@@ -129,6 +129,20 @@ df_check_commit_on_main() { # commit
         df_die "commit $1 has no tools/cloud/p1_pilot/run.sh: the box would have no workload to run"
 }
 
+# --pilot-part and --distill-preset reach run.sh as PILOT_PART and DISTILL_PRESET; a run.sh from before they existed
+# would ignore them and rerun the earlier pilot whole with the p1 settings, so such a commit is refused.
+df_check_run_sh_reads_c2() { # commit
+    if [ "${DUOFORGE_P1_NO_GIT_CHECK:-}" = 1 ]; then
+        df_log "warning: DUOFORGE_P1_NO_GIT_CHECK=1, run.sh is not checked for PILOT_PART and DISTILL_PRESET"
+        return 0
+    fi
+    local text
+    text=$(git -C "$DF_DIR" show "$1:tools/cloud/p1_pilot/run.sh" 2> /dev/null) ||
+        df_die "commit $1: its tools/cloud/p1_pilot/run.sh cannot be read"
+    printf '%s\n' "$text" | grep -q 'PILOT_PART' && printf '%s\n' "$text" | grep -q 'DISTILL_PRESET' ||
+        df_die "commit $1: its run.sh does not read PILOT_PART and DISTILL_PRESET (it predates option C2)"
+}
+
 # ---------------------------------------------------------------------------------------------- AWS lookups
 
 # The security group by name: it must exist once, have no inbound rule and carry the tag project=duoforge. Sets
@@ -220,9 +234,10 @@ df_active_pilots() {
 # ---------------------------------------------------------------------------------------------- the request
 
 # $DF_DIR/user_data.sh with its placeholders filled; every value is validated before it gets here.
-df_render_user_data() { # commit bucket max-minutes run-id [pilot-run-id]
+df_render_user_data() { # commit bucket max-minutes run-id [pilot-run-id [pilot-part [distill-preset]]]
     sed -e "s|@COMMIT@|$1|g" -e "s|@BUCKET@|$2|g" -e "s|@MAX_MINUTES@|$3|g" -e "s|@RUN_ID@|$4|g" \
-        -e "s|@PILOT_RUN_ID@|${5:-}|g" "$DF_DIR/user_data.sh"
+        -e "s|@PILOT_RUN_ID@|${5:-}|g" -e "s|@PILOT_PART@|${6:-}|g" -e "s|@DISTILL_PRESET@|${7:-}|g" \
+        "$DF_DIR/user_data.sh"
 }
 
 # Fills DF_RUN_ARGS with the arguments of `aws ec2 run-instances` (without --dry-run): one instance, a one-time spot

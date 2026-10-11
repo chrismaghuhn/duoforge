@@ -1,0 +1,22 @@
+{
+  "name": "g67_mg_recoil_contact",
+  "purpose": "Step G67 targeted battle, Magic Guard against recoil and contact damage: Clefable (Magic Guard) uses Double-Edge (recoil, contact) into Garchomp (Rough Skin) and then into Staraptor (Rocky Helmet); the recoil, the Rough Skin and the Rocky Helmet damage are all indirect and none shows a line (no damage line for Clefable).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000074616374",
+  "teams": [
+    "Clefable (F) @ Life Orb\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Double-Edge\n- Moonblast\n- Protect\n- Substitute\n\nReuniclus (M) @ Sitrus Berry\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Substitute\n- Protect\n\nAlakazam (M) @ Focus Sash\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Calm Mind\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nGarchomp (M) @ Lum Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Spikes\n- Protect",
+    "Garchomp (M) @ Focus Sash\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Spikes\n- Protect\n\nStaraptor (F) @ Rocky Helmet\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nGliscor (M) @ Leftovers\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Toxic Spikes\n- Earthquake\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Hydro Pump\n- Protect\n\nSharpedo (M) @ Sitrus Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Snarl\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Shadow Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 3",
+      "move 1 2, move 3"
+    ],
+    "p2": [
+      "move 2 1, move 3",
+      "move 4, move 1 1"
+    ],
+    "max_steps": 10
+  }
+}

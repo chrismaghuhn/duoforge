@@ -24,12 +24,16 @@
 #include "support/team_c.h"
 #include "state/battle_internal.h"
 #include "codec/state_codec.h"
+#include "state/knowledge.h"
+#include "data/closure_tables.h"
+#include "data/pool_tables.h"
 
 #define GAMES 80u
 #define MAX_STEPS 400u
 #define WORLDS 4u
 #define RNG_OFF 52u
 #define RNG_SIZE 24u
+#define DFI_POSITIONS_MR_TEST 4u /* the flat positions of the move result check */
 
 static uint32_t masks_checked;
 static uint32_t masks_refused;
@@ -228,11 +232,33 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
         const duoforge_status st = duoforge_battle_public(ctx, b, p, &view);
         DF_CHECK(t, st == DUOFORGE_OK || st == DUOFORGE_E_UNSUPPORTED);
         DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, p, &h) == st);
+        /* the observation's part of the one predicate (duoforge_observation_causes) is the battle's mask but for the bits the
+         * observation does not carry (a Substitute, a temporary forme, the foe's disguise state) */
+        {
+            duoforge_observation seen;
+            uint32_t from_view = 0xFFFFFFFFu;
+            uint32_t from_battle = 0xFFFFFFFFu;
+            DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &seen) == DUOFORGE_OK);
+            DF_CHECK(t, duoforge_observation_causes(ctx, &seen, &from_view) == DUOFORGE_OK);
+            DF_CHECK(t, duoforge_battle_public_causes(ctx, b, p, &from_battle) == DUOFORGE_OK);
+            const uint32_t battle_only = DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE | DUOFORGE_PUBLIC_CAUSE_TEMP_FORME |
+                                         DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
+            DF_CHECK(t, (from_view & ~from_battle) == 0u && (from_battle & ~from_view & ~battle_only) == 0u);
+        }
         if (st != DUOFORGE_OK) {
             ++ty->unsupported;
             continue;
         }
         ++ty->checked;
+        /* the engine's verdict on a record (duoforge_public_record_check): its own records come back; a masked field filled
+         * (the foe's exact HP of its first member) does not */
+        DF_CHECK(t, duoforge_public_record_check(ctx, &view) == DUOFORGE_OK);
+        {
+            duoforge_public_state bad = view;
+            uint8_t *hp = bad.state + DFI_ENC_SIDE_OFF + (p ^ 1u) * DFI_ENC_SIDE_SIZE + DFI_ENC_SIDE_MEMBERS_OFF + DFI_ENC_MEMBER_HP_OFF;
+            hp[0] = (uint8_t)(hp[0] ^ 1u);
+            DF_CHECK(t, duoforge_public_record_check(ctx, &bad) == DUOFORGE_E_MALFORMED);
+        }
         for (uint32_t side = 0u; side < 2u; ++side) {
             const uint8_t *sb = view.state + 215u + 397u * side;
             for (uint32_t m = 0u; m < 6u; ++m) {
@@ -252,6 +278,13 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
         DF_CHECK(t, dfi_party_entry(&world->tail, foe, 1u) == dfi_party_entry(&b->tail, foe, 1u));
         truth = *b;
         memcpy(truth.tail.party_order[foe], world->tail.party_order[foe], sizeof truth.tail.party_order[foe]);
+        /* The silent flinch is not public (view audit 2026-10-10): the record drops it where it has no effect (no move left
+         * to run before the residual ends it) and refuses the state otherwise, so the world lacks it. */
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            for (uint32_t slot = 0u; slot < 2u; ++slot) {
+                truth.sides[side].positions[slot].flags = (uint8_t)(truth.sides[side].positions[slot].flags & ~DFI_VOL_FLINCH);
+            }
+        }
         const size_t n = bytes_of(ctx, &truth, want);
         DF_CHECK(t, bytes_of(ctx, world, got) == n);
         DF_CHECK(t, memcmp(want, got, n) == 0);
@@ -378,6 +411,161 @@ static void test_party_order_information_safety(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+/* The differential check of duoforge_move_result against the engine (POOL play): the events of each step are cut into
+ * move actions as the live tracker cuts them (python/duoforge_live/tracker.py _segment, _pre_action, _end_action), each
+ * action is classified by the library, and after the step every standing position's tail move_result must hold what the
+ * classifications say, this turn's and last turn's. A status move whose engine result the classifier gets wrong (a new
+ * handler of the generic special, say) fails here instead of going silently into a record. An action the library refuses
+ * (E_UNSUPPORTED) leaves its slot unknown until the next turn shift brings a known one. */
+typedef struct mr_track {
+    uint8_t now[DFI_POSITIONS_MR_TEST];
+    uint8_t last[DFI_POSITIONS_MR_TEST];
+    bool known_now[DFI_POSITIONS_MR_TEST];
+    bool known_last[DFI_POSITIONS_MR_TEST];
+    bool fainted[DFI_POSITIONS_MR_TEST];
+    uint32_t entries[DFI_POSITIONS_MR_TEST]; /* switches, drags and faints at the position: a changed occupant */
+} mr_track;
+
+static uint32_t mr_classified;
+static uint32_t mr_unclassified;
+static uint32_t mr_compared;
+
+static void mr_clear(mr_track *tr, uint32_t pos)
+{
+    tr->now[pos] = 0u;
+    tr->last[pos] = 0u;
+    tr->known_now[pos] = true;
+    tr->known_last[pos] = true;
+}
+
+static void mr_set(df_test *t, const duoforge_context *ctx, mr_track *tr, uint32_t pos, const duoforge_event *ev,
+                   uint32_t n)
+{
+    uint8_t out = 0u;
+    const duoforge_status st = duoforge_move_result(ctx, pos, ev, n, &out);
+    DF_CHECK(t, st == DUOFORGE_OK || st == DUOFORGE_E_UNSUPPORTED);
+    tr->known_now[pos] = st == DUOFORGE_OK;
+    tr->now[pos] = out;
+    if (st == DUOFORGE_OK) {
+        ++mr_classified;
+    } else {
+        ++mr_unclassified;
+    }
+}
+
+/* The result of the action ev[start, end) of `pos` (its user still the one that began it, not fainted), and of a run
+ * that Magic Bounce reflected inside it, for the holder. */
+static void mr_end_action(df_test *t, const duoforge_context *ctx, mr_track *tr, const duoforge_event *ev, uint32_t start,
+                          uint32_t end, uint32_t pos, uint32_t entry)
+{
+    if (tr->entries[pos] == entry && !tr->fainted[pos]) {
+        mr_set(t, ctx, tr, pos, &ev[start], end - start);
+    }
+    for (uint32_t j = start; j < end; ++j) {
+        const uint32_t h = ev[j].position;
+        if (ev[j].kind == DUOFORGE_EVENT_MOVE && ev[j].cause == DUOFORGE_CAUSE_ABILITY && h < DFI_POSITIONS_MR_TEST &&
+            !tr->fainted[h]) {
+            mr_set(t, ctx, tr, h, &ev[j], end - j);
+        }
+    }
+}
+
+/* The last event of ev[start, end) is a line of `pos` that comes before its action's first line (_pre_action). */
+static bool mr_pre_action(const duoforge_event *ev, uint32_t start, uint32_t end, uint32_t pos)
+{
+    const duoforge_event *e = &ev[end - 1u];
+    if (e->position != pos) {
+        return false;
+    }
+    if (end - 1u > start && ev[end - 2u].kind == DUOFORGE_EVENT_ITEM_END && ev[end - 2u].position == pos) {
+        return false;
+    }
+    return (e->kind == DUOFORGE_EVENT_CURE_STATUS && (e->flags & DUOFORGE_EVENT_FLAG_MESSAGE) != 0u &&
+            e->cause == DUOFORGE_CAUSE_NONE) ||
+           e->kind == DUOFORGE_EVENT_CONFUSION_END ||
+           (e->kind == DUOFORGE_EVENT_ACTIVATE && e->cause == DUOFORGE_CAUSE_MOVE && e->id2 == DFI_MOVE_STRUGGLE);
+}
+
+static void mr_step(df_test *t, const duoforge_context *ctx, mr_track *tr, const duoforge_event *ev, uint32_t n)
+{
+    bool open = false;
+    bool confused = false;
+    uint32_t start = 0u;
+    uint32_t user = 0u;
+    uint32_t entry = 0u;
+    for (uint32_t i = 0u; i < n; ++i) {
+        const duoforge_event *e = &ev[i];
+        const uint32_t pos = e->position;
+        if (e->kind == DUOFORGE_EVENT_UPKEEP || e->kind == DUOFORGE_EVENT_TURN) {
+            if (open) {
+                mr_end_action(t, ctx, tr, ev, start, i, user, entry);
+                open = false;
+            }
+            if (e->kind == DUOFORGE_EVENT_TURN) {
+                for (uint32_t p = 0u; p < DFI_POSITIONS_MR_TEST; ++p) {
+                    tr->last[p] = tr->now[p];
+                    tr->known_last[p] = tr->known_now[p];
+                    tr->now[p] = 0u;
+                    tr->known_now[p] = true;
+                }
+            }
+            continue;
+        }
+        const bool starts = pos < DFI_POSITIONS_MR_TEST &&
+                            ((e->kind == DUOFORGE_EVENT_MOVE && e->cause == DUOFORGE_CAUSE_NONE) ||
+                             e->kind == DUOFORGE_EVENT_CONFUSED ||
+                             (e->kind == DUOFORGE_EVENT_CANT && e->cause != DUOFORGE_CAUSE_ABILITY));
+        if (starts && open && user == pos && confused && e->kind != DUOFORGE_EVENT_CONFUSED) {
+            confused = false; /* the move the confusion line let through, or its [cant] */
+        } else if (starts) {
+            uint32_t first = i;
+            while (open && first > start && mr_pre_action(ev, start, first, pos)) {
+                --first;
+            }
+            if (open) {
+                mr_end_action(t, ctx, tr, ev, start, first, user, entry);
+            }
+            open = true;
+            start = first;
+            user = pos;
+            entry = tr->entries[pos];
+            confused = e->kind == DUOFORGE_EVENT_CONFUSED;
+        }
+        if (pos < DFI_POSITIONS_MR_TEST &&
+            (e->kind == DUOFORGE_EVENT_SWITCH || e->kind == DUOFORGE_EVENT_DRAG || e->kind == DUOFORGE_EVENT_FAINT)) {
+            tr->entries[pos] += 1u;
+            tr->fainted[pos] = e->kind == DUOFORGE_EVENT_FAINT;
+            mr_clear(tr, pos); /* the tail of the position is cleared (a new occupant, or the faint) */
+        }
+    }
+    if (open) {
+        mr_end_action(t, ctx, tr, ev, start, n, user, entry);
+    }
+}
+
+static void mr_compare(df_test *t, const duoforge_battle *b, const mr_track *tr)
+{
+    for (uint32_t p = 0u; p < DFI_POSITIONS_MR_TEST; ++p) {
+        const uint32_t occupant = b->sides[p / 2u].positions[p % 2u].occupant;
+        if (occupant >= DUOFORGE_MAX_ROSTER || b->sides[p / 2u].members[occupant].hp == 0u) {
+            continue;
+        }
+        const uint32_t mr = b->tail.sides[p / 2u].positions[p % 2u].move_result;
+        if (tr->known_now[p]) {
+            DF_CHECK(t, (mr & (DFI_MOVE_RESULT_VALUE_MASK | DFI_MOVE_RESULT_UNCLASSIFIED_NOW)) == tr->now[p]);
+            ++mr_compared;
+        }
+        if (tr->known_last[p]) {
+            const uint32_t last = ((mr >> DFI_MOVE_RESULT_LAST_SHIFT) & DFI_MOVE_RESULT_VALUE_MASK) |
+                                  ((mr & DFI_MOVE_RESULT_UNCLASSIFIED_LAST) != 0u ? DFI_MOVE_RESULT_UNCLASSIFIED_NOW : 0u);
+            DF_CHECK(t, last == tr->last[p]);
+            ++mr_compared;
+        }
+    }
+}
+
+static duoforge_event mr_events[DUOFORGE_SIDE_COUNT][DUOFORGE_MAX_EVENTS];
+
 static void play(df_test *t, const duoforge_context_config *config, const char *pairs, uint32_t games, uint64_t seed,
                  tally *ty)
 {
@@ -396,6 +584,12 @@ static void play(df_test *t, const duoforge_context_config *config, const char *
         duoforge_public_state starts[2];
         bool saved[2] = {false, false};
         duoforge_factored_choice chosen[2] = {0};
+        mr_track track;
+        memset(&track, 0, sizeof track);
+        for (uint32_t p = 0u; p < DFI_POSITIONS_MR_TEST; ++p) {
+            mr_clear(&track, p);
+        }
+        const bool pool_play = config == &df_config_pool;
         for (uint32_t step = 0u; step < MAX_STEPS; ++step) {
             check_state(t, ctx, b, world, &rs, ty);
             duoforge_request rq[2];
@@ -444,13 +638,19 @@ static void play(df_test *t, const duoforge_context_config *config, const char *
             duoforge_decision_bundle bundle;
             DF_CHECK(t, build_bundle(rq, d, c, &bundle));
             duoforge_step_result r;
-            const duoforge_status st = duoforge_battle_step(ctx, b, &bundle, &r);
+            duoforge_event_buffer buffers[DUOFORGE_SIDE_COUNT] = {{mr_events[0], DUOFORGE_MAX_EVENTS, 0u},
+                                                                  {mr_events[1], DUOFORGE_MAX_EVENTS, 0u}};
+            const duoforge_status st = duoforge_battle_step_events(ctx, b, &bundle, &r, buffers);
             if (st == DUOFORGE_E_UNSUPPORTED) {
                 break; /* a mechanic the manifest does not mark: the game ends here */
             }
             DF_CHECK(t, st == DUOFORGE_OK);
             if (st != DUOFORGE_OK) {
                 break;
+            }
+            if (pool_play) {
+                mr_step(t, ctx, &track, mr_events[0], buffers[0].count);
+                mr_compare(t, b, &track);
             }
         }
         duoforge_battle_destroy(world);
@@ -628,6 +828,81 @@ static void test_early_pivot_information_boundary(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+/* A PIVOT after a public Protect, the foe's lead (side 1, position 0) still to move when `pending`; `flinch` sets the
+ * silent flinch volatile on that lead (a secondary's roll, never shown until its [cant] line). */
+static duoforge_battle *flinch_pivot(df_test *t, const duoforge_context *ctx, bool pending, bool flinch)
+{
+    duoforge_battle_setup setup;
+    (void)duoforge_reference_setup(0u, &setup);
+    duoforge_battle *b = df_make_battle(ctx, &setup);
+    duoforge_request rq[2];
+    duoforge_factored_domain domains[2];
+    duoforge_factored_choice choices[2] = {0};
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        DF_CHECK(t, duoforge_battle_request(ctx, b, p, &rq[p]) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_factored(ctx, b, p, &domains[p]) == DUOFORGE_OK);
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            choices[p].picks[i] = (uint8_t)i;
+        }
+    }
+    duoforge_decision_bundle bundle;
+    DF_CHECK(t, build_bundle(rq, domains, choices, &bundle));
+    duoforge_step_result result;
+    DF_CHECK(t, duoforge_battle_step(ctx, b, &bundle, &result) == DUOFORGE_OK);
+    b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_PIVOT;
+    b->request_mask = 1u;
+    ++b->request_epoch;
+    b->sides[0].requested_slots = 1u;
+    b->sides[1].requested_slots = 0u;
+    b->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_EMERGENCY_EXIT;
+    b->sides[0].positions[1].flags = (uint8_t)DFI_VOL_PROTECT; /* the moves of this turn have started, publicly */
+    b->turn = 3u;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        for (uint32_t slot = 0u; slot < 2u; ++slot) {
+            b->sides[side].positions[slot].move_actions = 2u;
+        }
+    }
+    const uint32_t actor = b->sides[1].positions[0].activation_id;
+    b->queue_len = 0u;
+    if (pending) {
+        b->queue[b->queue_len++] = (dfi_queue_record){actor, (uint8_t)DFI_Q_MOVE, 1u, 0u, 0u, 0u, 0u};
+    }
+    b->queue[b->queue_len++] = (dfi_queue_record){0u, (uint8_t)DFI_Q_RESIDUAL, 0u, 0u, 0u, 0u, 0u};
+    if (flinch) {
+        b->sides[1].positions[0].flags = (uint8_t)(b->sides[1].positions[0].flags | DFI_VOL_FLINCH);
+    }
+    DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+    return b;
+}
+
+/* Information safety of the silent flinch (view audit 2026-10-10): whether a secondary's flinch landed is hidden from both
+ * players until the flinched Pokemon tries to move. A record with a position still to move is refused (no public fact tells
+ * whether a flinch is outstanding on it); with none left the flinch has no effect and the record does not carry it. */
+static void test_flinch_information_safety(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_k1);
+    for (uint32_t pending = 0u; pending < 2u; ++pending) {
+        static duoforge_public_state v[2][2]; /* [flinch][player] */
+        duoforge_status st[2][2];
+        for (uint32_t flinch = 0u; flinch < 2u; ++flinch) {
+            duoforge_battle *b = flinch_pivot(t, ctx, pending != 0u, flinch != 0u);
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                memset(&v[flinch][p], 0x55, sizeof v[flinch][p]);
+                st[flinch][p] = duoforge_battle_public(ctx, b, p, &v[flinch][p]);
+            }
+            duoforge_battle_destroy(b);
+        }
+        for (uint32_t p = 0u; p < 2u; ++p) {
+            DF_CHECK(t, st[0][p] == st[1][p]);
+            DF_CHECK(t, st[0][p] == (pending != 0u ? DUOFORGE_E_UNSUPPORTED : DUOFORGE_OK));
+        }
+        for (uint32_t p = 0u; pending == 0u && p < 2u; ++p) { /* both players' records, the flinched foe's and its owner's */
+            DF_CHECK(t, memcmp(&v[0][p], &v[1][p], sizeof v[0][p]) == 0);
+        }
+    }
+    duoforge_context_destroy(ctx);
+}
+
 static void test_counter_information_safety(df_test *t)
 {
     duoforge_context *ctx = df_make_context(&df_config_k1);
@@ -690,15 +965,191 @@ static void test_counter_information_safety(df_test *t)
 }
 
 
+/* duoforge_hp_display: the engine's HP display (the knowledge fold's dfi_hp_display) for every exact HP of a range of maxima,
+ * the documented edge values, and the argument checks with nothing written on a refusal. */
+static void test_hp_display(df_test *t)
+{
+    for (uint32_t hp_max = 1u; hp_max <= 400u; ++hp_max) {
+        for (uint32_t hp = 0u; hp <= hp_max; ++hp) {
+            uint8_t want_pc = 0u;
+            uint8_t want_fl = 0u;
+            dfi_hp_display(hp, hp_max, &want_pc, &want_fl);
+            uint8_t pc = 0xAAu;
+            uint8_t fl = 0xAAu;
+            if (!DF_CHECK(t, duoforge_hp_display(hp, hp_max, &pc, &fl) == DUOFORGE_OK) ||
+                !DF_CHECK(t, pc == want_pc && fl == want_fl)) {
+                return;
+            }
+        }
+    }
+    uint8_t pc = 0u;
+    uint8_t fl = 0u;
+    DF_CHECK(t, duoforge_hp_display(1u, 181u, &pc, &fl) == DUOFORGE_OK && pc == 1u && fl == DUOFORGE_HP_FLAG_NONE);
+    DF_CHECK(t, duoforge_hp_display(0u, 181u, &pc, &fl) == DUOFORGE_OK && pc == 0u && fl == DUOFORGE_HP_FLAG_NONE);
+    DF_CHECK(t, duoforge_hp_display(181u, 181u, &pc, &fl) == DUOFORGE_OK && pc == 100u);
+    DF_CHECK(t, duoforge_hp_display(150u, 193u, &pc, &fl) == DUOFORGE_OK && pc == 77u); /* the record of m5_real_aa_1 */
+    DF_CHECK(t, duoforge_hp_display(20u, 100u, &pc, &fl) == DUOFORGE_OK && pc == 20u && fl == DUOFORGE_HP_FLAG_RED);
+    DF_CHECK(t, duoforge_hp_display(41u, 201u, &pc, &fl) == DUOFORGE_OK && pc == 20u && fl == DUOFORGE_HP_FLAG_YELLOW);
+    DF_CHECK(t, duoforge_hp_display(50u, 100u, &pc, &fl) == DUOFORGE_OK && pc == 50u && fl == DUOFORGE_HP_FLAG_YELLOW);
+    DF_CHECK(t, duoforge_hp_display(101u, 201u, &pc, &fl) == DUOFORGE_OK && pc == 50u && fl == DUOFORGE_HP_FLAG_GREEN);
+    pc = 0x55u;
+    fl = 0x55u;
+    DF_CHECK(t, duoforge_hp_display(1u, 2u, NULL, &fl) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_hp_display(1u, 2u, &pc, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_hp_display(0u, 0u, &pc, &fl) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_hp_display(3u, 2u, &pc, &fl) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_hp_display(1u, 0x10000u, &pc, &fl) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, pc == 0x55u && fl == 0x55u);
+}
+
+/* An event of the move-result tests. */
+static duoforge_event mr_ev(uint8_t kind, uint8_t position, uint8_t other, uint8_t cause, uint16_t id, uint16_t id2)
+{
+    duoforge_event e;
+    memset(&e, 0, sizeof e);
+    e.kind = kind;
+    e.position = position;
+    e.other = other;
+    e.cause = cause;
+    e.id = id;
+    e.id2 = id2;
+    return e;
+}
+
+static uint8_t mr_of(df_test *t, const duoforge_context *ctx, uint32_t user, const duoforge_event *ev, uint32_t n)
+{
+    uint8_t out = 0xAAu;
+    if (!DF_CHECK(t, duoforge_move_result(ctx, user, ev, n, &out) == DUOFORGE_OK)) {
+        return 0xAAu;
+    }
+    return out;
+}
+
+/* duoforge_move_result: the classes of the engine's rule on hand-built actions (the corpus comparison is the live test's,
+ * duoforge.python.live), the unclassified bit, the refusals with nothing written, the argument checks. */
+static void test_move_result(df_test *t)
+{
+    duoforge_context *kp = df_make_context(&df_config_pool);
+    duoforge_context *k1 = df_make_context(&df_config_k1);
+    const uint8_t none = (uint8_t)DUOFORGE_NO_POSITION;
+    duoforge_event ev[6];
+    /* a [cant] (paralysis): false; the recharge turn: null */
+    ev[0] = mr_ev(DUOFORGE_EVENT_CANT, 1u, none, DUOFORGE_CAUSE_PARALYSIS, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 1u) == DFI_MOVE_RESULT_FALSE);
+    ev[0].cause = DUOFORGE_CAUSE_RECHARGE;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 1u) == DFI_MOVE_RESULT_NULL);
+    /* a damaging move: a hit target true; a miss false; Protect null; a hit and a protected target: true */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_THUNDERBOLT, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_DAMAGE, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[1] = mr_ev(DUOFORGE_EVENT_MISS, 0u, 2u, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BLOCKED, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_NULL);
+    ev[2] = mr_ev(DUOFORGE_EVENT_DAMAGE, 3u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    /* an absorbing ability (Lightning Rod's -ability, then its boost): false, the boost is no hit */
+    ev[1] = mr_ev(DUOFORGE_EVENT_ABILITY, 2u, none, DUOFORGE_CAUSE_NONE, 0u, (uint16_t)(1u + DFI_ABILITY_LIGHTNINGROD));
+    ev[2] = mr_ev(DUOFORGE_EVENT_BOOST, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[2].amount = 1u;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    /* a self boost: true when a stage rose, false at +6 (a boost of 0) */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 1u, DUOFORGE_CAUSE_NONE, DFI_MOVE_SWORDSDANCE, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BOOST, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].amount = 2u;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[1].amount = 0u;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* a status cured in the same action (a Lum Berry): the status did not change, false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 3u, 0u, DUOFORGE_CAUSE_NONE, DFI_MOVE_WILLOWISP, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_STATUS, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 3u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[2] = mr_ev(DUOFORGE_EVENT_CURE_STATUS, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 3u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    /* Haze sets no class: the unclassified bit alone */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_HAZE, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, none, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_UNCLASSIFIED_NOW);
+    /* Baneful Bunker (G94a, dfi_run_protect): its -singleturn Protect, true; the stall fail (-fail with [still]) false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 1u, DUOFORGE_CAUSE_NONE, DFI_MOVE_BANEFULBUNKER, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_PROTECT, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* Imprison: its volatile on the user, true; a second one (-fail with [still], dfi_run_imprison) false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 1u, DUOFORGE_CAUSE_NONE, DFI_MOVE_IMPRISON, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_VOLATILE_START, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].detail = (uint8_t)DUOFORGE_VOLATILE_IMPRISON;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* a [still] -fail: false; the lines of another position before the action are skipped */
+    ev[0] = mr_ev(DUOFORGE_EVENT_DAMAGE, 3u, none, DUOFORGE_CAUSE_POISON, 0u, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_TAILWIND, 0u);
+    ev[1].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[2] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    /* the residual's events after the turn's last action are not the move's (found by the playouts below): a screen's
+     * end, the weather's end, a Perish count, Yawn's sleep; Trick Room's own end by the Trick Room move is */
+    ev[3] = mr_ev(DUOFORGE_EVENT_SIDE_END, none, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[4] = mr_ev(DUOFORGE_EVENT_WEATHER, none, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[5] = mr_ev(DUOFORGE_EVENT_VOLATILE_START, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[5].detail = (uint8_t)DUOFORGE_VOLATILE_PERISH;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 6u) == DFI_MOVE_RESULT_FALSE);
+    ev[5] = mr_ev(DUOFORGE_EVENT_STATUS, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[5].detail = (uint8_t)DFI_STATUS_SLP;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 6u) == DFI_MOVE_RESULT_FALSE);
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_TRICKROOM, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_FIELD_END, none, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].detail = (uint8_t)DUOFORGE_FIELD_TRICK_ROOM;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    /* refusals, nothing written: a handler not mapped (Substitute), no action of the user, a context without the tail */
+    uint8_t out = 0x55u;
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 0u, DUOFORGE_CAUSE_NONE, DFI_MOVE_SUBSTITUTE, 0u);
+    DF_CHECK(t, duoforge_move_result(kp, 0u, ev, 1u, &out) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_move_result(kp, 2u, ev, 1u, &out) == DUOFORGE_E_UNSUPPORTED);
+    ev[0] = mr_ev(DUOFORGE_EVENT_CANT, 1u, none, DUOFORGE_CAUSE_PARALYSIS, 0u, 0u);
+    DF_CHECK(t, duoforge_move_result(k1, 1u, ev, 1u, &out) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 0u, &out) == DUOFORGE_E_UNSUPPORTED);
+    /* the argument checks */
+    DF_CHECK(t, duoforge_move_result(NULL, 1u, ev, 1u, &out) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, NULL, 1u, &out) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 1u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_move_result(kp, 4u, ev, 1u, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, out == 0x55u);
+    /* the argument checks of the two predicate calls */
+    duoforge_observation o;
+    memset(&o, 0, sizeof o);
+    uint32_t mask = 0x55u;
+    DF_CHECK(t, duoforge_observation_causes(NULL, &o, &mask) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_observation_causes(kp, NULL, &mask) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_observation_causes(kp, &o, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    o.player = 2u;
+    DF_CHECK(t, duoforge_observation_causes(kp, &o, &mask) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, mask == 0x55u);
+    duoforge_public_state rec;
+    memset(&rec, 0, sizeof rec);
+    DF_CHECK(t, duoforge_public_record_check(NULL, &rec) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_public_record_check(kp, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_public_record_check(kp, &rec) == DUOFORGE_E_MALFORMED); /* no size: not a record of the context */
+    duoforge_context_destroy(k1);
+    duoforge_context_destroy(kp);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.view");
     test_uniforms(&t);
+    test_hp_display(&t);
+    test_move_result(&t);
     test_arguments(&t);
     test_counter_information_safety(&t);
     test_batch(&t);
     test_early_pivot_information_boundary(&t);
+    test_flinch_information_safety(&t);
     test_party_order_information_safety(&t);
     tally closure = {0};
     tally team_c = {0};
@@ -714,7 +1165,13 @@ int main(void)
     printf("worlds refused for a flagged display: %u\n", closure.contradicted + team_c.contradicted + pool.contradicted);
     DF_CHECK(&t, closure.checked > 0u && team_c.checked > 0u && pool.checked > 0u);
     printf("queue masks: %u sound, %u explicitly unsupported\n", masks_checked, masks_refused);
-    DF_CHECK(&t, masks_checked == 20u && masks_refused == 32u);
-    DF_CHECK(&t, varied_picks > 0u && varied_commands > 0u);
+    /* Since the view audit of 2026-10-10 a PIVOT with a queued move left is refused (a silent flinch may be outstanding on
+     * it), so no public record carries a foe's pending command: the masks checked are those of PIVOTs with no move left
+     * (20 sound and 32 refused before), and no world varies a queued command. */
+    DF_CHECK(&t, masks_checked == 6u && masks_refused == 6u);
+    DF_CHECK(&t, varied_picks > 0u && varied_commands == 0u);
+    printf("move results: %u actions classified, %u refused, %u slots compared with the engine\n", mr_classified,
+           mr_unclassified, mr_compared);
+    DF_CHECK(&t, mr_classified > 0u && mr_compared > 0u);
     return df_test_end(&t);
 }

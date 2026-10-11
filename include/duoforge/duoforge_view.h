@@ -119,6 +119,11 @@ typedef struct duoforge_hypothesis {
  * is not affected (the bit is zero there, endTurn cleared it), and neither is a REPLACEMENT at the end of a turn: the bit is
  * reset for the next turn anyway. */
 #define DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN 32u
+/* TURN_HISTORY (step G88, decision 0046, number from HauptSession): a PIVOT boundary while an active Pokemon of either side has
+ * Lash Out or Assurance among its known moves. Their turn-history bits (LOWERED_THIS_TURN, HURT_THIS_TURN, position_flags bits
+ * 5 and 6) are not carried by the view, and they are live mid-turn, so duoforge_battle_from_view and the public record refuse
+ * with this cause. A turn boundary is not affected (the bits are zero there). */
+#define DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY 64u
 
 /* Argument errors touch no output. Otherwise statuses are per environment,
  * the return is the first failure, and each failing environment is atomic.
@@ -149,6 +154,46 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
    player > 1 -> E_INVALID_ARGUMENT, the full state check -> E_INVARIANT. *out_mask is written only on success. */
 duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t player,
                                               uint32_t *out_mask);
+
+/* The part of the causes of a public refusal (DUOFORGE_PUBLIC_CAUSE_*) that the player's observation alone decides: visible
+   sleep, visible confusion, a possible Illusion of the foe's sheet, raised-this-turn at a PIVOT. It is the predicate that
+   duoforge_battle_public refuses on, read from the observation (the battle path adds the bits the observation does not carry:
+   the foe's disguise state, a Substitute, a temporary forme), so a player who rebuilds its observation (the live tracker) gets
+   the engine's causes without a copy of the rule. A pure call. Checks: NULL -> E_NULL_ARGUMENT; the player above 1 ->
+   E_INVALID_ARGUMENT. *out_mask is written only on success. */
+duoforge_status duoforge_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation,
+                                            uint32_t *out_mask);
+
+/* The engine's verdict on a public record that was assembled outside it (the live tracker's): duoforge_battle_from_view of
+   it with a hypothesis that draws nothing in particular (the middle of every uniform; the foe's leads, then the members seen,
+   then the others as its pick order; zero stat points but the HP points a shown HP display needs; the first legal command of
+   a pending foe position). DUOFORGE_OK: the world gives the record back byte for byte. E_UNSUPPORTED: the engine refuses the
+   record (a PIVOT before the moves or with a move queued, a possible lockedmove, the Revival Blessing proxy, a cause of
+   duoforge_battle_public_causes). E_MALFORMED: a field the engine masks is filled, or the record contradicts itself; the
+   other statuses as duoforge_battle_from_view. A pure call: no heap, no output but the status. */
+duoforge_status duoforge_public_record_check(const duoforge_context *ctx, const duoforge_public_state *record);
+
+/* The HP display every player is shown of a Pokemon with hp of hp_max HP (the Champions percent display, sim/pokemon.ts
+   getHealth at the pin): the percent (floor, at least 1 while hp > 0) and its DUOFORGE_HP_FLAG_* colour flag (at 20 and 50
+   percent only). It is the opponent's knowledge of a member (the public record's knowledge bytes), which a player's own
+   protocol stream shows only as exact HP: the live tracker reads it here instead of holding the rule (decision 0023 section
+   4). A pure call. Checks: NULL -> E_NULL_ARGUMENT; hp_max 0 or above 65535, or hp above hp_max -> E_INVALID_ARGUMENT.
+   Nothing is written on a refusal. */
+duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_percent, uint8_t *out_flag);
+
+/* The result of one move action, from its public events (the POOL kinds' tail rev 4 move_result of the action's turn, the
+   pin's moveThisTurnResult): *out_result is the tail's value of this turn, its class in bits 0-1 (true 1, false 2, null 3) or
+   bit 4 alone for an action whose handler sets no class (Quick Guard, Haze, After You, Quash), as the engine's own rule sets
+   it (src/combat/turn.c, dfi_run_move and the move body; the values are the state encoding's, DFI_MOVE_RESULT_*, exported to
+   Python by duoforge._state_layout.VALUES, no public value). `events` are the events of the action as a player sees them (the converter's of the
+   protocol lines, decision 0007), from its user's first line (a [cant], a confusion line, its [move], or a [move] Magic Bounce
+   reflected for its holder) to the next action, the residual or the decision point; lines of other positions before that
+   first line are skipped. The live tracker keeps the record's move_result with it and holds no rule. A pure call, no heap.
+   Checks: NULL (events with a count) -> E_NULL_ARGUMENT; user above 3 -> E_INVALID_ARGUMENT; a context of no POOL kind,
+   events without the user's action, or an action the events do not determine (a move another one calls, a status move whose
+   handler is not mapped, a reflected run the engine itself would refuse) -> E_UNSUPPORTED. Nothing is written on a refusal. */
+duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user, const duoforge_event *events,
+                                     uint32_t count, uint8_t *out_result);
 
 /* The world of a public state and a hypothesis, written into *out (a battle of
    the same context, as duoforge_battle_copy's destination). Its RNG is seeded

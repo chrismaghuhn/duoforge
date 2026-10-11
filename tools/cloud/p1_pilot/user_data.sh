@@ -22,6 +22,8 @@ DF_COMMIT='@COMMIT@'
 DF_BUCKET='@BUCKET@'
 DF_RUN_ID='@RUN_ID@'
 DF_PILOT_RUN_ID='@PILOT_RUN_ID@'  # empty, or the earlier run whose pilot run.sh reads (read only)
+DF_PILOT_PART='@PILOT_PART@'  # empty (run.sh: distill), or generation: run.sh distils again
+DF_DISTILL_PRESET='@DISTILL_PRESET@'  # empty (run.sh: p1), or c2
 DF_MAX_MINUTES=@MAX_MINUTES@
 DF_REGION=eu-central-1
 DF_REPO_URL=https://github.com/chrismaghuhn/duoforge.git
@@ -50,6 +52,8 @@ mkdir -p "$WORK" "$OUT"
 # the workload's environment, exported before anything is started (the interruption hook gets it too)
 export BUCKET="$DF_BUCKET" RUN_PREFIX RUN_ID="$DF_RUN_ID" COMMIT="$DF_COMMIT" OUT_DIR="$OUT"
 if [ -n "$DF_PILOT_RUN_ID" ]; then export PILOT_RUN_ID="$DF_PILOT_RUN_ID"; fi
+if [ -n "$DF_PILOT_PART" ]; then export PILOT_PART="$DF_PILOT_PART"; fi
+if [ -n "$DF_DISTILL_PRESET" ]; then export DISTILL_PRESET="$DF_DISTILL_PRESET"; fi
 
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" >> "$LOG"; }
 

@@ -18,6 +18,7 @@
  * v3 adds the groups of decision 0006 section 3; the combat of the closure
  * (src/combat/turn.c) writes them for CLOSURE data.
  */
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <duoforge/duoforge.h>
@@ -89,6 +90,18 @@ typedef struct dfi_move_slot {
 #define DFI_SWITCH_UTURN 5u     /* U-turn (the POOL kinds only), step G5 */
 #define DFI_SWITCH_VOLT_SWITCH 6u /* Volt Switch (the POOL kinds only), step G32 */
 #define DFI_SWITCH_REVIVE_BLESSING 7u /* Revival Blessing (the POOL kinds only), decision 0025 item 6: a REVIVE answer */
+#define DFI_SWITCH_BATON_PASS 8u /* Baton Pass (the POOL kinds only), decision 0042: a PIVOT that copies the leaver's volatiles */
+/* A freeze's status counter at its start (one less at each [cant] frz; the thaw chance draws), and Encore's turns (one more
+ * when its target has no move left in the turn). */
+#define DFI_FREEZE_TURNS 3u
+#define DFI_ENCORE_TURNS 3u
+/* The durations the volatiles of the POOL extension start with (the live record assembler reads them from the state
+ * layout dump, so no copy lives outside C): Taunt 3 turns (one more when its target has been out for a turn and has no move
+ * left in the turn, DFI_TAIL_TAUNT_MAX), Disable 5 (one less when its target still has its move ahead or Cursed Body sets
+ * it), Psychic Noise's Heal Block 2 (durationCallback, data/moves.ts:8286-8289); Yawn's is DFI_TAIL_YAWN_MAX. */
+#define DFI_TAUNT_TURNS 3u
+#define DFI_DISABLE_TURNS 5u
+#define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */
@@ -231,7 +244,9 @@ typedef struct dfi_side {
 #define DFI_PROTECT_SPIKY_SHIELD 1u
 /* step G66 (decision 0015 5cb, decision 0040): King's Shield, Protect that passes Status moves and lowers a contact attacker's Attack */
 #define DFI_PROTECT_KINGS_SHIELD 2u
-#define DFI_TAIL_PROTECT_KIND_MAX 2u
+/* step G94 (decision 0015 5cv, decision 0061 section 1): Baneful Bunker, Protect that poisons a contact attacker (data/moves.ts:985-1037) */
+#define DFI_PROTECT_BANEFUL_BUNKER 3u
+#define DFI_TAIL_PROTECT_KIND_MAX 3u
 /* rev 4, per position (decision 0015 section 7, the audit of tail-rev4-proposal.md section 4.1; no mechanic writes them yet).
  * move_result: two bits for this turn (0-1) and two for the last turn (2-3), each DFI_MOVE_RESULT_*; the pin's
  * moveThisTurnResult and moveLastTurnResult (Stomping Tantrum reads `=== false`, so null must not count as a failure). */
@@ -240,6 +255,7 @@ typedef struct dfi_side {
 #define DFI_MOVE_RESULT_FALSE 2u
 #define DFI_MOVE_RESULT_NULL 3u
 #define DFI_MOVE_RESULT_LAST_SHIFT 2u
+#define DFI_MOVE_RESULT_VALUE_MASK 3u /* the two bits of one turn's result */
 /* Step G42 (Stomping Tantrum, Roost): the result of the occupant's move was not classified exactly (an engine exit that
  * the classifier does not map to the pin's value, turn.c dfi_move_result_*): bit 4 while this turn runs, bit 5 for the last
  * turn once the turn ends (dfi_end_turn shifts it with the result). A set bit means the result bits of its slot are zero.
@@ -259,13 +275,22 @@ typedef struct dfi_side {
 /* tail rev 5 position flags (position_flags, G72b; decision 0015 5ce). The bitfield of one position: bit 0 Healing Wish (never
  * set yet), bit 1 DFI_POSFLAG_STATS_RAISED (Alluring Voice: a positive boost reached the occupant this turn; set in dfi_boost,
  * cleared at the turn boundary and with the occupant), bits 2-3 DFI_POSFLAG_DRAGON_CHEER_MASK (the Dragon Cheer crit stage:
- * 0 none, 1 = +1, 2 = +2 for a Dragon at start; 3 is invalid). Bits 4-7 are zero. */
+ * 0 none, 1 = +1, 2 = +2 for a Dragon at start; 3 is invalid), bit 4 DFI_POSFLAG_DESTINY_BOND (step G76, decision 0015 5cg:
+ * the user's Destiny Bond volatile; set by the move, ended by the user's next move attempt, a refused attempt included, and
+ * with the occupant). Bits 5 and 6 are LOWERED and HURT (G88, below); bit 7 is zero. */
 #define DFI_POSFLAG_HEALING_WISH 0x01u
 #define DFI_POSFLAG_STATS_RAISED 0x02u
 #define DFI_POSFLAG_DRAGON_CHEER_SHIFT 2u
 #define DFI_POSFLAG_DRAGON_CHEER_MASK 0x0Cu
 #define DFI_POSFLAG_DRAGON_CHEER_MAX 2u
-#define DFI_POSFLAG_VALID_MASK 0x0Fu
+#define DFI_POSFLAG_DESTINY_BOND 0x10u
+/* Step G88 (decision 0046): bit 5 LOWERED_THIS_TURN (Lash Out: a stage fell this turn, set in dfi_boost where a stage really
+ * dropped; sim/battle.ts:2086) and bit 6 HURT_THIS_TURN (Assurance: a spread damage left the occupant alive this turn, set in
+ * dfi_deal_ex; sim/battle.ts:2137-2138). Both are cleared at the turn boundary and with the occupant. The mask is the OR of
+ * bits 0-6 (Destiny Bond, G76, bit 4 included): 0x7F. */
+#define DFI_POSFLAG_LOWERED 0x20u
+#define DFI_POSFLAG_HURT 0x40u
+#define DFI_POSFLAG_VALID_MASK 0x7Fu
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
 /* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which
@@ -366,6 +391,14 @@ typedef struct dfi_tail_side {
     uint8_t hazard_order;                      /* tail rev 4: the creation order of the hazards that are up, 2 bits per slot (see above) */
     dfi_tail_illusion illusion;                /* tail rev 5 (decision 0026): the foe's shown state of the holder, zero until Illusion */
 } dfi_tail_side;
+
+/* Illusion (decision 0026): the position's disguise is up (1) or not (0). ability_state is the state of the occupant's current ability
+ * (rev 4), so it is the disguise only while the occupant is a holder: the sheet's Illusion (id + 1). Defined in state/invariants.c. */
+bool dfi_illusion_disguise_up(const dfi_side *side, const dfi_tail_side *ts, uint32_t p);
+/* The roster index the foe shows on position p of `side` (decision 0026 section 4): the disguise while it is up, and the holder's name
+ * while the holder stands fainted on the position after a faint while disguised (the faint drops the disguise; the name keeps the
+ * fainted values until a line about the real member). Otherwise the occupant (DFI_OCCUPANT_NONE stays none). Defined in state/invariants.c. */
+uint32_t dfi_illusion_shown_occupant(const dfi_side *side, const dfi_tail_side *ts, uint32_t p);
 
 /* party_order (step G46, decision 0015 section 7): the side.pokemon order of the pin, per side, as the permutation of the
  * brought members. Entry k (k = 0..5, the Showdown index in side.pokemon: the two actives, then the bench) holds roster index

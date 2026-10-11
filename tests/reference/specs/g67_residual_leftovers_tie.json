@@ -1,0 +1,22 @@
+{
+  "name": "g67_residual_leftovers_tie",
+  "purpose": "Step G67 regression, the residual tie of two equally fast Leftovers holders (mechanism 1 of campaign seed 6700000 battle 10, a follow-on error of the hit-loop Update). Both sides lead with Milotic (Leftovers, Scald, Protect) and Staraptor; no Substitute and no weather (Tyranitar is benched). The Milotic take the Staraptors' Brave Bird each turn and heal at every residual, and their Leftovers callbacks tie in speed; then Protect on the next turn.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000a6a0",
+  "teams": [
+    "Milotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nClefable (F) @ Life Orb\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Stealth Rock\n- Protect\n- Calm Mind\n\nAlakazam (M) @ Focus Sash\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Calm Mind\n- Protect\n\nReuniclus (M) @ Sitrus Berry\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Substitute\n- Protect\n\nTyranitar (M) @ Smooth Rock\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sandstorm\n- Rock Slide\n- Protect",
+    "Milotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nClefable (F) @ Life Orb\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Stealth Rock\n- Protect\n- Calm Mind\n\nAlakazam (M) @ Focus Sash\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Calm Mind\n- Protect\n\nReuniclus (M) @ Sitrus Berry\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Substitute\n- Protect\n\nTyranitar (M) @ Smooth Rock\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sandstorm\n- Rock Slide\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1 2",
+      "move 3, move 3"
+    ],
+    "p2": [
+      "move 1 2, move 1 2",
+      "move 3, move 3"
+    ],
+    "max_steps": 12
+  }
+}

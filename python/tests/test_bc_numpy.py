@@ -65,11 +65,22 @@ def split_variants(train, val):
     raise AssertionError("no nature pairs for the split")
 
 
-def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc", natures=None, name="dataset"):
+def short_log(log):
+    """The fixture log cut before p1's Salamence enters: three of p1's four brought members are seen."""
+    lines = log.split(chr(10))
+    cut = next(i for i, line in enumerate(lines) if line.startswith("|switch|p1a: Salamence|"))
+    return chr(10).join(lines[:cut] + ["|win|p2"])
+
+
+def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc", natures=None, name="dataset",
+                  pick_hypotheses=False):
     """A dataset of games of the fixture log (ids fixture-0..): `copies` plain copies, or one game per nature pair
-    of `natures` (split_variants); built into tmp/name."""
+    of `natures` (split_variants); built into tmp/name. pick_hypotheses: the copies are the short log (short_log),
+    built with the pick hypotheses."""
     from duoforge_replay import build
     log = FIXTURE.read_text(encoding="utf-8")
+    if pick_hypotheses:
+        log = short_log(log)
     prior_path = tmp / "prior.json"
     prior_path.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
                           encoding="utf-8")
@@ -80,7 +91,7 @@ def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc", natures=
             f.write(json.dumps({"id": f"fixture-{i}", "formatid": format_id, "log": text}) + chr(10))
     out = tmp / name
     build.build([source], prior_path, out, stats_factory=stats_factory, log=lambda _: None,
-                format_prefix=format_id[:len("gen9championsvgc2026regmc")])
+                format_prefix=format_id[:len("gen9championsvgc2026regmc")], pick_hypotheses=pick_hypotheses)
     return out
 
 
@@ -167,6 +178,103 @@ class BcDataTest(unittest.TestCase):
         message = str(caught.exception)
         self.assertIn(f"{lines.LIBRARY_SUPPORTED ^ 1:#x}", message)
         self.assertIn(f"{lines.LIBRARY_SUPPORTED:#x}", message)
+
+    def with_manifest(self, name, change):
+        """A copy of the fixture dataset whose output manifest.json is changed by `change`."""
+        copy = self.tmp / name
+        if copy.exists():
+            shutil.rmtree(copy)
+        shutil.copytree(self.out, copy)
+        path = copy / "manifest.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        change(manifest)
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        return copy
+
+    def test_a_new_dataset_names_its_source(self):
+        self.assertEqual(self.bc_data.dataset_source(self.out), "sheet")
+
+    def test_a_belief_dataset_without_its_weight_is_refused(self):
+        belief = self.with_manifest("belief", lambda m: m.update(source="bo1_belief"))
+        with self.assertRaisesRegex(ValueError, "--source-weight bo1_belief"):
+            self.bc_data.load([belief], self.context, self.mask)
+        half = self.bc_data.load([belief], self.context, self.mask, source_weights={"bo1_belief": 0.5})
+        np.testing.assert_allclose(half.weight, self.rows.weight * 0.5)
+
+    def test_a_drop_sheets_dataset_never_trains(self):
+        # review minor: drop_sheets holds the test split's games; no weight lets it into training
+        drop = self.with_manifest("drop", lambda m: m.update(source="drop_sheets"))
+        with self.assertRaisesRegex(ValueError, "validation"):
+            self.bc_data.load([drop], self.context, self.mask, source_weights={"drop_sheets": 1.0})
+
+    def test_belief_rows_split_by_player(self):
+        # review I4: a belief game's drawn sheets change with each draw; its split follows its players
+        from duoforge_replay import dataset, split
+        belief = self.with_manifest("belief-split", lambda m: m.update(source="bo1_belief"))
+        part = next(iter(dataset.parts(belief)))
+        games = dataset.read_games(part)
+        want = split.of_game(tuple(int(h) for h in games["players"][0])) == "test"
+        # sheet hashes whose sheet-pair split is the other one: a split by sheets would fail this test
+        other = next(np.array([a, a + 1], dtype=np.uint64) for a in range(1, 10 ** 6)
+                     if bool(self.bc_data.split_key(np.array([a, a + 1], dtype=np.uint64))) != want)
+        games["sheets"] = np.tile(other, (len(games["sheets"]), 1))
+        dataset.write_npz(Path(part) / "games.npz", games)
+        rows = self.bc_data.load([belief], self.context, self.mask, source_weights={"bo1_belief": 1.0})
+        self.assertTrue((rows.val == want).all())
+
+    def test_the_source_weight_of_sheets_is_one_unless_named(self):
+        named = self.bc_data.load([self.out], self.context, self.mask, source_weights={"sheet": 2.0})
+        np.testing.assert_allclose(named.weight, self.rows.weight * 2.0)
+
+    def test_an_old_dataset_is_a_sheet_dataset_but_never_loads(self):
+        # format version 1 (before the source existed) was always a sheet build; versions 1 and 2 carry no extension
+        # record, and since #334 their rows can hold fold states the encoder cannot see: rebuild them
+        old = self.with_manifest("old", lambda m: (m.pop("source"), m.pop("tracker_folds"), m.pop("ext_revision"),
+                                                   m.update(format_version=1)))
+        self.assertEqual(self.bc_data.dataset_source(old), "sheet")
+        for version in (1, 2):
+            legacy = self.with_manifest(f"legacy{version}", lambda m: (m.pop("tracker_folds"), m.pop("ext_revision"),
+                                                                      m.update(format_version=version)))
+            with self.subTest(version), self.assertRaisesRegex(ValueError, "extension record"):
+                self.bc_data.load([legacy], self.context, self.mask)
+
+    def test_hypothesis_rows_load_only_with_their_weight(self):
+        # M11 pick hypotheses spec, section 5: left out by default; --pick-hypotheses-weight W gives W/H per row
+        from duoforge_replay import dataset
+        hyp = build_fixture(self.tmp, name="hyp", pick_hypotheses=True)
+        shards = list(dataset.read(hyp))
+        h = np.concatenate([s["picks_hypotheses"] for s in shards])
+        self.assertEqual(set(h.tolist()), {1, 3})
+        plain = self.bc_data.load([hyp], self.context, self.mask)
+        self.assertEqual(len(plain), int((h == 1).sum()))
+        taken = self.bc_data.load([hyp], self.context, self.mask, pick_hypotheses_weight=0.6)
+        self.assertEqual(len(taken), len(h))
+        rating = np.concatenate([[self.bc_data.rating_weight(int(r)) for r in dataset.read_games(Path(hyp) / s["part"])[
+            "ratings"][s["game"].astype(np.int64), s["side"].astype(np.int64)]] for s in shards])
+        np.testing.assert_allclose(taken.weight, rating * np.where(h > 1, 0.6 / h, 1.0), rtol=1e-6)
+        np.testing.assert_allclose(taken.weight[h == 1], plain.weight, rtol=1e-6)
+        for bad in (0.0, -1.0):
+            with self.subTest(bad), self.assertRaisesRegex(ValueError, "pick_hypotheses_weight"):
+                self.bc_data.load([hyp], self.context, self.mask, pick_hypotheses_weight=bad)
+
+    def test_a_version_3_dataset_has_no_hypothesis_rows(self):
+        v3 = self.with_manifest("v3", lambda m: m.update(format_version=3))
+        self.assertEqual(len(self.bc_data.load([v3], self.context, self.mask)), len(self.rows))
+
+    def test_rows_folded_under_other_folds_are_refused(self):
+        other = self.with_manifest("folds", lambda m: m.update(tracker_folds=lines.TRACKER_FOLDS ^ 1))
+        with self.assertRaisesRegex(ValueError, "other folds"):
+            self.bc_data.load([other], self.context, self.mask)
+
+    def test_the_mask_takes_the_extension_features_the_tracker_folds(self):
+        library = self.bc_data.library_mask(self.context)
+        self.assertEqual(self.bc_data.bc_mask(self.context), library & lines.TRACKER_FOLDS)
+
+    def test_a_new_manifest_without_its_source_is_refused(self):
+        # a version 2 build always writes its source: one without it is no sheet dataset by default
+        bare = self.with_manifest("bare", lambda m: m.pop("source"))
+        with self.assertRaisesRegex(ValueError, "names no source"):
+            self.bc_data.load([bare], self.context, self.mask)
 
     def test_dataset_of_another_library_is_refused(self):
         other = self.tmp / "other"

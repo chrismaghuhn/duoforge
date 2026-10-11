@@ -93,6 +93,7 @@ CONSTANTS = {
     "DUOFORGE_LOCATION_NOT_BROUGHT": 3,
     "DUOFORGE_EVENT_DRAG": 45,
     "DUOFORGE_EVENT_CLEAR_ALL_BOOSTS": 47,
+    "DUOFORGE_EVENT_ITEM_SHOWN": 48,
     "DUOFORGE_VOLATILE_SUBSTITUTE": 9,
     "DUOFORGE_VOLATILE_DRAGONCHEER": 10,
     "DUOFORGE_FAIL_SUBSTITUTE_EXISTS": 1,
@@ -170,15 +171,23 @@ CONSTANTS = {
     "DUOFORGE_VIEWEXT_FEATURE_TRANSFORM": 42,
     "DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH": 43,
     "DUOFORGE_VIEWEXT_FEATURE_COUNT": 44,
+    "DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES": 59,
+    "DUOFORGE_VIEWEXT_FEATURE_VOLATILES2": 60,
+    "DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS": 61,
+    "DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS": 62,
+    "DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS": 63,
     "DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP": 1,
     "DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION": 2,
     "DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE": 4,
     "DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE": 8,
     "DUOFORGE_PUBLIC_CAUSE_TEMP_FORME": 16,
     "DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN": 32,
+    "DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY": 64,
     "DUOFORGE_DATA_KIND_SYNTHETIC": 1,
     "DUOFORGE_DATA_KIND_TEAM_C": 4,
     "DUOFORGE_DATA_KIND_POOL": 6,
+    "DUOFORGE_DATA_KIND_CLOSURE_DEV": 3,
+    "DUOFORGE_DATA_KIND_POOL_DEV": 7,
     "DUOFORGE_DATA_TABLE_SPECIES": 1,
     "DUOFORGE_DATA_TABLE_MOVE": 2,
     "DUOFORGE_DATA_TABLE_ITEM": 3,
@@ -207,6 +216,7 @@ CONSTANTS = {
     "DUOFORGE_MOVE_STATIC_FLAG_POWDER": 512,
     "DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE": 1024,
     "DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE": 2048,
+    "DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE": 4096,
     "DUOFORGE_ITEM_FAMILY_NONE": 0,
     "DUOFORGE_ITEM_FAMILY_TYPE_BOOSTER": 1,
     "DUOFORGE_ITEM_FAMILY_RESIST_BERRY": 2,
@@ -326,6 +336,25 @@ REQUEST = _struct([
     ("slot_mask", _U1, 11),
 ], 12)
 
+# One event (duoforge_event, decision 0007): the converter's tuples in this order (trace_to_c.ev_tuple).
+EVENT = _struct([
+    ("kind", _U1, 0),
+    ("position", _U1, 1),
+    ("other", _U1, 2),
+    ("cause", _U1, 3),
+    ("id", _U2, 4),
+    ("id2", _U2, 6),
+    ("hp", _U2, 8),
+    ("hp_max", _U2, 10),
+    ("hp_kind", _U1, 12),
+    ("hp_flag", _U1, 13),
+    ("status", _U1, 14),
+    ("detail", _U1, 15),
+    ("amount", _U1, 16),
+    ("flags", _U1, 17),
+    ("reserved", (_U1, (2,)), 18),
+], 20)
+
 STEP_RESULT = _struct([
     ("epoch", _U4, 0),
     ("kind", _U1, 4),
@@ -406,7 +435,9 @@ OBSERVATION = _struct([
 # The POOL player-view extension (decision 0018): 192 bytes, alignment 8, all zero under every non-POOL kind.
 FIELD_EXT = _struct([
     ("gravity_turns", _U1, 0),
-    ("reserved", (_U1, (15,)), 1),
+    ("reserved0", _U1, 1),
+    ("flags", _U2, 2),
+    ("reserved", (_U1, (12,)), 4),
 ], 16)
 
 POSITION_EXT = _struct([
@@ -447,7 +478,8 @@ SIDE_EXT = _struct([
     ("toxic_spikes", _U1, 59),
     ("sticky_web", _U1, 60),
     ("guard_flags", _U1, 61),
-    ("reserved", (_U1, (2,)), 62),
+    ("conditions", _U1, 62),
+    ("reserved", _U1, 63),
 ], 64)
 
 OBSERVATION_EXT = _struct([
@@ -458,7 +490,8 @@ OBSERVATION_EXT = _struct([
     ("supported", _U8, 8),
     ("field", FIELD_EXT, 16),
     ("sides", (SIDE_EXT, (2,)), 32),
-    ("reserved1", (_U1, (32,)), 160),
+    ("volatiles2", (_U4, (2, 2)), 160),
+    ("reserved1", (_U1, (16,)), 176),
 ], 192)
 
 # The static data API (decision 0020): every field a uint32 (priority an int32), no padding.
@@ -576,6 +609,7 @@ BY_C_NAME = {
     "duoforge_factored_domain": FACTORED_DOMAIN,
     "duoforge_factored_choice": FACTORED_CHOICE,
     "duoforge_request": REQUEST,
+    "duoforge_event": EVENT,
     "duoforge_step_result": STEP_RESULT,
     "duoforge_member_view": MEMBER_VIEW,
     "duoforge_position_view": POSITION_VIEW,

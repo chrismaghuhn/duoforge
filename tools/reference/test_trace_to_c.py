@@ -1546,12 +1546,19 @@ class Library(unittest.TestCase):
                 (e,) = trace_to_c.step_events([line], 0, roster, maxhp, tables)
                 self.assertEqual(e[:6], (trace_to_c.EV['ITEM_END'], 2, other, trace_to_c.CAUSE['ITEM_TAKEN'],
                                          tables['MOVE'][trace_to_c.key(move)], tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1))
+        # Decision 0033 (step G67): the holder's own announcement, a plain -item with no attribute, is ITEM_SHOWN (cause NONE,
+        # id2 the item + 1, the holder in position); the reserved Frisk form is refused above, never mapped.
+        (e,) = trace_to_c.step_events(['|-item|p2a: Staraptor|Air Balloon'], 0, roster, maxhp, tables)
+        self.assertEqual(e, (trace_to_c.EV['ITEM_SHOWN'], 2, trace_to_c.NOPOS, 0, 0, tables['ITEM'][trace_to_c.key('Air Balloon')] + 1,
+                             0, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(trace_to_c.EV['ITEM_SHOWN'], 48)
         # A silent -enditem that no move caused is still no event; every other shape of these lines is refused.
         self.assertEqual(trace_to_c.step_events(['|-enditem|p2a: Staraptor|Sitrus Berry|[silent]'], 0, roster, maxhp, tables), [])
         for bad in ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick|[of] p1a: Sneasler',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] move: Thief',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk',
-                    '|-item|p2a: Staraptor|Sitrus Berry',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p1a: Sneasler|[identify]',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[identify]',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick|[of] p1a: Sneasler',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[from] move: Trick',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief',
@@ -2012,7 +2019,7 @@ class Library(unittest.TestCase):
         log = enter + [ally]
         swaps = trace_to_c.swap_partners({'steps': [{'log': log}]}, teams, roster, tables)
         self.assertEqual(swaps, [{2: (ab[trace_to_c.key('Intimidate')], ab[trace_to_c.key('Trace')])}])
-        events = trace_to_c.step_events(log, 1, roster, maxhp, tables, None, swaps[0])
+        events = trace_to_c.step_events(log, 1, roster, maxhp, tables, None, swap_ids=swaps[0])
         self.assertEqual(events[-2][:6], (trace_to_c.EV['ABILITY'], 0, 1, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Intimidate')] + 1, move))
         self.assertEqual(events[-1][:6], (trace_to_c.EV['ABILITY'], 1, 0, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Trace')] + 1, move))
         # the Trace copy before the ally swap is followed: Incineroar copies Multiscale from p2a, then swaps with Gardevoir
@@ -2113,7 +2120,7 @@ class Library(unittest.TestCase):
         committed traces, so the engine's tail and extension are checked against the protocol and not against
         themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
-        self.assertEqual(len(names), 5)
+        self.assertEqual(len(names), 6)  # with g19_glaive_rush_mirror (the replay tracker's coverage)
         with open(os.path.join(ROOT, 'tests', 'test_pool_g19.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
@@ -2199,7 +2206,8 @@ class Library(unittest.TestCase):
     def test_the_data_has_the_df_conf_shape(self):
         spec, trace = battle('s2_turn_core_1')
         data = convert('s2_turn_core_1', spec, trace)
-        self.assertEqual(sorted(data), ['dropped_total', 'member_count', 'members', 'name', 'purpose', 'steps'])
+        self.assertEqual(sorted(data), ['dropped_total', 'illusion_duplicate_step', 'member_count', 'members', 'name', 'purpose', 'steps'])
+        self.assertIsNone(data['illusion_duplicate_step'])  # no disguise shown beside its real member in this battle
         self.assertEqual((data['name'], data['purpose']), ('s2_turn_core_1', spec['purpose']))
         self.assertEqual(data['member_count'], 4)
         self.assertEqual([len(rows) for rows in data['members']], [4, 4])
@@ -2299,7 +2307,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 197)  # G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 244)  # C2 (decision 0015 5cp): 22 damaging moves make 244 (222 before); G94 (decision 0015 5cv): Baneful Bunker; C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); G88 (decision 0046): Lash Out and Assurance make 203 (201 before); G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2320,6 +2328,8 @@ class Library(unittest.TestCase):
                             done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
+                            # Baton Pass (step G74): its switch line names it as the cause, `|switch|...|[from] Baton Pass`.
+                            done = done or (name == 'Baton Pass' and after.startswith('|switch|') and after.endswith('|[from] Baton Pass'))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith(('|move: ' + name, '|' + name)))  # Spikes' own line has no move: prefix (step G37)
                             # A terrain that a status move sets (Electric Terrain, Misty Terrain, step G25): its -fieldstart line.
@@ -2330,6 +2340,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
                             # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
                             done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
+                            # Baneful Bunker (step G94) prints its own Protect line the same way (data/moves.ts:1005).
+                            done = done or (name == 'Baneful Bunker' and after.startswith('|-singleturn|'))
                             # King's Shield (step G66) prints the same `-singleturn|X|Protect` line as Protect (data/moves.ts:9929).
                             done = done or (name == "King's Shield" and after.startswith('|-singleturn|'))
                             # Haze (step G62, decision 0031): its own line, the public -clearallboost.
@@ -2338,6 +2350,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Thunder Wave' and after.startswith(('|-status|', '|-immune|')))
                             # After You and Quash (step G62): the -activate line of the move on the target.
                             done = done or (name in ('After You', 'Quash') and after.startswith('|-activate|') and after.endswith('|move: ' + name))
+                            # Destiny Bond (step G76): its start line, -singlemove (data/moves.ts:3493-3495).
+                            done = done or (name == 'Destiny Bond' and after.startswith('|-singlemove|'))
                             # Rage Powder (step G30): the single-turn line of its condition.
                             done = done or (name == 'Rage Powder' and after.startswith('|-singleturn|') and after.endswith('|move: Rage Powder'))
                             # An item that a move gave (Trick, Switcheroo, Thief, Covet; step G29): its -item line.
@@ -2486,8 +2500,11 @@ class Library(unittest.TestCase):
         self.assertNotEqual(move['UTURN'], move['FLIPTURN'])
         with self.assertRaises(KeyError):
             trace_to_c.ev_cause(['[from] U-turn'], ext)
+        # Baton Pass (step G74, decision 0042): the switch line of its pivot is `[from] Baton Pass`, the bare move name.
+        self.assertEqual(trace_to_c.ev_cause(['[from] Baton Pass'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['BATONPASS']))
+        # A name that the converter does not know as a cause (Shed Tail stays refused, decision 0032 section 7) is still refused.
         with self.assertRaises(trace_to_c.ConversionError) as cm:
-            trace_to_c.ev_cause(['[from] Baton Pass'], pool)  # not a move that the converter knows as a cause
+            trace_to_c.ev_cause(['[from] Shed Tail'], pool)
         self.assertEqual(cm.exception.rule, 'from-attribute')
         names = ('g5_uturn_a', 'g5_uturn_b', 'g5_uturn_c', 'g5_uturn_d', 'g5_uturn_e')
         seen = {}
@@ -2628,6 +2645,213 @@ class Cli(unittest.TestCase):
                     f.write(good)
             self.assertEqual(self.run_cli(tmp, '--check').returncode, 0)
 
+class IllusionPP(unittest.TestCase):
+    """The foe's knowledge of PP under an Illusion (decision 0026 section 4; trace_to_c.ill_pp_fold, step I2). Hand-made
+    states: side 1 has the holder Zoroark (roster 0; Shadow Ball, Sludge Bomb, Protect) shown as the disguise Milotic (roster 1;
+    Protect, Scald). Without the fold the foe's PP is the true PP, and the checks on a disguised row fail."""
+
+    def state(self, zoroark_pp, milotic_pp, active=(0, -1)):
+        def mon(species, pp):
+            return {'species': species, 'set_species': species, 'pp': list(pp)}
+        return {'sides': [{'pokemon': [mon('Ceruledge', [8])], 'active': [0, -1]},
+                          {'pokemon': [mon('Zoroark', zoroark_pp), mon('Milotic', milotic_pp)], 'active': list(active)}]}
+
+    def plain_uses(self, log, tables):
+        """The charge of every move line at 1 (no Pressure in these states), as the event pass of the converter gives them."""
+        uses = [[], []]
+        for line in log:
+            parts = line.split('|')
+            if len(parts) >= 4 and parts[1] == 'move' and '[from] lockedmove' not in parts[5:]:
+                uses[int(parts[2][1]) - 1].append((tables['MOVE'][trace_to_c.key(parts[3])], 1))
+        return uses
+
+    def tables_and_teams(self):
+        tables = {'MOVE': {trace_to_c.key(n): i + 1 for i, n in enumerate(
+            ['Shadow Ball', 'Sludge Bomb', 'Protect', 'Scald'])}, 'ABILITY': {trace_to_c.key('Illusion'): 4}}
+        teams = [[{'ability': 0, 'moves': [1]}],
+                 [{'ability': 5, 'moves': [1, 2, 3]}, {'ability': 0, 'moves': [3, 4]}]]
+        return tables, teams
+
+    def run_fold(self, steps):
+        """The foe's PP of every row after each step: the start PP less the counts the fold attributes (pp_foe)."""
+        tables, teams = self.tables_and_teams()
+        roster_of = [{'Ceruledge': 0}, {'Zoroark': 0, 'Milotic': 1}]
+        win, spent, out = [None, None], {}, []
+        start = self.state([16, 12, 8], [8, 16])
+        start_pp = {}
+        for s in range(2):
+            for p in start['sides'][s]['pokemon']:
+                start_pp[(s, roster_of[s][p['species']])] = list(p['pp']) + [0] * (4 - len(p['pp']))
+        prev = start
+        for log, new in steps:
+            trace_to_c.ill_pp_fold(log, prev, new, roster_of, teams, tables, 4, win, spent, {}, self.plain_uses(log, tables))
+            out.append({key: tuple(max(0, start_pp[key][k] - spent.get(key, [0, 0, 0, 0])[k]) for k in range(4))
+                        for key in start_pp})
+            prev = new
+        return out
+
+    ENTER = ['|switch|p2a: Milotic|Milotic, L50, F|167/167']
+
+    def test_a_move_not_on_the_disguise_sheet_is_pending_until_the_break(self):
+        # Zoroark, disguised as Milotic, uses Sludge Bomb under the name Milotic: the foe still counts 12 on Zoroark.
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16])),
+                 (['|move|p2a: Milotic|Sludge Bomb|p1a: Ceruledge'], self.state([16, 11, 8], [8, 16]))]
+        known = self.run_fold(steps)
+        self.assertEqual(known[1][(1, 0)], (16, 12, 8, 0))  # the holder's row, frozen (true 11)
+        self.assertEqual(known[1][(1, 1)], (8, 16, 0, 0))   # the disguise's row is not touched by Sludge Bomb
+
+    def test_a_move_on_the_disguise_sheet_counts_on_the_disguise_row(self):
+        # Zoroark uses Protect (on both sheets) under the name Milotic: the foe counts it on Milotic, not on Zoroark.
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16])),
+                 (['|move|p2a: Milotic|Protect|p2a: Milotic'], self.state([16, 12, 7], [8, 16]))]
+        known = self.run_fold(steps)
+        self.assertEqual(known[1][(1, 0)], (16, 12, 8, 0))  # Zoroark's Protect stays 8 for the foe
+        self.assertEqual(known[1][(1, 1)], (7, 16, 0, 0))   # Milotic's Protect shows the use
+
+    def test_the_break_brings_the_holder_to_the_truth(self):
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16])),
+                 (['|move|p2a: Milotic|Sludge Bomb|p1a: Ceruledge'], self.state([16, 11, 8], [8, 16])),
+                 (['|replace|p2a: Zoroark|Zoroark, L50, F|167/167', '|-end|p2a: Zoroark|Illusion'], self.state([16, 11, 8], [8, 16]))]
+        known = self.run_fold(steps)
+        self.assertEqual(known[2][(1, 0)], (16, 11, 8, 0))  # the pending use is attributed at the break
+        self.assertEqual(known[2][(1, 1)], (8, 16, 0, 0))   # the disguise's row restored to its value before the disguise
+
+    def test_negative_control_the_foe_knows_pp_foe_and_the_owner_the_true_pp(self):
+        """Negative control: where the true PP and the foe's PP differ (Sludge Bomb used under the disguise's name), the row
+        the converter emits carries both: the true PP for the owner (conformance_compare.c uses pp for the owner's viewer)
+        and pp_foe for the foe. A converter that put the true PP into pp_foe fails the foe assertion below."""
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16])),
+                 (['|move|p2a: Milotic|Sludge Bomb|p1a: Ceruledge'], self.state([16, 11, 8], [8, 16]))]
+        out = self.run_fold(steps)
+        true_row = steps[1][1]['sides'][1]['pokemon'][0]['pp'] + [0]
+        shown_row = out[1][(1, 0)]
+        self.assertEqual(true_row, [16, 11, 8, 0])            # the owner's row: the true PP
+        self.assertEqual(shown_row, (16, 12, 8, 0))           # the foe's row: what it was shown
+        self.assertNotEqual(tuple(true_row), shown_row)       # the two differ, so the negative control has teeth
+
+    def status_state(self, zoro, milo):
+        """A state with the statuses of the two Pokemon of side 1: zoro = (pp, status), milo = (pp, status)."""
+        def mon(species, pp, status):
+            return {'species': species, 'set_species': species, 'pp': list(pp), 'status': status}
+        return {'sides': [{'pokemon': [mon('Ceruledge', [8], '')], 'active': [0, -1]},
+                          {'pokemon': [mon('Zoroark', zoro[0], zoro[1]), mon('Milotic', milo[0], milo[1])], 'active': [0, -1]}]}
+
+    def run_status_fold(self, steps):
+        tables, teams = self.tables_and_teams()
+        roster_of = [{'Ceruledge': 0}, {'Zoroark': 0, 'Milotic': 1}]
+        win, spent, sst = [None, None], {}, {}
+        prev = self.status_state(([16, 12, 8], ''), ([8, 16], ''))
+        for log, new in steps:
+            trace_to_c.ill_pp_fold(log, prev, new, roster_of, teams, tables, 4, win, spent, sst, self.plain_uses(log, tables))
+            prev = new
+        return win, sst
+
+    def test_negative_control_the_foe_shows_the_status_of_the_name(self):
+        """Negative control (decision 0026 section 4, shown_status): the holder is burned under the disguise's name. The foe's
+        holder row keeps the status it knew before (none), the disguise's row shows the burn, and the owner's row is the truth
+        (the converter emits shown_status for the foe and the true status is compared for the owner). A converter that put the
+        true status into shown_status fails the foe assertions."""
+        steps = [(self.ENTER, self.status_state(([16, 12, 8], ''), ([8, 16], ''))),
+                 (['|-status|p2a: Milotic|brn'], self.status_state(([16, 12, 8], 'brn'), ([8, 16], '')))]
+        win, sst = self.run_status_fold(steps)
+        true_holder = steps[1][1]['sides'][1]['pokemon'][0]['status']
+        self.assertEqual(true_holder, 'brn')                              # the owner's row: the true status
+        self.assertEqual(trace_to_c.status_map(steps[1][1], [{'Ceruledge': 0}, {'Zoroark': 0, 'Milotic': 1}])[(1, 0)], 'brn')
+        self.assertEqual(sst.get((1, 0)), '')                             # the foe's holder row: frozen, none
+        self.assertEqual(sst.get((1, 1)), 'brn')                          # the foe's disguise row: the burn of the name
+        self.assertNotEqual(sst.get((1, 0)), true_holder)                 # the two differ, so the control has teeth
+
+    def test_the_break_gives_the_holder_the_last_status_shown(self):
+        steps = [(self.ENTER, self.status_state(([16, 12, 8], ''), ([8, 16], ''))),
+                 (['|-status|p2a: Milotic|brn'], self.status_state(([16, 12, 8], 'brn'), ([8, 16], ''))),
+                 (['|replace|p2a: Zoroark|Zoroark, L50, M', '|-end|p2a: Zoroark|Illusion'],
+                  self.status_state(([16, 12, 8], 'brn'), ([8, 16], '')))]
+        win, sst = self.run_status_fold(steps)
+        self.assertEqual(sst.get((1, 0)), 'brn')   # the holder takes the status the name showed last
+        self.assertIn(sst.get((1, 1)), (None, ''))  # the disguise's row goes back to its status before the disguise (None: the true one)
+
+    def test_a_disguise_without_a_use_is_the_truth(self):
+        known = self.run_fold([(self.ENTER, self.state([16, 12, 8], [8, 16]))])
+        self.assertEqual(known[0][(1, 0)], (16, 12, 8, 0))
+        self.assertEqual(known[0][(1, 1)], (8, 16, 0, 0))
+
+
+
+def trace_ev(kind, pos, other, cause, ident, ident2, hp, hpmax, hp_kind, flags=0):
+    """An event tuple as convert_battle reads it: the kind, position, other, cause, id, id2, hp, hp max, hp kind, flags at 13."""
+    return (trace_to_c.EV[kind], pos, other, cause, ident, ident2, hp, hpmax, hp_kind, 0, 0, 0, 0, flags)
+
+
+class IllusionPressure(unittest.TestCase):
+    """A disguised holder's move that hits a Pressure target (decision 0026 section 4 with decision 0030 section 1): the move is
+    charged 1 plus the Pressure extra of the owner's standing Pressure Pokemon that it targets. On the disguise's sheet the charge
+    goes to the disguise's row; off it, the charge is pending and reaches the holder only at the break. The owner (side 0, Ceruledge
+    with Pressure) is the viewer; side 1 is the holder Zoroark (roster 0, sheet Shadow Ball, Sludge Bomb, Protect) disguised as
+    Milotic (roster 1, sheet Protect, Scald)."""
+
+    def tables_teams(self):
+        tables = {'MOVE': {trace_to_c.key(n): i + 1 for i, n in enumerate(
+                      ['Shadow Ball', 'Sludge Bomb', 'Protect', 'Scald'])},
+                  'ABILITY': {trace_to_c.key('Illusion'): 4, trace_to_c.key('Pressure'): 2},
+                  'MOVE_CLASS': {1: 0, 2: 0, 3: 0, 4: 0}, 'MOVE_MUST': {1: 0, 2: 0, 3: 0, 4: 0}}
+        teams = [[{'ability': 3, 'moves': [1]}],  # the owner's Pressure Pokemon (the sheet's ability is id + 1)
+                 [{'ability': 5, 'moves': [1, 2, 3]}, {'ability': 0, 'moves': [3, 4]}]]
+        return tables, teams
+
+    def state(self, zoro_pp, milo_pp):
+        def mon(species, pp):
+            return {'species': species, 'set_species': species, 'pp': list(pp)}
+        return {'sides': [{'pokemon': [mon('Ceruledge', [8])], 'active': [0, -1]},
+                          {'pokemon': [mon('Zoroark', zoro_pp), mon('Milotic', milo_pp)], 'active': [0, -1]}]}
+
+    def fold(self, steps):
+        """steps: (log, new state, the owner's events of the step). Returns (spent, the window after each step, the charges)."""
+        tables, teams = self.tables_teams()
+        roster_of = [{'Ceruledge': 0}, {'Zoroark': 0, 'Milotic': 1}]
+        pressure = trace_to_c.FoePressure(tables, teams)
+        win, spent, sst = [None, None], {}, {}
+        prev = self.state([16, 12, 8], [8, 16])
+        windows, charges = [], []
+        for log, new, owner_events in steps:
+            uses = pressure.step([owner_events, []])
+            charges.append(uses)
+            trace_to_c.ill_pp_fold(log, prev, new, roster_of, teams, tables, 4, win, spent, sst, uses)
+            windows.append(win[1])
+            prev = new
+        return spent, windows, charges
+
+    def own_switch(self):
+        # the owner's Ceruledge enters at position 0, healthy (EV SWITCH, id = roster 0, hp 100)
+        return (trace_ev('SWITCH', 0, 0xFF, 0, 0, 0, 100, 100, 1),)
+
+    ENTER = ['|switch|p2a: Milotic|Milotic, L50, F|167/167']
+
+    def test_a_move_on_the_disguise_sheet_is_charged_to_the_disguise_with_the_pressure_extra(self):
+        # Milotic (the disguise) uses Scald at the owner's Ceruledge: Scald is on the disguise's sheet, one extra PP: 2 counts.
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16]), self.own_switch()),
+                 (['|move|p2a: Milotic|Scald|p1a: Ceruledge'], self.state([16, 12, 8], [8, 16]),
+                  (trace_ev('MOVE', 2, 0, 0, 4, 0, 0, 0, 0),))]
+        spent, windows, charges = self.fold(steps)
+        self.assertEqual(charges[1], [[], [(4, 2)]])                 # Scald, 1 plus the extra of the standing Pressure target
+        self.assertEqual(spent[(1, 1)], [0, 2, 0, 0])                # the disguise's row: Scald is slot 1 of its sheet
+        self.assertEqual(spent.get((1, 0), [0, 0, 0, 0]), [0, 0, 0, 0])  # the holder's row stays what the foe knew
+        self.assertEqual(windows[1]['pending'], [0, 0, 0, 0])
+
+    def test_a_move_off_the_disguise_sheet_is_pending_and_reaches_the_holder_at_the_break(self):
+        # The disguise (Milotic) is shown using Shadow Ball, which is not on its sheet: the 2 counts stay pending, out of every row.
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16]), self.own_switch()),
+                 (['|move|p2a: Milotic|Shadow Ball|p1a: Ceruledge'], self.state([16, 12, 8], [8, 16]),
+                  (trace_ev('MOVE', 2, 0, 0, 1, 0, 0, 0, 0),)),
+                 (['|replace|p2a: Zoroark|Zoroark, L50, F|167/167', '|-end|p2a: Zoroark|Illusion'],
+                  self.state([14, 12, 8], [8, 16]), ())]
+        spent, windows, charges = self.fold(steps)
+        self.assertEqual(charges[1], [[], [(1, 2)]])
+        self.assertEqual(windows[1]['pending'], [2, 0, 0, 0])        # Shadow Ball is slot 0 of the holder's sheet
+        self.assertEqual(spent.get((1, 1), [0, 0, 0, 0]), [0, 0, 0, 0])   # nothing on the disguise's row
+        self.assertIsNone(windows[2])                                 # the break ends the disguise
+        self.assertEqual(spent[(1, 0)], [2, 0, 0, 0])                 # the holder takes the pending 2 at the break
+        self.assertEqual(spent[(1, 1)], [0, 0, 0, 0])                 # the disguise's row restored to its snapshot
+
 
 class FormeStance(unittest.TestCase):
     """NAMED RULE FORME-STANCE (step G66, decision 0040): a `-formechange` line with no attribute is accepted only for
@@ -2680,6 +2904,77 @@ class FormeStance(unittest.TestCase):
         with self.assertRaises(trace_to_c.ConversionError) as cm:
             convert(self.NAME, spec, trace)
         self.assertEqual(cm.exception.rule, 'formechange-line')
+
+
+class Forme(unittest.TestCase):
+    """The forme key (lead decision 2026-10-11): a switch line names a forme by its base species in the identifier
+    (`|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|`), and the roster key stays the team species. One case each for the
+    formes whose identifier is the base name (Decidueye-Hisui, Goodra-Hisui, Stunfisk-Galar), a Mega Evolution after its
+    detailschange (the key is the team species, the Mega forme is no key), and the refusals."""
+
+    @staticmethod
+    def battle(roster, lines):
+        return {'steps': [{'log': lines}]}, [dict((name, index) for index, name in enumerate(roster[s])) for s in range(2)]
+
+    def test_decidueye_hisui_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp', 'Decidueye-Hisui']],
+                                    ['|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|195/195'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Decidueye'], 1)  # the switch line of side 1 (p2, slot b) names member 1 by its base species
+        self.assertEqual(roster[1]['Decidueye-Hisui'], 1)  # the team species key is unchanged
+
+    def test_goodra_hisui_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp', 'Goodra-Hisui']],
+                                    ['|switch|p2a: Goodra|Goodra-Hisui, L50, M|160/160'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Goodra'], 1)
+        self.assertEqual(roster[1]['Goodra-Hisui'], 1)
+
+    def test_stunfisk_galar_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Stunfisk-Galar']],
+                                    ['|drag|p2a: Stunfisk|Stunfisk-Galar, L50, M|200/200'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Stunfisk'], 0)
+
+    def test_a_mega_evolution_keeps_the_team_species_key(self):
+        """detailschange names the Mega forme; the switch that brings it back names the Mega forme in its details. Both leave
+        the key of the team species (the identifier is Charizard), and the Mega forme is not a key."""
+        trace, roster = self.battle([['Charizard', 'Pikachu'], ['Garchomp']],
+                                    ['|switch|p1a: Charizard|Charizard, L50, M|200/200',
+                                     '|detailschange|p1a: Charizard|Charizard-Mega-X, L50, M',
+                                     '|switch|p1b: Pikachu|Pikachu, L50, M|100/100',
+                                     '|switch|p1a: Charizard|Charizard-Mega-X, L50, M|200/200'])
+        before = dict(roster[0])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[0]['Charizard'], 0)
+        self.assertEqual(roster[0]['Pikachu'], 1)
+        self.assertNotIn('Charizard-Mega-X', roster[0])
+        self.assertEqual(roster[0], before)
+
+    def test_an_illusion_disguise_is_keyed_by_the_disguise_member(self):
+        """Illusion (decision 0026): a Zoroark-Hisui in disguise is shown by the species of a member of its own side (the
+        disguise is a roster name), in the identifier and in the details alike. The index is the disguise's member and there
+        is no conflict: the real Zoroark-Hisui keeps its own key (the i2_illusion_break and i2_bench_swap traces use this)."""
+        trace, roster = self.battle([['Zoroark-Hisui', 'Garchomp'], ['Pikachu']],
+                                    ['|switch|p1a: Garchomp|Garchomp, L50, M|200/200'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[0]['Garchomp'], 1)
+        self.assertEqual(roster[0]['Zoroark-Hisui'], 0)
+        self.assertNotIn('Zoroark', roster[0])
+
+    def test_a_short_name_that_two_members_take_is_refused(self):
+        trace, roster = self.battle([['Decidueye-Hisui', 'Decidueye'], ['Garchomp']],
+                                    ['|switch|p1a: Decidueye|Decidueye-Hisui, L50, M|195/195'])
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(cm.exception.rule, 'forme-key')
+
+    def test_a_line_that_matches_no_roster_member_is_refused(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp']],
+                                    ['|switch|p2a: Foo|Foo-Bar, L50, M|100/100'])
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(cm.exception.rule, 'forme-key')
 
 
 if __name__ == '__main__':

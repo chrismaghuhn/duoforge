@@ -1,0 +1,20 @@
+{
+ "name": "g78_partner_absent",
+ "purpose": "Step G78: after the partner p2b falls, Dragon Darts on p2a has no partner: one target, two hits, -anim before the second, no -hitcount.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+ "teams": [
+  "Dragapult (M) @ Life Orb\nAbility: Clear Body\nLevel: 50\nEVs: 32 Atk / 32 Spe / 2 HP\nAdamant Nature\n- Dragon Darts\n- Protect\n- Thunderbolt\n- Shadow Ball\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nSylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Alluring Voice\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect",
+  "Golisopod (F) @ Miracle Seed\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Iron Head\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n\nSylveon (F) @ Sitrus Berry\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Alluring Voice\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n- Protect\n\nSneasler (M) @ Mystic Water\nAbility: Pressure\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n- Poison Jab"
+ ],
+ "plan": {
+  "p1": [
+   "move 1 1, move 1"
+  ],
+  "p2": [
+   "move 1 -2, move 1 -1"
+  ],
+  "max_steps": 30
+ }
+}

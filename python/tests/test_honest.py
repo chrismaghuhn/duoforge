@@ -12,12 +12,15 @@ from unittest import mock
 import numpy as np
 
 import duoforge
-from duoforge import _layout, privileged, view
+from duoforge import _layout, features, privileged, view
+
+from ._pivot_fixture import SETUP, play_to_pivot
 from duoforge_search import arena, belief, honest
 from python.tests.test_search import _v2s
 from python.tests import test_search as search_tests
 
 C = _layout.CONSTANTS
+PIVOT_STEPS = 160  # lockstep steps of the PIVOT record test
 
 
 class CanonicalReduction(unittest.TestCase):
@@ -51,6 +54,7 @@ class PublicCauses(unittest.TestCase):
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"), honest._CAUSES)
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"], "temp_forme"), honest._CAUSES)
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"], "raised_this_turn"), honest._CAUSES)
+        self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY"], "turn_history"), honest._CAUSES)
 
 
 class HonestSearch(unittest.TestCase):
@@ -58,12 +62,13 @@ class HonestSearch(unittest.TestCase):
     def setUpClass(cls):
         cls.model, cls.params = _v2s()
 
-    def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5):
+    def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False):
         table = table or belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
-            mask = int(b.observe_ext()[0, 0]["supported"])
+            mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         return honest.Honest(ctx, self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
-                             capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam)
+                             capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam,
+                             species_prior=species_prior)
 
     def preview(self, search, roots, seat=0):
         return search.decide(roots, list(range(roots.envs)), [seat] * roots.envs,
@@ -136,6 +141,72 @@ class HonestSearch(unittest.TestCase):
             self.assertFalse((table.team[rows] == ids["A"]).any())
             self.assertEqual(sampled["stat_points"].shape, (16, 6, 6))
 
+    def test_live_spread_table_is_pinned(self):
+        # Live play's belief (owner, 2026-10-10): every A/B/C and PP_ team of the registry, pinned by its table hash; P1's
+        # and the evaluation's 79 SPREAD_SOURCES stay as they are. A registry change fails here until it is re-pinned.
+        import json
+        from pathlib import Path
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            table, ids, info = honest.live_spread_table(ctx)
+            self.assertEqual(info["sha256"], honest.LIVE_SPREAD_SHA256)
+            registry = json.loads((Path(honest.__file__).resolve().parents[2] / "data/teams/index.json")
+                                  .read_text(encoding="utf-8"))["teams"]
+            self.assertEqual(set(ids), {r["id"] for r in registry if r["id"] in ("A", "B", "C") or r["id"].startswith("PP_")})
+            self.assertTrue(set(honest.SPREAD_SOURCES) < set(ids))
+            with mock.patch.object(honest, "LIVE_SPREAD_SHA256", "0" * 64), \
+                    self.assertRaisesRegex(honest.SearchError, "pinned"):
+                honest.live_spread_table(ctx)
+
+    def test_species_without_prior_is_refused_when_required(self):
+        # Live play (owner, 2026-10-10): a foe species without a stated spread in the table is not drawn from the
+        # belief's nature-only or table-wide fallback; the decision is refused with its cause and played raw (counted).
+        # Off (P1, the arena), the fallback levels stay as they are.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            other = belief.SpreadTable.from_sides(duoforge.reference_setups([2])["sides"].reshape(-1))  # no Politoed team
+            for required, kind in ((True, "unreconstructible"), (False, "searched")):
+                with self.subTest(required=required), \
+                        duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                        self.make(ctx, table=other, species_prior=required) as search:
+                    self.preview(search, b)
+                    self.start_turn(b)
+                    _, records = search.decide(b, [0], [0], [456], [False])
+                    self.assertEqual(records[0]["kind"], kind)
+                    if required:
+                        self.assertIn("no spread prior", records[0]["reason"])
+
+    def test_a_redraw_past_the_species_prior_is_named_apart_from_no_prior(self):
+        # Review of #339: a redraw raises the table level (draw: min_level = initial + redraw), so "no spread prior" is
+        # decided from the first draw's level only. A species with only species-level spreads (level 3) is searched; a
+        # world the public view refuses redraws it past level 3, which is its own named refusal, never "no spread prior".
+        sides = duoforge.reference_setups([0])["sides"].reshape(-1)
+        table = belief.SpreadTable.from_sides(sides)
+        table.nature[:] = (table.nature + 1) % 25  # no stated nature matches: every foe member draws at level 3
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            for forced in (False, True):
+                with self.subTest(forced=forced), \
+                        duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                        self.make(ctx, table=table, species_prior=True) as search:
+                    self.preview(search, b)
+                    self.start_turn(b)
+                    real, refused = search._build, []
+
+                    def build(record, h):
+                        statuses = real(record, h)
+                        if forced and int(record["boundary"]) == C["DUOFORGE_BOUNDARY_TURN"] and not refused:
+                            refused.append(True)  # the turn record refuses world 0 once: its spreads are redrawn
+                            statuses = statuses.copy()
+                            statuses[0] = C["DUOFORGE_E_INVALID_ARGUMENT"]
+                        return statuses
+
+                    with mock.patch.object(search, "_build", side_effect=build):
+                        _, records = search.decide(b, [0], [0], [456], [False])
+                    if forced:
+                        self.assertEqual(records[0]["kind"], "unreconstructible")
+                        self.assertIn("redraw past the species prior", records[0]["reason"])
+                        self.assertNotIn("no spread prior", records[0]["reason"])
+                    else:
+                        self.assertEqual(records[0]["kind"], "searched")
+
     def test_missing_history_is_counted_and_errors_stop(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
@@ -148,12 +219,29 @@ class HonestSearch(unittest.TestCase):
                 search.decide(b, [0, 0], [0, 0], [1, 1], [False, False])
 
     def test_pivot_records_and_queue_sampling(self):
+        def check_searched(b, search, r, p):
+            # Since the view audit of 2026-10-10 a public PIVOT record has no move left to run (one with a move left is
+            # refused: a silent flinch may be outstanding), so no foe command is sampled and neither the queue mask nor
+            # the turn-start record is needed: a stale one and a queue mask that must not be queried leave it searched.
+            self.assertEqual(r["foe_pairs"], [[-1], [-1]])
+            public, st = b.public(np.full(b.envs, p, np.uint32))
+            self.assertEqual(int(st[r["env"]]), 0)
+            self.assertEqual(int(public[r["env"]]["foe_pending_mask"]), 0)
+            self.assertEqual(r["queue_pairs"], [])
+            history = search.history[b][(r["env"], p)]
+            saved_start = history["turn_start"].copy()
+            history["turn_start"]["turn"] -= 1
+            with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("no queue mask")):
+                _, again = search.decide(b, [r["env"]], [p], [r["key"]], [False])
+            self.assertEqual(again[0]["kind"], "searched")
+            history["turn_start"] = saved_start
+
+        counted = searched = refused = 0
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 8), 3, 42) as b, \
                 self.make(ctx, 1) as search:
             policy = duoforge.RandomPolicy(71, 8)
-            counted = searched = 0
-            for _ in range(160):
+            for _ in range(PIVOT_STEPS):
                 b.query_factored()
                 for p in (0, 1):
                     envs = np.flatnonzero(b.requests["requested"][:, p])
@@ -169,28 +257,34 @@ class HonestSearch(unittest.TestCase):
                             self.assertIn(r["kind"], ("forced", "searched", "unreconstructible"))
                             if r["kind"] == "searched":
                                 searched += 1
-                                self.assertEqual(r["foe_pairs"], [[-1], [-1]])
-                                players = np.full(b.envs, p, np.uint32)
-                                public, st = b.public(players)
-                                self.assertEqual(int(st[r["env"]]), 0)
-                                current = public[r["env"]:r["env"] + 1].reshape(())
-                                mask = duoforge.queue_mask(ctx, search.history[b][(r["env"], p)]["turn_start"], current)
-                                self.assertEqual(len(r["queue_pairs"]), 2)
-                                self.assertTrue(all(mask.reshape(-1)[x] for x in r["queue_pairs"]))
-                                history = search.history[b][(r["env"], p)]
-                                saved_start = history["turn_start"].copy()
-                                history["turn_start"]["turn"] -= 1
-                                with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("stale C query")):
-                                    _, fallback = search.decide(b, [r["env"]], [p], [r["key"]], [False])
-                                self.assertEqual(fallback[0]["kind"], "unreconstructible")
-                                self.assertIn("turn-start", fallback[0]["reason"])
-                                history["turn_start"] = saved_start
+                                check_searched(b, search, r, p)
+                            elif r["kind"] == "unreconstructible":
+                                refused += 1
                 b.step_factored(policy.choose_factored(b))
                 b.reset_terminal()
-                if counted >= 4 and searched:
+                if counted >= 4 and refused:
                     break
-            self.assertGreaterEqual(counted, 4)
-            self.assertGreater(searched, 0)
+        self.assertGreaterEqual(counted, 4)
+        self.assertGreater(refused, 0)  # PIVOTs with a move left are refused, not searched
+        # Random play almost never reaches a public PIVOT (a Protect up and no move left): the scripted one.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([SETUP]), 1, 43) as b, \
+                self.make(ctx, 1) as search:
+            keys = iter(range(100, 200))
+
+            def observe(batch):  # the searcher's history: the team preview and the turn-start records
+                for p in (0, 1):
+                    if batch.requests["requested"][0, p]:
+                        search.decide(batch, [0], [p], [next(keys)], [False])
+
+            play_to_pivot(b, before_step=observe)
+            search.k = 2
+            _, records = search.decide(b, [0], [0], [7], [False])
+            self.assertEqual(records[0]["boundary"], "PIVOT")
+            self.assertEqual(records[0]["kind"], "searched")
+            check_searched(b, search, records[0], 0)
+            searched += 1
+        self.assertGreater(searched, 0)
 
     def test_pinned_abc_decisions(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
@@ -303,6 +397,116 @@ class HonestSearch(unittest.TestCase):
                 stats = arena.diagnostics(records, 2)
                 self.assertEqual(stats["unreconstructible_by_cause"][cause], {"decisions": 2, "share_of_decisions": 1.0})
 
+    def test_record_roots_reproduce_batch_decisions(self):
+        # The live path (plan 2026-10-10-live-honest-search, Task 2): decide() over RecordRoots filled with a batch's
+        # own parts (request, observation, encoded features, public record, episode) gives the batch's decisions.
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 4), 2, 42) as b, \
+                self.make(ctx) as search, self.make(ctx) as twin:
+            roots = RecordRoots(b.envs)
+            policy = duoforge.RandomPolicy(73, b.envs)
+            compared = 0
+            for step in range(24):
+                b.query_factored()
+                obs, slots, pairs = b.query_encoded(search.encoder, search.ext_supported)
+                for p in (0, 1):
+                    envs = np.flatnonzero(b.requests["requested"][:, p])
+                    if not envs.size:
+                        continue
+                    records, statuses = b.public(np.full(b.envs, p, np.uint32))
+                    records, statuses = records.copy(), statuses.copy()
+                    causes, _ = b.public_causes(np.full(b.envs, p, np.uint32))
+                    for e in envs:
+                        roots.set(e, p, request=b.requests[e, p], observation=b.observations[e, p], obs=obs[e, p],
+                                  slots=slots[e, p], pairs=pairs[e, p], record=records[e], status=statuses[e],
+                                  episode=b.episode(int(e)), causes=causes[e])
+                    roots.requests[:, 1 - p]["requested"] = b.requests[:, 1 - p]["requested"]
+                    keys = np.arange(len(envs), dtype=np.uint64) + 1000 * step
+                    want, want_records = search.decide(b, envs, [p] * len(envs), keys, np.zeros(len(envs), bool))
+                    got, got_records = twin.decide(roots, envs, [p] * len(envs), keys, np.zeros(len(envs), bool))
+                    np.testing.assert_array_equal(got, want)
+                    for w, g in zip(want_records, got_records):
+                        self.assertEqual((g["kind"], g["boundary"], g.get("reason")), (w["kind"], w["boundary"], w.get("reason")))
+                    compared += len(envs)
+                b.step_factored(policy.choose_factored(b))
+                b.reset_terminal()
+            self.assertGreater(compared, 20)
+
+    def test_live_search_on_live_features_gives_the_batch_decision(self):
+        # The live path (plan 2026-10-10-live-honest-search, Task 5) encodes its own features (features.encode of the
+        # tracker's observation and domain; zero slots and pairs at team preview) and LiveSearch converts them to the
+        # network's encoder: over a batch's parts it decides as decide() on the batch.
+        from duoforge_live import search as live_search
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                self.make(ctx) as search, self.make(ctx) as twin:
+            live = live_search.LiveSearch(twin)
+            try:
+                for turn in (False, True):
+                    if turn:
+                        self.start_turn(b)
+                    else:
+                        b.query_factored()
+                    records, statuses = b.public(np.zeros(1, np.uint32))
+                    causes, _ = b.public_causes(np.zeros(1, np.uint32))
+                    parts = {"request": b.requests[0, 0], "observation": b.observations[0, 0],
+                             "record": records[0].copy(), "status": int(statuses[0]), "causes": int(causes[0])}
+                    obs_part, slot_part, pair_mask = features.encode(b.observations[0, 0], b.domains[0, 0],
+                                                                     b.observe_ext()[0, 0], twin.ext_supported)
+                    want, _ = search.decide(b, [0], [0], [456], [False])
+                    got = live.decide(parts, obs_part, slot_part, pair_mask if turn else None, key=456,
+                                      episode=b.episode(0), budget=600.0)
+                    if turn:
+                        self.assertEqual((got.cause, got.fallback, got.action), ("searched", None, int(want[0])))
+                    else:
+                        self.assertEqual((got.cause, got.fallback), ("team", None))
+            finally:
+                live.close()
+
+    def test_assembled_record_is_checked_and_named(self):
+        # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
+        # every world built from it gives it back. A filled masked field (here the foe's exact HP) is refused by the
+        # engine itself; a world that gives another record back is named by field.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            v, st = b.public(np.zeros(1, np.uint32))
+            self.assertEqual(int(st[0]), 0)
+            record = v[:1].reshape(()).copy()
+            history = search.history[b][(0, 0)]
+            costs = {k: 0. for k in ("public_records", "world_builds", "team_head", "network")}
+            search._hypotheses(record, b.observations[0, 0], history, 1, None, costs)  # the engine's record passes
+            from duoforge import state_layout
+            starts = dict((n, s) for n, s, _ in state_layout.fields())
+            masked = record.copy()
+            masked["state"][starts["side1.member0.hp"]] = 7
+            with self.assertRaisesRegex(honest.SearchError, "MALFORMED"):
+                search._hypotheses(masked, b.observations[0, 0], history, 2, None, costs)
+            public = search.worlds.public
+
+            def other_turn(players):  # worlds that give a record with another weather byte back
+                again, statuses = public(players)
+                again = again.copy()
+                again["state"][:, starts["weather_turns"]] ^= 1
+                return again, statuses
+
+            with mock.patch.object(search.worlds, "public", side_effect=other_turn), \
+                    self.assertRaisesRegex(honest.SearchError, r"state fields \['weather_turns'\]"):
+                search._hypotheses(record, b.observations[0, 0], history, 3, None, costs)
+
+            def other_preview(players):  # only the team preview's worlds give another record back (review of #339)
+                again, statuses = public(players)
+                if int(again[0]["boundary"]) == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
+                    again = again.copy()
+                    again["state"][:, starts["weather_turns"]] ^= 1
+                return again, statuses
+
+            with mock.patch.object(search.worlds, "public", side_effect=other_preview), \
+                    self.assertRaisesRegex(honest.SearchError, r"state fields \['weather_turns'\]"):
+                search._hypotheses(record, b.observations[0, 0], history, 4, None, costs)
+
     def test_stale_turn_start_counts_as_unreconstructible(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
@@ -314,6 +518,10 @@ class HonestSearch(unittest.TestCase):
             history["turn_start"] = record.copy()
             record["turn"] += 1
             record["boundary"] = C["DUOFORGE_BOUNDARY_PIVOT"]
+            # Only a PIVOT record with a pending foe command needs its turn-start record (the queue mask). Since the
+            # view audit of 2026-10-10 the engine's public records never carry one, so this hand-made record sets it;
+            # a public PIVOT without one is searched from its own record (test_pivot_records_and_queue_sampling).
+            record["foe_pending_mask"] = 1
             costs = {k: 0. for k in ("public_records", "world_builds", "team_head", "network")}
             with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("stale record must not reach C")):
                 with self.assertRaisesRegex(honest.Unreconstructible, "stale"):
@@ -338,6 +546,82 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual(calls, 256)
             for name in ("public_view", "preview", "turn_start", "exclude_team", "search_seed"):
                 self.assertIn(name, stopped.exception.reproduction)
+
+
+class LiveModelPolicy(unittest.TestCase):
+    def test_a_v2_checkpoint_plays_through_its_own_network(self):
+        # The live bot's raw ranking (its play without the search, and the search's fallback) of a model-v2 checkpoint
+        # such as params-49333 (plan 2026-10-10-live-honest-search, Task 4): the checkpoint's own network in its trained
+        # layout, never the v1-only NumPy forward. Over the live features its best team and pair are the network's
+        # argmax over the batch's own rows.
+        from duoforge_learn import checkpoint, policy as learn_policy
+        from duoforge_live import policy as live_policy
+        model_config = learn_policy.v2_config("S")
+        model = learn_policy.make(model_config, features.feature_names(4))
+        params = model.init(__import__("jax").random.PRNGKey(11))
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "v2.npz")
+            checkpoint.save(path, params, {"model": model_config, "encoder": 4,
+                                           "features": list(features.feature_names(4)),
+                                           "slot_features": list(features.SLOT_FEATURE_NAMES),
+                                           "data": {"kind": "pool", "fingerprint": "00"}, "teams": {}, "update": 0,
+                                           "decisions": 0, "ids": checkpoint.ids_of(ctx)})
+            live = live_policy.load(path)
+            self.assertEqual(live.encoder, 4)
+            for turn in (False, True):
+                if turn:
+                    choices = np.zeros((1, 2), _layout.FACTORED_CHOICE)
+                    choices["picks"][:, :, :4] = np.arange(4, dtype=np.uint8)
+                    b.step_factored(choices)
+                b.query_factored()
+                obs, slots, pairs = b.query_encoded(4, live.ext_supported)
+                logp_pairs, logp_team, _ = (np.asarray(x) for x in model.apply(params, obs[:, 0], slots[:, 0], pairs[:, 0]))
+                obs_part, slot_part, pair_mask = features.encode(b.observations[0, 0], b.domains[0, 0], None,
+                                                                 live.ext_supported)
+                if turn:
+                    i, j, _ = live.rank_pairs(b.observations[0, 0], obs_part, slot_part, pair_mask)[0]
+                    self.assertEqual(i * pair_mask.shape[1] + j, int(np.argmax(logp_pairs[0])))
+                else:
+                    self.assertEqual(live.rank_teams(b.observations[0, 0], obs_part)[0][0], int(np.argmax(logp_team[0])))
+
+
+class LiveLatency(unittest.TestCase):
+    def test_a_short_measurement_reports_every_boundary_kind_it_met(self):
+        # Task 4 of plan 2026-10-10-live-honest-search: the live search's own latency per boundary kind (no deadline),
+        # its warm-up and its outcome causes; private output outside the repository only.
+        from duoforge_learn import checkpoint, policy as learn_policy
+        from duoforge_search import live_latency
+        model_config = learn_policy.v2_config("S")
+        model = learn_policy.make(model_config, features.feature_names(4))
+        params = model.init(__import__("jax").random.PRNGKey(11))
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "v2.npz")
+            checkpoint.save(path, params, {"model": model_config, "encoder": 4,
+                                           "features": list(features.feature_names(4)),
+                                           "slot_features": list(features.SLOT_FEATURE_NAMES),
+                                           "data": {"kind": "pool", "fingerprint": "00"}, "teams": {}, "update": 0,
+                                           "decisions": 0, "ids": checkpoint.ids_of(ctx)})
+            out = os.path.join(tmp, "out")
+            with self.assertRaisesRegex(ValueError, "repository"):
+                live_latency.main(["--checkpoint", path, "--out", "python/tests/latency-out", "--games", "1"])
+            live_latency.main(["--checkpoint", path, "--out", out, "--games", "1", "--max-steps", "6",
+                               "--k", "2", "--m", "2", "--worlds", "2"])
+            with open(os.path.join(out, "latency.json"), encoding="utf-8") as f:
+                report = json.load(f)
+        self.assertEqual(report["games"], 1)
+        self.assertEqual(report["runtime"], "jax-cpu")
+        self.assertGreater(report["warmup"]["load_seconds"], 0.0)
+        self.assertIn("team_selection", report["boundaries"])
+        self.assertIn("turn", report["boundaries"])
+        for kind, row in report["boundaries"].items():
+            self.assertEqual(set(row), {"n", "p50", "p95", "p99", "max", "causes", "reasons"}, kind)
+            self.assertTrue(row["p50"] <= row["p95"] <= row["p99"] <= row["max"], kind)
+            self.assertEqual(sum(row["causes"].values()), row["n"], kind)
+            self.assertEqual(set(row["reasons"]) == set(), all(c in ("searched", "forced", "raw", "team")
+                                                                for c in row["causes"]), kind)
+        self.assertEqual(report["settings"]["k"], 2)
 
 
 class HonestArena(unittest.TestCase):

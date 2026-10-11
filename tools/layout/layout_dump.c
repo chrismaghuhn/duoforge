@@ -74,6 +74,11 @@ int main(void)
     STRUCT(duoforge_request, false, FIELD(duoforge_request, epoch), FIELD(duoforge_request, candidate_count),
            FIELD(duoforge_request, boundary_kind), FIELD(duoforge_request, player),
            FIELD(duoforge_request, requested), FIELD(duoforge_request, slot_mask));
+    STRUCT(duoforge_event, false, FIELD(duoforge_event, kind), FIELD(duoforge_event, position), FIELD(duoforge_event, other),
+           FIELD(duoforge_event, cause), FIELD(duoforge_event, id), FIELD(duoforge_event, id2), FIELD(duoforge_event, hp),
+           FIELD(duoforge_event, hp_max), FIELD(duoforge_event, hp_kind), FIELD(duoforge_event, hp_flag),
+           FIELD(duoforge_event, status), FIELD(duoforge_event, detail), FIELD(duoforge_event, amount),
+           FIELD(duoforge_event, flags), FIELD(duoforge_event, reserved));
     STRUCT(duoforge_step_result, false, FIELD(duoforge_step_result, epoch), FIELD(duoforge_step_result, kind),
            FIELD(duoforge_step_result, boundary_kind), FIELD(duoforge_step_result, request_mask),
            FIELD(duoforge_step_result, reserved));
@@ -107,7 +112,8 @@ int main(void)
            FIELD(duoforge_observation, weather_turns), FIELD(duoforge_observation, terrain),
            FIELD(duoforge_observation, terrain_turns), FIELD(duoforge_observation, trick_room_turns),
            FIELD(duoforge_observation, reserved), FIELD(duoforge_observation, sides));
-    STRUCT(duoforge_field_ext, false, FIELD(duoforge_field_ext, gravity_turns), FIELD(duoforge_field_ext, reserved));
+    STRUCT(duoforge_field_ext, false, FIELD(duoforge_field_ext, gravity_turns), FIELD(duoforge_field_ext, reserved0),
+           FIELD(duoforge_field_ext, flags), FIELD(duoforge_field_ext, reserved));
     STRUCT(duoforge_position_ext, false, FIELD(duoforge_position_ext, volatiles),
            FIELD(duoforge_position_ext, ability_now), FIELD(duoforge_position_ext, type_now),
            FIELD(duoforge_position_ext, encore_slot), FIELD(duoforge_position_ext, disable_slot),
@@ -123,12 +129,12 @@ int main(void)
            FIELD(duoforge_side_ext, aurora_veil_turns), FIELD(duoforge_side_ext, stealth_rock),
            FIELD(duoforge_side_ext, spikes), FIELD(duoforge_side_ext, toxic_spikes),
            FIELD(duoforge_side_ext, sticky_web), FIELD(duoforge_side_ext, guard_flags),
-           FIELD(duoforge_side_ext, reserved));
+           FIELD(duoforge_side_ext, conditions), FIELD(duoforge_side_ext, reserved));
     STRUCT(duoforge_observation_ext, false, FIELD(duoforge_observation_ext, revision),
            FIELD(duoforge_observation_ext, player), FIELD(duoforge_observation_ext, reserved0),
            FIELD(duoforge_observation_ext, epoch), FIELD(duoforge_observation_ext, supported),
            FIELD(duoforge_observation_ext, field), FIELD(duoforge_observation_ext, sides),
-           FIELD(duoforge_observation_ext, reserved1));
+           FIELD(duoforge_observation_ext, volatiles2), FIELD(duoforge_observation_ext, reserved1));
     STRUCT(duoforge_forme_info, false, FIELD(duoforge_forme_info, dex_num), FIELD(duoforge_forme_info, is_mega), FIELD(duoforge_forme_info, setup_legal), FIELD(duoforge_forme_info, base_species), FIELD(duoforge_forme_info, mega_species), FIELD(duoforge_forme_info, mega_stone), FIELD(duoforge_forme_info, mega_ability), FIELD(duoforge_forme_info, mega_supported), FIELD(duoforge_forme_info, gender_mask), FIELD(duoforge_forme_info, no_ability), FIELD(duoforge_forme_info, ability_count), FIELD(duoforge_forme_info, abilities), FIELD(duoforge_forme_info, move_count));
     STRUCT(duoforge_forme_static, false, FIELD(duoforge_forme_static, types), FIELD(duoforge_forme_static, base_stats), FIELD(duoforge_forme_static, weight_hg), FIELD(duoforge_forme_static, default_ability), FIELD(duoforge_forme_static, is_mega));
     STRUCT(duoforge_move_static, false, FIELD(duoforge_move_static, type), FIELD(duoforge_move_static, category), FIELD(duoforge_move_static, base_power), FIELD(duoforge_move_static, accuracy), FIELD(duoforge_move_static, pp), FIELD(duoforge_move_static, priority), FIELD(duoforge_move_static, target_class), FIELD(duoforge_move_static, flags), FIELD(duoforge_move_static, crit_stage), FIELD(duoforge_move_static, drain), FIELD(duoforge_move_static, recoil), FIELD(duoforge_move_static, secondary_chance), FIELD(duoforge_move_static, hits_min), FIELD(duoforge_move_static, hits_max));
@@ -153,6 +159,8 @@ int main(void)
            FIELD(duoforge_hypothesis, charge_target), FIELD(duoforge_hypothesis, queued), FIELD(duoforge_hypothesis, queue_order),
            FIELD(duoforge_hypothesis, reserved2));
     printf("  },\n  \"constants\": {\n");
+    CONSTANT(DUOFORGE_DATA_KIND_CLOSURE_DEV, false);
+    CONSTANT(DUOFORGE_DATA_KIND_POOL_DEV, false);
     CONSTANT(DUOFORGE_VIEW_REVISION, false);
     CONSTANT(DUOFORGE_HYPOTHESIS_REVISION, false);
     CONSTANT(DUOFORGE_VIEW_STATE_MAX, false);
@@ -165,6 +173,7 @@ int main(void)
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE, false);
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_TEMP_FORME, false);
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN, false);
+    CONSTANT(DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY, false);
     CONSTANT(DUOFORGE_MAX_CANDIDATES, false);
     CONSTANT(DUOFORGE_MAX_SLOT_OPTIONS, false);
     CONSTANT(DUOFORGE_DIGEST_SIZE, false);
@@ -229,6 +238,7 @@ int main(void)
     CONSTANT(DUOFORGE_LOCATION_NOT_BROUGHT, false);
     CONSTANT(DUOFORGE_EVENT_DRAG, false);
     CONSTANT(DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, false);
+    CONSTANT(DUOFORGE_EVENT_ITEM_SHOWN, false);
     CONSTANT(DUOFORGE_VOLATILE_SUBSTITUTE, false);
     CONSTANT(DUOFORGE_VOLATILE_DRAGONCHEER, false);
     CONSTANT(DUOFORGE_FAIL_SUBSTITUTE_EXISTS, false);
@@ -304,6 +314,11 @@ int main(void)
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_TRANSFORM, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_COUNT, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_VOLATILES2, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS, false);
     CONSTANT(DUOFORGE_DATA_KIND_SYNTHETIC, false);
     CONSTANT(DUOFORGE_DATA_KIND_TEAM_C, false);
     CONSTANT(DUOFORGE_DATA_KIND_POOL, false);
@@ -335,6 +350,7 @@ int main(void)
     CONSTANT(DUOFORGE_MOVE_STATIC_FLAG_POWDER, false);
     CONSTANT(DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE, false);
     CONSTANT(DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE, false);
+    CONSTANT(DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE, false);
     CONSTANT(DUOFORGE_ITEM_FAMILY_NONE, false);
     CONSTANT(DUOFORGE_ITEM_FAMILY_TYPE_BOOSTER, false);
     CONSTANT(DUOFORGE_ITEM_FAMILY_RESIST_BERRY, false);

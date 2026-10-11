@@ -10,7 +10,9 @@
 - The value term is ppo._loss's squared error over the value rows (returns.gae targets).
 - Each mean divides by its own weight (the batch's weight, 0 on padding). No PPO surrogate, no magnet.
 
-The constants are the spec's and are not options.
+The constants are the spec's. Five of them can be set per fit (Settings; the CLI's --lr, --ref-coef,
+--ref-kl-max, --max-epochs, --max-steps, P1 C2, owner decision 2026-10-10); their defaults are the module's, the
+values of the first P1 run, which stays reproducible. A fit records the values it used (constants).
 """
 import contextlib
 import dataclasses
@@ -85,24 +87,24 @@ def _sums(terms, weights):
             tuple(jnp.sum(w) for w in weights))
 
 
-def distill_loss(params, ref_params, batch, model):
+def distill_loss(params, ref_params, batch, model, ref_coef=None):
     """(loss, aux) of a batch of DistillData rows with "weight"; aux holds teacher_kl, ref_kl, value_loss and the
     weights n_target, n_policy, n_value."""
     sums, counts = _sums(*_terms(params, ref_params, batch, model))
     t, r, v = (s / jnp.maximum(c, 1.0) for s, c in zip(sums, counts))
-    loss = t + REF_COEF * r + VALUE_COEF * v
+    loss = t + (REF_COEF if ref_coef is None else ref_coef) * r + VALUE_COEF * v
     return loss, {"teacher_kl": t, "ref_kl": r, "value_loss": v, "n_target": counts[0], "n_policy": counts[1],
                   "n_value": counts[2]}
 
 
-def guard(best, best_kl, stale, epoch, metrics):
+def guard(best, best_kl, stale, epoch, metrics, ref_kl_max=None):
     """One epoch's held-out metrics against the best so far: (best, best_kl, stale, reason). reason "nonfinite"
-    (any metric) or "ref_kl" (held-out reference KL above REF_KL_MAX; that epoch is never best) stops; a held-out
+    (any metric) or "ref_kl" (held-out reference KL above ref_kl_max; that epoch is never best) stops; a held-out
     teacher KL MIN_GAIN below best_kl makes the epoch best, anything else counts as stale, and PATIENCE stale
     epochs stop with "no_gain"."""
     if not np.isfinite(list(metrics.values())).all():
         return best, best_kl, stale, "nonfinite"
-    if metrics["held_ref_kl"] > REF_KL_MAX:
+    if metrics["held_ref_kl"] > (REF_KL_MAX if ref_kl_max is None else ref_kl_max):
         return best, best_kl, stale, "ref_kl"
     if metrics["held_teacher_kl"] < best_kl - MIN_GAIN:
         return epoch, metrics["held_teacher_kl"], 0, None
@@ -110,16 +112,17 @@ def guard(best, best_kl, stale, epoch, metrics):
     return best, best_kl, stale, "no_gain" if stale >= PATIENCE else None
 
 
-def drift(history):
+def drift(history, settings=None):
     """(stop, best_epoch) after the epochs of history (history[0]: the start, epoch 0): the held-out guard's
-    verdict (guard for every epoch, the shared code) and the stop at MAX_EPOCHS. fit additionally stops at
-    MAX_STEPS and on a nonfinite training step, which a history of held-out metrics cannot show."""
+    verdict (guard for every epoch, the shared code) and the stop at max_epochs. fit additionally stops at
+    max_steps and on a nonfinite training step, which a history of held-out metrics cannot show."""
+    st = settings or Settings()
     if not np.isfinite(list(history[0].values())).all():
         return True, 0
     best, best_kl, stale = 0, history[0]["held_teacher_kl"], 0
     for epoch, metrics in enumerate(history[1:], start=1):
-        best, best_kl, stale, reason = guard(best, best_kl, stale, epoch, metrics)
-        if reason is not None or epoch >= MAX_EPOCHS:
+        best, best_kl, stale, reason = guard(best, best_kl, stale, epoch, metrics, st.ref_kl_max)
+        if reason is not None or epoch >= st.max_epochs:
             return True, best
     return False, best
 
@@ -172,39 +175,59 @@ def _eval_sums(params, ref_params, batch, model):
     return _sums(*_terms(params, ref_params, batch, model))
 
 
-def evaluate_rows(data, rows, model, params, ref_params):
+@functools.partial(jax.jit, static_argnames=("model",))
+def _agree_sums(params, batch, model):
+    """Over the target rows: the weighted count where the student's most likely joint action (the pair head's
+    argmax over the legal actions) is the teacher's (its target id of the highest probability), and the weight."""
+    logp_pairs, _, _ = model.apply(params, batch["obs"], batch["slots"], batch["mask"])
+    teacher = jnp.take_along_axis(batch["target_ids"], jnp.argmax(batch["target_probs"], axis=1)[:, None], axis=1)
+    w = batch["weight"] * batch["has_target"]
+    agree = jnp.argmax(logp_pairs, axis=1) == teacher[:, 0]
+    return jnp.sum(jnp.where(agree, w, 0.0)), jnp.sum(w)
+
+
+def evaluate_rows(data, rows, model, params, ref_params, agree=False):
     """held_teacher_kl, held_ref_kl and held_value_loss over rows, in chunks of EVAL_ROWS (the last one padded):
-    each the sum over all chunks divided by the summed weights."""
+    each the sum over all chunks divided by the summed weights. agree: also held_argmax_agree, the share of the
+    target rows whose student argmax is the teacher's argmax."""
     rows = np.asarray(rows)
     total, weight = np.zeros(3), np.zeros(3)
+    agreed = targets = 0.0
     for start in range(0, len(rows), EVAL_ROWS):
         chunk = np.full(EVAL_ROWS, -1, np.int64)
         part = rows[start:start + EVAL_ROWS]
         chunk[:len(part)] = part
-        sums, counts = _eval_sums(params, ref_params, batch_of(data, chunk), model)
+        batch = batch_of(data, chunk)
+        sums, counts = _eval_sums(params, ref_params, batch, model)
         total += np.asarray(sums, np.float64)
         weight += np.asarray(counts, np.float64)
+        if agree:
+            a, n = _agree_sums(params, batch, model)
+            agreed, targets = agreed + float(a), targets + float(n)
     means = total / np.maximum(weight, 1.0)
-    return {"held_teacher_kl": float(means[0]), "held_ref_kl": float(means[1]), "held_value_loss": float(means[2])}
+    out = {"held_teacher_kl": float(means[0]), "held_ref_kl": float(means[1]), "held_value_loss": float(means[2])}
+    if agree:
+        out["held_argmax_agree"] = agreed / max(targets, 1.0)
+    return out
 
 
 def _norm(tree):
     return jnp.sqrt(sum(jnp.sum(jnp.square(x)) for x in jax.tree_util.tree_leaves(tree)))
 
 
-@functools.partial(jax.jit, static_argnames=("model", "tx"))
-def _step(params, opt_state, ref_params, batch, model, tx):
+@functools.partial(jax.jit, static_argnames=("model", "tx", "ref_coef"))
+def _step(params, opt_state, ref_params, batch, model, tx, ref_coef):
     """One optimizer step; the gradient norms of the policy terms and of the value term are reported apart."""
     def parts(p):
-        _, aux = distill_loss(p, ref_params, batch, model)
-        return jnp.stack([aux["teacher_kl"] + REF_COEF * aux["ref_kl"], aux["value_loss"]]), aux
+        _, aux = distill_loss(p, ref_params, batch, model, ref_coef)
+        return jnp.stack([aux["teacher_kl"] + ref_coef * aux["ref_kl"], aux["value_loss"]]), aux
 
     _, pullback, aux = jax.vjp(parts, params, has_aux=True)
     g_policy = pullback(jnp.array([1.0, 0.0]))[0]
     g_value = pullback(jnp.array([0.0, 1.0]))[0]
     grads = jax.tree_util.tree_map(lambda a, b: a + VALUE_COEF * b, g_policy, g_value)
     updates, opt_state = tx.update(grads, opt_state, params)
-    loss = aux["teacher_kl"] + REF_COEF * aux["ref_kl"] + VALUE_COEF * aux["value_loss"]
+    loss = aux["teacher_kl"] + ref_coef * aux["ref_kl"] + VALUE_COEF * aux["value_loss"]
     return (optax.apply_updates(params, updates), opt_state, loss, aux, _norm(g_policy), _norm(g_value))
 
 
@@ -230,6 +253,33 @@ _CONSTANTS = ("LR", "CLIP", "TARGET_ROWS", "NON_TARGET_ROWS", "REF_COEF", "VALUE
 
 def _constants():
     return {name: globals()[name] for name in _CONSTANTS}
+
+
+@dataclasses.dataclass(frozen=True)
+class Settings:
+    """The constants a fit may set (P1 C2); the defaults are the module's (read when a Settings is made), the
+    first P1 run's."""
+    lr: float = dataclasses.field(default_factory=lambda: LR)
+    ref_coef: float = dataclasses.field(default_factory=lambda: REF_COEF)
+    ref_kl_max: float = dataclasses.field(default_factory=lambda: REF_KL_MAX)
+    max_epochs: int = dataclasses.field(default_factory=lambda: MAX_EPOCHS)
+    max_steps: int = dataclasses.field(default_factory=lambda: MAX_STEPS)
+
+    def __post_init__(self):
+        for name, low in (("lr", 0.0), ("ref_coef", None), ("ref_kl_max", None)):
+            value = getattr(self, name)
+            if not (np.isfinite(value) and (value > low if low is not None else value >= 0)):
+                bound = "above 0" if low is not None else "of at least 0"
+                raise ValueError(f"distill {name} must be a finite number {bound}, not {value}")
+        for name, least in (("max_epochs", 0), ("max_steps", 1)):
+            value = getattr(self, name)
+            if not (isinstance(value, int) and not isinstance(value, bool) and value >= least):
+                raise ValueError(f"distill {name} must be an integer of at least {least}, not {value}")
+
+    def constants(self):
+        """Every constant of a fit with these settings (the module's, five of them replaced)."""
+        return _constants() | {"LR": self.lr, "REF_COEF": self.ref_coef, "REF_KL_MAX": self.ref_kl_max,
+                               "MAX_EPOCHS": self.max_epochs, "MAX_STEPS": self.max_steps}
 
 
 def _save_state(out, state, tx):
@@ -264,13 +314,16 @@ def _load_state(out, tx, like):
 
 
 def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, identity=None, resume=False,
-        stop=None):
-    """Distills data into a student from init_params (fresh Adam at LR, clip CLIP) against the frozen ref_params.
+        stop=None, settings=None):
+    """Distills data into a student from init_params (fresh Adam at lr, clip CLIP) against the frozen ref_params;
+    settings (Settings, default the module's constants) sets lr, ref_coef, ref_kl_max, max_epochs and max_steps.
 
     Epoch 0 evaluates the start; each later epoch visits every training target once, then evaluates the held-out
-    rows. Stops at MAX_EPOCHS, MAX_STEPS (the step that reaches it ends its epoch), PATIENCE epochs without a
-    MIN_GAIN gain of the held-out teacher KL, a held-out reference KL above REF_KL_MAX, or a nonfinite value. The
-    best epoch is the lowest held-out teacher KL among finite epochs within REF_KL_MAX; params-best.npz holds it
+    rows. Each epoch's record also holds held_teacher_kl_rel (its held-out teacher KL over epoch 0's) and
+    held_argmax_agree (the share of held-out targets whose student argmax is the teacher's). Stops at max_epochs,
+    max_steps (the step that reaches it ends its epoch), PATIENCE epochs without a MIN_GAIN gain of the held-out
+    teacher KL, a held-out reference KL above ref_kl_max, or a nonfinite value. The best epoch is the lowest
+    held-out teacher KL among finite epochs within ref_kl_max; params-best.npz holds it
     (the start itself, marked no_gain, when that is epoch 0). Writes log.jsonl, params-epoch-{e}.npz and
     params-best.npz into out, with config (the start's checkpoint config) and a "distill" record.
 
@@ -279,7 +332,8 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
     inputs' hashes), seed or constants. ValueError for a refused start or resume."""
     from . import ppo
     out = Path(out)
-    tx = ppo.optimizer(LR, CLIP)
+    st = settings or Settings()
+    tx = ppo.optimizer(st.lr, CLIP)
     plan = BatchPlan(seed)
     idx = distill_data.strata(data)
     for name in ("train_target", "train_non", "held_target", "held_non"):
@@ -288,7 +342,7 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
     if not data.policy_row[idx["held_non"]].any():
         raise ValueError("no policy rows in held_non: the held-out reference KL guard would be blind")
     held_rows = np.concatenate([idx["held_target"], idx["held_non"]])
-    who = {"identity": identity or {}, "seed": int(seed), "constants": _constants()}
+    who = {"identity": identity or {}, "seed": int(seed), "constants": st.constants()}
     if resume:
         if not (out / STATE).exists():
             raise ValueError(f"{out}: no state to resume ({STATE})")
@@ -311,12 +365,18 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
         return ledger.device() if ledger is not None else contextlib.nullcontext()
 
     def held(p):
-        """Teacher KL over the held-out targets, reference KL over the held-out policy rows, value loss over every
-        held-out value row."""
+        """Teacher KL and argmax agreement over the held-out targets, reference KL over the held-out policy rows,
+        value loss over every held-out value row."""
         with device():
-            return {"held_teacher_kl": evaluate_rows(data, idx["held_target"], model, p, ref_params)["held_teacher_kl"],
+            targets = evaluate_rows(data, idx["held_target"], model, p, ref_params, agree=True)
+            return {"held_teacher_kl": targets["held_teacher_kl"],
                     "held_ref_kl": evaluate_rows(data, idx["held_non"], model, p, ref_params)["held_ref_kl"],
-                    "held_value_loss": evaluate_rows(data, held_rows, model, p, ref_params)["held_value_loss"]}
+                    "held_value_loss": evaluate_rows(data, held_rows, model, p, ref_params)["held_value_loss"],
+                    "held_argmax_agree": targets["held_argmax_agree"]}
+
+    def report(metrics, start_kl):
+        """The epoch's record fields beyond the guard's metrics."""
+        return {"held_teacher_kl_rel": metrics["held_teacher_kl"] / start_kl if start_kl else None}
 
     with phase, open(out / "log.jsonl", "a", encoding="utf-8") as log:
         def write(record):
@@ -325,7 +385,7 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
 
         if s is None:
             metrics = held(init_params)
-            write(metrics | {"epoch": 0})
+            write(metrics | report(metrics, metrics["held_teacher_kl"]) | {"epoch": 0})
             s = who | {"params": init_params, "opt_state": tx.init(init_params), "best_params": init_params,
                        "epochs": [metrics | {"epoch": 0}], "best": 0, "best_kl": metrics["held_teacher_kl"],
                        "stale": 0, "steps": 0, "cursor": [0, 0], "epoch": 1, "row": 0, "seconds": 0.0,
@@ -337,18 +397,18 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
             return s | {"params": params, "opt_state": opt_state, "seconds": time.perf_counter() - start} | kw
 
         signalled = False
-        while reason is None and s["epoch"] <= MAX_EPOCHS:
+        while reason is None and s["epoch"] <= st.max_epochs:
             epoch = s["epoch"]
             targets = plan.targets(epoch, idx["train_target"])
             nonfinite = False
             for r in range(s["row"], len(targets)):
-                if s["steps"] == MAX_STEPS:
+                if s["steps"] == st.max_steps:
                     break
                 non, cursor = plan.non_targets(tuple(s["cursor"]), idx["train_non"], 1)
                 batch = batch_of(data, np.concatenate([targets[r], non[0]]))
                 with device():
                     params, opt_state, loss, aux, g_pol, g_val = jax.block_until_ready(
-                        _step(params, opt_state, ref_params, batch, model, tx))
+                        _step(params, opt_state, ref_params, batch, model, tx, st.ref_coef))
                 s = s | {"steps": s["steps"] + 1, "cursor": list(cursor), "row": r + 1}
                 record = {"step": s["steps"], "epoch": epoch, "loss": float(loss),
                           **{k: float(v) for k, v in aux.items()}, "grad_norm_policy": float(g_pol),
@@ -367,9 +427,9 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
                 reason = "nonfinite"
                 break
             metrics = held(params)
-            record = metrics | {"epoch": epoch}
+            record = metrics | report(metrics, s["epochs"][0]["held_teacher_kl"]) | {"epoch": epoch}
             s = s | {"epochs": s["epochs"] + [record]}
-            best, best_kl, stale, verdict = guard(s["best"], s["best_kl"], s["stale"], epoch, metrics)
+            best, best_kl, stale, verdict = guard(s["best"], s["best_kl"], s["stale"], epoch, metrics, st.ref_kl_max)
             if verdict in ("nonfinite", "ref_kl"):
                 write(record if verdict == "nonfinite" else record | {"best": False})
                 reason = verdict
@@ -382,7 +442,7 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
                   config | {"distill": {"epoch": epoch, "best_epoch": s["best"], "no_gain": s["best"] == 0}})
             if verdict == "no_gain":
                 reason = "no_gain"
-            elif s["steps"] == MAX_STEPS:
+            elif s["steps"] == st.max_steps:
                 reason = "max_steps"
             s = s | {"epoch": epoch + 1, "row": 0}
             _save_state(out, state(reason=reason), tx)
@@ -459,9 +519,21 @@ def main(argv=None):
     p.add_argument("--load-workers", type=int, default=None,
                    help="processes reading the shards (default: os.cpu_count()); the data does not depend on it")
     p.add_argument("--allow-other-init", action="store_true", help="tests only: another start or reference")
+    p.add_argument("--lr", type=float, default=LR, help=f"Adam's learning rate (default {LR}, the first P1 run's)")
+    p.add_argument("--ref-coef", type=float, default=REF_COEF,
+                   help=f"the weight of KL(pi_ref || pi) in the loss (default {REF_COEF})")
+    p.add_argument("--ref-kl-max", type=float, default=REF_KL_MAX,
+                   help=f"the held-out reference KL that stops the fit (default {REF_KL_MAX})")
+    p.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help=f"default {MAX_EPOCHS}")
+    p.add_argument("--max-steps", type=int, default=MAX_STEPS, help=f"default {MAX_STEPS}")
     args = p.parse_args(argv)
     if args.load_workers is not None and args.load_workers < 1:
         p.error("--load-workers must be at least 1")
+    try:
+        settings = Settings(lr=args.lr, ref_coef=args.ref_coef, ref_kl_max=args.ref_kl_max,
+                            max_epochs=args.max_epochs, max_steps=args.max_steps)
+    except ValueError as err:
+        p.error(str(err))
     book = None
     try:
         from duoforge_replay.dataset import refuse_repository
@@ -506,7 +578,8 @@ def main(argv=None):
             stop = runstate.StopFlag().install()
             try:
                 result = fit(data, model, jax.device_put(init), jax.device_put(ref), config, args.out,
-                             seed=args.seed, ledger=book, identity=identity, resume=args.resume, stop=stop)
+                             seed=args.seed, ledger=book, identity=identity, resume=args.resume, stop=stop,
+                             settings=settings)
             finally:
                 stop.restore()
         except (ValueError, OSError) as err:
@@ -518,7 +591,8 @@ def main(argv=None):
     finally:
         if book is not None:
             book.save()
-    print(json.dumps({"stop": result.stop_reason, "best_epoch": result.best_epoch, "steps": result.steps}))
+    print(json.dumps({"stop": result.stop_reason, "best_epoch": result.best_epoch, "steps": result.steps,
+                      "constants": settings.constants()}))
     return 3 if result.stop_reason == "signal" else 0
 
 

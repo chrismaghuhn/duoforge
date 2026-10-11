@@ -1,0 +1,138 @@
+{
+  "name": "c1_cover_b",
+  "purpose": "C1 (decision 0015 entry 5co): a PASS battle of the Substitute-free random differential campaign of run 21022 (diff_driver.py random, seed 21022), adopted as a regression fixture to show the marked moves Glare, Rock Polish, Shadow Punch and Slack Off used in a pool battle. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f2cc29ce212bef143ee2c566141656fb1576dbe606ab8dc3bb945c2ba433a2aa",
+  "teams": [
+    "Serperior (M) @ Expert Belt\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Glare\n- Protect\n- Helping Hand\n- Coil\n\nPrimarina (F) @ Sitrus Berry\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Baby-Doll Eyes\n- Protect\n- Helping Hand\n- Hydro Pump\n\nGlimmora (F) @ Black Glasses\nAbility: Toxic Debris\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Acid Armor\n- Rock Polish\n- Protect\n- Stealth Rock\n\nCorviknight (M) @ Rocky Helmet\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Feather Dance\n- Metal Sound\n- Roost\n- Protect\n\nToxtricity (M) @ Life Orb\nAbility: Punk Rock\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Metal Sound\n- Thunderbolt\n- Protect\n- Helping Hand\n\nWhimsicott (F) @ Leftovers\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Cotton Guard\n- Protect\n- Tailwind\n- Helping Hand",
+    "Kommoo (M) @ Silk Scarf\nAbility: Soundproof\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Metal Sound\n- Brutal Swing\n- Mega Kick\n- Protect\n\nAnnihilape (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Seed Bomb\n- Shadow Punch\n- Protect\n- Taunt\n\nInfernape (M) @ Charcoal\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Slack Off\n- Protect\n- Fire Punch\n- Close Combat\n\nMetagross @ Sitrus Berry\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Brutal Swing\n- Aerial Ace\n- Protect\n- Shadow Punch\n\nGolurk @ Focus Sash\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Shadow Punch\n- Protect\n- Earthquake\n- Stone Edge\n\nEspeon (F) @ Wise Glasses\nAbility: Magic Bounce\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Baby-Doll Eyes\n- Protect\n- Helping Hand\n- Psychic"
+  ],
+  "choices": [
+    {
+      "p1": "team 3124",
+      "p2": "team 3164"
+    },
+    {
+      "p1": "move 4, move 1 2",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 2, move 1 2",
+      "p2": "move 2, switch 3"
+    },
+    {
+      "p1": "move 4, move 1 -1",
+      "p2": "move 2, move 4 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 2 2, move 1 1",
+      "p2": "move 4 -2, move 4 1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 1, move 4 1"
+    },
+    {
+      "p1": "move 1 2, move 1 2",
+      "p2": "move 4 -2, move 1 2"
+    },
+    {
+      "p1": "move 1 1, switch 3",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 3, move 1 -1",
+      "p2": "move 3 2, move 1 1"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "move 2, switch 4"
+    },
+    {
+      "p1": "move 3, move 1 -1",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "switch 3, move 2 1"
+    },
+    {
+      "p1": "move 2 1, move 1 1",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "move 1 -2, move 1 1",
+      "p2": "move 4, move 4 2"
+    },
+    {
+      "p1": "move 1 1, move 4 2",
+      "p2": "move 4, move 4 -1"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 1 2, switch 3",
+      "p2": "move 3 -2, move 2 -1"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "move 3 2, move 4 1"
+    },
+    {
+      "p1": "move 2, switch 3",
+      "p2": "move 1 2, move 4 1"
+    },
+    {
+      "p1": "move 3 -2, move 1 -1",
+      "p2": "move 2, move 4 2"
+    },
+    {
+      "p1": "move 4 2, move 3",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 2, move 3",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 3 1, move 2"
+    },
+    {
+      "p1": "move 4 2, move 2 1",
+      "p2": "switch 3, move 4 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 3 -2, move 3 -1"
+    },
+    {
+      "p1": "move 4 2, move 1 1",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 4 2, switch 3",
+      "p2": "move 4 1, pass"
+    }
+  ]
+}

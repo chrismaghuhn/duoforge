@@ -343,6 +343,9 @@ const ALL_TYPES_X = (chain) => Object.fromEntries(TYPES.map((t) => [t, chain]));
 const ENGINE_STAT_MODIFIERS = {
     hugepower: {onModifyAtk: ALL_TYPES_X(2)},
     firemane: {onModifyAtk: {Fire: 1.5}, onModifySpA: {Fire: 1.5}},
+    // Step G65: Water Bubble's holder, x2 for its Water moves (data/abilities.ts:5390-5399). Its onSourceModifyAtk and
+    // onSourceModifySpA (x0.5 for a Fire move against the holder) are probed by g65Probes, not here.
+    waterbubble: {onModifyAtk: {Water: 2}, onModifySpA: {Water: 2}},
 };
 
 // What an entry ability sets for a source Pokemon.
@@ -906,6 +909,38 @@ function checkG47(dex) {
     return 1;
 }
 
+// Step G67, Magic Guard and Air Balloon: the pinned handlers against stubs. Magic Guard blocks a damage whose effect is not a Move
+// (returns false), says -activate for an Ability's damage with the damage source as the position, and lets a Move's damage through.
+// The Air Balloon announces itself at switch-in (not with gravity), and its pop of a damaging hit and of a substitute hit prints
+// -enditem; a Move is the only effect that pops it (AfterSubDamage with effectType Move).
+function checkG67(dex) {
+    const guard = dex.abilities.get('magicguard');
+    const runGuard = (effect, source) => {
+        const lines = [];
+        const b = battle(guard, {add: (...a) => lines.push(a)});
+        const result = call(guard.onDamage, b, [10, {}, source, effect]);
+        return {result, lines};
+    };
+    expect('Magic Guard passes a Move damage', runGuard({effectType: 'Move'}, {}), {result: undefined, lines: []});
+    expect('Magic Guard blocks a Condition damage silently', runGuard({effectType: 'Condition'}, {}), {result: false, lines: []});
+    expect('Magic Guard blocks an Item damage silently', runGuard({effectType: 'Item'}, {}), {result: false, lines: []});
+    expect('Magic Guard blocks an Ability damage with -activate of its source', runGuard({effectType: 'Ability', name: 'Rough Skin'}, 'src'),
+        {result: false, lines: [['-activate', 'src', 'ability: Rough Skin']]});
+    const balloon = dex.items.get('airballoon');
+    const shown = (ignoring, gravity) => {
+        const lines = [];
+        const pokemon = {ignoringItem: () => ignoring};
+        const b = battle(balloon, {add: (...a) => lines.push(a),
+            field: {getPseudoWeather: (id) => (gravity && id === 'gravity' ? {} : null)}});
+        call(balloon.onStart, b, [pokemon]);
+        return lines;
+    };
+    expect('Air Balloon is announced at switch-in', shown(false, false), [['-item', {}, 'Air Balloon']]);
+    expect('Air Balloon is not announced when its holder ignores items', shown(true, false), []);
+    expect('Air Balloon is not announced under gravity', shown(false, true), []);
+    return 1;
+}
+
 // Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5y). The
 // four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
 // another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
@@ -1096,6 +1131,40 @@ function checkG61(dex, headers, moveIds, moveRows, unmodeledMoves) {
     expect('Sheer Force has no flags', sf.flags, {});
     expect('Sheer Force is not notrace (Trace may copy it)', Boolean(sf.flags.notrace), false);
     return {checked, stripped, boostOnly, strippedIds};
+}
+
+// Step G69, Symbiosis (decision 0015 5bm): the pinned onAllyAfterUseItem on probes. The holder's item moves to the user when the
+// user is not switching (switchFlag) and the holder holds one; then the one line -activate|holder|ability: Symbiosis|Item|[of] user.
+// Nothing changes for a switching user or an empty holder. The engine refuses the other cases (dfi_symbiosis, src/combat/turn.c).
+function checkG69(dex) {
+    const sym = dex.abilities.get('symbiosis');
+    const pokemon = (name, item) => ({name, item, hp: 1, isActive: true, switchFlag: false, toString() { return name; },
+        takeItem() {
+            if (!this.item) return undefined;
+            const taken = {id: this.item, toString() { return 'Focus Sash'; }};
+            this.item = '';
+            return taken;
+        },
+        setItem(it) { this.item = it.id; return true; }});
+    const probe = (holderItem, userSwitching) => {
+        const holder = pokemon('Floette-Eternal', holderItem);
+        const user = pokemon('Gardevoir', '');
+        user.switchFlag = userSwitching;
+        const lines = [];
+        const b = battle(sym, {effectState: {target: holder}, singleEvent: () => true,
+            add: (...args) => lines.push(args.map(String).join('|'))});
+        call(sym.onAllyAfterUseItem, b, [{id: 'sitrusberry'}, user]);
+        return {holder: holder.item, user: user.item, lines};
+    };
+    expect('Symbiosis passes the item to a user that is not switching',
+        probe('focussash', false),
+        {holder: '', user: 'focussash', lines: ['-activate|Floette-Eternal|ability: Symbiosis|Focus Sash|[of] Gardevoir']});
+    expect('Symbiosis gives nothing to a switching user',
+        probe('focussash', true), {holder: 'focussash', user: '', lines: []});
+    expect('Symbiosis gives nothing from an empty holder',
+        probe('', false), {holder: '', user: '', lines: []});
+    expect('Symbiosis has no flags', sym.flags, {});
+    return {checked: 4};
 }
 
 // The pinned counts of checkG61: stripped and boost-only pool moves (marked or not), as of step G61.
@@ -1394,6 +1463,66 @@ function orderCallbacks(raw) {
         ...ORDER_CALLBACKS.filter((k) => raw.condition && raw.condition[k] !== undefined).map((k) => 'condition.' + k)];
 }
 
+// Step G65: the callbacks of the five engine rows that the stat probe above does not reach (it runs onModifyAtk and
+// onModifySpA only), checked against the pinned texts (data/abilities.ts): the priorities, the breakable flags, Marvel
+// Scale's Defense for a status, Super Luck's ratio, Reckless's recoil modifier, and Water Bubble's onSource halves.
+// Thick Fat's onSource callbacks have no probe of their own; the Water Bubble half here is the first.
+const RECKLESS_CRASH_CLAUSE = false; // the engine does not model hasCrashDamage (checkG65 refuses a modelled crash move)
+const G65_PROBES = {
+    unaware(ability) {
+        expect('unaware breakable', ability.flags.breakable, 1);
+        expect('unaware onAnyModifyBoost', typeof ability.onAnyModifyBoost, 'function');
+    },
+    marvelscale(ability) {
+        expect('marvelscale onModifyDefPriority', ability.onModifyDefPriority, 6);
+        expect('marvelscale breakable', ability.flags.breakable, 1);
+        expect('marvelscale statused Defense', call(ability.onModifyDef, battle(ability), [100, {status: 'par'}]), {chain: 1.5});
+        expect('marvelscale asleep Defense', call(ability.onModifyDef, battle(ability), [100, {status: 'slp'}]), {chain: 1.5});
+        expect('marvelscale healthy Defense', call(ability.onModifyDef, battle(ability), [100, {status: ''}]), undefined);
+    },
+    waterbubble(ability) {
+        expect('waterbubble onSourceModifyAtkPriority', ability.onSourceModifyAtkPriority, 5);
+        expect('waterbubble onSourceModifySpAPriority', ability.onSourceModifySpAPriority, 5);
+        expect('waterbubble breakable', ability.flags.breakable, 1);
+        for (const callback of ['onSourceModifyAtk', 'onSourceModifySpA']) {
+            expect('waterbubble ' + callback + ' of a Fire move', call(ability[callback], battle(ability), [100, {}, {}, moveOf('Fire')]), {chain: 0.5});
+            expect('waterbubble ' + callback + ' of a Water move', call(ability[callback], battle(ability), [100, {}, {}, moveOf('Water')]), undefined);
+        }
+    },
+    reckless(ability) {
+        expect('reckless onBasePowerPriority', ability.onBasePowerPriority, 23);
+        expect('reckless recoil move', call(ability.onBasePower, battle(ability), [100, {}, {}, moveOf('Normal', {recoil: [1, 4]})]), {chain: [4915, 4096]});
+        expect('reckless crash move (pinned, not modelled)', call(ability.onBasePower, battle(ability), [100, {}, {}, moveOf('Normal', {hasCrashDamage: true})]), {chain: [4915, 4096]});
+        expect('reckless plain move', call(ability.onBasePower, battle(ability), [100, {}, {}, moveOf('Normal')]), undefined);
+    },
+    superluck(ability) {
+        expect('superluck ratio 1 to 2', call(ability.onModifyCritRatio, battle(ability), [1]), 2);
+        expect('superluck ratio 0 to 1', call(ability.onModifyCritRatio, battle(ability), [0]), 1);
+        expect('superluck breakable', ability.flags.breakable, undefined);
+    },
+};
+
+// Step G73 (Moody, the order and the flags of its onResidual; the draw and boost logic is checked by G73_ABILITY_FACTS in
+// gen_closure.py and the recorded battles): the order of Speed Boost's key, no breakable flag, and the two callbacks it has.
+const G73_PROBES = {
+    moody(ability) {
+        expect('moody onResidualOrder', ability.onResidualOrder, 28);
+        expect('moody onResidualSubOrder', ability.onResidualSubOrder, 2);
+        expect('moody flags', ability.flags, {});
+        expect('moody onResidual', typeof ability.onResidual, 'function');
+    },
+};
+
+// Step G65 (Reckless's crash clause): a modelled move with hasCrashDamage needs the clause, which the engine does not have.
+function checkG65(dex, moveNames, unmodeledMoves) {
+    for (const id of moveNames) {
+        const move = dex.moves.get(id);
+        if (move.exists && move.hasCrashDamage && !unmodeledMoves.has(id) && !RECKLESS_CRASH_CLAUSE) {
+            bad(id + ' is a modelled move with hasCrashDamage: Reckless has no crash clause (step G65)');
+        }
+    }
+}
+
 function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
     const counts = {};
     for (const row of rows) {
@@ -1430,6 +1559,12 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (typeof ability.onStart === 'function' && /\.field\.set(Weather|Terrain)\(/.test(ability.onStart.toString())) {
                     bad(row.id + ' (no family) sets weather or terrain on entry');
+                }
+                if (G65_PROBES[row.id] !== undefined) {
+                    G65_PROBES[row.id](ability);
+                }
+                if (G73_PROBES[row.id] !== undefined) {
+                    G73_PROBES[row.id](ability);
                 }
             }
             continue;
@@ -1594,13 +1729,14 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
-    abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
+const ENGINE_ROWS = {items: ['airballoon', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
+    abilities: ['magicguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
-        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']};
+        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1621,7 +1757,7 @@ function isBoostBlock(b) {
 // effect each. The move's handler id (G2) or its place in the prefix is decided by the caller.
 // The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
 // (a G2 row); Flip Turn is a row of the prefix.
-const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
+const ENGINE_PIVOTS = ['uturn', 'voltswitch', 'batonpass'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
 // Step G46: the four forced-switch moves; their forceSwitch: true is modelled (gen_closure.py G46_FORCE_SWITCH_MOVES).
@@ -1984,13 +2120,16 @@ function main() {
     checkG32(dex);
     checkG33(dex);
     checkG41(dex);
+    checkG67(dex);
     const g61 = checkG61(dex, headers, moveIds, moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT')), unmodeledMoves);
     checkG47(dex);
     checkG44(dex);
     checkG54(dex);
     checkG62(dex);
+    checkG69(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
+    checkG65(dex, [...moveIds.values()], unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
     expect('resist berries', items.RESIST_BERRY, 18);

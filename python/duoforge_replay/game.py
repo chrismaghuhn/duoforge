@@ -11,9 +11,19 @@ Counters:
 - points.written (rows); points.dropped.<reason>: the game's decision points
   (either side) after a perspective's stop;
 - labels.<REASON> per asked slot of the rows, labels.TEAM for team rows;
-- turn-scoped.<NAME>: single-turn feature lines that stopped nothing.
+- turn-scoped.<NAME>: single-turn feature lines that stopped nothing;
+- turns.total: the game's turns, per perspective; turns.kept: the turns complete before the perspective's stop
+  (all of them without a stop): the turn coverage;
+- games.both_kept: 1 when both perspectives ran to the end without a stop.
+
+With pick_hypotheses (M11 pick hypotheses spec) a perspective stopped by picks-incomplete is folded once more per
+pick tuple the log allows; these rows carry picks_hypotheses = H and their hypothesis index, and count apart:
+- perspectives.hypotheses_kept, perspectives.hypotheses_stopped.<reason>: per such perspective, its common stop;
+- points.hypotheses: their rows; turns.hypotheses: the turns complete before the common stop, once per perspective.
+The counters above stay as without the option: the perspective still counts as stopped by picks-incomplete.
 """
 import collections
+import dataclasses
 import hashlib
 import re
 from dataclasses import dataclass
@@ -24,7 +34,7 @@ from duoforge_live.data import trace_to_c
 from duoforge_live.lines import line_kind
 from duoforge_live.tracker import SESSION_LINES
 
-from . import labels, superset
+from . import facts as facts_of, labels, setbelief, superset
 
 # Reg M-B (BC spec section 11): the engine's POOL data is Reg M-C's, and two moves have other PP under Reg M-B
 # (Strength Sap and Wish: 10, not 5). A Reg M-B game whose sheets hold one is skipped.
@@ -32,6 +42,7 @@ REGMB = "gen9championsvgc2026regmb"
 REGMB_PP = {"STRENGTHSAP", "WISH"}
 from .points import TEAM_SELECTION, Skip, find
 from .prior import LEVELS
+from .hindsight import pick_hypotheses as pick_tuples
 from .spectator import SpectatorTracker, feed_lines, hindsight, hindsight_picks, own_requested, walk
 
 REASONS = ("NOT_REQUESTED", "EXACT", "TARGET_UNKNOWN", "MOVE_HIDDEN", "FORCED", "UNKNOWN")
@@ -48,7 +59,8 @@ class GameRecord:
     winner: int  # 0, 1, or -1 for a tie or no winner
     turns: int
     players: tuple  # (u64, u64): the first 8 bytes of SHA-256 of each name's to_id
-    sheets: tuple  # (u64, u64): of each |showteam| payload
+    sheets: tuple  # (u64, u64): of each |showteam| payload (of each drawn team's paste in a belief game)
+    draw: int = 0  # a belief game's draw index (M11 Bo1 spec section 3)
 
 
 @dataclass
@@ -59,6 +71,11 @@ class Row:
     point: int
     label: labels.Label
     prior_level: tuple  # six levels (prior.LEVELS = no paste)
+    belief_level: tuple = None  # a belief game: the own six members' set levels (0 or 1), then the foe's six
+    revealed: tuple = None  # a belief game: per own member, the bits of the sheet move slots the game showed
+    ext: object = None  # the OBSERVATION_EXT record of the tracker view at the point (decision 0018), as live
+    picks_hypotheses: int = 1  # H: the pick tuples its perspective was folded with (1: the picks are known)
+    hypothesis: int = 0  # the index of its pick tuple in hindsight.pick_hypotheses (0 when H is 1)
 
 
 @dataclass
@@ -94,7 +111,8 @@ def _check_names(sets, data):
                 raise Skip(f"name:{table} {name}")
 
 
-def _prepass(replay_id, format_id, log, data):
+def _header(log):
+    """(players, ratings, winner, turns, bo3, packed sheets) of a log; Skip("skip:session") for a session line."""
     players, ratings, winner, turns, bo3, packed = {}, [-1, -1], -1, 0, 0, {}
     for line in log:
         kind = line_kind(line)
@@ -116,14 +134,11 @@ def _prepass(replay_id, format_id, log, data):
         elif kind == "uhtml" and len(parts) > 3 and parts[2] == "bestof":
             m = re.search(r"Game (\d+)", parts[3])
             bo3 = int(m.group(1)) if m else 0
-    if sorted(packed) != [0, 1]:
-        raise Skip("skip:sheets")
-    if sum(1 for line in log if line_kind(line) == "start") > 1:
-        raise Skip("skip:two-games")  # a Bo3 log that holds a second game's lines: one game per row
-    sheets = tuple(teams.unpack(packed[s]) for s in (0, 1))
-    _check_names(sheets[0] + sheets[1], data)
-    for s in sheets[0] + sheets[1]:
-        s["species"] = data.canonical(s["species"])  # a cosmetic alias (#118) as the tables name its row
+    return players, ratings, winner, turns, bo3, packed
+
+
+def _check_sheets(sheets, format_id, data):
+    """Skip unless the engine takes the sheets (sets per side, species canonical): parsing, Reg M-B PP, legality."""
     parsed = []
     for s in (0, 1):
         try:
@@ -139,31 +154,155 @@ def _prepass(replay_id, format_id, log, data):
             what, index = issue
             name = sheet["moves"][index] if what == "move" else sheet["ability"] if what == "ability" else ""
             raise Skip(f"skip:pool-illegal {sheet['species']} {what} {name}".rstrip())
+
+
+def _prepass(replay_id, format_id, log, data):
+    players, ratings, winner, turns, bo3, packed = _header(log)
+    if not packed:
+        raise Skip("skip:sheets")
+    if sorted(packed) != [0, 1]:
+        raise Skip("skip:sheets-one-side")  # two |showteam| lines of one side: no pair of sheets
+    if sum(1 for line in log if line_kind(line) == "start") > 1:
+        raise Skip("skip:two-games")  # a Bo3 log that holds a second game's lines: one game per row
+    sheets = tuple(teams.unpack(packed[s]) for s in (0, 1))
+    _check_names(sheets[0] + sheets[1], data)
+    for s in sheets[0] + sheets[1]:
+        s["species"] = data.canonical(s["species"])  # a cosmetic alias (#118) as the tables name its row
+    _check_sheets(sheets, format_id, data)
     record = GameRecord(replay_id, format_id, bo3, tuple(ratings), winner, turns,
                         tuple(_hash8(_to_id(players.get(s, ""))) for s in (0, 1)),
                         tuple(_hash8(packed[s]) for s in (0, 1)))
     return record, sheets
 
 
-def process(replay_id, format_id, log, data, prior, stats):
+MAX_REDRAWS = 8  # drawn teams per side the engine may refuse before the game is skip:belief-illegal
+
+
+def draw_sheets(lines, format_id, data, belief, seed, replay_id, draw):
+    """(sheets, levels, revealed) of a game without sheets (M11 Bo1 spec sections 2 and 3, option B): per side the
+    six members' drawn sets (facts.side_facts, setbelief.SetBelief), their levels, and per member the bits of the
+    sheet move slots the game showed. A side the engine refuses is drawn again (attempt + 1) up to MAX_REDRAWS times,
+    then Skip("skip:belief-illegal"); a used Reg M-B PP move is Skip("skip:regmb-pp")."""
+    key = trace_to_c.key
+    sheets, levels, revealed = [], [], []
+    for side in (0, 1):
+        members = facts_of.side_facts(lines, side, data)
+        for f in members:  # a name the log reveals and the tables lack: as an open sheet's (_check_names)
+            for table, name in [("ITEM", f.item), ("ABILITY", f.ability)] + [("MOVE", m) for m in sorted(f.moves)]:
+                if name and key(name) not in data.tables[table]:
+                    raise Skip(f"name:{table} {name}")
+        if format_id.startswith(REGMB) and any(key(m) in REGMB_PP for f in members for m in f.moves):
+            raise Skip("skip:regmb-pp")
+        for attempt in range(MAX_REDRAWS):
+            drawn = [belief.draw(f, setbelief.word(seed, replay_id, side, m, attempt, draw))
+                     for m, f in enumerate(members)]
+            sheet = [s for s, _ in drawn]
+            for s in sheet:
+                s["species"] = data.canonical(s["species"])
+            try:
+                _check_sheets((sheet, sheet), format_id, data)
+            except Skip as e:
+                if e.reason.startswith(("skip:pool-illegal", "skip:regmb-pp")):
+                    continue  # a drawn set the engine refuses: the next attempt draws another
+                raise
+            break
+        else:
+            raise Skip("skip:belief-illegal")
+        sheets.append(sheet)
+        levels.append(tuple(level for _, level in drawn))
+        revealed.append(tuple(sum(1 << i for i, m in enumerate(s["moves"]) if key(m) in {key(u) for u in f.moves})
+                              for s, f in zip(sheet, members)))
+    return tuple(sheets), tuple(levels), tuple(revealed)
+
+
+def _with_drawn_sheets(replay_id, format_id, lines, data, belief, seed, draw, known_sheets):
+    """The log of a game without sheets with the drawn teams' |showteam| lines right after its |teampreview|, where
+    an open-sheet game has its sheets, and the rows' extra fields (levels, revealed): the sheet pipeline then runs on
+    the drawn sheets unchanged (option B)."""
+    _, _, _, _, _, packed = _header(lines)
+    if packed:
+        raise ValueError("a belief game has sheets: the source drops them (drop_sheets) or takes none (bo1_belief)")
+    if set(known_sheets) & belief.corpus.sheet_hashes:
+        raise Skip("skip:sheet-in-corpus")  # a training player has this team (a rental): never drawn from itself
+    previews = [i for i, line in enumerate(lines) if line.startswith("|teampreview")]
+    if len(previews) != 1:
+        raise Skip("skip:belief-preview")
+    sheets, levels, revealed = draw_sheets(lines, format_id, data, belief, seed, replay_id, draw)
+    shown = [f"|showteam|p{side + 1}|" + teams.pack(teams.to_text(sheets[side])) for side in (0, 1)]
+    at = previews[0] + 1
+    return lines[:at] + shown + lines[at:], (levels, revealed)
+
+
+def process(replay_id, format_id, log, data, prior, stats, belief=None, seed=0, draw=0, known_sheets=(),
+            pick_hypotheses=False):
     """The rows and counters of one game (module docstring). `log` is the replay's text; `prior` a prior.Prior;
-    `stats` has stats(species, nature, stat points) (stats.StatSource)."""
+    `stats` has stats(species, nature, stat points) (stats.StatSource). With `belief` (a setbelief.SetBelief) the
+    game has no sheets and both sides' sheets are drawn (draw_sheets, under seed and draw); known_sheets are the
+    hashes of sheets the source dropped, which must not be in the corpus. pick_hypotheses adds the hypothesis rows
+    of perspectives stopped by picks-incomplete."""
     lines = [line.rstrip("\r") for line in log.split("\n")]
+    extra = None
+    if belief is not None:
+        lines, extra = _with_drawn_sheets(replay_id, format_id, lines, data, belief, seed, draw, known_sheets)
     record, sheets = _prepass(replay_id, format_id, lines, data)
+    if belief is not None:
+        record = dataclasses.replace(record, draw=draw)
     counters = collections.Counter()
     try:
         points = find(lines)
     except line_classes.Stop as stop:
         counters[f"perspectives.stopped.{stop.reason}"] += 2
+        counters["turns.total"] += 2 * record.turns
         return GameResult(record, [], counters)
     rows = []
+    kept_before = counters["perspectives.kept"]
     for side in (0, 1):
-        rows += _perspective(lines, points, side, sheets, data, prior, stats, counters)
-    counters["points.written"] += len(rows)
+        rows += _perspective(lines, points, side, sheets, data, prior, stats, counters, extra, record.turns,
+                             pick_hypotheses)
+    if counters["perspectives.kept"] - kept_before == 2:
+        counters["games.both_kept"] += 1
+    else:
+        counters["games.both_kept"] += 0  # the key is there for every game set up
+    counters["points.written"] += sum(1 for r in rows if r.picks_hypotheses == 1)
     return GameResult(record, rows, counters)
 
 
-def _perspective(lines, points, side, sheets, data, prior, stats, counters):
+def _fold(tracker, lines, points):
+    """The taken points of one fold of a perspective, (point, observation, domain, lists, context, ext) for each
+    point its side is asked at, and the Stop that ended it (None when it ran to the end)."""
+    taken, stop, done = [], None, 0
+    try:
+        for point in walk(tracker, lines, points):
+            done = point.line
+            if own_requested(tracker):
+                domain, lists = superset.domain(tracker)
+                taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker),
+                              tracker.observation_ext().copy()))
+        feed_lines(tracker, lines, done, len(lines))  # a stop after the last point still cuts the last labels
+    except line_classes.Stop as e:
+        stop = e
+    return taken, stop
+
+
+def _common_stop(runs):
+    """The common stop of the hypotheses' folds, runs = [(taken, stop)] (M11 pick hypotheses spec, section 3): the
+    stop with the earliest line (the first hypothesis's of equal lines), and per run the taken points every run has,
+    so that a point any hypothesis cannot reach is a point none of them keeps."""
+    stops = [stop for _, stop in runs if stop is not None]
+    stop = min(stops, key=lambda s: s.line) if stops else None
+    common = set.intersection(*({t[0].index for t in taken} for taken, _ in runs))
+    return [[t for t in taken if t[0].index in common] for taken, _ in runs], stop
+
+
+def _kept_turns(lines, stop, turns):
+    if stop is None:
+        return turns
+    started = sum(1 for line in lines[:stop.line] if line_kind(line) == "turn")
+    return max(0, started - 1)  # the turn the stop came in is not complete
+
+
+def _side(sheets, side, data, prior, stats):
+    """The prior levels of a side's six members and its stats_of(member, forme) for the tracker."""
     forme_names = {v: k.lower() for k, v in data.tables["FORME"].items() if k != "COUNT"}
     levels = []
     stat_points = []
@@ -175,6 +314,43 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters):
 
     def stats_of(m, forme):
         return stats.stats(forme_names[forme], sheets[side][m]["nature"], stat_points[m]), stat_points[m]
+    return prior_level, stats_of
+
+
+def _rows_of(lines, side, leads, back, prior_level, extra, taken, stop, h=1, k=0):
+    """The rows of taken points (_fold) under a stop (labels end at its line), marked with H and the index k."""
+    stop_line = len(lines) if stop is None else stop.line
+    out = []
+    for point, observation, domain, lists, ctx, ext in taken:
+        label = labels.compute(ctx, lines, point, lists, stop_line, leads, back)
+        if extra is None:
+            out.append(Row(observation, domain, side, point.index, label, prior_level, ext=ext,
+                           picks_hypotheses=h, hypothesis=k))
+        else:
+            levels, revealed = extra
+            out.append(Row(observation, domain, side, point.index, label, prior_level,
+                           tuple(levels[side]) + tuple(levels[1 - side]), tuple(revealed[side]), ext, h, k))
+    return out
+
+
+def hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra=None):
+    """The rows of one perspective folded once per pick tuple of `hyps` (hindsight.pick_hypotheses) past team
+    selection, under their common stop (_common_stop): (rows per pick tuple, each marked H = len(hyps) and its
+    index; the common stop, None when every fold ran to the end). `lines` and `points` as process has them."""
+    prior_level, stats_of = _side(sheets, side, data, prior, stats)
+    leads, back = hindsight(lines, side, data, sheets)
+    runs = []
+    for picks in hyps:  # the team selection row is the one the perspective has: not repeated
+        taken, stop = _fold(SpectatorTracker(data, sheets, side, picks, stats_of, lines), lines, points)
+        runs.append(([t for t in taken if t[0].boundary != TEAM_SELECTION], stop))
+    kept, common = _common_stop(runs)
+    return [_rows_of(lines, side, leads, back, prior_level, extra, taken, common, len(hyps), k)
+            for k, taken in enumerate(kept)], common
+
+
+def _perspective(lines, points, side, sheets, data, prior, stats, counters, extra=None, turns=0,
+                 pick_hypotheses=False):
+    prior_level, stats_of = _side(sheets, side, data, prior, stats)
 
     try:
         leads, back = hindsight(lines, side, data, sheets)
@@ -183,22 +359,12 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters):
     except line_classes.Stop as stop:
         counters[f"perspectives.stopped.{stop.reason}"] += 1
         counters[f"points.dropped.{stop.reason}"] += len(points)
+        counters["turns.total"] += turns
         return []
-    taken, stop, done = [], None, 0
-    try:
-        for point in walk(tracker, lines, points):
-            done = point.line
-            if own_requested(tracker):
-                domain, lists = superset.domain(tracker)
-                taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker)))
-        feed_lines(tracker, lines, done, len(lines))  # a stop after the last point still cuts the last labels
-    except line_classes.Stop as e:
-        stop = e
-    stop_line = len(lines) if stop is None else stop.line
-    rows = []
-    for point, observation, domain, lists, ctx in taken:
-        label = labels.compute(ctx, lines, point, lists, stop_line, leads, back)
-        rows.append(Row(observation, domain, side, point.index, label, prior_level))
+    taken, stop = _fold(tracker, lines, points)
+    rows = _rows_of(lines, side, leads, back, prior_level, extra, taken, stop)
+    for point, row in zip((t[0] for t in taken), rows):
+        label = row.label
         if point.boundary == TEAM_SELECTION:
             counters["labels.TEAM"] += 1
         else:
@@ -208,9 +374,28 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters):
     for name, n in tracker.turn_scoped_seen.items():
         if stop is None or stop.reason != f"feature:{name}":
             counters[f"turn-scoped.{name}"] += n
+    counters["turns.total"] += turns
+    counters["turns.kept"] += _kept_turns(lines, stop, turns)
     if stop is None:
         counters["perspectives.kept"] += 1
     else:
         counters[f"perspectives.stopped.{stop.reason}"] += 1
         counters[f"points.dropped.{stop.reason}"] += sum(1 for p in points if p.line >= stop.line)
+    if pick_hypotheses and stop is not None and stop.reason == "picks-incomplete":
+        hyps = pick_tuples(lines, side, data, sheets)
+        if not hyps:
+            counters["perspectives.hypotheses_stopped.no-hypotheses"] += 1
+            return rows
+        if len(hyps) == 1:  # a sheet of fewer than six: one tuple, yet the picks are not seen; never rows with H 1
+            counters["perspectives.hypotheses_stopped.single-hypothesis"] += 1
+            return rows
+        per_hypothesis, common = hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra)
+        for h_rows in per_hypothesis:
+            rows += h_rows
+        counters["points.hypotheses"] += sum(len(r) for r in per_hypothesis)
+        counters["turns.hypotheses"] += _kept_turns(lines, common, turns)
+        if common is None:
+            counters["perspectives.hypotheses_kept"] += 1
+        else:
+            counters[f"perspectives.hypotheses_stopped.{common.reason}"] += 1
     return rows

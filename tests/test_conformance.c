@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 701u /* the recorded pool battles: g72b_av_sheer_force (Alluring Voice from a Trace-copied Sheer Force), 672 of the lane A batch (incl. the three cross-row battles) and lane B G63 eight, G59 eight, G61 twelve (642 on main); main's 614 (lane A batches 1-3, G53, G55, G57), G63 eight, G59 eight and G61 twelve */
+#define DF_POOL_DATA_BATTLES 811u /* main G67 and #342 battles included (793 on main) + the recorded pool battles: the six C2 battles (three covering, pair run 9007), the three G94 Baneful Bunker battles, 762 on main, the seven G88 battles (g88_*), the two C1 battles (c1_*) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

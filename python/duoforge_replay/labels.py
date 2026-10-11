@@ -23,7 +23,7 @@ from duoforge_live.lines import flat_position, line_kind
 from duoforge_live.data import trace_to_c
 from duoforge_live.game import TEAM_TABLE
 
-from .points import TEAM_SELECTION, TURN
+from .points import TEAM_SELECTION, TURN, Skip
 
 NOT_REQUESTED, EXACT, TARGET_UNKNOWN, MOVE_HIDDEN, FORCED, UNKNOWN = range(6)
 TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
@@ -31,6 +31,9 @@ TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
 REDIRECT_TURN = {"move: Follow Me", "move: Rage Powder", "Rage Powder", "move: Spotlight", "Spotlight"}
 # Abilities whose -activate right before a move line draws it (sim: onAnyRedirectTarget).
 _REDIRECT_ABILITY = {"ability: Lightning Rod", "ability: Storm Drain"}
+# Moves whose line may name another target than the chosen one by their own rule (data/moves.ts smartTarget, step G78):
+# Dragon Darts goes to the chosen foe's ally when the chosen foe cannot be hit, and the line names the ally.
+_SMART_TARGET = {"DRAGONDARTS"}
 
 
 @dataclass(frozen=True)
@@ -62,10 +65,11 @@ def team_label(leads, seen_back, member_count=6):
     return Label((0, 0), bytes(bits), (NOT_REQUESTED, NOT_REQUESTED))
 
 
-def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vacant=frozenset()):
+def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vacant=frozenset(), barred=((), ())):
     """The label of a TURN point: per own slot, from the lines log[point.line:min(point.end, stop_line)].
     moves[k] are the move ids of the occupant of slot k at the point (None for none); member_of(details) is the own
-    roster index of a switch line's details; vacant holds the flat positions empty or fainted at the point."""
+    roster index of a switch line's details; vacant holds the flat positions empty or fainted at the point; barred[k]
+    the move slots of slot k that the view bars at the point (its Disable slot, its Choice lock's slot)."""
     end = min(point.end, stop_line)
     segment = log[point.line:end]
     # A slot whose action never showed chose a move only if the switch phase of the turn is over (Showdown runs
@@ -75,7 +79,7 @@ def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vac
                 (line_kind(line) == "-activate" and line.split("|")[3:4] == ["confusion"]) for line in segment)
     slots, reasons = [], []
     for k in (0, 1):
-        mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, vacant)
+        mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, vacant, barred[k])
         if reason is None:
             reason, mask = UNKNOWN if end < point.end or not acted else MOVE_HIDDEN, None
             if reason == MOVE_HIDDEN:
@@ -98,7 +102,7 @@ def _move_options(options_list, mega, move_slot=None):
                  if o.kind == options.MOVE and o.mega == mega and (move_slot is None or o.move_slot == move_slot))
 
 
-def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant):
+def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant, barred=()):
     """(mask, reason) of slot k, or (None, None) when its action never showed in the segment."""
     kinds = {o.kind for o in options_list}
     if kinds == {options.NONE}:
@@ -128,15 +132,24 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
             if len(parts) > 4 and parts[4]:
                 move = tables["MOVE"].get(trace_to_c.key(parts[4]))
                 if move is not None and moves is not None and move in moves:
-                    return _move_options(options_list, mega, moves.index(move)), TARGET_UNKNOWN
+                    named = _move_options(options_list, mega, moves.index(move))
+                    if not named and parts[3] == "Disable" and moves.index(move) in barred:
+                        # cant|X|Disable|Move of a move the view bars (its Disable slot or its Choice lock's): the
+                        # request offered no such move (Struggle, g27_disable_lock), so every move option with the
+                        # shown Mega choice. Any other move that is no option keeps the empty set, which bc_data
+                        # refuses as a labeler bug: a stale view never turns into a label without the real choice.
+                        return _move_options(options_list, mega), MOVE_HIDDEN
+                    return named, TARGET_UNKNOWN
             return None, None
         if kind == "-start" and len(parts) > 3 and parts[3] == "Encore" and flat_position(parts[2]) == position:
             encored = True
         if kind == "move" and flat_position(parts[2]) == position:
             if encored:
                 # Encore started on this position before it moved: a queued move of another slot is replaced by the
-                # Encored one (Champions), so the move line is not what was chosen
-                return _all(options_list), UNKNOWN
+                # Encored one (Champions), so the move line may not be what was chosen; it was some move (the
+                # Encored one too: a player who chose it sees no replacement), with the shown Mega choice
+                mask = _move_options(options_list, mega)
+                return (mask, MOVE_HIDDEN) if mask else (_all(options_list), UNKNOWN)
             return _move_label(segment, index, parts, side, options_list, moves, mega, tables, vacant)
     return None, None
 
@@ -161,7 +174,8 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
     if targets == {options.TARGET_NONE}:
         return _mask(candidates), EXACT
     shown = flat_position(parts[4]) if len(parts) > 4 else None
-    uncertain = shown is None or "[notarget]" in attrs or any(a.startswith("[spread]") for a in attrs)
+    uncertain = shown is None or "[notarget]" in attrs or any(a.startswith("[spread]") for a in attrs) \
+        or trace_to_c.key(name) in _SMART_TARGET
     if not uncertain and any(position // 2 == shown // 2 for position in vacant):
         uncertain = True  # a position of the target's side was empty at the point: Showdown retargets
     if not uncertain:
@@ -186,6 +200,24 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
     return _mask(candidates), TARGET_UNKNOWN
 
 
+def _revived(log, upto, side, name, member_of):
+    """The own member a Revival Blessing -heal line names: that line has only the nickname ("p1: <name>"), so the member
+    is the one whose switch, drag or replace lines before it carry that name (their details name the forme). Skip
+    ("skip:revive-unseen") when no such line names it, Skip("skip:revive-ambiguous") when they name two members: the
+    log does not say who came back."""
+    members = set()
+    for line in log[:upto]:
+        parts = line.split("|")
+        if line_kind(line) in ("switch", "drag", "replace") and len(parts) > 3 and parts[2].startswith(f"p{side + 1}") \
+                and parts[2].split(": ", 1)[1:] == [name]:
+            members.add(member_of(parts[3]))
+    if not members:
+        raise Skip("skip:revive-unseen")
+    if len(members) > 1:
+        raise Skip("skip:revive-ambiguous")
+    return members.pop()
+
+
 def switch_label(log, point, side, lists, member_of, stop_line):
     """The label of a REPLACEMENT or PIVOT point: per asked own slot, the switch of its run, or a pass."""
     end = min(point.end, stop_line)
@@ -205,7 +237,8 @@ def switch_label(log, point, side, lists, member_of, stop_line):
         if getattr(point, "revive", False) and position in point.run:
             # Revival Blessing's choice (step G52): the member its -heal line names
             if revives:
-                member = member_of(revives[0].split("|")[2].split(": ", 1)[1])
+                name = revives[0].split("|")[2].split(": ", 1)[1]
+                member = _revived(log, point.line + segment.index(revives[0]), side, name, member_of)
                 found = [i for i, o in enumerate(options_list) if o.kind == options.REVIVE and o.reserve == member]
             elif end < point.end:
                 found = []
@@ -236,6 +269,7 @@ class Context:
     roster: tuple  # the own members' base forme ids
     data: object
     vacant: frozenset = frozenset()  # flat positions empty or fainted at the point
+    barred: tuple = ((), ())  # per slot: the move slots the view bars (the Disable slot, the Choice lock's slot)
 
     def member_of(self, details):
         base = self.data.base_forme(self.data.forme(details.split(",")[0]))
@@ -250,7 +284,9 @@ def context(tracker):
     roster = tuple(tracker.data.base_forme(member.sheet["species"]) for member in own)
     vacant = frozenset(s * 2 + k for s in (0, 1) for k, p in enumerate(tracker._positions[s])
                        if p.occupant >= len(tracker._member(s) or ()) or p.fainted)
-    return Context(tracker.side, moves, roster, tracker.data, vacant)
+    barred = tuple(frozenset(slot for slot in (p.disable_slot - 1, p.choice_slot) if 0 <= slot < 4)
+                   for p in tracker._positions[tracker.side])
+    return Context(tracker.side, moves, roster, tracker.data, vacant, barred)
 
 
 def compute(ctx, log, point, lists, stop_line, leads, seen_back):
@@ -259,7 +295,7 @@ def compute(ctx, log, point, lists, stop_line, leads, seen_back):
         return team_label(leads, seen_back, len(ctx.roster))
     if point.boundary == TURN:
         return turn_label(log, point, ctx.side, lists, ctx.moves, ctx.member_of, ctx.data.tables, stop_line,
-                          ctx.vacant)
+                          ctx.vacant, ctx.barred)
     return switch_label(log, point, ctx.side, lists, ctx.member_of, stop_line)
 
 
