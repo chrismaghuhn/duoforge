@@ -823,3 +823,7 @@ duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX 
 # Step G73 (decision 0015 5bo): Moody (its residual order, its two samples on one site, the boost with the raised key first; white-box, with
 # its recorded battles g73_*, which conformance_pool_data replays).
 duoforge_add_test(NAME duoforge.state.pool_g73 SOURCES test_pool_g73.c WHITEBOX TIMEOUT 60)
+
+# Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
+# pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
+duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)

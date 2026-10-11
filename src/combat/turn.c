@@ -263,12 +263,17 @@ static bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, u
 
 static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id);
 
-/* isGrounded with the data (sim/pokemon.ts:2148-2160): not a Flying type and not a Levitate holder. Gravity, Ingrain,
- * Smack Down, Iron Ball, Air Balloon, Magnet Rise and Telekinesis are unmarked rows, so no battle has them; Eelevate is
- * an unmarked ability. The ability is the current one (a Mega's, or one that Trace copied). */
+static uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m);
+static bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id);
+
+/* isGrounded with the data (sim/pokemon.ts:2148-2160): not a Flying type, not a Levitate holder and not an Air Balloon holder
+ * (step G67: `return item !== 'airballoon'`, read live, so Knock Off and Trick move it at once). Gravity, Ingrain, Smack Down,
+ * Iron Ball, Magnet Rise and Telekinesis are unmarked rows, so no battle has them; Eelevate is an unmarked ability. The ability
+ * is the current one (a Mega's, or one that Trace copied). Stealth Rock does not read it (moves.ts:17814-17838). */
 static bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE);
+    return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE) &&
+           !dfi_holds(b, m, DFI_ITEM_AIRBALLOON);
 }
 
 /* The FIELD_START / FIELD_END detail of a terrain (DUOFORGE_FIELD_*). */
@@ -2182,23 +2187,58 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     return DUOFORGE_OK;
 }
 
-/* Pokemon.damage: HP never below 0; reaching 0 queues the faint. `spread` is the pin's spreadDamage path (every damage except
- * the directDamage callers: Substitute's cost, Clangorous Soul, Struggle's recoil; the confusion self-hit is spreadDamage, see
- * data/conditions.ts:191-194). Only the spread path
- * sets HURT_THIS_TURN (step G88, sim/battle.ts:2137-2138), and only when the occupant is still alive afterwards (the pin stores
- * target.hp, which is read as a truth value). */
-static duoforge_status dfi_deal_ex(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other,
-                                   bool spread)
+/* The class of a damage that dfi_deal applies (step G67, Magic Guard, decision 0015 entry 5bl). Every caller names one, with no
+ * default; Magic Guard (data/abilities.ts:2465-2476) blocks a damage whose Showdown effect is not a Move, and a directDamage
+ * never reaches its Damage event (sim/battle.ts:2093-2140 runs the event; sim/pokemon.ts:1595 does not). Silent: no line.
+ * UNCLASSIFIED is refused for a Magic Guard holder (E_UNSUPPORTED), never guessed. */
+typedef enum dfi_dmg_class {
+    DFI_DMG_UNCLASSIFIED = 0, /* refused for a Magic Guard holder */
+    DFI_DMG_DIRECT,           /* directDamage, no Damage event: Substitute and Clangorous Soul costs, Struggle's recoil */
+    DFI_DMG_MOVE,             /* effect Move: a move's hit, confusion's self-hit (conditions.ts:184-190) */
+    DFI_DMG_SIDE,             /* side condition: Stealth Rock (moves.ts:17814), Spikes (:17500) */
+    DFI_DMG_WEATHER,          /* sandstorm's chip (conditions.ts:628-660) */
+    DFI_DMG_STATUS,           /* burn, poison, toxic residual (conditions.ts:2, 123, 138) */
+    DFI_DMG_CONDITION,        /* a move's condition: Spiky Shield's contact damage (moves.ts:17562-17568) */
+    DFI_DMG_RECOIL,           /* a move's recoil, effect 'recoil' (battle-actions.ts:1391-1392) */
+    DFI_DMG_ITEM,             /* an item: Life Orb (items.ts:3413-3416), Rocky Helmet (items.ts:5295) */
+    DFI_DMG_ABILITY           /* an ability: Rough Skin (abilities.ts:3938), Solar Power (:4396). Blocked with
+                               * -activate|source|ability: name, the source being the ability's holder (`other`). */
+} dfi_dmg_class;
+
+/* The one Magic Guard predicate (step G67, data/abilities.ts:2465-2476): a holder takes no damage of a class that Showdown's
+ * Damage event blocks (every class but DIRECT and MOVE). dfi_deal skips such a damage, and the order of a weather tie counts
+ * only the Pokemon that take the damage: a Magic Guard holder has no order to show (decision 0015 entry 5bl). */
+static bool dfi_magic_guard_blocks(const struct duoforge_battle *b, const dfi_member *m, dfi_dmg_class cls)
+{
+    return dfi_ability(b, m, DFI_ABILITY_MAGICGUARD) && cls != DFI_DMG_DIRECT && cls != DFI_DMG_MOVE;
+}
+
+/* Pokemon.damage: HP never below 0; reaching 0 queues the faint. The class (above) is required; a Magic Guard holder takes
+ * a DIRECT or MOVE damage and no other, and an UNCLASSIFIED one is refused. An ability's damage blocked by Magic Guard prints
+ * -activate with the ability's holder (`other`) as the position, cause ABILITY and id2 the ability, as Showdown's handler does. */
+static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2,
+                                uint32_t other, dfi_dmg_class cls)
 {
     dfi_member *m = dfi_at(r->b, flat);
     const uint32_t hp = m->hp;
     if (hp == 0u) {
         return DUOFORGE_OK;
     }
+    if (dfi_magic_guard_blocks(r->b, m, cls)) {
+        if (cls == DFI_DMG_UNCLASSIFIED) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (cls == DFI_DMG_ABILITY) {
+            const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, other, DUOFORGE_CAUSE_ABILITY, id2, DUOFORGE_NO_POSITION);
+            dfi_emit(r, &act);
+        }
+        return DUOFORGE_OK;
+    }
     m->hp = (uint16_t)(hp > amount ? hp - amount : 0u); /* wide-operands-reviewed: <= hp */
     if (amount != 0u) {
         dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_DAMAGE, flat, cause, id2, other)); /* [-damage] */
-        if (spread && m->hp != 0u && dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+        /* Step G88 (sim/battle.ts:2137-2138): every damage but the directDamage class (cost, Struggle's recoil) sets HURT. */
+        if (cls != DFI_DMG_DIRECT && m->hp != 0u && dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
             dfi_tail_pos *tp = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
             tp->position_flags = (uint8_t)((uint32_t)tp->position_flags | DFI_POSFLAG_HURT); /* wide-operands-reviewed */
         }
@@ -2215,12 +2255,6 @@ static duoforge_status dfi_deal_ex(dfi_run *r, uint32_t flat, uint32_t amount, u
         }
     }
     return DUOFORGE_OK;
-}
-
-/* The spread path of Pokemon.damage (every caller but the directDamage ones): see dfi_deal_ex. */
-static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other)
-{
-    return dfi_deal_ex(r, flat, amount, cause, id2, other, true);
 }
 
 /* runStatusImmunity('psn') (Team C; Toxic asks for 'psn' too, sim/pokemon.ts:1713): a type whose chart entry carries the
@@ -2647,13 +2681,13 @@ static duoforge_status dfi_hazards_enter(dfi_run *r, uint32_t flat)
             const uint32_t hp = m->hp_max;
             uint32_t amount = biased >= DFI_BIAS6 ? (hp << (biased - DFI_BIAS6)) / 8u : hp / (8u << (DFI_BIAS6 - biased));
             amount = amount == 0u ? 1u : amount;
-            st = dfi_deal(r, flat, amount, DUOFORGE_CAUSE_MOVE, DFI_MOVE_STEALTHROCK, DUOFORGE_NO_POSITION);
+            st = dfi_deal(r, flat, amount, DUOFORGE_CAUSE_MOVE, DFI_MOVE_STEALTHROCK, DUOFORGE_NO_POSITION, DFI_DMG_SIDE);
         } else if (kind == DUOFORGE_SIDE_SPIKES) {
             if (dfi_grounded(b, m)) {
                 static const uint8_t twenty_fourths[4] = {0u, 3u, 4u, 6u}; /* 1/8, 1/6, 1/4 of the maximum HP */
                 uint32_t amount = ((uint32_t)twenty_fourths[ts->spikes] * m->hp_max) / 24u;
                 amount = amount == 0u ? 1u : amount;
-                st = dfi_deal(r, flat, amount, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKES, DUOFORGE_NO_POSITION);
+                st = dfi_deal(r, flat, amount, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKES, DUOFORGE_NO_POSITION, DFI_DMG_SIDE);
             }
         } else if (kind == DUOFORGE_SIDE_TOXIC_SPIKES) {
             if (dfi_grounded(b, m)) {
@@ -3705,7 +3739,8 @@ static duoforge_status dfi_sand_damage(dfi_run *r)
     uint32_t bearers = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         const dfi_member *m = dfi_at(r->b, flat);
-        if (m != NULL && m->hp != 0u && !dfi_sand_immune(r->b, m)) {
+        /* the Pokemon that take the Sandstorm damage: alive, not sand-immune and not a Magic Guard holder (decision 0015 5bl) */
+        if (m != NULL && m->hp != 0u && !dfi_sand_immune(r->b, m) && !dfi_magic_guard_blocks(r->b, m, DFI_DMG_WEATHER)) {
             bearers |= 1u << flat;
         }
     }
@@ -3726,7 +3761,7 @@ static duoforge_status dfi_sand_damage(dfi_run *r)
         }
         const uint32_t damage = (uint32_t)m->hp_max / 16u;
         st = dfi_deal(r, flat, damage == 0u ? 1u : damage, DUOFORGE_CAUSE_WEATHER, DFI_WEATHER_SAND,
-                      DUOFORGE_NO_POSITION);
+                      DUOFORGE_NO_POSITION, DFI_DMG_WEATHER);
         if (st != DUOFORGE_OK) {
             return st;
         }
@@ -3796,7 +3831,7 @@ static duoforge_status dfi_solar_power(dfi_run *r)
             continue;
         }
         const uint32_t damage = (uint32_t)m->hp_max / 8u;
-        st = dfi_deal(r, flat, damage == 0u ? 1u : damage, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SOLARPOWER, flat);
+        st = dfi_deal(r, flat, damage == 0u ? 1u : damage, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SOLARPOWER, flat, DFI_DMG_ABILITY);
         if (st != DUOFORGE_OK) {
             return st;
         }
@@ -4114,8 +4149,7 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
                     dfi_use_item(r, user);
                     damage = (uint32_t)m->hp - 1u;
                 }
-                /* the confusion self-hit is this.damage(...) (data/conditions.ts:191-194), a spread damage: it sets HURT (G88) */
-                return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION);
+                return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION, DFI_DMG_MOVE);
             }
         }
     }
@@ -4928,8 +4962,7 @@ static duoforge_status dfi_run_clangorous_soul(dfi_run *r, uint32_t user, const 
     }
     uint32_t cost = (uint32_t)m->hp_max * 33u / 100u;
     cost = cost == 0u ? 1u : cost;
-    /* directDamage (sim/battle-actions.ts Clangorous Soul, data/moves.ts:2515): not a spread damage, no HURT_THIS_TURN (G88). */
-    const duoforge_status st = dfi_deal_ex(r, user, cost, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, false);
+    const duoforge_status st = dfi_deal(r, user, cost, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, DFI_DMG_DIRECT);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -5578,9 +5611,8 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
      * Update after the damage check (:574): both run on this success path, which gives the status result true. The two
      * fail paths above (EXISTS and WEAK) return NOT_FAIL from onTryHit (data/moves.ts:18314-18321); hitStepTryHitEvent keeps
      * that result as '' and the step loop drops the target before hitStepMoveHitLoop (sim/battle-actions.ts:602-611 the
-     * loop and its break, 643-652 hitStepTryHitEvent, 577 the hit-loop step), so neither fail path runs an Update. dfi_status_hit_end is that pair of Updates (plus the faint check).
-     * The cost is directDamage (data/moves.ts:18325): no HURT_THIS_TURN (G88, decision 0046). */
-    const duoforge_status cost = dfi_deal_ex(r, user, quarter == 0u ? 1u : quarter, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, false);
+     * loop and its break, 643-652 hitStepTryHitEvent, 577 the hit-loop step), so neither fail path runs an Update. dfi_status_hit_end is that pair of Updates (plus the faint check). */
+    const duoforge_status cost = dfi_deal(r, user, quarter == 0u ? 1u : quarter, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, DFI_DMG_DIRECT);
     if (cost != DUOFORGE_OK) {
         return cost;
     }
@@ -5685,7 +5717,7 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
         /* applyRecoilDamage(damage, move, source): round(damage * recoil[0] / recoil[1]), at least 1 (sim/battle-actions.ts:1384) */
         uint32_t recoil = (dealt * md->recoil[0] * 2u + md->recoil[1]) / (2u * md->recoil[1]);
         recoil = recoil < 1u ? 1u : recoil;
-        const duoforge_status rst = dfi_deal(r, user, recoil, DUOFORGE_CAUSE_RECOIL, 0u, DUOFORGE_NO_POSITION);
+        const duoforge_status rst = dfi_deal(r, user, recoil, DUOFORGE_CAUSE_RECOIL, 0u, DUOFORGE_NO_POSITION, DFI_DMG_RECOIL);
         if (rst != DUOFORGE_OK) {
             return rst;
         }
@@ -5694,6 +5726,13 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
         /* heal(Math.ceil(damage * drain[0] / drain[1]), source, target, 'drain') (data/moves.ts:18363) */
         const uint32_t amount = (dealt * md->drain[0] + md->drain[1] - 1u) / md->drain[1];
         dfi_heal(r, user, amount, DUOFORGE_CAUSE_DRAIN, 0u, target);
+    }
+    /* AfterSubDamage on the Substitute's holder (data/moves.ts:18368-18369, after the recoil and the drain): an Air Balloon pops.
+     * Struggle's recoil is not in this function (the move body applies it after the hit loop), so for Struggle the pop waits
+     * for that recoil: the move body pops it (step G67, measured in fz_6700000_3: Struggle, the sub's [damage], [from] recoil,
+     * then -enditem). */
+    if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u && dfi_holds(r->b, dfi_at(r->b, target), DFI_ITEM_AIRBALLOON)) {
+        dfi_use_item(r, target);
     }
     return DUOFORGE_OK;
 }
@@ -5866,7 +5905,7 @@ static duoforge_status dfi_protect_targets(dfi_run *r, uint32_t user, const uint
              * Spiky Shield kind punishes (King's Shield, kind 2, drops Attack instead, below). */
             if (kind == DFI_PROTECT_SPIKY_SHIELD && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
                 const uint32_t spikes = (uint32_t)m->hp_max / 8u;
-                st = dfi_deal(r, user, spikes == 0u ? 1u : spikes, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKYSHIELD, t);
+                st = dfi_deal(r, user, spikes == 0u ? 1u : spikes, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKYSHIELD, t, DFI_DMG_CONDITION);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
@@ -6009,6 +6048,14 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
             smart_dropped = true;
             if (!smart_step) {
                 dfi_immune(r, targets[i], 1u + DFI_ABILITY_LEVITATE);
+            }
+        } else if (move_type == DFI_TYPE_GROUND && dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+            /* step G67: isGrounded is false for an Air Balloon holder (sim/pokemon.ts:2159, `return item !== 'airballoon'`), so
+             * runImmunity prints the plain -immune (its else branch, sim/pokemon.ts:2265); no [from]. */
+            hit[i] = false;
+            smart_dropped = true;
+            if (!smart_step) {
+                dfi_immune(r, targets[i], 0u);
             }
         }
     }
@@ -7467,6 +7514,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     /* The targets whose hit of the previous iteration a Substitute took: their hit is back on for the next hit (the target is
      * still hit by the move; only this hit went to the Substitute). */
     bool sub_off[DFI_POSITIONS] = {false, false, false, false};
+    /* step G67: a target whose Struggle hit a Substitute took: its Air Balloon pops after the Struggle recoil, not at the hit */
+    bool sub_struggle[DFI_POSITIONS] = {false, false, false, false};
     /* step G78: a split (both targets still hit) is a loop over the targets one by one: hit k goes to the k-th target
      * (data/mods/champions/scripts.ts:466-470). hit_all keeps the targets that the steps left. */
     const bool dd = md->special == DFI_SPECIAL_DRAGON_DARTS;
@@ -7551,6 +7600,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                         sub_off[i] = true;
                         sub_any = true;
                         absorbed_any = true;
+                        sub_struggle[i] = (md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) != 0u;
                     }
                 }
             }
@@ -7598,7 +7648,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                     damage[i] = (uint32_t)tm->hp - 1u;
                 }
                 const uint32_t queued_before = r->faint_count;
-                st = dfi_deal(r, targets[i], damage[i], DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+                st = dfi_deal(r, targets[i], damage[i], DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, DFI_DMG_MOVE);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
@@ -7935,7 +7985,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 dfi_ability(r->b, dfi_at(b, targets[i]), DFI_ABILITY_ROUGHSKIN)) {
                 const uint32_t skin = (uint32_t)m->hp_max / 8u;
                 st = dfi_deal(r, user, skin == 0u ? 1u : skin, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_ROUGHSKIN,
-                              targets[i]);
+                              targets[i], DFI_DMG_ABILITY);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
@@ -7946,7 +7996,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 dfi_holds(r->b, dfi_at(b, targets[i]), DFI_ITEM_ROCKYHELMET)) {
                 const uint32_t helmet = (uint32_t)m->hp_max / 6u;
                 st = dfi_deal(r, user, helmet == 0u ? 1u : helmet, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_ROCKYHELMET,
-                              targets[i]);
+                              targets[i], DFI_DMG_ITEM);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
@@ -7991,6 +8041,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
+                /* Air Balloon (step G67): the hit that knocks its holder out still pops it, before the faint (measured in
+                 * g67_balloon_ground: -enditem, then |faint|). The holder's ability (above) comes before its item. */
+                if (dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+                    dfi_use_item(r, targets[i]);
+                }
                 continue;
             }
             if (move_type == DFI_TYPE_FIRE && tm->status == DFI_STATUS_FRZ) {
@@ -8013,6 +8068,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 static const uint8_t atk_up[DFI_STAT_STAGE_COUNT] = {7u, 6u, 6u, 6u, 6u, 6u, 6u};
                 dfi_boost(r, targets[i], atk_up, user,
                           dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_THERMALEXCHANGE, DFI_BOOST_PRIMARY));
+            }
+            /* Air Balloon (step G67, data/items.ts:197-202, onDamagingHit): a damaging hit uses it up (-enditem with no [from]).
+             * Indirect damage does not pop it: every indirect path goes through dfi_deal, which never calls this. */
+            if (dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+                dfi_use_item(r, targets[i]);
             }
             /* Cursed Body (POOL data): the target's own onDamagingHit, after Thermal Exchange's place and before the attacker's
              * Poison Touch; the target is standing here (a holder that is down rolls too: see above). Two holders hit by one
@@ -8187,14 +8247,20 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         if (recoil != 0u) {
             const uint32_t user_before = m->hp;
-            /* Struggle's recoil is directDamage (strugglerecoil, sim/battle.ts:2246-2248): no HURT_THIS_TURN; every other recoil is
-         * applyRecoilDamage, a spread damage (G88). */
-        st = dfi_deal_ex(r, user, recoil, recoil_cause, recoil_id2, DUOFORGE_NO_POSITION,
-                         (md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u);
+            st = dfi_deal(r, user, recoil, recoil_cause, recoil_id2, DUOFORGE_NO_POSITION,
+                          ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) != 0u ? DFI_DMG_DIRECT
+                           : md->special == DFI_SPECIAL_STEEL_BEAM ? DFI_DMG_CONDITION : DFI_DMG_RECOIL));
             if (st != DUOFORGE_OK) {
                 return st;
             }
             dfi_emergency_exit(r, user, user_before); /* inside applyRecoilDamage */
+        }
+        /* step G67: the Air Balloon of a Substitute's holder that a Struggle hit went to pops after the recoil (see
+         * dfi_substitute_takes). */
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (sub_struggle[i] && dfi_holds(r->b, dfi_at(r->b, targets[i]), DFI_ITEM_AIRBALLOON)) {
+                dfi_use_item(r, targets[i]);
+            }
         }
         st = dfi_update(r);
         if (st != DUOFORGE_OK) {
@@ -8290,7 +8356,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if ((!any || absorbed_any) && md->special == DFI_SPECIAL_STEEL_BEAM && m->hp != 0u) {
         const uint32_t user_before = m->hp;
         const uint32_t fail_damage = ((uint32_t)m->hp_max + 1u) / 2u; /* Math.round(maxhp / 2) */
-        st = dfi_deal(r, user, fail_damage, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
+        st = dfi_deal(r, user, fail_damage, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION, DFI_DMG_CONDITION);
         if (st != DUOFORGE_OK) {
             return st;
         }
@@ -8320,7 +8386,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         const uint32_t recoil = (uint32_t)m->hp_max / 10u;
         const uint32_t user_before = m->hp;
         st = dfi_deal(r, user, recoil == 0u ? 1u : recoil, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_LIFEORB,
-                      DUOFORGE_NO_POSITION);
+                      DUOFORGE_NO_POSITION, DFI_DMG_ITEM);
         if (st != DUOFORGE_OK) {
             return st;
         }
@@ -8852,7 +8918,8 @@ static duoforge_status dfi_terrain_change(dfi_run *r)
 static bool dfi_has_switch_in(const struct duoforge_battle *b, const dfi_member *m)
 {
     return dfi_has_entry(b, m) || dfi_seed_terrain(b, m) != DFI_TERRAIN_NONE ||
-           dfi_ability(b, m, DFI_ABILITY_HOSPITALITY) || m->status == DFI_STATUS_TOX;
+           dfi_ability(b, m, DFI_ABILITY_HOSPITALITY) || m->status == DFI_STATUS_TOX ||
+           dfi_holds(b, m, DFI_ITEM_AIRBALLOON); /* its onStart is a SwitchIn handler too (step G67) */
 }
 
 /* Hospitality (step G30, data/abilities.ts:1874-1887, onStart): the holder heals every adjacent ally by a quarter of its
@@ -9256,6 +9323,14 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                     if (r->ended) {
                         return DUOFORGE_OK;
                     }
+                }
+                /* Air Balloon's onStart (step G67, data/items.ts:191-195): the holder's own -item line, ITEM_SHOWN (decision
+                 * 0033). Its place among the handlers is measured against recorded battles (the order of the item's onStart
+                 * against the entry abilities is not pinned yet). Gravity is not modelled (unmarked). */
+                if (m->hp != 0u && dfi_holds(b, m, DFI_ITEM_AIRBALLOON)) {
+                    duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_AIRBALLOON,
+                                                  DUOFORGE_NO_POSITION);
+                    dfi_emit(r, &shown);
                 }
             } else if (m->hp != 0u && dfi_seed_terrain(r->b, m) != DFI_TERRAIN_NONE) {
                 dfi_terrain_seed(r, flat);
@@ -9977,7 +10052,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             damage = (damage == 0u ? 1u : damage) * (uint32_t)*stage; /* wide-operands-reviewed: <= 15 * hp_max */
         }
         st = dfi_deal(r, e->flat, damage, poison ? DUOFORGE_CAUSE_POISON : DUOFORGE_CAUSE_BURN, 0u,
-                      DUOFORGE_NO_POSITION);
+                      DUOFORGE_NO_POSITION, DFI_DMG_STATUS);
         if (st != DUOFORGE_OK) {
             return st;
         }

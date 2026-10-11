@@ -1,0 +1,217 @@
+{
+  "name": "g67_struggle_sub_balloon",
+  "purpose": "Step G67, Struggle into a Substitute with an Air Balloon holder: Raichu holds the Balloon behind its Substitute, Gliscor uses Struggle into it (step 50 of campaign seed 6700000, battle 3, the case fz_6700000_3). The sub takes the hit ([damage]), Struggle's recoil is applied next ([from] recoil), and only then the Balloon pops (-enditem), since the move body applies the recoil after the hit loop (data/moves.ts AfterSubDamage after the recoil; sim/battle-actions.ts:1379-1395).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,d4675810ff36371c05693c6d78f0200db388bdd37c5e6218b63bfb221e280d66",
+  "teams": [
+    "Raichu (F) @ Air Balloon\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Substitute\n- Protect\n\nSharpedo (M) @ Sitrus Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Snarl\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Hydro Pump\n- Protect\n\nGliscor (M) @ Leftovers\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Toxic Spikes\n- Earthquake\n- Protect\n\nGarchomp (M) @ Focus Sash\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Spikes\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Shadow Ball\n- Protect",
+    "Garchomp (M) @ Focus Sash\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Spikes\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Shadow Ball\n- Protect\n\nRaichu (F) @ Air Balloon\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Substitute\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Hydro Pump\n- Protect\n\nSharpedo (M) @ Sitrus Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Snarl\n- Protect\n\nGliscor (M) @ Leftovers\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Toxic Spikes\n- Earthquake\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 6415",
+      "p2": "team 6235"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 2, switch 3",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 2, move 3",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "move 2, move 1 -1",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 1 2, move 1 -1",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "switch 3, move 3",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 2, move 1 1",
+      "p2": "move 3, switch 3"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 2, move 2 -1",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 1, move 2 -1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "switch 4, move 3"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 3, switch 3"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 1"
+    }
+  ]
+}

@@ -665,8 +665,10 @@ class RecordAssemblerPoolTest(unittest.TestCase):
     (record.assemble with exact=False)."""
 
     # move-result-not-foldable: the tail's move_result is the engine's classification of each move action (record.py
-    # move_result_unknown); unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone)
-    TRACKER_REFUSALS = {"move-result-not-foldable", "unburden-without-item-line"}
+    # move_result_unknown); unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone);
+    # fold-not-in-record: a view-extension fold of #342 is up whose tail fields the assembler does not write yet
+    # (record.unrecorded_folds: Taunt, Heal Block, Yawn, Disable, the hazards, ...; before #342 the tracker stopped there)
+    TRACKER_REFUSALS = {"move-result-not-foldable", "unburden-without-item-line", "fold-not-in-record"}
     # The tracker's own-PP check (Tracker._on_request) refuses these player streams before a record: Pressure the lines
     # cannot attribute (a [still] target, a clamped extra), Dragon Darts' split, the Pressure of a disguised Illusion.
     OWN_PP_STOPS = {("g53_field_trick_room", 0), ("g53_still_pressure", 1), ("g78_ee_t", 0), ("g78_fainted_ally", 0),

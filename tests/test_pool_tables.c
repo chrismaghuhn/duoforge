@@ -1294,7 +1294,9 @@ int main(void)
                                id == DFI_ITEM_REDCARD || id == DFI_ITEM_MUSCLEBAND || id == DFI_ITEM_WISEGLASSES || id == DFI_ITEM_BRIGHTPOWDER /* step G46: Red Card (no Sheer Force gate); step G49: the three item rows */ ||
                                /* step G55: the four rocks and Terrain Extender (the duration rows, read by the setter's item) */
                                id == DFI_ITEM_DAMPROCK || id == DFI_ITEM_HEATROCK || id == DFI_ITEM_SMOOTHROCK ||
-                               id == DFI_ITEM_ICYROCK || id == DFI_ITEM_TERRAINEXTENDER;
+                               id == DFI_ITEM_ICYROCK || id == DFI_ITEM_TERRAINEXTENDER ||
+                               /* step G67: Air Balloon (the grounding, the switch-in line, the pop) */
+                               id == DFI_ITEM_AIRBALLOON;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -1380,6 +1382,8 @@ int main(void)
                                  * the Solid Rock damage step and the redirection of dfi_run_move_body) */
                                 id == DFI_ABILITY_SANDFORCE || id == DFI_ABILITY_SHELLARMOR || id == DFI_ABILITY_FILTER ||
                                 id == DFI_ABILITY_STALWART ||
+                                /* step G67: Magic Guard, by id (the class of every indirect damage, dfi_deal) */
+                                id == DFI_ABILITY_MAGICGUARD ||
                                 /* step I2: Illusion, by id (the disguise, the break, the faint, the foe view) */
                                 id == DFI_ABILITY_ILLUSION ||
                                 /* step G69: Symbiosis, by id (dfi_symbiosis, the ally's AfterUseItem) */

@@ -23,6 +23,7 @@ NONE, MOVE, SWITCH, PASS = (C[f"DUOFORGE_SLOT_{n}"] for n in ("NONE", "MOVE", "S
 REVIVE = C["DUOFORGE_SLOT_REVIVE"]  # Revival Blessing's choice of a fainted member (decision 0025)
 TARGET_NONE = C["DUOFORGE_TARGET_NONE"]
 STRUGGLE = 4  # DUOFORGE_MOVE_SLOT_STRUGGLE (include/duoforge/duoforge.h)
+RECHARGE = 5  # DUOFORGE_MOVE_SLOT_RECHARGE
 TEAM, SLOTS = C["DUOFORGE_CHOICE_TEAM_SELECTION"], C["DUOFORGE_CHOICE_SLOTS"]
 
 # Showdown's target types: those that take a chosen target, and those that do not.
@@ -115,6 +116,10 @@ def slot_options(request, side, roster_of, locked):
             moves = entry["moves"]
             if len(moves) == 1 and moves[0]["id"] == "struggle":
                 out.append(Option(MOVE, STRUGGLE, TARGET_NONE, 0, 0, "move 1"))
+            elif len(moves) == 1 and moves[0]["id"] == "recharge":
+                # mustrecharge (step G17): the request offers only Recharge (sim/pokemon.ts getMoveRequestData), the
+                # engine's DUOFORGE_MOVE_SLOT_RECHARGE command
+                out.append(Option(MOVE, RECHARGE, TARGET_NONE, 0, 0, "move 1"))
             elif len(moves) == 1 and "pp" not in moves[0]:
                 if slot not in locked:
                     raise ValueError(f"slot {slot} is locked into {moves[0]['id']} without a known target")
