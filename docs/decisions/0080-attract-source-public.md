@@ -79,6 +79,23 @@ current position at every observation.
 - `tests/test_pool_g71.c` now expects the consistent infatuated world to build (it was the refusal's test).
 - Python: `test_encoder6` (the own feature of the two bits, the feature's bit in the version-6 mask, the header list).
 
+## The battle's last faint (issue #395)
+
+A source that fainted in an action can still hold its byte at a boundary: the Update that ends an infatuation with an inactive source runs
+after the faint is shown, and the Update of the faint's action runs before the next request. Pin: the faint is announced in
+`faintMessages` (`sim/battle.ts:2535`); when it ends the battle, `checkWin` (`:2606`) calls `win()`, which sets `this.ended`
+(`:1537`). `runAction` then returns at `if (this.ended) return true;` (`:2836`), before the general Update (`:2860-2861`). The volatile's
+`onUpdate` (`data/moves.ts:736-741`) therefore does not run for the battle's last faint: the holder keeps its volatile at the end of the
+battle, and the source keeps its position (it is the occupant until the battle ends).
+
+The state check now accepts a fainted source only at TERMINAL (`dfi_attract_byte_ok`, `src/state/invariants.c`; the model's
+`attract_byte_ok`, `tools/state_model/state_v3_model.py`, the same rule). Outside TERMINAL the source must stand, as before. The
+observation's source bits name the position that holds the source as occupant, standing or fainted. The evidence: 40 source faints in
+the random play (scan of seed 9720000): 29 at a REPLACEMENT boundary, 8 at TURN, 3 at PIVOT, all with the byte cleared (0) after the step;
+the two battles that ended with a fainted source (TERMINAL) now finish. The regression is `python/tests/test_attract_faint.py`
+(the three episodes with their stored choices) and the C test `test_fainted_source` in `tests/test_pool_g87.c` (the live refusal and its
+control, the TERMINAL acceptance, and the observation bits).
+
 ## Triggers (the trigger rule)
 
 The differential driver (`tools/reference/diff_driver.py`) does not call `duoforge_battle_from_view`, so it cannot count these builds.

@@ -412,6 +412,80 @@ static void test_corpus(df_test *t)
     duoforge_context_destroy(k2);
 }
 
+/* Issue #395: an Attract source that fainted keeps its byte only at TERMINAL (the battle's last action runs no Update: the pin's
+ * runAction returns after the faintMessages that ends the battle, sim/battle.ts:2837, before the Update at 2845). Outside TERMINAL the
+ * same state is refused, and the source keeps its position (occupant) as the observation's bits name it. */
+static void test_fainted_source(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    if (!start(t, "g65_water_bubble", &ctx, &b)) {
+        finish(ctx, b);
+        return;
+    }
+    b->tail.attract_source[G87_ARA] = code_of(1u, 1u); /* Skeledirge (F, flat 3) infatuates Araquanid (M) */
+    DF_CHECK_EQ_U64(t, duoforge_battle_check(ctx, b), DUOFORGE_OK);
+    /* the foe's HP display of a seen fainted member reads 0 (side 0's knowledge of side 1): with it, the byte is the only rule
+     * that the fainted source can break, so the negatives below test the attract rule and nothing else */
+    dfi_knowledge saved_k_live[DUOFORGE_MAX_ROSTER];
+    memcpy(saved_k_live, b->sides[0].knowledge, sizeof saved_k_live);
+    b->sides[0].knowledge[1].hp_percent = 0u;
+    b->sides[0].knowledge[1].hp_flag = DUOFORGE_HP_FLAG_NONE;
+    b->sides[1].members[1].hp = 0u; /* the source faints (its position keeps it as occupant) */
+    b->tail.attract_source[G87_ARA] = 0u;
+    DF_CHECK_EQ_U64(t, duoforge_battle_check(ctx, b), DUOFORGE_OK); /* without the byte the fainted state is valid */
+    b->tail.attract_source[G87_ARA] = code_of(1u, 1u);
+    DF_CHECK_EQ_U64(t, duoforge_battle_check(ctx, b), DUOFORGE_E_INVARIANT); /* a live battle: the Update must have ended it */
+    memcpy(b->sides[0].knowledge, saved_k_live, sizeof saved_k_live);
+    b->sides[0].knowledge[1].hp_percent = 0u;
+    b->sides[0].knowledge[1].hp_flag = DUOFORGE_HP_FLAG_NONE;
+    /* the same state at the end of the battle (TERMINAL, the result set, no request): accepted, and the observation names the
+     * fainted source's position (flat 3, bits 12-13) for both players */
+    const uint8_t boundary = b->boundary_kind;
+    const uint8_t mask = b->request_mask;
+    const uint8_t result = b->result;
+    /* the battle ends when the losing side has no Pokemon left: side 1 faints entirely (its occupants keep their positions); a
+     * finished battle requests nothing (request_mask and requested_slots zero) */
+    uint16_t saved_hp[DUOFORGE_MAX_ROSTER];
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        saved_hp[m] = b->sides[1].members[m].hp;
+        b->sides[1].members[m].hp = 0u;
+    }
+    const uint8_t saved_req0 = b->sides[0].requested_slots;
+    const uint8_t saved_req1 = b->sides[1].requested_slots;
+    b->sides[0].requested_slots = 0u;
+    b->sides[1].requested_slots = 0u;
+    b->boundary_kind = DUOFORGE_BOUNDARY_TERMINAL;
+    b->request_mask = 0u;
+    b->result = DFI_RESULT_SIDE0;
+    /* the foe's HP display of a seen fainted member reads 0 (the knowledge of side 0 about side 1) */
+    dfi_knowledge saved_k[DUOFORGE_MAX_ROSTER];
+    memcpy(saved_k, b->sides[0].knowledge, sizeof saved_k);
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        if ((((uint32_t)b->sides[0].seen_mask >> m) & 1u) != 0u) { /* seen_mask: the foe members that side 0 has seen */
+            b->sides[0].knowledge[m].hp_percent = 0u;
+            b->sides[0].knowledge[m].hp_flag = DUOFORGE_HP_FLAG_NONE;
+        }
+    }
+    DF_CHECK_EQ_U64(t, duoforge_battle_check(ctx, b), DUOFORGE_OK);
+    for (uint32_t viewer = 0u; viewer < 2u; ++viewer) {
+        duoforge_observation_ext o;
+        observe(t, ctx, b, viewer, &o);
+        DF_CHECK_EQ_U64(t, o.volatiles2[0][0], (uint32_t)G87_SKE << 12u);
+        DF_CHECK_EQ_U64(t, o.sides[0].positions[0].volatiles & DUOFORGE_POSITION_EXT_ATTRACT, DUOFORGE_POSITION_EXT_ATTRACT);
+    }
+    b->boundary_kind = boundary;
+    b->request_mask = mask;
+    b->result = result;
+    b->sides[0].requested_slots = saved_req0;
+    b->sides[1].requested_slots = saved_req1;
+    memcpy(b->sides[0].knowledge, saved_k, sizeof saved_k);
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        b->sides[1].members[m].hp = saved_hp[m];
+    }
+    finish(ctx, b);
+}
+
 int main(void)
 {
     df_test t;
@@ -419,6 +493,7 @@ int main(void)
     test_observation_bits(&t);
     test_from_view(&t);
     test_pair_invariant(&t);
+    test_fainted_source(&t);
     test_corpus(&t);
     return df_test_end(&t);
 }
