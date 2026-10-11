@@ -148,7 +148,8 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
     return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_HEAL_BLOCK ||
-           e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH || e->kind == DFI_RES_LOCK;
+           e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH || e->kind == DFI_RES_LOCK ||
+           e->kind == DFI_RES_LEECH;
 }
 
 /* What is known about the age of a Pokemon's volatiles. The counters of the turn (Protect, the stall counter, flinch, a charge,
