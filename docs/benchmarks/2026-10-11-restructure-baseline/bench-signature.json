@@ -1,0 +1,11 @@
+{
+  "boundaries": [
+    "PIVOT",
+    "REPLACEMENT",
+    "TURN"
+  ],
+  "expected": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+  "observed": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+  "roots": 8,
+  "searched": 7
+}
