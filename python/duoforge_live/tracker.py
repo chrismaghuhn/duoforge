@@ -250,6 +250,8 @@ class Tracker:
     """One battle room as one player sees it. feed() every message of the room in order, accepted() every
     own choice Showdown took; at a decision point (ready) observation() and domain() give DuoForge's view."""
 
+    _theft_due = None  # the Air Balloon announcement whose item line is still due (_theft_follows, steps G85, G29)
+
     def __init__(self, data, own_text):
         self.data = data
         self.side = None
@@ -349,9 +351,16 @@ class Tracker:
     def _battle_line(self, line):
         """A battle line: classified (lines.check), then folded; a single-turn feature line is remembered for the
         turn instead (it can matter only at a PIVOT of the same turn, _turn_scoped_stop)."""
+        if self._theft_due is not None:
+            self._theft_follows(line)
         cls = lines.check(line, self) if self._foe_members is not None else "fold"
         if cls is None:
             return
+        if cls == "balloon":
+            # the receiver's Air Balloon announcement (lines.check): it changes no field; the line that gives the item
+            # comes next, in the engine's order (_theft_follows)
+            self._theft_due = {"holder": line.split("|")[2], "giver": None}
+            cls = "fold"
         self._lines.append(line)
         if cls == "keep":
             return  # a line that changes no field (lines.check)
@@ -392,6 +401,19 @@ class Tracker:
             self._at(pos).yawn = 0
             return
         self._fold(line)
+
+    def _theft_follows(self, line):
+        """The line after an Air Balloon announcement (lines.check "balloon", step G85): the item line that gives the
+        balloon to the announced holder, with Pickpocket's silent loss of the attacker before it (lines.balloon_follow).
+        Any other line stops the tracker: the engine prints the announcement only before that item line."""
+        due = self._theft_due
+        got = lines.balloon_follow(line, due["holder"], due["giver"])
+        if got is None:
+            raise lines.Stop(f"line:{line.split('|')[1]} not the item an Air Balloon announcement opens")
+        if got[0] == "loss":
+            due["giver"] = line.split("|")[2]  # the attacker: the silent loss's position
+        else:
+            self._theft_due = None
 
     def _throat_chop(self, parts):
         """Throat Chop's volatile (decision 0018 THROAT_CHOP, step G8; public by the owner's change): the move's
@@ -1132,13 +1154,15 @@ class Tracker:
                 self._herb_end = pos  # its -end lines follow (dfi_mental_herb)
             if e[3] == trace_to_c.CAUSE["NONE"] and self._eject_button is not None and ident2 == self._eject_button + 1:
                 self._at(pos).flag = SWITCH_EMERGENCY_EXIT  # Eject Button sets its holder's switchFlag, then the -enditem
-            if e[3] != trace_to_c.CAUSE["ITEM_TAKEN"]:
-                m.item_consumed = 1  # used up (useItem, eatItem); a taken item is not
+            # a taken item is not used up: a move took it (ITEM_TAKEN: Knock Off, Thief, Trick, Switcheroo, Bug Bite; steps
+            # G16, G29, G64) or Pickpocket did (ABILITY, step G85, dfi_pickpocket: the silent -enditem of the giver)
+            taken = e[3] in (trace_to_c.CAUSE["ITEM_TAKEN"], trace_to_c.CAUSE["ABILITY"])
+            if not taken:
+                m.item_consumed = 1  # used up (useItem, eatItem)
             if public:
                 m.item_used = 1
-            if e[3] == trace_to_c.CAUSE["ITEM_TAKEN"]:
-                # a move took the item (Knock Off, Thief, Trick, Switcheroo, Bug Bite; steps G16, G29, G64): the member
-                # holds nothing, also after a switch or a faint (the tail's item_now)
+            if taken:
+                # the member holds nothing, also after a switch or a faint (the tail's item_now)
                 m.item_now = ITEM_NOW_NONE
             if self._unburden is not None and self._ability_at(pos) == self._unburden:
                 self._at(pos).flags |= FLAG_UNBURDEN  # Unburden doubles Speed once the item is gone (c08 battles)
