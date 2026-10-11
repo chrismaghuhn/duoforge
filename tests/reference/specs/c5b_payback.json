@@ -1,0 +1,24 @@
+{
+  "name": "c5b_payback",
+  "purpose": "C5b Payback (decision 0015 entry 5cy): Gyarados (M) uses Payback on Quaquaval in turn 1 (the target is newly switched: not doubled, even though Quaquaval's Aqua Jet already moved); turn 2 again on Quaquaval, which has moved (Aqua Jet, priority +1) and is no longer newly switched: doubled; turn 3 on Milotic, which has not moved yet (Gyarados is faster): not doubled. Gyarados (Choice-free, Black Glasses), Milotic Protects; team V as the foe. Every move and ability marked.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c5b1",
+  "teams": [
+    "Gyarados (M) @ Black Glasses\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Payback\n- Protect\n- Dark Pulse\n- Crunch\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Recover\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nBlastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect",
+    "Quaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Surf\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect\n\nBlastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Recover\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 4",
+      "move 1 1, move 4",
+      "move 1 2, move 4"
+    ],
+    "p2": [
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 4, move 1"
+    ],
+    "max_steps": 5
+  }
+}
