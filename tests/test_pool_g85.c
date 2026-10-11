@@ -372,6 +372,35 @@ static void check_magician_stone(df_test *t, duoforge_context *ctx)
     }
 }
 
+/* Pickpocket taking a Mega Stone of the holder's own species: Kingambit's contact Kowtow Cleave hits Barbaracle (Pickpocket, no
+ * item) and Kingambit holds Barbaracite, the stone of Barbaracle: refused (E_UNSUPPORTED). The control holds Black Glasses. */
+static void check_pickpocket_stone(df_test *t, duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("g85_pickpocket_kowtow");
+    if (!DF_CHECK(t, cb != NULL)) {
+        return;
+    }
+    for (int stone = 0; stone < 2; ++stone) {
+        duoforge_battle_setup setup;
+        build_setup(cb, &setup);
+        if (stone) {
+            setup.sides[0].members[0].item = (uint8_t)(1u + DFI_ITEM_BARBARACITE);
+        }
+        duoforge_member_setup *bc = &setup.sides[1].members[0];
+        bc->species_id = DFI_FORME_BARBARACLE;
+        bc->gender = DUOFORGE_GENDER_MALE;
+        bc->ability = (uint8_t)(1u + DFI_ABILITY_PICKPOCKET);
+        bc->item = 0u;
+        const uint32_t bc_moves[2] = {DFI_MOVE_CLOSECOMBAT, DFI_MOVE_PROTECT};
+        set_moves(bc, 2u, bc_moves);
+        const duoforge_slot_command cmd[2][2] = {
+            {{DUOFORGE_SLOT_MOVE, 0u, 2u, 0u, 0u, {0u, 0u, 0u}}, k_move1_none},
+            {{DUOFORGE_SLOT_MOVE, 0u, 0u, 0u, 0u, {0u, 0u, 0u}}, k_move0_foe0}};
+        const duoforge_status st = one_turn(t, ctx, &setup, cb, cmd);
+        DF_CHECK_EQ_U64(t, (uint64_t)st, (uint64_t)(stone ? DUOFORGE_E_UNSUPPORTED : DUOFORGE_OK));
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -382,6 +411,7 @@ int main(void)
         check_pickpocket_refusal(&t, ctx);
         check_magician_tie(&t, ctx);
         check_magician_faster_first(&t, ctx);
+        check_pickpocket_stone(&t, ctx);
         check_magician_stone(&t, ctx);
         duoforge_context_destroy(ctx);
     }
