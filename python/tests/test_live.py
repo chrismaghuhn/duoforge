@@ -296,9 +296,16 @@ class CurseTest(unittest.TestCase):
                         [self.tracker._Position(), self.tracker._Position()]]
         t._positions[0][0].occupant = 0  # the user, own side at p1a
         t._positions[1][0].occupant = 0  # the cursed foe at p2a
-        members = [SimpleNamespace(ability=1, item_now=0, seen=True, hp_percent=100, hp_flag=0, status=0)
+        members = [SimpleNamespace(ability=1, item_now=0, item_used=0, seen=True, hp_percent=100, hp_flag=0, status=0,
+                                   toxic=0, toxic_stage=0, freeze_turns=0)
                    for _ in range(6)]
         t._member = lambda side_: members
+        # what the tracker's SWITCH and FAINT folds read beside the positions (the real tracker sets all of them)
+        t._after_upkeep = False
+        t._next_activation = 0
+        t._foe_leads = [self.tracker.ROSTER_NONE, self.tracker.ROSTER_NONE]
+        t._party = None
+        t._baton_pass = -1
         return t
 
     def start(self, t, pos=2, source=0):
