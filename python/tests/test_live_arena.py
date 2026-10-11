@@ -71,9 +71,18 @@ class Arena(unittest.TestCase):
         # Review of #401: the arena never logs in, challenges or turns timers on at a public server.
         for host in ("localhost", "127.0.0.1", "::1", "172.22.224.1", "192.168.1.5", "10.0.0.2"):
             arena.check_host(host)
-        for host in ("sim3.psim.us", "play.pokemonshowdown.com", "8.8.8.8", "example.org", ""):
+        for host in ("sim3.psim.us", "play.pokemonshowdown.com", "8.8.8.8", "example.org", "", "0.0.0.0", "::"):
             with self.subTest(host=host), self.assertRaises(SystemExit):
                 arena.check_host(host)
+
+    def test_the_server_is_bound_to_the_arena_host_only(self):
+        # Review of #401: a --no-security server on every interface would take guests from the LAN; the arena starts
+        # it bound to its own (local) host, through cloud-env's BIND_IP and PORT, with no change to the pinned checkout.
+        argv, env = arena.server_command("172.22.224.1", 8001)
+        self.assertEqual(argv, ["node", "pokemon-showdown", "start", "--no-security"])  # no port argument
+        self.assertEqual((env["BIND_IP"], env["PORT"]), ("172.22.224.1", "8001"))
+        with self.assertRaises(SystemExit):
+            arena.server_command("0.0.0.0", 8001)  # every interface: not a host the arena may play on
 
     def test_a_game_is_read_from_the_search_bots_log(self):
         with tempfile.TemporaryDirectory() as tmp:
