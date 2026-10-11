@@ -1,0 +1,20 @@
+{
+  "name": "c5_surf_cover",
+  "purpose": "C5 Surf (decision 0015 entry 5cy): turn 1 both Blastoise (Surf, slot 1) and Milotic (Surf, slot 2) use Surf: a spread hit of two foes and the ally, the Sitrus Milotic of both sides at the same speed (mirror); no Substitute user. Mirror of team W; six members per side, unique species and items, every move and ability marked on this branch.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c5a1",
+  "teams": [
+    "Blastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Recover\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nQuaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Aqua Jet\n- Surf\n- Close Combat\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Surf\n- Dark Pulse\n- Ice Beam\n- Protect",
+    "Blastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Recover\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nQuaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Aqua Jet\n- Surf\n- Close Combat\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Surf\n- Dark Pulse\n- Ice Beam\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 1"
+    ],
+    "max_steps": 3
+  }
+}

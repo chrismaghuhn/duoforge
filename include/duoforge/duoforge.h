@@ -871,6 +871,12 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_DRAGON_CHEER 0x00000040u
 #define DUOFORGE_POSITION_EXT_MUST_RECHARGE 0x00000080u
 #define DUOFORGE_POSITION_EXT_PARTIAL_TRAP 0x00000100u
+/* POSITION_EXT2 bits 4 to 6 (duoforge_observation_ext.volatiles2, decision 0060, the hidden counters): the partial trap's elapsed
+   residual phases, a 3-bit value (0..5 while trapped, 0 without the trap). Public: every viewer sees the same. Shown under
+   DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED (DUOFORGE_VIEWEXT_RESERVE_OWN) and the family VOLATILES2. */
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT0 0x00000010u
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT1 0x00000020u
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT2 0x00000040u
 #define DUOFORGE_POSITION_EXT_GLAIVE_RUSH  0x00000200u
 #define DUOFORGE_POSITION_EXT_DESTINY_BOND 0x00000400u
 #define DUOFORGE_POSITION_EXT_CURSE        0x00000800u
@@ -885,6 +891,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 #define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
 #define DUOFORGE_POSITION_EXT_ATTRACT      0x08000000u /* Attract (step G71, decision 0034): the occupant is infatuated; presence only, no source */
+#define DUOFORGE_POSITION_EXT_HEALING_WISH 0x00400000u /* Healing Wish: the position's slot condition is pending (decision 0045) */
 /* Attract's source (step G87, decision 0080): bits 12 and 13 of duoforge_observation_ext.volatiles2 hold the flat position (0 to 3) of
    the source of the infatuated occupant (bit 12 is the low bit). Both are 0 unless DUOFORGE_POSITION_EXT_ATTRACT is set on the same
    position. Public for both players: the source is named in the Attract line of the protocol. */
@@ -906,9 +913,16 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    derives the same from the names, and python/tests/test_encoder6.py checks that the two agree). */
 /* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says
    DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
-   well. Step G87 (decision 0080): the two bits of Attract's source (volatiles2 bits 12 and 13) are shown under ATTRACT_SOURCE
+   well. Here: POSITION_EXT2 bits 4 to 6, the partial trap's elapsed count (decision 0060), each with VIEWEXT feature 45 (TRAP_ELAPSED).
+   Step G87 (decision 0080): the two bits of Attract's source (volatiles2 bits 12 and 13) are shown under ATTRACT_SOURCE
    (one entry per bit: the macro compares the bit number exactly). */
-#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)     X(VOLATILES2, 12u, ATTRACT_SOURCE)     X(VOLATILES2, 13u, ATTRACT_SOURCE)
+#define DUOFORGE_VIEWEXT_RESERVE_OWN(X) \
+    X(RESERVE_VOLATILES, 22u, HEALING_WISH) \
+    X(VOLATILES2, 4u, TRAP_ELAPSED)     \
+    X(VOLATILES2, 5u, TRAP_ELAPSED)     \
+    X(VOLATILES2, 6u, TRAP_ELAPSED)     \
+    X(VOLATILES2, 12u, ATTRACT_SOURCE)  \
+    X(VOLATILES2, 13u, ATTRACT_SOURCE)
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
@@ -965,6 +979,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_ROOST            40u
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
+#define DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH    43u /* Healing Wish: the position's wish bit (decision 0045) */
+/* Lane A (G90, decision 0060): the partial trap's elapsed counter, the own feature of POSITION_EXT2 bits 4 to 6 (HS registry). */
+#define DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED     45u
 #define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
 /* The content expansion's features above the tiers (HauptSession's blocks, lane B 53-58). */
 #define DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE   53u /* step G87 (decision 0080): the flat position of Attract's source, bits 12-13 of volatiles2 */
@@ -1153,6 +1170,14 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               the pin prints none, data/abilities.ts:1549) is ITEM_SHOWN with position the frisked
                                               foe X, other the Frisk user Y, cause ABILITY, id = Frisk + 1, id2 = item + 1, every
                                               other field 0. The converter accepts only that form. */
+#define DUOFORGE_EVENT_SWAP 49u /* [swap] (Ally Switch, decision 0044, step G80): position: the user's slot before the swap,
+                                              other: the slot it moved to, cause MOVE + id2 = the move (Ally Switch), every other
+                                              field 0. Public: both players get it. The two occupants exchange their slots; nothing
+                                              else is written by the event. 48 is ITEM_SHOWN (lane B). */
+#define DUOFORGE_EVENT_COPY_BOOST 50u /* [-copyboost] (Psych Up, decision 0044, step G80; data/moves.ts:14211-14240): position:
+                                              the user, other: the target, cause MOVE + id2 = Psych Up, every other field 0. Public:
+                                              both players get it. The user takes the target's seven stages and its Focus Energy and
+                                              Dragon Cheer state; those starts are [silent] and write no event of their own. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
@@ -1176,6 +1201,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_CAUSE_WEATHER   16u /* DAMAGE (POOL kinds): the residual damage of a weather ([from] Sandstorm); id2: the
                                          DUOFORGE_WEATHER_* value. Generic for every weather that damages; in this format
                                          it fires only for Sand: Snow has no residual damage and Hail is not in the format */
+#define DUOFORGE_CAUSE_CURSE 23u /* DAMAGE (POOL kinds, step G84b, decision 0063, lane A block): the Curse residual [from] Curse (no [of]) */
 #define DUOFORGE_CAUSE_LEECH_SEED 22u /* DAMAGE and HEAL (POOL kinds, decision 0047, lane A block): Leech Seed's residual drain of
                                          the holder and the heal of the source: [from] Leech Seed [of] source; the heal is silent */
 #define DUOFORGE_CAUSE_RECHARGE  18u /* CANT (POOL kinds): the recharge turn after a recharge move ([cant] recharge) */
@@ -1223,6 +1249,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               A switch-out removes it with no END (the pin's clearVolatile). */
 #define DUOFORGE_VOLATILE_LEECH_SEED 13u /* VOLATILE_START (POOL kinds, decision 0047, lane A block): -start|X|move: Leech Seed; the
                                             source's slot is the position's leech_seed_source (no END line: it ends with the holder) */
+#define DUOFORGE_VOLATILE_CURSE 14u /* VOLATILE_START (POOL kinds, step G84b, decision 0063, lane A block): -start|X|Curse|[of] source (other: the
+                                            source). No END: it ends with the holder (a switch-out). Set by a Ghost user's Curse only. */
 #define DUOFORGE_VOLATILE_DRAGONCHEER 10u /* VOLATILE_START (POOL kinds, step G72b, decision 0015 5ce): Dragon Cheer's volatile
                                               (-start|X|move: Dragon Cheer). Presence only; no END: a switch-out removes it with no
                                               line. The crit stage it gives is in the position flags (tail rev 5), not in an event. */
@@ -1230,6 +1258,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               [from] ability: Cute Charm|[of] Y, other: the holder). Its end lines of Mental Herb and
                                               Oblivious are VOLATILE_END (cause ITEM or ABILITY); the silent end (the source left) is state
                                               only, with no event (decision 0015 5bn). */
+/* VOLATILE_START / VOLATILE_END (POOL kinds, step G90, decision 0060): the partial trap of Bind, Wrap, Fire Spin, Sand Tomb,
+   Snap Trap and Infestation. The start is an ACTIVATE (cause MOVE, id2 the move, other the source), the residual damage a DAMAGE
+   (cause MOVE, id2 the move), the end of the duration -end|X|move: M|[partiallytrapped] a VOLATILE_END with id = the move. The silent
+   ends (the source left, a Substitute, a fainted source) emit nothing. The turns are a drawn counter, hidden from both viewers. */
+#define DUOFORGE_VOLATILE_PARTIAL_TRAP 12u
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
 #define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */

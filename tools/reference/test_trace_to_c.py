@@ -213,6 +213,25 @@ class Refusals(unittest.TestCase):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
 
+    def test_a_swap_line_that_is_not_an_ally_switch_swap_is_refused(self):
+        """Step G80 (decision 0044): `|swap|` maps only as Ally Switch's own line: the user's slot and the other slot of its
+        side, with `[from] move: Ally Switch`. A swap without that attribute, or to a slot that is not 0 or 1, is refused."""
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|swap|p1a: Bulbasaur|1'),
+                     'protocol-line', "trace_to_c: unsupported |swap| line '|swap|p1a: Bulbasaur|1'", 'swap')
+        self.control('s2_turn_core_1',
+                     lambda spec, trace: trace['steps'][1]['log'].append('|swap|p1a: Bulbasaur|2|[from] move: Ally Switch'),
+                     'protocol-line', "trace_to_c: unsupported |swap| line '|swap|p1a: Bulbasaur|2|[from] move: Ally Switch'",
+                     'swap')
+
+    def test_a_copyboost_line_that_is_not_psych_ups_is_refused(self):
+        """Step G80 (decision 0044): `-copyboost` maps only as Psych Up's own line, between two Pokemon (not a side)."""
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|-copyboost|p1a: Bulbasaur|p2a: Raichu'),
+                     'protocol-line', "trace_to_c: unsupported -copyboost '|-copyboost|p1a: Bulbasaur|p2a: Raichu'", 'copyboost')
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append(
+            '|-copyboost|p1a: Bulbasaur|p2a: Raichu|[from] move: Swords Dance'),
+                     'protocol-line', "trace_to_c: unsupported -copyboost '|-copyboost|p1a: Bulbasaur|p2a: Raichu|[from] move: Swords Dance'",
+                     'copyboost')
+
     def test_a_hitcount_line_is_asserted_against_the_damage_lines_and_dropped(self):
         """`|-hitcount|P|N` (multi-hit moves, data/mods/champions/scripts.ts:427-549) is no event: N must be the number of
         -damage lines the move showed on that Pokemon. A wrong N is refused; a missing line is not an error (the Champions loop
@@ -2405,7 +2424,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 279)  # G92 (decision 0062): the nine marks make 279 (270 before); G84 (decision 0047): Leech Seed and Curse make 270 (268 before); batch 6 (5cq): Charge Beam and Wild Charge make 268 (266 before); C4 (decision 0015 entry 5ct): 15 more make 266 (251 before); G86 (decision 0048): the seven of this batch make 251 (244 before); C2 (decision 0015 5cp): 22 damaging moves make 244 (222 before); G94 (decision 0015 5cv): Baneful Bunker; C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); G88 (decision 0046): Lash Out and Assurance make 203 (201 before); G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 290)  # G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2436,6 +2455,9 @@ class Library(unittest.TestCase):
                                     done = True
                             # Memento (step G92, decision 0062): the two -unboost lines of the target before its user faints.
                             done = done or (name == 'Memento' and after.startswith('|-unboost|'))
+                            # Psych Up (step G80): the -copyboost line of the copy; Ally Switch: its swap line (the consecutive refusals are -fail).
+                            done = done or (name == 'Psych Up' and after.startswith('|-copyboost|'))
+                            done = done or (name == 'Ally Switch' and after.startswith('|swap|'))
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
                             # Baton Pass (step G74): its switch line names it as the cause, `|switch|...|[from] Baton Pass`.

@@ -45,7 +45,7 @@ static const char TAIL_HEX[] =
     "000000000500000102010100000001000000000000010100000101000000000f000101000000000005002c01050c0012"
     "0100d700590112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
     "000000000000000001000001040401000300000000000000000001010000000000000000000000040003000300000000"
-    "040000000000000000000001030000000000000000000000ff0100090200000100000000000000000000000000000000"
+    "040000000000000000000001030000000000000000000000ff0100090200000104000000000000000000000000000000"
     "000000000000000001000000010000010000000000000000000000000000000000000000000000000700006400000100"
     "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     "000000000000000000000000";
@@ -89,8 +89,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {4, 0, 251, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {7, 0, 248, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -110,7 +110,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 0 (trapped: 1..5 OK, the rest POSITION) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -146,7 +146,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 1 (not trapped: only 0, POSITION otherwise) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -250,7 +250,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 0 (not trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -265,8 +265,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {7, 0, 248, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -286,7 +286,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 1 (trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -386,22 +386,23 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, mask 0x7F): 47 values of the byte decode (11 before G88) */
+    {191, 0, 64, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, G84b bit 7, G82 bit 0, mask 0xFF): 191 values of the byte decode
+     * (47 with mask 0x7F before G84b, 11 before G88); exact count: the decoder and tools/state_model/state_v3_model.py --pool-tail agree */
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {191, 0, 64, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {191, 0, 64, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {191, 0, 64, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0}, /* 332: step G71, Attract flat 0 (Rillaboom, M): the code 2 (model: attract_valid_codes) */
     {3, 0, 252, 0, 0, 0, 0, 0}, /* 333: flat 1 (Staraptor, F): the codes 1, 9 and 11 */
     {1, 0, 254, 0, 0, 0, 0, 0}, /* 334: flat 2 (Archaludon, M): the code 2 */
     {1, 0, 254, 0, 0, 0, 0, 0}, /* 335: flat 3 (Charizard, M): the code 2 */
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -596,7 +597,7 @@ static void set_example_tail(duoforge_battle *b)
                                      .heal_block_turns = 3u, .leech_seed_source = 1u, .yawn_turns = 1u, .move_result = 4u,
                                      .hits_taken = 3u, .lock_turns = 3u};
     c->positions[1] = (dfi_tail_pos){.trap_move = DFI_POOL_MOVE_COUNT, .last_move = EXAMPLE_LOCK_SLOT, .trap_turns = 1u,
-                                     .trap_source = 3u, .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST,
+                                     .trap_source = 3u, .trap_elapsed = 4u, .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST,
                                      .lock_turns = 1u};
     /* the overrides of a member on the field: side 1's lead at position 0, its member 2 */
     c->ability_now[2] = 1u;
@@ -731,10 +732,10 @@ static size_t build_settings(tail_setting *out)
                                                   W1(po + DFI_ENC_TAIL_POS_DISABLE_TURNS_OFF, 1u), NO_WRITE}};
             out[n++] = (tail_setting){"imprison", {W1(po + DFI_ENC_TAIL_POS_IMPRISON_OFF, 1u), NO_WRITE, NO_WRITE}};
             out[n++] = (tail_setting){"must_recharge", {W1(po + DFI_ENC_TAIL_POS_MUST_RECHARGE_OFF, 1u), NO_WRITE, NO_WRITE}};
-            out[n++] = (tail_setting){"trap", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 1u),
+            out[n++] = (tail_setting){"trap", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 5u),
                                                W1(po + DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF, other),
                                                W2(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF, 1u)}};
-            out[n++] = (tail_setting){"trap_band", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 1u),
+            out[n++] = (tail_setting){"trap_band", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 5u),
                                                     W1(po + DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF, other),
                                                     W2(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF, 1u),
                                                     W1(po + DFI_ENC_TAIL_POS_TRAP_BAND_OFF, 1u)}};
@@ -933,8 +934,12 @@ MUT(m_trap_no_move, {
     p0->trap_turns = 1u;
     p0->trap_source = 2u;
 })
-MUT(m_trap_no_source, {
+MUT(m_trap_no_source_no_move, {
     p0->trap_turns = 1u;
+})
+/* decision 0060: a trap whose source left keeps its turns and move (the source is 0): valid, the residual ends it silently. */
+MUT(m_trap_no_source, {
+    p0->trap_turns = 5u; /* turns + elapsed in {5, 6} (the exact rule) */
     p0->trap_move = 1u;
 })
 MUT(m_trap_turns9, {
@@ -1033,8 +1038,11 @@ MUT(m_ill_shown, ts->illusion.shown = 1u)
 MUT(m_ill_override, ts->illusion.override[3] = 1u)
 MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
 MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
-MUT(m_healing_wish_bit, p0->position_flags = 1u) /* bit 0 (Healing Wish) is never set yet */
-MUT(m_position_flags_bit7, p0->position_flags = 0x80u) /* bit 7 is not defined (G76 took bit 4, G88 took bits 5 and 6) */
+/* G82 (decision 0045): bit 0 (Healing Wish) is the slot's; it is valid at a standing lead and at an empty position. A bit that
+ * ends with the occupant (the raised flag, bit 1) stays refused at an empty position. */
+MUT(v_healing_wish_bit, p0->position_flags = 0x01u)
+MUT(v_healing_wish_empty, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = (uint8_t)(y->sides[0].requested_slots & ~1u), p0->position_flags = 0x01u) /* the empty slot is no longer requested (TURN: requested == occupied) */
+MUT(m_empty_stats_raised, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = (uint8_t)(y->sides[0].requested_slots & ~1u), p0->position_flags = 0x02u)
 MUT(v_destiny_bond_standing, p0->position_flags = 0x10u) /* G76: Destiny Bond at a standing lead is valid */
 MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
@@ -1057,7 +1065,7 @@ MUT(v_maxima, {
     ts->positions[0] = (dfi_tail_pos){.substitute_hp = 1u, .trap_move = DFI_POOL_MOVE_COUNT, .last_move = 5u,
                                       .encore_slot = 4u, .encore_turns = 4u, .throat_chop_turns = 2u,
                                       .heal_block_turns = 5u, .perish = 4u, .taunt_turns = 4u, .disable_slot = 4u,
-                                      .disable_turns = 5u, .imprison = 1u, .must_recharge = 1u, .trap_turns = 8u,
+                                      .disable_turns = 5u, .imprison = 1u, .must_recharge = 1u, .trap_turns = 6u,
                                       .trap_source = 4u, .trap_band = 1u, .leech_seed_source = 4u, .yawn_turns = 2u,
                                       .focus_energy = 1u, .stockpile = 3u, .stockpile_def = 3u,
                                       .stockpile_spd = 3u, .charge = 1u, .glaive_rush = 1u, .move_result = 0x0Fu,
@@ -1079,6 +1087,7 @@ MUT(v_unclass_now, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW)
 MUT(v_unclass_both, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW | DFI_MOVE_RESULT_UNCLASSIFIED_LAST)
 MUT(v_position_flags_raised_stage2, p0->position_flags = 0x0Au) /* G72b: stats raised and the Dragon Cheer stage 2 */
 MUT(v_position_flags_stage1, p0->position_flags = 0x04u) /* G72b: the Dragon Cheer stage 1 */
+MUT(v_position_flags_curse, p0->position_flags = 0x80u) /* G84b: Curse (bit 7) at a standing lead is valid */
 MUT(v_hazard_order_two, {
     ts->spikes = 2u;
     ts->toxic_spikes = 1u;
@@ -1175,7 +1184,8 @@ static const tail_case cases[] = {
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
     {"a trap with a move alone", DFI_INV_TAIL_POSITION, false, m_trap_move_only},
     {"a trap without its move", DFI_INV_TAIL_POSITION, false, m_trap_no_move},
-    {"a trap without its source", DFI_INV_TAIL_POSITION, false, m_trap_no_source},
+    {"a trap whose source left is legal at a turn boundary (decision 0060, pin data/conditions.ts:234-252: it ends silently at the next residual)", DFI_INV_NONE, true, m_trap_no_source},
+    {"a trap with neither source nor move", DFI_INV_TAIL_POSITION, false, m_trap_no_source_no_move},
     {"a trap above 8 turns", DFI_INV_TAIL_POSITION, false, m_trap_turns9},
     {"a trap source above 4", DFI_INV_TAIL_POSITION, false, m_trap_source5},
     {"a trap whose source is the occupant", DFI_INV_TAIL_POSITION, false, m_trap_own},
@@ -1215,8 +1225,9 @@ static const tail_case cases[] = {
     {"Illusion override byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_override},
     {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
     {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
-    {"healing wish bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_healing_wish_bit},
-    {"position flag bit 7 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit7},
+    {"G82: Healing Wish bit at a standing lead is valid", DFI_INV_NONE, false, v_healing_wish_bit},
+    {"G82: Healing Wish bit at an empty position is valid", DFI_INV_NONE, false, v_healing_wish_empty},
+    {"G82: a raised flag at an empty position is refused", DFI_INV_TAIL_POSITION, false, m_empty_stats_raised},
     {"G76: Destiny Bond at a standing lead is valid", DFI_INV_NONE, false, v_destiny_bond_standing},
     {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
@@ -1234,13 +1245,14 @@ static const tail_case cases[] = {
     {"an unclassified this-turn bit with an undefined this-turn result is valid", DFI_INV_NONE, false, v_unclass_now},
     {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both},
     {"G72b: stats raised with stage 2 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_raised_stage2},
-    {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1}};
+    {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1},
+    {"G84b: Curse at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_curse}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
 {
-    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: the last 12 of its 16 reserve bytes (the first 4 are Attract's, step G71) */
-        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE;
+    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: the last 8 of its 16 reserve bytes (4..7 are Ally Switch's, 0..3 Attract's) */
+        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE + DFI_ENC_TAIL5_ALLY_SWITCH_COUNT;
     }
     if (off < DFI_ENC_TAIL_FIELD_SIZE) {
         return off >= DFI_ENC_TAIL_FIELD_RESERVED_OFF;
@@ -1276,8 +1288,11 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 41u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 12 more (G71 takes 4 for Attract) */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 33u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); step G90 takes 1 of the position block's 4 (rev 5: 16 more) */
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_ATTRACT_OFF, 44u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_ALLY_SWITCH_OFF, 4u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF, 32u); /* step G90 (decision 0060): the partial trap's elapsed count */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_RESERVED_OFF, 33u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u); /* refused since rev 5 */
@@ -1294,15 +1309,17 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
         DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 308u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state, the 2 position bytes and (step G71) the 4 Attract sources */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 148u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 34u);
+        /* step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes; step G90 adds the elapsed count
+         * (one byte of a position's reserved four) and a pad byte per position, so each position is an even 36 bytes */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 324u); /* 316 + the Ally Switch byte and the pad of each position (G80) */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 156u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 38u); /* 35 data bytes, pos_pad (G90), the Ally Switch byte and its pad (G80) */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 41u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved */
+        DF_CHECK_EQ_U64(&t, reserved, 33u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved */
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1600,8 +1617,8 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 41u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 12 of rev 5 (step G71: 4 Attract sources) */
-    }
+        /* 41 reserved bytes: the field block's +1..+6 are party_order (G46), the position block's byte 32 is the elapsed count (G90) and the Attract sources (G71) are data */
+        DF_CHECK_EQ_U64(&t, all_reserved, 33u);    }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
     {
@@ -1718,7 +1735,10 @@ int main(void)
                 uint8_t dg[DUOFORGE_DIGEST_SIZE];
                 size_t written = 77u;
                 size_t size = 0u;
-                if (dfi_state_check(kinds[i], b, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_TAIL_KIND &&
+                /* a non-pool battle: every tail byte, the trap_turns bytes too, is refused by TAIL_KIND (the per-position trap
+                 * rules are the pool tail's; the boundary rule on the source is gone, decision 0060) */
+                const dfi_invariant want_inv = DFI_INV_TAIL_KIND;
+                if (dfi_state_check(kinds[i], b, &inv) == DUOFORGE_E_INVARIANT && inv == want_inv &&
                     duoforge_battle_check(kinds[i], b) == DUOFORGE_E_INVARIANT &&
                     duoforge_battle_encode(kinds[i], b, out, sizeof out, &written) == DUOFORGE_E_INVARIANT &&
                     duoforge_battle_digest(kinds[i], b, dg) == DUOFORGE_E_INVARIANT &&
@@ -1727,7 +1747,8 @@ int main(void)
                 }
                 *tail_byte(b, k) = 0u;
             }
-            DF_CHECK_EQ_U64(&t, refused, sizeof b->tail);
+            /* every byte but the four position pads (never encoded, not state: decision 0060) is refused */
+            DF_CHECK_EQ_U64(&t, refused, sizeof b->tail - DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE);
             DF_CHECK(&t, duoforge_battle_check(kinds[i], b) == DUOFORGE_OK);
             duoforge_battle_destroy(b);
         }
@@ -1839,8 +1860,8 @@ int main(void)
                 duoforge_battle_destroy(y);
             }
         }
-        DF_CHECK_EQ_U64(&t, refused, 2u * sizeof(dfi_tail_pos));
-        duoforge_battle_destroy(x);
+        /* every byte of the position but its pad (never encoded, not state: decision 0060) is refused, for both fainted cases; the position flag bit 0 (Healing Wish, G82) is valid at an empty position: two fewer */
+        DF_CHECK_EQ_U64(&t, refused, 2u * (sizeof(dfi_tail_pos) - 1u) - 2u);        duoforge_battle_destroy(x);
     }
 
     /* What leaves with the occupant (dfi_tail_clear_occupant): the position, the soak type, the current ability and
@@ -1904,6 +1925,16 @@ int main(void)
             want.sides[s].aurora_veil_turns = (uint8_t)(want.sides[s].aurora_veil_turns != 0u ? want.sides[s].aurora_veil_turns - 1u : 0u);
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 dfi_tail_pos *tp = &want.sides[s].positions[p];
+                /* step G90 (decision 0060): the partial trap counts down in the residual (order 13). The example's trapper (flat 2)
+                 * stands, so no source-gone clearing: the turns go down by one, and at 0 the four fields are cleared. */
+                if (tp->trap_turns != 0u) {
+                    tp->trap_turns = (uint8_t)(tp->trap_turns - 1u);
+                    if (tp->trap_turns == 0u) {
+                        tp->trap_source = 0u;
+                        tp->trap_move = 0u;
+                        tp->trap_band = 0u;
+                    }
+                }
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);
                 tp->heal_block_turns = (uint8_t)(tp->heal_block_turns != 0u ? tp->heal_block_turns - 1u : 0u);
                 /* step G31: Taunt and Yawn count down in the residual (a Yawn that runs out puts its holder to sleep) */
@@ -1947,6 +1978,8 @@ int main(void)
                 const uint32_t mr = x->tail.sides[s].positions[p].move_result;
                 DF_CHECK_EQ_U64(&t, mr & 0xC0u, 0u);
                 want.sides[s].positions[p].move_result = (uint8_t)mr;
+                /* step G90: the partial trap's elapsed count is the battle's own (the model does not play the residuals) */
+                want.sides[s].positions[p].trap_elapsed = x->tail.sides[s].positions[p].trap_elapsed;
             }
         }
         DF_CHECK(&t, memcmp(&x->tail, &want, sizeof want) == 0);

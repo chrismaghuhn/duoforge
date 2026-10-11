@@ -215,15 +215,25 @@ def _own_features(prefix, exceptions=None):
     return out
 
 
+# A reserve bit's own feature is the feature of its constant's name; where the names differ (several bits of one
+# feature, as Last Resort's four slots), the family's exceptions name it: {constant suffix: feature name}. These mirror
+# DUOFORGE_VIEWEXT_RESERVE_OWN, the C encoder's list, which python/tests/test_encoder6.py compares with them.
+_RESERVE_EXCEPTIONS = {"RESERVE_VOLATILES": _VOLATILE_FEATURE, "VOLATILES2": {"TRAP_ELAPSED_BIT0": "TRAP_ELAPSED", "TRAP_ELAPSED_BIT1": "TRAP_ELAPSED",
+                 "TRAP_ELAPSED_BIT2": "TRAP_ELAPSED"}, "RESERVE_GUARDS": {},
+                       "SIDE_CONDITIONS": {}, "FIELD_FLAGS": {}}
 # Encoder 6's reserve families (decision 0050): (bit numbers, the family's feature, the own features of its bits).
 _RES_VOLATILES = (range(22, 32), FEATURE_BITS["RESERVE_VOLATILES"],
-                  _own_features("DUOFORGE_POSITION_EXT_", _VOLATILE_FEATURE))
+                    _own_features("DUOFORGE_POSITION_EXT_", _RESERVE_EXCEPTIONS["RESERVE_VOLATILES"]))
 # Attract's source position (step G87, decision 0080): the two bits 12 and 13 of volatiles2 show under ATTRACT_SOURCE.
 _ATTRACT_SOURCE_FEATURE = {"ATTRACT_SOURCE_LO": "ATTRACT_SOURCE", "ATTRACT_SOURCE_HI": "ATTRACT_SOURCE"}
-_RES_VOLATILES2 = (range(32), FEATURE_BITS["VOLATILES2"], _own_features("DUOFORGE_POSITION_EXT2_", _ATTRACT_SOURCE_FEATURE))
-_RES_GUARDS = (range(2, 8), FEATURE_BITS["RESERVE_GUARDS"], _own_features("DUOFORGE_SIDE_GUARD_"))
-_RES_CONDITIONS = (range(8), FEATURE_BITS["SIDE_CONDITIONS"], _own_features("DUOFORGE_SIDE_CONDITION_"))
-_RES_FIELD = (range(16), FEATURE_BITS["FIELD_FLAGS"], _own_features("DUOFORGE_FIELD_FLAG_"))
+_RES_VOLATILES2 = (range(32), FEATURE_BITS["VOLATILES2"],
+                   _own_features("DUOFORGE_POSITION_EXT2_", {**_RESERVE_EXCEPTIONS["VOLATILES2"], **_ATTRACT_SOURCE_FEATURE}))
+_RES_GUARDS = (range(2, 8), FEATURE_BITS["RESERVE_GUARDS"],
+               _own_features("DUOFORGE_SIDE_GUARD_", _RESERVE_EXCEPTIONS["RESERVE_GUARDS"]))
+_RES_CONDITIONS = (range(8), FEATURE_BITS["SIDE_CONDITIONS"],
+                   _own_features("DUOFORGE_SIDE_CONDITION_", _RESERVE_EXCEPTIONS["SIDE_CONDITIONS"]))
+_RES_FIELD = (range(16), FEATURE_BITS["FIELD_FLAGS"],
+              _own_features("DUOFORGE_FIELD_FLAG_", _RESERVE_EXCEPTIONS["FIELD_FLAGS"]))
 _RES_FLAGS = range(3, 8)  # the observation's position flags beyond FOLLOW_ME, HELPING_HAND and UNBURDEN: no feature
 
 
@@ -394,6 +404,27 @@ def obs_size(encoder):
     return _OBS_SIZES[encoder]
 
 
+def _unshown(all_features, column_masks):
+    """The defined feature bits that no column of any encoder shows."""
+    shown = int(np.bitwise_or.reduce(np.asarray(column_masks, dtype=np.uint64), initial=np.uint64(0)))
+    return int(all_features) & ~shown
+
+
+def _require_columns(all_features, column_masks):
+    """Every defined feature has a column (decision 0050): a lane's feature (bits 43 to 58) shows only through its reserve
+    bit, so a feature whose bit is in no family's own features (no X entry in DUOFORGE_VIEWEXT_RESERVE_OWN, or a name
+    that needs an exception) fails here, at import, instead of being a mask bit nothing reads."""
+    missing = _unshown(all_features, column_masks)
+    if missing:
+        names = [_FEATURE_NAME.get(b, f"bit {b}") for b in range(64) if missing >> b & 1]
+        raise RuntimeError(f"features {names} have no encoder column: a lane feature needs its reserve bit in "
+                           "DUOFORGE_VIEWEXT_RESERVE_OWN and the bit's constant named after it (or an entry in "
+                           "features._RESERVE_EXCEPTIONS)")
+
+
+_require_columns(ALL_FEATURES, EXT_COLUMN_MASKS)
+
+
 def version_features(encoder):
     """The mask of the DUOFORGE_VIEWEXT_FEATURE_* bits encoder version
     `encoder` has columns for: none for 1 and 2, bits 0 to 39 for 3, 0 to 41
@@ -401,6 +432,14 @@ def version_features(encoder):
     own feature of a reserve bit. A network's ext_supported lies inside it."""
     width = obs_size(encoder) - BASE_OBS_SIZE
     return int(np.bitwise_or.reduce(EXT_COLUMN_MASKS[:width], initial=np.uint64(0)))
+
+
+# Encoder 5's features, the tiers it has columns for (bits 0 to 42), fixed for good: a later feature counts in
+# DUOFORGE_VIEWEXT_FEATURE_COUNT but is a lane's (bits 43 to 58), shown by encoder 6's reserve only. Encoders 1 to 5 refuse
+# a mask with it, and a set bit of it in the records (EncoderAwaitingBit).
+ENCODER5_FEATURES = int(np.bitwise_or.reduce(EXT_COLUMN_MASKS[:EXT5_SIZE], initial=np.uint64(0)))  # version_features(5)
+LANE_FEATURES = ALL_FEATURES & ~ENCODER5_FEATURES & ~sum(1 << FEATURE_BITS[n] for n in _FAMILIES)
+assert ENCODER5_FEATURES == (1 << 43) - 1 and all(43 <= b < 59 for b in range(64) if LANE_FEATURES >> b & 1)
 
 
 def feature_names(encoder):

@@ -49,6 +49,7 @@ TAIL_REV4_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE              # 288
 TAIL5_SIDE_SIZE = 18
 TAIL5_POS_SIZE = 2
 TAIL5_RESERVED_SIZE = 16
+TAIL5_ALLY_OFF = 4                  # step G80 (decision 0044): reserve bytes 4..7 are the Ally Switch volatile, one per flat position
 TAIL5_SIZE = 2 * TAIL5_SIDE_SIZE + 4 * TAIL5_POS_SIZE + TAIL5_RESERVED_SIZE        # 60
 TAIL_SIZE = TAIL_REV4_SIZE + TAIL5_SIZE                             # 348
 POOL_STATE_SIZE = STATE_SIZE + TAIL_SIZE
@@ -63,6 +64,7 @@ TAIL_TAUNT_MAX = 4
 TAIL_DISABLE_SLOT_MAX = 4
 TAIL_DISABLE_TURNS_MAX = 5
 TAIL_TRAP_TURNS_MAX = 8
+TAIL_TRAP_ELAPSED_MAX = 5  # step G90 (decision 0060): the elapsed count while the trap is up (d <= 6)
 TAIL_SOURCE_MAX = 4
 TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
@@ -104,7 +106,7 @@ TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop
                         'disable_slot', 'disable_turns', 'imprison', 'must_recharge', 'trap_turns', 'trap_source',
                         'trap_band', 'leech_seed', 'yawn', 'focus_energy', 'stockpile', 'stockpile_def',
                         'stockpile_spd', 'charge', 'glaive_rush']
-TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns']
+TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns', 'trap_elapsed']
 # rev 5, per position (lane A; zero, nothing writes them yet) and per side (the Illusion state of decision 0026, zero)
 TAIL_POS_REV5_FIELDS = ['position_flags', 'future_sight']
 TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web', 'quick_guard',
@@ -302,7 +304,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('279e3b5643b95fcc4253c66bd1dd9cee712a6157cd3e5e810e088ff0904cdd69')
+POOL_TABLE_HASH = bytes.fromhex('10f8972473fef6e0e3c3a3f4c29bfd46eca685efcd773943e0671e00b5712f22')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -383,6 +385,7 @@ def empty_tail_pos():
         p[f] = 0
     for f in TAIL_POS_REV5_FIELDS:
         p[f] = 0
+    p['ally_switch'] = 0  # step G80: the Ally Switch volatile, in reserve byte 4 + flat position (not a position byte)
     return p
 
 
@@ -978,10 +981,16 @@ def hazard_order_valid(ts):
     return set(slots[:n]) == present and len(set(slots[:n])) == n and all(v == 0 for v in slots[n:])
 
 
+def ally_switch_valid(v):
+    """Step G80: the Ally Switch byte is zero, or (level << 2) | turns with level 1..6 and turns 1..2 (the counter is 3^level)."""
+    return v == 0 or (1 <= v >> 2 <= 6 and 1 <= v & 3 <= 2)
+
+
 def position_flags_valid(pf):
-    """Rev 5 (G72b, G76, G88): bit 0 (Healing Wish) and bit 7 are zero, the Dragon Cheer stage (bits 2-3) is at most 2,
-    bit 4 is Destiny Bond (G76), and bits 5 and 6 are LOWERED (0x20) and HURT (0x40), G88."""
-    return pf & ~0x7F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+    """Rev 5 (G72b, G76, G82, G88, G84b): bit 0 is Healing Wish (G82, valid: slot-bound, no occupant rule), the Dragon Cheer
+    stage (bits 2-3) is at most 2, bit 4 is Destiny Bond (G76), bits 5 and 6 are LOWERED (0x20) and HURT (0x40, G88) and bit 7
+    is Curse (G84b, decision 0063). The occupant rule of the flags is the caller's (src/state/invariants.c)."""
+    return pf & ~0xFF == 0 and (pf >> 2) & 3 <= 2
 
 
 def substitute_cap(sd):
@@ -1009,8 +1018,9 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
         return False
     if not (tp['trap_turns'] <= TAIL_TRAP_TURNS_MAX and tp['trap_source'] <= TAIL_SOURCE_MAX
             and tp['trap_source'] != flat + 1 and tp['trap_move'] <= ctx.move_count
-            and (tp['trap_turns'] == 0) == (tp['trap_source'] == 0) and (tp['trap_turns'] == 0) == (tp['trap_move'] == 0)
-            and tp['trap_band'] <= TAIL_FLAG_MAX and (tp['trap_turns'] != 0 or tp['trap_band'] == 0)):
+            and (tp['trap_turns'] != 0 or tp['trap_source'] == 0) and (tp['trap_turns'] == 0) == (tp['trap_move'] == 0)
+            and tp['trap_band'] <= TAIL_FLAG_MAX and (tp['trap_turns'] != 0 or tp['trap_band'] == 0)
+            and ((tp['trap_turns'] + tp['trap_elapsed'] in (5, 6)) if tp['trap_turns'] != 0 else tp['trap_elapsed'] == 0)):
         return False
     if not (tp['leech_seed'] <= TAIL_SOURCE_MAX and tp['leech_seed'] != flat + 1):
         return False
@@ -1039,6 +1049,9 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
     if not position_flags_valid(tp['position_flags']):
         return False
     if tp['future_sight'] != 0:
+        return False
+    # Step G80 (decision 0044): the Ally Switch volatile of a standing occupant: zero, or level 1..6 with 1 or 2 turns.
+    if not ally_switch_valid(tp['ally_switch']):
         return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
@@ -1103,9 +1116,13 @@ def check_tail(ctx, st):
                 # Rev 5 (G72b): the position flags may outlive a fainted occupant (the occupant is still there, as in the C
                 # invariant); an empty position has none.
                 flags_only = all(v == 0 for k, v in tp.items() if k != 'position_flags')
-                if not (flags_only and (tp['position_flags'] == 0 or (occ < MAX_ROSTER and position_flags_valid(tp['position_flags'])))):
+                pf = tp['position_flags']
+                # G82 (decision 0045): bit 0 (Healing Wish) is the slot's, it may wait at an empty position; the others need an occupant.
+                if not (flags_only and position_flags_valid(pf) and ((pf & ~0x01) == 0 or occ < MAX_ROSTER)):
                     return 'TAIL_POSITION'
                 continue
+            # Step G90 (decision 0060, data/conditions.ts:234-252): a trap whose source left stays up (source 0) until the
+            # target's next residual; it is legal at the TURN and REPLACEMENT boundaries.
             if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags'], substitute_cap(sd)):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
@@ -1196,7 +1213,7 @@ def tail_bytes(tail):
         for tp in ts['pos']:
             out += bytes([tp[f] for f in TAIL_POS_BYTE_FIELDS])
             out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes([tp['protect_kind']])
-            out += bytes([tp[f] for f in TAIL_POS_REV4_FIELDS]) + bytes(4)
+            out += bytes([tp[f] for f in TAIL_POS_REV4_FIELDS]) + bytes(3)
         for m in range(MAX_ROSTER):
             out += struct.pack('<HH', ts['ability_now'][m], ts['forme_now'][m])
             out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], ts['type2'][m], ts['member_flags'][m], 0])
@@ -1206,26 +1223,28 @@ def tail_bytes(tail):
     for flat in range(4):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         out += bytes([tp[f] for f in TAIL_POS_REV5_FIELDS])
-    # Step G71: the first 4 bytes of the reserve are the Attract sources (one per flat position), the other 12 are zero.
-    out += bytes(tail.get('attract', [0] * 4)) + bytes(TAIL5_RESERVED_SIZE - 4)
+    reserve = bytearray(TAIL5_RESERVED_SIZE)
+    reserve[0:4] = bytes(tail.get('attract', [0] * 4))  # step G71: Attract's sources (data)
+    for flat in range(4):  # step G80: reserve bytes 4..7, the Ally Switch volatile of each flat position
+        reserve[TAIL5_ALLY_OFF + flat] = tail['sides'][flat // 2]['pos'][flat % 2]['ally_switch']
+    out += bytes(reserve)
     assert len(out) == TAIL_SIZE
     return bytes(out)
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 45 reserved bytes: 29 of the rev 4 part (step G46: the field block's +1..+6 are
-    party_order) and the 16 of the rev 5 reserve at the end."""
+    """The offsets (within the tail) of the 41 reserved bytes: 29 of the rev 4 part (step G46: the field block's +1..+6 are
+    party_order) and the 12 of the rev 5 reserve at the end that are not the Ally Switch bytes 4..7 (step G80)."""
     offs = [TAIL_FIELD_SIZE - 1]
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
         for p in range(2):
-            offs += [so + 8 + TAIL_POS_SIZE * p + 32 + i for i in range(4)]
+            offs += [so + 8 + TAIL_POS_SIZE * p + 33 + i for i in range(3)]
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
-    assert len(offs) == 29
+    assert len(offs) == 25
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
-    # Step G71: the reserve's first 4 bytes are the Attract sources (data), so only its other 12 are reserved.
-    offs += [rev5_reserve + i for i in range(4, TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 41
+    offs += [rev5_reserve + i for i in range(TAIL5_ALLY_OFF + 4, TAIL5_RESERVED_SIZE)]
+    assert len(offs) == 33
     return offs
 
 
@@ -1272,6 +1291,7 @@ def parse_tail(b):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         q = r5 + 2 * TAIL5_SIDE_SIZE + TAIL5_POS_SIZE * flat
         tp['position_flags'], tp['future_sight'] = b[q], b[q + 1]
+        tp['ally_switch'] = b[r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE + TAIL5_ALLY_OFF + flat]  # step G80: the reserve byte of the flat position
     # Step G71: the Attract sources, the first 4 bytes of the reserve (r5 + 44 = rev 5 block offset 44).
     tail['attract'] = list(b[r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE:r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE + 4])
     return tail
@@ -2035,7 +2055,7 @@ def tail_example():
     # the locks (step G56): three turns left at position 0, the last one at position 1, both on Outrage, the last used move
     c['pos'][0] = tail_pos(last_move=EXAMPLE_LOCK_SLOT, encore_slot=4, encore_turns=1, heal_block=3, leech_seed=1, yawn=1,
                            move_result=4, hits_taken=3, lock_turns=3)
-    c['pos'][1] = tail_pos(last_move=EXAMPLE_LOCK_SLOT, trap_turns=1, trap_source=3, trap_move=511, move_result=9,
+    c['pos'][1] = tail_pos(last_move=EXAMPLE_LOCK_SLOT, trap_turns=1, trap_elapsed=4, trap_source=3, trap_move=511, move_result=9,
                            single_turn=2, lock_turns=1)
     # the overrides of a member on the field: side 1's lead at position 0, its member 2
     c['ability_now'][2] = 1

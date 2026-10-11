@@ -81,9 +81,9 @@ CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
 TURN_SCOPED = {"RAGE_POWDER", "WIDE_GUARD", "QUICK_GUARD"}
 
 # Kinds whose effect on the view no field holds and the fold does not apply: stops with a readable reason.
-UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost",
-                         "-swapboost", "-invertboost", "-transform", "swap", "-endability", "-swapsideconditions",
-                         "-cureteam"}
+UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", 
+                         "-swapboost", "-invertboost", "-transform", "-endability", "-swapsideconditions",
+                         "-cureteam"}  # -copyboost and swap: folded since step G80 (COPY_BOOST, SWAP)
 
 
 def _features():
@@ -150,7 +150,8 @@ EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
-                                          "WIDE_GUARD", "STICKY_WEB")) | ATTRACT_FOLD
+                                          "WIDE_GUARD", "STICKY_WEB",
+                                           "CURSE", "HEALING_WISH", "PARTIAL_TRAP", "TRAP_ELAPSED")) | ATTRACT_FOLD
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -159,12 +160,13 @@ _START = {"move: Taunt": "TAUNT", "Taunt": "TAUNT", "Encore": "ENCORE", "Substit
           "move: Substitute": "SUBSTITUTE",  # the absorbed hit's -activate (decision 0032, step G60)
           "typechange": "TYPE_CHANGE", "Throat Chop": "THROAT_CHOP", "move: Heal Block": "HEAL_BLOCK",
           "Heal Block": "HEAL_BLOCK", "move: Imprison": "IMPRISON", "Disable": "DISABLE", "Stockpile": "STOCKPILE",
-          "move: Yawn": "YAWN", "move: Leech Seed": "LEECH_SEED", "Salt Cure": "SALT_CURE", "Curse": "CURSE",
+          "move: Yawn": "YAWN", "move: Leech Seed": "LEECH_SEED", "Salt Cure": "SALT_CURE",
           "move: No Retreat": "NO_RETREAT", "Charge": "CHARGE", "move: Dragon Cheer": "DRAGON_CHEER",
-          "move: Focus Energy": "FOCUS_ENERGY", "Infestation": "PARTIAL_TRAP", "move: Infestation": "PARTIAL_TRAP",
-          "Wrap": "PARTIAL_TRAP", "Bind": "PARTIAL_TRAP", "Fire Spin": "PARTIAL_TRAP", "Whirlpool": "PARTIAL_TRAP",
-          "Sand Tomb": "PARTIAL_TRAP", "Magma Storm": "PARTIAL_TRAP", "Snap Trap": "PARTIAL_TRAP",
-          "Thunder Cage": "PARTIAL_TRAP"}
+          "move: Focus Energy": "FOCUS_ENERGY"}
+# The partial trap (step G90, decision 0060) is not in _START: its three line forms are checked whole (_trap_features), for the
+# five moves the engine marks (src/data/support_manifest.c); Snap Trap ("stays unmarked: decision 0060 section 8"), Whirlpool,
+# Magma Storm and Thunder Cage stay unknown lines. The converter reads the sixth, Snap Trap, but no engine battle has it.
+PARTIAL_TRAP_MOVES = ("Bind", "Wrap", "Fire Spin", "Sand Tomb", "Infestation")
 _WEATHER = {"Sandstorm": "WEATHER_SAND", "Snowscape": "WEATHER_SNOW", "Snow": "WEATHER_SNOW"}
 _FIELD = {"move: Electric Terrain": "TERRAIN_ELECTRIC", "move: Misty Terrain": "TERRAIN_MISTY",
           "move: Gravity": "GRAVITY"}
@@ -239,6 +241,13 @@ def _feature(name):
     raise Stop(f"feature:{name}")
 
 
+def _trap_features():
+    """A partial-trap line (step G90): folded when the library supports the presence (PARTIAL_TRAP, 18) and the elapsed
+    count (TRAP_ELAPSED, 45), the two features the lines build."""
+    _feature("PARTIAL_TRAP")
+    return _feature("TRAP_ELAPSED")
+
+
 def _unknown(kind, effect=None):
     raise Stop(f"line:{kind}" + (f" {effect}" if effect else ""))
 
@@ -277,6 +286,16 @@ def _froms(attrs):
     return [a[len("[from] "):] for a in attrs if a.startswith("[from] ") or a.startswith("[from]")]
 
 
+def _curse(kind, args, attrs):
+    """-start|X|Curse|[of] S (step G84b, decision 0063): the Ghost Curse's volatile, VOLATILE_START with S as its other.
+    Both are flat positions and nothing else is on the line. The engine prints no end line (the volatile ends with its
+    holder), so -end|X|Curse and any other form of the line stop."""
+    if (kind == "-start" and len(args) == 2 and len(attrs) == 1 and attrs[0].startswith("[of] ")
+            and flat_position(args[0]) is not None and flat_position(attrs[0][len("[of] "):]) is not None):
+        return _feature("CURSE")
+    _unknown(kind, "Curse")
+
+
 def _toxic(parts):
     """Whether an HP or status field of the line shows Toxic (badly poisoned): Tox of 0018 section 4."""
     return any(p == "tox" or p.endswith(" tox") for p in parts[2:] if not p.startswith("["))
@@ -296,6 +315,12 @@ def check(line, view):
     attrs = [p for p in parts[2:] if p.startswith("[")]
     args = [p for p in parts[2:] if not p.startswith("[")]
     tables = view.data.tables
+    if kind == "-damage" and "[from] Curse" in attrs:
+        # the residual of the Ghost Curse (step G84b, decision 0063): the holder's HP and no source, DAMAGE of cause
+        # CURSE. Any other form stops; the feature is folded with its start line, or the line stops on it
+        if attrs != ["[from] Curse"] or len(args) != 2 or flat_position(args[0]) is None:
+            _unknown(kind, "[from] Curse")
+        _feature("CURSE")
     if _toxic(parts) and kind in ("switch", "-damage", "-heal", "-status", "-curestatus"):
         return _feature("AILMENT_TOX")
     if kind == "replace":
@@ -321,6 +346,12 @@ def check(line, view):
         if attrs:
             _unknown(kind, "Attract " + " ".join(attrs))  # the pin's cant names no attribute
         return _feature("RESERVE_VOLATILES")  # the infatuated occupant's stopped action (step G71): no move named
+    if kind == "-damage" and "[partiallytrapped]" in attrs:
+        # the residual of a partial trap (step G90): -damage|T|hp|[from] move: M|[partiallytrapped], nothing else
+        if (len(args) == 2 and len(attrs) == 2 and attrs[1] == "[partiallytrapped]" and attrs[0].startswith("[from] move: ")
+                and attrs[0][len("[from] move: "):] in PARTIAL_TRAP_MOVES and flat_position(args[0]) is not None):
+            return _trap_features()
+        _unknown(kind, "partiallytrapped")
     if kind in GENERIC:
         return "fold"
     if kind == "-ohko" and not args and not attrs:
@@ -341,6 +372,11 @@ def check(line, view):
             _unknown(kind, f"{effect} [silent]")
         return _feature("RESERVE_VOLATILES")
     if kind == "-activate":
+        if effect.startswith("move: ") and effect[len("move: "):] in PARTIAL_TRAP_MOVES:
+            # the start of a partial trap (step G90): -activate|T|move: M|[of] S, nothing else
+            if len(args) == 2 and len(attrs) == 1 and attrs[0].startswith("[of] ") and                     flat_position(args[0]) is not None and flat_position(attrs[0][len("[of] "):]) is not None:
+                return _trap_features()
+            _unknown(kind, effect)
         if effect in _FOLD_ACTIVATE:
             return "fold"
         if effect in _GUARD_ACTIVATE:
@@ -396,7 +432,17 @@ def check(line, view):
         if effect in _SINGLE_MOVE:
             return _feature(_SINGLE_MOVE[effect])
         _unknown(kind, effect)
+    if kind == "-end" and "[partiallytrapped]" in attrs:
+        # the end of a partial trap (step G90): -end|T|M|[partiallytrapped] (the duration), or with |[silent] (the source left,
+        # a Substitute, the residual with a fainted source); the pin prints the move with or without "move: "
+        name = effect[len("move: "):] if effect.startswith("move: ") else effect
+        if (name in PARTIAL_TRAP_MOVES and len(args) == 2 and flat_position(args[0]) is not None
+                and attrs in (["[partiallytrapped]"], ["[partiallytrapped]", "[silent]"])):
+            return _trap_features()
+        _unknown(kind, effect)
     if kind in ("-start", "-end"):
+        if effect == "Curse":
+            return _curse(kind, args, attrs)
         if effect in (_FOLD_START if kind == "-start" else _FOLD_END):
             return "fold"
         if re.fullmatch(r"perish[0-3]", effect):

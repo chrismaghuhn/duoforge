@@ -1,0 +1,142 @@
+{
+  "name": "g80_residual_allyswitch_burn",
+  "purpose": "The residual order with an Ally Switch volatile (step G80, decision 0044): at the residual of step 32 two burned Milotic stand on the field, and an Audino on the other slot of one side carries an Ally Switch volatile (duration 2, no order). That volatile is a handler of the residual: it takes a place in Showdown's selection sort (sim/battle.ts:429-455), and the sort's swaps decide the order of the two burn handlers before their shuffle (sim/battle.ts:484-510 collects the handlers per position). Taken from the random differential battle fz_80_29 of run 80 (its first 33 answers), which the pinned Showdown accepted.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,d7daa2735b7dc5a677ee30ac8a445244ae82746495d27d36b851c2a119f823d4",
+  "teams": [
+    "Garchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nChimecho (F) @ Sitrus Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Ally Switch\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nAudino (F) @ Leftovers\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand",
+    "Audino (F) @ Leftovers\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nChimecho (F) @ Sitrus Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Ally Switch\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand"
+  ],
+  "choices": [
+    {
+      "p1": "team 5143",
+      "p2": "team 1542"
+    },
+    {
+      "p1": "move 3 -2, move 2",
+      "p2": "move 4, move 2"
+    },
+    {
+      "p1": "switch 3, move 2",
+      "p2": "switch 3, move 1 2"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 3 1, move 2"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "switch 3, move 4"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "move 2 2, switch 4"
+    },
+    {
+      "p1": "move 4, switch 4",
+      "p2": "move 3 -2, move 1 -1"
+    },
+    {
+      "p1": "move 3 -2, move 3",
+      "p2": "move 2 1, switch 4"
+    },
+    {
+      "p1": "move 3 -2, move 1",
+      "p2": "move 1, move 3 2"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "move 4 1, move 1 1",
+      "p2": "move 3 -2, move 4"
+    },
+    {
+      "p1": "move 2, move 3 1",
+      "p2": "switch 4, move 2"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3, move 4",
+      "p2": "move 1, move 3 2"
+    },
+    {
+      "p1": "move 4 2, move 3 -1",
+      "p2": "move 1 2, move 4"
+    },
+    {
+      "p1": "move 4 -2, move 4",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 2, move 4"
+    },
+    {
+      "p1": "switch 3, move 4 2",
+      "p2": "move 2, move 2 1"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "switch 4, move 1",
+      "p2": "move 3 1, move 4"
+    },
+    {
+      "p1": "move 3, move 3 2",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 -2, move 1 -1",
+      "p2": "switch 3, move 1 2"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "move 1 -2, move 3 1"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "switch 3, move 3 1"
+    },
+    {
+      "p1": "switch 3, move 3 -1",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1, move 3 2",
+      "p2": "move 4, move 1 2"
+    },
+    {
+      "p1": "move 1 1, move 3 -1",
+      "p2": "switch 3, move 3 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 1, move 2"
+    }
+  ],
+  "max_steps": 33
+}

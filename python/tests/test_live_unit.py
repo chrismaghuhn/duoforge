@@ -8,7 +8,7 @@ import collections
 import random
 import unittest
 
-from duoforge_live import data, teams
+from duoforge_live import data, lines, teams
 
 # The |showteam| payload of Team A as the pinned Showdown sends it at team
 # preview (open team sheets: no names, no EVs), from ps_client.js on
@@ -196,6 +196,7 @@ class TrackerStopTest(unittest.TestCase):
         t = tracker.Tracker.__new__(tracker.Tracker)
         t.side, t._spectator = 0, False
         t._action = None  # no move action open (Tracker._segment)
+        t._healing_wish = None  # no Healing Wish in the tables (G82)
         t._herb_end = None
         t._positions = [[tracker._Position(), tracker._Position()] for _ in (0, 1)]
         for side in t._positions:
@@ -248,6 +249,38 @@ class TrackerStopTest(unittest.TestCase):
                          (VALUES["DFI_TAIL_TYPE2_TYPELESS"], 7))
         self.assertEqual((get("tail.side0.member1.soak_type"), get("tail.side0.member1.type2")), (18, 0))
 
+    def test_healing_wish_is_a_slot_condition(self):
+        # G82 (decision 0045, dfi_run_healing_wish and dfi_wish_heal): a Healing Wish that runs sets its slot's wish, which
+        # the user's faint and the next occupant keep (the position's flags bit 0, the view's HEALING_WISH bit); the heal of
+        # an entrant (-heal ... [from] move: Healing Wish) ends it and the entrant's status with it (clearStatus, no line).
+        # A wish refused for no reserve ([still] -fail) sets nothing.
+        from types import SimpleNamespace
+        from duoforge._state_layout import VALUES
+        from duoforge_live import record
+        from duoforge_live.data import trace_to_c
+        from duoforge_live.tracker import EXT_FIELDS
+        t = self.tracker()
+        t._move_pivots, t._guard_moves, t._choice_items, t._struggle, t._last_move = {}, set(), set(), None, None
+        t._healing_wish = 9
+        t._item_of = lambda member: None
+        t._pressure_extra = lambda pos, move, target, flags: 0
+        members = [SimpleNamespace(sheet={"moves": [9, 8]}, uses=[0, 0], item_used=0, status=3, freeze_turns=0, toxic=0,
+                                   toxic_stage=0, hp_percent=40, hp_flag=0) for _ in range(6)]
+        t._member = lambda side: members
+        EV, CAUSE, FLAG = trace_to_c.EV, trace_to_c.CAUSE, trace_to_c.FLAG
+        p = t._positions[0][1]
+        t._fold_event(trace_to_c.ev_tuple(EV["MOVE"], 1, cause=CAUSE["NONE"], ident=9, flags=FLAG["STILL"]))
+        self.assertEqual(p.wish, 0)  # no reserve: -fail [still]
+        t._fold_event(trace_to_c.ev_tuple(EV["MOVE"], 1, cause=CAUSE["NONE"], ident=9))
+        self.assertEqual(p.wish, 1)
+        p.reset()  # the faint and the next occupant's entry clear the position's conditions, not the slot's wish
+        self.assertEqual(p.wish, 1)
+        t._spectator = True
+        t._fold_event(trace_to_c.ev_tuple(EV["HEAL"], 1, cause=CAUSE["MOVE"], ident2=9, hp=100))
+        self.assertEqual((p.wish, members[p.occupant].status), (0, 0))
+        self.assertEqual(record.POSFLAG_HEALING_WISH, VALUES["DFI_POSFLAG_HEALING_WISH"])
+        self.assertIn("HEALING_WISH", EXT_FIELDS)
+
     def test_a_bounced_move_is_no_action_of_the_holder(self):
         # c1_cover_b step 2: |move|p2b: Espeon|Glare|p1b: Serperior|[from] ability: Magic Bounce is Magic Bounce's reflection
         # (useMove), no action of the holder: acted (move_actions != 0, only dfi_run_move counts, as runMove's
@@ -298,9 +331,11 @@ class TrackerStopTest(unittest.TestCase):
 
     def test_the_direct_costs_are_the_engines_dfi_deal_direct_sites(self):
         # G86: Belly Drum's half-HP cost is directDamage like Substitute's and Clangorous Soul's (src/combat/turn.c
-        # dfi_run_belly_drum); the three are the plain -damage of the user's own move that sets no HURT
+        # dfi_run_belly_drum), and G84b's Ghost Curse cost is too (dfi_run_curse); the four are the plain -damage of the
+        # user's own move that sets no HURT. The engine's dfi_deal(..., DFI_DMG_DIRECT) sites on batch 8: dfi_run_clangorous_soul,
+        # dfi_run_curse, dfi_run_substitute, dfi_run_belly_drum, and Struggle's recoil (DFI_MOVE_FLAG_STRUGGLE_RECOIL, folded apart)
         from duoforge_live import tracker
-        self.assertEqual(set(tracker.DIRECT_COST_MOVES), {"SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM"})
+        self.assertEqual(set(tracker.DIRECT_COST_MOVES), {"SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM", "CURSE"})
 
     def test_leech_seed_source_comes_from_the_move_line_and_the_drain_must_agree(self):
         # G84 (decision 0047): -start|X|move: Leech Seed has no [of]; the seed's source is the user of the move line before
@@ -676,6 +711,393 @@ class CheckpointTablesTest(unittest.TestCase):
         for form in (3, 0, "2"):
             with self.assertRaisesRegex(ValueError, "is not 1 or 2"):
                 data.for_config({"format": form})
+class TrackerPartialTrapTest(unittest.TestCase):
+    """Step G90 (decision 0060): the partial trap of Bind, Wrap, Fire Spin, Sand Tomb and Infestation, folded
+    from the three public line forms exactly as the engine keeps it per position: the source (flat position + 1, 0 once
+    the source left), the move, the Binding Band of the start and the elapsed count (TRAP_ELAPSED: 0 at the start, +1 at
+    each residual damage line, 0 at the end and when the trapped Pokemon leaves). The drawn turns are never known."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker, cls.D = tracker, data.load(kind="pool")
+        cls.M, cls.I = cls.D.tables["MOVE"], cls.D.tables["ITEM"]
+
+    def setUp(self):
+        from types import SimpleNamespace
+        tr, D = self.tracker, self.D
+        t = tr.Tracker.__new__(tr.Tracker)
+        t.data, t.side, t._spectator = D, 0, True  # the spectator path: every display comes from its line
+        t._action, t._herb_end, t._last_move = None, None, None  # Tracker.__init__ sets them; _segment reads them
+        t._baton_pass = self.M["BATONPASS"]
+        t._trap_moves = {self.M[k] for k in ("BIND", "WRAP", "FIRESPIN", "SANDTOMB", "INFESTATION")}
+        t._next_activation, t._foe_leads, t._party, t._after_upkeep = 1, [tr.ROSTER_NONE] * 2, None, False
+        band = self.I["BINDINGBAND"] + 1
+        # side 0 member 0 and side 1 member 1 hold the band: the occupants of flat positions 0 and 3
+        self.members = [[SimpleNamespace(sheet={"item": band if (s, m) in ((0, 0), (1, 1)) else 0}, item_used=0,
+                                         item_now=0, toxic_stage=0, seen=False, hp_percent=0, hp_flag=0, status=0,
+                                         revealed=0) for m in range(6)] for s in (0, 1)]
+        t._member = lambda side: self.members[side]
+        t._positions = [[tr._Position(), tr._Position()] for _ in (0, 1)]
+        for side in t._positions:
+            for k, p in enumerate(side):
+                p.occupant = k
+        self.t = t
+
+    def trap(self, flat):
+        p = self.t._positions[flat // 2][flat % 2]
+        return (p.trap, p.trap_source, p.trap_move, p.trap_band, p.trap_elapsed)
+
+    def start(self, target, source, move):
+        from duoforge_live.data import trace_to_c
+        self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], target, source, trace_to_c.CAUSE["MOVE"], 0,
+                                          self.M[move.upper().replace(" ", "")]))
+
+    def end(self, target, move):
+        from duoforge_live.data import trace_to_c
+        self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["VOLATILE_END"], target, detail=trace_to_c.VOLATILE_PARTIAL_TRAP,
+                                          ident=self.M[move.upper().replace(" ", "")]))
+
+    def leave(self, flat, kind="SWITCH", cause=0, id2=0):
+        from duoforge_live.data import trace_to_c
+        if kind == "FAINT":
+            self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["FAINT"], flat))
+        else:
+            self.t._event(trace_to_c.ev_tuple(trace_to_c.EV[kind], flat, trace_to_c.NOPOS, cause, 4, id2, 100, 100, 1))
+
+    def residual(self, flat, move, hp="83/100"):
+        ident = "p%d%s: Mon" % (flat // 2 + 1, "ab"[flat % 2])
+        self.t._trap_residual(f"|-damage|{ident}|{hp}|[from] move: {move}|[partiallytrapped]".split("|"))
+
+    def test_the_start_sets_source_move_band_and_a_zero_count(self):
+        self.start(2, 0, "Bind")  # p1a (holds the band) traps p2a
+        self.assertEqual(self.trap(2), (1, 1, self.M["BIND"] + 1, 1, 0))
+        self.start(1, 3, "Wrap")  # p2b (holds the band) traps p1b
+        self.assertEqual(self.trap(1), (1, 4, self.M["WRAP"] + 1, 1, 0))
+        self.start(3, 1, "Infestation")  # p1b holds nothing
+        self.assertEqual(self.trap(3), (1, 2, self.M["INFESTATION"] + 1, 0, 0))
+        self.assertEqual(self.trap(0), (0, 0, 0, 0, 0))
+        # the band is the source's held item as far as the lines showed: one seen used up or taken is not held
+        self.members[1][1].item_used = 1
+        self.start(0, 3, "Fire Spin")
+        self.assertEqual(self.trap(0), (1, 4, self.M["FIRESPIN"] + 1, 0, 0))
+
+    def test_a_start_on_a_trapped_target_is_a_stop(self):
+        from duoforge_live import lines
+        self.start(2, 0, "Bind")
+        with self.assertRaises(lines.Stop) as caught:
+            self.start(2, 1, "Wrap")  # the engine refuses it with no line, so no line can show it
+        self.assertEqual(caught.exception.reason, "trap-start-on-trapped")
+        self.assertEqual(self.trap(2), (1, 1, self.M["BIND"] + 1, 1, 0))
+
+    def test_a_start_from_an_empty_or_own_position_is_a_stop(self):
+        from duoforge_live import lines
+        for source in (2, self.tracker.NOPOS):
+            with self.assertRaises(lines.Stop, msg=source) as caught:
+                self.start(2, source, "Bind")
+            self.assertEqual(caught.exception.reason, "trap-start-source")
+        self.t._positions[0][0].occupant = self.tracker.ROSTER_NONE
+        with self.assertRaises(lines.Stop) as caught:
+            self.start(2, 0, "Bind")
+        self.assertEqual(caught.exception.reason, "trap-start-source")
+
+    def test_each_residual_damage_line_counts_one(self):
+        self.start(2, 0, "Bind")
+        for n in range(1, 6):
+            self.residual(2, "Bind")
+            self.assertEqual(self.trap(2)[4], n)
+        self.assertEqual(self.trap(2), (1, 1, self.M["BIND"] + 1, 1, 5))
+
+    def test_a_sixth_residual_damage_line_is_a_stop(self):
+        # the engine's trap lasts 5 or 6 residual phases and the last one ends it with no damage: at most 5 damage lines
+        from duoforge_live import lines
+        self.start(2, 0, "Bind")
+        for _ in range(5):
+            self.residual(2, "Bind")
+        with self.assertRaises(lines.Stop) as caught:
+            self.residual(2, "Bind")
+        self.assertEqual(caught.exception.reason, "trap-residual-count")
+        self.assertEqual(self.trap(2)[4], 5)
+
+    def test_a_residual_line_that_is_not_the_traps_is_a_stop(self):
+        from duoforge_live import lines
+        good = "|-damage|p2a: Mon|83/100|[from] move: Bind|[partiallytrapped]"
+        for trapped, line, reason in (
+                (False, good, "trap-residual-untrapped"),
+                (True, "|-damage|p2a: Mon|83/100|[from] move: Wrap|[partiallytrapped]", "trap-residual-move"),
+                (True, "|-damage|p2a: Mon|83/100|[from] move: Whirlpool|[partiallytrapped]", "trap-residual-move"),
+                (True, "|-damage|p2: Mon|83/100|[from] move: Bind|[partiallytrapped]", "trap-residual-line"),
+                (True, good + "|[silent]", "trap-residual-line"),
+                (True, "|-damage|p2a: Mon|[from] move: Bind|[partiallytrapped]", "trap-residual-line"),
+                (True, "|-heal|p2a: Mon|83/100|[from] move: Bind|[partiallytrapped]", "trap-residual-line")):
+            self.setUp()
+            if trapped:
+                self.start(2, 0, "Bind")
+            with self.assertRaises(lines.Stop, msg=line) as caught:
+                self.t._trap_residual(line.split("|"))
+            self.assertEqual(caught.exception.reason, reason, line)
+            self.assertEqual(self.trap(2)[4], 0, line)
+
+    def test_the_end_line_clears_everything_and_names_its_move(self):
+        from duoforge_live import lines
+        self.start(2, 0, "Bind")
+        self.residual(2, "Bind")
+        with self.assertRaises(lines.Stop) as caught:
+            self.end(2, "Wrap")
+        self.assertEqual(caught.exception.reason, "trap-end-move")
+        self.end(2, "Bind")
+        self.assertEqual(self.trap(2), (0, 0, 0, 0, 0))
+        with self.assertRaises(lines.Stop) as caught:
+            self.end(2, "Bind")  # nothing to end
+        self.assertEqual(caught.exception.reason, "trap-end-untrapped")
+
+    def test_the_silent_end_clears_everything_in_the_pins_forms_only(self):
+        from duoforge_live import lines
+        for end in ("Bind", "move: Bind"):
+            self.setUp()
+            self.start(2, 0, "Bind")
+            self.residual(2, "Bind")
+            self.t._trap_silent_end(f"|-end|p2a: Mon|{end}|[partiallytrapped]|[silent]".split("|"))
+            self.assertEqual(self.trap(2), (0, 0, 0, 0, 0), end)
+        self.start(2, 0, "Bind")
+        for line, reason in (("|-end|p2a: Mon|Wrap|[partiallytrapped]|[silent]", "trap-end-move"),
+                             ("|-end|p2: Mon|Bind|[partiallytrapped]|[silent]", "trap-end-line"),
+                             ("|-end|p2a: Mon|Bind|[partiallytrapped]|[silent]|[of] p1a: Mon", "trap-end-line"),
+                             ("|-end|p2a: Mon|Bind|[silent]|[partiallytrapped]", "trap-end-line"),
+                             ("|-end|p2b: Mon|Bind|[partiallytrapped]|[silent]", "trap-end-untrapped")):
+            with self.assertRaises(lines.Stop, msg=line) as caught:
+                self.t._trap_silent_end(line.split("|"))
+            self.assertEqual(caught.exception.reason, reason, line)
+        self.assertEqual(self.trap(2)[0], 1)
+
+    def test_the_trapped_pokemon_leaving_clears_the_trap_and_the_count(self):
+        for kind in ("SWITCH", "DRAG", "FAINT"):
+            self.setUp()
+            self.start(2, 0, "Bind")
+            self.residual(2, "Bind")
+            self.leave(2, kind)
+            self.assertEqual(self.trap(2), (0, 0, 0, 0, 0), kind)
+
+    def test_the_source_leaving_keeps_the_trap_and_the_count_with_no_source(self):
+        # dfi_tail_clear_occupant: the source becomes 0, the turns, the move, the band and the count stay; the residual
+        # then ends it silently (the silent end line)
+        for kind in ("SWITCH", "DRAG", "FAINT"):
+            self.setUp()
+            self.start(2, 0, "Bind")
+            self.start(3, 0, "Infestation")  # one source, two targets
+            self.start(0, 3, "Wrap")  # a trap on the leaver itself, sourced elsewhere
+            self.residual(2, "Bind")
+            self.leave(0, kind)
+            self.assertEqual(self.trap(2), (1, 0, self.M["BIND"] + 1, 1, 1), kind)
+            self.assertEqual(self.trap(3), (1, 0, self.M["INFESTATION"] + 1, 1, 0), kind)
+            self.assertEqual(self.trap(0), (0, 0, 0, 0, 0), kind)  # the leaver's own trap went with it
+            self.t._trap_silent_end("|-end|p2a: Mon|Bind|[partiallytrapped]|[silent]".split("|"))
+            self.assertEqual(self.trap(2), (0, 0, 0, 0, 0), kind)
+
+    def test_another_position_leaving_changes_no_trap(self):
+        self.start(2, 0, "Bind")
+        self.leave(1)
+        self.leave(3, "FAINT")
+        self.assertEqual(self.trap(2), (1, 1, self.M["BIND"] + 1, 1, 0))
+
+    def test_a_baton_pass_gives_the_trap_with_its_source_and_count(self):
+        # dfi_pass_give: the partial trap has no noCopy in the pin, so the receiver is trapped by the same source, with the
+        # same move, band and elapsed count (the turns stay hidden); a plain switch of the trapped one clears it
+        from duoforge_live.data import trace_to_c
+        self.start(2, 0, "Bind")
+        self.residual(2, "Bind")
+        self.residual(2, "Bind")
+        self.leave(2, cause=trace_to_c.CAUSE["MOVE"], id2=self.M["BATONPASS"])
+        self.assertEqual(self.trap(2), (1, 1, self.M["BIND"] + 1, 1, 2))
+        self.residual(2, "Bind")  # it goes on counting
+        self.assertEqual(self.trap(2)[4], 3)
+        self.leave(2)
+        self.assertEqual(self.trap(2), (0, 0, 0, 0, 0))
+        # an untrapped leaver passes nothing, and the source's own leaving still ends the copy's source
+        self.setUp()
+        self.leave(2, cause=trace_to_c.CAUSE["MOVE"], id2=self.M["BATONPASS"])
+        self.assertEqual(self.trap(2), (0, 0, 0, 0, 0))
+        self.setUp()
+        self.start(2, 0, "Bind")
+        self.leave(2, cause=trace_to_c.CAUSE["MOVE"], id2=self.M["BATONPASS"])
+        self.leave(0)
+        self.assertEqual(self.trap(2), (1, 0, self.M["BIND"] + 1, 1, 0))
+
+    def test_a_new_occupant_can_be_trapped_at_once(self):
+        self.start(2, 0, "Bind")
+        self.leave(2)
+        self.start(2, 1, "Wrap")
+        self.assertEqual(self.trap(2), (1, 2, self.M["WRAP"] + 1, 0, 0))
+
+    def test_the_record_writes_the_public_trap_fields_and_hides_the_turns(self):
+        # dfi_view_encode: the drawn turns are DUOFORGE_VIEW_HIDDEN for both viewers; the source (0 once it left), the move,
+        # the band and the elapsed count are public and written as the engine keeps them
+        import collections
+        from duoforge_live import record
+        C = self.tracker.C
+        t = self.t
+        t._conditions, t._hazards, t._guards = [[0] * 4, [0] * 4], [collections.Counter(), collections.Counter()], set()
+        self.start(2, 0, "Bind")
+        self.residual(2, "Bind")
+        self.residual(2, "Bind")
+        self.start(1, 3, "Wrap")
+        self.leave(3, "FAINT")  # the source of the second trap left
+        # (record.unrecorded_folds is gone since #342: the assembler writes every fold, so no refusal list is left to check)
+        size = max(start + length for start, length in record._FIELDS.values())
+        s = record._State(size)
+        record._tail(t, s, C["DUOFORGE_BOUNDARY_PIVOT"])
+
+        def field(flat, name):
+            start, length = record._FIELDS[f"tail.side{flat // 2}.position{flat % 2}.{name}"]
+            return int.from_bytes(s.bytes[start:start + length], "little")
+        hidden = C["DUOFORGE_VIEW_HIDDEN"]
+        self.assertEqual([field(2, n) for n in ("trap_turns", "trap_source", "trap_move", "trap_band", "trap_elapsed")],
+                         [hidden, 1, self.M["BIND"] + 1, 1, 2])
+        self.assertEqual([field(1, n) for n in ("trap_turns", "trap_source", "trap_move", "trap_band", "trap_elapsed")],
+                         [hidden, 0, self.M["WRAP"] + 1, 1, 0])
+        for flat in (0, 3):
+            self.assertEqual([field(flat, n) for n in ("trap_turns", "trap_source", "trap_move", "trap_band",
+                                                       "trap_elapsed")], [0] * 5, flat)
+
+    def test_the_view_extension_shows_the_presence_and_the_count(self):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        C = tracker.C
+        t = self.t
+        t.request, t.epoch, t._conditions, t._guards = {}, 3, [[0] * 4, [0] * 4], set()
+        t._hazards = [tracker.collections.Counter(), tracker.collections.Counter()]
+        t.data = SimpleNamespace(kind="pool", tables=self.D.tables)
+        for side in (0, 1):
+            for m in self.members[side]:
+                m.ability = 0
+        self.start(2, 0, "Bind")
+        for _ in range(3):
+            self.residual(2, "Bind")
+        self.start(1, 3, "Wrap")
+        ext = t.observation_ext()
+        bit = C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]
+        self.assertEqual(ext["sides"][1]["positions"]["volatiles"].tolist(), [bit, 0])
+        self.assertEqual(ext["sides"][0]["positions"]["volatiles"].tolist(), [0, bit])
+        self.assertEqual(ext["volatiles2"].tolist(), [[0, 0], [3 << 4, 0]])  # POSITION_EXT2 bits 4 to 6: the count
+        self.leave(2)
+        again = t.observation_ext()
+        self.assertEqual(again["volatiles2"].tolist(), [[0, 0], [0, 0]])
+        self.assertEqual(again["sides"][1]["positions"]["volatiles"].tolist(), [0, 0])
+
+
+class AllySwitchStateTest(unittest.TestCase):
+    """Step G80 (decision 0044 section 10, lane A's H17): the tracker's Ally Switch fold mirrors dfi_swap_position_state
+    (src/combat/turn.c) field by field. What belongs to the Pokemon moves (the slot record and the whole tail position,
+    position flags 1, 2-3, 4 and 5-7, the attract byte); what is a slot's stays (Leech Seed's source slot, Healing Wish bit 0,
+    the locked target); the trap source of every position that names a swapped position follows the trapper, and so does the
+    Attract source position (derived from the member code in the engine, a tracker field here). A swap onto a pending Healing
+    Wish is E_UNSUPPORTED in the engine and an explicit stop here."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker, cls.D = tracker, data.load(kind="pool")
+
+    def setUp(self):
+        t = TrackerStopTest.tracker()  # the positions hold the roster indexes 0 and 1 of both sides
+        t.data, t._spectator = self.D, True
+        self.t = t
+
+    def swap(self, user=0, other=1):
+        from duoforge_live.data import trace_to_c
+        self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWAP"], user, other, trace_to_c.CAUSE["MOVE"], 0,
+                                          self.D.tables["MOVE"]["ALLYSWITCH"]))
+
+    def at(self, flat):
+        return self.t._positions[flat // 2][flat % 2]
+
+    def test_every_field_of_a_position_is_classified(self):
+        # a field added to _Position must be put on one of the two lists, deliberately: it moves or it is the slot's
+        tr = self.tracker
+        moving, slot = set(tr._SWAP_MOVES), set(tr._SWAP_SLOT)
+        self.assertFalse(moving & slot)
+        self.assertEqual(moving | slot, set(vars(tr._Position())))
+
+    def test_the_pokemons_state_moves_with_it(self):
+        # one distinct value per moving field on each of the two positions; the trap source and the Attract source position
+        # name a foe here (the relinks have their own tests)
+        tr = self.tracker
+        a, c = self.at(0), self.at(1)
+        values = {}
+        for n, name in enumerate(tr._SWAP_MOVES):
+            values[name] = (100 + n, 200 + n)
+            setattr(a, name, values[name][0])
+            setattr(c, name, values[name][1])
+        a.trap_source, c.trap_source = 3, 4  # the flat positions 2 and 3 of the foe, + 1
+        a.attract_from, c.attract_from = 2, 3
+        a.ally_level = a.ally_turns = 0  # the swap's own passed roll sets the user's counter to level 1, 2 turns first
+        c.ally_level, c.ally_turns = 3, 1
+        values["trap_source"], values["attract_from"] = (3, 4), (2, 3)
+        values["ally_level"], values["ally_turns"] = (1, 3), (2, 1)
+        self.swap(0, 1)
+        for name in tr._SWAP_MOVES:
+            self.assertEqual((getattr(a, name), getattr(c, name)), values[name][::-1], name)
+
+    def test_the_slots_own_state_stays(self):
+        # Leech Seed's source slot (the drain goes to whoever stands there), the locked target (a slot location in the pin)
+        a, c = self.at(0), self.at(1)
+        a.leech_source, c.leech_source = 3, 0
+        a.locked_target, c.locked_target = 2, 3
+        a.confused, c.confused = 1, 0  # a field that moves, for the contrast
+        self.swap(0, 1)
+        self.assertEqual((a.leech_source, c.leech_source), (3, 0))
+        self.assertEqual((a.locked_target, c.locked_target), (2, 3))
+        self.assertEqual((a.confused, c.confused), (0, 1))
+
+    def test_the_trap_source_of_every_position_follows_the_trapper(self):
+        a, c, f0, f1 = self.at(0), self.at(1), self.at(2), self.at(3)
+        f0.trap, f0.trap_source = 1, 1  # trapped by the Pokemon at flat 0 (+ 1)
+        f1.trap, f1.trap_source = 1, 2  # trapped by the one at flat 1
+        a.trap, a.trap_source = 1, 4  # trapped by the foe at flat 3: moves with the trapped Pokemon, names the same trapper
+        self.swap(0, 1)
+        self.assertEqual((f0.trap_source, f1.trap_source), (2, 1))
+        self.assertEqual((c.trap, c.trap_source), (1, 4))
+        self.assertEqual((a.trap, a.trap_source), (0, 0))
+
+    def test_an_ally_trapped_by_its_partner_follows_it(self):
+        # the trapped Pokemon moves to the trapper's slot and the trapper to its: the source names the other flat position
+        a, c = self.at(0), self.at(1)
+        c.trap, c.trap_source = 1, 1  # the Pokemon at flat 1 is trapped by the one at flat 0
+        self.swap(0, 1)
+        self.assertEqual((a.trap, a.trap_source), (1, 2))
+        self.assertEqual((c.trap, c.trap_source), (0, 0))
+
+    def test_the_attract_source_position_follows_the_source(self):
+        # the byte (the member code) moves with the infatuated Pokemon and does not change; the source's flat position follows
+        # the source to its new slot (the engine derives it from the code), also when the source is the swapped partner
+        a, c, f0 = self.at(0), self.at(1), self.at(2)
+        f0.attract, f0.attract_from = 1 + 0, 0  # infatuated by the member code 1 (side 0 roster 0), standing at flat 0
+        c.attract, c.attract_from = 1 + 0, 0  # the partner is infatuated by the same source: the swap moves both
+        a.attract, a.attract_from = 1 + 7, 3  # infatuated by the foe at flat 3
+        self.swap(0, 1)
+        self.assertEqual((f0.attract, f0.attract_from), (1, 1))  # the source now stands at flat 1
+        self.assertEqual((a.attract, a.attract_from), (1, 1))  # c's state moved to flat 0; its source stands at flat 1
+        self.assertEqual((c.attract, c.attract_from), (8, 3))  # a's state moved to flat 1; the foe source stays at flat 3
+
+    def test_a_pending_healing_wish_stops(self):
+        # dfi_ally_swap_wish_blocked: E_UNSUPPORTED when either slot holds the wish (the onSwap heal is not modelled)
+        for flat in (0, 1):
+            with self.subTest(wish_at=flat):
+                self.setUp()
+                self.at(flat).wish = 1
+                with self.assertRaises(lines.Stop) as caught:
+                    self.swap(0, 1)
+                self.assertEqual(caught.exception.reason, "ally-switch-healing-wish")
+                self.assertEqual((self.at(0).occupant, self.at(1).occupant, self.at(0).ally_level), (0, 1, 0))
+
+    def test_the_foes_swap_is_the_same_swap(self):
+        a, c = self.at(2), self.at(3)
+        a.taunt, c.taunt = 3, 0
+        a.leech_source, c.leech_source = 1, 2
+        self.at(0).trap, self.at(0).trap_source = 1, 3  # our Pokemon at flat 0 is trapped by the foe at flat 2
+        self.swap(2, 3)
+        self.assertEqual((a.taunt, c.taunt, a.leech_source, c.leech_source), (0, 3, 1, 2))
+        self.assertEqual(self.at(0).trap_source, 4)
 
 
 if __name__ == "__main__":

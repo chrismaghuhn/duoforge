@@ -230,6 +230,9 @@ duoforge_add_test(NAME duoforge.state.pool_g78 SOURCES test_pool_g78.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g88 SOURCES test_pool_g88.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g86 SOURCES test_pool_g86.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g92 SOURCES test_pool_g92.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g90 SOURCES test_pool_g90.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g80 SOURCES test_pool_g80.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
@@ -277,8 +280,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=fe6324307c0687f8aa73b6e24f48601481491807cb4c836ac004ef64b5f8f955"
-        "pool_tables.c=5417f358973d64cd13ce31bf87b0b502201ce49a5afb9d0dc76383f8ef137c40")
+        "pool_tables.h=fc4601a46a561da76980f07fac072a642c575c5c22e19269de229f11cb271970"
+        "pool_tables.c=08acc5eaae81972e88b65d4f106451366e5350f128534a3a5d301c681e9d7228")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

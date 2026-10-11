@@ -142,7 +142,9 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'MULTIHIT_COUNT': 22,  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
          'MOODY': 23,  # 23: step G73, Moody's samples (DFI_SITE_MOODY), one site for both draws
          'CUTE_CHARM': 24,  # 24: step G71, Cute Charm's roll (DFI_SITE_CUTE_CHARM), randomChance(3, 10)
-         'ATTRACT': 25}  # 25: step G71, Attract's roll before the move (DFI_SITE_ATTRACT), randomChance(1, 2)
+         'ATTRACT': 25,  # 25: step G71, Attract's roll before the move (DFI_SITE_ATTRACT), randomChance(1, 2)
+         'PARTIAL_TRAP_TURNS': 32,  # 32: step G90, the partial trap's turns (DFI_SITE_PARTIAL_TRAP_TURNS)
+         'ALLY_SWITCH': 33}  # 33: step G80, Ally Switch's consecutive-use roll (DFI_SITE_ALLY_SWITCH)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -1056,10 +1058,15 @@ EV['ILLUSION_END'] = 46
 EV['CLEAR_ALL_BOOSTS'] = 47
 # DUOFORGE_EVENT_ITEM_SHOWN = 48 (decision 0033, step G67): by value.
 EV['ITEM_SHOWN'] = 48
+# DUOFORGE_EVENT_SWAP = 49 (Ally Switch, decision 0044, step G80): by value; 48 is lane B's ITEM_SHOWN.
+EV['SWAP'] = 49
+# DUOFORGE_EVENT_COPY_BOOST = 50 (Psych Up, decision 0044, step G80): by value, as SWAP.
+EV['COPY_BOOST'] = 50
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21,
-         'LEECH_SEED': 22,  # LEECH_SEED: step G84, decision 0047 (the lane A block)
+         'LEECH_SEED': 22,  # LEECH_SEED: step G84, decision 0047 (the lane A block); CURSE: step G84b, decision 0063
+         'CURSE': 23,
          'ATTRACT': 36}  # 36: DUOFORGE_CAUSE_ATTRACT (step G71, decision 0034; lane B block CAUSE_ 36-49)
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
@@ -1070,9 +1077,13 @@ VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 VOLATILE_LEECH_SEED = 13  # DUOFORGE_VOLATILE_LEECH_SEED (step G84, decision 0047): START only, no END line
+VOLATILE_CURSE = 14  # DUOFORGE_VOLATILE_CURSE (step G84b, decision 0063): START only, the Ghost Curse's [of] source
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
 VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
 VOLATILE_ATTRACT = 11      # DUOFORGE_VOLATILE_ATTRACT (step G71, decision 0034): START, and the visible END of Mental Herb and Oblivious
+VOLATILE_PARTIAL_TRAP = 12  # DUOFORGE_VOLATILE_PARTIAL_TRAP (step G90, decision 0060): the END line; the start is an ACTIVATE
+# The six moves of the partial trap (step G90, decision 0060): the names of their lines.
+PARTIAL_TRAP_MOVES = ('Bind', 'Wrap', 'Fire Spin', 'Sand Tomb', 'Snap Trap', 'Infestation')
 FAIL_SUBSTITUTE_EXISTS = 1  # DUOFORGE_FAIL_SUBSTITUTE_EXISTS: cause MOVE + id2 Substitute only
 FAIL_SUBSTITUTE_WEAK = 2    # DUOFORGE_FAIL_SUBSTITUTE_WEAK: cause MOVE + id2 Substitute only
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
@@ -1140,6 +1151,10 @@ IGNORED_VOLATILES = {
     # Pool step G31: Taunt's turns are not a field of the record: the moves of the next requests (every Status move is
     # disabled), the cant lines and the start and end lines show them; Yawn's show in the start line and the sleep.
     'taunt': 'the moves of the requests, the cant lines and the start and end lines',
+    # Step G90 (decision 0060): the partial trap's turns are not a field of the record (a drawn counter, hidden from both viewers):
+    # the residual damage lines, the end line and the trapped request (no switch option) show it; the source and the band are read
+    # by duoforge.state.pool_g90 after every step, and the presence bit of the view by its own test.
+    'partiallytrapped': 'the residual damage lines, the end line and the trapped request; the turns are hidden',
     'yawn': 'the start line and the sleep that it brings',
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
@@ -1166,6 +1181,12 @@ IGNORED_VOLATILES = {
     # Step G84 (Leech Seed, decision 0047): the volatile is the tail's leech_seed_source (the view bit LEECH_SEED); its presence
     # shows in the start line, the drain's damage line `[from] Leech Seed` and the silent heal (the HEAL event, cause LEECH_SEED).
     'leechseed': 'the start line, the drain damage line and the silent heal of the target',
+    # Step G84b (Curse, decision 0063): the Ghost variant's start line (`-start|X|Curse|[of] source`), its residual damage line
+    # (`[from] Curse`, no [of]) and the user's half-HP line (a plain -damage); the variant is the user's type at execution.
+    'curse': 'the start line, the residual damage line and the half-HP line of the user (the variant shows in the moves)',
+    # Pool step G80 (Ally Switch, decision 0044): its condition prints nothing; the swap lines show the uses that worked and the
+    # `-fail` lines with [still] the refused rolls, and the counter is drawn in the roll (DFI_SITE_ALLY_SWITCH).
+    'allyswitch': 'the swap lines, the refused rolls and the consecutive-roll draws (the counter is not a field of the record)',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -1223,6 +1244,9 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['POISON']  # the residual damage of tox is poison's cause too (the status in the HP field tells them apart)
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
+            elif what == 'Curse':
+                # Step G84b (decision 0063): the Curse residual, `-damage|holder|hp|[from] Curse` (no [of]; cause CURSE)
+                cause = CAUSE['CURSE']
             elif what == 'Leech Seed':
                 # Step G84 (decision 0047): the residual drain, `-damage|holder|hp|[from] Leech Seed|[of] source`; other = the source
                 cause = CAUSE['LEECH_SEED']
@@ -1514,6 +1538,11 @@ def swap_partners(trace, teams, roster_of, tables):
                 occ[side][pos % 2] = r
                 sheet = (teams[side][r]['ability'] - 1) if teams[side][r]['ability'] else None
                 now[side][r] = None if (side, r) in mega else sheet
+            elif kind == 'swap' and args and ev_pos(args[0]) is not None and len(args) == 2 and args[1] in ('0', '1'):
+                # Ally Switch (step G80): the occupants of the two slots of the side exchange (the same as the line's new slot)
+                pos = ev_pos(args[0])
+                new = (pos // 2) * 2 + int(args[1])
+                occ[pos // 2][pos % 2], occ[pos // 2][new % 2] = occ[pos // 2][new % 2], occ[pos // 2][pos % 2]
             elif kind == '-ability' and ev_pos(args[0]) is not None and '[from] ability: Trace' in attrs:
                 pos = ev_pos(args[0])
                 now[pos // 2][occ[pos // 2][pos % 2]] = tables['ABILITY'][key(args[1])]
@@ -1708,6 +1737,26 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                     truth = tn
             hp = ev_hp(args[2], side, viewer, maxhp[side][truth])
             e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][truth], id2, *hp)
+        elif kind == '-copyboost':
+            # Psych Up (step G80, decision 0044; data/moves.ts:14211-14240, onHit): `-copyboost|USER|TARGET|[from] move: Psych
+            # Up`, the user takes the target's seven stages. Public: both players see the line. Anything else is refused.
+            if len(args) != 2 or attrs != ['[from] move: Psych Up']:
+                raise ConversionError('protocol-line', 'trace_to_c: unsupported -copyboost %r' % line, detail='copyboost')
+            user, target = ev_pos(args[0]), ev_pos(args[1])
+            if user is None or target is None:
+                raise ConversionError('protocol-line', 'trace_to_c: -copyboost of a side %r' % line, detail='copyboost')
+            cause, id2, _ = ev_cause(attrs, tables)
+            e = ev_tuple(EV['COPY_BOOST'], user, target, cause, 0, id2)
+        elif kind == 'swap':
+            # Ally Switch (decision 0044, step G80; data/moves.ts:302-357, swapPosition sim/battle.ts:1588-1607): the line
+            # `|swap|POKEMON|POSITION|[from] move: Ally Switch` names the user and the slot it moves to, on its own side.
+            # Public (both players see it). Anything else is refused, never mapped.
+            pos = ev_pos(args[0]) if args else None
+            if pos is None or len(args) != 2 or args[1] not in ('0', '1') or attrs != ['[from] move: Ally Switch']:
+                raise ConversionError('protocol-line', 'trace_to_c: unsupported |swap| line %r' % line, detail='swap')
+            new_pos = (pos // 2) * 2 + int(args[1])
+            cause, id2, _ = ev_cause(attrs, tables)
+            e = ev_tuple(EV['SWAP'], pos, new_pos, cause, 0, id2)
         elif kind == 'move':
             pos = ev_pos(args[0])
             last_user = pos
@@ -1765,6 +1814,23 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             side = pos // 2
             hp = ev_hp(args[1], side, viewer, maxhp[side][args[0].split(': ', 1)[1]])
             e = ev_tuple(EV['HEAL'], pos, NOPOS, CAUSE['LEECH_SEED'], 0, 0, *hp)
+        elif kind == '-heal' and '[from] move: Healing Wish' in attrs:
+            # Step G82 (decision 0045, option A): the entrant of a slot with a pending wish is healed to full HP and cured in
+            # the same step (data/moves.ts:8370-8377: target.heal(maxhp), clearStatus, then this line). clearStatus prints
+            # nothing, so the cure has no line of its own (no CURE event). The pin heals only when the entrant is hurt or
+            # statused, so the line always leaves the entrant at full HP with no status: the text is the precondition, and a
+            # line with another HP text or a status suffix is a ConversionError (the rule 'healing-wish-heal').
+            pos = ev_pos(args[0])
+            side = pos // 2
+            # The owner's copy shows the exact HP (175/175), the foe's the percentage (100/100): both are full HP. A status
+            # suffix would mean a status left, which the pin's clearStatus does not do.
+            hp_text = args[1].split(' ')
+            cur, _, top = hp_text[0].partition('/')
+            if len(hp_text) != 1 or not cur or cur != top:
+                raise ConversionError('healing-wish-heal', 'trace_to_c: a Healing Wish heal that is not full HP and status-free',
+                                      detail='%s %s' % (args[0], args[1]))
+            hp = ev_hp(args[1], side, viewer, maxhp[side][args[0].split(': ', 1)[1]])
+            e = ev_tuple(EV['HEAL'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Healing Wish')], *hp)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
             side = pos // 2
@@ -1777,6 +1843,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 tn = ill['truth_at'].get((side, pos % 2))
                 if tn is not None and tn != name and ill['shown_at'].get((side, pos % 2)) == name:
                     shown_max = tn
+            if '[partiallytrapped]' in attrs and (kind != '-damage' or cause != CAUSE['MOVE'] or other != NOPOS):
+                # Step G90 (decision 0060, rule partial-trap-damage): the residual of a partial trap is `-damage|T|hp|[from] move: M|
+                # [partiallytrapped]`: a DAMAGE with cause MOVE and the move in id2, no [of]. Any other shape is refused.
+                raise ConversionError('partial-trap-damage', 'trace_to_c: partial trap line of another shape %r' % line, detail=line)
             hp = ev_hp(args[1], side, viewer, maxhp[side][shown_max])
             e = ev_tuple(EV['DAMAGE' if kind == '-damage' else 'HEAL'], pos, other, cause, 0, id2, *hp)
         elif kind == 'faint':
@@ -1852,6 +1922,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 if cause != CAUSE['ABILITY'] or other == NOPOS:
                     raise ConversionError('fail-line', 'trace_to_c: unknown -fail unboost %r' % line, detail='unboost')
                 e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
+            elif len(args) == 2 and args[1] == 'move: Ally Switch':
+                # Ally Switch with no partner (step G80, decision 0044; data/moves.ts:326-328, NOT_FAIL): FAIL with cause MOVE, id2
+                # Ally Switch, detail 0 (the lead's approved representation). The consecutive roll's `-fail|X` has no move name.
+                e = ev_tuple(EV['FAIL'], ev_pos(args[0]), NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Ally Switch')])
             else:
                 e = ev_tuple(EV['FAIL'], ev_pos(args[0]),
                              detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
@@ -1891,7 +1965,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]
-            if what == 'move: Poltergeist' and len(args) == 3:
+            if what.startswith('move: ') and what[6:] in PARTIAL_TRAP_MOVES and len(args) == 2 and len(attrs) == 1 \
+                    and attrs[0].startswith('[of] '):
+                # Step G90 (decision 0060, rule partial-trap-start): `-activate|T|move: M|[of] S`, the start of the partial trap:
+                # ACTIVATE with cause MOVE, id2 = the move, other = the source (the converter's rule for the volatile's start).
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['ACTIVATE'], pos, other, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
+            elif what == 'move: Poltergeist' and len(args) == 3:
                 # Step G64 (Poltergeist's onTryHit, data/moves.ts:13601-13604): -activate|X|move: Poltergeist|Item, an ACTIVATE of
                 # the move with no state of its own. The item is the one X holds now; the name must be an item of the tables.
                 try:
@@ -2084,6 +2164,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 if not (herb or oblivious) or other != NOPOS:
                     raise ConversionError('attract-end', 'trace_to_c: unknown -end %r' % line, detail='Attract end cause')
                 e = ev_tuple(EV['VOLATILE_END'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=VOLATILE_ATTRACT)
+            elif kind == '-end' and (what[6:] if what.startswith('move: ') else what) in PARTIAL_TRAP_MOVES and len(args) == 2 \
+                    and attrs == ['[partiallytrapped]']:
+                # Step G90 (decision 0060, rule partial-trap-end): `-end|T|move: M|[partiallytrapped]`, the duration's end (the
+                # residual's count at 0, no damage that turn): VOLATILE_END with the move in `ident`. The silent end has [silent]
+                # and no event (the [silent] rule).
+                e = ev_tuple(EV['VOLATILE_END'], ev_pos(args[0]), detail=VOLATILE_PARTIAL_TRAP,
+                             ident=tables['MOVE'][key(what[6:] if what.startswith('move: ') else what)])
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
@@ -2119,6 +2206,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             elif what == 'move: Leech Seed' and kind == '-start':
                 # Step G84 (decision 0047; data/moves.ts:10214): `-start|X|move: Leech Seed` (no [of]): VOLATILE_START, no END line
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), NOPOS, detail=VOLATILE_LEECH_SEED)
+            elif what == 'Curse' and kind == '-start':
+                # Step G84b (decision 0063; champions/moves.ts:187-194): `-start|X|Curse|[of] source` from addVolatile (after the
+                # delete, so a refresh shows it too): VOLATILE_START, other = the source
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), other, detail=VOLATILE_CURSE)
             elif what == 'move: Yawn' and kind == '-start':
                 # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
                 # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)
@@ -2630,6 +2722,8 @@ def convert_battle(name, spec, trace, tables):
         # The positions that received a Pokemon, in the reference's order of their LAST entry (each switch or drag is
         # logged twice, for the two audiences). A position entered again in the same step (a drag of a Pokemon that
         # switched in) moves to the end: the engine's activation ids of the positions are those of their last entry.
+        # An Ally Switch (step G80) moves the entrant with its activation id: a `|swap|` line exchanges the two positions in the
+        # list, so each entry follows its Pokemon (the engine's activation ids of the slots move with the occupants).
         entries = []
         for line in step['log']:
             if line.startswith('|switch|') or line.startswith('|drag|'):
@@ -2638,6 +2732,12 @@ def convert_battle(name, spec, trace, tables):
                 if flat in entries:
                     entries.remove(flat)
                 entries.append(flat)
+            elif line.startswith('|swap|'):
+                parts = line.split('|')
+                who = parts[2].split(':')[0]
+                pos = (int(who[1]) - 1) * 2 + (ord(who[2]) - ord('a'))
+                new = (pos // 2) * 2 + int(parts[3])
+                entries = [new if f == pos else pos if f == new else f for f in entries]
         ent = entries + [0xFF] * (4 - len(entries))
         # The moves the reference's request offers per slot: bit k for move k,
         # 0x10 for Struggle, 0x20 for the recharge turn, 0xFF where there is nothing to compare.
@@ -2718,7 +2818,10 @@ class FoePressure:
 
     def _own(self, v, kind, slot, other, cause, ident, ident2, hp, hp_kind):
         occ = self.own_occ[v][slot]
-        if kind == EV['SWITCH']:
+        if kind == EV['SWAP']:
+            # Ally Switch (step G80): the user and its ally exchange their slots, the occupants with them (sim/battle.ts:1588-1607)
+            self.own_occ[v][slot], self.own_occ[v][other % 2] = self.own_occ[v][other % 2], self.own_occ[v][slot]
+        elif kind == EV['SWITCH']:
             self.own_occ[v][slot] = ident
             self.alive[v][ident] = hp != 0
             self.has_pressure[v][ident] = self.teams[v][ident]['ability'] == self.pressure

@@ -596,6 +596,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             # (BOOST_ROLE PRIMARY_TARGET); a spread class (Growl) or a Pokemon of any distance stays UNMODELED.
             rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_TARGET'], boosts_of(f['boosts'][1])
             vectors += 1
+        elif pool and rec['target_class'] == TARGET_CLASS_POOL['allies'] and rec['category'] == CATEGORIES['Status']:
+            # Step G80: Howl, a status move whose primary boosts go to each standing member of the user's side (the user and
+            # its ally: alliesAndSelf in slot order, sim/pokemon.ts:818-819). The turn code runs BOOST_ROLE PRIMARY_TARGET over
+            # every target of the allies class (the Life Dew list), so the role is the same one Charm uses.
+            rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_TARGET'], boosts_of(f['boosts'][1])
+            vectors += 1
         elif rec['target_class'] != TARGET_CLASS['self']:
             bad('move %s: primary boosts on a non-self target' % mid, 'primary boosts on a non-self target')
         else:
@@ -2356,6 +2362,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'revivalblessing': ('REVIVAL_BLESSING', {'onTryHit'}),                # G52: the revive at the PIVOT of the user's slot
     'leechseed': ('LEECH_SEED', {'onTryImmunity'}),                       # G84 (decision 0047): the seed; its drain is a residual
     'curse': ('CURSE', {'onModifyMove', 'onTryHit', 'onHit'}),            # G84: non-Ghost boosts; a Ghost Curse is refused explicitly
+    'healingwish': ('HEALING_WISH', {'onTryHit'}),                        # G82 (decision 0045): the user's slot condition; the user faints
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
     'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
@@ -2416,6 +2423,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'stormthrow': ('WILL_CRIT', set()),                                   # C4: willCrit, the critical hit without a draw (sim/battle-actions.ts:1638)
     'flowertrick': ('WILL_CRIT', set()),                                  # C4: willCrit
     'frostbreath': ('WILL_CRIT', set()),                                  # C4: willCrit
+    'endeavor': ('ENDEAVOR', {'damageCallback', 'onTryImmunity'}),       # C5 (5cy): damage = target HP - user HP; immune if user HP >= target HP
     'haze': ('HAZE', {'onHitField'}),                                     # G62: clears every boost of the standing actives (decision 0031)
     'afteryou': ('AFTER_YOU', {'onHit'}),                                 # G62: the target's queued move goes next (decision 0015 entry 5az)
     'quash': ('QUASH', {'onHit'}),                                        # G62: the target's queued move goes last
@@ -2429,6 +2437,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'dragoncheer': ('DRAGON_CHEER', set()),    # G72b: the crit stage of its target (the ally), by its Dragon type at start
     'lashout': ('LASH_OUT', {'onBasePower'}),   # G88: 2x power when the user's stat fell this turn (position flag LOWERED, decision 0046)
     'assurance': ('ASSURANCE', {'basePowerCallback'}),  # G88: 2x power when the target was hurt this turn (position flag HURT)
+    'psychup': ('PSYCH_UP', {'onHit'}),        # G80: the user takes the target's boosts, Focus Energy and Dragon Cheer (its copies are [silent])
+    'allyswitch': ('ALLY_SWITCH', {'onHit', 'onPrepareHit'}),  # G80: swaps the user with its ally; the allyswitch volatile's counter
     'doubleshock': ('DOUBLE_SHOCK', {'onTryMove'}),                       # G50: fails without Electric; its self effect is owned                            # G48: ten hits, a check for each (multiaccuracy)
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
@@ -2448,6 +2458,9 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'horndrill': ('OHKO', set()),
     'memento': ('MEMENTO', set()),                                        # G92: target atk and spa -2, then the user faints
     'nightshade': ('LEVEL_DAMAGE', set()),                                # G92: damage 'level' (the user's level, no crit draw)
+    # G90 (decision 0060): the six moves that apply the volatile partiallytrapped (G2_OWNED_FIELDS owns the volatileStatus line)
+    'bind': ('PARTIAL_TRAP', set()), 'wrap': ('PARTIAL_TRAP', set()), 'firespin': ('PARTIAL_TRAP', set()),
+    'sandtomb': ('PARTIAL_TRAP', set()), 'infestation': ('PARTIAL_TRAP', set()),  # Snap Trap is dropped (decision 0060 section 8)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2564,6 +2577,47 @@ G84_CURSE_FACTS = (
     'flags: { bypasssub: 1, metronome: 1 },', "volatileStatus: 'curse',", "onModifyMove(move, source, target) {",
     'this.directDamage(source.maxhp / 2, source, source);', 'onResidualOrder: 12,', 'this.damage(pokemon.baseMaxhp / 4);',
 )
+# Step G82 (decision 0045, lead approval 2026-10-10): Healing Wish (data/moves.ts:8348-8382). The user's position gets the slot
+# condition 'healingwish' (side.slotConditions[position], sim/side.ts:464-495) and the user faints (selfdestruct ifHit, after the
+# condition is added, sim/battle-actions.ts:1244-1246, :1287). The next entrant of that slot is healed to full HP and cured when it
+# is hurt or statused (the condition's onSwap, :8370-8377); otherwise the condition waits. onTryHit fails with [still] when the side
+# has no bench (:8357-8363). The turn code implements the move and the heal (src/combat/turn.c, decision 0045).
+G82_HANDLERS = ['HEALING_WISH']
+G82_HEALING_WISH_FACTS = (
+    'accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+    'flags: { snatch: 1, heal: 1, metronome: 1 },', 'selfdestruct: "ifHit",', "slotCondition: 'healingwish',",
+    'target: "self",', 'type: "Psychic",', 'if (!this.canSwitch(source.side)) {', "this.attrLastMove('[still]');",
+    "this.add('-fail', source);", 'return this.NOT_FAIL;', 'onSwitchIn(target) {',
+    "this.singleEvent('Swap', this.effect, this.effectState, target);", 'onSwap(target) {',
+    "if (!target.fainted && (target.hp < target.maxhp || target.status)) {", 'target.heal(target.maxhp);',
+    'target.clearStatus();', "this.add('-heal', target, target.getHealth, '[from] move: Healing Wish');",
+    "target.side.removeSlotCondition(target, 'healingwish');",
+)
+# Step G80, Psych Up (data/moves.ts:14211-14240; no Champions override): the user takes the target's seven stages, then its
+# crit-stage volatiles are removed and the target's copies are added (Focus Energy and Dragon Cheer; the Dragon Cheer stage is
+# copied as the stored Dragon flag, not recomputed). Laser Focus and Gmax Chi Strike are not in the pool (checked by the generator).
+G80_HANDLERS = ['PSYCH_UP', 'ALLY_SWITCH']
+G80_ALLYSWITCH_FACTS = (
+    'accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 2,', 'flags: { metronome: 1 },',
+    'onPrepareHit(pokemon) {', "return pokemon.addVolatile('allyswitch');",
+    'const newPosition = (pokemon.position === 0 ? pokemon.side.active.length - 1 : 0);',
+    'if (!pokemon.side.active[newPosition]) success = false;', 'if (pokemon.side.active[newPosition].fainted) success = false;',
+    "this.add('-fail', pokemon, 'move: Ally Switch');", 'this.attrLastMove(\'[still]\');', 'return this.NOT_FAIL;',
+    "this.swapPosition(pokemon, newPosition, '[from] move: Ally Switch');",
+    'duration: 2,', 'counterMax: 729,', 'this.effectState.counter = 3;',
+    'const success = this.randomChance(1, counter);', 'delete pokemon.volatiles[\'allyswitch\'];', 'return false;',
+    'this.effectState.counter *= 3;', 'this.effectState.duration = 2;', 'target: "self",', 'type: "Psychic",',
+)
+G80_FACTS = (
+    'accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+    'flags: { bypasssub: 1, allyanim: 1, metronome: 1 },', 'target: "normal",', 'type: "Normal",',
+    'for (i in target.boosts) {', 'source.boosts[i] = target.boosts[i];',
+    "const volatilesToCopy = ['dragoncheer', 'focusenergy', 'gmaxchistrike', 'laserfocus'];",
+    'for (const volatile of volatilesToCopy) source.removeVolatile(volatile);',
+    'if (target.volatiles[volatile]) {', 'source.addVolatile(volatile);',
+    "if (volatile === 'dragoncheer') source.volatiles[volatile].hasDragonType = target.volatiles[volatile].hasDragonType;",
+    "this.add('-copyboost', source, target, '[from] move: Psych Up');",
+)
 # Step G76 (decision 0015 5cg, lead's approval 2026-10-10): Destiny Bond. The volatile is the move's volatileStatus on the
 # user; onPrepareHit fails the move while the volatile is up (removeVolatile returns true: a consecutive use fails and
 # removes it); the condition prints the -singlemove start; onBeforeMove (not for Destiny Bond itself) and onMoveAborted
@@ -2589,6 +2643,24 @@ G76_FINAL_GAMBIT_FACTS = (
 # Step G78, Dragon Darts (decision 0043, lead's approval of 2026-10-10): the split of its two hits (smartTarget) over the
 # chosen foe and its partner; the hit count is the number 2 (no draw), the hit loop is the Champions one.
 G78_HANDLERS = ['DRAGON_DARTS']
+# Step G90, the partial trap (decision 0060, lead's approval 2026-10-11): the volatile partiallytrapped of six moves. The pin's
+# volatile (data/conditions.ts:222-258: the duration draw random(5, 7) or 8 with a Grip Claw, the Binding Band divisor, the
+# residual at order 13, the end line, the trapped flag of the source) is what the turn code reads; the moves are plain hits.
+G90_HANDLERS = ['PARTIAL_TRAP']
+G90_MOVES = ('bind', 'wrap', 'firespin', 'sandtomb', 'infestation')
+G90_MOVE_FACTS = ("volatileStatus: 'partiallytrapped',", 'target: "normal",')
+G90_CONDITION_FACTS = (
+    'durationCallback(target, source) {', "if (source?.hasItem('gripclaw')) return 8;", 'return this.random(5, 7);',
+    "this.effectState.boundDivisor = source.hasItem('bindingband') ? 6 : 8;", 'onResidualOrder: 13,',
+    'if (source && (!source.isActive || source.hp <= 0 || !source.activeTurns) && !gmaxEffect) {',
+    "this.add('-end', pokemon, this.effectState.sourceEffect, '[partiallytrapped]', '[silent]');",
+    'this.damage(pokemon.baseMaxhp / this.effectState.boundDivisor);',
+    "this.add('-end', pokemon, this.effectState.sourceEffect, '[partiallytrapped]');",
+    'if (this.effectState.source?.isActive || gmaxEffect) pokemon.tryTrap();',
+)
+# Step C5 (decision 0015 entry 5cy): Endeavor, the damageCallback path of Final Gambit (G76) with an onTryImmunity (the user's HP
+# must be below the target's, else -immune). Read by parse_move from SPECIAL_P (the callbacks named there).
+C5_HANDLERS = ['ENDEAVOR']
 G78_FACTS = (
     'accuracy: 100,', 'basePower: 50,', 'category: "Physical",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
@@ -2747,7 +2819,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + G82_HANDLERS + G90_HANDLERS + C5_HANDLERS + G80_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2765,6 +2837,7 @@ G2_OWNED_FIELDS = {
     'REVIVAL_BLESSING': {'slotCondition': "slotCondition: 'revivalblessing', // No this not a real switchout move // This is needed "
                                          "to trigger a switch protocol to choose a fainted party member // Feel free to refactor"},
     'LEECH_SEED': {'volatileStatus': "volatileStatus: 'leechseed',"},
+    'HEALING_WISH': {'slotCondition': "slotCondition: 'healingwish',", 'selfdestruct': 'selfdestruct: "ifHit",'},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
     'ELECTRIC_TERRAIN': {'terrain': "terrain: 'electricterrain',"},
@@ -2804,6 +2877,7 @@ G2_OWNED_FIELDS = {
     'OHKO': {'ohko': 'ohko: true,'},
     'MEMENTO': {'selfdestruct': 'selfdestruct: "ifHit",'},
     'LEVEL_DAMAGE': {'damage': "damage: 'level',"},
+    'PARTIAL_TRAP': {'volatileStatus': "volatileStatus: 'partiallytrapped',"},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
@@ -2813,7 +2887,7 @@ G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEA
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
-                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'DESTINY_BOND', 'BANEFUL_BUNKER', 'LEECH_SEED', 'CURSE'}
+                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'HEALING_WISH', 'ALLY_SWITCH', 'DESTINY_BOND', 'BANEFUL_BUNKER', 'LEECH_SEED', 'CURSE'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2970,7 +3044,7 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
-ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
+ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
                          'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock',
                          'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek'],
                'abilities': ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
@@ -3553,6 +3627,25 @@ def check_g58_facts(moves_ts):
             fail('move phantomforce: the entry no longer has "%s"' % fact)
 
 
+def check_g90_facts(conditions_ts, moves_ts):
+    """Step G90: the partiallytrapped condition and the six moves are the pinned text the turn code reads."""
+    e = conditions_ts.entry('partiallytrapped')
+    if e is None:
+        fail('condition partiallytrapped not found')
+    text = norm('\n'.join(e[2]))
+    for fact in G90_CONDITION_FACTS:
+        if norm(fact) not in text:
+            fail('condition partiallytrapped: the entry no longer has "%s"' % fact)
+    for mid in G90_MOVES:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in G90_MOVE_FACTS:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_g78_facts(moves_ts):
     """Step G78: the Dragon Darts entry is the pinned text the turn code reads (its hits, its smartTarget, its target)."""
     e = moves_ts.entry('dragondarts')
@@ -3611,6 +3704,19 @@ def check_g86_facts(moves_ts):
                 fail('move %s: the entry no longer has "%s"' % (mid, fact))
 
 
+def check_g80_facts(moves_ts):
+    """Step G80: the Psych Up and Ally Switch entries are the pinned texts the turn code reads (boosts, copied volatiles, the
+    log lines; the swap, the priority, the counter and its draw)."""
+    for mid, facts in (('psychup', G80_FACTS), ('allyswitch', G80_ALLYSWITCH_FACTS)):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_g84_facts(moves_ts):
     """Step G84 (decision 0047): the Leech Seed and Curse base entries have the pinned texts the turn code reads."""
     for mid, facts in (('leechseed', G84_LEECH_FACTS), ('curse', G84_CURSE_FACTS)):
@@ -3621,6 +3727,17 @@ def check_g84_facts(moves_ts):
         for fact in facts:
             if norm(fact) not in text:
                 fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
+def check_g82_facts(moves_ts):
+    """Step G82: the Healing Wish entry has the pinned texts the turn code reads (data/moves.ts:8348-8382, decision 0045)."""
+    e = moves_ts.entry('healingwish')
+    if e is None:
+        fail('move healingwish not found')
+    text = norm('\n'.join(e[2]))
+    for fact in G82_HEALING_WISH_FACTS:
+        if norm(fact) not in text:
+            fail('move healingwish: the entry no longer has "%s"' % fact)
 
 
 def check_g76_facts(moves_ts):
@@ -4525,6 +4642,46 @@ def check_c4_facts(moves_ts, champ_moves, only=None):
                 fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
 
 
+# Step C5 (decision 0015 entry 5cy): the pinned fields of the data-only moves of the step, read from data/moves.ts at b2cb775.
+# Every field of the pin entry must be listed (C5_IGNORED_KEYS aside) with its value, and the Champions mod must have no entry.
+C5_IGNORED_KEYS = {'num', 'name', 'contestType', 'zMove', 'maxMove', 'damageCallback', 'onTryImmunity'}
+C5_FACTS = (
+    ('surf', {'accuracy': 100, 'basePower': 90, 'category': 'Special', 'pp': 15, 'priority': 0, 'target': 'allAdjacent',
+              'type': 'Water', 'flags': {'protect', 'mirror', 'nonsky', 'metronome'}}),
+    # Endeavor (data/moves.ts:4784-4804): the callbacks are checked by the handler (C5_HANDLERS, SPECIAL_P), not here.
+    ('endeavor', {'accuracy': 100, 'basePower': 0, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                  'type': 'Normal', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'noparentalbond'}}),
+)
+
+
+def c5_value(key, text):
+    """The value of one pin field: a flag set or a scalar."""
+    if key == 'flags':
+        return set(re.findall(r'(\w+): 1\b', text))
+    return scalar(text)
+
+
+def check_c5_facts(moves_ts, champ_moves, only=None):
+    """Step C5: each listed move has exactly the listed fields (nothing else but C5_IGNORED_KEYS), each with its pinned value,
+    and no Champions override. `only`: a tuple of (move id, expected) for the tests."""
+    for mid, expected in (C5_FACTS if only is None else only):
+        if champ_moves.entry(mid) is not None:
+            fail('move %s: the Champions mod overrides it; the C5 facts must be read again' % mid)
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        got = fields(e[2])
+        extra = sorted(set(got) - set(expected) - C5_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the C5 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            have = c5_value(key, got[key][1])
+            if have != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -4540,6 +4697,7 @@ def build_pool(root, repo, dx):
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
     check_c4_facts(moves_ts, champ_moves)
+    check_c5_facts(moves_ts, champ_moves)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
@@ -4560,12 +4718,15 @@ def build_pool(root, repo, dx):
     check_g58_facts(moves_ts)
     check_g72b_facts(moves_ts)
     check_g84_facts(moves_ts)
+    check_g82_facts(moves_ts)
+    check_g80_facts(moves_ts)
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
     check_g86_facts(moves_ts)
     check_g92_facts(moves_ts)
+    check_g90_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

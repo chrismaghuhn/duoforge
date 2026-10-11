@@ -242,6 +242,7 @@ typedef struct dfi_side {
 #define DFI_TAIL_DISABLE_TURNS_MAX 5u /* disable: duration 5 */
 #define DFI_TAIL_TRAP_TURNS_MAX 8u    /* partiallytrapped: 5 or 6 turns, 8 with a Grip Claw */
 #define DFI_TAIL_SOURCE_MAX 4u        /* trap_source and leech_seed_source: 0 none, else flat position + 1 */
+#define DFI_TAIL_TRAP_ELAPSED_MAX 5u  /* step G90: trap_elapsed while the partial trap is up (d <= 6, so trap_turns = d - elapsed >= 1) */
 #define DFI_TAIL_YAWN_MAX 2u          /* yawn: duration 2 */
 #define DFI_TAIL_STOCKPILE_MAX 3u     /* layers; stockpile_def and stockpile_spd count the boosts the layers gave */
 #define DFI_TAIL_FLAG_MAX 1u          /* imprison, must_recharge, trap_band, focus_energy, charge, glaive_rush */
@@ -293,18 +294,21 @@ typedef struct dfi_side {
 /* Step G88 (decision 0046): bit 5 LOWERED_THIS_TURN (Lash Out: a stage fell this turn, set in dfi_boost where a stage really
  * dropped; sim/battle.ts:2086) and bit 6 HURT_THIS_TURN (Assurance: a spread damage left the occupant alive this turn, set in
  * dfi_deal_ex; sim/battle.ts:2137-2138). Both are cleared at the turn boundary and with the occupant. The mask is the OR of
- * bits 0-6 (Destiny Bond, G76, bit 4 included): 0x7F. */
+ * bits 0-6 (Destiny Bond, G76, bit 4 included), bit 7 with G84b (CURSED): see below. */
 #define DFI_POSFLAG_LOWERED 0x20u
 #define DFI_POSFLAG_HURT 0x40u
-#define DFI_POSFLAG_VALID_MASK 0x7Fu
-/* Build-time guard (static asserts, G84 and G88): the position-flag fields are pairwise disjoint and together make the valid mask. */
+/* Step G84b (decision 0063, lane A block): bit 7 CURSED, the occupant's Curse volatile (the Ghost Curse's target, public as
+ * -start|X|Curse|[of] source). Per occupant: it ends with the occupant (dfi_tail_clear_occupant) and Baton Pass copies it. */
+#define DFI_POSFLAG_CURSED 0x80u
+#define DFI_POSFLAG_VALID_MASK 0xFFu
+/* Build-time guard (static asserts, G84, G88 and G84b): the position-flag fields are pairwise disjoint and together make the valid mask. */
 _Static_assert((DFI_POSFLAG_HEALING_WISH + DFI_POSFLAG_STATS_RAISED + DFI_POSFLAG_DRAGON_CHEER_MASK + DFI_POSFLAG_DESTINY_BOND +
-                DFI_POSFLAG_LOWERED + DFI_POSFLAG_HURT) ==
+                DFI_POSFLAG_LOWERED + DFI_POSFLAG_HURT + DFI_POSFLAG_CURSED) ==
                    (DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
-                    DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT),
+                    DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT | DFI_POSFLAG_CURSED),
                 "the DFI_POSFLAG_* fields are pairwise disjoint");
 _Static_assert((DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
-                DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT) == DFI_POSFLAG_VALID_MASK,
+                DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT | DFI_POSFLAG_CURSED) == DFI_POSFLAG_VALID_MASK,
                 "the DFI_POSFLAG_* fields make the valid mask");
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
@@ -351,6 +355,8 @@ typedef struct dfi_tail_pos {
     uint8_t trap_turns;        /* partial trap: turns left; zero exactly when trap_source and trap_move are */
     uint8_t trap_source;       /* flat position of the trapper + 1 (never the occupant's own) */
     uint8_t trap_band;         /* 0/1: the trapper holds a Binding Band (1/6 per turn, not 1/8); 0 when not trapped */
+    uint8_t trap_elapsed;      /* step G90 (decision 0060): residual phases the partial trap has been through, 0..5 while it is up,
+                                * 0 without it (+1 per residual with the trap up, 0 at its start and its end); public */
     uint8_t leech_seed_source; /* flat position that gets the HP + 1, 0 = no Leech Seed (never the occupant's own) */
     uint8_t yawn_turns;        /* Yawn: turns until sleep, 0 = none */
     uint8_t focus_energy;      /* 0/1 */
@@ -370,7 +376,20 @@ typedef struct dfi_tail_pos {
                                 * writes it), bit 1 the occupant's stats were raised this turn, bits 2-3 the Dragon Cheer crit stage;
                                 * bits 4-7 are zero. The flags end with the occupant (dfi_tail_clear_occupant). */
     uint8_t future_sight;      /* tail rev 5 (lane A): 2 bits of turns, 3 bits for the source, 3 spare; zero, nothing writes it yet */
+    uint8_t pos_pad;           /* always zero, never encoded: the struct's even size (its uint16 members), as field_pad of the field block */
+    uint8_t ally_switch;       /* tail rev 5 (step G80, decision 0044): the Ally Switch volatile, DFI_ALLY_SWITCH_*; 0 = none.
+                                * Stored in the general reserve (encoded at reserve byte DFI_ENC_TAIL5_ALLY_SWITCH_OFF + flat
+                                * position). It moves with the occupant on a swap and ends with it. */
+    uint8_t ally_switch_pad;   /* step G80: always zero (never encoded, refused when nonzero); it makes the position 36 bytes with no
+                                * implicit padding, so that the all-zero tests of the struct are exact */
 } dfi_tail_pos;
+
+/* tail rev 5 Ally Switch (step G80, decision 0044): the counter is 3^k with k = level 1..6 (the pin's counter 3, 9, ... 729), and
+ * turns is the duration left, 1 or 2. Encoded as (level << 2) | turns, 0 = no volatile. */
+#define DFI_ALLY_SWITCH_LEVEL_MAX 6u
+#define DFI_ALLY_SWITCH_TURNS_MAX 2u
+#define DFI_ALLY_SWITCH_LEVEL_SHIFT 2u
+#define DFI_ALLY_SWITCH_MAX ((DFI_ALLY_SWITCH_LEVEL_MAX << DFI_ALLY_SWITCH_LEVEL_SHIFT) | DFI_ALLY_SWITCH_TURNS_MAX)
 
 /* tail rev 5 (decision 0026, Illusion), per side: the foe's shown state of the holder on this side. Nothing writes it yet,
  * every byte is zero and refused otherwise. shown: the roster index + 1 of the member whose name carries the values the foe
@@ -491,6 +510,13 @@ struct duoforge_battle {
     dfi_side sides[DUOFORGE_SIDE_COUNT];
     dfi_pool_tail tail; /* POOL kinds only; all zero otherwise */
 };
+
+/* The position-bound state of two positions a and c (slots 0..1) of one side exchanges with their occupants (step G80, Ally
+ * Switch): which fields move and which stay, with the reasons, at its definition in combat/turn.c. */
+void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c);
+/* Step G80 (decision 0044, known gap): true when a pending Healing Wish stands on slot a or c of the side (its arrival's onSwap is not
+ * modelled): an Ally Switch between them is refused with E_UNSUPPORTED. Defined in combat/turn.c. */
+bool dfi_ally_swap_wish_blocked(const struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c);
 
 /* The move that the occupant of the position (side * 2 + slot) used last, from the tail's last_move (move slot + 1) and the
  * occupant's moves; UINT32_MAX when it has used none, used Struggle or the position is empty. The tail is zero under

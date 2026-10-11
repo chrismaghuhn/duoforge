@@ -556,6 +556,79 @@ class LinesTest(unittest.TestCase):
         for line in ("|-singlemove|p1a: Staraptor|Destiny Bond", "|-activate|p2a: Gholdengo|move: Destiny Bond"):
             self.assertEqual(self.stop(line), "feature:DESTINY_BOND", line)
 
+    def test_ghost_curse_lines_are_its_feature(self):
+        # Step G84b (decision 0063): the Ghost Curse's start -start|X|Curse|[of] source (VOLATILE_START, other: the source)
+        # and its residual -damage|X|hp|[from] Curse (DAMAGE, cause CURSE) fold as the feature CURSE (36)
+        self.assertEqual(lines.check("|-start|p2a: Gholdengo|Curse|[of] p1a: Staraptor", self.view), "fold")
+        self.assertEqual(lines.check("|-damage|p2a: Gholdengo|75/100|[from] Curse", self.view), "fold")
+        self.assertEqual(lines.check("|-damage|p2a: Gholdengo|0 fnt|[from] Curse", self.view), "fold")
+
+    def test_a_curse_the_library_does_not_support_stops_on_its_line(self):
+        from unittest import mock
+        with mock.patch.object(lines, "SUPPORTED", 0):
+            self.assertEqual(self.stop("|-start|p2a: Gholdengo|Curse|[of] p1a: Staraptor"), "feature:CURSE")
+            self.assertEqual(self.stop("|-damage|p2a: Gholdengo|75/100|[from] Curse"), "feature:CURSE")
+
+    def test_other_curse_forms_stop(self):
+        # the Ghost variant always names its source; the engine has no END line for Curse (it ends with the holder); a
+        # residual damage names no source, and a [silent] or another attribute is no form of the engine's
+        self.assertEqual(self.stop("|-start|p2a: Gholdengo|Curse"), "line:-start Curse")
+        self.assertEqual(self.stop("|-start|p2a: Gholdengo|Curse|[of] p1a: Staraptor|[silent]"), "line:-start Curse")
+        self.assertEqual(self.stop("|-start|p2a: Gholdengo|Curse|[of] Staraptor"), "line:-start Curse")
+        self.assertEqual(self.stop("|-end|p2a: Gholdengo|Curse"), "line:-end Curse")
+        self.assertEqual(self.stop("|-damage|p2a: Gholdengo|75/100|[from] Curse|[of] p1a: Staraptor"),
+                         "line:-damage [from] Curse")
+        self.assertEqual(self.stop("|-damage|p2a: Gholdengo|75/100|[from] Curse|[silent]"), "line:-damage [from] Curse")
+    def test_partial_trap_lines_fold_in_the_engines_forms_only(self):
+        # Step G90 (decision 0060): the start (-activate|T|move: M|[of] S), the residual damage (-damage|T|hp|[from] move: M|
+        # [partiallytrapped]) and the end (-end|T|M|[partiallytrapped], with [silent] for the silent ends) of the six moves
+        # of the engine; the tracker folds them (PARTIAL_TRAP and TRAP_ELAPSED). Every other form stops on its line.
+        f = lines.FEATURES
+        self.assertTrue(lines.SUPPORTED >> f["PARTIAL_TRAP"] & 1 and lines.SUPPORTED >> f["TRAP_ELAPSED"] & 1)  # 18 and 45
+        for move in ("Bind", "Wrap", "Fire Spin", "Sand Tomb", "Infestation"):
+            for line in (f"|-activate|p2a: Gholdengo|move: {move}|[of] p1a: Staraptor",
+                         f"|-damage|p2a: Gholdengo|83/100|[from] move: {move}|[partiallytrapped]",
+                         f"|-damage|p2a: Gholdengo|83/182|[from] move: {move}|[partiallytrapped]",
+                         f"|-end|p2a: Gholdengo|move: {move}|[partiallytrapped]",
+                         f"|-end|p2a: Gholdengo|{move}|[partiallytrapped]|[silent]",
+                         f"|-end|p2a: Gholdengo|move: {move}|[partiallytrapped]|[silent]"):
+                self.assertEqual(lines.check(line, self.view), "fold", line)
+        # the moves the engine does not model keep their stop (Snap Trap stays unmarked, decision 0060 section 8), and so does
+        # every other shape
+        for line, reason in (
+                ("|-activate|p2a: Gholdengo|move: Whirlpool|[of] p1a: Staraptor", "line:-activate move: Whirlpool"),
+                ("|-activate|p2a: Gholdengo|move: Snap Trap|[of] p1a: Staraptor", "line:-activate move: Snap Trap"),
+                ("|-damage|p2a: Gholdengo|83/100|[from] move: Snap Trap|[partiallytrapped]",
+                 "line:-damage partiallytrapped"),
+                ("|-activate|p2a: Gholdengo|move: Magma Storm|[of] p1a: Staraptor", "line:-activate move: Magma Storm"),
+                ("|-activate|p2a: Gholdengo|move: Bind", "line:-activate move: Bind"),  # no source
+                ("|-activate|p2a: Gholdengo|move: Bind|[of] p1a: Staraptor|[silent]", "line:-activate move: Bind"),
+                ("|-activate|p2a: Gholdengo|Bind|[of] p1a: Staraptor", "line:-activate Bind"),  # no "move: "
+                ("|-activate|p2a: Gholdengo|move: Bind|x|[of] p1a: Staraptor", "line:-activate move: Bind"),
+                ("|-damage|p2a: Gholdengo|83/100|[partiallytrapped]", "line:-damage partiallytrapped"),
+                ("|-damage|p2a: Gholdengo|83/100|[from] move: Bind", None),  # a plain damage line is the converter's
+                ("|-damage|p2a: Gholdengo|83/100|[from] move: Bind|[of] p1a: Staraptor|[partiallytrapped]",
+                 "line:-damage partiallytrapped"),
+                ("|-damage|p2a: Gholdengo|83/100|[from] move: Whirlpool|[partiallytrapped]",
+                 "line:-damage partiallytrapped"),
+                ("|-damage|p2a: Gholdengo|83/100|[from] item: Leftovers|[partiallytrapped]",
+                 "line:-damage partiallytrapped"),
+                ("|-end|p2a: Gholdengo|move: Whirlpool|[partiallytrapped]", "line:-end move: Whirlpool"),
+                ("|-end|p2a: Gholdengo|move: Bind|[partiallytrapped]|[silent]|[of] p1a: Staraptor",
+                 "line:-end move: Bind"),
+                ("|-end|p2a: Gholdengo|move: Bind|[partiallytrapped]|[from] x", "line:-end move: Bind"),
+                ("|-end|p2a: Gholdengo|move: Bind|[silent]", "line:-end move: Bind"),  # no marker
+                ("|-end|p2a: Gholdengo|move: Bind|[partiallytrapped]|[partiallytrapped]", "line:-end move: Bind")):
+            if reason is None:
+                self.assertEqual(lines.check(line, self.view), "fold", line)
+            else:
+                self.assertEqual(self.stop(line), reason, line)
+    def test_ally_switch_and_psych_up_fold(self):
+        # Step G80 (decision 0044): Ally Switch's |swap| (SWAP 49) and Psych Up's -copyboost (COPY_BOOST 50) are public
+        # and folded by the tracker
+        self.assertEqual(lines.check("|swap|p1a: Staraptor|1|[from] move: Ally Switch", self.view), "fold")
+        self.assertEqual(lines.check("|-copyboost|p1a: Staraptor|p2a: Gholdengo|[from] move: Psych Up", self.view), "fold")
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
@@ -668,10 +741,13 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.FEATURES["RAGE_POWDER"], 39)
         self.assertEqual(lines.FEATURES["MOVE_FAILED"], 41)
         self.assertEqual(lines.FEATURES["TRANSFORM"], 42)
-        # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42; 0050: the five reserve families 59 to 63; 0080:
-        # ATTRACT_SOURCE 53 (step G87)
-        self.assertEqual(len(lines.FEATURES), 43 + 5 + 1)
+        # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42; the lanes' features from 43 (G82: HEALING_WISH);
+        # 0050: the five reserve families 59 to 63; 0080: ATTRACT_SOURCE 53 (step G87); TRAP_ELAPSED 45 (G90).
+        self.assertEqual(lines.FEATURES["HEALING_WISH"], 43)
         self.assertEqual(lines.FEATURES["ATTRACT_SOURCE"], 53)
+        from duoforge import features
+        self.assertEqual(lines.FEATURES, features.FEATURE_BITS)
+        self.assertEqual(len(lines.FEATURES), 43 + 5 + 3)  # tiers, the five families, HEALING_WISH, TRAP_ELAPSED, ATTRACT_SOURCE
         self.assertEqual([lines.FEATURES[n] for n in ("RESERVE_VOLATILES", "VOLATILES2", "RESERVE_GUARDS",
                                                       "SIDE_CONDITIONS", "FIELD_FLAGS")], [59, 60, 61, 62, 63])
 
@@ -740,6 +816,44 @@ class LinesTest(unittest.TestCase):
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
+
+
+class CurseEventsTest(unittest.TestCase):
+    """Step G84b (decision 0063): the converter's events of the Ghost Curse lines, as the engine emits them (turn.c
+    dfi_run_curse and the residual DFI_RES_CURSE): the start is VOLATILE_START of the Curse volatile with the source as
+    other; the residual is DAMAGE with cause CURSE and no source; the user's half-HP damage is a plain DAMAGE with cause
+    NONE (directDamage prints no [from])."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tables = data.load(kind="pool").tables
+
+    def events(self, log, viewer, maxhp):
+        return trace_to_c.step_events(log, viewer, [{}, {}], maxhp, self.tables)
+
+    def test_the_start_is_the_curse_volatile_with_its_source(self):
+        (e,) = self.events(["|-start|p2a: Gholdengo|Curse|[of] p1a: Staraptor"], 0, [{}, {"Gholdengo": 194}])
+        self.assertEqual((e[0], e[1], e[2], e[11]), (trace_to_c.EV["VOLATILE_START"], 2, 0, trace_to_c.VOLATILE_CURSE))
+
+    def test_the_residual_is_damage_with_cause_curse(self):
+        (e,) = self.events(["|-damage|p2a: Gholdengo|75/100|[from] Curse"], 0, [{}, {"Gholdengo": 194}])
+        self.assertEqual((e[0], e[1], e[2], e[3]),
+                         (trace_to_c.EV["DAMAGE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["CURSE"]))
+        self.assertEqual(trace_to_c.CAUSE["CURSE"], 23)  # DUOFORGE_CAUSE_CURSE
+
+    def test_the_users_half_hp_is_a_plain_damage_with_cause_none(self):
+        # the owner's copy of the split line is the exact one: 167 max HP, the user pays 83 (84 left)
+        log = ["|split|p1", "|-damage|p1a: Gengar|84/167", "|-damage|p1a: Gengar|50/100g"]
+        (e,) = self.events(log, 0, [{"Gengar": 167}, {}])
+        self.assertEqual((e[0], e[1], e[3], e[6], e[7]), (trace_to_c.EV["DAMAGE"], 0, trace_to_c.CAUSE["NONE"], 84, 167))
+        # a foe sees the public copy
+        (public,) = self.events(log, 1, [{"Gengar": 167}, {}])
+        self.assertEqual((public[0], public[1], public[3]), (trace_to_c.EV["DAMAGE"], 0, trace_to_c.CAUSE["NONE"]))
+
+    def test_curse_is_one_feature_folded_into_the_view(self):
+        # decision 0018 section 4, feature 36: folded by the tracker, its view bit in the extension (EXT_FIELDS)
+        self.assertEqual(lines.FEATURES["CURSE"], 36)
+        self.assertTrue(lines.EXT_FOLDS >> lines.FEATURES["CURSE"] & 1)
 
 
 TEAMS = data.ROOT / "tests" / "reference" / "teams"
@@ -906,6 +1020,18 @@ class LabelsTest(unittest.TestCase):
         self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
         self.assertTrue({2, 3} <= {o.target for o in self.options_of(got, 0)})  # the chosen p2a is in the label
         self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
+
+    def test_ghost_curse_line_may_name_a_random_foe(self):
+        # data/moves.ts curse onModifyMove (step G84b): a Ghost user's Curse aimed at its partner (or with no target)
+        # becomes randomNormal, so the move line names a random foe, not the chosen target; the partner stays possible
+        mv = self.tables["MOVE"]
+        moves = ([mv["BRAVEBIRD"], mv["CURSE"], mv["TAILWIND"], mv["PROTECT"]], self.moves[1])
+        log = ["|move|p1a: Staraptor|Curse|p2b: Foe2"]
+        point = self.P.Point(1, 0, self.P.TURN, (), len(log))
+        got = self.L.turn_label(log, point, 0, self.lists, moves, lambda details: self.species[details.split(",")[0]],
+                                self.tables, len(log))
+        self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
+        self.assertIn(1, {o.target for o in self.options_of(got, 0)})  # the partner, the chosen target, is in the label
 
     def test_faint_earlier_makes_the_target_unknown(self):
         got = self.label(["|move|p1b: Gholdengo|Make It Rain|p2a: Foe|[spread] p2a,p2b", "|faint|p2a: Foe",

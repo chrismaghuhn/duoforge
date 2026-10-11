@@ -173,7 +173,7 @@ static void test_row(df_test *t)
     DF_CHECK_EQ_U64(t, DUOFORGE_POSITION_EXT_DESTINY_BOND, 0x00000400u);
     DF_CHECK_EQ_U64(t, DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND, 35u);
     DF_CHECK_EQ_U64(t, DFI_POSFLAG_DESTINY_BOND, 0x10u); /* the lead's approved bit 4 of position_flags */
-    DF_CHECK_EQ_U64(t, DFI_POSFLAG_VALID_MASK, 0x7Fu); /* G88 adds LOWERED 0x20 and HURT 0x40 (batch 6): bits 0-6 */
+    DF_CHECK_EQ_U64(t, DFI_POSFLAG_VALID_MASK, 0xFFu); /* G84b (decision 0063) adds bit 7 CURSED; G88 bits 5 and 6: all eight bits */
     DF_CHECK_EQ_U64(t, DUOFORGE_EVENT_SINGLE_TURN, 38u); /* event 38 carries -singlemove with id = the move (no new value) */
     DF_CHECK_EQ_U64(t, DUOFORGE_VOLATILE_DRAGONCHEER, 10u); /* volatile 12 stays unused */
 }

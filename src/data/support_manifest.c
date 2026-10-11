@@ -375,6 +375,9 @@ const dfi_support_manifest dfi_support = {
              * recoil, the recoil path of the hit loop). Their rows were in the pool tables unmarked. */
             [DFI_MOVE_CHARGEBEAM] = 1u,
             [DFI_MOVE_WILDCHARGE] = 1u,
+            [DFI_MOVE_PSYCHUP] = 1u,       /* step G80 (decision 0044): the target's stages, Focus Energy and Dragon Cheer, -copyboost */
+            [DFI_MOVE_HOWL] = 1u,          /* step G80: the allies class with the primary boost (Charm's role); Soundproof per target */
+            [DFI_MOVE_ALLYSWITCH] = 1u,    /* step G80: the swap, the consecutive roll, the Illusion refusal (E_UNSUPPORTED) */
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
             /* Step G88 (decision 0046): Lash Out (x2 base power when the user's stat fell this turn, LOWERED) and Assurance (x2 when
              * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */
@@ -391,11 +394,18 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HARDPRESS] = 1u,
             [DFI_MOVE_ICESPINNER] = 1u,
             [DFI_MOVE_BELLYDRUM] = 1u,
+            /* Step G90 (decision 0060): the partial trap of six moves (the volatile partiallytrapped: the draw of its turns, the residual
+             * damage with the Binding Band divisor, the trapped flag, the silent ends and the end line). */
+            [DFI_MOVE_BIND] = 1u, [DFI_MOVE_WRAP] = 1u, [DFI_MOVE_FIRESPIN] = 1u,
+            [DFI_MOVE_SANDTOMB] = 1u, [DFI_MOVE_INFESTATION] = 1u, /* Snap Trap stays unmarked: decision 0060 section 8 */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G84 (decision 0047): Leech Seed (the holder's volatile, the source's slot, the residual drain of order 8) and Curse
-             * (a non-Ghost user's self boost; a Ghost user's Curse is refused explicitly, E_UNSUPPORTED). */
+             * (a non-Ghost user's self boost; the Ghost Curse since step G84b, decision 0063). */
             [DFI_MOVE_LEECHSEED] = 1u,
             [DFI_MOVE_CURSE] = 1u,
+            /* Step G82 (decision 0045): Healing Wish, the user's slot condition (position bit 0) and the user's faint; the next
+             * entrant of that slot is healed (dfi_run_entries). The Champions hit loop Updates run after it (scripts.ts:537, :574). */
+            [DFI_MOVE_HEALINGWISH] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
             [DFI_MOVE_ROOST] = 1u,
@@ -624,6 +634,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HORNDRILL] = 1u,
             [DFI_MOVE_MEMENTO] = 1u,
             [DFI_MOVE_NIGHTSHADE] = 1u,
+            /* Step C5 (decision 0015 entry 5cy): Surf, a damaging spread move that also hits the ally (target allAdjacent, as
+             * Earthquake of step G28). Data only: the pin's fields are checked by check_c5_facts (data/moves.ts:18526-18538). */
+            [DFI_MOVE_SURF] = 1u,
+            /* Step C5 (decision 0015 entry 5cy): Endeavor (the ENDEAVOR special, the Final Gambit damage path): damage = target HP
+             * - user HP, immune when the user's HP is not below the target's (data/moves.ts:4784-4804). */
+            [DFI_MOVE_ENDEAVOR] = 1u,
         },
     .abilities =
         {
@@ -766,6 +782,7 @@ const dfi_support_manifest dfi_support = {
     .items =
         {
             [DFI_ITEM_LEFTOVERS] = 1u,
+            [DFI_ITEM_BINDINGBAND] = 1u, /* step G90 (decision 0060): the trap's band, read at its start (trap_band) */
             [DFI_ITEM_LEEK] = 1u, /* step G77: Farfetch'd and Sirfetch'd (crit ratio +2) */
             [DFI_ITEM_SITRUSBERRY] = 1u,
             [DFI_ITEM_GRASSYSEED] = 1u,
@@ -948,7 +965,11 @@ const dfi_support_manifest dfi_support = {
      * an event). Decision 0032 section 9 names the bit as supported once the step lands; verified against the g60 battles. */
     /* Step G76 (decision 0015 5cg): Destiny Bond (bit 35: the DESTINY_BOND bit of the position's flags, public: its -singlemove
      * line; verified against the g76 battles). */
-    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+    /* Step G90 (decision 0060, hidden counters): the POSITION_EXT2 family and the partial trap's elapsed bits (4 to 6, public). */
+    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PARTIAL_TRAP) | /* G90 (decision 0060): presence, source, move and band are public */
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ENCORE) |
@@ -979,7 +1000,9 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_CURSE) |  /* step G84b (decision 0063): the Ghost Curse volatile (bit 36) */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS) |

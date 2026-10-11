@@ -53,7 +53,9 @@ VOL_FOLLOW_ME, VOL_HELPING_HAND, VOL_UNBURDEN = (VALUES[f"DFI_VOL_{n}"] for n in
 VOL_CHOICE_LOCK, VOL_NEWLY_SWITCHED = VALUES["DFI_VOL_CHOICE_LOCK"], VALUES["DFI_VOL_NEWLY_SWITCHED"]
 PARTY_HIDDEN = VALUES["DFI_PARTY_HIDDEN"]
 POSFLAG_STATS_RAISED = VALUES["DFI_POSFLAG_STATS_RAISED"]
+POSFLAG_HEALING_WISH = VALUES["DFI_POSFLAG_HEALING_WISH"]  # G82: the slot's pending Healing Wish (decision 0045)
 POSFLAG_LOWERED, POSFLAG_HURT = VALUES["DFI_POSFLAG_LOWERED"], VALUES["DFI_POSFLAG_HURT"]  # step G88 (decision 0046)
+POSFLAG_CURSED = VALUES["DFI_POSFLAG_CURSED"]  # step G84b (decision 0063): the Ghost Curse's volatile, bit 7
 # the position flags the states of a kind may carry (dfi_kind_limits_of: the POOL kinds add theirs), by table kind
 VOL_FLAGS_MASK = {"closure": VALUES["VOL_FLAGS_MASK_CLOSURE"], "pool": VALUES["VOL_FLAGS_MASK_POOL"]}
 MR_UNCLASSIFIED_NOW, MR_UNCLASSIFIED_LAST = VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_NOW"], VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_LAST"]
@@ -367,6 +369,9 @@ def _tail(t, s, boundary):
         for k, p in enumerate(t._positions[side]):
             attract[side * 2 + k] = p.attract
     s.put_list("tail5.attract_source", attract)
+    # tail rev 5 (step G80): Ally Switch's counter per flat position, (level << 2) | turns, 0 = none
+    s.put_list("tail5.ally_switch", [(p.ally_level << 2) | p.ally_turns if p.ally_level else 0
+                                      for side in (0, 1) for p in t._positions[side]])
     for side in (0, 1):
         pre = f"tail.side{side}."
         s.put(pre + "aurora_veil_turns", t._conditions[side][3])
@@ -404,8 +409,17 @@ def _tail(t, s, boundary):
             if p.type_now != (0, 0):
                 s.put(mpre + "soak_type", p.type_now[0] or TYPE_TYPELESS)  # Soak's type + 1, or Double Shock's ???
             s.put(mpre + "type2", p.type2)
+            if p.trap:
+                # the partial trap (step G90, decision 0060): the drawn turns are hidden for both viewers (src/state/view.c); the
+                # source (0 once it left), the move, the band and the elapsed count are public
+                s.put(ppre + "trap_turns", C["DUOFORGE_VIEW_HIDDEN"])
+                s.put(ppre + "trap_source", p.trap_source)
+                s.put(ppre + "trap_move", p.trap_move)
+                s.put(ppre + "trap_band", p.trap_band)
+                s.put(ppre + "trap_elapsed", p.trap_elapsed)
             s.put(f"tail5.position{side * 2 + k}.position_flags", (POSFLAG_STATS_RAISED if p.raised else 0) |
-                  (POSFLAG_LOWERED if p.lowered else 0) | (POSFLAG_HURT if p.hurt else 0))
+                  (POSFLAG_LOWERED if p.lowered else 0) | (POSFLAG_HURT if p.hurt else 0) |
+                  (POSFLAG_HEALING_WISH if p.wish else 0) | (POSFLAG_CURSED if p.cursed else 0))
             if p.ability_now:
                 s.put(f"{pre}member{p.occupant}.ability_now", p.ability_now)
         for m, member in enumerate(members):

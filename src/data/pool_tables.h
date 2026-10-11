@@ -937,7 +937,12 @@
 #define DFI_SPECIAL_OHKO 112u
 #define DFI_SPECIAL_MEMENTO 113u
 #define DFI_SPECIAL_LEVEL_DAMAGE 114u
-#define DFI_SPECIAL_UNMODELED 115u
+#define DFI_SPECIAL_HEALING_WISH 115u
+#define DFI_SPECIAL_PARTIAL_TRAP 116u
+#define DFI_SPECIAL_ENDEAVOR 117u
+#define DFI_SPECIAL_PSYCH_UP 118u
+#define DFI_SPECIAL_ALLY_SWITCH 119u
+#define DFI_SPECIAL_UNMODELED 120u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

@@ -26,9 +26,10 @@ STRUCTS = {'duoforge_public_state': {'size': 1396,
                                     'charge_target': [232, 16],
                                     'queued': [248, 16],
                                     'queue_order': [264, 12],
-                                    'reserved2': [276, 4]}}}
+                                    'trap_pick': [276, 4]}}}
 CONSTANTS = {'DUOFORGE_VIEW_REVISION': 2,
- 'DUOFORGE_HYPOTHESIS_REVISION': 2,
+ 'DUOFORGE_HYPOTHESIS_REVISION': 3,
+ 'DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP': 2,
  'DUOFORGE_VIEW_STATE_MAX': 1357,
  'DUOFORGE_VIEW_HIDDEN': 255,
  'DUOFORGE_VIEW_HIDDEN_TARGET': 254,

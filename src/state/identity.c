@@ -38,7 +38,23 @@ void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat)
     }
     dfi_tail_side *ts = &b->tail.sides[flat / DUOFORGE_ACTIVE_PER_SIDE];
     const uint32_t occupant = b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].positions[flat % DUOFORGE_ACTIVE_PER_SIDE].occupant;
-    ts->positions[flat % DUOFORGE_ACTIVE_PER_SIDE] = (dfi_tail_pos){0u};
+    /* Step G90 (decision 0060): a partial trap whose source is this position ends with the source's time on the field: its
+     * source becomes 0 ("the source left"), and the residual ends the trap silently. The turns, the move and the band stay. */
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            dfi_tail_pos *q = &b->tail.sides[s].positions[p];
+            if (q->trap_turns != 0u && q->trap_source == flat + 1u) {
+                q->trap_source = 0u;
+            }
+        }
+    }
+    /* Step G82 (decision 0045): bit 0 (Healing Wish) belongs to the slot, not to the occupant (side.slotConditions[position]):
+     * it stays across a switch-out, a faint and the replacement's entry, and only the heal of an entrant clears it. The other
+     * bits end with the occupant, as before. */
+    dfi_tail_pos *tp = &ts->positions[flat % DUOFORGE_ACTIVE_PER_SIDE];
+    const uint8_t healing_wish = (uint8_t)(tp->position_flags & DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed: a mask of one bit */
+    *tp = (dfi_tail_pos){0u};
+    tp->position_flags = healing_wish;
     /* Step G71 (decision 0034): the infatuation of the occupant ends with it (a switch-out or a faint; the byte is in the rev 5
      * reserve, outside dfi_tail_pos, so it is cleared here by name). No line: the pin's clearVolatile prints none. */
     b->tail.attract_source[flat] = 0u;

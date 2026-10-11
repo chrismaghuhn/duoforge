@@ -117,7 +117,7 @@ def fields(pool=True):
                 ("protect_kind", "TAIL_POS_PROTECT_KIND_OFF"), ("move_result", "TAIL_POS_MOVE_RESULT_OFF"),
                 ("single_turn", "TAIL_POS_SINGLE_TURN_OFF"), ("hits_taken", "TAIL_POS_HITS_TAKEN_OFF"),
                 ("ability_state", "TAIL_POS_ABILITY_STATE_OFF"), ("lock_turns", "TAIL_POS_LOCK_TURNS_OFF"),
-                ("reserved", "TAIL_POS_RESERVED_OFF"))), _o("TAIL_POS_SIZE"))
+                ("trap_elapsed", "TAIL_POS_TRAP_ELAPSED_OFF"), ("reserved", "TAIL_POS_RESERVED_OFF"))), _o("TAIL_POS_SIZE"))
         for m in range(MAX_ROSTER):
             out += _block(f"tail.side{s}.member{m}.", base + _o("TAIL_MEMBER_OFF") + m * _o("TAIL_MEMBER_SIZE"), _sub((
                 ("ability_now", "TAIL_MEMBER_ABILITY_OFF"), ("forme_now", "TAIL_MEMBER_FORME_OFF"),
@@ -136,8 +136,11 @@ def fields(pool=True):
             _o("TAIL5_POS_SIZE"))
     # step G71 (decision 0034): the first 4 bytes of the rev 5 reserve are Attract's source member per flat position
     out.append(("tail5.attract_source", tail5 + _o("TAIL5_ATTRACT_OFF"), _o("TAIL5_ATTRACT_SIZE")))
-    out.append(("tail5.reserved", tail5 + _o("TAIL5_RESERVED_OFF") + _o("TAIL5_ATTRACT_SIZE"),
-                _o("TAIL5_RESERVED_SIZE") - _o("TAIL5_ATTRACT_SIZE")))
+    # step G80: the Ally Switch counter of each position, one byte per flat position; the rest of the reserve is zero
+    res = tail5 + _o("TAIL5_RESERVED_OFF")
+    ally, ally_n = _o("TAIL5_ALLY_SWITCH_OFF"), _o("TAIL5_ALLY_SWITCH_COUNT")
+    out.append(("tail5.ally_switch", res + ally, ally_n))
+    out.append(("tail5.reserved", res + ally + ally_n, _o("TAIL5_RESERVED_SIZE") - ally - ally_n))
     return out
 
 

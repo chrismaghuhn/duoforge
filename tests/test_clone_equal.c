@@ -172,6 +172,7 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dp->trap_turns = sp->trap_turns;
             dp->trap_source = sp->trap_source;
             dp->trap_band = sp->trap_band;
+            dp->trap_elapsed = sp->trap_elapsed;
             dp->leech_seed_source = sp->leech_seed_source;
             dp->yawn_turns = sp->yawn_turns;
             dp->focus_energy = sp->focus_energy;
@@ -188,6 +189,8 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dp->lock_turns = sp->lock_turns;
             dp->position_flags = sp->position_flags; /* tail rev 5 */
             dp->future_sight = sp->future_sight;
+            dp->ally_switch = sp->ally_switch; /* step G80: the Ally Switch byte is state */
+            dp->ally_switch_pad = sp->ally_switch_pad; /* step G80: the explicit pad, zero in every valid state (the invariant) */
         }
         for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
             dt->ability_now[m] = st->ability_now[m];

@@ -585,7 +585,7 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
             /* Step G66: a temporary forme (Stance Change) is refused too: its forme is not in the view (the TEMP_FORME cause). */
             const uint32_t occupant = b->sides[side].positions[p].occupant;
             const bool temp_forme = occupant < DUOFORGE_MAX_ROSTER && b->tail.sides[side].forme_now[occupant] != 0u;
-            if (tp->trap_turns != 0u || maybe_locked || tp->substitute_hp != 0u || temp_forme) {
+            if (maybe_locked || tp->substitute_hp != 0u || temp_forme) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }
@@ -605,6 +605,17 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
         }
     }
     memset(s + DFI_ENC_RNG_STATE_OFF, 0, 24u);
+    /* Step G90 (decision 0060, approved 2026-10-11): the partial trap's drawn turns are hidden for both viewers (the owner too:
+     * the duration is never shown, decision 0007). The presence, the source, the move and the band are public. */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            uint8_t *tt = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF +
+                          p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF;
+            if (*tt != 0u) {
+                *tt = (uint8_t)DUOFORGE_VIEW_HIDDEN;
+            }
+        }
+    }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             uint8_t *mb = member_at(s, side, m);
@@ -776,6 +787,8 @@ typedef enum mr_family {
                         hit (Roar, Whirlwind: the reserve's) */
     MR_UNCLASSIFIED, /* its success sets no class: Quick Guard, Haze, After You, Quash */
     MR_HEAL_PULSE,   /* a target at full HP is NOT_FAIL: true */
+    MR_PSYCH_UP,     /* G80: the copy (-copyboost) is true even when it copies nothing; else the effect rule (nothing changed: false) */
+    MR_ALLY_SWITCH,  /* G80: the swap true; the partner-missing fail (-fail with the move as cause) null; the roll's fail false */
     MR_REFUSED       /* a handler this classifier does not map: refused */
 } mr_family;
 
@@ -843,6 +856,10 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
         return MR_UNCLASSIFIED;
     case DFI_SPECIAL_HEAL_PULSE:
         return MR_HEAL_PULSE;
+    case DFI_SPECIAL_PSYCH_UP:
+        return MR_PSYCH_UP;
+    case DFI_SPECIAL_ALLY_SWITCH:
+        return MR_ALLY_SWITCH;
     default:
         return MR_REFUSED; /* Substitute, Destiny Bond and every handler not mapped here */
     }
@@ -948,6 +965,23 @@ static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user
         }
     }
     return statused != 0u;
+}
+
+/* The result of a status move whose effect is what changed (MR_EFFECT): true when something changed at a position it reached,
+ * else the failure classes of its hit steps: a hit target that nothing changed is false (runMoveEffects), a Protect alone null. */
+static uint8_t mr_effect_value(const duoforge_event *body, uint32_t n, uint32_t user, uint32_t stopped, bool selfish,
+                               const dfi_move_data *md, bool failed, uint32_t classes)
+{
+    if (mr_changed(body, n, user, stopped, selfish, md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM)) {
+        return (uint8_t)DFI_MOVE_RESULT_TRUE;
+    }
+    if (failed || (classes & MR_FALSE) != 0u) {
+        return (uint8_t)DFI_MOVE_RESULT_FALSE;
+    }
+    if ((classes & MR_NULL) != 0u) {
+        return (uint8_t)DFI_MOVE_RESULT_NULL;
+    }
+    return (uint8_t)DFI_MOVE_RESULT_FALSE; /* a hit target that nothing changed: false (runMoveEffects) */
 }
 
 static duoforge_status mr_value(uint32_t classes, uint8_t *out)
@@ -1193,17 +1227,48 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
             value = (uint8_t)DFI_MOVE_RESULT_TRUE; /* a heal, or full HP: NOT_FAIL, the hit is true */
         }
         break;
+    case MR_PSYCH_UP: {
+        /* Step G80 (dfi_psych_up, dfi_status_effects): the copy of the target's stages is the effect and counts as done whatever it
+         * copied (-copyboost, cause MOVE with Psych Up, at the user): the hit target is true. Without it (a Protect, nothing
+         * to copy from) the classes of the hit steps decide as for any effect: Protect null, a target that nothing changed false. */
+        bool copied = false;
+        for (uint32_t j = 0u; j < n; ++j) {
+            copied = copied || (body[j].kind == DUOFORGE_EVENT_COPY_BOOST && body[j].position == user &&
+                                body[j].cause == DUOFORGE_CAUSE_MOVE && body[j].id2 == DFI_MOVE_PSYCHUP);
+        }
+        if (copied) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else {
+            value = mr_effect_value(body, n, user, stopped, selfish, md, user_fail || refused_at_target, classes);
+        }
+        break;
+    }
+    case MR_ALLY_SWITCH: {
+        /* Step G80 (dfi_run_ally_switch): the swap (|swap| at the user's slot before it, cause MOVE with Ally Switch) is true. With no
+         * standing partner onHit prints -fail|X|move: Ally Switch (cause MOVE: not the plain -fail of a failed roll) and returns
+         * NOT_FAIL: null. The failed consecutive roll is the plain -fail with [still] (user_fail): false. Any other shape is not
+         * a case of the engine and is refused. */
+        bool swapped = false;
+        bool no_partner = false;
+        for (uint32_t j = 0u; j < n; ++j) {
+            const bool mine = body[j].position == user && body[j].cause == DUOFORGE_CAUSE_MOVE && body[j].id2 == DFI_MOVE_ALLYSWITCH;
+            swapped = swapped || (mine && body[j].kind == DUOFORGE_EVENT_SWAP);
+            no_partner = no_partner || (mine && body[j].kind == DUOFORGE_EVENT_FAIL);
+        }
+        if (swapped) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else if (no_partner) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
+        } else if (user_fail) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        break;
+    }
     case MR_EFFECT:
     default:
-        if (mr_changed(body, n, user, stopped, selfish, md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM)) {
-            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
-        } else if (user_fail || refused_at_target || (classes & MR_FALSE) != 0u) {
-            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
-        } else if ((classes & MR_NULL) != 0u) {
-            value = (uint8_t)DFI_MOVE_RESULT_NULL;
-        } else {
-            value = (uint8_t)DFI_MOVE_RESULT_FALSE; /* a hit target that nothing changed: false (runMoveEffects) */
-        }
+        value = mr_effect_value(body, n, user, stopped, selfish, md, user_fail || refused_at_target, classes);
         break;
     }
     if (reflected && (value & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) != 0u) {
@@ -1301,14 +1366,14 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     if (ctx == NULL || view == NULL || hypothesis == NULL || out == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
-    if (view->revision != DUOFORGE_VIEW_REVISION || hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION) {
+    if (view->revision != DUOFORGE_VIEW_REVISION ||
+        (hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION && hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP)) {
         return DUOFORGE_E_SCHEMA_MISMATCH;
     }
     const size_t n = dfi_state_encoded_size_of(ctx);
     if (view->player >= DUOFORGE_SIDE_COUNT || view->state_size != n || !dfi_all_zero(view->reserved, sizeof view->reserved) ||
         !dfi_all_zero(view->pad, 3u) || !dfi_all_zero(view->state + n, DUOFORGE_VIEW_STATE_MAX - n) ||
-        hypothesis->reserved0 != 0u || !dfi_all_zero(hypothesis->reserved1, 6u) ||
-        !dfi_all_zero(hypothesis->reserved2, 4u)) {
+        hypothesis->reserved0 != 0u || !dfi_all_zero(hypothesis->reserved1, 6u)) {
         return DUOFORGE_E_MALFORMED;
     }
     if (!dfi_context_fingerprint_matches(ctx, view->state + DFI_ENC_FINGERPRINT_OFF)) {
@@ -1392,6 +1457,38 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
             uint8_t *mv = mb + DFI_ENC_MOVE_OFF + k * DFI_ENC_MOVE_SIZE;
             const uint32_t used = kb[DFI_ENC_KNOWLEDGE_USED_OFF + k];
             mv[2] = (uint8_t)(used >= mv[3] ? 0u : mv[3] - used); /* wide-operands-reviewed: <= pp_max */
+        }
+    }
+    /* Step G90 (decision 0060, hidden counters): the partial trap's turns are hidden in the view. The duration d is 5 or 6
+     * (random(5, 7), data/conditions.ts:222-228) and the public elapsed count e leaves trap_turns = d - e >= 1, so d > e. The
+     * word hypothesis->trap_pick[flat] carries the draw: at e <= 4 both durations fit, and d = 6 when bit 0 is set, 5 when it is
+     * clear (the 1/2 : 1/2 weights of a uniform word); at e = 5 only 6 fits, whatever the word; above 5 none fits (E_MALFORMED).
+     * A revision-2 hypothesis has no words: a trapped view is E_UNSUPPORTED. A position without a hidden trap takes no word (E_INVALID_ARGUMENT
+     * otherwise). Only a pool state has the tail. */
+    const bool pool_tail = dfi_kind_limits_of(ctx->data_kind).pool_rules;
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const uint32_t flat = side * DUOFORGE_ACTIVE_PER_SIDE + p;
+            uint8_t *tb = pool_tail ? s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE +
+                                          DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE
+                                    : NULL;
+            const bool hidden = tb != NULL && tb[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] == DUOFORGE_VIEW_HIDDEN;
+            if (!hidden) {
+                if (hypothesis->trap_pick[flat] != 0u) {
+                    return DUOFORGE_E_INVALID_ARGUMENT;
+                }
+                continue;
+            }
+            if (hypothesis->revision == DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+            const uint32_t elapsed = tb[DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF];
+            if (elapsed > DFI_TAIL_TRAP_ELAPSED_MAX) {
+                return DUOFORGE_E_MALFORMED; /* no duration fits: a legal state never shows it */
+            }
+            const bool six = elapsed == DFI_TAIL_TRAP_ELAPSED_MAX || (hypothesis->trap_pick[flat] & 1u) != 0u;
+            const uint32_t duration = six ? 6u : 5u;
+            tb[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] = (uint8_t)(duration - elapsed); /* wide-operands-reviewed: 1..6 */
         }
     }
     /* the hidden counters of both sides and the foe's charging targets */
@@ -1691,6 +1788,13 @@ duoforge_status duoforge_battle_hypothesis(const duoforge_context *ctx, const du
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_active_slot *pos = &sd->positions[p];
+            /* Step G90 (decision 0060): the true duration of a hidden partial trap (the turns and the elapsed count, both known to
+             * the battle): the word that the rebuild of this hypothesis reads, bit 0 set for 6. */
+            const dfi_tail_pos *tp = &battle->tail.sides[side].positions[p];
+            if (tp->trap_turns != 0u) {
+                h.trap_pick[side * DUOFORGE_ACTIVE_PER_SIDE + p] =
+                    (uint8_t)(tp->trap_turns + tp->trap_elapsed == 6u ? 1u : 0u); /* wide-operands-reviewed: 0 or 1 */
+            }
             if (pos->confusion_turns >= 1u && pos->confusion_turns <= 5u) {
                 h.confusion[side][p] = dfi_word_of_weighted(pos->confusion_turns - 1u, dfi_confusion_weights, 5u);
             }

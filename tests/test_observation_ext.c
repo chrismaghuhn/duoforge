@@ -188,11 +188,13 @@ static void test_constants(df_test *t)
                     (((uint64_t)1u << 6u) | ((uint64_t)1u << 7u) | ((uint64_t)1u << 9u) | ((uint64_t)1u << 15u) |
                      ((uint64_t)1u << 16u) | ((uint64_t)1u << 17u) | ((uint64_t)1u << 0u) | ((uint64_t)1u << 1u) |
                      ((uint64_t)1u << 11u) | ((uint64_t)1u << 2u) | ((uint64_t)1u << 20u) | ((uint64_t)1u << 3u) |
+                     ((uint64_t)1u << 18u) | ((uint64_t)1u << 45u) | /* step G90: Partial trap (bit 18), TRAP_ELAPSED (bit 45) */
                      ((uint64_t)1u << 39u) | /* step G30: Rage Powder (bit 39) */
                      ((uint64_t)1u << 53u) | /* step G87: Attract's source position (bits 12-13 of volatiles2, decision 0080) */
                      ((uint64_t)1u << 10u) | /* step G36: the ailment Tox (bit 10) */
                      ((uint64_t)1u << 21u) | /* step G27: Disable (bit 21) */
                      ((uint64_t)1u << 28u) | /* step G84: Leech Seed (bit 28, decision 0047) */
+                     ((uint64_t)1u << 43u) | /* step G82: Healing Wish (bit 43, decision 0045) */
                      ((uint64_t)1u << 5u) | ((uint64_t)1u << 32u) | /* step G25: the terrain values Electric (bit 5) and Misty (bit 32) */
                      ((uint64_t)1u << 4u) | /* step G26: Perish (bit 4) */
                      ((uint64_t)1u << 14u) | ((uint64_t)1u << 25u) | /* step G31: Taunt and Yawn */
@@ -203,6 +205,7 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 23u) | /* step G60: Substitute (bit 23) */
                      ((uint64_t)1u << 24u) | /* step G72b: Dragon Cheer (bit 24); MOVE_FAILED (bit 41) stays clear, see support_manifest.c */
                      ((uint64_t)1u << 35u) | /* step G76: Destiny Bond (bit 35) */
+                     ((uint64_t)1u << 36u) | /* step G84b: Curse (bit 36, decision 0063) */
                      /* encoder 6's reserve families (decision 0050), exact while no bit of theirs is defined */
                      ((uint64_t)1u << 59u) | /* RESERVE_VOLATILES */
                      ((uint64_t)1u << 60u) | /* VOLATILES2 */

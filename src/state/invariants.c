@@ -344,6 +344,10 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                 (b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT && ((uint32_t)slot->flags & residual_bits) != 0u)) {
                 return DFI_INV_VOLATILE;
             }
+            /* Step G90 (decision 0060, data/conditions.ts:234-252): a trap whose source left or fainted stays up (turns > 0,
+             * source 0) until the target's next residual, which ends it silently. onTrapPokemon tries to trap only while the
+             * source is active, so such a target is not trapped and may switch. A trap with turns and no source is legal at
+             * the TURN and REPLACEMENT boundaries. */
         }
     }
     const uint32_t occupied = dfi_side_occupied_mask(side);
@@ -637,12 +641,22 @@ static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
 
 /* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
  * never the occupant itself (flat is its position, side * 2 + slot). */
-/* The position flags (tail rev 5, G72b; G76 adds bit 4, G88 adds bits 5 and 6): bit 0 (Healing Wish) and bit 7 are zero, and the Dragon
- * Cheer stage is at most 2. */
+/* The position flags (tail rev 5; G82 bit 0 Healing Wish, decision 0045, may stand at any position; G76 bit 4 Destiny Bond,
+ * G88 bits 5 and 6): bit 7 is zero, and the Dragon Cheer stage is at most 2. */
 static bool dfi_position_flags_ok(uint8_t pf)
 {
-    return (pf & ~DFI_POSFLAG_VALID_MASK) == 0u && (pf & DFI_POSFLAG_HEALING_WISH) == 0u &&
+    return (pf & ~DFI_POSFLAG_VALID_MASK) == 0u &&
            ((pf & DFI_POSFLAG_DRAGON_CHEER_MASK) >> DFI_POSFLAG_DRAGON_CHEER_SHIFT) <= DFI_POSFLAG_DRAGON_CHEER_MAX;
+}
+
+/* The Ally Switch volatile of a standing occupant (tail rev 5, step G80, decision 0044): zero, or a level 1..6 (the counter is
+ * 3^level) with 1 or 2 turns left. */
+static bool dfi_ally_switch_ok(uint8_t as)
+{
+    const uint32_t level = (uint32_t)as >> DFI_ALLY_SWITCH_LEVEL_SHIFT;
+    const uint32_t turns = (uint32_t)as & 3u;
+    return as <= DFI_ALLY_SWITCH_MAX && level >= 1u && level <= DFI_ALLY_SWITCH_LEVEL_MAX && turns >= 1u &&
+           turns <= DFI_ALLY_SWITCH_TURNS_MAX;
 }
 
 /* A Substitute is made at a quarter of its maker's maximum HP (floor, decision 0032). A pass (decision 0042, copyVolatileFrom)
@@ -683,9 +697,11 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     /* A partial trap: turns, source (another position) and move together, the band only with them. */
     const bool trap_ok = tp->trap_turns <= DFI_TAIL_TRAP_TURNS_MAX && tp->trap_source <= DFI_TAIL_SOURCE_MAX &&
                          tp->trap_source != flat + 1u && tp->trap_move <= lim->move_count &&
-                         (tp->trap_turns == 0u) == (tp->trap_source == 0u) &&
+                         (tp->trap_turns != 0u || tp->trap_source == 0u) &&
                          (tp->trap_turns == 0u) == (tp->trap_move == 0u) && tp->trap_band <= DFI_TAIL_FLAG_MAX &&
-                         (tp->trap_turns != 0u || tp->trap_band == 0u);
+                         (tp->trap_turns != 0u || tp->trap_band == 0u) &&
+                         (tp->trap_turns != 0u ? (tp->trap_turns + tp->trap_elapsed == 5u || tp->trap_turns + tp->trap_elapsed == 6u)
+                                               : tp->trap_elapsed == 0u);
     const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
     const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
                               tp->stockpile_spd <= tp->stockpile;
@@ -713,13 +729,13 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
                          (tp->lock_turns == 0u || slot->locked_move != 0u) && /* lockedmove (G56): its move is in the slot */
                          (tp->lock_turns == 0u || lock_last_ok);
-    /* Rev 5 (lane A, G72b, decision 0015 5ce; step G76, 5cg): the position flags (bit 0 Healing Wish, never set; bit 7 is
-     * zero; the stats-raised bit, the Dragon Cheer stage, Destiny Bond (bit 4), LOWERED (bit 5) and HURT (bit 6) only with an
-     * occupant; the stage at most 2).
+    /* Rev 5 (lane A, G72b, decision 0015 5ce; step G76, 5cg): the position flags (bit 0 Healing Wish, never set; the stats-raised
+     * bit, the Dragon Cheer stage, Destiny Bond (bit 4), LOWERED (bit 5), HURT (bit 6) and Curse (bit 7) only with an occupant;
+     * the stage at most 2).
      * Future Sight stays zero. */
     const bool posflags_ok = dfi_position_flags_ok(tp->position_flags) &&
                           ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
-                                                  DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT)) == 0u ||
+                                                  DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT | DFI_POSFLAG_CURSED)) == 0u ||
                            slot->occupant < DUOFORGE_MAX_ROSTER);
     const bool rev5_ok = posflags_ok && tp->future_sight == 0u;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&
@@ -808,11 +824,23 @@ static bool dfi_attract_byte_ok(const struct duoforge_battle *b, uint32_t flat)
     return (g_inf == DFI_GENDER_MALE && g_src == DFI_GENDER_FEMALE) || (g_inf == DFI_GENDER_FEMALE && g_src == DFI_GENDER_MALE);
 }
 
+/* The position pads (pos_pad) are never encoded and are not state (decision 0060): a tail is zero when every other byte is. */
+static bool dfi_tail_zero_ignoring_pads(const dfi_pool_tail *t)
+{
+    dfi_pool_tail c = *t;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            c.sides[s].positions[p].pos_pad = 0u;
+        }
+    }
+    return dfi_bytes_zero(&c, sizeof c);
+}
+
 static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
     const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
     if (!lim.pool_rules) {
-        return dfi_bytes_zero(&b->tail, sizeof b->tail) ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
+        return dfi_tail_zero_ignoring_pads(&b->tail) ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
     }
     if (b->tail.gravity_turns > DFI_TAIL_GRAVITY_MAX || b->tail.field_pad != 0u) {
         return DFI_INV_TAIL_FIELD;
@@ -869,17 +897,23 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                                   side->members[occupant].hp != 0u;
             if (!standing) {
                 /* Rev 5 (G72b): the position flags of a fainted occupant stay until the turn ends or it is replaced (it is still
-                 * there, as in the state model); an empty position has none. The rest of the tail is cleared when the occupant
-                 * leaves or faints. */
+                 * there, as in the state model). An empty position has none, except bit 0 (G82, decision 0045): the Healing Wish
+                 * of a slot waits for its next entrant. The rest of the tail is cleared when the occupant leaves or faints. */
                 dfi_tail_pos rest = *tp;
                 rest.position_flags = 0u;
+                rest.pos_pad = 0u; /* the pad is not state (decision 0060) */
                 if (!dfi_bytes_zero(&rest, sizeof rest)) {
                     return DFI_INV_TAIL_POSITION; /* cleared when the occupant leaves or faints */
                 }
-                if (tp->position_flags != 0u && (occupant >= DUOFORGE_MAX_ROSTER || !dfi_position_flags_ok(tp->position_flags))) {
+                const uint8_t occupant_flags = (uint8_t)(tp->position_flags & ~DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed: a byte mask */
+                if (!dfi_position_flags_ok(tp->position_flags) || (occupant_flags != 0u && occupant >= DUOFORGE_MAX_ROSTER)) {
                     return DFI_INV_TAIL_POSITION;
                 }
                 continue;
+            }
+            /* step G80: the Ally Switch volatile is one of the standing occupant's; its pad byte is always zero */
+            if (tp->ally_switch_pad != 0u || (tp->ally_switch != 0u && !dfi_ally_switch_ok(tp->ally_switch))) {
+                return DFI_INV_TAIL_POSITION;
             }
             if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant],
                                     &side->positions[p], dfi_substitute_cap(side))) {

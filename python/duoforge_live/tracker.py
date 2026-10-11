@@ -78,6 +78,9 @@ HITS_TAKEN_MAX = _ENC["DFI_TAIL_HITS_TAKEN_MAX"]  # where Rage Fist's count stop
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
+EXT_CURSE = C["DUOFORGE_POSITION_EXT_CURSE"]
+EXT2_TRAP_ELAPSED = tuple(C[f"DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT{k}"] for k in range(3))  # the count's bits, low to high
+TRAP_ELAPSED_MAX = 5  # DFI_TAIL_TRAP_ELAPSED_MAX: residual phases a partial trap can have been through (d <= 6, the last ends it)
 ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the member holds nothing
 # The view-extension fields (OBSERVATION_EXT, decision 0018) of each feature the tracker folds: what observation_ext
 # writes, and all that restrict_ext keeps of DuoForge's record for a comparison. ("bit", B): bit B of a position's
@@ -112,6 +115,11 @@ EXT_FIELDS = {
     "ITEM_CHANGE": (("member", "item_now"),),
     # Attract (step G71, decision 0034): the presence bit of the infatuated position; its source is the record's byte
     "RESERVE_VOLATILES": (("bit", C["DUOFORGE_POSITION_EXT_ATTRACT"]),),
+    # Ghost Curse (step G84b, decision 0063): the holder's CURSED bit, the view bit of the Curse volatile
+    "CURSE": (("bit", EXT_CURSE),),
+    "HEALING_WISH": (("bit", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]),),  # G82: encoder 6's reserve volatile bit 22
+    "PARTIAL_TRAP": (("bit", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]),),
+    "TRAP_ELAPSED": (("v2bits", sum(EXT2_TRAP_ELAPSED)),),  # POSITION_EXT2 (volatiles2), a record field of its own
     # Attract's source position (step G87, decision 0080): volatiles2 bits 12-13, the source's flat position
     "ATTRACT_SOURCE": (("v2bits", _ATTRACT_SOURCE_BITS),),
 }
@@ -121,15 +129,20 @@ _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORG
                   ("leech_source", C["DUOFORGE_POSITION_EXT_LEECH_SEED"]),
                   ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
                   ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),
-                  ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]))
+                   ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]), ("cursed", EXT_CURSE),
+                   ("wish", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]),
+                   ("trap", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
             trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
-_PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source")  # with their counts (dfi_pass_give copies the turns
-# and Leech Seed's source slot: the seed has no noCopy, decision 0047)
+_PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source", "cursed",
+           # the partial trap has no noCopy in the pin (pokemon.ts copyVolatileFrom): dfi_pass_give copies its turns, source, move,
+           # band and elapsed count (G90), so the receiver is trapped by the same source with the same count
+           "trap", "trap_source", "trap_move", "trap_band", "trap_elapsed")  # with their counts (dfi_pass_give copies the turns
+# and Leech Seed's source slot: the seed has no noCopy, decision 0047; the Ghost Curse's flag too, step G84b: turn.c's copy keeps CURSED)
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -141,7 +154,7 @@ STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5, "tox": 6}  # DUOFORG
 SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = (_ENC[f"DFI_SWITCH_{n}"] for n in ("MOVE", "EMERGENCY_EXIT", "FAINTED"))
 # The moves whose cost to their own user is directDamage, a plain -damage line of the user with no [from] (src/combat/turn.c,
 # dfi_deal with DFI_DMG_DIRECT: Substitute, Clangorous Soul, Belly Drum): it sets no hurtThisTurn (Tracker._hurt).
-DIRECT_COST_MOVES = ("SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM")
+DIRECT_COST_MOVES = ("SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM", "CURSE")  # Ghost Curse: dfi_deal DFI_DMG_DIRECT (G84b)
 # The self-switch moves and the reason they flag: a damaging one when it hit a target, its user stands and a reserve can
 # come in (src/combat/turn.c, selfSwitch of a damaging move); Baton Pass and Revival Blessing when they do not fail.
 _HIT_PIVOTS = {"UTURN": _ENC["DFI_SWITCH_UTURN"], "VOLTSWITCH": _ENC["DFI_SWITCH_VOLT_SWITCH"],
@@ -179,6 +192,10 @@ class _Position:
         # start unless it switches (a switch-out cancels its actions, sim/battle-actions.ts switchIn); it leaves the queue
         # when it runs (its [move], [cant] or confusion line). A faint does not remove it (the action then does nothing).
         self.move_queued = False
+        # Healing Wish's slot condition (G82, decision 0045): the slot's, not the occupant's, so a faint or an entry keeps
+        # it (reset leaves it); the heal of an entrant ends it (dfi_wish_heal). The record's position flag bit 0 and the
+        # view's HEALING_WISH bit.
+        self.wish = 0
         self.reset()
 
     def reset(self):
@@ -210,16 +227,27 @@ class _Position:
         # _silent_attract_end.
         self.attract = 0
         self.attract_from = 0  # the source's flat position while infatuated (POSITION_EXT2 ATTRACT_SOURCE, step G87)
+        # The partial trap (step G90, decision 0060), the engine's four tail fields without the drawn turns, which no line shows:
+        self.trap = 0  # the volatile is up (the engine's trap_turns is not zero)
+        self.trap_source = 0  # the trapper's flat position + 1; 0 once it left the field (the trap then ends at the residual)
+        self.trap_move = 0  # the trapping move + 1
+        self.trap_band = 0  # the trapper held a Binding Band at the start
+        self.trap_elapsed = 0  # TRAP_ELAPSED: residual damage lines since the start (0..5), zero without the trap
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         # the record's type2 of the occupant (tail rev 4): Double Shock's remaining type + 1, 0 after Soak; a Mega
         # Evolution ends type_now (the soak_type) and keeps it, as dfi_run_mega does; it ends with the occupant
         self.type2 = 0
         self.disable_turns = 0  # Disable's turns left (the record; the view shows only disable_slot)
+        self.cursed = 0  # the Ghost Curse's volatile is up (presence only; it ends with the occupant, step G84b)
         self.encore_turns = 0  # Encore's turns left (the record)
         self.hits_taken = 0  # damaging hits of another Pokemon's move since the entry (the record; Rage Fist)
         self.raised = 0  # a stat of the occupant rose this turn (the record's position flag; Alluring Voice)
         self.lowered = 0  # a stat of the occupant fell this turn (the record's position flag LOWERED; Lash Out, G88)
         self.hurt = 0  # a spread damage left the occupant standing this turn (the record's position flag HURT; Assurance)
+        # Ally Switch's volatile (step G80, decision 0044): the level (counter 3^level) and the turns left, 0 = none. It moves
+        # with the occupant on a swap (the position object moves) and ends with it (reset).
+        self.ally_level = 0
+        self.ally_turns = 0
         self.newly_switched = 0  # the occupant came in this turn (the record's flag under the TEAM_C and POOL kinds)
         self.turn_done = True  # no move of the occupant is left this turn (it moved, could not, or came in or fainted)
         self.unburden_unseen = False  # Knock Off hit an Unburden holder and no -enditem followed (record.py refuses)
@@ -236,6 +264,38 @@ class _Position:
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
         self.last_move = None  # the move id of pokemon.moveUsed: the occupant's own last move line, none after leaving
+
+
+# Ally Switch's swap of two positions of one side (step G80, decision 0044 section 10; src/combat/turn.c dfi_swap_position_state).
+# The engine exchanges whole slot and tail records and puts back the slot's own fields; the tracker mirrors that as an explicit
+# list, so a field added to _Position has to be put on one of the two lists (AllySwitchStateTest). Everything in _SWAP_MOVES
+# belongs to the Pokemon and goes with it:
+#   - the slot record (dfi_active_slot): occupant, activation, stages, flags (protecting, flash_fire, flags, choice_slot,
+#     newly_switched), stall (chain, stall), confused, charge, locked_slot (locked_move), move_actions, flag (switch_flag);
+#   - the tail position (dfi_tail_pos), every volatile: substitute and the other tail fields the tracker does not fold are
+#     features that stop it at their lines, the folded ones are throat_chop, must_recharge, taunt, yawn, imprison, glaive_rush,
+#     rage_powder (the Follow Me flag), heal_block, attract and attract_from (the position's attract_source byte, see below),
+#     trap, trap_source, trap_move, trap_band and trap_elapsed (the partial trap), type_now and type2 (Soak and Double Shock,
+#     the roster member's soak_type and type2, which the record keys by occupant), disable_slot and disable_turns, encore_slot
+#     and encore_turns, cursed, perish, hits_taken, last_slot and last_move, result_now and result_last (move_result),
+#     ability_now (the occupant's), ally_level and ally_turns (the Ally Switch counter);
+#   - the position flags that ride on the Pokemon: STATS_RAISED (raised), LOWERED (lowered), HURT (hurt), CURSED (cursed);
+#     DRAGON_CHEER and DESTINY_BOND are features whose lines stop the tracker, so they are never up here;
+#   - the tracker's own scratch of the occupant's action and turn (confused_action, acted, move_queued, turn_done,
+#     guard_undo, unburden_unseen, fainted), which the engine keeps in the queue records and the run (they follow the Pokemon).
+_SWAP_MOVES = (
+    "occupant", "activation", "stages", "protecting", "flash_fire", "flags", "choice_slot", "newly_switched", "chain", "stall",
+    "confused", "charge", "locked_slot", "move_actions", "flag",
+    "throat_chop", "must_recharge", "taunt", "yawn", "imprison", "glaive_rush", "rage_powder", "heal_block", "attract",
+    "attract_from", "trap", "trap_source", "trap_move", "trap_band", "trap_elapsed", "type_now", "type2", "disable_slot",
+    "disable_turns", "encore_slot", "encore_turns", "cursed", "perish", "hits_taken", "last_slot", "last_move", "result_now",
+    "result_last", "ability_now", "ally_level", "ally_turns", "raised", "lowered", "hurt",
+    "confused_action", "acted", "move_queued", "turn_done", "guard_undo", "unburden_unseen", "fainted")
+# What stays at its position (the slot's, not the Pokemon's): leech_seed_source (the seed's sourceSlot is a slot, sim/pokemon.ts:
+# 2002: the drain goes to whoever stands there), Healing Wish's bit 0 (the slot condition; a swap onto a pending one is refused
+# before it gets here) and locked_target (a slot location in the pin). Requested slots and sealed commands are not _Position
+# fields: they belong to the request of the slot and the tracker keeps them by slot.
+_SWAP_SLOT = ("leech_source", "wish", "locked_target")
 
 
 class _Member:
@@ -271,6 +331,11 @@ class _Member:
 class Tracker:
     """One battle room as one player sees it. feed() every message of the room in order, accepted() every
     own choice Showdown took; at a decision point (ready) observation() and domain() give DuoForge's view."""
+
+    # Class defaults: the tests build a tracker with __new__ and set only what they use (step G80 attributes below).
+    _party = None
+    _ally_move = None
+    _as_pending = None
 
     def __init__(self, data, own_text):
         self.data = data
@@ -315,9 +380,13 @@ class Tracker:
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
         self._accepted_commands = None  # its options per position (accepted)
         self._last_move = None  # (position, move id, target) of the last MOVE event
+        self._as_pending = None  # the position of the last Ally Switch move line, until its outcome line (step G80)
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
         self._baton_pass = data.tables["MOVE"].get("BATONPASS", -1)  # its receiver takes the leaver's copy (G74)
+        # the moves of the engine's partial trap (G90); a closure table has none
+        self._trap_moves = {data.tables["MOVE"][trace_to_c.key(name)] for name in lines.PARTIAL_TRAP_MOVES
+                            if trace_to_c.key(name) in data.tables["MOVE"]}
         self._phantom_force = data.tables["MOVE"].get("PHANTOMFORCE", -1)  # breaks a Protect as Feint does (G58)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)
@@ -341,6 +410,7 @@ class Tracker:
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
         self._knock_off = tables["MOVE"].get("KNOCKOFF")
         self._leech_seed = tables["MOVE"].get("LEECHSEED")
+        self._healing_wish = tables["MOVE"].get("HEALINGWISH")
         # the moves whose cost to their own user is directDamage, not spreadDamage (G88: no hurtThisTurn; dfi_deal_ex's
         # callers with spread false): the plain -damage of DIRECT_COST_MOVES; Struggle's recoil is the other one
         self._direct_costs = {tables["MOVE"].get(k) for k in DIRECT_COST_MOVES} - {None}
@@ -348,6 +418,7 @@ class Tracker:
         self._mental_herb = tables["ITEM"].get("MENTALHERB")
         self._hit_pivots = {tables["MOVE"][k]: v for k, v in _HIT_PIVOTS.items() if k in tables["MOVE"]}
         self._move_pivots = {tables["MOVE"][k]: v for k, v in _MOVE_PIVOTS.items() if k in tables["MOVE"]}
+        self._ally_move = tables["MOVE"].get("ALLYSWITCH")  # step G80
 
     # ------------------------------------------------------------------ input
     def feed(self, lines):
@@ -427,6 +498,13 @@ class Tracker:
         if parts[1] == "-end" and parts[3:4] == ["Attract"]:
             self._silent_attract_end(parts)
             return
+        if parts[1] == "-end" and "[partiallytrapped]" in parts and "[silent]" in parts:
+            # a partial trap's silent end (step G90: the source left, a Substitute, the residual with a fainted source); the
+            # converter skips [silent] lines, so the tracker clears the trap here. The duration's end is no silent line.
+            self._trap_silent_end(parts)
+            return
+        if parts[1] == "-damage" and "[partiallytrapped]" in parts:
+            self._trap_residual(parts)  # counts the residual phase; the damage itself folds as any damage line below
         if parts[1] == "-end" and parts[3:4] == ["move: Yawn"]:
             # Yawn's end (step G31, data/moves.ts yawn onEnd: -end|X|move: Yawn|[silent], before the sleep it brings):
             # the converter skips [silent] lines, so the tracker clears the presence bit here; any other form stops
@@ -458,6 +536,77 @@ class Tracker:
         if pos is None or parts[4:] != ["[silent]"]:
             raise lines.Stop(f"line:{parts[1]} Throat Chop")
         self._at(pos).throat_chop = THROAT_CHOP_TURNS if parts[1] == "-start" else 0
+
+    def _trap_move_id(self, name):
+        """The move id of a partial-trap line's move name, None when the tables have none."""
+        return self.data.tables["MOVE"].get(trace_to_c.key(name))
+
+    @staticmethod
+    def _trap_clear(p):
+        p.trap = p.trap_source = p.trap_move = p.trap_band = p.trap_elapsed = 0
+
+    def _trap_start(self, pos, source, move):
+        """The partial trap's start (step G90, decision 0060; `-activate|T|move: M|[of] S`, an ACTIVATE of cause MOVE): the
+        engine sets the volatile on a standing target that has none, with the source, the move, the source's Binding Band
+        at that moment and a zero elapsed count. A target that has one is refused by the engine with no line, so the
+        line cannot come then; the drawn turns are never shown."""
+        p = self._at(pos)
+        if p.trap:
+            raise lines.Stop("trap-start-on-trapped")
+        if (p.occupant == ROSTER_NONE or not 0 <= source < len(self._positions) * 2 or source == pos
+                or self._at(source).occupant == ROSTER_NONE):
+            raise lines.Stop("trap-start-source")
+        p.trap, p.trap_source, p.trap_move = 1, source + 1, move + 1
+        p.trap_band = 1 if self._holds(self._occupant(source), "BINDINGBAND") else 0
+        p.trap_elapsed = 0
+
+    def _trap_end(self, pos, move):
+        """The duration's end (`-end|T|move: M|[partiallytrapped]`, VOLATILE_END): the engine clears the trap and its count."""
+        p = self._at(pos)
+        if not p.trap:
+            raise lines.Stop("trap-end-untrapped")
+        if p.trap_move != move + 1:
+            raise lines.Stop("trap-end-move")
+        self._trap_clear(p)
+
+    def _trap_silent_end(self, parts):
+        """A partial trap's silent end, `-end|T|M|[partiallytrapped]|[silent]` (the pin prints the move bare; the converter's
+        other spelling, "move: M", is taken too): the engine cleared the trap with no event. Any other form stops."""
+        pos = lines.flat_position(parts[2]) if len(parts) > 2 else None
+        if len(parts) != 6 or parts[1] != "-end" or parts[4] != "[partiallytrapped]" or parts[5] != "[silent]" or pos is None:
+            raise lines.Stop("trap-end-line")
+        p = self._at(pos)
+        if not p.trap:
+            raise lines.Stop("trap-end-untrapped")
+        name = parts[3][len("move: "):] if parts[3].startswith("move: ") else parts[3]
+        if self._trap_move_id(name) != p.trap_move - 1:
+            raise lines.Stop("trap-end-move")
+        self._trap_clear(p)
+
+    def _trap_residual(self, parts):
+        """One residual phase of a partial trap that stays up: `-damage|T|hp|[from] move: M|[partiallytrapped]`. The engine
+        counts the phase (TRAP_ELAPSED, +1) before the damage; the phase that ends the trap shows an end line, not this one,
+        and the count stays below the duration of at most 6. Any other form stops."""
+        pos = lines.flat_position(parts[2]) if len(parts) > 2 else None
+        if (len(parts) != 6 or parts[1] != "-damage" or not parts[3] or parts[3].startswith("[") or pos is None
+                or parts[5] != "[partiallytrapped]" or not parts[4].startswith("[from] move: ")):
+            raise lines.Stop("trap-residual-line")
+        p = self._at(pos)
+        if not p.trap:
+            raise lines.Stop("trap-residual-untrapped")
+        if self._trap_move_id(parts[4][len("[from] move: "):]) != p.trap_move - 1:
+            raise lines.Stop("trap-residual-move")
+        if p.trap_elapsed >= TRAP_ELAPSED_MAX:
+            raise lines.Stop("trap-residual-count")
+        p.trap_elapsed += 1
+
+    def _trap_source_left(self, pos):
+        """The occupant of `pos` leaves (a switch, a drag or a faint): every trap it was the source of keeps its turns, move,
+        band and count but has no source any more (dfi_tail_clear_occupant), and the residual ends it silently."""
+        for side in self._positions:
+            for q in side:
+                if q.trap and q.trap_source == pos + 1:
+                    q.trap_source = 0
 
     def _extended_field(self, line):
         """A weather or terrain set by a member that holds the item lengthening it (Damp Rock, Heat Rock, Smooth
@@ -821,10 +970,15 @@ class Tracker:
         if action is None or self.data.kind != "pool":
             return
         from . import record
-        p, events = self._at(action["pos"]), action["events"]
-        # another occupant now, or the user fainted: the faint's clearing comes after the result
-        if p.activation == action["activation"] and not p.fainted:
-            p.result_now = record.move_result_of(self.data, action["pos"], events)
+        events = action["events"]
+        # The user may have moved during its own action (Ally Switch): the activation id belongs to the Pokemon, so the slot that
+        # now holds it gets the result (src/combat/turn.c dfi_run_move). Another occupant at every slot, or the user fainted:
+        # the faint's clearing comes after the result
+        side = action["pos"] // 2
+        for p in self._positions[side]:
+            if p.occupant != ROSTER_NONE and p.activation == action["activation"] and not p.fainted:
+                p.result_now = record.move_result_of(self.data, action["pos"], events)
+                break
         for i, e in enumerate(events):
             if e[0] == EV["MOVE"] and e[3] == trace_to_c.CAUSE["ABILITY"] and e[1] != NOPOS:
                 # Magic Bounce: the holder's result is that of the reflected run (src/combat/turn.c, the bounced move)
@@ -837,6 +991,11 @@ class Tracker:
         hp, hp_kind, hp_flag, status, detail, amount, flags = e[6], e[8], e[9], e[10], e[11], e[12], e[13]
         foe = pos != NOPOS and pos // 2 != self.side
         public = foe or (self._spectator and pos != NOPOS)  # folded from the public lines
+        if kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["NONE"] and pos != NOPOS and self._as_pending == pos:
+            # Ally Switch's consecutive roll failed (onPrepareHit false, -fail|X with [still]): the volatile is deleted, the
+            # next use starts at level 1 (data/moves.ts:326-357; the engine: dfi_ally_switch_prepare)
+            self._at(pos).ally_level = self._at(pos).ally_turns = 0
+            self._as_pending = None
         if kind == EV["TURN"]:
             self._turn = ident
             self._after_upkeep = False
@@ -859,6 +1018,7 @@ class Tracker:
         elif kind in (EV["SWITCH"], EV["DRAG"]):
             # A drag (Step G46) is a switch of the dragged-in member: the occupant is replaced and reset, the HP of the line.
             p = self._at(pos)
+            self._trap_source_left(pos)
             if p.occupant != ROSTER_NONE:
                 self._member(pos // 2)[p.occupant].toxic_stage = 0  # the leaving member's toxic counter ends with it
             passed = None
@@ -892,6 +1052,11 @@ class Tracker:
                 self._own_display(m, hp, e[7])
         elif kind == EV["MOVE"]:
             p = self._at(pos)
+            if ident == self._healing_wish and e[3] == trace_to_c.CAUSE["NONE"] and not flags & FLAG["STILL"]:
+                # dfi_run_healing_wish: it runs (a reserve stands; a [still] -fail is the refusal for none) and sets the
+                # slot's wish; a second one finds it set and changes nothing
+                p.wish = 1
+            self._as_pending = pos if ident == self._ally_move else None
             if e[3] == trace_to_c.CAUSE["NONE"]:
                 # an action of the user (runMove's activeMoveActions++, dfi_run_move); a move line with cause ABILITY is
                 # Magic Bounce's reflection (useMove), no action of the holder
@@ -948,6 +1113,8 @@ class Tracker:
                 if public:
                     holder.item_used = 1
                 self._item_received(e[2], ident, public)
+            elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 in self._trap_moves:
+                self._trap_start(pos, e[2], ident2)  # the partial trap's start (step G90)
             elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 in (self._feint, self._phantom_force):
                 # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then; Phantom
                 # Force's `[broken]` line the same, step G58): the target's own Protect (its flag) and its stall
@@ -963,6 +1130,7 @@ class Tracker:
                         self._turn_scoped.discard(guard)
         elif kind == EV["FAINT"]:
             p = self._at(pos)
+            self._trap_source_left(pos)
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
             p.fainted = True
             # a faint takes a pivot flag (faint(): switchFlag = false); after the residual (Perish Song's) checkFainted asks
@@ -1011,6 +1179,8 @@ class Tracker:
                 p.attract_from = e[2]  # the view's source position (step G87, decision 0080)
             else:
                 p.attract, p.attract_from = 0, 0
+        elif kind == EV["VOLATILE_END"] and detail == trace_to_c.VOLATILE_PARTIAL_TRAP:
+            self._trap_end(pos, ident)  # the duration's end (step G90): the line names the move in `ident`
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_HEAL_BLOCK:
             # Heal Block (step G8, Psychic Noise): -start|X|move: Heal Block and -end|X|move: Heal Block (the duration,
             # Mental Herb); the occupant's leaving ends it with no line; its count is never shown
@@ -1096,6 +1266,11 @@ class Tracker:
                 m.hp_percent, m.hp_flag = hp, hp_flag
             else:
                 self._own_display(m, hp, e[7])
+            if kind == EV["HEAL"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._healing_wish:
+                # dfi_wish_heal: the entrant's full heal ends the wish and its status (clearStatus, silent: no cure line)
+                self._at(pos).wish = 0
+                m.status, m.freeze_turns = 0, 0
+                m.toxic = m.toxic_stage = 0
         elif kind == EV["REVIVE"]:
             # Step G52 (decision 0025): Revival Blessing brings a fainted member of the user's side back at half HP,
             # its status cured; ident is its roster index (the line names it without a position)
@@ -1132,6 +1307,17 @@ class Tracker:
                 p.raised = 1  # statsRaisedThisTurn: a stage really rose
             if kind == EV["UNBOOST"] and amount > 0:
                 p.lowered = 1  # statsLoweredThisTurn (G88, dfi_boost): a stage really fell
+        elif kind == EV["SWAP"]:
+            # Ally Switch (step G80, decision 0044; sim/battle.ts swapPosition): the user and its partner change
+            # positions with everything that rides on the Pokemon (_swap_positions: an explicit field list, not an object swap)
+            self._swap_positions(pos, e[2])
+            if pos // 2 == self.side and self._party is not None:
+                # side.pokemon: the two actives exchange their entries (sim/battle.ts:1598-1599)
+                self._party[pos % 2], self._party[e[2] % 2] = self._party[e[2] % 2], self._party[pos % 2]
+        elif kind == EV["COPY_BOOST"]:
+            # Psych Up (step G80): the user takes the target's seven stages (-copyboost; the copied crit volatiles
+            # are silent decision 0018 features)
+            self._at(pos).stages = list(self._at(e[2]).stages)
         elif kind == EV["CLEAR_ALL_BOOSTS"]:
             # Haze (step G62, decision 0031; data/moves.ts haze onHitField: clearBoosts on getAllActive): every standing
             # active Pokemon's stages return to neutral
@@ -1144,6 +1330,10 @@ class Tracker:
             self._at(pos).confused = 0
         elif kind == EV["FLASH_FIRE"]:
             self._at(pos).flash_fire = 1
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_CURSE:
+            # The Ghost Curse (step G84b, decision 0063): the holder's CURSED bit, shown to both viewers; the holder's
+            # leaving or faint clears it (reset), the source's does not (the residual goes on)
+            self._at(pos).cursed = 1
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_PERISH:
             # Perish Song's count (step G26): the residual's -start|X|perishN, N = 3, 2, 1, then perish0 before the
             # holder faints; the cast's own perish3 line is [silent] (no event), so nothing shows until the first count
@@ -1176,6 +1366,9 @@ class Tracker:
             p.protecting = 1
             p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
             p.stall = STALL_DURATION
+        elif kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._ally_move and self._ally_move is not None:
+            self._as_pending = None
+            self._ally_pass(self._at(pos))  # the roll passed; the onHit found no partner (NOT_FAIL, null)
         elif kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["NONE"] and self._last_move is not None \
                 and self._last_move[0] == pos and self._last_move[1] in self._move_pivots:
             self._at(pos).flag = 0  # Baton Pass or Revival Blessing failed: no switch
@@ -1343,9 +1536,48 @@ class Tracker:
             raise ValueError(f"an own two-turn move without a target: {self._accepted!r}")
         return trace_to_c.abs_target(self.side, int(words[2]))
 
+    def _swap_positions(self, user, partner):
+        """Ally Switch's exchange of the flat positions `user` and `partner` (dfi_swap_position_state, decision 0044 section 10):
+        the fields of _SWAP_MOVES go with the Pokemon, those of _SWAP_SLOT stay, and what names a swapped position follows it:
+        the trap source of every position (a trapper's flat position + 1) and the Attract source position of every infatuated
+        one (the engine derives it from the member code, which does not change). A pending Healing Wish on either slot is the
+        engine's E_UNSUPPORTED (its onSwap heal is not modelled): an explicit stop, before anything changes."""
+        a, c = self._at(user), self._at(partner)
+        if a.wish or c.wish:
+            raise lines.Stop("ally-switch-healing-wish")
+        self._as_pending = None
+        self._ally_pass(a)  # a passed consecutive roll (or the first use): the counter goes up (before the swap, as the engine)
+        for name in _SWAP_MOVES:
+            va, vc = getattr(a, name), getattr(c, name)
+            setattr(a, name, vc)
+            setattr(c, name, va)
+        for p in (p for side in self._positions for p in side):
+            if p.trap_source == user + 1:
+                p.trap_source = partner + 1
+            elif p.trap_source == partner + 1:
+                p.trap_source = user + 1
+            if p.attract:
+                if p.attract_from == user:
+                    p.attract_from = partner
+                elif p.attract_from == partner:
+                    p.attract_from = user
+
+    def _ally_pass(self, p):
+        """Ally Switch's counter after a passed roll: the first use starts at level 1 (no roll), a later one goes up to 6;
+        either way the duration is 2 turns (dfi_ally_switch_prepare)."""
+        p.ally_level = 1 if p.ally_level == 0 else min(6, p.ally_level + 1)
+        p.ally_turns = 2
+
     def _upkeep(self):
         def down(n):
             return n - 1 if n > 0 else 0
+        for side in (0, 1):
+            for p in self._positions[side]:
+                if p.ally_level:
+                    if p.ally_turns <= 1:
+                        p.ally_level = p.ally_turns = 0  # the residual's end: turns 1 -> 0 (the volatile is deleted)
+                    else:
+                        p.ally_turns -= 1
         self._weather_turns = down(self._weather_turns)
         self._terrain_turns = down(self._terrain_turns)
         self._trick_room = down(self._trick_room)
@@ -1609,6 +1841,8 @@ class Tracker:
                     pv["volatiles"] |= C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]
                     pv["type_now"] = p.type_now
                 pv["perish"], pv["encore_slot"], pv["disable_slot"] = p.perish, p.encore_slot, p.disable_slot
+                if p.trap:  # POSITION_EXT2 bits 4 to 6: the elapsed count (zero without the trap)
+                    o["volatiles2"][side][k] = sum(bit for n, bit in enumerate(EXT2_TRAP_ELAPSED) if p.trap_elapsed >> n & 1)
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs
                 if p.attract:

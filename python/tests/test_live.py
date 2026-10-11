@@ -224,6 +224,45 @@ class PressureExtraTest(unittest.TestCase):
 
     def test_a_blanked_target_counts_nothing(self):
         self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["STILL"] | self.FLAG["SPREAD"]), 0)
+class AllySwitchPsychUpTest(unittest.TestCase):
+    """Step G80 (decision 0044): SWAP exchanges the two positions of the user's side with everything on them
+    (sim/battle.ts swapPosition moves the Pokemon objects); COPY_BOOST gives the user the target's seven stages."""
+
+    def _tracker(self):
+        from duoforge_live import tracker
+        D = data.load(kind="pool")
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.data, t.side, t._spectator = D, 0, False
+        t._action, t._herb_end, t._healing_wish = None, None, None  # no move action open (Tracker._segment), no Healing Wish
+        t._positions = [[tracker._Position(), tracker._Position()], [tracker._Position(), tracker._Position()]]
+        a, b = t._positions[0]
+        a.occupant, a.stages, a.confused = 0, [8, 6, 6, 6, 6, 6, 6], 1
+        b.occupant, b.stages = 1, [6, 6, 6, 6, 4, 6, 6]
+        foe = t._positions[1][0]
+        foe.occupant, foe.stages = 2, [10, 6, 6, 6, 6, 6, 5]
+        return t, D
+
+    def test_ally_switch_exchanges_the_positions(self):
+        t, D = self._tracker()
+        a, b = t._positions[0]
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWAP"], 0, 1, trace_to_c.CAUSE["MOVE"], 0,
+                                     D.tables["MOVE"]["ALLYSWITCH"]))
+        # the pin moved deliberately with the explicit field list (decision 0044 section 10): the position objects stay at their
+        # slots and the Pokemon's fields go; the contents are what the old object swap showed
+        self.assertIs(t._positions[0][0], a)
+        self.assertIs(t._positions[0][1], b)
+        self.assertEqual((a.occupant, a.confused, a.stages), (1, 0, [6, 6, 6, 6, 4, 6, 6]))
+        self.assertEqual((b.occupant, b.confused, b.stages), (0, 1, [8, 6, 6, 6, 6, 6, 6]))
+
+    def test_psych_up_copies_the_targets_stages(self):
+        t, D = self._tracker()
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["COPY_BOOST"], 0, 2, trace_to_c.CAUSE["MOVE"], 0,
+                                     D.tables["MOVE"]["PSYCHUP"]))
+        self.assertEqual(t._positions[0][0].stages, [10, 6, 6, 6, 6, 6, 5])
+        self.assertEqual(t._positions[1][0].stages, [10, 6, 6, 6, 6, 6, 5])
+        self.assertIsNot(t._positions[0][0].stages, t._positions[1][0].stages)
+
+
 class BatonPassTest(unittest.TestCase):
     """Step G74 (decision 0042): the receiver of a Baton Pass (`|switch|...|[from] move: Baton Pass`, no volatile
     lines) takes the leaver's stages and confusion, the base view's fields; a plain switch resets them. The other
@@ -258,6 +297,103 @@ class BatonPassTest(unittest.TestCase):
         t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 3, 0, 100, 100, 1))
         p = t._positions[0][0]
         self.assertEqual((p.occupant, p.stages, p.confused), (3, [tracker.STAGE_NEUTRAL] * 7, 0))
+
+    def test_the_receiver_takes_a_curse(self):
+        # copyVolatileFrom copies every volatile without noCopy, and the curse volatile has none (the condition has no
+        # entry in data/conditions.ts): the CURSED flag passes with the stages, as the C copy keeps it (turn.c)
+        t, D, tracker = self._tracker()
+        t._positions[0][0].cursed = 1
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 3,
+                                     D.tables["MOVE"]["BATONPASS"], 100, 100, 1))
+        self.assertEqual(t._positions[0][0].cursed, 1)
+
+    def test_a_plain_switch_ends_a_curse(self):
+        t, D, tracker = self._tracker()
+        t._positions[0][0].cursed = 1
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 3, 0, 100, 100, 1))
+        self.assertEqual(t._positions[0][0].cursed, 0)
+
+
+class CurseTest(unittest.TestCase):
+    """Step G84b (decision 0063): the Ghost Curse's volatile is the CURSED bit of its holder. VOLATILE_START sets it, and
+    observation_ext shows it as DUOFORGE_POSITION_EXT_CURSE for both viewers; the holder's switch-out or faint ends it
+    (no END line exists, turn.c dfi_tail_clear_occupant); the source's faint does not (the residual goes on)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker = tracker
+        cls.D = data.load(kind="pool")
+        cls.EXT = tracker.C["DUOFORGE_POSITION_EXT_CURSE"]
+
+    def tracker_of(self, side):
+        from types import SimpleNamespace
+
+        class Ready(self.tracker.Tracker):  # ready is a property of the real tracker: a decision point is complete
+            ready = True
+
+        t = Ready.__new__(Ready)
+        t.data, t.side, t._spectator, t.epoch = self.D, side, False, 4
+        t._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]
+        t._positions = [[self.tracker._Position(), self.tracker._Position()],
+                        [self.tracker._Position(), self.tracker._Position()]]
+        t._positions[0][0].occupant = 0  # the user, own side at p1a
+        t._positions[1][0].occupant = 0  # the cursed foe at p2a
+        members = [SimpleNamespace(ability=1, item_now=0, item_used=0, seen=True, hp_percent=100, hp_flag=0, status=0,
+                                   toxic=0, toxic_stage=0, freeze_turns=0)
+                   for _ in range(6)]
+        t._member = lambda side_: members
+        # what the tracker's SWITCH and FAINT folds read beside the positions (the real tracker sets all of them)
+        t._after_upkeep = False
+        t._next_activation = 0
+        t._foe_leads = [self.tracker.ROSTER_NONE, self.tracker.ROSTER_NONE]
+        t._party = None
+        t._baton_pass = -1
+        t._action, t._herb_end, t._last_move = None, None, None  # Tracker.__init__ sets them; _segment reads them
+        t._guards = set()
+        t._hazards = [self.tracker.collections.Counter(), self.tracker.collections.Counter()]
+        return t
+
+    def start(self, t, pos=2, source=0):
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["VOLATILE_START"], pos, source, detail=trace_to_c.VOLATILE_CURSE))
+
+    def bit(self, t, side, k):
+        return int(t.observation_ext()["sides"][side]["positions"][k]["volatiles"]) & self.EXT
+
+    def test_the_start_sets_the_view_bit_of_the_cursed_position_for_both_viewers(self):
+        for viewer in (0, 1):
+            t = self.tracker_of(viewer)
+            self.start(t)
+            self.assertEqual(self.bit(t, side=1, k=0), self.EXT, viewer)
+            self.assertEqual(self.bit(t, side=0, k=0), 0, viewer)
+
+    def test_the_bit_ends_when_the_holder_switches_out(self):
+        t = self.tracker_of(0)
+        self.start(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 2, trace_to_c.NOPOS, 0, 1, 0, 100, 100, 1))
+        self.assertEqual(self.bit(t, side=1, k=0), 0)
+
+    def test_the_bit_ends_when_the_holder_faints(self):
+        t = self.tracker_of(1)
+        self.start(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["FAINT"], 2))
+        self.assertEqual(self.bit(t, side=1, k=0), 0)
+
+    def test_the_bit_stays_when_the_source_leaves(self):
+        # Substitute faint battle: the user faints, the residual [from] Curse goes on for the holder
+        t = self.tracker_of(0)
+        self.start(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["FAINT"], 0))
+        self.assertEqual(self.bit(t, side=1, k=0), self.EXT)
+
+    def test_the_residual_damage_is_the_public_hp_of_the_holder(self):
+        t = self.tracker_of(0)
+        self.start(t)
+        (e,) = trace_to_c.step_events(["|-damage|p2a: Gholdengo|75/100|[from] Curse"], 0, [{}, {}],
+                                      [{}, {"Gholdengo": 194}], self.D.tables)
+        t._event(e)
+        self.assertEqual(t._member(1)[0].hp_percent, 75)
+        self.assertEqual(self.bit(t, side=1, k=0), self.EXT)
 
 
 class SetBoostTest(unittest.TestCase):
@@ -336,6 +472,7 @@ class BreakProtectTest(unittest.TestCase):
             t.data, t.side, t._spectator = D, 0, False
             t._feint = D.tables["MOVE"]["FEINT"]
             t._phantom_force = D.tables["MOVE"]["PHANTOMFORCE"]
+            t._trap_moves = set()  # the partial trap's moves (G90): the event reads them before Feint's
             target = SimpleNamespace(protecting=1, chain=2, stall=1, guard_undo=(1, 0))
             t._positions = [[SimpleNamespace(), SimpleNamespace()], [target, SimpleNamespace()]]
             t._guards = {("WIDE_GUARD", 1)}
@@ -370,6 +507,7 @@ class LockedMoveSlotTest(unittest.TestCase):
         band = next(items[k.upper()] for k in lines.CHOICE_ITEMS if k.upper() in items) + 1  # a Choice holder (#334)
         t._guard_moves, t._choice_items = set(), {band}
         t._turn, t._move_pivots = 1, {}  # the public record's folds of a move line
+        t._healing_wish = self.D.tables["MOVE"].get("HEALINGWISH")  # G82's slot condition (a move line folds it)
         t._positions = [[self.tracker._Position(), self.tracker._Position()],
                         [self.tracker._Position(), self.tracker._Position()]]
         for side in t._positions:
@@ -585,8 +723,11 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # lane B G87 (the Attract source public; HS fold hs/g87-python): the 42 infatuated points build now: +42 equal, the engine-check
 # refusal is gone. Lane B G77 (crit package): +74 equal (its eight battles), no new refused record or stop. Measured on the
 # merged tree (main 0bc8d8d9 + G77 + G87): 11082 equal, 637 refused.
-POOL_OUTCOME = {"equal": 11082, "refused": 637, "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 98, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
+# Batch 8 pins (HS's measurement on aa0d8c65 with mismatch 0; to be confirmed by the CI log of the batch head): the record
+# assembler's equal 11590, refused 639, the unburden refusal 4 (the infatuated key of batch 7 is gone with G87). The tracker's
+# stops: 162 streams = SUBSTITUTE 110 + DRAGON_CHEER 20 + FORME_CHANGE 10 + DESTINY_BOND 10 + ROOST 8 + line:-end 2 + ILLUSION 2.
+POOL_OUTCOME = {"equal": 11590, "refused": 639, "tracker refuses: unburden-without-item-line": 4}
+POOL_STOPS = {"feature:SUBSTITUTE": 110, "feature:DRAGON_CHEER": 20, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
 

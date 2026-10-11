@@ -405,13 +405,21 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= (tail->single_turn & DFI_SINGLE_TURN_ROOST) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ROOST : 0u;
                 /* Step G60 (decision 0032): the Substitute is up: presence only, its HP is never in the observation. */
                 vol |= tail->substitute_hp != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_SUBSTITUTE : 0u;
+                /* Step G90 (decision 0060): the partial trap is up (-activate at its start, -end at its end): presence only; the
+                 * turns are drawn and hidden, the source is public (the -activate line names it). */
+                vol |= tail->trap_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_PARTIAL_TRAP : 0u;
                 /* Step G72b (decision 0015 5ce): Dragon Cheer's volatile is up while its stage is (-start|X|move: Dragon Cheer; a
                  * switch-out clears the stage with the position's tail, so the bit ends with it). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DRAGON_CHEER : 0u;
                 /* Step G84 (decision 0047): Leech Seed is up on the holder (the tail's source; public: the -start line). */
                 vol |= tail->leech_seed_source != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_LEECH_SEED : 0u;
+                /* Step G82 (decision 0045): the slot's Healing Wish is pending. Public (the user's move and faint, and the heal that
+                 * ends it); set at every position, an empty one included, since the wish waits for the next entrant. */
+                vol |= (tail->position_flags & DFI_POSFLAG_HEALING_WISH) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEALING_WISH : 0u;
                 /* Step G76 (decision 0015 5cg): Destiny Bond is up until the occupant's next move attempt (-singlemove|X|Destiny Bond). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DESTINY_BOND) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DESTINY_BOND : 0u;
+                /* Step G84b (decision 0063): Curse is up on the holder (public: -start|X|Curse|[of] source; it ends with the occupant). */
+                vol |= (tail->position_flags & DFI_POSFLAG_CURSED) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_CURSE : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
                  * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
                 if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&
@@ -427,6 +435,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                  * infatuated occupant and no source (the source's member is not in the view). */
                 vol |= battle->tail.attract_source[s * DUOFORGE_ACTIVE_PER_SIDE + p] != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ATTRACT : 0u;
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G90 (decision 0060, hidden counters): the partial trap's elapsed residual phases, POSITION_EXT2 bits 4 to 6.
+                 * Public (-activate and each residual line show them), zero without the trap. */
+                o.volatiles2[s][p] = tail->trap_turns != 0u ? ((uint32_t)tail->trap_elapsed << 4) : 0u;
                 /* Step G87 (decision 0080): the source's flat position (0 to 3) in volatiles2 bits 12 and 13, for both players: the
                  * Attract line names the source. Written only with the presence bit. The position is the one that holds the source
                  * as its occupant, standing or fainted (a source that fainted in the battle's last action keeps its position, issue

@@ -47,11 +47,13 @@
 #define DFI_SITE_LOCK_TURNS 21u    /* the lock of Outrage, Thrash and Petal Dance (POOL data, step G56): lockedmove's onStart,
                                     * random(2, 4) = 2 or 3 turns (data/conditions.ts:265) */
 #define DFI_SITE_MULTIHIT_COUNT 22u /* Scale Shot, Icicle Spear (POOL data, step G54): sample of 20 hit counts, random(20) */
+#define DFI_SITE_PARTIAL_TRAP_TURNS 32u /* the partial trap's turns (POOL data, step G90, decision 0060): random(5, 7), data/conditions.ts:222-258 */
 #define DFI_SITE_MOODY 23u         /* Moody (POOL data, step G73): sample of the stats that can rise (random(n), n = the list length, one
                                     * draw), then of the stats that can fall (random(n), no draw for an empty list); data/abilities.ts:2701-2734 */
 #define DFI_SITE_CUTE_CHARM 24u    /* Cute Charm (POOL data, step G71, decision 0034): randomChance(3, 10), random(10) < 3, per contact hit on a damaged holder */
 #define DFI_SITE_ATTRACT 25u       /* Attract (POOL data, step G71, decision 0034): randomChance(1, 2) at BeforeMove priority 2, random(2) < 1 */
-#define DFI_SITE_COUNT 26u
+#define DFI_SITE_ALLY_SWITCH 33u /* Ally Switch's consecutive use (POOL data, step G80, decision 0044): randomChance(1, 3^level), random(3^level) == 0 */
+#define DFI_SITE_COUNT 34u /* gaps are fine: dfi_draw checks site < COUNT (HS ranges: sites 24-31 unused, 32 G90, 33 G80) */
 
 /* The name of a draw site, for the tests and the debug paths. A new site needs its case here; the switch is the build-time guard: a
  * duplicate site value is a duplicate case value, a compile error on every compiler (see residual_order.h for the residual kinds). */
@@ -104,6 +106,14 @@ static inline const char *dfi_site_name(uint32_t site)
         return "multihit-count";
     case DFI_SITE_MOODY:
         return "moody";
+    case DFI_SITE_PARTIAL_TRAP_TURNS:
+        return "partial-trap-turns";
+    case DFI_SITE_ALLY_SWITCH:
+        return "ally-switch";
+    case DFI_SITE_CUTE_CHARM:
+        return "cute-charm";
+    case DFI_SITE_ATTRACT:
+        return "attract";
     default:
         return NULL;
     }

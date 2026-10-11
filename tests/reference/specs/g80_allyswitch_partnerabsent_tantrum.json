@@ -1,0 +1,108 @@
+{
+  "name": "g80_allyswitch_partnerabsent_tantrum",
+  "purpose": "Ally Switch with no partner (step G80, decision 0044) and Stomping Tantrum after it: Audino uses Ally Switch while its partner is fainted (step 22; the onHit returns NOT_FAIL, so the result is null, data/moves.ts:326-328), then Stomping Tantrum on the next turn is not doubled: basePowerCallback doubles only when moveLastTurnResult === false (data/moves.ts:18054). Taken from the random differential battle fz_80_184 of run 80 (its first 24 answers), which the pinned Showdown accepted.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,d3108894655019efaa9dfcb47261b1217fb97fe61ceb83b77df19e3567059d57",
+  "teams": [
+    "Audino (F)\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Encore\n- Ally Switch\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect",
+    "Salamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Encore\n- Ally Switch\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nAudino (F)\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand"
+  ],
+  "choices": [
+    {
+      "p1": "team 5314",
+      "p2": "team 2645"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "switch 3, move 2",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 4, move 1 2",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "switch 3, move 1 2",
+      "p2": "move 3 -2, move 1 1"
+    },
+    {
+      "p1": "move 1 2, move 2",
+      "p2": "move 4, move 1 2"
+    },
+    {
+      "p1": "move 2, switch 4",
+      "p2": "move 1 -2, move 2"
+    },
+    {
+      "p1": "move 2, move 1 -1",
+      "p2": "move 1 2, move 1"
+    },
+    {
+      "p1": "move 3 -2, move 1 -1",
+      "p2": "move 4 -2, move 4"
+    },
+    {
+      "p1": "pass, switch 3",
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 1, move 1",
+      "p2": "move 3 -2, move 4 -1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "switch 3, move 3"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 3 2, move 1 1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 3 1, move 4 -1"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 3 2, move 1 1"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 3 2, move 4 -1"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 3 -2, move 1 2"
+    },
+    {
+      "p1": "move 3 2, switch 4",
+      "p2": "move 1 -2, move 4 -1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "move 3 1, move 1"
+    },
+    {
+      "p1": "move 3 -2, move 4 -1",
+      "p2": "pass, move 2 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2, move 3 -1",
+      "p2": "pass, move 1"
+    },
+    {
+      "p1": "move 1 -2, move 3 -1",
+      "p2": "pass, move 2 -1"
+    }
+  ],
+  "max_steps": 24
+}

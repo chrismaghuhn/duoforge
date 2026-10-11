@@ -43,6 +43,7 @@ static void dfi_encode_tail_pos(const dfi_tail_pos *tp, uint8_t *po)
     po[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] = tp->trap_turns;
     po[DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF] = tp->trap_source;
     po[DFI_ENC_TAIL_POS_TRAP_BAND_OFF] = tp->trap_band;
+    po[DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF] = tp->trap_elapsed;
     po[DFI_ENC_TAIL_POS_LEECH_SEED_OFF] = tp->leech_seed_source;
     po[DFI_ENC_TAIL_POS_YAWN_OFF] = tp->yawn_turns;
     po[DFI_ENC_TAIL_POS_FOCUS_ENERGY_OFF] = tp->focus_energy;
@@ -93,6 +94,11 @@ static void dfi_encode_tail5(const dfi_pool_tail *tail, uint8_t *out)
     }
     for (uint32_t i = DFI_ENC_TAIL5_ATTRACT_SIZE; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
         out[DFI_ENC_TAIL5_RESERVED_OFF + i] = 0u;
+    }
+    /* step G80: the Ally Switch volatile of each flat position, in reserve bytes 4..7 (the rest of the reserve stays zero) */
+    for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
+        const dfi_tail_pos *tp = &tail->sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
+        out[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_OFF + f] = tp->ally_switch;
     }
 }
 
@@ -154,7 +160,10 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
             any |= so[DFI_ENC_TAIL_MEMBER_OFF + m * DFI_ENC_TAIL_MEMBER_SIZE + DFI_ENC_TAIL_MEMBER_RESERVED_OFF];
         }
     }
-    for (uint32_t i = DFI_ENC_TAIL5_ATTRACT_SIZE; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) { /* step G71: the first 4 are data */
+    for (uint32_t i = DFI_ENC_TAIL5_ATTRACT_SIZE; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+        if (i >= DFI_ENC_TAIL5_ALLY_SWITCH_OFF && i < DFI_ENC_TAIL5_ALLY_SWITCH_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_COUNT) {
+            continue; /* step G80: the Ally Switch bytes are read by dfi_parse_tail5 and checked by the invariants */
+        }
         any |= in[DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_RESERVED_OFF + i];
     }
     return any == 0u;
@@ -162,6 +171,7 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
 
 static void dfi_parse_tail_pos(const uint8_t *po, dfi_tail_pos *tp)
 {
+    tp->pos_pad = 0u; /* the struct's pad: never encoded, zero after every decode (the tail-kind check reads the whole tail) */
     tp->last_move = po[DFI_ENC_TAIL_POS_LAST_MOVE_OFF];
     tp->encore_slot = po[DFI_ENC_TAIL_POS_ENCORE_SLOT_OFF];
     tp->encore_turns = po[DFI_ENC_TAIL_POS_ENCORE_TURNS_OFF];
@@ -176,6 +186,7 @@ static void dfi_parse_tail_pos(const uint8_t *po, dfi_tail_pos *tp)
     tp->trap_turns = po[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF];
     tp->trap_source = po[DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF];
     tp->trap_band = po[DFI_ENC_TAIL_POS_TRAP_BAND_OFF];
+    tp->trap_elapsed = po[DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF];
     tp->leech_seed_source = po[DFI_ENC_TAIL_POS_LEECH_SEED_OFF];
     tp->yawn_turns = po[DFI_ENC_TAIL_POS_YAWN_OFF];
     tp->focus_energy = po[DFI_ENC_TAIL_POS_FOCUS_ENERGY_OFF];
@@ -216,6 +227,8 @@ static void dfi_parse_tail5(const uint8_t *in, dfi_pool_tail *tail)
         const uint8_t *po = in + DFI_ENC_TAIL5_POS_OFF + f * DFI_ENC_TAIL5_POS_SIZE;
         tp->position_flags = po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF];
         tp->future_sight = po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF];
+        tp->ally_switch = in[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_OFF + f]; /* step G80 */
+        tp->ally_switch_pad = 0u;
     }
     for (uint32_t i = 0u; i < DFI_ENC_TAIL5_ATTRACT_SIZE; ++i) { /* step G71: the Attract source per position */
         tail->attract_source[i] = in[DFI_ENC_TAIL5_ATTRACT_OFF + i];
