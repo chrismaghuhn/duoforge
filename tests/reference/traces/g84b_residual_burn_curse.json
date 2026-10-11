@@ -1,7 +1,7 @@
 {
  "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "burn_try.json",
+ "spec": "g84b_residual_burn_curse.json",
  "format": "gen9championsvgc2026regmc",
  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000a05",
  "start": {
@@ -11,7 +11,7 @@
    "|player|p2|p2||",
    "|gen|9",
    "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
-   "|rule|Species Clause: Limit one of each PokÃ©mon",
+   "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
    "|poke|p1|Gengar, L50, M|",
