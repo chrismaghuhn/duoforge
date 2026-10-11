@@ -2897,5 +2897,104 @@ class FormeStance(unittest.TestCase):
         self.assertEqual(cm.exception.rule, 'formechange-line')
 
 
+
+class AngerPointSetboost(unittest.TestCase):
+    """NAMED RULE SETBOOST-ANGER-POINT (step G77, decision 0015 5bq): `-setboost|X|atk|N|[from] ability: Anger Point` is the Attack
+    boost of the holder (sim/battle.ts:2050-2053), converted to the BOOST of Attack by N minus the stage before the line, the
+    cause ABILITY and id2 Anger Point + 1. Any other -setboost, and a stage line that is not followed, is refused. Each negative
+    control changes an in-memory copy of the committed battle g77_leek_anger_point and asserts the rule. Sniper's ModifyDamage
+    value (6144, one of the factors of a critical hit) and its exclusion of the screens are checked here too."""
+
+    NAME = 'g77_leek_anger_point'
+
+    def mutated(self, fn, prefix='|-setboost|'):
+        spec, trace = battle(self.NAME)
+        changed = 0
+        for st in trace['steps']:
+            new = []
+            for line in st['log']:
+                if line.startswith(prefix):
+                    new.extend(fn(line))
+                    changed += 1
+                else:
+                    new.append(line)
+            st['log'] = new
+        self.assertGreater(changed, 0, 'the committed battle has the -setboost line')
+        return spec, trace
+
+    def test_committed_line_converts_and_its_stage_before_is_zero(self):
+        spec, trace = battle(self.NAME)
+        convert(self.NAME, spec, trace)  # no ConversionError: the rule accepts the recorded shape
+        # the turn that has the line starts with Tauros at Attack 0: the change is 6 - 0
+        self.assertEqual(trace_to_c.setboost_olds(trace['steps'][1]['log'], trace['steps'][0]['state']), [0])
+
+    def test_bellydrum_cause_refused(self):
+        spec, trace = self.mutated(lambda l: [l.replace('[from] ability: Anger Point', '[from] move: Bellydrum')])
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'setboost-line')
+
+    def test_another_stat_refused(self):
+        spec, trace = self.mutated(lambda l: [l.replace('|atk|', '|def|', 1)])
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'setboost-line')
+
+    def test_a_stage_that_does_not_rise_refused(self):
+        spec, trace = self.mutated(lambda l: [l.replace('|atk|6|', '|atk|0|', 1)])
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'setboost-line')
+
+    def test_at_the_cap_a_crit_prints_no_line_and_no_stage_change(self):
+        # Tauros is at Attack +6 after the first crit of the battle (turn 1): the second crit (turn 2) changes nothing, the pin
+        # prints nothing (the boost is `if (boostBy)`: a change of 0 has no -setboost), so the step has no line and no stage change
+        spec, trace = battle(self.NAME)
+        convert(self.NAME, spec, trace)
+        step = trace['steps'][2]
+        self.assertIn('|-crit|p2a: Tauros', step['log'])
+        self.assertFalse([l for l in step['log'] if l.startswith('|-setboost|')])
+        self.assertEqual(trace_to_c.setboost_olds(step['log'], trace['steps'][1]['state']), [])
+
+    def test_a_setboost_at_the_cap_refused(self):
+        # an inserted -setboost in the turn with Attack already +6: its change would be 0, which the pin never prints
+        spec, trace = battle(self.NAME)
+        step = trace['steps'][2]
+        i = step['log'].index('|-crit|p2a: Tauros')
+        step['log'] = step['log'][:i] + ['|-setboost|p2a: Tauros|atk|6|[from] ability: Anger Point'] + step['log'][i:]
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'setboost-line')
+
+    def test_a_stage_invert_before_it_refused(self):
+        # an invert of the stages before the line: the converter does not follow it, so it refuses the battle
+        spec, trace = self.mutated(lambda l: ['|-invertboost|p2a: Tauros|[silent]', l])
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'setboost-state')
+
+    def test_a_clear_before_it_is_followed(self):
+        # -clearallboost before the first boost of the battle: Attack is 0 before it, the same as without the clear
+        spec, trace = battle(self.NAME)
+        log = trace['steps'][1]['log']
+        self.assertEqual(trace_to_c.setboost_olds(['|-clearallboost|'] + log, trace['steps'][0]['state']), [0])
+
+
+class SniperChain(unittest.TestCase):
+    """NAMED RULE SNIPER-CHAIN (step G77): the value of Sniper in the ModifyDamage chain and its exclusion of the screens: a
+    critical hit takes no screen, so the two never meet; a tie of Sniper with a set that does not commute is refused."""
+
+    def test_sniper_is_6144_and_excludes_the_screens(self):
+        values = trace_to_c.modify_damage_values()
+        self.assertEqual(values['sniper'], 6144)
+        mods = trace_to_c.modifier_subsets(['reflect', 'sniper'], values)
+        self.assertEqual(mods, [[values['reflect']], [values['sniper']]])  # a set with both is never a hit
+
+    def test_a_non_commuting_set_with_sniper_is_refused(self):
+        # Life Orb, a resist berry, Solid Rock and Sniper: the chain takes 2995 or 2996 by the order (turn.c refuses it too)
+        self.assertFalse(trace_to_c.modifiers_commute([5324, 2048, 3072, 6144]))
+        self.assertTrue(trace_to_c.modifiers_commute([5324, 6144, 2048]))
+
+
 if __name__ == '__main__':
     unittest.main()

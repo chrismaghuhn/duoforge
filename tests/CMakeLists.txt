@@ -815,3 +815,7 @@ duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX 
 # Step G65 (decision 0015 5bk): the simple modifier abilities Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck (their
 # rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)
+
+# Step G77 (decision 0015 5bq): the crit package Magma Armor, Anger Point, Sniper and Leek (their rows, the ModifyDamage bound and
+# commutation with Sniper, the Skill Swap and Trace refusals of Magma Armor onto a frozen holder; white-box).
+duoforge_add_test(NAME duoforge.state.pool_g77 SOURCES test_pool_g77.c WHITEBOX TIMEOUT 60)

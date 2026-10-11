@@ -1470,6 +1470,26 @@ const G65_PROBES = {
     },
 };
 
+// Step G77 (crit package): the callbacks of Magma Armor and the flags of Anger Point and Sniper, against the pinned texts
+// (data/abilities.ts:2501-2515, 131-142, 4358-4369). Anger Point's onHit and Sniper's onModifyDamage need a holder and a target
+// with a crit record, which the probe helpers do not build; their texts are checked whole by check_g34_facts (G77_ABILITY_FACTS).
+const G77_PROBES = {
+    magmaarmor(ability) {
+        expect('magmaarmor breakable', ability.flags.breakable, 1);
+        expect('magmaarmor freeze refused', call(ability.onImmunity, battle(ability), ['frz']), false);
+        expect('magmaarmor paralysis not refused', call(ability.onImmunity, battle(ability), ['par']), undefined);
+        expect('magmaarmor onUpdate', typeof ability.onUpdate, 'function');
+    },
+    angerpoint(ability) {
+        expect('angerpoint flags', ability.flags, {});
+        expect('angerpoint onHit', typeof ability.onHit, 'function');
+    },
+    sniper(ability) {
+        expect('sniper flags', ability.flags, {});
+        expect('sniper onModifyDamage', typeof ability.onModifyDamage, 'function');
+    },
+};
+
 // Step G65 (Reckless's crash clause): a modelled move with hasCrashDamage needs the clause, which the engine does not have.
 function checkG65(dex, moveNames, unmodeledMoves) {
     for (const id of moveNames) {
@@ -1519,6 +1539,9 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (G65_PROBES[row.id] !== undefined) {
                     G65_PROBES[row.id](ability);
+                }
+                if (G77_PROBES[row.id] !== undefined) {
+                    G77_PROBES[row.id](ability);
                 }
             }
             continue;

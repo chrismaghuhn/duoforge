@@ -393,7 +393,8 @@ def resist_berries():
 def modify_damage_values():
     """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name."""
     values = {'lifeorb': 5324, 'expertbelt': 4915, 'reflect': 2732, 'lightscreen': 2732, 'auroraveil': 2732, 'glaiverush': 8192,
-              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072, 'auraguard': 2048}
+              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072, 'auraguard': 2048,
+              'sniper': 6144}  # Sniper (step G77): x1.5 on a critical hit, the attacker's ability (data/abilities.ts:4358-4369)
     values.update({berry: 2048 for berry in resist_berries()})
     return values
 
@@ -414,7 +415,8 @@ def modifier_subsets(kinds, values):
     """The modifier lists that one hit can have from the handlers `kinds`: any subset with one screen at most, one of Life Orb and
     Expert Belt, and one of Solid Rock, Multiscale and Aura Guard (Mega batch 2)."""
     import itertools
-    exclusive = (('reflect', 'lightscreen', 'auroraveil'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale', 'auraguard'))
+    # A screen is not applied to a critical hit (turn.c, the `!crit` test), and Sniper is only on one: they never meet (step G77).
+    exclusive = (('reflect', 'lightscreen', 'auroraveil', 'sniper'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale', 'auraguard'))
     out = []
     for r in range(1, len(kinds) + 1):
         for sub in itertools.combinations(kinds, r):
@@ -422,6 +424,56 @@ def modifier_subsets(kinds, values):
                 continue
             out.append([values[k] for k in sub])
     return out
+
+
+def setboost_olds(log, state):
+    """The Attack stage before each -setboost line of one step (step G77, Anger Point). It is the stage at the start of the step
+    (`state`, the previous snapshot), moved by the Attack changes of the lines before it: a -boost or -unboost of atk adds or
+    subtracts its amount, a -setboost of atk sets its stage, a switch into the position starts at 0, the clears set the
+    stages they clear (-clearallboost and -clearboost to 0, -clearnegativeboost to max(stage, 0), -clearpositiveboost to
+    min(stage, 0)). A copy, a swap or an invert of stages is refused: the converter does not follow it. One entry per
+    -setboost line, in order."""
+    stage = {}
+    olds = []
+
+    def slot_of(text):
+        return int(text[1]) - 1, 'ab'.index(text[2])
+
+    def current(k):
+        if k not in stage:
+            idx = state['sides'][k[0]]['active'][k[1]]
+            stage[k] = 0 if idx is None or idx < 0 else state['sides'][k[0]]['pokemon'][idx]['boosts'][0]
+        return stage[k]
+
+    for line in log:
+        parts = line.split('|')
+        if len(parts) < 2:
+            continue
+        kind = parts[1]
+        if kind in ('switch', 'drag') and len(parts) > 2 and ': ' in parts[2]:
+            stage[slot_of(parts[2])] = 0
+        elif kind in ('-copyboost', '-swapboost', '-invertboost'):  # a copy, a swap or an invert of stages: not followed
+            raise ConversionError('setboost-state', 'trace_to_c: a stage line beside an Anger Point boost: %r' % line,
+                                  detail=kind)
+        elif kind == '-clearallboost':
+            for k in ((0, 0), (0, 1), (1, 0), (1, 1)):
+                stage[k] = 0
+        elif kind == '-clearboost' and len(parts) > 2 and ': ' in parts[2]:
+            stage[slot_of(parts[2])] = 0
+        elif kind == '-clearnegativeboost' and len(parts) > 2 and ': ' in parts[2]:
+            k = slot_of(parts[2])
+            stage[k] = max(current(k), 0)  # a White Herb restore of the negative stages: Attack below 0 becomes 0
+        elif kind == '-clearpositiveboost' and len(parts) > 2 and ': ' in parts[2]:
+            k = slot_of(parts[2])
+            stage[k] = min(current(k), 0)
+        elif kind in ('-boost', '-unboost') and len(parts) > 4 and parts[3] == 'atk':
+            k = slot_of(parts[2])
+            stage[k] = current(k) + int(parts[4]) if kind == '-boost' else current(k) - int(parts[4])
+        elif kind == '-setboost' and len(parts) > 4 and parts[3] == 'atk':
+            k = slot_of(parts[2])
+            olds.append(current(k))
+            stage[k] = int(parts[4])
+    return olds
 
 
 def lock_counter_tie(group):
@@ -1395,7 +1447,7 @@ def swap_partners(trace, teams, roster_of, tables):
     return out
 
 
-def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None):
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None, setboost_old=None):
     """The events `viewer` sees in one step, in protocol order.
 
     ill (decision 0026, Illusion; None = no holder in the battle): 'side' (per side: a holder is on it), 'truth_at' ((side, p) ->
@@ -1776,6 +1828,22 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['BOOST' if kind == '-boost' else 'UNBOOST'], ev_pos(args[0]), other, cause, 0, id2,
                          detail=EV_STATS.index(args[1]), amount=int(args[2]))
+        elif kind == '-setboost':
+            # Anger Point (step G77, sim/battle.ts:2050-2053): `-setboost|X|atk|N|[from] ability: Anger Point` shows the Attack stage
+            # after the boost (N), with no -ability line. The event is the BOOST of Attack by the change, cause ABILITY, id2 Anger
+            # Point + 1 (turn.c, dfi_boost); the change is N minus the stage before the line (setboost_olds). Any other -setboost
+            # (Bellydrum, another stat, another source) is refused.
+            cause, id2, other = ev_cause(attrs, tables)
+            if len(args) != 3 or args[1] != 'atk' or len(attrs) != 1 or cause != CAUSE['ABILITY'] or                     id2 != tables['ABILITY'][key('Anger Point')] + 1:
+                raise ConversionError('setboost-line', 'trace_to_c: unknown -setboost %r' % line, detail=line)
+            if not setboost_old:
+                raise ConversionError('setboost-line', 'trace_to_c: no stage before -setboost %r' % line, detail=line)
+            old = setboost_old.pop(0)
+            new = int(args[2])
+            if not (-6 <= new <= 6) or new <= old:
+                raise ConversionError('setboost-line', 'trace_to_c: -setboost that does not raise the stage: %r' % line,
+                                      detail=line)
+            e = ev_tuple(EV['BOOST'], ev_pos(args[0]), other, cause, 0, id2, detail=EV_STATS.index('atk'), amount=new - old)
         elif kind == '-status':
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['STATUS'], ev_pos(args[0]), other, cause, 0, id2, detail=AILMENT[args[1]])
@@ -2184,7 +2252,8 @@ def convert_battle(name, spec, trace, tables):
             for p_i in range(2):
                 act = new_state['sides'][sd_i]['active'][p_i]
                 ill_step['truth_at'][(sd_i, p_i)] = name_of(new_state['sides'][sd_i]['pokemon'][act]) if act is not None and act >= 0 else None
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k])
+        setboost = setboost_olds(step['log'], state)  # Anger Point's stage before each -setboost of the step (step G77)
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k], list(setboost))
                   for viewer in range(2)]
         for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
             if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:

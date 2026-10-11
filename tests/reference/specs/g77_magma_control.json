@@ -1,0 +1,24 @@
+{
+  "name": "g77_magma_control",
+  "purpose": "G77 control of g77_magma_camerupt: Camerupt (F) with Solid Rock instead of Magma Armor, the same seed and turns; its freeze on the same roll shows -status|p2a: Camerupt|frz.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000077006",
+  "teams": [
+    "Tauros (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Ice Beam\n- Close Combat\n- Zen Headbutt\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Marvel Scale\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Muddy Water\n- Double-Edge\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Foul Play\n- Kowtow Cleave\n- Sucker Punch\n- Swords Dance",
+    "Camerupt (F) @ Leftovers\nAbility: Solid Rock\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nBold Nature\n- Stone Edge\n- Ironhead\n- Zen Headbutt\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Foul Play\n- Kowtow Cleave\n- Sucker Punch\n- Swords Dance\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Marvel Scale\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Muddy Water\n- Double-Edge\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 4",
+      "move 1 1, move 4",
+      "move 1 1, move 4"
+    ],
+    "p2": [
+      "move 1 1, move 4",
+      "move 1 1, move 4",
+      "move 1 1, move 4"
+    ],
+    "max_steps": 3
+  }
+}
