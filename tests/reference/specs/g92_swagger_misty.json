@@ -1,0 +1,21 @@
+{
+  "name": "g92_swagger_misty",
+  "purpose": "Misty Terrain (Gardevoir, turn 1), then Swagger into grounded Primarina: its attack rises (boost succeeds), the confusion is refused by the terrain (-activate, null): no -fail",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Gardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect\n\nGengar (F) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Confuse Ray\n- Night Shade\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Confuse Ray\n- Protect\n\nExcadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect\n\nSteelix (M) @ Expert Belt\nAbility: Sturdy\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Fissure\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect",
+    "Primarina (F) @ Sitrus Berry\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nFeraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect\n\nMr. Mime (M) @ Focus Sash\nAbility: Filter\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Teeter Dance\n- Protect\n\nRaichu (M) @ Life Orb\nAbility: Static\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Thunder Wave\n- Protect\n\nUmbreon (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Swagger\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3",
+      "move 2 1, move 3"
+    ],
+    "p2": [
+      "move 2, move 2"
+    ],
+    "max_steps": 3
+  }
+}

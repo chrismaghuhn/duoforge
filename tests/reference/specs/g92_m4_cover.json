@@ -1,0 +1,193 @@
+{
+  "name": "g92_m4_cover",
+  "purpose": "M4 cover (decision 0062, lead, 2026-10-11): an OHKO move (Fissure, Guillotine or Horn Drill) by a non-Ice user whose accuracy roll is in [20, 30): hit at 30, miss at 20",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,756ecf9ac862844eff07bac0f55759ccfd7f9c57bfd53be910365661ba3a2f08",
+  "teams": [
+    "Gengar (F) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Confuse Ray\n- Night Shade\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Guillotine\n- Protect\n\nFeraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect\n\nGardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect\n\nExcadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect\n\nMr. Mime (M) @ Sitrus Berry\nAbility: Filter\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Teeter Dance\n- Protect",
+    "Excadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect\n\nMr. Mime (M) @ Sitrus Berry\nAbility: Filter\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Teeter Dance\n- Protect\n\nGardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect\n\nGengar (F) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Confuse Ray\n- Night Shade\n- Protect\n\nFeraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Guillotine\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 3125",
+      "p2": "team 2453"
+    },
+    {
+      "p1": "move 1 2, move 3",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "switch 4, move 3",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 2, move 2 1"
+    },
+    {
+      "p1": "move 3, move 1 1",
+      "p2": "move 1, move 2 1"
+    },
+    {
+      "p1": "move 1 -2, switch 3",
+      "p2": "switch 4, move 1 1"
+    },
+    {
+      "p1": "move 1 1, move 2 -1",
+      "p2": "switch 4, move 1 2"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 -2, move 2 2",
+      "p2": "move 1, move 2 -1"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 1 2, move 2 2",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 1 2, move 3",
+      "p2": "move 2 1, move 1 1"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 3 -2, move 2 1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "switch 3, move 2 2",
+      "p2": "move 1 1, move 3"
+    },
+    {
+      "p1": "move 2 -2, move 3",
+      "p2": "move 1 1, move 1 2"
+    },
+    {
+      "p1": "move 1 -2, switch 3",
+      "p2": "move 1 2, move 3"
+    },
+    {
+      "p1": "move 1 1, move 3",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 3, move 2 2",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 3, move 1 2",
+      "p2": "move 1 2, move 2 1"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 1 -2, move 2 2"
+    },
+    {
+      "p1": "move 2 -2, move 3",
+      "p2": "move 1 2, move 3"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "switch 4, move 1",
+      "p2": "move 2, move 2 2"
+    },
+    {
+      "p1": "move 2, move 3",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 1 2, move 1 1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 2, move 2 1"
+    },
+    {
+      "p1": "move 1 2, move 3",
+      "p2": "move 1 -2, move 2 -1"
+    },
+    {
+      "p1": "move 2, move 2 -1",
+      "p2": "move 1 -2, move 3"
+    },
+    {
+      "p1": "move 1 1, switch 4",
+      "p2": "move 1 2, move 2 -1"
+    },
+    {
+      "p1": "move 2, move 3",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 2, move 2 1",
+      "p2": "move 1 -2, move 2 2"
+    },
+    {
+      "p1": "move 1 2, switch 4",
+      "p2": "move 2, move 2 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 2, move 2 -1",
+      "p2": "move 1 1, move 1 2"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 1 2, move 2 1"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "move 1 1, move 2 -1"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 1 -2, move 2 -1"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "pass, move 2 1"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 2 -1"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "pass, move 2 2"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "pass, move 1"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "pass, move 1"
+    }
+  ]
+}
