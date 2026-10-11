@@ -1,0 +1,6490 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "c4_cover_b.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,a156fef1945c5b68baefc6dc3564f112b8ce48f15e9dda204967514f291cdc6c",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Machamp, L50, M|",
+   "|poke|p1|Glalie, L50, M|",
+   "|poke|p1|Emboar, L50, M|",
+   "|poke|p1|Pangoro, L50, M|",
+   "|poke|p1|Meowscarada, L50, F|",
+   "|poke|p1|Froslass, L50, F|",
+   "|poke|p2|Pyroar, L50, M|",
+   "|poke|p2|Tauros, L50, M|",
+   "|poke|p2|Snorlax, L50, M|",
+   "|poke|p2|Metagross, L50|",
+   "|poke|p2|Lopunny, L50, F|",
+   "|poke|p2|Scovillain, L50, F|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Machamp",
+       "set_species": "Machamp",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 167,
+       "maxhp": 167,
+       "item": "choicescarf",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Glalie",
+       "set_species": "Glalie",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 187,
+       "maxhp": 187,
+       "item": "glalitite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Emboar",
+       "set_species": "Emboar",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 217,
+       "maxhp": 217,
+       "item": "muscleband",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Pangoro",
+       "set_species": "Pangoro",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Meowscarada",
+       "set_species": "Meowscarada",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 151,
+       "maxhp": 151,
+       "item": "focussash",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Froslass",
+       "set_species": "Froslass",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "froslassite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Pyroar",
+       "set_species": "Pyroar",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 193,
+       "maxhp": 193,
+       "item": "pyroarite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Tauros",
+       "set_species": "Tauros",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 152,
+       "maxhp": 152,
+       "item": "choicescarf",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Snorlax",
+       "set_species": "Snorlax",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 267,
+       "maxhp": 267,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Metagross",
+       "set_species": "Metagross",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 157,
+       "maxhp": 157,
+       "item": "metagrossite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        12,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Lopunny",
+       "set_species": "Lopunny",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 142,
+       "maxhp": 142,
+       "item": "lopunnite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Scovillain",
+       "set_species": "Scovillain",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "scovillainite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        16,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 1254",
+    "p2": "team 3624"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Machamp|Machamp, L50, M|167/167",
+    "|switch|p1a: Machamp|Machamp, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Glalie|Glalie, L50, M|187/187",
+    "|switch|p1b: Glalie|Glalie, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2a: Snorlax|Snorlax, L50, M|267/267",
+    "|switch|p2a: Snorlax|Snorlax, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Scovillain|Scovillain, L50, F|172/172",
+    "|switch|p2b: Scovillain|Scovillain, L50, F|100/100",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 267,
+        "maxhp": 267,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain",
+        "set_species": "Scovillain",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 4, move 4 mega",
+    "p2": "move 3 -2, move 2 2 mega"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 50
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 76
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Pangoro|Pangoro, L50, M|202/202",
+    "|switch|p1a: Pangoro|Pangoro, L50, M|100/100",
+    "|detailschange|p1b: Glalie|Glalie-Mega, L50, M",
+    "|-mega|p1b: Glalie|Glalie|Glalitite",
+    "|detailschange|p2b: Scovillain|Scovillain-Mega, L50, F",
+    "|-mega|p2b: Scovillain|Scovillain|Scovillainite",
+    "|move|p1b: Glalie|Protect|p1b: Glalie",
+    "|-singleturn|p1b: Glalie|Protect",
+    "|move|p2b: Scovillain|Flamethrower|p1b: Glalie",
+    "|-activate|p1b: Glalie|move: Protect",
+    "|move|p2a: Snorlax|Crunch|p2b: Scovillain",
+    "|split|p2",
+    "|-damage|p2b: Scovillain|131/172",
+    "|-damage|p2b: Scovillain|76/100",
+    "|-status|p2a: Snorlax|brn|[from] ability: Spicy Spray|[of] p2b: Scovillain",
+    "|split|p2",
+    "|-damage|p2a: Snorlax|251/267 brn|[from] brn",
+    "|-damage|p2a: Snorlax|94/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 251,
+        "maxhp": 267,
+        "item": "rockyhelmet",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         15,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 1, move 1 -1",
+    "p2": "move 3 2, move 3 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 82
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 22
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 90
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 50
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 69
+    }
+   ],
+   "log": [
+    "|move|p1b: Glalie|Frost Breath|p1a: Pangoro",
+    "|-crit|p1a: Pangoro",
+    "|split|p1",
+    "|-damage|p1a: Pangoro|93/202",
+    "|-damage|p1a: Pangoro|46/100",
+    "|move|p2b: Scovillain|Trailblaze|p2a: Snorlax",
+    "|split|p2",
+    "|-damage|p2a: Snorlax|215/267 brn",
+    "|-damage|p2a: Snorlax|80/100 brn",
+    "|-boost|p2b: Scovillain|spe|1",
+    "|split|p2",
+    "|-damage|p2b: Scovillain|103/172|[from] item: Rocky Helmet|[of] p2a: Snorlax",
+    "|-damage|p2b: Scovillain|59/100|[from] item: Rocky Helmet|[of] p2a: Snorlax",
+    "|move|p1a: Pangoro|Knock Off|p2a: Snorlax",
+    "|split|p2",
+    "|-damage|p2a: Snorlax|86/267 brn",
+    "|-damage|p2a: Snorlax|32/100 brn",
+    "|split|p1",
+    "|-damage|p1a: Pangoro|60/202|[from] item: Rocky Helmet|[of] p2a: Snorlax",
+    "|-damage|p1a: Pangoro|29/100|[from] item: Rocky Helmet|[of] p2a: Snorlax",
+    "|-enditem|p2a: Snorlax|Rocky Helmet|[from] move: Knock Off|[of] p1a: Pangoro",
+    "|move|p2a: Snorlax|Crunch|p1b: Glalie",
+    "|split|p1",
+    "|-damage|p1b: Glalie|166/187",
+    "|-damage|p1b: Glalie|88/100",
+    "|split|p2",
+    "|-damage|p2a: Snorlax|70/267 brn|[from] brn",
+    "|-damage|p2a: Snorlax|26/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 166,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         20,
+         20,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 70,
+        "maxhp": 267,
+        "item": "",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 103,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         15,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 3, move 4",
+    "p2": "move 1 1, switch 3"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Tauros|Tauros, L50, M|152/152",
+    "|switch|p2b: Tauros|Tauros, L50, M|100/100",
+    "|-ability|p2b: Tauros|Intimidate|boost",
+    "|-unboost|p1a: Pangoro|atk|1",
+    "|-unboost|p1b: Glalie|atk|1",
+    "|split|p1",
+    "|switch|p1a: Meowscarada|Meowscarada, L50, F|151/151",
+    "|switch|p1a: Meowscarada|Meowscarada, L50, F|100/100",
+    "|move|p1b: Glalie|Protect|p1b: Glalie",
+    "|-singleturn|p1b: Glalie|Protect",
+    "|move|p2a: Snorlax|Screech|p1a: Meowscarada",
+    "|-unboost|p1a: Meowscarada|def|2",
+    "|split|p2",
+    "|-damage|p2a: Snorlax|54/267 brn|[from] brn",
+    "|-damage|p2a: Snorlax|20/100y brn|[from] brn",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 166,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         20,
+         20,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 54,
+        "maxhp": 267,
+        "item": "",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 103,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         15,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 2",
+    "p2": "move 1 1, move 3"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 93
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 51
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 55
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 6
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 92
+    }
+   ],
+   "log": [
+    "|move|p2b: Tauros|Earthquake|p1b: Glalie|[spread] p2a,p1a,p1b",
+    "|-resisted|p1a: Meowscarada|1",
+    "|split|p2",
+    "|-damage|p2a: Snorlax|11/267 brn",
+    "|-damage|p2a: Snorlax|4/100 brn",
+    "|split|p1",
+    "|-damage|p1a: Meowscarada|101/151",
+    "|-damage|p1a: Meowscarada|66/100",
+    "|split|p1",
+    "|-damage|p1b: Glalie|119/187",
+    "|-damage|p1b: Glalie|63/100",
+    "|move|p1a: Meowscarada|Knock Off|p2b: Tauros",
+    "|split|p2",
+    "|-damage|p2b: Tauros|67/152",
+    "|-damage|p2b: Tauros|44/100",
+    "|-enditem|p2b: Tauros|Choice Scarf|[from] move: Knock Off|[of] p1a: Meowscarada",
+    "|move|p1b: Glalie|Spikes|p2b: Tauros",
+    "|-sidestart|p2: p2|Spikes",
+    "|move|p2a: Snorlax|Screech|p1a: Meowscarada|[miss]",
+    "|-miss|p2a: Snorlax|p1a: Meowscarada",
+    "|split|p2",
+    "|-damage|p2a: Snorlax|0 fnt|[from] brn",
+    "|-damage|p2a: Snorlax|0 fnt|[from] brn",
+    "|faint|p2a: Snorlax",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 101,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         19,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 119,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         20,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 67,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         11,
+         8
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 2
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 103,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         15,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Scovillain|Scovillain-Mega, L50, F|103/172",
+    "|switch|p2a: Scovillain|Scovillain-Mega, L50, F|59/100",
+    "|split|p2",
+    "|-damage|p2a: Scovillain|82/172|[from] Spikes",
+    "|-damage|p2a: Scovillain|47/100|[from] Spikes",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 101,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         19,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 119,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         20,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 82,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         15,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 67,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         11,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 2, move 3 1",
+    "p2": "switch 4, move 3"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 89
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 96
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 40
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 3
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 89
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 41
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Metagross|Metagross, L50|157/157",
+    "|switch|p2a: Metagross|Metagross, L50|100/100",
+    "|split|p2",
+    "|-damage|p2a: Metagross|138/157|[from] Spikes",
+    "|-damage|p2a: Metagross|87/100|[from] Spikes",
+    "|move|p1a: Meowscarada|Trailblaze|p2b: Tauros",
+    "|split|p2",
+    "|-damage|p2b: Tauros|22/152",
+    "|-damage|p2b: Tauros|14/100",
+    "|-boost|p1a: Meowscarada|spe|1",
+    "|move|p2b: Tauros|Earthquake|p1a: Meowscarada|[spread] p2a,p1a,p1b",
+    "|-supereffective|p2a: Metagross|1",
+    "|-resisted|p1a: Meowscarada|1",
+    "|split|p2",
+    "|-damage|p2a: Metagross|82/157",
+    "|-damage|p2a: Metagross|52/100",
+    "|split|p1",
+    "|-damage|p1a: Meowscarada|53/151",
+    "|-damage|p1a: Meowscarada|35/100",
+    "|split|p1",
+    "|-damage|p1b: Glalie|70/187",
+    "|-damage|p1b: Glalie|37/100",
+    "|move|p1b: Glalie|Trailblaze|p2a: Metagross",
+    "|-resisted|p2a: Metagross|1",
+    "|split|p2",
+    "|-damage|p2a: Metagross|76/157",
+    "|-damage|p2a: Metagross|48/100",
+    "|-boost|p1b: Glalie|spe|1",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         19,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 70,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         19,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 76,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 22,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 82,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         15,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, move 1 1",
+    "p2": "move 2 2, move 3"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 50
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 63
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Knock Off|p2a: Metagross",
+    "|-supereffective|p2a: Metagross|1",
+    "|split|p2",
+    "|-damage|p2a: Metagross|0 fnt",
+    "|-damage|p2a: Metagross|0 fnt",
+    "|faint|p2a: Metagross",
+    "|move|p1b: Glalie|Frost Breath|p2b: Tauros",
+    "|-crit|p2b: Tauros",
+    "|split|p2",
+    "|-damage|p2b: Tauros|0 fnt",
+    "|-damage|p2b: Tauros|0 fnt",
+    "|faint|p2b: Tauros",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         18,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 70,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         19,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 82,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         15,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Scovillain|Scovillain-Mega, L50, F|82/172",
+    "|switch|p2b: Scovillain|Scovillain-Mega, L50, F|47/100",
+    "|split|p2",
+    "|-damage|p2b: Scovillain|61/172|[from] Spikes",
+    "|-damage|p2b: Scovillain|35/100|[from] Spikes",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         18,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 70,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         19,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 61,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         15,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, move 4",
+    "p2": "pass, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p1b: Glalie|Protect|p1b: Glalie",
+    "|-singleturn|p1b: Glalie|Protect",
+    "|move|p1a: Meowscarada|Flower Trick|p2b: Scovillain",
+    "|-resisted|p2b: Scovillain|2",
+    "|-crit|p2b: Scovillain",
+    "|split|p2",
+    "|-damage|p2b: Scovillain|38/172",
+    "|-damage|p2b: Scovillain|22/100",
+    "|-status|p1a: Meowscarada|brn|[from] ability: Spicy Spray|[of] p2b: Scovillain",
+    "|move|p2b: Scovillain|Flamethrower|p2: Metagross|[notarget]",
+    "|-fail|p2b: Scovillain",
+    "|split|p1",
+    "|-damage|p1a: Meowscarada|44/151 brn|[from] brn",
+    "|-damage|p1a: Meowscarada|29/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 44,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         18,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 70,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         19,
+         5
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 38,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         14,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 -2, move 4",
+    "p2": "pass, move 4"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 23
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 11
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p1b: Glalie|Protect||[still]",
+    "|-fail|p1b: Glalie",
+    "|move|p2b: Scovillain|Protect|p2b: Scovillain",
+    "|-singleturn|p2b: Scovillain|Protect",
+    "|move|p1a: Meowscarada|Trailblaze|p1b: Glalie",
+    "|split|p1",
+    "|-damage|p1b: Glalie|31/187",
+    "|-damage|p1b: Glalie|16/100",
+    "|-boost|p1a: Meowscarada|spe|1",
+    "|split|p1",
+    "|-damage|p1a: Meowscarada|35/151 brn|[from] brn",
+    "|-damage|p1a: Meowscarada|23/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 35,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         18,
+         18,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 31,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         19,
+         4
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 38,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         14,
+         19,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, move 3 2",
+    "p2": "pass, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 85
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 95
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Protect|p1a: Meowscarada",
+    "|-singleturn|p1a: Meowscarada|Protect",
+    "|move|p1b: Glalie|Trailblaze|p2b: Scovillain",
+    "|-resisted|p2b: Scovillain|2",
+    "|split|p2",
+    "|-damage|p2b: Scovillain|34/172",
+    "|-damage|p2b: Scovillain|19/100",
+    "|-boost|p1b: Glalie|spe|1",
+    "|-status|p1b: Glalie|brn|[from] ability: Spicy Spray|[of] p2b: Scovillain",
+    "|move|p2b: Scovillain|Flamethrower|p2: Metagross|[notarget]",
+    "|-fail|p2b: Scovillain",
+    "|split|p1",
+    "|-damage|p1a: Meowscarada|26/151 brn|[from] brn",
+    "|-damage|p1a: Meowscarada|17/100 brn|[from] brn",
+    "|split|p1",
+    "|-damage|p1b: Glalie|20/187 brn|[from] brn",
+    "|-damage|p1b: Glalie|10/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|10"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 26,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         18,
+         18,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 20,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         18,
+         4
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 34,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         13,
+         19,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 -2, move 4",
+    "p2": "pass, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 4,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|move|p1b: Glalie|Protect|p1b: Glalie",
+    "|-singleturn|p1b: Glalie|Protect",
+    "|move|p1a: Meowscarada|Flower Trick|p1b: Glalie",
+    "|-activate|p1b: Glalie|move: Protect",
+    "|move|p2b: Scovillain|Spicy Extract|p1b: Glalie",
+    "|-activate|p1b: Glalie|move: Protect",
+    "|split|p1",
+    "|-damage|p1a: Meowscarada|17/151 brn|[from] brn",
+    "|-damage|p1a: Meowscarada|11/100 brn|[from] brn",
+    "|split|p1",
+    "|-damage|p1b: Glalie|9/187 brn|[from] brn",
+    "|-damage|p1b: Glalie|4/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|11"
+   ],
+   "state": {
+    "turn": 11,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 17,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         18,
+         18,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 9,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         18,
+         3
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 34,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         13,
+         19,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, move 3 -1",
+    "p2": "pass, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Protect|p1a: Meowscarada",
+    "|-singleturn|p1a: Meowscarada|Protect",
+    "|move|p1b: Glalie|Trailblaze|p1a: Meowscarada",
+    "|-activate|p1a: Meowscarada|move: Protect",
+    "|move|p2b: Scovillain|Spicy Extract|p1b: Glalie",
+    "|-boost|p1b: Glalie|atk|2",
+    "|-unboost|p1b: Glalie|def|2",
+    "|split|p1",
+    "|-damage|p1a: Meowscarada|8/151 brn|[from] brn",
+    "|-damage|p1a: Meowscarada|5/100 brn|[from] brn",
+    "|split|p1",
+    "|-damage|p1b: Glalie|0 fnt|[from] brn",
+    "|-damage|p1b: Glalie|0 fnt|[from] brn",
+    "|faint|p1b: Glalie",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 11,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 8,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         18,
+         18,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         17,
+         3
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 34,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         13,
+         19,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Machamp|Machamp, L50, M|167/167",
+    "|switch|p1b: Machamp|Machamp, L50, M|100/100",
+    "|turn|12"
+   ],
+   "state": {
+    "turn": 12,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 8,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         18,
+         18,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         17,
+         3
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 34,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         13,
+         19,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 1 2",
+    "p2": "pass, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 43
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Knock Off|p2b: Scovillain",
+    "|split|p2",
+    "|-damage|p2b: Scovillain|1/172",
+    "|-damage|p2b: Scovillain|1/100",
+    "|move|p1b: Machamp|Storm Throw|p2b: Scovillain",
+    "|-crit|p2b: Scovillain",
+    "|split|p2",
+    "|-damage|p2b: Scovillain|0 fnt",
+    "|-damage|p2b: Scovillain|0 fnt",
+    "|-status|p1b: Machamp|brn|[from] ability: Spicy Spray|[of] p2b: Scovillain",
+    "|faint|p2b: Scovillain",
+    "|win|p1"
+   ],
+   "state": {
+    "turn": 12,
+    "ended": true,
+    "winner": "p1",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 8,
+        "maxhp": 151,
+        "item": "focussash",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -2,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         17,
+         18,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Machamp",
+        "set_species": "Machamp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "choicescarf",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         20,
+         8
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 0
+       },
+       {
+        "species": "Pangoro",
+        "set_species": "Pangoro",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 60,
+        "maxhp": 202,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie-Mega",
+        "set_species": "Glalie",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         19,
+         17,
+         3
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Metagross",
+        "set_species": "Metagross",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 157,
+        "item": "metagrossite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scovillain-Mega",
+        "set_species": "Scovillain",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 172,
+        "item": "scovillainite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         13,
+         19,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 267,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tauros",
+        "set_species": "Tauros",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         10,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

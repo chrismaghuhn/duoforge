@@ -1,0 +1,113 @@
+{
+  "name": "c4_cover_c",
+  "purpose": "C4 coverage (decision 0015 entry 5ct), a random pool battle of run 4100 (campaign c4-campaign-y3, diff_driver random): Eerie Impulse (the target's Special Attack falls, Luxray on the team) with Amnesia, Cosmic Power, Flame Charge, Flower Trick, Frost Breath, Psyshield Bash, Scary Face, Steel Wing, Storm Throw and Trailblaze; no Substitute user.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,cb184eacf9a3e39bd4e96df2451c214f55ae986b55e37b0e5416cbd00a37b4df",
+  "teams": [
+    "Charizard (M) @ Life Orb\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Flame Charge\n- Steel Wing\n- Scary Face\n- Protect\n\nQuaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Aqua Step\n- Close Combat\n- Knock Off\n- Protect\n\nWyrdeer (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Def\nCalm Nature\n- Psyshield Bash\n- Scary Face\n- Earthquake\n- Protect\n\nClefable (F) @ Leftovers\nAbility: Unaware\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Cosmic Power\n- Moonblast\n- Thunder Wave\n- Protect\n\nScizor (M) @ Scizorite\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Trailblaze\n- Steel Wing\n- Scary Face\n- Protect\n\nVenusaur (M) @ Venusaurite\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nBold Nature\n- Amnesia\n- Trailblaze\n- Sludge Bomb\n- Protect",
+    "Meowscarada (F) @ Focus Sash\nAbility: Overgrow\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Flower Trick\n- Knock Off\n- Trailblaze\n- Protect\n\nGlalie (M) @ Glalitite\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Frost Breath\n- Spikes\n- Trailblaze\n- Protect\n\nEmboar (M) @ Muscle Band\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Storm Throw\n- Flare Blitz\n- Scary Face\n- Protect\n\nLuxray (M) @ Expert Belt\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Eerie Impulse\n- Thunderbolt\n- Crunch\n- Protect\n\nMachamp (M) @ Choice Scarf\nAbility: No Guard\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Storm Throw\n- Close Combat\n- Knock Off\n- Protect\n\nFroslass (F) @ Froslassite\nAbility: Snow Cloak\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Frost Breath\n- Thunder Wave\n- Trailblaze\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1463",
+      "p2": "team 1654"
+    },
+    {
+      "p1": "move 1 2, move 1",
+      "p2": "switch 3, move 1 -1 mega"
+    },
+    {
+      "p1": "move 1 1, move 3 1",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "move 3 -2, move 2 2",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "move 4, switch 3",
+      "p2": "move 4, move 3 2"
+    },
+    {
+      "p1": "move 4, move 3 -1",
+      "p2": "move 4, move 3 1"
+    },
+    {
+      "p1": "move 3 -2, move 4 mega",
+      "p2": "switch 3, move 3 2"
+    },
+    {
+      "p1": "move 3 -2, move 4",
+      "p2": "move 2 2, move 2 1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 3 2, move 4"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 2 1, move 1 -1"
+    },
+    {
+      "p1": "move 1 2, move 1",
+      "p2": "move 1 2, move 2 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 1 2, move 1 -1"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 3 1, switch 3"
+    },
+    {
+      "p1": "move 3 -2, move 3 1",
+      "p2": "switch 3, move 4"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 2 2, move 4"
+    },
+    {
+      "p1": "move 1 -2, move 3 2",
+      "p2": "move 3 2, switch 3"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 4, move 1 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 3 2, move 1 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 2, move 3",
+      "p2": "move 3 1, move 1 1"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 1 2, pass"
+    },
+    {
+      "p1": "move 3 2, move 2 2",
+      "p2": "move 2 -2, pass"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 3 -2, pass"
+    }
+  ]
+}
