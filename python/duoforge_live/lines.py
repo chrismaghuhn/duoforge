@@ -144,7 +144,8 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 # Attract (step G71, decision 0034) is the encoder 6 reserve's bit POSITION_EXT_ATTRACT (decision 0050): a checked reserve bit,
 # shown under its family's feature RESERVE_VOLATILES alone (DUOFORGE_VIEWEXT_RESERVE_CHECKED). The tracker folds that one bit;
 # no other bit of the family has a line the tracker folds.
-ATTRACT_FOLD = 1 << FEATURES["RESERVE_VOLATILES"]
+# Its source position (step G87, decision 0080) is the own feature ATTRACT_SOURCE of volatiles2's bits 12-13.
+ATTRACT_FOLD = 1 << FEATURES["RESERVE_VOLATILES"] | 1 << FEATURES["ATTRACT_SOURCE"]
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",
@@ -544,9 +545,9 @@ def check(line, view):
     if kind == "-formechange":
         return _feature("FORME_CHANGE")
     if kind == "-setboost":
-        # Belly Drum (step G86, sim/battle.ts:2051-2052): the line shows the Attack stage it leaves; the tracker sets the
-        # stage (Tracker._set_boost). Any other source (Anger Point, not marked) stays unknown.
-        if len(args) == 3 and args[1] == "atk" and attrs == ["[from] move: Belly Drum"]:
+        # Belly Drum (step G86) and Anger Point (step G77) (sim/battle.ts:2051-2052): the line shows the Attack stage it
+        # leaves; the tracker sets the stage (Tracker._set_boost). Any other form or source stays unknown.
+        if len(args) == 3 and args[1] == "atk" and attrs in (["[from] move: Belly Drum"], ["[from] ability: Anger Point"]):
             return "fold"
         _unknown(kind, " ".join(args[1:] + attrs))
     if kind in UNREPRESENTABLE_KINDS:

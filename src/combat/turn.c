@@ -1325,7 +1325,10 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
             }
         }
     }
-    bool announced = effect.mode == DFI_BOOST_SECONDARY;
+    /* Anger Point (step G77): its line is -setboost with [from] ability: Anger Point, which replaces the -ability line of an
+     * ability's boost (sim/battle.ts:2050-2053, the 'angerpoint' case), so the boost is announced already. */
+    const bool angerpoint = effect.cause == DUOFORGE_CAUSE_ABILITY && effect.id2 == 1u + DFI_ABILITY_ANGERPOINT;
+    bool announced = effect.mode == DFI_BOOST_SECONDARY || angerpoint;
     /* The stats of a boost are changed in the order of the move's table in the data (Battle.boost loops over the keys of
      * the object): the stat order, except Shell Smash, whose pinned entry lists Defense and Special Defense first (data/moves.ts
      * 16255-16275); `negatives_first` is that order, two passes by the sign that the entry gives (Contrary reverses the
@@ -1378,6 +1381,10 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
             if (effect.cause == DUOFORGE_CAUSE_MOVE && effect.id2 != 0u) {
                 /* A move's boost that names its move ([from] move: X, Belly Drum's -setboost, step G86): id2 is the move id. */
                 e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
+                e.id2 = (uint16_t)effect.id2;
+            }
+            if (angerpoint) {
+                e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY; /* the -setboost line's [from] ability: Anger Point (step G77) */
                 e.id2 = (uint16_t)effect.id2;
             }
             dfi_emit(r, &e);
@@ -1734,11 +1741,14 @@ static bool dfi_is_ohko(const dfi_move_data *md)
 }
 
 static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md,
-                                      uint32_t move_type, bool spread, uint32_t *out)
+                                      uint32_t move_type, bool spread, uint32_t *out, bool *crit_out)
 {
     static const uint32_t crit_mult[5] = {0u, 24u, 8u, 2u, 1u};
     const dfi_member *a = dfi_at(r->b, user);
     const dfi_member *d = dfi_at(r->b, target);
+    /* The critical hit of this hit (the caller's Anger Point test, step G77): false unless the roll below made it one; a move
+     * that has no roll (Final Gambit, Super Fang, Sheer Cold) and a target that is not hit never reads true. */
+    *crit_out = false;
     /* Final Gambit's damageCallback (step G76, data/moves.ts:5301-5320): getDamage takes the user's current HP and then faints
      * the user (pokemon.faint() in the callback, before the damage is dealt), so the user's faint is queued here, and selfdestruct
      * 'ifHit' faints it again as a no-op. There is no critical hit roll and no formula; the type immunity, Protect and the
@@ -1787,9 +1797,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * data/abilities.ts:4703-4711, onModifyCritRatio of the user, not breakable: +1) added to the move's ratio, then the
      * clamp to 0..4 for gen 9 (sim/battle-actions.ts:1623-1633). */
     /* Step G75: Scope Lens (data/items.ts:5554-5565, onModifyCritRatio +1) is the holder's item, one more term of the same sum. */
+    /* Leek (step G77, data/items.ts:3322-3337, onModifyCritRatio of the user: +2 when its base species is Farfetch'd or
+     * Sirfetch'd; the pool has no other forme of either, and the item's itemUser list is not checked by the sim for it,
+     * only for Z-moves, so the holder's species decides). */
+    const bool leek_crit = dfi_holds(r->b, a, DFI_ITEM_LEEK) &&
+                           (a->species_id == DFI_FORME_FARFETCHD || a->species_id == DFI_FORME_SIRFETCHD);
     uint32_t ratio = (uint32_t)md->crit_ratio + dfi_dragon_cheer_stage(r->b, user) +
                      (dfi_ability(r->b, a, DFI_ABILITY_SUPERLUCK) ? 1u : 0u) +
-                     (dfi_holds(r->b, a, DFI_ITEM_SCOPELENS) ? 1u : 0u);
+                     (dfi_holds(r->b, a, DFI_ITEM_SCOPELENS) ? 1u : 0u) + (leek_crit ? 2u : 0u);
     if (ratio > 4u) {
         ratio = 4u;
     }
@@ -2267,15 +2282,17 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     uint32_t mlist[DFI_MODIFY_DAMAGE_MAX] = {0u}; /* and their values, for the commutation test below */
     if (dfi_holds(r->b, a, DFI_ITEM_LIFEORB)) {
         ok = dfi_chain_modify(chain, 5324u, &chain);
-        mlist[mods] = 5324u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 5324u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* Expert Belt's onModifyDamage (step G28, data/items.ts:1901-1914): 4915/4096 when the hit is super effective
      * (typeMod > 0: the combined type effectiveness above the neutral one). */
     if (dfi_holds(r->b, a, DFI_ITEM_EXPERTBELT) && mod > DFI_BIAS6) {
         ok = ok && dfi_chain_modify(chain, 4915u, &chain);
-        mlist[mods] = 4915u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 4915u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
      * others, decision 0015; combat/item_family.h) is eaten by a super
@@ -2288,8 +2305,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         weaken.detail = 1u;
         dfi_emit(r, &weaken); /* [-enditem] [weaken] */
         ok = ok && dfi_chain_modify(chain, DFI_RESIST_BERRY_MODIFIER, &chain);
-        mlist[mods] = DFI_RESIST_BERRY_MODIFIER;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, DFI_RESIST_BERRY_MODIFIER)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* Aurora Veil (step G20, data/moves.ts:846-860) weakens both categories by the same 2732/4096 and returns without an
      * effect when the target's side has the screen of the move's category (so the two never multiply): the test is one
@@ -2301,29 +2319,33 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
          (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u) ||
          r->b->tail.sides[target / 2u].aurora_veil_turns != 0u)) {
         ok = ok && dfi_chain_modify(chain, 2732u, &chain);
-        mlist[mods] = 2732u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 2732u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* Glaive Rush's onSourceModifyDamage on the target (data/moves.ts:6647-6678): chainModify(2). With a Life Orb attacker,
      * a resist berry and a screen all in the chain the four modifiers do not commute (3552 or 3551 by their order, the
      * handlers' speeds and a tie draw), a case that this build does not model. */
     if (r->b->tail.sides[target / 2u].positions[target % 2u].glaive_rush != 0u) {
         ok = ok && dfi_chain_modify(chain, 8192u, &chain);
-        mlist[mods] = 8192u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 8192u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* Solid Rock and Multiscale (step G34, data/abilities.ts:4414-4425 and 2760-2771, onSourceModifyDamage of the target,
      * both breakable and Mold Breaker is not marked): x0.75 on a super effective hit (typeMod > 0), x0.5 at full HP.
      * Filter (step G63, data/abilities.ts:1283-1294) is the same callback with the same text: x0.75 on typeMod > 0. */
     if ((dfi_ability(r->b, d, DFI_ABILITY_SOLIDROCK) || dfi_ability(r->b, d, DFI_ABILITY_FILTER)) && mod > DFI_BIAS6) {
         ok = ok && dfi_chain_modify(chain, 3072u, &chain);
-        mlist[mods] = 3072u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 3072u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     if (dfi_ability(r->b, d, DFI_ABILITY_MULTISCALE) && d->hp >= d->hp_max) {
         ok = ok && dfi_chain_modify(chain, 2048u, &chain);
-        mlist[mods] = 2048u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 2048u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* Aura Guard (Mega batch 2, data/abilities.ts:310-319, onSourceModifyDamage of the target, breakable and Mold Breaker is
      * not marked; the Champions mod has no entry): x0.5 (chainModify(0.5) = 2048/4096) on a move with the contact flag, like
@@ -2331,16 +2353,18 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * the three. */
     if (dfi_ability(r->b, d, DFI_ABILITY_AURAGUARD) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = ok && dfi_chain_modify(chain, 2048u, &chain);
-        mlist[mods] = 2048u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 2048u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* Punk Rock's onSourceModifyDamage (step G45, data/abilities.ts:3597-3602, breakable): chainModify(0.5) on a sound move
      * against the holder. It is the target's one ability, so with Solid Rock, Multiscale and Aura Guard a hit has at most one. */
     if (dfi_ability(r->b, d, DFI_ABILITY_PUNKROCK) && md->special != DFI_SPECIAL_STRUGGLE &&
         (dfi_pool_move_flags2[(uint32_t)(md - dfi_pool_moves)] & DFI_MOVE_FLAG2_SOUND) != 0u) { /* wide-operands-reviewed: a pointer into the move table */
         ok = ok && dfi_chain_modify(chain, 2048u, &chain);
-        mlist[mods] = 2048u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 2048u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* Friend Guard (step G35, data/abilities.ts:1533-1540, onAnyModifyDamage, breakable and Mold Breaker is not marked): the
      * target's partner, when it stands and holds the ability, weakens every hit on the target by x0.75 (3072/4096). The handler
@@ -2349,8 +2373,18 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     const dfi_member *partner = dfi_at(r->b, target ^ 1u);
     if (partner != NULL && partner->hp != 0u && dfi_ability(r->b, partner, DFI_ABILITY_FRIENDGUARD)) {
         ok = ok && dfi_chain_modify(chain, 3072u, &chain);
-        mlist[mods] = 3072u;
-        mods += 1u;
+        if (!dfi_mods_push(mlist, &mods, 3072u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
+    }
+    /* Sniper (step G77, data/abilities.ts:4358-4369, onModifyDamage of the attacker, not breakable): chainModify(1.5) = 6144/4096
+     * on a critical hit. The Champions modifyDamage runs its ModifyDamage event once, at its end (scripts.ts:296; the base game
+     * at sim/battle-actions.ts:1826), so Sniper is one more factor of the same chain as Life Orb and the rest, applied once. */
+    if (crit && dfi_ability(r->b, a, DFI_ABILITY_SNIPER)) {
+        ok = ok && dfi_chain_modify(chain, 6144u, &chain);
+        if (!dfi_mods_push(mlist, &mods, 6144u)) {
+            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        }
     }
     /* The handlers have no order and priority 0, so runEvent sorts them by their holders' speed, then by subOrder (a screen, a
      * side condition, has no speed and is last); this build does not compute that order (a follow-up, combat/damage_chain.h), so
@@ -2368,6 +2402,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         damage = dfi_modify(damage, chain);
     }
     *out = dfi_final_damage(damage);
+    *crit_out = crit; /* the roll's result after the Shell Armor test: the critical hit the holder's Anger Point reads (step G77) */
     return DUOFORGE_OK;
 }
 
@@ -2531,6 +2566,17 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         (status == DFI_STATUS_PAR && dfi_has_type(r->b, m, DFI_TYPE_ELECTRIC)) ||
         (status == DFI_STATUS_FRZ && (dfi_has_type(r->b, m, DFI_TYPE_ICE) || dfi_field_weather(r) == DFI_WEATHER_SUN)) ||
         ((status == DFI_STATUS_PSN || status == DFI_STATUS_TOX) && dfi_poison_immune(r->b, m))) {
+        if (primary) {
+            dfi_immune(r, flat, 0u);
+        }
+        return DUOFORGE_OK;
+    }
+    /* Magma Armor (step G77, data/abilities.ts:2501-2515, onImmunity 'frz' returns false, breakable; no Champions entry): every
+     * freeze of its holder is refused in the Immunity event, after the natural immunities above and before SetStatus (so before
+     * Flower Veil's block and the terrains). The -immune line is the plain one (runStatusImmunity, then setStatus's
+     * `(sourceEffect as Move)?.status` test, sim/pokemon.ts:1713-1718): a move's own status shows it, a secondary or a pick is
+     * silent. No [from] ability, the line of a natural immunity. Mold Breaker is not marked, so breakable is not reached. */
+    if (status == DFI_STATUS_FRZ && dfi_ability(r->b, m, DFI_ABILITY_MAGMAARMOR)) {
         if (primary) {
             dfi_immune(r, flat, 0u);
         }
@@ -4371,7 +4417,7 @@ static bool dfi_faint_shown(const dfi_run *r, uint32_t flat)
 
 /* Step G71 (decision 0034): the flat position of an Attract source (code = 1 + side * 6 + roster index) while the member stands on
  * the field and is not fainted; DUOFORGE_NO_POSITION otherwise (the pin's source.isActive, data/moves.ts:722-727). */
-static uint32_t dfi_attract_source_flat(const struct duoforge_battle *b, uint32_t code)
+uint32_t dfi_attract_source_flat(const struct duoforge_battle *b, uint32_t code)
 {
     const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
     const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
@@ -6669,9 +6715,10 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
         return DUOFORGE_OK;
     }
     uint32_t dealt = 0u;
+    bool sub_crit = false; /* a critical hit on a Substitute never reaches the holder's Anger Point: no Hit event (step G77) */
     r->sub_hit = true;
     r->sub_active = active;
-    const duoforge_status st = dfi_get_damage(r, user, target, md, move_type, spread, &dealt);
+    const duoforge_status st = dfi_get_damage(r, user, target, md, move_type, spread, &dealt, &sub_crit);
     r->sub_hit = false;
     if (st != DUOFORGE_OK) {
         return st;
@@ -8819,9 +8866,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         /* getSpreadDamage: every target's damage (crit, roll), then spreadDamage. */
         uint32_t damage[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+        /* the critical hit of each target of this hit (Anger Point, step G77): false for a target that is not hit or has no roll */
+        bool crit_hit[DFI_POSITIONS] = {false, false, false, false};
         for (uint32_t i = 0u; i < count; ++i) {
             if (hit[i]) {
-                st = dfi_get_damage(r, user, targets[i], md, move_type, spread, &damage[i]);
+                st = dfi_get_damage(r, user, targets[i], md, move_type, spread, &damage[i], &crit_hit[i]);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
@@ -8962,6 +9011,18 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
             if (hit_any && m->hp != 0u && dfi_can_switch(b, side)) {
                 pos->switch_flag = pivot->flag;
+            }
+        }
+        /* Anger Point (step G77, data/abilities.ts:131-142, onHit of the holder): the Hit event runs in Champions' runMoveEffects
+         * (scripts.ts:373), after the damage and before the user's self drops (scripts.ts:Champions step 4), the secondaries
+         * (scripts.ts:387) and the DamagingHit of the holder (scripts.ts:409). A critical hit that the holder took from this move's hit (crit_hit, no Substitute: hit[i] false)
+         * raises its Attack by 12, capped at +6 by the boost; a fainted holder does nothing (dfi_boost). The line is
+         * -setboost with [from] ability: Anger Point, no -ability line. */
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (hit[i] && crit_hit[i] && dfi_ability(r->b, dfi_at(r->b, targets[i]), DFI_ABILITY_ANGERPOINT)) {
+                static const uint8_t atk_up12[DFI_STAT_STAGE_COUNT] = {18u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Atk +12, biased by 6 */
+                dfi_boost(r, targets[i], atk_up12, targets[i],
+                          dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_ANGERPOINT, DFI_BOOST_PRIMARY));
             }
         }
         /* selfDrops: once, after the first target that was hit, a roll of
@@ -10304,6 +10365,11 @@ static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
     if (copied == 1u + DFI_ABILITY_WATERBUBBLE && dfi_at(b, flat)->status == DFI_STATUS_BRN) {
         return DUOFORGE_E_UNSUPPORTED;
     }
+    /* Magma Armor's onUpdate (step G77, data/abilities.ts:2502-2507) cures a freeze of its holder with its -activate line: a
+     * frozen Trace holder that copies it is not modelled (E_UNSUPPORTED, never a guess), as for Limber and Water Bubble. */
+    if (copied == 1u + DFI_ABILITY_MAGMAARMOR && dfi_at(b, flat)->status == DFI_STATUS_FRZ) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     /* Oblivious's onUpdate (step G47, data/abilities.ts:3009-3016) removes a taunt of its holder with its -activate line. The
      * copy comes at the entry, where no taunt stands; a taunted holder that copies it is refused, never guessed. */
     if (copied == 1u + DFI_ABILITY_OBLIVIOUS && b->tail.sides[flat / 2u].positions[flat % 2u].taunt_turns != 0u) {
@@ -10424,6 +10490,9 @@ static bool dfi_skill_swap_update_due(struct duoforge_battle *b, uint32_t flat, 
     }
     if (code == 1u + DFI_ABILITY_OBLIVIOUS) {
         return b->tail.sides[flat / 2u].positions[flat % 2u].taunt_turns != 0u; /* onUpdate removes Taunt (:3008-3040) */
+    }
+    if (code == 1u + DFI_ABILITY_MAGMAARMOR) {
+        return m->status == DFI_STATUS_FRZ; /* Magma Armor's onUpdate cures the freeze (data/abilities.ts:2502-2507, step G77) */
     }
     return false;
 }

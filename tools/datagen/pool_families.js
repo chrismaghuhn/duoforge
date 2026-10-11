@@ -1554,6 +1554,26 @@ const G75_PROBES = {
     },
 };
 
+// Step G77 (crit package): the callbacks of Magma Armor and the flags of Anger Point and Sniper, against the pinned texts
+// (data/abilities.ts:2501-2515, 131-142, 4358-4369). Anger Point's onHit and Sniper's onModifyDamage need a holder and a target
+// with a crit record, which the probe helpers do not build; their texts are checked whole by check_g34_facts (G77_ABILITY_FACTS).
+const G77_PROBES = {
+    magmaarmor(ability) {
+        expect('magmaarmor breakable', ability.flags.breakable, 1);
+        expect('magmaarmor freeze refused', call(ability.onImmunity, battle(ability), ['frz']), false);
+        expect('magmaarmor paralysis not refused', call(ability.onImmunity, battle(ability), ['par']), undefined);
+        expect('magmaarmor onUpdate', typeof ability.onUpdate, 'function');
+    },
+    angerpoint(ability) {
+        expect('angerpoint flags', ability.flags, {});
+        expect('angerpoint onHit', typeof ability.onHit, 'function');
+    },
+    sniper(ability) {
+        expect('sniper flags', ability.flags, {});
+        expect('sniper onModifyDamage', typeof ability.onModifyDamage, 'function');
+    },
+};
+
 // Step G65 (Reckless's crash clause): a modelled move with hasCrashDamage needs the clause, which the engine does not have.
 function checkG65(dex, moveNames, unmodeledMoves) {
     for (const id of moveNames) {
@@ -1609,6 +1629,9 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (G75_PROBES[row.id] !== undefined) {
                     G75_PROBES[row.id](ability);
+                }
+                if (G77_PROBES[row.id] !== undefined) {
+                    G77_PROBES[row.id](ability);
                 }
             }
             continue;
@@ -1773,14 +1796,14 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens'],
+const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek'],
     abilities: ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
         'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
-        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm']};
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm', 'magmaarmor', 'angerpoint', 'sniper']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.

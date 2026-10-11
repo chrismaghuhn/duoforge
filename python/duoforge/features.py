@@ -223,9 +223,11 @@ _RESERVE_EXCEPTIONS = {"RESERVE_VOLATILES": _VOLATILE_FEATURE, "VOLATILES2": {"T
                        "SIDE_CONDITIONS": {}, "FIELD_FLAGS": {}}
 # Encoder 6's reserve families (decision 0050): (bit numbers, the family's feature, the own features of its bits).
 _RES_VOLATILES = (range(22, 32), FEATURE_BITS["RESERVE_VOLATILES"],
-                  _own_features("DUOFORGE_POSITION_EXT_", _RESERVE_EXCEPTIONS["RESERVE_VOLATILES"]))
+                    _own_features("DUOFORGE_POSITION_EXT_", _RESERVE_EXCEPTIONS["RESERVE_VOLATILES"]))
+# Attract's source position (step G87, decision 0080): the two bits 12 and 13 of volatiles2 show under ATTRACT_SOURCE.
+_ATTRACT_SOURCE_FEATURE = {"ATTRACT_SOURCE_LO": "ATTRACT_SOURCE", "ATTRACT_SOURCE_HI": "ATTRACT_SOURCE"}
 _RES_VOLATILES2 = (range(32), FEATURE_BITS["VOLATILES2"],
-                   _own_features("DUOFORGE_POSITION_EXT2_", _RESERVE_EXCEPTIONS["VOLATILES2"]))
+                   _own_features("DUOFORGE_POSITION_EXT2_", {**_RESERVE_EXCEPTIONS["VOLATILES2"], **_ATTRACT_SOURCE_FEATURE}))
 _RES_GUARDS = (range(2, 8), FEATURE_BITS["RESERVE_GUARDS"],
                _own_features("DUOFORGE_SIDE_GUARD_", _RESERVE_EXCEPTIONS["RESERVE_GUARDS"]))
 _RES_CONDITIONS = (range(8), FEATURE_BITS["SIDE_CONDITIONS"],

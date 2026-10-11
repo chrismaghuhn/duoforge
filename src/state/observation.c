@@ -438,6 +438,25 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G90 (decision 0060, hidden counters): the partial trap's elapsed residual phases, POSITION_EXT2 bits 4 to 6.
                  * Public (-activate and each residual line show them), zero without the trap. */
                 o.volatiles2[s][p] = tail->trap_turns != 0u ? ((uint32_t)tail->trap_elapsed << 4) : 0u;
+                /* Step G87 (decision 0080): the source's flat position (0 to 3) in volatiles2 bits 12 and 13, for both players: the
+                 * Attract line names the source. Written only with the presence bit. The position is the one that holds the source
+                 * as its occupant, standing or fainted (a source that fainted in the battle's last action keeps its position, issue
+                 * #395); a source with no position is an invariant failure (the state check of dfi_attract_byte_ok refuses it first). */
+                if (battle->tail.attract_source[s * DUOFORGE_ACTIVE_PER_SIDE + p] != 0u) {
+                    const uint32_t code = battle->tail.attract_source[s * DUOFORGE_ACTIVE_PER_SIDE + p];
+                    const uint32_t src_side = (code - 1u) / DUOFORGE_MAX_ROSTER;
+                    const uint32_t src_member = (code - 1u) % DUOFORGE_MAX_ROSTER;
+                    uint32_t src = DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT;
+                    for (uint32_t q = 0u; q < DUOFORGE_ACTIVE_PER_SIDE; ++q) {
+                        if (battle->sides[src_side].positions[q].occupant == src_member) {
+                            src = src_side * DUOFORGE_ACTIVE_PER_SIDE + q;
+                        }
+                    }
+                    if (src >= DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT) {
+                        return DUOFORGE_E_INVARIANT;
+                    }
+                    o.volatiles2[s][p] = src << 12u;
+                }
                 /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
                  * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
                 o.sides[s].positions[p].move_failed =

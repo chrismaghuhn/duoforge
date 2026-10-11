@@ -1281,6 +1281,31 @@ static duoforge_status dfi_check_picks(const duoforge_context *ctx, const duofor
     return DUOFORGE_OK;
 }
 
+/* Step G87 (decision 0080): one nonzero Attract source byte of a view (position i of the rev 5 reserve) is consistent: the code names a
+ * member of its side below that side's member count, the infatuated occupant is present and below its side's member count, the
+ * source is an active occupant (on the field), and it is not the holder itself. */
+static bool dfi_view_attract_ok(uint8_t *s, uint32_t i)
+{
+    const uint32_t code = s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_ATTRACT_OFF + i];
+    const uint32_t holder_side = i / DUOFORGE_ACTIVE_PER_SIDE;
+    const uint32_t holder = position_at(s, holder_side, i % DUOFORGE_ACTIVE_PER_SIDE)[0];
+    if (code > DFI_ATTRACT_MEMBER_MAX || holder == DFI_OCCUPANT_NONE ||
+        holder >= side_at(s, holder_side)[DFI_ENC_SIDE_MEMBER_COUNT_OFF]) {
+        return false;
+    }
+    const uint32_t src_side = (code - 1u) / DUOFORGE_MAX_ROSTER;
+    const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
+    if (src >= side_at(s, src_side)[DFI_ENC_SIDE_MEMBER_COUNT_OFF] || (src_side == holder_side && src == holder)) {
+        return false;
+    }
+    for (uint32_t q = 0u; q < DUOFORGE_ACTIVE_PER_SIDE; ++q) {
+        if (position_at(s, src_side, q)[0] == src) {
+            return true;
+        }
+    }
+    return false;
+}
+
 duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duoforge_public_state *view,
                                           const duoforge_hypothesis *hypothesis, duoforge_battle *out)
 {
@@ -1302,12 +1327,12 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     }
     uint8_t s[DUOFORGE_VIEW_STATE_MAX];
     memcpy(s, view->state, n);
-    /* Step G71 (decision 0034, decision 0015 5bn, lead's option B): a world with an infatuated occupant (either side) is not built
-     * from a view: the Attract source is in the rev 5 reserve, which the view does not carry as a hypothesis. Explicit refusal. */
+    /* Step G87 (decision 0080): an infatuated occupant's Attract source is public (the Attract line names it), so the view carries
+     * its byte and the world copies it. Every nonzero byte is checked for consistency; an inconsistent byte is malformed. */
     if (dfi_context_has_pool_tail(ctx)) {
         for (uint32_t i = 0u; i < DFI_ATTRACT_SLOTS; ++i) {
-            if (s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_ATTRACT_OFF + i] != 0u) {
-                return DUOFORGE_E_UNSUPPORTED;
+            if (s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_ATTRACT_OFF + i] != 0u && !dfi_view_attract_ok(s, i)) {
+                return DUOFORGE_E_MALFORMED;
             }
         }
     }

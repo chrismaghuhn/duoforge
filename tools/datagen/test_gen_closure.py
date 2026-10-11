@@ -1451,7 +1451,7 @@ class ItemAbilityFeatures(unittest.TestCase):
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
         self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt',
                                                            'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb',
-                                                           'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens'],
+                                                           'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek'],
                                                    'abilities': ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
@@ -1465,7 +1465,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
                                                                  'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                                                                  'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
-                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor']})
+                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor', 'magmaarmor', 'angerpoint', 'sniper']})
 
 
 class Bounds(unittest.TestCase):
@@ -1832,10 +1832,10 @@ class SmallRulesG35(unittest.TestCase):
 
     def sources(self, skip=(None, None)):
         abilities = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             abilities.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS + gen_closure.G77_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(abilities)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 
@@ -1916,10 +1916,10 @@ class SmallRulesG39(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS + gen_closure.G77_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(out)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 
@@ -1989,7 +1989,7 @@ class SmallRulesG59(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
         return out
@@ -1999,7 +1999,7 @@ class SmallRulesG59(unittest.TestCase):
         return TextSource('data/mods/champions/abilities.ts', '\n'.join(out + list(extra)))
 
     def sources(self, skip=(None, None), champ=None):
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS + gen_closure.G77_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(self.abilities(skip))),
                 self.champ() if champ is None else champ,
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
@@ -2059,12 +2059,12 @@ class SmallRulesG53(unittest.TestCase):
         out = []
         # check_g34_facts reads every family of the facts, so the fixture carries all of them
         for aid, facts in (gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS +
-                           gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS +
+                           gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS +
                            gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS +
                            gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS):
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS + gen_closure.G77_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(out)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 

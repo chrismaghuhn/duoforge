@@ -304,7 +304,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('f632c4769e1f9db04eae83ebe31869f933f289264d4957e8630661271d3467fb')
+POOL_TABLE_HASH = bytes.fromhex('279e3b5643b95fcc4253c66bd1dd9cee712a6157cd3e5e810e088ff0904cdd69')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -1058,8 +1058,8 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
 
 def attract_byte_ok(st, flat):
     """Step G71 (decision 0034, decision 0015 5bn): the Attract source of the infatuated occupant at flat position `flat`, as
-    dfi_attract_byte_ok in src/state/invariants.c. Zero is none; else the code 1..12 names a member of its side on the field and
-    not fainted, not the infatuated occupant itself, of the opposite gender (1 and 2), and the occupant stands."""
+    dfi_attract_byte_ok in src/state/invariants.c. Zero is none; else the code 1..12 names a member of its side on the field (standing,
+    except at TERMINAL), not the infatuated occupant itself, of the opposite gender (1 and 2), and the occupant stands."""
     code = st['tail'].get('attract', [0] * 4)[flat]
     if code == 0:
         return True
@@ -1076,7 +1076,11 @@ def attract_byte_ok(st, flat):
         return False
     if src_side == side and src == occ:
         return False
-    if not any(ssd['pos'][p]['occ'] == src and ssd['members'][src]['hp'] != 0 for p in range(2)):
+    # Issue #395: the source must hold a position of its side; it must also stand, except at TERMINAL (the battle's last faint keeps
+    # its position and runs no Update), as dfi_attract_byte_ok does.
+    on_field = any(ssd['pos'][p]['occ'] == src for p in range(2))
+    standing = any(ssd['pos'][p]['occ'] == src and ssd['members'][src]['hp'] != 0 for p in range(2))
+    if not on_field or (not standing and st['boundary'] != TERMINAL):
         return False
     pair = (sd['members'][occ]['gender'], ssd['members'][src]['gender'])
     return pair in ((1, 2), (2, 1))

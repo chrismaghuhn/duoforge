@@ -6634,6 +6634,57 @@ static const df_tb_stop tb_g76_fg_immune[] = {
     {1u, 0u, 2u, 3u, {4u, 4u}, {685u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 2u, 1u, {3u, 4u}, {538u, 655u}, {0x4049000000000000ull, 0x404df3a2027932b4ull}},
 };
+static const df_tb_stop tb_g77_anger_intimidate[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1099u, 1119u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {690u, 710u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {690u, 710u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {690u, 710u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {690u, 710u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {7u, 0u, 1u, 2u, {4u, 4u}, {690u, 663u}, {0x4050aaaaaaaaaaabull, 0x404f2e6ae6ae6ae7ull}},
+};
+static const df_tb_stop tb_g77_anger_no_crit[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1099u, 1119u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {690u, 710u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {690u, 710u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {690u, 710u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {657u, 621u}, {0x404fe6aaaaaaaaabull, 0x404d421c21c21c21ull}},
+};
+static const df_tb_stop tb_g77_leek_anger_point[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1104u, 1119u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {710u, 725u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {710u, 674u}, {0x4050aaaaaaaaaaabull, 0x404eff87f87f87f9ull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {508u, 627u}, {0x4049000000000000ull, 0x404cd89d89d89d8bull}},
+};
+static const df_tb_stop tb_g77_leek_nonfarfetchd[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {733u, 720u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {706u, 664u}, {0x40500c6cc6cc6cc7ull, 0x404eb26162d517a0ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {682u, 675u}, {0x404eff87f87f87f9ull, 0x404f36f5e02e4850ull}},
+};
+static const df_tb_stop tb_g77_magma_camerupt[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {733u, 720u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {688u, 709u}, {0x404f45dc5dc5dc5dull, 0x405068606bfe1252ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {641u, 699u}, {0x404d1ef1ef1ef1efull, 0x40502c1ced329f19ull}},
+};
+static const df_tb_stop tb_g77_magma_control[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1127u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {733u, 720u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {715u, 709u}, {0x4050412c12c12c13ull, 0x405068606bfe1252ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {697u, 699u}, {0x404faf5af5af5af5ull, 0x40502c1ced329f19ull}},
+};
+static const df_tb_stop tb_g77_sniper_ariados[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1122u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {728u, 720u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {569u, 610u}, {0x4049d8f2fba93868ull, 0x404c27886fd96e68ull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {551u, 621u}, {0x4049000000000000ull, 0x404cac1ced329f18ull}},
+};
+static const df_tb_stop tb_g77_sniper_no_crit[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1122u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {728u, 720u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {711u, 682u}, {0x40504437ecb73396ull, 0x404f8b545e7e5008ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {558u, 646u}, {0x4049545e7e5007b7ull, 0x404dd96e672bdf38ull}},
+};
 static const df_tb_stop tb_g78_ally_target[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1102u, 1129u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {741u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -9614,6 +9665,14 @@ static const df_tb_battle tb_battles[] = {
     {"g76_fg_damaged", 3u, tb_g76_fg_damaged, sizeof tb_g76_fg_damaged / sizeof tb_g76_fg_damaged[0]},
     {"g76_fg_hit", 2u, tb_g76_fg_hit, sizeof tb_g76_fg_hit / sizeof tb_g76_fg_hit[0]},
     {"g76_fg_immune", 2u, tb_g76_fg_immune, sizeof tb_g76_fg_immune / sizeof tb_g76_fg_immune[0]},
+    {"g77_anger_intimidate", 7u, tb_g77_anger_intimidate, sizeof tb_g77_anger_intimidate / sizeof tb_g77_anger_intimidate[0]},
+    {"g77_anger_no_crit", 4u, tb_g77_anger_no_crit, sizeof tb_g77_anger_no_crit / sizeof tb_g77_anger_no_crit[0]},
+    {"g77_leek_anger_point", 3u, tb_g77_leek_anger_point, sizeof tb_g77_leek_anger_point / sizeof tb_g77_leek_anger_point[0]},
+    {"g77_leek_nonfarfetchd", 3u, tb_g77_leek_nonfarfetchd, sizeof tb_g77_leek_nonfarfetchd / sizeof tb_g77_leek_nonfarfetchd[0]},
+    {"g77_magma_camerupt", 3u, tb_g77_magma_camerupt, sizeof tb_g77_magma_camerupt / sizeof tb_g77_magma_camerupt[0]},
+    {"g77_magma_control", 3u, tb_g77_magma_control, sizeof tb_g77_magma_control / sizeof tb_g77_magma_control[0]},
+    {"g77_sniper_ariados", 3u, tb_g77_sniper_ariados, sizeof tb_g77_sniper_ariados / sizeof tb_g77_sniper_ariados[0]},
+    {"g77_sniper_no_crit", 3u, tb_g77_sniper_no_crit, sizeof tb_g77_sniper_no_crit / sizeof tb_g77_sniper_no_crit[0]},
     {"g78_ally_target", 2u, tb_g78_ally_target, sizeof tb_g78_ally_target / sizeof tb_g78_ally_target[0]},
     {"g78_ee_p", 7u, tb_g78_ee_p, sizeof tb_g78_ee_p / sizeof tb_g78_ee_p[0]},
     {"g78_ee_t", 7u, tb_g78_ee_t, sizeof tb_g78_ee_t / sizeof tb_g78_ee_t[0]},
@@ -9859,7 +9918,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 6604 stops: 181 of an ended battle; decided by the count 1615,
- * the HP percentage 2037, the total HP 2560, a tie 211;
- * winners: side 0 3101, side 1 3292, tie 211 */
+/* 6639 stops: 181 of an ended battle; decided by the count 1617,
+ * the HP percentage 2049, the total HP 2581, a tie 211;
+ * winners: side 0 3116, side 1 3312, tie 211 */
 #endif

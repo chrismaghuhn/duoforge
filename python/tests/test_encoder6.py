@@ -210,6 +210,8 @@ class Encoder6Test(unittest.TestCase):
         self.assertIn(("VOLATILES2", "4", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
         self.assertIn(("VOLATILES2", "5", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
         self.assertIn(("VOLATILES2", "6", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
+        self.assertIn(("VOLATILES2", "12", "ATTRACT_SOURCE"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
+        self.assertIn(("VOLATILES2", "13", "ATTRACT_SOURCE"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
 
     def test_every_lane_feature_gates_a_reserve_column(self):
         # A lane's feature (bits 43 to 58: HEALING_WISH 43, G82) is shown only through its reserve bit: each one gates

@@ -779,9 +779,10 @@ static bool dfi_party_side_ok(const dfi_pool_tail *t, const dfi_side *side, uint
 /* Step G71 (decision 0034, decision 0015 5bn): the Attract source byte of the infatuated occupant at flat position `flat`. Zero is
  * no infatuation. A nonzero byte needs: a code of 1..12 (side * 6 + roster index + 1) that names a member of its side below the
  * side's member count; an infatuated occupant that stands (on the field, not fainted); a source member that is not the occupant
- * itself; the source on the field and not fainted (the pin's source.isActive); and the genders of the pair opposite (1 and 2,
- * data/moves.ts:707-711). Anything else is refused: a bad index, a source that is the holder, a source not active, and a byte
- * on an empty or fainted position. */
+ * itself; the source on the field and standing (the pin's source.isActive), except at TERMINAL, where a source that fainted in the
+ * battle's last action may keep its byte (issue #395); and the genders of the pair opposite (1 and 2, data/moves.ts:707-711).
+ * Anything else is refused: a bad index, a source that is the holder, a source not active outside TERMINAL, and a byte on an empty
+ * or fainted position. */
 static bool dfi_attract_byte_ok(const struct duoforge_battle *b, uint32_t flat)
 {
     const uint32_t code = b->tail.attract_source[flat];
@@ -804,14 +805,18 @@ static bool dfi_attract_byte_ok(const struct duoforge_battle *b, uint32_t flat)
     if (src_side == side && src == occupant) {
         return false; /* the source is the holder itself */
     }
-    /* The source must be on the field and not fainted: a position of its side holds it and it has HP. */
+    /* The source must be on the field: a position of its side holds it. It must also be standing (HP), except in a battle that
+     * ended (TERMINAL, issue #395): the faint that ended the battle runs no Update (sim/battle.ts:2837 returns when ended, before
+     * the Update at 2845), so the byte stays with the fainted source, which keeps its position until the battle ends. */
+    bool on_field = false;
     bool active = false;
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-        if (b->sides[src_side].positions[p].occupant == src && b->sides[src_side].members[src].hp != 0u) {
-            active = true;
+        if (b->sides[src_side].positions[p].occupant == src) {
+            on_field = true;
+            active = active || b->sides[src_side].members[src].hp != 0u;
         }
     }
-    if (!active) {
+    if (!on_field || (!active && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL)) {
         return false;
     }
     const uint32_t g_inf = b->sides[side].members[occupant].gender;

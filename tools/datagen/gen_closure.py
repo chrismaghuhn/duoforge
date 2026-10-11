@@ -3046,7 +3046,7 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
 ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
                          'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock',
-                         'smoothrock', 'icyrock', 'terrainextender', 'scopelens'],
+                         'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek'],
                'abilities': ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
@@ -3067,7 +3067,8 @@ ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', '
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                              'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
-                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor']}
+                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor',
+                             'magmaarmor', 'angerpoint', 'sniper']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -4153,6 +4154,48 @@ G75_ITEM_FACTS = (
 )
 
 
+# Step G77 (crit package): Magma Armor, Anger Point and Sniper are engine rows (ENGINE_ROWS) that the turn code reads by id, and
+# Leek (an item row) is read by the crit ratio. The pinned callbacks they hard-code are checked here, whole: Anger Point's onHit
+# (data/abilities.ts:131-142; the boost of +12 is set by the line -setboost, sim/battle.ts:2050-2053); Magma Armor's onImmunity
+# and onUpdate (2501-2515); Sniper's onModifyDamage (4358-4369); Leek's onModifyCritRatio and itemUser (items.ts:3322-3337).
+# None is overridden by the Champions mod; Leek inherits (G77_INHERIT_ONLY); Magma Armor is breakable, Mold Breaker is not marked.
+G77_ABILITY_FACTS = (
+    ('angerpoint', ('onHit(target, source, move) {',
+                    'if (!target.hp) return;',
+                    "if (move?.effectType === 'Move' && target.getMoveHitData(move).crit) {",
+                    'this.boost({ atk: 12 }, target, target);',
+                    '}',
+                    '},',
+                    'flags: {},')),
+    ('magmaarmor', ('onUpdate(pokemon) {',
+                    "if (pokemon.status === 'frz') {",
+                    "this.add('-activate', pokemon, 'ability: Magma Armor');",
+                    'pokemon.cureStatus();',
+                    '}',
+                    '},',
+                    'onImmunity(type, pokemon) {',
+                    "if (type === 'frz') return false;",
+                    '},',
+                    'flags: { breakable: 1 },')),
+    ('sniper', ('onModifyDamage(damage, source, target, move) {',
+                'if (target.getMoveHitData(move).crit) {',
+                "this.debug('Sniper boost');",
+                'return this.chainModify(1.5);',
+                '}',
+                '},',
+                'flags: {},')),
+)
+G77_ITEM_FACTS = (
+    ('leek', ('onModifyCritRatio(critRatio, user) {',
+              'if (["farfetchd", "sirfetchd"].includes(this.toID(user.baseSpecies.baseSpecies))) {',
+              'return critRatio + 2;',
+              '}',
+              '},',
+              'itemUser: ["Farfetch\\u2019d", "Farfetch\\u2019d-Galar", "Sirfetch\\u2019d"],')),
+)
+G77_INHERIT_ONLY = ('leek',)
+
+
 def check_g57_facts(abil_ts, champ_abil):
     """Step G57: the texts of Magic Bounce that the engine reproduces (G57_ABILITY_FACTS) are in the pinned entry, whitespace
     aside, and the Champions mod has no entry of its own for it."""
@@ -4186,8 +4229,8 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G83_ABILITY_FACTS + G81_ABILITY_FACTS + G79_ABILITY_FACTS + G75_ABILITY_FACTS + G71_ABILITY_FACTS, abil_ts, champ_abil),
-                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS + G83_ITEM_FACTS + G75_ITEM_FACTS, items_ts, champ_items)):
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G83_ABILITY_FACTS + G81_ABILITY_FACTS + G79_ABILITY_FACTS + G75_ABILITY_FACTS + G71_ABILITY_FACTS + G77_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS + G83_ITEM_FACTS + G75_ITEM_FACTS + G77_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:
@@ -4196,7 +4239,7 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
             if override is not None:
                 lines = [' '.join(line.split()) for line in override[2]]
                 inner = [line for line in lines[1:] if line not in ('', '},', '}')]
-                inherit_only = (rid in G59_INHERIT_ONLY and lines[0].endswith('{') and
+                inherit_only = (rid in G59_INHERIT_ONLY + G77_INHERIT_ONLY and lines[0].endswith('{') and
                                 inner == ['inherit: true,', 'isNonstandard: null,'])
                 if not inherit_only:
                     fail('%s %s: the champions mod overrides the entry' % (kind, rid))

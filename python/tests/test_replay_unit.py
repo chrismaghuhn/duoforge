@@ -381,11 +381,14 @@ class LinesTest(unittest.TestCase):
             lines.check(line, self.view)
         return caught.exception.reason
 
-    def test_belly_drum_setboost_folds_and_any_other_stops(self):
-        # Step G86: Belly Drum prints -setboost (sim/battle.ts:2051-2052), the stage it leaves; only that source folds
+    def test_setboost_folds_for_belly_drum_and_anger_point_and_any_other_stops(self):
+        # Steps G86 (Belly Drum) and G77 (Anger Point) print -setboost (sim/battle.ts:2051-2052), the stage it leaves; only
+        # those two sources of Attack fold
         self.assertEqual(lines.check("|-setboost|p1a: Staraptor|atk|6|[from] move: Belly Drum", self.view), "fold")
-        self.assertTrue(self.stop("|-setboost|p1a: Staraptor|atk|6|[from] ability: Anger Point").startswith("line:-setboost"))
+        self.assertEqual(lines.check("|-setboost|p1a: Staraptor|atk|6|[from] ability: Anger Point", self.view), "fold")
         self.assertTrue(self.stop("|-setboost|p1a: Staraptor|def|6|[from] move: Belly Drum").startswith("line:-setboost"))
+        self.assertTrue(self.stop("|-setboost|p1a: Staraptor|def|6|[from] ability: Anger Point").startswith("line:-setboost"))
+        self.assertTrue(self.stop("|-setboost|p1a: Staraptor|atk|6|[from] move: Swords Dance").startswith("line:-setboost"))
 
     def test_feature_lines_stop(self):
         self.assertEqual(self.stop("|-fieldstart|move: Gravity"), "feature:GRAVITY")
@@ -739,13 +742,12 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.FEATURES["MOVE_FAILED"], 41)
         self.assertEqual(lines.FEATURES["TRANSFORM"], 42)
         # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42; the lanes' features from 43 (G82: HEALING_WISH);
-        # 0050: the five reserve families 59 to 63. The header's names are the generated layout's.
+        # 0050: the five reserve families 59 to 63; 0080: ATTRACT_SOURCE 53 (step G87); TRAP_ELAPSED 45 (G90).
         self.assertEqual(lines.FEATURES["HEALING_WISH"], 43)
+        self.assertEqual(lines.FEATURES["ATTRACT_SOURCE"], 53)
         from duoforge import features
         self.assertEqual(lines.FEATURES, features.FEATURE_BITS)
-        # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42; 0050: the five reserve families 59 to 63
-        # and 45 TRAP_ELAPSED (lane A, G90, decision 0060): one feature of its own inside the lane range
-        self.assertEqual(len(lines.FEATURES), 43 + 1 + 5)
+        self.assertEqual(len(lines.FEATURES), 43 + 5 + 3)  # tiers, the five families, HEALING_WISH, TRAP_ELAPSED, ATTRACT_SOURCE
         self.assertEqual([lines.FEATURES[n] for n in ("RESERVE_VOLATILES", "VOLATILES2", "RESERVE_GUARDS",
                                                       "SIDE_CONDITIONS", "FIELD_FLAGS")], [59, 60, 61, 62, 63])
 
@@ -803,9 +805,14 @@ class LinesTest(unittest.TestCase):
         cut = tracker.restrict_ext(full, 0)
         self.assertEqual((int(cut["revision"]), int(cut["epoch"])), (int(full["revision"]), int(full["epoch"])))
         self.assertEqual(cut["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
+        self.assertFalse(cut["volatiles2"].any())
         chop = tracker.restrict_ext(full, 1 << lines.FEATURES["THROAT_CHOP"])
         self.assertEqual(chop["sides"]["positions"]["volatiles"].tolist(),
                          (full["sides"]["positions"]["volatiles"] & tracker.EXT_THROAT_CHOP).tolist())
+        # Attract's source position (step G87): only volatiles2's bits 12-13, nothing of the sides
+        source = tracker.restrict_ext(full, 1 << lines.FEATURES["ATTRACT_SOURCE"])
+        self.assertEqual(source["volatiles2"].tolist(), (full["volatiles2"] & tracker._ATTRACT_SOURCE_BITS).tolist())
+        self.assertEqual(source["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
