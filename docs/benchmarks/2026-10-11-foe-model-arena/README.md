@@ -42,4 +42,44 @@ F is adopted for live play only if every gate holds.
 
 ## Results
 
-Pending.
+**Verdict: every gate holds, so F is adopted for live play by the predeclared rule.** The limit in the design above still applies: the foe model shares the bot's training data. Switching the live mode is a separate change.
+
+| gate | rule | result |
+|---|---|---|
+| strength | lower bound of h > 0.50 | **h = 0.527, 95% [0.519, 0.536]** over 1024 pairs |
+| latency | F's p99 ≤ 2.0 s | **0.084 s** |
+| fallbacks | F ≤ 5% | **2.0%** (M: 2.1%) |
+| errors | none | none: all 2048 games of every arm finished, none unresolved |
+
+Per arm, against the bot BC mc-M (2048 games each):
+
+| arm | score | searched | forced | team | unreconstructible (raw) | wall per searched decision p50 / p95 / p99 / max (s) | coverage |
+|---|---|---|---|---|---|---|---|
+| R: 49333 raw | 0.825 | | | | | | |
+| M: search, 49333 as foe model | 0.839 | 17291 | 917 | 2048 | 398 (2.1%) | 0.061 / 0.072 / 0.088 / 0.93 | 0.956 |
+| F: search, BC mcmb-M as foe model | **0.893** | 16606 | 792 | 2048 | 363 (2.0%) | 0.061 / 0.072 / 0.084 / 2.30 | 0.737 |
+
+- **The gain.** Against this human-like bot, the search with its own network as the foe model gains 1.4 points over raw play, and the BC foe model gains 6.8.
+  - Paired, F against M: h = 0.527, the same as 5.4 points of score.
+- **Coverage.** This is the share of the foe model's own probability that its menu of 8 pairs holds. It is lower for the BC (0.74 against 0.96), because the BC spreads its probability over more pairs.
+- **Latency.** Unchanged in the median and at p99, though F runs one more query and network call per decision.
+- **Three slow decisions in F** took over 1 s (2.30, 1.80 and 1.67 s). M's slowest took 0.93 s.
+  - The time went to the engine: the leaf expansion took 2.24 s and 1.74 s, and a world build took 1.61 s, where these usually take 4 ms and 8 ms.
+  - The foe network takes part in neither step. Its network time in those decisions was 0.03 s, as usual. These outliers are an observation for the engine side and do not touch the gate.
+- **Fallbacks.** In both arms they are mostly records the engine's public view does not support: 295 in M and 265 in F. The rest are redraws past the species prior.
+- **Run time.** Arm M took 1144 s and arm F 1100 s, with the machine held alone.
+
+## Provenance
+
+- **Code:** m12/foe-net at f1fc1f84 (on main 1880d62f). The tool, the tests and these gates were committed before the run.
+  - The library was the Release build of that main.
+  - `foe_arena.json` records `"commit": null`, because WSL git cannot resolve the Windows worktree's gitdir. The commit is recorded here by hand.
+- **Run:** 2026-10-11, 19:04 to 19:44, under `tools/ci/machine_lock.sh --exclusive`.
+- **Networks:** the foe model and the bot are distinct files (SHA-256 prefixes `a1e79e3e9b74` and `19bf1ef06d65`).
+- **Spread table:** the live table, `91af704d…`. 264 of the 2048 games' bot teams are in it; they were left out of the belief for their game.
+- **Raw output:** `foe_arena.json` and the decision records stay private, outside the repository, as do the networks. This report quotes aggregates only.
+
+## What follows
+
+1. **Repeat with M11's encoder-6 BC** with a held-out-players split, so the foe model has not seen the bot's training data. That measurement closes the limit above.
+2. **The live switch is the owner's decision.** It would give `duoforge_live.search.load` the foe network as an option (a later PR); this PR changes no live default.
