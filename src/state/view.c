@@ -768,6 +768,7 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
     case DFI_SPECIAL_ELECTRIC_TERRAIN:
     case DFI_SPECIAL_MISTY_TERRAIN:
     case DFI_SPECIAL_AURORA_VEIL:
+    case DFI_SPECIAL_IMPRISON:
         return MR_EFFECT;
     case DFI_SPECIAL_WIDE_GUARD:
     case DFI_SPECIAL_RAGE_POWDER:
@@ -787,7 +788,7 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
     case DFI_SPECIAL_HEAL_PULSE:
         return MR_HEAL_PULSE;
     default:
-        return MR_REFUSED; /* Substitute, Destiny Bond, Imprison and every handler not mapped here */
+        return MR_REFUSED; /* Substitute, Destiny Bond and every handler not mapped here */
     }
 }
 

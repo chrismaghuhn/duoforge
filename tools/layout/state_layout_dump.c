@@ -206,6 +206,17 @@ int main(void)
     ENTRY(DFI_TAIL_HITS_TAKEN_MAX);
     ENTRY(DFI_FREEZE_TURNS);
     ENTRY(DFI_ENCORE_TURNS);
+    ENTRY(DFI_TAUNT_TURNS);
+    ENTRY(DFI_DISABLE_TURNS);
+    ENTRY(DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS);
+    ENTRY(DFI_TAIL_YAWN_MAX);
+    ENTRY(DFI_TAIL_FLAG_MAX);
+    ENTRY(DFI_TAIL_WIDE_GUARD_MAX);
+    ENTRY(DFI_TAIL_TYPE2_TYPELESS);
+    ENTRY(DFI_HAZARD_STEALTH_ROCK);
+    ENTRY(DFI_HAZARD_SPIKES);
+    ENTRY(DFI_HAZARD_TOXIC_SPIKES);
+    ENTRY(DFI_HAZARD_STICKY_WEB);
     /* the position flags each kind's states may carry (dfi_kind_limits_of: the TEAM_C and POOL kinds add their bits) */
     entry("VOL_FLAGS_MASK_CLOSURE", dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).vol_flags_mask);
     entry("VOL_FLAGS_MASK_POOL", dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL).vol_flags_mask);

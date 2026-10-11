@@ -3372,9 +3372,8 @@ static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat)
     return b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u;
 }
 
-/* Psychic Noise's Heal Block lasts 2 turns (durationCallback, data/moves.ts:8286-8289); Throat Chop's condition has
- * duration 2 (data/moves.ts:19391-19393, DFI_TAIL_THROAT_CHOP_MAX). */
-#define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
+/* Psychic Noise's Heal Block lasts 2 turns (durationCallback, data/moves.ts:8286-8289; DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS);
+ * Throat Chop's condition has duration 2 (data/moves.ts:19391-19393, DFI_TAIL_THROAT_CHOP_MAX). */
 
 /* Encore's condition has duration 3 (data/moves.ts:4724-4783); onStart adds one when the target has no move queued. */
 
@@ -4642,7 +4641,6 @@ static duoforge_status dfi_encore(dfi_run *r, uint32_t user, uint32_t flat, bool
  * progress (Cursed Body: pokemon is the active Pokemon and the move is not external). The line is `-start|X|Disable|MOVE`
  * with [from] ability: Cursed Body [of] holder for the ability. Struggle (last move 5) is never barred: Disable's
  * onTryHit refuses it and Cursed Body skips it. */
-#define DFI_DISABLE_TURNS 5u
 static bool dfi_disable_start(dfi_run *r, uint32_t flat, uint32_t holder, bool by_ability)
 {
     struct duoforge_battle *b = r->b;
@@ -4694,7 +4692,7 @@ static bool dfi_taunt(dfi_run *r, uint32_t user, uint32_t flat)
     }
     const uint32_t newly = dfi_kind_limits_of(r->ctx->data_kind).vol_flags_mask & DFI_VOL_NEWLY_SWITCHED;
     const bool out_a_turn = ((uint32_t)dfi_pos(b, flat)->flags & newly) == 0u;
-    const uint32_t turns = (out_a_turn && dfi_will_move(b, flat) == NULL) ? 4u : 3u;
+    const uint32_t turns = (out_a_turn && dfi_will_move(b, flat) == NULL) ? DFI_TAUNT_TURNS + 1u : DFI_TAUNT_TURNS;
     tail->taunt_turns = (uint8_t)turns; /* <= DFI_TAIL_TAUNT_MAX */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_TAUNT;
@@ -4779,7 +4777,7 @@ static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
         dfi_emit(r, &e);
         return false;
     }
-    tail->yawn_turns = 2u; /* DFI_TAIL_YAWN_MAX */
+    tail->yawn_turns = (uint8_t)DFI_TAIL_YAWN_MAX; /* 2 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_YAWN;
     e.other = (uint8_t)user;

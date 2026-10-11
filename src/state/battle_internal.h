@@ -95,6 +95,13 @@ typedef struct dfi_move_slot {
  * when its target has no move left in the turn). */
 #define DFI_FREEZE_TURNS 3u
 #define DFI_ENCORE_TURNS 3u
+/* The durations the volatiles of the POOL extension start with (the live record assembler reads them from the state
+ * layout dump, so no copy lives outside C): Taunt 3 turns (one more when its target has been out for a turn and has no move
+ * left in the turn, DFI_TAIL_TAUNT_MAX), Disable 5 (one less when its target still has its move ahead or Cursed Body sets
+ * it), Psychic Noise's Heal Block 2 (durationCallback, data/moves.ts:8286-8289); Yawn's is DFI_TAIL_YAWN_MAX. */
+#define DFI_TAUNT_TURNS 3u
+#define DFI_DISABLE_TURNS 5u
+#define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */

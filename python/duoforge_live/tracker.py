@@ -68,6 +68,11 @@ STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c)
 FREEZE_TURNS = _ENC["DFI_FREEZE_TURNS"]  # a freeze's status counter at its start, one less per [cant] frz
 THROAT_CHOP_TURNS = _ENC["DFI_TAIL_THROAT_CHOP_MAX"]  # throatchop's duration, counted down in the residual
 ENCORE_TURNS = _ENC["DFI_ENCORE_TURNS"]  # encore's duration; one more when its target has no move left this turn
+# the durations the #342 volatiles start with (src/state/battle_internal.h), each counted down in the residual
+TAUNT_TURNS = _ENC["DFI_TAUNT_TURNS"]  # one more when its target has been out for a turn and has no move left
+DISABLE_TURNS = _ENC["DFI_DISABLE_TURNS"]  # one less when its target has its move ahead or Cursed Body sets it
+HEAL_BLOCK_TURNS = _ENC["DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS"]  # Psychic Noise's, the one Heal Block of the pool
+YAWN_TURNS = _ENC["DFI_TAIL_YAWN_MAX"]
 TOXIC_STAGE_MAX = _ENC["DFI_TAIL_TOXIC_STAGE_MAX"]  # where the toxic counter stops
 HITS_TAKEN_MAX = _ENC["DFI_TAIL_HITS_TAKEN_MAX"]  # where Rage Fist's count stops
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
@@ -113,7 +118,7 @@ _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C
             trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
-_PASSED = ("throat_chop", "perish", "taunt", "heal_block")
+_PASSED = ("throat_chop", "perish", "taunt", "heal_block")  # with their counts (dfi_pass_give copies the turns)
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -177,13 +182,17 @@ class _Position:
         # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
         self.throat_chop = 0  # Throat Chop's turns left (the view shows its presence, the record its count)
         self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
-        self.taunt = 0  # Taunt's volatile is up (presence only)
-        self.yawn = 0  # Yawn's volatile is up (presence only)
+        self.taunt = 0  # Taunt's turns left: the view shows its presence, the record its count (taunt_turns)
+        self.yawn = 0  # Yawn's turns left until the sleep: the view shows its presence, the record its count
         self.imprison = 0  # the occupant used Imprison (presence only, until it leaves)
         self.glaive_rush = 0  # Glaive Rush's drawback is up until the occupant's next action (presence only)
         self.rage_powder = 0  # Rage Powder draws the foes' single-target moves this turn (presence only)
-        self.heal_block = 0  # Heal Block's volatile is up (presence only)
+        self.heal_block = 0  # Heal Block's turns left: the view shows its presence, the record its count
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
+        # the record's type2 of the occupant (tail rev 4): Double Shock's remaining type + 1, 0 after Soak; a Mega
+        # Evolution ends type_now (the soak_type) and keeps it, as dfi_run_mega does; it ends with the occupant
+        self.type2 = 0
+        self.disable_turns = 0  # Disable's turns left (the record; the view shows only disable_slot)
         self.encore_turns = 0  # Encore's turns left (the record)
         self.hits_taken = 0  # damaging hits of another Pokemon's move since the entry (the record; Rage Fist)
         self.raised = 0  # a stat of the occupant rose this turn (the record's position flag; Alluring Voice)
@@ -887,30 +896,39 @@ class Tracker:
                 raise lines.Stop("line:-start typechange (no Soak)")
             p = self._at(pos)
             p.type_now = (0, amount) if detail == trace_to_c.TYPE_NONE else (detail + 1, 0)
+            p.type2 = amount if detail == trace_to_c.TYPE_NONE else 0  # setType replaces both types (Soak)
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_HEAL_BLOCK:
             # Heal Block (step G8, Psychic Noise): -start|X|move: Heal Block and -end|X|move: Heal Block (the duration,
             # Mental Herb); the occupant's leaving ends it with no line; its count is never shown
-            self._at(pos).heal_block = 1 if kind == EV["VOLATILE_START"] else 0
+            self._at(pos).heal_block = HEAL_BLOCK_TURNS if kind == EV["VOLATILE_START"] else 0
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_TAUNT:
             # Taunt (step G31): -start|X|move: Taunt and -end|X|move: Taunt (the duration, Mental Herb, Oblivious); the
-            # occupant's leaving ends it with no line; its count is never shown
-            self._at(pos).taunt = 1 if kind == EV["VOLATILE_START"] else 0
+            # occupant's leaving ends it with no line; the view shows its presence, the record its count: one more
+            # when the target has been out for a turn and has no move left this turn (dfi_taunt)
+            p = self._at(pos)
+            p.taunt = 0
+            if kind == EV["VOLATILE_START"]:
+                p.taunt = TAUNT_TURNS + (1 if not p.newly_switched and not p.move_queued else 0)
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_DISABLE:
             # Disable (step G27): -start|X|Disable|MOVE (also [from] ability: Cursed Body) bars MOVE's slot of the open
             # sheet; -end|X|Disable (the duration, Mental Herb) and the occupant's leaving end it; its count is never
             # shown. A barred move that is not on the sheet stops.
             p = self._at(pos)
             if kind == EV["VOLATILE_END"]:
-                p.disable_slot = 0
+                p.disable_slot = p.disable_turns = 0
             else:
                 moves = self._occupant(pos).sheet["moves"]
                 if ident not in moves:
                     raise lines.Stop("disable-move-unknown")
                 p.disable_slot = moves.index(ident) + 1
+                # its count (the record): one less when the target has its move ahead or Cursed Body sets it
+                # (dfi_disable_start: the effect comes from the holder's own action in progress)
+                by_ability = e[3] == trace_to_c.CAUSE["ABILITY"]
+                p.disable_turns = DISABLE_TURNS - (1 if by_ability or p.move_queued else 0)
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_IMPRISON:
             self._at(pos).imprison = 1  # -start|X|move: Imprison (step G38): no end line, it ends with the occupant
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_YAWN:
-            self._at(pos).yawn = 1  # -start|X|move: Yawn|[of] source (step G31); its end line is [silent], above
+            self._at(pos).yawn = YAWN_TURNS  # -start|X|move: Yawn|[of] source (step G31); its end line is [silent], above
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
             self._at(pos).must_recharge = 1  # -mustrecharge|X: a recharge move hit (step G17)
         elif kind == EV["CONFUSED"]:
@@ -1058,8 +1076,13 @@ class Tracker:
             # an entry hazard (step G37): every -sidestart line lays one layer, up to the move's maximum; its -sideend
             # (Toxic Spikes that a grounded Poison type absorbed, the one removal the engine models) clears it
             field, top = _HAZARD[amount]
+            # The Counter keeps the kinds that are up in the order they were created (the record's hazard_order): a
+            # further layer keeps its place, an ended kind leaves, one put up again goes last.
             layers = self._hazards[detail]
-            layers[field] = min(layers[field] + 1, top) if kind == EV["SIDE_START"] else 0
+            if kind == EV["SIDE_START"]:
+                layers[field] = min(layers[field] + 1, top)
+            else:
+                layers.pop(field, None)
         elif kind == EV["SIDE_START"]:
             index = _SIDE_CONDITION[amount]
             turns = TAILWIND_TURNS
@@ -1206,6 +1229,9 @@ class Tracker:
                         p.locked_slot, p.locked_target = MOVE_SLOT_NONE, TARGET_NONE
                 p.throat_chop = down(p.throat_chop)  # its residual end is silent
                 p.encore_turns = down(p.encore_turns)
+                # the residual counts (orders 15, 17, 20, 23); each end at 0 shows its line, which the fold read already
+                p.taunt, p.heal_block, p.yawn = down(p.taunt), down(p.heal_block), down(p.yawn)
+                p.disable_turns = down(p.disable_turns)
 
     def _pressure_extra(self, pos, move, target, flags):
         """The extra PP a move use costs for the user's standing foes with Pressure (decision 0030, step G53), counted

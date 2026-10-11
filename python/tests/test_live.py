@@ -519,13 +519,9 @@ def record_diff(battle_name, k, viewer, record):
 # engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
 # (lines.Stop: an unfolded feature's line), by reason.
 CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
-POOL_OUTCOME = {"equal": 8094, "refused": 375, "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 62, "feature:DISABLE": 44, "feature:YAWN": 32, "feature:TERRAIN_ELECTRIC": 26,
-              "feature:TYPE_CHANGE": 24, "feature:MUST_RECHARGE": 20, "feature:IMPRISON": 20, "feature:TAUNT": 18,
-              "feature:STEALTH_ROCK": 18, "feature:HEAL_BLOCK": 16, "feature:TERRAIN_MISTY": 14, "feature:FORME_CHANGE": 10,
-              "feature:DESTINY_BOND": 10, "feature:STICKY_WEB": 8, "feature:DRAGON_CHEER": 8, "feature:GLAIVE_RUSH": 6,
-              "feature:TOXIC_SPIKES": 6, "feature:ROOST": 6, "feature:SPIKES": 4, "feature:RAGE_POWDER": 2, "line:-end": 2,
-              "feature:WIDE_GUARD": 2, "feature:ILLUSION": 2}
+POOL_OUTCOME = {"equal": 9198, "refused": 447, "tracker refuses: unburden-without-item-line": 4}
+POOL_STOPS = {"feature:SUBSTITUTE": 66, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 8,
+              "feature:ROOST": 6, "line:-end": 2, "feature:ILLUSION": 2}
 
 
 def record_kind(battle_name):
@@ -671,10 +667,9 @@ class RecordAssemblerPoolTest(unittest.TestCase):
 
     # unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone) shows no line;
     # move-result-not-determined: the library cannot tell an action's result from its events (duoforge_move_result
-    # refuses); last-move-not-on-sheet: the move of a position's last line is on no slot of its sheet; fold-not-in-record:
-    # a view-extension fold of #342 is up whose tail fields the assembler does not write (record.unrecorded_folds)
+    # refuses); last-move-not-on-sheet: the move of a position's last line is on no slot of its sheet
     TRACKER_REFUSALS = {"unburden-without-item-line", "move-result-not-determined", "last-move-not-on-sheet",
-                        "own-command-unknown", "pivot-switch-reason-unknown", "fold-not-in-record"}
+                        "own-command-unknown", "pivot-switch-reason-unknown"}
     # The tracker's own-PP check (Tracker._on_request) refuses these player streams before a record: Pressure the lines
     # cannot attribute (a [still] target, a clamped extra), Dragon Darts' split, the Pressure of a disguised Illusion.
     OWN_PP_STOPS = {("g53_field_trick_room", 0), ("g53_still_pressure", 1), ("g78_ee_t", 0), ("g78_fainted_ally", 0),

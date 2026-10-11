@@ -24,8 +24,10 @@ The tracker refuses, with a named reason, only a record that the engine has and 
 unburden-without-item-line, last-move-not-on-sheet, own-command-unknown, and move-result-not-determined (the library
 cannot tell an action's result from its events). The POOL tail's move_result is the library's classification of each move
 action's events (duoforge_move_result, the engine's rule; the tracker only collects the events); its other fields are the
-tracker's folds (party order, Aurora Veil, the position counters, item_now, the toxic stage, the raised flag). The
-features the tracker does not fold stop it at their lines (lines.check) before a record could need them.
+tracker's folds (party order, Aurora Veil, the position counters, item_now, the toxic stage, the raised flag, and the
+view-extension folds of #342: the entry hazards and their creation order, Wide Guard, Taunt, Heal Block, Yawn and Disable
+with their counts, Imprison, the recharge, Glaive Rush, Rage Powder's Follow Me flag, the type Soak or Double Shock set).
+The features the tracker does not fold stop it at their lines (lines.check) before a record could need them.
 """
 import numpy as np
 
@@ -53,6 +55,11 @@ POSFLAG_STATS_RAISED = VALUES["DFI_POSFLAG_STATS_RAISED"]
 # the position flags the states of a kind may carry (dfi_kind_limits_of: the POOL kinds add theirs), by table kind
 VOL_FLAGS_MASK = {"closure": VALUES["VOL_FLAGS_MASK_CLOSURE"], "pool": VALUES["VOL_FLAGS_MASK_POOL"]}
 MR_UNCLASSIFIED_NOW, MR_UNCLASSIFIED_LAST = VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_NOW"], VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_LAST"]
+TAIL_FLAG, WIDE_GUARD = VALUES["DFI_TAIL_FLAG_MAX"], VALUES["DFI_TAIL_WIDE_GUARD_MAX"]  # the 0/1 tail bytes when set
+TYPE_TYPELESS = VALUES["DFI_TAIL_TYPE2_TYPELESS"]  # soak_type of Double Shock's ??? slot
+# the tail's hazard kind of each hazard field (DFI_HAZARD_*, 2 bits per slot of hazard_order)
+_HAZARD_KIND = {field: VALUES[f"DFI_HAZARD_{field.upper()}"] for field in
+                ("stealth_rock", "spikes", "toxic_spikes", "sticky_web")}
 _FIELDS = {name: (start, size) for name, start, size in state_layout.fields(pool=True)}
 
 
@@ -256,8 +263,8 @@ def _position(t, s, pre, p, side, k, own):
         flags |= VOL_PROTECT
     if p.flash_fire:
         flags |= VOL_FLASH_FIRE
-    if p.flags & _tracker.FLAG_FOLLOW_ME:
-        flags |= VOL_FOLLOW_ME
+    if p.flags & _tracker.FLAG_FOLLOW_ME or p.rage_powder:
+        flags |= VOL_FOLLOW_ME  # Rage Powder sets the same flag (dfi_run_follow_me); the observation tells them apart
     if p.flags & _tracker.FLAG_HELPING_HAND:
         flags |= VOL_HELPING_HAND
     if p.flags & _tracker.FLAG_UNBURDEN:
@@ -332,31 +339,8 @@ def _party_bytes(entries):
 # Heal Block, Yawn, Disable), layers and creation order (the entry hazards), soak and second types, the recharge, Glaive
 # Rush, Imprison, Rage Powder's Follow Me volatile and the side's Wide Guard. While one is up the record would hold a zero
 # where the engine's has the fold, so the decision point is refused (fold-not-in-record), never approximated.
-_UNRECORDED_POSITION_FOLDS = ("must_recharge", "taunt", "yawn", "imprison", "glaive_rush", "rage_powder", "heal_block",
-                              "disable_slot")
-
-
-def unrecorded_folds(t):
-    """The names of the folded states up at the tracker's point that the record does not carry ([] when none)."""
-    names = []
-    for side in (0, 1):
-        if any(t._hazards[side].values()):
-            names.append(f"side{side}.hazards")
-        if ("WIDE_GUARD", side) in t._guards:
-            names.append(f"side{side}.wide_guard")
-        for k, p in enumerate(t._positions[side]):
-            if p.occupant == OCCUPANT_NONE:
-                continue
-            names += [f"side{side}.position{k}.{name}" for name in _UNRECORDED_POSITION_FOLDS if getattr(p, name)]
-            if p.type_now != (0, 0):
-                names.append(f"side{side}.position{k}.type_now")
-    return names
-
-
 def _tail(t, s, boundary):
     """The POOL kinds' tail (src/codec/state_codec.c dfi_encode_tail) of what the tracker folds."""
-    if unrecorded_folds(t):
-        raise Refusal("fold-not-in-record")
     party = []
     for side in (0, 1):
         entries = [0] * 6
@@ -371,6 +355,12 @@ def _tail(t, s, boundary):
     for side in (0, 1):
         pre = f"tail.side{side}."
         s.put(pre + "aurora_veil_turns", t._conditions[side][3])
+        s.put(pre + "wide_guard", WIDE_GUARD if ("WIDE_GUARD", side) in t._guards else 0)
+        order = 0
+        for n, (field, layers) in enumerate(t._hazards[side].items()):  # the kinds that are up, in creation order
+            s.put(pre + field, layers)
+            order |= _HAZARD_KIND[field] << (2 * n)
+        s.put(pre + "hazard_order", order)
         members = t._member(side)
         for k, p in enumerate(t._positions[side]):
             if p.occupant == OCCUPANT_NONE:
@@ -387,6 +377,17 @@ def _tail(t, s, boundary):
             s.put(ppre + "throat_chop_turns", p.throat_chop)
             s.put(ppre + "perish", p.perish)
             s.put(ppre + "hits_taken", p.hits_taken)
+            s.put(ppre + "taunt_turns", p.taunt)
+            s.put(ppre + "heal_block_turns", p.heal_block)
+            s.put(ppre + "yawn_turns", p.yawn)
+            s.put(ppre + "disable_slot", p.disable_slot)
+            s.put(ppre + "disable_turns", p.disable_turns)
+            for field in ("imprison", "must_recharge", "glaive_rush"):
+                s.put(ppre + field, TAIL_FLAG if getattr(p, field) else 0)
+            mpre = f"{pre}member{p.occupant}."
+            if p.type_now != (0, 0):
+                s.put(mpre + "soak_type", p.type_now[0] or TYPE_TYPELESS)  # Soak's type + 1, or Double Shock's ???
+            s.put(mpre + "type2", p.type2)
             s.put(f"tail5.position{side * 2 + k}.position_flags", POSFLAG_STATS_RAISED if p.raised else 0)
             if p.ability_now:
                 s.put(f"{pre}member{p.occupant}.ability_now", p.ability_now)
