@@ -469,6 +469,42 @@ class HonestSearch(unittest.TestCase):
             finally:
                 live.close()
 
+    def test_a_provisional_pair_mask_is_cut_to_the_engines_domain(self):
+        # The live tracker's pair mask is provisional (Showdown judges a pair; the arena of #362 met "switch 3, switch 3"):
+        # the search's own candidates come from the engine's own domain of the worlds, never from a pair the engine
+        # refuses. The root policy here puts a pair outside the engine's domain first.
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            obs, slots, pairs = b.query_encoded(search.encoder, search.ext_supported)
+            records, statuses = b.public(np.zeros(1, np.uint32))
+            d = b.domains[0, 0]
+            widened = np.zeros_like(pairs[0, 0])
+            widened[:int(d["slot_count"][0]), :int(d["slot_count"][1])] = True  # every slot pair, the illegal ones too
+            illegal = np.argwhere(widened & ~pairs[0, 0].astype(bool))
+            self.assertTrue(illegal.size, "no pair outside the engine's domain at this root")
+            roots = RecordRoots(1)
+            roots.set(0, 0, request=b.requests[0, 0], observation=b.observations[0, 0], obs=obs[0, 0],
+                      slots=slots[0, 0], pairs=widened, record=records[0], status=int(statuses[0]),
+                      episode=b.episode(0))
+            search.history[roots] = {(0, 0): dict(search.history[b][(0, 0)])}  # the team preview the batch recorded
+            bad = int(illegal[0][0]) * 32 + int(illegal[0][1])
+            real = search._policy
+
+            def policy(*inputs):
+                pair, team, seconds = real(*inputs)
+                pair = pair.copy()
+                pair[0, bad] = 0.0  # the highest log-probability: the root's first candidate
+                return pair, team, seconds
+
+            with mock.patch.object(search, "_policy", side_effect=policy):
+                actions, records_ = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual(records_[0]["kind"], "searched")
+            i, k = divmod(int(actions[0]), 32)
+            self.assertTrue(pairs[0, 0][i, k], "the search played a pair the engine refuses")
+
     def test_assembled_record_is_checked_and_named(self):
         # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
         # every world built from it gives it back. A filled masked field (here the foe's exact HP) is refused by the
