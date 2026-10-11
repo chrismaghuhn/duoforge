@@ -460,6 +460,7 @@ class LockedMoveSlotTest(unittest.TestCase):
         band = next(items[k.upper()] for k in lines.CHOICE_ITEMS if k.upper() in items) + 1  # a Choice holder (#334)
         t._guard_moves, t._choice_items = set(), {band}
         t._turn, t._move_pivots = 1, {}  # the public record's folds of a move line
+        t._healing_wish = self.D.tables["MOVE"].get("HEALINGWISH")  # G82's slot condition (a move line folds it)
         t._positions = [[self.tracker._Position(), self.tracker._Position()],
                         [self.tracker._Position(), self.tracker._Position()]]
         for side in t._positions:

@@ -410,6 +410,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= (tail->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DRAGON_CHEER : 0u;
                 /* Step G84 (decision 0047): Leech Seed is up on the holder (the tail's source; public: the -start line). */
                 vol |= tail->leech_seed_source != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_LEECH_SEED : 0u;
+                /* Step G82 (decision 0045): the slot's Healing Wish is pending. Public (the user's move and faint, and the heal that
+                 * ends it); set at every position, an empty one included, since the wish waits for the next entrant. */
+                vol |= (tail->position_flags & DFI_POSFLAG_HEALING_WISH) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEALING_WISH : 0u;
                 /* Step G76 (decision 0015 5cg): Destiny Bond is up until the occupant's next move attempt (-singlemove|X|Destiny Bond). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DESTINY_BOND) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DESTINY_BOND : 0u;
                 /* Step G84b (decision 0063): Curse is up on the holder (public: -start|X|Curse|[of] source; it ends with the occupant). */

@@ -1034,8 +1034,11 @@ MUT(m_ill_shown, ts->illusion.shown = 1u)
 MUT(m_ill_override, ts->illusion.override[3] = 1u)
 MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
 MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
-MUT(m_healing_wish_bit, p0->position_flags = 1u) /* bit 0 (Healing Wish) is never set yet */
-MUT(m_position_flags_hw_curse, p0->position_flags = 0x81u) /* G84b: bit 7 (Curse) does not excuse bit 0 (Healing Wish, never set); every bit is defined now */
+/* G82 (decision 0045): bit 0 (Healing Wish) is the slot's; it is valid at a standing lead and at an empty position. A bit that
+ * ends with the occupant (the raised flag, bit 1) stays refused at an empty position. */
+MUT(v_healing_wish_bit, p0->position_flags = 0x01u)
+MUT(v_healing_wish_empty, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = (uint8_t)(y->sides[0].requested_slots & ~1u), p0->position_flags = 0x01u) /* the empty slot is no longer requested (TURN: requested == occupied) */
+MUT(m_empty_stats_raised, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = (uint8_t)(y->sides[0].requested_slots & ~1u), p0->position_flags = 0x02u)
 MUT(v_destiny_bond_standing, p0->position_flags = 0x10u) /* G76: Destiny Bond at a standing lead is valid */
 MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
@@ -1217,8 +1220,9 @@ static const tail_case cases[] = {
     {"Illusion override byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_override},
     {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
     {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
-    {"healing wish bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_healing_wish_bit},
-    {"position flags Healing Wish with Curse at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_hw_curse},
+    {"G82: Healing Wish bit at a standing lead is valid", DFI_INV_NONE, false, v_healing_wish_bit},
+    {"G82: Healing Wish bit at an empty position is valid", DFI_INV_NONE, false, v_healing_wish_empty},
+    {"G82: a raised flag at an empty position is refused", DFI_INV_TAIL_POSITION, false, m_empty_stats_raised},
     {"G76: Destiny Bond at a standing lead is valid", DFI_INV_NONE, false, v_destiny_bond_standing},
     {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
@@ -1842,7 +1846,9 @@ int main(void)
                 duoforge_battle_destroy(y);
             }
         }
-        DF_CHECK_EQ_U64(&t, refused, 2u * sizeof(dfi_tail_pos));
+        /* G82 (decision 0045): bit 0 of the position flags is valid at an empty position, so the byte 1 of the empty position
+         * (the fainted and the empty case) is no refusal any more: two fewer than before. */
+        DF_CHECK_EQ_U64(&t, refused, 2u * sizeof(dfi_tail_pos) - 2u);
         duoforge_battle_destroy(x);
     }
 

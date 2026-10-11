@@ -1,0 +1,20 @@
+{
+  "name": "g82_t2_switch_order_tie_full_hp_wish",
+  "purpose": "G82 T2 (decision (d)): mirror teams; both Lopunnies cast Healing Wish on turn 1 and both replacements (Kingambit, equal Speed, full HP) enter onto a pending wish in one end-of-turn switch: the switch-order SPEED_TIE is drawn (bearers count the wish holders at full HP).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,8200000000000000000000000000000000000000000000000000000000000007",
+  "teams": [
+    "Lopunny (F) @ Occa Berry\nAbility: Limber\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Healing Wish\n- Protect\n- Quick Attack\n- Fake Out\n\nGardevoir (F) @ Sitrus Berry\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Moonblast\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nChimecho (M) @ Leftovers\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Expanding Force\n- Psychic\n- Helping Hand\n- Protect\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil",
+    "Lopunny (F) @ Occa Berry\nAbility: Limber\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Healing Wish\n- Protect\n- Quick Attack\n- Fake Out\n\nGardevoir (F) @ Sitrus Berry\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Moonblast\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nChimecho (M) @ Leftovers\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Expanding Force\n- Psychic\n- Helping Hand\n- Protect\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 2"
+    ],
+    "p2": [
+      "move 1, move 2"
+    ],
+    "max_steps": 4
+  }
+}

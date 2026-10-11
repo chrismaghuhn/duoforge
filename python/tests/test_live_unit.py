@@ -196,6 +196,7 @@ class TrackerStopTest(unittest.TestCase):
         t = tracker.Tracker.__new__(tracker.Tracker)
         t.side, t._spectator = 0, False
         t._action = None  # no move action open (Tracker._segment)
+        t._healing_wish = None  # no Healing Wish in the tables (G82)
         t._herb_end = None
         t._positions = [[tracker._Position(), tracker._Position()] for _ in (0, 1)]
         for side in t._positions:
@@ -247,6 +248,38 @@ class TrackerStopTest(unittest.TestCase):
         self.assertEqual((get("tail.side1.member0.soak_type"), get("tail.side1.member0.type2")),
                          (VALUES["DFI_TAIL_TYPE2_TYPELESS"], 7))
         self.assertEqual((get("tail.side0.member1.soak_type"), get("tail.side0.member1.type2")), (18, 0))
+
+    def test_healing_wish_is_a_slot_condition(self):
+        # G82 (decision 0045, dfi_run_healing_wish and dfi_wish_heal): a Healing Wish that runs sets its slot's wish, which
+        # the user's faint and the next occupant keep (the position's flags bit 0, the view's HEALING_WISH bit); the heal of
+        # an entrant (-heal ... [from] move: Healing Wish) ends it and the entrant's status with it (clearStatus, no line).
+        # A wish refused for no reserve ([still] -fail) sets nothing.
+        from types import SimpleNamespace
+        from duoforge._state_layout import VALUES
+        from duoforge_live import record
+        from duoforge_live.data import trace_to_c
+        from duoforge_live.tracker import EXT_FIELDS
+        t = self.tracker()
+        t._move_pivots, t._guard_moves, t._choice_items, t._struggle, t._last_move = {}, set(), set(), None, None
+        t._healing_wish = 9
+        t._item_of = lambda member: None
+        t._pressure_extra = lambda pos, move, target, flags: 0
+        members = [SimpleNamespace(sheet={"moves": [9, 8]}, uses=[0, 0], item_used=0, status=3, freeze_turns=0, toxic=0,
+                                   toxic_stage=0, hp_percent=40, hp_flag=0) for _ in range(6)]
+        t._member = lambda side: members
+        EV, CAUSE, FLAG = trace_to_c.EV, trace_to_c.CAUSE, trace_to_c.FLAG
+        p = t._positions[0][1]
+        t._fold_event(trace_to_c.ev_tuple(EV["MOVE"], 1, cause=CAUSE["NONE"], ident=9, flags=FLAG["STILL"]))
+        self.assertEqual(p.wish, 0)  # no reserve: -fail [still]
+        t._fold_event(trace_to_c.ev_tuple(EV["MOVE"], 1, cause=CAUSE["NONE"], ident=9))
+        self.assertEqual(p.wish, 1)
+        p.reset()  # the faint and the next occupant's entry clear the position's conditions, not the slot's wish
+        self.assertEqual(p.wish, 1)
+        t._spectator = True
+        t._fold_event(trace_to_c.ev_tuple(EV["HEAL"], 1, cause=CAUSE["MOVE"], ident2=9, hp=100))
+        self.assertEqual((p.wish, members[p.occupant].status), (0, 0))
+        self.assertEqual(record.POSFLAG_HEALING_WISH, VALUES["DFI_POSFLAG_HEALING_WISH"])
+        self.assertIn("HEALING_WISH", EXT_FIELDS)
 
     def test_a_bounced_move_is_no_action_of_the_holder(self):
         # c1_cover_b step 2: |move|p2b: Espeon|Glare|p1b: Serperior|[from] ability: Magic Bounce is Magic Bounce's reflection

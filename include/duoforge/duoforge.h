@@ -885,6 +885,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 #define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
 #define DUOFORGE_POSITION_EXT_ATTRACT      0x08000000u /* Attract (step G71, decision 0034): the occupant is infatuated; presence only, no source */
+#define DUOFORGE_POSITION_EXT_HEALING_WISH 0x00400000u /* Healing Wish: the position's slot condition is pending (decision 0045) */
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
@@ -902,7 +903,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 /* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says
    DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
    well. Empty while no reserve bit has a feature of its own. */
-#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)
+#define DUOFORGE_VIEWEXT_RESERVE_OWN(X) X(RESERVE_VOLATILES, 22u, HEALING_WISH)
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
@@ -959,7 +960,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_ROOST            40u
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
-#define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
+#define DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH    43u /* Healing Wish: the position's wish bit (decision 0045) */
+#define DUOFORGE_VIEWEXT_FEATURE_COUNT            44u
 /* The reserve families of encoder 6 (decision 0050), outside the tiers (COUNT does not count them). */
 #define DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES 59u /* duoforge_position_ext.volatiles bits 22 to 31 */
 #define DUOFORGE_VIEWEXT_FEATURE_VOLATILES2        60u /* duoforge_observation_ext.volatiles2 */

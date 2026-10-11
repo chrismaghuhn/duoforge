@@ -175,7 +175,8 @@ class SearchExpand(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "encoder 7 is not one"):
                 self._expand(leaves, n=4, version=7)  # 5 is encoder 5 (decisions 0025/0028), 6 encoder 6 (0050)
             with self.assertRaisesRegex(ValueError, "not a mask"):  # no mask of the feature bits, as in query_encoded
-                self._expand(leaves, n=4, ext_supported=1 << 43)  # 42 is TRANSFORM (0028): 43 is past every bit
+                undefined = next(b for b in range(64) if not features.ALL_FEATURES >> b & 1)  # a bit no feature has
+                self._expand(leaves, n=4, ext_supported=1 << undefined)
             refused("DUOFORGE_E_INVALID_ARGUMENT", version=3, ext_supported=1 << 40)  # past version 3's features
             with self.assertRaises(duoforge.DuoforgeError) as caught:  # leaves == roots
                 leaves.expand(leaves, 4, self.mask, SEED, np.zeros(4, np.uint64), np.zeros(4, np.uint8),

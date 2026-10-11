@@ -396,6 +396,9 @@ const dfi_support_manifest dfi_support = {
              * (a non-Ghost user's self boost; the Ghost Curse since step G84b, decision 0063). */
             [DFI_MOVE_LEECHSEED] = 1u,
             [DFI_MOVE_CURSE] = 1u,
+            /* Step G82 (decision 0045): Healing Wish, the user's slot condition (position bit 0) and the user's faint; the next
+             * entrant of that slot is healed (dfi_run_entries). The Champions hit loop Updates run after it (scripts.ts:537, :574). */
+            [DFI_MOVE_HEALINGWISH] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
             [DFI_MOVE_ROOST] = 1u,
@@ -975,6 +978,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_CURSE) |  /* step G84b (decision 0063): the Ghost Curse volatile (bit 36) */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES) |
