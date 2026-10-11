@@ -31,7 +31,7 @@ python3 tools/datagen/gen_closure.py <pinned checkout>          # write the file
 python3 tools/datagen/gen_closure.py <pinned checkout> --check  # compare only
 ```
 
-After regenerating, update the two file hashes in `tests/CMakeLists.txt` and the table hash in `tests/test_closure_tables.c`. With `-DDUOFORGE_PS_REFERENCE_DIR=<pinned checkout>` CTest runs the `--check` form as `duoforge.data.closure_regen`.
+After regenerating, update the two file hashes in `tests/CMakeLists.txt` and the table hash in `tests/data/test_closure_tables.c`. With `-DDUOFORGE_PS_REFERENCE_DIR=<pinned checkout>` CTest runs the `--check` form as `duoforge.data.closure_regen`.
 
 `test_gen_closure.py` checks the refusals on small move, item and ability texts without a checkout; CTest runs it as `duoforge.data.gen_closure_refusals` whenever Python is found.
 

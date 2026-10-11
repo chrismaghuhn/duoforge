@@ -75,6 +75,8 @@ Showdown is checked out at exactly
 the `linux-full` workflow. Dependencies and run outputs live outside the repo.
 The optional separate PCG reference-checkout job is not added to this profile.
 
+The teacher row/batch test needs `OPENBLAS_NUM_THREADS=1` with multi-threaded OpenBLAS.
+
 The Python workflow uses `OPENBLAS_NUM_THREADS=1`. With automatic threaded
 OpenBLAS on this Intel CPU, the unchanged `expert_teacher` suite failed its
 per-root-versus-tick decision-byte comparison and its three-path tickbench
@@ -144,7 +146,7 @@ cmake --build build/restructure --parallel 4
 ctest --test-dir build/restructure --show-only=json-v1 > /workspace/duoforge-env/inventory.json
 ctest --test-dir build/restructure --output-on-failure --no-tests=error \
   --timeout 120 --parallel 4 --output-junit /workspace/duoforge-env/ctest.xml
-python docs/benchmarks/2026-10-11-restructure-baseline/capture_reference.py \
+python tools/restructure/capture_reference.py \
   "$PWD" "$PWD/build/restructure" /workspace/duoforge-env/reference
 python tools/datagen/gen_closure.py /workspace/duoforge-env/pokemon-showdown --check
 python tools/datagen/gen_closure.py /workspace/duoforge-env/pokemon-showdown --team-c --check
