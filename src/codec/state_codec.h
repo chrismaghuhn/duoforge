@@ -160,6 +160,10 @@
  * infatuated occupant (0 = not infatuated, else 1 + side * 6 + roster index of the source member); the other 12 stay zero. */
 #define DFI_ENC_TAIL5_ATTRACT_OFF DFI_ENC_TAIL5_RESERVED_OFF
 #define DFI_ENC_TAIL5_ATTRACT_SIZE 4u
+/* step G80 (decision 0044, lead's allocation): reserve bytes 4..7 hold the Ally Switch volatile, one per flat position (the
+ * position's dfi_tail_pos.ally_switch). Bytes 0..3 are lane B's and 8..15 stay free; all of them are zero and refused otherwise. */
+#define DFI_ENC_TAIL5_ALLY_SWITCH_OFF 4u
+#define DFI_ENC_TAIL5_ALLY_SWITCH_COUNT 4u
 #define DFI_ENC_TAIL5_SIZE (DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_RESERVED_SIZE)
 /* The whole tail: rev 4 (288) and rev 5 (60). */
 #define DFI_ENC_TAIL_SIZE (DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_SIZE)
@@ -232,7 +236,7 @@
      DUOFORGE_SIDE_COUNT * (DFI_ENC_TAIL_SIDE_RESERVED_SIZE +                                                          \
                             DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE +                                \
                             DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE) +                                 \
-     (DFI_ENC_TAIL5_RESERVED_SIZE - DFI_ENC_TAIL5_ATTRACT_SIZE))
+     (DFI_ENC_TAIL5_RESERVED_SIZE - DFI_ENC_TAIL5_ATTRACT_SIZE - DFI_ENC_TAIL5_ALLY_SWITCH_COUNT))
 /* The encoded size of a state under a POOL kind, and the largest of any kind: buffers of tests and tools that do
  * not ask duoforge_battle_encoded_size. Not a public constant. */
 #define DFI_STATE_POOL_ENCODED_SIZE (DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIZE)
@@ -346,25 +350,27 @@ _Static_assert(DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF + 9u == DFI_ENC_TAIL5_ILL_PENDING_
 _Static_assert(DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL5_POS_SIZE ==
                    DFI_ENC_TAIL5_RESERVED_OFF,
                "the positions' rev 5 bytes end the block's data");
-_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 37u,
-               "37 of them are reserved (step G46 takes 6 of the field block's 7, step G90 takes the position block's byte 32 "
-               "of its four, and the four Attract bytes of step G71 are data)");
+_Static_assert(DFI_ENC_TAIL5_ALLY_SWITCH_COUNT == DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE,
+               "one Ally Switch byte per flat position (step G80)");
+_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 33u,
+               "33 of them are reserved (step G46 takes 6 of the field block's 7, step G90 the position block's byte 32 "
+               "of its four, the Attract (G71) and Ally Switch (G80) bytes of the rev 5 reserve are data)");
 _Static_assert(DFI_ENC_TAIL5_ATTRACT_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE <= DFI_ENC_TAIL5_SIZE, "the Attract bytes are in the rev 5 block");
 _Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1357u, "the state with the POOL tail is 1357 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data
  * and nothing else (the encoded size without the reserved bytes, plus the pad byte of the field block: a position and a side
  * have an even number of data bytes and need none; rev 5 adds 2 bytes per position and the 18-byte Illusion block). */
-_Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE - DFI_ENC_TAIL_POS_RESERVED_SIZE + DFI_ENC_TAIL5_POS_SIZE + 1u,
-               "a position's tail in memory is its data, none of the reserved bytes, and the one pos_pad byte");
+_Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE - DFI_ENC_TAIL_POS_RESERVED_SIZE + DFI_ENC_TAIL5_POS_SIZE + 3u,
+               "a position's tail in memory: its data, the Ally Switch byte (G80), the pos_pad (G90) and the Ally Switch pad (G80)");
 _Static_assert(sizeof(dfi_tail_illusion) == DFI_ENC_TAIL5_SIDE_SIZE, "the Illusion block is its 18 bytes");
 _Static_assert(sizeof(dfi_tail_side) == DFI_ENC_TAIL_SIDE_SIZE - DFI_ENC_TAIL_SIDE_RESERVED_SIZE -
                                             DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE -
                                             DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE +
-                                            DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL5_POS_SIZE + DFI_ENC_TAIL5_SIDE_SIZE +
-                                            DUOFORGE_ACTIVE_PER_SIDE,
-               "a side's tail in memory is its data, none of the reserved bytes, and its positions' pad bytes");
-_Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVED_COUNT + 1u + DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE,
-               "the tail in memory is its data, none of the reserved bytes, the field block's pad and the positions' pads");
+    DUOFORGE_ACTIVE_PER_SIDE * (DFI_ENC_TAIL5_POS_SIZE + 3u) + DFI_ENC_TAIL5_SIDE_SIZE,
+               "a side's tail in memory: its data, the Ally Switch bytes and the positions' pads");
+_Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVED_COUNT + 1u +
+                                            DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE * 2u,
+               "the tail in memory: the reserved bytes gone, the field block's pad, the positions' pads and Ally Switch pads");
 
 /* True for the kinds whose states carry the POOL tail: _POOL and _POOL_DEV. */
 bool dfi_context_has_pool_tail(const struct duoforge_context *ctx);

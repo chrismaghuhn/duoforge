@@ -136,8 +136,11 @@ def fields(pool=True):
             _o("TAIL5_POS_SIZE"))
     # step G71 (decision 0034): the first 4 bytes of the rev 5 reserve are Attract's source member per flat position
     out.append(("tail5.attract_source", tail5 + _o("TAIL5_ATTRACT_OFF"), _o("TAIL5_ATTRACT_SIZE")))
-    out.append(("tail5.reserved", tail5 + _o("TAIL5_RESERVED_OFF") + _o("TAIL5_ATTRACT_SIZE"),
-                _o("TAIL5_RESERVED_SIZE") - _o("TAIL5_ATTRACT_SIZE")))
+    # step G80: the Ally Switch counter of each position, one byte per flat position; the rest of the reserve is zero
+    res = tail5 + _o("TAIL5_RESERVED_OFF")
+    ally, ally_n = _o("TAIL5_ALLY_SWITCH_OFF"), _o("TAIL5_ALLY_SWITCH_COUNT")
+    out.append(("tail5.ally_switch", res + ally, ally_n))
+    out.append(("tail5.reserved", res + ally + ally_n, _o("TAIL5_RESERVED_SIZE") - ally - ally_n))
     return out
 
 

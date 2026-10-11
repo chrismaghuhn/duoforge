@@ -377,7 +377,19 @@ typedef struct dfi_tail_pos {
                                 * bits 4-7 are zero. The flags end with the occupant (dfi_tail_clear_occupant). */
     uint8_t future_sight;      /* tail rev 5 (lane A): 2 bits of turns, 3 bits for the source, 3 spare; zero, nothing writes it yet */
     uint8_t pos_pad;           /* always zero, never encoded: the struct's even size (its uint16 members), as field_pad of the field block */
+    uint8_t ally_switch;       /* tail rev 5 (step G80, decision 0044): the Ally Switch volatile, DFI_ALLY_SWITCH_*; 0 = none.
+                                * Stored in the general reserve (encoded at reserve byte DFI_ENC_TAIL5_ALLY_SWITCH_OFF + flat
+                                * position). It moves with the occupant on a swap and ends with it. */
+    uint8_t ally_switch_pad;   /* step G80: always zero (never encoded, refused when nonzero); it makes the position 36 bytes with no
+                                * implicit padding, so that the all-zero tests of the struct are exact */
 } dfi_tail_pos;
+
+/* tail rev 5 Ally Switch (step G80, decision 0044): the counter is 3^k with k = level 1..6 (the pin's counter 3, 9, ... 729), and
+ * turns is the duration left, 1 or 2. Encoded as (level << 2) | turns, 0 = no volatile. */
+#define DFI_ALLY_SWITCH_LEVEL_MAX 6u
+#define DFI_ALLY_SWITCH_TURNS_MAX 2u
+#define DFI_ALLY_SWITCH_LEVEL_SHIFT 2u
+#define DFI_ALLY_SWITCH_MAX ((DFI_ALLY_SWITCH_LEVEL_MAX << DFI_ALLY_SWITCH_LEVEL_SHIFT) | DFI_ALLY_SWITCH_TURNS_MAX)
 
 /* tail rev 5 (decision 0026, Illusion), per side: the foe's shown state of the holder on this side. Nothing writes it yet,
  * every byte is zero and refused otherwise. shown: the roster index + 1 of the member whose name carries the values the foe
@@ -495,6 +507,10 @@ struct duoforge_battle {
     dfi_side sides[DUOFORGE_SIDE_COUNT];
     dfi_pool_tail tail; /* POOL kinds only; all zero otherwise */
 };
+
+/* The position-bound state of two positions a and c (slots 0..1) of one side exchanges with their occupants (step G80, Ally
+ * Switch): which fields move and which stay, with the reasons, at its definition in combat/turn.c. */
+void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c);
 
 /* The move that the occupant of the position (side * 2 + slot) used last, from the tail's last_move (move slot + 1) and the
  * occupant's moves; UINT32_MAX when it has used none, used Struggle or the position is empty. The tail is zero under

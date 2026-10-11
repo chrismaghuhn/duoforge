@@ -364,6 +364,9 @@ def _tail(t, s, boundary):
         for k, p in enumerate(t._positions[side]):
             attract[side * 2 + k] = p.attract
     s.put_list("tail5.attract_source", attract)
+    # tail rev 5 (step G80): Ally Switch's counter per flat position, (level << 2) | turns, 0 = none
+    s.put_list("tail5.ally_switch", [(p.ally_level << 2) | p.ally_turns if p.ally_level else 0
+                                      for side in (0, 1) for p in t._positions[side]])
     for side in (0, 1):
         pre = f"tail.side{side}."
         s.put(pre + "aurora_veil_turns", t._conditions[side][3])

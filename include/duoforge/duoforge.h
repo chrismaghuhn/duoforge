@@ -1159,6 +1159,14 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               the pin prints none, data/abilities.ts:1549) is ITEM_SHOWN with position the frisked
                                               foe X, other the Frisk user Y, cause ABILITY, id = Frisk + 1, id2 = item + 1, every
                                               other field 0. The converter accepts only that form. */
+#define DUOFORGE_EVENT_SWAP 49u /* [swap] (Ally Switch, decision 0044, step G80): position: the user's slot before the swap,
+                                              other: the slot it moved to, cause MOVE + id2 = the move (Ally Switch), every other
+                                              field 0. Public: both players get it. The two occupants exchange their slots; nothing
+                                              else is written by the event. 48 is ITEM_SHOWN (lane B). */
+#define DUOFORGE_EVENT_COPY_BOOST 50u /* [-copyboost] (Psych Up, decision 0044, step G80; data/moves.ts:14211-14240): position:
+                                              the user, other: the target, cause MOVE + id2 = Psych Up, every other field 0. Public:
+                                              both players get it. The user takes the target's seven stages and its Focus Energy and
+                                              Dragon Cheer state; those starts are [silent] and write no event of their own. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

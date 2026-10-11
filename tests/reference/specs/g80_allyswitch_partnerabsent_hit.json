@@ -1,0 +1,67 @@
+{
+  "name": "g80_allyswitch_partnerabsent_hit",
+  "purpose": "Ally Switch with no partner (step G80, decision 0044), then Stomping Tantrum on the next turn, which hits: Audino uses Ally Switch while its partner is fainted (step 12; the onHit returns NOT_FAIL, so the result is null, data/moves.ts:326-328). Stomping Tantrum is not doubled (basePowerCallback doubles only when moveLastTurnResult === false, data/moves.ts:18054), so its damage is the undoubled one; a result of false would double it. Taken from the random differential battle fz_80_293 of run 80 (its first 14 answers), which the pinned Showdown accepted.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,532f5f20e7cd782ed9b0a06ecfaa13d3daf9410e9ad41a015508a67e6901d567",
+  "teams": [
+    "Audino (F) @ Leftovers\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nChimecho (F) @ Sitrus Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Ally Switch\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect",
+    "Chimecho (F) @ Sitrus Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Ally Switch\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nAudino (F) @ Leftovers\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 3241",
+      "p2": "team 6523"
+    },
+    {
+      "p1": "move 3 2, move 4 2",
+      "p2": "move 4, move 3 2"
+    },
+    {
+      "p1": "move 3 1, move 3",
+      "p2": "switch 4, move 3 2"
+    },
+    {
+      "p2": "switch 4, switch 3"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 4, move 1 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 2, move 2",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "move 1 -2, move 4"
+    },
+    {
+      "p1": "move 2 2, move 3 -1",
+      "p2": "move 4, move 2 2"
+    },
+    {
+      "p1": "move 2 -2, move 2",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 3 1, move 3 -1",
+      "p2": "move 2 2, move 3 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "pass, move 2 2",
+      "p2": "move 4, move 2 1"
+    }
+  ],
+  "max_steps": 14
+}

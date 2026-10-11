@@ -124,9 +124,9 @@ static inline const char *dfi_res_kind_name(uint32_t kind)
     }
 }
 
-/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 24 * 4 entries, a few draws and a few
- * orders (24 per position: the count of steps G27, G31, G32, G56, G42, G84, G84b and G90 together, DFI_RES_PER_POSITION in turn.c). */
-#define DFI_RES_MODEL_MAX 107u /* 3 + 4 * 2 + 24 * 4: DFI_RES_PER_POSITION counts Curse (step G84b) and the partial trap (G90) */
+/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 25 * 4 entries, a few draws and a few
+ * orders (25 per position: the count of steps G27, G31, G32, G56, G42, G84, G84b, G90 and G80 together, DFI_RES_PER_POSITION in turn.c). */
+#define DFI_RES_MODEL_MAX 111u /* 3 + 4 * 2 + 25 * 4: DFI_RES_PER_POSITION counts Curse (step G84b), the partial trap (G90) and the Ally Switch duration (G80) */
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
 #define DFI_RES_REGION_MAX 4u

@@ -413,6 +413,13 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 dfi_fold_illusion_switch(ill, viewer, e.id, &events->rec[i], i >= first, disg, holder, slot);
                 occupant[slot] = e.id;
             }
+            /* A swap of the foe's side (Ally Switch, step G80): the two occupants exchange their slots, the line shows which. */
+            if (e.kind == DUOFORGE_EVENT_SWAP && e.other < 2u * DUOFORGE_ACTIVE_PER_SIDE && (uint32_t)e.other / 2u == foe) {
+                const uint32_t other_slot = (uint32_t)e.other % 2u;
+                const uint32_t moved = occupant[slot];
+                occupant[slot] = occupant[other_slot];
+                occupant[other_slot] = moved;
+            }
             const uint32_t m = occupant[slot];
             if (i < first || m >= DUOFORGE_MAX_ROSTER || m >= fs->member_count) {
                 continue;

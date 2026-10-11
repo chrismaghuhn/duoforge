@@ -56,7 +56,7 @@ static void check_marks(df_test *t)
     }
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SACREDSWORD].special, DFI_SPECIAL_DARKEST_LARIAT);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].special, DFI_SPECIAL_SUPER_FANG);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ENDEAVOR + 1u /* C5 (5cy): UNMODELED follows Endeavor, the last handler (batch 8 merge order) */ /* G72b: after Alluring Voice and Dragon Cheer */) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */; /* Taunt and Yawn (G31), the four of G48, the four of G44, Double Shock (G50) and Roost and Stomping Tantrum (G42) follow */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ALLY_SWITCH + 1u /* G72b: after Alluring Voice and Dragon Cheer */) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */; /* Taunt and Yawn (G31), the four of G48, the four of G44, Double Shock (G50) and Roost and Stomping Tantrum (G42) follow */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].base_power, 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].accuracy, 90u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_CHARM].boost_role, DFI_BOOST_ROLE_PRIMARY_TARGET);
@@ -67,7 +67,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_FAKETEARS].boosts[3], 4u);
     /* Static's draw is the site 19 (Flame Body has 18, 17 is Cursed Body's) */
     DF_CHECK_EQ_U64(t, DFI_SITE_STATIC, 19u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 33u); /* step G46 adds the drag (site 20), step G54 the multi-hit count (site 22), step G73 Moody (site 23), step G90 the partial trap's turns (site 32) */
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 34u); /* step G46 adds the drag (site 20), step G54 the multi-hit count (site 22), step G73 Moody (site 23), step G80 Ally Switch (site 33) */
 }
 
 /* Damp and Sturdy are inert only while what they would act on is unmarked. */

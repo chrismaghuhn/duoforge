@@ -399,10 +399,10 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {3, 0, 252, 0, 0, 0, 0, 0}, /* 333: flat 1 (Staraptor, F): the codes 1, 9 and 11 */
     {1, 0, 254, 0, 0, 0, 0, 0}, /* 334: flat 2 (Archaludon, M): the code 2 */
     {1, 0, 254, 0, 0, 0, 0, 0}, /* 335: flat 3 (Charizard, M): the code 2 */
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1251,8 +1251,8 @@ static const tail_case cases[] = {
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
 {
-    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: the last 12 of its 16 reserve bytes (the first 4 are Attract's, step G71) */
-        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE;
+    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: the last 8 of its 16 reserve bytes (4..7 are Ally Switch's, 0..3 Attract's) */
+        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE + DFI_ENC_TAIL5_ALLY_SWITCH_COUNT;
     }
     if (off < DFI_ENC_TAIL_FIELD_SIZE) {
         return off >= DFI_ENC_TAIL_FIELD_RESERVED_OFF;
@@ -1288,8 +1288,9 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 37u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); step G90 takes 1 of the position block's 4 (rev 5: 16 more) */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 33u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); step G90 takes 1 of the position block's 4 (rev 5: 16 more) */
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_ATTRACT_OFF, 44u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_ALLY_SWITCH_OFF, 4u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF, 32u); /* step G90 (decision 0060): the partial trap's elapsed count */
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_RESERVED_OFF, 33u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
@@ -1310,15 +1311,15 @@ int main(void)
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
         /* step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes; step G90 adds the elapsed count
          * (one byte of a position's reserved four) and a pad byte per position, so each position is an even 36 bytes */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 316u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 152u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 36u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 324u); /* 316 + the Ally Switch byte and the pad of each position (G80) */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 156u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 38u); /* 35 data bytes, pos_pad (G90), the Ally Switch byte and its pad (G80) */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 37u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved */
+        DF_CHECK_EQ_U64(&t, reserved, 33u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved */
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1617,7 +1618,7 @@ int main(void)
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
         /* 41 reserved bytes: the field block's +1..+6 are party_order (G46), the position block's byte 32 is the elapsed count (G90) and the Attract sources (G71) are data */
-        DF_CHECK_EQ_U64(&t, all_reserved, 37u);    }
+        DF_CHECK_EQ_U64(&t, all_reserved, 33u);    }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
     {

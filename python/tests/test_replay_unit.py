@@ -620,6 +620,11 @@ class LinesTest(unittest.TestCase):
                 self.assertEqual(lines.check(line, self.view), "fold", line)
             else:
                 self.assertEqual(self.stop(line), reason, line)
+    def test_ally_switch_and_psych_up_fold(self):
+        # Step G80 (decision 0044): Ally Switch's |swap| (SWAP 49) and Psych Up's -copyboost (COPY_BOOST 50) are public
+        # and folded by the tracker
+        self.assertEqual(lines.check("|swap|p1a: Staraptor|1|[from] move: Ally Switch", self.view), "fold")
+        self.assertEqual(lines.check("|-copyboost|p1a: Staraptor|p2a: Gholdengo|[from] move: Psych Up", self.view), "fold")
 
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)

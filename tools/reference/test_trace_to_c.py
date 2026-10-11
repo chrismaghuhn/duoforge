@@ -213,6 +213,25 @@ class Refusals(unittest.TestCase):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
 
+    def test_a_swap_line_that_is_not_an_ally_switch_swap_is_refused(self):
+        """Step G80 (decision 0044): `|swap|` maps only as Ally Switch's own line: the user's slot and the other slot of its
+        side, with `[from] move: Ally Switch`. A swap without that attribute, or to a slot that is not 0 or 1, is refused."""
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|swap|p1a: Bulbasaur|1'),
+                     'protocol-line', "trace_to_c: unsupported |swap| line '|swap|p1a: Bulbasaur|1'", 'swap')
+        self.control('s2_turn_core_1',
+                     lambda spec, trace: trace['steps'][1]['log'].append('|swap|p1a: Bulbasaur|2|[from] move: Ally Switch'),
+                     'protocol-line', "trace_to_c: unsupported |swap| line '|swap|p1a: Bulbasaur|2|[from] move: Ally Switch'",
+                     'swap')
+
+    def test_a_copyboost_line_that_is_not_psych_ups_is_refused(self):
+        """Step G80 (decision 0044): `-copyboost` maps only as Psych Up's own line, between two Pokemon (not a side)."""
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|-copyboost|p1a: Bulbasaur|p2a: Raichu'),
+                     'protocol-line', "trace_to_c: unsupported -copyboost '|-copyboost|p1a: Bulbasaur|p2a: Raichu'", 'copyboost')
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append(
+            '|-copyboost|p1a: Bulbasaur|p2a: Raichu|[from] move: Swords Dance'),
+                     'protocol-line', "trace_to_c: unsupported -copyboost '|-copyboost|p1a: Bulbasaur|p2a: Raichu|[from] move: Swords Dance'",
+                     'copyboost')
+
     def test_a_hitcount_line_is_asserted_against_the_damage_lines_and_dropped(self):
         """`|-hitcount|P|N` (multi-hit moves, data/mods/champions/scripts.ts:427-549) is no event: N must be the number of
         -damage lines the move showed on that Pokemon. A wrong N is refused; a missing line is not an error (the Champions loop
@@ -2405,7 +2424,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 287)  # G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
+        self.assertEqual(len(marked), 290)  # G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2436,6 +2455,9 @@ class Library(unittest.TestCase):
                                     done = True
                             # Memento (step G92, decision 0062): the two -unboost lines of the target before its user faints.
                             done = done or (name == 'Memento' and after.startswith('|-unboost|'))
+                            # Psych Up (step G80): the -copyboost line of the copy; Ally Switch: its swap line (the consecutive refusals are -fail).
+                            done = done or (name == 'Psych Up' and after.startswith('|-copyboost|'))
+                            done = done or (name == 'Ally Switch' and after.startswith('|swap|'))
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
                             # Baton Pass (step G74): its switch line names it as the cause, `|switch|...|[from] Baton Pass`.

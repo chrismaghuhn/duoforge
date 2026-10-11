@@ -740,7 +740,9 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_HEALING_WISH, DFI_SPECIAL_LEVEL_DAMAGE + 1u); /* step G82 (decision 0045): Healing Wish follows Level Damage (batch 8 merge order) */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PARTIAL_TRAP, DFI_SPECIAL_HEALING_WISH + 1u); /* step G90 (decision 0060): the partial trap follows Healing Wish (batch 8 merge order) */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENDEAVOR, DFI_SPECIAL_PARTIAL_TRAP + 1u); /* step C5 (decision 0015 5cy): Endeavor follows the partial trap (batch 8 merge order) */
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ENDEAVOR + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PSYCH_UP, DFI_SPECIAL_ENDEAVOR + 1u); /* step G80 (decision 0044) */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ALLY_SWITCH, DFI_SPECIAL_PSYCH_UP + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ALLY_SWITCH + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TAUNT].special, DFI_SPECIAL_TAUNT);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_YAWN].special, DFI_SPECIAL_YAWN);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PERISHSONG].special, DFI_SPECIAL_PERISH_SONG);
@@ -1598,7 +1600,9 @@ int main(void)
                                                 /* step C5 (decision 0015 entry 5cy): Surf */
                                                 DFI_MOVE_SURF,
                                                 /* step C5 (decision 0015 entry 5cy): Endeavor */
-                                                DFI_MOVE_ENDEAVOR};
+                                                DFI_MOVE_ENDEAVOR,
+                                                /* step G80: Psych Up, Howl and Ally Switch (decision 0044) */
+                                                DFI_MOVE_PSYCHUP, DFI_MOVE_HOWL, DFI_MOVE_ALLYSWITCH};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1610,7 +1614,7 @@ int main(void)
              * family), Low Kick (Grass Knot's), Soak (step G11), Wide Guard (step G7), the two weather moves and Detect
              * (Protect's, step G13), Knock Off (step G16), Aurora Veil and Spiky Shield (step G20), Perish Song (step G26); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
-                             id == DFI_MOVE_DESTINYBOND || id == DFI_MOVE_FINALGAMBIT || /* step G76 */
+                             id == DFI_MOVE_DESTINYBOND || id == DFI_MOVE_FINALGAMBIT || id == DFI_MOVE_PSYCHUP || id == DFI_MOVE_ALLYSWITCH || /* G76, G80 */
                              id == DFI_MOVE_STORMTHROW || id == DFI_MOVE_FLOWERTRICK || id == DFI_MOVE_FROSTBREATH || /* step C4: WILL_CRIT */
                              /* step G90 (decision 0060): the partial trap moves, the volatile is their own handler */
                              id == DFI_MOVE_BIND || id == DFI_MOVE_WRAP || id == DFI_MOVE_FIRESPIN ||
@@ -1676,7 +1680,7 @@ int main(void)
          * DragOut and the drag-in. Skill Swap is marked (G70, decision 0041), and dfi_drag_blocked reads the holder's ability
          * at the drag-in (dfi_ability, the current one), so the re-check is correct, not equivalent. */
         DF_CHECK_EQ_U64(&t, dfi_support.moves[DFI_MOVE_SKILLSWAP] != 0u ? 1u : 0u, 1u);
-        DF_CHECK_EQ_U64(&t, marked_count, 287u); /* C5 (decision 0015 5cy): Surf and Endeavor make 287 (285 before); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82 (decision 0045): Healing Wish marked (279 before); G92 (decision 0062): the nine marks make 279 (270 before); G84 (decision 0047): Leech Seed and Curse make 270 (268 before); batch 6 (5cq): Charge Beam and Wild Charge make 268 (266 before); step C4 (decision 0015 5ct): 15 more make 266 (251 before); step G86 (decision 0048): the seven of this batch make 251 (244 before); step C2 (decision 0015 5cp): 22 moves make 244 (222 before); step G94 (decision 0015 5cv): Baneful Bunker makes 222 (221 before); step C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); step G88 (decision 0046): Lash Out and Assurance make 203 (201 before); step G78: Dragon Darts makes 201 (200 before); step G76: Destiny Bond and Final Gambit make 200 (198 before); step G74: Baton Pass makes 198; step G72b:Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 makes 195; the Skill Swap of G70 makes 194 (193 with the four of G68: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer; 189 with the Phantom Force of G58; 188 of G64, G62 and G60) */ /* 187 of G64 and G62, the Substitute of G60 makes 188 */ /* step G64: Poltergeist, Beat Up, Bug Bite and Sheer Cold (decision 0015 item 5ca). Before: 180; seven more: step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing) */ /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
+        DF_CHECK_EQ_U64(&t, marked_count, 290u); /* C5 (decision 0015 5cy): Surf and Endeavor make 287 (285 before); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82 (decision 0045): Healing Wish marked (279 before); G92 (decision 0062): the nine marks make 279 (270 before); G84 (decision 0047): Leech Seed and Curse make 270 (268 before); batch 6 (5cq): Charge Beam and Wild Charge make 268 (266 before); step C4 (decision 0015 5ct): 15 more make 266 (251 before); step G86 (decision 0048): the seven of this batch make 251 (244 before); step C2 (decision 0015 5cp): 22 moves make 244 (222 before); step G94 (decision 0015 5cv): Baneful Bunker makes 222 (221 before); step C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); step G88 (decision 0046): Lash Out and Assurance make 203 (201 before); step G78: Dragon Darts makes 201 (200 before); step G76: Destiny Bond and Final Gambit make 200 (198 before); step G74: Baton Pass makes 198; step G72b:Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 makes 195; the Skill Swap of G70 makes 194 (193 with the four of G68: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer; 189 with the Phantom Force of G58; 188 of G64, G62 and G60) */ /* 187 of G64 and G62, the Substitute of G60 makes 188 */ /* step G64: Poltergeist, Beat Up, Bug Bite and Sheer Cold (decision 0015 item 5ca). Before: 180; seven more: step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing) */ /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only

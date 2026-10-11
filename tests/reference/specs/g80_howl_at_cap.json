@@ -1,0 +1,49 @@
+{
+  "name": "g80_howl_at_cap",
+  "purpose": "Howl (step G80, decision 0044; Champions allies, primary boost) with both targets at +6 Attack: the user Houndoom and its ally Delphox (step 8; the other side's Chimecho swaps in the same step). Each -boost shows 0 and no stat changes, so the hit loop fails and the [spread] line lists no slot (sim/battle-actions.ts:614-618). A target whose stat changes stays in the line, as in fz_90_7 (step 21). Taken from the random differential battle fz_90_37 of run 90 (its first 9 answers), which the pinned Showdown accepted.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,eb55a7f368b1fea6850657f1179acfe5823b06245c1989ca875ccac30083cf60",
+  "teams": [
+    "Milotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Encore\n- Ally Switch\n\nAudino (F)\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand",
+    "Lycanroc (F)\nAbility: Keen Eye\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Howl\n- Protect\n- Helping Hand\n- Rock Slide\n\nHoundoom (F)\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Howl\n- Dark Pulse\n- Flamethrower\n- Helping Hand\n\nArcanine (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Howl\n- Flamethrower\n- Helping Hand\n- Flare Blitz\n\nLucario (M)\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Howl\n- Dark Pulse\n- Calm Mind\n- Earthquake\n\nDelphox (F)\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Howl\n- Dazzling Gleam\n- Calm Mind\n- Flamethrower\n\nLuxray (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Howl\n- Protect\n- Helping Hand\n- Thunderbolt"
+  ],
+  "choices": [
+    {
+      "p1": "team 3154",
+      "p2": "team 5236"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 4 -2, move 4 -1"
+    },
+    {
+      "p1": "move 3 -2, move 2",
+      "p2": "move 1, move 4 -1"
+    },
+    {
+      "p1": "switch 4, move 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 2 -2, move 1",
+      "p2": "move 4 1, move 1"
+    },
+    {
+      "p1": "move 2 -2, move 3 -1",
+      "p2": "move 4 1, move 2 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4 1, move 1"
+    }
+  ],
+  "max_steps": 9
+}
