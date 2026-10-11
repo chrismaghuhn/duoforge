@@ -326,7 +326,7 @@ int main(void)
             const bool bit = (dfi_pool_move_flags2[id] & DFI_MOVE_FLAG2_RECHARGE) != 0u;
             flagged += bit ? 1u : 0u;
             if (bit) {
-                DF_CHECK(&t, (dfi_support.moves[id] != 0u) == (id != DFI_MOVE_METEORASSAULT));
+                DF_CHECK(&t, dfi_support.moves[id] != 0u); /* step C3: Meteor Assault is marked (Sirfetch'd: Steadfast and Scrappy) */
                 DF_CHECK(&t, dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
             }
         }
