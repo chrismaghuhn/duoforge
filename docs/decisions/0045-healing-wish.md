@@ -190,6 +190,12 @@ The view feature 43 (`DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH`, COUNT 44) breaks t
 a position bit above 21 gets an explicit, named refusal there). After that merge: merge origin/main and add only the
 family-table entry for feature 43 in `src/encode/encode.c`. encode.c is not touched before then.
 
+**Integration (batch 8, merge `4884b077`, 2026-10-11):** the COUNT 44 above is superseded. `DUOFORGE_VIEWEXT_FEATURE_COUNT`
+stays the tier count 43 (bits 0 to 42, encoder 5's features); `HEALING_WISH` 43 is the first lane feature (43 to 58,
+decision 0050), outside the tiers like `TRAP_ELAPSED` 45 and `ATTRACT_SOURCE` 53. Encoder 6 shows it through
+`DUOFORGE_VIEWEXT_RESERVE_OWN` (`X(RESERVE_VOLATILES, 22u, HEALING_WISH)`); encoders 1 to 5 have no column for it
+(`E_INVALID_ARGUMENT` for the mask bit). `tests/moves/test_pool_g82.c` pins this (#430).
+
 Status at this point: the engine, state, invariant, generator row, converter branch, specs R1, R2, R3, R5, T2, R6 and their
 recorded traces, the C view tests (`tests/test_pool_g82.c`, M11), and the mutant file are committed. The mutants have not run:
 the last combined job stopped at the build (the encode.c assertion), so no mutant is caught yet. Open: the baseline run after

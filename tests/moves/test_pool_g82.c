@@ -2,12 +2,14 @@
  * duoforge.state.pool_g82 (white-box): Healing Wish (decision 0045, step G82). Position bit 0 is the slot's wish: the occupant's
  * clear (a switch-out, a replacement's entry) keeps it and ends the other bits with the occupant; the heal of the entrant is a HEAL
  * event with cause MOVE and the move id, which the foe sees as a percentage like every heal (decision 0007); the view bit and its
- * feature are the manifest's and the public values of the header (0x00400000, feature 43, count 44).
+ * feature are the manifest's and the public values of the header (0x00400000, feature 43, a lane's feature above the tiers: the
+ * tier count stays 43, as the batch 8 integration kept it, 4884b077).
  *
- * The recorded battles g82_r1_normal_heal and g82_r2_full_hp_kept (conformance_pool.h, the tapes of their specs) are replayed here
- * command by command: after the Healing Wish user faints, the view of both viewers shows DUOFORGE_POSITION_EXT_HEALING_WISH at that
- * slot (public); after a heal on entry it is gone (R1); with a full-HP entrant it stays set (R2); and battle_from_view rebuilds the
- * tail bit 0 from the view bit (the round trip). Flat positions: side 0 slots 0 and 1 (flat 0, 1), side 1 (flat 2, 3).
+ * The recorded battles g82_r1_normal_heal and g82_r2_full_hp_kept (conformance_pool.h) are replayed here step by step, each step
+ * with its recorded commands and the reference's draws as the tape: after the Healing Wish user faints, the view of both viewers
+ * shows DUOFORGE_POSITION_EXT_HEALING_WISH at that slot (public); after a heal on entry it is gone (R1); with a full-HP entrant it
+ * stays set (R2); and battle_from_view rebuilds the tail bit 0 from the view (the round trip). Flat positions: side 0 slots 0 and 1
+ * (flat 0, 1), side 1 (flat 2, 3).
  */
 #include <stdio.h>
 #include <string.h>
@@ -19,9 +21,11 @@
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
+#include "rng/draw.h"
 #include "state/identity.h"
 #include "state/invariants.h"
 #include "state/knowledge.h"
+#include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
@@ -76,28 +80,26 @@ static void test_wish_kept_by_occupant_clear(df_test *t)
     DF_CHECK_EQ_U64(t, b.tail.sides[0].positions[0].position_flags, 0u);
 }
 
-/* The public values: the view bit 0x00400000 (decision 0045), the feature 43 in the manifest, and the feature count 44. */
+/* The public values: the view bit 0x00400000 (decision 0045), the feature 43 in the manifest. Feature 43 is the first of the
+ * content expansion's lane features (43 to 58, decision 0050), above the tiers 0 to COUNT - 1 (COUNT 43, encoder 5's TRANSFORM
+ * is the last tier) and below the reserve families (59 to 63): encoder 6 shows it through RESERVE_OWN, encoder 5 has no column
+ * for it. */
 static void test_public_values(df_test *t)
 {
     DF_CHECK_EQ_U64(t, DUOFORGE_POSITION_EXT_HEALING_WISH, 0x00400000u);
     DF_CHECK_EQ_U64(t, DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH, 43u);
-    DF_CHECK_EQ_U64(t, DUOFORGE_VIEWEXT_FEATURE_COUNT, 44u);
+    DF_CHECK_EQ_U64(t, DUOFORGE_VIEWEXT_FEATURE_COUNT, 43u);
+    DF_CHECK(t, DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH >= DUOFORGE_VIEWEXT_FEATURE_COUNT &&
+                    DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH < DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES);
     DF_CHECK(t, ((dfi_support.view_ext_features >> DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH) & 1u) == 1u);
 }
 
-/* ---- the recorded tapes: the battle of a spec, replayed command by command ---- */
+/* ---- the recorded battles: their steps replayed with the reference's draws as the tape ---- */
 
-typedef struct g82_cmd {
-    uint8_t kind;      /* DUOFORGE_SLOT_MOVE, DUOFORGE_SLOT_SWITCH or DUOFORGE_SLOT_PASS */
-    uint8_t move_slot; /* 0-based */
-    uint8_t target;    /* flat position, DUOFORGE_TARGET_NONE for none */
-    uint8_t reserve;   /* roster index, for a switch */
-} g82_cmd;
-
-#define MV(slot, target) {DUOFORGE_SLOT_MOVE, (slot), (target), 0u}
-#define SW(reserve) {DUOFORGE_SLOT_SWITCH, 0u, DUOFORGE_TARGET_NONE, (reserve)}
-#define PASS {DUOFORGE_SLOT_PASS, 0u, DUOFORGE_TARGET_NONE, 0u}
-#define NO DUOFORGE_TARGET_NONE
+/* The recorded steps of R1 and R2 (conformance_pool.h): 0 the team preview, 1 turn 1, 2 side 1's replacement (its KO in turn 1),
+ * 3 turn 2 (Lopunny's Healing Wish at side 0 slot 1, the user faints), 4 side 0's replacement into that slot. */
+#define G82_STEPS_TO_FAINT 4u
+#define G82_STEP_ENTRY 4u
 
 static const df_conf_battle *find_conf(const char *name)
 {
@@ -135,88 +137,89 @@ static void setup_from(const df_conf_battle *cb, duoforge_battle_setup *s)
     }
 }
 
-/* The team preview: the first four of each paste (the leads are the first two), as the recorded battles pick them. */
-static void team_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
+/* The bundle of recorded step `st`: the sides it answered, with their picks or slot commands. */
+static void bundle_of(const df_conf_step *st, const duoforge_battle *b, duoforge_decision_bundle *bd)
 {
     memset(bd, 0, sizeof *bd);
     bd->epoch = b->request_epoch;
-    bd->response_mask = 3u;
-    for (uint32_t side = 0u; side < 2u; ++side) {
-        duoforge_side_choice *c = &bd->responses[side];
-        c->epoch = b->request_epoch;
-        c->side = (uint8_t)side;
-        c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
-        c->pick_count = 4u;
-        for (uint32_t i = 0u; i < 4u; ++i) {
-            c->picks[i] = (uint8_t)i;
+    bd->response_mask = (uint8_t)(st->answered0 | (st->answered1 << 1u)); /* wide-operands-reviewed */
+    for (uint32_t s = 0u; s < 2u; ++s) {
+        if ((s == 0u && !st->answered0) || (s == 1u && !st->answered1)) {
+            continue;
+        }
+        duoforge_side_choice *r = &bd->responses[s];
+        r->epoch = b->request_epoch;
+        r->side = (uint8_t)s;
+        if (st->team) {
+            r->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            r->pick_count = 4u;
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                r->picks[i] = st->picks[s][i];
+            }
+        } else {
+            r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+            for (uint32_t k = 0u; k < 2u; ++k) {
+                const df_conf_cmd *c = &st->cmds[s][k];
+                r->slots[k] = (duoforge_slot_command){c->kind, c->move_slot, c->target, c->mega, c->reserve, {0u, 0u, 0u}};
+            }
         }
     }
 }
 
-/* One turn: cmd[side][slot], both sides. */
-static void turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b, const g82_cmd cmd[2][2])
+/* Steps [from, to) of the recorded battle on b, each with its recorded draws (every one consumed) and its recorded boundary. */
+static bool replay(df_test *t, const duoforge_context *ctx, duoforge_battle *b, const df_conf_battle *cb, uint32_t from,
+                   uint32_t to)
 {
-    memset(bd, 0, sizeof *bd);
-    bd->epoch = b->request_epoch;
-    bd->response_mask = 3u;
-    for (uint32_t side = 0u; side < 2u; ++side) {
-        duoforge_side_choice *c = &bd->responses[side];
-        c->epoch = b->request_epoch;
-        c->side = (uint8_t)side;
-        c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
-        for (uint32_t slot = 0u; slot < 2u; ++slot) {
-            c->slots[slot].kind = cmd[side][slot].kind;
-            c->slots[slot].move_slot = cmd[side][slot].move_slot;
-            c->slots[slot].target = cmd[side][slot].target;
-            c->slots[slot].reserve = cmd[side][slot].reserve;
+    if (!DF_CHECK(t, to <= cb->step_count)) {
+        return false;
+    }
+    for (uint32_t si = from; si < to; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0u;
+        if (!DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res) ==
+                             DUOFORGE_OK) ||
+            !DF_CHECK_EQ_U64(t, used, st->tape_len) || !DF_CHECK_EQ_U64(t, b->boundary_kind, st->boundary)) {
+            fprintf(stderr, "  %s step %u\n", cb->name, si);
+            return false;
         }
     }
+    return true;
 }
 
-/* A replacement answer of side 0 alone (the other side is not asked at this boundary). */
-static void replacement_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b, const g82_cmd side0[2])
-{
-    memset(bd, 0, sizeof *bd);
-    bd->epoch = b->request_epoch;
-    bd->response_mask = 1u;
-    duoforge_side_choice *c = &bd->responses[0];
-    c->epoch = b->request_epoch;
-    c->side = 0u;
-    c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
-    for (uint32_t slot = 0u; slot < 2u; ++slot) {
-        c->slots[slot].kind = side0[slot].kind;
-        c->slots[slot].move_slot = side0[slot].move_slot;
-        c->slots[slot].target = side0[slot].target;
-        c->slots[slot].reserve = side0[slot].reserve;
-    }
-}
-
-/* Starts the recorded battle `name` (the team preview is answered). */
-static bool start(df_test *t, const char *name, duoforge_context **ctx, duoforge_battle **b, duoforge_decision_bundle *bd,
-                  duoforge_step_result *res)
+/* Starts the recorded battle `name` and replays it up to the faint of the Healing Wish user: a REPLACEMENT boundary that asks
+ * side 0 alone (the recorded step G82_STEP_ENTRY answers side 0 only). */
+static bool start(df_test *t, const char *name, duoforge_context **ctx, duoforge_battle **b, const df_conf_battle **cb)
 {
     *ctx = df_make_context(&df_config_pool);
     DF_CHECK(t, *ctx != NULL);
-    const df_conf_battle *cb = find_conf(name);
-    DF_CHECK(t, cb != NULL);
-    if (*ctx == NULL || cb == NULL) {
+    *cb = find_conf(name);
+    DF_CHECK(t, *cb != NULL);
+    if (*ctx == NULL || *cb == NULL || !DF_CHECK(t, (*cb)->step_count > G82_STEP_ENTRY)) {
         return false;
     }
+    const df_conf_step *entry = &(*cb)->steps[G82_STEP_ENTRY];
+    DF_CHECK(t, entry->answered0 == 1u && entry->answered1 == 0u && entry->team == 0u);
     duoforge_battle_setup s;
-    setup_from(cb, &s);
+    setup_from(*cb, &s);
     *b = df_make_battle(*ctx, &s);
     DF_CHECK(t, *b != NULL);
-    if (*b == NULL) {
+    if (*b == NULL || !replay(t, *ctx, *b, *cb, 0u, G82_STEPS_TO_FAINT)) {
         return false;
     }
-    team_bundle(bd, *b);
-    return duoforge_battle_step(*ctx, *b, bd, res) == DUOFORGE_OK;
+    return DF_CHECK_EQ_U64(t, (*b)->boundary_kind, DUOFORGE_BOUNDARY_REPLACEMENT);
 }
 
 static void finish(duoforge_context *ctx, duoforge_battle *b)
 {
-    duoforge_battle_destroy(b);
-    duoforge_context_destroy(ctx);
+    if (b != NULL) {
+        duoforge_battle_destroy(b);
+    }
+    if (ctx != NULL) {
+        duoforge_context_destroy(ctx);
+    }
 }
 
 /* The view bit of a side-0 position as both viewers see it (the bit is public: the wish is no hidden state). */
@@ -228,30 +231,27 @@ static void check_view_bit(df_test *t, duoforge_context *ctx, const duoforge_bat
         const bool got = (ob.sides[side].positions[slot].volatiles & DUOFORGE_POSITION_EXT_HEALING_WISH) != 0u;
         DF_CHECK(t, got == want);
     }
-    (void)b;
 }
 
-/* The round trip (battle_from_view): the public state of viewer 0 at the faint rebuilds the tail bit 0 of the wish slot. The
- * hypothesis is the zero one: the hidden parts are not the point of this check, the wish bit is. */
-static void check_round_trip(df_test *t, duoforge_context *ctx, const duoforge_battle *b, const char *name)
+/* The round trip (battle_from_view): the public state of viewer 0 at the faint, with viewer 0's true hypothesis
+ * (duoforge_battle_hypothesis, the current revision), rebuilds the tail bit 0 of the wish slot in a fresh world of the same
+ * setup, which starts without it. */
+static void check_round_trip(df_test *t, duoforge_context *ctx, const duoforge_battle *b, const df_conf_battle *cb)
 {
     duoforge_public_state pub;
     memset(&pub, 0, sizeof pub);
     DF_CHECK_EQ_U64(t, duoforge_battle_public(ctx, b, 0u, &pub), DUOFORGE_OK);
+    duoforge_hypothesis hyp;
+    memset(&hyp, 0, sizeof hyp);
+    DF_CHECK_EQ_U64(t, duoforge_battle_hypothesis(ctx, b, 0u, &hyp), DUOFORGE_OK);
     duoforge_battle_setup s;
-    const df_conf_battle *cb = find_conf(name);
-    DF_CHECK(t, cb != NULL);
-    if (cb == NULL) {
-        return;
-    }
     setup_from(cb, &s);
     duoforge_battle *world = df_make_battle(ctx, &s);
     DF_CHECK(t, world != NULL);
     if (world == NULL) {
         return;
     }
-    duoforge_hypothesis hyp;
-    memset(&hyp, 0, sizeof hyp);
+    DF_CHECK(t, (world->tail.sides[0].positions[1].position_flags & DFI_POSFLAG_HEALING_WISH) == 0u);
     DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &pub, &hyp, world), DUOFORGE_OK);
     DF_CHECK(t, (world->tail.sides[0].positions[1].position_flags & DFI_POSFLAG_HEALING_WISH) != 0u);
     duoforge_battle_destroy(world);
@@ -262,25 +262,16 @@ static void test_r1_view(df_test *t)
 {
     duoforge_context *ctx = NULL;
     duoforge_battle *b = NULL;
-    duoforge_decision_bundle bd;
-    duoforge_step_result res;
-    if (!start(t, "g82_r1_normal_heal", &ctx, &b, &bd, &res)) {
+    const df_conf_battle *cb = NULL;
+    if (!start(t, "g82_r1_normal_heal", &ctx, &b, &cb)) {
         finish(ctx, b);
         return;
     }
-    static const g82_cmd turn1[2][2] = {{MV(0, 3u), MV(1, NO)}, {MV(0, NO), MV(0, 0u)}};
-    turn_bundle(&bd, b, turn1);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
-    static const g82_cmd turn2[2][2] = {{SW(2), MV(0, NO)}, {MV(0, NO), MV(0, 0u)}};
-    turn_bundle(&bd, b, turn2);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
     /* the Healing Wish user has fainted: the slot holds the wish, public to both viewers */
     DF_CHECK(t, (b->tail.sides[0].positions[1].position_flags & DFI_POSFLAG_HEALING_WISH) != 0u);
     check_view_bit(t, ctx, b, 0u, 1u, true);
-    check_round_trip(t, ctx, b, "g82_r1_normal_heal");
-    static const g82_cmd repl[2] = {PASS, SW(0)};
-    replacement_bundle(&bd, b, repl);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    check_round_trip(t, ctx, b, cb);
+    DF_CHECK(t, replay(t, ctx, b, cb, G82_STEP_ENTRY, G82_STEP_ENTRY + 1u));
     /* the heal on entry: the bit is gone for both viewers */
     check_view_bit(t, ctx, b, 0u, 1u, false);
     DF_CHECK(t, (b->tail.sides[0].positions[1].position_flags & DFI_POSFLAG_HEALING_WISH) == 0u);
@@ -293,25 +284,18 @@ static void test_r2_view(df_test *t)
 {
     duoforge_context *ctx = NULL;
     duoforge_battle *b = NULL;
-    duoforge_decision_bundle bd;
-    duoforge_step_result res;
-    if (!start(t, "g82_r2_full_hp_kept", &ctx, &b, &bd, &res)) {
+    const df_conf_battle *cb = NULL;
+    if (!start(t, "g82_r2_full_hp_kept", &ctx, &b, &cb)) {
         finish(ctx, b);
         return;
     }
-    static const g82_cmd turn1[2][2] = {{MV(0, 3u), MV(1, NO)}, {MV(0, NO), MV(0, 1u)}};
-    turn_bundle(&bd, b, turn1);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
-    static const g82_cmd turn2[2][2] = {{SW(2), MV(0, NO)}, {MV(0, NO), MV(0, 1u)}};
-    turn_bundle(&bd, b, turn2);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK(t, (b->tail.sides[0].positions[1].position_flags & DFI_POSFLAG_HEALING_WISH) != 0u);
     check_view_bit(t, ctx, b, 0u, 1u, true);
-    static const g82_cmd repl[2] = {PASS, SW(0)};
-    replacement_bundle(&bd, b, repl);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK(t, replay(t, ctx, b, cb, G82_STEP_ENTRY, G82_STEP_ENTRY + 1u));
     /* the full-HP entrant does not consume the wish: the bit stays set for both viewers */
     check_view_bit(t, ctx, b, 0u, 1u, true);
     DF_CHECK(t, (b->tail.sides[0].positions[1].position_flags & DFI_POSFLAG_HEALING_WISH) != 0u);
+    DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
     finish(ctx, b);
 }
 
