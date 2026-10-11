@@ -456,6 +456,10 @@ struct duoforge_battle {
     dfi_pool_tail tail; /* POOL kinds only; all zero otherwise */
 };
 
+/* The position-bound state of two positions a and c (slots 0..1) of one side exchanges with their occupants (step G80, Ally
+ * Switch): which fields move and which stay, with the reasons, at its definition in combat/turn.c. */
+void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c);
+
 /* The move that the occupant of the position (side * 2 + slot) used last, from the tail's last_move (move slot + 1) and the
  * occupant's moves; UINT32_MAX when it has used none, used Struggle or the position is empty. The tail is zero under
  * every kind but POOL. Step G30: Rage Powder shares the position's DFI_VOL_FOLLOW_ME bit with Follow Me, which is told

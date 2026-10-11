@@ -8,6 +8,7 @@
  * Switch byte of the tail: its codec round trip in reserve bytes 4..7, the invariant that refuses a level or a turn count out of
  * range, and the Illusion refusal (E_UNSUPPORTED) of a swap whose partner may hold Illusion, set through the tail's ability_now.
  */
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -256,6 +257,112 @@ static void test_illusion_refusal(df_test *t)
     finish(ctx, b);
 }
 
+/* dfi_swap_position_state (step G80; the inventory is its comment in combat/turn.c): every field the swap moves gets a distinct
+ * value on each side of the exchange before it, and the fields the swap keeps get one too. After the swap, a moved field holds
+ * the other position's value, a kept field its own, and nothing outside the two positions and the trap/leech references changes. */
+static void test_swap_position_fields(df_test *t)
+{
+    struct duoforge_battle *b = (struct duoforge_battle *)calloc(1, sizeof *b);
+    DF_CHECK(t, b != NULL);
+    if (b == NULL) {
+        return;
+    }
+    dfi_active_slot *sa = &b->sides[0].positions[0];
+    dfi_active_slot *sc = &b->sides[0].positions[1];
+    sa->activation_id = 1001u; sc->activation_id = 2001u;
+    sa->occupant = 2u; sc->occupant = 3u;
+    for (uint32_t k = 0u; k < DFI_STAT_STAGE_COUNT; ++k) {
+        sa->stages[k] = (uint8_t)(10u + k); sc->stages[k] = (uint8_t)(20u + k);
+    }
+    sa->flags = 0x21u; sc->flags = 0x42u;
+    sa->stall_level = 1u; sc->stall_level = 2u;
+    sa->stall_turns = 3u; sc->stall_turns = 4u;
+    sa->confusion_turns = 5u; sc->confusion_turns = 6u;
+    sa->charge_turns = 7u; sc->charge_turns = 8u;
+    sa->locked_move = 9u; sc->locked_move = 10u;
+    sa->locked_target = 11u; sc->locked_target = 12u; /* kept: a slot location */
+    sa->move_actions = 13u; sc->move_actions = 14u;
+    sa->switch_flag = 15u; sc->switch_flag = 16u;
+    /* the tail of each position: every byte distinct, the Healing Wish bit set on position 0 only (a slot condition) */
+    dfi_tail_pos *ta = &b->tail.sides[0].positions[0];
+    dfi_tail_pos *tc = &b->tail.sides[0].positions[1];
+    for (size_t k = 0u; k < sizeof(dfi_tail_pos); ++k) {
+        ((uint8_t *)ta)[k] = (uint8_t)(0x30u + k);
+        ((uint8_t *)tc)[k] = (uint8_t)(0x90u + k);
+    }
+    ta->position_flags = (uint8_t)(ta->position_flags | (uint8_t)DFI_POSFLAG_HEALING_WISH);
+    tc->position_flags = (uint8_t)(tc->position_flags & (uint8_t)~DFI_POSFLAG_HEALING_WISH);
+    dfi_tail_pos before_a = *ta;
+    dfi_tail_pos before_c = *tc;
+    /* the sealed commands and the request bits are slot-bound: they are set and must not move */
+    b->sides[0].sealed_cmds[0].move_slot = 4u;
+    b->sides[0].sealed_cmds[1].move_slot = 5u;
+    b->sides[0].requested_slots = 3u;
+    /* the trap and the leech seed of the other side name the two positions: they follow the Pokemon */
+    b->tail.sides[1].positions[0].trap_source = 1u; /* flat 0 + 1 */
+    b->tail.sides[1].positions[1].leech_seed_source = 2u; /* flat 1 + 1 */
+    /* a value on the other side, and a party order: the entries of the two active positions exchange */
+    b->tail.sides[1].positions[0].stockpile = 77u;
+    dfi_party_put(&b->tail, 0u, 0u, 1u);
+    dfi_party_put(&b->tail, 0u, 1u, 2u);
+    dfi_party_put(&b->tail, 0u, 2u, 3u);
+
+    dfi_swap_position_state(b, 0u, 0u, 1u);
+
+    /* the slot records: the Pokemon's fields moved, locked_target stayed with the slot */
+    DF_CHECK_EQ_U64(t, sc->activation_id, 1001u);
+    DF_CHECK_EQ_U64(t, sa->activation_id, 2001u);
+    DF_CHECK_EQ_U64(t, sc->occupant, 2u);
+    DF_CHECK_EQ_U64(t, sa->occupant, 3u);
+    for (uint32_t k = 0u; k < DFI_STAT_STAGE_COUNT; ++k) {
+        DF_CHECK_EQ_U64(t, sc->stages[k], 10u + k);
+        DF_CHECK_EQ_U64(t, sa->stages[k], 20u + k);
+    }
+    DF_CHECK_EQ_U64(t, sc->flags, 0x21u);
+    DF_CHECK_EQ_U64(t, sa->flags, 0x42u);
+    DF_CHECK_EQ_U64(t, sc->stall_level, 1u);
+    DF_CHECK_EQ_U64(t, sa->stall_level, 2u);
+    DF_CHECK_EQ_U64(t, sc->stall_turns, 3u);
+    DF_CHECK_EQ_U64(t, sa->stall_turns, 4u);
+    DF_CHECK_EQ_U64(t, sc->confusion_turns, 5u);
+    DF_CHECK_EQ_U64(t, sa->confusion_turns, 6u);
+    DF_CHECK_EQ_U64(t, sc->charge_turns, 7u);
+    DF_CHECK_EQ_U64(t, sa->charge_turns, 8u);
+    DF_CHECK_EQ_U64(t, sc->locked_move, 9u);
+    DF_CHECK_EQ_U64(t, sa->locked_move, 10u);
+    DF_CHECK_EQ_U64(t, sc->move_actions, 13u);
+    DF_CHECK_EQ_U64(t, sa->move_actions, 14u);
+    DF_CHECK_EQ_U64(t, sc->switch_flag, 15u);
+    DF_CHECK_EQ_U64(t, sa->switch_flag, 16u);
+    DF_CHECK_EQ_U64(t, sa->locked_target, 11u);
+    DF_CHECK_EQ_U64(t, sc->locked_target, 12u);
+    /* the tail: every byte moved, except the Healing Wish bit of each slot, which stayed */
+    for (size_t k = 0u; k < sizeof(dfi_tail_pos); ++k) {
+        if (k == offsetof(dfi_tail_pos, position_flags)) {
+            continue;
+        }
+        DF_CHECK_EQ_U64(t, ((uint8_t *)ta)[k], ((uint8_t *)&before_c)[k]);
+        DF_CHECK_EQ_U64(t, ((uint8_t *)tc)[k], ((uint8_t *)&before_a)[k]);
+    }
+    DF_CHECK_EQ_U64(t, (uint32_t)ta->position_flags & (uint32_t)DFI_POSFLAG_HEALING_WISH, (uint32_t)DFI_POSFLAG_HEALING_WISH);
+    DF_CHECK_EQ_U64(t, (uint32_t)tc->position_flags & (uint32_t)DFI_POSFLAG_HEALING_WISH, 0u);
+    DF_CHECK_EQ_U64(t, (uint32_t)ta->position_flags & ~(uint32_t)DFI_POSFLAG_HEALING_WISH,
+                    (uint32_t)before_c.position_flags & ~(uint32_t)DFI_POSFLAG_HEALING_WISH);
+    /* the references: the trapper and the seeder follow the Pokemon */
+    DF_CHECK_EQ_U64(t, b->tail.sides[1].positions[0].trap_source, 2u);
+    DF_CHECK_EQ_U64(t, b->tail.sides[1].positions[1].leech_seed_source, 1u);
+    /* the party order entries 0 and 1 exchange, entry 2 is untouched */
+    DF_CHECK_EQ_U64(t, dfi_party_entry(&b->tail, 0u, 0u), 2u);
+    DF_CHECK_EQ_U64(t, dfi_party_entry(&b->tail, 0u, 1u), 1u);
+    DF_CHECK_EQ_U64(t, dfi_party_entry(&b->tail, 0u, 2u), 3u);
+    /* slot-bound and other-side state stays */
+    DF_CHECK_EQ_U64(t, b->sides[0].sealed_cmds[0].move_slot, 4u);
+    DF_CHECK_EQ_U64(t, b->sides[0].sealed_cmds[1].move_slot, 5u);
+    DF_CHECK_EQ_U64(t, b->sides[0].requested_slots, 3u);
+    DF_CHECK_EQ_U64(t, b->tail.sides[1].positions[0].stockpile, 77u);
+    free(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -264,5 +371,6 @@ int main(void)
     test_codec_round_trip(&t);
     test_invariant(&t);
     test_illusion_refusal(&t);
+    test_swap_position_fields(&t);
     return df_test_end(&t);
 }

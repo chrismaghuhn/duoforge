@@ -4851,6 +4851,63 @@ static void dfi_run_swap_scratch(dfi_run *r, uint32_t user, uint32_t partner)
     r->lock_restarted = dfi_swap_bits(r->lock_restarted, user, partner);
 }
 
+/* The position-bound state of a battle (step G80, decision 0044; the lead's inventory). When two positions a and c of one side
+ * exchange their occupants (sim/battle.ts:1588-1607 moves the Pokemon objects, every field of the Pokemon with them), each of
+ * the following moves with the Pokemon:
+ *   - sides[side].positions[a/c] (dfi_active_slot): activation_id, occupant, stages, flags, stall, confusion, charge, locked_move,
+ *     move_actions, switch_flag: yes (they belong to the activation). locked_target: NO (a slot location in the pin, it stays).
+ *   - tail.sides[side].positions[a/c] (dfi_tail_pos): every field: yes (moves, Follow Me and Protect, counters, Dragon Cheer,
+ *     move_result, ally_switch). position_flags bit 0 (Healing Wish): NO (a slot condition; the Swap rule of Healing Wish belongs
+ *     to its own step, decision 0044).
+ *   - trap_source and leech_seed_source of EVERY position that name a or c: relinked to the new flat position (a reference to the
+ *     Pokemon, not to the slot).
+ *   - party_order[side] entries a and c: yes (the side.pokemon order exchanges, sim/battle.ts:1598-1599).
+ * Not moved, slot-bound: sealed_cmds[a/c] and requested_slots (the request of the slot), and sides[].knowledge, ability_now,
+ * forme_now, soak_type, item_now, toxic_stage, type2, member_flags, illusion, hazards and screens (per roster member or per side).
+ * The run's scratch (speed_seen, residual_hp, faint queue, drag and lock bits) is dfi_run_swap_scratch, and the queued actions are
+ * remapped by the caller. Field test: tests/test_pool_g80.c (dfi_swap_position_state moves every listed field and no other). */
+void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c)
+{
+    dfi_active_slot *sa = &b->sides[side].positions[a];
+    dfi_active_slot *sc = &b->sides[side].positions[c];
+    const uint8_t locked_a = sa->locked_target;
+    const uint8_t locked_c = sc->locked_target;
+    const dfi_active_slot slot_tmp = *sa;
+    *sa = *sc;
+    *sc = slot_tmp;
+    sa->locked_target = locked_a; /* a slot location in the pin: it stays with the slot */
+    sc->locked_target = locked_c;
+    dfi_tail_pos *ta = &b->tail.sides[side].positions[a];
+    dfi_tail_pos *tc = &b->tail.sides[side].positions[c];
+    const uint32_t hw = (uint32_t)DFI_POSFLAG_HEALING_WISH;
+    const uint8_t hw_a = (uint8_t)((uint32_t)ta->position_flags & hw); /* wide-operands-reviewed: one bit */
+    const uint8_t hw_c = (uint8_t)((uint32_t)tc->position_flags & hw); /* wide-operands-reviewed: one bit */
+    const dfi_tail_pos tail_tmp = *ta;
+    *ta = *tc;
+    *tc = tail_tmp;
+    ta->position_flags = (uint8_t)(((uint32_t)ta->position_flags & ~hw) | hw_a); /* wide-operands-reviewed: the slot condition stays */
+    tc->position_flags = (uint8_t)(((uint32_t)tc->position_flags & ~hw) | hw_c); /* wide-operands-reviewed: the slot condition stays */
+    const uint32_t up = side * DUOFORGE_ACTIVE_PER_SIDE + a + 1u;
+    const uint32_t pp = side * DUOFORGE_ACTIVE_PER_SIDE + c + 1u;
+    for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
+        dfi_tail_pos *tp = &b->tail.sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
+        if ((uint32_t)tp->trap_source == up) {
+            tp->trap_source = (uint8_t)pp; /* wide-operands-reviewed: a flat position + 1 */
+        } else if ((uint32_t)tp->trap_source == pp) {
+            tp->trap_source = (uint8_t)up; /* wide-operands-reviewed: a flat position + 1 */
+        }
+        if ((uint32_t)tp->leech_seed_source == up) {
+            tp->leech_seed_source = (uint8_t)pp; /* wide-operands-reviewed: a flat position + 1 */
+        } else if ((uint32_t)tp->leech_seed_source == pp) {
+            tp->leech_seed_source = (uint8_t)up; /* wide-operands-reviewed: a flat position + 1 */
+        }
+    }
+    const uint32_t e_a = dfi_party_entry(&b->tail, side, a);
+    const uint32_t e_c = dfi_party_entry(&b->tail, side, c);
+    dfi_party_put(&b->tail, side, a, e_c);
+    dfi_party_put(&b->tail, side, c, e_a);
+}
+
 /* The swap of Ally Switch (sim/battle.ts swapPosition, sim/battle.ts:1588-1607; step G80, decision 0044 section 2). The two slots
  * of the user's side exchange their occupant with everything that goes with it: the slot record (stages, flags, stall, confusion,
  * charge, locked move, move actions, switch flag, activation id), and the position's tail (the moves, the Follow Me and Protect
@@ -4866,44 +4923,7 @@ static void dfi_ally_switch_swap(dfi_run *r, uint32_t user, uint32_t partner)
     const uint32_t side = user / 2u;
     const uint32_t us = user % 2u;
     const uint32_t ps = partner % 2u;
-    dfi_active_slot *a = dfi_pos(b, user);
-    dfi_active_slot *c = dfi_pos(b, partner);
-    const uint8_t locked_a = a->locked_target;
-    const uint8_t locked_c = c->locked_target;
-    const dfi_active_slot slot_tmp = *a;
-    *a = *c;
-    *c = slot_tmp;
-    a->locked_target = locked_a; /* a slot location: it stays with the slot */
-    c->locked_target = locked_c;
-    dfi_tail_pos *ta = &b->tail.sides[side].positions[us];
-    dfi_tail_pos *tc = &b->tail.sides[side].positions[ps];
-    const uint32_t hw = (uint32_t)DFI_POSFLAG_HEALING_WISH;
-    const uint8_t hw_a = (uint8_t)((uint32_t)ta->position_flags & hw); /* wide-operands-reviewed: one bit */
-    const uint8_t hw_c = (uint8_t)((uint32_t)tc->position_flags & hw); /* wide-operands-reviewed: one bit */
-    const dfi_tail_pos tail_tmp = *ta;
-    *ta = *tc;
-    *tc = tail_tmp;
-    ta->position_flags = (uint8_t)(((uint32_t)ta->position_flags & ~hw) | hw_a); /* wide-operands-reviewed: the slot condition stays */
-    tc->position_flags = (uint8_t)(((uint32_t)tc->position_flags & ~hw) | hw_c); /* wide-operands-reviewed: the slot condition stays */
-    const uint32_t up = user + 1u;
-    const uint32_t pp = partner + 1u;
-    for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
-        dfi_tail_pos *tp = &b->tail.sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
-        if ((uint32_t)tp->trap_source == up) {
-            tp->trap_source = (uint8_t)pp; /* wide-operands-reviewed: a flat position + 1 */
-        } else if ((uint32_t)tp->trap_source == pp) {
-            tp->trap_source = (uint8_t)up; /* wide-operands-reviewed: a flat position + 1 */
-        }
-        if ((uint32_t)tp->leech_seed_source == up) {
-            tp->leech_seed_source = (uint8_t)pp; /* wide-operands-reviewed: a flat position + 1 */
-        } else if ((uint32_t)tp->leech_seed_source == pp) {
-            tp->leech_seed_source = (uint8_t)up; /* wide-operands-reviewed: a flat position + 1 */
-        }
-    }
-    const uint32_t e_us = dfi_party_entry(&b->tail, side, us);
-    const uint32_t e_ps = dfi_party_entry(&b->tail, side, ps);
-    dfi_party_put(&b->tail, side, us, e_ps);
-    dfi_party_put(&b->tail, side, ps, e_us);
+    dfi_swap_position_state(b, side, us, ps);
     for (uint32_t i = 0u; i < b->queue_len; ++i) {
         dfi_queue_record *q = &b->queue[i];
         if (q->side != side || (q->kind != DFI_Q_MOVE && q->kind != DFI_Q_SWITCH)) {
