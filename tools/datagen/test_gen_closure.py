@@ -796,7 +796,8 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G74_HANDLERS], [97])  # G74: Baton Pass (decision 0042)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G76_HANDLERS], [98, 99])  # G76: Destiny Bond, Final Gambit (decision 0015 5cg)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G78_HANDLERS], [100])  # G78: Dragon Darts (decision 0043)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 101)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.C4_HANDLERS], [101])  # C4: WILL_CRIT (decision 0015 entry 5ct)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 102)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.G70_HANDLERS) | set(gen_closure.G66_HANDLERS) | set(gen_closure.G72B_HANDLERS) | set(gen_closure.G74_HANDLERS) | set(gen_closure.G76_HANDLERS) | set(gen_closure.G78_HANDLERS) | set(gen_closure.G64_HANDLERS) | set(gen_closure.WEATHER_HANDLERS) |
