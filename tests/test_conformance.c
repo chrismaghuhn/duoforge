@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 770u /* the recorded pool battles: main's 762 (the batch's 757 and G73's five Moody battles) and the eight G86 battles (decision 0048) */
+#define DF_POOL_DATA_BATTLES 771u /* the recorded pool battles: main's 762 (the batch's 757 and G73's five Moody battles) and the nine G86 battles (decision 0048) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
