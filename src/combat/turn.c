@@ -4485,7 +4485,7 @@ static duoforge_status dfi_attract_start(dfi_run *r, uint32_t holder, uint32_t i
     }
     const uint32_t hside = holder / DUOFORGE_ACTIVE_PER_SIDE;
     const uint32_t hmember = b->sides[hside].positions[holder % DUOFORGE_ACTIVE_PER_SIDE].occupant;
-    b->tail.attract_source[inf] = (uint8_t)(1u + hside * DUOFORGE_MAX_ROSTER + hmember);
+    b->tail.attract_source[inf] = (uint8_t)(1u + hside * DUOFORGE_MAX_ROSTER + hmember); /* wide-operands-reviewed: 1..12 (side 0..1, member 0..5) */
     duoforge_event start = dfi_ev(DUOFORGE_EVENT_VOLATILE_START, inf, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_CUTECHARM, holder);
     start.detail = DUOFORGE_VOLATILE_ATTRACT;
     dfi_emit(r, &start);

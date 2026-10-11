@@ -394,10 +394,10 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {11, 0, 244, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0}, /* 332: step G71, Attract flat 0: the codes 2 and 8 (model: attract_valid_codes) */
-    {2, 0, 253, 0, 0, 0, 0, 0}, /* 333: flat 1: the codes 1 and 7 */
-    {2, 0, 253, 0, 0, 0, 0, 0}, /* 334: flat 2: the codes 2 and 8 */
-    {2, 0, 253, 0, 0, 0, 0, 0}, /* 335: flat 3: the codes 1 and 7 */
+    {1, 0, 254, 0, 0, 0, 0, 0}, /* 332: step G71, Attract flat 0 (Rillaboom, M): the code 2 (model: attract_valid_codes) */
+    {3, 0, 252, 0, 0, 0, 0, 0}, /* 333: flat 1 (Staraptor, F): the codes 1, 9 and 11 */
+    {1, 0, 254, 0, 0, 0, 0, 0}, /* 334: flat 2 (Archaludon, M): the code 2 */
+    {1, 0, 254, 0, 0, 0, 0, 0}, /* 335: flat 3 (Charizard, M): the code 2 */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1565,13 +1565,15 @@ int main(void)
                     fprintf(stderr, "  tail byte %u = %u: %s (%s)\n", (unsigned)off, v, duoforge_status_name(st), inv_name(inv));
                 }
             }
-            /* step G71: the Attract sources of the base battle (reference pairing 0): on flat 0 and 2 (male holders) the codes
-             * 2 (the ally Staraptor, F) and 8 (the foe Golisopod, F); on flat 1 and 3 (female holders) 1 (the ally Rillaboom, M) and
-             * 7 (the foe Politoed, M). Derived from src/state/reference_teams.c; the model's listing gives the same pairs. */
+            /* step G71: the Attract sources of the base battle (reference pairing 0, with side 1's leads Archaludon and
+             * Charizard since the golden example of main): on flat 0 (Rillaboom, M) only 2 (the ally Staraptor, F); on flat 1
+             * (Staraptor, F) 1 (the ally Rillaboom, M), 9 (the foe Archaludon, M) and 11 (the foe Charizard, M); on flat 2
+             * (Archaludon, M) and flat 3 (Charizard, M) only 2 (the foe Staraptor, F). Derived from src/state/reference_teams.c;
+             * the model's listing (pool_tail_attract_codes) gives the same sets. */
             const size_t attract_first = DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_ATTRACT_OFF;
             if (off >= attract_first && off < attract_first + DFI_ENC_TAIL5_ATTRACT_SIZE) {
                 const size_t flat = off - attract_first;
-                const uint32_t want = flat % 2u == 0u ? ((1u << 2u) | (1u << 8u)) : ((1u << 1u) | (1u << 7u));
+                const uint32_t want = flat == 1u ? ((1u << 1u) | (1u << 9u) | (1u << 11u)) : (1u << 2u);
                 DF_CHECK_EQ_U64(&t, accepted_codes, want);
             }
             if (memcmp(got, sweep[off], sizeof got) != 0) {

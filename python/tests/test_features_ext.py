@@ -297,19 +297,19 @@ class FeaturesExtTest(unittest.TestCase):
         shows it in its reserve column; an observation without the bit encodes under encoder 5."""
         ob, d = self.obs, self.domains
         ext = _records(ob)
-        ext["sides"]["positions"]["volatiles"][...] = 0
+        base = ext["sides"]["positions"]["volatiles"].copy()  # the records' own bits stay (TYPE_CHANGED goes with type_now)
         self.assertEqual(features.encode_batch(ob, d, ext, ALL, encoder=5)[0].shape[0], ob.shape[0])
-        ext["sides"]["positions"]["volatiles"][:, 0, 0] = C["DUOFORGE_POSITION_EXT_ATTRACT"]
+        ext["sides"]["positions"]["volatiles"][:, 0, 0] = base[:, 0, 0] | C["DUOFORGE_POSITION_EXT_ATTRACT"]
         with self.assertRaises(features.EncoderAwaitingBit) as raised:
             features.encode_batch(ob, d, ext, ALL, encoder=5)
         self.assertEqual(raised.exception.name, "DUOFORGE_POSITION_EXT_ATTRACT")
         features.encode_batch(ob, d, ext, ALL)  # encoder 6 shows the bit in its reserve column
-        ext["sides"]["positions"]["volatiles"][:, 0, 0] = (C["DUOFORGE_POSITION_EXT_ATTRACT"]
+        ext["sides"]["positions"]["volatiles"][:, 0, 0] = (base[:, 0, 0] | C["DUOFORGE_POSITION_EXT_ATTRACT"]
                                                            | C["DUOFORGE_POSITION_EXT_TAUNT"])
         with self.assertRaises(features.EncoderAwaitingBit) as raised:
             features.encode_batch(ob, d, ext, ALL, encoder=5)
         self.assertEqual(raised.exception.name, "DUOFORGE_POSITION_EXT_ATTRACT")
-        ext["sides"]["positions"]["volatiles"][...] = 0
+        ext["sides"]["positions"]["volatiles"][...] = base
         self.assertEqual(features.encode_batch(ob, d, ext, ALL, encoder=5)[0].shape[0], ob.shape[0])
 
     def test_a_clear_bit_zeros_its_columns(self):
