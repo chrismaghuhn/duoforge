@@ -31,6 +31,15 @@ START_WAIT = 60.0  # seconds for a challenge to open its battle room
 GAME_WAIT = 1800.0  # seconds a game may take
 
 
+def playable(ids, valid):
+    """(the pool's ids the server accepts, in pool order; the refused ones): tools/live/validate_pool.js validates the
+    pool with the pinned server's own team validator, and a refused team could never be challenged with."""
+    kept = [i for i in ids if i in valid]
+    if len(kept) < 2:
+        raise SystemExit(f"only {len(kept)} of {len(ids)} pool teams are playable: no pair")
+    return kept, [i for i in ids if i not in valid]
+
+
 def draw_pairs(ids, pairs, seed):
     """[(team of the search bot in the pair's first game, the raw bot's)]: a pure function of the ids and seed."""
     r = random.Random(seed)
@@ -243,6 +252,9 @@ def main(argv=None):
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--host", default="localhost", help="the server's host (from WSL: the Windows host's address)")
     p.add_argument("--seed", type=int, default=0x2026101200000362)
+    p.add_argument("--valid-teams", default=None,
+                   help="the pool ids the pinned server accepts (stdout of tools/live/validate_pool.js); pairs come "
+                        "from these only, the refused ones are reported")
     p.add_argument("--server-dir", default=None,
                    help="a pinned Showdown checkout to start with --no-security, bound to --host only "
                         "(on Windows with WSL bots: tools/live/local_server.ps1 starts it on the WSL host address)")
@@ -258,6 +270,10 @@ def main(argv=None):
     (out / "logs").mkdir(parents=True, exist_ok=True)
     _, config = checkpoint.load(args.checkpoint)
     ids = list(config["teams"]["ids"])
+    refused = []
+    if args.valid_teams:
+        valid = {line.strip() for line in Path(args.valid_teams).read_text(encoding="utf-8").splitlines() if line.strip()}
+        ids, refused = playable(ids, valid)
     games = schedule(draw_pairs(ids, args.games // 2, args.seed))
     root = Path(__file__).resolve().parents[2] / "data" / "teams"
     texts = {t: (root / f"{t}.txt").read_text(encoding="utf-8") for t in {x for g in games for x in g[2:]}}
@@ -298,7 +314,8 @@ def main(argv=None):
     finally:
         if server is not None:
             server.terminate()
-    report = {"checkpoint_config_teams": len(ids), "seed": args.seed, "games_planned": len(games),
+    report = {"checkpoint_config_teams": len(ids) + len(refused), "playable_teams": len(ids),
+              "refused_teams": refused, "seed": args.seed, "games_planned": len(games),
               "lanes": args.lanes, "seconds": time.monotonic() - start, "code": _commit(),
               **evaluate(records, len(games))}
     (out / "games.json").write_text(json.dumps(records, indent=1), encoding="utf-8")
