@@ -518,7 +518,11 @@ static void test_unmodelled_bounces_are_refused(df_test *t)
  * for it, so its effect (the halving, the target's volatile and the residual) is not modelled. Banette (Ghost, Cursed Body;
  * learns Curse and Protect, data/mods/champions/learnsets.ts banette) leads side 0 in place of Tauros and uses Curse at the
  * foe in position 0 of the battle of g84_c3_nonghost_curse (Gengar is already in that team: Species Clause). */
-static void test_ghost_curse_is_refused(df_test *t)
+/* G84b (decision 0063): the Ghost Curse is modelled (refused in G84). Banette (Ghost, Cursed Body; learns Curse and Protect,
+ * data/mods/champions/learnsets.ts banette) leads side 0 in place of Tauros and uses Curse at the foe in position 0 of the battle of
+ * g84_c3_nonghost_curse (Gengar is already in that team: Species Clause). The turn runs; its lines and draws are checked by the
+ * recorded g84b_* battles of conformance. */
+static void test_ghost_curse_executes(df_test *t)
 {
     const df_conf_battle *cb = must_find(t, "g84_c3_nonghost_curse");
     if (cb == NULL) {
@@ -534,7 +538,7 @@ static void test_ghost_curse_is_refused(df_test *t)
         /* Banette's Curse at the foe (position 0 of side 1); the others protect (Venusaur and Pawmot: move 2 is Protect). */
         duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(1, DUOFORGE_TARGET_NONE)}, {slot(0, DUOFORGE_TARGET_NONE), slot(1, DUOFORGE_TARGET_NONE)}};
         uint32_t bounces = 0u;
-        DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_OK);
         duoforge_battle_destroy(b);
     }
     duoforge_context_destroy(ctx);
@@ -557,6 +561,6 @@ int main(void)
     test_a_protecting_holder_is_not_bounced(&t);
     test_a_bounce_is_no_move_action_of_the_bouncer(&t);
     test_unmodelled_bounces_are_refused(&t);
-    test_ghost_curse_is_refused(&t);
+    test_ghost_curse_executes(&t);
     return df_test_end(&t);
 }
