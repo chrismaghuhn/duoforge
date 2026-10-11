@@ -84,6 +84,9 @@ ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the
 # volatiles; ("side_bit", (F, B)): bit B of side field F; ("position" | "member" | "side", F): field F of every
 # position, member or side record. The base-value
 # features show in the base observation alone (lines.BASE_FOLDS).
+# volatiles2's ATTRACT_SOURCE bits (step G87): the source's flat position (0-3) at bit _ATTRACT_SOURCE_SHIFT
+_ATTRACT_SOURCE_BITS = C["DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_LO"] | C["DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_HI"]
+_ATTRACT_SOURCE_SHIFT = C["DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_LO"].bit_length() - 1
 EXT_FIELDS = {
     "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (), "TERRAIN_ELECTRIC": (), "TERRAIN_MISTY": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
@@ -109,6 +112,8 @@ EXT_FIELDS = {
     "ITEM_CHANGE": (("member", "item_now"),),
     # Attract (step G71, decision 0034): the presence bit of the infatuated position; its source is the record's byte
     "RESERVE_VOLATILES": (("bit", C["DUOFORGE_POSITION_EXT_ATTRACT"]),),
+    # Attract's source position (step G87, decision 0080): volatiles2 bits 12-13, the source's flat position
+    "ATTRACT_SOURCE": (("v2bits", _ATTRACT_SOURCE_BITS),),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
@@ -204,6 +209,7 @@ class _Position:
         # clearing of its byte (dfi_tail_clear_occupant, no line); its visible and silent ends are folded in _fold_event and
         # _silent_attract_end.
         self.attract = 0
+        self.attract_from = 0  # the source's flat position while infatuated (POSITION_EXT2 ATTRACT_SOURCE, step G87)
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         # the record's type2 of the occupant (tail rev 4): Double Shock's remaining type + 1, 0 after Soak; a Mega
         # Evolution ends type_now (the soak_type) and keeps it, as dfi_run_mega does; it ends with the occupant
@@ -365,17 +371,21 @@ class Tracker:
                 self._battle_line(line)
 
     def _set_boost(self, parts):
-        """Belly Drum's -setboost (step G86): the line shows the Attack stage it leaves; the engine's event is the BOOST of
-        the change (dfi_boost, cause MOVE with the move's id), which the tracker folds as any boost. The converter
-        computes the change from the trace state (trace_to_c, boost_pre); the tracker has the stage itself. A change
-        that is not positive is the converter's refusal setboost-change."""
+        """Belly Drum's (step G86) and Anger Point's (step G77) -setboost: the line shows the Attack stage it leaves; the
+        engine's event is the BOOST of the change (dfi_boost: Belly Drum with cause MOVE and the move's id, Anger Point
+        with cause ABILITY and the ability's id + 1), which the tracker folds as any boost. The converter computes the
+        change from the trace state (trace_to_c); the tracker has the stage itself. A change that is not positive is the
+        converter's refusal setboost-change (at +6 before, Anger Point's pin prints no line at all)."""
         flat = trace_to_c.ev_pos(parts[2])
         stat = trace_to_c.EV_STATS.index(parts[3])
         change = STAGE_NEUTRAL + int(parts[4]) - self._at(flat).stages[stat]
         if change <= 0:
             raise lines.Stop("converter:setboost-change")
-        self._event(trace_to_c.ev_tuple(EV["BOOST"], flat, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
-                                        self.data.tables["MOVE"]["BELLYDRUM"], detail=stat, amount=change))
+        if parts[5:] == ["[from] ability: Anger Point"]:
+            cause, id2 = trace_to_c.CAUSE["ABILITY"], self.data.tables["ABILITY"]["ANGERPOINT"] + 1
+        else:
+            cause, id2 = trace_to_c.CAUSE["MOVE"], self.data.tables["MOVE"]["BELLYDRUM"]
+        self._event(trace_to_c.ev_tuple(EV["BOOST"], flat, trace_to_c.NOPOS, cause, 0, id2, detail=stat, amount=change))
 
     def _battle_line(self, line):
         """A battle line: classified (lines.check), then folded; a single-turn feature line is remembered for the
@@ -998,8 +1008,9 @@ class Tracker:
                 if holder.occupant == ROSTER_NONE:
                     raise lines.Stop("attract-source-unknown")  # the holder of [of] is not on the field
                 p.attract = 1 + (e[2] // 2) * C["DUOFORGE_MAX_ROSTER"] + holder.occupant
+                p.attract_from = e[2]  # the view's source position (step G87, decision 0080)
             else:
-                p.attract = 0
+                p.attract, p.attract_from = 0, 0
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_HEAL_BLOCK:
             # Heal Block (step G8, Psychic Noise): -start|X|move: Heal Block and -end|X|move: Heal Block (the duration,
             # Mental Herb); the occupant's leaving ends it with no line; its count is never shown
@@ -1600,6 +1611,8 @@ class Tracker:
                 pv["perish"], pv["encore_slot"], pv["disable_slot"] = p.perish, p.encore_slot, p.disable_slot
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs
+                if p.attract:
+                    o["volatiles2"][side][k] |= p.attract_from << _ATTRACT_SOURCE_SHIFT
         return o
 
     def domain(self):
@@ -1631,6 +1644,8 @@ def restrict_ext(ext, folds):
                 src, dst = ext["sides"][s], out["sides"][s]
                 if where == "bit":
                     dst["positions"]["volatiles"] = dst["positions"]["volatiles"] | (src["positions"]["volatiles"] & field)
+                elif where == "v2bits":
+                    out["volatiles2"][s] = out["volatiles2"][s] | (ext["volatiles2"][s] & field)
                 elif where == "side_bit":
                     name, bit = field
                     dst[name] = dst[name] | (src[name] & bit)

@@ -1,0 +1,24 @@
+{
+  "name": "g77_leek_nonfarfetchd",
+  "purpose": "G77 M09: a Leek holder that is not Farfetch'd or Sirfetch'd: Tauros (M, Leek) uses Stone Edge (high crit ratio, base 1/8) on Camerupt (F, Magma Armor) for the first turn (Stone Edge hits without a critical hit; the second Stone Edge misses); Leek adds nothing, so the critical hits follow the base ratio. Milotic protects on the first turn.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000077004",
+  "teams": [
+    "Tauros (M) @ Leek\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Stone Edge\n- Close Combat\n- Zen Headbutt\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Marvel Scale\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Muddy Water\n- Double-Edge\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Foul Play\n- Kowtow Cleave\n- Sucker Punch\n- Swords Dance",
+    "Camerupt (F) @ Leftovers\nAbility: Magma Armor\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nBold Nature\n- Stone Edge\n- Ironhead\n- Zen Headbutt\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Foul Play\n- Kowtow Cleave\n- Sucker Punch\n- Swords Dance\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Marvel Scale\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Muddy Water\n- Double-Edge\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 4",
+      "move 1 1, move 4",
+      "move 1 1, move 4"
+    ],
+    "p2": [
+      "move 1 1, move 4",
+      "move 1 1, move 4",
+      "move 1 1, move 4"
+    ],
+    "max_steps": 3
+  }
+}

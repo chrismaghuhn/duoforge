@@ -15,6 +15,17 @@ log r = KL_LOG_RATIO_MAX the estimate goes on linearly with k3's slope at
 the cap: a rarely drawn action that the reference finds likely made r
 unbounded (means up to 7.9e6 in the magnet run of 2026-10-04), and one such
 row filled a whole clipped gradient step.
+
+The objective (#359): "ppo" (the default) is the clipped surrogate above;
+"mmd" is Magnetic Mirror Descent (Sokota et al. 2023): no ratio clipping,
+the policy loss -(r A) plus prox_coef times the estimate r log r - r + 1 of
+KL(policy || behaviour) on the taken actions, r = exp(logp - behaviour logp)
+(never negative, 0 at r = 1; per row the loss is least at log r = A /
+prox_coef). Above log r = KL_LOG_RATIO_MAX both r and the estimate go on
+linearly with their slope at the cap, as _k3 does: a row with a large
+advantage would otherwise drive r toward exp(A / prox_coef) and fill a whole
+clipped step, or overflow float32. MMD's magnet is the KL anchor above (a frozen copy of the
+learner, refreshed: --kl-ref magnet), and its entropy term the entropy bonus.
 """
 import functools
 
@@ -28,6 +39,7 @@ from .returns import gae  # noqa: F401  (the advantages of a rollout)
 
 
 KL_LOG_RATIO_MAX = 3.0
+OBJECTIVES = ("ppo", "mmd")
 
 
 def _k3(log_r):
@@ -38,11 +50,21 @@ def _k3(log_r):
     return jnp.exp(capped) - 1.0 - capped + (jnp.exp(c) - 1.0) * jnp.maximum(log_r - c, 0.0)
 
 
+def _mmd_terms(log_r):
+    """(r, r log r - r + 1) of log r up to KL_LOG_RATIO_MAX, each linear
+    beyond it (same value and slope at the cap)."""
+    c = KL_LOG_RATIO_MAX
+    capped = jnp.minimum(log_r, c)
+    beyond = jnp.maximum(log_r - c, 0.0)
+    ratio = jnp.exp(capped)
+    return ratio + jnp.exp(c) * beyond, capped * ratio - ratio + 1.0 + c * jnp.exp(c) * beyond
+
+
 def optimizer(learning_rate=3e-4, max_norm=0.5):
     return optax.chain(optax.clip_by_global_norm(max_norm), optax.adam(learning_rate))
 
 
-def _loss(params, batch, evaluate_fn, clip, entropy_coef, value_coef, kl_coef=0.0):
+def _loss(params, batch, evaluate_fn, clip, entropy_coef, value_coef, kl_coef=0.0, objective="ppo", prox_coef=0.0):
     logp, entropy, value = evaluate_fn(params, batch["obs"], batch["slots"], batch["mask"], batch["is_team"],
                                        batch["actions"])
     w = batch["weight"] * batch["acting"]  # the policy's rows
@@ -51,20 +73,28 @@ def _loss(params, batch, evaluate_fn, clip, entropy_coef, value_coef, kl_coef=0.
     mean = (adv * w).sum() / total
     std = jnp.sqrt((((adv - mean) ** 2) * w).sum() / total) + 1e-8
     adv = (adv - mean) / std
-    ratio = jnp.exp(logp - batch["logp"])
-    surrogate = jnp.minimum(ratio * adv, jnp.clip(ratio, 1.0 - clip, 1.0 + clip) * adv)
+    if objective == "mmd":  # the proximal KL to the behaviour policy in place of the clip
+        ratio, prox = _mmd_terms(logp - batch["logp"])
+        surrogate = ratio * adv
+        prox_mean = (prox * w).sum() / total
+    else:
+        ratio = jnp.exp(logp - batch["logp"])
+        surrogate = jnp.minimum(ratio * adv, jnp.clip(ratio, 1.0 - clip, 1.0 + clip) * adv)
+        prox_mean = jnp.float32(0.0)
     policy_loss = -(surrogate * w).sum() / total
     wv = batch["weight"]  # the value's rows: all
     value_loss = (((value - batch["value_targets"]) ** 2) * wv).sum() / jnp.maximum(wv.sum(), 1.0)
     entropy_mean = (entropy * w).sum() / total
     loss = policy_loss + value_coef * value_loss - entropy_coef * entropy_mean
+    if objective == "mmd":
+        loss = loss + prox_coef * prox_mean
     if "ref_logp" in batch:  # the KL anchor to a reference policy (k3 on the taken actions)
         log_r = batch["ref_logp"] - logp
         kl_mean = (_k3(log_r) * w).sum() / total
         loss = loss + kl_coef * kl_mean
     else:
         kl_mean = jnp.float32(0.0)
-    return loss, (policy_loss, value_loss, entropy_mean, kl_mean)
+    return loss, (policy_loss, value_loss, entropy_mean, kl_mean, prox_mean)
 
 
 @functools.partial(jax.jit, static_argnames=("tx", "evaluate_fn", "clip", "value_coef"))
@@ -90,7 +120,7 @@ def _update_host(params, opt_state, tx, samples, rng, evaluate_fn=model.evaluate
             params, opt_state, loss, aux = _update_step(params, opt_state, batch, tx, evaluate_fn, clip,
                                                         jnp.float32(entropy_coef), value_coef)
             stats.append([float(loss)] + [float(a) for a in aux])
-    mean = np.mean(stats, axis=0) if stats else np.zeros(5)
+    mean = np.mean(stats, axis=0) if stats else np.zeros(6)
     return params, opt_state, {"loss": mean[0], "policy_loss": mean[1], "value_loss": mean[2], "entropy": mean[3],
                                "kl": mean[4]}
 
@@ -117,8 +147,9 @@ def reference_logp(params, samples, evaluate_fn=model.evaluate, minibatch=4096):
     return out
 
 
-@functools.partial(jax.jit, static_argnames=("tx", "evaluate_fn", "clip", "value_coef"))
-def _epochs(params, opt_state, data, order, tx, evaluate_fn, clip, entropy_coef, value_coef, kl_coef, lr_scale):
+@functools.partial(jax.jit, static_argnames=("tx", "evaluate_fn", "clip", "value_coef", "objective"))
+def _epochs(params, opt_state, data, order, tx, evaluate_fn, clip, entropy_coef, value_coef, kl_coef, lr_scale,
+            objective="ppo", prox_coef=0.0):
     """Every minibatch of every epoch in one call: order (steps, minibatch)
     holds the rows of each minibatch in data, which stays on the device."""
 
@@ -126,7 +157,8 @@ def _epochs(params, opt_state, data, order, tx, evaluate_fn, clip, entropy_coef,
         params, opt_state = carry
         batch = {k: jnp.take(v, rows, axis=0) for k, v in data.items()}
         (loss, aux), grads = jax.value_and_grad(_loss, has_aux=True)(params, batch, evaluate_fn, clip,
-                                                                     entropy_coef, value_coef, kl_coef)
+                                                                     entropy_coef, value_coef, kl_coef, objective,
+                                                                     prox_coef)
         updates, opt_state = tx.update(grads, opt_state, params)
         updates = jax.tree_util.tree_map(lambda u: u * lr_scale, updates)
         return (optax.apply_updates(params, updates), opt_state), jnp.stack([loss, *aux])
@@ -136,16 +168,20 @@ def _epochs(params, opt_state, data, order, tx, evaluate_fn, clip, entropy_coef,
 
 
 def update(params, opt_state, tx, samples, rng, evaluate_fn=model.evaluate, epochs=4, minibatch=4096, clip=0.2,
-           entropy_coef=0.01, value_coef=0.5, kl_coef=0.0, lr_scale=1.0):
+           entropy_coef=0.01, value_coef=0.5, kl_coef=0.0, lr_scale=1.0, objective="ppo", prox_coef=0.0):
     """PPO epochs over the samples (dict of arrays, one row per decision),
     in minibatches of a fixed size (the last one of an epoch padded with
     rows of weight 0). The samples go to the device once; every epoch's
     permutation (rng, as _update_host draws it) cuts the minibatches there,
     in one jitted scan. lr_scale multiplies every step and kl_coef weighs the
-    KL anchor of samples with "ref_logp" (module docstring). Returns (params,
-    opt_state, mean losses with t_transfer and t_compute, the seconds of the
-    copy and of the epochs)."""
+    KL anchor of samples with "ref_logp" (module docstring). objective is
+    "ppo" or "mmd" (with prox_coef, the proximal term's weight; module
+    docstring). Returns (params, opt_state, mean losses with t_transfer and
+    t_compute, the seconds of the copy and of the epochs; with "prox", the
+    proximal estimate, under mmd)."""
     import time
+    if objective not in OBJECTIVES:
+        raise ValueError(f"unknown policy objective {objective!r}: one of {OBJECTIVES}")
     n = samples["actions"].shape[0]
     total = -(-n // minibatch) * minibatch
     t0 = time.perf_counter()
@@ -158,9 +194,12 @@ def update(params, opt_state, tx, samples, rng, evaluate_fn=model.evaluate, epoc
     order = order.reshape(-1, minibatch).astype(np.int32)
     params, opt_state, stats = _epochs(params, opt_state, data, order, tx, evaluate_fn, clip,
                                        jnp.float32(entropy_coef), value_coef, jnp.float32(kl_coef),
-                                       jnp.float32(lr_scale))
+                                       jnp.float32(lr_scale), objective, jnp.float32(prox_coef))
     stats = np.asarray(jax.block_until_ready(stats))
     t2 = time.perf_counter()
-    mean = stats.mean(axis=0) if stats.size else np.zeros(5)
-    return params, opt_state, {"loss": mean[0], "policy_loss": mean[1], "value_loss": mean[2], "entropy": mean[3],
-                               "kl": mean[4], "t_transfer": t1 - t0, "t_compute": t2 - t1}
+    mean = stats.mean(axis=0) if stats.size else np.zeros(6)
+    out = {"loss": mean[0], "policy_loss": mean[1], "value_loss": mean[2], "entropy": mean[3], "kl": mean[4],
+           "t_transfer": t1 - t0, "t_compute": t2 - t1}
+    if objective == "mmd":
+        out["prox"] = mean[5]
+    return params, opt_state, out
