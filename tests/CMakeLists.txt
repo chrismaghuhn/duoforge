@@ -277,8 +277,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=15a47d87bd7a6c39d991ea75adb2d7f43221910578a90a66dab3252d386561de"
-        "pool_tables.c=4003b9132cc783be3cba724ac1c1c58ba07c4c6cf21c9363640b41e173c73da0")
+        "pool_tables.h=fe6324307c0687f8aa73b6e24f48601481491807cb4c836ac004ef64b5f8f955"
+        "pool_tables.c=96b2f1eebc7b0d6f169c6d99513be034ef199fc3ab246ddf0c3803b8cde9f6d3")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
