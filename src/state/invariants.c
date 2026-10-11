@@ -768,11 +768,23 @@ static bool dfi_party_side_ok(const dfi_pool_tail *t, const dfi_side *side, uint
 
 /* The POOL tail (decision 0015 section 7). Runs after the side checks, so every occupant is below the member count
  * and every move count is 1..4; each index is still bounded here. Under the other kinds the tail is absent: zero. */
+/* The position pads (pos_pad) are never encoded and are not state (decision 0060): a tail is zero when every other byte is. */
+static bool dfi_tail_zero_ignoring_pads(const dfi_pool_tail *t)
+{
+    dfi_pool_tail c = *t;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            c.sides[s].positions[p].pos_pad = 0u;
+        }
+    }
+    return dfi_bytes_zero(&c, sizeof c);
+}
+
 static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
     const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
     if (!lim.pool_rules) {
-        return dfi_bytes_zero(&b->tail, sizeof b->tail) ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
+        return dfi_tail_zero_ignoring_pads(&b->tail) ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
     }
     if (b->tail.gravity_turns > DFI_TAIL_GRAVITY_MAX || b->tail.field_pad != 0u) {
         return DFI_INV_TAIL_FIELD;
@@ -833,6 +845,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                  * leaves or faints. */
                 dfi_tail_pos rest = *tp;
                 rest.position_flags = 0u;
+                rest.pos_pad = 0u; /* the pad is not state (decision 0060) */
                 if (!dfi_bytes_zero(&rest, sizeof rest)) {
                     return DFI_INV_TAIL_POSITION; /* cleared when the occupant leaves or faints */
                 }
