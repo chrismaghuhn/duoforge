@@ -1,6 +1,6 @@
 {
   "name": "c5_endeavor_normal",
-  "purpose": "C5 Endeavor (decision 0015 entry 5cy): Quaquaval (M) uses Endeavor on Blastoise (full HP) after Blastoise's Ice Beam and Milotic's Scald have lowered the user; the damage is target HP minus user HP (damageCallback, data/moves.ts:4788-4790). Team V against team W; no Substitute user on the target side.",
+  "purpose": "C5 Endeavor (decision 0015 entry 5cy): Quaquaval (M, 160 HP) uses Endeavor on Milotic (slot 2, 202 HP): the target's HP is above the user's, so the hit is not immune and the damage is target HP minus user HP (damageCallback, data/moves.ts:4788-4790). Team V against team W.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c5e2",
@@ -10,10 +10,10 @@
   ],
   "plan": {
     "p1": [
-      "move 1, move 1"
+      "move 1 2, move 1"
     ],
     "p2": [
-      "move 2, move 2"
+      "move 3, move 3"
     ],
     "max_steps": 3
   }
