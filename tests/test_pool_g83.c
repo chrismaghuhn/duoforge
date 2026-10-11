@@ -143,15 +143,15 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_LEAFGUARD], DFI_HANDLER_NONE);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_IRONBALL] != 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_IRONBALL], DFI_HANDLER_NONE);
-    DF_CHECK_EQ_U64(t, DUOFORGE_MOVE_STATIC_FLAG_BULLET, 0x010u); /* the bullet flag the Bulletproof reader tests */
+    DF_CHECK_EQ_U64(t, DFI_MOVE_FLAG3_BULLET, 0x10u); /* the bullet bit of the flags3 column the Bulletproof reader tests (approved) */
 }
 
 /* Each G83 battle replays to its end with the lines and HP of the reference (test_conformance compares them step by step). */
 static void check_battles(df_test *t, const duoforge_context *ctx)
 {
     static const char *const names[] = {"g83_bulletproof_bullets", "g83_ironball_ground", "g83_ironball_spikes",
-                                        "g83_rivalry_gender", "g83_rivalry_genderless", "g83_leafguard_sun",
-                                        "g83_leafguard_yawn_residual"};
+                                        "g83_ironball_speed", "g83_rivalry_gender", "g83_rivalry_genderless",
+                                        "g83_leafguard_sun", "g83_leafguard_yawn_residual"};
     for (size_t i = 0; i < sizeof names / sizeof names[0]; ++i) {
         duoforge_battle *b = replay_all(t, ctx, names[i]);
         if (b != NULL) {

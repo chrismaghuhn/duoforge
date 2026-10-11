@@ -2185,3 +2185,23 @@ class CheapMoveFactsC2(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class BulletFlag(unittest.TestCase):
+    """Step G83 (approved by HauptSession): the bullet bit of the third flags byte (DFI_MOVE_FLAG3_BULLET, 0x10) marks exactly
+    the moves that carry flags.bullet in the pin (data/moves.ts: 26 of them). Bulletproof reads that bit, so the count is pinned."""
+    PIN_BULLET_MOVES = 26
+
+    def test_the_bit_is_assigned_to_the_bullet_flag(self):
+        self.assertEqual(gen_closure.FLAGS3_BITS['bullet'], 16)
+        self.assertEqual(gen_closure.FLAGS3_BITS['pulse'], 8)
+
+    def test_the_committed_table_marks_the_pins_26_bullet_moves(self):
+        import re
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        with open(os.path.join(root, 'src', 'data', 'pool_tables.c'), encoding='utf-8') as f:
+            text = f.read()
+        m = re.search(r'const uint8_t dfi_pool_move_flags3\[DFI_POOL_MOVE_COUNT\] = \{(.*?)\n\};', text, re.S)
+        self.assertIsNotNone(m)
+        values = [int(v) for v in re.findall(r'=\s*(\d+)u,', m.group(1))]
+        self.assertEqual(sum(1 for v in values if v & 16), self.PIN_BULLET_MOVES)

@@ -2665,7 +2665,7 @@ G8_SECONDARIES = {
 }
 FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16, 'punch': 32, 'slicing': 64}  # steps G30 (powder) and G34 (punch, slicing)
 # The third flags byte (DFI_MOVE_FLAG3_*, pool tables only): one bit per Showdown flag name, assigned centrally (HauptSession).
-FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2, 'bypasssub': 4, 'pulse': 8}  # steps G57 (Magic Bounce), G53 (Pressure), G60 (Substitute), G59 (Mega Launcher)
+FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2, 'bypasssub': 4, 'pulse': 8, 'bullet': 16}  # steps G57 (Magic Bounce), G53 (Pressure), G60 (Substitute), G59 (Mega Launcher), G83 (Bulletproof)
 # Decision 0020: the public static flags of a move (DUOFORGE_MOVE_STATIC_FLAG_*, include/duoforge/duoforge.h), one bit per
 # Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
 # no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
@@ -4878,6 +4878,7 @@ extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 #define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
 #define DFI_MOVE_FLAG3_BYPASSSUB 4u      /* flags.bypasssub (step G60): a Substitute does not take the hit of the move (decision 0032) */
 #define DFI_MOVE_FLAG3_PULSE 8u          /* flags.pulse (step G59): Mega Launcher's BasePower x1.5 for the holder's pulse moves */
+#define DFI_MOVE_FLAG3_BULLET 16u        /* flags.bullet (step G83, approved by HauptSession): Bulletproof stops a bullet move at its holder */
 extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
@@ -5014,7 +5015,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
           'const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {']
     for m in dp['moves']:
         c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['hits'][0], m['hits'][1], m['name']))
-    c += ['};', '', '/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59). */',
+    c += ['};', '', '/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59), BULLET (step G83). */',
           'const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {']
     for m in dp['moves']:
         if m['flags3']:

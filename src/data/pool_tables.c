@@ -5379,9 +5379,13 @@ const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {
     [DFI_MOVE_ZINGZAP] = {1u, 1u}, /* Zing Zap */
 };
 
-/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59). */
+/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59), BULLET (step G83). */
 const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_HYPNOSIS] = 1u, /* Hypnosis */
+    [DFI_MOVE_ZAPCANNON] = 16u, /* Zap Cannon */
+    [DFI_MOVE_FOCUSBLAST] = 16u, /* Focus Blast */
+    [DFI_MOVE_SHADOWBALL] = 16u, /* Shadow Ball */
+    [DFI_MOVE_WEATHERBALL] = 16u, /* Weather Ball */
     [DFI_MOVE_DRAGONPULSE] = 8u, /* Dragon Pulse */
     [DFI_MOVE_SNARL] = 4u, /* Snarl */
     [DFI_MOVE_PARTINGSHOT] = 5u, /* Parting Shot */
@@ -5390,15 +5394,18 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ENCORE] = 5u, /* Encore */
     [DFI_MOVE_SOAK] = 1u, /* Soak */
     [DFI_MOVE_PSYCHICNOISE] = 4u, /* Psychic Noise */
+    [DFI_MOVE_ACIDSPRAY] = 16u, /* Acid Spray */
     [DFI_MOVE_AFTERYOU] = 4u, /* After You */
     [DFI_MOVE_ALLURINGVOICE] = 4u, /* Alluring Voice */
     [DFI_MOVE_AROMATICMIST] = 4u, /* Aromatic Mist */
     [DFI_MOVE_ATTRACT] = 5u, /* Attract */
-    [DFI_MOVE_AURASPHERE] = 8u, /* Aura Sphere */
+    [DFI_MOVE_AURASPHERE] = 24u, /* Aura Sphere */
     [DFI_MOVE_BABYDOLLEYES] = 1u, /* Baby-Doll Eyes */
+    [DFI_MOVE_BEAKBLAST] = 16u, /* Beak Blast */
     [DFI_MOVE_BLOCK] = 1u, /* Block */
     [DFI_MOVE_BOOMBURST] = 4u, /* Boomburst */
     [DFI_MOVE_BUGBUZZ] = 4u, /* Bug Buzz */
+    [DFI_MOVE_BULLETSEED] = 16u, /* Bullet Seed */
     [DFI_MOVE_CHARM] = 1u, /* Charm */
     [DFI_MOVE_CLANGINGSCALES] = 4u, /* Clanging Scales */
     [DFI_MOVE_COACHING] = 4u, /* Coaching */
@@ -5413,6 +5420,8 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DRAGONCHEER] = 4u, /* Dragon Cheer */
     [DFI_MOVE_EERIEIMPULSE] = 1u, /* Eerie Impulse */
     [DFI_MOVE_EERIESPELL] = 4u, /* Eerie Spell */
+    [DFI_MOVE_ELECTROBALL] = 16u, /* Electro Ball */
+    [DFI_MOVE_ENERGYBALL] = 16u, /* Energy Ball */
     [DFI_MOVE_ENTRAINMENT] = 1u, /* Entrainment */
     [DFI_MOVE_FAIRYLOCK] = 4u, /* Fairy Lock */
     [DFI_MOVE_FAKETEARS] = 1u, /* Fake Tears */
@@ -5422,6 +5431,7 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_GASTROACID] = 1u, /* Gastro Acid */
     [DFI_MOVE_GLARE] = 1u, /* Glare */
     [DFI_MOVE_GUARDSWAP] = 4u, /* Guard Swap */
+    [DFI_MOVE_GYROBALL] = 16u, /* Gyro Ball */
     [DFI_MOVE_HAZE] = 4u, /* Haze */
     [DFI_MOVE_HEALBELL] = 4u, /* Heal Bell */
     [DFI_MOVE_HEALPULSE] = 9u, /* Heal Pulse */
@@ -5438,18 +5448,24 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_OVERDRIVE] = 4u, /* Overdrive */
     [DFI_MOVE_PERISHSONG] = 4u, /* Perish Song */
     [DFI_MOVE_POISONPOWDER] = 1u, /* Poison Powder */
+    [DFI_MOVE_POLLENPUFF] = 16u, /* Pollen Puff */
     [DFI_MOVE_POWERSWAP] = 4u, /* Power Swap */
     [DFI_MOVE_PSYCHUP] = 4u, /* Psych Up */
+    [DFI_MOVE_PYROBALL] = 16u, /* Pyro Ball */
     [DFI_MOVE_REFLECTTYPE] = 4u, /* Reflect Type */
     [DFI_MOVE_ROAR] = 5u, /* Roar */
+    [DFI_MOVE_ROCKBLAST] = 16u, /* Rock Blast */
+    [DFI_MOVE_ROCKWRECKER] = 16u, /* Rock Wrecker */
     [DFI_MOVE_ROLEPLAY] = 4u, /* Role Play */
     [DFI_MOVE_ROUND] = 4u, /* Round */
     [DFI_MOVE_SCARYFACE] = 1u, /* Scary Face */
     [DFI_MOVE_SCREECH] = 5u, /* Screech */
+    [DFI_MOVE_SEEDBOMB] = 16u, /* Seed Bomb */
     [DFI_MOVE_SIMPLEBEAM] = 1u, /* Simple Beam */
     [DFI_MOVE_SING] = 5u, /* Sing */
     [DFI_MOVE_SKILLSWAP] = 4u, /* Skill Swap */
     [DFI_MOVE_SLEEPPOWDER] = 1u, /* Sleep Powder */
+    [DFI_MOVE_SLUDGEBOMB] = 16u, /* Sludge Bomb */
     [DFI_MOVE_SNORE] = 4u, /* Snore */
     [DFI_MOVE_SPARKLINGARIA] = 4u, /* Sparkling Aria */
     [DFI_MOVE_SPEEDSWAP] = 4u, /* Speed Swap */
@@ -5464,6 +5480,7 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SWAGGER] = 1u, /* Swagger */
     [DFI_MOVE_SWEETKISS] = 1u, /* Sweet Kiss */
     [DFI_MOVE_SWEETSCENT] = 1u, /* Sweet Scent */
+    [DFI_MOVE_SYRUPBOMB] = 16u, /* Syrup Bomb */
     [DFI_MOVE_TAUNT] = 5u, /* Taunt */
     [DFI_MOVE_TEARFULLOOK] = 1u, /* Tearful Look */
     [DFI_MOVE_TEATIME] = 4u, /* Teatime */
@@ -7102,10 +7119,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x18u, 0x2bu, 0x55u, 0x23u, 0xf7u, 0x60u, 0x35u, 0xefu,
-    0x02u, 0x17u, 0xb8u, 0xf2u, 0x77u, 0x51u, 0x8eu, 0x1eu,
-    0xf8u, 0xefu, 0x9du, 0x92u, 0x4bu, 0xffu, 0x23u, 0x9fu,
-    0x84u, 0xb0u, 0x50u, 0x60u, 0xfau, 0xfau, 0xd4u, 0x71u,
+    0x6eu, 0xcfu, 0x54u, 0x75u, 0x2du, 0x7eu, 0x36u, 0xbdu,
+    0xbdu, 0xa6u, 0xb3u, 0xa3u, 0x3bu, 0x29u, 0x2eu, 0x60u,
+    0xdfu, 0xe8u, 0xd9u, 0x1du, 0x62u, 0x85u, 0xefu, 0x35u,
+    0xabu, 0x6fu, 0x6du, 0xa9u, 0x92u, 0x56u, 0xb6u, 0x7eu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

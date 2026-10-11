@@ -2321,11 +2321,11 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
 static duoforge_status dfi_after_set_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t source, uint32_t origin);
 
 /* Leaf Guard's test (step G83, data/abilities.ts:2291-2310, which read Pokemon#effectiveWeather, sim/pokemon.ts:2190-2198): sun
- * is up. On main that is the raw weather: Cloud Nine (step G79) is not merged, and a Leaf Guard holder is never the Mega Sol
- * holder (Meganium's Mega Sol takes the place of Leaf Guard). Step G79 routes this test through the effective-weather predicate:
- * this helper is the one place to change. A Mega Sol holder standing on the field reads as sun for the effects of its own moves
- * (the Pokemon whose move is active), which the raw weather does not show, so while one stands and the raw weather is not sun the
- * test is not modelled: E_UNSUPPORTED, never a guess. */
+ * is up. On main that is the raw weather: Cloud Nine (step G79) is not merged. Step G79 routes this test through the
+ * effective-weather predicate: this helper is the one place to change. A Mega Sol holder standing on the field reads as sun for
+ * the effects of its own moves, whatever the holder's own ability: Mega Meganium's base learnset has Toxic and Poison Powder, so
+ * its Toxic on a Leaf Guard foe outside sun is refused by Leaf Guard in the pin. The raw weather does not show that, so while such
+ * a holder stands and the raw weather is not sun the test is not modelled: E_UNSUPPORTED, never a guess. */
 static duoforge_status dfi_leaf_guard_sun(struct duoforge_battle *b, bool *sun)
 {
     *sun = b->weather == DFI_WEATHER_SUN;
@@ -6058,8 +6058,7 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
              * the hit returns null (no -fail). A target holds one ability, so no other holder's TryHit is in this branch. */
             dfi_immune(r, t, 1u + DFI_ABILITY_STURDY);
             hit[i] = false;
-        } else if (dfi_ability(r->b, tm, DFI_ABILITY_BULLETPROOF) &&
-                   (dfi_pool_move_static_flags[move_id] & DUOFORGE_MOVE_STATIC_FLAG_BULLET) != 0u) {
+        } else if (dfi_ability(r->b, tm, DFI_ABILITY_BULLETPROOF) && (dfi_pool_move_flags3[move_id] & DFI_MOVE_FLAG3_BULLET) != 0u) {
             /* Step G83, Bulletproof (data/abilities.ts:480-491, onTryHit, breakable): a move with the bullet flag stops for its holder
              * with -immune and [from] ability: Bulletproof, and the TryHit returns null. The target takes no accuracy draw and no
              * draw after it (the hit step is before the accuracy step). No marked ability ignores breakable (no Mold Breaker family
