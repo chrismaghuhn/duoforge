@@ -39,6 +39,7 @@ TEAM_SELECTION, TURN, REPLACEMENT, PIVOT = (C[f"DUOFORGE_BOUNDARY_{n}"] for n in
 CAUSE_SLEEP, CAUSE_CONFUSION = C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION"]
 CAUSE_ILLUSION = C["DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE"]
 CAUSE_RAISED = C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"]
+CAUSE_TURN_HISTORY = C["DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY"]
 MAX_ROSTER = 6
 Q_RESIDUAL = VALUES["DFI_Q_RESIDUAL"]
 AILMENT_SLEEP = C["DUOFORGE_AILMENT_SLEEP"]
@@ -51,6 +52,7 @@ VOL_FOLLOW_ME, VOL_HELPING_HAND, VOL_UNBURDEN = (VALUES[f"DFI_VOL_{n}"] for n in
 VOL_CHOICE_LOCK, VOL_NEWLY_SWITCHED = VALUES["DFI_VOL_CHOICE_LOCK"], VALUES["DFI_VOL_NEWLY_SWITCHED"]
 PARTY_HIDDEN = 7  # DFI_PARTY_HIDDEN
 POSFLAG_STATS_RAISED = 2  # DFI_POSFLAG_STATS_RAISED
+POSFLAG_LOWERED, POSFLAG_HURT = 0x20, 0x40  # DFI_POSFLAG_LOWERED, DFI_POSFLAG_HURT (G88, decision 0046)
 _FIELDS = {name: (start, size) for name, start, size in state_layout.fields(pool=True)}
 
 
@@ -115,6 +117,19 @@ def visible_causes(observation, tables):
                     v = s["members"][int(occupant)]
                     if alluring in [int(x) for x in v["move_ids"][:int(v["move_count"])]]:
                         mask |= CAUSE_RAISED
+    # step G88 (src/state/view.c dfi_view_turn_history_risk): at a PIVOT, an active Pokemon of either side that knows Lash
+    # Out or Assurance; at a decision of turn 1 (endTurn keeps the entries' LOWERED there), one that knows Lash Out
+    lash, assurance = tables["MOVE"].get("LASHOUT"), tables["MOVE"].get("ASSURANCE")
+    pivot = int(observation["boundary_kind"]) == PIVOT
+    if pivot or int(observation["turn"]) == 1:
+        for side in (0, 1):
+            s = observation["sides"][side]
+            for occupant in s["occupant"]:
+                if int(occupant) < MAX_ROSTER:
+                    v = s["members"][int(occupant)]
+                    moves = [int(x) for x in v["move_ids"][:int(v["move_count"])]]
+                    if (lash is not None and lash in moves) or (pivot and assurance is not None and assurance in moves):
+                        mask |= CAUSE_TURN_HISTORY
     return mask
 
 
@@ -136,7 +151,8 @@ def refusal(tracker, observation):
     causes = visible_causes(observation, tracker.data.tables)
     if causes:
         names = [n for bit, n in ((CAUSE_SLEEP, "visible-sleep"), (CAUSE_CONFUSION, "visible-confusion"),
-                                  (CAUSE_ILLUSION, "illusion-possible"), (CAUSE_RAISED, "raised-this-turn")) if causes & bit]
+                                  (CAUSE_ILLUSION, "illusion-possible"), (CAUSE_RAISED, "raised-this-turn"),
+                                  (CAUSE_TURN_HISTORY, "turn-history")) if causes & bit]
         raise Refusal(",".join(names), causes)
     if revive_proxy(observation, tracker.data.tables):
         raise Refusal("revive-proxy")
@@ -429,7 +445,8 @@ def _tail(t, s, boundary):
             s.put(ppre + "throat_chop_turns", p.throat_chop)
             s.put(ppre + "perish", p.perish)
             s.put(ppre + "hits_taken", p.hits_taken)
-            s.put(f"tail5.position{side * 2 + k}.position_flags", POSFLAG_STATS_RAISED if p.raised else 0)
+            s.put(f"tail5.position{side * 2 + k}.position_flags", (POSFLAG_STATS_RAISED if p.raised else 0) |
+                  (POSFLAG_LOWERED if p.lowered else 0) | (POSFLAG_HURT if p.hurt else 0))
             if p.ability_now:
                 s.put(f"{pre}member{p.occupant}.ability_now", p.ability_now)
         for m, member in enumerate(members):
