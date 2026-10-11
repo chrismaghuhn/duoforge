@@ -75,7 +75,7 @@ G. **Public view (existing decision, not a new value).** Decision 0018 (`forme`,
 - Move `kingsshield` (id 277), with `protect_kind` 2.
 - Blade forme row (A), if approved.
 
-Not marked: Baneful Bunker (Toxapex, which has no supported ability), Unseen Fist (unmarked, see section 1), Transform. Mold Breaker is not yet checked against the pin (phase 2 item if it is marked).
+Not marked: Baneful Bunker (Toxapex, which has no supported ability), Unseen Fist (unmarked, see section 1), Transform. Mold Breaker is not yet checked against the pin (phase 2 item if it is marked). Marked since batch 6 (0015 entry 5cx).
 
 ## 5. Refusals (E_UNSUPPORTED, never a guess)
 

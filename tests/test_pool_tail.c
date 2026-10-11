@@ -386,13 +386,13 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0}, /* G76: position_flags bit 4 (Destiny Bond) is valid, 11 values of the byte decode (5 before) */
+    {47, 0, 208, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, mask 0x7F): 47 values of the byte decode (11 before G88) */
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {47, 0, 208, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {47, 0, 208, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {47, 0, 208, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -875,7 +875,11 @@ MUT(m_charge, p0->charge = 2u)
 MUT(m_glaive, p0->glaive_rush = 2u)
 MUT(m_protect_above, {
     y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
-    p0->protect_kind = 3u; /* above DFI_TAIL_PROTECT_KIND_MAX (2, King's Shield of step G66) */
+    p0->protect_kind = 4u; /* above DFI_TAIL_PROTECT_KIND_MAX (3, Baneful Bunker of step G94) */
+})
+MUT(m_protect_bunker, { /* Baneful Bunker, protect_kind 3 (step G94, decision 0015 5cv): a valid kind */
+    y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
+    p0->protect_kind = DFI_PROTECT_BANEFUL_BUNKER;
 })
 MUT(m_protect_kings, { /* King's Shield, protect_kind 2 (step G66, decision 0015 5cb): a valid kind */
     y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
@@ -1030,7 +1034,7 @@ MUT(m_ill_override, ts->illusion.override[3] = 1u)
 MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
 MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
 MUT(m_healing_wish_bit, p0->position_flags = 1u) /* bit 0 (Healing Wish) is never set yet */
-MUT(m_position_flags_bit5, p0->position_flags = 0x20u) /* bits 5-7 are not defined (G76 took bit 4) */
+MUT(m_position_flags_bit7, p0->position_flags = 0x80u) /* bit 7 is not defined (G76 took bit 4, G88 took bits 5 and 6) */
 MUT(v_destiny_bond_standing, p0->position_flags = 0x10u) /* G76: Destiny Bond at a standing lead is valid */
 MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
@@ -1148,8 +1152,9 @@ static const tail_case cases[] = {
     {"Focus Energy above 1", DFI_INV_TAIL_POSITION, false, m_focus},
     {"Charge above 1", DFI_INV_TAIL_POSITION, false, m_charge},
     {"Glaive Rush above 1", DFI_INV_TAIL_POSITION, false, m_glaive},
-    {"protect kind above 2", DFI_INV_TAIL_POSITION, false, m_protect_above},
+    {"protect kind above 3", DFI_INV_TAIL_POSITION, false, m_protect_above},
     {"protect kind King's Shield (2) with the volatile", DFI_INV_NONE, false, m_protect_kings},
+    {"protect kind Baneful Bunker (3) with the volatile", DFI_INV_NONE, false, m_protect_bunker},
     {"protect kind without the Protect volatile", DFI_INV_TAIL_POSITION, false, m_protect_no_volatile},
     {"a move result above its two nibbles and its two unclassified bits", DFI_INV_TAIL_POSITION, false, m_move_result_high},
     {"an unclassified this-turn bit with a this-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_now_with_result},
@@ -1211,7 +1216,7 @@ static const tail_case cases[] = {
     {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
     {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
     {"healing wish bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_healing_wish_bit},
-    {"position flag bit 5 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit5},
+    {"position flag bit 7 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit7},
     {"G76: Destiny Bond at a standing lead is valid", DFI_INV_NONE, false, v_destiny_bond_standing},
     {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
@@ -1393,6 +1398,12 @@ int main(void)
             }
             memcpy(zero_tail + DFI_ENC_TAIL_FIELD_PARTY_OFF, pt.party_order, sizeof pt.party_order);
         }
+        /* G88 (decision 0046): side 0's lead Staraptor has Intimidate (team_a.txt), which lowers both leads of side 1 at the battle
+         * start (sim/battle.ts:2086). endTurn keeps LOWERED through turn 1 (the gate turn !== 1, sim/battle.ts:1677-1683), so the
+         * position flags of flats 2 and 3 (tail bytes 328 and 330; the position byte is at 324 + 2 * flat) carry
+         * LOWERED_THIS_TURN after team selection. Side 0's own leads are not lowered. */
+        zero_tail[328] = DFI_POSFLAG_LOWERED;
+        zero_tail[330] = DFI_POSFLAG_LOWERED;
         DF_CHECK_EQ_U64(&t, df_encode_n(kp, w, zero_enc), 1357u);
         DF_CHECK_BYTES(&t, zero_enc + DFI_ENC_TAIL_OFF, zero_tail, sizeof zero_tail,
                        "a tail after team selection: zero but the party order (step G46)");

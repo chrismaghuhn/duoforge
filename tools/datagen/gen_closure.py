@@ -410,7 +410,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
-    if pool and handled[0] in G20_PROTECT_HANDLERS:
+    if pool and handled[0] in G20_PROTECT_HANDLERS + G94_HANDLERS:
         punish = PROTECT_VARIANT_PUNISHMENT[handled[0]]
         if 'condition' not in f or norm(f['condition'][1]) != PROTECT_VARIANT_CONDITION % (punish, punish):
             fail('move %s: the condition is not the pinned text' % mid)
@@ -1466,7 +1466,13 @@ PROTECT_VARIANT_CONDITION = (
     "if (source.volatiles['lockedmove'].duration === 2) { delete source.volatiles['lockedmove']; } } "
     "if (this.checkMoveMakesContact(move, source, target)) { %s } return this.NOT_FAIL; }, "
     "onHit(target, source, move) { if (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) { %s } }, },")
-PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);'}
+PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);',
+                              'BANEFUL_BUNKER': "source.trySetStatus('psn', target);"}
+# Step G94 (decision 0015 5cv, decision 0061): Baneful Bunker (data/moves.ts:985-1037) is the same Protect variant with poison
+# on a contact attacker; its only learner in the pool is Toxapex, whose Limber and Regenerator are marked (G39, G20-era
+# Regenerator). Its handler is a row of its own, appended after G78 (before UNMODELED). The template check above covers
+# the whole condition text with the punishment filled in; the move's copied fields are Protect's, as for Spiky Shield.
+G94_HANDLERS = ['BANEFUL_BUNKER']
 # Step G66, King's Shield: the pinned condition (data/moves.ts:9905-9955), whitespace aside. Unlike Spiky Shield's, its
 # onTryHit passes a Status move (checkMoveBypassesProtect with blockStatus false) and its contact drop is -1 Attack on the
 # attacker (both in onTryHit and in onHit for a Z-move). The move's own flags differ from Protect's (failinstruct), so only
@@ -2256,6 +2262,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
+    'banefulbunker': ('BANEFUL_BUNKER', {'onPrepareHit', 'onHit'}),       # G94: Protect that poisons a contact attacker
     'kingsshield': ('KINGS_SHIELD', {'onPrepareHit', 'onHit'}),           # G66: Protect that passes Status moves and lowers a contact attacker's Attack
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'substitute': ('SUBSTITUTE', {'onTryHit', 'onHit'}),                  # G60: a 1/4 HP decoy that takes the hits (decision 0032)
@@ -2331,6 +2338,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'populationbomb': ('MULTI_HIT_10', set()),
     'alluringvoice': ('ALLURING_VOICE', set()),                       # G72b: confusion when the target's stats were raised this turn
     'dragoncheer': ('DRAGON_CHEER', set()),    # G72b: the crit stage of its target (the ally), by its Dragon type at start
+    'lashout': ('LASH_OUT', {'onBasePower'}),   # G88: 2x power when the user's stat fell this turn (position flag LOWERED, decision 0046)
+    'assurance': ('ASSURANCE', {'basePowerCallback'}),  # G88: 2x power when the target was hurt this turn (position flag HURT)
     'doubleshock': ('DOUBLE_SHOCK', {'onTryMove'}),                       # G50: fails without Electric; its self effect is owned                            # G48: ten hits, a check for each (multiaccuracy)
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
@@ -2410,6 +2419,21 @@ G66_HANDLERS = ['KINGS_SHIELD']
 # Step G72b (decision 0015 5ce, lead's approval): Alluring Voice's secondary (confusion when the target's stats were raised this
 # turn: the position flag of tail rev 5) and Dragon Cheer's volatile (the crit stage in the position flags).
 G72B_HANDLERS = ['ALLURING_VOICE', 'DRAGON_CHEER']
+# Step G88 (decision 0046): Lash Out's onBasePower (data/moves.ts:10048-10066) and Assurance's basePowerCallback
+# (data/moves.ts:643-660). Both read a turn-history position flag (LOWERED, HURT); the flags are set and cleared by the engine.
+G88_HANDLERS = ['LASH_OUT', 'ASSURANCE']
+G88_FACTS = {
+    'assurance': (
+        'accuracy: 100,', 'basePower: 60,', 'category: "Physical",', 'priority: 0,',
+        'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'if (target.hurtThisTurn) {',
+        'return move.basePower * 2;', 'target: "normal",', 'type: "Dark",',
+    ),
+    'lashout': (
+        'accuracy: 100,', 'basePower: 75,', 'category: "Physical",', 'priority: 0,',
+        'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'onBasePower(basePower, source) {',
+        'if (source.statsLoweredThisTurn) {', 'return this.chainModify(2);', 'target: "normal",', 'type: "Dark",',
+    ),
+}
 G72B_FACTS = (
     'accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, sound: 1, bypasssub: 1, metronome: 1 },', 'chance: 100,',
@@ -2543,7 +2567,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2553,6 +2577,7 @@ G2_OWNED_FIELDS = {
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
     'DISABLE': {'volatileStatus': "volatileStatus: 'disable',"},
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
+    'BANEFUL_BUNKER': {'volatileStatus': "volatileStatus: 'banefulbunker',"},
     'TAUNT': {'volatileStatus': "volatileStatus: 'taunt',"},
     'DRAGON_CHEER': {'volatileStatus': "volatileStatus: 'dragoncheer',"},
     'SUBSTITUTE': {'volatileStatus': "volatileStatus: 'substitute',"},
@@ -2601,7 +2626,7 @@ G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEA
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
-                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'DESTINY_BOND'}
+                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'DESTINY_BOND', 'BANEFUL_BUNKER'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -3349,6 +3374,16 @@ def check_g78_facts(moves_ts):
     for fact in G78_FACTS:
         if norm(fact) not in text:
             fail('move dragondarts: the entry no longer has "%s"' % fact)
+def check_g88_facts(moves_ts):
+    """Step G88: the Lash Out and Assurance entries are the pinned texts the turn code reads."""
+    for mid, facts in sorted(G88_FACTS.items()):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
 
 
 def check_g72b_facts(moves_ts):
@@ -3911,6 +3946,199 @@ def check_g8_conditions(moves_ts, only=None):
                 fail('move %s: the condition no longer has "%s"' % (mid, fact))
 
 
+# Step C2 (cheap moves, decision 0015 entry 5cp): the pinned fields of the 30 damaging moves with secondaries or self effects,
+# read from data/moves.ts at b2cb775 by c2_literal, which reads the entry as the object literal it is (nested secondary,
+# secondaries and self objects, arrays, flags as a set of names). Every field of the entry must be listed here with the value
+# the pin gives, and nothing else but C2_IGNORED_KEYS. C2_CHAMPIONS_OVERRIDES: the three moves whose Champions mod entry
+# only sets a base power (data/mods/champions/moves.ts); their pin entries are the base values listed here.
+C2_IGNORED_KEYS = {'num', 'name', 'zMove', 'contestType'}
+C2_CHAMPIONS_OVERRIDES = {'appleacid': 90, 'mountaingale': 120, 'nightdaze': 90}
+C2_FACTS = (
+    ('bittermalice', {'accuracy': 100, 'basePower': 75, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                      'type': 'Ghost', 'flags': {'protect', 'mirror', 'metronome'},
+                      'secondary': {'chance': 100, 'boosts': {'atk': -1}}}),
+    ('zenheadbutt', {'accuracy': 90, 'basePower': 80, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal',
+                     'type': 'Psychic', 'flags': {'contact', 'protect', 'mirror', 'metronome'},
+                     'secondary': {'chance': 20, 'volatileStatus': 'flinch'}}),
+    ('pyroball', {'accuracy': 90, 'basePower': 120, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                  'type': 'Fire', 'flags': {'protect', 'mirror', 'defrost', 'bullet'},
+                  'secondary': {'chance': 10, 'status': 'brn'}}),
+    ('wildcharge', {'accuracy': 100, 'basePower': 90, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal',
+                    'type': 'Electric', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'recoil': [1, 4]}),
+    ('headlongrush', {'accuracy': 100, 'basePower': 120, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                      'type': 'Ground', 'flags': {'contact', 'protect', 'mirror', 'punch', 'metronome'},
+                      'self': {'boosts': {'def': -1, 'spd': -1}}}),
+    ('extrasensory', {'accuracy': 100, 'basePower': 80, 'category': 'Special', 'pp': 20, 'priority': 0, 'target': 'normal',
+                      'type': 'Psychic', 'flags': {'protect', 'mirror', 'metronome'},
+                      'secondary': {'chance': 10, 'volatileStatus': 'flinch'}}),
+    ('chillingwater', {'accuracy': 100, 'basePower': 50, 'category': 'Special', 'pp': 20, 'priority': 0, 'target': 'normal',
+                       'type': 'Water', 'flags': {'protect', 'mirror'},
+                       'secondary': {'chance': 100, 'boosts': {'atk': -1}}}),
+    ('waterpulse', {'accuracy': 100, 'basePower': 60, 'category': 'Special', 'pp': 20, 'priority': 0, 'target': 'any',
+                    'type': 'Water', 'flags': {'protect', 'mirror', 'distance', 'metronome', 'pulse'},
+                    'secondary': {'chance': 20, 'volatileStatus': 'confusion'}}),
+    ('lunge', {'accuracy': 100, 'basePower': 80, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal',
+               'type': 'Bug', 'flags': {'contact', 'protect', 'mirror', 'metronome'},
+               'secondary': {'chance': 100, 'boosts': {'atk': -1}}}),
+    ('blazekick', {'accuracy': 90, 'basePower': 85, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Fire', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'critRatio': 2,
+                   'secondary': {'chance': 10, 'status': 'brn'}}),
+    ('acidspray', {'accuracy': 100, 'basePower': 40, 'category': 'Special', 'pp': 20, 'priority': 0, 'target': 'normal',
+                   'type': 'Poison', 'flags': {'protect', 'mirror', 'metronome', 'bullet'},
+                   'secondary': {'chance': 100, 'boosts': {'spd': -2}}}),
+    ('paraboliccharge', {'accuracy': 100, 'basePower': 65, 'category': 'Special', 'pp': 20, 'priority': 0,
+                         'target': 'allAdjacent', 'type': 'Electric', 'flags': {'protect', 'mirror', 'heal', 'metronome'},
+                         'drain': [1, 2]}),
+    ('torchsong', {'accuracy': 100, 'basePower': 80, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Fire', 'flags': {'protect', 'mirror', 'sound', 'bypasssub', 'metronome'},
+                   'secondary': {'chance': 100, 'self': {'boosts': {'spa': 1}}}}),
+    ('lavaplume', {'accuracy': 100, 'basePower': 80, 'category': 'Special', 'pp': 15, 'priority': 0, 'target': 'allAdjacent',
+                   'type': 'Fire', 'flags': {'protect', 'mirror', 'metronome'},
+                   'secondary': {'chance': 30, 'status': 'brn'}}),
+    ('firefang', {'accuracy': 95, 'basePower': 65, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal',
+                  'type': 'Fire', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'bite'},
+                  'secondaries': [{'chance': 10, 'status': 'brn'}, {'chance': 10, 'volatileStatus': 'flinch'}]}),
+    ('lowsweep', {'accuracy': 100, 'basePower': 65, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                  'type': 'Fighting', 'flags': {'contact', 'protect', 'mirror', 'metronome'},
+                  'secondary': {'chance': 100, 'boosts': {'spe': -1}}}),
+    ('skittersmack', {'accuracy': 90, 'basePower': 70, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                      'type': 'Bug', 'flags': {'contact', 'protect', 'mirror', 'metronome'},
+                      'secondary': {'chance': 100, 'boosts': {'spa': -1}}}),
+    ('hornleech', {'accuracy': 100, 'basePower': 75, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Grass', 'flags': {'contact', 'protect', 'mirror', 'heal', 'metronome'}, 'drain': [1, 2]}),
+    ('zingzap', {'accuracy': 100, 'basePower': 80, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                 'type': 'Electric', 'flags': {'contact', 'protect', 'mirror', 'metronome'},
+                 'secondary': {'chance': 30, 'volatileStatus': 'flinch'}}),
+    ('irontail', {'accuracy': 75, 'basePower': 100, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal',
+                  'type': 'Steel', 'flags': {'contact', 'protect', 'mirror', 'metronome'},
+                  'secondary': {'chance': 30, 'boosts': {'def': -1}}}),
+    ('dynamicpunch', {'accuracy': 50, 'basePower': 100, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                      'type': 'Fighting', 'flags': {'contact', 'protect', 'mirror', 'punch', 'metronome'},
+                      'secondary': {'chance': 100, 'volatileStatus': 'confusion'}}),
+    ('mudshot', {'accuracy': 95, 'basePower': 55, 'category': 'Special', 'pp': 15, 'priority': 0, 'target': 'normal',
+                 'type': 'Ground', 'flags': {'protect', 'mirror', 'metronome'},
+                 'secondary': {'chance': 100, 'boosts': {'spe': -1}}}),
+    ('chargebeam', {'accuracy': 90, 'basePower': 50, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                    'type': 'Electric', 'flags': {'protect', 'mirror', 'metronome'},
+                    'secondary': {'chance': 70, 'self': {'boosts': {'spa': 1}}}}),
+    ('thunderfang', {'accuracy': 95, 'basePower': 65, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal',
+                     'type': 'Electric', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'bite'},
+                     'secondaries': [{'chance': 10, 'status': 'par'}, {'chance': 10, 'volatileStatus': 'flinch'}]}),
+    ('crosspoison', {'accuracy': 100, 'basePower': 70, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                     'type': 'Poison', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'slicing'}, 'critRatio': 2,
+                     'secondary': {'chance': 10, 'status': 'psn'}}),
+    ('pounce', {'accuracy': 100, 'basePower': 50, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                'type': 'Bug', 'flags': {'contact', 'protect', 'mirror'},
+                'secondary': {'chance': 100, 'boosts': {'spe': -1}}}),
+    ('nightdaze', {'accuracy': 95, 'basePower': 85, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Dark', 'flags': {'protect', 'mirror', 'metronome'},
+                   'secondary': {'chance': 40, 'boosts': {'accuracy': -1}}}),
+    ('mudslap', {'accuracy': 100, 'basePower': 20, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                 'type': 'Ground', 'flags': {'protect', 'mirror', 'metronome'},
+                 'secondary': {'chance': 100, 'boosts': {'accuracy': -1}}}),
+    ('appleacid', {'accuracy': 100, 'basePower': 80, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Grass', 'flags': {'protect', 'mirror'},
+                   'secondary': {'chance': 100, 'boosts': {'spd': -1}}}),
+    ('mountaingale', {'accuracy': 85, 'basePower': 100, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                      'type': 'Ice', 'flags': {'protect', 'mirror', 'metronome'},
+                      'secondary': {'chance': 30, 'volatileStatus': 'flinch'}}),
+)
+_C2_TOKEN = re.compile(r"\s*(?:('[^']*'|\"[^\"]*\")|(-?\d+)|(true|false)\b|([A-Za-z_]\w*)|([{}\[\]:,]))")
+
+
+def c2_literal(text):
+    """The value of an object literal of the subset the move entries use: numbers, quoted strings, true and false, arrays,
+    objects with identifier keys, trailing commas. Anything else fails loudly."""
+    tokens, pos = [], 0
+    while True:
+        m = _C2_TOKEN.match(text, pos)
+        if m is None:
+            if text[pos:].strip() == '':
+                break
+            fail('the C2 reader meets %r in a move entry' % text[pos:pos + 24].strip())
+        pos = m.end()
+        if m.group(1) is not None:
+            tokens.append(('v', m.group(1)[1:-1]))
+        elif m.group(2) is not None:
+            tokens.append(('v', int(m.group(2))))
+        elif m.group(3) is not None:
+            tokens.append(('v', m.group(3) == 'true'))
+        elif m.group(4) is not None:
+            tokens.append(('id', m.group(4)))
+        else:
+            tokens.append(('p', m.group(5)))
+
+    def value(i):
+        if i >= len(tokens):
+            fail('a move entry ends inside a value')
+        kind, val = tokens[i]
+        if kind == 'v':
+            return val, i + 1
+        if val == '{':
+            out, i = {}, i + 1
+            while tokens[i] != ('p', '}'):
+                if tokens[i][0] != 'id' or tokens[i + 1] != ('p', ':'):
+                    fail('a move entry has a key that is not an identifier before token %d' % i)
+                out[tokens[i][1]], i = value(i + 2)
+                if tokens[i] == ('p', ','):
+                    i += 1
+            return out, i + 1
+        if val == '[':
+            out, i = [], i + 1
+            while tokens[i] != ('p', ']'):
+                item, i = value(i)
+                out.append(item)
+                if tokens[i] == ('p', ','):
+                    i += 1
+            return out, i + 1
+        fail('a move entry has the token %r where a value starts' % (val,))
+
+    if not tokens or tokens[0] != ('p', '{'):
+        fail('a move entry does not start with "{"')
+    got, end = value(0)
+    if end != len(tokens):
+        fail('a move entry has tokens after its closing brace')
+    return got
+
+
+def c2_entry_value(source, mid):
+    """The parsed entry of a move (its top-level object), with its flags as a set of names (each must be 1)."""
+    e = source.entry(mid)
+    if e is None:
+        return None
+    body = '\n'.join(e[2][1:-1])
+    got = c2_literal('{' + body + '}')
+    if 'flags' in got:
+        if any(v != 1 for v in got['flags'].values()):
+            fail('move %s: a flag with a value other than 1' % mid)
+        got['flags'] = set(got['flags'])
+    return got
+
+
+def check_c2_facts(moves_ts, champ_moves, only=None):
+    """Step C2: the pin entry of every listed move has exactly the listed fields with their values (nothing else but
+    C2_IGNORED_KEYS), and the Champions mod has no entry for it, except the three base power overrides of C2_CHAMPIONS_OVERRIDES
+    (whose entry is exactly that override). `only`: a tuple of (move id, expected) for the tests."""
+    for mid, expected in (C2_FACTS if only is None else only):
+        got = c2_entry_value(moves_ts, mid)
+        if got is None:
+            fail('move %s not found' % mid)
+        champ = c2_entry_value(champ_moves, mid)
+        if mid in C2_CHAMPIONS_OVERRIDES:
+            if champ is None or champ != {'inherit': True, 'basePower': C2_CHAMPIONS_OVERRIDES[mid]}:
+                fail('move %s: the Champions mod entry is not the base power override %d' % (mid, C2_CHAMPIONS_OVERRIDES[mid]))
+        elif champ is not None:
+            fail('move %s: the Champions mod overrides it; the C2 facts must be read again' % mid)
+        extra = sorted(set(got) - set(expected) - C2_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the C2 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            if got[key] != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, got[key], want))
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -3944,6 +4172,8 @@ def build_pool(root, repo, dx):
     check_g72b_facts(moves_ts)
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
+    check_g88_facts(moves_ts)
+    check_c2_facts(moves_ts, champ_moves)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

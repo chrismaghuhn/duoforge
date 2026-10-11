@@ -260,8 +260,48 @@ static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_obs
     return false;
 }
 
+/* Step G88 (decision 0046, cause DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY = 64): at a PIVOT boundary, an active Pokemon of either side
+ * that knows Lash Out or Assurance (its move ids are open, the OTS sheet; the position is public through occupant[]). Lash Out's
+ * LOWERED_THIS_TURN and Assurance's HURT_THIS_TURN (position_flags bits 5 and 6) are live mid-turn and are not in the view, so the
+ * record and the rebuild refuse. The same predicate as the Alluring Voice one: it reads only the observation (its boundary kind,
+ * its turn, the move ids of the own team and of the foe's open sheet) and the context, never the battle or the queue, so the
+ * battle path and duoforge_observation_causes (the live record assembler's path) share it. The bits are zero at a turn
+ * boundary (endTurn clears them). */
+static bool dfi_view_turn_history_risk(const duoforge_context *ctx, const duoforge_observation *ob)
+{
+    if (!dfi_context_is_pool(ctx)) {
+        return false;
+    }
+    const bool pivot = ob->boundary_kind == DUOFORGE_BOUNDARY_PIVOT;
+    /* The first decision (turn 1, after team selection, and any boundary of turn 1 before its endTurn): the entries of the battle
+     * start can have set LOWERED (Intimidate, sim/battle.ts:2086), and endTurn keeps it at turn 1 (the gate turn !== 1,
+     * sim/battle.ts:1677-1683). The view does not carry LOWERED, so the rebuilt world would be wrong there (decision 0046,
+     * section 3). HURT cannot be set before the first move: no spread damage happens at the start (entries set stages, weather
+     * and terrain; hazards are set by moves), so only Lash Out refuses at the first decision. A negative boost is not the
+     * criterion: the rule refuses whenever Lash Out is known. */
+    if (!pivot && ob->turn != 1u) {
+        return false;
+    }
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const uint32_t occ = ob->sides[side].occupant[p];
+            if (occ >= DUOFORGE_MAX_ROSTER) {
+                continue;
+            }
+            const duoforge_member_view *v = &ob->sides[side].members[occ];
+            for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < v->move_count; ++k) {
+                if (v->move_ids[k] == DFI_MOVE_LASHOUT || (pivot && v->move_ids[k] == DFI_MOVE_ASSURANCE)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 /* The part of the one predicate that the player's observation alone decides: a visible sleep, a visible confusion, a foe
- * Illusion member that may be disguised, a PIVOT with Alluring Voice on the field. The battle path adds what the observation does
+ * Illusion member that may be disguised, a PIVOT with Alluring Voice on the field, the turn history of Lash Out and Assurance
+ * (step G88). The battle path adds what the observation does
  * not carry (the foe's disguise state, a Substitute, a temporary forme). duoforge_observation_causes serves this part to the live
  * record assembler, so that no copy of it lives outside C. */
 static uint32_t dfi_view_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation)
@@ -295,6 +335,9 @@ static uint32_t dfi_view_observation_causes(const duoforge_context *ctx, const d
     }
     if (dfi_view_raised_risk(ctx, observation)) {
         mask |= DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN; /* step G72b: a PIVOT with Alluring Voice known on the field */
+    }
+    if (dfi_view_turn_history_risk(ctx, observation)) {
+        mask |= DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY; /* step G88: Lash Out or Assurance known on the field (PIVOT, turn 1) */
     }
     return mask;
 }
@@ -746,6 +789,8 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
     case DFI_SPECIAL_PROTECT:
     case DFI_SPECIAL_SPIKY_SHIELD:
     case DFI_SPECIAL_KINGS_SHIELD:
+    /* G94a: Baneful Bunker runs dfi_run_protect as every Protect: the stall fail FALSE, the -singleturn Protect TRUE */
+    case DFI_SPECIAL_BANEFUL_BUNKER:
     case DFI_SPECIAL_ENCORE:
     case DFI_SPECIAL_SOAK:
     case DFI_SPECIAL_DISABLE:

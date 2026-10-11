@@ -67,7 +67,7 @@ TAIL_SOURCE_MAX = 4
 TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
 TAIL_FLAG_MAX = 1
-TAIL_PROTECT_KIND_MAX = 1           # rev 3: 0 Protect and Detect, 1 Spiky Shield (Baneful Bunker would be 2)
+TAIL_PROTECT_KIND_MAX = 3           # rev 3: 0 Protect and Detect, 1 Spiky Shield, 2 King's Shield (G66), 3 Baneful Bunker (G94)
 TAIL_MOVE_RESULT_MASK = 0x3F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null),
                                     # bit 4 unclassified this turn, bit 5 unclassified last turn (step G42); bits 6-7 zero
 UNCLASSIFIED_NOW = 0x10
@@ -302,7 +302,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('738803081d558894d50fa7899cc147ccd15981a59907ac7314cf856b101a7196')
+POOL_TABLE_HASH = bytes.fromhex('19cc167476fdb4aaa545c5e472a7695109b25a6f1394213ac90d05ec4bb2af5c')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -977,9 +977,9 @@ def hazard_order_valid(ts):
 
 
 def position_flags_valid(pf):
-    """Rev 5 (G72b, G76): bit 0 (Healing Wish) and bits 5-7 are zero, the Dragon Cheer stage (bits 2-3) is at most 2, and
-    bit 4 is Destiny Bond (G76)."""
-    return pf & ~0x1F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+    """Rev 5 (G72b, G76, G88): bit 0 (Healing Wish) and bit 7 are zero, the Dragon Cheer stage (bits 2-3) is at most 2,
+    bit 4 is Destiny Bond (G76), and bits 5 and 6 are LOWERED (0x20) and HURT (0x40), G88."""
+    return pf & ~0x7F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
 
 
 def substitute_cap(sd):

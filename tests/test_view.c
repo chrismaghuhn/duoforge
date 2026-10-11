@@ -1070,6 +1070,13 @@ static void test_move_result(df_test *t)
     ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_HAZE, 0u);
     ev[1] = mr_ev(DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, none, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
     DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_UNCLASSIFIED_NOW);
+    /* Baneful Bunker (G94a, dfi_run_protect): its -singleturn Protect, true; the stall fail (-fail with [still]) false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 1u, DUOFORGE_CAUSE_NONE, DFI_MOVE_BANEFULBUNKER, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_PROTECT, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
     /* Imprison: its volatile on the user, true; a second one (-fail with [still], dfi_run_imprison) false */
     ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 1u, DUOFORGE_CAUSE_NONE, DFI_MOVE_IMPRISON, 0u);
     ev[1] = mr_ev(DUOFORGE_EVENT_VOLATILE_START, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);

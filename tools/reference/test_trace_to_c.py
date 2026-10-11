@@ -2307,7 +2307,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 201)  # G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 244)  # C2 (decision 0015 5cp): 22 damaging moves make 244 (222 before); G94 (decision 0015 5cv): Baneful Bunker; C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); G88 (decision 0046): Lash Out and Assurance make 203 (201 before); G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2340,6 +2340,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
                             # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
                             done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
+                            # Baneful Bunker (step G94) prints its own Protect line the same way (data/moves.ts:1005).
+                            done = done or (name == 'Baneful Bunker' and after.startswith('|-singleturn|'))
                             # King's Shield (step G66) prints the same `-singleturn|X|Protect` line as Protect (data/moves.ts:9929).
                             done = done or (name == "King's Shield" and after.startswith('|-singleturn|'))
                             # Haze (step G62, decision 0031): its own line, the public -clearallboost.
@@ -2902,6 +2904,77 @@ class FormeStance(unittest.TestCase):
         with self.assertRaises(trace_to_c.ConversionError) as cm:
             convert(self.NAME, spec, trace)
         self.assertEqual(cm.exception.rule, 'formechange-line')
+
+
+class Forme(unittest.TestCase):
+    """The forme key (lead decision 2026-10-11): a switch line names a forme by its base species in the identifier
+    (`|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|`), and the roster key stays the team species. One case each for the
+    formes whose identifier is the base name (Decidueye-Hisui, Goodra-Hisui, Stunfisk-Galar), a Mega Evolution after its
+    detailschange (the key is the team species, the Mega forme is no key), and the refusals."""
+
+    @staticmethod
+    def battle(roster, lines):
+        return {'steps': [{'log': lines}]}, [dict((name, index) for index, name in enumerate(roster[s])) for s in range(2)]
+
+    def test_decidueye_hisui_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp', 'Decidueye-Hisui']],
+                                    ['|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|195/195'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Decidueye'], 1)  # the switch line of side 1 (p2, slot b) names member 1 by its base species
+        self.assertEqual(roster[1]['Decidueye-Hisui'], 1)  # the team species key is unchanged
+
+    def test_goodra_hisui_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp', 'Goodra-Hisui']],
+                                    ['|switch|p2a: Goodra|Goodra-Hisui, L50, M|160/160'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Goodra'], 1)
+        self.assertEqual(roster[1]['Goodra-Hisui'], 1)
+
+    def test_stunfisk_galar_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Stunfisk-Galar']],
+                                    ['|drag|p2a: Stunfisk|Stunfisk-Galar, L50, M|200/200'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Stunfisk'], 0)
+
+    def test_a_mega_evolution_keeps_the_team_species_key(self):
+        """detailschange names the Mega forme; the switch that brings it back names the Mega forme in its details. Both leave
+        the key of the team species (the identifier is Charizard), and the Mega forme is not a key."""
+        trace, roster = self.battle([['Charizard', 'Pikachu'], ['Garchomp']],
+                                    ['|switch|p1a: Charizard|Charizard, L50, M|200/200',
+                                     '|detailschange|p1a: Charizard|Charizard-Mega-X, L50, M',
+                                     '|switch|p1b: Pikachu|Pikachu, L50, M|100/100',
+                                     '|switch|p1a: Charizard|Charizard-Mega-X, L50, M|200/200'])
+        before = dict(roster[0])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[0]['Charizard'], 0)
+        self.assertEqual(roster[0]['Pikachu'], 1)
+        self.assertNotIn('Charizard-Mega-X', roster[0])
+        self.assertEqual(roster[0], before)
+
+    def test_an_illusion_disguise_is_keyed_by_the_disguise_member(self):
+        """Illusion (decision 0026): a Zoroark-Hisui in disguise is shown by the species of a member of its own side (the
+        disguise is a roster name), in the identifier and in the details alike. The index is the disguise's member and there
+        is no conflict: the real Zoroark-Hisui keeps its own key (the i2_illusion_break and i2_bench_swap traces use this)."""
+        trace, roster = self.battle([['Zoroark-Hisui', 'Garchomp'], ['Pikachu']],
+                                    ['|switch|p1a: Garchomp|Garchomp, L50, M|200/200'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[0]['Garchomp'], 1)
+        self.assertEqual(roster[0]['Zoroark-Hisui'], 0)
+        self.assertNotIn('Zoroark', roster[0])
+
+    def test_a_short_name_that_two_members_take_is_refused(self):
+        trace, roster = self.battle([['Decidueye-Hisui', 'Decidueye'], ['Garchomp']],
+                                    ['|switch|p1a: Decidueye|Decidueye-Hisui, L50, M|195/195'])
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(cm.exception.rule, 'forme-key')
+
+    def test_a_line_that_matches_no_roster_member_is_refused(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp']],
+                                    ['|switch|p2a: Foo|Foo-Bar, L50, M|100/100'])
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(cm.exception.rule, 'forme-key')
 
 
 if __name__ == '__main__':

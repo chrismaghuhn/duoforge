@@ -52,6 +52,7 @@ VOL_FOLLOW_ME, VOL_HELPING_HAND, VOL_UNBURDEN = (VALUES[f"DFI_VOL_{n}"] for n in
 VOL_CHOICE_LOCK, VOL_NEWLY_SWITCHED = VALUES["DFI_VOL_CHOICE_LOCK"], VALUES["DFI_VOL_NEWLY_SWITCHED"]
 PARTY_HIDDEN = VALUES["DFI_PARTY_HIDDEN"]
 POSFLAG_STATS_RAISED = VALUES["DFI_POSFLAG_STATS_RAISED"]
+POSFLAG_LOWERED, POSFLAG_HURT = VALUES["DFI_POSFLAG_LOWERED"], VALUES["DFI_POSFLAG_HURT"]  # step G88 (decision 0046)
 # the position flags the states of a kind may carry (dfi_kind_limits_of: the POOL kinds add theirs), by table kind
 VOL_FLAGS_MASK = {"closure": VALUES["VOL_FLAGS_MASK_CLOSURE"], "pool": VALUES["VOL_FLAGS_MASK_POOL"]}
 MR_UNCLASSIFIED_NOW, MR_UNCLASSIFIED_LAST = VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_NOW"], VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_LAST"]
@@ -390,7 +391,8 @@ def _tail(t, s, boundary):
             if p.type_now != (0, 0):
                 s.put(mpre + "soak_type", p.type_now[0] or TYPE_TYPELESS)  # Soak's type + 1, or Double Shock's ???
             s.put(mpre + "type2", p.type2)
-            s.put(f"tail5.position{side * 2 + k}.position_flags", POSFLAG_STATS_RAISED if p.raised else 0)
+            s.put(f"tail5.position{side * 2 + k}.position_flags", (POSFLAG_STATS_RAISED if p.raised else 0) |
+                  (POSFLAG_LOWERED if p.lowered else 0) | (POSFLAG_HURT if p.hurt else 0))
             if p.ability_now:
                 s.put(f"{pre}member{p.occupant}.ability_now", p.ability_now)
         for m, member in enumerate(members):

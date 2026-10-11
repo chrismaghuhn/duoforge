@@ -196,6 +196,8 @@ class _Position:
         self.encore_turns = 0  # Encore's turns left (the record)
         self.hits_taken = 0  # damaging hits of another Pokemon's move since the entry (the record; Rage Fist)
         self.raised = 0  # a stat of the occupant rose this turn (the record's position flag; Alluring Voice)
+        self.lowered = 0  # a stat of the occupant fell this turn (the record's position flag LOWERED; Lash Out, G88)
+        self.hurt = 0  # a spread damage left the occupant standing this turn (the record's position flag HURT; Assurance)
         self.newly_switched = 0  # the occupant came in this turn (the record's flag under the TEAM_C and POOL kinds)
         self.turn_done = True  # no move of the occupant is left this turn (it moved, could not, or came in or fainted)
         self.unburden_unseen = False  # Knock Off hit an Unburden holder and no -enditem followed (record.py refuses)
@@ -315,6 +317,9 @@ class Tracker:
         self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
         self._knock_off = tables["MOVE"].get("KNOCKOFF")
+        # the moves whose cost to their own user is directDamage, not spreadDamage (G88: no hurtThisTurn; dfi_deal_ex's
+        # callers with spread false): Substitute's and Clangorous Soul's plain -damage; Struggle's recoil is the third
+        self._direct_costs = {tables["MOVE"].get(k) for k in ("SUBSTITUTE", "CLANGOROUSSOUL")} - {None}
         self._eject_button = tables["ITEM"].get("EJECTBUTTON")
         self._mental_herb = tables["ITEM"].get("MENTALHERB")
         self._hit_pivots = {tables["MOVE"][k]: v for k, v in _HIT_PIVOTS.items() if k in tables["MOVE"]}
@@ -763,7 +768,7 @@ class Tracker:
                     # battle's start keeps its entry boosts' flag); every standing occupant has its move ahead
                     p.newly_switched = 0
                     if ident > 1:
-                        p.raised = 0
+                        p.raised = p.lowered = p.hurt = 0  # statsLoweredThisTurn and hurtThisTurn as well (G88)
                     p.move_queued = p.occupant != ROSTER_NONE and not p.fainted
                     p.turn_done = p.occupant == ROSTER_NONE or p.fainted
                     # endTurn's DisableMove: choicelock ends for a holder without its Choice item (dfi_end_turn)
@@ -807,8 +812,10 @@ class Tracker:
                 self._own_display(m, hp, e[7])
         elif kind == EV["MOVE"]:
             p = self._at(pos)
-            p.acted = 1
             if e[3] == trace_to_c.CAUSE["NONE"]:
+                # an action of the user (runMove's activeMoveActions++, dfi_run_move); a move line with cause ABILITY is
+                # Magic Bounce's reflection (useMove), no action of the holder
+                p.acted = 1
                 self._move_action(p)
                 p.turn_done, p.move_queued = True, False
                 if ident in self._move_pivots:
@@ -976,6 +983,8 @@ class Tracker:
                     # Unburden's onTakeItem answers Knock Off before the item may refuse (a Mega Stone): the volatile can
                     # be set with no line; an -enditem that follows shows the usual case (_unburden_unseen, record.py)
                     p.unburden_unseen = True
+            if kind == EV["DAMAGE"] and hp != 0:
+                self._hurt(pos, e[3])
             if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["POISON"] and m.toxic:
                 m.toxic_stage = min(m.toxic_stage + 1, TOXIC_STAGE_MAX)  # tox's residual: the stage first, then the damage
             if public:
@@ -1016,6 +1025,8 @@ class Tracker:
             p.stages[detail] = min(12, max(0, p.stages[detail] + sign * amount))
             if kind == EV["BOOST"] and amount > 0:
                 p.raised = 1  # statsRaisedThisTurn: a stage really rose
+            if kind == EV["UNBOOST"] and amount > 0:
+                p.lowered = 1  # statsLoweredThisTurn (G88, dfi_boost): a stage really fell
         elif kind == EV["CLEAR_ALL_BOOSTS"]:
             # Haze (step G62, decision 0031; data/moves.ts haze onHitField: clearBoosts on getAllActive): every standing
             # active Pokemon's stages return to neutral
@@ -1253,6 +1264,21 @@ class Tracker:
                 # the residual counts (orders 15, 17, 20, 23); each end at 0 shows its line, which the fold read already
                 p.taunt, p.heal_block, p.yawn = down(p.taunt), down(p.heal_block), down(p.yawn)
                 p.disable_turns = down(p.disable_turns)
+
+    def _hurt(self, pos, cause):
+        """hurtThisTurn (G88, dfi_deal_ex): a spread damage that leaves its target standing. Every damage line is spread
+        damage except the directDamage of a user's own cost: Struggle's recoil ([from] Recoil after a Struggle line of
+        the same position) and the plain -damage of Substitute and Clangorous Soul on their user. A plain -damage on the
+        user of another move is no line the engine makes: it stops the tracker rather than guess."""
+        last = self._last_move
+        own = last is not None and last[0] == pos
+        if own and cause == trace_to_c.CAUSE["RECOIL"] and last[1] == self._struggle:
+            return
+        if own and cause == trace_to_c.CAUSE["NONE"]:
+            if last[1] in self._direct_costs:
+                return
+            raise lines.Stop("line:-damage of the move's own user")
+        self._at(pos).hurt = 1
 
     def _pressure_extra(self, pos, move, target, flags):
         """The extra PP a move use costs for the user's standing foes with Pressure (decision 0030, step G53), counted
