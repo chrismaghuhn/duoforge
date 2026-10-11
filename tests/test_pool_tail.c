@@ -386,13 +386,13 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0}, /* G76: position_flags bit 4 (Destiny Bond) is valid, 11 values of the byte decode (5 before) */
+    {47, 0, 208, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, mask 0x7F): 47 values of the byte decode (11 before G88) */
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {47, 0, 208, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {47, 0, 208, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {47, 0, 208, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1030,7 +1030,7 @@ MUT(m_ill_override, ts->illusion.override[3] = 1u)
 MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
 MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
 MUT(m_healing_wish_bit, p0->position_flags = 1u) /* bit 0 (Healing Wish) is never set yet */
-MUT(m_position_flags_bit5, p0->position_flags = 0x20u) /* bits 5-7 are not defined (G76 took bit 4) */
+MUT(m_position_flags_bit7, p0->position_flags = 0x80u) /* bit 7 is not defined (G76 took bit 4, G88 took bits 5 and 6) */
 MUT(v_destiny_bond_standing, p0->position_flags = 0x10u) /* G76: Destiny Bond at a standing lead is valid */
 MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
@@ -1211,7 +1211,7 @@ static const tail_case cases[] = {
     {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
     {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
     {"healing wish bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_healing_wish_bit},
-    {"position flag bit 5 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit5},
+    {"position flag bit 7 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit7},
     {"G76: Destiny Bond at a standing lead is valid", DFI_INV_NONE, false, v_destiny_bond_standing},
     {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},

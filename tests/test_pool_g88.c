@@ -147,7 +147,7 @@ static void test_row(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_ASSURANCE], 1u);
     DF_CHECK_EQ_U64(t, DFI_POSFLAG_LOWERED, 0x20u);
     DF_CHECK_EQ_U64(t, DFI_POSFLAG_HURT, 0x40u);
-    DF_CHECK_EQ_U64(t, DFI_POSFLAG_VALID_MASK, 0x6Fu); /* bit 4 (Destiny Bond, G76) is not on this branch */
+    DF_CHECK_EQ_U64(t, DFI_POSFLAG_VALID_MASK, 0x7Fu); /* bits 0-6: Destiny Bond (G76, bit 4) with LOWERED and HURT */
     DF_CHECK_EQ_U64(t, DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY, 64u);
 }
 
