@@ -273,7 +273,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=3ec1f2c36036ab9f02835678b0368de84397225172933e059a83dd253371b71e"
-        "pool_tables.c=dbf15dfd5bf023f77fae56861d51434bbf215e5267d57bc3177f8468bae742a6")
+        "pool_tables.c=222bc2b440dd6bbe917339d7408cd107a2f49fc0b7bda69892884e6c75f66a42")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -820,3 +820,7 @@ duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX 
 # Step G73 (decision 0015 5bo): Moody (its residual order, its two samples on one site, the boost with the raised key first; white-box, with
 # its recorded battles g73_*, which conformance_pool_data replays).
 duoforge_add_test(NAME duoforge.state.pool_g73 SOURCES test_pool_g73.c WHITEBOX TIMEOUT 60)
+
+# Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
+# pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
+duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)

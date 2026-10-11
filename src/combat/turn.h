@@ -42,6 +42,8 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
 bool dfi_switch_trapped(const struct duoforge_battle *b, uint32_t flat);
 /* The target class of a move for its user (step G84: a non-Ghost Curse targets the user, the Champions override). */
 uint32_t dfi_user_target_class(const struct duoforge_battle *b, uint32_t user, uint32_t special, uint32_t table_class);
+/* The same rule for a user of the given current types (duoforge_data_request_target_class); DFI_CLOSURE_NONE marks no type. */
+uint32_t dfi_target_class_for_types(uint32_t special, uint32_t table_class, const uint32_t types[2]);
 /* Illusion (decision 0026): the disguise of the lead at `slot` of `side` at team start, if its holder disguises. */
 bool dfi_illusion_lead_disguise(const struct duoforge_battle *b, uint32_t side, uint32_t slot, uint32_t *roster);
 

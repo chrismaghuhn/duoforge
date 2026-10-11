@@ -65,10 +65,11 @@ def team_label(leads, seen_back, member_count=6):
     return Label((0, 0), bytes(bits), (NOT_REQUESTED, NOT_REQUESTED))
 
 
-def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vacant=frozenset()):
+def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vacant=frozenset(), barred=((), ())):
     """The label of a TURN point: per own slot, from the lines log[point.line:min(point.end, stop_line)].
     moves[k] are the move ids of the occupant of slot k at the point (None for none); member_of(details) is the own
-    roster index of a switch line's details; vacant holds the flat positions empty or fainted at the point."""
+    roster index of a switch line's details; vacant holds the flat positions empty or fainted at the point; barred[k]
+    the move slots of slot k that the view bars at the point (its Disable slot, its Choice lock's slot)."""
     end = min(point.end, stop_line)
     segment = log[point.line:end]
     # A slot whose action never showed chose a move only if the switch phase of the turn is over (Showdown runs
@@ -78,7 +79,7 @@ def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vac
                 (line_kind(line) == "-activate" and line.split("|")[3:4] == ["confusion"]) for line in segment)
     slots, reasons = [], []
     for k in (0, 1):
-        mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, vacant)
+        mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, vacant, barred[k])
         if reason is None:
             reason, mask = UNKNOWN if end < point.end or not acted else MOVE_HIDDEN, None
             if reason == MOVE_HIDDEN:
@@ -101,7 +102,7 @@ def _move_options(options_list, mega, move_slot=None):
                  if o.kind == options.MOVE and o.mega == mega and (move_slot is None or o.move_slot == move_slot))
 
 
-def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant):
+def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant, barred=()):
     """(mask, reason) of slot k, or (None, None) when its action never showed in the segment."""
     kinds = {o.kind for o in options_list}
     if kinds == {options.NONE}:
@@ -131,7 +132,14 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
             if len(parts) > 4 and parts[4]:
                 move = tables["MOVE"].get(trace_to_c.key(parts[4]))
                 if move is not None and moves is not None and move in moves:
-                    return _move_options(options_list, mega, moves.index(move)), TARGET_UNKNOWN
+                    named = _move_options(options_list, mega, moves.index(move))
+                    if not named and parts[3] == "Disable" and moves.index(move) in barred:
+                        # cant|X|Disable|Move of a move the view bars (its Disable slot or its Choice lock's): the
+                        # request offered no such move (Struggle, g27_disable_lock), so every move option with the
+                        # shown Mega choice. Any other move that is no option keeps the empty set, which bc_data
+                        # refuses as a labeler bug: a stale view never turns into a label without the real choice.
+                        return _move_options(options_list, mega), MOVE_HIDDEN
+                    return named, TARGET_UNKNOWN
             return None, None
         if kind == "-start" and len(parts) > 3 and parts[3] == "Encore" and flat_position(parts[2]) == position:
             encored = True
@@ -261,6 +269,7 @@ class Context:
     roster: tuple  # the own members' base forme ids
     data: object
     vacant: frozenset = frozenset()  # flat positions empty or fainted at the point
+    barred: tuple = ((), ())  # per slot: the move slots the view bars (the Disable slot, the Choice lock's slot)
 
     def member_of(self, details):
         base = self.data.base_forme(self.data.forme(details.split(",")[0]))
@@ -275,7 +284,9 @@ def context(tracker):
     roster = tuple(tracker.data.base_forme(member.sheet["species"]) for member in own)
     vacant = frozenset(s * 2 + k for s in (0, 1) for k, p in enumerate(tracker._positions[s])
                        if p.occupant >= len(tracker._member(s) or ()) or p.fainted)
-    return Context(tracker.side, moves, roster, tracker.data, vacant)
+    barred = tuple(frozenset(slot for slot in (p.disable_slot - 1, p.choice_slot) if 0 <= slot < 4)
+                   for p in tracker._positions[tracker.side])
+    return Context(tracker.side, moves, roster, tracker.data, vacant, barred)
 
 
 def compute(ctx, log, point, lists, stop_line, leads, seen_back):
@@ -284,7 +295,7 @@ def compute(ctx, log, point, lists, stop_line, leads, seen_back):
         return team_label(leads, seen_back, len(ctx.roster))
     if point.boundary == TURN:
         return turn_label(log, point, ctx.side, lists, ctx.moves, ctx.member_of, ctx.data.tables, stop_line,
-                          ctx.vacant)
+                          ctx.vacant, ctx.barred)
     return switch_label(log, point, ctx.side, lists, ctx.member_of, stop_line)
 
 

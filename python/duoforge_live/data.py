@@ -190,6 +190,26 @@ class Data:
             raise ValueError(f"move {move_id}: target class {target_class} has no Showdown target type")
         return TARGET_TYPES[target_class]
 
+    def request_target(self, move_id, types):
+        """Showdown's target type of a move in the request of a user of the given current types (DUOFORGE_TYPE_* values,
+        one or two): the library's rule (duoforge_data_request_target_class), which differs from target_type for a Curse
+        of a user without the Ghost type ("self"). ValueError for a user without a type or with more than two, and for
+        a target class that has no Showdown target type."""
+        from duoforge import data as api
+        types = tuple(types)
+        if not 1 <= len(types) <= 2:
+            raise ValueError(f"a user has one or two types, not {len(types)}")
+        target_class = api.request_target_class(self._context(), move_id, types + (api.NONE,) * (2 - len(types)))
+        if target_class not in TARGET_TYPES:
+            raise ValueError(f"move {move_id}: target class {target_class} has no Showdown target type")
+        return TARGET_TYPES[target_class]
+
+    def forme_types(self, forme):
+        """The types of a forme row (a Mega forme's own), one or two DUOFORGE_TYPE_* values."""
+        from duoforge import data as api
+        types = api.forme_static(self._context(), forme)["types"]
+        return tuple(t for t in types if t != api.NONE)
+
     def ability_of(self, forme):
         """The forme's ability as a member holds it (the set's; a Mega forme's own), 1-based like parse_team."""
         return self._ability[forme] + 1

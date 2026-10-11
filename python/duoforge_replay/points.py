@@ -97,6 +97,7 @@ def find(lines):
     revive_user = None  # the position of a Revival Blessing user whose revive is still to come (step G52)
     revive_asked_at = 0  # the line its first request came at
     revived = None  # (side, name) of a revive whose instaswitch may follow: its |switch| asks nobody
+    exited = set()  # positions whose Emergency Exit came in the switch phase of the turn (entry hazards)
     for i in range(starts[0] + 1, len(lines)):
         kind = line_kind(lines[i])
         if kind in ("win", "tie"):
@@ -130,10 +131,15 @@ def find(lines):
         if kind == "turn":
             points.append(Point(len(points), i + 1, TURN))
             turn_open, acted, upkeep_since_point = True, False, False
+            exited.clear()
         elif kind == "upkeep":
             turn_open, upkeep_since_point = False, True
         elif kind in _ACTED or (kind == "-activate" and lines[i].split("|")[3:4] == ["confusion"]):
             acted = True
+        elif kind == "-activate" and lines[i].split("|")[3:4] == ["ability: Emergency Exit"] and turn_open and not acted:
+            # an Emergency Exit before any action of the turn (an entering member that the hazards took to half or
+            # less, g37_exit): the switch into its position answers a request of its own, no TURN action
+            exited.add(flat_position(lines[i].split("|")[2]))
         elif kind == "switch":
             parts = lines[i].split("|")
             position = flat_position(parts[2])
@@ -145,8 +151,9 @@ def find(lines):
                 continue  # a revived member into its empty position (0025 item 10): part of the revive's answer
             if len(points) == 1:
                 continue  # the leads at |start|, before |turn|1
-            if turn_open and not acted:
+            if turn_open and not acted and position not in exited:
                 continue  # a switch chosen at the TURN point
+            exited.discard(position)
             # A switch "[from]" a move (Flip Turn, Parting Shot, U-turn: the user's own switch) is asked alone on its
             # side: it shares no run with another switch of that side (c04_flip_turn_double_pivot: Flip Turn's
             # switch, then the Emergency Exit it caused on the same side, two PIVOT points), but the other side's
