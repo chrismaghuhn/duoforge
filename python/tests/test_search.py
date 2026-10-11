@@ -341,8 +341,9 @@ class LookaheadDecisions(unittest.TestCase):
         self.assertEqual(digest, PINNED_TABLE_SHA256, f"table {record['table']} under {conditions}")
 
     def test_encoder_probe_refuses_at_init(self):
+        unassigned = max(features.FEATURE_BITS.values()) + 1  # the first bit past the last assigned feature (a new one moves it)
         with self.assertRaises(ValueError):  # no mask of the feature bits
-            self._lookahead(capacity=4).__init__(self.ctx, self.model, self.params, 4, 1 << 43)
+            self._lookahead(capacity=4).__init__(self.ctx, self.model, self.params, 4, 1 << unassigned)
         from duoforge_learn import policy
         v3 = policy.make(policy.v2_config("S"), features.feature_names(3))
         with self.assertRaises(duoforge.DuoforgeError):  # a mask past version 3's features: the C encoder refuses
