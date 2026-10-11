@@ -386,13 +386,13 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0}, /* G76: position_flags bit 4 (Destiny Bond) is valid, 11 values of the byte decode (5 before) */
+    {23, 0, 232, 0, 0, 0, 0, 0}, /* G76: position_flags bit 4 (Destiny Bond) is valid, 11 values of the byte decode (5 before) */
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {23, 0, 232, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {23, 0, 232, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {11, 0, 244, 0, 0, 0, 0, 0},
+    {23, 0, 232, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1075,6 +1075,7 @@ MUT(v_unclass_now, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW)
 MUT(v_unclass_both, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW | DFI_MOVE_RESULT_UNCLASSIFIED_LAST)
 MUT(v_position_flags_raised_stage2, p0->position_flags = 0x0Au) /* G72b: stats raised and the Dragon Cheer stage 2 */
 MUT(v_position_flags_stage1, p0->position_flags = 0x04u) /* G72b: the Dragon Cheer stage 1 */
+MUT(v_position_flags_curse, p0->position_flags = 0x80u) /* G84b: Curse (bit 7) at a standing lead is valid */
 MUT(v_hazard_order_two, {
     ts->spikes = 2u;
     ts->toxic_spikes = 1u;
@@ -1229,7 +1230,8 @@ static const tail_case cases[] = {
     {"an unclassified this-turn bit with an undefined this-turn result is valid", DFI_INV_NONE, false, v_unclass_now},
     {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both},
     {"G72b: stats raised with stage 2 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_raised_stage2},
-    {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1}};
+    {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1},
+    {"G84b: Curse at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_curse}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)

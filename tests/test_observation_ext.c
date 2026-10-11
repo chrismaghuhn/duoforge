@@ -202,6 +202,7 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 23u) | /* step G60: Substitute (bit 23) */
                      ((uint64_t)1u << 24u) | /* step G72b: Dragon Cheer (bit 24); MOVE_FAILED (bit 41) stays clear, see support_manifest.c */
                      ((uint64_t)1u << 35u) | /* step G76: Destiny Bond (bit 35) */
+                     ((uint64_t)1u << 36u) | /* step G84b: Curse (bit 36, decision 0063) */
                      /* encoder 6's reserve families (decision 0050), exact while no bit of theirs is defined */
                      ((uint64_t)1u << 59u) | /* RESERVE_VOLATILES */
                      ((uint64_t)1u << 60u) | /* VOLATILES2 */

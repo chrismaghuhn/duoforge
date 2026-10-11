@@ -475,14 +475,16 @@ static bool parse_shard_arg(const char *text, uint32_t limit, uint32_t *out)
     return true;
 }
 
-/* Every residual kind 1..19 and every draw site 1..DFI_SITE_COUNT-1 has its name (the switches of residual_order.h and draw.h are the
- * build-time guards against duplicate values; this test makes the names used, and a new kind or site without its case is caught). */
+/* Every residual kind 1..19 (Leech Seed is 19) and Curse's kind 26 and every draw site 1..DFI_SITE_COUNT-1 has its name (the switches
+ * of residual_order.h and draw.h are the build-time guards against duplicate values; this test makes the names used, and a new kind
+ * or site without its case is caught). Kinds 20..25 are lane B's and unnamed here. */
 static void test_kinds_and_sites_have_names(df_test *t)
 {
-    for (uint32_t k = 1u; k <= DFI_RES_MOODY; ++k) {
+    for (uint32_t k = 1u; k <= DFI_RES_LEECH; ++k) {
         DF_CHECK(t, dfi_res_kind_name(k) != NULL);
     }
-    DF_CHECK(t, dfi_res_kind_name(DFI_RES_MOODY + 1u) == NULL);
+    DF_CHECK(t, dfi_res_kind_name(DFI_RES_CURSE) != NULL);
+    DF_CHECK(t, dfi_res_kind_name(DFI_RES_CURSE + 1u) == NULL);
     for (uint32_t s = 1u; s < DFI_SITE_COUNT; ++s) {
         DF_CHECK(t, dfi_site_name(s) != NULL);
     }
