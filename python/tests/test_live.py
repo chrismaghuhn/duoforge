@@ -527,9 +527,28 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # lane B batch 5c (G71 Cute Charm, G75 cheap set): +144 equal and +2 refused records; 12 streams stop on the Attract lines
 # (unfolded:DUOFORGE_POSITION_EXT_ATTRACT, the tracker fold of the ATTRACT bit comes after G71), 4 more on Dragon Cheer (the
 # G75 crit battles). Lane B batch 5d (G79 Cloud Nine, G81 Frisk): +170 equal and +18 refused records, no new stop.
-POOL_OUTCOME = {"equal": 10212, "refused": 507, "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 78, "unfolded:DUOFORGE_POSITION_EXT_ATTRACT": 12, "feature:DRAGON_CHEER": 12,
-              "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
+# PR #393 (the Attract fold, G71 on the tracker): the 12 unfolded:DUOFORGE_POSITION_EXT_ATTRACT streams are gone (the fold
+# reaches their later points): +30 equal, +4 refused, and 42 infatuated points whose tracker refusal is the engine check's
+# verdict (duoforge_public_record_check refuses a world with an infatuated occupant, lead's option B), counted apart. Measured
+# on the merged tree (CI, Linux and Windows Python jobs, identical): 10242 equal, 511 refused, 42 engine-check refusals.
+POOL_OUTCOME = {"equal": 10242, "refused": 511, "engine check refuses: infatuated occupant (from_view, option B)": 42,
+                "tracker refuses: unburden-without-item-line": 4}
+POOL_STOPS = {"feature:SUBSTITUTE": 78, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
+              "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
+
+
+INFATUATED_REFUSAL = "engine check refuses: infatuated occupant (from_view, option B)"
+
+
+def infatuated_in_engine(battle_name, k, viewer):
+    """Whether the engine's public record of `viewer` at decision point k has an Attract source (the tail5 reserve bytes)."""
+    from duoforge import state_layout
+    ref = Reference.get() if battle_name in Reference.get().publics else Reference.get().pool()
+    status, record = ref.publics[battle_name][(int(k), int(viewer))]
+    if status != 0:
+        return False
+    start, size = next((s, n) for name, s, n in state_layout.fields(pool=True) if name == "tail5.attract_source")
+    return bool(np.asarray(record["state"])[start:start + size].any())
 
 
 def record_kind(battle_name):
@@ -726,6 +745,12 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                     same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
                         result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
                     key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
+                elif parts["status"] != 0 and parts["reason"] == "engine-refuses-record":
+                    # the engine's public record of this point is status 0, but its check refuses a world with an infatuated occupant
+                    # (duoforge_battle_from_view, lead's option B, tests/test_pool_g71.c): the tracker refuses with that verdict. Only
+                    # records with an Attract source in the engine's record may take this key (infatuated_in_engine).
+                    self.assertTrue(infatuated_in_engine(name, k, player), (name, k, player))
+                    key = INFATUATED_REFUSAL
                 elif parts["status"] != 0:
                     key = f"tracker refuses: {parts['reason']}"
                 else:
@@ -738,7 +763,7 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         print(f"\npool record assembler: {dict(sorted(outcome.items()))}")
         print(f"pool tracker stops: {sum(self.stops.values())} streams, {dict(self.stops.most_common())}")
         self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
-        allowed = {"equal", "refused"} | {f"tracker refuses: {reason}" for reason in self.TRACKER_REFUSALS}
+        allowed = {"equal", "refused", INFATUATED_REFUSAL} | {f"tracker refuses: {reason}" for reason in self.TRACKER_REFUSALS}
         self.assertEqual(set(outcome) - allowed, set(), {key: where[key] for key in outcome})
         self.assertEqual(self.raised, self.OWN_PP_STOPS)
         self.assertEqual(dict(outcome), POOL_OUTCOME)

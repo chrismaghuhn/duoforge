@@ -995,6 +995,16 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
         if (i == count) {
             return DUOFORGE_E_UNSUPPORTED;
         }
+        /* Attract's check (step G71, data/moves.ts:731-741, onBeforeMovePriority 2, after confusion's 3): its -activate of the
+         * user comes between the confusion line and the roll's [cant] or [move] (src/combat/turn.c, the Attract check). It names
+         * the move in id2 and its source in other; it is no line of the action's result. */
+        if (events[i].kind == DUOFORGE_EVENT_ACTIVATE && events[i].position == user &&
+            events[i].cause == DUOFORGE_CAUSE_MOVE && events[i].id2 == DFI_MOVE_ATTRACT) {
+            i += 1u;
+            if (i == count) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
         e0 = &events[i];
         if (e0->kind == DUOFORGE_EVENT_CANT) {
             *out_result = (uint8_t)mr_cant_result(e0);
