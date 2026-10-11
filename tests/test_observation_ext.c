@@ -134,17 +134,17 @@ static void test_constants(df_test *t)
         DUOFORGE_VIEWEXT_FEATURE_CURSE,            DUOFORGE_VIEWEXT_FEATURE_NO_RETREAT,
         DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD,      DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER,
         DUOFORGE_VIEWEXT_FEATURE_ROOST,            DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED,
-        DUOFORGE_VIEWEXT_FEATURE_TRANSFORM,        DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH,
+        DUOFORGE_VIEWEXT_FEATURE_TRANSFORM,
     };
-    /* Bit numbers 0 to 43, each once, in the order of the note (the tiers). */
+    /* Bit numbers 0 to 41, each once, in the order of the note (the tiers). */
     DF_CHECK(t, sizeof features / sizeof features[0] == DUOFORGE_VIEWEXT_FEATURE_COUNT);
-    DF_CHECK(t, DUOFORGE_VIEWEXT_FEATURE_COUNT == 44u);
+    DF_CHECK(t, DUOFORGE_VIEWEXT_FEATURE_COUNT == 43u);
     uint64_t seen = 0u;
     for (uint32_t i = 0u; i < DUOFORGE_VIEWEXT_FEATURE_COUNT; ++i) {
         DF_CHECK(t, features[i] == i);
         seen |= (uint64_t)1u << features[i];
     }
-    DF_CHECK(t, seen == (((uint64_t)1u << 44u) - 1u));
+    DF_CHECK(t, seen == (((uint64_t)1u << 43u) - 1u));
 
     static const uint32_t vol[] = {
         DUOFORGE_POSITION_EXT_SUBSTITUTE,    DUOFORGE_POSITION_EXT_TAUNT,         DUOFORGE_POSITION_EXT_IMPRISON,
@@ -155,14 +155,13 @@ static void test_constants(df_test *t)
         DUOFORGE_POSITION_EXT_HEAL_BLOCK,    DUOFORGE_POSITION_EXT_THROAT_CHOP,   DUOFORGE_POSITION_EXT_RAGE_POWDER,
         DUOFORGE_POSITION_EXT_TYPE_CHANGED,  DUOFORGE_POSITION_EXT_ILLUSION_UP,
         DUOFORGE_POSITION_EXT_ROOST,         DUOFORGE_POSITION_EXT_TRANSFORMED,
-        DUOFORGE_POSITION_EXT_HEALING_WISH,
     };
     uint32_t all = 0u;
     for (uint32_t i = 0u; i < sizeof vol / sizeof vol[0]; ++i) {
         DF_CHECK(t, vol[i] == (1u << i)); /* bit i, in the order of the note */
         all |= vol[i];
     }
-    DF_CHECK(t, sizeof vol / sizeof vol[0] == 23u && all == 0x7FFFFFu);
+    DF_CHECK(t, sizeof vol / sizeof vol[0] == 22u && all == 0x3FFFFFu);
     DF_CHECK(t, DUOFORGE_SIDE_GUARD_WIDE_GUARD == 1u && DUOFORGE_SIDE_GUARD_QUICK_GUARD == 2u);
     DF_CHECK(t, DUOFORGE_ITEM_NOW_NONE == 255u);
 
@@ -189,7 +188,7 @@ static void test_constants(df_test *t)
                     (((uint64_t)1u << 6u) | ((uint64_t)1u << 7u) | ((uint64_t)1u << 9u) | ((uint64_t)1u << 15u) |
                      ((uint64_t)1u << 16u) | ((uint64_t)1u << 17u) | ((uint64_t)1u << 0u) | ((uint64_t)1u << 1u) |
                      ((uint64_t)1u << 11u) | ((uint64_t)1u << 2u) | ((uint64_t)1u << 20u) | ((uint64_t)1u << 3u) |
-                     ((uint64_t)1u << 60u) | ((uint64_t)1u << 45u) | ((uint64_t)1u << 18u) |
+                     ((uint64_t)1u << 18u) | ((uint64_t)1u << 45u) | /* step G90: Partial trap (bit 18), TRAP_ELAPSED (bit 45) */
                      ((uint64_t)1u << 39u) | /* step G30: Rage Powder (bit 39) */
                      ((uint64_t)1u << 53u) | /* step G87: Attract's source position (bits 12-13 of volatiles2, decision 0080) */
                      ((uint64_t)1u << 10u) | /* step G36: the ailment Tox (bit 10) */
