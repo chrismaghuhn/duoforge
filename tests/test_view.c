@@ -1289,6 +1289,12 @@ static void test_move_result(df_test *t)
     ev[2] = mr_ev(DUOFORGE_EVENT_ACTIVATE, 1u, none, DUOFORGE_CAUSE_MOVE, 0u, (uint16_t)DFI_MOVE_SUBSTITUTE);
     DF_CHECK(t, mr_of(t, kp, 2u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
     DF_CHECK(t, mr_of(t, kp, 2u, ev, 2u) == DFI_MOVE_RESULT_NULL);
+    /* the hit that breaks the Substitute shows only its -end (VOLATILE_END, cause NONE, dfi_substitute_takes): a hit too
+     * (HIT_SUBSTITUTE), so a spread move with one target protected and the other's Substitute broken is true */
+    ev[0].flags = DUOFORGE_EVENT_FLAG_SPREAD;
+    ev[2] = mr_ev(DUOFORGE_EVENT_VOLATILE_END, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[2].detail = (uint8_t)DUOFORGE_VOLATILE_SUBSTITUTE;
+    DF_CHECK(t, mr_of(t, kp, 2u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
     /* refusals, nothing written: a handler not mapped (Substitute), no action of the user, a context without the tail */
     uint8_t out = 0x55u;
     ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 0u, DUOFORGE_CAUSE_NONE, DFI_MOVE_SUBSTITUTE, 0u);
