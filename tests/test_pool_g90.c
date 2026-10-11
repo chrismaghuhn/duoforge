@@ -567,12 +567,15 @@ static void test_pad_zero_after_decode(df_test *t)
     size_t size = 0u;
     DF_CHECK_EQ_U64(t, duoforge_battle_encoded_size(ctx, b, &size), DUOFORGE_OK);
     uint8_t *bytes = (uint8_t *)malloc(size);
-    duoforge_battle *d = (duoforge_battle *)malloc(sizeof *d);
+    const df_conf_battle *cb = find_conf("g90_wrap_band");
+    duoforge_battle_setup setup;
+    setup_from(cb, &setup);
+    duoforge_battle *d = df_make_battle(ctx, &setup); /* a valid header; only its tail is prefilled */
     DF_CHECK(t, bytes != NULL && d != NULL);
     if (bytes != NULL && d != NULL) {
         size_t written = 0u;
         DF_CHECK_EQ_U64(t, duoforge_battle_encode(ctx, b, bytes, size, &written), DUOFORGE_OK);
-        memset(d, 0xFF, sizeof *d);
+        memset(&d->tail, 0xFF, sizeof d->tail);
         DF_CHECK_EQ_U64(t, duoforge_battle_decode(ctx, d, bytes, written), DUOFORGE_OK);
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
@@ -582,7 +585,7 @@ static void test_pad_zero_after_decode(df_test *t)
         DF_CHECK(t, dfi_state_check(ctx, d, NULL) == DUOFORGE_OK);
     }
     free(bytes);
-    free(d);
+    duoforge_battle_destroy(d);
     finish(ctx, b);
 }
 
