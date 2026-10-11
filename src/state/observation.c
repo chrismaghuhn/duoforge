@@ -425,6 +425,16 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                  * infatuated occupant and no source (the source's member is not in the view). */
                 vol |= battle->tail.attract_source[s * DUOFORGE_ACTIVE_PER_SIDE + p] != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ATTRACT : 0u;
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G87 (decision 0080): the source's flat position (0 to 3) in volatiles2 bits 12 and 13, for both players: the
+                 * Attract line names the source. Written only with the presence bit; a source that is not on the field is an
+                 * invariant failure (the state check of dfi_attract_byte_ok refuses it first). */
+                if (battle->tail.attract_source[s * DUOFORGE_ACTIVE_PER_SIDE + p] != 0u) {
+                    const uint32_t src = dfi_attract_source_flat(battle, battle->tail.attract_source[s * DUOFORGE_ACTIVE_PER_SIDE + p]);
+                    if (src >= DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT) {
+                        return DUOFORGE_E_INVARIANT;
+                    }
+                    o.volatiles2[s][p] = src << 12u;
+                }
                 /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
                  * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
                 o.sides[s].positions[p].move_failed =

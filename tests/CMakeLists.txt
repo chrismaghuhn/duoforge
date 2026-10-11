@@ -842,3 +842,8 @@ duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES test_pool_g79.c WHITEBOX 
 # Step G81 (decision 0015 entry 5bs, decision 0033): Frisk (the foes' items announced at its holder's switch-in, ITEM_SHOWN in
 # the Frisk form), the switch-in order against Intimidate, two Frisk holders, and the fold that ignores the event.
 duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES test_pool_g81.c WHITEBOX TIMEOUT 120)
+
+# Step G87 (decision 0080): Attract's source is public: the observation's source bits (volatiles2 12-13), the from-view worlds that copy it,
+# the refusal of an inconsistent view byte, the pair invariant, and the corpus of every recorded pool battle (every decision point with an
+# infatuated occupant, both players' views built into worlds and compared with the engine).
+duoforge_add_test(NAME duoforge.state.pool_g87 SOURCES test_pool_g87.c WHITEBOX LIBS duoforge_batch TIMEOUT 600)
