@@ -6215,13 +6215,13 @@ static const df_tb_stop tb_g79_cloud_nine_speed_tie[] = {
     {6u, 0u, 2u, 1u, {1u, 3u}, {207u, 535u}, {0x4030aaaaaaaaaaabull, 0x40466f96f96f96f9ull}},
 };
 static const df_tb_stop tb_g79_cloud_nine_spread_pending[] = {
-    {0u, 0u, 1u, 3u, {6u, 6u}, {1152u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
-    {1u, 0u, 2u, 3u, {4u, 4u}, {763u, 798u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 1u, 1u, {4u, 3u}, {746u, 561u}, {0x4050455cf5fd23c1ull, 0x4046c92c1c083ea9ull}},
-    {3u, 0u, 1u, 1u, {4u, 3u}, {746u, 561u}, {0x4050455cf5fd23c1ull, 0x4046c92c1c083ea9ull}},
-    {6u, 0u, 1u, 1u, {3u, 2u}, {510u, 298u}, {0x4045d5925a93c8b4ull, 0x403865691eeaf9d1ull}},
-    {7u, 0u, 1u, 1u, {3u, 2u}, {510u, 298u}, {0x4045d5925a93c8b4ull, 0x403865691eeaf9d1ull}},
-    {8u, 0u, 1u, 2u, {2u, 2u}, {301u, 159u}, {0x40396b4337c6cb15ull, 0x4029dadfc27b8c8full}},
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1194u, 1117u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {805u, 768u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {665u, 719u}, {0x404c06c7746f90d0ull, 0x404f16f96f96f970ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {549u, 569u}, {0x404799c68ba4dd35ull, 0x4048331a841911d7ull}},
+    {6u, 0u, 2u, 1u, {2u, 3u}, {399u, 513u}, {0x4040aaaaaaaaaaabull, 0x4045f1f84cdba56cull}},
+    {7u, 0u, 1u, 2u, {2u, 2u}, {399u, 362u}, {0x4040aaaaaaaaaaabull, 0x403fbb8a5d877903ull}},
+    {8u, 0u, 1u, 2u, {2u, 2u}, {399u, 362u}, {0x4040aaaaaaaaaaabull, 0x403fbb8a5d877903ull}},
 };
 static const df_tb_stop tb_g79_cloud_nine_sun[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1144u, 1129u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -8599,7 +8599,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5779 stops: 155 of an ended battle; decided by the count 1415,
- * the HP percentage 1787, the total HP 2249, a tie 173;
- * winners: side 0 2695, side 1 2911, tie 173 */
+/* 5779 stops: 155 of an ended battle; decided by the count 1413,
+ * the HP percentage 1789, the total HP 2249, a tie 173;
+ * winners: side 0 2694, side 1 2912, tie 173 */
 #endif

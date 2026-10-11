@@ -3,7 +3,7 @@
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "g79_cloud_nine_spread_pending.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,000000000000000000000000000000000000000000000000790000000000000c",
+ "seed": "sodium,0000000000000000000000000000000000000000000000007900000000000042",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -14,14 +14,14 @@
    "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
-   "|poke|p1|Drampa, L50, M|",
+   "|poke|p1|Basculegion, L50, M|",
    "|poke|p1|Gholdengo, L50|",
    "|poke|p1|Staraptor, L50, F|",
    "|poke|p1|Kingambit, L50, M|",
    "|poke|p1|Milotic, L50, F|",
    "|poke|p1|Annihilape, L50, M|",
    "|poke|p2|Altaria, L50, F|",
-   "|poke|p2|Tyranitar, L50, M|",
+   "|poke|p2|Torkoal, L50, M|",
    "|poke|p2|Kingambit, L50, M|",
    "|poke|p2|Milotic, L50, F|",
    "|poke|p2|Sneasler, L50, M|",
@@ -58,13 +58,13 @@
      ],
      "pokemon": [
       {
-       "species": "Drampa",
-       "set_species": "Drampa",
+       "species": "Basculegion",
+       "set_species": "Basculegion",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 185,
-       "maxhp": 185,
-       "item": "sitrusberry",
+       "hp": 227,
+       "maxhp": 227,
+       "item": "focussash",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -79,8 +79,8 @@
         0
        ],
        "pp": [
-        12,
-        12,
+        8,
+        8,
         8,
         8
        ],
@@ -283,13 +283,13 @@
        "locked": null
       },
       {
-       "species": "Tyranitar",
-       "set_species": "Tyranitar",
+       "species": "Torkoal",
+       "set_species": "Torkoal",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 207,
-       "maxhp": 207,
-       "item": "smoothrock",
+       "hp": 177,
+       "maxhp": 177,
+       "item": "heatrock",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -305,9 +305,9 @@
        ],
        "pp": [
         12,
-        8,
         12,
-        20
+        8,
+        8
        ],
        "volatiles": [],
        "locked": null
@@ -455,8 +455,8 @@
     "|uhtmlchange|otsrequest|",
     "",
     "|split|p1",
-    "|switch|p1a: Drampa|Drampa, L50, M|185/185",
-    "|switch|p1a: Drampa|Drampa, L50, M|100/100",
+    "|switch|p1a: Basculegion|Basculegion, L50, M|227/227",
+    "|switch|p1a: Basculegion|Basculegion, L50, M|100/100",
     "|split|p1",
     "|switch|p1b: Gholdengo|Gholdengo, L50|179/179",
     "|switch|p1b: Gholdengo|Gholdengo, L50|100/100",
@@ -464,18 +464,17 @@
     "|switch|p2a: Altaria|Altaria, L50, F|182/182",
     "|switch|p2a: Altaria|Altaria, L50, F|100/100",
     "|split|p2",
-    "|switch|p2b: Tyranitar|Tyranitar, L50, M|207/207",
-    "|switch|p2b: Tyranitar|Tyranitar, L50, M|100/100",
+    "|switch|p2b: Torkoal|Torkoal, L50, M|177/177",
+    "|switch|p2b: Torkoal|Torkoal, L50, M|100/100",
     "|-ability|p2a: Altaria|Cloud Nine",
-    "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2b: Tyranitar",
-    "|-ability|p1a: Drampa|Cloud Nine",
+    "|-weather|SunnyDay|[from] ability: Drought|[of] p2b: Torkoal",
     "|turn|1"
    ],
    "state": {
     "turn": 1,
     "ended": false,
     "winner": "",
-    "weather": "sandstorm",
+    "weather": "sunnyday",
     "weather_turns": 8,
     "terrain": "",
     "terrain_turns": 0,
@@ -508,13 +507,13 @@
       ],
       "pokemon": [
        {
-        "species": "Drampa",
-        "set_species": "Drampa",
+        "species": "Basculegion",
+        "set_species": "Basculegion",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 185,
-        "maxhp": 185,
-        "item": "sitrusberry",
+        "hp": 227,
+        "maxhp": 227,
+        "item": "focussash",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -529,8 +528,8 @@
          0
         ],
         "pp": [
-         12,
-         12,
+         8,
+         8,
          8,
          8
         ],
@@ -686,13 +685,13 @@
         "locked": null
        },
        {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
+        "species": "Torkoal",
+        "set_species": "Torkoal",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "smoothrock",
+        "hp": 177,
+        "maxhp": 177,
+        "item": "heatrock",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -708,9 +707,9 @@
         ],
         "pp": [
          12,
-         8,
          12,
-         20
+         8,
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -783,12 +782,19 @@
   {
    "input": {
     "p1": "move 3, move 2 1",
-    "p2": "move 2 1, move 1 1"
+    "p2": "move 1 1, move 4"
    },
    "draws": [
     {
      "site": "RANDOM_TARGET",
      "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
      "lo": 0,
      "hi": 2,
      "value": 1
@@ -812,49 +818,70 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 77
+     "value": 1
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 7
+     "value": 6
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 8
+     "value": 10
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 81
+     "value": 97
     },
     {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 95
+     "value": 31
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 19
+    },
+    {
+     "site": "CONFUSION_TURNS",
+     "context": "Start",
+     "lo": 2,
+     "hi": 6,
+     "value": 4
     },
     {
      "site": "RANDOM_TARGET",
@@ -871,124 +898,106 @@
      "value": 1
     },
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
      "lo": 0,
      "hi": 100,
-     "value": 3
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 4
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 21
+     "value": 6
     },
     {
      "site": "DAMAGE_ROLL",
-     "context": "",
+     "context": "BeforeMove",
      "lo": 0,
      "hi": 16,
-     "value": 4
+     "value": 8
     },
     {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 10
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 12
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 69
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 22
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 1
     }
    ],
    "log": [
+    "|move|p2b: Torkoal|Protect|p2b: Torkoal",
+    "|-singleturn|p2b: Torkoal|Protect",
     "|move|p1b: Gholdengo|Shadow Ball|p2a: Altaria",
     "|split|p2",
-    "|-damage|p2a: Altaria|87/182",
-    "|-damage|p2a: Altaria|47/100",
+    "|-damage|p2a: Altaria|88/182",
+    "|-damage|p2a: Altaria|48/100",
     "|-enditem|p2a: Altaria|Sitrus Berry|[eat]",
     "|split|p2",
-    "|-heal|p2a: Altaria|132/182|[from] item: Sitrus Berry",
-    "|-heal|p2a: Altaria|72/100|[from] item: Sitrus Berry",
+    "|-heal|p2a: Altaria|133/182|[from] item: Sitrus Berry",
+    "|-heal|p2a: Altaria|73/100|[from] item: Sitrus Berry",
     "|split|p1",
     "|-damage|p1b: Gholdengo|162/179|[from] item: Life Orb",
     "|-damage|p1b: Gholdengo|90/100|[from] item: Life Orb",
-    "|move|p2a: Altaria|Solar Beam||[still]",
-    "|-prepare|p2a: Altaria|Solar Beam",
-    "|move|p2b: Tyranitar|Thunder|p1a: Drampa|[miss]",
-    "|-miss|p2b: Tyranitar|p1a: Drampa",
-    "|move|p1a: Drampa|Blizzard|p2b: Tyranitar|[spread] p2a,p2b",
-    "|-supereffective|p2a: Altaria|2",
-    "|split|p2",
-    "|-damage|p2a: Altaria|0 fnt",
-    "|-damage|p2a: Altaria|0 fnt",
-    "|split|p2",
-    "|-damage|p2b: Tyranitar|152/207",
-    "|-damage|p2b: Tyranitar|73/100",
-    "|faint|p2a: Altaria",
-    "|-weather|Sandstorm|[upkeep]",
-    "|upkeep"
+    "|move|p2a: Altaria|Hurricane|p1a: Basculegion",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|139/227",
+    "|-damage|p1a: Basculegion|61/100",
+    "|-start|p1a: Basculegion|confusion",
+    "|-activate|p1a: Basculegion|confusion",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|104/227|[from] confusion",
+    "|-damage|p1a: Basculegion|45/100|[from] confusion",
+    "|-weather|SunnyDay|[upkeep]",
+    "|upkeep",
+    "|turn|2"
    ],
    "state": {
-    "turn": 1,
+    "turn": 2,
     "ended": false,
     "winner": "",
-    "weather": "sandstorm",
+    "weather": "sunnyday",
     "weather_turns": 7,
     "terrain": "",
     "terrain_turns": 0,
     "trick_room": 0,
     "sides": [
      {
-      "request": "",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
       ],
       "pokemon": [
        {
-        "species": "Drampa",
-        "set_species": "Drampa",
+        "species": "Basculegion",
+        "set_species": "Basculegion",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 185,
-        "maxhp": 185,
-        "item": "sitrusberry",
+        "hp": 104,
+        "maxhp": 227,
+        "item": "focussash",
         "status": "",
         "status_time": 0,
-        "confusion": 0,
+        "confusion": 3,
         "fainted": false,
         "boosts": [
          0,
@@ -1000,12 +1009,14 @@
          0
         ],
         "pp": [
-         12,
-         12,
-         7,
+         8,
+         8,
+         8,
          8
         ],
-        "volatiles": [],
+        "volatiles": [
+         "confusion"
+        ],
         "locked": null
        },
        {
@@ -1032,6 +1043,517 @@
         "pp": [
          8,
          15,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackbelt",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Altaria",
+        "set_species": "Altaria",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 133,
+        "maxhp": 182,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Torkoal",
+        "set_species": "Torkoal",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "heatrock",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackbelt",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "mysticwater",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, move 2 1",
+    "p2": "move 1 1, move 4"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 73
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 99
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 23
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 12
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 91
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 100,
+     "value": 42
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 36
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 66
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 90
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 6
+    }
+   ],
+   "log": [
+    "|move|p2b: Torkoal|Protect||[still]",
+    "|-fail|p2b: Torkoal",
+    "|move|p1b: Gholdengo|Shadow Ball|p2a: Altaria",
+    "|split|p2",
+    "|-damage|p2a: Altaria|43/182",
+    "|-damage|p2a: Altaria|23/100",
+    "|split|p1",
+    "|-damage|p1b: Gholdengo|145/179|[from] item: Life Orb",
+    "|-damage|p1b: Gholdengo|81/100|[from] item: Life Orb",
+    "|move|p2a: Altaria|Hurricane|p1a: Basculegion",
+    "|split|p1",
+    "|-damage|p1a: Basculegion|5/227",
+    "|-damage|p1a: Basculegion|2/100",
+    "|-activate|p1a: Basculegion|confusion",
+    "|move|p1a: Basculegion|Blizzard|p2a: Altaria|[spread] p2a,p2b",
+    "|-supereffective|p2a: Altaria|2",
+    "|-resisted|p2b: Torkoal|1",
+    "|split|p2",
+    "|-damage|p2a: Altaria|0 fnt",
+    "|-damage|p2a: Altaria|0 fnt",
+    "|split|p2",
+    "|-damage|p2b: Torkoal|160/177",
+    "|-damage|p2b: Torkoal|90/100",
+    "|-status|p2b: Torkoal|frz",
+    "|faint|p2a: Altaria",
+    "|-weather|SunnyDay|[upkeep]",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "sunnyday",
+    "weather_turns": 6,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 5,
+        "maxhp": 227,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 2,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8,
+         7,
+         8
+        ],
+        "volatiles": [
+         "confusion"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         14,
          20,
          8
         ],
@@ -1135,8 +1657,8 @@
          0
         ],
         "pp": [
+         10,
          12,
-         11,
          12,
          8
         ],
@@ -1144,15 +1666,15 @@
         "locked": null
        },
        {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
+        "species": "Torkoal",
+        "set_species": "Torkoal",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 152,
-        "maxhp": 207,
-        "item": "smoothrock",
-        "status": "",
-        "status_time": 0,
+        "hp": 160,
+        "maxhp": 177,
+        "item": "heatrock",
+        "status": "frz",
+        "status_time": 3,
         "confusion": 0,
         "fainted": false,
         "boosts": [
@@ -1165,10 +1687,10 @@
          0
         ],
         "pp": [
-         11,
-         8,
          12,
-         20
+         12,
+         8,
+         6
         ],
         "volatiles": [],
         "locked": null
@@ -1247,494 +1769,13 @@
     "|split|p2",
     "|switch|p2a: Kingambit|Kingambit, L50, M|207/207",
     "|switch|p2a: Kingambit|Kingambit, L50, M|100/100",
-    "|turn|2"
-   ],
-   "state": {
-    "turn": 2,
-    "ended": false,
-    "winner": "",
-    "weather": "sandstorm",
-    "weather_turns": 7,
-    "terrain": "",
-    "terrain_turns": 0,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Drampa",
-        "set_species": "Drampa",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 185,
-        "maxhp": 185,
-        "item": "sitrusberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         7,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gholdengo",
-        "set_species": "Gholdengo",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 162,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         15,
-         20,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "sharpbeak",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         20,
-         8,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackbelt",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackbelt",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 152,
-        "maxhp": 207,
-        "item": "smoothrock",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         8,
-         12,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Altaria",
-        "set_species": "Altaria",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 182,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         11,
-         12,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Milotic",
-        "set_species": "Milotic",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "mysticwater",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         20,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 3, move 2 1",
-    "p2": "move 2 1, move 1 1"
-   },
-   "draws": [
-    {
-     "site": "RANDOM_TARGET",
-     "context": "resolve",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 84
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 4
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 12
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 74
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 9
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 8
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 69
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 74
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:allAdjacentFoes",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 17
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 88
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 18
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 14
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 83
-    }
-   ],
-   "log": [
-    "|move|p2a: Kingambit|Sucker Punch|p1a: Drampa",
-    "|split|p1",
-    "|-damage|p1a: Drampa|104/185",
-    "|-damage|p1a: Drampa|56/100",
-    "|move|p1b: Gholdengo|Shadow Ball|p2a: Kingambit",
-    "|-resisted|p2a: Kingambit|1",
-    "|split|p2",
-    "|-damage|p2a: Kingambit|152/207",
-    "|-damage|p2a: Kingambit|73/100",
-    "|split|p1",
-    "|-damage|p1b: Gholdengo|145/179|[from] item: Life Orb",
-    "|-damage|p1b: Gholdengo|81/100|[from] item: Life Orb",
-    "|move|p2b: Tyranitar|Thunder|p1a: Drampa|[miss]",
-    "|-miss|p2b: Tyranitar|p1a: Drampa",
-    "|move|p1a: Drampa|Blizzard|p2b: Tyranitar|[spread] p2a",
-    "|-miss|p1a: Drampa|p2b: Tyranitar",
-    "|-resisted|p2a: Kingambit|1",
-    "|split|p2",
-    "|-damage|p2a: Kingambit|122/207",
-    "|-damage|p2a: Kingambit|58/100",
-    "|-weather|Sandstorm|[upkeep]",
-    "|upkeep",
     "|turn|3"
    ],
    "state": {
     "turn": 3,
     "ended": false,
     "winner": "",
-    "weather": "sandstorm",
+    "weather": "sunnyday",
     "weather_turns": 6,
     "terrain": "",
     "terrain_turns": 0,
@@ -1767,16 +1808,16 @@
       ],
       "pokemon": [
        {
-        "species": "Drampa",
-        "set_species": "Drampa",
+        "species": "Basculegion",
+        "set_species": "Basculegion",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 104,
-        "maxhp": 185,
-        "item": "sitrusberry",
+        "hp": 5,
+        "maxhp": 227,
+        "item": "focussash",
         "status": "",
         "status_time": 0,
-        "confusion": 0,
+        "confusion": 2,
         "fainted": false,
         "boosts": [
          0,
@@ -1788,12 +1829,14 @@
          0
         ],
         "pp": [
-         12,
-         12,
-         6,
+         8,
+         8,
+         7,
          8
         ],
-        "volatiles": [],
+        "volatiles": [
+         "confusion"
+        ],
         "locked": null
        },
        {
@@ -1919,7 +1962,7 @@
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 122,
+        "hp": 207,
         "maxhp": 207,
         "item": "blackbelt",
         "status": "",
@@ -1937,7 +1980,7 @@
         ],
         "pp": [
          12,
-         7,
+         8,
          16,
          8
         ],
@@ -1945,15 +1988,15 @@
         "locked": null
        },
        {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
+        "species": "Torkoal",
+        "set_species": "Torkoal",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 152,
-        "maxhp": 207,
-        "item": "smoothrock",
-        "status": "",
-        "status_time": 0,
+        "hp": 160,
+        "maxhp": 177,
+        "item": "heatrock",
+        "status": "frz",
+        "status_time": 3,
         "confusion": 0,
         "fainted": false,
         "boosts": [
@@ -1966,10 +2009,10 @@
          0
         ],
         "pp": [
-         10,
-         8,
          12,
-         20
+         12,
+         8,
+         6
         ],
         "volatiles": [],
         "locked": null
@@ -1996,8 +2039,8 @@
          0
         ],
         "pp": [
+         10,
          12,
-         11,
          12,
          8
         ],
@@ -2042,7 +2085,7 @@
   {
    "input": {
     "p1": "move 3, move 2 1",
-    "p2": "move 2 1, move 1 1"
+    "p2": "move 1 1, move 4"
    },
    "draws": [
     {
@@ -2057,35 +2100,21 @@
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
      "value": 0
     },
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
      "lo": 0,
-     "hi": 100,
-     "value": 45
+     "hi": 2,
+     "value": 1
     },
     {
-     "site": "CRIT",
-     "context": "",
+     "site": "FREEZE_THAW",
+     "context": "BeforeMove",
      "lo": 0,
-     "hi": 24,
-     "value": 10
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 14
+     "hi": 4,
+     "value": 2
     },
     {
      "site": "RANDOM_TARGET",
@@ -2099,14 +2128,14 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 41
+     "value": 97
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 17
+     "value": 7
     },
     {
      "site": "DAMAGE_ROLL",
@@ -2120,200 +2149,127 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 6
+     "value": 5
     },
     {
      "site": "RANDOM_TARGET",
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 34
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 8
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 10
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 59
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
+     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
      "context": "execute:allAdjacentFoes",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
      "lo": 0,
      "hi": 100,
-     "value": 66
+     "value": 17
     },
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "DAMAGE_ROLL",
+     "context": "BeforeMove",
      "lo": 0,
-     "hi": 100,
-     "value": 61
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 11
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 14
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 15
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 10
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 25
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
      "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
     }
    ],
    "log": [
-    "|move|p2a: Kingambit|Sucker Punch|p1a: Drampa",
-    "|split|p1",
-    "|-damage|p1a: Drampa|25/185",
-    "|-damage|p1a: Drampa|13/100",
-    "|-enditem|p1a: Drampa|Sitrus Berry|[eat]",
-    "|split|p1",
-    "|-heal|p1a: Drampa|71/185|[from] item: Sitrus Berry",
-    "|-heal|p1a: Drampa|38/100|[from] item: Sitrus Berry",
+    "|cant|p2b: Torkoal|frz",
     "|move|p1b: Gholdengo|Shadow Ball|p2a: Kingambit",
     "|-resisted|p2a: Kingambit|1",
     "|split|p2",
-    "|-damage|p2a: Kingambit|66/207",
-    "|-damage|p2a: Kingambit|31/100",
+    "|-damage|p2a: Kingambit|151/207",
+    "|-damage|p2a: Kingambit|72/100",
     "|-unboost|p2a: Kingambit|spd|1",
     "|-ability|p2a: Kingambit|Defiant|boost",
     "|-boost|p2a: Kingambit|atk|2",
     "|split|p1",
     "|-damage|p1b: Gholdengo|128/179|[from] item: Life Orb",
     "|-damage|p1b: Gholdengo|71/100|[from] item: Life Orb",
-    "|move|p2b: Tyranitar|Thunder|p1a: Drampa",
-    "|-resisted|p1a: Drampa|1",
+    "|-activate|p1a: Basculegion|confusion",
     "|split|p1",
-    "|-damage|p1a: Drampa|51/185",
-    "|-damage|p1a: Drampa|27/100",
-    "|move|p1a: Drampa|Blizzard|p2b: Tyranitar|[spread] p2a,p2b",
-    "|-resisted|p2a: Kingambit|1",
-    "|split|p2",
-    "|-damage|p2a: Kingambit|21/207",
-    "|-damage|p2a: Kingambit|10/100",
-    "|split|p2",
-    "|-damage|p2b: Tyranitar|96/207",
-    "|-damage|p2b: Tyranitar|46/100",
-    "|-status|p2b: Tyranitar|frz",
-    "|-weather|Sandstorm|[upkeep]",
-    "|upkeep",
-    "|turn|4"
+    "|-damage|p1a: Basculegion|0 fnt|[from] confusion",
+    "|-damage|p1a: Basculegion|0 fnt|[from] confusion",
+    "|faint|p1a: Basculegion",
+    "|move|p2a: Kingambit|Kowtow Cleave|p1b: Gholdengo",
+    "|-supereffective|p1b: Gholdengo|1",
+    "|split|p1",
+    "|-damage|p1b: Gholdengo|0 fnt",
+    "|-damage|p1b: Gholdengo|0 fnt",
+    "|faint|p1b: Gholdengo",
+    "|-weather|SunnyDay|[upkeep]",
+    "|upkeep"
    ],
    "state": {
-    "turn": 4,
+    "turn": 3,
     "ended": false,
     "winner": "",
-    "weather": "sandstorm",
+    "weather": "sunnyday",
     "weather_turns": 5,
     "terrain": "",
     "terrain_turns": 0,
     "trick_room": 0,
     "sides": [
      {
-      "request": "move",
+      "request": "switch",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
       ],
       "pokemon": [
        {
-        "species": "Drampa",
-        "set_species": "Drampa",
+        "species": "Basculegion",
+        "set_species": "Basculegion",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 51,
-        "maxhp": 185,
-        "item": "",
-        "status": "",
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 227,
+        "item": "focussash",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -2324,9 +2280,9 @@
          0
         ],
         "pp": [
-         12,
-         12,
-         5,
+         8,
+         8,
+         7,
          8
         ],
         "volatiles": [],
@@ -2336,14 +2292,14 @@
         "species": "Gholdengo",
         "set_species": "Gholdengo",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 128,
+        "switch_flag": 1,
+        "hp": 0,
         "maxhp": 179,
         "item": "lifeorb",
-        "status": "",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -2425,26 +2381,13 @@
       ]
      },
      {
-      "request": "move",
+      "request": "",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -2455,7 +2398,7 @@
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 21,
+        "hp": 151,
         "maxhp": 207,
         "item": "blackbelt",
         "status": "",
@@ -2472,8 +2415,8 @@
          0
         ],
         "pp": [
-         12,
-         6,
+         11,
+         8,
          16,
          8
         ],
@@ -2481,15 +2424,15 @@
         "locked": null
        },
        {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
+        "species": "Torkoal",
+        "set_species": "Torkoal",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 96,
-        "maxhp": 207,
-        "item": "smoothrock",
+        "hp": 160,
+        "maxhp": 177,
+        "item": "heatrock",
         "status": "frz",
-        "status_time": 3,
+        "status_time": 2,
         "confusion": 0,
         "fainted": false,
         "boosts": [
@@ -2502,10 +2445,10 @@
          0
         ],
         "pp": [
-         9,
-         8,
          12,
-         20
+         12,
+         8,
+         6
         ],
         "volatiles": [],
         "locked": null
@@ -2532,8 +2475,8 @@
          0
         ],
         "pp": [
+         10,
          12,
-         11,
          12,
          8
         ],
@@ -2577,458 +2520,66 @@
   },
   {
    "input": {
-    "p1": "move 3, move 2 1",
-    "p2": "move 2 1, move 1 1"
+    "p1": "switch 3, switch 4"
    },
    "draws": [
     {
-     "site": "RANDOM_TARGET",
-     "context": "resolve",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
     },
     {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:S",
+      "P:p2a:0:-"
+     ],
+     "start": 1
     },
     {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 31
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 3
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 7
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 55
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 17
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 12
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 58
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "FREEZE_THAW",
-     "context": "BeforeMove",
-     "lo": 0,
-     "hi": 4,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
     }
    ],
    "log": [
-    "|move|p2a: Kingambit|Sucker Punch|p1a: Drampa",
     "|split|p1",
-    "|-damage|p1a: Drampa|0 fnt",
-    "|-damage|p1a: Drampa|0 fnt",
-    "|faint|p1a: Drampa",
-    "|move|p1b: Gholdengo|Shadow Ball|p2a: Kingambit",
-    "|-resisted|p2a: Kingambit|1",
-    "|split|p2",
-    "|-damage|p2a: Kingambit|0 fnt",
-    "|-damage|p2a: Kingambit|0 fnt",
-    "|faint|p2a: Kingambit",
+    "|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p1b: Kingambit|Kingambit, L50, M|100/100",
     "|split|p1",
-    "|-damage|p1b: Gholdengo|111/179|[from] item: Life Orb",
-    "|-damage|p1b: Gholdengo|62/100|[from] item: Life Orb",
-    "|cant|p2b: Tyranitar|frz",
-    "|-weather|Sandstorm|[upkeep]",
-    "|upkeep"
+    "|switch|p1a: Staraptor|Staraptor, L50, F|192/192",
+    "|switch|p1a: Staraptor|Staraptor, L50, F|100/100",
+    "|-ability|p1a: Staraptor|Intimidate|boost",
+    "|-unboost|p2a: Kingambit|atk|1",
+    "|-ability|p2a: Kingambit|Defiant|boost",
+    "|-boost|p2a: Kingambit|atk|2",
+    "|-unboost|p2b: Torkoal|atk|1",
+    "|turn|4"
    ],
    "state": {
     "turn": 4,
     "ended": false,
     "winner": "",
-    "weather": "sandstorm",
-    "weather_turns": 4,
-    "terrain": "",
-    "terrain_turns": 0,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "switch",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Drampa",
-        "set_species": "Drampa",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 185,
-        "item": "",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         5,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gholdengo",
-        "set_species": "Gholdengo",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 111,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         12,
-         20,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "sharpbeak",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         20,
-         8,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackbelt",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "switch",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 207,
-        "item": "blackbelt",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         5,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 96,
-        "maxhp": 207,
-        "item": "smoothrock",
-        "status": "frz",
-        "status_time": 2,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         9,
-         8,
-         12,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Altaria",
-        "set_species": "Altaria",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 182,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         11,
-         12,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Milotic",
-        "set_species": "Milotic",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "mysticwater",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         20,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "switch 3, pass",
-    "p2": "switch 4, pass"
-   },
-   "draws": [],
-   "log": [
-    "|split|p2",
-    "|switch|p2a: Milotic|Milotic, L50, F|202/202",
-    "|switch|p2a: Milotic|Milotic, L50, F|100/100",
-    "|split|p1",
-    "|switch|p1a: Staraptor|Staraptor, L50, F|192/192",
-    "|switch|p1a: Staraptor|Staraptor, L50, F|100/100",
-    "|-ability|p1a: Staraptor|Intimidate|boost",
-    "|-unboost|p2a: Milotic|atk|1",
-    "|-ability|p2a: Milotic|Competitive|boost",
-    "|-boost|p2a: Milotic|spa|2",
-    "|-unboost|p2b: Tyranitar|atk|1",
-    "|turn|5"
-   ],
-   "state": {
-    "turn": 5,
-    "ended": false,
-    "winner": "",
-    "weather": "sandstorm",
-    "weather_turns": 4,
+    "weather": "sunnyday",
+    "weather_turns": 5,
     "terrain": "",
     "terrain_turns": 0,
     "trick_room": 0,
@@ -3090,66 +2641,6 @@
         "locked": null
        },
        {
-        "species": "Gholdengo",
-        "set_species": "Gholdengo",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 111,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         12,
-         20,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Drampa",
-        "set_species": "Drampa",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 185,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         5,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
         "species": "Kingambit",
         "set_species": "Kingambit",
         "mega": 0,
@@ -3174,6 +2665,66 @@
          12,
          8,
          16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 227,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8,
+         7,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         13,
+         20,
          8
         ],
         "volatiles": [],
@@ -3208,43 +2759,43 @@
       ],
       "pokemon": [
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "mysticwater",
+        "hp": 151,
+        "maxhp": 207,
+        "item": "blackbelt",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
+         3,
+         0,
+         0,
          -1,
-         0,
-         2,
-         0,
          0,
          0,
          0
         ],
         "pp": [
-         12,
-         12,
-         20,
+         11,
+         8,
+         16,
          8
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
+        "species": "Torkoal",
+        "set_species": "Torkoal",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 96,
-        "maxhp": 207,
-        "item": "smoothrock",
+        "hp": 160,
+        "maxhp": 177,
+        "item": "heatrock",
         "status": "frz",
         "status_time": 2,
         "confusion": 0,
@@ -3259,10 +2810,10 @@
          0
         ],
         "pp": [
-         9,
-         8,
          12,
-         20
+         12,
+         8,
+         6
         ],
         "volatiles": [],
         "locked": null
@@ -3289,8 +2840,8 @@
          0
         ],
         "pp": [
+         10,
          12,
-         11,
          12,
          8
         ],
@@ -3298,17 +2849,17 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Milotic",
+        "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 207,
-        "item": "blackbelt",
+        "hp": 202,
+        "maxhp": 202,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -3320,8 +2871,8 @@
         ],
         "pp": [
          12,
-         5,
-         16,
+         12,
+         20,
          8
         ],
         "volatiles": [],
@@ -3335,50 +2886,65 @@
   {
    "input": {
     "p1": "move 3 1, move 2 1",
-    "p2": "move 2 1, move 1 1"
+    "p2": "move 1 1, move 4"
    },
    "draws": [
     {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 84
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
     },
     {
-     "site": "CRIT",
-     "context": "",
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "FREEZE_THAW",
+     "context": "BeforeMove",
      "lo": 0,
-     "hi": 24,
+     "hi": 4,
      "value": 1
     },
     {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 2
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 48
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 98
+     "value": 75
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 14
+     "value": 16
     },
     {
      "site": "DAMAGE_ROLL",
@@ -3388,234 +2954,110 @@
      "value": 10
     },
     {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 66
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 36
+     "value": 24
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 5
+     "value": 15
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 9
+     "value": 0
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 76
+     "value": 73
     },
     {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:normal",
-     "lo": 0,
-     "hi": 1,
-     "value": 0
-    },
-    {
-     "site": "FREEZE_THAW",
-     "context": "BeforeMove",
-     "lo": 0,
-     "hi": 4,
-     "value": 2
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
     }
    ],
    "log": [
-    "|move|p1a: Staraptor|Close Combat|p2a: Milotic",
+    "|cant|p2b: Torkoal|frz",
+    "|move|p1b: Kingambit|Sucker Punch|p2a: Kingambit",
+    "|-resisted|p2a: Kingambit|1",
     "|split|p2",
-    "|-damage|p2a: Milotic|145/202",
-    "|-damage|p2a: Milotic|71/100",
+    "|-damage|p2a: Kingambit|120/207",
+    "|-damage|p2a: Kingambit|57/100",
+    "|move|p1a: Staraptor|Close Combat|p2a: Kingambit",
+    "|-supereffective|p2a: Kingambit|2",
+    "|split|p2",
+    "|-damage|p2a: Kingambit|0 fnt",
+    "|-damage|p2a: Kingambit|0 fnt",
     "|-unboost|p1a: Staraptor|def|1",
     "|-unboost|p1a: Staraptor|spd|1",
-    "|move|p1b: Gholdengo|Shadow Ball|p2a: Milotic",
-    "|split|p2",
-    "|-damage|p2a: Milotic|75/202",
-    "|-damage|p2a: Milotic|37/100",
-    "|split|p1",
-    "|-damage|p1b: Gholdengo|94/179|[from] item: Life Orb",
-    "|-damage|p1b: Gholdengo|52/100|[from] item: Life Orb",
-    "|move|p2a: Milotic|Ice Beam|p1a: Staraptor",
-    "|-supereffective|p1a: Staraptor|1",
-    "|split|p1",
-    "|-damage|p1a: Staraptor|0 fnt",
-    "|-damage|p1a: Staraptor|0 fnt",
-    "|faint|p1a: Staraptor",
-    "|cant|p2b: Tyranitar|frz",
-    "|-weather|Sandstorm|[upkeep]",
-    "|split|p2",
-    "|-damage|p2a: Milotic|63/202|[from] Sandstorm",
-    "|-damage|p2a: Milotic|31/100|[from] Sandstorm",
+    "|faint|p2a: Kingambit",
+    "|-weather|SunnyDay|[upkeep]",
     "|upkeep"
    ],
    "state": {
-    "turn": 5,
+    "turn": 4,
     "ended": false,
     "winner": "",
-    "weather": "sandstorm",
-    "weather_turns": 3,
+    "weather": "sunnyday",
+    "weather_turns": 4,
     "terrain": "",
     "terrain_turns": 0,
     "trick_room": 0,
     "sides": [
-     {
-      "request": "switch",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 192,
-        "item": "sharpbeak",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         20,
-         7,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gholdengo",
-        "set_species": "Gholdengo",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 94,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         11,
-         20,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Drampa",
-        "set_species": "Drampa",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 185,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         5,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackbelt",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
      {
       "request": "",
       "conditions": [
@@ -3630,21 +3072,51 @@
       ],
       "pokemon": [
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
+        "species": "Staraptor",
+        "set_species": "Staraptor",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 63,
-        "maxhp": 202,
-        "item": "mysticwater",
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
+         0,
          -1,
          0,
-         2,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         7,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackbelt",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
          0,
          0,
          0,
@@ -3652,21 +3124,126 @@
         ],
         "pp": [
          12,
-         11,
-         20,
+         7,
+         16,
          8
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Tyranitar",
-        "set_species": "Tyranitar",
+        "species": "Basculegion",
+        "set_species": "Basculegion",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 96,
+        "hp": 0,
+        "maxhp": 227,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8,
+         7,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         13,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
         "maxhp": 207,
-        "item": "smoothrock",
+        "item": "blackbelt",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Torkoal",
+        "set_species": "Torkoal",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 160,
+        "maxhp": 177,
+        "item": "heatrock",
         "status": "frz",
         "status_time": 1,
         "confusion": 0,
@@ -3681,10 +3258,10 @@
          0
         ],
         "pp": [
-         9,
-         8,
          12,
-         20
+         12,
+         8,
+         6
         ],
         "volatiles": [],
         "locked": null
@@ -3711,8 +3288,328 @@
          0
         ],
         "pp": [
+         10,
          12,
-         11,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "mysticwater",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 4, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Milotic|Milotic, L50, F|202/202",
+    "|switch|p2a: Milotic|Milotic, L50, F|100/100",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "sunnyday",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         7,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackbelt",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         7,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Basculegion",
+        "set_species": "Basculegion",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 227,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8,
+         7,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         13,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "mysticwater",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Torkoal",
+        "set_species": "Torkoal",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 160,
+        "maxhp": 177,
+        "item": "heatrock",
+        "status": "frz",
+        "status_time": 1,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Altaria",
+        "set_species": "Altaria",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 182,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         12,
          12,
          8
         ],
@@ -3741,8 +3638,8 @@
          0
         ],
         "pp": [
-         12,
-         5,
+         11,
+         8,
          16,
          8
         ],
