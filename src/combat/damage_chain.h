@@ -14,14 +14,33 @@
  *
  * The modifiers (out of 4096): Life Orb 5324, Expert Belt 4915, a resist berry 2048, a screen or Aurora Veil 2732, Glaive
  * Rush's volatile 8192, Solid Rock 3072, Multiscale 2048, (step G35) Friend Guard 3072, the ability of the target's partner, and
- * (Mega batch 2) Aura Guard 2048, a contact hit on its holder. One hit has at most one of Life Orb and Expert Belt (the
- * attacker's item), one of Solid Rock, Multiscale and Aura Guard (the target's ability), one screen, one berry, Glaive Rush's
- * volatile and Friend Guard, so six modifiers at most.
+ * (Mega batch 2) Aura Guard 2048, a contact hit on its holder, (step G45) Punk Rock 2048, a sound move on its holder, and
+ * (step G77) Sniper 6144, a critical hit by its holder. The maximum for one hit, enumerated: the attacker has one item (Life
+ * Orb or Expert Belt) and one ability (Sniper, crit only); the target has one ability (Solid Rock, Multiscale, Aura Guard
+ * or Punk Rock: one of the four), one berry and Glaive Rush's volatile; its partner has Friend Guard; and one screen or
+ * Aurora Veil counts only when the hit is not critical (turn.c, the `!crit` test of the screen modifier). A critical hit
+ * therefore has at most 2 + 1 + 1 + 1 + 1 = 6 modifiers (Sniper, no screen), and a hit that is not critical has at most
+ * 1 + 1 + 1 + 1 + 1 + 1 = 6 (the screen, no Sniper). So six is the bound, and it is what the list is sized to: no hit
+ * has a seventh (the sets of the other modifiers are the ones above; the Sniper step of G77 adds the one that is
+ * crit-only). Every write is still checked by dfi_mods_push, so an overflow would be E_UNSUPPORTED, never an
+ * out-of-bounds write.
  */
 #include <stdbool.h>
 #include <stdint.h>
 
 #define DFI_MODIFY_DAMAGE_MAX 6u
+
+/* Appends one modifier to the chain list (turn.c). False when the list is full: the caller returns E_UNSUPPORTED, so an
+ * overflow is never an out-of-bounds write. */
+static inline bool dfi_mods_push(uint32_t *mlist, uint32_t *mods, uint32_t value)
+{
+    if (*mods >= DFI_MODIFY_DAMAGE_MAX) {
+        return false;
+    }
+    mlist[*mods] = value;
+    *mods += 1u;
+    return true;
+}
 
 /* one chainModify step on the accumulated modifier */
 #define DFI_MD_CHAIN(a, b) ((((a) * (b)) + 2048u) >> 12)
