@@ -228,6 +228,8 @@ jobs:
           grep -E 'Test +#[0-9]+: duoforge\.python\.random_pool_train ' ctest.log
           grep -E 'Test +#[0-9]+: duoforge\.python\.mmd ' ctest.log
           grep -E 'Test +#[0-9]+: duoforge\.python\.perft ' ctest.log
+          grep -E 'Test +#[0-9]+: duoforge\.data\.model_pool_hash ' ctest.log
+          grep -E 'Test +#[0-9]+: duoforge\.state\.model_pool_tail ' ctest.log
 
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan

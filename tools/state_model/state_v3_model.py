@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Structural model of DuoForge context v3, state v3, invariants v3, codec v3
 and the decision domains (decisions 0005 and 0006). Written from the decision
-notes, not from the C sources. Stdlib only. CTest never runs it.
+notes, not from the C sources. Stdlib only. CTest runs only its POOL tail part
+(test_model_pins.py: the envelope, the example and the byte sweep that
+tests/test_pool_tail.c pins).
 
 Prints every value the C tests assert: context bytes and fingerprints,
 fixture encodings and digests, per-region mutation counts, targeted invariant
@@ -676,8 +678,8 @@ def member_extra_is_zero(mem):
                 or mem['ability'])
 
 
-def volatile_valid(p, move_count, switch_flag_max=None, vol_flags_mask=None):
-    """Value ranges of an occupied position's volatile block."""
+def volatile_valid(p, move_count, switch_flag_max=None, vol_flags_mask=None, lock=False):
+    """Value ranges of an occupied position's volatile block. `lock`: the POOL tail's lock_turns of the position is nonzero."""
     if p['switch_flag'] > (SWITCH_FAINTED if switch_flag_max is None else switch_flag_max):
         return False
     mask = VOL_FLAGS_MAX if vol_flags_mask is None else vol_flags_mask
@@ -689,13 +691,51 @@ def volatile_valid(p, move_count, switch_flag_max=None, vol_flags_mask=None):
         return False
     if p['confusion_turns'] > CONFUSION_TURNS_MAX or p['charge_turns'] > CHARGE_TURNS_MAX:
         return False
-    # The locked-move byte: a charging two-turn move, a choice lock, or both on one move.
+    # The locked-move byte: a charging two-turn move, a choice lock, or both on one move. Step G56 (decision 0015 section 7,
+    # "Values (rev 4)", lock_turns): a lockedmove is a third owner of the byte, so a locked move without a charge, a choice
+    # lock or a lock is refused here (VOLATILE); the charge and the choice lock need the byte, a lock without its move is the
+    # tail's refusal (TAIL_POSITION, tail_pos_valid).
     choice = bool(p['flags'] & VOL_CHOICE_LOCK)
-    if p['locked_move'] > move_count or (p['locked_move'] != 0) != (p['charge_turns'] != 0 or choice):
+    if p['locked_move'] > move_count:
+        return False
+    if p['locked_move'] != 0 and not (p['charge_turns'] != 0 or choice or lock):
+        return False
+    if p['locked_move'] == 0 and (p['charge_turns'] != 0 or choice):
         return False
     if p['charge_turns'] == 0:
         return p['locked_target'] == 0
     return p['locked_target'] < 4 or p['locked_target'] == TARGET_NONE
+
+
+def position_volatile_ok(ctx, st, s, i):
+    """Invariant VOLATILE of position i of side s: an empty position is cleared; an occupied one has a valid volatile block.
+    Under POOL two tail bytes take part: the lock (lock_turns, step G56) owns a locked move, and the current ability decides
+    the Unburden holder."""
+    sd = st['sides'][s]
+    p = sd['pos'][i]
+    kind = st['boundary']
+    if p['occ'] == NONE:
+        return p == empty_pos()
+    team_c = ctx.data_kind in EXTENDED_KINDS
+    mem = sd['members'][p['occ']]
+    team_c_mask = (VOL_FLAGS_MAX | VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_UNBURDEN | VOL_CHOICE_LOCK |
+                   VOL_NEWLY_SWITCHED)
+    switch_max = SWITCH_VOLT_SWITCH if ctx.data_kind in (KIND_POOL, KIND_POOL_DEV) else SWITCH_FLIP_TURN if team_c else None
+    lock = has_pool_tail(ctx) and st['tail']['sides'][s]['pos'][i]['lock_turns'] != 0
+    if not volatile_valid(p, mem['move_count'], switch_max, team_c_mask if team_c else None, lock):
+        return False
+    if p['flags'] & VOL_CHOICE_LOCK and (mem['item'] != ITEM_CHOICE_SCARF or mem['item_consumed']):
+        return False
+    # The holder is the Pokemon whose ability now is Unburden: the sheet's, or the tail's ability_now.
+    ability_now = (st['tail']['sides'][s]['ability_now'][p['occ']] if has_pool_tail(ctx) else 0) or mem['ability']
+    if p['flags'] & VOL_UNBURDEN and (ability_now != ABILITY_UNBURDEN or not mem['item'] or not mem['item_consumed']):
+        return False
+    # Follow Me and Helping Hand end in the residual, newlySwitched at the end of the turn.
+    if kind == TURN and p['flags'] & (VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_NEWLY_SWITCHED):
+        return False
+    if kind == REPLACEMENT and p['flags'] & (VOL_FOLLOW_ME | VOL_HELPING_HAND):
+        return False
+    return True
 
 
 def check_side(ctx, st, s):
@@ -772,31 +812,9 @@ def check_side(ctx, st, s):
             return 'ACTIVATION_NOT_ISSUED'
     if sd['pos'][0]['occ'] != NONE and sd['pos'][0]['occ'] == sd['pos'][1]['occ']:
         return 'OCCUPANT_DUPLICATE'
-    for p in sd['pos']:
-        if p['occ'] == NONE:
-            if p != empty_pos():
-                return 'VOLATILE'
-        else:
-            team_c = ctx.data_kind in EXTENDED_KINDS
-            mem = sd['members'][p['occ']]
-            team_c_mask = (VOL_FLAGS_MAX | VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_UNBURDEN | VOL_CHOICE_LOCK |
-                           VOL_NEWLY_SWITCHED)
-            switch_max = SWITCH_VOLT_SWITCH if ctx.data_kind in (KIND_POOL, KIND_POOL_DEV) else SWITCH_FLIP_TURN if team_c else None
-            if not volatile_valid(p, mem['move_count'], switch_max,
-                                  team_c_mask if team_c else None):
-                return 'VOLATILE'
-            if p['flags'] & VOL_CHOICE_LOCK and (mem['item'] != ITEM_CHOICE_SCARF or mem['item_consumed']):
-                return 'VOLATILE'
-            # The holder is the Pokemon whose ability now is Unburden: the sheet's, or the tail's ability_now.
-            ability_now = (st['tail']['sides'][s]['ability_now'][p['occ']] if has_pool_tail(ctx) else 0) or mem['ability']
-            if p['flags'] & VOL_UNBURDEN and (ability_now != ABILITY_UNBURDEN or not mem['item']
-                                              or not mem['item_consumed']):
-                return 'VOLATILE'
-            # Follow Me and Helping Hand end in the residual, newlySwitched at the end of the turn.
-            if kind == TURN and p['flags'] & (VOL_FOLLOW_ME | VOL_HELPING_HAND | VOL_NEWLY_SWITCHED):
-                return 'VOLATILE'
-            if kind == REPLACEMENT and p['flags'] & (VOL_FOLLOW_ME | VOL_HELPING_HAND):
-                return 'VOLATILE'
+    for i in range(2):
+        if not position_volatile_ok(ctx, st, s, i):
+            return 'VOLATILE'
     occ = occupied_mask(sd)
     rs = sd['requested_slots']
     if rs > 3:
@@ -999,8 +1017,9 @@ def substitute_cap(sd):
     return max([sd['members'][m]['hp_max'] // 4 for m in range(sd['member_count']) if (sd['brought'] >> m) & 1] or [0])
 
 
-def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
-    """The tail of a standing occupant's position (the rules of decision 0015 section 7)."""
+def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0, locked_move=0):
+    """The tail of a standing occupant's position (the rules of decision 0015 section 7). `slot_flags` and `locked_move` are
+    the body's volatile flags and locked-move byte of the position."""
     mc = mem['move_count']
     if not (tp['last_move'] <= TAIL_MOVE_MAX and (tp['last_move'] == TAIL_MOVE_MAX or tp['last_move'] <= mc)
             and tp['encore_slot'] <= TAIL_ENCORE_SLOT_MAX and tp['encore_slot'] <= mc
@@ -1038,14 +1057,16 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
             and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
         return False
     # Step G56 (view audit 2026-10-10): a running lockedmove's move is the occupant's last used one, a move of the occupant whose
-    # effect is a lockedmove (none, Struggle or another move with a lock is a broken state). The other half of the lock, its move
-    # in the body's locked_move, is the body's: this model does not carry it (tests/test_pool_tail.c counts it by hand).
+    # effect is a lockedmove (none, Struggle or another move with a lock is a broken state). The other half of the lock is its
+    # move in the body's locked_move (decision 0015 section 7, "Values (rev 4)"): a lock without it is TAIL_POSITION here, and a
+    # locked move without its lock is the body's VOLATILE (volatile_valid).
     last = tp['last_move']
     if tp['lock_turns'] != 0 and not (1 <= last <= mc and mem['moves'][last - 1]['id'] in POOL_LOCKEDMOVE_MOVES):
         return False
-    # Rev 5 (lane A, G72b, decision 0015 5ce; G76): the position flags are a bitfield: bit 0 (Healing Wish) and bits 5-7 are
-    # zero, the Dragon Cheer stage (bits 2-3) is at most 2, bit 4 is Destiny Bond, and the stats-raised bit, the stage and
-    # Destiny Bond need an occupant. Future Sight is zero.
+    if tp['lock_turns'] != 0 and locked_move == 0:
+        return False
+    # Rev 5 (lane A, G72b, decision 0015 5ce; G76, G82, G84b, G88): the position flags are a bitfield (position_flags_valid):
+    # the Dragon Cheer stage (bits 2-3) is at most 2, every other bit is defined. Future Sight is zero.
     if not position_flags_valid(tp['position_flags']):
         return False
     if tp['future_sight'] != 0:
@@ -1123,7 +1144,8 @@ def check_tail(ctx, st):
                 continue
             # Step G90 (decision 0060, data/conditions.ts:234-252): a trap whose source left stays up (source 0) until the
             # target's next residual; it is legal at the TURN and REPLACEMENT boundaries.
-            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags'], substitute_cap(sd)):
+            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags'], substitute_cap(sd),
+                                  sd['pos'][p]['locked_move']):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
             ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]
@@ -1134,7 +1156,13 @@ def check_tail(ctx, st):
                 return 'TAIL_MEMBER'
             mem = sd['members'][m]
             on_field = mem['hp'] != 0 and (sd['pos'][0]['occ'] == m or sd['pos'][1]['occ'] == m)
-            if ty != 0 and (ty > TYPE_COUNT or not on_field):
+            # Step G50 (decision 0025 item 2, decision 0015 5ar): the soak byte may hold the typeless first slot (255, Double
+            # Shock's "???") with the second type in type2. Read here as type2 a type id + 1 (1..18): the typeless slot is the
+            # first one and type2 carries the second type (0025: the view shows type2 as the second type of type_now). The
+            # notes' wording is "a nonzero type2", which taken literally also admits type2 = 255 (the second type gone too, a
+            # shape no move makes); reported to HS on 2026-10-11 so that the note can say "a type in type2".
+            typeless_ok = ty == TAIL_TYPE2_TYPELESS and 1 <= t2 <= TYPE_COUNT
+            if ty != 0 and ((ty > TYPE_COUNT and not typeless_ok) or not on_field):
                 return 'TAIL_MEMBER'
             if ab != 0 and (ab > POOL_ABILITY_COUNT or not on_field):
                 return 'TAIL_MEMBER'
@@ -1233,8 +1261,9 @@ def tail_bytes(tail):
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 41 reserved bytes: 29 of the rev 4 part (step G46: the field block's +1..+6 are
-    party_order) and the 12 of the rev 5 reserve at the end that are not the Ally Switch bytes 4..7 (step G80)."""
+    """The offsets (within the tail) of the 33 reserved bytes: 25 of the rev 4 part (step G46: the field block's +1..+6 are
+    party_order; step G90: a position's byte +32 is trap_elapsed) and the 8 of the rev 5 reserve at the end that are not the
+    Attract sources 0..3 (step G71) or the Ally Switch bytes 4..7 (step G80)."""
     offs = [TAIL_FIELD_SIZE - 1]
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
@@ -2089,6 +2118,9 @@ def tail_model_state():
             for k, move_id in enumerate(EXAMPLE_MOVES[s][m]):
                 mem['moves'][k]['id'] = move_id
             mem['gender'] = REFERENCE_GENDERS_PAIRING0[s][m]
+    # step G56: the body's half of the example's two locks, Outrage's slot + 1 in the locked-move byte of side 1's leads
+    for p in range(2):
+        st['sides'][1]['pos'][p]['locked_move'] = EXAMPLE_LOCK_SLOT
     return st
 
 
@@ -2105,36 +2137,66 @@ def attract_valid_codes(st, flat):
 
 
 def tail_outcome(raw):
-    """decode() of the tail alone: the reserved bytes first, then the tail rules, over tail_model_state()."""
+    """decode() of the tail alone: the reserved bytes first, then the rules over tail_model_state() that a tail byte can break:
+    the body's volatile check of the occupied positions (the locked-move byte reads the tail's lock, step G56) and the tail
+    rules. The body is fixed and valid otherwise, so the order of those two does not change a count."""
     full = bytes(STATE_SIZE) + raw
     if not tail_reserved_zero(full):
         return 'TAIL_RESERVED'
     st = tail_model_state()
     st['tail'] = parse_tail(full)
+    for s in range(2):
+        for p in range(2):
+            if not position_volatile_ok(KP, st, s, p):
+                return 'VOLATILE'
     return check_tail(KP, st)
 
 
-SWEEP_COLUMNS = ('OK', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_FIELD', 'TAIL_RESERVED', 'TAIL_PARTY')
+# The columns of tests/test_pool_tail.c's sweep[] in its order (step G46: TAIL_PARTY; step G56: VOLATILE, a locked move whose
+# lock was cleared).
+SWEEP_COLUMNS = ('OK', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_FIELD', 'TAIL_RESERVED', 'TAIL_PARTY', 'VOLATILE')
 
 
-def print_pool_tail():
-    example = tail_example()
-    base_tail = tail_bytes(example)
+def pool_tail_envelope():
+    """The 20-byte envelope of a POOL state (schema 0x0503, 1357 bytes)."""
+    return MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV5, SEMANTICS, POOL_STATE_SIZE)
+
+
+def pool_tail_example_bytes():
+    """The 348 tail bytes of the example (tail_example()); valid over tail_model_state()."""
+    base_tail = tail_bytes(tail_example())
     assert tail_outcome(base_tail) == 'OK' and len(base_tail) == TAIL_SIZE
-    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV5, SEMANTICS, POOL_STATE_SIZE)
-    print('pool_tail envelope %s' % head.hex())
-    print('pool_tail example %s' % base_tail.hex())
+    return base_tail
+
+
+def pool_tail_sweep(base_tail=None):
+    """For every tail byte of the example, the outcome counts of its 255 other values: a list of TAIL_SIZE dicts. Every
+    outcome is one of SWEEP_COLUMNS (asserted), and exactly the reserved offsets refuse all 255 as TAIL_RESERVED.
+    tools/state_model/test_model_pins.py compares the rows with tests/test_pool_tail.c's sweep[]."""
+    if base_tail is None:
+        base_tail = pool_tail_example_bytes()
     reserved = set(tail_reserved_offsets())
+    rows = []
     for off in range(TAIL_SIZE):
         counts = {}
+        raw = bytearray(base_tail)
         for v in range(256):
             if v == base_tail[off]:
                 continue
-            raw = bytearray(base_tail)
             raw[off] = v
             r = tail_outcome(bytes(raw))
             counts[r] = counts.get(r, 0) + 1
+        assert set(counts) <= set(SWEEP_COLUMNS), (off, counts)
         assert (off in reserved) == (counts.get('TAIL_RESERVED', 0) == 255)
+        rows.append(counts)
+    return rows
+
+
+def print_pool_tail():
+    base_tail = pool_tail_example_bytes()
+    print('pool_tail envelope %s' % pool_tail_envelope().hex())
+    print('pool_tail example %s' % base_tail.hex())
+    for off, counts in enumerate(pool_tail_sweep(base_tail)):
         print('pool_tail_sweep %3d %s' % (off, ' '.join('%s=%d' % kv for kv in sorted(counts.items()))))
         print('pool_tail_sweep_c %3d {%s},' % (off, ', '.join(str(counts.get(c, 0)) for c in SWEEP_COLUMNS)))
     # Step G71: the Attract codes each flat position accepts on the sweep's base (its tail's attract bytes are zero there).

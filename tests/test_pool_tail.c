@@ -10,12 +10,14 @@
  * field conditions and the member overrides that decision 0018 declares as view fields; rev 3 the Protect variant; rev 4
  * the move result, the single-turn markers, the hits taken, the ability state, the lock counter, Quick Guard, the second
  * type and the member flags (tail-rev4-proposal.md, cut B); rev 5 (the 60-byte block after the rev 4 part) the Illusion
- * state per side (decision 0026) and the two lane A bytes per position, with 16 reserve bytes. Rev 4 and rev 5 have no
- * mechanic yet, so the tests set their fields by hand, and the rev 5 bytes can only be zero: any other value is refused.
+ * state per side (decision 0026) and the two lane A bytes per position, with 16 reserve bytes; the expansion steps gave
+ * later meanings to some of the reserve (the party order G46, the trap's elapsed count G90, the Attract sources G71, the
+ * Ally Switch volatile G80) and to the position flags.
  *
  * The independent oracle is tools/state_model/state_v3_model.py (run with --pool-tail): the envelope, the 348 tail
  * bytes of the example and, for every tail byte, how many of the 255 other values the decoder accepts or refuses
- * with which invariant, are its output.
+ * with which invariant, are its output; tools/state_model/test_model_pins.py (CTest duoforge.state.model_pool_tail)
+ * checks that ENVELOPE_HEX, TAIL_HEX and sweep[] below are still what the model derives.
  */
 #include <stdio.h>
 #include <string.h>
@@ -54,12 +56,13 @@ static const char TAIL_HEX[] =
  * largest quarter of a side's brought members, decision 0042): the model's EXAMPLE_HP_MAX, asserted below. */
 static const unsigned example_hp_max[2][6] = {{193u, 192u, 202u, 181u, 164u, 179u}, {197u, 182u, 197u, 224u, 169u, 202u}};
 
-/* Step G50: a soak_type of 255 (Double Shock) is OK for a standing member with a second type, which moves the two soak bytes
- * (offsets 92 and 252: side 0's member 0 and side 1's member 2) from 18 to 19 OK values and from 237 to 236 member refusals.
- * Step G56: the lock bytes of side 1's positions (offsets 187 and 223) refuse 0 as VOLATILE (the body's locked move without its
- * owner), which the model counts as OK. For every tail byte of the example: how many of the 255 other values give OK, TAIL_SIDE,
- * TAIL_POSITION, TAIL_MEMBER, TAIL_FIELD and TAIL_RESERVED ("pool_tail_sweep_c" of the model, with these four rows kept by
- * hand). */
+/* For every tail byte of the example: how many of the 255 other values give OK, TAIL_SIDE, TAIL_POSITION, TAIL_MEMBER,
+ * TAIL_FIELD, TAIL_RESERVED, TAIL_PARTY and VOLATILE ("pool_tail_sweep_c" of the model, every row; the CTest
+ * duoforge.state.model_pool_tail checks that the model still derives this table). Step G50: a soak_type of 255 (Double
+ * Shock) is OK for a standing member with a type in type2, so the soak bytes of side 0's member 0 and side 1's member 2
+ * (offsets 92 and 252) have 19 OK values, those of side 0's member 1 (type2 255) and side 1's member 4 (no type2) 18.
+ * Step G56: the lock bytes of side 1's positions (offsets 187 and 223) refuse 0 as VOLATILE (the body's locked move
+ * without its owner). */
 enum { SWEEP_COLUMNS = 8 }; /* step G46: TAIL_PARTY is the seventh; step G56: a lock without its locked move is VOLATILE, the eighth */
 static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {5, 0, 0, 0, 250, 0, 0, 0},
@@ -110,7 +113,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 0 (trapped: 1..5 OK, the rest POSITION) */
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 0 (trapped with 6 turns: only 0 gives 5 or 6) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1617,7 +1620,8 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        /* 41 reserved bytes: the field block's +1..+6 are party_order (G46), the position block's byte 32 is the elapsed count (G90) and the Attract sources (G71) are data */
+        /* 33 reserved bytes: the field block's +1..+6 are party_order (G46), the position block's byte 32 is the elapsed
+         * count (G90), the Attract sources (G71) and the Ally Switch bytes (G80) are data */
         DF_CHECK_EQ_U64(&t, all_reserved, 33u);    }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
