@@ -927,6 +927,25 @@ static const df_tb_stop tb_c12_scarf_tie[] = {
     {15u, 0u, 2u, 1u, {1u, 3u}, {57u, 267u}, {0x4012cfd7720f353aull, 0x403910f195ec07e8ull}},
     {16u, 1u, 2u, 0u, {0u, 3u}, {0u, 267u}, {0x0000000000000000ull, 0x403910f195ec07e8ull}},
 };
+static const df_tb_stop tb_c2fix_a[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1050u, 1081u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {701u, 757u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {3u, 3u}, {449u, 597u}, {0x4045180000000000ull, 0x4049000000000000ull}},
+    {3u, 0u, 2u, 2u, {3u, 3u}, {449u, 597u}, {0x4045180000000000ull, 0x4049000000000000ull}},
+    {6u, 0u, 2u, 2u, {2u, 2u}, {186u, 343u}, {0x40310e4fa8ac7ca1ull, 0x403ad25b496d25b4ull}},
+    {8u, 0u, 2u, 1u, {1u, 2u}, {117u, 219u}, {0x402608ad8f2fba94ull, 0x40311ed5a6cf5c72ull}},
+    {9u, 1u, 2u, 0u, {0u, 2u}, {0u, 219u}, {0x0000000000000000ull, 0x40311ed5a6cf5c72ull}},
+};
+static const df_tb_stop tb_c2fix_b[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1050u, 1081u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {703u, 696u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 1u, {2u, 4u}, {349u, 639u}, {0x4040aaaaaaaaaaabull, 0x404e5d5555555555ull}},
+    {3u, 0u, 2u, 1u, {2u, 4u}, {349u, 639u}, {0x4040aaaaaaaaaaabull, 0x404e5d5555555555ull}},
+    {6u, 0u, 2u, 1u, {2u, 3u}, {349u, 442u}, {0x4040aaaaaaaaaaabull, 0x404532aaaaaaaaabull}},
+    {9u, 0u, 2u, 1u, {2u, 3u}, {160u, 320u}, {0x402e4e9852f7b6e7ull, 0x403c2d3d76c02631ull}},
+    {12u, 0u, 1u, 2u, {1u, 1u}, {128u, 20u}, {0x40281aff84947d59ull, 0x3ff92840670b453cull}},
+    {13u, 1u, 1u, 0u, {1u, 0u}, {82u, 0u}, {0x401ee29761de409bull, 0x0000000000000000ull}},
+};
 static const df_tb_stop tb_d01_noguard_accuracy_tie[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1111u, 1111u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {737u, 730u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -7940,6 +7959,8 @@ static const df_tb_battle tb_battles[] = {
     {"c12_real_cc_3", 21u, tb_c12_real_cc_3, sizeof tb_c12_real_cc_3 / sizeof tb_c12_real_cc_3[0]},
     {"c12_real_cc_4", 17u, tb_c12_real_cc_4, sizeof tb_c12_real_cc_4 / sizeof tb_c12_real_cc_4[0]},
     {"c12_scarf_tie", 16u, tb_c12_scarf_tie, sizeof tb_c12_scarf_tie / sizeof tb_c12_scarf_tie[0]},
+    {"c2fix_a", 9u, tb_c2fix_a, sizeof tb_c2fix_a / sizeof tb_c2fix_a[0]},
+    {"c2fix_b", 13u, tb_c2fix_b, sizeof tb_c2fix_b / sizeof tb_c2fix_b[0]},
     {"d01_noguard_accuracy_tie", 2u, tb_d01_noguard_accuracy_tie, sizeof tb_d01_noguard_accuracy_tie / sizeof tb_d01_noguard_accuracy_tie[0]},
     {"d02_electro_shot_lock_emergency_exit", 4u, tb_d02_electro_shot_lock_emergency_exit, sizeof tb_d02_electro_shot_lock_emergency_exit / sizeof tb_d02_electro_shot_lock_emergency_exit[0]},
     {"d03_electro_shot_lock_parting_shot", 4u, tb_d03_electro_shot_lock_parting_shot, sizeof tb_d03_electro_shot_lock_parting_shot / sizeof tb_d03_electro_shot_lock_parting_shot[0]},
@@ -8821,7 +8842,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5923 stops: 158 of an ended battle; decided by the count 1439,
- * the HP percentage 1832, the total HP 2311, a tie 183;
- * winners: side 0 2779, side 1 2961, tie 183 */
+/* 5938 stops: 160 of an ended battle; decided by the count 1444,
+ * the HP percentage 1836, the total HP 2315, a tie 183;
+ * winners: side 0 2782, side 1 2973, tie 183 */
 #endif
