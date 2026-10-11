@@ -14,6 +14,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import numpy as np
+
 from duoforge_live import data, lines
 from duoforge_live.data import trace_to_c
 
@@ -1772,6 +1774,111 @@ class SourceTest(unittest.TestCase):
         self.assertEqual(counters["funnel.gen9ou.skipped.skip:format"], 1)
 
 
+class PickHypothesesTest(unittest.TestCase):
+    """Pick hypotheses (M11 pick hypotheses spec): a perspective whose back picks the log does not show is folded once
+    per pick tuple the log allows, marked, and stopped at the earliest stop of any of them."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import teams
+        from duoforge_replay import game, hindsight, prior
+        cls.G, cls.H = game, hindsight
+        cls.data = data.load(kind="pool")
+        log = FIXTURE.read_text(encoding="utf-8").split(chr(10))
+        cut = next(i for i, line in enumerate(log) if line.startswith("|switch|p1a: Salamence|"))
+        cls.short = log[:cut] + ["|win|p2"]  # p1's Salamence never enters: three of p1's four brought are seen
+        cls.full = log
+        cls.sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
+        for s in cls.sheets[0] + cls.sheets[1]:
+            s["species"] = cls.data.canonical(s["species"])
+        cls.names = [s["species"] for s in cls.sheets[0]]
+        cls.prior = prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]})
+
+    def index(self, species):
+        return self.names.index(species)
+
+    def fold(self, log, **kw):
+        return self.G.process("fixture-hyp", "gen9championsvgc2026regmcbo3", chr(10).join(log), self.data, self.prior,
+                              _Stats(), **kw)
+
+    def test_the_hypotheses_are_the_pick_tuples_the_log_allows(self):
+        hyps = self.H.pick_hypotheses(self.short, 0, self.data, self.sheets)
+        leads = (self.index("Kingambit"), self.index("Incineroar"))
+        seen = self.index("Indeedee-F")
+        unseen = {self.index(n) for n in ("Salamence", "Basculegion", "Sneasler")}
+        self.assertEqual(len(hyps), 3)
+        for h in hyps:
+            self.assertEqual(h[:2], leads)
+            self.assertIn(seen, h[2:])
+            self.assertEqual(len(set(h[2:]) - {seen}), 1)
+        self.assertEqual({next(iter(set(h[2:]) - {seen})) for h in hyps}, unseen)
+        cut = next(i for i, line in enumerate(self.short) if line.startswith("|switch|p1a: Indeedee"))
+        two = self.H.pick_hypotheses(self.short[:cut] + ["|win|p2"], 0, self.data, self.sheets)
+        self.assertEqual(len(two), 6)  # only the leads seen: two of the four other members
+        self.assertEqual({h[:2] for h in two}, {leads})
+        self.assertEqual(len({frozenset(h[2:]) for h in two}), 6)
+        # with the four brought known there is one hypothesis: the picks themselves
+        self.assertEqual(self.H.pick_hypotheses(self.full, 0, self.data, self.sheets),
+                         [self.H.hindsight_picks(self.full, 0, self.data, self.sheets)])
+
+    def test_each_hypothesis_gives_its_marked_rows_and_the_team_row_once(self):
+        from duoforge_replay import points
+        result = self.fold(self.short, pick_hypotheses=True)
+        own = [r for r in result.rows if r.side == 0]
+        team = [r for r in own if int(r.observation["boundary_kind"]) == points.TEAM_SELECTION]
+        self.assertEqual([(r.picks_hypotheses, r.hypothesis) for r in team], [(1, 0)])
+        turns = [r for r in own if int(r.observation["boundary_kind"]) != points.TEAM_SELECTION]
+        self.assertEqual({r.picks_hypotheses for r in turns}, {3})
+        self.assertEqual({r.hypothesis for r in turns}, {0, 1, 2})
+        by_hyp = collections.Counter(r.hypothesis for r in turns)
+        self.assertEqual(len(set(by_hyp.values())), 1)  # a common stop: every hypothesis has the same points
+        hyps = self.H.pick_hypotheses(self.short, 0, self.data, self.sheets)
+        for r in turns:  # the own bench follows its hypothesis
+            order = [int(x) for x in r.observation["sides"][0]["brought_order"][:4]]
+            self.assertEqual(sorted(order), sorted(hyps[r.hypothesis]))
+
+    def test_the_headline_counters_do_not_change(self):
+        plain, hyp = self.fold(self.short), self.fold(self.short, pick_hypotheses=True)
+        for key in ("perspectives.kept", "perspectives.stopped.picks-incomplete", "turns.kept", "turns.total"):
+            self.assertEqual(hyp.counters[key], plain.counters[key], key)
+        self.assertGreater(hyp.counters["turns.hypotheses"], 0)
+        self.assertEqual(hyp.counters["perspectives.hypotheses_kept"]
+                         + sum(v for k, v in hyp.counters.items() if k.startswith("perspectives.hypotheses_stopped.")),
+                         plain.counters["perspectives.stopped.picks-incomplete"])
+        self.assertEqual(hyp.counters["points.hypotheses"], sum(1 for r in hyp.rows if r.picks_hypotheses > 1))
+
+    def test_a_single_pick_tuple_makes_no_hypothesis_rows(self):
+        # review: a sheet of four members leaves one pick tuple; its rows would pass for rows with known picks
+        def without(line, names):
+            packed = line.split("|", 3)[3]
+            kept = [m for m in packed.split("]") if not set(m.split("|")[:2]) & set(names)]
+            return "|".join(line.split("|", 3)[:3]) + "|" + "]".join(kept)
+        log = [without(line, ("Basculegion", "Sneasler")) if line.startswith("|showteam|p1|") else line
+               for line in self.short]
+        plain, hyp = self.fold(log), self.fold(log, pick_hypotheses=True)
+        self.assertEqual(plain.counters["perspectives.stopped.picks-incomplete"], 1)
+        self.assertEqual(len(hyp.rows), len(plain.rows))
+        self.assertEqual(hyp.counters["points.written"], plain.counters["points.written"])
+        self.assertEqual(hyp.counters["perspectives.hypotheses_stopped.single-hypothesis"], 1)
+        self.assertEqual(hyp.counters["points.hypotheses"], 0)
+
+    def test_a_stop_in_one_hypothesis_ends_all_at_the_earliest_line(self):
+        from duoforge_replay import points
+
+        class Stop(Exception):
+            def __init__(self, line, reason):
+                self.line, self.reason = line, reason
+        p = [points.Point(i, line, points.TURN, (), line + 1) for i, line in enumerate((10, 20, 30, 40))]
+        runs = [([(q, "row") for q in p], None), ([(q, "row") for q in p[:2]], Stop(25, "feature:X")),
+                ([(q, "row") for q in p[:3]], Stop(35, "feature:Y"))]
+        kept, stop = self.G._common_stop(runs)
+        self.assertEqual((stop.line, stop.reason), (25, "feature:X"))
+        self.assertEqual([[q.line for q, _ in taken] for taken in kept], [[10, 20], [10, 20], [10, 20]])
+        kept, stop = self.G._common_stop([([(q, "row") for q in p], None)] * 2)
+        self.assertIsNone(stop)
+        self.assertEqual([len(t) for t in kept], [4, 4])
+
+
 class SplitTest(unittest.TestCase):
     """The player split of the Bo1 belief validation (M11 Bo1 spec section 6): no player in training and test."""
 
@@ -2273,7 +2380,7 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
         from duoforge_replay import dataset
         self.build("ext", ["open-train"])
         m = self.manifest("ext")
-        self.assertEqual((m["format_version"], m["tracker_folds"]), (3, line_classes.TRACKER_FOLDS))
+        self.assertEqual((m["format_version"], m["tracker_folds"]), (4, line_classes.TRACKER_FOLDS))
         self.assertEqual(m["ext_revision"], _layout.CONSTANTS["DUOFORGE_OBSERVATION_EXT_REVISION"])
         for shard in dataset.read(self.tmp / "ext"):
             self.assertEqual(shard["ext"].dtype, _layout.OBSERVATION_EXT)
@@ -2285,7 +2392,7 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
         self.build("sheet", ["open-train", "bo1-train"])
         m = self.manifest("sheet")
         self.assertEqual((m["source"], m["format_version"]), ("sheet", dataset.FORMAT_VERSION))
-        self.assertEqual(dataset.FORMAT_VERSION, 3)
+        self.assertEqual(dataset.FORMAT_VERSION, 4)
         for shard in dataset.read(self.tmp / "sheet"):
             self.assertNotIn("belief_level", shard)
         part = next(iter(dataset.parts(self.tmp / "sheet")))
@@ -2307,6 +2414,137 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
         writer = dataset.Writer(self.tmp / "mixed", {}, source="sheet")
         with self.assertRaisesRegex(ValueError, "belief rows"):
             writer.add(result)
+
+
+def short_log(log):
+    """The fixture log cut before p1's Salamence enters: three of p1's four brought members are seen."""
+    lines = log.split(chr(10))
+    cut = next(i for i, line in enumerate(lines) if line.startswith("|switch|p1a: Salamence|"))
+    return chr(10).join(lines[:cut] + ["|win|p2"])
+
+
+class _ShortFixture(_BeliefFixture):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.games["short-train"] = short_log(cls.games["open-train"])
+
+
+class PickHypothesesBuildTest(_ShortFixture, unittest.TestCase):
+    """A sheet build with --pick-hypotheses: its marked rows, manifest, inputs and funnel (M11 pick hypotheses spec,
+    sections 4, 6 and 7)."""
+
+    def test_the_hypothesis_rows_are_marked_and_counted_apart(self):
+        from duoforge_replay import dataset, funnel
+        plain = self.build("plain", ["short-train", "open-train"])
+        hyp = self.build("hyp", ["short-train", "open-train"], pick_hypotheses=True)
+        self.assertEqual((self.manifest("hyp")["pick_hypotheses"], self.manifest("plain")["pick_hypotheses"]),
+                         (True, False))
+        shards = list(dataset.read(self.tmp / "hyp"))
+        h = np.concatenate([s["picks_hypotheses"] for s in shards])
+        k = np.concatenate([s["hypothesis"] for s in shards])
+        self.assertEqual(set(h.tolist()), {1, 3})
+        self.assertEqual(set(k[h == 3].tolist()), {0, 1, 2})
+        self.assertTrue((k[h == 1] == 0).all())
+        for s in dataset.read(self.tmp / "plain"):
+            self.assertTrue((s["picks_hypotheses"] == 1).all())
+        self.assertEqual(int((h == 1).sum()), sum(len(s["side"]) for s in dataset.read(self.tmp / "plain")))
+        fp, fh = (funnel.report(c)["gen9championsvgc2026regmc"] for c in (plain, hyp))
+        self.assertEqual(fh["rows"], fp["rows"])  # the rows column holds the rows without hypotheses
+        self.assertEqual(fh["turns"], fp["turns"])  # the headline turn coverage does not change
+        self.assertEqual(fh["perspectives"], fp["perspectives"])
+        self.assertEqual(fh["hypotheses"]["rows"], int((h == 3).sum()))
+        self.assertGreater(fh["hypotheses"]["turns"], 0)
+        self.assertEqual(fh["hypotheses"]["kept"] + sum(fh["hypotheses"]["stopped"].values()),
+                         fp["perspectives"]["stopped"]["picks-incomplete"])
+        self.assertEqual(fp["hypotheses"], {"kept": 0, "stopped": {}, "turns": 0, "rows": 0})
+        text = funnel.text(funnel.report(hyp))
+        self.assertIn("turns with pick hypotheses", text)
+        self.assertNotIn("turns with pick hypotheses", funnel.text(funnel.report(plain)))
+
+    def test_a_resume_refuses_the_other_setting(self):
+        self.build("resume", ["short-train"])
+        with self.assertRaisesRegex(ValueError, "other inputs"):
+            self.build("resume", ["short-train"], pick_hypotheses=True)
+
+    def test_only_a_sheet_build_makes_hypotheses(self):
+        with self.assertRaisesRegex(ValueError, "pick hypotheses"):
+            self.build("bad-hyp", ["bo1-train"], mode="bo1_belief", corpus=self.corpus, pick_hypotheses=True)
+
+    def test_a_writer_without_the_option_refuses_hypothesis_rows(self):
+        from duoforge_replay import dataset, game, prior
+        result = game.process("x", "gen9championsvgc2026regmc", self.games["short-train"], self.data,
+                              prior.Prior.load(self.prior_path), _Stats(), pick_hypotheses=True)
+        self.assertTrue(any(r.picks_hypotheses > 1 for r in result.rows))
+        writer = dataset.Writer(self.tmp / "no-hyp", {})
+        with self.assertRaisesRegex(ValueError, "pick hypotheses"):
+            writer.add(result)
+        with self.assertRaisesRegex(ValueError, "sheet"):
+            dataset.Writer(self.tmp / "belief-hyp", {}, source="bo1_belief", pick_hypotheses=True)
+
+
+class ValidateHypothesesTest(_ShortFixture, unittest.TestCase):
+    """The validation of the pick hypotheses (M11 pick hypotheses spec, Validation): a seen back pick hidden from the
+    hypothesis builder; the true hypothesis must give the real rows byte for byte."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        from duoforge_replay import prior
+        cls.prior = prior.Prior.load(cls.prior_path)
+
+    def counters(self, log):
+        from duoforge_replay import validate
+        return validate.hypotheses_game("fixture-v", "gen9championsvgc2026regmcbo3", log, self.data, self.prior,
+                                        _Stats())
+
+    def test_the_true_hypothesis_of_a_hidden_pick_is_byte_identical(self):
+        c = self.counters(FIXTURE.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(c["perspectives.seen4"], 1)
+        self.assertEqual(c["cases"], 2 * c["perspectives.seen4"])  # each of the two seen back picks hidden once
+        self.assertGreater(c["true.rows"], 0)
+        self.assertEqual((c["true.identical"], c["true.missing"]), (c["true.rows"], 0))
+        self.assertEqual(c["other.rows"] + c["other.missing"], 2 * (c["true.rows"] + c["true.missing"]))
+        self.assertGreater(c["other.differs.own_members"], 0)  # the swapped bench member's location
+        self.assertGreater(c["points"], 0)
+        self.assertEqual(c["all_equal.rows"], 0)  # the own bench of every hypothesis is its own
+        self.assertLessEqual(c["all_equal.beyond_picks"], c["points"])
+
+    def test_a_row_difference_of_the_true_hypothesis_is_counted(self):
+        from unittest import mock
+        from duoforge_replay import game
+        real = game.hypothesis_rows
+
+        def shifted(*args, **kw):
+            rows, stop = real(*args, **kw)
+            for per in rows:
+                for r in per:
+                    r.observation = r.observation.copy()
+                    r.observation["turn"] += 1
+            return rows, stop
+        with mock.patch.object(game, "hypothesis_rows", shifted):
+            c = self.counters(FIXTURE.read_text(encoding="utf-8"))
+        self.assertEqual((c["true.identical"], c["true.differs"]), (0, c["true.rows"]))
+
+    def test_the_real_hypotheses_count_their_equal_points(self):
+        c = self.counters(self.games["short-train"])
+        self.assertEqual(c["real.perspectives"], 1)
+        self.assertGreater(c["real.points"], 0)
+        self.assertEqual(c["real.all_equal.rows"], 0)
+
+    def test_the_report_is_aggregates_of_test_games_only(self):
+        import json
+        from duoforge_replay import validate
+        path = self.source("vh", ["open-train", "open-test"])
+        report = validate.hypotheses([path], "gen9championsvgc2026regmc", self.tmp / "vh.json",
+                                     self.prior_path, stats_factory=stats_factory)
+        f = report["formats"]["gen9championsvgc2026regmc"]
+        self.assertEqual((f["games"], report["skipped"].get("skip:split-train")), (1, 1))
+        self.assertEqual(f["true"]["identical_share"], 1.0)
+        self.assertNotIn("open-test", json.dumps(report))
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            validate.hypotheses([path], "gen9championsvgc2026regmc", Path(__file__).resolve().parent / "x.json",
+                                self.prior_path, stats_factory=stats_factory)
 
 
 class ValidateTest(_BeliefFixture, unittest.TestCase):
