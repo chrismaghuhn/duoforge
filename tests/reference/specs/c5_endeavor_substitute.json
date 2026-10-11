@@ -1,21 +1,21 @@
 {
   "name": "c5_endeavor_substitute",
-  "purpose": "C5 Endeavor (decision 0015 entry 5cy): Milotic (202 HP, Substitute; team V2 = V with Substitute for Recover) is shielded; Quaquaval (160 HP) uses Endeavor on it: not immune (the target has more HP), the damage (target HP minus user HP) goes to the Substitute (moves.ts:18341-18369). Mirror of team V2.",
+  "purpose": "C5 Endeavor (decision 0015 entry 5cy): Quaquaval (slot a, Close Combat on turn 1 takes it to about 43 to 61 HP) and Milotic (slot b, 202 HP, Substitute on turn 1: its HP falls to 152) on both sides. Turn 2 Quaquaval's Endeavor on Milotic: not immune (the user's HP is below 152), the damage (152 minus user HP) is capped at the Substitute's 50 and breaks it (moves.ts:18341-18369). Team V3 (Milotic leads), mirror.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c5e3",
   "teams": [
-    "Quaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Surf\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect\n\nBlastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Substitute\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect",
-    "Quaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Surf\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect\n\nBlastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Substitute\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect"
+    "Quaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Close Combat\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Substitute\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect\n\nBlastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect",
+    "Quaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Close Combat\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Substitute\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect\n\nBlastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect"
   ],
   "plan": {
     "p1": [
-      "move 1 2, move 4",
+      "move 2 1, move 4",
       "move 1 2, move 4"
     ],
     "p2": [
-      "move 3, move 3",
-      "move 3, move 3"
+      "move 3 1, move 3",
+      "move 4, move 1"
     ],
     "max_steps": 4
   }
