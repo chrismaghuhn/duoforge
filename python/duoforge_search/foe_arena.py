@@ -71,7 +71,7 @@ def verdict(score_f, score_m, records_f, records_m, resamples=2000, seed=SEED):
     allowed = GATES["fallback_share"] if share_m <= GATES["fallback_share"] else share_m + GATES["fallback_over_m"]
     gates = {"lower_bound": h["95"][0] > GATES["lower_bound"],
              "p99_seconds": p99 is not None and p99 <= GATES["p99_seconds"],
-             "fallback_share": share_f <= allowed}
+             "fallback_share": share_f <= allowed + 1e-12}  # shares are ratios of counts: no rounding decides
     return {"pairs": int(per_pair.size), "h": h, "score_f": float(f.mean()), "score_m": float(m.mean()),
             "p99_seconds_f": p99, "fallback_share_f": share_f, "fallback_share_m": share_m,
             "fallback_allowed": allowed, "gates": gates, "adopt": all(gates.values())}

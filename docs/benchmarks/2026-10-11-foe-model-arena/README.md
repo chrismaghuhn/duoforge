@@ -62,7 +62,7 @@ Per arm, against the bot BC mc-M (2048 games each):
 - **The gain.** Against this human-like bot, the search with its own network as the foe model gains 1.4 points over raw play, and the BC foe model gains 6.8.
   - Paired, F against M: h = 0.527, the same as 5.4 points of score.
 - **Coverage.** This is the share of the foe model's own probability that its menu of 8 pairs holds. It is lower for the BC (0.74 against 0.96), because the BC spreads its probability over more pairs.
-- **Latency.** Unchanged in the median and at p99, though F runs one more query and network call per decision.
+- **Latency.** Unchanged in the median and at p99, though F encodes the worlds once more per decision. The foe network replaces the main network on the world calls, so the number of network calls stays the same.
 - **Three slow decisions in F** took over 1 s (2.30, 1.80 and 1.67 s). M's slowest took 0.93 s.
   - The time went to the engine: the leaf expansion took 2.24 s and 1.74 s, and a world build took 1.61 s, where these usually take 4 ms and 8 ms.
   - The foe network takes part in neither step. Its network time in those decisions was 0.03 s, as usual. These outliers are an observation for the engine side and do not touch the gate.
@@ -82,4 +82,6 @@ Per arm, against the bot BC mc-M (2048 games each):
 ## What follows
 
 1. **Repeat with M11's encoder-6 BC** with a held-out-players split, so the foe model has not seen the bot's training data. That measurement closes the limit above.
-2. **The live switch is the owner's decision.** It would give `duoforge_live.search.load` the foe network as an option (a later PR); this PR changes no live default.
+2. **The live switch is the owner's decision.** It would give `duoforge_live.search.load` the foe network as an option (a later PR); this PR changes no live default. Two points for that change:
+   - **Encoder refusals.** A world the foe network's encoder refuses stops the decision. The arena saw none. In live play that is a class (b) error, not a counted fallback, so the live change has to decide how to handle it.
+   - **Preview search.** A foe network with a preview search is refused at construction, because the preview's rollout plays both seats with the main network. The live mode keeps the preview raw.

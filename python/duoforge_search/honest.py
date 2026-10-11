@@ -218,6 +218,8 @@ class Honest(lookahead.Lookahead):
         # None: the main network models the foe, as before.
         self.foe_net = None
         if foe_net is not None:
+            if preview_mode != "raw":  # preview.rollout plays both seats with the main network: two foe models at once
+                raise ValueError("a foe network is not supported with a preview search (preview_mode must be raw)")
             if len(foe_net) != 4:
                 raise ValueError("a foe network is (model, params, encoder, ext_supported)")
             foe_model, foe_params, foe_encoder, foe_ext = foe_net
@@ -455,6 +457,8 @@ class Honest(lookahead.Lookahead):
             base = {"env": e, "seat": p, "key": int(keys[d]), "epoch": int(roots.requests[e, p]["epoch"]),
                     "boundary": lookahead._BOUNDARIES[boundary], "last_step": bool(last_step[d]),
                     "search": "honest", "w": self.s, "table_sha256": self.table_info["sha256"], "lam": self.lam}
+            if self.foe_net is not None:  # which encoding modelled the foe (a reproduction needs it)
+                base["foe_net"] = {"encoder": self.foe_net[2], "ext_supported": self.foe_net[3]}
             if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
                 actions[d] = int(np.argmax(pt[d]))
                 result = {"kind": "team", "choice": int(actions[d])}
