@@ -15,6 +15,7 @@ sys.dont_write_bytecode = True
 import import_vgcpastes as ivp  # noqa: E402
 import team_registry as reg  # noqa: E402
 import test_import_paste as tip  # noqa: E402  (its stand-in pokedex)
+from test_team_registry import copy_registry  # noqa: E402  (A, B, C: a registry small enough to copy per test)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
@@ -315,6 +316,89 @@ class PendingDirTest(unittest.TestCase):
         cache = {}
         self.assertEqual(ivp.pending_problems(
             ROOT, lambda team_c: cache.setdefault(team_c, trace_to_c.load_tables(ROOT, team_c))), [])
+
+
+class RecheckTest(unittest.TestCase):
+    """The pending teams decided again: the ones the engine accepts now move into the registry."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix='duoforge_ivp_recheck_')
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        copy_registry(self.tmp)
+        self.dir = os.path.join(self.tmp, 'data', 'teams_pending')
+
+    def pending_dir(self, today='2026-10-09'):
+        rows = [{'team_id': 'MC%d' % n, 'description': 'd', 'creator': 'c', 'paste_id': pid, 'evs': 'Yes',
+                 'event': 'Regional', 'rank': 'Top 8', 'date': '4 Oct 2026', 'tab': 'Champions M-C'}
+                for n, pid in ((3, 'c' * 16), (4, 'd' * 16))]
+        decisions = ivp.decide(rows, {'c' * 16: paste(TEAM4), 'd' * 16: paste(TEAM4[:5] + ['Raichu'])}, {},
+                               tip.info_of, check_by_first)
+        self.assertEqual([d['status'] for d in decisions], ['pending', 'pending'])
+        ivp.write_pending(self.dir, decisions, today)
+
+    @staticmethod
+    def later_engine(text):
+        """The engine of a later version: the first team is playable now, the second needs another mechanic."""
+        if 'Ceruledge' in text and 'Raichu' not in text:
+            return ('pool', None)
+        return ('pending', ['set 2: move Leech Seed', 'set 4: item Mawilite'])
+
+    def test_a_recheck_moves_the_accepted_team_and_keeps_the_others_with_their_reason(self):
+        self.pending_dir()
+        before = {e['id']: e for e in reg.entries(self.tmp)}
+        decisions = ivp.recheck_pending(self.tmp, self.later_engine)
+        self.assertEqual([(d['id'], d['status']) for d in decisions],
+                         [('PP_' + 'C' * 16, 'pool'), ('PP_' + 'D' * 16, 'pending')])
+        moved, remaining = ivp.apply_recheck(self.tmp, decisions, '2026-10-11', tables_for=tip.tables)
+        self.assertEqual((moved, remaining), (['PP_' + 'C' * 16], ['PP_' + 'D' * 16]))
+        entry = reg.get_entry(self.tmp, 'PP_' + 'C' * 16)
+        self.assertEqual(list(entry), ['id', 'name', 'source', 'notes', 'sha256'])
+        self.assertIn('accepts it on 2026-10-11', entry['notes'])
+        self.assertNotIn('refuses it', entry['notes'])
+        with open(reg.team_path(self.tmp, entry['id']), 'rb') as f:
+            self.assertEqual(reg.sha256_of(f.read()), entry['sha256'])
+        self.assertEqual({e['id'] for e in reg.entries(self.tmp)}, set(before) | {entry['id']})
+        for old in before.values():  # nothing that was there changed
+            self.assertEqual(reg.get_entry(self.tmp, old['id']), old)
+        self.assertEqual(sorted(os.listdir(self.dir)), ['PP_' + 'D' * 16 + '.txt', 'index.json'])
+        index = ivp.read_pending(self.dir)
+        self.assertEqual(index['date'], '2026-10-11')
+        self.assertEqual([(t['id'], t['blockers']) for t in index['teams']],
+                         [('PP_' + 'D' * 16, ['set 2: move Leech Seed', 'set 4: item Mawilite'])])
+        self.assertEqual(ivp.first_reason(index['teams'][0]['blockers']), 'move Leech Seed')
+        self.assertEqual(ivp.pending_problems(self.tmp, tip.tables), [])
+        self.assertEqual(reg.problems(self.tmp, tip.tables), [])
+
+    def test_a_team_the_registry_has_gained_stays_pending_as_a_duplicate(self):
+        self.pending_dir()
+        with open(os.path.join(self.dir, 'PP_' + 'C' * 16 + '.txt'), encoding='utf-8') as f:
+            text = f.read()
+        known = {ivp.content_key(reg.split_sets(text)): 'LL_TWIN_1'}
+        decisions = ivp.recheck_pending(self.tmp, self.later_engine, known)
+        self.assertEqual(decisions[0]['status'], 'duplicate')
+        self.assertEqual(decisions[0]['blockers'], ['the same team as LL_TWIN_1'])
+
+    def test_nothing_moves_when_one_team_fails_the_registry_check(self):
+        self.pending_dir()
+        decisions = ivp.recheck_pending(self.tmp, self.later_engine)
+        decisions[0]['sets'][0] += ' '
+        before = len(reg.entries(self.tmp))
+        with self.assertRaisesRegex(reg.RegistryError, 'nothing moved'):
+            ivp.apply_recheck(self.tmp, decisions, '2026-10-11', tables_for=tip.tables)
+        self.assertEqual(len(reg.entries(self.tmp)), before)
+        self.assertIn('PP_' + 'C' * 16 + '.txt', os.listdir(self.dir))
+
+    def test_a_pending_file_that_changed_is_refused(self):
+        self.pending_dir()
+        with open(os.path.join(self.dir, 'PP_' + 'C' * 16 + '.txt'), 'ab') as f:
+            f.write(b'x')
+        with self.assertRaisesRegex(ValueError, 'sha256'):
+            ivp.recheck_pending(self.tmp, self.later_engine)
+
+    def test_an_unnamed_blocker_is_an_error(self):
+        self.pending_dir()
+        with self.assertRaisesRegex(ValueError, 'no blocker is named'):
+            ivp.recheck_pending(self.tmp, lambda text: ('pending', []))
 
 
 if __name__ == '__main__':

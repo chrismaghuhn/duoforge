@@ -80,6 +80,32 @@ class ReserveNetworkTest(unittest.TestCase):
         for a, b in zip(self._outputs(six, wide, zero), self._outputs(six, wide, self.part)):
             np.testing.assert_array_equal(a, b)
 
+    def test_an_encoder_4_network_widens_to_encoder_6_and_trains_one_update(self):
+        # params-49333's layout in miniature (encoder 4, model v2 S, untrained): load_current widens it to encoder 6
+        # with zero rows, so its outputs on rows whose new columns are empty are the encoder 4 network's; a run from
+        # it plays one update (a smoke of the start of the next training, not a training run).
+        import os
+        import tempfile
+        from duoforge_learn import checkpoint, policy, runstate
+        from python.tests.test_ledger import _SMALL, _init_checkpoint, _train
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "params-e4.npz")
+            _init_checkpoint(path, encoder=4)
+            params4, config4 = checkpoint.load_trained(path)
+            wide, config6 = checkpoint.load_current(path)
+            self.assertEqual((config6["encoder"], len(config6["features"])), (6, features.OBS_SIZE))
+            four = policy.make(config4["model"], config4["features"])
+            six = policy.make(config6["model"], config6["features"])
+            empty = self.part.copy()
+            empty[:, features.obs_size(4):] = 0.0
+            for a, b in zip(self._outputs(four, params4, empty[:, :features.obs_size(4)]),
+                            self._outputs(six, wide, empty)):
+                np.testing.assert_allclose(a, b, rtol=1e-6, atol=1e-6)
+            out = os.path.join(folder, "run")
+            self.assertEqual(_train(["--out", out, "--init", path, "--updates", "1", "--minutes", "0"] + _SMALL), 0)
+            state = runstate.load_state(out)
+            self.assertEqual((state["encoder"], len(state["features"])), (6, features.OBS_SIZE))
+
 
 if __name__ == "__main__":
     unittest.main()
