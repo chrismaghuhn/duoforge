@@ -9844,7 +9844,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         }
         /* Leech Seed's drain (order 8, decision 0047): an entry only for a standing holder whose seed has a source */
         if (m->hp != 0u && b->tail.sides[flat / 2u].positions[flat % 2u].leech_seed_source != 0u) {
-            list[n] = (dfi_residual_entry){DFI_RES_LEECH, flat, 8u, speed, 0u, true};
+            list[n] = (dfi_residual_entry){DFI_RES_LEECH, flat, 8u, speed, 2u, true}; /* sub-order 2: a condition (sim/battle.ts resolvePriority) */
             n += 1u;
         }
         /* Curse's residual (step G84b, decision 0063; onResidualOrder 12, a condition: sub-order 2): an entry for a standing holder */

@@ -150,11 +150,14 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
     return 1u;
 }
 
-/* A handler of one of a Pokemon's volatiles (the part of its list whose order is not stored). */
+/* A handler of one of a Pokemon's volatiles (the part of its list whose order is not stored). Leech Seed (G84) and Curse (G84b)
+ * are volatiles too: the campaign seed 84 battle fz_84_21 showed that their insertion order decides which of two tied holders the
+ * shuffle puts first (the reference's list had Curse before Leech Seed on one Pokemon), so they go through the exact test. */
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
     return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_HEAL_BLOCK ||
-           e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH || e->kind == DFI_RES_LOCK;
+           e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH || e->kind == DFI_RES_LOCK ||
+           e->kind == DFI_RES_LEECH || e->kind == DFI_RES_CURSE;
 }
 
 /* What is known about the age of a Pokemon's volatiles. The counters of the turn (Protect, the stall counter, flinch, a charge,
