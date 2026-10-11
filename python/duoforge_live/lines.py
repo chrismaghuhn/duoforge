@@ -74,6 +74,11 @@ GENERIC = {"move", "switch", "-damage", "-heal", "faint", "cant", "-miss", "-cri
 # Revival Blessing revives a member through a request of its own.
 SILENT_MOVES = {"Shed Tail"}  # Revival Blessing: folded since step G52 (REVIVE), Baton Pass since G74 (its SWITCH)
 
+# Moves that swap two positions: the Pokemon objects, and with them their moveSlots' used flags (the Last Resort bits of
+# step G94), change places (sim/battle.ts swapPosition). The fold does not move the bits yet (G80, not on this branch), so
+# such a move stops on its line.
+UNMODELLED_SWAP_MOVES = {"Ally Switch"}
+
 # Showdown's choice items at the pin (isChoice; the reference test checks the list): a holder is locked into the move
 # of its |move| line until it leaves (data/items.ts onModifyMove, data/conditions.ts choicelock).
 CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
@@ -137,7 +142,8 @@ LIBRARY_SUPPORTED = supported()
 BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX"))
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
-EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE"))
+EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
+                                           "LAST_RESORT_USED"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -287,7 +293,13 @@ def check(line, view):
     if kind == "move":
         if len(args) > 1 and args[1] in SILENT_MOVES:
             _unknown(kind, args[1])
+        if len(args) > 1 and args[1] in UNMODELLED_SWAP_MOVES:
+            _unknown(kind, args[1])
         return "fold"
+    if kind == "cant" and len(args) > 1 and args[1] == "nopp":
+        # deductPP sets the used flag before its PP test (sim/pokemon.ts:892), so a move with no PP takes a Last Resort bit
+        # with no move line; the domain never offers such a move, so the line stops here rather than guessing its slot
+        _unknown(kind, "nopp")
     if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
         return _kept_drop(args, attrs, view)
     if kind in GENERIC:

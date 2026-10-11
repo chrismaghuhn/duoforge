@@ -72,6 +72,8 @@ EXT_FIELDS = {
     "ENCORE": (("position", "encore_slot"),),
     "ABILITY_CHANGE": (("position", "ability_now"),),
     "ITEM_CHANGE": (("member", "item_now"),),
+    # Last Resort's used bits (step G94, decision 0061): volatiles2 bits 0 to 3, the move slots 1 to 4 of the occupant
+    "LAST_RESORT_USED": (("volatiles2", 0xF),),
 }
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
@@ -124,6 +126,9 @@ class _Position:
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
         self.last_move = None  # the move id of pokemon.moveUsed: the occupant's own last move line, none after leaving
+        # Step G94 (decision 0061): bit k set when the occupant's own move line of move slot k (0 to 3) came with a PP use
+        # (deductPP's used flag); the occupant's leaving or faint clears them (dfi_tail_clear_occupant)
+        self.used = 0
 
 
 class _Member:
@@ -560,6 +565,14 @@ class Tracker:
                     p.last_slot = 5 if ident == self._struggle else None
             if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
                 m.uses[m.sheet["moves"].index(ident)] += 1 + self._pressure_extra(pos, ident, e[2], flags)
+            if self.data.kind == "pool" and e[3] != trace_to_c.CAUSE["ABILITY"] and not flags & FLAG["LOCKED"]:
+                # Step G94 (decision 0061): deductPP sets the move slot's used flag before TryMove, so a move that fails
+                # still counts. A locked turn deducts no PP (battle-actions.ts runMove), and a Magic Bounce reflection is
+                # no use of its holder (useMove, no deductPP). Struggle has no slot (move_slot 4 is past the four).
+                if ident in m.sheet["moves"]:
+                    p.used |= 1 << m.sheet["moves"].index(ident)
+                elif ident != self._struggle:
+                    raise lines.Stop(f"structure:{ident} is not on the sheet of its user (the used bits of Last Resort)")
             if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
                 # Wide Guard and Quick Guard add the stall volatile when they run (data/moves.ts onHitSide
                 # addVolatile('stall')), also when the side has the guard already (no -singleturn line then), the
@@ -982,6 +995,7 @@ class Tracker:
             return o
         o["revision"], o["player"], o["epoch"] = EXT_REVISION, self.side, self.epoch
         o["supported"] = lines.LIBRARY_SUPPORTED
+        last_resort = self.data.tables["MOVE"]["LASTRESORT"]
         for side in (0, 1):
             v = o["sides"][side]
             v["aurora_veil_turns"] = self._conditions[side][3]
@@ -995,6 +1009,10 @@ class Tracker:
                 pv["perish"], pv["encore_slot"] = p.perish, p.encore_slot
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs
+                # Step G94 (decision 0061): the used bits, shown only for an occupant with Last Resort on its open sheet
+                # (the state keeps them for every occupant, as the engine does); they are public: each is a move line
+                if last_resort in self._member(side)[p.occupant].sheet["moves"]:
+                    o["volatiles2"][side][k] = p.used
         return o
 
     def domain(self):
@@ -1022,6 +1040,9 @@ def restrict_ext(ext, folds):
         if not folds >> bit & 1:
             continue
         for where, field in EXT_FIELDS[name]:
+            if where == "volatiles2":
+                out["volatiles2"] |= ext["volatiles2"] & field
+                continue
             for s in (0, 1):
                 src, dst = ext["sides"][s], out["sides"][s]
                 if where == "bit":
