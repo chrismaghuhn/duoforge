@@ -260,7 +260,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
     DF_CHECK_EQ_U64(&t, battles, 772u); /* main's 762 (G73 included), the eight G80 battles, the self-target and the partner-absent battle */
-    DF_CHECK_EQ_U64(&t, counts.stops, 4221u); /* main's 4178, the G80 battles' 43 stops (to be confirmed by the run) */
+    DF_CHECK_EQ_U64(&t, counts.stops, 4233u); /* main's 4178, the G80 battles' 43 stops and the partner-absent battle's 12 (measured by the first CI run of 2e208b92) */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&
