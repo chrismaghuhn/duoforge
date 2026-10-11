@@ -90,7 +90,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -266,7 +266,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -934,7 +934,7 @@ MUT(m_trap_no_source_no_move, {
 })
 /* decision 0060: a trap whose source left keeps its turns and move (the source is 0): valid, the residual ends it silently. */
 MUT(m_trap_no_source, {
-    p0->trap_turns = 1u;
+    p0->trap_turns = 5u; /* turns + elapsed in {5, 6} (the exact rule) */
     p0->trap_move = 1u;
 })
 MUT(m_trap_turns9, {
@@ -1174,7 +1174,7 @@ static const tail_case cases[] = {
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
     {"a trap with a move alone", DFI_INV_TAIL_POSITION, false, m_trap_move_only},
     {"a trap without its move", DFI_INV_TAIL_POSITION, false, m_trap_no_move},
-    {"a trap whose source left is refused at a turn boundary (decision 0060: the residual ends it inside the turn)", DFI_INV_TAIL_POSITION, false, m_trap_no_source},
+    {"a trap whose source left is legal at a turn boundary (decision 0060, pin data/conditions.ts:234-252: it ends silently at the next residual)", DFI_INV_NONE, true, m_trap_no_source},
     {"a trap with neither source nor move", DFI_INV_TAIL_POSITION, false, m_trap_no_source_no_move},
     {"a trap above 8 turns", DFI_INV_TAIL_POSITION, false, m_trap_turns9},
     {"a trap source above 4", DFI_INV_TAIL_POSITION, false, m_trap_source5},

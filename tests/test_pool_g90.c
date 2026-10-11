@@ -273,11 +273,16 @@ static void test_source_leaves(df_test *t)
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_source, FLAT_P1A + 1u);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_move, DFI_MOVE_FIRESPIN + 1u);
     const uint32_t hp2 = hp_of(b, FLAT_P2A);
-    /* decision 0060: a trap without its source is valid only inside its turn; at this TURN boundary it is invalid */
+    /* decision 0060 (pin data/conditions.ts:234-252): a trap whose source is gone stays up with source 0 at the boundary; that is
+     * a legal state. The target is not trapped (onTrapPokemon needs an active source), so it may switch; the next residual ends
+     * the trap silently. Checked here at the boundary, and the source comes back for the recorded turns below. */
     tail_of(b, FLAT_P2A)->trap_source = 0u;
-    DF_CHECK_EQ_U64(t, dfi_state_check(ctx, b, NULL), DUOFORGE_E_INVARIANT);
+    DF_CHECK(t, tail_of(b, FLAT_P2A)->trap_turns != 0u);
+    DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
+    DF_CHECK(t, !dfi_switch_trapped(b, FLAT_P2A));
     tail_of(b, FLAT_P2A)->trap_source = FLAT_P1A + 1u;
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
+    DF_CHECK(t, dfi_switch_trapped(b, FLAT_P2A));
     /* step 3: Salamence (slot 0) switches out to reserve 0 (Dragapult); the trap ends silently (its source is gone) */
     static const g90_cmd turn3[2][2] = {{SW(0u), MV(1, NO)}, {MV(0, FLAT_P1A), MV(1, FLAT_P1A)}};
     turn_bundle(&bd, b, turn3);
