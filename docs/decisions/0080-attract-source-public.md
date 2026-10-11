@@ -81,6 +81,9 @@ current position at every observation.
 
 ## Triggers (the trigger rule)
 
-The corpus gives 42 worlds, below the 100 of the trigger rule. The differential driver (`tools/reference/diff_driver.py`) does not call
-`duoforge_battle_from_view`: its domain check compares request acceptance with Showdown, so it cannot count these builds. A separate
-campaign that builds the views of random battles is needed for the rule; the batch PR text says which of the two was run.
+The differential driver (`tools/reference/diff_driver.py`) does not call `duoforge_battle_from_view`, so it cannot count these builds.
+The engine-only check (python API, no Showdown, script not committed) measures the rule: seed 9720000, the G71 Cute Charm teams,
+36 environments, 275 battles to the end. At 151 decision points with an infatuated occupant, both players' views were taken: 111
+worlds per player were built, all with the engine's attract_source bytes and public(world) == view (0 deviations); 40 per player were
+refused by public() for the older PIVOT rule. Two engine step refusals (E_INVARIANT, the pre-state valid) are reported separately:
+one with an Attract source on flat 0, one without any Attract.
