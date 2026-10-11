@@ -676,7 +676,7 @@ static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, cons
 
 /* The target class of a move for its user (step G84; the Curse override of data/mods/champions/moves.ts:165-196): a Curse of a
  * user without the Ghost type targets the user (onModifyMove sets 'self'), so the request offers no target and the choice has
- * none. The pool row says normal; a Ghost user keeps it (its Curse is refused by dfi_run_curse). Every other move keeps the class
+ * none. The pool row says normal; a Ghost user keeps it (step G84b: dfi_run_curse and dfi_curse_targets). Every other move keeps the class
  * of its row. */
 uint32_t dfi_user_target_class(const struct duoforge_battle *b, uint32_t user, uint32_t special, uint32_t table_class)
 {
@@ -5553,34 +5553,122 @@ static uint16_t *dfi_sub_hp_of(struct duoforge_battle *b, uint32_t flat)
 /* The Substitute move (data/moves.ts:18314-18326 and 18328-18340): onTryHit fails in order (the Substitute is up, then the
  * user's HP is a quarter or less, or its maximum is 1), then the volatile starts with floor(maxhp / 4) HP, and onHit takes
  * directDamage(maxhp / 4) from the user (clamped to at least 1, sim/battle.ts:2215). */
-/* Curse (decision 0047; the Champions override data/mods/champions/moves.ts:165-196): a user without the Ghost type is boosted,
- * Speed -1 then Attack +1 and Defense +1 (the pin's order: the falls first, negatives_first, sim/battle.ts boost table order), and
- * no volatile is set. A Ghost user's Curse is refused explicitly (E_UNSUPPORTED): the pin's client accepts no target choice for
- * it, so its effect (the halving, the target's volatile and the residual) is not modelled (0047, the bounded check). */
-static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user)
+/* Curse (decisions 0047 and 0063; the Champions override data/mods/champions/moves.ts:165-196). The variant is the user's type at
+ * execution (onModifyMove, onTryHit and onHit read source.hasType('Ghost') then, not at the choice).
+ * A user without the Ghost type is boosted, Speed -1 then Attack +1 and Defense +1 (the pin's order: the falls first,
+ * negatives_first, sim/battle.ts boost table order), and no volatile is set. The target is the user (dfi_curse_targets).
+ * A Ghost user: the target's Good as Gold refuses it (-immune, status move, `target !== source`); a target that has Curse
+ * fails (-fail on the user, [still], no halving); otherwise onHit takes directDamage(maxhp / 2) from the user (at least 1,
+ * floor), then, when the target is the user itself (a non-Ghost choice executed as Ghost), redirects to a random foe (one
+ * RANDOM_TARGET draw, getRandomTarget), and the target gets the Curse (-start|X|Curse|[of] user, its flag). Protect does not
+ * stop it (no protect flag), and it goes through a Substitute (bypasssub). A failed hit or an immune one returns before the hit
+ * loop's Updates (dfi_status_hit_end is the success path). */
+static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target, uint32_t count)
 {
     struct duoforge_battle *b = r->b;
-    if (dfi_has_type(b, dfi_at(b, user), DFI_TYPE_GHOST)) {
-        return DUOFORGE_E_UNSUPPORTED;
+    if (!dfi_has_type(b, dfi_at(b, user), DFI_TYPE_GHOST)) {
+        uint8_t stages[DFI_STAT_STAGE_COUNT];
+        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+            stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
+        }
+        stages[DFI_STAGE_SPE] = (uint8_t)(DFI_STAGE_NEUTRAL - 1u); /* wide-operands-reviewed: a stage of 5 */
+        stages[DFI_STAGE_ATK] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u); /* wide-operands-reviewed: a stage of 7 */
+        stages[DFI_STAGE_DEF] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u); /* wide-operands-reviewed: a stage of 7 */
+        dfi_boost_effect eff = dfi_effect(DUOFORGE_CAUSE_MOVE, DFI_MOVE_CURSE, DFI_BOOST_PRIMARY);
+        eff.negatives_first = true;
+        const bool any = dfi_boost(r, user, stages, user, eff);
+        if (!any) {
+            /* onHit returns the boost's result (champions/moves.ts:185): a failed hit breaks the hit loop before its Updates (:531-532) */
+            r->mres |= DFI_MRES_FALSE;
+            return DUOFORGE_OK;
+        }
+        /* A successful hit: the hit loop's Update, the faint lines and the Update after (scripts.ts:537, :574). */
+        return dfi_status_hit_end(r);
     }
-    uint8_t stages[DFI_STAT_STAGE_COUNT];
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
+    if (count != 1u || target >= DFI_POSITIONS) {
+        return DUOFORGE_E_INVARIANT; /* dfi_curse_targets always leaves one target for a Ghost user */
     }
-    stages[DFI_STAGE_SPE] = (uint8_t)(DFI_STAGE_NEUTRAL - 1u); /* wide-operands-reviewed: a stage of 5 */
-    stages[DFI_STAGE_ATK] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u); /* wide-operands-reviewed: a stage of 7 */
-    stages[DFI_STAGE_DEF] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u); /* wide-operands-reviewed: a stage of 7 */
-    dfi_boost_effect eff = dfi_effect(DUOFORGE_CAUSE_MOVE, DFI_MOVE_CURSE, DFI_BOOST_PRIMARY);
-    eff.negatives_first = true;
-    const bool any = dfi_boost(r, user, stages, user, eff);
-    if (!any) {
-        /* onHit returns the boost's result (champions/moves.ts:185): a failed hit breaks the hit loop before its Updates (:531-532) */
+    /* TryHit: Good as Gold on a foe (data/abilities.ts:1630-1636): -immune, the status move stops, no Update */
+    if (target != user && dfi_ability(b, dfi_at(b, target), DFI_ABILITY_GOODASGOLD)) {
+        dfi_immune(r, target, 1u + DFI_ABILITY_GOODASGOLD);
         r->mres |= DFI_MRES_FALSE;
         return DUOFORGE_OK;
     }
-    /* A successful hit: the hit loop's Update, the faint lines and the Update after (scripts.ts:537, :574), as for every status
-     * move that does something to its target (dfi_status_hit_end). A Curse that returns before them would lose the draws. */
+    /* onTryHit (champions/moves.ts:178-180): the target already has Curse, so it fails: -fail on the user, [still] */
+    if ((b->tail.sides[target / 2u].positions[target % 2u].position_flags & DFI_POSFLAG_CURSED) != 0u) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    /* onHit: directDamage(source.maxhp / 2) to the user (sim/battle.ts directDamage: at least 1; no [from] on the line) */
+    {
+        const dfi_member *um = dfi_at(b, user);
+        uint32_t amount = (uint32_t)um->hp_max / 2u;
+        amount = amount == 0u ? 1u : amount;
+        const duoforge_status cost = dfi_deal(r, user, amount, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        if (cost != DUOFORGE_OK) {
+            return cost;
+        }
+    }
+    uint32_t hit = target;
+    if (target == user) {
+        /* onHit: source.isAlly(target) is true for the user itself: getRandomTarget(source, 'Curse'), one draw over the foes */
+        uint32_t v = DFI_POSITIONS;
+        const duoforge_status st = dfi_random_foe(r, user / 2u, &v);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        if (v >= DFI_POSITIONS) {
+            return DUOFORGE_E_INVARIANT; /* a foe stands: the battle has not ended */
+        }
+        hit = v;
+    }
+    /* addVolatile after delete: the flag is set and -start|X|Curse|[of] user shows, with or without an old Curse */
+    b->tail.sides[hit / 2u].positions[hit % 2u].position_flags =
+        (uint8_t)((uint32_t)b->tail.sides[hit / 2u].positions[hit % 2u].position_flags | DFI_POSFLAG_CURSED); /* wide-operands-reviewed */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, hit);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_CURSE;
+    e.other = (uint8_t)user; /* -start|X|Curse|[of] source */
+    dfi_emit(r, &e);
     return dfi_status_hit_end(r);
+}
+
+/* Curse's targets at execution (step G84b, decision 0063). runMove's own target is the class of runMove (dfi_user_target_class,
+ * read before BeforeMove); this is the ModifyMove change of the Champions override, read after it. For a Ghost user:
+ *   - its target is itself (a non-Ghost choice that executed as Ghost): kept, dfi_run_curse redirects it with one draw;
+ *   - its target is an ally (the partner, or a fainted one, or no target): onModifyMove sets randomNormal, and
+ *     battle-actions.ts useMove draws getRandomTarget twice (after singleEvent ModifyMove and after runEvent ModifyMove); the
+ *     second draw is the target (verified by the trace of g84b_ally_random: two RANDOM_TARGET draws, one line).
+ *   - a foe: kept, no draw.
+ * A user without the Ghost type targets itself (onModifyMove sets 'self'), with no draw. */
+static duoforge_status dfi_curse_targets(dfi_run *r, uint32_t user, uint32_t targets[DFI_POSITIONS], uint32_t *count)
+{
+    struct duoforge_battle *b = r->b;
+    if (!dfi_has_type(b, dfi_at(b, user), DFI_TYPE_GHOST)) {
+        targets[0] = user;
+        *count = 1u;
+        return DUOFORGE_OK;
+    }
+    const uint32_t side = user / 2u;
+    const bool own = *count == 0u || (targets[0] / 2u == side);
+    if (!own || (*count == 1u && targets[0] == user)) {
+        return DUOFORGE_OK;
+    }
+    uint32_t first = DFI_POSITIONS;
+    uint32_t second = DFI_POSITIONS;
+    duoforge_status st = dfi_random_foe(r, side, &first);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    st = dfi_random_foe(r, side, &second);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (second >= DFI_POSITIONS) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    targets[0] = second;
+    *count = 1u;
+    return DUOFORGE_OK;
 }
 
 static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
@@ -6578,8 +6666,13 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * draw happens even when the Pokemon then cannot move. */
     uint32_t targets[DFI_POSITIONS] = {0};
     uint32_t count = 0u;
-    duoforge_status st = dfi_move_targets(r, user, dfi_user_target_class(r->b, user, md->special, md->target_class), q->target,
-                                          targets, &count, md->special == DFI_SPECIAL_DRAGON_DARTS);
+    /* Curse (step G84b): a non-Ghost choice has no target (TARGET_NONE); a Ghost user that Mega Evolved or was typed into
+     * Ghost before its move has no chosen Pokemon either, so runMove aims at the user (no draw), as the trace shows. */
+    uint32_t run_class = dfi_user_target_class(r->b, user, md->special, md->target_class);
+    if (md->special == DFI_SPECIAL_CURSE && q->target >= DFI_POSITIONS) {
+        run_class = DUOFORGE_TARGET_CLASS_SELF;
+    }
+    duoforge_status st = dfi_move_targets(r, user, run_class, q->target, targets, &count, md->special == DFI_SPECIAL_DRAGON_DARTS);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -6681,6 +6774,13 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (target_class != md->target_class) {
         st = dfi_move_targets(r, user, target_class, q->target, targets, &count,
                               md->special == DFI_SPECIAL_DRAGON_DARTS);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+    }
+    /* Curse's execution-time targets (step G84b): the variant is the user's type now (dfi_curse_targets). */
+    if (md->special == DFI_SPECIAL_CURSE) {
+        st = dfi_curse_targets(r, user, targets, &count);
         if (st != DUOFORGE_OK) {
             return st;
         }
@@ -7055,7 +7155,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         return dfi_run_substitute(r, user);
     }
     if (md->special == DFI_SPECIAL_CURSE) {
-        return dfi_run_curse(r, user);
+        return dfi_run_curse(r, user, count == 1u ? targets[0] : DFI_POSITIONS, count);
     }
     /* Baton Pass (decision 0042): its onHit and self block, then the PIVOT of the user (dfi_run_baton_pass). */
     if (md->special == DFI_SPECIAL_BATON_PASS) {
@@ -8591,7 +8691,8 @@ static void dfi_pass_give(struct duoforge_battle *b, uint32_t flat, const dfi_pa
     t->trap_source = s->trap_source;
     t->trap_band = s->trap_band;
     t->trap_move = s->trap_move;
-    t->position_flags = (uint8_t)((uint32_t)s->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK); /* wide-operands-reviewed: < 256 */
+    /* copyVolatileFrom (sim/pokemon.ts:1246-1251): Curse has no noCopy, so the passer's Curse goes to the new occupant (step G84b). */
+    t->position_flags = (uint8_t)((uint32_t)s->position_flags & (DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_CURSED)); /* wide-operands-reviewed: < 256 */
 }
 
 /* Illusion (decision 0026 sections 2 and 4; pin data/abilities.ts:2056-2069, onBeforeSwitchIn): the disguise of a holder that
@@ -9409,7 +9510,7 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
  * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore, Disable (step G27),
  * Perish Song (step G26), Taunt and Yawn (step G31)), an item (Leftovers or White Herb), Speed Boost (step G32) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 22u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31), the lockedmove (G56), Roost's volatile (G42) and Leech Seed's drain (G84) */
+#define DFI_RES_PER_POSITION 23u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31), the lockedmove (G56), Roost's volatile (G42) Leech Seed's drain (G84) and Curse's residual (G84b) */
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
@@ -9658,6 +9759,24 @@ static duoforge_status dfi_leech_drain(dfi_run *r, uint32_t holder)
     return DUOFORGE_OK;
 }
 
+/* Curse's residual (step G84b, decision 0063; data/moves.ts:3295-3303, the Champions override keeps the condition): onResidualOrder
+ * 12, this.damage(baseMaxhp / 4) on the holder with no source, so the line is `-damage|T|hp|[from] Curse` (no [of]). Nothing when the
+ * holder is down or the amount is zero. The flag is the holder's own (dfi_tail_clear_occupant ends it with the occupant). */
+static duoforge_status dfi_curse_residual(dfi_run *r, uint32_t holder)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_member *h = dfi_at(b, holder);
+    if (h == NULL || h->hp == 0u ||
+        (b->tail.sides[holder / 2u].positions[holder % 2u].position_flags & DFI_POSFLAG_CURSED) == 0u) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t amount = (uint32_t)h->hp_max / 4u;
+    if (amount == 0u) {
+        return DUOFORGE_OK;
+    }
+    return dfi_deal(r, holder, amount, DUOFORGE_CAUSE_CURSE, 0u, DUOFORGE_NO_POSITION);
+}
+
 static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot *ps)
 {
     struct duoforge_battle *b = r->b;
@@ -9726,6 +9845,11 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         /* Leech Seed's drain (order 8, decision 0047): an entry only for a standing holder whose seed has a source */
         if (m->hp != 0u && b->tail.sides[flat / 2u].positions[flat % 2u].leech_seed_source != 0u) {
             list[n] = (dfi_residual_entry){DFI_RES_LEECH, flat, 8u, speed, 0u, true};
+            n += 1u;
+        }
+        /* Curse's residual (step G84b, decision 0063; onResidualOrder 12, a condition: sub-order 2): an entry for a standing holder */
+        if (m->hp != 0u && (b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & DFI_POSFLAG_CURSED) != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_CURSE, flat, 12u, speed, 2u, true};
             n += 1u;
         }
         /* The volatiles with a duration handler of their own, in the one fixed order of residual_order.h (Heal
@@ -10053,6 +10177,17 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         }
         if (e->kind == DFI_RES_LEECH) {
             st = dfi_leech_drain(r, e->flat);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            dfi_process_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
+            continue;
+        }
+        if (e->kind == DFI_RES_CURSE) {
+            st = dfi_curse_residual(r, e->flat);
             if (st != DUOFORGE_OK) {
                 return st;
             }

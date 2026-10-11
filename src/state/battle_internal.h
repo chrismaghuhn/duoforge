@@ -270,7 +270,10 @@ typedef struct dfi_side {
 #define DFI_POSFLAG_DRAGON_CHEER_MASK 0x0Cu
 #define DFI_POSFLAG_DRAGON_CHEER_MAX 2u
 #define DFI_POSFLAG_DESTINY_BOND 0x10u
-#define DFI_POSFLAG_VALID_MASK 0x1Fu
+/* Step G84b (decision 0063, lane A block): bit 7 CURSED, the occupant's Curse volatile (the Ghost Curse's target, public as
+ * -start|X|Curse|[of] source). Per occupant: it ends with the occupant (dfi_tail_clear_occupant) and Baton Pass copies it. */
+#define DFI_POSFLAG_CURSED 0x80u
+#define DFI_POSFLAG_VALID_MASK 0x9Fu
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
 /* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which

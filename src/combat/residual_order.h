@@ -46,6 +46,10 @@
 /* Leech Seed's residual drain (decision 0047, data/moves.ts:10216-10226): onResidualOrder 8, a callback (the drain and the heal to
  * the source slot). It runs before poison (9) and burn (10); a tie of two holders at order 8 draws like any tie of two callbacks. */
 #define DFI_RES_LEECH 19u
+/* Curse's residual (decision 0063, data/mods/champions/moves.ts:165-196 and data/moves.ts:3295-3303): onResidualOrder 12, sub-order 2
+ * (a condition), a callback every turn with no duration: this.damage(baseMaxhp / 4) on the holder, `[from] Curse`. Kind 26 (1-19 are
+ * taken: 18 Moody, 19 Leech Seed; 20-24 are lane B's, HS froze them). */
+#define DFI_RES_CURSE 26u
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
 #define DFI_RES_SPEED_BOOST 11u /* Speed Boost's onResidual: order 28, sub-order 2 (step G32) */
@@ -65,7 +69,7 @@
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 22 * 4 entries, a few draws and a few
  * orders (22 per position: the count of steps G27, G31, G32, G56, G42 and G84 together, DFI_RES_PER_POSITION in turn.c). */
-#define DFI_RES_MODEL_MAX 99u
+#define DFI_RES_MODEL_MAX 103u /* 3 + 4 * 2 + 23 * 4: DFI_RES_PER_POSITION counts Curse (step G84b) */
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
 #define DFI_RES_REGION_MAX 4u

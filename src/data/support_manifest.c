@@ -372,7 +372,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G84 (decision 0047): Leech Seed (the holder's volatile, the source's slot, the residual drain of order 8) and Curse
-             * (a non-Ghost user's self boost; a Ghost user's Curse is refused explicitly, E_UNSUPPORTED). */
+             * (a non-Ghost user's self boost; the Ghost Curse since step G84b, decision 0063). */
             [DFI_MOVE_LEECHSEED] = 1u,
             [DFI_MOVE_CURSE] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
