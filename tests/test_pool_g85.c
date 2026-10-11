@@ -319,7 +319,8 @@ static void check_magician_faster_first(df_test *t, duoforge_context *ctx)
     const uint32_t dl_moves[2] = {DFI_MOVE_DAZZLINGGLEAM, DFI_MOVE_PROTECT};
     set_moves(dl, 2u, dl_moves);
     setup.sides[1].members[0].item = (uint8_t)(1u + DFI_ITEM_BLACKGLASSES); /* Weavile, the faster target */
-    const duoforge_slot_command cmd[2][2] = {{k_move0_none, k_move1_none}, {k_move0_foe0, k_move0_foe0}};
+    /* the foes hit each other (Weavile's Night Slash at Primarina, Primarina's Moonblast at Weavile), so Delphox takes no hit */
+    const duoforge_slot_command cmd[2][2] = {{k_move0_none, k_move1_none}, {{DUOFORGE_SLOT_MOVE, 0u, 3u, 0u, 0u, {0u, 0u, 0u}}, {DUOFORGE_SLOT_MOVE, 0u, 2u, 0u, 0u, {0u, 0u, 0u}}}};
     duoforge_battle *b = NULL;
     if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
         return;
