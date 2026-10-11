@@ -902,6 +902,14 @@ static void test_move_result(df_test *t)
     ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_HAZE, 0u);
     ev[1] = mr_ev(DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, none, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
     DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_UNCLASSIFIED_NOW);
+    /* Imprison: its volatile on the user, true; a second one (-fail with [still], dfi_run_imprison) false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 1u, DUOFORGE_CAUSE_NONE, DFI_MOVE_IMPRISON, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_VOLATILE_START, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].detail = (uint8_t)DUOFORGE_VOLATILE_IMPRISON;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
     /* a [still] -fail: false; the lines of another position before the action are skipped */
     ev[0] = mr_ev(DUOFORGE_EVENT_DAMAGE, 3u, none, DUOFORGE_CAUSE_POISON, 0u, 0u);
     ev[1] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_TAILWIND, 0u);

@@ -201,24 +201,50 @@ class TrackerStopTest(unittest.TestCase):
                 p.occupant = k
         return t
 
-    def test_the_record_refuses_folds_it_does_not_write(self):
-        # record.py writes the tail of the #334 folds (Throat Chop, Perish, Encore, Aurora Veil, item_now, ability_now);
-        # a #342 fold that is up has tail fields the assembler does not write yet, so the point is refused, never a zero
+    def test_the_record_writes_the_folds_of_342(self):
+        # record.py writes the tail fields of the #342 folds exactly per the engine's layout: the hazard layers and their
+        # creation order (2 bits per slot), Wide Guard, the counts of Taunt, Heal Block, Yawn and Disable, the 0/1 bytes,
+        # Soak's type (soak_type, type2 0) and Double Shock's (soak_type ???, type2 the remaining type); Rage Powder is
+        # the Follow Me flag of the position (_position)
         import collections
+        from duoforge._state_layout import VALUES
         from duoforge_live import record
         t = self.tracker()
+        t._party, t._conditions = None, [[0] * 4, [0] * 4]
+        t._member = lambda side: []
         t._hazards = [collections.Counter(), collections.Counter()]
-        t._guards = set()
-        t._positions[0][0].throat_chop, t._positions[1][1].perish = 2, 3  # recorded folds: no refusal
-        self.assertEqual(record.unrecorded_folds(t), [])
-        t._positions[1][0].taunt, t._positions[0][1].type_now = 1, (18, 0)
-        t._hazards[1]["spikes"] = 2
-        t._guards.add(("WIDE_GUARD", 0))
-        self.assertEqual(sorted(record.unrecorded_folds(t)),
-                         ["side0.position1.type_now", "side0.wide_guard", "side1.hazards", "side1.position0.taunt"])
-        with self.assertRaises(record.Refusal) as caught:
-            record._tail(t, None, 2)
-        self.assertEqual(caught.exception.reason, "fold-not-in-record")
+        t._guards = {("WIDE_GUARD", 0)}
+        t._hazards[1]["toxic_spikes"] = 2
+        t._hazards[1]["stealth_rock"] = 1
+        t._hazards[0]["spikes"] = 1
+        t._hazards[0]["sticky_web"] = 1
+        t._hazards[0].pop("spikes")  # an ended kind leaves; one put up again goes last
+        t._hazards[0]["spikes"] = 3
+        a, b = t._positions[1][0], t._positions[0][1]
+        a.taunt, a.heal_block, a.yawn, a.disable_slot, a.disable_turns = 4, 2, 1, 3, 5
+        a.imprison, a.must_recharge, a.glaive_rush = 1, 1, 1
+        a.type_now, a.type2 = (0, 7), 7  # Double Shock: the ??? slot and the remaining type + 1
+        b.type_now, b.type2 = (18, 0), 0  # Soak: Water + 1
+        st = record._State(max(start + size for start, size in record._FIELDS.values()))
+        record._tail(t, st, 2)
+
+        def get(name):
+            start, size = record._FIELDS[name]
+            return int.from_bytes(st.bytes[start:start + size], "little")
+        hz = {n: VALUES[f"DFI_HAZARD_{n.upper()}"] for n in ("stealth_rock", "spikes", "toxic_spikes", "sticky_web")}
+        self.assertEqual([get(f"tail.side1.{n}") for n in ("toxic_spikes", "stealth_rock", "spikes", "sticky_web")],
+                         [2, 1, 0, 0])
+        self.assertEqual(get("tail.side1.hazard_order"), hz["toxic_spikes"] | hz["stealth_rock"] << 2)
+        self.assertEqual(get("tail.side0.hazard_order"), hz["sticky_web"] | hz["spikes"] << 2)
+        self.assertEqual(get("tail.side0.spikes"), 3)
+        self.assertEqual((get("tail.side0.wide_guard"), get("tail.side1.wide_guard")), (VALUES["DFI_TAIL_WIDE_GUARD_MAX"], 0))
+        pre = "tail.side1.position0."
+        self.assertEqual([get(pre + n) for n in ("taunt_turns", "heal_block_turns", "yawn_turns", "disable_slot",
+                                                 "disable_turns", "imprison", "must_recharge", "glaive_rush")],
+                         [4, 2, 1, 3, 5] + [VALUES["DFI_TAIL_FLAG_MAX"]] * 3)
+        self.assertEqual((get("tail.side1.member0.soak_type"), get("tail.side1.member0.type2")),
+                         (VALUES["DFI_TAIL_TYPE2_TYPELESS"], 7))
+        self.assertEqual((get("tail.side0.member1.soak_type"), get("tail.side0.member1.type2")), (18, 0))
 
     def test_throat_chop_takes_only_the_pins_silent_form(self):
         from duoforge_live import lines
@@ -239,11 +265,11 @@ class TrackerStopTest(unittest.TestCase):
         # entering member; Encore, Disable, Yawn, Imprison, Glaive Rush (noCopy), the recharge and a changed type stay
         # with the leaver (decision 0042)
         from duoforge_live.data import trace_to_c
-        passed = {"throat_chop": 1, "perish": 2, "taunt": 1, "heal_block": 1}
-        kept = {"encore_slot": 3, "disable_slot": 2, "yawn": 1, "imprison": 1, "glaive_rush": 1, "must_recharge": 1,
-                "type_now": (18, 0)}
-        empty = {"encore_slot": 0, "disable_slot": 0, "yawn": 0, "imprison": 0, "glaive_rush": 0, "must_recharge": 0,
-                 "type_now": (0, 0)}
+        passed = {"throat_chop": 1, "perish": 2, "taunt": 3, "heal_block": 2}  # the counts of the record
+        kept = {"encore_slot": 3, "disable_slot": 2, "disable_turns": 4, "yawn": 1, "imprison": 1, "glaive_rush": 1,
+                "must_recharge": 1, "type_now": (0, 7), "type2": 7}
+        empty = {"encore_slot": 0, "disable_slot": 0, "disable_turns": 0, "yawn": 0, "imprison": 0, "glaive_rush": 0,
+                 "must_recharge": 0, "type_now": (0, 0), "type2": 0}
         from types import SimpleNamespace
         from duoforge_live.tracker import ROSTER_NONE
         t = self.tracker()
