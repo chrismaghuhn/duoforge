@@ -226,6 +226,28 @@ class TrackerStopTest(unittest.TestCase):
         t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 5, 0))  # a plain switch
         self.assertEqual((p.occupant, p.throat_chop, p.perish), (5, 0, 0))
 
+    def test_a_plain_typechange_is_soaks_only_after_a_soak_line(self):
+        # Soak and Magic Powder print the same -start|X|typechange|T (no attribute): the converter gives Soak's cause to
+        # both, so the tracker folds it only after a Soak move line; after Magic Powder it stops
+        from duoforge_live import lines
+        from duoforge_live.data import trace_to_c
+        moves = data.load(kind="pool").tables["MOVE"]
+        t = self.tracker()
+        t._soak = moves["SOAK"]
+        water, psychic = trace_to_c.TYPE_IDS["Water"], trace_to_c.TYPE_IDS["Psychic"]
+
+        def typechange(type_id):
+            return trace_to_c.ev_tuple(trace_to_c.EV["TYPE_CHANGE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                       moves["SOAK"], detail=type_id)
+        t._last_move = (0, moves["MAGICPOWDER"], 2)
+        with self.assertRaises(lines.Stop) as caught:
+            t._event(typechange(psychic))
+        self.assertEqual(caught.exception.reason, "line:-start typechange (no Soak)")
+        self.assertEqual(t._positions[1][0].type_now, (0, 0))
+        t._last_move = (0, moves["SOAK"], 2)
+        t._event(typechange(water))
+        self.assertEqual(t._positions[1][0].type_now, (water + 1, 0))
+
     def test_encore_takes_the_slot_of_the_last_move_line(self):
         from duoforge_live import lines
         from duoforge_live.data import trace_to_c
