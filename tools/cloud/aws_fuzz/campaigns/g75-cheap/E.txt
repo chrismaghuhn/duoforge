@@ -28,7 +28,7 @@ Calm Nature
 - Coil
 - Protect
 
-Falinks (M) @ Leftovers
+Falinks @ Leftovers
 Ability: Battle Armor
 Level: 50
 EVs: 32 HP / 32 Atk / 2 SpD
