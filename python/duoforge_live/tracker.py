@@ -572,6 +572,24 @@ class Tracker:
     def _at(self, pos):
         return self._positions[pos // 2][pos % 2]
 
+    def current_types(self, member):
+        """The types of a member now, as the lines the tracker folds show them: those of its set's forme, or of its Mega
+        forme once it Mega Evolved (the stone of its sheet names it). Every other change of types (Soak, Double Shock,
+        Trick-or-Treat, Forest's Curse, a forme change) stops on its own line, because TYPE_CHANGE and FORME_CHANGE are no
+        fold of this tracker; the day one is folded this has to know it, so it refuses while either is supported and
+        never answers with the forme's types then. Lines the tracker does not read cannot change them (Roost only
+        hides Flying for a turn, which never decides a Ghost). ValueError for a Mega member whose sheet has no stone of
+        its forme."""
+        for feature in ("TYPE_CHANGE", "FORME_CHANGE"):
+            if lines.SUPPORTED >> lines.FEATURES[feature] & 1:
+                raise lines.Stop(f"types:{feature}")
+        forme = member.sheet["species"]
+        if member.is_mega:
+            forme = self.data.mega_of(forme, member.sheet["item"])
+            if forme is None:
+                raise ValueError("a Mega member whose sheet has no Mega Stone of its forme")
+        return self.data.forme_types(forme)
+
     def _occupant(self, pos):
         p = self._at(pos)
         return None if p.occupant == ROSTER_NONE else self._member(pos // 2)[p.occupant]

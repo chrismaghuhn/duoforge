@@ -282,7 +282,11 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
         for point in walk(tracker, lines, points):
             done = point.line
             if own_requested(tracker):
-                domain, lists = superset.domain(tracker)
+                try:
+                    domain, lists = superset.domain(tracker)
+                except line_classes.Stop as e:  # the user's types are not settled (Tracker.current_types): cut here
+                    e.line = point.line
+                    raise
                 taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker),
                               tracker.observation_ext().copy()))
         feed_lines(tracker, lines, done, len(lines))  # a stop after the last point still cuts the last labels
