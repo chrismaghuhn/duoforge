@@ -88,7 +88,7 @@ def domain(tracker):
                 continue
             struggle_too[k] = True  # effects outside the view can disable every move: the request is then Struggle
             moves = []
-            types = tracker.current_types(member)  # a move's request target can depend on them (Curse); Stop if unknown
+            types = tracker.current_types(member, p)  # a move's request target can depend on them (Curse); Stop if unknown
             for i, move_id in enumerate(sheet_moves):
                 disabled = not usable[i]
                 moves.append({"id": _move_name(tracker, move_id), "pp": pp[i],
