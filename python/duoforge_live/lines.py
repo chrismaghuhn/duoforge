@@ -138,6 +138,9 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
                                                  "TERRAIN_MISTY"))
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
+# SUBSTITUTE is not folded, and the record's move_result relies on that: a status move that a Substitute blocks shows the
+# lines of a failed one and is true at the pin, which duoforge_move_result cannot tell from the events (its precondition).
+# Folding SUBSTITUTE first needs an explicit treatment of a status move into a Substitute for move_result.
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK",

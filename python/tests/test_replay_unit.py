@@ -599,10 +599,12 @@ class LinesTest(unittest.TestCase):
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
         # the library may support a feature (G60: Substitute), but its view-extension field stays empty until the
-        # tracker folds it: the line still stops the perspective
+        # tracker folds it: the line still stops the perspective. Folding SUBSTITUTE needs move_result to treat a status
+        # move into a Substitute explicitly first (duoforge_move_result's precondition: the pin counts it true)
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
         self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["SUBSTITUTE"] & 1)
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Substitute"), "feature:SUBSTITUTE")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Substitute"), "feature:SUBSTITUTE",
+                         "folding SUBSTITUTE needs move_result to treat a status move into a Substitute explicitly first")
         # a folded one: Throat Chop's [silent] lines (the tracker sets and clears the presence bit)
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
         self.assertEqual(lines.check("|-end|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
