@@ -247,6 +247,35 @@ class TrackerStopTest(unittest.TestCase):
                          (VALUES["DFI_TAIL_TYPE2_TYPELESS"], 7))
         self.assertEqual((get("tail.side0.member1.soak_type"), get("tail.side0.member1.type2")), (18, 0))
 
+    def test_turn_history_bits_follow_the_engine(self):
+        # G88 (decision 0046): LOWERED for a stage that really fell, HURT for a spread damage that leaves its target
+        # standing; not for the directDamage of a user's own cost (Struggle's recoil, Substitute's and Clangorous Soul's
+        # -damage); a plain -damage on the user of another move stops; the turn boundary (not turn 1) clears all three
+        from duoforge_live import lines
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._struggle, t._direct_costs, t._last_move = 900, {901, 902}, None
+        CAUSE = trace_to_c.CAUSE
+        p, q = t._positions[0][0], t._positions[1][0]
+        t._hurt(2, CAUSE["NONE"])  # a hit of no move line: hurt
+        self.assertEqual(q.hurt, 1)
+        t._last_move = (0, 900, 2)
+        t._hurt(0, CAUSE["RECOIL"])  # Struggle's recoil: directDamage
+        self.assertEqual(p.hurt, 0)
+        t._last_move = (0, 901, 0)
+        t._hurt(0, CAUSE["NONE"])  # Substitute's or Clangorous Soul's cost
+        self.assertEqual(p.hurt, 0)
+        t._last_move = (0, 5, 2)
+        t._hurt(0, CAUSE["RECOIL"])  # another move's recoil is applyRecoilDamage, a spread damage
+        self.assertEqual(p.hurt, 1)
+        p.hurt = 0
+        for cause in ("POISON", "WEATHER", "CONFUSION"):
+            t._hurt(0, CAUSE[cause])
+            self.assertEqual(p.hurt, 1)
+            p.hurt = 0
+        with self.assertRaises(lines.Stop):
+            t._hurt(0, CAUSE["NONE"])  # a plain -damage on its own user that no engine cost explains
+
     def test_throat_chop_takes_only_the_pins_silent_form(self):
         from duoforge_live import lines
         t = self.tracker()
