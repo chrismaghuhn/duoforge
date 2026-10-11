@@ -843,6 +843,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_CURSE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS) |
