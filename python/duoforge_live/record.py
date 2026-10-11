@@ -55,6 +55,7 @@ PARTY_HIDDEN = VALUES["DFI_PARTY_HIDDEN"]
 POSFLAG_STATS_RAISED = VALUES["DFI_POSFLAG_STATS_RAISED"]
 POSFLAG_HEALING_WISH = VALUES["DFI_POSFLAG_HEALING_WISH"]  # G82: the slot's pending Healing Wish (decision 0045)
 POSFLAG_LOWERED, POSFLAG_HURT = VALUES["DFI_POSFLAG_LOWERED"], VALUES["DFI_POSFLAG_HURT"]  # step G88 (decision 0046)
+POSFLAG_CURSED = VALUES["DFI_POSFLAG_CURSED"]  # step G84b (decision 0063): the Ghost Curse's volatile, bit 7
 # the position flags the states of a kind may carry (dfi_kind_limits_of: the POOL kinds add theirs), by table kind
 VOL_FLAGS_MASK = {"closure": VALUES["VOL_FLAGS_MASK_CLOSURE"], "pool": VALUES["VOL_FLAGS_MASK_POOL"]}
 MR_UNCLASSIFIED_NOW, MR_UNCLASSIFIED_LAST = VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_NOW"], VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_LAST"]
@@ -418,7 +419,7 @@ def _tail(t, s, boundary):
                 s.put(ppre + "trap_elapsed", p.trap_elapsed)
             s.put(f"tail5.position{side * 2 + k}.position_flags", (POSFLAG_STATS_RAISED if p.raised else 0) |
                   (POSFLAG_LOWERED if p.lowered else 0) | (POSFLAG_HURT if p.hurt else 0) |
-                  (POSFLAG_HEALING_WISH if p.wish else 0))
+                  (POSFLAG_HEALING_WISH if p.wish else 0) | (POSFLAG_CURSED if p.cursed else 0))
             if p.ability_now:
                 s.put(f"{pre}member{p.occupant}.ability_now", p.ability_now)
         for m, member in enumerate(members):
