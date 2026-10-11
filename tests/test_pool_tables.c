@@ -1308,6 +1308,8 @@ int main(void)
                                id == DFI_ITEM_ICYROCK || id == DFI_ITEM_TERRAINEXTENDER ||
                                /* step G67: Air Balloon (the grounding, the switch-in line, the pop) */
                                id == DFI_ITEM_AIRBALLOON ||
+                               /* step G83: Iron Ball (the grounding, the Ground immunity, the Speed) */
+                               id == DFI_ITEM_IRONBALL ||
                                /* step G75: Scope Lens (an engine row, the critical ratio), Medichamite and Clefablite (mark only) */
                                id == DFI_ITEM_SCOPELENS || id == DFI_ITEM_MEDICHAMITE || id == DFI_ITEM_CLEFABLITE;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
@@ -1413,6 +1415,8 @@ int main(void)
                                 id == DFI_ABILITY_PUREPOWER || id == DFI_ABILITY_BATTLEARMOR ||
                                 /* step G73: Moody, by id (dfi_moody, the residual of order 28) */
                                 id == DFI_ABILITY_MOODY ||
+                                /* step G83: Bulletproof (the TryHit of a bullet move), Rivalry (the base power), Leaf Guard (sun) */
+                                id == DFI_ABILITY_BULLETPROOF || id == DFI_ABILITY_RIVALRY || id == DFI_ABILITY_LEAFGUARD ||
                                 /* step G71: Cute Charm (decision 0034) */
                                 id == DFI_ABILITY_CUTECHARM ||
                                 /* step G81: Frisk, by id (dfi_entry_ability, the switch-in ITEM_SHOWN lines of the foes' items) */

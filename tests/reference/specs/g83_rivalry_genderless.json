@@ -1,0 +1,22 @@
+{
+  "name": "g83_rivalry_genderless",
+  "purpose": "Step G83, Rivalry: a Luxray holder hits a genderless Gholdengo, which takes no Rivalry multiplier (the base power is the move's own).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000083a4",
+  "teams": [
+    "Luxray (M) @ Muscle Band\nAbility: Rivalry\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Thunder Wave\n- Protect\n\nGarchomp (M) @ Life Orb\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nChesnaught (M) @ Sitrus Berry\nAbility: Bulletproof\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Seed Bomb\n- Earthquake\n- Focus Blast\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Earthquake\n- Focus Blast\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect",
+    "Pyroar (F) @ Sitrus Berry\nAbility: Unnerve\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 Spe\nModest Nature\n- Yawn\n- Sunny Day\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect\n\nClefable (F) @ Leftovers\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Protect\n\nMilotic (F) @ Mental Herb\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nSharpedo (M) @ Rocky Helmet\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Protect\n- Snarl\n\nGengar (M) @ Life Orb\nAbility: Cursed Body\nLevel: 50\nEVs: 32 SpA / 2 SpD / 32 Spe\nModest Nature\n- Shadow Ball\n- Sludge Bomb\n- Thunderbolt\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 2",
+      "move 1 2, move 2"
+    ],
+    "p2": [
+      "move 2, move 1 1",
+      "move 2, move 1 1"
+    ],
+    "max_steps": 2
+  }
+}

@@ -572,7 +572,9 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # reaches their later points): +30 equal, +4 refused, and 42 infatuated points whose tracker refusal is the engine check's
 # verdict (duoforge_public_record_check refuses a world with an infatuated occupant, lead's option B), counted apart. Measured
 # on the merged tree (CI, Linux and Windows Python jobs, identical): 10242 equal, 511 refused, 42 engine-check refusals.
-POOL_OUTCOME = {"equal": 10242, "refused": 511, "engine check refuses: infatuated occupant (from_view, option B)": 42,
+# lane B G83 (Iron Ball, Bulletproof, Rivalry, Leaf Guard): +64 equal; +4 refused, all g83_ironball_ground under the
+# visible-confusion cause (mask 2); no new stop. Measured on the merged tree (main 6c16c960 + G83): 10306 equal, 515 refused.
+POOL_OUTCOME = {"equal": 10306, "refused": 515, "engine check refuses: infatuated occupant (from_view, option B)": 42,
                 "tracker refuses: unburden-without-item-line": 4}
 POOL_STOPS = {"feature:SUBSTITUTE": 78, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}

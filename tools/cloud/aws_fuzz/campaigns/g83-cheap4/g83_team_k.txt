@@ -1,0 +1,54 @@
+Luxray (M) @ Muscle Band
+Ability: Rivalry
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Thunderbolt
+- Thunder Wave
+- Protect
+
+Raichu (F) @ Air Balloon
+Ability: Lightning Rod
+Level: 50
+EVs: 29 HP / 5 Def / 32 Spe
+Timid Nature
+- Thunder Wave
+- Thunderbolt
+- Protect
+
+Pyroar (F) @ Sitrus Berry
+Ability: Unnerve
+Level: 50
+EVs: 32 HP / 2 SpA / 32 Spe
+Modest Nature
+- Yawn
+- Sunny Day
+- Protect
+
+Garchomp (M) @ Life Orb
+Ability: Rough Skin
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Earthquake
+- Dragon Claw
+- Protect
+
+Kommo-o (M) @ Rocky Helmet
+Ability: Bulletproof
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Focus Blast
+- Earthquake
+- Protect
+
+Gengar (M) @ Expert Belt
+Ability: Cursed Body
+Level: 50
+EVs: 32 SpA / 2 SpD / 32 Spe
+Modest Nature
+- Shadow Ball
+- Sludge Bomb
+- Thunderbolt
+- Protect

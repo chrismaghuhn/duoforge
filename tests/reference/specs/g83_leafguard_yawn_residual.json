@@ -1,0 +1,21 @@
+{
+  "name": "g83_leafguard_yawn_residual",
+  "purpose": "Step G83, Leaf Guard and the Yawn residual: Leafeon's Yawn lands on Meganium in no sun; Pyroar's Sunny Day comes before the residual sleep, which Leaf Guard refuses silently (no -immune line: the residual has no move status).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000083a7",
+  "teams": [
+    "Meganium (M) @ Miracle Seed\nAbility: Leaf Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Seed Bomb\n- Energy Ball\n- Earthquake\n- Protect\n\nGarchomp (M) @ Life Orb\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Earthquake\n- Focus Blast\n- Protect\n\nChesnaught (M) @ Sitrus Berry\nAbility: Bulletproof\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Seed Bomb\n- Earthquake\n- Focus Blast\n- Protect",
+    "Leafeon (M) @ Life Orb\nAbility: Chlorophyll\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Seed Bomb\n- Protect\n\nPyroar (F) @ Sitrus Berry\nAbility: Unnerve\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 Spe\nModest Nature\n- Yawn\n- Sunny Day\n- Protect\n\nGengar (M) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 SpA / 2 SpD / 32 Spe\nModest Nature\n- Shadow Ball\n- Sludge Bomb\n- Thunderbolt\n- Protect\n\nRaichu (F) @ Air Balloon\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Substitute\n- Thunderbolt\n- Protect\n\nSharpedo (M) @ Rocky Helmet\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Protect\n- Snarl\n\nGholdengo @ Expert Belt\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 1, move 3"
+    ],
+    "p2": [
+      "move 1 1, move 3",
+      "move 3, move 2"
+    ],
+    "max_steps": 3
+  }
+}

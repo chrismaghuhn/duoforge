@@ -269,12 +269,17 @@ static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, ui
 static uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m);
 static bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id);
 
-/* isGrounded with the data (sim/pokemon.ts:2148-2160): not a Flying type, not a Levitate holder and not an Air Balloon holder
- * (step G67: `return item !== 'airballoon'`, read live, so Knock Off and Trick move it at once). Gravity, Ingrain, Smack Down,
- * Iron Ball, Magnet Rise and Telekinesis are unmarked rows, so no battle has them; Eelevate is an unmarked ability. The ability
- * is the current one (a Mega's, or one that Trace copied). Stealth Rock does not read it (moves.ts:17814-17838). */
+/* isGrounded with the data (sim/pokemon.ts:2148-2160): an Iron Ball holder is grounded first (step G83: `if (item === 'ironball')
+ * return true`, before the Flying and Levitate tests, so it is grounded whatever its types and ability); otherwise not a Flying
+ * type, not a Levitate holder and not an Air Balloon holder (step G67: `return item !== 'airballoon'`, read live, so Knock Off
+ * and Trick move it at once). Gravity, Ingrain, Smack Down, Magnet Rise and Telekinesis are unmarked rows, so no battle has
+ * them; Eelevate is an unmarked ability. The ability is the current one (a Mega's, or one that Trace copied). Stealth Rock does
+ * not read it (moves.ts:17814-17838). */
 static bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
 {
+    if (dfi_holds(b, m, DFI_ITEM_IRONBALL)) {
+        return true;
+    }
     return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE) &&
            !dfi_holds(b, m, DFI_ITEM_AIRBALLOON);
 }
@@ -322,6 +327,13 @@ static uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member 
 static bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
 {
     return m != NULL && dfi_item_code(b, m) == 1u + id;
+}
+
+/* The genders that Rivalry reads (step G83): a male or a female member. A genderless one (DUOFORGE_GENDER_NONE) has none, so
+ * its Rivalry does nothing (data/abilities.ts:3884, `attacker.gender && defender.gender`). */
+static bool dfi_gender_known(uint32_t gender)
+{
+    return gender == DUOFORGE_GENDER_MALE || gender == DUOFORGE_GENDER_FEMALE;
 }
 
 /* Step G55: the rock that lengthens the weather w (data/conditions.ts durationCallback: Rain Dance with Damp Rock, Sunny Day
@@ -639,6 +651,11 @@ static duoforge_status dfi_speed_key(const dfi_run *r, uint32_t side, const dfi_
         chain = 8192u;
     }
     if (active && dfi_holds(b, m, DFI_ITEM_CHOICESCARF) && !dfi_chain_modify(chain, 6144u, &chain)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    /* Iron Ball (step G83, data/items.ts:3062-3064, onModifySpe): chainModify(0.5) for its standing holder, in the chain of the
+     * items (one item per holder: never with Choice Scarf). */
+    if (active && dfi_holds(b, m, DFI_ITEM_IRONBALL) && !dfi_chain_modify(chain, 2048u, &chain)) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Unburden's volatile (Team C): chainModify(2) while its holder holds no item (data/abilities.ts:5247-5251): the
@@ -1960,6 +1977,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (!dfi_ate_excluded(md) && dfi_ate_boosts_fam(dfi_ability_family_now(r->b, a), md->type, move_type)) {
         ok = ok && dfi_chain_modify(bp_chain, DFI_ATE_MODIFIER, &bp_chain);
     }
+    /* Rivalry (step G83, data/abilities.ts:3881-3898, onBasePowerPriority 24, after Technician's 30 and before Iron Fist's 23): the
+     * attacker and the defender both have a gender (male or female): chainModify(1.25) for the same gender, chainModify(0.75)
+     * for the other one, and nothing when either is genderless. Its holder is the attacker, and the rival is the defender. */
+    if (dfi_ability(r->b, a, DFI_ABILITY_RIVALRY) && dfi_gender_known(a->gender) && dfi_gender_known(d->gender)) {
+        ok = ok && dfi_chain_modify(bp_chain, a->gender == d->gender ? 5120u : 3072u, &bp_chain);
+    }
     /* Iron Fist (step G34, data/abilities.ts:2236-2248, priority 23 like the -ate abilities, which it never meets: one
      * ability): the punch flag, 4915/4096. */
     if ((bp_flags2 & DFI_MOVE_FLAG2_PUNCH) != 0u && dfi_ability(r->b, a, DFI_ABILITY_IRONFIST)) {
@@ -2439,6 +2462,28 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
                                       uint32_t origin, uint32_t from_ability);
 static duoforge_status dfi_after_set_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t source, uint32_t origin);
 
+/* Leaf Guard's test (step G83, data/abilities.ts:2291-2310, which read Pokemon#effectiveWeather, sim/pokemon.ts:2190-2212): sun
+ * is up. The weather it reads is the field's (dfi_field_weather, step G79: a standing Cloud Nine holder suppresses it, so
+ * Leaf Guard does not block). Utility Umbrella is not marked (support_manifest.c), so its branch of Pokemon#effectiveWeather
+ * (sim/pokemon.ts:2199-2205) is never reached. A Mega Sol holder standing on the field reads as sun for the effects of its own
+ * moves, whatever the holder's own ability: Mega Meganium's base learnset has Toxic and Poison Powder, so its
+ * Toxic on a Leaf Guard foe outside sun is refused by Leaf Guard in the pin. The field does not show that, so while such a holder
+ * stands and the field is not sun the test is not modelled: E_UNSUPPORTED (a white-box test pins it), never a guess. */
+static duoforge_status dfi_leaf_guard_sun(const dfi_run *r, bool *sun)
+{
+    *sun = dfi_field_weather(r) == DFI_WEATHER_SUN;
+    if (*sun) {
+        return DUOFORGE_OK;
+    }
+    for (uint32_t p = 0u; p < DFI_POSITIONS; ++p) {
+        const dfi_member *mm = dfi_at(r->b, p);
+        if (mm != NULL && mm->hp != 0u && dfi_ability(r->b, mm, DFI_ABILITY_MEGASOL)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t user, uint32_t move_id,
                                       uint32_t origin, uint32_t from_ability)
 {
@@ -2523,6 +2568,27 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
             dfi_flower_veil_block(r, flat, holder);
         }
         return DUOFORGE_OK;
+    }
+    /* Leaf Guard (step G83, data/abilities.ts:2291-2310, onSetStatus, breakable): in sun every status of its holder is refused,
+     * with the -immune line for a move's own status (effect.status, `primary`) and silently for a secondary or the Yawn residual
+     * (its effect is the condition, which has no status). A Pokemon's effect, so it comes before the terrains' (below). With a
+     * Flower Veil holder in play for the same Grass-type target the order of the two handlers is not modelled (E_UNSUPPORTED,
+     * as Thermal Exchange's). */
+    if (dfi_ability(r->b, m, DFI_ABILITY_LEAFGUARD)) {
+        bool sun = false;
+        const duoforge_status lg = dfi_leaf_guard_sun(r, &sun);
+        if (lg != DUOFORGE_OK) {
+            return lg;
+        }
+        if (sun) {
+            if (user != flat && dfi_flower_veil_holder(r->b, flat, &holder)) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+            if (primary) {
+                dfi_immune(r, flat, 1u + DFI_ABILITY_LEAFGUARD); /* [-immune] [from] ability: Leaf Guard */
+            }
+            return DUOFORGE_OK;
+        }
     }
     /* The terrains' onSetStatus (step G25, data/moves.ts:4497-4551 and 12151-12205). The field's handlers have no
      * speed (Battle.resolvePriority gives a speed to a Pokemon's effects only, sim/battle.ts:1001-1003), so they run after
@@ -5162,31 +5228,50 @@ static bool dfi_dragon_cheer(dfi_run *r, uint32_t user, uint32_t flat)
  * the grounded test of Electric Terrain below.
  * Otherwise -start|target|move: Yawn|[of] user, and the target falls asleep at the end of the next turn
  * (duration 2, the residual at order 23: the Yawn pass of dfi_residual). True when it started. */
-static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
+static duoforge_status dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat, bool *started)
 {
+    *started = false;
     struct duoforge_battle *b = r->b;
     const dfi_member *tm = dfi_at(b, flat);
     dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
     if (tm == NULL || tm->hp == 0u) {
-        return false;
+        return DUOFORGE_OK;
     }
     if (tm->status != DFI_STATUS_NONE) {
         dfi_fail_still(r, user);
-        return false;
+        return DUOFORGE_OK;
     }
     /* addVolatile: a target that yawns already is refused silently before TryAddVolatile (the fix of G31's second bug:
      * this check was after Flower Veil's block, which made a yawning Grass target print -block; recorded in
      * g31_yawn_flower_veil_yawning). */
     if (tail->yawn_turns != 0u) {
         dfi_fail_still(r, user);
-        return false;
+        return DUOFORGE_OK;
+    }
+    /* TryAddVolatile, the target's own effects first: Leaf Guard (step G83, data/abilities.ts:2300-2305, onTryAddVolatile) refuses
+     * the yawn volatile in sun with -immune and [from] ability: Leaf Guard, and returns null (the move's hit has no line of its own,
+     * as the blocks below). With a Flower Veil holder on the side the order of the two is not modelled (E_UNSUPPORTED). */
+    if (dfi_ability(b, tm, DFI_ABILITY_LEAFGUARD)) {
+        bool sun = false;
+        const duoforge_status lg = dfi_leaf_guard_sun(r, &sun);
+        if (lg != DUOFORGE_OK) {
+            return lg;
+        }
+        if (sun) {
+            uint32_t veil_holder = 0u;
+            if (dfi_flower_veil_holder(b, flat, &veil_holder)) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+            dfi_immune(r, flat, 1u + DFI_ABILITY_LEAFGUARD);
+            return DUOFORGE_OK;
+        }
     }
     /* TryAddVolatile: Flower Veil of the target's side blocks it on a Grass type (-block, then the move did nothing);
      * the Pokemon's effects run before the field's, so Flower Veil comes before Electric Terrain. */
     uint32_t veil = 0u;
     if (dfi_flower_veil_holder(b, flat, &veil)) {
         dfi_flower_veil_block(r, flat, veil); /* -block only: neither [still] nor -fail (recorded in g31_yawn_flower_veil) */
-        return false;
+        return DUOFORGE_OK;
     }
     /* Electric Terrain (step G31 fix, data/moves.ts:4525-4530): a grounded target does not take the volatile; the line
      * is the move's cause and the terrain move as id2, as the sleep refusal's (recorded in g31_yawn_electric). The
@@ -5195,14 +5280,15 @@ static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
         const duoforge_event e =
             dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ELECTRICTERRAIN, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e);
-        return false;
+        return DUOFORGE_OK;
     }
     tail->yawn_turns = (uint8_t)DFI_TAIL_YAWN_MAX; /* 2 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_YAWN;
     e.other = (uint8_t)user;
     dfi_emit(r, &e);
-    return true;
+    *started = true;
+    return DUOFORGE_OK;
 }
 
 /* Leech Seed (decision 0047; data/moves.ts:10202-10231): onTryImmunity refuses a Grass target (`-immune`, no volatile); the
@@ -6440,6 +6526,13 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
              * the hit returns null (no -fail). A target holds one ability, so no other holder's TryHit is in this branch. */
             dfi_immune(r, t, 1u + DFI_ABILITY_STURDY);
             hit[i] = false;
+        } else if (dfi_ability(r->b, tm, DFI_ABILITY_BULLETPROOF) && (dfi_pool_move_flags3[move_id] & DFI_MOVE_FLAG3_BULLET) != 0u) {
+            /* Step G83, Bulletproof (data/abilities.ts:480-491, onTryHit, breakable): a move with the bullet flag stops for its holder
+             * with -immune and [from] ability: Bulletproof, and the TryHit returns null. The target takes no accuracy draw and no
+             * draw after it (the hit step is before the accuracy step). No marked ability ignores breakable (no Mold Breaker family
+             * in the pool). Its onTryHit runs after Protect (priority 3) and Magic Bounce (1): Protect's block above has hit false. */
+            dfi_immune(r, t, 1u + DFI_ABILITY_BULLETPROOF);
+            hit[i] = false;
         } else if (dfi_ability(r->b, tm, DFI_ABILITY_VOLTABSORB) && tm->hp != 0u && move_type == DFI_TYPE_ELECTRIC) {
             /* Volt Absorb (step G45, data/abilities.ts:5340-5353, onTryHit, breakable): an Electric move of another Pokemon,
              * a status move included, heals the holder by baseMaxHP / 4 through this.heal, whose source is the user (so
@@ -6494,13 +6587,17 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
          * a Ghost type is hit by them (its other type decides the effectiveness: an immunity adds nothing, dfi_type_mod). */
         const bool scrappy = dfi_ability(b, dfi_at(b, user), DFI_ABILITY_SCRAPPY) &&
                              (move_type == DFI_TYPE_NORMAL || move_type == DFI_TYPE_FIGHTING);
-        if (!scrappy && dfi_type_immune(b, tm, move_type)) {
+        /* Step G83, Iron Ball: runImmunity('Ground') asks isGrounded alone (sim/pokemon.ts:2252-2254), not the type chart, so an
+         * Iron Ball holder is hit by a Ground move whatever its types and ability (the Flying component of the effectiveness
+         * is still neutral: its chart immunity counts 0 in dfi_type_mod, as the holder's Effectiveness handler returns 0). */
+        const bool iron_ground = move_type == DFI_TYPE_GROUND && tm != NULL && dfi_holds(b, tm, DFI_ITEM_IRONBALL);
+        if (!scrappy && !iron_ground && dfi_type_immune(b, tm, move_type)) {
             hit[i] = false;
             smart_dropped = true;
             if (!smart_step) {
                 dfi_immune(r, targets[i], 0u);
             }
-        } else if (move_type == DFI_TYPE_GROUND && dfi_ability(b, tm, DFI_ABILITY_LEVITATE)) {
+        } else if (move_type == DFI_TYPE_GROUND && !iron_ground && dfi_ability(b, tm, DFI_ABILITY_LEVITATE)) {
             /* runImmunity('Ground'): isGrounded is null for a Levitate holder (sim/pokemon.ts:2156), shown as
              * -immune|X|[from] ability: Levitate (:2257-2258); a Flying type is immune first, without the line. */
             hit[i] = false;
@@ -6722,7 +6819,12 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                 continue;
             }
             if (md->special == DFI_SPECIAL_YAWN) {
-                did = dfi_yawn(r, user, targets[i]) || did;
+                bool started = false;
+                st = dfi_yawn(r, user, targets[i], &started);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                did = did || started;
                 continue;
             }
             if (md->special == DFI_SPECIAL_LEECH_SEED) {
