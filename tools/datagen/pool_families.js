@@ -1767,6 +1767,11 @@ function moveIsModelled(raw, id) {
                            raw.heal[0] <= raw.heal[1] && raw.heal[1] <= 255)) {
         return false;
     }
+    // Step G92 (decision 0062): cantusetwice has no reader in the turn code (Gigaton Hammer, dropped; the generator leaves the
+    // flag unmodelled, gen_closure.py parse_move), so a move with it is unmodelled.
+    if (raw.flags && raw.flags.cantusetwice) {
+        return false;
+    }
     let vectors = 0;
     if (raw.secondary !== undefined) {
         const sec = raw.secondary;
