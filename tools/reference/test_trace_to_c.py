@@ -2942,6 +2942,17 @@ class Forme(unittest.TestCase):
         self.assertNotIn('Charizard-Mega-X', roster[0])
         self.assertEqual(roster[0], before)
 
+    def test_an_illusion_disguise_is_keyed_by_the_disguise_member(self):
+        """Illusion (decision 0026): a Zoroark-Hisui in disguise is shown by the species of a member of its own side (the
+        disguise is a roster name), in the identifier and in the details alike. The index is the disguise's member and there
+        is no conflict: the real Zoroark-Hisui keeps its own key (the i2_illusion_break and i2_bench_swap traces use this)."""
+        trace, roster = self.battle([['Zoroark-Hisui', 'Garchomp'], ['Pikachu']],
+                                    ['|switch|p1a: Garchomp|Garchomp, L50, M|200/200'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[0]['Garchomp'], 1)
+        self.assertEqual(roster[0]['Zoroark-Hisui'], 0)
+        self.assertNotIn('Zoroark', roster[0])
+
     def test_a_short_name_that_two_members_take_is_refused(self):
         trace, roster = self.battle([['Decidueye-Hisui', 'Decidueye'], ['Garchomp']],
                                     ['|switch|p1a: Decidueye|Decidueye-Hisui, L50, M|195/195'])
