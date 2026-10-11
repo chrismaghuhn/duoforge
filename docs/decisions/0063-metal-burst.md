@@ -99,6 +99,13 @@ The engine implements this in `dfi_move_targets` (SCRIPTED): an occupant that is
 
 **(c) substitute, verified by hand.** The attempt-2 plan was not a harness fault: Dragonite holds **Choice Scarf**, so its turn-1 Protect locked it into Protect (the choicelock: the request offers only the locked move). Its turn-2 choice `move 3 1` (Dragon Claw) was not legal, and the plan fell back to its first usable move. The new plan has Dragonite hit Aggron on turn 1 (no Substitute yet: Dragonite acts first), then Aggron makes a Substitute; turn 2 Dragon Claw is the only legal move and hits the Substitute (`battle-actions.ts:1061-1065`, no entry), and Aggron's Metal Burst fails (`-fail`, `[still]`) because the turn-1 record ended with turn 1 (section 1.2). Sub HP is 177/4 = 44; the turn-2 Dragon Claw does about 20, so the Substitute stays up.
 
+**Outcome of attempt 3 (recorded, conformant, final: no fourth attempt).**
+
+- attacker_switched: Flip Turn took 62 from Aggron (177 to 115); Azumarill came in at p2b (`[from] Flip Turn`); Metal Burst took 93 from Azumarill (207 to 114) = floor(1.5 x 62). The target is the replacement at the slot.
+- substitute: turn 1 Dragon Claw hit Aggron directly (18); Aggron's Substitute cost 44 (159 to 115). Turn 2 Dragon Claw went into the Substitute (no damage line on Aggron); Metal Burst `-fail` `[still]`.
+- source_fainted: turn 1 Dragon Claw 19 on Aggron, Icicle Crash 175 on Dragonite (198 to 23, Multiscale halved it, then Multiscale was gone). Turn 2 Icicle Crash KO'd Dragonite (ACCURACY hit); Metal Burst `|move|p1a: Aggron|Metal Burst|p2b: Azumarill` (retargeted, one RANDOM_TARGET draw in the engine's tape) and took 16 (170 to 154). The record D2 that 16 implies is 11 (floor(1.5 x 11) = 16); the trace shows Aggron's HP after the hit (150 of 177) but not the HP before it, so D2 is inferred, not read. The conformance test matches the tape, so the retarget draw is a kept entry.
+- The Choice Scarf locked Dragonite into its first move, which confirms the attempt-2 substitute cause (section 5.2).
+
 **Mutants planned against attempt 3:** the retarget without its draw (the tape differs), the retarget of a fainted target to a fail, the record kept at turn end, the Substitute hit counted as an entry.
 
 ## 6. Tests and evidence (planned)
