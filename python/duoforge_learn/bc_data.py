@@ -24,9 +24,11 @@ refused: its rows can hold fold states the encoder would not see.
 Rows of pick hypotheses (H > 1, format version 4; M11 pick hypotheses spec, section 5) are left out unless
 pick_hypotheses_weight W is given; then each weighs W/H. A version 3 dataset has none.
 
-split="players" holds out the games of a test player (duoforge_replay.split.of_game) for every source, not only for
-the belief sources. With memmap (a directory outside the repository) the encoded rows go into one .npy memmap per
-field there instead of memory (6.6 million rows are about 51 GB); load_memmap opens such a directory again.
+split="players" (for every source) takes a test player's game (duoforge_replay.split) out of training entirely and
+validates only on the rows whose acting player is the test player; the other side of such a game is in neither (its
+player trains in other games). With memmap (a directory outside the repository) the encoded rows go into one .npy
+memmap per field there instead of memory (6.6 million rows are about 51 GB), flushed to disk with rows.json last
+(the key, every array's dtype and shape); load_memmap opens such a directory again and checks them.
 """
 import hashlib
 import json
@@ -245,29 +247,71 @@ def _alloc(memmap, name, shape, dtype):
     return np.lib.format.open_memmap(Path(memmap) / f"{name}.npy", mode="w+", dtype=dtype, shape=shape)
 
 
-def load_memmap(path):
+def _field_shapes(n):
+    """The dtype and shape of every memmap field of n rows under this checkout's encoder."""
+    return {"obs": ("float32", [n, features.OBS_SIZE]), "slots": ("float32", [n, 2, OPTIONS, features.SLOT_FEATURES]),
+            "mask_bits": ("uint8", [n, OPTIONS * OPTIONS // 8]), "is_team": ("bool", [n]),
+            "pair_bits": ("uint8", [n, OPTIONS * OPTIONS // 8]), "team_bits": ("uint8", [n, 45]),
+            "reason": ("uint8", [n, 2]), "z": ("float32", [n]), "has_z": ("bool", [n]), "weight": ("float32", [n]),
+            "val": ("bool", [n]), "side": ("uint8", [n]), "point": ("uint16", [n])}
+
+
+def load_memmap(path, key=None):
     """The Rows of a memmap directory that load wrote (read-only memmaps). ValueError for a directory without its
-    completion record (a run that did not finish writing it)."""
+    completion record (a run that did not finish writing it), of another key, or whose arrays are not this encoder's
+    (rows.json's dtype and shape of each, and the files themselves)."""
     path = Path(path)
     try:
         done = json.loads((path / _MEMMAP_DONE).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         raise ValueError(f"{path} is not a complete rows directory (no {_MEMMAP_DONE})") from None
-    arrays = {name: np.load(path / f"{name}.npy", mmap_mode="r") for name in _MEMMAP_FIELDS}
+    if key is not None and done.get("key") != key:
+        raise ValueError(f"{path}: rows of key {done.get('key')!r}, not {key!r}")
+    n = done["rows"]
+    want = _field_shapes(n)
+    arrays = {}
+    for name in _MEMMAP_FIELDS:
+        dtype, shape = want[name]
+        if done["fields"].get(name) != {"dtype": dtype, "shape": shape}:
+            raise ValueError(f"{path}: {name} is {done['fields'].get(name)}, this encoder's is {dtype} {shape}")
+        a = np.load(path / f"{name}.npy", mmap_mode="r")
+        if str(a.dtype) != dtype or list(a.shape) != shape:
+            raise ValueError(f"{path}: {name}.npy is {a.dtype} {list(a.shape)}, rows.json names {dtype} {shape}")
+        arrays[name] = a
     arrays.update({name: np.load(path / f"{name}.npy") for name in ("fmt", "replay")})
-    if any(len(a) != done["rows"] for a in arrays.values()):
-        raise ValueError(f"{path}: arrays of another length than its {done['rows']} rows")
+    if any(len(arrays[name]) != n for name in ("fmt", "replay")):
+        raise ValueError(f"{path}: fmt or replay of another length than its {n} rows")
     return Rows(**arrays)
 
 
+def _player_plans(out, with_hypotheses):
+    """Per shard of a dataset, in dataset.read's order: (keep, val) of the players split (module docstring)."""
+    plans = []
+    for part in dataset.parts(out):
+        games = dataset.read_games(part)
+        test = np.array([[player_split.is_test_player(h) for h in pair] for pair in games["players"]],
+                        dtype=bool).reshape(-1, 2)
+        manifest = json.loads((Path(part) / "manifest.json").read_text(encoding="utf-8"))
+        for shard in manifest["shards"]:
+            with np.load(Path(part) / shard["file"]) as z:
+                game, side = z["game"].astype(np.int64), z["side"].astype(np.int64)
+                h = z["picks_hypotheses"] if "picks_hypotheses" in z.files else np.ones(len(game), np.uint8)
+            actor = test[game, side]
+            keep = ~test[game].any(axis=1) | actor
+            if not with_hypotheses:
+                keep &= h == 1
+            plans.append((keep, actor[keep]))
+    return plans
+
+
 def load(dirs, context, mask, format_weights=None, weights="rating", source_weights=None,
-         pick_hypotheses_weight=None, split="sheet", memmap=None):
+         pick_hypotheses_weight=None, split="sheet", memmap=None, key=None):
     """The Rows of every shard of the datasets `dirs`, encoded under `mask`, into arrays allocated once (no copy of
     the whole set). weights: "rating" (rating_weight) or "uniform"; format_weights: {format prefix: factor};
     source_weights: {dataset source: factor} (dataset_source; a source other than sheet must be named);
     pick_hypotheses_weight: W above 0 takes the rows of pick hypotheses at W/H each (None leaves them out);
-    split: "sheet" (the sheet pair for sheet datasets, the players for the others) or "players" (the players for every
-    dataset); memmap: a new directory outside the repository for the arrays (module docstring)."""
+    split: "sheet" (the sheet pair for sheet datasets, the players for the others) or "players" (module docstring);
+    memmap: a new directory outside the repository for the arrays, key: the cache key its rows.json records."""
     if weights not in ("rating", "uniform"):
         raise ValueError(f"weights must be 'rating' or 'uniform', not {weights!r}")
     if split not in SPLITS:
@@ -288,7 +332,11 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
     source_weight = {out: _source_weight(out, source_weights) for out in dirs}
     # drawn sheets change with each draw: a belief dataset always splits by its players
     by_players = {out: split == "players" or dataset_source(out) != "sheet" for out in dirs}
-    n = sum(_shard_rows(out, with_hypotheses) for out in dirs)
+    plans = {out: _player_plans(out, with_hypotheses) for out in dirs} if split == "players" else None
+    if plans is None:
+        n = sum(_shard_rows(out, with_hypotheses) for out in dirs)
+    else:
+        n = sum(int(keep.sum()) for out in dirs for keep, _ in plans[out])
     if n == 0:
         raise ValueError(f"no rows in {list(map(str, dirs))}")
     m = memmap
@@ -312,7 +360,12 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
                 games_of[part] = dataset.read_games(Path(out) / part)
             g = games_of[part]
             h = _hypotheses(shard, version)
-            if not with_hypotheses:
+            plan_val = None
+            if plans is not None:
+                keep, plan_val = plans[out].pop(0)
+                shard = {name: (a[keep] if name != "part" else a) for name, a in shard.items()}
+                h = h[keep]
+            elif not with_hypotheses:
                 keep = h == 1
                 shard = {name: (a[keep] if name != "part" else a) for name, a in shard.items()}
                 h = h[keep]
@@ -340,7 +393,9 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
                                * _format_weight(f, format_weights) * source_weight[out] for r, f in zip(rating, fmt)]
             if with_hypotheses:
                 rows.weight[sl] *= np.where(h > 1, float(pick_hypotheses_weight) / h, 1.0).astype(np.float32)
-            if by_players[out]:
+            if plan_val is not None:
+                rows.val[sl] = plan_val
+            elif by_players[out]:
                 rows.val[sl] = [player_split.of_game(tuple(int(h) for h in g["players"][i])) == "test" for i in game]
             else:
                 rows.val[sl] = [split_key(g["sheets"][i]) for i in game]
@@ -353,9 +408,12 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
     if memmap is not None:
         for name in _MEMMAP_FIELDS:
             getattr(rows, name).flush()
-        np.save(memmap / "fmt.npy", rows.fmt)
-        np.save(memmap / "replay.npy", rows.replay)
-        (memmap / _MEMMAP_DONE).write_text(json.dumps({"rows": n, "split": split}) + "\n", encoding="utf-8")
+            dataset.fsync_file(memmap / f"{name}.npy")
+        for name in ("fmt", "replay"):
+            np.save(memmap / f"{name}.npy", getattr(rows, name))
+            dataset.fsync_file(memmap / f"{name}.npy")
+        fields_ = {name: {"dtype": dtype, "shape": shape} for name, (dtype, shape) in _field_shapes(n).items()}
+        dataset.write_json_atomic(memmap / _MEMMAP_DONE, {"rows": n, "split": split, "key": key, "fields": fields_})
     return rows
 
 
@@ -371,8 +429,11 @@ def check_labels(rows):
 
 
 def batches(rows, index, size, rng):
-    """Rows of `index` in a random order (rng), `size` at a time; the last batch may be smaller. Each batch is taken
-    in index order (the loss does not depend on the order inside a batch), so a memmap reads it front to back."""
+    """Rows of `index` in a random order (rng), `size` at a time; the last batch may be smaller. Memmap rows are taken
+    in index order inside each batch, so the disk is read front to back (the same batches; rows in memory keep the
+    order, bit-equal to the runs before memmaps)."""
     order = np.asarray(index)[rng.permutation(len(index))]
+    on_disk = isinstance(rows.obs, np.memmap)
     for start in range(0, len(order), size):
-        yield rows.take(np.sort(order[start:start + size]))
+        chunk = order[start:start + size]
+        yield rows.take(np.sort(chunk) if on_disk else chunk)

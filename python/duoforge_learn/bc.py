@@ -132,14 +132,37 @@ def _rows(args, context, mask, dirs, format_weights, source_weights=None):
                                     sort_keys=True).encode()).hexdigest()[:24]
     path = Path(args.cache) / f"bc-rows-{key}"
     if (path / "rows.json").exists():
-        return bc_data.load_memmap(path)
-    tmp = path.with_name(path.name + ".tmp")
-    if tmp.exists():
-        shutil.rmtree(tmp)  # a run that did not finish writing it
-    rows = bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights, hyp, split, memmap=tmp)
+        return bc_data.load_memmap(path, key)
+    import os
+    import uuid
+    from duoforge_replay import dataset
+    for stale in path.parent.glob(f"{path.name}.tmp-*"):  # a run that died while writing (POSIX: its pid is gone)
+        if os.name == "posix" and not _alive(int(stale.name.split("-")[-2])):
+            shutil.rmtree(stale, ignore_errors=True)
+    tmp = path.with_name(f"{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex[:8]}")  # one run's own directory
+    rows = bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights, hyp, split, memmap=tmp,
+                        key=key)
     del rows  # close the writable memmaps before the directory is renamed
-    tmp.rename(path)
-    return bc_data.load_memmap(path)
+    try:
+        tmp.rename(path)
+    except OSError:
+        if not (path / "rows.json").exists():
+            raise
+        shutil.rmtree(tmp)  # a parallel run of the same key finished first: its rows are the same
+    dataset.fsync_dir(path.parent)
+    return bc_data.load_memmap(path, key)
+
+
+def _alive(pid):
+    """Whether a POSIX process `pid` runs (signal 0 checks, sends nothing)."""
+    import os
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
 
 
 def _device(rows):
@@ -204,7 +227,8 @@ def train(args):
     train_index, val_index = np.flatnonzero(~rows.val), np.flatnonzero(rows.val)
     if len(val_index) == 0 or len(train_index) == 0:
         raise ValueError(f"the split leaves {len(train_index)} training and {len(val_index)} validation rows: the "
-                         "validation set (bucket 0 of 20 of the sheet pairs) needs games on both sides")
+                         "validation set (bucket 0 of 20 of the --split's sheet pairs or players) needs games on both "
+                         "sides")
     dims = {k: getattr(args, k) for k in ("embed", "member", "position", "hidden", "layers", "option")
             if getattr(args, k) is not None}
     model_cfg = policy.v2_config(args.preset, **dims)

@@ -287,26 +287,68 @@ class BcDataTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not a complete"):
             self.bc_data.load_memmap(out)
 
+    def test_batches_take_every_index_once_in_the_same_batches_for_a_seed(self):
+        # review of #409: the default path keeps its order inside a batch (bit-equal to earlier runs); memmap rows are
+        # taken sorted inside each batch, with the same batches
+        index = np.arange(len(self.rows))[::2]
+        order = index[np.random.default_rng(7).permutation(len(index))]
+        plain = list(self.bc_data.batches(self.rows, index, 3, np.random.default_rng(7)))
+        for k, chunk in enumerate(plain):
+            want = self.rows.take(order[3 * k:3 * k + 3])
+            self.assertTrue(np.array_equal(chunk.obs, want.obs), k)
+            self.assertTrue(np.array_equal(chunk.point, want.point), k)
+        self.assertEqual(sum(len(c) for c in plain), len(index))
+        mm = self.bc_data.load([self.out], self.context, self.mask, memmap=self.tmp / "memmap-batches")
+        for k, chunk in enumerate(self.bc_data.batches(mm, index, 3, np.random.default_rng(7))):
+            want = self.rows.take(np.sort(order[3 * k:3 * k + 3]))
+            self.assertTrue(np.array_equal(chunk.obs, want.obs), k)
+        del mm
+
+    def test_a_memmap_directory_records_its_key_and_shapes(self):
+        # review of #409: rows.json names the cache key and every array's dtype and shape; load_memmap checks them
+        out = self.tmp / "memmap-meta"
+        self.bc_data.load([self.out], self.context, self.mask, memmap=out, key="k1")
+        meta = json.loads((out / "rows.json").read_text(encoding="utf-8"))
+        self.assertEqual((meta["key"], meta["rows"]), ("k1", len(self.rows)))
+        self.assertEqual(meta["fields"]["obs"], {"dtype": "float32", "shape": [len(self.rows), features.OBS_SIZE]})
+        self.assertEqual(len(self.bc_data.load_memmap(out, key="k1")), len(self.rows))
+        with self.assertRaisesRegex(ValueError, "key"):
+            self.bc_data.load_memmap(out, key="k2")
+        meta["fields"]["slots"]["shape"][-1] += 1  # a directory of another encoder's slot width
+        (out / "rows.json").write_text(json.dumps(meta), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "slots"):
+            self.bc_data.load_memmap(out)
+
     def test_a_memmap_directory_inside_the_repository_is_refused(self):
         root = Path(__file__).resolve().parents[2]
         with self.assertRaisesRegex(ValueError, "inside the repository"):
             self.bc_data.load([self.out], self.context, self.mask, memmap=root / "build" / "bc-rows")
 
-    def test_the_players_split_holds_out_every_row_of_a_test_players_game(self):
-        # the BC run of 2026-10-11 (owner via HS): held out by player for every source, so that a model of human play
-        # is never validated on players it trained on; the default stays the sheet-pair split of the BC spec
+    def test_the_players_split_validates_only_on_the_test_players_own_rows(self):
+        # the BC run of 2026-10-11 (owner via HS): a model of human play is never validated on players it trained on.
+        # A test player's game leaves training entirely (both sides); validation takes only the rows whose acting
+        # player is the test player; the other side of that game is in neither (its player trains in other games, so
+        # validating on it would validate on a trained player). The default stays the sheet-pair split of the BC spec.
         from duoforge_replay import dataset, split
         copy = self.with_manifest("players-split", lambda m: None)
         part = next(iter(dataset.parts(copy)))
         games = dataset.read_games(part)
-        test_pair = next((a, a + 1) for a in range(1, 10 ** 6) if split.of_game((a, a + 1)) == "test")
-        train_pair = next((a, a + 1) for a in range(1, 10 ** 6) if split.of_game((a, a + 1)) == "train")
-        games["players"] = np.array([test_pair if g == 0 else train_pair for g in range(len(games["players"]))],
+        test = next(a for a in range(1, 10 ** 6) if split.is_test_player(a))
+        train = [a for a in range(1, 10 ** 6) if not split.is_test_player(a)][:2]
+        games["players"] = np.array([(test, train[0]) if g == 0 else tuple(train) for g in range(len(games["players"]))],
                                     dtype=np.uint64)
         dataset.write_npz(Path(part) / "games.npz", games)
         rows = self.bc_data.load([copy], self.context, self.mask, split="players")
-        game = np.concatenate([s["game"] for s in dataset.read(copy)])
-        self.assertTrue(np.array_equal(rows.val, game == 0))
+        shards = list(dataset.read(copy))
+        game = np.concatenate([s["game"] for s in shards])
+        side = np.concatenate([s["side"] for s in shards])
+        own, other = (game == 0) & (side == 0), (game == 0) & (side == 1)
+        self.assertTrue(own.any() and other.any())
+        self.assertEqual(len(rows), len(game) - int(other.sum()))  # the other side of a test game is dropped
+        self.assertEqual(int(rows.val.sum()), int(own.sum()))
+        kept = ~other
+        self.assertTrue(np.array_equal(rows.val, own[kept]))
+        self.assertTrue(np.array_equal(rows.side, side[kept]))
         self.assertTrue(rows.val.any() and not rows.val.all())
         default = self.bc_data.load([copy], self.context, self.mask)  # unchanged: the sheet pair decides
         self.assertTrue(np.array_equal(default.val, self.rows.val))
