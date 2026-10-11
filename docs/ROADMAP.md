@@ -285,6 +285,14 @@ Ideas recorded by the owner on 2026-10-11 (an external comparison with Jaxcalibu
 - **Symmetry augmentation:** swapping the left and right slots (and the bench order) gives free extra training samples, or the encoder is made invariant to them. Cheap; measured as its own lever.
 - **Interpretability probes:** linear probes on the network for concepts such as speed control, threat and position. No Elo; a possible publication, since neither competitor's code or weights are public.
 
+Ideas recorded by the owner on 2026-10-11 after looking at replayreview.app (singles random battles: win chance per decision, turning points, the move a human of that rating would pick). That site rates only the moves played; the owner wants what a chess engine shows, whether another move was better. With where they fit:
+- **A human model conditioned on rating** (extends lever 2): the human-play policy takes the player's rating as an input, since a 1300 and an 1800 player choose differently; the M11 replays carry the ratings. The search uses the opponent's rating on the ladder.
+- **Replay analysis like a chess engine, for VGC doubles:** for every decision point, the honest search's value of each of the player's options, so the analysis shows the best option, the win-chance loss of the chosen one, and marks large losses as mistakes. Three points make it honest in a game with hidden information and simultaneous moves:
+  - each player is judged only on what that player could see (the tracker's view and the honest search's belief worlds), never on hindsight;
+  - "best" is measured against the opponent model: the equilibrium mix, and optionally the human model at the opponent's rating, since an option can be right against one and wrong against the other; an option in the support of the equilibrium mix loses nothing against it;
+  - luck is reported apart from decisions: the engine knows every chance draw, so a lost game splits into the win chance given up by choices and the win chance lost to rolls, crits and misses.
+  The per-option values are the same numbers that regret mining (above) trains on, so the analysis also finds the states worth training on. No such tool exists for VGC doubles. It needs the multi-turn search for decisions whose value shows only later, and it waits for the 85 % coverage like everything else here.
+
 
 ## M14 — Closed team sheets (the Bo1 ladder)
 
