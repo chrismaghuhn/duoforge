@@ -27,7 +27,7 @@ The replay coverage of 2026-10-09 (Reg M-C, both sides playable) puts two moves 
    - The tail's `soak_type` (the first type slot override) may now hold `DFI_TAIL_TYPE2_TYPELESS` (255): "slot 1 is `???`".
    - The species' second type is held in `type2`.
    - battle_internal.h (lines 251 and 317) documents 255 as a `type2` value. That stays, and the comment on `soak_type` is extended the same way.
-   - The invariant allows 255 in `soak_type` only together with a nonzero `type2`.
+   - The invariant allows 255 in `soak_type` only together with a `type2` of 1 to 18 (a type id + 1, `type2 != 0 && type2 <= DFI_TYPE_COUNT`); a `type2` of 0 or 255 is refused.
    - Every `dfi_types_of` caller is audited for a typeless first slot.
    - The only legal user in the pool, Pawmot, is Electric/Fighting. Any other result shape (Electric as the second type, a pure Electric user, Electric after Soak) returns `DUOFORGE_E_UNSUPPORTED` until a recorded battle covers it.
    - A test round-trips a state with `soak_type` = 255 through the codec, byte for byte.
