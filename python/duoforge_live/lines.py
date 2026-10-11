@@ -141,11 +141,15 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 # SUBSTITUTE is not folded, and the record's move_result relies on that: a status move that a Substitute blocks shows the
 # lines of a failed one and is true at the pin, which duoforge_move_result cannot tell from the events (its precondition).
 # Folding SUBSTITUTE first needs an explicit treatment of a status move into a Substitute for move_result.
+# Attract (step G71, decision 0034) is the encoder 6 reserve's bit POSITION_EXT_ATTRACT (decision 0050): a checked reserve bit,
+# shown under its family's feature RESERVE_VOLATILES alone (DUOFORGE_VIEWEXT_RESERVE_CHECKED). The tracker folds that one bit;
+# no other bit of the family has a line the tracker folds.
+ATTRACT_FOLD = 1 << FEATURES["RESERVE_VOLATILES"]
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
-                                          "WIDE_GUARD", "STICKY_WEB"))
+                                          "WIDE_GUARD", "STICKY_WEB")) | ATTRACT_FOLD
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -181,6 +185,9 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # (-item). The converter checks each line's shape. Every other source of _ITEM_CHANGE_FROM stops on its line.
 _ITEM_TAKEN_FOLD = {"move: Knock Off", "move: Thief", "move: Trick", "move: Switcheroo", "stealeat"}
 _ITEM_GIVEN_FOLD = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet"}
+# Attract's effect names (data/moves.ts attract): the start and the end print it bare, its check and the visible ends with
+# the move's prefix (Mental Herb, Oblivious); the family's feature shows them (ATTRACT_FOLD)
+_ATTRACT = {"Attract", "move: Attract"}
 # Ability changes by the holder's own ability on contact, which the engine does not model (DFI_HANDLER_UNMODELED, or
 # not in the pool): their -activate line stops.
 _ABILITY_ACTIVATE_UNMODELED = {"ability: Mummy", "ability: Lingering Aroma"}
@@ -211,9 +218,9 @@ _FOLD_SIDE = {"move: Tailwind", "Reflect", "move: Reflect", "move: Light Screen"
 
 
 # Effects whose state is a view bit this tracker does not fold yet (encoder 6 has its column; the fold and its byte
-# comparison against the engine come as their own step): every line of them stops by the bit's name (step G71,
-# decision 0034: Attract's start, its announcement before a move, its cant, its silent and its cured end).
-UNFOLDED = {"Attract": "DUOFORGE_POSITION_EXT_ATTRACT", "move: Attract": "DUOFORGE_POSITION_EXT_ATTRACT"}
+# comparison against the engine come as their own step): every line of them stops by the bit's name. None now: Attract
+# (step G71, decision 0034) is folded, as the reserve family's bit below.
+UNFOLDED = {}
 
 
 def _unfolded(effect):
@@ -309,8 +316,8 @@ def check(line, view):
         return "fold"
     if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
         return _kept_drop(args, attrs, view)
-    if kind == "cant" and len(args) > 1 and args[1] in UNFOLDED:
-        _unfolded(args[1])
+    if kind == "cant" and len(args) > 1 and args[1] == "Attract":
+        return _feature("RESERVE_VOLATILES")  # the infatuated occupant's stopped action (step G71): no move named
     if kind in GENERIC:
         return "fold"
     if kind == "-ohko" and not args and not attrs:
@@ -322,6 +329,10 @@ def check(line, view):
     effect = args[1] if len(args) > 1 else ""
     if kind in ("-activate", "-start", "-end") and effect in UNFOLDED:
         _unfolded(effect)
+    if kind in ("-activate", "-start", "-end") and effect in _ATTRACT:
+        # Attract (step G71): its start, its check before a move and its ends (the visible ones, and the silent end the tracker
+        # folds itself); the converter takes exactly the forms of the pin, and refuses the rest
+        return _feature("RESERVE_VOLATILES")
     if kind == "-activate":
         if effect in _FOLD_ACTIVATE:
             return "fold"

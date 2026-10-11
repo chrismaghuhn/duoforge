@@ -106,12 +106,15 @@ EXT_FIELDS = {
     "ENCORE": (("position", "encore_slot"),),
     "ABILITY_CHANGE": (("position", "ability_now"),),
     "ITEM_CHANGE": (("member", "item_now"),),
+    # Attract (step G71, decision 0034): the presence bit of the infatuated position; its source is the record's byte
+    "RESERVE_VOLATILES": (("bit", C["DUOFORGE_POSITION_EXT_ATTRACT"]),),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
                   ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]),
                   ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
-                  ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]))
+                  ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),
+                  ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
@@ -188,6 +191,11 @@ class _Position:
         self.glaive_rush = 0  # Glaive Rush's drawback is up until the occupant's next action (presence only)
         self.rage_powder = 0  # Rage Powder draws the foes' single-target moves this turn (presence only)
         self.heal_block = 0  # Heal Block's turns left: the view shows its presence, the record its count
+        # Attract (step G71): the member code of the holder that infatuates the occupant, 1 + side * DUOFORGE_MAX_ROSTER + roster
+        # index (the record's attract_source byte of this position; 0: not infatuated). Ended with the occupant, as the engine's
+        # clearing of its byte (dfi_tail_clear_occupant, no line); its visible and silent ends are folded in _fold_event and
+        # _silent_attract_end.
+        self.attract = 0
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         # the record's type2 of the occupant (tail rev 4): Double Shock's remaining type + 1, 0 after Soak; a Mega
         # Evolution ends type_now (the soak_type) and keeps it, as dfi_run_mega does; it ends with the occupant
@@ -310,6 +318,7 @@ class Tracker:
         self._rage_powder = tables["MOVE"].get("RAGEPOWDER")
         self._wide_guard = tables["MOVE"].get("WIDEGUARD")
         self._struggle = tables["MOVE"].get("STRUGGLE")
+        self._attract = tables["MOVE"].get("ATTRACT")  # the check before an infatuated occupant's move (step G71)
         self._soak = tables["MOVE"].get("SOAK")
         self._symbiosis = tables["ABILITY"]["SYMBIOSIS"] + 1 if "SYMBIOSIS" in tables["ABILITY"] else None
         # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
@@ -383,6 +392,9 @@ class Tracker:
                 raise lines.Stop("line:-singlemove Glaive Rush")
             self._at(pos).glaive_rush = 1
             return
+        if parts[1] == "-end" and parts[3:4] == ["Attract"]:
+            self._silent_attract_end(parts)
+            return
         if parts[1] == "-end" and parts[3:4] == ["move: Yawn"]:
             # Yawn's end (step G31, data/moves.ts yawn onEnd: -end|X|move: Yawn|[silent], before the sleep it brings):
             # the converter skips [silent] lines, so the tracker clears the presence bit here; any other form stops
@@ -392,6 +404,15 @@ class Tracker:
             self._at(pos).yawn = 0
             return
         self._fold(line)
+
+    def _silent_attract_end(self, parts):
+        """-end|X|Attract|[silent] (data/moves.ts attract onEnd): the infatuation of X ends with no visible line, when its source
+        has left the field (onUpdate's removeVolatile, the engine's silent clearing of its byte). The converter skips [silent]
+        lines, so the tracker clears the position here, as the Yawn's end does; any other form stops."""
+        pos = lines.flat_position(parts[2])
+        if pos is None or parts[4:] != ["[silent]"]:
+            raise lines.Stop("line:-end Attract")
+        self._at(pos).attract = 0
 
     def _throat_chop(self, parts):
         """Throat Chop's volatile (decision 0018 THROAT_CHOP, step G8; public by the owner's change): the move's
@@ -732,7 +753,8 @@ class Tracker:
             return False
         return (e[0] == EV["CURE_STATUS"] and e[13] & FLAG["MESSAGE"] and e[3] == trace_to_c.CAUSE["NONE"]) or \
             e[0] == EV["CONFUSION_END"] or \
-            (e[0] == EV["ACTIVATE"] and e[3] == trace_to_c.CAUSE["MOVE"] and e[5] == self._struggle)
+            (e[0] == EV["ACTIVATE"] and e[3] == trace_to_c.CAUSE["MOVE"] and e[5] == self._struggle) or \
+            (e[0] == EV["ACTIVATE"] and e[3] == trace_to_c.CAUSE["MOVE"] and e[5] == self._attract)
 
     def _end_action(self):
         """The result of the move action that ends here, into its user's position (this turn's): the library's
@@ -918,6 +940,18 @@ class Tracker:
             p = self._at(pos)
             p.type_now = (0, amount) if detail == trace_to_c.TYPE_NONE else (detail + 1, 0)
             p.type2 = amount if detail == trace_to_c.TYPE_NONE else 0  # setType replaces both types (Soak)
+        elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_ATTRACT:
+            # Attract (step G71, decision 0034): -start|X|Attract|[from] ability: Cute Charm|[of] Y (e[2] = Y's position) keeps Y's
+            # member code on X; the visible ends (Mental Herb's and Oblivious's rows) clear it. The silent end (the source left) comes
+            # as its own line (_silent_attract_end), and a switch or a faint of X clears it in _Position.reset.
+            p = self._at(pos)
+            if kind == EV["VOLATILE_START"]:
+                holder = self._at(e[2])
+                if holder.occupant == ROSTER_NONE:
+                    raise lines.Stop("attract-source-unknown")  # the holder of [of] is not on the field
+                p.attract = 1 + (e[2] // 2) * C["DUOFORGE_MAX_ROSTER"] + holder.occupant
+            else:
+                p.attract = 0
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_HEAL_BLOCK:
             # Heal Block (step G8, Psychic Noise): -start|X|move: Heal Block and -end|X|move: Heal Block (the duration,
             # Mental Herb); the occupant's leaving ends it with no line; its count is never shown

@@ -26,7 +26,8 @@ cannot tell an action's result from its events). The POOL tail's move_result is 
 action's events (duoforge_move_result, the engine's rule; the tracker only collects the events); its other fields are the
 tracker's folds (party order, Aurora Veil, the position counters, item_now, the toxic stage, the raised flag, and the
 view-extension folds of #342: the entry hazards and their creation order, Wide Guard, Taunt, Heal Block, Yawn and Disable
-with their counts, Imprison, the recharge, Glaive Rush, Rage Powder's Follow Me flag, the type Soak or Double Shock set).
+with their counts, Imprison, the recharge, Glaive Rush, Rage Powder's Follow Me flag, the type Soak or Double Shock set, and
+Attract's source of each infatuated position (the tail5 reserve bytes, step G71)).
 The features the tracker does not fold stop it at their lines (lines.check) before a record could need them.
 """
 import numpy as np
@@ -355,6 +356,13 @@ def _tail(t, s, boundary):
             entries[2:] = [PARTY_HIDDEN] * 4
         party += _party_bytes(entries)
     s.put_list("tail.field.party_order", party)
+    # Attract's source of each infatuated position (step G71, decision 0034): the rev 5 reserve bytes 0..3, by flat position
+    # (side * 2 + slot), 1 + side * DUOFORGE_MAX_ROSTER + roster index of the holder; 0 where no infatuation stands
+    attract = [0] * 4
+    for side in (0, 1):
+        for k, p in enumerate(t._positions[side]):
+            attract[side * 2 + k] = p.attract
+    s.put_list("tail5.attract_source", attract)
     for side in (0, 1):
         pre = f"tail.side{side}."
         s.put(pre + "aurora_veil_turns", t._conditions[side][3])
