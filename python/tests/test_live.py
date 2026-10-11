@@ -574,9 +574,13 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # on the merged tree (CI, Linux and Windows Python jobs, identical): 10242 equal, 511 refused, 42 engine-check refusals.
 # lane B G83 (Iron Ball, Bulletproof, Rivalry, Leaf Guard): +64 equal; +4 refused, all g83_ironball_ground under the
 # visible-confusion cause (mask 2); no new stop. Measured on the merged tree (main 6c16c960 + G83): 10306 equal, 515 refused.
-POOL_OUTCOME = {"equal": 10306, "refused": 515, "engine check refuses: infatuated occupant (from_view, option B)": 42,
+# Batch 7 (base: main before batch 7, equal 9898 / refused 487): G84 Leech Seed fold, the G86, G92 and C4 moves and the
+# sub-fixes-2 moves add +660 equal and +122 refused; the SUBSTITUTE stops go 78 -> 98 (the Leech Seed streams run on to a
+# later Substitute). Main (+408 equal, +28 refused): Attract #393, lane B G79/G81/G83 and the infatuated engine check.
+# Measured on the merged tree (CI 38140646950, Windows Python job): 10966 equal, 637 refused.
+POOL_OUTCOME = {"equal": 10966, "refused": 637, "engine check refuses: infatuated occupant (from_view, option B)": 42,
                 "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 78, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
+POOL_STOPS = {"feature:SUBSTITUTE": 98, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
 
