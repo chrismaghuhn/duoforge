@@ -10426,7 +10426,7 @@ static duoforge_status dfi_end_turn(dfi_run *r)
          * bit moves with the result (step G42). */
         dfi_tail_pos *tp = &b->tail.sides[flat / 2u].positions[flat % 2u];
         const uint32_t mr = tp->move_result;
-        tp->move_result = (uint8_t)(((mr & 3u) << DFI_MOVE_RESULT_LAST_SHIFT) | /* wide-operands-reviewed: <= 0x3F */
+        tp->move_result = (uint8_t)(((mr & DFI_MOVE_RESULT_VALUE_MASK) << DFI_MOVE_RESULT_LAST_SHIFT) | /* wide-operands-reviewed: <= 0x3F */
                                     ((mr & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) != 0u ? DFI_MOVE_RESULT_UNCLASSIFIED_LAST : 0u));
     }
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);

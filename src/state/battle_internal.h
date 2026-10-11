@@ -253,6 +253,7 @@ typedef struct dfi_side {
 #define DFI_MOVE_RESULT_FALSE 2u
 #define DFI_MOVE_RESULT_NULL 3u
 #define DFI_MOVE_RESULT_LAST_SHIFT 2u
+#define DFI_MOVE_RESULT_VALUE_MASK 3u /* the two bits of one turn's result */
 /* Step G42 (Stomping Tantrum, Roost): the result of the occupant's move was not classified exactly (an engine exit that
  * the classifier does not map to the pin's value, turn.c dfi_move_result_*): bit 4 while this turn runs, bit 5 for the last
  * turn once the turn ends (dfi_end_turn shifts it with the result). A set bit means the result bits of its slot are zero.

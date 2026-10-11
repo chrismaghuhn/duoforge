@@ -55,6 +55,7 @@ POSFLAG_STATS_RAISED = VALUES["DFI_POSFLAG_STATS_RAISED"]
 # the position flags the states of a kind may carry (dfi_kind_limits_of: the POOL kinds add theirs), by table kind
 VOL_FLAGS_MASK = {"closure": VALUES["VOL_FLAGS_MASK_CLOSURE"], "pool": VALUES["VOL_FLAGS_MASK_POOL"]}
 MR_UNCLASSIFIED_NOW, MR_UNCLASSIFIED_LAST = VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_NOW"], VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_LAST"]
+MR_VALUE_MASK, MR_LAST_SHIFT = VALUES["DFI_MOVE_RESULT_VALUE_MASK"], VALUES["DFI_MOVE_RESULT_LAST_SHIFT"]
 TAIL_FLAG, WIDE_GUARD = VALUES["DFI_TAIL_FLAG_MAX"], VALUES["DFI_TAIL_WIDE_GUARD_MAX"]  # the 0/1 tail bytes when set
 TYPE_TYPELESS = VALUES["DFI_TAIL_TYPE2_TYPELESS"]  # soak_type of Double Shock's ??? slot
 # the tail's hazard kind of each hazard field (DFI_HAZARD_*, 2 bits per slot of hazard_order)
@@ -112,8 +113,10 @@ def move_result_of(data, user, events):
 
 def move_result_byte(now, last):
     """The tail's move_result byte of this turn's and last turn's results (each a value with its unclassified bit, in this
-    turn's form: DFI_MOVE_RESULT_UNCLASSIFIED_NOW): this turn in bits 0-1 and 4, last turn in bits 2-3 and 5."""
-    return (now & 3) | (now & MR_UNCLASSIFIED_NOW) | ((last & 3) << 2) | (MR_UNCLASSIFIED_LAST if last & MR_UNCLASSIFIED_NOW else 0)
+    turn's form: DFI_MOVE_RESULT_UNCLASSIFIED_NOW): this turn in the low bits and UNCLASSIFIED_NOW, last turn shifted by
+    DFI_MOVE_RESULT_LAST_SHIFT and UNCLASSIFIED_LAST."""
+    return ((now & MR_VALUE_MASK) | (now & MR_UNCLASSIFIED_NOW) | ((last & MR_VALUE_MASK) << MR_LAST_SHIFT)
+            | (MR_UNCLASSIFIED_LAST if last & MR_UNCLASSIFIED_NOW else 0))
 
 
 def assemble(tracker, observation):
