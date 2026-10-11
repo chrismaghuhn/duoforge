@@ -504,6 +504,9 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual(records_[0]["kind"], "searched")
             i, k = divmod(int(actions[0]), 32)
             self.assertTrue(pairs[0, 0][i, k], "the search played a pair the engine refuses")
+            self.assertEqual(records_[0]["cut_pairs"], int((widened & ~pairs[0, 0].astype(bool)).sum()))  # shown
+            _, engine_records = search.decide(b, [0], [0], [457], [False])
+            self.assertEqual(engine_records[0]["cut_pairs"], 0)  # an engine root's mask is the engine's domain
 
     def test_assembled_record_is_checked_and_named(self):
         # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
