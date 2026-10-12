@@ -1,11 +1,14 @@
 """The search ladder (issue #440): one search improvement measured against the step before it, paired game by game.
 
-    python -m duoforge_search.ladder --checkpoint MAIN --foe-net FOE --teams-from POOLNET --step N [--previous P]
-        [--raw] [--h2h] --opponent NAME=PATH [--opponent ...] --out DIR [--pairs 1024] [--seed SEED] [--workers 8]
-        [--max-steps 1000] [--previous-run OLD/ladder.json]
+    python -m duoforge_search.ladder --checkpoint MAIN --foe-net FOE (--teams-from POOLNET | --matchup OURS FOE
+        [--fill-stat-points smogon]) --step N [--previous P] [--raw] [--h2h] --opponent NAME=PATH [--opponent ...]
+        --out DIR [--pairs 1024] [--seed SEED] [--workers 8] [--max-steps 1000] [--previous-run OLD/ladder.json]
 
 The networks stay fixed along the ladder: MAIN (BC6) searches and plays, FOE (BC6) is the foe model in the searched
-worlds, and the team pool is POOLNET's (--teams-from: a pool network's config). A step is a settings dict for
+worlds, and the team pool is POOLNET's (--teams-from: a pool network's config). --matchup is a sanity arm instead: our
+team OURS (a registry paste or a packed team) against one fixed foe team FOE (a packed team), the learner always
+playing OURS on both seats; a packed team's members without stat points are refused unless --fill-stat-points smogon
+gives them their Smogon spread of their nature. A step is a settings dict for
 honest.Honest: step N is its base step's settings plus its own delta (STEPS, step_settings); step 0 is the live settings
 (duoforge_live.search.HONEST_SETTINGS) unchanged.
 
@@ -23,6 +26,7 @@ scores only.
 """
 import argparse
 import copy
+import hashlib
 import json
 import os
 import subprocess
@@ -201,6 +205,114 @@ def _summary(records, games, decisions=None, seconds=None):
     return out
 
 
+MATCHUP_LABELS = ("ours", "foe")
+FILL_STAT_POINTS = ("smogon",)
+
+
+def matchup_rows(pairs):
+    """The suite rows of --matchup: ours (team 0) against the foe (team 1) in every game, the learner always team 0.
+    Pair k is rows 2k (ours on seat 0) and 2k + 1 (ours on seat 1), both of game k. ValueError for fewer than a pair."""
+    from duoforge_learn import suite
+    if pairs < 1:
+        raise ValueError(f"a matchup needs at least one pair (got {pairs})")
+    rows = []
+    for k in range(pairs):
+        rows += [(0, 1, 0, k), (1, 0, 1, k)]
+    return np.array(rows, dtype=suite.SUITE)
+
+
+def _packed_member(s, name):
+    """A member dict (teams.parse's shape) of one set unpacked by duoforge_live.teams.unpack; ValueError for a level
+    other than 50 (battles are at level 50) or a gender other than M, F or empty."""
+    if s["level"] != 50:
+        raise ValueError(f"{name}: {s['name']} is at level {s['level']}: battles are at level 50")
+    if s["gender"] not in ("", "M", "F"):
+        raise ValueError(f"{name}: {s['name']} has the gender {s['gender']!r}: M, F or empty")
+    return {"species": s["species"], "gender": s["gender"] or None, "item": s["item"] or None,
+            "ability": s["ability"], "nature": s["nature"], "moves": list(s["moves"]), "stat_points": list(s["evs"])}
+
+
+def read_team(path):
+    """(members, packed, sha256 of the file's bytes). A packed team (Showdown's: its stripped content has "|" and no
+    line starts with "Ability:") is unpacked into members; any other file is a registry paste (teams.parse). The
+    file name is all a message names of the file."""
+    from duoforge import teams
+    from duoforge_live import teams as live
+    with open(path, "rb") as f:
+        raw = f.read()
+    text, name = raw.decode("utf-8"), os.path.basename(path)
+    stripped = text.strip()
+    packed = "|" in stripped and not any(line.strip().startswith("Ability:") for line in stripped.splitlines())
+    digest = hashlib.sha256(raw).hexdigest()
+    if not packed:
+        return teams.parse(text, name), False, digest
+    return [_packed_member(s, name) for s in live.unpack(stripped)], True, digest
+
+
+def fill_stat_points(members, table):
+    """(members, filled): a copy of the members, and for each member whose stat points are all zero, its stat points
+    become the highest-weight spread of its species in the table (the shape of smogon_spreads.load_table()) among the
+    spreads of its own nature; ties keep the table's order. filled lists {"species", "nature", "spread"} per filled
+    member. SystemExit naming the member for a species the table lacks or a nature it has no spread of: another nature
+    or a default spread is never guessed."""
+    from duoforge import data
+    out, filled = copy.deepcopy(members), []
+    for k, member in enumerate(out):
+        if any(member["stat_points"]):
+            continue
+        label = f"member {k + 1} ({member['species']})"
+        entry = table["species"].get(data.to_id(member["species"]))
+        if entry is None:
+            raise SystemExit(f"{label}: the Smogon table has no spreads for this species (--fill-stat-points)")
+        best = None
+        for nature, spread, weight in entry["spreads"]:
+            if nature == member["nature"] and (best is None or weight > best[1]):
+                best = (spread, weight)
+        if best is None:
+            raise SystemExit(f"{label}: the Smogon table has no spread of the nature {member['nature']}")
+        member["stat_points"] = [int(x) for x in best[0].split("/")]
+        filled.append({"species": member["species"], "nature": member["nature"], "spread": best[0]})
+    return out, filled
+
+
+def matchup_teams(ours, foe, fill=None):
+    """The two teams of --matchup as {"ours": ..., "foe": ...}, each {"members", "packed", "sha256", "filled"}: the
+    read_team of each file. A member without stat points is refused by SystemExit naming it, unless fill is "smogon",
+    which gives it its Smogon spread (fill_stat_points)."""
+    from . import smogon_spreads
+    out = {}
+    for label, path in zip(MATCHUP_LABELS, (ours, foe)):
+        members, packed, digest = read_team(path)
+        zero = [f"member {k + 1} ({m['species']})" for k, m in enumerate(members) if not any(m["stat_points"])]
+        filled = []
+        if zero:
+            if fill is None:
+                raise SystemExit(f"the {label} team has members without stat points ({', '.join(zero)}): give "
+                                 "--fill-stat-points smogon for their Smogon spreads, or stat points in the team")
+            members, filled = fill_stat_points(members, smogon_spreads.load_table())
+        out[label] = {"members": members, "packed": packed, "sha256": digest, "filled": filled}
+    return out
+
+
+def matchup_pool(ctx, matchup):
+    """The two-team pool of --matchup under the context: ours (team 0) and the foe (team 1). Each side is set up
+    by teams.side_setup (a name the context does not have: SystemExit) and must pass teams.check."""
+    import duoforge
+    from duoforge import teams
+    sides = []
+    for label in MATCHUP_LABELS:
+        try:
+            side = teams.side_setup(ctx, matchup[label]["members"], label)
+        except teams.TeamError as err:
+            raise SystemExit(str(err)) from None
+        status = teams.check(ctx, side)
+        if status != 0:
+            raise SystemExit(f"the {label} team is refused under this context's data kind: "
+                             f"{duoforge.status_name(status)}")
+        sides.append(side)
+    return teams.TeamPool.from_setups(MATCHUP_LABELS, sides)
+
+
 def _opponents(items):
     """NAME=PATH items as {name: path}: known names, each at most once, at least one."""
     out = {}
@@ -222,7 +334,12 @@ def main(argv=None):
     p = argparse.ArgumentParser(prog="python -m duoforge_search.ladder", description=__doc__.split("\n")[0])
     p.add_argument("--checkpoint", required=True, help="the main network (BC6): it searches; R is its raw play")
     p.add_argument("--foe-net", required=True, help="the foe model in the searched worlds (BC6)")
-    p.add_argument("--teams-from", required=True, help="a pool network: its config's teams are the suite's pool")
+    p.add_argument("--teams-from", help="a pool network: its config's teams are the suite's pool")
+    p.add_argument("--matchup", nargs=2, metavar=("OURS", "FOE"),
+                   help="instead of --teams-from: our team OURS (a registry paste or a packed team) against the foe "
+                        "team FOE (a packed team); the learner always plays OURS")
+    p.add_argument("--fill-stat-points", choices=FILL_STAT_POINTS,
+                   help="smogon: a --matchup member without stat points takes its Smogon spread of its nature")
     p.add_argument("--step", required=True, help="the step measured (STEPS)")
     p.add_argument("--previous", help="the previous step: the paired comparison and the head-to-head's opponent")
     p.add_argument("--raw", action="store_true", help="add arm R: the main network's raw play")
@@ -244,6 +361,14 @@ def main(argv=None):
     except ValueError:
         raise SystemExit(f"--out {args.out} is inside the repository (AGENTS.md)") from None
     opponents = _opponents(args.opponent)
+    if (args.teams_from is None) == (args.matchup is None):
+        raise SystemExit("give exactly one of --teams-from (a pool network's teams) and --matchup OURS FOE")
+    if args.fill_stat_points is not None and args.matchup is None:
+        raise SystemExit("--fill-stat-points applies to --matchup only")
+    if args.h2h and args.matchup is not None:  # the previous step, searching as the foe team, would know our spreads
+        raise SystemExit("--h2h is not supported with --matchup: no matchup team has a registry id to leave out of "
+                         "the searching foe's belief")
+    matchup = None if args.matchup is None else matchup_teams(*args.matchup, fill=args.fill_stat_points)
     if args.h2h and args.previous is None:
         raise SystemExit("--h2h needs --previous (the step it plays against)")
     if args.previous_run is not None and args.previous is None:
@@ -273,12 +398,15 @@ def main(argv=None):
         return {"model": ck.trained_model(config, params), "params": params, "encoder": ck.encoder_of(config),
                 "ext": ck.ext_supported_of(config)}
 
-    _, teams_config = ck.load_trained(args.teams_from)
-    if teams_config.get("data", {}).get("kind") != "pool":
-        raise SystemExit("--teams-from's teams are no pool (its config's data kind must be pool)")
+    teams_config = None
+    if args.teams_from is not None:
+        _, teams_config = ck.load_trained(args.teams_from)
+        if teams_config.get("data", {}).get("kind") != "pool":
+            raise SystemExit("--teams-from's teams are no pool (its config's data kind must be pool)")
     main_net, foe_net = load(args.checkpoint), load(args.foe_net)
     opponent_nets = {name: load(path) for name, path in opponents.items()}
-    paths = {"main": args.checkpoint, "foe": args.foe_net, "teams": args.teams_from,
+    paths = {"main": args.checkpoint, "foe": args.foe_net,
+             **({"teams": args.teams_from} if args.teams_from is not None else {}),
              **{f"opponent {name}": path for name, path in opponents.items()}}
     digests = {role: arena._sha256(path) for role, path in paths.items()}
     commit, dirty = _checkout()
@@ -286,8 +414,12 @@ def main(argv=None):
     os.makedirs(args.out, exist_ok=True)
 
     with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
-        pool = teams.load(ctx, teams_config["teams"]["ids"])
-        rows = foe_arena.games(len(pool.ids), args.pairs, args.seed)
+        if matchup is None:
+            pool = teams.load(ctx, teams_config["teams"]["ids"])
+            rows = foe_arena.games(len(pool.ids), args.pairs, args.seed)
+        else:
+            pool = matchup_pool(ctx, matchup)
+            rows = matchup_rows(args.pairs)
         table, source_ids, table_info = honest.live_spread_table(ctx)
         learner_team = np.where(rows["learner_seat"] == 0, rows["side0"], rows["side1"])
         opponent_team = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
@@ -372,8 +504,16 @@ def main(argv=None):
         paired_previous = {name: entry["paired"]["step_vs_previous"] for name, entry in opponent_out.items()}
         verdict_out = verdict(h2h, paired_previous, pooled["step"], pooled["previous"], p99)
 
+    matchup_out = None  # hash prefixes only: the team files are private paths, never written
+    if matchup is not None:
+        matchup_out = {"ours_sha256_prefix": matchup["ours"]["sha256"][:12],
+                       "foe_sha256_prefix": matchup["foe"]["sha256"][:12],
+                       "ours_packed": matchup["ours"]["packed"], "foe_packed": matchup["foe"]["packed"],
+                       "fill": args.fill_stat_points,
+                       "filled": matchup["ours"]["filled"] + matchup["foe"]["filled"]}
     conditions = {
-        "seed": hex(args.seed), "pairs": args.pairs, "max_steps": args.max_steps,
+        "seed": hex(args.seed), "pairs": args.pairs, "max_steps": args.max_steps, "matchup": matchup_out,
+        "filled_count": None if matchup_out is None else len(matchup_out["filled"]),
         "step": {"name": args.step, "settings": step_cfg},
         "previous": None if args.previous is None else {"name": args.previous, "settings": previous_cfg},
         "arms": [arm for arm, _ in arm_steps] + (["R"] if args.raw else []), "h2h": args.h2h,
