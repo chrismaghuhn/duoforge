@@ -33,14 +33,11 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 966u /* + the G96 Psychic Terrain battle (g96_psychic_terrain_block); + G77's eight crit battles (lane B, decision 0015 5bq) + the two Bug Bite battles of decision 0015 5cw (provisional)  + the four C4 battles (c4_cover_a, b, c, c4_shell_armor; provisional)  + the nine G86 battles (decision 0048; provisional, set from the regeneration)  main G67 and #342 battles included (793 on main) + the recorded pool battles: the six C2 battles (three covering, pair run 9007), the three G94 Baneful Bunker battles, 762 on main, the seven G88 battles (g88_*), the two C1 battles (c1_*) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
 #include "support/team_c.h"
 #define DF_CONF_FORMES dfi_ext_formes
-#define DF_TEAM_C_BATTLES 73u /* the recorded Team C battles */
-#define DF_TEAM_C_REAL 23u   /* of them under TEAM_C itself (six registered members) */
 #else
 #include "data/closure_tables.h"
 #include "reference/conformance.h"
@@ -55,6 +52,8 @@
 #include "state/battle_internal.h"
 #include "state/request.h"
 #include "support/check.h"
+#include "support/reference_digest.h"
+#include "reference_pins.h"
 #include "support/conformance_compare.h"
 #include "support/fixtures.h"
 
@@ -84,8 +83,12 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
     }
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+    df_reference_digest digest;
+    if (!df_reference_digest_open(&digest, argc, argv)) {
+        return 2;
+    }
     df_test t;
 #if defined(DF_CONFORMANCE_POOL_DATA)
     df_test_begin(&t, "duoforge.reference.conformance_pool_data");
@@ -130,6 +133,7 @@ int main(void)
             fprintf(stderr, "  %s: the setup is rejected: %s\n", cb->name, duoforge_status_name(created));
             continue;
         }
+        df_reference_digest_begin(&digest, cb->name, ctx, b);
         unsigned bad = 0;
         for (uint32_t si = 0; si < cb->step_count && bad == 0u; ++si) {
             const df_conf_step *st = &cb->steps[si];
@@ -173,22 +177,25 @@ int main(void)
                 ++bad;
                 break;
             }
+            df_reference_digest_step(&digest, ctx, b, used, &res);
+            df_reference_digest_events(&digest, buffers);
             bad += df_conf_compare_state(stderr, ctx, b, st, cb->name, si);
             bad += df_conf_compare_observation(stderr, ctx, b, st, cb, si);
             bad += df_conf_compare_events(stderr, st, cb->name, si, buffers, conf_events, &event_reports);
             DF_CHECK(&t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
+        df_reference_digest_end(&digest);
         duoforge_battle_destroy(b);
     }
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_POOL_DATA_BATTLES);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_PIN_BATTLES);
     /* All of them under POOL itself: the sets are the real members', with
      * a real ability each, the new items are marked (decision 0015 step P2). */
-    DF_CHECK_EQ_U64(&t, real, DF_POOL_DATA_BATTLES);
+    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_PIN_CERTIFIED);
 #elif defined(DF_CONFORMANCE_TEAM_C)
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_TEAM_C_BATTLES);
-    DF_CHECK_EQ_U64(&t, real, DF_TEAM_C_REAL);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_PIN_BATTLES);
+    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_PIN_CERTIFIED);
     /* The real Team C of the recorded gate battles (team-c.txt through the
      * specs) is the gate's fixture (df_put_team_c, duoforge.combat.
      * team_c_gate): each Team C member of a c12_real battle equals the
@@ -228,15 +235,15 @@ int main(void)
                 }
             }
         }
-        DF_CHECK_EQ_U64(&t, matched, 24u * 6u); /* Team C on 4 x 4 + 4 x 2 sides */
+        DF_CHECK_EQ_U64(&t, matched, DF_REFERENCE_PIN_FIXTURE_MATCHES); /* Team C on 4 x 4 + 4 x 2 sides */
     }
 #else
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], 90u);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_PIN_BATTLES);
     /* Exactly the battles of the real teams run under CLOSURE, the certified
      * profile (decision 0010): the closure gate's 8, the 16 of M5 step 3 and
      * d01_noguard_accuracy_tie and d02_electro_shot_lock_emergency_exit, cuts
      * of battles found by the differential loop. */
-    DF_CHECK_EQ_U64(&t, real, 26u);
+    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_PIN_CERTIFIED);
 #endif
 #if defined(DF_CONFORMANCE_POOL) || defined(DF_CONFORMANCE_POOL_DATA)
     fprintf(stderr, "  %u of the battles run under POOL data\n", real);
@@ -247,5 +254,6 @@ int main(void)
 #endif
     duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
-    return df_test_end(&t);
+    const int result = df_test_end(&t);
+    return df_reference_digest_close(&digest) ? result : 2;
 }

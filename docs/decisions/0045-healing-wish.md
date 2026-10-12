@@ -77,7 +77,7 @@ an empty slot.
 **Baton Pass / U-turn.** The slot condition belongs to the position. A pivot out does not remove it, and the next
 entrant at that slot is healed if hurt or statused. Baton Pass's copied volatiles do not include side conditions.
 
-**Request flow.** The end-of-turn replacement is a `REPLACEMENT` boundary (C: `dfi_finish_turn`, `src/combat/turn.c:9771`),
+**Request flow.** The end-of-turn replacement is a `REPLACEMENT` boundary (C: `dfi_finish_turn`, `src/combat/turn.c (dfi_finish_turn)`),
 the mid-turn one a `PIVOT`. Both already exist; no new boundary.
 
 ## 2. State
@@ -147,7 +147,7 @@ the mid-turn one a `PIVOT`. Both already exist; no new boundary.
 - Planned mutants (each must fail a test): M1 no status cure; M2 no HP heal; M3 heal at full HP (wish consumed
   always); M4 the wish cleared at switch-out; M5 `dfi_tail_clear_occupant` keeps the old zeroing (wish erased at entry;
   the expected catch: R1); M6 heal after Intimidate (subOrder moved to 8); M7 the user does not faint; M8 second use
-  overwrites the wish; M9 the bearer count without the wish (`dfi_run_entries`, `src/combat/turn.c:8388-8440`); M10 invariant refusing bit 0 at an empty position; M11 view
+  overwrites the wish; M9 the bearer count without the wish (`dfi_run_entries`, `src/combat/turn.c (dfi_run_entries)`); M10 invariant refusing bit 0 at an empty position; M11 view
   bit not set. Caught/total reported in the phase-2 report.
 
 ## 6. Refusals (E_UNSUPPORTED)
@@ -155,7 +155,7 @@ the mid-turn one a `PIVOT`. Both already exist; no new boundary.
 - None for the wish itself. The second-use path and the empty-slot wish are modelled exactly, not refused.
 - Conditional refusal: if Neutralizing Gas (onSwitchInPriority +2, `data/abilities.ts:2907`) or Tera Shift (+2, :4965) is
   marked AND can enter with a pending wish, refuse explicitly until the +2 pass exists in `dfi_run_entries`
-  (`src/combat/turn.c:8388`, the pass order Unnerve +1, then priority 0). The +1 Unnerve pass already exists.
+  (`src/combat/turn.c (dfi_run_entries)`, the pass order Unnerve +1, then priority 0). The +1 Unnerve pass already exists.
 - Heal Block: `Pokemon.heal` does not check it (`sim/pokemon.ts:1640`), so the wish heals through Heal Block. The C
   must not check it either.
 
@@ -164,7 +164,7 @@ the mid-turn one a `PIVOT`. Both already exist; no new boundary.
 1. The view bit number, the VIEWEXT feature number (43) and the pool special id (section 4).
 2. Silent cure: CURE_STATUS without a message, or the HEAL event carries the status (section 3).
 3. Approve: the `dfi_tail_clear_occupant` change, the invariant change and the rewrite of the two `test_pool_tail.c` checks.
-4. Confirm the speed-tie bearer count: `ps_trace.js` must count a wish-holding entrant (the C count is in `dfi_run_entries`, `turn.c:8388-8440`).
+4. Confirm the speed-tie bearer count: `ps_trace.js` must count a wish-holding entrant (the C count is in `dfi_run_entries`, `src/combat/turn.c (dfi_run_entries)`).
 
 ## 7. Status of the recordings (2026-10-10, end of the batch round)
 
