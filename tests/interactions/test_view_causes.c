@@ -128,7 +128,8 @@ static void test_causes_cases(df_test *t, const duoforge_context *ctx)
         duoforge_public_state v0;
         DF_CHECK(t, duoforge_battle_public(ctx, b, 0u, &v0) == DUOFORGE_OK);
         duoforge_public_state v1;
-        DF_CHECK(t, duoforge_battle_public(ctx, b, 1u, &v1) == DUOFORGE_E_UNSUPPORTED);
+        /* decision 0066: under POOL the bench sleep is no cause, so the record is accepted for player 1 too */
+        DF_CHECK(t, duoforge_battle_public(ctx, b, 1u, &v1) == (sleep_cause(ctx) != 0u ? DUOFORGE_E_UNSUPPORTED : DUOFORGE_OK));
     }
     /* confusion only: either side's lead, each counter 1 to 5 */
     for (uint32_t side = 0u; side < 2u; ++side) {

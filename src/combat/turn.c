@@ -9912,6 +9912,7 @@ static duoforge_status dfi_run_revive(dfi_run *r, const dfi_queue_record *q)
     }
     dfi_member *m = &sd->members[reserve];
     m->status = DUOFORGE_AILMENT_NONE;
+    b->tail.sides[side].sleep_cant[reserve] = 0u; /* decision 0066: the revival cures the sleep and its count */
     m->hp = (uint16_t)(m->hp_max / 2u); /* sethp(maxhp / 2): trunc, and maxhp is at least 2; wide-operands-reviewed: < 256 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_REVIVE, side * 2u + (uint32_t)q->slot);
     e.id = (uint16_t)reserve; /* wide-operands-reviewed: a roster index */

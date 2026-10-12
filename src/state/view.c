@@ -27,6 +27,7 @@ _Static_assert(sizeof(duoforge_public_state) == 1396u, "public state layout (the
 _Static_assert(sizeof(duoforge_hypothesis) == 280u, "hypothesis layout");
 _Static_assert(sizeof(((duoforge_hypothesis *)0)->queue_order) == DFI_QUEUE_CAPACITY, "queue permutation capacity");
 
+#define DFI_HYPOTHESIS_REVISION_TRAP 3u /* decision 0060 (trap_pick), kept for the trapped views: before decision 0066 */
 static const uint32_t dfi_confusion_weights[5] = {4u, 4u, 3u, 2u, 1u}; /* random(2, 6): 2..5 */
 
 /* ---- integer uniforms ---- */
@@ -1401,8 +1402,11 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     if (ctx == NULL || view == NULL || hypothesis == NULL || out == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
+    /* The revisions accepted: 4 (decision 0066), 3 (trap_pick: a trapped view, no sleeping POOL member: its sleep words are refused
+     * below), and 2 (no trap). */
     if (view->revision != DUOFORGE_VIEW_REVISION ||
-        (hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION && hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP)) {
+        (hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION && hypothesis->revision != DFI_HYPOTHESIS_REVISION_TRAP &&
+         hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP)) {
         return DUOFORGE_E_SCHEMA_MISMATCH;
     }
     const size_t n = dfi_state_encoded_size_of(ctx);

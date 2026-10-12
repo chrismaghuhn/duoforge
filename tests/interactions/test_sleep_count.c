@@ -19,6 +19,7 @@
 
 #include "codec/state_codec.h"
 #include "data/pool_tables.h"
+#include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
 #include "support/check.h"
 #include "support/fixtures.h"
@@ -64,10 +65,50 @@ static void turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b, 
     }
 }
 
+/* The recorded battle g31_yawn_a (a POOL setup: its moves are the POOL ids, marked on main): Sylveon, Gyarados, Rillaboom,
+ * Ceruledge, Gholdengo, Politoed against Kingambit, Staraptor, Rillaboom, Ceruledge, Gholdengo, Milotic. */
+static const df_conf_battle *find_conf(const char *name)
+{
+    for (size_t i = 0u; i < sizeof conf_battles / sizeof conf_battles[0]; ++i) {
+        if (strcmp(conf_battles[i].name, name) == 0) {
+            return &conf_battles[i];
+        }
+    }
+    return NULL;
+}
+
+static void setup_from(const df_conf_battle *cb, duoforge_battle_setup *s)
+{
+    memset(s, 0, sizeof *s);
+    s->rng_initstate = 1u;
+    s->rng_initseq = 2u;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        s->sides[side].member_count = cb->member_count;
+        for (uint32_t m = 0u; m < cb->member_count; ++m) {
+            const df_conf_member *src = &cb->members[side][m];
+            duoforge_member_setup *dst = &s->sides[side].members[m];
+            dst->species_id = src->species;
+            dst->gender = src->gender;
+            dst->nature = src->nature;
+            for (uint32_t i = 0u; i < 6u; ++i) {
+                dst->stat_points[i] = src->sp[i];
+            }
+            dst->ability = src->ability;
+            dst->item = src->item;
+            dst->move_count = src->move_count;
+            for (uint32_t k = 0u; k < src->move_count; ++k) {
+                dst->moves[k].move_id = src->moves[k];
+            }
+        }
+    }
+}
+
 static duoforge_battle *turn_battle(df_test *t, const duoforge_context *ctx)
 {
+    const df_conf_battle *cb = find_conf("g31_yawn_a");
+    DF_CHECK(t, cb != NULL);
     duoforge_battle_setup setup;
-    df_setup_teams(&setup);
+    setup_from(cb, &setup);
     duoforge_battle *b = df_make_battle(ctx, &setup);
     DF_CHECK(t, b != NULL);
     duoforge_decision_bundle bd;
