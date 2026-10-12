@@ -152,11 +152,12 @@ def decide(search, record, observation, player, key, logp_team, excluded, last_s
     outcomes, reduced = reduce(tables, sampled["weights"], qs, np.arange(len(own)),
         float(seeds.play_uniforms(search.seed, np.array([key], np.uint64))[0]), search.lam)
     costs["solve"] += time.perf_counter() - t
-    chosen = int(own[outcomes[search.rule]])
+    rule = search.rule if search.preview_rule is None else search.preview_rule
+    chosen = int(own[outcomes[rule]])
     gap = matrix.bayes_certify(tables, sampled["weights"], np.array(reduced["x"]),
                               [np.array(y) for y in reduced["ys"]])
     search.last.append({"tables": tables.copy(), "hypotheses": hypotheses.copy(), "choices": choices.copy()})
-    return {"kind": "searched", "rule": search.rule, "k": len(own), "m": len(other), "s": search.s,
+    return {"kind": "searched", "rule": rule, "k": len(own), "m": len(other), "s": search.s,
         "preview_eval": search.preview_mode, "rollout_steps_limit": search.preview_steps,
         "own_teams": own.tolist(), "foe_teams": other.tolist(), "own_probs": own_probs.tolist(),
         "foe_probs": qs.tolist(), "weights": sampled["weights"].tolist(), "coverage": float(qs.mean(axis=0).sum()),

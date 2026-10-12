@@ -38,7 +38,12 @@ OPPONENT_NAMES = ("bc6", "bot", "ppo")
 GATED_OPPONENTS = ("bot", "bc6")  # ppo is reported, not gated
 GATES = {"lower_bound": 0.50, "no_harm_upper": 0.50, "p99_seconds": 2.0, "fallback_share": 0.05,
          "fallback_over_previous": 0.01}
-STEPS = {"0": {"base": None, "settings": {}}}
+STEPS = {"0": {"base": None, "settings": {}},
+         # Step 1 (#363): the team preview as a Nash matrix game over the foe network's candidates; 1e and 1x are its
+         # controls (the best answer to the foe model, and the live mix rule).
+         "1": {"base": "0", "settings": {"preview_mode": "value", "preview_rule": "nash"}},
+         "1e": {"base": "0", "settings": {"preview_mode": "value", "preview_rule": "ev"}},
+         "1x": {"base": "0", "settings": {"preview_mode": "value", "preview_rule": "mix"}}}
 
 
 def step_settings(name):
