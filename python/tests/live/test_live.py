@@ -1087,6 +1087,135 @@ def state_layout_fields():
     return state_layout.fields(pool=False)
 
 
+def _drive(t, stream, battle, player):
+    """Feeds a tracker (open or particle) a player's stream of a pool battle: what it shows at each decision point
+    (epoch, request, domain bytes, public parts per particle, observation bytes per particle) and how it ended (None, or
+    the class and reason of a lines.Stop or a ValueError)."""
+    from duoforge_live import cts
+    from duoforge_live import lines as live_lines
+    points, done, pid = [], 0, f"p{player + 1}"
+    try:
+        for lines in stream:
+            t.feed(lines)
+            if not (t.ready and t.epoch > done):
+                continue
+            done = t.epoch
+            k = done - 1
+            many = isinstance(t, cts.ParticleTracker)
+            parts = t.public_parts() if many else [t.public_parts()]
+            observations = t.observations() if many else [t.observation()]
+            points.append((t.epoch, t.request, t.domain()[0].tobytes(),
+                           [(p["record"].tobytes(), p["status"], p["causes"], p["reason"]) for p in parts],
+                           [o.tobytes() for o in observations]))
+            step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
+            if step is not None and pid in step["input"]:
+                t.accepted(step["input"][pid])
+    except live_lines.Stop as stop:
+        return points, ("stop", stop.reason)
+    except ValueError as err:
+        return points, ("error", str(err))
+    return points, None
+
+
+class ClosedSheetsPoolTest(unittest.TestCase):
+    """The particle tracker of closed team sheets (decision 0081) over every committed pool battle, both players: each
+    stream without its |showteam| lines, and a set prior of the foe's true team only. Every particle shows what the
+    open-sheet tracker shows of the stream with its sheets, at every decision point, byte for byte (the request, the
+    domain, the observation, the public record with its status, causes and reason), and ends as it ends (the same Stop or
+    own-PP error), with no redraw. A foe sheet with an Illusion holder is the named exception: its facts are refused
+    (cts:facts skip:illusion), as the open-sheet tracker refuses the Illusion feature."""
+
+    PARTICLES = 2
+
+    def test_a_particle_of_the_true_team_shows_what_the_open_sheets_show(self):
+        import collections
+        from duoforge_live import cts, teams
+        from duoforge_live.data import trace_to_c
+        from duoforge_live.tracker import Tracker
+        pool = Reference.get().pool()
+        outcome, where = collections.Counter(), {}
+        for battle in pool.battles:
+            kind = record_kind(battle.name)
+            for player in (0, 1):
+                opened = Tracker(pool.data, battle.spec["teams"][player])
+                opened.record_kind = kind
+                want, want_end = _drive(opened, battle.streams[player], battle, player)
+                foe = teams._paste(battle.spec["teams"][1 - player])
+                particles = cts.ParticleTracker(pool.data, battle.spec["teams"][player], cts.SetPrior(pool.data, foe),
+                                                seed=1, key=battle.name, n=self.PARTICLES, record_kind=kind)
+                closed = [[line for line in m if not line.startswith("|showteam|")] for m in battle.streams[player]]
+                got, got_end = _drive(particles, closed, battle, player)
+                if any(trace_to_c.key(s["species"]).startswith("ZOROARK") for s in foe):
+                    key = "illusion" if got_end == ("stop", "cts:facts skip:illusion") else f"illusion: {got_end}"
+                else:
+                    same = len(got) == len(want) and all(
+                        g[:3] == w[:3] and g[3] == w[3] * self.PARTICLES and g[4] == w[4] * self.PARTICLES
+                        for g, w in zip(got, want))
+                    redraws = sum(n for name, n in particles.counters.items() if name.startswith("redraw."))
+                    key = "equal" if same and got_end == want_end and redraws == 0 else \
+                        f"differs: {len(got)} of {len(want)} points, end {got_end} vs {want_end}, {redraws} redraws"
+                outcome[key] += 1
+                where.setdefault(key, (battle.name, player))
+        print(f"\nclosed-sheet particles over the pool streams: {dict(sorted(outcome.items()))}")
+        self.assertEqual(set(outcome) - {"equal", "illusion"}, set(), {key: where[key] for key in outcome})
+        self.assertGreater(outcome["equal"], 1000)
+
+    def test_a_weather_past_five_turns_rules_out_a_politoed_without_damp_rock(self):
+        """g55_damp_rock_drizzle, player 2: the foe's Politoed sets rain with Drizzle, and the rain lasts past 5 turns.
+        A drawn Politoed without Damp Rock counts the rain down to 0 while the lines keep it: the engine refuses that
+        particle's record at the decision point (public_parts raises), and the particle is drawn again. At the end no
+        particle holds it."""
+        from duoforge_live import cts, teams
+        pool = Reference.get().pool()
+        battle = pool.battles_by_name["g55_damp_rock_drizzle"]
+        foe = teams._paste(battle.spec["teams"][0])
+        politoed = next(s for s in foe if s["species"] == "Politoed")
+        other = dict(politoed, item="Mystic Water")
+        self.assertNotIn("Mystic Water", [s["item"] for s in foe])
+        particles = cts.ParticleTracker(pool.data, battle.spec["teams"][1], cts.SetPrior(pool.data, foe + [other]),
+                                        seed=5, key=battle.name, n=16, record_kind=record_kind(battle.name))
+        closed = [[line for line in m if not line.startswith("|showteam|")] for m in battle.streams[1]]
+        points, end = _drive(particles, closed, battle, 1)
+        self.assertIsNone(end)
+        self.assertGreater(particles.counters["redraw.error:ValueError"], 0)
+        held = [s["item"] for p in particles.particles for s in p.sets if s["species"] == "Politoed"]
+        self.assertEqual(set(held), {"Damp Rock"})
+
+    def test_a_wide_prior_ends_every_stream_by_name(self):
+        """A prior of every set of every pool battle's teams (weighted by how often it appears): the particles draw sets
+        that the lines contradict, and replace them. Every stream ends as the open-sheet tracker ends it, or with a named
+        lines.Stop; a ValueError only where the open-sheet tracker's own-PP check raises (RecordAssemblerPoolTest)."""
+        import collections
+        from duoforge_live import cts, teams
+        pool = Reference.get().pool()
+        weights, sets = collections.Counter(), {}
+        for battle in pool.battles:
+            for team in battle.spec["teams"]:
+                for s in teams._paste(team):
+                    key = (s["species"], s["item"], s["ability"], tuple(s["moves"]), s["nature"])
+                    weights[key] += 1
+                    sets[key] = s
+        prior = cts.SetPrior(pool.data, [(sets[key], n) for key, n in sorted(weights.items())])
+        ends, redraws, where = collections.Counter(), collections.Counter(), {}
+        for battle in pool.battles:
+            for player in (0, 1):
+                particles = cts.ParticleTracker(pool.data, battle.spec["teams"][player], prior, seed=3, key=battle.name,
+                                                n=4, record_kind=record_kind(battle.name))
+                closed = [[line for line in m if not line.startswith("|showteam|")] for m in battle.streams[player]]
+                _, end = _drive(particles, closed, battle, player)
+                if end is not None and end[0] == "error":
+                    self.assertIn((battle.name, player), RecordAssemblerPoolTest.OWN_PP_STOPS, end)
+                    self.assertTrue(end[1].startswith("own PP of "), end)
+                key = "complete" if end is None else f"{end[0]} {end[1].split(' ')[0]}"
+                ends[key] += 1
+                where.setdefault(key, (battle.name, player))
+                redraws.update(particles.counters)
+        print(f"\nwide prior, ends: {dict(ends.most_common())}\nredraws: {dict(redraws.most_common())}")
+        self.assertGreater(ends["complete"], 1500)
+        self.assertGreater(redraws["redraw.facts"], 0)
+        self.assertGreater(redraws["redraw.choice-lock"], 0)
+
+
 class TrackerTest(unittest.TestCase):
     """Test 1 of the spec: the tracker's observation is DuoForge's, byte for byte."""
 

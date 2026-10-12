@@ -328,6 +328,15 @@ class _Member:
         self.stats = [0] * 5
 
 
+class SheetContradiction(Exception):
+    """A line that contradicts the foe's sheet (only with Tracker.check_foe_sheet, decision 0081): the sheet was drawn,
+    not shown (reason: the counter's name)."""
+
+    def __init__(self, reason):
+        super().__init__(reason)
+        self.reason = reason
+
+
 class Tracker:
     """One battle room as one player sees it. feed() every message of the room in order, accepted() every
     own choice Showdown took; at a decision point (ready) observation() and domain() give DuoForge's view."""
@@ -336,6 +345,9 @@ class Tracker:
     _party = None
     _ally_move = None
     _as_pending = None
+    # A particle of closed team sheets (decision 0081) folds a drawn foe sheet: it raises SheetContradiction where a line
+    # contradicts that sheet and the open-sheet fold would go on. Off for every open-sheet tracker.
+    check_foe_sheet = False
 
     def __init__(self, data, own_text):
         self.data = data
@@ -1095,6 +1107,13 @@ class Tracker:
             holds_choice = not m.item_used and self._item_of(m) in self._choice_items
             if p.choice_slot != MOVE_SLOT_NONE and not holds_choice and e[3] != trace_to_c.CAUSE["ABILITY"]:
                 p.choice_slot = MOVE_SLOT_NONE  # choicelock's onBeforeMove: its Choice item is gone (a Trick, Knock Off)
+            if self.check_foe_sheet and pos // 2 != self.side and e[3] == trace_to_c.CAUSE["NONE"] and ident != self._struggle:
+                # A drawn foe sheet (decision 0081, cts.ParticleTracker) the line contradicts, where the open-sheet fold
+                # would go on in silence: an own move off the sheet, or another move than the one a Choice item locked
+                if ident not in m.sheet["moves"]:
+                    raise SheetContradiction("move-not-on-set")
+                if p.choice_slot != MOVE_SLOT_NONE and holds_choice and m.sheet["moves"][p.choice_slot] != ident:
+                    raise SheetContradiction("choice-lock")
             if (p.choice_slot == MOVE_SLOT_NONE and holds_choice and ident in m.sheet["moves"]
                     and e[3] != trace_to_c.CAUSE["ABILITY"]):
                 # A Choice item locks its holder into the move of its |move| line (data/items.ts onModifyMove,
