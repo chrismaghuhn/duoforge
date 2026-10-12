@@ -2599,6 +2599,21 @@ class BeliefGameTest(unittest.TestCase):
                     self.assertTrue({trace_to_c.key(m) for m in member.moves} <= set(drawn), (member, s))
                     self.assertEqual(bin(bits).count("1"), len(member.moves))
 
+    def test_an_ability_a_cant_line_shows_is_never_drawn_otherwise(self):
+        # decision 0081: the fixture's cant|p2b: Farigiraf|ability: Armor Tail|Fake Out|[of] p1b: Incineroar shows
+        # Farigiraf's ability; a corpus set with another ability, however heavy, is never drawn for it
+        from duoforge_replay import corpus, setbelief
+        sets = dict(self.corpus._sets)
+        sets["FARIGIRAF"] = list(sets["FARIGIRAF"]) + [(item, "CudChew", nature, moves, 50)
+                                                       for item, _, nature, moves, _ in sets["FARIGIRAF"]]
+        belief = setbelief.SetBelief(corpus.Corpus(sets, frozenset(), "test"), self.data, min_sets=1)
+        abilities = set()
+        for draw in range(8):
+            sheets = self.G.draw_sheets(self.log, "gen9championsvgc2026regmc", self.data, belief, 7, "fixture-belief",
+                                        draw)[0]
+            abilities |= {trace_to_c.key(s["ability"]) for s in sheets[1] if trace_to_c.key(s["species"]) == "FARIGIRAF"}
+        self.assertEqual(abilities, {"ARMORTAIL"})
+
     def test_a_revealed_name_outside_the_tables_is_a_name_skip(self):
         # the 2026-10-10 run: an item a log reveals (Assault Vest) that the tables lack was a KeyError
         at = next(i for i, line in enumerate(self.log) if line.startswith("|switch|p1a: Kingambit|")) + 1
