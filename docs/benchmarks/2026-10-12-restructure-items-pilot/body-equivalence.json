@@ -1,0 +1,62 @@
+{
+  "functions": {
+    "dfi_at": {
+      "interface_substitutions": [
+        "name existing position constant (still 2u; expanded inputs identical)"
+      ],
+      "new_file": "src/combat/run_internal.h",
+      "normalized_body_equal": true
+    },
+    "dfi_emit": {
+      "interface_substitutions": [],
+      "new_file": "src/combat/run_internal.h",
+      "normalized_body_equal": true
+    },
+    "dfi_ev": {
+      "interface_substitutions": [],
+      "new_file": "src/combat/run_internal.h",
+      "normalized_body_equal": true
+    },
+    "dfi_herb_due": {
+      "interface_substitutions": [],
+      "new_file": "src/combat/items/white_herb.c",
+      "normalized_body_equal": true
+    },
+    "dfi_herb_holder": {
+      "interface_substitutions": [],
+      "new_file": "src/combat/items/white_herb.c",
+      "normalized_body_equal": true
+    },
+    "dfi_holds": {
+      "interface_substitutions": [],
+      "new_file": "src/combat/items/held.c",
+      "normalized_body_equal": true
+    },
+    "dfi_item_code": {
+      "interface_substitutions": [],
+      "new_file": "src/combat/items/held.c",
+      "normalized_body_equal": true
+    },
+    "dfi_item_takeable": {
+      "interface_substitutions": [],
+      "new_file": "src/combat/items/held.c",
+      "normalized_body_equal": true
+    },
+    "dfi_pos": {
+      "interface_substitutions": [
+        "name existing position constant (still 2u; expanded inputs identical)"
+      ],
+      "new_file": "src/combat/run_internal.h",
+      "normalized_body_equal": true
+    },
+    "dfi_white_herb": {
+      "interface_substitutions": [
+        "same existing useItem callback supplied as a parameter"
+      ],
+      "new_file": "src/combat/items/white_herb.c",
+      "normalized_body_equal": true
+    }
+  },
+  "run_definition_byte_equal": true,
+  "source_commit": "3a9d04d1"
+}
