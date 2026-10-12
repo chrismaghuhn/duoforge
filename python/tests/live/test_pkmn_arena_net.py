@@ -92,7 +92,7 @@ class ArenaNetworkTest(unittest.TestCase):
         self.assertEqual(bot.run_log.counts["decisions"], 4)
 
     def test_an_honest_search_decision_with_the_revealed_sheets(self):
-        live = live_search.load(self.path)
+        live = live_search.load(self.path, foe_net=None)  # the search alone; the next test adds the foe net
         with mock.patch.object(live_search, "DEADLINE_CAP", 120.0):  # the first decision compiles the network
             bot = self.play(search=live)
         text = Path(self.logs.name, f"{ROOM}-tiansuan.jsonl").read_text(encoding="utf-8")
@@ -141,6 +141,7 @@ class PrivateBc6Test(unittest.TestCase):
         self.assertIn(tables.checkpoint_check["ids"], ("same tables", "carried over"))
         foe, check = pkmn_arena.load_foe_net(BC6)
         self.assertEqual(check, tables.checkpoint_check)
+        self.assertEqual(pkmn_arena.sha256_of(BC6), live_search.FOE_NET_SHA256)  # the live default's full pin
 
 
 if __name__ == "__main__":
