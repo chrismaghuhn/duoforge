@@ -416,11 +416,11 @@ def main(argv=None):
     paths = {"main": args.checkpoint, "foe": args.foe_net, "teams": args.teams_from,
              **{f"opponent {name}": path for name, path in opponents.items()}}
     digests = {role: arena._sha256(path) for role, path in paths.items()}
-    if recorded is not None:  # the networks must be the recorded ones. An opponent the recorded run lacks is allowed
-        # (its reproduction is None). The pool's teams are not compared: a different pool changes the games, and the
-        # per-game scores compare those.
-        sha =recorded["conditions"].get("sha256_prefix", {})
-        for role in ["main", "foe"] + [role for role in digests if role.startswith("opponent ") and role in sha]:
+    if recorded is not None:  # the networks and the pool must be the recorded ones. An opponent the recorded run lacks
+        # is allowed (its reproduction is None).
+        sha = recorded["conditions"].get("sha256_prefix", {})
+        roles = [role for role in ("main", "foe", "teams") if role in digests]
+        for role in roles + [role for role in digests if role.startswith("opponent ") and role in sha]:
             if sha.get(role) != digests[role][:12]:
                 raise SystemExit(f"--previous-run's sha256_prefix of {role} is {sha.get(role)!r}, "
                                  f"this run's is {digests[role][:12]!r}")

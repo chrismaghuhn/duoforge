@@ -518,6 +518,11 @@ class CliGuardTest(unittest.TestCase):
                     "--step", "0", "--previous", "0", "--previous-run", recorded, "--opponent", f"bot={files['bot']}",
                     "--out", out]
             self.assertRefused("sha256_prefix of main", argv, out)
+            # The pool's teams are compared as well: another pool is refused before any game, not found afterwards.
+            recorded = self.recorded(tmp, sha256_prefix={"main": digests["main"], "foe": digests["foe"],
+                                                         "teams": "0" * 12, "opponent bot": digests["bot"]})
+            argv[argv.index("--previous-run") + 1] = recorded
+            self.assertRefused("sha256_prefix of teams", argv, out)
 
 
 class VerdictCliTest(unittest.TestCase):
