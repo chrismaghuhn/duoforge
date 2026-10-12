@@ -430,6 +430,99 @@ class HonestSearch(unittest.TestCase):
             self.assertGreater(records[0]["leaves"]["cut_off"], 0)
             self.assertTrue(np.isin(np.array(records[0]["tables"]), [-1, 0, 1]).all())
 
+    def refuse_pairs(self, search, refuse, seat=0):
+        """(patch, refused): while patch is active, a leaf whose seat's pair satisfies refuse(pair) returns the
+        engine's E_UNSUPPORTED step status, as C reports a refused step; refused lists the forced count per chunk."""
+        real, refused = search.leaves.expand, []
+
+        def expand(*args):
+            row, st, enc, other, res = real(*args)
+            choices = args[-1]
+            pairs = choices["slot"][:, seat, 0].astype(np.int64) * honest.lookahead.OPTIONS + choices["slot"][:, seat, 1]
+            hit = np.array([refuse(int(x)) for x in pairs], bool)
+            st = np.array(st, copy=True)
+            st[hit] = C["DUOFORGE_E_UNSUPPORTED"]
+            refused.append(int(hit.sum()))
+            return row, st, enc, other, res
+
+        return mock.patch.object(search.leaves, "expand", side_effect=expand), refused
+
+    def test_refused_leaves_drop_their_own_candidate(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            _, records = search.decide(b, [0], [0], [456], [False])
+            base = records[0]
+            self.assertEqual(base["kind"], "searched")
+            self.assertEqual(base["leaves"]["refused"], 0)
+            self.assertEqual(len(base["own_pairs"]), 2)
+            dropped, kept = base["own_pairs"]
+            patch, refused = self.refuse_pairs(search, lambda pair: pair == dropped)
+            with patch:
+                actions, records = search.decide(b, [0], [0], [456], [False])
+            r = records[0]
+            self.assertEqual(r["kind"], "searched")
+            self.assertEqual(r["refused_pairs"], [dropped])
+            self.assertEqual(r["own_pairs"], [kept])
+            self.assertEqual(r["k"], 1)
+            self.assertEqual(int(actions[0]), kept)
+            self.assertEqual(r["choice"], kept)
+            self.assertNotEqual(r["choice"], dropped)
+            self.assertEqual(r["raw"], dropped)  # raw stays the network's first candidate
+            self.assertTrue(r["changed"])
+            self.assertGreater(sum(refused), 0)
+            self.assertEqual(r["leaves"]["refused"], sum(refused))
+            # Row 1's leaves are untouched by the forced refusals: its table is the baseline's row 1 exactly.
+            np.testing.assert_array_equal(np.array(r["tables"]), np.array(base["tables"])[:, 1:, :])
+            self.assertEqual(search.last[0]["tables"].shape, (search.s, 1, r["m"]))
+
+    def test_every_leaf_refused_is_unreconstructible(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            _, records = search.decide(b, [0], [0], [456], [False])
+            raw = records[0]["raw"]
+            patch, refused = self.refuse_pairs(search, lambda pair: True)
+            with patch:
+                actions, records = search.decide(b, [0], [0], [456], [False])
+            r = records[0]
+            self.assertEqual(r["kind"], "unreconstructible")
+            self.assertEqual(r["reason"], "engine_refused_leaves")
+            self.assertEqual(r["causes"], ["engine_refused_leaves"])
+            self.assertEqual(int(actions[0]), raw)  # played raw and counted
+            self.assertGreater(sum(refused), 0)
+
+    def test_refused_drop_without_refusals_is_score(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            drop_actions, drop = search.decide(b, [0], [0], [456], [False])
+            drop_tables = search.last[0]["tables"].copy()
+            real = search._decision
+            with mock.patch.object(search, "_decision", side_effect=lambda *a, **kw: real(*a, **{**kw, "refused": "score"})):
+                score_actions, score = search.decide(b, [0], [0], [456], [False])
+            score_tables = search.last[0]["tables"].copy()
+            self.assertEqual(drop[0]["kind"], "searched")
+            np.testing.assert_array_equal(drop_actions, score_actions)
+            self.assertEqual(drop[0]["refused_pairs"], [])
+            self.assertNotIn("refused_pairs", score[0])
+            np.testing.assert_array_equal(drop_tables, score_tables)
+            # cost and time are wall-clock measurements; every other field of the record must match exactly.
+            self.assertEqual({k: v for k, v in drop[0].items() if k not in ("refused_pairs", "cost", "time")},
+                             {k: v for k, v in score[0].items() if k not in ("cost", "time")})
+
+    def test_refused_mode_must_be_score_or_drop(self):
+        costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            with self.assertRaises(ValueError):
+                search._decision(0, 456, np.zeros(1, np.int64), np.ones(1), np.ones(2) / 2, False, costs, refused="other")
+            with self.assertRaises(ValueError):
+                search._finish(None, np.zeros(1, np.float32), np.ones(1), costs, refused="other")
+
     def test_respreads_keep_world_words_and_other_worlds(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:

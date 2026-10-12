@@ -3,6 +3,8 @@
     python -m duoforge_search.ladder --checkpoint MAIN --foe-net FOE (--teams-from POOLNET | --matchup OURS FOE
         [--fill-stat-points smogon]) --step N [--previous P] [--raw] [--h2h] --opponent NAME=PATH [--opponent ...]
         --out DIR [--pairs 1024] [--seed SEED] [--workers 8] [--max-steps 1000] [--previous-run OLD/ladder.json]
+        [--latency-run LATENCY/ladder.json]
+    python -m duoforge_search.ladder verdict RUN/ladder.json [--latency-run LATENCY/ladder.json]
 
 The networks stay fixed along the ladder: MAIN (BC6) searches and plays, FOE (BC6) is the foe model in the searched
 worlds, and the team pool is POOLNET's (--teams-from: a pool network's config). --matchup is a sanity arm instead: our
@@ -17,12 +19,14 @@ Each opponent (a raw greedy network: bc6, bot or ppo) meets the arms "step", "pr
 team pair, its teams and seats swapped. A searching arm leaves the opponent's own team out of the spread table, as
 foe_arena does. --h2h plays step N against the previous step, both searching, over the same rows.
 
-The gates (GATES, verdict()): strength (the head-to-head's lower bound above 0.50), no harm (each gated opponent, bot
-and bc6, measured and at least 0.50 at its upper bound against the previous step), fallbacks (raw decisions at most
-5 %, or the previous share plus 1 point where that is above 5 %) and latency (the step's p99 wall seconds per searched
-decision at most 2.0; the lead reruns the latency exclusively, as this run shares the machine with its workers). The
-output directory lies outside the repository; the networks stay private and the report holds aggregates and per-game
-scores only.
+The gates (GATES, verdict()), a pure function of a finished report: strength (the head-to-head's lower bound above 0.50,
+with no unresolved game), no harm (each gated opponent, bot and bc6, measured and at least 0.50 at its upper bound
+against the previous step), reproduced (each gated opponent's previous arm plays the recorded step arm's games and
+decisions, --previous-run), fallbacks (raw fallbacks per gated opponent at most 5 %, or the previous share plus 1 point
+where that is above 5 %) and latency (the step's p99 wall seconds per searched decision at most 2.0, measured by an
+exclusive latency run, --latency-run: this run shares the machine with its workers). Without a latency run the verdict
+is pending: its latency gate and adopt are None. The output directory lies outside the repository; the networks stay
+private and the report holds aggregates, per-game scores and decision digests only.
 """
 import argparse
 import copy
@@ -111,11 +115,23 @@ def paired_h(score_a, score_b, resamples=2000, seed=SEED):
             "95": [0.5 + low / 2, 0.5 + high / 2]}
 
 
+def paired_entry(scores):
+    """One opponent's paired comparisons from its arms' per-game scores: step against previous, and step against R,
+    each when that arm was played (paired_h)."""
+    out = {}
+    if "previous" in scores:
+        out["step_vs_previous"] = paired_h(scores["step"], scores["previous"])
+    if "R" in scores:
+        out["step_vs_R"] = paired_h(scores["step"], scores["R"])
+    return out
+
+
 def refused_leaves(decisions):
-    """The refused leaves of the searched decisions: the leaves are k * m * s of each, refused those the engine refused
+    """The refused leaves of the searched decisions. A record's leaves are (k + the refused pairs dropped by #443) * m
+    * s: k counts the kept rows only, refused_pairs lists the dropped ones. Refused are those the engine refused
     (E_UNSUPPORTED). unreconstructible_engine_refused counts the decisions that played raw because of such leaves."""
     searched = [r for r in decisions if r["kind"] == "searched"]
-    leaves = sum(r["k"] * r["m"] * r["s"] for r in searched)
+    leaves = sum((r["k"] + len(r.get("refused_pairs", []))) * r["m"] * r["s"] for r in searched)
     refused = sum(r["leaves"]["refused"] for r in searched)
     return {"leaves": int(leaves), "refused": int(refused),
             "decisions_with_refused": sum(r["leaves"]["refused"] > 0 for r in searched),
@@ -125,22 +141,96 @@ def refused_leaves(decisions):
                                                     for r in decisions)}
 
 
-def verdict(h2h, paired, records_new, records_prev, p99_seconds):
-    """The predeclared gates (GATES). h2h: pair_interval of the step's head-to-head scores; paired: opponent name ->
-    paired_h(step, previous), each gated opponent needed (a missing one fails no harm); records_new and
-    records_prev: the decision records of the step and of the previous step; p99_seconds: the step's p99 wall seconds
-    per searched decision, None without evidence (the latency fails)."""
-    share_new, share_prev = foe_arena.fallback_share(records_new), foe_arena.fallback_share(records_prev)
-    allowed = GATES["fallback_share"] if share_prev <= GATES["fallback_share"] \
-        else share_prev + GATES["fallback_over_previous"]
-    gates = {"strength": h2h["95"][0] > GATES["lower_bound"],
-             # a gated opponent without a measurement is no evidence of no harm
-             "no_harm": all(name in paired and paired[name]["95"][1] >= GATES["no_harm_upper"]
-                            for name in GATED_OPPONENTS),
-             "fallback": share_new <= allowed + 1e-12,  # shares are ratios of counts: the tolerance is float noise only
-             "latency": p99_seconds is not None and p99_seconds <= GATES["p99_seconds"]}
-    return {"h2h": h2h, "paired": paired, "fallback_share_new": share_new, "fallback_share_previous": share_prev,
-            "fallback_allowed": allowed, "p99_seconds": p99_seconds, "gates": gates, "adopt": all(gates.values())}
+def fallback_allowed(previous_share):
+    """The fallback share a step may have against its previous step's share (foe_arena's rule): 5 %, or the previous
+    share plus one point where that share is above 5 %."""
+    if previous_share <= GATES["fallback_share"]:
+        return GATES["fallback_share"]
+    return previous_share + GATES["fallback_over_previous"]
+
+
+def _pooled_share(opponents, arm):
+    """The fallback share of an arm over all opponents' non-team decisions (reported, not gated)."""
+    fallbacks = sum(entry["arms"][arm]["fallback_decisions"] for entry in opponents.values())
+    non_team = sum(entry["arms"][arm]["non_team_decisions"] for entry in opponents.values())
+    return fallbacks / max(1, non_team)
+
+
+def _check_latency(latency, step_name, commit):
+    """ValueError unless the latency run measured this step on this commit. An unknown commit (None) matches nothing."""
+    measured = latency["conditions"]["step"]["name"]
+    if measured != step_name:
+        raise ValueError(f"the latency run measured step {measured!r}, not the step {step_name!r}")
+    if commit is None:
+        raise ValueError("the commit is unknown (no git checkout): a latency run cannot be matched to the report")
+    if latency["conditions"]["commit"] != commit:
+        raise ValueError(f"the latency run ran on commit {latency['conditions']['commit']!r}, not on {commit!r}")
+
+
+def verdict(report, latency=None):
+    """The predeclared gates (GATES) of a finished ladder.json, as a pure function of it. report: main's dict, with a
+    head-to-head (ValueError without one). latency: an exclusive latency run's ladder.json of the same step and commit
+    (ValueError otherwise); without it the latency gate and adopt are None (pending).
+
+    The gates: strength (the head-to-head's lower bound above 0.50, and no unresolved game: evaluate scores one as the
+    learner's loss); no_harm (each gated opponent's step against previous at least 0.50 at its upper bound); reproduced
+    (each gated opponent's same_games_as_recorded is True); fallback (each gated opponent's step share at most
+    fallback_allowed of its previous share); latency (the latency run's p99 at most 2.0 seconds). The inputs and the
+    notes come back with the gates."""
+    h2h = report["h2h"]
+    if h2h is None:
+        raise ValueError("the report has no head-to-head: the gates need a run with --h2h")
+    step_name, commit = report["conditions"]["step"]["name"], report["conditions"]["commit"]
+    if latency is not None:
+        _check_latency(latency, step_name, commit)
+    opponents = report["opponents"]
+    notes = []
+
+    unresolved = int(h2h["unresolved"])
+    if unresolved:
+        notes.append(f"{unresolved} head-to-head game(s) unresolved: evaluate scores each as the learner's loss, "
+                     "so strength fails whatever the interval says")
+    strength = h2h["95"][0] > GATES["lower_bound"] and unresolved == 0
+
+    fallback_per = {}
+    for name, entry in opponents.items():
+        previous = entry["arms"]["previous"]["fallback_share"]
+        fallback_per[name] = {"step": entry["arms"]["step"]["fallback_share"], "previous": previous,
+                              "allowed": fallback_allowed(previous), "gated": name in GATED_OPPONENTS}
+    no_harm = reproduced = fallback = True
+    for name in GATED_OPPONENTS:
+        entry = opponents.get(name)
+        if entry is None:
+            notes.append(f"{name}: not measured, so no-harm, reproduction and fallbacks fail")
+            no_harm = reproduced = fallback = False
+            continue
+        vs_previous = entry.get("paired", {}).get("step_vs_previous")  # a gated opponent without a measurement
+        if vs_previous is None or vs_previous["95"][1] < GATES["no_harm_upper"]:  # is no evidence of no harm
+            no_harm = False
+        if entry.get("same_games_as_recorded") is not True:
+            reproduced = False
+        share = fallback_per[name]
+        if share["step"] > share["allowed"] + 1e-12:  # shares are ratios of counts: the tolerance is float noise only
+            fallback = False
+
+    if latency is None:
+        latency_gate, p99, source = None, None, None
+        notes.append("latency pending: adopt waits for the exclusive latency run (--latency-run)")
+    else:
+        p99 = latency["p99_seconds"]
+        latency_gate = p99 is not None and p99 <= GATES["p99_seconds"]
+        source = {"run": "latency", "step": latency["conditions"]["step"]["name"],
+                  "commit": latency["conditions"]["commit"]}
+    gates = {"strength": strength, "no_harm": no_harm, "reproduced": reproduced, "fallback": fallback,
+             "latency": latency_gate}
+    return {"gates": gates, "adopt": None if latency is None else all(gates.values()),
+            "h2h": h2h,
+            "paired": {name: entry["paired"]["step_vs_previous"] for name, entry in opponents.items()
+                       if "step_vs_previous" in entry.get("paired", {})},
+            "fallback": {"per_opponent": fallback_per,
+                         "pooled": {"step": _pooled_share(opponents, "step"),
+                                    "previous": _pooled_share(opponents, "previous")}},
+            "p99_seconds": p99, "p99_source": source, "notes": notes}
 
 
 def wsl_path(path):
@@ -152,7 +242,9 @@ def wsl_path(path):
 
 def _checkout():
     """(commit, dirty) of this checkout. arena._commit runs git in it; under WSL, git cannot follow a Windows worktree's
-    .git pointer ("gitdir: C:/..."), so the gitdir the pointer names is given to git as GIT_DIR instead."""
+    .git pointer ("gitdir: C:/..."), so the gitdir the pointer names is given to git as GIT_DIR instead. Under WSL
+    `dirty` is best effort only (line-ending config can mark files dirty). --no-optional-locks keeps the status from
+    rewriting the Windows index."""
     from . import arena
     commit, dirty = arena._commit()
     if commit is not None:
@@ -166,8 +258,8 @@ def _checkout():
         env = dict(os.environ, GIT_DIR=wsl_path(pointer[len("gitdir:"):].strip()), GIT_WORK_TREE=root)
         commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True, env=env,
                                 cwd=root).stdout.strip()
-        status = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], capture_output=True,
-                                text=True, check=True, env=env, cwd=root).stdout.strip()
+        status = subprocess.run(["git", "--no-optional-locks", "status", "--porcelain", "--untracked-files=no"],
+                                capture_output=True, text=True, check=True, env=env, cwd=root).stdout.strip()
         return commit, bool(status)
     except (OSError, subprocess.CalledProcessError):
         return None, None
@@ -177,6 +269,33 @@ def same_games(scores_a, scores_b):
     """True when two runs' per-game score arrays are identical (the determinism gate)."""
     a, b = np.asarray(scores_a, np.float64), np.asarray(scores_b, np.float64)
     return a.shape == b.shape and bool(np.array_equal(a, b))
+
+
+def decisions_digest(decisions):
+    """The sha256 hex of every decision as a JSON line [env, step, seat, kind, choice], in (env, step, seat) order: two
+    runs that decide alike give the same digest, whatever the order of their records."""
+    rows = [[r["env"], r["step"], r["seat"], r["kind"], r.get("choice")] for r in decisions]
+    rows.sort(key=lambda row: (row[0], row[1], row[2], json.dumps(row)))
+    return hashlib.sha256("\n".join(json.dumps(row) for row in rows).encode("utf-8")).hexdigest()
+
+
+def recorded_reproduction(scores, digest, recorded_arm, recorded_dir, name):
+    """Whether this run's previous arm plays the recorded step arm's games: True when the per-game scores and the digest
+    of the decisions both match, False when either differs. None when the recorded run has no such arm, or when its
+    decisions cannot be checked (no stored digest and no decision file step-NAME-decisions.jsonl in recorded_dir):
+    never True without the evidence."""
+    if recorded_arm is None:
+        return None
+    if not same_games(scores, recorded_arm["scores"]):
+        return False
+    recorded = recorded_arm.get("decisions_sha256")
+    if recorded is None:
+        path = os.path.join(recorded_dir, f"step-{name}-decisions.jsonl")
+        if not os.path.exists(path):
+            return None
+        with open(path, encoding="utf-8") as f:
+            recorded = decisions_digest([json.loads(line) for line in f if line.strip()])
+    return recorded == digest
 
 
 def wall_seconds(decisions):
@@ -189,14 +308,17 @@ def wall_seconds(decisions):
 
 def _summary(records, games, decisions=None, seconds=None):
     """One arm on one opponent: the per-game scores, their pair interval, the unfinished and unresolved games and, for
-    a searching arm (decisions given), its decision shares, refused leaves, wall times and diagnostics."""
+    a searching arm (decisions given), its decision shares and digest, refused leaves, wall times and diagnostics."""
     from . import arena  # JAX: imported where a run needs it, not where the pure functions are used
     scores = arena.scores(records)
     out = {"scores": [float(x) for x in scores], "pair_interval": pair_interval(scores),
            "unfinished": int(records["unfinished"].sum()), "unresolved": int(records["unresolved"].sum())}
     if decisions is not None:
+        non_team = [r for r in decisions if r["kind"] != "team"]
         out.update({"searched": sum(r["kind"] == "searched" for r in decisions),
                     "fallback_share": foe_arena.fallback_share(decisions),
+                    "fallback_decisions": sum(r["kind"] in foe_arena.FALLBACK_KINDS for r in non_team),
+                    "non_team_decisions": len(non_team), "decisions_sha256": decisions_digest(decisions),
                     "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions)})
         if decisions:
             out["diagnostics"] = arena.diagnostics(decisions, games)
@@ -330,7 +452,37 @@ def _opponents(items):
     return out
 
 
+def _load_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def main_verdict(argv):
+    """`verdict RUN/ladder.json [--latency-run L/ladder.json]`: the gates of a finished run, printed and written
+    beside it as verdict.json. It reads JSON files only: no network and no library."""
+    p = argparse.ArgumentParser(prog="python -m duoforge_search.ladder verdict",
+                                description="the gates of a finished ladder run")
+    p.add_argument("run", metavar="RUN/ladder.json")
+    p.add_argument("--latency-run", metavar="LATENCY/ladder.json",
+                   help="the exclusive latency run of the same step and commit: its p99 is the latency gate")
+    args = p.parse_args(argv)
+    report = _load_json(args.run)
+    latency = None if args.latency_run is None else _load_json(args.latency_run)
+    try:
+        result = verdict(report, latency)
+    except ValueError as err:
+        raise SystemExit(str(err)) from None
+    text = json.dumps(result, indent=1, allow_nan=False)
+    with open(os.path.join(os.path.dirname(os.path.abspath(args.run)), "verdict.json"), "w", encoding="utf-8") as f:
+        f.write(text + "\n")
+    print(text)
+    return 0
+
+
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ["verdict"]:
+        return main_verdict(argv[1:])
     p = argparse.ArgumentParser(prog="python -m duoforge_search.ladder", description=__doc__.split("\n")[0])
     p.add_argument("--checkpoint", required=True, help="the main network (BC6): it searches; R is its raw play")
     p.add_argument("--foe-net", required=True, help="the foe model in the searched worlds (BC6)")
@@ -353,7 +505,10 @@ def main(argv=None):
     p.add_argument("--max-steps", type=int, default=1000)
     p.add_argument("--previous-run", metavar="LADDER.JSON",
                    help="a recorded run: the previous arm's games must equal its step arm's games")
-    args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
+    p.add_argument("--latency-run", metavar="LATENCY/ladder.json",
+                   help="an exclusive latency run of this step on this commit: its p99 is the latency gate "
+                        "(without it the verdict is pending)")
+    args = p.parse_args(argv)
 
     from duoforge_replay.dataset import refuse_repository
     try:
@@ -373,23 +528,49 @@ def main(argv=None):
         raise SystemExit("--h2h needs --previous (the step it plays against)")
     if args.previous_run is not None and args.previous is None:
         raise SystemExit("--previous-run needs --previous")
+    if args.latency_run is not None and not args.h2h:
+        raise SystemExit("--latency-run needs --h2h: the latency gate belongs to the verdict of a head-to-head")
     try:
         step_cfg = step_settings(args.step)
         previous_cfg = None if args.previous is None else step_settings(args.previous)
     except ValueError as err:
         raise SystemExit(str(err)) from None
-    recorded = None
-    if args.previous_run is not None:
-        with open(args.previous_run, encoding="utf-8") as f:
-            recorded = json.load(f)
+    recorded = recorded_dir = None
+    if args.previous_run is not None:  # every check against the recorded run runs before any network is loaded
+        recorded, recorded_dir = _load_json(args.previous_run), os.path.dirname(os.path.abspath(args.previous_run))
         name = recorded["conditions"]["step"]["name"]
         if name != args.previous:
             raise SystemExit(f"--previous-run measured step {name!r}, not the previous step {args.previous!r}")
+        expected = {"seed": hex(args.seed), "pairs": args.pairs, "max_steps": args.max_steps, "games": 2 * args.pairs}
+        for field, value in expected.items():  # a pair is two rows: the games of this run are 2 * pairs
+            if recorded["conditions"].get(field) != value:
+                raise SystemExit(f"--previous-run's {field} is {recorded['conditions'].get(field)!r}, "
+                                 f"this run's is {value!r}")
+    from . import arena
+    paths = {"main": args.checkpoint, "foe": args.foe_net,  # a matchup has no pool network: its teams are hashed
+             **({"teams": args.teams_from} if args.teams_from is not None else {}),  # in its conditions instead
+             **{f"opponent {name}": path for name, path in opponents.items()}}
+    digests = {role: arena._sha256(path) for role, path in paths.items()}
+    if recorded is not None:  # the networks and the pool must be the recorded ones. An opponent the recorded run lacks
+        # is allowed (its reproduction is None).
+        sha = recorded["conditions"].get("sha256_prefix", {})
+        roles = [role for role in ("main", "foe", "teams") if role in digests]
+        for role in roles + [role for role in digests if role.startswith("opponent ") and role in sha]:
+            if sha.get(role) != digests[role][:12]:
+                raise SystemExit(f"--previous-run's sha256_prefix of {role} is {sha.get(role)!r}, "
+                                 f"this run's is {digests[role][:12]!r}")
+    commit, dirty = _checkout()  # git: slow under WSL on a Windows worktree, so after the guards that need none of it
+    latency = None if args.latency_run is None else _load_json(args.latency_run)
+    if latency is not None:
+        try:
+            _check_latency(latency, args.step, commit)
+        except ValueError as err:
+            raise SystemExit(str(err)) from None
 
     import duoforge
     from duoforge import _layout, teams
     from duoforge_learn import checkpoint as ck, evaluate
-    from . import arena, honest
+    from . import honest
 
     C = _layout.CONSTANTS
 
@@ -405,11 +586,6 @@ def main(argv=None):
             raise SystemExit("--teams-from's teams are no pool (its config's data kind must be pool)")
     main_net, foe_net = load(args.checkpoint), load(args.foe_net)
     opponent_nets = {name: load(path) for name, path in opponents.items()}
-    paths = {"main": args.checkpoint, "foe": args.foe_net,
-             **({"teams": args.teams_from} if args.teams_from is not None else {}),
-             **{f"opponent {name}": path for name, path in opponents.items()}}
-    digests = {role: arena._sha256(path) for role, path in paths.items()}
-    commit, dirty = _checkout()
     foe_tuple = (foe_net["model"], foe_net["params"], foe_net["encoder"], foe_net["ext"])
     os.makedirs(args.out, exist_ok=True)
 
@@ -421,6 +597,9 @@ def main(argv=None):
             pool = matchup_pool(ctx, matchup)
             rows = matchup_rows(args.pairs)
         table, source_ids, table_info = honest.live_spread_table(ctx)
+        if recorded is not None and recorded["conditions"].get("table_sha256") != table_info["sha256"]:
+            raise SystemExit(f"--previous-run's table_sha256 is {recorded['conditions'].get('table_sha256')!r}, "
+                             f"this run's is {table_info['sha256']!r}")
         learner_team = np.where(rows["learner_seat"] == 0, rows["side0"], rows["side1"])
         opponent_team = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
 
@@ -445,7 +624,7 @@ def main(argv=None):
         opponent_out, pooled = {}, {"step": [], "previous": []}
         for name, net in opponent_nets.items():
             opponent_player = evaluate.Player(net["model"], net["params"], net["encoder"], name, net["ext"])
-            arms, scores, paired = {}, {}, {}
+            arms, scores = {}, {}
             for arm, step_name in arm_steps:
                 started = time.perf_counter()
                 records, decisions = play_search(arm, step_name, opponent_player)
@@ -462,19 +641,15 @@ def main(argv=None):
                                               max_steps=args.max_steps)
                 arms["R"] = _summary(records, rows.shape[0], None, time.perf_counter() - started)
                 scores["R"] = arena.scores(records)
-            if args.previous is not None:
-                paired["step_vs_previous"] = paired_h(scores["step"], scores["previous"])
-            if args.raw:
-                paired["step_vs_R"] = paired_h(scores["step"], scores["R"])
-            entry = {"arms": arms, "paired": paired,
+            entry = {"arms": arms, "paired": paired_entry(scores),
                      "opponent_is_foe_model": digests[f"opponent {name}"] == digests["foe"]}
-            if recorded is not None:  # the previous step rerun on this code reproduces its recorded games
+            if recorded is not None:  # the previous step rerun on this code plays the recorded step arm's games
                 old = recorded.get("opponents", {}).get(name, {}).get("arms", {}).get("step")
-                entry["same_games_as_recorded"] = None if old is None else \
-                    same_games(scores["previous"], old["scores"])
+                entry["same_games_as_recorded"] = recorded_reproduction(
+                    scores["previous"], arms["previous"]["decisions_sha256"], old, recorded_dir, name)
             opponent_out[name] = entry
 
-        h2h = verdict_out = p99 = None
+        h2h = None
         if args.h2h:
             with searcher(args.step, excluded(opponent_team)) as learner_search, \
                     searcher(args.previous, excluded(learner_team)) as opponent_search:
@@ -500,10 +675,6 @@ def main(argv=None):
         pool_teams, in_table = len(pool.ids), sum(x is not None for x in excluded(opponent_team))
 
     p99 = (wall_seconds(pooled["step"]) or {}).get("p99")
-    if h2h is not None:
-        paired_previous = {name: entry["paired"]["step_vs_previous"] for name, entry in opponent_out.items()}
-        verdict_out = verdict(h2h, paired_previous, pooled["step"], pooled["previous"], p99)
-
     matchup_out = None  # hash prefixes only: the team files are private paths, never written
     if matchup is not None:
         matchup_out = {"ours_sha256_prefix": matchup["ours"]["sha256"][:12],
@@ -524,15 +695,17 @@ def main(argv=None):
         "pool_teams": pool_teams, "games": int(rows.shape[0]), "table_sha256": table_info["sha256"],
         "opponent_team_in_table": in_table,
     }
-    report = {"conditions": conditions, "opponents": opponent_out, "h2h": h2h, "p99_seconds": p99,
-              "verdict": verdict_out}
+    report = {"conditions": conditions, "opponents": opponent_out, "h2h": h2h, "p99_seconds": p99, "verdict": None}
+    if args.h2h:
+        report["verdict"] = verdict(report, latency)
     with open(os.path.join(args.out, "ladder.json"), "w", encoding="utf-8") as f:
         json.dump(arena._finite(report), f, indent=1, allow_nan=False)
+    gates = report["verdict"] or {}
     print(json.dumps(arena._finite({
         "opponents": {name: {"scores": {arm: entry["arms"][arm]["pair_interval"]["score"] for arm in entry["arms"]},
                              "paired": entry["paired"]} for name, entry in opponent_out.items()},
-        "h2h": h2h, "p99_seconds": p99,
-        "adopt": None if verdict_out is None else verdict_out["adopt"]}), indent=1, allow_nan=False))
+        "h2h": h2h, "p99_seconds": p99, "gates": gates.get("gates"), "adopt": gates.get("adopt")}),
+        indent=1, allow_nan=False))
     return 0
 
 

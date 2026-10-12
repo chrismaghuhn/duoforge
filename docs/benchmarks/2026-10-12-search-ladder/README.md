@@ -26,12 +26,18 @@ This document is committed before any measurement of the ladder. Each later step
 
 | gate | rule |
 |---|---|
-| strength | head-to-head, step N against step N−1, both searching: the 95% lower bound of N's score, bootstrapped over team pairs, is **above 0.50** |
+| strength | head-to-head, step N against step N−1, both searching: the 95% lower bound of N's score, bootstrapped over team pairs, is **above 0.50**, and **no head-to-head game is unresolved** |
 | no harm | against `bot` and against `bc6`, paired against step N−1 on the same games: the 95% upper bound of h is **at least 0.50**. Both opponents must be measured |
-| reproduced | step N−1, rerun on step N's code, plays exactly its recorded games (`--previous-run`) |
-| fallbacks | raw fallbacks are at most **5%** of the non-team decisions, or at most N−1's share plus 1 point where N−1 is above 5% |
-| latency | p99 wall seconds per searched decision **≤ 2.0** in the exclusive latency run |
+| reproduced | for each gated opponent, step N−1 rerun on step N's code plays exactly its recorded games: the per-game scores **and** a digest of every decision match (`--previous-run`) |
+| fallbacks | **per gated opponent**: its raw fallbacks are at most **5%** of its non-team decisions, or at most its N−1 share plus 1 point where N−1 is above 5% |
+| latency | p99 wall seconds per searched decision **≤ 2.0** in the exclusive latency run (`--latency-run`, same step and commit). Without that run the verdict is **pending** and `adopt` is None |
 | errors | none: a SearchError stops the run, and a stopped run gives no verdict |
+
+**Tightened after the harness review of PR #445 (2026-10-12).** This was before any result of step 1's gated runs was known. Only the ungated sanity arm on one arena matchup was in at that point. Every change makes a gate stricter:
+- Strength also needs 0 unresolved head-to-head games: evaluate scores an engine-refused or untiebreakable game as the learner's loss, and the learner is the step.
+- Fallbacks are gated per gated opponent, not pooled: pooling over `ppo` could hide a regression against `bot`. The pooled share is reported.
+- Reproduced compares the per-game scores and a digest of every decision, not the scores alone.
+- Latency comes from the exclusive run (`verdict RUN/ladder.json --latency-run LATENCY/ladder.json`); `adopt` stays pending without it.
 
 **A step that misses the strength gate** is still reported, with its point estimate and its interval. No measurable gain is not the same as no gain.
 - In close cases, the step is rerun with 2048 pairs if the machine is free.
@@ -140,6 +146,7 @@ A small or no gain is the expected outcome here.
 
 **Provenance.**
 - **Code:** search/0-baseline at 1cb3e2d9, which is main 7f9ee4da's content plus the harness; the run recorded `dirty: false`.
+  - The PR head also merges #443 (refused leaves `"drop"`); with 0 refused leaves in step 0 it decides bit for bit as the measured code.
 - **Library:** the WSL Release build of main's C (library 0.45.0), JAX on the CPU, AMD Ryzen 7 5800X.
 - **Spread table:** `5f079072…`. 256 of the 2048 games' opponent teams are in it, and each was left out of the belief for its game.
 - **Networks** (SHA-256 prefixes): BC6 `bda5de8e4e96`, bc6-bot-M `213b773b3448`, params-49333 `ef1abe65f637`.
