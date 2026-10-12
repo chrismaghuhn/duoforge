@@ -82,6 +82,14 @@ For a member whose counter is hidden (asleep, `DUOFORGE_VIEW_HIDDEN`), with its 
 
 The word of a hypothesis built from a true state: S = 2 takes `dfi_word_of(0, 3)`, S = 3 takes `dfi_word_of(1, 3)` (the middle of each bucket).
 
+## 7a. Non-POOL kinds: a hidden sleeper is refused by the rebuild
+
+A non-POOL kind (closure, Team C) has no count byte, so a hidden counter there has no start that can be derived. The rebuild
+(`duoforge_battle_from_view`) refuses it with E_UNSUPPORTED instead of drawing one. This does not change any game: the public
+view already refuses a visible sleep under every non-POOL kind (the cause VISIBLE_SLEEP stays), so a view that comes from a
+battle never reaches the rebuild with a hidden sleeper there. Only a hand-made view can, and then the refusal is the explicit
+answer. The former weighted fill for these kinds is removed with the table (section 7).
+
 ## 8. Hypothesis revision
 
 - `DUOFORGE_HYPOTHESIS_REVISION` 3 -> 4 (the meaning of `sleep[][]` changes for a hidden sleeper; the layout does not change: `sleep` stays a uint64 per side and member, `reserved1` and `reserved0` stay zero).
