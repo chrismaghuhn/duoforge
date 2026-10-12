@@ -142,13 +142,36 @@ player has seen) is the version-2 item of #385.
 
 ## Evidence (this PR)
 
-- Pin, reference tier (`duoforge.python.live`): every committed pool battle's client streams without their `|showteam|` lines, with
-  a prior that holds only the true foe team. Every particle's public parts equal the open-sheet tracker's at every decision point,
-  byte for byte (record, status, causes and reason), and so do its observation, domain and stops.
-- Robustness, reference tier: a prior of every pool set of each species. Over the same streams, no particle raises anything but a
-  named redraw or stop.
-- Unit tier (`duoforge.python.live_cts`): the hindsight exclusion; a Choice lock against a later different move, a move off the set,
-  and a revealed item and ability are never kept; the Item Clause; the redraw cap and the named stops; determinism; the hook is off
-  for every plain tracker (the open-sheet tests are unchanged).
-- Cost: the fold time per particle and line, and a full refold of a long game. The decision latency with 16 particles is measured
-  against the open-sheet path (`live_latency`).
+- **Pin**, reference tier (`duoforge.python.live`, `ClosedSheetsPoolTest`). Input: every committed pool battle's client streams
+  without their `|showteam|` lines, both players, with a prior that holds only the true foe team. Result over 1932 streams:
+  - 1929 are equal at every decision point, byte for byte: request, domain, observation, and the public record with its status,
+    causes and reason.
+  - Where the open tracker stops or fails while folding, the particles stop by name (`cts:redraw-cap stop:<reason>`,
+    `cts:redraw-cap error:ValueError`). Where the decision point's own calls fail, they fail alike.
+  - The 3 streams against an Illusion sheet stop with `cts:facts skip:illusion`.
+  - A stream that runs to its end draws nothing again.
+- **Wide prior**, reference tier. The prior holds every set of every pool team (1485 sets, weighted by count). Every stream ends
+  by name, with 4 particles:
+  - 1749 complete;
+  - 175 stop at a feature the tracker does not fold (`cts:redraw-cap stop:feature:SUBSTITUTE` and others);
+  - 14 stop with `cts:redraw-cap error:ValueError` (own-PP and record-check streams);
+  - 3 stop on Illusion;
+  - 6 decision points fail in the own options as the open tracker's do.
+
+  The redraws include `facts`, `choice-lock` (#423) and `item-clause`.
+- **Damp Rock**, reference tier. A rain past 5 turns rules out a drawn Politoed without Damp Rock, through the engine's record
+  check.
+- **Unit tier** (`duoforge.python.live_cts`, 20 tests):
+  - the live fixture's pin;
+  - no hindsight;
+  - contradictions: Choice lock, move off the set, revealed ability, Item Clause, and a cheap Item Clause redraw;
+  - the named stops;
+  - determinism and weights;
+  - the hook off for every plain tracker.
+- **Cost**, measured on this machine (Windows, under the machine lock, with another lane's job in the other slot):
+  - One open-sheet tracker folds a pool stream at 30 us per line at p50 (42 us at p95). A full refold of a 600-line game is
+    therefore about 20 ms per particle.
+  - The particle tracker's `feed` per message with 16 particles and the wide prior (28384 messages): p50 17 ms, p95 53 ms,
+    p99 77 ms, max 1.4 s. The maximum is a redraw cap, which ends the battle's tracking.
+  - This cost includes the 16 records and observations of each decision point, which the search needs anyway.
+  - The decision latency of the search over 16 records is measured with the arena PR.
