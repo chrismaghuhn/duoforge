@@ -926,6 +926,22 @@ static void play(df_test *t, const duoforge_context_config *config, const char *
             if (st == DUOFORGE_E_UNSUPPORTED) {
                 break; /* a mechanic the manifest does not mark: the game ends here */
             }
+            if (st != DUOFORGE_OK && st != DUOFORGE_E_UNSUPPORTED) {
+                /* diagnostic of decision 0066 (#442): the game, the step, the boundary, the commands and the sleepers */
+                fprintf(stderr, "DIAG pool %u game %u pairs %u step %u boundary %u status %u slots %u,%u / %u,%u\n",
+                        (unsigned)pool_play, g, k, step, (unsigned)b->boundary_kind, (unsigned)st, (unsigned)c[0].slot[0],
+                        (unsigned)c[0].slot[1], (unsigned)c[1].slot[0], (unsigned)c[1].slot[1]);
+                for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+                    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+                        const dfi_member *mem = &b->sides[side].members[m];
+                        if (mem->status == DUOFORGE_AILMENT_SLEEP) {
+                            fprintf(stderr, "  DIAG side %u member %u asleep counter %u cant %u hp %u\n", side, m,
+                                    (unsigned)mem->status_counter, (unsigned)b->tail.sides[side].sleep_cant[m],
+                                    (unsigned)mem->hp);
+                        }
+                    }
+                }
+            }
             DF_CHECK_EQ_U64(t, st, DUOFORGE_OK); /* the status is reported with the failure */
             if (st != DUOFORGE_OK) {
                 break;
