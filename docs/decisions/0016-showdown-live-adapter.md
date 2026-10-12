@@ -64,11 +64,20 @@ The owner approved playing on PKMN Arena (https://vgc.ellep.dev, spec https://vg
 set -a; source ~/.duoforge-arena.env; set +a      # ARENA_BOT_NAME=Tian-Suan, ARENA_BOT_TOKEN=pka_... (mode 600)
 cd /mnt/c/Dev/src/duoforge
 export DUOFORGE_LIBRARY=<Linux build of this commit>/libduoforge_shared.so PYTHONPATH=python JAX_PLATFORMS=cpu
+BC6=/mnt/c/Dev/datasets/m11-bc-runs/bc6-M/bc.npz
+
+# recommended (owner, 2026-10-12): the honest search, BC6 as the network and as the foe model (M7: F 0.892, M 0.862)
 ~/df-learn/bin/python -m duoforge_live --server arena --format gen9championsvgc2026regmcots \
-    --checkpoint /mnt/c/Dev/datasets/m11-bc-runs/bc6-M/bc.npz --team <team paste> --log-dir ~/duoforge-arena-logs
+    --checkpoint $BC6 --search honest --foe-net $BC6 --team <team paste> --log-dir ~/duoforge-arena-logs
+
+# raw play with BC6
+~/df-learn/bin/python -m duoforge_live --server arena --format gen9championsvgc2026regmcots \
+    --checkpoint $BC6 --team <team paste> --log-dir ~/duoforge-arena-logs
 ```
 
-Add `--search honest` to play the turn decisions with the honest search on the same checkpoint. `--team-pool FILE` holds the random ladder's published teams (see below).
+- `--foe-net P` gives the search's worlds the foe's policy from P (Honest's `foe_net`, M7). It needs `--search honest`. Without it, the search models the foe with its own network. The default of the Showdown mode is unchanged.
+- `--team-pool FILE` holds the random ladder's published teams (see below).
+- Every checkpoint's tables must be the library's: a checkpoint whose pool fingerprint differs is refused at start, never played on other tables.
 
 **Name and token.**
 - The name comes only from `ARENA_BOT_NAME` and the token only from `ARENA_BOT_TOKEN`. No option takes either.
@@ -97,13 +106,17 @@ Add `--search honest` to play the turn decisions with the honest search on the s
 | `reconnect` | after a reconnect, the replayed log differs from the lines already folded |
 | `random_team_unknown`, `random_team_ambiguous` | a random-team battle whose team is not exactly one `--team-pool` team |
 | `format` | a battle of another format |
+| `no_team` | a team-ladder battle without `--team` |
+| `request` | a request that is no JSON object (answered with a default without an rqid) |
+| `forfeit` | a case where the Showdown mode would forfeit: the arena bot never forfeits |
 
-So every request gets an answer well within the arena timer (45 s, 90 s at team preview).
+With one battle at a time, as the arena runs them, every request gets an answer well within the arena timer (45 s, 90 s at team preview). A dropped connection is no fallback: the bot reconnects, and the server sends the open request again.
 
 **Reconnect.**
 - A dropped connection reconnects after 1, 2, 5, 10, then every 30 s; a successful login resets the backoff.
 - Close code 4001 (another login as the bot) stops the bot, so that two instances do not take turns. A refused login (`|nametaken|`) also stops it.
-- The server replays an open battle's log. When the replay starts with every battle line already folded, the new lines are folded, and the open request is answered again with the same choice. A `|sentchoice|` line means the server already holds the choice, so the bot sends nothing.
+- The server replays an open battle's log, then sends the open request again. When the replay starts with every battle line already folded, the new lines are folded, and the open request is answered again with the same choice. A `|sentchoice|` line, beside the log or the request, means the server already holds the choice: the bot sends nothing, and the line is never folded.
+- A connection must stay up for 60 s after its login before the backoff starts again, so a server that closes at once is not hit every second.
 
 **Random-team ladder** (`…random`). The team comes from the first request, which lacks the natures and stat points that the tracker's own sheet needs. The policy plays such a battle only when exactly one `--team-pool` team matches the request's species, items, abilities and moves. Otherwise the battle falls back.
 
@@ -114,5 +127,5 @@ So every request gets an answer well within the arena timer (45 s, 90 s at team 
 
 **Evidence.**
 - `duoforge.python.pkmn_arena`: a fake websocket only. It covers login, team and token handling, an OTS battle that folds the sheets, every fallback, retries, the deadline, reconnects and the random ladder.
-- `duoforge.python.pkmn_arena_net` (JAX): a tiny synthetic checkpoint in the BC file format (model v2, encoder 6) loads as its own network. It plays the OTS fixture raw and with the honest search, with no fallback.
+- `duoforge.python.pkmn_arena_net` (JAX): a tiny synthetic checkpoint in the BC file format (model v2, encoder 6) loads as its own network. It plays the OTS fixture raw, with the honest search, and with the honest search and the same file as `foe_net`, with no fallback.
 - Nothing connects to the arena in tests.

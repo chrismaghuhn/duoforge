@@ -3,7 +3,8 @@
 The password of a registered name comes only from the environment variable
 DUOFORGE_PS_PASSWORD; without it the bot logs in as a guest.
 
-    python -m duoforge_live --server arena --format ID --checkpoint P [--team FILE] [--team-pool FILE] ...
+    python -m duoforge_live --server arena --format ID --checkpoint P [--team FILE] [--team-pool FILE]
+                            [--search honest [--foe-net P]] ...
 
 plays on PKMN Arena (pkmn_arena): the bot's name comes from ARENA_BOT_NAME and its token from ARENA_BOT_TOKEN, only
 from the environment; no option takes the token.
@@ -41,7 +42,7 @@ def _arguments(argv):
 
 
 def _arena_arguments(argv):
-    p = argparse.ArgumentParser(prog="python -m duoforge_live --server arena",
+    p = argparse.ArgumentParser(prog="python -m duoforge_live --server arena", allow_abbrev=False,
                                 description="PKMN Arena: name and token only from ARENA_BOT_NAME and ARENA_BOT_TOKEN")
     p.add_argument("--server", required=True, choices=(ARENA,))
     p.add_argument("--format", required=True, choices=pkmn_arena.FORMATS,
@@ -53,6 +54,9 @@ def _arena_arguments(argv):
                         "is played by the policy only when one of them matches its request")
     p.add_argument("--search", default="raw", choices=("raw", "honest"),
                    help="honest: the honest search X plays the turn decisions (a trained format-2 checkpoint)")
+    p.add_argument("--foe-net", default=None,
+                   help="with --search honest: the checkpoint that models the foe in the search's worlds (Honest's "
+                        "foe_net, M7); recommended (owner, 2026-10-12): the same BC6 file as --checkpoint")
     p.add_argument("--log-dir", default=_log_dir(), help="private logs, outside the repository")
     return p.parse_args(argv)
 
@@ -65,6 +69,8 @@ def _is_arena(argv):
 def arena_main(argv):
     pkmn_arena.check_argv(argv)  # before argparse, whose errors echo the arguments
     args = _arena_arguments(argv)
+    if args.foe_net is not None and args.search != "honest":
+        pkmn_arena._refuse("--foe-net models the foe in the honest search: it needs --search honest")
     name = pkmn_arena.credentials()  # the token's value is never shown
     from duoforge_replay.dataset import refuse_repository
     try:
@@ -80,9 +86,15 @@ def arena_main(argv):
         search.check_tracker(Tracker)
     net, tables = policy.load(args.checkpoint), data.for_checkpoint(args.checkpoint)
     pkmn_arena.check_teams(tables, team_text, pool)
-    live = search.load(args.checkpoint) if args.search == "honest" else None
+    live = None
+    if args.search == "honest":
+        settings = None
+        if args.foe_net is not None:
+            settings = dict(search.HONEST_SETTINGS, foe_net=pkmn_arena.load_foe_net(args.foe_net))
+        live = search.load(args.checkpoint, settings)
+    mode = args.search + ("+foe_net" if args.foe_net is not None else "")
     bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
-                              search=live, mode=args.search)
+                              search=live, mode=mode)
     try:
         asyncio.run(bot.run())
     finally:
@@ -91,10 +103,11 @@ def arena_main(argv):
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
+    pkmn_arena.check_argv(argv)  # in every mode, before argparse, whose errors echo the arguments
     if _is_arena(argv):
         return arena_main(argv)
     args = _arguments(argv)
-    if (urllib.parse.urlparse(args.server).hostname or "") == pkmn_arena.HOST:
+    if args.server == ARENA or (urllib.parse.urlparse(args.server).hostname or "") == pkmn_arena.HOST:
         print(f"duoforge_live: {pkmn_arena.HOST} is PKMN Arena: use --server {ARENA}", file=sys.stderr)
         raise SystemExit(2)
     config = client.Config(name=args.name, team=args.team, log_dir=args.log_dir, team_link=args.team_link,

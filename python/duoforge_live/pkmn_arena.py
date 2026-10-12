@@ -2,7 +2,7 @@
 bot ladder (owner, 2026-10-12), next to the Showdown modes and never instead of them.
 
     python -m duoforge_live --server arena --format ID --checkpoint P [--team FILE] [--team-pool FILE]
-                            [--search raw|honest] [--log-dir DIR]
+                            [--search raw|honest [--foe-net P]] [--log-dir DIR]
 
 The arena speaks the Showdown protocol on one fixed host (URL). The bot's name comes from ARENA_BOT_NAME and its token
 from ARENA_BOT_TOKEN, both only from the environment: the token is never taken from the command line or a URL, never
@@ -57,6 +57,7 @@ SHEET_WAIT = 20.0  # seconds after the team preview request for both open sheets
 MAX_RETRIES = 16  # next-best choices after "[Invalid choice]" at one decision point, then the battle falls back
 _NAME = re.compile(r"^[A-Za-z0-9._-]+(?: [A-Za-z0-9._-]+)*$")  # llms.txt: 3-18 characters
 _CLOSE_STOP = 4001  # another connection logged in as the bot
+STABLE = 60.0  # seconds a logged-in connection must last to reset the backoff
 
 
 def _refuse(message):
@@ -139,6 +140,18 @@ def request_matches(pokemon, paste):
     return got == want
 
 
+def load_foe_net(path):
+    """Honest's foe_net (model, params, encoder, ext_supported) of a format-2 checkpoint in its trained layout: the
+    network that models the foe in the search's worlds (M7). Its tables must be the library's (data.for_checkpoint
+    raises ValueError for another fingerprint), as for the main network."""
+    from duoforge_learn import checkpoint
+    from .data import for_checkpoint
+    for_checkpoint(path)
+    params, config = checkpoint.load_trained(path)
+    return (checkpoint.trained_model(config, params), params, checkpoint.encoder_of(config),
+            checkpoint.ext_supported_of(config))
+
+
 def close_code(err):
     """The close code a websockets ConnectionClosed (or an alike error) received, or None."""
     rcvd = getattr(err, "rcvd", None)
@@ -215,6 +228,7 @@ class ArenaBot(client.Bot):
         self.run_log = RunLog(log_dir, mode, fmt)
         self._executor = ThreadPoolExecutor(1, thread_name_prefix="duoforge-arena-policy")
         self._worker = None  # the future of the last decision; a late one blocks the next (no two at once)
+        self._dropped = ()  # the connection's errors: never a battle's fallback, the run loop reconnects
         self.warned = set()
 
     def close(self):
@@ -231,8 +245,10 @@ class ArenaBot(client.Bot):
             from websockets.exceptions import WebSocketException
             connect = connect or (lambda url: websockets.connect(url, max_size=None))
             errors = errors or (WebSocketException, OSError)
+        self._dropped = errors
         attempt = 0
         while True:
+            since = self.clock()
             try:
                 async with connect(URL) as ws:
                     self.connection, self.named = ws, False
@@ -257,8 +273,8 @@ class ArenaBot(client.Bot):
                              f"{code}); reconnecting"), file=sys.stderr)
             finally:
                 self.connection = None
-            if self.named:
-                attempt = 0  # that connection logged in: the backoff starts again
+            if self.named and self.clock() - since >= STABLE:
+                attempt = 0  # that connection logged in and lasted: the backoff starts again
             delay = BACKOFF[min(attempt, len(BACKOFF) - 1)]
             attempt += 1
             self.run_log.counts["reconnects"] += 1
@@ -300,8 +316,8 @@ class ArenaBot(client.Bot):
         self.run_log.fallback_battles[reason] += 1
         if reason not in self.warned:
             self.warned.add(reason)
-            print(f"duoforge_live: arena fallback ({reason}): the rest of the battle is /choose default "
-                  "(counted in the run log)", file=sys.stderr)
+            print(redact(f"duoforge_live: arena fallback ({reason}): the rest of the battle is /choose default "
+                         "(counted in the run log)"), file=sys.stderr)
 
     async def _fall(self, b, reason, detail=None):
         self._mark(b, reason, detail)
@@ -359,13 +375,15 @@ class ArenaBot(client.Bot):
     def _resync(self, b, lines):
         """The lines of a replayed log still to fold: those after the battle lines folded before the reconnect."""
         b.resync = False
-        if any(line_kind(line) == "sentchoice" for line in lines):
-            b.resend = False  # the server holds the choice sent before the drop
-        if b.fallback is not None or b.game is None:
-            return [line for line in lines if line_kind(line) != "init"] if b.history else lines
+        if b.fallback is None and b.game is None:  # a random-team battle before its first request: all again
+            b.buffer = []
+            return lines
+        if b.fallback is not None:
+            return [line for line in lines if line_kind(line) != "init"]
         n, seen, out = len(b.history), 0, []
         for line in lines:
             if line_kind(line) == "sentchoice":
+                out.append(line)  # the caller reads it
                 continue
             if seen < n:
                 if _history_line(line):
@@ -376,7 +394,7 @@ class ArenaBot(client.Bot):
             out.append(line)
         if seen < n:
             self._mark(b, "reconnect", f"the replayed log differs from the folded one after {seen} of {n} lines")
-            return [line for line in lines if line_kind(line) not in ("init", "sentchoice")]
+            return [line for line in lines if line_kind(line) != "init"]
         return out
 
     async def _battle(self, room, lines):
@@ -387,6 +405,12 @@ class ArenaBot(client.Bot):
             return
         if b.resync and "|init|battle" in lines:
             lines = self._resync(b, lines)
+        # |sentchoice| (after a reconnect, beside the log or the open request): the server holds the choice sent
+        # before the drop, so it is not sent again; a session line, never folded
+        held = any(line_kind(line) == "sentchoice" for line in lines)
+        lines = [line for line in lines if line_kind(line) != "sentchoice"]
+        if held:
+            b.resend = False
         resent = None
         for line in lines:
             b.write({"in": line})
@@ -401,8 +425,12 @@ class ArenaBot(client.Bot):
             if line.startswith("|request|"):
                 try:
                     request = json.loads(line[len("|request|"):])
+                    if not isinstance(request, dict):
+                        raise ValueError("not an object")
                 except ValueError as err:
-                    self._mark(b, "request", f"a request that is no JSON: {err}")
+                    self._mark(b, "request", f"a request that is no JSON object: {err}")
+                    b.raw = {}  # answered with a default without an rqid
+                    b.answered.discard(None)
                     continue
                 if b.resend:  # the first request after a reconnect: an answered one is still open
                     b.resend = False
@@ -442,6 +470,8 @@ class ArenaBot(client.Bot):
             if resent is not None and b.fallback is None and b.candidates and b.game.request is not None \
                     and b.game.request.get("rqid") == resent:
                 await self._choose(b)  # the open request again after a reconnect: the same choice again
+        except self._dropped:
+            raise  # a dropped connection, not the battle: the run loop reconnects and the request comes again
         except Stop as e:  # a line the tracker cannot represent
             await self._fall(b, f"stop:{e.reason.split(':')[0]}", f"stop:{e.reason}")
         except (Exception, trace_to_c.ConversionError) as e:  # ConversionError is a SystemExit
@@ -457,6 +487,8 @@ class ArenaBot(client.Bot):
             elif b.awaiting is not None and self.clock() - b.awaiting > client.TIMER_WAIT:
                 try:
                     await self._after_feed(b)
+                except self._dropped:
+                    raise
                 except Stop as e:
                     await self._fall(b, f"stop:{e.reason.split(':')[0]}", f"stop:{e.reason}")
                 except (Exception, trace_to_c.ConversionError) as e:
@@ -498,7 +530,8 @@ class ArenaBot(client.Bot):
         if game.dirty is not None and self.paused is None:
             self.paused = game.dirty  # the rest of this game and every later one play raw
             b.write({"dirty": game.dirty})
-            print(f"duoforge_live: search error, the rest of the session plays raw: {game.dirty}", file=sys.stderr)
+            print(redact(f"duoforge_live: search error, the rest of the session plays raw: {game.dirty}"),
+                  file=sys.stderr)
         await self._choose(b)
 
     async def _decide(self, b, budget):

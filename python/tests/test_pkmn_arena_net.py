@@ -107,6 +107,23 @@ class ArenaNetworkTest(unittest.TestCase):
         self.assertNotIn("default", " ".join(self.chosen()))
         self.assertGreaterEqual(bot.run_log.search["searched"], 1)
 
+    def test_the_recommended_search_models_the_foe_with_the_same_bc_file(self):
+        # Owner, 2026-10-12: the honest search with foe_net = BC6, the same file as the network (M7: F 0.892 against
+        # M 0.862). The search's worlds take the foe's policy from the foe network, encoded with its own encoder.
+        foe = pkmn_arena.load_foe_net(self.path)
+        self.assertEqual(foe[2:], (6, self.mask))
+        live = live_search.load(self.path, dict(live_search.HONEST_SETTINGS, foe_net=foe))
+        self.assertIsNotNone(live.searcher.foe_net)
+        self.assertEqual(live.searcher.foe_net[2:], (6, self.mask))
+        with mock.patch.object(live_search, "DEADLINE_CAP", 120.0):
+            bot = self.play(search=live)
+        text = Path(self.logs.name, f"{ROOM}-tiansuan.jsonl").read_text(encoding="utf-8")
+        outcomes = [json.loads(line)["search"] for line in text.splitlines() if '"search"' in line]
+        self.assertIn("searched", [o["cause"] for o in outcomes], outcomes)
+        self.assertFalse([o for o in outcomes if o["fallback"] == "b"], outcomes)
+        self.assertEqual(dict(bot.run_log.fallback_battles), {})
+        self.assertNotIn("default", " ".join(self.chosen()))
+
 
 if __name__ == "__main__":
     unittest.main()

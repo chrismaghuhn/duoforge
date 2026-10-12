@@ -56,10 +56,11 @@ class FakeClosed(Exception):
 
 
 class FakeSocket:
-    """One connection: hands out its script (a str, or a callable run when reached), then closes with `code`."""
+    """One connection: hands out its script (a str, or a callable run when reached), then closes with `code`. A send
+    that ends with `drop` closes it instead (once)."""
 
-    def __init__(self, script, code, sent):
-        self.script, self.code, self.sent = list(script), code, sent
+    def __init__(self, script, code, sent, drop=None):
+        self.script, self.code, self.sent, self.drop = list(script), code, sent, drop
 
     async def recv(self):
         while self.script:
@@ -71,6 +72,9 @@ class FakeSocket:
         raise FakeClosed(self.code)
 
     async def send(self, text):
+        if self.drop is not None and text.endswith(self.drop):
+            self.drop, self.script = None, []
+            raise FakeClosed(1006)
         self.sent.append(text)
 
 
@@ -78,14 +82,14 @@ class FakeConnect:
     """connect(url) of the bot: one scripted connection per call."""
 
     def __init__(self, connections):
-        self.connections = list(connections)  # [(script, close code)]
+        self.connections = list(connections)  # [(script, close code)] or [(script, close code, drop)]
         self.urls = []
         self.sent = []
 
     def __call__(self, url):
         self.urls.append(url)
-        script, code = self.connections.pop(0)
-        socket = FakeSocket(script, code, self.sent)
+        script, code, *drop = self.connections.pop(0)
+        socket = FakeSocket(script, code, self.sent, *drop)
 
         @contextlib.asynccontextmanager
         async def manager():
@@ -184,13 +188,16 @@ class ArenaTest(unittest.TestCase):
         self.assertFalse(client.official(pkmn_arena.URL))  # the official server's refusal is a separate check
 
     def test_login_with_trn_and_the_team_after_every_login(self):
-        self.make(connections=[(LOGIN, 1006), (LOGIN, 1008), (LOGIN, 4001)])
+        def lasts():
+            self.clock.now += pkmn_arena.STABLE
+        self.make(connections=[(LOGIN + [lasts], 1006), (LOGIN, 1008), (LOGIN, 4001)])
         stop = self.run_bot()
         self.assertIn("4001", str(stop))
         trn = f"|/trn {NAME},0,{TOKEN}"
         utm = "|/utm " + teams.pack(FIXTURE["team"])
         self.assertEqual(self.sent, [trn, utm] * 3)
-        self.assertEqual(self.slept, [1.0, 1.0])  # each connection logged in: the backoff starts again
+        # the first connection lasted: the backoff starts again; the second closed at once after its login: it grows
+        self.assertEqual(self.slept, [1.0, 2.0])
         log = self.run_log()
         self.assertEqual(log["counts"]["logins"], 3)
         self.assertEqual(log["counts"]["reconnects"], 2)
@@ -471,10 +478,49 @@ class ArenaTest(unittest.TestCase):
         self.assertEqual(self.run_log()["fallback_battles"], {"reconnect": 1})
 
     def test_a_choice_the_server_holds_is_not_sent_again(self):
+        # Showdown sends the open request again after the log, with |sentchoice| when it holds the choice already
+        held = room(FIXTURE["messages"][5] + ["|sentchoice|move 1, move 1"])
         self.make(connections=[(LOGIN + battle_messages(upto=6), 1006),
-                               (LOGIN + [self.replay(6)[0] + "\n|sentchoice|move 1, move 1"], 4001)])
+                               (LOGIN + self.replay(6) + [held] + [room(m) for m in FIXTURE["messages"][6:8]], 4001)])
         self.run_bot()
-        self.assertEqual(len([s for s in self.sent if "/choose" in s]), 2)
+        chosen = [s for s in self.sent if "/choose" in s]
+        self.assertEqual(len(chosen), 3)  # team, turn 1, and turn 2 after the reconnect: nothing sent twice
+        self.assertTrue(chosen[2].endswith(f"|{request_of(7)['rqid']}") and "default" not in chosen[2])
+        self.assertEqual(self.run_log()["fallback_battles"], {})
+
+    def test_a_drop_while_choosing_is_no_fallback(self):
+        rq = request_of(5)["rqid"]
+        self.make(connections=[(LOGIN + battle_messages(upto=6), 1006, f"|{rq}"),
+                               (LOGIN + self.replay(6) + [room(FIXTURE["messages"][5])], 4001)])
+        self.run_bot()
+        chosen = [s for s in self.sent if "/choose" in s]
+        self.assertEqual(len(chosen), 2)  # the team, then the turn's choice after the reconnect
+        self.assertTrue(chosen[1].endswith(f"|{rq}") and "default" not in chosen[1], chosen)
+        log = self.run_log()
+        self.assertEqual(log["fallback_battles"], {})
+        self.assertEqual(log["closes"], {"1006": 1, "4001": 1})
+
+    def test_a_request_that_is_no_json_object_is_answered_with_default(self):
+        self.make()
+        self.feed(*battle_messages(upto=5))
+        self.take()
+        self.feed(room(["|request|{not json"]))
+        self.assertEqual(self.chosen(), [f"{ROOM}|/choose default"])
+        self.feed(room(["|request|null"]))  # each such request gets its own default
+        self.assertEqual(self.chosen(), [f"{ROOM}|/choose default"])
+        self.assertEqual(self.run_log()["fallback_battles"], {"request": 1})
+
+    def test_a_reconnect_before_a_random_battles_first_request(self):
+        rnd = f"battle-{OTS}random-9"
+        replay = room(["|init|battle"] + [l for m in FIXTURE["messages"][:2] for l in m], rnd)
+        self.make(team=False, pool=[FIXTURE["team"]],
+                  connections=[(LOGIN + battle_messages(rnd, upto=2), 1006),
+                               (LOGIN + [replay] + [room(m, rnd) for m in FIXTURE["messages"][2:6]], 4001)])
+        self.run_bot()
+        chosen = [s for s in self.sent if "/choose" in s]
+        self.assertEqual(len(chosen), 2)
+        self.assertNotIn("default", " ".join(chosen))
+        self.assertEqual(self.run_log()["fallback_battles"], {})
 
     # ------------------------------------------------------------------ random-team ladder
     def test_a_random_team_battle_takes_its_team_from_the_pool(self):
@@ -541,6 +587,12 @@ class CommandLineTest(unittest.TestCase):
             self.assertEqual(stop.code, 2)
             self.assertNotIn(TOKEN, err)
 
+    def test_the_foe_net_needs_the_honest_search(self):
+        stop, err = self.run_main(["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--foe-net", "x.npz"],
+                                  ENV)
+        self.assertEqual(stop.code, 2)
+        self.assertIn("--search honest", err)
+
     def test_arena_logs_never_go_into_the_repository(self):
         argv = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--log-dir",
                 str(data.ROOT / "build" / "arena-logs")]
@@ -549,10 +601,19 @@ class CommandLineTest(unittest.TestCase):
         self.assertIn("inside the repository", err)
 
     def test_the_showdown_mode_refuses_the_arena_host(self):
-        stop, err = self.run_main(["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--server", pkmn_arena.URL],
-                                  ENV)
-        self.assertEqual(stop.code, 2)
-        self.assertIn("--server arena", err)
+        for argv in (["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--server", pkmn_arena.URL],
+                     ["--ser", "arena", "--checkpoint", "x.npz", "--name", "DuoForgeBot"]):
+            stop, err = self.run_main(argv, ENV)
+            self.assertEqual(stop.code, 2)
+            self.assertIn("--server arena", err)
+
+    def test_no_mode_echoes_a_token_on_the_command_line(self):
+        for argv in (["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--password", TOKEN],
+                     ["--serv=arena", "--token", "pka_other"]):
+            stop, err = self.run_main(argv, ENV)
+            self.assertEqual(stop.code, 2)
+            self.assertIn("on the command line", err)
+            self.assertFalse(TOKEN in err or "pka_other" in err)
 
     def test_the_official_server_refusal_is_unchanged(self):
         stop, _ = self.run_main(["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--challenge", "chris"], ENV)
