@@ -1,6 +1,6 @@
 # 0065 - Psychic Terrain (G96, lane A batch 7, builder H23)
 
-Status: **implemented on chris/expansion-g96-psychic-terrain; evidence on the final head pending** (the lock job of section 6). Metal Burst is not part of this decision: it stays paused, and decision 0064 and tail bytes 33-35 stay reserved (no Metal Burst code may land). Decision 0015 letter **5cz**. Pin: Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`). Builds on 0015 (POOL kinds, the pool tables), 0023 (the public state), 0007 (the view), and the terrain rules already on main (Electric, Misty; the Psychic Seed of 0059/Team C).
+Status: **implemented; evidence on the final head in section 6 (mutants P1-P6 6/6, campaigns 96/97/98: 699/700 PASS, 0 DIVERGENCE, 126 blocks); full CI green on 1f7b1df0.** Metal Burst is not part of this decision: it stays paused, and decision 0064 and tail bytes 33-35 stay reserved (no Metal Burst code may land). Decision 0015 letter **5cz**. Pin: Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`). Builds on 0015 (POOL kinds, the pool tables), 0023 (the public state), 0007 (the view), and the terrain rules already on main (Electric, Misty; the Psychic Seed of 0059/Team C).
 
 ## 1. Pin semantics (checked against the pin)
 
