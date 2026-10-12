@@ -859,7 +859,7 @@ class LiveLatency(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "repository"):
                 live_latency.main(["--checkpoint", path, "--out", "python/tests/latency-out", "--games", "1"])
             live_latency.main(["--checkpoint", path, "--out", out, "--games", "1", "--max-steps", "6",
-                               "--k", "2", "--m", "2", "--worlds", "2"])
+                               "--k", "2", "--m", "2", "--worlds", "2", "--no-foe-net"])
             with open(os.path.join(out, "latency.json"), encoding="utf-8") as f:
                 report = json.load(f)
         self.assertEqual(report["games"], 1)
@@ -874,6 +874,47 @@ class LiveLatency(unittest.TestCase):
             self.assertEqual(set(row["reasons"]) == set(), all(c in ("searched", "forced", "raw", "team")
                                                                 for c in row["causes"]), kind)
         self.assertEqual(report["settings"]["k"], 2)
+
+    def test_the_live_search_loads_its_pinned_foe_network(self):
+        # Owner 2026-10-12: the live search's worlds are modelled by the pinned foe network (BC6 in play; here an
+        # encoder-3 stand-in pinned by its own hash); it must read the library's tables as the network does
+        # (checkpoint.check_data), and the main network keeps its own candidates and the values.
+        import hashlib
+        import jax
+        from duoforge_learn import checkpoint, policy as learn_policy
+        from duoforge_live import search as live_search
+
+        def save(path, encoder, key):
+            config = learn_policy.v2_config("S")
+            model = learn_policy.make(config, features.feature_names(encoder))
+            checkpoint.save(path, model.init(jax.random.PRNGKey(key)),
+                            {"model": config, "encoder": encoder, "features": list(features.feature_names(encoder)),
+                             "slot_features": list(features.SLOT_FEATURE_NAMES),
+                             "data": {"kind": "pool", "fingerprint": "00"}, "teams": {}, "update": 0, "decisions": 0,
+                             "ids": checkpoint.ids_of(ctx)})
+
+        settings = dict(live_search.HONEST_SETTINGS, k=2, m=2, s=2, capacity=8)
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, tempfile.TemporaryDirectory() as tmp:
+            main, foe = os.path.join(tmp, "main.npz"), os.path.join(tmp, "foe.npz")
+            save(main, 4, 11)
+            save(foe, 3, 12)
+            with open(foe, "rb") as f:
+                pin = hashlib.sha256(f.read()).hexdigest()
+            live = live_search.load(main, settings=settings, foe_net=foe, foe_net_sha256=pin)
+            try:
+                model, _, encoder, _ = live.searcher.foe_net
+                self.assertEqual(encoder, 3)
+                self.assertEqual(len(model.feature_names), features.obs_size(3))
+                self.assertEqual(live.searcher.encoder, 4)
+                self.assertEqual(live.foe_check["ids"], "carried over")  # another fingerprint, its ids carry over
+            finally:
+                live.close()
+            bare = live_search.load(main, settings=settings, foe_net=None)
+            try:
+                self.assertIsNone(bare.searcher.foe_net)
+                self.assertIsNone(bare.foe_check)
+            finally:
+                bare.close()
 
 
 class PositionsTool(unittest.TestCase):

@@ -175,6 +175,51 @@ class StartTest(unittest.TestCase):
             cli.main(["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--search", "honest"])
         loaded.assert_not_called()
 
+    def test_the_foe_model_is_pinned_bc6_and_configured_explicitly(self):
+        # Owner 2026-10-12 (M7 repeat, docs/benchmarks/2026-10-12-bc6-foe-model): the live search models the foe with
+        # M11's BC6. Its weights are private, so the file comes from --foe-net or $DUOFORGE_FOE_NET; nothing configured
+        # is refused, never silently played without it; None (--no-foe-net) is the explicit choice of no foe network.
+        self.assertTrue(search.FOE_NET_SHA256.startswith("bda5de8e4e96"))  # the M7 report's prefix of BC6's file hash
+        self.assertEqual(len(search.FOE_NET_SHA256), 64)
+        self.assertEqual(search.foe_net_path("bc6.npz", environ={}), "bc6.npz")
+        self.assertEqual(search.foe_net_path(search.ENVIRONMENT, environ={search.FOE_NET_ENV: "x/bc.npz"}),
+                         "x/bc.npz")
+        self.assertIsNone(search.foe_net_path(None, environ={search.FOE_NET_ENV: "x/bc.npz"}))
+        for environ in ({}, {search.FOE_NET_ENV: ""}):
+            with self.subTest(environ=environ), self.assertRaisesRegex(ValueError, "not configured"):
+                search.foe_net_path(search.ENVIRONMENT, environ=environ)
+
+    def test_a_foe_net_file_other_than_the_pin_is_refused_before_anything_loads(self):
+        from duoforge_learn import checkpoint
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "other.npz"
+            path.write_bytes(b"not BC6")
+            with mock.patch.object(checkpoint, "load_trained") as loaded, \
+                    self.assertRaisesRegex(ValueError, "pinned"):
+                search.load("main.npz", foe_net=str(path))
+            loaded.assert_not_called()
+
+    def test_the_foe_net_options(self):
+        import contextlib
+        import io
+        from duoforge_live import __main__ as cli
+        base = ["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--search", "honest"]
+        self.assertIs(search.foe_net_of(cli._arguments(base)), search.ENVIRONMENT)
+        self.assertEqual(search.foe_net_of(cli._arguments(base + ["--foe-net", "bc6.npz"])), "bc6.npz")
+        self.assertIsNone(search.foe_net_of(cli._arguments(base + ["--no-foe-net"])))
+        self.assertEqual(search.foe_net_sha256_of(cli._arguments(base)), search.FOE_NET_SHA256)  # the pin by default
+        self.assertEqual(search.foe_net_sha256_of(cli._arguments(base + ["--foe-net-sha256", "ab" * 32])), "ab" * 32)
+        with self.assertRaises(SystemExit) as caught, contextlib.redirect_stderr(io.StringIO()):
+            cli._arguments(base + ["--foe-net", "bc6.npz", "--no-foe-net"])
+        self.assertEqual(caught.exception.code, 2)
+        # An unconfigured foe model stops the bot before any network is loaded or a server is met.
+        from duoforge_live import policy
+        with mock.patch.dict("os.environ", {search.FOE_NET_ENV: ""}), \
+                mock.patch.object(search, "check_tracker"), mock.patch.object(policy, "load") as loaded, \
+                self.assertRaisesRegex(ValueError, "not configured"):
+            cli.main(base)
+        loaded.assert_not_called()
+
     def test_the_tables_follow_the_checkpoints_data_kind(self):
         from duoforge_live import policy
         self.assertEqual(policy.table_kind({"format": 2, "data": {"kind": "pool"}}), "pool")
