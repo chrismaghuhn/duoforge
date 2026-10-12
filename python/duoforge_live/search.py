@@ -225,18 +225,18 @@ def load(checkpoint_path, settings=None, foe_net=ENVIRONMENT, foe_net_sha256=FOE
     $DUOFORGE_FOE_NET, None for none; a foe network already in settings ("foe_net") is taken as it is. The foe network
     must have foe_net_sha256 and read the library's tables (pkmn_arena.load_foe_net: checkpoint.check_data); its check
     is the LiveSearch's foe_check. Its close() also closes the search and its context."""
-    import duoforge
-    from duoforge_learn import checkpoint
-    from duoforge_learn.train import DATA_KINDS
-    from duoforge_search import honest
     settings = HONEST_SETTINGS if settings is None else settings
     foe_check = None
-    if "foe_net" not in settings:
+    if "foe_net" not in settings:  # first: an unconfigured or unpinned foe network stops before anything loads
         path = foe_net_path(foe_net)
         if path is not None:
             from .pkmn_arena import load_foe_net
             foe, foe_check = load_foe_net(path, foe_net_sha256)
             settings = dict(settings, foe_net=foe)
+    import duoforge
+    from duoforge_learn import checkpoint
+    from duoforge_learn.train import DATA_KINDS
+    from duoforge_search import honest
     params, config = checkpoint.load_trained(checkpoint_path)
     model = checkpoint.trained_model(config, params)
     context = duoforge.Context(data_kind=DATA_KINDS[config["data"]["kind"]])
