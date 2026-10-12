@@ -639,16 +639,30 @@ class CommandLineTest(unittest.TestCase):
             self.assertNotIn(TOKEN, err)
 
     def test_the_foe_net_needs_the_honest_search(self):
-        stop, err = self.run_main(["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--foe-net", "x.npz"],
-                                  ENV)
-        self.assertEqual(stop.code, 2)
-        self.assertIn("--search honest", err)
+        for extra in (["--foe-net", "x.npz"], ["--no-foe-net"], ["--foe-net-sha256", "0" * 64]):
+            with self.subTest(extra=extra):
+                stop, err = self.run_main(["--server", "arena", "--format", OTS, "--checkpoint", "x.npz"] + extra, ENV)
+                self.assertEqual(stop.code, 2)
+                self.assertIn("--search honest", err)
 
-    def test_the_sha_pin_needs_a_foe_net(self):
+    def test_a_pin_needs_a_foe_net_to_pin(self):
+        # Owner 2026-10-12: the pinned BC6 is the honest search's foe model by default (its path from --foe-net or
+        # $DUOFORGE_FOE_NET); a pin with --no-foe-net pins nothing and is refused.
         stop, err = self.run_main(["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--search", "honest",
-                                   "--foe-net-sha256", "0" * 64], ENV)
+                                   "--no-foe-net", "--foe-net-sha256", "0" * 64], ENV)
         self.assertEqual(stop.code, 2)
         self.assertIn("--foe-net", err)
+
+    def test_the_honest_search_needs_its_foe_model_configured(self):
+        from duoforge_live import search
+        with tempfile.TemporaryDirectory() as tmp:
+            argv = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--search", "honest",
+                    "--team", __file__, "--log-dir", tmp]
+            with mock.patch.object(cli.policy, "load") as loaded:
+                stop, err = self.run_main(argv, {**ENV, search.FOE_NET_ENV: ""})
+            loaded.assert_not_called()
+        self.assertEqual(stop.code, 2)
+        self.assertIn("not configured", err)
 
     def test_arena_logs_never_go_into_the_repository(self):
         argv = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--log-dir",

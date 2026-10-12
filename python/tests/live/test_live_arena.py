@@ -93,6 +93,21 @@ class Arena(unittest.TestCase):
         with self.assertRaises(SystemExit):
             arena.server_command("0.0.0.0", 8001)  # every interface: not a host the arena may play on
 
+    def test_the_search_bot_needs_its_foe_model_configured(self):
+        # Owner 2026-10-12: the search bot plays with the pinned foe model BC6, as in live play; nothing configured stops
+        # the arena before anything is loaded (--no-foe-net is the explicit choice of the earlier search).
+        from unittest import mock
+        from duoforge_live import search
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict("os.environ", {search.FOE_NET_ENV: ""}), \
+                mock.patch("duoforge_learn.checkpoint.load") as loaded, self.assertRaisesRegex(ValueError, "not configured"):
+            arena.main(["--checkpoint", "x.npz", "--out", str(Path(tmp) / "out"), "--games", "2"])
+        loaded.assert_not_called()
+        with tempfile.TemporaryDirectory() as tmp, mock.patch("duoforge_learn.checkpoint.load") as loaded, \
+                self.assertRaisesRegex(ValueError, "pins the file"):
+            arena.main(["--checkpoint", "x.npz", "--out", str(Path(tmp) / "out"), "--games", "2", "--no-foe-net",
+                        "--foe-net-sha256", "ab" * 32])
+        loaded.assert_not_called()
+
     def test_a_game_is_read_from_the_search_bots_log(self):
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp, "battle-x-dfarena0sbot.jsonl")
