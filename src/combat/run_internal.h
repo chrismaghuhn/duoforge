@@ -81,7 +81,7 @@ typedef struct dfi_run {
 
 static inline dfi_active_slot *dfi_pos(struct duoforge_battle *b, uint32_t flat)
 {
-    return &b->sides[flat / 2u].positions[flat % 2u];
+    return &b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].positions[flat % DUOFORGE_ACTIVE_PER_SIDE];
 }
 
 /* The member at a flat position, or NULL when it is empty. */
@@ -91,7 +91,7 @@ static inline dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
     if (occupant >= DUOFORGE_MAX_ROSTER) {
         return NULL;
     }
-    return &b->sides[flat / 2u].members[occupant];
+    return &b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].members[occupant];
 }
 
 static inline void dfi_emit(dfi_run *r, const duoforge_event *e)
