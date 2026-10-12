@@ -102,6 +102,11 @@ class Arena(unittest.TestCase):
                 mock.patch("duoforge_learn.checkpoint.load") as loaded, self.assertRaisesRegex(ValueError, "not configured"):
             arena.main(["--checkpoint", "x.npz", "--out", str(Path(tmp) / "out"), "--games", "2"])
         loaded.assert_not_called()
+        with tempfile.TemporaryDirectory() as tmp, mock.patch("duoforge_learn.checkpoint.load") as loaded, \
+                self.assertRaisesRegex(ValueError, "pins the file"):
+            arena.main(["--checkpoint", "x.npz", "--out", str(Path(tmp) / "out"), "--games", "2", "--no-foe-net",
+                        "--foe-net-sha256", "ab" * 32])
+        loaded.assert_not_called()
 
     def test_a_game_is_read_from_the_search_bots_log(self):
         with tempfile.TemporaryDirectory() as tmp:

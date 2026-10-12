@@ -645,7 +645,7 @@ class CommandLineTest(unittest.TestCase):
                 self.assertEqual(stop.code, 2)
                 self.assertIn("--search honest", err)
 
-    def test_the_sha_pin_needs_a_foe_net(self):
+    def test_a_pin_needs_a_foe_net_to_pin(self):
         # Owner 2026-10-12: the pinned BC6 is the honest search's foe model by default (its path from --foe-net or
         # $DUOFORGE_FOE_NET); a pin with --no-foe-net pins nothing and is refused.
         stop, err = self.run_main(["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--search", "honest",

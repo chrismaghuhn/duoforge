@@ -220,6 +220,27 @@ class StartTest(unittest.TestCase):
             cli.main(base)
         loaded.assert_not_called()
 
+    def test_foe_options_never_pass_silently(self):
+        # Review of #446: every entry point refuses a foe option it would not use (without --search honest), a pin that
+        # pins nothing (with --no-foe-net) and an empty path, before anything loads; never a silent ignore.
+        from duoforge_live import __main__ as cli, policy
+        base = ["--checkpoint", "x.npz", "--name", "DuoForgeBot"]
+        cases = ((["--foe-net", "bc6.npz"], "--search honest"), (["--no-foe-net"], "--search honest"),
+                 (["--foe-net-sha256", "ab" * 32], "--search honest"),
+                 (["--search", "honest", "--no-foe-net", "--foe-net-sha256", "ab" * 32], "pins the file"),
+                 (["--search", "honest", "--foe-net", ""], "empty"))
+        for extra, message in cases:
+            with self.subTest(extra=extra), mock.patch.object(search, "check_tracker"), \
+                    mock.patch.object(policy, "load") as loaded, self.assertRaisesRegex(ValueError, message):
+                cli.main(base + extra)
+            loaded.assert_not_called()
+
+    def test_a_foe_net_path_needs_a_pin(self):
+        from duoforge_learn import checkpoint
+        with mock.patch.object(checkpoint, "load_trained") as loaded, self.assertRaisesRegex(ValueError, "pin"):
+            search.load("main.npz", foe_net="bc6.npz", foe_net_sha256=None)
+        loaded.assert_not_called()
+
     def test_the_tables_follow_the_checkpoints_data_kind(self):
         from duoforge_live import policy
         self.assertEqual(policy.table_kind({"format": 2, "data": {"kind": "pool"}}), "pool")

@@ -141,6 +141,7 @@ class PrivateBc6Test(unittest.TestCase):
         self.assertIn(tables.checkpoint_check["ids"], ("same tables", "carried over"))
         foe, check = pkmn_arena.load_foe_net(BC6)
         self.assertEqual(check, tables.checkpoint_check)
+        self.assertEqual(pkmn_arena.sha256_of(BC6), live_search.FOE_NET_SHA256)  # the live default's full pin
 
 
 if __name__ == "__main__":

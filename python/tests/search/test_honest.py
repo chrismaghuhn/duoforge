@@ -967,6 +967,7 @@ class LiveLatency(unittest.TestCase):
             self.assertEqual(set(row["reasons"]) == set(), all(c in ("searched", "forced", "raw", "team")
                                                                 for c in row["causes"]), kind)
         self.assertEqual(report["settings"]["k"], 2)
+        self.assertIsNone(report["foe_net"])  # the report names its arm: here --no-foe-net
 
     def test_the_live_search_loads_its_pinned_foe_network(self):
         # Owner 2026-10-12: the live search's worlds are modelled by the pinned foe network (BC6 in play; here an
@@ -1000,6 +1001,7 @@ class LiveLatency(unittest.TestCase):
                 self.assertEqual(len(model.feature_names), features.obs_size(3))
                 self.assertEqual(live.searcher.encoder, 4)
                 self.assertEqual(live.foe_check["ids"], "carried over")  # another fingerprint, its ids carry over
+                self.assertEqual(live.foe_check["sha256"], pin)  # the arm a log or a report names
             finally:
                 live.close()
             bare = live_search.load(main, settings=settings, foe_net=None)
