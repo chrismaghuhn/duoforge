@@ -65,4 +65,52 @@ Step 0 against R is reported, paired with its 95% interval, as the first point o
 
 ## Results
 
-(after the run)
+### Step 0 (2026-10-12)
+
+**Checks: all hold.**
+
+| check | rule | result |
+|---|---|---|
+| fallbacks | ≤ 5% | 2.3–2.7% |
+| latency | p99 ≤ 2.0 s (exclusive run) | **0.123 s** |
+| errors | none | none: every game finished, none unresolved |
+| refused leaves | reported | **0** of 50,944,384 |
+
+**Search against raw play.** The table is per opponent: 2048 games per arm, 1024 team pairs. h is the search's paired score against arm R, BC6 raw, on the same games.
+
+| opponent | search (step 0) [95%] | raw (R) [95%] | h, search against R [95%] |
+|---|---|---|---|
+| `bot` (bc6-bot-M) | **0.863** [0.848, 0.878] | 0.809 [0.792, 0.825] | **0.527** [0.518, 0.537] |
+| `bc6` (the foe model itself) | 0.698 [0.679, 0.715] | 0.500 [0.484, 0.514] | 0.599 [0.588, 0.611] |
+| `ppo` (params-49333) | 0.471 [0.450, 0.492] | 0.349 [0.329, 0.369] | **0.561** [0.548, 0.574] |
+
+- **Against the held-out bot**, the search gains 5.5 points of score over raw play.
+- **Against `bc6`** the gain is larger, but the foe model is that opponent exactly, so this row is an upper bound.
+- **Against 49333**, a PPO network and not human-like:
+  - BC6 raw loses: 0.349, consistent with the earlier raw head-to-head of 49333 against BC6, 0.618 for 49333.
+  - The search with BC6 as foe model still gains 12 points.
+
+**The search's decisions** (step arm, per opponent):
+
+| | `bot` | `bc6` | `ppo` |
+|---|---|---|---|
+| searched | 19,404 | 18,729 | 18,372 |
+| forced / team | 906 / 2048 | 1219 / 2048 | 1452 / 2048 |
+| unreconstructible, played raw | 572 (2.7%) | 477 (2.3%) | 528 (2.6%) |
+| … of which visible sleep / visible confusion | 182 / 31 | 171 / 12 | 220 / 46 |
+| search changed the raw choice | 76.1% | 75.1% | 74.4% |
+| foe-menu coverage | 0.80 | 0.80 | 0.80 |
+
+- **Fallbacks.** Every one is a public record the engine does not support (`DUOFORGE_E_UNSUPPORTED: public record`). About a third of them come from a visible sleep, about 1% of all decisions.
+  - #442 makes the hidden sleep counter an exact two-value belief. It is a candidate step of its own.
+- **Latency**, exclusive run: step 0 against `bot`, 16 pairs, 295 searched decisions.
+  - p50 / p95 / p99 / max: 0.048 / 0.056 / 0.123 / 0.633 s. The maximum is the first decision's compile.
+  - In the shared strength run, p99 was 0.10–0.19 s, with a single maximum of 10.5 s while the machine was shared.
+- **Run time:** about 20 min per searched arm and 30–45 s per raw arm, on two shared lock slots. 64 min in all, 15:40–16:44.
+
+**Provenance.**
+- **Code:** search/0-baseline at 1cb3e2d9, which is main 7f9ee4da's content plus the harness; the run recorded `dirty: false`.
+- **Library:** the WSL Release build of main's C (library 0.45.0), JAX on the CPU, AMD Ryzen 7 5800X.
+- **Spread table:** `5f079072…`. 256 of the 2048 games' opponent teams are in it, and each was left out of the belief for its game.
+- **Networks** (SHA-256 prefixes): BC6 `bda5de8e4e96`, bc6-bot-M `213b773b3448`, params-49333 `ef1abe65f637`.
+- **Raw output:** `ladder.json` and the decision records stay private, outside the repository.
