@@ -6,4 +6,3 @@ add_test(NAME duoforge.provenance.pcg_license
         -P "${PROJECT_SOURCE_DIR}/cmake/checks/file_sha256.cmake")
 duoforge_label_test(duoforge.provenance.pcg_license quick data)
 set_tests_properties(duoforge.provenance.pcg_license PROPERTIES TIMEOUT 30)
-

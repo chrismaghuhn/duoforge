@@ -19,4 +19,3 @@ add_test(NAME duoforge.lint.no_mutable_globals
 duoforge_label_test(duoforge.lint.no_mutable_globals quick tools)
 set_tests_properties(duoforge.lint.no_mutable_globals PROPERTIES
     TIMEOUT 60 SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
-
