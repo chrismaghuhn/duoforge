@@ -70,7 +70,7 @@ jobs:
         run: cmake --build build --parallel 4
       - name: Test
         if: steps.fetch.outcome == 'success'
-        run: ctest --test-dir build -L reference --no-tests=error --output-on-failure --timeout 120
+        run: ctest --test-dir build -L '^ci-rng-reference$' --no-tests=error --output-on-failure --timeout 120
       - name: Report blocked fetch
         if: steps.fetch.outcome != 'success'
         run: |

@@ -1,0 +1,41 @@
+{
+  "all_other_test_properties_and_registration_order_identical": true,
+  "all_tests_one_tier_and_area": true,
+  "area_counts": {
+    "abilities": 15,
+    "bench": 3,
+    "certify": 5,
+    "data": 23,
+    "engine": 18,
+    "flow": 27,
+    "forms": 6,
+    "interactions": 42,
+    "items": 5,
+    "learn": 17,
+    "live": 7,
+    "mechanics": 12,
+    "moves": 33,
+    "replay": 5,
+    "search": 12,
+    "tools": 1173
+  },
+  "baseline": "d19839e381b569d17c9885bafd55a126db49b82a",
+  "ci_guard_controls": {
+    "negative_controls": 28,
+    "real_linux_log": "passed",
+    "real_windows_log": "passed"
+  },
+  "duration_measurement": "median of both full Linux Release CTest runs; fixture setup cost included in consuming tests",
+  "full_baseline_ci_runs": [
+    38239492848,
+    38210931789
+  ],
+  "inventory_count": 1403,
+  "inventory_sha256": "ab415dad8fa1b4923bcc60cfd9715d5e66036693696ca7e1c01deead10b8fd40",
+  "tier_counts": {
+    "full": 30,
+    "quick": 204,
+    "reference": 1151,
+    "slow": 18
+  }
+}

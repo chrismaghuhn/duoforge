@@ -1,0 +1,38 @@
+{
+  "asan": {
+    "after": 255,
+    "before": 255,
+    "only_labels_differ": true,
+    "order_identical": true
+  },
+  "full": {
+    "after": 1403,
+    "before": 1403,
+    "only_labels_differ": true,
+    "order_identical": true
+  },
+  "rng": {
+    "after": 256,
+    "before": 256,
+    "only_labels_differ": true,
+    "order_identical": true
+  },
+  "standard": {
+    "after": 254,
+    "before": 254,
+    "only_labels_differ": true,
+    "order_identical": true
+  },
+  "tsan": {
+    "after": 253,
+    "before": 253,
+    "only_labels_differ": true,
+    "order_identical": true
+  },
+  "windows-full": {
+    "after": 1403,
+    "before": 1403,
+    "only_labels_differ": true,
+    "order_identical": true
+  }
+}
