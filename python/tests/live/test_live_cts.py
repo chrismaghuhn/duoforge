@@ -245,13 +245,14 @@ class CtsTest(unittest.TestCase):
         from duoforge_replay.facts import MemberFacts
         member = MemberFacts("Farigiraf", "F", frozenset({"Psychic"}), "Choice Scarf", None)
         base = teams._paste(farigiraf(moves=("Psychic", "Protect", "Trick Room", "Helping Hand")))[0]
-        found = cts.level2(self.data, [(base, 3)], member)
+        found, refused = cts.level2(self.data, [(base, 3)], member)
+        self.assertEqual(refused, 0)
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0][0]["item"], "Choice Scarf")
         self.assertNotIn("Protect", found[0][0]["moves"])
         self.assertEqual(found[0][1], 3)
         unknown = MemberFacts("Farigiraf", "F", frozenset({"Psychic"}), "Notanitem", None)
-        self.assertEqual(cts.level2(self.data, [(base, 3)], unknown), [])  # a name the tables lack: no set, no crash
+        self.assertEqual(cts.level2(self.data, [(base, 3)], unknown), ([], 1))  # a name the tables lack: refused, counted
 
     def test_a_set_the_engine_refuses_at_every_level_stops_by_name(self):
         """No level gives a set the engine accepts: Farigiraf with an ability it cannot have stops the tracker by name."""
@@ -261,6 +262,25 @@ class CtsTest(unittest.TestCase):
         with self.assertRaises(lines.Stop) as caught:
             Run(t, messages)
         self.assertEqual(caught.exception.reason, "cts:no-consistent-set Farigiraf")
+        # every rebuilt set the engine refused is counted, never dropped in silence (review of 2026-10-12)
+        self.assertGreater(t.counters["levels.refused"], 0)
+
+    def test_the_level_counters_count_facts_not_draws(self):
+        """level1 counts the distinct facts of a member that needed level 1, once, not once per particle and redraw."""
+        sets = with_species(foe_sets(), "Farigiraf", farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))
+        run = self.run_closed(sets, n=16)
+        self.assertEqual(run.t.counters["level1"], 1)  # Farigiraf after Trick Room: one set of facts
+
+    def test_a_setup_check_that_fails_for_another_reason_raises(self):
+        """setup_issue names an unknown name ("name"); any other failure of the check is a bug and raises."""
+        from unittest import mock
+        s = teams._paste(farigiraf())[0]
+        self.assertIsNone(cts.setup_issue(self.data, s))
+        self.assertEqual(cts.setup_issue(self.data, dict(s, item="Notanitem")), ("name", None))
+        for call in ("team", "setup_issue"):
+            with mock.patch.object(type(self.data), call, side_effect=KeyError("a bug")):
+                with self.assertRaises(KeyError):
+                    cts.setup_issue(self.data, s)
 
     def test_a_species_without_a_set_stops_at_team_preview(self):
         sets = [s for s in foe_sets() if s["species"] != "Politoed"]

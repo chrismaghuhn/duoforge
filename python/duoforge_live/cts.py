@@ -91,24 +91,29 @@ def setup_issue(data, s):
     """data.setup_issue of a set under a gender its species may have (the preview gives a drawn member's own): None
     when the engine's setup accepts it, ("name", None) for a name the tables do not know."""
     try:
-        rule = data.tables["GENDER_RULE"][data.forme(s["species"])]
-        gender = {trace_to_c.GENDER["F"]: "F", trace_to_c.GENDERLESS: ""}.get(rule, "M")
-        member = data.team(teams.to_text([_sheet(s, gender)]))[0]
-    except (KeyError, ValueError, trace_to_c.ConversionError):
-        return ("name", None)  # a species, item, ability, nature or move the tables do not know
-    return data.setup_issue(member)
+        forme = data.forme(s["species"])
+    except ValueError:
+        return ("name", None)  # a species the tables do not know
+    named = [("ITEM", s["item"]), ("NATURE", s["nature"])] + [("MOVE", m) for m in s["moves"]]
+    if _key(s["ability"]) != "NOABILITY":
+        named.append(("ABILITY", s["ability"]))
+    if any(name and _key(name) not in data.tables[table] for table, name in named):
+        return ("name", None)  # an item, ability, nature or move the tables do not know
+    rule = data.tables["GENDER_RULE"][forme]
+    gender = {trace_to_c.GENDER["F"]: "F", trace_to_c.GENDERLESS: ""}.get(rule, "M")
+    return data.setup_issue(data.team(teams.to_text([_sheet(s, gender)]))[0])
 
 
 def _rebuilt(data, sets, member, keep):
     """The sets of `sets` that keep() takes as bases, rebuilt on a member's facts: the revealed item and ability put on,
     the used moves (sorted by name) then the base's own others in its order, up to four; a Choice item's holder gets no
-    CHOICE_EXCLUDED move from the base (the set table's rule). A result the engine's setup refuses is left out; equal
-    results add their weights."""
+    CHOICE_EXCLUDED move from the base (the set table's rule). A result the engine's setup refuses is left out and
+    counted; equal results add their weights. Returns (the sets, how many results were refused)."""
     from duoforge_search.smogon_sets import CHOICE_EXCLUDED, CHOICE_ITEMS
     used = sorted(member.moves)
     if len(used) > MOVES:
-        return []
-    out = collections.Counter()
+        return [], 0
+    out, refused = collections.Counter(), 0
     for s, w in sets:
         if w <= 0 or not keep(s):
             continue
@@ -120,19 +125,21 @@ def _rebuilt(data, sets, member, keep):
         candidate = dict(s, item=item, ability=ability, moves=(used + fill)[:MOVES])
         if setup_issue(data, candidate) is None:
             out[json.dumps(candidate, sort_keys=True)] += w
-    return [(json.loads(k), w) for k, w in sorted(out.items())]
+        else:
+            refused += 1
+    return [(json.loads(k), w) for k, w in sorted(out.items())], refused
 
 
 def level1(data, sets, member):
     """Level 1 (the replay's set belief, setbelief.SetBelief): when no set agrees with a member's facts, every set that
-    agrees on the revealed item and ability is a base for its used moves (_rebuilt). [] when none remains."""
+    agrees on the revealed item and ability is a base for its used moves (_rebuilt): (sets, refused)."""
     return _rebuilt(data, sets, member, lambda s: (member.item is None or _key(s["item"]) == _key(member.item)) and (
         member.ability is None or _key(s["ability"]) == _key(member.ability)))
 
 
 def level2(data, sets, member):
     """Level 2: when level 1 has no base (an item or ability the prior never pairs with the species), every set of the
-    species is a base for the revealed item, ability and used moves (_rebuilt). [] when none remains."""
+    species is a base for the revealed item, ability and used moves (_rebuilt): (sets, refused)."""
     return _rebuilt(data, sets, member, lambda s: True)
 
 
@@ -309,9 +316,7 @@ class ParticleTracker:
             self.counters[f"redraw.{reason}"] += 1
         candidates = []
         for member in facts:
-            level, found = self._candidates_of(member)
-            if level is not None:
-                self.counters[level] += 1
+            found = self._candidates_of(member)
             if not found:
                 raise self._stop(f"cts:no-consistent-set {member.species}")
             candidates.append(found)
@@ -329,16 +334,20 @@ class ParticleTracker:
         raise self._stop(f"cts:redraw-cap {last}") from error
 
     def _candidates_of(self, member):
-        """(the level: None, "level1" or "level2"; the sets a member's facts allow), kept per facts, so the levels'
-        engine checks run once for all particles that draw under the same facts."""
+        """The sets a member's facts allow, kept per facts, so the levels' engine checks run once for all particles that
+        draw under the same facts. Counted once per distinct facts: level1 or level2 (the level that gave the sets) and
+        levels.refused (the rebuilt sets the engine refused)."""
         key = (member.species, member.item, member.ability, member.moves)
         if key not in self._candidates:
             sets = self.prior.candidates(member.species)
-            found, level = [(s, w) for s, w in sets if w > 0 and agrees(s, member)], None
+            found = [(s, w) for s, w in sets if w > 0 and agrees(s, member)]
             for name, rebuild in (("level1", level1), ("level2", level2)):
                 if not found:
-                    found, level = rebuild(self.data, sets, member), name
-            self._candidates[key] = (level if found else None, found)
+                    found, refused = rebuild(self.data, sets, member)
+                    self.counters["levels.refused"] += refused
+                    if found:
+                        self.counters[name] += 1
+            self._candidates[key] = found
         return self._candidates[key]
 
     def _draw(self, i, candidates, facts):

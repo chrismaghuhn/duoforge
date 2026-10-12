@@ -15,8 +15,8 @@ forme's base species, with the stone). Derivation, every case counted in the tab
 - Registry sets: every member of every registry team, once per team in which it appears. A name the engine does not know,
   or a set its setup refuses, is dropped and counted (refused). A set holding the stone of its species' Mega forme is in
   that forme's bucket; any other set is in the base species' bucket.
-- Smogon marginals, per bucket: the Smogon entry of the bucket's name (a Mega forme has its own) at the highest cutoff
-  whose two formats together weigh at least smogon_spreads.MIN_WEIGHT (the spread table's rule), both formats summed:
+- Smogon marginals, per bucket: the Smogon entry of the bucket's name (a Mega forme has its own) at its species' cutoff:
+  the highest whose two formats and buckets together weigh at least smogon_spreads.MIN_WEIGHT, both formats summed:
   the item, the ability, the nature (from the spreads) and each move's share of sets (a set has four move slots). A Mega
   entry's ability is the Mega's own, not the sheet's: no ability marginal for a Mega bucket (counted).
 - Raking: the bucket's support (its registry sets) is reweighted from its registry counts toward the marginals by
@@ -31,9 +31,10 @@ forme's base species, with the stone). Derivation, every case counted in the tab
   its stone and takes its ability from the base species' Smogon entry, else from the engine's legal abilities; the
   engine's setup accepts the set (else it is drawn again, up to SYNTH_ATTEMPTS times per set).
 - A forme Smogon counts under its dex sibling's name (Toxtricity-Low-Key under "Toxtricity") and the table lacks takes
-  the sibling's sets its own setup accepts (counted: species.from_dex_sibling).
-- A species is its buckets mixed by their Smogon weights (a bucket Smogon does not name keeps its registry share: a
-  species Smogon does not name is the registry's alone, counted). Its MAX_SETS heaviest sets become RESOLUTION whole
+  the sets its own setup accepts of the one species of the table with its dex number and types (counted:
+  species.from_dex_sibling).
+- A species is its buckets mixed by their Smogon weights at its one cutoff, each blended with PRIOR_WEIGHT sets' worth of
+  its registry share (a species Smogon does not name is the registry's alone, counted). Its MAX_SETS heaviest sets become RESOLUTION whole
   draws by largest remainders; a set below one draw is dropped (counted).
 """
 import argparse
@@ -48,9 +49,10 @@ from pathlib import Path
 from . import smogon_spreads as ss
 
 TABLE_PATH = Path(__file__).resolve().parents[2] / "data" / "belief" / f"smogon-sets-regmc-{ss.MONTH}.json"
-TABLE_SHA256 = "42f24df8b61495d0234b929de96c0ea4e2f4e3d8b3237e90a1416e615c5208c0"
+TABLE_SHA256 = "aac26cc7f84fc07e42a2fdd291384dfbd165163bc7cdd9cd5825aa561ee6eb1e"
 REGISTRY = Path(__file__).resolve().parents[2] / "data" / "teams"
 MIN_SETS = 4
+RESIDUAL_REPORTED = 0.1  # raked buckets left farther than this from a target are counted (buckets.residual_over_0.1)
 UNCOVERED_MAX = 0.25  # a bucket whose support leaves more of Smogon's item, ability or move mass uncovered is thin too
 SYNTH_SETS = 32
 SYNTH_ATTEMPTS = 16
@@ -136,6 +138,10 @@ class Names:
         from duoforge import data
         return int(data.forme_info(self.ctx, data.find(self.ctx, data.TABLE_SPECIES, species))["dex_num"])
 
+    def types(self, species):
+        from duoforge import data
+        return tuple(int(t) for t in data.forme_static(self.ctx, data.find(self.ctx, data.TABLE_SPECIES, species))["types"])
+
     def setup_formes(self):
         """The names of every species of the context a member may be (setup-legal: a base forme, not a Mega)."""
         from duoforge import data
@@ -152,20 +158,12 @@ class Names:
 
 
 def legal(live_data, species, s):
-    """Whether the engine's setup accepts set s = (item, ability, nature, moves) of species (duoforge_live.data's
-    setup_issue under a gender the species may have)."""
-    from duoforge_live import teams
-    from duoforge_live.data import trace_to_c
-    rule = live_data.tables["GENDER_RULE"][live_data.forme(species)]
-    gender = {trace_to_c.GENDER["F"]: "F", trace_to_c.GENDERLESS: ""}.get(rule, "M")
+    """Whether the engine's setup accepts set s = (item, ability, nature, moves) of species (cts.setup_issue: a name the
+    tables do not know is no legal set; any other failure of the check raises)."""
+    from duoforge_live.cts import setup_issue
     item, ability, nature, moves = s
-    text = teams.to_text([{"species": species, "item": item, "ability": ability, "nature": nature, "moves": list(moves),
-                           "evs": [0] * 6, "gender": gender, "level": 50}])
-    try:
-        member = live_data.team(text)[0]
-    except (KeyError, ValueError, trace_to_c.ConversionError):
-        return False
-    return live_data.setup_issue(member) is None
+    return setup_issue(live_data, {"species": species, "item": item, "ability": ability, "nature": nature,
+                                   "moves": list(moves)}) is None
 
 
 def registry_sets(root, names, live_data):
@@ -202,8 +200,9 @@ def registry_sets(root, names, live_data):
 
 def marginals(sources, names):
     """({bucket: {"cutoff", "weight", "species", "item", "ability", "nature", "move"}}, counts): each Smogon name's
-    marginals at its cutoff (smogon_spreads' rule), keyed by the engine's name of the forme; a name the engine does not
-    know is counted (outside_context)."""
+    marginals, keyed by the engine's name of the forme, at its species' cutoff (smogon_spreads' rule over the species'
+    buckets together); a name the engine does not know is counted (outside_context). "weight" is the bucket's number of
+    sets (its abilities' weights); a move's weight counts the sets that hold it."""
     from duoforge import data
     by_cutoff, counts = {}, Counter()
     for (fmt, cutoff), stats in sources.items():
@@ -243,17 +242,22 @@ def marginals(sources, names):
                     counts["smogon.unknown_move"] += 1
                     continue
                 m["move"][canonical] += float(w)
+    # One cutoff per species (review of 2026-10-12): its buckets' weights are mixed, so they must be of one scale. The
+    # species takes the highest cutoff where its buckets together weigh at least MIN_WEIGHT, else the lowest present.
+    species_of = {b: m["species"] for per in by_cutoff.values() for b, m in per.items()}
     chosen = {}
-    for bucket in sorted({b for per in by_cutoff.values() for b in per}):
-        present = [c for c in ss.CUTOFFS if c in by_cutoff and by_cutoff[c].get(bucket, {}).get("weight", 0) > 0]
+    for species in sorted(set(species_of.values())):
+        weight = {c: sum(m["weight"] for b, m in by_cutoff.get(c, {}).items() if species_of[b] == species)
+                  for c in ss.CUTOFFS}
+        present = [c for c in ss.CUTOFFS if weight[c] > 0]
         if not present:
             counts["smogon.weightless"] += 1
             continue
-        heavy = [c for c in present if by_cutoff[c][bucket]["weight"] >= ss.MIN_WEIGHT]
+        heavy = [c for c in present if weight[c] >= ss.MIN_WEIGHT]
         cutoff = heavy[0] if heavy else present[-1]
-        m = dict(by_cutoff[cutoff][bucket])
-        m["cutoff"] = cutoff
-        chosen[bucket] = m
+        for bucket, m in sorted(by_cutoff[cutoff].items()):
+            if species_of[bucket] == species and m["weight"] > 0:
+                chosen[bucket] = dict(m, cutoff=cutoff)
     return chosen, counts
 
 
@@ -281,16 +285,16 @@ def targets(marginal, support, counts, mega):
         smogon = _shares(marginal[kind])
         uncovered[kind] = sum(p for k, p in smogon.items() if k not in own[kind])
         covered = sum(p for k, p in smogon.items() if k in own[kind])
-        out[kind] = {k: (w * (smogon.get(k, 0.0) / covered if covered > 0 else 0.0) + PRIOR_WEIGHT * own[kind][k])
-                     / (w + PRIOR_WEIGHT) for k in own[kind]}
+        if covered > 0:
+            out[kind] = {k: (w * smogon.get(k, 0.0) / covered + PRIOR_WEIGHT * own[kind][k]) / (w + PRIOR_WEIGHT)
+                         for k in own[kind]}
+        else:
+            out[kind] = dict(own[kind])  # Smogon names none of the support's: the support's own shares
     slots = sum(marginal["move"].values())
-    if slots > 0:
-        sets = slots / 4.0
-        smogon = {k: min(1.0, v / sets) for k, v in marginal["move"].items()}
-        uncovered["move"] = sum(v for k, v in marginal["move"].items() if k not in own["move"]) / slots
-    else:
-        smogon = {}
-        uncovered["move"] = 0.0
+    # a move's share of sets is its weight over the bucket's sets (review of 2026-10-12: Smogon's Moves sum to four
+    # slots per set, empty slots included, which marginals leaves out)
+    smogon = {k: min(1.0, v / w) for k, v in marginal["move"].items()} if w > 0 else {}
+    uncovered["move"] = sum(v for k, v in marginal["move"].items() if k not in own["move"]) / slots if slots > 0 else 0.0
     out["move"] = {k: (w * smogon.get(k, 0.0) + PRIOR_WEIGHT * own["move"][k]) / (w + PRIOR_WEIGHT) for k in own["move"]}
     return out, uncovered
 
@@ -400,14 +404,14 @@ def build(sources, live_data, names, registry_root=REGISTRY):
             support_counts = sets.get(species, {}).get(bucket, Counter())
             marginal = chosen.get(bucket)
             mega = bucket != species
+            registry = float(sum(support_counts.values()))
             if marginal is None:
                 if not support_counts:
                     continue
                 counts["buckets.registry_only"] += 1
                 support = sorted(support_counts)
                 weights = rake(support, [support_counts[s] for s in support], {"move": {}})
-                share = float(sum(support_counts.values()))
-                mixture[bucket] = (share, support, weights, None)
+                mixture[bucket] = (0.0, registry, support, weights, None)
                 continue
             support = sorted(support_counts)
             base_counts = [support_counts[s] for s in support]
@@ -434,24 +438,33 @@ def build(sources, live_data, names, registry_root=REGISTRY):
             if mega:
                 counts["buckets.mega_no_ability"] += 1
             weights = rake(support, base_counts, goal)
-            residual_max = max(residual_max, residual(support, weights, goal))
+            gap = residual(support, weights, goal)
+            residual_max = max(residual_max, gap)
+            if gap > RESIDUAL_REPORTED:
+                counts["buckets.residual_over_0.1"] += 1
             for kind, v in uncovered.items():
                 uncovered_sum[kind] += v * marginal["weight"]
-            mixture[bucket] = (marginal["weight"], support, weights, marginal["cutoff"])
+            mixture[bucket] = (marginal["weight"], registry, support, weights, marginal["cutoff"])
         if not mixture:
             continue
-        if all(m[3] is None for m in mixture.values()):
+        if all(m[4] is None for m in mixture.values()):
             counts["species.registry_only"] += 1
-        total = sum(m[0] for m in mixture.values())
+        # a bucket's share: its Smogon sets, blended with PRIOR_WEIGHT sets' worth of its registry share (one cutoff per
+        # species, so the Smogon weights are of one scale); a species Smogon does not name: its registry shares
+        smogon_total = sum(m[0] for m in mixture.values())
+        registry_total = sum(m[1] for m in mixture.values())
+        raw = {b: m[0] + (PRIOR_WEIGHT * m[1] / registry_total if registry_total else 0.0) if smogon_total else m[1]
+               for b, m in mixture.items()}
+        total = sum(raw.values())
         probs = Counter()
-        for share, support, weights, _ in mixture.values():
+        for bucket, (_, _, support, weights, _) in mixture.items():
             for s, x in zip(support, weights):
-                probs[s] += share / total * x
+                probs[s] += raw[bucket] / total * x
         table[species] = _quantize(probs, counts)
-        table[species]["cutoffs"] = {b: m[3] for b, m in sorted(mixture.items()) if m[3] is not None}
+        table[species]["cutoffs"] = {b: m[4] for b, m in sorted(mixture.items()) if m[4] is not None}
     _dex_siblings(table, names, live_data, counts)
     weight_all = sum(m["weight"] for m in chosen.values())
-    derivation = {"min_sets": MIN_SETS, "uncovered_max": UNCOVERED_MAX, "synth_sets": SYNTH_SETS, "prior_weight": PRIOR_WEIGHT, "rake_sweeps": RAKE_SWEEPS,
+    derivation = {"min_sets": MIN_SETS, "uncovered_max": UNCOVERED_MAX, "residual_reported": RESIDUAL_REPORTED, "synth_sets": SYNTH_SETS, "prior_weight": PRIOR_WEIGHT, "rake_sweeps": RAKE_SWEEPS,
                   "max_sets": MAX_SETS, "resolution": RESOLUTION, "choice_excluded": list(CHOICE_EXCLUDED),
                   "residual_max": round(residual_max, 4),
                   "uncovered_share": {k: round(v / weight_all, 4) for k, v in sorted(uncovered_sum.items())} if weight_all else {},
@@ -466,13 +479,17 @@ def build(sources, live_data, names, registry_root=REGISTRY):
 
 def _dex_siblings(table, names, live_data, counts):
     """Formes Smogon counts under a sibling's name (Toxtricity-Low-Key under "Toxtricity", Squawkabilly-White under
-    "Squawkabilly"): every setup-legal species the table lacks takes the sets of the table's species with its dex number
-    that its own setup accepts, with their draws (counted: species.from_dex_sibling)."""
+    "Squawkabilly"): a setup-legal species the table lacks takes the sets that its own setup accepts of the one species
+    of the table with its dex number and its types (counted: species.from_dex_sibling). A forme of other types
+    (Tauros-Paldea-Combat beside Tauros), or with several such siblings in the table (Gourgeist's sizes), has its own
+    Smogon entry when it is played: its absence means no data, and it gets no sets."""
     by_dex = defaultdict(list)
     for species in table:
-        by_dex[names.dex(species)].append(species)
+        by_dex[(names.dex(species), names.types(species))].append(species)
     for forme in names.setup_formes():
-        siblings = sorted(by_dex.get(names.dex(forme), ())) if forme not in table else []
+        siblings = sorted(by_dex.get((names.dex(forme), names.types(forme)), ())) if forme not in table else []
+        if len(siblings) != 1:
+            continue
         probs = Counter()
         for sibling in siblings:
             for item, ability, nature, moves, n in table[sibling]["sets"]:
@@ -538,9 +555,11 @@ def main(argv=None):
     live_data = live.load(kind="pool")
     text = render(build(ss.load(args.stats), live_data, Names(live_data.context())))
     if args.check:
-        with open(args.out, encoding="utf-8") as f:
-            if f.read() != text:
-                raise SystemExit(f"{args.out} is not the table these stats give: regenerate it")
+        raw = Path(args.out).read_bytes()
+        if raw != text.encode("utf-8"):
+            raise SystemExit(f"{args.out} is not the table these stats give: regenerate it")
+        if hashlib.sha256(raw).hexdigest() != TABLE_SHA256:
+            raise SystemExit(f"{args.out} matches the stats but not TABLE_SHA256: re-pin it")
         print(f"{args.out}: matches")
         return 0
     os.makedirs(os.path.dirname(args.out), exist_ok=True)

@@ -40,8 +40,10 @@ def sources(data_by_name, cutoff=1760):
 class Registry:
     """A made-up registry: index.json and one paste per team."""
 
-    def __init__(self, teams):
+    def __init__(self, teams, test=None):
         self.tmp = tempfile.TemporaryDirectory()
+        if test is not None:
+            test.addCleanup(self.tmp.cleanup)
         root = Path(self.tmp.name)
         index = {"registry": {}, "teams": [{"id": f"T{i}"} for i in range(len(teams))]}
         (root / "index.json").write_text(json.dumps(index), encoding="utf-8")
@@ -59,7 +61,7 @@ class SmogonSetsTest(unittest.TestCase):
     def test_a_registry_set_counts_once_per_team_and_a_mega_stone_names_its_bucket(self):
         lucario = paste("Lucario", "Lucarionite", "Inner Focus", "Jolly", ["Close Combat", "Meteor Mash", "Protect",
                                                                           "Extreme Speed"], gender="M")
-        reg = Registry([FARIGIRAF + "\n" + lucario, FARIGIRAF, FARIGIRAF.replace("Bold", "Calm")])
+        reg = Registry([FARIGIRAF + "\n" + lucario, FARIGIRAF, FARIGIRAF.replace("Bold", "Calm")], self)
         sets, counts = S.registry_sets(reg.root, self.names, self.data)
         bold = ("sitrusberry", "armortail", "bold", ("helpinghand", "protect", "psychic", "trickroom"))
         self.assertEqual(sets["farigiraf"]["farigiraf"][bold], 2)  # two teams, once each
@@ -71,7 +73,7 @@ class SmogonSetsTest(unittest.TestCase):
         bad = paste("Grimmsnarl", "Light Clay", "Prankster", "Sassy", ["Snarl", "Reflect", "Light Screen", "Parting Shot"],
                     gender="M")
         unknown = paste("Farigiraf", "Sitrus Berry", "Armor Tail", "Bold", ["Psychic", "Notamove", "Protect", "Trick Room"])
-        reg = Registry([bad, unknown, FARIGIRAF])
+        reg = Registry([bad, unknown, FARIGIRAF], self)
         sets, counts = S.registry_sets(reg.root, self.names, self.data)
         self.assertEqual(counts["registry.refused.setup"], 1)  # Grimmsnarl does not learn Snarl in the pool tables
         self.assertEqual(counts["registry.refused.name"], 1)
@@ -89,6 +91,46 @@ class SmogonSetsTest(unittest.TestCase):
         self.assertEqual(dict(m["item"]), {"sitrusberry": heavy, "": heavy})  # "nothing" is no item
         self.assertEqual(dict(m["move"]), {"trickroom": 2 * heavy})  # an empty slot is no move
         self.assertEqual(counts["smogon.outside_context"], 1)
+
+    def test_a_species_takes_one_cutoff_for_all_its_buckets(self):
+        """Review of 2026-10-12: a base species and its Mega forme at different cutoffs mixed weights of different scales
+        (Aggron's stone at 9 % instead of 97 %). The species takes the highest cutoff where all its buckets together
+        weigh enough, and every bucket is read there."""
+        light, heavy = 2.0, 30.0
+        base = {"Lucario": entry({"lifeorb": light}, {"innerfocus": light}, {"Jolly:0/32/0/0/2/32": light},
+                                 {"closecombat": 4 * light})}
+        mega = {"Lucario-Mega": entry({"lucarionite": heavy}, {"adaptability": heavy}, {"Jolly:0/32/0/0/2/32": heavy},
+                                      {"closecombat": 4 * heavy})}
+        src = sources({**base, **mega})
+        for name, e in (("Lucario", base["Lucario"]), ("Lucario-Mega", mega["Lucario-Mega"])):
+            big = entry({k: 50 * v for k, v in e["Items"].items()}, {k: 50 * v for k, v in e["Abilities"].items()},
+                        {k: 50 * v for k, v in e["Spreads"].items()}, {k: 50 * v for k, v in e["Moves"].items()})
+            src[(ss.FORMATS[0], 1500)]["data"][name] = big
+        src[(ss.FORMATS[0], 1500)]["data"]["Lucario"]["Items"] = {"lifeorb": 50 * 50 * light}  # base heavy at 1500
+        chosen, _ = S.marginals(src, self.names)
+        self.assertEqual((chosen["lucario"]["cutoff"], chosen["lucariomega"]["cutoff"]), (1760, 1760))
+        self.assertEqual((chosen["lucario"]["weight"], chosen["lucariomega"]["weight"]), (light, heavy))
+
+    def test_move_shares_count_the_sets_with_empty_slots(self):
+        """Review of 2026-10-12: Smogon's Moves sum to four slots per set, empty ones ("") included. A move's share of
+        sets is its weight over the species' weight, not over the filled slots."""
+        src = sources({"Farigiraf": entry({"sitrusberry": 100.0}, {"armortail": 100.0}, {"Bold:32/0/20/0/14/0": 100.0},
+                                          {"protect": 100.0, "trickroom": 50.0, "": 250.0})})
+        chosen, _ = S.marginals(src, self.names)
+        support = [("sitrusberry", "armortail", "bold", ("protect", "trickroom")), ("sitrusberry", "armortail", "bold",
+                                                                                  ("protect",))]
+        goal, uncovered = S.targets(chosen["farigiraf"], support, [1, 1], mega=False)
+        self.assertAlmostEqual(goal["move"]["protect"], 1.0)
+        self.assertAlmostEqual(goal["move"]["trickroom"], 0.5)
+        self.assertAlmostEqual(uncovered["move"], 0.0)
+
+    def test_targets_of_a_support_smogon_does_not_cover_are_the_supports_own(self):
+        support = [("mentalherb", "armortail", "bold", ("protect",))]
+        marginal = {"weight": 100.0, "item": Counter({"sitrusberry": 100.0}), "ability": Counter({"armortail": 100.0}),
+                    "nature": Counter({"bold": 100.0}), "move": Counter({"protect": 100.0})}
+        goal, uncovered = S.targets(marginal, support, [1], mega=False)
+        self.assertEqual(goal["item"], {"mentalherb": 1.0})
+        self.assertAlmostEqual(uncovered["item"], 1.0)
 
     def test_raking_meets_feasible_marginals(self):
         support = [("a", "x", "bold", ("m1", "m2")), ("b", "x", "bold", ("m1", "m3")), ("a", "x", "calm", ("m2", "m3")),
@@ -160,7 +202,7 @@ class SmogonSetsTest(unittest.TestCase):
         toxtricity = paste("Toxtricity", "Life Orb", "Punk Rock", "Modest", ["Overdrive", "Sludge Bomb", "Boomburst",
                                                                                 "Protect"], gender="M")
         plus = toxtricity.replace("Punk Rock", "Plus")
-        reg = Registry([toxtricity, plus, toxtricity.replace("Modest", "Timid"), plus.replace("Modest", "Timid")])
+        reg = Registry([toxtricity, plus, toxtricity.replace("Modest", "Timid"), plus.replace("Modest", "Timid")], self)
         src = sources({"Toxtricity": entry({"lifeorb": 100.0}, {"punkrock": 80.0, "plus": 20.0},
                                            {"Modest:0/0/0/32/2/32": 60.0, "Timid:0/0/0/32/2/32": 40.0},
                                            {"overdrive": 100.0, "sludgebomb": 100.0, "boomburst": 100.0, "protect": 100.0})})
@@ -171,6 +213,19 @@ class SmogonSetsTest(unittest.TestCase):
         self.assertEqual({s[1] for s in low_key}, {"punkrock"})  # Plus is not a Low-Key ability
         self.assertEqual(sum(s[4] for s in low_key), S.RESOLUTION)
         self.assertEqual(table["derivation"]["species.from_dex_sibling"], 1)
+
+    def test_a_forme_with_other_types_or_several_siblings_takes_no_siblings_sets(self):
+        """Review of 2026-10-12: Tauros-Paldea-Combat (Fighting) is no forme Smogon counts under "Tauros" (Normal); a
+        missing forme of another type, or with more than one sibling in the table, gets no sets (no data, not lumped)."""
+        tauros = paste("Tauros", "Expert Belt", "Intimidate", "Jolly", ["Body Slam", "Iron Head", "Close Combat",
+                                                                       "Protect"], gender="M")
+        reg = Registry([tauros, tauros.replace("Jolly", "Adamant"), tauros.replace("Iron Head", "Rock Slide"),
+                        tauros.replace("Body Slam", "Double-Edge")], self)
+        src = sources({"Tauros": entry({"expertbelt": 100.0}, {"intimidate": 100.0}, {"Jolly:0/32/0/0/2/32": 100.0},
+                                       {"bodyslam": 100.0, "ironhead": 100.0, "closecombat": 100.0, "protect": 100.0})})
+        table = S.build(src, self.data, self.names, registry_root=reg.root)
+        self.assertIn("tauros", table["species"])
+        self.assertNotIn("taurospaldeacombat", table["species"])
 
     def test_marginals_the_engine_cannot_draw_from_are_refused_by_name(self):
         """A bucket whose Smogon items are all unknown to the tables (or that has fewer than four moves: Ditto) gives no
@@ -185,8 +240,7 @@ class SmogonSetsTest(unittest.TestCase):
         probs = Counter({("a", "x", "bold", ("m",)): 0.5, ("b", "x", "bold", ("m",)): 0.3333,
                          ("c", "x", "bold", ("m",)): 0.1667})
         out = S._quantize(probs, Counter())
-        self.assertEqual(sum(n for *_, n in out["sets"]), S.RESOLUTION)
-        self.assertEqual([s[0] for s in out["sets"]], ["a", "b", "c"])
+        self.assertEqual([(s[0], s[4]) for s in out["sets"]], [("a", 5000), ("b", 3333), ("c", 1667)])
 
     def test_the_stats_are_refused_inside_the_repository(self):
         with self.assertRaises(SystemExit) as caught:
