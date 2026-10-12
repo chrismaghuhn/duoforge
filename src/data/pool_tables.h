@@ -942,7 +942,8 @@
 #define DFI_SPECIAL_ENDEAVOR 117u
 #define DFI_SPECIAL_PSYCH_UP 118u
 #define DFI_SPECIAL_ALLY_SWITCH 119u
-#define DFI_SPECIAL_UNMODELED 120u
+#define DFI_SPECIAL_PSYCHIC_TERRAIN 120u
+#define DFI_SPECIAL_UNMODELED 121u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

@@ -538,6 +538,9 @@ const dfi_support_manifest dfi_support = {
              * stops poisons its user (the Poison and Steel types are immune). Its only learner in the pool is Toxapex, with Limber or
              * Regenerator (both marked). Its Merciless is not marked, so a Merciless Toxapex is refused. */
             [DFI_MOVE_BANEFULBUNKER] = 1u,
+            /* Step G96 (decision 0015 5cz): Psychic Terrain, the terrain setter (5 turns, 8 with Terrain Extender); the block of
+             * the priority moves against grounded foes and the Psychic boost are the terrain's rules, already on main. */
+            [DFI_MOVE_PSYCHICTERRAIN] = 1u,
             /* Step G76 (decision 0015 5cg): Destiny Bond (the user's volatile, the consecutive-use failure, the KO of a foe that
              * faints from a Move; Future Sight, the futuremove the pin excludes, is unmarked, so it cannot reach a holder). */
             [DFI_MOVE_DESTINYBOND] = 1u,

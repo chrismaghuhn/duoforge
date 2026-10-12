@@ -726,7 +726,9 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # Batch 8 pins (HS's measurement on aa0d8c65 with mismatch 0; to be confirmed by the CI log of the batch head): the record
 # assembler's equal 11590, refused 639, the unburden refusal 4 (the infatuated key of batch 7 is gone with G87). The tracker's
 # stops: 162 streams = SUBSTITUTE 110 + DRAGON_CHEER 20 + FORME_CHANGE 10 + DESTINY_BOND 10 + ROOST 8 + line:-end 2 + ILLUSION 2.
-POOL_OUTCOME = {"equal": 11590, "refused": 639, "tracker refuses: unburden-without-item-line": 4}
+# G96 Psychic Terrain (decision 0065) on the batch-8 base: the record assembler's equal 11604 (CI 38194785871, Windows Python job, the
+# pool tracker stops unchanged at 162); refused 639 and the unburden refusal 4 are main's.
+POOL_OUTCOME = {"equal": 11604, "refused": 639, "tracker refuses: unburden-without-item-line": 4}
 POOL_STOPS = {"feature:SUBSTITUTE": 110, "feature:DRAGON_CHEER": 20, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
