@@ -189,6 +189,19 @@ class VerdictTest(unittest.TestCase):
             self.assertIn(key, got)
 
 
+class WslPathTest(unittest.TestCase):
+    """A worktree's .git pointer names a Windows gitdir; WSL's git needs its /mnt spelling."""
+
+    def test_a_windows_drive_path_gets_its_wsl_spelling(self):
+        self.assertEqual(ladder.wsl_path("C:/Dev/src/duoforge/.git/worktrees/x"),
+                         "/mnt/c/Dev/src/duoforge/.git/worktrees/x")
+        self.assertEqual(ladder.wsl_path("D:\\data\\run"), "/mnt/d/data/run")
+
+    def test_other_paths_are_unchanged(self):
+        self.assertEqual(ladder.wsl_path("/home/chris/df-runs"), "/home/chris/df-runs")
+        self.assertEqual(ladder.wsl_path("relative/dir"), "relative/dir")
+
+
 class SameGamesTest(unittest.TestCase):
     def test_identical_games_match(self):
         self.assertTrue(ladder.same_games([1.0, 0.5, 0.0], np.array([1.0, 0.5, 0.0])))
