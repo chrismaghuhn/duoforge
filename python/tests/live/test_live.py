@@ -790,6 +790,62 @@ class RecordHarnessTest(unittest.TestCase):
         self.assertGreater(supported, 100)
 
 
+def _closure_assembler_observations(points):
+    import collections
+    import re
+    outcome, fields, where = collections.Counter(), collections.Counter(), {}
+    by_battle = collections.defaultdict(collections.Counter)
+    for (name, player), points in points.items():
+        for k, parts in points:
+            result = record_diff(name, k, player, parts["record"])
+            if result["engine_status"] != 0:
+                same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
+                    result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
+                key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
+            elif parts["status"] != 0:
+                key = f"tracker refuses: {parts['reason']}"
+            else:
+                key = "mismatch" if result["fields"] else "equal"
+                for field in result["fields"]:
+                    fields[re.sub(r"\d+", "#", field)] += 1
+                    where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
+            outcome[key] += 1
+            by_battle[name][key] += 1
+            where.setdefault(key, (name, k, player))
+    return outcome, fields, where, by_battle
+
+
+def _pool_assembler_observations(points, verifier):
+    import collections
+    import re
+    outcome, fields, where = collections.Counter(), collections.Counter(), {}
+    by_battle = collections.defaultdict(collections.Counter)
+    for (name, player), points in points.items():
+        for k, parts in points:
+            result = record_diff(name, k, player, parts["record"])
+            if result["engine_status"] != 0:
+                same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
+                    result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
+                key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
+            elif parts["status"] != 0 and parts["reason"] == "engine-refuses-record":
+                # the engine's public record of this point is status 0, but its check refuses a world with an infatuated occupant
+                # (duoforge_battle_from_view, lead's option B, tests/test_pool_g71.c): the tracker refuses with that verdict. Only
+                # records with an Attract source in the engine's record may take this key (infatuated_in_engine).
+                verifier.assertTrue(infatuated_in_engine(name, k, player), (name, k, player))
+                key = INFATUATED_REFUSAL
+            elif parts["status"] != 0:
+                key = f"tracker refuses: {parts['reason']}"
+            else:
+                key = "mismatch" if result["fields"] else "equal"
+                for field in result["fields"]:
+                    fields[re.sub(r"\d+", "#", field)] += 1
+                    where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
+            outcome[key] += 1
+            by_battle[name][key] += 1
+            where.setdefault(key, (name, k, player))
+    return outcome, fields, where, by_battle
+
+
 class RecordAssemblerTest(unittest.TestCase):
     """The tracker's public record (Tracker.public_parts, duoforge_live.record; M12 option A) is the engine's, byte for
     byte, at every decision point of both players of every committed closure battle; where the engine refuses the
@@ -819,25 +875,7 @@ class RecordAssemblerTest(unittest.TestCase):
                         tracker.accepted(step["input"][pid])
 
     def test_record_equals_engine(self):
-        import collections
-        import re
-        outcome, fields, where = collections.Counter(), collections.Counter(), {}
-        for (name, player), points in self.points.items():
-            for k, parts in points:
-                result = record_diff(name, k, player, parts["record"])
-                if result["engine_status"] != 0:
-                    same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
-                        result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
-                    key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
-                elif parts["status"] != 0:
-                    key = f"tracker refuses: {parts['reason']}"
-                else:
-                    key = "mismatch" if result["fields"] else "equal"
-                    for field in result["fields"]:
-                        fields[re.sub(r"\d+", "#", field)] += 1
-                        where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
-                outcome[key] += 1
-                where.setdefault(key, (name, k, player))
+        outcome, fields, where, by_battle = _closure_assembler_observations(self.points)
         print(f"\nrecord assembler: {dict(sorted(outcome.items()))}")
         self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
         self.assertEqual(dict(outcome), CLOSURE_OUTCOME, {key: where[key] for key in outcome})
@@ -906,6 +944,7 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         from duoforge_live.tracker import Tracker
         cls.pool = Reference.get().pool()
         cls.points, cls.stops, cls.raised = {}, collections.Counter(), set()  # (battle, player) -> [(k, parts)]
+        cls.stops_by_battle = collections.defaultdict(collections.Counter)
         for battle in cls.pool.battles:
             kind = record_kind(battle.name)
             for player in (0, 1):
@@ -925,37 +964,14 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                             tracker.accepted(step["input"][pid])
                 except live_lines.Stop as stop:
                     cls.stops[str(stop).split(" ")[0]] += 1
+                    cls.stops_by_battle[battle.name][str(stop).split(" ")[0]] += 1
                 except ValueError as err:
                     if not str(err).startswith("own PP of "):
                         raise
                     cls.raised.add((battle.name, player))
 
     def test_pool_records_equal_engine(self):
-        import collections
-        import re
-        outcome, fields, where = collections.Counter(), collections.Counter(), {}
-        for (name, player), points in self.points.items():
-            for k, parts in points:
-                result = record_diff(name, k, player, parts["record"])
-                if result["engine_status"] != 0:
-                    same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
-                        result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
-                    key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
-                elif parts["status"] != 0 and parts["reason"] == "engine-refuses-record":
-                    # the engine's public record of this point is status 0, but its check refuses a world with an infatuated occupant
-                    # (duoforge_battle_from_view, lead's option B, tests/test_pool_g71.c): the tracker refuses with that verdict. Only
-                    # records with an Attract source in the engine's record may take this key (infatuated_in_engine).
-                    self.assertTrue(infatuated_in_engine(name, k, player), (name, k, player))
-                    key = INFATUATED_REFUSAL
-                elif parts["status"] != 0:
-                    key = f"tracker refuses: {parts['reason']}"
-                else:
-                    key = "mismatch" if result["fields"] else "equal"
-                    for field in result["fields"]:
-                        fields[re.sub(r"\d+", "#", field)] += 1
-                        where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
-                outcome[key] += 1
-                where.setdefault(key, (name, k, player))
+        outcome, fields, where, by_battle = _pool_assembler_observations(self.points, self)
         print(f"\npool record assembler: {dict(sorted(outcome.items()))}")
         print(f"pool tracker stops: {sum(self.stops.values())} streams, {dict(self.stops.most_common())}")
         self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
