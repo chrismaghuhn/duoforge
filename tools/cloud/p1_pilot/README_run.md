@@ -10,7 +10,7 @@ are `aws s3 cp/sync/ls`.
 | `run.sh` | the run, `--on-interrupt`, `--dry-run` and `--check-env` |
 | `p1_manifest.py` | writes the collector's `DataManifest` with the hashes the collector CLI checks; `freeze` computes the production rounds from the smoke |
 | `p1_export.py` | the control's final parameters from its run state as a format-2 checkpoint (a budget stop writes no snapshot) |
-| `test_p1_tools.py` | offline tests: `p1_manifest.freeze`, the RUN_ID guard (`python tools/cloud/p1_pilot/test_p1_tools.py`) |
+| `tests/test_p1_tools.py` | offline tests: `p1_manifest.freeze`, the RUN_ID guard (`python tools/cloud/p1_pilot/tests/test_p1_tools.py`) |
 
 ## Environment
 

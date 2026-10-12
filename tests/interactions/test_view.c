@@ -29,6 +29,8 @@
 #include "data/pool_tables.h"
 #include "reference/conformance_pool.h"
 #include "state/request.h"
+#include "state/closure_member.h"
+#include "data/support_manifest.h"
 
 #define GAMES 80u
 #define MAX_STEPS 400u
@@ -1244,6 +1246,83 @@ static void test_counter_information_safety(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+/* PKMN Arena, 2026-10-12: a public record whose battle holds a move the support manifest does not mark (the live tracker's
+ * record of an open sheet: a foe Meowstic with Psychic Terrain) gave worlds, and every step of those worlds was E_UNSUPPORTED
+ * (dfi_turn_run's support gate), so the honest search valued every leaf as refused (-1) and played its prior's first pair
+ * while it counted the decision as searched. A world the engine can never step is no world: from_view refuses such a record
+ * with E_UNSUPPORTED and writes nothing, as duoforge_battle_create refuses its setup (decision 0006 section 2), and the
+ * engine's verdict on an assembled record (duoforge_public_record_check) says the same. The supported record still builds. */
+static void test_unsupported_member_world(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    const dfi_kind_limits lim = dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL);
+    duoforge_battle_setup setup;
+    memset(&setup, 0, sizeof setup);
+    team('A', &setup.sides[0]);
+    team('B', &setup.sides[1]);
+    /* a move a member of the foe side learns that the manifest does not mark (Psychic Terrain first, the arena's case) */
+    uint32_t member = DUOFORGE_MAX_ROSTER;
+    uint32_t move = DFI_POOL_MOVE_COUNT;
+    for (uint32_t pass = 0u; pass < 2u && member == DUOFORGE_MAX_ROSTER; ++pass) {
+        for (uint32_t m = 0u; m < setup.sides[1].member_count && member == DUOFORGE_MAX_ROSTER; ++m) {
+            const duoforge_member_setup *ms = &setup.sides[1].members[m];
+            for (uint32_t id = pass == 0u ? DFI_MOVE_PSYCHICTERRAIN : 0u;
+                 id < (pass == 0u ? DFI_MOVE_PSYCHICTERRAIN + 1u : DFI_POOL_MOVE_COUNT); ++id) {
+                bool held = false;
+                for (uint32_t k = 0u; k < ms->move_count; ++k) {
+                    held = held || ms->moves[k].move_id == id;
+                }
+                if (!held && dfi_support.moves[id] == 0u && dfi_forme_move_legal(&lim, ms->species_id, id)) {
+                    member = m;
+                    move = id;
+                    break;
+                }
+            }
+        }
+    }
+    if (!DF_CHECK(t, member < DUOFORGE_MAX_ROSTER)) {
+        fprintf(stderr, "  no member of Team B learns a move the manifest does not mark: build the case from another team\n");
+        duoforge_context_destroy(ctx);
+        return;
+    }
+    duoforge_battle_setup unsupported = setup;
+    unsupported.sides[1].members[member].moves[0].move_id = (uint16_t)move;
+    duoforge_battle *gated = NULL;
+    DF_CHECK(t, duoforge_battle_create(ctx, &unsupported, &gated) == DUOFORGE_E_UNSUPPORTED && gated == NULL);
+    duoforge_battle *b = NULL;
+    DF_CHECK(t, dfi_battle_create_ungated(ctx, &unsupported, &b) == DUOFORGE_OK && b != NULL);
+    duoforge_battle *supported = df_make_battle(ctx, &setup);
+    duoforge_battle *world = df_make_battle(ctx, &setup);
+    if (b == NULL || supported == NULL || world == NULL) {
+        duoforge_battle_destroy(b);
+        duoforge_battle_destroy(supported);
+        duoforge_battle_destroy(world);
+        duoforge_context_destroy(ctx);
+        return;
+    }
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        duoforge_public_state view;
+        duoforge_hypothesis h;
+        DF_CHECK(t, duoforge_battle_public(ctx, supported, p, &view) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_hypothesis(ctx, supported, p, &h) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_from_view(ctx, &view, &h, world) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_public_record_check(ctx, &view) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_public(ctx, b, p, &view) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, p, &h) == DUOFORGE_OK);
+        const struct duoforge_battle before = *world;
+        const duoforge_status st = duoforge_battle_from_view(ctx, &view, &h, world);
+        if (!DF_CHECK(t, st == DUOFORGE_E_UNSUPPORTED)) {
+            fprintf(stderr, "  player %u: from_view of a battle holding unmarked move %u: %s\n", p, move,
+                    duoforge_status_name(st));
+        }
+        DF_CHECK(t, memcmp(world, &before, sizeof before) == 0);
+        DF_CHECK(t, duoforge_public_record_check(ctx, &view) == DUOFORGE_E_UNSUPPORTED);
+    }
+    duoforge_battle_destroy(world);
+    duoforge_battle_destroy(supported);
+    duoforge_battle_destroy(b);
+    duoforge_context_destroy(ctx);
+}
 
 /* duoforge_hp_display: the engine's HP display (the knowledge fold's dfi_hp_display) for every exact HP of a range of maxima,
  * the documented edge values, and the argument checks with nothing written on a refusal. */
@@ -1588,6 +1667,7 @@ int main(void)
     test_move_result(&t);
     test_arguments(&t);
     test_counter_information_safety(&t);
+    test_unsupported_member_world(&t);
     test_batch(&t);
     test_early_pivot_information_boundary(&t);
     test_flinch_information_safety(&t);

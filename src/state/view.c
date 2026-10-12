@@ -15,6 +15,7 @@
 #include "core/bytes.h"
 #include "data/closure_tables.h"
 #include "data/pool_tables.h"
+#include "data/support_manifest.h"
 #include "rng/pcg32.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
@@ -1593,6 +1594,12 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     const duoforge_status st = dfi_decode_state(ctx, s, n, &world, NULL);
     if (st != DUOFORGE_OK) {
         return st == DUOFORGE_E_CONTEXT_MISMATCH ? st : DUOFORGE_E_MALFORMED;
+    }
+    /* The support gate of duoforge_battle_create (decision 0006 section 2): a world that holds a move, ability, item or Mega
+     * Evolution the manifest does not mark is one every step refuses (dfi_turn_run), so it is refused here, explicitly, and
+     * never handed to a search as a world (PKMN Arena, 2026-10-12: an open sheet's Psychic Terrain). */
+    if (dfi_context_is_closure(ctx) && !dfi_closure_battle_supported(&dfi_support, &world)) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
     duoforge_public_state checked;
     const duoforge_status cs = duoforge_battle_public(ctx, &world, player, &checked);

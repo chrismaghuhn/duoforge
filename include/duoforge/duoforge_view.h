@@ -211,8 +211,11 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
    hypothesis against the record (a spread past 32 or 66, a pick order that is
    not a brought set agreeing with the leads and the members seen, or any pick
    at TEAM_SELECTION) -> E_INVALID_ARGUMENT; the built world's full check ->
-   E_MALFORMED. Unmodelled public features are E_UNSUPPORTED; a public
-   support-query invariant failure is E_INVARIANT. *out is written only on success. */
+   E_MALFORMED. Unmodelled public features are E_UNSUPPORTED, and so is a
+   world that holds a move, ability, item or Mega Evolution the support
+   manifest does not mark (duoforge_battle_create's support gate: every step
+   of it would be refused); a public support-query invariant failure is
+   E_INVARIANT. *out is written only on success. */
 duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duoforge_public_state *view,
                                           const duoforge_hypothesis *hypothesis, duoforge_battle *out);
 
