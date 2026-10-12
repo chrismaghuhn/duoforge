@@ -68,7 +68,7 @@ Options:
 | `DUOFORGE_ENABLE_SANITIZERS` | OFF | ASan + UBSan, non-recovering (GCC/Clang only). |
 | `DUOFORGE_ENABLE_IPO` | OFF | Link-time optimization of Release builds (8 to 13 percent faster battles, decision 0008 section 8). The library then links only with the same toolchain; fails the configuration where unsupported. |
 | `DUOFORGE_PYTHON` | empty | Python 3.10+ with NumPy 2 for the `duoforge.python.*` tests (see "Python"); without it they report skipped. |
-| `DUOFORGE_PCG_REFERENCE_DIR` | empty | Path to a checkout of `imneme/pcg-c-basic` at `bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3`. Enables the reference tests (`ctest -L reference`): byte-identical KAT regeneration and a 1,024,000-operation lockstep differential. |
+| `DUOFORGE_PCG_REFERENCE_DIR` | empty | Path to a checkout of `imneme/pcg-c-basic` at `bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3`. Enables the PCG tests (`ctest -L ci-rng`): byte-identical KAT regeneration and a 1,024,000-operation lockstep differential. |
 
 Every test is finite and has a timeout. Test groups:
 

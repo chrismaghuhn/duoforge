@@ -1,10 +1,11 @@
+# Full includes the records_write fixture setup (median 18.81 s in full CI).
 duoforge_add_test(NAME duoforge.reference.runner_records SOURCES interactions/test_runner_records.c WHITEBOX
-    LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/closure.records")
+    LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/closure.records" TIER full AREA interactions LABELS ci-no-skip)
 duoforge_add_test(NAME duoforge.reference.runner_records_team_c SOURCES interactions/test_runner_records.c WHITEBOX
-    LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/team_c.records")
+    LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/team_c.records" TIER full AREA interactions LABELS ci-no-skip)
 target_compile_definitions(duoforge_reference_runner_records_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
 duoforge_add_test(NAME duoforge.reference.runner_records_pool SOURCES interactions/test_runner_records.c WHITEBOX
-    LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/pool.records")
+    LIBS duoforge_difftest_records TIMEOUT 60 ARGS "${_records_dir}/pool.records" TIER full AREA interactions LABELS ci-no-skip)
 target_compile_definitions(duoforge_reference_runner_records_pool PRIVATE DF_CONFORMANCE_POOL_DATA)
 set_tests_properties(duoforge.reference.runner_records duoforge.reference.runner_records_team_c
     duoforge.reference.runner_records_pool PROPERTIES FIXTURES_REQUIRED duoforge_conformance_records)
