@@ -241,7 +241,7 @@ int main(void)
         duoforge_battle *dd = NULL;
         DF_CHECK(&t, duoforge_battle_clone(c1, f1, &dd) == DUOFORGE_OK && dd != NULL);
         memset(dd, 0xAA, sizeof *dd);
-        DF_CHECK(&t, duoforge_battle_decode(c1, dd, e1, sizeof e1) == DUOFORGE_OK);
+        DF_CHECK_EQ_U64(&t, duoforge_battle_decode(c1, dd, e1, sizeof e1), DUOFORGE_OK);
         for (unsigned s2 = 0u; s2 < DUOFORGE_SIDE_COUNT; ++s2) {
             for (unsigned m2 = 0u; m2 < DUOFORGE_MAX_ROSTER; ++m2) {
                 DF_CHECK_EQ_U64(&t, dd->tail.sides[s2].sleep_cant[m2], 0u);
