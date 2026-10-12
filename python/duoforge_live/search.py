@@ -208,11 +208,23 @@ def add_foe_net_arguments(parser):
                         help="the foe network file's SHA-256, checked before loading (default: the pinned BC6)")
 
 
+def check_foe_net_arguments(args, honest):
+    """ValueError for foe options an entry point would not use or that pin nothing (review of #446): any of them
+    without the honest search, a pin with --no-foe-net, an empty --foe-net. Never a silent ignore."""
+    given = args.foe_net is not None or args.no_foe_net or args.foe_net_sha256 is not None
+    if given and not honest:
+        raise ValueError("--foe-net models the foe in the honest search: it needs --search honest")
+    if args.foe_net_sha256 is not None and args.no_foe_net:
+        raise ValueError("--foe-net-sha256 pins the file of --foe-net: not with --no-foe-net")
+    if args.foe_net is not None and not args.foe_net:
+        raise ValueError("--foe-net is empty: name the foe network's file, or choose --no-foe-net")
+
+
 def foe_net_of(args):
-    """load's foe_net from parsed add_foe_net_arguments options."""
+    """load's foe_net from parsed add_foe_net_arguments options (check_foe_net_arguments first)."""
     if args.no_foe_net:
         return None
-    return args.foe_net if args.foe_net else ENVIRONMENT
+    return ENVIRONMENT if args.foe_net is None else args.foe_net
 
 
 def foe_net_sha256_of(args):
@@ -230,8 +242,11 @@ def load(checkpoint_path, settings=None, foe_net=ENVIRONMENT, foe_net_sha256=FOE
     if "foe_net" not in settings:  # first: an unconfigured or unpinned foe network stops before anything loads
         path = foe_net_path(foe_net)
         if path is not None:
+            if not foe_net_sha256:
+                raise ValueError(f"the foe network {path} needs its pin (foe_net_sha256)")
             from .pkmn_arena import load_foe_net
-            foe, foe_check = load_foe_net(path, foe_net_sha256)
+            foe, check = load_foe_net(path, foe_net_sha256)
+            foe_check = {**check, "sha256": foe_net_sha256}  # the arm a log or a report names
             settings = dict(settings, foe_net=foe)
     import duoforge
     from duoforge_learn import checkpoint

@@ -66,6 +66,7 @@ def main(argv=None):
         if value is not None:
             settings[name] = value
     t = time.perf_counter()
+    live_search.check_foe_net_arguments(args, True)
     live = live_search.load(args.checkpoint, settings=settings, foe_net=live_search.foe_net_of(args),
                             foe_net_sha256=live_search.foe_net_sha256_of(args))
     params, config = checkpoint.load_trained(args.checkpoint)
@@ -125,7 +126,7 @@ def main(argv=None):
     finally:
         live.close()
     report = {"games": args.games, "max_steps": args.max_steps, "seed": args.seed, "runtime": "jax-cpu",
-              "settings": settings, "table_sha256": searcher.table_info["sha256"],
+              "settings": settings, "foe_net": live.foe_check, "table_sha256": searcher.table_info["sha256"],
               "warmup": {"load_seconds": load_seconds, "first_seconds": first},
               "boundaries": {label: {"n": len(s), **_quantiles(s), "causes": causes[label],
                                      "reasons": reasons[label]}

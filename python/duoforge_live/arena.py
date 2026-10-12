@@ -264,6 +264,7 @@ def main(argv=None):
     if args.games % 2 or args.games < 2:
         raise SystemExit("the arena plays pairs: --games must be even")
     check_host(args.host)  # before anything is loaded or connected
+    search.check_foe_net_arguments(args, True)
     foe_net = search.foe_net_path(search.foe_net_of(args))  # an unconfigured foe model stops here too
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
@@ -318,7 +319,8 @@ def main(argv=None):
     finally:
         if server is not None:
             server.terminate()
-    report = {"checkpoint_config_teams": len(ids) + len(refused), "playable_teams": len(ids),
+    report = {"foe_net": None if foe_net is None else {"sha256": search.foe_net_sha256_of(args)},  # the arm
+              "checkpoint_config_teams": len(ids) + len(refused), "playable_teams": len(ids),
               "refused_teams": refused, "seed": args.seed, "games_planned": len(games),
               "lanes": args.lanes, "seconds": time.monotonic() - start, "code": _commit(),
               **evaluate(records, len(games))}

@@ -68,10 +68,10 @@ def _is_arena(argv):
 def arena_main(argv):
     pkmn_arena.check_argv(argv)  # before argparse, whose errors echo the arguments
     args = _arena_arguments(argv)
-    if (args.foe_net is not None or args.no_foe_net or args.foe_net_sha256 is not None) and args.search != "honest":
-        pkmn_arena._refuse("--foe-net models the foe in the honest search: it needs --search honest")
-    if args.foe_net_sha256 is not None and args.no_foe_net:
-        pkmn_arena._refuse("--foe-net-sha256 pins the file of --foe-net")
+    try:
+        search.check_foe_net_arguments(args, args.search == "honest")
+    except ValueError as err:
+        pkmn_arena._refuse(str(err))
     name = pkmn_arena.credentials()  # the token's value is never shown
     from duoforge_replay.dataset import refuse_repository
     try:
@@ -117,6 +117,7 @@ def main(argv=None):
     config = client.Config(name=args.name, team=args.team, log_dir=args.log_dir, team_link=args.team_link,
                            challenge=args.challenge, challenge_format=args.challenge_format, server=args.server)
     client.check_arguments(config)  # before anything is loaded or connected
+    search.check_foe_net_arguments(args, args.search == "honest")
     foe_path = None
     if args.search == "honest":
         from .tracker import Tracker
