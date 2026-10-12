@@ -30,7 +30,7 @@ Skill Swap (`data/moves.ts:16590-16606`) exchanges the two holders' abilities. T
 
 - Both holders' tail `ability_now` (AC1) are set to the new ability + 1, and **stored as 0 when the new ability equals the holder's sheet ability**, so the view's `ability_changed` keeps its meaning. A swap back to the sheet ability clears the copy.
 - The switch-out reset is unchanged: the pin resets `ability` to `baseAbility` (`sim/pokemon.ts:1522`), which is the existing reset of `ability_now` (`identity.c:46`).
-- Every rule of the turn code reads the ability through `dfi_ability_code` (`src/combat/turn.c (dfi_ability_code)`), so the copy is seen everywhere. Verified: Regenerator's `onSwitchOut` (`src/combat/turn.c (dfi_switch_in)`) and Speed Boost's `onResidual` (`src/combat/turn.c (dfi_speed_boost)`) read the current ability and need no change.
+- Every rule of the turn code reads the ability through `dfi_ability_code` (`src/combat/abilities/current.h (dfi_ability_code)`), so the copy is seen everywhere. Verified: Regenerator's `onSwitchOut` (`src/combat/turn.c (dfi_switch_in)`) and Speed Boost's `onResidual` (`src/combat/turn.c (dfi_speed_boost)`) read the current ability and need no change.
 
 ## Start and End of the marked abilities
 

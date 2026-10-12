@@ -1,0 +1,534 @@
+{
+  "after": {
+    "bench": {
+      "calls": {
+        "dfi_ability": [
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "34f6e:\te8 3d ea fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "34fed:\te8 be e9 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "35096:\te8 15 e9 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "35132:\te8 79 e8 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3594f:\te8 5c e0 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "36a87:\te8 24 cf fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "36aa9:\te8 02 cf fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "370d5:\te8 d6 c8 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "38f5f:\te8 4c aa fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "38f77:\te8 34 aa fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "396b6:\te8 f5 a2 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "397ac:\te8 ff a1 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "39c33:\te8 78 9d fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3a6ec:\te8 bf 92 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3c05b:\te8 50 79 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3c7ce:\te8 dd 71 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3ca3e:\te8 6d 6f fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3cb0d:\te8 9e 6e fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d347:\te8 64 66 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d3a2:\te8 09 66 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d402:\te8 a9 65 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d4fb:\te8 b0 64 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d5f5:\te8 b6 63 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d63e:\te8 6d 63 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d696:\te8 15 63 fd ff       \tcall   139b0 <dfi_ability.lto_priv.0>"
+          }
+        ],
+        "dfi_ability_code": [],
+        "dfi_ability_family_for": [],
+        "dfi_ability_family_now": [],
+        "dfi_ate_base_power": [],
+        "dfi_ate_boosts_fam": [],
+        "dfi_ate_excluded": [],
+        "dfi_ate_type_fam": [],
+        "dfi_fairy_aura_base_power": [],
+        "dfi_fairy_aura_on_field": [],
+        "dfi_pinch_applies_fam": [],
+        "dfi_pinch_attack": [],
+        "dfi_terrain_set_by_fam": [],
+        "dfi_weather_set_by_fam": []
+      },
+      "counts": {
+        "dfi_ability": 25,
+        "dfi_ability_code": 0,
+        "dfi_ability_family_for": 0,
+        "dfi_ability_family_now": 0,
+        "dfi_ate_base_power": 0,
+        "dfi_ate_boosts_fam": 0,
+        "dfi_ate_excluded": 0,
+        "dfi_ate_type_fam": 0,
+        "dfi_fairy_aura_base_power": 0,
+        "dfi_fairy_aura_on_field": 0,
+        "dfi_pinch_applies_fam": 0,
+        "dfi_pinch_attack": 0,
+        "dfi_terrain_set_by_fam": 0,
+        "dfi_weather_set_by_fam": 0
+      }
+    },
+    "shared": {
+      "calls": {
+        "dfi_ability": [
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "44574:\te8 27 07 fe ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "445ee:\te8 ad 06 fe ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "446a2:\te8 f9 05 fe ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "44747:\te8 54 05 fe ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "44f76:\te8 25 fd fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "453fa:\te8 a1 f8 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "46384:\te8 17 e9 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "463a6:\te8 f5 e8 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "46985:\te8 16 e3 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "482b3:\te8 e8 c9 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "482cb:\te8 d0 c9 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "48f43:\te8 58 bd fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "49032:\te8 69 bc fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4a864:\te8 37 a4 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4ab42:\te8 59 a1 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4b436:\te8 65 98 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4b4f6:\te8 a5 97 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4b640:\te8 5b 96 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4baf2:\te8 a9 91 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4bb4f:\te8 4c 91 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4bbb6:\te8 e5 90 fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4bcd6:\te8 c5 8f fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4bde4:\te8 b7 8e fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4be2e:\te8 6d 8e fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4be87:\te8 14 8e fd ff       \tcall   24ca0 <dfi_ability.lto_priv.0>"
+          }
+        ],
+        "dfi_ability_code": [],
+        "dfi_ability_family_for": [],
+        "dfi_ability_family_now": [],
+        "dfi_ate_base_power": [],
+        "dfi_ate_boosts_fam": [],
+        "dfi_ate_excluded": [],
+        "dfi_ate_type_fam": [],
+        "dfi_fairy_aura_base_power": [],
+        "dfi_fairy_aura_on_field": [],
+        "dfi_pinch_applies_fam": [],
+        "dfi_pinch_attack": [],
+        "dfi_terrain_set_by_fam": [],
+        "dfi_weather_set_by_fam": []
+      },
+      "counts": {
+        "dfi_ability": 25,
+        "dfi_ability_code": 0,
+        "dfi_ability_family_for": 0,
+        "dfi_ability_family_now": 0,
+        "dfi_ate_base_power": 0,
+        "dfi_ate_boosts_fam": 0,
+        "dfi_ate_excluded": 0,
+        "dfi_ate_type_fam": 0,
+        "dfi_fairy_aura_base_power": 0,
+        "dfi_fairy_aura_on_field": 0,
+        "dfi_pinch_applies_fam": 0,
+        "dfi_pinch_attack": 0,
+        "dfi_terrain_set_by_fam": 0,
+        "dfi_weather_set_by_fam": 0
+      }
+    }
+  },
+  "baseline": {
+    "bench": {
+      "calls": {
+        "dfi_ability": [
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3522e:\te8 3d 04 fe ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "352ad:\te8 be 03 fe ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "35356:\te8 15 03 fe ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "353f2:\te8 79 02 fe ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "35c0f:\te8 5c fa fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "36d47:\te8 24 e9 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "36d69:\te8 02 e9 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "37395:\te8 d6 e2 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3921f:\te8 4c c4 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "39237:\te8 34 c4 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "39976:\te8 f5 bc fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "39a6c:\te8 ff bb fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "39ef3:\te8 78 b7 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3a9ac:\te8 bf ac fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3c31b:\te8 50 93 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3ca8e:\te8 dd 8b fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3ccfe:\te8 6d 89 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3cdcd:\te8 9e 88 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d607:\te8 64 80 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d662:\te8 09 80 fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d6c2:\te8 a9 7f fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d7bb:\te8 b0 7e fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d8b5:\te8 b6 7d fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d8fe:\te8 6d 7d fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "3d956:\te8 15 7d fd ff       \tcall   15670 <dfi_ability.lto_priv.0>"
+          }
+        ],
+        "dfi_ability_code": [],
+        "dfi_ability_family_for": [],
+        "dfi_ability_family_now": [],
+        "dfi_ate_boosts_fam": [],
+        "dfi_ate_excluded": [],
+        "dfi_ate_type_fam": [],
+        "dfi_fairy_aura_on_field": [],
+        "dfi_pinch_applies_fam": [],
+        "dfi_terrain_set_by_fam": [],
+        "dfi_weather_set_by_fam": []
+      },
+      "counts": {
+        "dfi_ability": 25,
+        "dfi_ability_code": 0,
+        "dfi_ability_family_for": 0,
+        "dfi_ability_family_now": 0,
+        "dfi_ate_boosts_fam": 0,
+        "dfi_ate_excluded": 0,
+        "dfi_ate_type_fam": 0,
+        "dfi_fairy_aura_on_field": 0,
+        "dfi_pinch_applies_fam": 0,
+        "dfi_terrain_set_by_fam": 0,
+        "dfi_weather_set_by_fam": 0
+      }
+    },
+    "shared": {
+      "calls": {
+        "dfi_ability": [
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "448b4:\te8 f7 05 fe ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4492e:\te8 7d 05 fe ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "449e2:\te8 c9 04 fe ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "44a87:\te8 24 04 fe ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "452b6:\te8 f5 fb fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4573a:\te8 71 f7 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "466c4:\te8 e7 e7 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "466e6:\te8 c5 e7 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "46cc5:\te8 e6 e1 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "485f3:\te8 b8 c8 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4860b:\te8 a0 c8 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "49283:\te8 28 bc fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "49372:\te8 39 bb fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4aba4:\te8 07 a3 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4ae82:\te8 29 a0 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4b776:\te8 35 97 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4b836:\te8 75 96 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4b980:\te8 2b 95 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4be32:\te8 79 90 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4be8f:\te8 1c 90 fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4bef6:\te8 b5 8f fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4c016:\te8 95 8e fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4c124:\te8 87 8d fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4c16e:\te8 3d 8d fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          },
+          {
+            "caller": "dfi_run_move_body.lto_priv.0",
+            "instruction": "4c1c7:\te8 e4 8c fd ff       \tcall   24eb0 <dfi_ability.lto_priv.0>"
+          }
+        ],
+        "dfi_ability_code": [],
+        "dfi_ability_family_for": [],
+        "dfi_ability_family_now": [],
+        "dfi_ate_boosts_fam": [],
+        "dfi_ate_excluded": [],
+        "dfi_ate_type_fam": [],
+        "dfi_fairy_aura_on_field": [],
+        "dfi_pinch_applies_fam": [],
+        "dfi_terrain_set_by_fam": [],
+        "dfi_weather_set_by_fam": []
+      },
+      "counts": {
+        "dfi_ability": 25,
+        "dfi_ability_code": 0,
+        "dfi_ability_family_for": 0,
+        "dfi_ability_family_now": 0,
+        "dfi_ate_boosts_fam": 0,
+        "dfi_ate_excluded": 0,
+        "dfi_ate_type_fam": 0,
+        "dfi_fairy_aura_on_field": 0,
+        "dfi_pinch_applies_fam": 0,
+        "dfi_terrain_set_by_fam": 0,
+        "dfi_weather_set_by_fam": 0
+      }
+    }
+  }
+}
