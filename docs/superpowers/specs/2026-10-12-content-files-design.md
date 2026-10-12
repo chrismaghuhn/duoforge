@@ -1,6 +1,7 @@
 # Content files: one definition per move, ability and item
 
-Status: **draft for the owner**, 2026-10-12. Addendum to `2026-10-11-extension-system-design.md` (owner-approved) and to
+Status: **owner-approved**, 2026-10-12 (the six decisions are in section 10, after the HS review on #452). Addendum to
+`2026-10-11-extension-system-design.md` (owner-approved) and to
 the restructure plan `../plans/2026-10-11-repo-restructure.md` (steps 0-2 merged at ca17e507, step 3 in preparation).
 Design only: no product code, no build and no measurement were made for this document; every number below is read from
 the repository at ca17e507 or from the two documents above.
@@ -24,7 +25,7 @@ effect", whose logic must exist once, not five hundred times. So the design has 
 Everything that is a hand-maintained central list today (the handler ids and facts in `gen_closure.py`, the marks in
 `support_manifest.c`, the `md->special != ...` allow-list, the hand-assigned draw sites and residual kinds, the lines of
 `docs/support/README.md` and of decision 0015) is **generated from the entry files**. A content PR then touches its own
-files plus regenerated output. The one shared hand-edited line left is the independent pin sum (open question 2).
+files plus regenerated output; with the pin per entry (section 6) no shared hand-edited line is left.
 
 ## Measured starting point (main ca17e507)
 
@@ -65,11 +66,12 @@ reason the gaps are invisible today.
 
 **Formes.** Species data (stats, types, learnsets, legal abilities) stays derived from the pin into the pool tables. A forme
 gets an entry file only when it carries behaviour (Aegislash's Stance Change; a Mega pair's rules sit on the stone's and
-the ability's entries). Open question 3 asks whether the owner wants a file per species anyway.
+the ability's entries). No file per species (owner decision 3).
 
 ## 2. The entry file
 
-**Format: TOML**, read with `tomllib` (standard library since Python 3.11; the CI baseline runs 3.12). Alternatives: JSON (no
+**Format: TOML** (owner decision 1), read with `tomllib` (standard library since Python 3.11; the three CI Python jobs
+run 3.12, `ci.yml:172, 340, 424`, and so does the VPS on Ubuntu 24.04, checked by HS). Alternatives: JSON (no
 comments, poor for multi-line facts); a C header fragment per entry with X-macros (a compile-time registry without a
 generator, but no place for facts, docs and status, and the include list is a central file again). The generator exists and
 checks facts already; the file format only has to be diff-friendly and editable by hand.
@@ -182,9 +184,11 @@ merge, never resolved by hand):
 
 **Registration without a central file.**
 - C sources: `file(GLOB CONFIGURE_DEPENDS src/combat/<area>/*.c)` per area, the pattern `tests/reference/data.cmake` uses
-  already. Alternative: a generated `sources.cmake` per area; same effect, one more generated file.
+  already. Alternative: a generated `sources.cmake` per area; same effect, one more generated file. A deleted C file is
+  loud: its functions are missing from the generated switches and the link fails (checked by HS).
 - Tests: `tests/<area>/<entry>/tests.cmake` per entry, included by a glob in the area's `tests.cmake`, so no area file gains a
-  line per entry. The restructure's per-area registration stays for the existing tests.
+  line per entry. The restructure's per-area registration stays for the existing tests. A missing test folder fails
+  `duoforge.data.entries`, because every entry names its test paths.
 - Reference battles: one file per battle, a directory registry (plan step 2, merged). New battles are named by entry.
 - Docs: one file per entry under `docs/mechanics/<area>/<entry>.md`; the index is generated.
 
@@ -194,13 +198,15 @@ merge, never resolved by hand):
   (generated once, then frozen and `--check`ed). Because the owner's bulk step creates every entry of the format at once, the
   Reg M-C ledger is written once, and content PRs never append to it. A later format appends to its own ledger.
 - *Handler keys*: a bespoke move is dispatched by its **move id**, not by a `special` id, so no handler number is allocated
-  per mechanic any more. The `special` column (`uint8_t`, 122 of 256 values used) stays for the existing handlers and for the
-  kinds several moves share; new bespoke code keys on the row id. This removes the number space OU would overflow (316 more
-  moves).
+  per mechanic any more (owner decision 5). The `special` column (`uint8_t`, 122 of 256 values used) keeps its width and
+  serves the existing handlers and the kinds several moves share; new bespoke code keys on the row id. This removes the
+  number space OU would overflow (316 more moves) without touching the canonical bytes.
 - *Draw sites and residual kinds owned by a mechanic* are declared in the entry file and **derived, not allocated**:
   `DFI_SITE_ENTRY_BASE + (kind << 14) + (row_id << 3) + k` for the k-th site of the entry (the site and kind fields are
-  `uint32_t` already; existing sites keep their frozen small numbers). Two agents cannot collide, nothing is renumbered, and
-  the fixture rule "never renumber" holds by construction. The generated name switch keeps the compile-time duplicate guard;
+  `uint32_t` already; existing sites keep their frozen small numbers). The bounds are part of the contract: `row_id < 2048`
+  and `k < 8`, so the three fields cannot overlap; the generated header guards them with `static_assert` against every
+  format's row counts (511 moves today, about 830 with OU) and the generator refuses an entry with a ninth site. Two
+  agents cannot collide, nothing is renumbered, and the fixture rule "never renumber" holds by construction. The generated name switch keeps the compile-time duplicate guard;
   `dfi_draw`'s bound check becomes a lookup in the generated table.
 - *Storage* (tail bytes, volatile and position flag bits, view-extension feature bits) is the scarce resource of part D.
   Until D, an entry **declares** what it owns (`[state]`), the generator fails on two owners of one byte or bit, and the
@@ -234,7 +240,9 @@ points; the entry files say who answers. The kinds follow the extension spec's l
 - Several responders at one hook point are called in Showdown's order: the handler priority from the entry file (static,
   sorted by the generator), then the flow's speed order with the existing tie draws, then the sub-order (condition 2,
   ability 7, item 8). Where today's code refuses an order it cannot compute (`dfi_mods_commute` for ModifyDamage, the
-  ambiguous residual lists of `residual_order.h`), the refusal stays.
+  ambiguous residual lists of `residual_order.h`), the refusal stays. The order is proven per hook point, not claimed: the
+  migration PR of a hook point compares the per-battle digests of every reference set before and after (the P2 command of
+  plan step 2), and a hook point whose digests differ is not merged.
 - **RNG.** A hook never draws on its own: it calls `dfi_draw` with a site declared in its entry file. The draw order is the
   flow's call order, and the migration proves it unchanged by the per-battle digests (the RNG use is part of the digest). A
   test per entry checks, over its reference battles, that every drawn site is declared and every declared site is drawn: the
@@ -261,7 +269,7 @@ points; the entry files say who answers. The kinds follow the extension spec's l
 - **By name.** The refusal text is data: `dfi_pool_<kind>_refusal[id]` (generated, replaces `*_unmodeled`), read by the test
   support, by the scenario runner's `expect refused <entry>` (spec C1) and by the status report. Which ids are refused is
   public already through `duoforge_data_supported`; Python names the refused entry through that query (data, no rule).
-  Exposing the text through the public API is a header change (P6) and open question 4.
+  The text stays out of the public API (owner decision 4: no header change, P6 empty) until the live path needs it.
 - **Status report.** `tools/content/status.py` generates `docs/support/status.md`: per area and family the supported and
   refused counts, every stub with its refusal cause and, when the private coverage data is given as an argument, the replay
   games each stub blocks (the shape of `registry_blockers.json`). It is the "what is missing at a glance" list.
@@ -277,12 +285,18 @@ points; the entry files say who answers. The kinds follow the extension spec's l
 | tests | `tests/<area>/<id>/` with its own `tests.cmake` | no |
 | scenarios (spec C1) | `tests/scenarios/<area>/<id>/` | no |
 | reference battles | `tests/reference/battles/<format>/<set>/<id>_*.json` plus the per-battle pin | no |
-| independent pin sums | `tests/reference/pins/<format>.json` | **yes**: one line per content PR (open question 2) |
+| independent pin | `tests/reference/pins/<format>/<id>.json`, hand-maintained: the names, the count and the counted values (certified, stops, outcomes) of the entry's reference battles | no |
 | doc | `docs/mechanics/<area>/<id>.md` | no |
 | generated output | pool tables, manifest, hooks, refusals, support docs | regenerated, never hand-merged |
 
-A family-row promotion touches four kinds and at most eight files (the entry, the scenarios, the battles, the doc); a
-bespoke one adds the C file and the test folder. That meets the spec's success measure. Shared interfaces (a new hook point
+**Pins per entry (owner decision 2).** No generator writes a pin. The format sums (battle count, certified, tiebreak
+stops, live outcomes and stops, own-PP pairs) are derived from the per-entry pins and checked against the battle files, so
+a missing or renamed battle file breaks the pin of its entry, and a content PR creates only the pin of its own entry.
+Battles that belong to no entry (today's closure, Team C and pool sets) keep one collective pin per set, which content PRs
+never change. The transition from `tests/reference/pins/reg-mc.json` is its own migration step (CF4 in section 7).
+
+A family-row promotion touches four kinds and at most eight files (the entry, the scenarios, the battles with their pin,
+the doc); a bespoke one adds the C file and the test folder. That meets the spec's success measure. Shared interfaces (a new hook point
 in the flow, a new family, new storage) are their own small PRs, serialised, as the plan rules.
 
 ## 7. Embedding in the restructure plan and the extension spec
@@ -297,7 +311,7 @@ Astra builds the restructure; nothing here is built twice:
 | step 10 (format definition) | the format file lists its entries by Showdown id and gets the id ledger (sections 3 and 8) |
 | step 11 (docs per mechanic, the generated support README) | file names are entry ids; the README and the status page are generated from the entries; the 0015 anchors are the `decision` field |
 | step 12 (scaffold) | `tools/content/promote.py <id>` instead of `new_mechanic.py`: the entry exists already; the tool writes the C file from the family or bespoke template, the test folder and the scenario folder. A `new` mode stays for an entry of a new format |
-| spec B (hook table, families as rows) | section 4 is the hook table; the B pilot (the damage-modifier family) is CF5 and uses the family files from the start |
+| spec B (hook table, families as rows) | section 4 is the hook table; the B pilot (the damage-modifier family) is CF6 and uses the family files from the start |
 | spec C1 (scenario language) | scenario folders per entry, referenced from the entry file |
 | spec A interim (durations into Python) | generated from the core and entry files (`_tables.py`) |
 | spec D (declared storage) | the `[state]` declaration is the forerunner; D turns it into the generated codec and swap rules, unchanged otherwise |
@@ -310,14 +324,16 @@ Astra builds the restructure; nothing here is built twice:
 | CF1 | the allow table and the refusal strings from the entries; delete the hand lists | old predicate and table agree for every special (the plan's test); `*_unmodeled` equals the refusal strings |
 | CF2 | draw sites and residual kinds declared per entry; the generated headers; the core file | every existing site and kind keeps its number (the static-assert table of plan step 5); fixtures unchanged |
 | CF3 | the generated support README section and status page; the 0015 redirect table (plan step 11) | README content equal (diff in the PR body); every 0015 id resolves to one file |
-| CF4 | hook masks and the first generated switch (`move.try`, the fail conditions), then one hook point per PR | the bench table of section 4 per PR; digests identical |
-| CF5 | the first family through a family file and the move family column (the B pilot) | the spec's B proof: identical results for the migrated members, one new member as a row only, the cost against the retro median |
-| CF6 | per-entry test folders and `promote.py` (plan step 12) | a promoted dummy builds and its empty test runs, then is removed |
-| CF7 | the id ledger and the status per mod (section 8) | P5 byte-identical for Reg M-C |
+| CF4 | the pin per entry: `tests/reference/pins/<format>/<id>.json` for every entry with recorded battles, one collective pin per legacy set, the sums derived and checked against the battle files; `reg-mc.json` retired | the derived sums equal the frozen values of `reg-mc.json` (battles 90/73/966, certified 26/23/966, tiebreak stops 833/734/5,324, the live outcomes and stops, the own-PP pairs); the mutation controls of plan step 2 still fail on a deleted or renamed battle file and on a changed count |
+| CF5 | hook masks and the first generated switch (`move.try`, the fail conditions), then one hook point per PR | the bench table of section 4 per PR; digests identical |
+| CF6 | the first family through a family file and the move family column (the B pilot) | the spec's B proof: identical results for the migrated members, one new member as a row only, the cost against the retro median |
+| CF7 | per-entry test folders and `promote.py` (plan step 12) | a promoted dummy builds and its empty test runs, then is removed |
+| CF8 | the id ledger and the status per mod (section 8) | P5 byte-identical for Reg M-C |
 
-CF0 takes the slot of plan step 5 (after steps 3 and 4, whose moved files it reads), so the plan's sequence holds. CF1-CF3
-are the plan's own steps 4, 5 and 11, executed through the entries. CF4 and CF5 are the extension spec's part B and come
-after C1 and A, in the owner's order.
+CF0 takes the slot of plan step 5 (after steps 3 and 4, whose moved files it reads; owner decision 6, step 4 is not
+delayed), so the plan's sequence holds. CF1-CF3 are the plan's own steps 4, 5 and 11, executed through the entries. CF4
+is the pin transition of owner decision 2. CF5 and CF6 are the extension spec's part B and come after C1 and A, in the
+owner's order.
 
 ## 8. The format axis (#413)
 
@@ -343,20 +359,24 @@ after C1 and A, in the owner's order.
   switch files are the only new large units.
 - **Two agents, one family**: the family file is a shared interface; the second PR waits, or the family is created in a
   separate small PR first.
-- **The independent pin sums**: one hand-edited line per content PR, mechanical but certain to conflict under parallel work.
-- **The TOML reader**: `tomllib` needs Python 3.11; the Windows jobs' Python version is checked before CF0.
+- **Pins per entry**: the format sums become derived, so the independence rests on the hand-maintained per-entry files and
+  on the check against the battle files; the legacy sets' collective pins and the mutation controls of plan step 2 keep
+  the guard until every battle belongs to an entry.
 - **The classification's age**: `classification.json` is from an older head; CF0 derives the classes from the current
   generator and manifest, not from it.
 - **Stale references** in about 26 docs to `turn.c` lines (plan risk) are not made worse: the entry file is the stable anchor.
 
-## 10. Open questions to the owner
+## 10. Owner decisions (2026-10-12, via HS, on #452)
 
-1. **TOML** as the entry format (`tomllib`, Python 3.11 or later), or JSON?
-2. **The independent pin sums file**: keep it as one file (a one-line conflict per content PR, resolved mechanically with
-   `format_pins.py`), or split it per area so that only the PRs of one area touch one file?
-3. **Formes**: entry files only for behaviour-carrying formes (this design), or one file per species of the format as well?
-4. **The refusal text in the public API** (a `duoforge_data_refusal` call, a header change) or test support and docs only?
-5. **Dispatch by move id** for new bespoke moves instead of new `special` ids (this design), or widen the `special` column
-   to 16 bits now (a canonical-bytes change)?
-6. **Order**: CF0 in the slot of plan step 5 (this design), or pull the entry files before step 4 so that its table is
-   generated from them at once (saves the re-pointing in CF1, delays step 4)?
+1. **TOML** is the format of the entry files.
+2. **One pin per entry**, `tests/reference/pins/<format>/<entry>.json`, hand-maintained, with the names, the count and the
+   counted values of the entry's reference battles. The format sums are derived from the pins and checked. Today's closure,
+   Team C and pool sets get one collective pin per set. The transition from `reg-mc.json` is its own step (CF4).
+3. **Formes**: only a forme with behaviour of its own gets a file.
+4. **The refusal text** lives in the test support, the docs and the status page only; no header change. A public API comes
+   when the live path needs it.
+5. **Dispatch by move id** for new bespoke moves; the `special` column stays at 8 bits, the canonical bytes do not change.
+6. **CF0** takes the slot of restructure step 5; step 4 is not delayed.
+
+HS's two review additions are in: the bounds and `static_assert` of the derived draw-site numbers (section 3) and the
+digest proof of the responder order per hook point (section 4).
