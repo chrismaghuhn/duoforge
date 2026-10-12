@@ -761,13 +761,82 @@ class HonestSearch(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "foe network's extension mask"):
                 self.make(ctx, foe_net=(model, params, 3, features.version_features(4)))
 
-    def test_a_foe_net_refuses_a_turn1_preview_search(self):
-        # The preview's turn-1 rollout plays both seats with the main network: with a foe network it would model the foe
-        # with two networks at once, so the combination is refused, not silently half applied (review of #415).
+    def test_a_foe_net_is_accepted_with_a_turn1_preview_search(self):
+        # Step 1b (#440): the turn-1 rollout plays the foe seat with the foe network, so the combination is accepted.
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             foe = self.encoder3_net(ctx)
-            with self.assertRaisesRegex(ValueError, "preview"):
-                self.make(ctx, foe_net=foe, preview_mode="turn1")
+            with self.make(ctx, foe_net=foe, preview_mode="turn1") as search:
+                self.assertEqual(search.foe_net[2:], (3, foe[3]))
+
+    def test_the_main_net_as_foe_net_rolls_out_bit_for_bit_as_without(self):
+        # Step 1b (#440): the rollout's foe seat takes the foe network's rows and policy; given the main network itself,
+        # every field of the turn-1 preview record is the default's, the wall times and the foe network's name aside.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx) as probe:
+                same = (self.model, self.params, 4, probe.ext_supported)
+            with self.make(ctx, preview_mode="turn1") as plain, \
+                    self.make(ctx, preview_mode="turn1", foe_net=same) as split:
+                for seat in (0, 1):
+                    for key in (456, 457):
+                        _, (a,) = plain.decide(b, [0], [seat], [key], [False])
+                        _, (r,) = split.decide(b, [0], [seat], [key], [False])
+                        self.assertEqual((a["kind"], a["preview_eval"]), ("searched", "turn1"))
+                        drop = ("cost", "time", "foe_net")
+                        self.assertEqual(r["foe_net"], {"encoder": 4, "ext_supported": probe.ext_supported})
+                        self.assertEqual({k: v for k, v in r.items() if k not in drop},
+                                         {k: v for k, v in a.items() if k not in drop})
+                        for name in ("hypotheses", "choices", "tables"):
+                            np.testing.assert_array_equal(split.last[-1][name], plain.last[-1][name])
+
+    def test_the_turn1_rollout_plays_the_foe_seat_with_the_foe_net(self):
+        # Step 1b (#440): each rollout step asks the foe network for the foe seat's rows only, and the main network for
+        # the player seat's rows only; both see the rollout batch's rows (one per environment), not the worlds' rows.
+        class Spy:
+            def __init__(self, inner):
+                self.inner, self.rows = inner, []
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+            def apply(self, params, obs, *rest):
+                self.rows.append(np.asarray(obs).shape[0])
+                return self.inner.apply(params, obs, *rest)
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            model, params, encoder, mask = self.encoder3_net(ctx)
+            main, foe = Spy(self.model), Spy(model)
+            with self.make(ctx, model=main, foe_net=(foe, params, encoder, mask), preview_mode="turn1") as search:
+                envs = search.leaves.envs
+                self.assertNotEqual(envs, 2 * search.s)  # the worlds' policy calls have 2 * s rows: told apart
+                main.rows.clear()
+                foe.rows.clear()
+                self.preview(search, b)
+        rollout_foe = [r for r in foe.rows if r == envs]
+        rollout_main = [r for r in main.rows if r == envs]
+        self.assertTrue(rollout_foe, "the foe network was not called on the rollout's foe seat")
+        self.assertTrue(rollout_main, "the main network was not called on the rollout's player seat")
+        self.assertEqual(len(rollout_foe), len(rollout_main))  # one foe-seat call for each player-seat call
+
+    def test_rollout_masks_must_agree(self):
+        # Step 1b (#440): the foe seat's pair is chosen from the foe encoding's legal mask; a mask the main encoding
+        # gives the same asked foe seat differently stops the decision, as _prepare does, and nothing is picked from either.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx, foe_net=self.encoder3_net(ctx), preview_mode="turn1") as search:
+                real = search.leaves.query_encoded
+
+                def query(version, ext=0):
+                    obs, slots, pairs = real(version, ext)
+                    if version == 4:  # the main encoding: the foe seat (seat 1) has no legal pair at all
+                        pairs = pairs.copy()
+                        pairs[:, 1] = False
+                    return obs, slots, pairs
+
+                with mock.patch.object(search.leaves, "query_encoded", side_effect=query):
+                    with self.assertRaisesRegex(honest.SearchError, "another pair mask"):
+                        search.decide(b, [0], [0], [456], [False])
 
     def test_a_foe_net_is_accepted_with_a_value_preview_search(self):
         # The value preview's rollout is none: the foe's team candidates come from the foe network, the own candidates

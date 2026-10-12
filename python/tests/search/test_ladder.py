@@ -80,6 +80,21 @@ class StepOneTest(unittest.TestCase):
                 self.assertEqual(ladder.step_settings(name), {**base, "preview_mode": "value", "preview_rule": rule})
 
 
+class StepOneBTest(unittest.TestCase):
+    """Step 1b (#440): the turn-1 rollout's best answer (ev) and its nash control."""
+
+    def test_the_predeclared_entries(self):
+        self.assertEqual(ladder.STEPS["1b"], {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev"}})
+        self.assertEqual(ladder.STEPS["1bn"],
+                         {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "nash"}})
+
+    def test_each_step_one_b_variant_is_step_zero_plus_exactly_its_delta(self):
+        base = ladder.step_settings("0")
+        for name, rule in (("1b", "ev"), ("1bn", "nash")):
+            with self.subTest(step=name):
+                self.assertEqual(ladder.step_settings(name), {**base, "preview_mode": "turn1", "preview_rule": rule})
+
+
 class PairIntervalTest(unittest.TestCase):
     def test_opposite_results_within_a_pair_give_a_zero_width_interval(self):
         got = ladder.pair_interval([1, 0, 0, 1, 1, 0, 0, 1])
