@@ -191,7 +191,7 @@ static uint32_t hp_of(const duoforge_battle *b, uint32_t flat)
 static void test_row(df_test *t)
 {
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_PARTIAL_TRAP, 0x74u); /* after Healing Wish (0x73) */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, 0x78u); /* after Ally Switch (batch 8 merge order) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, 0x79u); /* G96 Psychic Terrain (decision 0065) before UNMODELED: UNMODELED 121 */ /* after Ally Switch (batch 8 merge order) */
     static const uint32_t moves[5] = {DFI_MOVE_BIND, DFI_MOVE_WRAP, DFI_MOVE_FIRESPIN, DFI_MOVE_SANDTOMB, DFI_MOVE_INFESTATION};
     for (uint32_t i = 0u; i < 5u; ++i) {
         DF_CHECK_EQ_U64(t, dfi_pool_moves[moves[i]].special, DFI_SPECIAL_PARTIAL_TRAP);
