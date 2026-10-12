@@ -5,6 +5,7 @@ rows are evaluated exclusively in reconstructed worlds. No privileged call
 or true-root encoding is used, even for error reproduction.
 """
 from dataclasses import dataclass
+import hashlib
 import json
 from pathlib import Path
 import time
@@ -120,14 +121,37 @@ def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
     return table, {s["id"]: i for i, s in enumerate(sources)}, {**counts, "sources": sources, "sha256": table.sha256()}
 
 
-# Live play's spread table (owner, 2026-10-10): every A/B/C and PP_ team of the repository registry (1489 sources, 8904
-# sets, 156 species; renewed 2026-10-11 when 648 pending VGCPastes teams joined: it was 841 sources, 5016 sets, 103
-# species, `292712db...`). A registry change fails until this pin is renewed; P1 and the evaluation keep SPREAD_SOURCES.
-LIVE_SPREAD_SHA256 = "91af704dd4d6175ca1401506f37bc2a17b00dacf0ae7bcad514837db34276646"
+# Live play's spread table (owner 2026-10-12): the spreads derived from Smogon's usage stats of Reg M-C (smogon_spreads,
+# the committed data/belief table) for every species they name, and the registry's stated A/B/C and PP_ spreads only for
+# a species Smogon lacks. Before, the registry alone (8904 sets of 156 species) left a foe species such as Toxapex
+# without a prior, and the live search played every decision of such a game raw. A table change fails until re-pinned;
+# P1 and the evaluation keep SPREAD_SOURCES.
+LIVE_SPREAD_SHA256 = "779422deb08104b5361b2b3b641330e9f4925804ab4d2a6543e97fe998e4bcb5"
 
 
 def live_spread_table(ctx, root=None):
-    table, ids, info = spread_table(ctx, root, sources=None)
+    """(table, registry source ids, info) of live play: the Smogon rows first (team -1, no team to leave out), then the
+    registry's rows of the species Smogon lacks (team = registry index, left out for its own team)."""
+    from . import smogon_spreads
+    with open(smogon_spreads.TABLE_PATH, "rb") as f:
+        raw = f.read()
+    if hashlib.sha256(raw).hexdigest() != smogon_spreads.TABLE_SHA256:
+        raise SearchError(f"{smogon_spreads.TABLE_PATH.name} differs from its pinned {smogon_spreads.TABLE_SHA256}")
+    smogon = json.loads(raw)
+    cols, counts = smogon_spreads.rows(ctx, smogon["species"])
+    registry, ids, info = spread_table(ctx, root, sources=None)
+    fill = ~np.isin(registry.species, np.asarray(sorted(set(cols[1])), dtype=np.int64))
+    table = belief.SpreadTable(
+        np.concatenate([np.asarray(cols[0], np.int64), registry.team[fill]]),
+        np.concatenate([np.asarray(cols[1], np.int64), registry.species[fill]]),
+        np.concatenate([np.asarray(cols[2], np.int64), registry.nature[fill]]),
+        np.concatenate([np.asarray(cols[3], np.int64), registry.item[fill]]),
+        np.concatenate([np.asarray(cols[4], np.uint8).reshape(-1, belief.STAT_POINTS), registry.spreads[fill]]))
+    info = {**info, "sha256": table.sha256(), "registry_rows": int(fill.sum()),
+            "registry_species": int(len(set(registry.species[fill].tolist()))),
+            "smogon": {**counts, "rows": len(cols[1]), "table": smogon_spreads.TABLE_PATH.name,
+                       "table_sha256": smogon_spreads.TABLE_SHA256, "source": smogon["source"]["url"],
+                       "derivation": smogon["derivation"]}}
     if info["sha256"] != LIVE_SPREAD_SHA256:
         raise SearchError(f"live spread table {info['sha256']} differs from the pinned {LIVE_SPREAD_SHA256}")
     return table, ids, info
@@ -233,9 +257,14 @@ class Honest(lookahead.Lookahead):
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
                  table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
                  species_prior=False, foe_net=None):
-        # species_prior (live play, owner 2026-10-10): a foe species without a stated spread in the table refuses the
-        # decision instead of drawing from the belief's nature-only or table-wide fallback (levels 4 and 5).
-        self.species_prior = bool(species_prior)
+        # species_prior (live play, owner 2026-10-10): True refuses a decision whose foe species has no stated spread in
+        # the table instead of drawing from the belief's nature-only or table-wide levels (4 and 5); "count" (owner
+        # 2026-10-12) draws from those general levels and names every such species in the record (spread_fallback);
+        # False draws from them unnamed (P1, the arena).
+        if species_prior not in (False, True, "count") or isinstance(species_prior, int) and                 not isinstance(species_prior, bool):
+            raise ValueError(f"species_prior must be False, True or 'count' (got {species_prior!r})")
+        self.species_prior = species_prior
+        self._spread_fallback = []
         # foe_net (M7, owner 2026-10-11): (model, params, encoder, ext_supported) of a second network that models the
         # foe. Every policy call on the worlds (the foe's team draw, its queued pair and its menu) goes to it, encoded
         # with its own encoder; the own candidates (the root's policy) and the leaf values stay with the main network.
@@ -348,7 +377,7 @@ class Honest(lookahead.Lookahead):
                 raise
             finally:
                 costs["public_records"] += time.perf_counter() - t
-        if self.species_prior:  # from the first draw's level: a redraw raises it (SpreadTable.draw)
+        if self.species_prior is True:  # from the first draw's level: a redraw raises it (SpreadTable.draw)
             initial = [self.belief.table.candidates(sp, nature, item, excluded)[0] for sp, nature, item in members]
             missing = [members[m][0] for m, level in enumerate(initial) if level >= 4]
             if missing:
@@ -356,7 +385,7 @@ class Honest(lookahead.Lookahead):
         for _ in range(MAX_RESPREADS):
             t = time.perf_counter()
             sampled = self.belief.sample(members, self.s, self.seed, key, excluded, attempts)
-            if self.species_prior:
+            if self.species_prior is True:
                 past = np.flatnonzero((sampled["levels"][:, :len(members)] >= 4).any(axis=0))
                 if past.size:  # every stated spread of the species contradicted the public view
                     raise Unreconstructible(f"redraw past the species prior for foe species "
@@ -414,6 +443,8 @@ class Honest(lookahead.Lookahead):
             costs["world_builds"] += time.perf_counter() - t
             if not statuses.any():
                 self._check_worlds(record, costs)
+                general = np.flatnonzero((sampled["levels"][:, :len(members)] >= 4).any(axis=0))
+                self._spread_fallback = sorted({members[m][0] for m in general})
                 return h, weights, dropped, respreads, queue_pairs
             # The current C API reports a failed world, not the member. Redraw
             # all its spreads; keep its HP/counter/bench/queue words unchanged.
@@ -535,6 +566,8 @@ class Honest(lookahead.Lookahead):
                         self.last[-1]["hypotheses"] = hypotheses.copy()
                         result.update({"bench_dropped": dropped, "respreads": respreads, "exclude_team": excluded,
                                        "queue_pairs": queue_pairs})
+                        if self.species_prior == "count":  # the foe species drawn from the general levels, named
+                            result["spread_fallback"] = list(self._spread_fallback)
                         actions[d] = result["choice"]
                     except Unreconstructible as err:
                         result.update({"kind": "unreconstructible", "reason": str(err)})
