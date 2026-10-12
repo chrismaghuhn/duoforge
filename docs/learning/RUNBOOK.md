@@ -24,7 +24,7 @@ These are the versions of the local runs (`~/df-learn` in WSL, 2026-10-02).
 
 ```bash
 ~/df-learn/bin/python -c "import jax; print(jax.devices())"
-JAX_PLATFORMS=cpu ~/df-learn/bin/python -m unittest python.tests.test_learn_v2.TrainingV2Test
+JAX_PLATFORMS=cpu ~/df-learn/bin/python -m unittest python.tests.learn.test_learn_v2.TrainingV2Test
 ~/df-learn/bin/python -m duoforge_learn.train --envs 64 --workers 4 --updates 5 --minutes 0 --out /workspace/runs/smoke
 ```
 

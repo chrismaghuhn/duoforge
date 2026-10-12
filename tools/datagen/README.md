@@ -33,7 +33,7 @@ python3 tools/datagen/gen_closure.py <pinned checkout> --check  # compare only
 
 After regenerating, update the two file hashes in `tests/CMakeLists.txt` and the table hash in `tests/data/test_closure_tables.c`. With `-DDUOFORGE_PS_REFERENCE_DIR=<pinned checkout>` CTest runs the `--check` form as `duoforge.data.closure_regen`.
 
-`test_gen_closure.py` checks the refusals on small move, item and ability texts without a checkout; CTest runs it as `duoforge.data.gen_closure_refusals` whenever Python is found.
+`tests/test_gen_closure.py` checks the refusals on small move, item and ability texts without a checkout; CTest runs it as `duoforge.data.gen_closure_refusals` whenever Python is found.
 
 ## Extended and pool tables
 
@@ -74,7 +74,7 @@ After the rows of the steps (P1, G2), `--pool` appends a row for **every other f
 
 Two more files, read only by these rows, are pinned by their SHA-256 in `READER_INPUTS` (they are not part of any table header's provenance): `data/conditions.ts`, six `sim/` files and the Champions `conditions.ts`.
 
-Checks added with the rows: `test_pool_rows.py` (`duoforge.data.pool_rows`: the tables against `legal_pool.json` with code of its own, no checkout), `test_gen_closure.py` (the lenient mode, the item and ability features, the bounds, the aliases) and `pool_families.js` (for every row the UNMODELED marker against the pinned entry, every cosmetic alias against the pinned dex and the validator, and the whole-pool probes of every base forme with every move and ability: 191 thousand validator calls).
+Checks added with the rows: `tests/test_pool_rows.py` (`duoforge.data.pool_rows`: the tables against `legal_pool.json` with code of its own, no checkout), `tests/test_gen_closure.py` (the lenient mode, the item and ability features, the bounds, the aliases) and `pool_families.js` (for every row the UNMODELED marker against the pinned entry, every cosmetic alias against the pinned dex and the validator, and the whole-pool probes of every base forme with every move and ability: 191 thousand validator calls).
 
 The canonical pool bytes are the pool layout above (before the whole-pool rows: the closure layout over the pool data followed by the family columns and the moves and abilities of the formes); their SHA-256 is the pool table hash that the POOL fingerprints carry.
 
