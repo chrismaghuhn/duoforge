@@ -151,3 +151,44 @@ A small or no gain is the expected outcome here.
 - **Spread table:** `5f079072…`. 256 of the 2048 games' opponent teams are in it, and each was left out of the belief for its game.
 - **Networks** (SHA-256 prefixes): BC6 `bda5de8e4e96`, bc6-bot-M `213b773b3448`, params-49333 `ef1abe65f637`.
 - **Raw output:** `ladder.json` and the decision records stay private, outside the repository.
+
+### Step 1 (2026-10-12): the team preview as a Nash game; no measurable gain
+
+**Verdict: strength misses its gate narrowly; every other gate holds. Step 1 is not adopted.**
+
+The verdict is computed by hand from the run's report, because the run predates `ladder verdict`'s report fields. The exclusive latency run is queued; it cannot change the verdict.
+
+| gate | result |
+|---|---|
+| strength: head-to-head, step 1 against step 0 (1024 pairs) | **0.519 [0.498, 0.538]**, 0 unresolved. The lower bound is not above 0.50 |
+| no harm: step 1 against step 0, paired | `bot` 0.499 [0.489, 0.508]; `bc6` 0.512 [0.501, 0.523] |
+| reproduced: step 0 rerun on step 1's code | identical per-game scores **and** decision digests, for `bot`, `bc6` and `ppo` |
+| fallbacks | `bot` 2.3% (step 0: 2.7%); `bc6` 2.2% (2.3%) |
+| latency | pending (exclusive run queued); the shared run's p99 was 0.11–0.15 s |
+
+**Scores per opponent (2048 games each):**
+
+| opponent | step 1 | step 0 |
+|---|---|---|
+| `bot` | 0.860 | 0.863 |
+| `bc6` | 0.721 | 0.698 |
+| `ppo` | 0.475 | 0.471 |
+
+- `ppo`, paired: 0.502 [0.489, 0.513].
+- The step arm had one unresolved game each against `bot` and `bc6`. These are engine-refused games, scored as the step's loss.
+
+**Diagnosis.** It comes from the ungated sanity arm and the preview records:
+- **The Nash solution is pure.** In the sanity arm it had support 1 in every game, so the step plays the best answer of BC6's value head.
+- **The worlds play no part.** The value head reads the searcher's public view, which holds no hidden spreads before turn 1. A cell's spread over the worlds is 0.
+- **The candidates are half duplicates.** The top-8 team tuples come in pairs the network cannot tell apart (the same bring-four and leads, the bench order swapped). In effect there are 4 candidates.
+- **Sanity arm, Team A against an arena sun team (512 games):** step 1 against step 0 h 0.478 [0.466, 0.489] (`bot`) and 0.462 [0.443, 0.481] (`ppo`). This is one fixed team decision replicated 512 times (n = 1), not a general effect.
+
+**What follows:**
+- **Step 1b:** the turn-1 rollout, its foe seat played by the foe network, with the best answer. #241 measured this as the only preview form with a gain. It is measured next.
+- **Preview dedup:** the team candidates are deduplicated by evaluator equality, the network's identical inputs in every cell.
+- A rerun of step 1 with 2048 pairs is optional. 1b supersedes it as the preview step.
+
+**Provenance.**
+- **Code:** search/1-preview-nash at 1b2e5964; the run recorded `dirty: false`.
+- **Run:** 16:49 to 20:29, two shared lock slots.
+- **Raw output:** private, outside the repository.
