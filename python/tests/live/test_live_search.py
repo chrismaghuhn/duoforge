@@ -246,8 +246,17 @@ class UnsupportedSheetTest(unittest.TestCase):
         sheet = next(line for line in FIXTURE["messages"][3] if line.startswith("|showteam|p2|"))[len("|showteam|p2|"):]
         parts = self.tracker_at_preview(sheet).public_parts()
         self.assertEqual((parts["status"], parts["reason"]), (0, None))  # Team B as it is: the engine takes the record
-        unsupported = sheet.replace("|Psychic,GrassKnot,TrickRoom,Protect|", "|PsychicTerrain,GrassKnot,TrickRoom,Protect|")
-        self.assertNotEqual(unsupported, sheet)  # Farigiraf learns Psychic Terrain, which the engine does not support
+        # A move Farigiraf learns that the engine does not support, read from the library itself (duoforge_data_supported),
+        # so the test keeps working when the expansion marks the move of the day (Psychic Terrain was it until G96).
+        from duoforge import data as api
+        tables = data.load(kind="pool")
+        ctx = tables.context()
+        farigiraf = tables.forme("Farigiraf")
+        missing = [m for m in api.forme_moves(ctx, farigiraf) if not api.supported(ctx, api.TABLE_MOVE, m)]
+        self.assertTrue(missing, "every move Farigiraf learns is supported: pick another species for this test")
+        name = "".join(c for c in api.name(ctx, api.TABLE_MOVE, missing[0]) if c.isalnum())  # as a packed sheet writes it
+        unsupported = sheet.replace("|Psychic,GrassKnot,TrickRoom,Protect|", f"|{name},GrassKnot,TrickRoom,Protect|")
+        self.assertNotEqual(unsupported, sheet)
         parts = self.tracker_at_preview(unsupported).public_parts()
         self.assertEqual((parts["status"], parts["reason"]),
                          (_layout.CONSTANTS["DUOFORGE_E_UNSUPPORTED"], "engine-refuses-record"))
