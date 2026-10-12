@@ -153,6 +153,9 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         dt->quick_guard = st->quick_guard;
         dt->hazard_order = st->hazard_order;
         dt->illusion = st->illusion; /* tail rev 5 (decision 0026) */
+        for (unsigned m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            dt->sleep_cant[m] = st->sleep_cant[m]; /* decision 0066: the member's cant count (POOL); unnamed, it kept the background */
+        }
         for (unsigned p = 0; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *sp = &st->positions[p];
             dfi_tail_pos *dp = &dt->positions[p];
@@ -233,6 +236,19 @@ int main(void)
     DF_CHECK(&t, duoforge_battle_clone(c1, f1, &k) == DUOFORGE_OK && k != NULL);
     DF_CHECK(&t, api_equal(&t, c1, f1, k));
     df_encode(c1, f1, e1);
+    {
+        /* decision 0066: a non-POOL state decodes with no cant count, whatever the destination held before */
+        duoforge_battle *dd = NULL;
+        DF_CHECK(&t, duoforge_battle_clone(c1, f1, &dd) == DUOFORGE_OK && dd != NULL);
+        memset(dd, 0xAA, sizeof *dd);
+        DF_CHECK(&t, duoforge_battle_decode(c1, dd, e1, sizeof e1) == DUOFORGE_OK);
+        for (unsigned s2 = 0u; s2 < DUOFORGE_SIDE_COUNT; ++s2) {
+            for (unsigned m2 = 0u; m2 < DUOFORGE_MAX_ROSTER; ++m2) {
+                DF_CHECK_EQ_U64(&t, dd->tail.sides[s2].sleep_cant[m2], 0u);
+            }
+        }
+        duoforge_battle_destroy(dd);
+    }
     df_encode(c1, k, e2);
     DF_CHECK_BYTES(&t, e2, e1, sizeof e1, "clone encoding");
     {
