@@ -115,11 +115,49 @@ parts at every decision point it reaches, so the engine checks its record at eac
 Without this, a fresh draw would skip the record checks of earlier decision points (review of 2026-10-12). The decision point's
 parts are those taken when its request was folded, so a particle redrawn mid-turn shows the same decision point as the others.
 
+## The set prior (#385 step 3)
+
+The live prior is the committed table `data/belief/smogon-sets-regmc-2026-09.json`, loaded with `SetPrior.from_table`. Its
+file is pinned by `smogon_sets.TABLE_SHA256`, and the engine checks every set again on load (9,042 sets, 0.3 to 0.6 s on this machine).
+`python -m duoforge_search.smogon_sets --stats DIR [--fetch] [--check]` builds it. It uses the pinned Smogon files of
+`smogon_spreads` (the same cache outside the repository; `--check` reproduces the table byte for byte) and the team
+registry (`data/teams`). The credit is in its header and in `THIRD_PARTY_NOTICES.md`.
+
+**Whole sets, not marginals.** The table holds item, ability, nature and moves as one set: the registry's 12,372 members,
+3,140 distinct sets, each counted once per team. A set the engine's setup refuses, or with a name the tables lack, is dropped
+and counted. A set that holds its species' Mega Stone belongs to the Mega forme's bucket.
+
+**Smogon reweights them.** Per bucket, the registry counts are raked toward Smogon's shares by iterative proportional fitting:
+the item, the ability, the nature (from the spreads) and each move's share of sets. The cutoff is the spread table's
+(the highest with enough weight, both formats summed).
+- A target blends Smogon with the registry's own share (20 sets' worth), so a part Smogon never saw keeps a small weight.
+- A Mega bucket has no ability target: Smogon records the Mega's ability there, not the sheet's.
+- Smogon's mass outside the support is counted (`uncovered_share`), and so is the largest remaining gap (`residual_max`).
+
+**Thin buckets get drawn sets.** A bucket is thin when it has fewer than 4 registry sets, or when its sets leave more than 25 %
+of Smogon's item, ability or move mass uncovered.
+- 32 sets are drawn from its marginals and raked with its registry sets.
+- The drawn sets follow explicit rules: four distinct moves; no Protect or Detect beside a Choice item; a Mega bucket's stone
+  with the base species' ability; the engine's setup accepts the set.
+- A forme that Smogon counts under its dex sibling (Toxtricity-Low-Key under "Toxtricity") takes the sibling's sets that its
+  own setup accepts.
+- Every such case is counted in the table's `derivation`.
+
+**Levels at the draw.** When no set agrees with a member's facts, the tracker does not stop at once.
+- **Level 1** (as the replay's `SetBelief`): every set that agrees on the revealed item and ability is a base for the used
+  moves. The used moves come first; the base's own other moves fill up to four.
+- **Level 2:** when level 1 finds no base (an item or ability the prior never pairs with the species), every set of the
+  species is a base for the revealed item, ability and used moves.
+- At both levels, a Choice item's holder gets no Protect or Detect from the base, and a result the engine's setup refuses
+  (or with a name the tables lack) is left out. Each level is counted (`level1`, `level2`).
+- `cts:no-consistent-set` remains for a member no level can give a legal set. In the held-out measurement below that is
+  only Ditto, which the table lacks (one move, Transform).
+
 ## Explicitly refused (never silent)
 
 | reason | cause |
 |---|---|
-| `cts:no-consistent-set <species>` | no set of the prior agrees with the member's facts (a species outside the prior included) |
+| `cts:no-consistent-set <species>` | no set of the prior agrees with the member's facts, and levels 1 and 2 give no set the engine accepts (a species outside the prior included) |
 | `cts:redraw-cap <reason>` | `MAX_ATTEMPTS` folded draws of one particle all failed: they contradicted the log, or the line stops every fold (`stop:<reason>`, `error:<type>`; the last exception is the cause) |
 | `cts:redraw-cap item-clause` | `MAX_DRAWS` draws of one particle all broke the Item Clause |
 | `cts:facts <skip>` | `side_facts` cannot describe the prefix (a Transform, a possible Illusion, a preview it cannot match) |
@@ -164,7 +202,7 @@ This bias is measured, not assumed: the same CTS games are searched once with pa
 upper bound), and the difference is what version 1 costs. Reveal tracking in the state and view (the engine marks which facts each
 player has seen) is the version-2 item of #385.
 
-## Evidence (this PR)
+## Evidence (PR #447)
 
 - **Pin**, reference tier (`duoforge.python.live`, `ClosedSheetsPoolTest`). Input: every committed pool battle's client streams
   without their `|showteam|` lines, both players, with a prior that holds only the true foe team. Result over 1932 streams:
@@ -205,3 +243,34 @@ player has seen) is the version-2 item of #385.
       45 s per request.
   - This cost includes the 16 records and observations of each decision point, which the search needs anyway.
   - The decision latency of the search over 16 records is measured with the arena PR.
+
+## Evidence of the set prior (#385 step 3)
+
+**Prior quality on real sets.** The measure is the 403,107 sets of the open-sheet replays' training split, counted once per
+team. It stays private outside the repository and is not an input of the table.
+
+| | registry, raw counts | set table |
+|---|---|---|
+| the true set is in the prior | 73.4 % | 73.6 % |
+| a set with its item, ability and moves | 79.5 % | 80.0 % |
+| a set with its item, ability and two of its moves | 87.2 % | 88.8 % |
+| a set with its item and ability | 93.3 % | 95.8 % |
+| the species is missing | 1.6 % | 0.0 % |
+| mean log probability of the true set, where present | −2.63 | −2.53 |
+
+**Levels on held-out closed-sheet games.** 2,000 Bo1 games without sheets of the test split (`gen9championsvgc2026regmc`, the
+replay dump of 2026-10-10). Each member is checked with the facts of the **whole** game, the strictest case:
+
+| level | members |
+|---|---|
+| level 0 (a table set agrees) | 21,905 (93.2 %) |
+| level 1 | 1,194 (5.1 %) |
+| level 2 | 397 (1.7 %) |
+| no set at any level (Ditto) | 12 (0.1 %) |
+
+- Sides that would stop on the prior: 0 of 3,918. Without level 2 it would be 364 (9.3 %), mostly an item the table never
+  pairs with the species (Leppa Berry on Pawmot, Rocky Helmet on Farigiraf).
+- Sides refused by `side_facts` before any draw, by name:
+  - 41 with a possible Illusion;
+  - 22 with a Transform;
+  - 19 with a forme name the tables lack: Palafin-Hero 12, Alcremie-Salted-Cream 3, Mimikyu-Busted 2, Latios 1, Tapu Lele 1.

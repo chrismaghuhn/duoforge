@@ -42,6 +42,7 @@ PARTICLES = 16  # one per world of the live search (HONEST_SETTINGS s)
 MAX_ATTEMPTS = 64  # contradicted draws of one particle in a row, each a fold from the start
 MAX_DRAWS = 4096  # draws of one attempt that break the Item Clause (no fold: a draw is cheap)
 LEVEL = 50  # the format's level; the open sheets show it, and no stat points
+MOVES = 4
 _key = trace_to_c.key
 
 
@@ -62,15 +63,21 @@ class SetPrior:
                 raise ValueError(f"a set weight must be a whole number >= 0: {weight!r}")
             s = {"species": s["species"], "item": s["item"], "ability": s["ability"], "moves": list(s["moves"]),
                  "nature": s["nature"]}
-            # the legality of the set, under a gender the species may have (the preview gives the drawn member's own)
-            rule = data.tables["GENDER_RULE"][data.forme(s["species"])]
-            gender = {trace_to_c.GENDER["F"]: "F", trace_to_c.GENDERLESS: ""}.get(rule, "M")
-            member = data.team(teams.to_text([_sheet(s, gender)]))[0]
-            issue = data.setup_issue(member)
+            issue = setup_issue(data, s)
             if issue is not None:
                 raise ValueError(f"a set the engine refuses ({issue[0]}): {s}")
             self._sets[_species_key(data, s["species"])].append((s, weight))
         self.data = data
+
+    @classmethod
+    def from_table(cls, data, path=None, sha256=None):
+        """The prior of the committed set table (duoforge_search.smogon_sets): its pinned file (TABLE_SHA256) unless
+        path and sha256 name another."""
+        from duoforge_search import smogon_sets
+        table = smogon_sets.load_table(path or smogon_sets.TABLE_PATH, sha256 or smogon_sets.TABLE_SHA256)
+        return cls(data, [({"species": species, "item": item, "ability": ability, "nature": nature, "moves": moves}, n)
+                          for species, entry in sorted(table["species"].items())
+                          for item, ability, nature, moves, n in entry["sets"]])
 
     def candidates(self, species):
         """The (set, weight) pairs of a species (a preview name), [] for a species the prior lacks."""
@@ -78,6 +85,55 @@ class SetPrior:
             return self._sets.get(_species_key(self.data, species), [])
         except ValueError:
             return []
+
+
+def setup_issue(data, s):
+    """data.setup_issue of a set under a gender its species may have (the preview gives a drawn member's own): None
+    when the engine's setup accepts it, ("name", None) for a name the tables do not know."""
+    try:
+        rule = data.tables["GENDER_RULE"][data.forme(s["species"])]
+        gender = {trace_to_c.GENDER["F"]: "F", trace_to_c.GENDERLESS: ""}.get(rule, "M")
+        member = data.team(teams.to_text([_sheet(s, gender)]))[0]
+    except (KeyError, ValueError, trace_to_c.ConversionError):
+        return ("name", None)  # a species, item, ability, nature or move the tables do not know
+    return data.setup_issue(member)
+
+
+def _rebuilt(data, sets, member, keep):
+    """The sets of `sets` that keep() takes as bases, rebuilt on a member's facts: the revealed item and ability put on,
+    the used moves (sorted by name) then the base's own others in its order, up to four; a Choice item's holder gets no
+    CHOICE_EXCLUDED move from the base (the set table's rule). A result the engine's setup refuses is left out; equal
+    results add their weights."""
+    from duoforge_search.smogon_sets import CHOICE_EXCLUDED, CHOICE_ITEMS
+    used = sorted(member.moves)
+    if len(used) > MOVES:
+        return []
+    out = collections.Counter()
+    for s, w in sets:
+        if w <= 0 or not keep(s):
+            continue
+        item = s["item"] if member.item is None else member.item
+        ability = s["ability"] if member.ability is None else member.ability
+        choice = _key(item).lower() in CHOICE_ITEMS
+        fill = [m for m in s["moves"] if _key(m) not in {_key(u) for u in used}
+                and not (choice and _key(m).lower() in CHOICE_EXCLUDED)]
+        candidate = dict(s, item=item, ability=ability, moves=(used + fill)[:MOVES])
+        if setup_issue(data, candidate) is None:
+            out[json.dumps(candidate, sort_keys=True)] += w
+    return [(json.loads(k), w) for k, w in sorted(out.items())]
+
+
+def level1(data, sets, member):
+    """Level 1 (the replay's set belief, setbelief.SetBelief): when no set agrees with a member's facts, every set that
+    agrees on the revealed item and ability is a base for its used moves (_rebuilt). [] when none remains."""
+    return _rebuilt(data, sets, member, lambda s: (member.item is None or _key(s["item"]) == _key(member.item)) and (
+        member.ability is None or _key(s["ability"]) == _key(member.ability)))
+
+
+def level2(data, sets, member):
+    """Level 2: when level 1 has no base (an item or ability the prior never pairs with the species), every set of the
+    species is a base for the revealed item, ability and used moves (_rebuilt). [] when none remains."""
+    return _rebuilt(data, sets, member, lambda s: True)
 
 
 def _sheet(s, gender):
@@ -252,7 +308,13 @@ class ParticleTracker:
             self.counters[f"redraw.{reason}"] += 1
         candidates = []
         for member in facts:
-            found = [(s, w) for s, w in self.prior.candidates(member.species) if w > 0 and agrees(s, member)]
+            sets = self.prior.candidates(member.species)
+            found = [(s, w) for s, w in sets if w > 0 and agrees(s, member)]
+            for level, rebuild in (("level1", level1), ("level2", level2)):
+                if not found:
+                    found = rebuild(self.data, sets, member)
+                    if found:
+                        self.counters[level] += 1
             if not found:
                 raise self._stop(f"cts:no-consistent-set {member.species}")
             candidates.append(found)
