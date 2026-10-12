@@ -1,100 +1,56 @@
-"""Observe all five variants of both reference drivers without editing them.
+"""Capture all five contexts of both reference runners via --digest-out.
 
-Linux/GCC, Release+IPO Ninja build, CMAKE_EXPORT_COMPILE_COMMANDS=ON.
 Usage: python capture_reference.py REPO BUILD OUTSIDE_REPO_OUTPUT
-Only per-battle hashes/counts and aggregate results are saved; no replay data.
-The original assertions still execute; any failed compile/run aborts capture.
+The test-only digest encoding was verified against the step-0 observer on
+cc8d3fc7. All original assertions execute; a failed run aborts capture.
+Only per-battle counts and hashes are retained, never raw replay/state data.
 """
 import hashlib
 import json
 from pathlib import Path
 import re
-import shlex
 import subprocess
 import sys
 import tempfile
 
 
-def replace_once(source, old, new):
-    if source.count(old) != 1:
-        raise RuntimeError(f"expected exactly one insertion point: {old!r}")
-    return source.replace(old, new)
+VARIANTS = ('', '_pool', '_team_c', '_team_c_pool', '_pool_data')
 
 
-def instrument(source, kind, header):
-    source = replace_once(source, 'static void build_setup(',
-                          f'#include "{header.as_posix()}"\n\nstatic void build_setup(')
-    source = replace_once(source, '        unsigned bad = 0;',
-                          '        printf("BEGIN %s\\n", cb->name);\n'
-                          '        baseline_state(ctx, b);\n        unsigned bad = 0;')
-    source = replace_once(source, '        duoforge_battle_destroy(b);',
-                          '        printf("END %s\\n", cb->name);\n        duoforge_battle_destroy(b);')
-    if kind == 'conformance':
-        source = replace_once(source, '            bad += df_conf_compare_state(',
-                              '            baseline_step(ctx, b, used, &res);\n'
-                              '            baseline_events(buffers);\n            bad += df_conf_compare_state(')
-    else:
-        source = replace_once(source, '    counts->stops += 1u;',
-                              '    baseline_tiebreak(st, &r, rs, ps, out);\n    counts->stops += 1u;')
-        source = replace_once(source, '            }\n            while (stop < tb->stop_count',
-                              '                baseline_step(ctx, b, used, &res);\n'
-                              '            }\n            while (stop < tb->stop_count')
-    return source
-
-
-def records(stdout):
-    result, current, lines = [], None, []
-    for line in stdout.splitlines(keepends=True):
-        if line.startswith('BEGIN '):
-            if current is not None:
-                raise RuntimeError('nested battle')
-            current, lines = line[6:].strip(), []
-        elif line.startswith('END '):
-            if current != line[4:].strip():
-                raise RuntimeError('incomplete battle')
-            if not lines or not lines[0].startswith('state '):
-                raise RuntimeError('missing initial state observation')
-            result.append(dict(name=current, sha256=hashlib.sha256(''.join(lines).encode('ascii')).hexdigest(),
-                               steps=sum(s.startswith('step ') for s in lines),
-                               stops=sum(s.startswith('tiebreak ') for s in lines)))
-            current = None
-        elif current is not None:
-            lines.append(line)
-    if current is not None or not result or len({r['name'] for r in result}) != len(result):
-        raise RuntimeError('incomplete or duplicate battle records')
-    return sorted(result, key=lambda r: r['name'])
+def records(text):
+    rows = []
+    for line in text.splitlines():
+        fields = line.split('\t')
+        if (len(fields) != 4 or re.fullmatch(r'[A-Za-z0-9_]{1,63}', fields[0]) is None or
+                re.fullmatch(r'[0-9a-f]{64}', fields[1]) is None or
+                any(re.fullmatch(r'[0-9]+', x) is None for x in fields[2:])):
+            raise ValueError('invalid reference digest record')
+        name, digest, steps, stops = fields
+        rows.append(dict(name=name, sha256=digest, steps=int(steps), stops=int(stops)))
+    if not rows or len({r['name'] for r in rows}) != len(rows):
+        raise ValueError('empty or duplicate reference digest records')
+    return sorted(rows, key=lambda r: r['name'])
 
 
 def main():
+    if len(sys.argv) != 4:
+        raise SystemExit('usage: capture_reference.py REPO BUILD OUTSIDE_REPO_OUTPUT')
     repo, build, output = (Path(a).resolve() for a in sys.argv[1:])
     if output.is_relative_to(repo):
-        raise RuntimeError('capture output must be outside the repository')
+        raise ValueError('capture output must be outside the repository')
     output.mkdir(parents=True, exist_ok=True)
-    database = json.loads((build / 'compile_commands.json').read_text())
-    header = Path(__file__).with_name('observe.h').resolve()
     summary = {}
-    with tempfile.TemporaryDirectory(prefix='reference-observer-', dir=output) as temp:
-        temp = Path(temp)
+    with tempfile.TemporaryDirectory(prefix='reference-digests-', dir=output) as temp:
         for kind in ('conformance', 'tiebreak'):
-            source = repo / 'tests' / 'interactions' / f'test_{kind}.c'
-            entries = [e for e in database if Path(e['file']).resolve() == source]
-            if len(entries) != 5:
-                raise RuntimeError(f'expected five {kind} variants, got {len(entries)}')
-            observed = temp / source.name
-            observed.write_text(instrument(source.read_text(), kind, header))
-            for entry in entries:
-                args = shlex.split(entry['command'])
-                target = re.search(r'CMakeFiles/([^/]+)\.dir/', entry['command']).group(1)
-                obj, exe = temp / f'{target}.o', temp / target
-                args[args.index('-o') + 1] = str(obj)
-                args[args.index('-c') + 1] = str(observed)
-                if kind == 'conformance':
-                    args.insert(1, '-DBASELINE_CONFORMANCE')
-                subprocess.run(args, cwd=entry['directory'], check=True)
-                subprocess.run([args[0], '-flto=auto', str(obj), str(build / 'tests/libduoforge_test_support.a'),
-                                str(build / 'libduoforge.a'), '-pthread', '-o', str(exe)], check=True)
-                run = subprocess.run([str(exe)], check=True, capture_output=True, text=True)
-                rows = records(run.stdout)
+            for suffix in VARIANTS:
+                target = f'duoforge_reference_{kind}{suffix}'
+                exe = build / 'tests' / target
+                if not exe.exists():
+                    exe = exe.with_suffix('.exe')
+                digest_file = Path(temp) / f'{target}.tsv'
+                run = subprocess.run([str(exe), '--digest-out', str(digest_file)],
+                                     cwd=build / 'tests', check=True, capture_output=True, text=True)
+                rows = records(digest_file.read_text(encoding='ascii'))
                 canonical = ''.join(f"{r['name']}\t{r['sha256']}\n" for r in rows).encode('ascii')
                 summary[target] = dict(battles=len(rows), steps=sum(r['steps'] for r in rows),
                                        stops=sum(r['stops'] for r in rows),
