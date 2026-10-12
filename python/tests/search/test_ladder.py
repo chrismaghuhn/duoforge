@@ -1,7 +1,12 @@
 """The search ladder's harness (issue #440, step 0): pure functions over NumPy arrays and the CLI's guards. No
 network and no checkpoint: every guard runs before any network is loaded."""
+import contextlib
+import copy
+import hashlib
+import io
 import json
 import os
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -12,15 +17,53 @@ from duoforge_live.data import ROOT
 from duoforge_live.search import HONEST_SETTINGS
 from duoforge_search import foe_arena, ladder
 
-
-def searched(k=2, m=3, s=4, refused=0):
-    return {"kind": "searched", "k": k, "m": m, "s": s,
-            "leaves": {"refused": refused, "terminal": 0, "cut_off": 0, "unresolved": 0}}
+# The modules a verdict must never load: the verdict is a pure function of the JSON files it reads.
+LIBRARIES = {name: None for name in ("duoforge", "duoforge_learn", "duoforge_live", "duoforge_replay", "jax", "jaxlib")}
 
 
-def decisions(raw=0, searched_count=20):
-    """Searched decisions with raw ones among them: non-team decisions for fallback_share."""
-    return [{"kind": "raw"} for _ in range(raw)] + [searched() for _ in range(searched_count - raw)]
+def searched(k=2, m=3, s=4, refused=0, refused_pairs=None):
+    record = {"kind": "searched", "k": k, "m": m, "s": s,
+              "leaves": {"refused": refused, "terminal": 0, "cut_off": 0, "unresolved": 0}}
+    if refused_pairs is not None:
+        record["refused_pairs"] = refused_pairs
+    return record
+
+
+def decision(env, step, seat, kind="searched", choice=0):
+    return {"env": env, "step": step, "seat": seat, "kind": kind, "choice": choice}
+
+
+def write_json(path, value):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(value, f)
+
+
+def arm(fallback=0, non_team=20):
+    """A searching arm's summary as main writes it: the fields the gates and the pooled shares read."""
+    return {"scores": [1.0, 0.0], "fallback_share": fallback / non_team, "fallback_decisions": fallback,
+            "non_team_decisions": non_team}
+
+
+def opponent(upper=0.6, same=True, step_fallback=0, previous_fallback=0, non_team=20):
+    """One opponent's entry: the step against the previous step, its upper bound, and the reproduction check."""
+    return {"arms": {"step": arm(step_fallback, non_team), "previous": arm(previous_fallback, non_team)},
+            "paired": {"step_vs_previous": {"pairs": 4, "mean": 0.6, "95": [0.55, upper]}},
+            "same_games_as_recorded": same}
+
+
+def passing_report():
+    """A finished ladder.json, as main writes it, that passes every gate. A test breaks one input at a time."""
+    return {"conditions": {"commit": "c0ffee", "step": {"name": "1", "settings": {}},
+                           "previous": {"name": "0", "settings": {}}},
+            "h2h": {"pairs": 4, "score": 0.6, "95": [0.55, 0.65], "unfinished": 0, "unresolved": 0},
+            "opponents": {"bot": opponent(), "bc6": opponent(), "ppo": opponent()},
+            "p99_seconds": 0.12, "verdict": None}
+
+
+def latency_run(p99=1.0, step="1", commit="c0ffee"):
+    """An exclusive latency run's ladder.json: the fields the latency gate reads."""
+    return {"conditions": {"commit": commit, "step": {"name": step, "settings": {}}}, "p99_seconds": p99}
 
 
 class StepSettingsTest(unittest.TestCase):
@@ -110,6 +153,27 @@ class PairedHTest(unittest.TestCase):
             ladder.paired_h([1, 0], [1, 0, 1, 0])  # different shapes
 
 
+class PairedEntryTest(unittest.TestCase):
+    def test_step_against_previous_is_the_paired_h_of_the_two_arms(self):
+        scores = {"step": [1, 1, 0.5, 1], "previous": [0, 0.5, 0, 0]}
+        got = ladder.paired_entry(scores)
+        self.assertEqual(got["step_vs_previous"], ladder.paired_h(scores["step"], scores["previous"]))
+
+    def test_a_better_step_is_above_one_half_and_swapped_arms_are_below(self):
+        scores = {"step": [1, 1, 0.5, 1], "previous": [0, 0.5, 0, 0]}
+        self.assertGreater(ladder.paired_entry(scores)["step_vs_previous"]["mean"], 0.5)
+        swapped = {"step": scores["previous"], "previous": scores["step"]}
+        self.assertLess(ladder.paired_entry(swapped)["step_vs_previous"]["mean"], 0.5)
+
+    def test_r_is_compared_when_it_was_played(self):
+        got = ladder.paired_entry({"step": [1, 1], "previous": [0, 0], "R": [0.5, 0.5]})
+        self.assertEqual(set(got), {"step_vs_previous", "step_vs_R"})
+        self.assertEqual(got["step_vs_R"]["mean"], 0.75)
+
+    def test_without_a_previous_or_r_nothing_is_compared(self):
+        self.assertEqual(ladder.paired_entry({"step": [1, 0]}), {})
+
+
 class RefusedLeavesTest(unittest.TestCase):
     def test_counts_over_searched_decisions_only(self):
         records = [searched(2, 3, 4, refused=6), searched(1, 1, 1, refused=0), {"kind": "forced"}, {"kind": "team"},
@@ -123,74 +187,214 @@ class RefusedLeavesTest(unittest.TestCase):
         self.assertEqual(ladder.refused_leaves([]), {"leaves": 0, "refused": 0, "decisions_with_refused": 0,
                                                      "refused_share": 0.0, "unreconstructible_engine_refused": 0})
 
+    def test_dropped_refused_pairs_still_count_as_leaves(self):
+        # #443 drops the refused rows: k = 7 kept, one pair dropped, so the record had (7 + 1) * 8 * 16 leaves
+        got = ladder.refused_leaves([searched(7, 8, 16, refused_pairs=[[0, 1]])])
+        self.assertEqual(got["leaves"], 1024)
+        self.assertEqual(got["refused_share"], 0.0)
+
+
+class DecisionsDigestTest(unittest.TestCase):
+    def records(self):
+        return [decision(1, 0, 1, choice=3), decision(0, 2, 0, kind="raw", choice=1),
+                decision(0, 0, 1, kind="team", choice=2)]
+
+    def test_the_input_order_does_not_change_it(self):
+        records = self.records()
+        self.assertEqual(ladder.decisions_digest(records), ladder.decisions_digest(list(reversed(records))))
+
+    def test_one_choice_changes_it(self):
+        records = self.records()
+        changed = copy.deepcopy(records)
+        changed[0]["choice"] = 4
+        self.assertNotEqual(ladder.decisions_digest(records), ladder.decisions_digest(changed))
+
+    def test_it_is_a_sha256_hex_digest(self):
+        digest = ladder.decisions_digest(self.records())
+        self.assertEqual(len(digest), 64)
+        self.assertTrue(all(c in "0123456789abcdef" for c in digest))
+
+
+class ReproductionTest(unittest.TestCase):
+    def test_the_scores_and_the_decision_digest_must_both_match(self):
+        old = {"scores": [1.0, 0.5], "decisions_sha256": "abc"}
+        self.assertTrue(ladder.recorded_reproduction([1.0, 0.5], "abc", old, "unused", "bot"))
+        self.assertFalse(ladder.recorded_reproduction([1.0, 0.5], "xyz", old, "unused", "bot"))
+        self.assertFalse(ladder.recorded_reproduction([1.0, 0.0], "abc", old, "unused", "bot"))
+
+    def test_an_opponent_missing_from_the_recorded_run_is_none(self):
+        self.assertIsNone(ladder.recorded_reproduction([1.0], "abc", None, "unused", "bot"))
+
+    def test_no_digest_and_no_decision_file_is_none_never_true(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old = {"scores": [1.0, 0.5]}
+            self.assertIsNone(ladder.recorded_reproduction([1.0, 0.5], "abc", old, tmp, "bot"))
+
+    def test_the_recorded_decision_file_gives_the_digest_when_the_summary_has_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            records = [decision(0, 0, 0, choice=2), decision(1, 0, 1, kind="raw", choice=0)]
+            with open(os.path.join(tmp, "step-bot-decisions.jsonl"), "w", encoding="utf-8") as f:
+                for r in records:
+                    f.write(json.dumps(r) + "\n")
+            old = {"scores": [1.0, 0.5]}
+            digest = ladder.decisions_digest(records)
+            self.assertTrue(ladder.recorded_reproduction([1.0, 0.5], digest, old, tmp, "bot"))
+            self.assertFalse(ladder.recorded_reproduction([1.0, 0.5], "0" * 64, old, tmp, "bot"))
+
 
 class VerdictTest(unittest.TestCase):
-    def passing(self, **changes):
-        inputs = {"h2h": {"pairs": 4, "score": 0.6, "95": [0.55, 0.65]},
-                  "paired": {name: {"pairs": 4, "mean": 0.6, "95": [0.55, 0.65]} for name in ("bot", "bc6", "ppo")},
-                  "records_new": decisions(), "records_prev": decisions(), "p99_seconds": 1.0}
-        inputs.update(changes)
-        return ladder.verdict(**inputs)
-
     def test_every_gate_passing_adopts(self):
-        got = self.passing()
-        self.assertEqual(got["gates"], {"strength": True, "no_harm": True, "fallback": True, "latency": True})
+        got = ladder.verdict(passing_report(), latency_run())
+        self.assertEqual(got["gates"], {"strength": True, "no_harm": True, "reproduced": True, "fallback": True,
+                                        "latency": True})
         self.assertTrue(got["adopt"])
+        self.assertEqual(got["notes"], [])
 
-    def test_strength_needs_the_lower_bound_above_one_half(self):
-        self.assertFalse(self.passing(h2h={"pairs": 4, "score": 0.5, "95": [0.5, 0.7]})["gates"]["strength"])
-        got = self.passing(h2h={"pairs": 4, "score": 0.6, "95": [0.5000001, 0.7]})
-        self.assertTrue(got["gates"]["strength"])
+    def test_each_gate_flips_alone(self):
+        breakers = {
+            "strength": lambda r: r["h2h"].update({"95": [0.5, 0.65]}),
+            "no_harm": lambda r: r["opponents"]["bot"]["paired"]["step_vs_previous"].update({"95": [0.4, 0.49]}),
+            "reproduced": lambda r: r["opponents"]["bc6"].update({"same_games_as_recorded": False}),
+            "fallback": lambda r: r["opponents"]["bot"]["arms"]["step"].update(fallback_share=0.2,
+                                                                                fallback_decisions=4),
+        }
+        for gate, breaker in breakers.items():
+            with self.subTest(gate=gate):
+                report = passing_report()
+                breaker(report)
+                gates = ladder.verdict(report, latency_run())["gates"]
+                self.assertFalse(gates[gate])
+                self.assertEqual({name for name, passed in gates.items() if not passed}, {gate})
+        with self.subTest(gate="latency"):
+            gates = ladder.verdict(passing_report(), latency_run(p99=2.01))["gates"]
+            self.assertEqual({name for name, passed in gates.items() if not passed}, {"latency"})
 
-    def test_no_harm_needs_each_gated_upper_bound_at_least_one_half(self):
-        paired = {"bot": {"pairs": 4, "mean": 0.4, "95": [0.3, 0.49]}, "bc6": {"pairs": 4, "95": [0.4, 0.9]}}
-        got = self.passing(paired=paired)
-        self.assertFalse(got["gates"]["no_harm"])
-        self.assertFalse(got["adopt"])
-        paired["bot"]["95"] = [0.3, 0.5]  # an upper bound of exactly one half passes
-        self.assertTrue(self.passing(paired=paired)["gates"]["no_harm"])
-
-    def test_ppo_is_reported_but_not_gated(self):
-        paired = {"bot": {"pairs": 4, "95": [0.5, 0.6]}, "bc6": {"pairs": 4, "95": [0.5, 0.6]},
-                  "ppo": {"pairs": 4, "95": [0.0, 0.1]}}
-        self.assertTrue(self.passing(paired=paired)["gates"]["no_harm"])
-
-    def test_a_gated_opponent_without_a_measurement_fails_the_gate(self):
-        # No measurement against a gated opponent is no evidence of no harm (as a missing p99 fails the latency).
-        self.assertFalse(self.passing(paired={})["gates"]["no_harm"])
-        only_bot = {"bot": {"pairs": 4, "95": [0.5, 0.6]}, "ppo": {"pairs": 4, "95": [0.5, 0.6]}}
-        self.assertFalse(self.passing(paired=only_bot)["gates"]["no_harm"])
-
-    def test_fallback_at_most_five_percent_passes(self):
-        got = self.passing(records_new=decisions(raw=1), records_prev=decisions())  # 1 of 20 = 0.05
-        self.assertTrue(got["gates"]["fallback"])
-        self.assertFalse(self.passing(records_new=decisions(raw=2), records_prev=decisions())["gates"]["fallback"])
-
-    def test_fallback_over_five_percent_may_follow_the_previous_share_plus_a_point(self):
-        prev = decisions(raw=2)  # 0.10: the allowance is 0.11
-        self.assertTrue(self.passing(records_new=decisions(raw=2), records_prev=prev)["gates"]["fallback"])
-        self.assertFalse(self.passing(records_new=decisions(raw=3), records_prev=prev)["gates"]["fallback"])
-
-    def test_previous_share_at_or_below_five_percent_leaves_the_plain_gate(self):
-        prev = decisions(raw=1)  # 0.05 is not above five percent: the plain 0.05 gate stands
-        self.assertFalse(self.passing(records_new=decisions(raw=3), records_prev=prev)["gates"]["fallback"])
-        self.assertTrue(self.passing(records_new=decisions(raw=1), records_prev=prev)["gates"]["fallback"])
+    def test_latency_pending_without_a_latency_run(self):
+        got = ladder.verdict(passing_report())
+        self.assertIsNone(got["gates"]["latency"])
+        self.assertIsNone(got["adopt"])
+        self.assertIsNone(got["p99_seconds"])
+        self.assertTrue(all(v for name, v in got["gates"].items() if name != "latency"))
+        self.assertTrue(any("latency pending" in note for note in got["notes"]))
 
     def test_latency_needs_a_p99_at_most_two_seconds(self):
-        self.assertFalse(self.passing(p99_seconds=None)["gates"]["latency"])
-        self.assertTrue(self.passing(p99_seconds=2.0)["gates"]["latency"])
-        self.assertFalse(self.passing(p99_seconds=2.01)["gates"]["latency"])
+        self.assertTrue(ladder.verdict(passing_report(), latency_run(p99=2.0))["gates"]["latency"])
+        self.assertFalse(ladder.verdict(passing_report(), latency_run(p99=None))["gates"]["latency"])
+        self.assertFalse(ladder.verdict(passing_report(), latency_run(p99=None))["adopt"])
 
-    def test_shares_are_exact_ratios(self):
-        got = self.passing(records_new=decisions(raw=1, searched_count=3), records_prev=decisions())
-        self.assertEqual(got["fallback_share_new"], 1 / 3)
-        self.assertEqual(got["fallback_share_previous"], 0.0)
+    def test_the_latency_run_must_measure_this_step(self):
+        with self.assertRaisesRegex(ValueError, "step"):
+            ladder.verdict(passing_report(), latency_run(step="2"))
 
-    def test_reports_the_inputs(self):
-        got = self.passing()
-        for key in ("h2h", "paired", "fallback_share_new", "fallback_share_previous", "fallback_allowed", "p99_seconds",
-                    "gates", "adopt"):
+    def test_the_latency_run_must_be_on_this_commit(self):
+        with self.assertRaisesRegex(ValueError, "commit"):
+            ladder.verdict(passing_report(), latency_run(commit="other"))
+
+    def test_a_report_without_a_commit_cannot_be_matched_to_a_latency_run(self):
+        report = passing_report()
+        report["conditions"]["commit"] = None
+        with self.assertRaisesRegex(ValueError, "commit"):
+            ladder.verdict(report, latency_run(commit=None))
+
+    def test_strength_needs_the_lower_bound_above_one_half(self):
+        report = passing_report()
+        report["h2h"]["95"] = [0.5, 0.7]
+        self.assertFalse(ladder.verdict(report, latency_run())["gates"]["strength"])
+        report["h2h"]["95"] = [0.5000001, 0.7]
+        self.assertTrue(ladder.verdict(report, latency_run())["gates"]["strength"])
+
+    def test_unresolved_games_fail_strength_although_the_interval_passes(self):
+        report = passing_report()
+        report["h2h"]["unresolved"] = 1
+        got = ladder.verdict(report, latency_run())
+        self.assertGreater(got["h2h"]["95"][0], 0.5)
+        self.assertFalse(got["gates"]["strength"])
+        self.assertFalse(got["adopt"])
+        self.assertTrue(any("unresolved" in note for note in got["notes"]))
+
+    def test_strength_without_a_head_to_head_is_refused(self):
+        report = passing_report()
+        report["h2h"] = None
+        with self.assertRaisesRegex(ValueError, "--h2h"):
+            ladder.verdict(report, latency_run())
+
+    def test_no_harm_needs_each_gated_upper_bound_at_least_one_half(self):
+        report = passing_report()
+        report["opponents"]["bot"] = opponent(upper=0.49)
+        self.assertFalse(ladder.verdict(report, latency_run())["gates"]["no_harm"])
+        report["opponents"]["bot"] = opponent(upper=0.5)  # an upper bound of exactly one half passes
+        self.assertTrue(ladder.verdict(report, latency_run())["gates"]["no_harm"])
+
+    def test_ppo_is_reported_but_not_gated(self):
+        report = passing_report()
+        report["opponents"]["ppo"] = opponent(upper=0.1)
+        got = ladder.verdict(report, latency_run())
+        self.assertTrue(got["gates"]["no_harm"])
+        self.assertIn("ppo", got["paired"])
+
+    def test_a_gated_opponent_without_a_measurement_fails_the_gates_that_need_it(self):
+        report = passing_report()
+        del report["opponents"]["bc6"]
+        gates = ladder.verdict(report, latency_run())["gates"]
+        self.assertFalse(gates["no_harm"])
+        self.assertFalse(gates["reproduced"])
+        self.assertFalse(gates["fallback"])
+
+    def test_no_harm_needs_the_paired_entry(self):
+        report = passing_report()
+        del report["opponents"]["bot"]["paired"]["step_vs_previous"]
+        self.assertFalse(ladder.verdict(report, latency_run())["gates"]["no_harm"])
+
+    def test_reproduced_needs_true_for_each_gated_opponent(self):
+        for value in (None, False):
+            with self.subTest(value=value):
+                report = passing_report()
+                report["opponents"]["bot"]["same_games_as_recorded"] = value
+                self.assertFalse(ladder.verdict(report, latency_run())["gates"]["reproduced"])
+        report = passing_report()
+        del report["opponents"]["bot"]["same_games_as_recorded"]
+        self.assertFalse(ladder.verdict(report, latency_run())["gates"]["reproduced"])
+        self.assertTrue(ladder.verdict(passing_report(), latency_run())["gates"]["reproduced"])
+
+    def test_fallback_at_most_five_percent_passes(self):
+        report = passing_report()
+        report["opponents"]["bot"] = opponent(step_fallback=1)  # 1 of 20 = 0.05
+        self.assertTrue(ladder.verdict(report, latency_run())["gates"]["fallback"])
+        report["opponents"]["bot"] = opponent(step_fallback=2)
+        self.assertFalse(ladder.verdict(report, latency_run())["gates"]["fallback"])
+
+    def test_fallback_over_five_percent_may_follow_the_previous_share_plus_a_point(self):
+        report = passing_report()  # previous 2 of 20 = 0.10: the allowance is 0.11
+        report["opponents"]["bot"] = opponent(step_fallback=2, previous_fallback=2)
+        self.assertTrue(ladder.verdict(report, latency_run())["gates"]["fallback"])
+        report["opponents"]["bot"] = opponent(step_fallback=3, previous_fallback=2)
+        got = ladder.verdict(report, latency_run())
+        self.assertFalse(got["gates"]["fallback"])
+        self.assertAlmostEqual(got["fallback"]["per_opponent"]["bot"]["allowed"], 0.11)
+
+    def test_previous_share_at_or_below_five_percent_leaves_the_plain_gate(self):
+        report = passing_report()  # previous 1 of 20 = 0.05 is not above five percent: 0.05 stands
+        report["opponents"]["bot"] = opponent(step_fallback=3, previous_fallback=1)
+        self.assertFalse(ladder.verdict(report, latency_run())["gates"]["fallback"])
+        report["opponents"]["bot"] = opponent(step_fallback=1, previous_fallback=1)
+        self.assertTrue(ladder.verdict(report, latency_run())["gates"]["fallback"])
+
+    def test_a_bot_only_fallback_regression_fails_although_pooling_hides_it(self):
+        report = passing_report()
+        report["opponents"]["bot"] = opponent(step_fallback=5)  # 5 of 20 against 0 of 20
+        report["opponents"]["ppo"] = opponent(non_team=400)  # the pooled share is dominated by 400 clean ppo decisions
+        got = ladder.verdict(report, latency_run())
+        self.assertFalse(got["gates"]["fallback"])
+        self.assertLessEqual(got["fallback"]["pooled"]["step"], 0.05)
+
+    def test_reports_the_inputs_and_the_notes(self):
+        got = ladder.verdict(passing_report(), latency_run())
+        for key in ("h2h", "paired", "fallback", "p99_seconds", "p99_source", "gates", "adopt", "notes"):
             self.assertIn(key, got)
+        self.assertEqual(set(got["paired"]), {"bot", "bc6", "ppo"})
+        self.assertEqual(set(got["fallback"]["per_opponent"]), {"bot", "bc6", "ppo"})
+        self.assertEqual(set(got["fallback"]["pooled"]), {"step", "previous"})
+        self.assertEqual(got["p99_seconds"], 1.0)
 
 
 class WslPathTest(unittest.TestCase):
@@ -221,14 +425,23 @@ class CliGuardTest(unittest.TestCase):
     def argv(self, out, opponents=("bot=missing/bot.npz",), step="0", extra=()):
         args = ["--checkpoint", "missing/main.npz", "--foe-net", "missing/foe.npz", "--teams-from", "missing/pool.npz",
                 "--step", step, "--out", out]
-        for opponent in opponents:
-            args += ["--opponent", opponent]
+        for opponent_item in opponents:
+            args += ["--opponent", opponent_item]
         return args + list(extra)
 
     def assertRefused(self, pattern, argv, out):
         with self.assertRaisesRegex(SystemExit, pattern):
             ladder.main(argv)
         self.assertFalse(os.path.exists(out))
+
+    def recorded(self, directory, **conditions):
+        """A recorded ladder.json of step 0 with conditions that match this test's defaults, unless overridden."""
+        base = {"seed": hex(ladder.SEED), "pairs": 1024, "max_steps": 1000, "games": 2048, "step": {"name": "0"},
+                "table_sha256": "t", "sha256_prefix": {}}
+        base.update(conditions)
+        path = os.path.join(directory, "ladder.json")
+        write_json(path, {"conditions": base})
+        return path
 
     def test_out_inside_the_repository_is_refused(self):
         out = os.path.join(str(ROOT), "ladder-guard-test-out")
@@ -254,6 +467,11 @@ class CliGuardTest(unittest.TestCase):
             out = os.path.join(tmp, "out")
             self.assertRefused("--previous", self.argv(out, extra=("--h2h",)), out)
 
+    def test_latency_run_needs_h2h(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            self.assertRefused("--h2h", self.argv(out, extra=("--latency-run", "missing/ladder.json")), out)
+
     def test_previous_run_needs_a_previous_step(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "out")
@@ -272,6 +490,89 @@ class CliGuardTest(unittest.TestCase):
                 json.dump({"conditions": {"step": {"name": "7", "settings": {}}}}, f)
             self.assertRefused("measured step", self.argv(out, extra=("--previous", "0", "--previous-run", recorded)),
                                out)
+
+    def test_previous_run_must_match_seed_pairs_max_steps_and_games(self):
+        cases = {"seed": {"seed": hex(ladder.SEED + 1)}, "pairs": {"pairs": 512, "games": 1024},
+                 "max_steps": {"max_steps": 999}, "games": {"games": 4096}}
+        for field, changed in cases.items():
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as tmp:
+                out = os.path.join(tmp, "out")
+                recorded = self.recorded(tmp, **changed)
+                self.assertRefused(field, self.argv(out, extra=("--previous", "0", "--previous-run", recorded)), out)
+
+    def test_previous_run_must_match_the_main_sha_prefix_before_any_load(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            files = {}
+            for role in ("main", "foe", "bot", "teams"):  # real files, not networks: they are hashed, never loaded
+                files[role] = os.path.join(tmp, f"{role}.npz")
+                with open(files[role], "wb") as f:
+                    f.write(f"not a network: {role}".encode("ascii"))
+            digests = {}
+            for role, path in files.items():
+                with open(path, "rb") as f:
+                    digests[role] = hashlib.sha256(f.read()).hexdigest()[:12]
+            recorded = self.recorded(tmp, sha256_prefix={"main": "0" * 12, "foe": digests["foe"],
+                                                         "opponent bot": digests["bot"]})
+            argv = ["--checkpoint", files["main"], "--foe-net", files["foe"], "--teams-from", files["teams"],
+                    "--step", "0", "--previous", "0", "--previous-run", recorded, "--opponent", f"bot={files['bot']}",
+                    "--out", out]
+            self.assertRefused("sha256_prefix of main", argv, out)
+
+
+class VerdictCliTest(unittest.TestCase):
+    """`verdict RUN/ladder.json [--latency-run L/ladder.json]`: reads two JSON files, writes verdict.json, loads no
+    network and no library."""
+
+    def run_files(self, tmp, report, latency=None):
+        run = os.path.join(tmp, "run", "ladder.json")
+        write_json(run, report)
+        lat = None
+        if latency is not None:
+            lat = os.path.join(tmp, "latency", "ladder.json")
+            write_json(lat, latency)
+        return run, lat
+
+    def test_main_verdict_writes_verdict_json_next_to_the_run_without_loading_anything(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run, lat = self.run_files(tmp, passing_report(), latency_run())
+            with mock.patch.dict(sys.modules, LIBRARIES), contextlib.redirect_stdout(io.StringIO()) as printed:
+                code = ladder.main(["verdict", run, "--latency-run", lat])
+            self.assertEqual(code, 0)
+            with open(os.path.join(tmp, "run", "verdict.json"), encoding="utf-8") as f:
+                written = json.load(f)
+            self.assertTrue(written["adopt"])
+            self.assertEqual(json.loads(printed.getvalue())["adopt"], True)
+
+    def test_without_a_latency_run_the_verdict_is_pending(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run, _ = self.run_files(tmp, passing_report())
+            with mock.patch.dict(sys.modules, LIBRARIES), contextlib.redirect_stdout(io.StringIO()):
+                ladder.main(["verdict", run])  # dispatched by main's first argument
+            with open(os.path.join(tmp, "run", "verdict.json"), encoding="utf-8") as f:
+                written = json.load(f)
+            self.assertIsNone(written["adopt"])
+            self.assertIsNone(written["gates"]["latency"])
+
+    def test_a_mismatched_latency_run_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run, lat = self.run_files(tmp, passing_report(), latency_run(commit="other"))
+            with mock.patch.dict(sys.modules, LIBRARIES), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(SystemExit, "commit"):
+                    ladder.main(["verdict", run, "--latency-run", lat])
+            self.assertFalse(os.path.exists(os.path.join(tmp, "run", "verdict.json")))
+
+
+class MainVerdictCliTest(unittest.TestCase):
+    def test_verdict_of_a_run_without_a_head_to_head_is_refused(self):
+        report = passing_report()
+        report["h2h"] = None
+        with tempfile.TemporaryDirectory() as tmp:
+            run = os.path.join(tmp, "ladder.json")
+            write_json(run, report)
+            with mock.patch.dict(sys.modules, LIBRARIES), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(SystemExit, "--h2h"):
+                    ladder.main(["verdict", run])
 
 
 if __name__ == "__main__":
