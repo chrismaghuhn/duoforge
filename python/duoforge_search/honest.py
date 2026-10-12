@@ -126,7 +126,7 @@ def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
 # a species Smogon lacks. Before, the registry alone (8904 sets of 156 species) left a foe species such as Toxapex
 # without a prior, and the live search played every decision of such a game raw. A table change fails until re-pinned;
 # P1 and the evaluation keep SPREAD_SOURCES.
-LIVE_SPREAD_SHA256 = "779422deb08104b5361b2b3b641330e9f4925804ab4d2a6543e97fe998e4bcb5"
+LIVE_SPREAD_SHA256 = "5f0790722da3c81124f2868ff25ad3a888c70549c0179cc9733fc70577ccf507"
 
 
 def live_spread_table(ctx, root=None):
@@ -259,12 +259,13 @@ class Honest(lookahead.Lookahead):
                  species_prior=False, foe_net=None):
         # species_prior (live play, owner 2026-10-10): True refuses a decision whose foe species has no stated spread in
         # the table instead of drawing from the belief's nature-only or table-wide levels (4 and 5); "count" (owner
-        # 2026-10-12) draws from those general levels and names every such species in the record (spread_fallback);
-        # False draws from them unnamed (P1, the arena).
-        if species_prior not in (False, True, "count") or isinstance(species_prior, int) and                 not isinstance(species_prior, bool):
+        # 2026-10-12, live play) draws from those general levels and names the species in the record: spread_fallback
+        # for one without any spread of its own, spread_redrawn for one whose spreads a redraw exhausted (as True
+        # names the two refusals apart); False draws from them unnamed (P1, the evaluation).
+        if not (type(species_prior) is bool or species_prior == "count" and type(species_prior) is str):
             raise ValueError(f"species_prior must be False, True or 'count' (got {species_prior!r})")
         self.species_prior = species_prior
-        self._spread_fallback = []
+        self._spread_fallback, self._spread_redrawn = [], []
         # foe_net (M7, owner 2026-10-11): (model, params, encoder, ext_supported) of a second network that models the
         # foe. Every policy call on the worlds (the foe's team draw, its queued pair and its menu) goes to it, encoded
         # with its own encoder; the own candidates (the root's policy) and the leaf values stay with the main network.
@@ -377,10 +378,11 @@ class Honest(lookahead.Lookahead):
                 raise
             finally:
                 costs["public_records"] += time.perf_counter() - t
-        if self.species_prior is True:  # from the first draw's level: a redraw raises it (SpreadTable.draw)
+        initial = None
+        if self.species_prior is not False:  # from the first draw's level: a redraw raises it (SpreadTable.draw)
             initial = [self.belief.table.candidates(sp, nature, item, excluded)[0] for sp, nature, item in members]
             missing = [members[m][0] for m, level in enumerate(initial) if level >= 4]
-            if missing:
+            if missing and self.species_prior is True:
                 raise Unreconstructible(f"no spread prior for foe species {missing}")
         for _ in range(MAX_RESPREADS):
             t = time.perf_counter()
@@ -443,8 +445,10 @@ class Honest(lookahead.Lookahead):
             costs["world_builds"] += time.perf_counter() - t
             if not statuses.any():
                 self._check_worlds(record, costs)
-                general = np.flatnonzero((sampled["levels"][:, :len(members)] >= 4).any(axis=0))
-                self._spread_fallback = sorted({members[m][0] for m in general})
+                if initial is not None:  # the species drawn from the general levels (species_prior "count")
+                    general = (sampled["levels"][:, :len(members)] >= 4).any(axis=0)
+                    self._spread_fallback = sorted({members[m][0] for m in range(len(members)) if initial[m] >= 4})
+                    self._spread_redrawn = sorted({members[m][0] for m in np.flatnonzero(general) if initial[m] < 4})
                 return h, weights, dropped, respreads, queue_pairs
             # The current C API reports a failed world, not the member. Redraw
             # all its spreads; keep its HP/counter/bench/queue words unchanged.
@@ -568,6 +572,7 @@ class Honest(lookahead.Lookahead):
                                        "queue_pairs": queue_pairs})
                         if self.species_prior == "count":  # the foe species drawn from the general levels, named
                             result["spread_fallback"] = list(self._spread_fallback)
+                            result["spread_redrawn"] = list(self._spread_redrawn)
                         actions[d] = result["choice"]
                     except Unreconstructible as err:
                         result.update({"kind": "unreconstructible", "reason": str(err)})

@@ -84,6 +84,7 @@ class SpreadTable:
         if (self.spreads > 32).any() or (self.spreads.astype(np.int64).sum(axis=1) > 66).any():
             raise ValueError("a spread is past 32 per stat or 66 in all")
         self.min_sets = int(min_sets)
+        self._candidates = {}  # key -> (level, rows): the table is read only once drawn from
 
     @staticmethod
     def from_sides(sides, min_sets=MIN_SETS):
@@ -110,7 +111,16 @@ class SpreadTable:
         return h.hexdigest()
 
     def candidates(self, species, nature, item, exclude_team=None, min_level=1):
-        """(level, indices): the key level used (1..5) and the table rows it draws from."""
+        """(level, indices): the key level used (1..5) and the table rows it draws from. Each key's answer is kept: a
+        large table (live play's, about 270,000 rows) is scanned once per key, not at every draw; the table must not
+        change once drawn from."""
+        key = (int(species), int(nature), int(item), None if exclude_team is None else int(exclude_team), int(min_level))
+        found = self._candidates.get(key)
+        if found is None:
+            found = self._candidates[key] = self._scan(*key)
+        return found
+
+    def _scan(self, species, nature, item, exclude_team=None, min_level=1):
         keep = np.ones(self.team.shape, dtype=bool) if exclude_team is None else self.team != int(exclude_team)
         levels = (
             keep & (self.species == species) & (self.nature == nature) & (self.item == item),

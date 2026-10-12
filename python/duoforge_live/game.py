@@ -120,7 +120,9 @@ class Game:
         """The counts of the game's search outcomes (the private log's per-game summary)."""
         return {"decisions": len(self.outcomes), "causes": dict(Counter(o.cause for o in self.outcomes)),
                 "fallback": dict(Counter(o.fallback for o in self.outcomes if o.fallback is not None)),
-                "seconds_max": max((o.seconds for o in self.outcomes), default=0.0), "dirty": self.dirty}
+                "seconds_max": max((o.seconds for o in self.outcomes), default=0.0), "dirty": self.dirty,
+                "spread_fallback": sum(1 for o in self.outcomes if o.spread_fallback),
+                "spread_redrawn": sum(1 for o in self.outcomes if o.spread_redrawn)}
 
     def accepted(self, text):
         self.tracker.accepted(text)

@@ -11,7 +11,9 @@ missing file once; --check regenerates the table from DIR and fails unless it is
 Derivation:
 - every spread "Nature:HP/Atk/Def/SpA/SpD/Spe" (stat points) is checked: at most 32 per stat and 66 in all; another
   spread is dropped and counted (invalid), a malformed one raises;
-- a Mega forme's spreads join its base species (an open team sheet names the base species with its stone);
+- every species is keyed by the engine's name of its base species (duoforge_data_forme_info): a Mega forme's
+  spreads join its base species, which an open team sheet names with the stone (Floette-Mega: Floette-Eternal); a
+  name the engine does not know is counted (outside_context), never drawn;
 - per species, the highest cutoff whose two formats together weigh at least MIN_WEIGHT (Smogon's rating-weighted
   count) gives the spreads of that cutoff, both formats summed; a species too light at every cutoff takes the lowest
   cutoff's; the cutoff of every species is counted (origin);
@@ -53,7 +55,7 @@ RESOLUTION = 1000
 MAX_SPREADS = 32  # per species, the heaviest (a compact table: the tail of single spreads holds little weight)
 MAX_STAT, MAX_TOTAL = 32, 66
 TABLE_PATH = Path(__file__).resolve().parents[2] / "data" / "belief" / f"smogon-spreads-regmc-{MONTH}.json"
-TABLE_SHA256 = "f20bf4cbbac2a9e763702111c34875c276058d08becdf26fa5ff4c282204f369"
+TABLE_SHA256 = "17b1a776771239a2cdfb6ccbe9eecef34222b61b447fcd37d5b03cf533ad50c4"
 
 
 def parse_spread(text):
@@ -69,36 +71,59 @@ def parse_spread(text):
     return nature, sp
 
 
-def _base(name):
-    return name.split("-Mega")[0]
+def engine_base(ctx):
+    """base_of(name) for species_spreads: (the engine's name of the species' base species, whether it is another
+    forme: a Mega's), or None for a name the engine does not know; from duoforge_data_forme_info."""
+    import duoforge
+    from duoforge import data
+
+    def base_of(name):
+        try:
+            species = data.find(ctx, data.TABLE_SPECIES, data.to_id(name))
+        except duoforge.DuoforgeError as err:
+            if err.status_name != "DUOFORGE_E_INVALID_ARGUMENT":
+                raise
+            return None
+        base = int(data.forme_info(ctx, species)["base_species"])
+        return data.name(ctx, data.TABLE_SPECIES, base), base != species
+
+    return base_of
 
 
-def species_spreads(sources):
-    """({species: (cutoff, {(nature, stat points): weight})}, counts) of the chaos JSONs sources[(format, cutoff)]."""
+def species_spreads(sources, base_of):
+    """({species: (cutoff, {(nature, stat points): weight})}, counts) of the chaos JSONs sources[(format, cutoff)],
+    every name keyed by base_of(name) (engine_base: (base species name, merged) or None)."""
     counts = Counter()
-    by_cutoff = {}
+    by_cutoff, merged_names, unknown = {}, set(), set()
     for (fmt, cutoff), stats in sources.items():
         if fmt not in FORMATS or cutoff not in CUTOFFS:
             raise ValueError(f"an unknown source {fmt}-{cutoff}")
         merged = by_cutoff.setdefault(cutoff, {})
         for name, entry in stats["data"].items():
-            spreads = merged.setdefault(_base(name), Counter())
+            base = base_of(name)
+            if base is None:
+                unknown.add(name)
+                continue
+            key, other_forme = base
+            if other_forme:
+                merged_names.add(name)
+            spreads = merged.setdefault(key, Counter())
             for text, weight in entry["Spreads"].items():
                 spread = parse_spread(text)
                 if spread is None:
                     counts["invalid"] += 1
                     continue
                 spreads[spread] += float(weight)
-    megas = {name for stats in sources.values() for name in stats["data"] if _base(name) != name}
-    counts["mega_merged"] = len(megas)
     chosen = {}
     for name in sorted({n for merged in by_cutoff.values() for n in merged}):
         present = [c for c in CUTOFFS if c in by_cutoff and sum(by_cutoff[c].get(name, {}).values()) > 0]
+        if not present:
+            raise ValueError(f"species {name} has no valid weight at any cutoff")
         heavy = [c for c in present if sum(by_cutoff[c][name].values()) >= MIN_WEIGHT]
         cutoff = heavy[0] if heavy else present[-1]
         chosen[name] = (cutoff, dict(by_cutoff[cutoff][name]))
     origin = Counter(str(cutoff) for cutoff, _ in chosen.values())
-    out = {"invalid": counts["invalid"], "mega_merged": counts["mega_merged"],
+    out = {"invalid": counts["invalid"], "mega_merged": len(merged_names), "outside_context": len(unknown),
            "origin": {str(c): origin[str(c)] for c in CUTOFFS if origin[str(c)]}}
     return chosen, out
 
@@ -172,9 +197,9 @@ def fetch(stats_dir):
                 path.write_bytes(r.read())
 
 
-def build(sources):
-    """The derived table (a dict) of the pinned sources."""
-    chosen, counts = species_spreads(sources)
+def build(sources, base_of):
+    """The derived table (a dict) of the pinned sources, keyed by base_of (engine_base)."""
+    chosen, counts = species_spreads(sources, base_of)
     derived, dropped = quantize(chosen)
     battles = {f"{fmt}-{cutoff}": int(stats["info"]["number of battles"]) for (fmt, cutoff), stats in sorted(sources.items())}
     return {"source": {"credit": CREDIT, "url": URL, "month": MONTH, "formats": list(FORMATS), "cutoffs": list(CUTOFFS),
@@ -210,9 +235,17 @@ def main(argv=None):
     p.add_argument("--check", action="store_true", help="fail unless the committed table is this build")
     p.add_argument("--out", default=str(TABLE_PATH))
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
+    from duoforge_replay.dataset import refuse_repository
+    try:
+        refuse_repository(args.stats)
+    except ValueError:
+        raise SystemExit(f"--stats {args.stats} is inside the repository: the raw stats are never committed") from None
     if args.fetch:
         fetch(args.stats)
-    text = render(build(load(args.stats)))
+    import duoforge
+    from duoforge import _layout
+    with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+        text = render(build(load(args.stats), engine_base(ctx)))
     if args.check:
         with open(args.out, encoding="utf-8") as f:
             if f.read() != text:
