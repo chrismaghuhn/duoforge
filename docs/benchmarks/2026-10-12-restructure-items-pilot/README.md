@@ -10,11 +10,12 @@ search signature, public layout and exported symbol. Timing results are mixed;
 this report makes no performance-neutrality or speedup claim.
 
 Baseline: **`ca17e507`**. Implementation/visibility regression/format-fact naming:
-**`3a9d04d1`**. Main was fetched again and remains `ca17e507`; no rebase or main push.
-The branch is `restructure/3-items-pilot`. **No PR has been opened**: HS must
-release the Astra slot first. Before opening, fetch/merge current main and repeat
-any proofs affected by that merge. HS alone merges the PR; PR-head CI remains
-the merge gate even if this branch's manual CI is green.
+**`3a9d04d1`**. After HS released the PR slot, current main **`36b55704`** was
+merged into `restructure/3-items-pilot` in **`0e2652d4`**, without rebase or main
+push. Main's only addition since the baseline is the content-files design
+specification; engine, tests, workflows and proof inputs are unchanged by that
+merge. The baseline remains `ca17e507`. Fresh PR-head CI is required before HS
+merges; the successful implementation CI below does not replace that gate.
 
 ## Implementation and lineage
 
@@ -95,7 +96,7 @@ Windows GCC/Python/reference already passed **1,407 registrations**, including
 `duoforge.python.layout` with its new export guard (0.15 s); JAX-only skips are
 the workflow's existing allowance. The earlier run on `7c3a5c52` was superseded
 by the current source/guard run and is not a final proof. Fresh PR-head checks
-will run after HS releases the slot; no CI timeout or scheduling changes.
+will run when the authorized PR is opened; no CI timeout or scheduling changes.
 
 ## P2: every reference result
 

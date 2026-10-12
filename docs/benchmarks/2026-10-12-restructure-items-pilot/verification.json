@@ -39,12 +39,17 @@
     "windows_gcc_full_private_export_guard_passed": true
   },
   "baseline": "ca17e50718ab9591473abe06234904a06439c466",
-  "ci_status": "All 12 full matrix jobs and RNG passed on implementation 3a9d04d1; proof/doc-only follow-up does not change compiled code. Fresh PR-head CI remains the merge gate after HS slot release.",
+  "ci_status": "All 12 full matrix jobs and RNG passed on implementation 3a9d04d1. Subsequent commits and merged main change proof/docs only. HS released the PR slot; fresh PR-head CI remains the merge gate.",
   "hosted_ci_all_12_jobs_green": true,
   "hosted_ci_run": 38302940369,
   "hosted_rng_green": true,
   "hosted_rng_run": 38306118385,
   "inventory": 1407,
+  "main_changes_since_baseline": [
+    "docs/superpowers/specs/2026-10-12-content-files-design.md"
+  ],
+  "main_merge_commit": "0e2652d4",
+  "merged_main": "36b55704",
   "source_commit": "3a9d04d16f01f7429447237a5d0dcec802ad1312",
   "tier_counts": {
     "full": 31,
