@@ -67,7 +67,7 @@ jobs:
           -DDUOFORGE_PCG_REFERENCE_DIR=${{ runner.temp }}/pcg
       - name: Build
         if: steps.fetch.outcome == 'success'
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         if: steps.fetch.outcome == 'success'
         run: ctest --test-dir build -L reference --no-tests=error --output-on-failure --timeout 120
