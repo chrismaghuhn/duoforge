@@ -1,0 +1,170 @@
+[
+  {
+    "body_equal": true,
+    "function": "dfi_ability_family_for",
+    "new_file": "src/combat/abilities/current.h",
+    "new_first_line": 13,
+    "new_last_line": 20,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/ability_family.h",
+    "old_first_line": 34,
+    "old_last_line": 41
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_ability_code",
+    "new_file": "src/combat/abilities/current.h",
+    "new_first_line": 27,
+    "new_last_line": 37,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 254,
+    "old_last_line": 264
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_ability_family_now",
+    "new_file": "src/combat/abilities/current.h",
+    "new_first_line": 40,
+    "new_last_line": 43,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 267,
+    "old_last_line": 270
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_ability",
+    "new_file": "src/combat/abilities/current.h",
+    "new_first_line": 46,
+    "new_last_line": 49,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 273,
+    "old_last_line": 276
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_ate_excluded",
+    "new_file": "src/combat/abilities/ate.h",
+    "new_first_line": 13,
+    "new_last_line": 16,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/ability_family.h",
+    "old_first_line": 47,
+    "old_last_line": 50
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_ate_type_fam",
+    "new_file": "src/combat/abilities/ate.h",
+    "new_first_line": 23,
+    "new_last_line": 29,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/ability_family.h",
+    "old_first_line": 57,
+    "old_last_line": 63
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_ate_boosts_fam",
+    "new_file": "src/combat/abilities/ate.h",
+    "new_first_line": 33,
+    "new_last_line": 36,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/ability_family.h",
+    "old_first_line": 67,
+    "old_last_line": 70
+  },
+  {
+    "function": "dfi_ate_base_power",
+    "interface_substitutions": [
+      "b is the existing r->b",
+      "bp_chain passed by address; unchanged ok short circuit"
+    ],
+    "new_file": "src/combat/abilities/ate.h",
+    "new_first_line": 38,
+    "new_last_line": 48,
+    "normalized_body_equal": true,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 1869,
+    "old_last_line": 1871
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_pinch_applies_fam",
+    "new_file": "src/combat/abilities/pinch.h",
+    "new_first_line": 12,
+    "new_last_line": 16,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/ability_family.h",
+    "old_first_line": 75,
+    "old_last_line": 79
+  },
+  {
+    "function": "dfi_pinch_attack",
+    "interface_substitutions": [
+      "b is the existing r->b",
+      "atk_chain passed by address; unchanged ok short circuit"
+    ],
+    "new_file": "src/combat/abilities/pinch.h",
+    "new_first_line": 19,
+    "new_last_line": 26,
+    "normalized_body_equal": true,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 2003,
+    "old_last_line": 2005
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_weather_set_by_fam",
+    "new_file": "src/combat/abilities/weather_setter.h",
+    "new_first_line": 10,
+    "new_last_line": 20,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/ability_family.h",
+    "old_first_line": 85,
+    "old_last_line": 95
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_terrain_set_by_fam",
+    "new_file": "src/combat/abilities/terrain_setter.h",
+    "new_first_line": 8,
+    "new_last_line": 18,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/ability_family.h",
+    "old_first_line": 99,
+    "old_last_line": 109
+  },
+  {
+    "body_equal": true,
+    "function": "dfi_fairy_aura_on_field",
+    "interface_substitutions": [],
+    "new_file": "src/combat/abilities/fairy_aura.h",
+    "new_first_line": 14,
+    "new_last_line": 23,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 340,
+    "old_last_line": 349
+  },
+  {
+    "body_equal": null,
+    "function": "dfi_fairy_aura_base_power",
+    "interface_substitutions": [
+      "b is the existing r->b",
+      "bp_chain passed by address; unchanged ok short circuit"
+    ],
+    "new_file": "src/combat/abilities/fairy_aura.h",
+    "new_first_line": 26,
+    "new_last_line": 35,
+    "normalized_body_equal": true,
+    "old_commit": "58f2149d",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 1909,
+    "old_last_line": 1911
+  }
+]

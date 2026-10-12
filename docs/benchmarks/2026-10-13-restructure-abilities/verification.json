@@ -1,0 +1,75 @@
+{
+  "P1": {
+    "after": 1407,
+    "before": 1407,
+    "commands_order_and_runtime_properties_identical": true,
+    "excluded": "registration backtraces only",
+    "full_ci": "pending automatic PR-head CI; full matrix remains required",
+    "inventory_sha256": "fbd60c25eedbe427e6097993964249e12d5b39e30fdd167137fbb00b2b305913",
+    "tier_counts": {
+      "full": 31,
+      "quick": 207,
+      "reference": 1151,
+      "slow": 18
+    }
+  },
+  "P2": {
+    "baseline_ipo_equals_baseline_noipo_equals_after_ipo_equals_after_noipo": true,
+    "executions_per_profile": 2584,
+    "sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+    "steps_per_profile": 22472,
+    "stops_per_profile": 8458,
+    "unique_battles": 1129,
+    "variants": 10
+  },
+  "P3": {
+    "passed_both_profiles": true,
+    "pinned_depths": 24,
+    "pins_sha256": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+    "positions": 10
+  },
+  "P4": {
+    "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+    "cases": 2,
+    "passed_both_profiles": true,
+    "roots": 8,
+    "searched_roots": 7
+  },
+  "P5": {
+    "UNMODELED": {
+      "abilities": 90,
+      "items": 18,
+      "moves": 146
+    },
+    "closure_extended_pool_check_passed": true,
+    "format_pin_check_passed": true,
+    "generated_file_changes": [],
+    "tiebreak_regeneration_passed": true,
+    "unchanged_source_hashes": 20
+  },
+  "P6": {
+    "both_profiles_export_lists_byte_equal": true,
+    "exported_sha256": "1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5",
+    "exports": 238,
+    "layout_constants": 250,
+    "layout_sha256": "502ecc2e08dc76cf3004d31115948bc4e69d7843ce5cd5d2492d950464e07e8e",
+    "layout_structs": 33,
+    "layout_unittest_cases_after": 6,
+    "layout_unittest_cases_before": 5,
+    "negative_ability_symbol_lookups": 14,
+    "public_header_diff_empty": true
+  },
+  "PR_status": "HS released the slot; gh pr list empty; origin/main fetched and merged (already up to date at 58f2149d); ready to open",
+  "baseline": "58f2149d83c8e067115d3411cde03cee068b1eae",
+  "body_equivalence": {
+    "original_functions_byte_equal": 11,
+    "parameter_only_effect_blocks": 3
+  },
+  "performance": {
+    "median_time_ratio_at_most_1_02": true,
+    "rounds_each": 30,
+    "upper_95_bootstrap_at_most_1_02": true,
+    "within_baseline_spread": true
+  },
+  "source_commit": "2397c2ba"
+}
