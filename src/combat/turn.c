@@ -4464,7 +4464,10 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
     }
     const bool defrost = m->status == DFI_STATUS_FRZ && ((uint32_t)md->flags & DFI_MOVE_FLAG_DEFROST) != 0u;
     if ((m->status == DFI_STATUS_SLP || m->status == DFI_STATUS_FRZ) && !defrost) {
-        if (m->status == DFI_STATUS_SLP &&
+        /* the count of a sleep exists under POOL only (the tail's member byte; invariant TAIL_KIND elsewhere): the other kinds keep
+         * their sleep as it was */
+        const bool sleep_counted = dfi_kind_limits_of(r->ctx->data_kind).pool_rules;
+        if (m->status == DFI_STATUS_SLP && sleep_counted &&
             (move_id == DFI_MOVE_SLEEPTALK || move_id == DFI_MOVE_SNORE || dfi_ability_code(r->b, m) == DFI_ABILITY_EARLYBIRD + 1u)) {
             /* decision 0066 (review of the search lane): a sleeper that decrements its counter twice per attempt (Early
              * Bird, data/conditions.ts:68-69) or that runs a sleepUsable move after its cant line (Sleep Talk, Snore,
@@ -4481,7 +4484,7 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
         }
         if (!cured) {
             m->status_counter = (uint8_t)left; /* <= 2 */
-            if (m->status == DFI_STATUS_SLP) {
+            if (m->status == DFI_STATUS_SLP && sleep_counted) {
                 /* decision 0066: one more cant line of this sleep (c <= 2: the start is 2 or 3 and the wake is the next attempt) */
                 uint8_t *cant = &r->b->tail.sides[user / 2u].sleep_cant[pos->occupant];
                 *cant = (uint8_t)(*cant + 1u); /* wide-operands-reviewed: c <= 2 by the start (2 or 3) */
