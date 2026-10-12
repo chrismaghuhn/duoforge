@@ -69,6 +69,50 @@ Step 0 has no previous step and no strength gate. **Its checks:**
 
 Step 0 against R is reported, paired with its 95% interval, as the first point of the curve.
 
+## The budget step (owner, 2026-10-12)
+
+**Question.** With everything else of the search unchanged, how much strength does more search budget alone bring, and
+where does the curve flatten? This section is a predeclaration: it is committed before any budget run. The runs are
+`--step b-*` with `--paired-with` against step 0's recorded run.
+
+**The arms.** Each arm is one lever or one fixed combination of step 0's settings (K = M = 8, s = 16, capacity 1024).
+Its budget is k · m · s leaves, relative to step 0's 8 · 8 · 16 = 1024, and its capacity is k · m · s, so the leaf
+buffer matches the leaves. The S arms are the arms with an s lever.
+
+| arm | lever | budget (× step 0) | pairs | opponents |
+|---|---|---|---|---|
+| `b-s32` | s = 32 | ×2 | 512 | `bot`, `ppo` (S arm) |
+| `b-s64` | s = 64 | ×4 | 512 | `bot`, `ppo` (S arm) |
+| `b-s128` | s = 128 | ×8 | 256 | `bot`, `ppo` (S arm) |
+| `b-s256` | s = 256 | ×16 | 256 | `bot`, `ppo` (S arm) |
+| `b-k16` | k = 16 | ×2 | 512 | `bot` |
+| `b-m16` | m = 16 | ×2 | 512 | `bot` |
+| `b-km16` | k = m = 16 | ×4 | 512 | `bot`, `ppo` |
+| `b-km16-s64` | k = m = 16, s = 64 | ×16 | 256 | `bot`, `ppo` (S arm) |
+
+**The pairing.** Each arm is paired by prefix with step 0's recorded run (`--paired-with`), not replayed against it.
+- The arm plays this run's games, and its `step_vs_recorded` is the paired h against step 0's step arm on the first
+  2 · pairs games of that run, the same seed, networks, pool and spread table.
+- Before any game, the run is refused unless: `seed` and `max_steps` equal; the recorded `pairs` is at least this run's;
+  the `sha256_prefix` of main, foe, teams and each opponent equals the recorded one; the recorded run has a step arm for
+  each opponent with at least 2 · pairs games; and `table_sha256` equals the recorded one.
+- The recorded run's arm R is not used.
+
+**The latency.** Each arm is also run alone on the machine (`machine_lock.sh --exclusive`), with 16 pairs against `bot`.
+The gate reads the p99 of that run's `arms.step.wall_seconds`.
+
+**The gate.** Local p99 ≤ 1.67 s, which is ≤ 5 s on the VPS, whose cores are about 3× slower. An arm above the gate is
+reported with its point, but is not a candidate for adoption.
+
+**Reported, without a gate:**
+- the paired h against step 0 with its 95 % interval, per opponent;
+- p50, p95 and p99 of the wall seconds per searched decision, local and ×3 for the VPS;
+- the duplicate-row share per arm: `duplicate_rows.share` over the searched decisions, by value (rows that repeat an
+  earlier row of their own table within 1e-6). A hint of redundancy in the search, not an equivalence proof.
+
+**The result** is a curve: h against step 0, over the p50 seconds per decision, one line per lever. A smoke run of 4
+pairs checks the harness only and is not a result.
+
 ## Results
 
 ### Step 0 (2026-10-12)
