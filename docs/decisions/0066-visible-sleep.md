@@ -123,3 +123,29 @@ Every mutant is caught (exit 1):
 | M7 counter = S instead of S - c | `rebuilt counter == S - c` | 18 |
 
 Clean rebuild after the mutants: exit 0, 0 failures. Runner (duoforge_view_sleep_count) SHA-256 2fd26bcb97bcbbb0f038eb60111b7ac44186c763837c902dfb0047f41389060d.
+
+## 12. Evidence from the Showdown traces already in the repository (pin b2cb775)
+
+Every sleep episode in `tests/reference/traces` that ends in a wake was counted: the cant lines printed for the member before its
+`-curestatus`. The wake comes at attempt S, so S = cant lines + 1 (the law of section 4). Counts by battle kind:
+
+| kind | source | S = 2 (c = 1 before the wake) | S = 3 (c = 2 before the wake) |
+|---|---|---|---|
+| POOL | Hypnosis | 1 | 0 (recording open, see section 13) |
+| POOL | Sing | 2 | 1 |
+| POOL | Sleep Powder | 1 | 1 |
+| POOL | Yawn | 5 | 10 |
+| Team C | Hypnosis | 1 | 8 |
+| Team C | Yawn | 2 | 0 |
+| closure | Hypnosis | 11 | 13 |
+
+The c = 2 state (two cant lines, the sleeper still asleep with counter 1) occurs in every S = 3 episode. No episode contradicts
+the law. The conformance replays of these battles are green on the branch (section 9's tests), so the engine's counters agree
+with Showdown at every step.
+
+## 13. Open: one POOL recording
+
+POOL has no Hypnosis episode with S = 3. One recording is open: a POOL battle in which a Hypnosis user (learnset entry
+`hypnosis` in `data/mods/champions/learnsets.ts`; Gengar, Gardevoir, Musharna and Espathra are in the pool tables) lands the
+move and the foe wakes at attempt 3. The seed decides S (sample([2, 3, 3])), so the spec needs a seed with S = 3, at most two
+attempts. Not recorded in this step.
