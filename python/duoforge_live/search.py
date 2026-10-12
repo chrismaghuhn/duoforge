@@ -16,6 +16,7 @@ rule itself; it only classifies the search's answer by the owner's failure class
   raw and takes no new challenge until the session is reviewed.
 """
 import hashlib
+import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
@@ -112,6 +113,7 @@ class LiveSearch:
         self._running = None  # the future of a search that missed its deadline
         self._running_episode = None
         self.closers = []  # what load() opened for this search
+        self.foe_check = None  # load()'s check of the foe network against the library's tables
 
     def close(self):
         self._executor.shutdown(wait=True)
@@ -173,9 +175,79 @@ class LiveSearch:
         return outcome
 
 
-def load(checkpoint_path, settings=None):
+# The live search's foe model (owner 2026-10-12; docs/benchmarks/2026-10-12-bc6-foe-model): M11's encoder-6 BC6 models
+# the foe in the worlds (honest.Honest's foe_net), pinned by its file's SHA-256. Its weights are private: the file comes
+# from --foe-net or $DUOFORGE_FOE_NET, and a search with nothing configured is refused, never played without it;
+# --no-foe-net (None) is the explicit choice of the earlier search, for comparisons. Another foe model needs its own
+# measured arena and its pin (--foe-net-sha256, or a new FOE_NET_SHA256).
+FOE_NET_SHA256 = "bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39"
+FOE_NET_ENV = "DUOFORGE_FOE_NET"
+ENVIRONMENT = object()  # foe_net's default: the path in $DUOFORGE_FOE_NET
+
+
+def foe_net_path(foe_net=ENVIRONMENT, environ=None):
+    """The foe model's file: foe_net itself, $DUOFORGE_FOE_NET for ENVIRONMENT, or None (no foe network) for None.
+    ValueError when ENVIRONMENT finds nothing configured."""
+    if foe_net is ENVIRONMENT:
+        foe_net = (os.environ if environ is None else environ).get(FOE_NET_ENV) or None
+        if foe_net is None:
+            raise ValueError(f"the live search's foe model (BC6) is not configured: pass --foe-net PATH, set "
+                             f"${FOE_NET_ENV}, or choose --no-foe-net")
+    return foe_net
+
+
+def add_foe_net_arguments(parser):
+    """--foe-net PATH or --no-foe-net (exclusive) and --foe-net-sha256 (foe_net_of and foe_net_sha256_of read them)."""
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--foe-net", default=None,
+                       help=f"with --search honest: the checkpoint that models the foe in the search's worlds "
+                            f"(Honest's foe_net), the pinned BC6 (default: ${FOE_NET_ENV})")
+    group.add_argument("--no-foe-net", action="store_true",
+                       help="with --search honest: no foe network (the earlier live search, for comparisons)")
+    parser.add_argument("--foe-net-sha256", default=None,
+                        help="the foe network file's SHA-256, checked before loading (default: the pinned BC6)")
+
+
+def check_foe_net_arguments(args, honest):
+    """ValueError for foe options an entry point would not use or that pin nothing (review of #446): any of them
+    without the honest search, a pin with --no-foe-net, an empty --foe-net. Never a silent ignore."""
+    given = args.foe_net is not None or args.no_foe_net or args.foe_net_sha256 is not None
+    if given and not honest:
+        raise ValueError("--foe-net models the foe in the honest search: it needs --search honest")
+    if args.foe_net_sha256 is not None and args.no_foe_net:
+        raise ValueError("--foe-net-sha256 pins the file of --foe-net: not with --no-foe-net")
+    if args.foe_net is not None and not args.foe_net:
+        raise ValueError("--foe-net is empty: name the foe network's file, or choose --no-foe-net")
+
+
+def foe_net_of(args):
+    """load's foe_net from parsed add_foe_net_arguments options (check_foe_net_arguments first)."""
+    if args.no_foe_net:
+        return None
+    return ENVIRONMENT if args.foe_net is None else args.foe_net
+
+
+def foe_net_sha256_of(args):
+    return args.foe_net_sha256 or FOE_NET_SHA256
+
+
+def load(checkpoint_path, settings=None, foe_net=ENVIRONMENT, foe_net_sha256=FOE_NET_SHA256):
     """The LiveSearch of a format-2 checkpoint in its trained layout (HONEST_SETTINGS unless settings is given, the
-    live spread table). Its close() also closes the search and its context."""
+    live spread table), its worlds modelled by the pinned foe network: foe_net a path, ENVIRONMENT for
+    $DUOFORGE_FOE_NET, None for none; a foe network already in settings ("foe_net") is taken as it is. The foe network
+    must have foe_net_sha256 and read the library's tables (pkmn_arena.load_foe_net: checkpoint.check_data); its check
+    is the LiveSearch's foe_check. Its close() also closes the search and its context."""
+    settings = HONEST_SETTINGS if settings is None else settings
+    foe_check = None
+    if "foe_net" not in settings:  # first: an unconfigured or unpinned foe network stops before anything loads
+        path = foe_net_path(foe_net)
+        if path is not None:
+            if not foe_net_sha256:
+                raise ValueError(f"the foe network {path} needs its pin (foe_net_sha256)")
+            from .pkmn_arena import load_foe_net
+            foe, check = load_foe_net(path, foe_net_sha256)
+            foe_check = {**check, "sha256": foe_net_sha256}  # the arm a log or a report names
+            settings = dict(settings, foe_net=foe)
     import duoforge
     from duoforge_learn import checkpoint
     from duoforge_learn.train import DATA_KINDS
@@ -188,7 +260,7 @@ def load(checkpoint_path, settings=None):
         table, _, _ = honest.live_spread_table(context)
         searcher = honest.Honest(context, model, params, checkpoint.encoder_of(config),
                                  checkpoint.ext_supported_of(config), table=table,
-                                 **(HONEST_SETTINGS if settings is None else settings))
+                                 **settings)
         live = LiveSearch(searcher)
     except BaseException:
         if searcher is not None:
@@ -196,4 +268,5 @@ def load(checkpoint_path, settings=None):
         context.close()
         raise
     live.closers = [searcher.close, context.close]
+    live.foe_check = foe_check
     return live

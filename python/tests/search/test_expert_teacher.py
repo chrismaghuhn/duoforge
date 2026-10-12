@@ -535,9 +535,9 @@ class Teacher(unittest.TestCase):
     # per machine conditions: the fake net's float32 matmuls follow the BLAS/CPU, so another machine skips.
     PINNED_TWO_PHASE = {
         "Windows|AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD|numpy 2.5.3":
-            "6b61c312c0b190e123f43cbf0ef5e9a0e396bf6a416c1b92ad0391a3ddb4abaa",
+            "4fd73c236e4f58a6479445350080ff1a9b6941c5c7271090235fcd26d617bd65",
         "Linux|AMD Ryzen 7 5800X 8-Core Processor|numpy 2.5.3":
-            "7816fb90c21ddad524eca4b7b6481cb52cbc7626ceb11979df8415e0b6b39bf4",
+            "fe779ed31047e3797e0fa7b39e4495139d0cbceda959938182de5a986cce96b4",
     }
 
     @staticmethod
@@ -728,7 +728,10 @@ class Teacher(unittest.TestCase):
             self.skipTest(f"two-phase decision bytes are pinned under {sorted(self.PINNED_TWO_PHASE)}, here {conditions}")
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search:
             digest = hashlib.sha256(b"".join(self._three_labels(ctx, search))).hexdigest()
-        self.assertEqual(digest, self.PINNED_TWO_PHASE[conditions])
+        # Hosted CI never runs this (its CPUs are not keys): engine rule changes alter this digest, re-pin with the
+        # bisect reason (last: #417 Batch 8, first red merge f779a8e6; re-pinned 2026-10-12 on main 7f9ee4da).
+        self.assertEqual(digest, self.PINNED_TWO_PHASE[conditions],
+                         "engine rule changes alter this digest: re-pin with the bisect reason")
 
 
 if __name__ == "__main__":
