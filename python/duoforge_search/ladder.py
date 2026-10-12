@@ -115,7 +115,8 @@ def refused_leaves(decisions):
 def verdict(h2h, paired, records_new, records_prev, p99_seconds):
     """The predeclared gates (GATES). h2h: pair_interval of the step's head-to-head scores; paired: opponent name ->
     paired_h(step, previous), each gated opponent needed (a missing one fails no harm); records_new and
-    records_prev: the decision records of the step and of the previous step; p99_seconds: the step's p99 wall seconds per searched decision, None without evidence (the latency fails)."""
+    records_prev: the decision records of the step and of the previous step; p99_seconds: the step's p99 wall seconds
+    per searched decision, None without evidence (the latency fails)."""
     share_new, share_prev = foe_arena.fallback_share(records_new), foe_arena.fallback_share(records_prev)
     allowed = GATES["fallback_share"] if share_prev <= GATES["fallback_share"] \
         else share_prev + GATES["fallback_over_previous"]
