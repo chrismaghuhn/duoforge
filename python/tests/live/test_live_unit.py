@@ -265,7 +265,7 @@ class TrackerStopTest(unittest.TestCase):
         t._item_of = lambda member: None
         t._pressure_extra = lambda pos, move, target, flags: 0
         members = [SimpleNamespace(sheet={"moves": [9, 8]}, uses=[0, 0], item_used=0, status=3, freeze_turns=0, toxic=0,
-                                   toxic_stage=0, hp_percent=40, hp_flag=0) for _ in range(6)]
+                                   toxic_stage=0, sleep_cant=0, hp_percent=40, hp_flag=0) for _ in range(6)]
         t._member = lambda side: members
         EV, CAUSE, FLAG = trace_to_c.EV, trace_to_c.CAUSE, trace_to_c.FLAG
         p = t._positions[0][1]
@@ -401,7 +401,7 @@ class TrackerStopTest(unittest.TestCase):
         # the entry bookkeeping of the public record (#344): activation ids, the foe's leads, the own party order, the
         # members' toxic stage; the spectator path, so the own member's display comes from the line
         t._spectator, t._next_activation, t._foe_leads, t._party = True, 1, [ROSTER_NONE, ROSTER_NONE], None
-        members = [SimpleNamespace(toxic_stage=0, seen=False, hp_percent=0, hp_flag=0, status=0) for _ in range(6)]
+        members = [SimpleNamespace(toxic_stage=0, sleep_cant=0, seen=False, hp_percent=0, hp_flag=0, status=0) for _ in range(6)]
         t._member = lambda side: members
         p = t._positions[0][0]
         for name, value in {**passed, **kept}.items():
@@ -501,7 +501,7 @@ class AttractFoldTest(unittest.TestCase):
     @staticmethod
     def members(n=6):
         from types import SimpleNamespace
-        return [SimpleNamespace(toxic_stage=0, seen=False, hp_percent=0, hp_flag=0, status=0, freeze_turns=0, toxic=0,
+        return [SimpleNamespace(toxic_stage=0, sleep_cant=0, seen=False, hp_percent=0, hp_flag=0, status=0, freeze_turns=0, toxic=0,
                                 item_now=0, hp=0, hp_max=0) for _ in range(n)]
 
     def attracted(self, t):
@@ -735,7 +735,7 @@ class TrackerPartialTrapTest(unittest.TestCase):
         band = self.I["BINDINGBAND"] + 1
         # side 0 member 0 and side 1 member 1 hold the band: the occupants of flat positions 0 and 3
         self.members = [[SimpleNamespace(sheet={"item": band if (s, m) in ((0, 0), (1, 1)) else 0}, item_used=0,
-                                         item_now=0, toxic_stage=0, seen=False, hp_percent=0, hp_flag=0, status=0,
+                                         item_now=0, toxic_stage=0, sleep_cant=0, seen=False, hp_percent=0, hp_flag=0, status=0,
                                          revealed=0) for m in range(6)] for s in (0, 1)]
         t._member = lambda side: self.members[side]
         t._positions = [[tr._Position(), tr._Position()] for _ in (0, 1)]
