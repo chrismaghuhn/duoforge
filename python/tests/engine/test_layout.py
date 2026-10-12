@@ -56,6 +56,16 @@ class LayoutTest(unittest.TestCase):
                 with self.assertRaises(AttributeError):
                     getattr(library, name)
 
+    def test_ability_helpers_are_not_shared_library_exports(self):
+        library = load_library()
+        for name in ("dfi_ability_code", "dfi_ability", "dfi_ability_family_now", "dfi_ability_family_for",
+                     "dfi_ate_excluded", "dfi_ate_type_fam", "dfi_ate_boosts_fam", "dfi_ate_base_power",
+                     "dfi_pinch_applies_fam", "dfi_pinch_attack", "dfi_weather_set_by_fam",
+                     "dfi_terrain_set_by_fam", "dfi_fairy_aura_on_field", "dfi_fairy_aura_base_power"):
+            with self.subTest(symbol=name):
+                with self.assertRaises(AttributeError):
+                    getattr(library, name)
+
 
 if __name__ == "__main__":
     unittest.main()
