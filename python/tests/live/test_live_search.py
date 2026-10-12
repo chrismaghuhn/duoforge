@@ -226,6 +226,33 @@ class ExtensionRecordTest(unittest.TestCase):
         self.assertEqual(call.args[2].tobytes(), game.tracker.observation_ext().tobytes())
 
 
+class UnsupportedSheetTest(unittest.TestCase):
+    """PKMN Arena, 2026-10-12: the foe's open sheet held a move the engine does not support (Meowstic's Psychic Terrain).
+    The engine took the tracker's record and built worlds of it, but every step of those worlds was E_UNSUPPORTED, so the
+    honest search valued every leaf -1 and played its prior's first pair as a "searched" decision, all session long. The
+    engine refuses such a record (duoforge_battle_from_view's support gate): the decision is a named refusal, class (a)."""
+
+    def tracker_at_preview(self, foe_sheet):
+        lines = [list(m) for m in FIXTURE["messages"][:4]]
+        lines[3] = [line if not line.startswith("|showteam|p2|") else "|showteam|p2|" + foe_sheet for line in lines[3]]
+        t = tracker.Tracker(data.load(kind="pool"), FIXTURE["team"])
+        for m in lines:
+            t.feed(m)
+        self.assertTrue(t.ready and t.request.get("teamPreview"))
+        return t
+
+    def test_a_foe_sheet_with_an_unsupported_move_is_refused_not_searched(self):
+        from duoforge import _layout
+        sheet = next(line for line in FIXTURE["messages"][3] if line.startswith("|showteam|p2|"))[len("|showteam|p2|"):]
+        parts = self.tracker_at_preview(sheet).public_parts()
+        self.assertEqual((parts["status"], parts["reason"]), (0, None))  # Team B as it is: the engine takes the record
+        unsupported = sheet.replace("|Psychic,GrassKnot,TrickRoom,Protect|", "|PsychicTerrain,GrassKnot,TrickRoom,Protect|")
+        self.assertNotEqual(unsupported, sheet)  # Farigiraf learns Psychic Terrain, which the engine does not support
+        parts = self.tracker_at_preview(unsupported).public_parts()
+        self.assertEqual((parts["status"], parts["reason"]),
+                         (_layout.CONSTANTS["DUOFORGE_E_UNSUPPORTED"], "engine-refuses-record"))
+
+
 class FakeLive:
     """LiveSearch in shape: picks the highest allowed pair, or answers with a scripted outcome."""
 
