@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The corpus tooling (tools/reference/diff_corpus.py) without Node and without a Showdown checkout.
 
-usage: python3 tools/reference/test_diff_corpus.py
+usage: python3 tools/reference/tests/test_diff_corpus.py
 
 CTest runs it as duoforge.reference.diff_corpus, with DUOFORGE_DIFF_RUNNER set to the runner it has built. Committed
 battles stand in for what the fuzz plays and what the reference records again; the converter is real, and the runner is
@@ -26,6 +26,8 @@ import unittest.mock
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import conformance_records  # noqa: E402
 import diff_corpus as corpus_tools  # noqa: E402
 import diff_driver as driver  # noqa: E402
@@ -33,7 +35,7 @@ import diff_random as rnd  # noqa: E402
 import gen_real_specs  # noqa: E402
 import trace_to_c  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 RUNNER = os.environ.get('DUOFORGE_DIFF_RUNNER')
 KINDS = conformance_records.data_kinds(ROOT)

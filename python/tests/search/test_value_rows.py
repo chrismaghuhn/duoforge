@@ -31,7 +31,7 @@ class _Fake:
 class ValueRows(unittest.TestCase):
     def test_value_rows_position_and_neighbour_independent(self):
         from duoforge_search import rowprobe
-        from python.tests.test_search import _v2s
+        from python.tests.search.test_search import _v2s
         rows = rowprobe.encoded_rows(1536, seed=7)
         self.assertEqual(rows.dtype, np.float32)
         self.assertEqual(len({r.tobytes() for r in rows}), 1536)  # distinct real encoded rows

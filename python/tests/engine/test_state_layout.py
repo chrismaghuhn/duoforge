@@ -10,7 +10,7 @@ import duoforge
 from duoforge import _layout, _state_layout, state_layout
 from tools.layout.gen_state_layout import generate
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 POOL_SIZE = 1357  # DUOFORGE_VIEW_STATE_MAX: the POOL encoding (tail rev 5)
 CLOSURE_SIZE = 1009  # the v3 body without the POOL tail
 

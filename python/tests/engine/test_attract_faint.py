@@ -21,7 +21,7 @@ import numpy as np
 from duoforge import Batch, Context, RandomPolicy, _layout, state_layout, teams
 from duoforge._lib import load_library
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
 CAMPAIGNS = os.path.join(ROOT, 'tools', 'cloud', 'aws_fuzz', 'campaigns')
 TEAMS = {
     'G2': os.path.join(CAMPAIGNS, 'g71-triggers', 'G2.txt'),

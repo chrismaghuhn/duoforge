@@ -19,7 +19,7 @@ from duoforge import _layout, data, features, teams
 from duoforge_learn import book_preview, evaluate, ladder
 from duoforge_replay import book
 from duoforge_search import arena, book_ab
-from python.tests.test_learn_v2_numpy import _StandIn
+from python.tests.learn.test_learn_v2_numpy import _StandIn
 
 
 class PreviewModel(_StandIn):
@@ -232,7 +232,7 @@ class BookPreviewTest(unittest.TestCase):
         for minimum, mode, weight in ((0, "override", .5), (20, "invalid", .5), (20, "prior", float("nan")), (20, "prior", 2)):
             with self.assertRaises(ValueError):
                 book_preview.BookPlayer(self.raw, None, self.sheets, self.rows, minimum, mode, weight)
-        root = Path(__file__).resolve().parents[2]
+        root = Path(__file__).resolve().parents[3]
         args = SimpleNamespace(book=str(root / "private.json"), book_min_count=20, book_weight=.5, book_mode="override")
         with self.assertRaisesRegex(ValueError, "inside the repository"):
             book_preview.load_options(args)
@@ -264,7 +264,7 @@ class BookPreviewTest(unittest.TestCase):
             book_ab.run(self.ctx, self.pool, self.rows, self.raw, {}, evidence, args)
 
     def test_ab_refuses_repository_outputs_before_playing_any_arm(self):
-        args = SimpleNamespace(out=str(Path(__file__).resolve().parents[2] / "private-ab"))
+        args = SimpleNamespace(out=str(Path(__file__).resolve().parents[3] / "private-ab"))
         with self.assertRaisesRegex(ValueError, "inside the repository"):
             book_ab.run(self.ctx, self.pool, self.rows, self.raw, {}, self.evidence(), args)
 

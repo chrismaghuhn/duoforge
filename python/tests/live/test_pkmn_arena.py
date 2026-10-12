@@ -1,7 +1,7 @@
 """duoforge.python.pkmn_arena: the live client's PKMN Arena mode (owner, 2026-10-12) with a fake websocket only.
 
 Nothing here connects anywhere: the connection is a scripted fake. The battle stream is the live client's fixture
-(python/tests/data/live_stream_ab.json: what the pinned Showdown sends p1, Team A against Team B, with open team
+(python/tests/support/data/live_stream_ab.json: what the pinned Showdown sends p1, Team A against Team B, with open team
 sheets), put in an arena room. Under test: login with /trn and the team after every login, the token kept out of every
 log, record, message and exception text, the open-team-sheet battle played by the policy, the documented fallback
 (/choose default) with its counted reasons, retries after refused choices, the decision deadline, reconnects with
@@ -22,7 +22,7 @@ from unittest import mock
 import numpy as np
 
 from duoforge_live import __main__ as cli, client, data, pkmn_arena, teams
-from python.tests.test_live_client import FIXTURE, FakePolicy
+from python.tests.live.test_live_client import FIXTURE, FakePolicy
 
 TOKEN = "pka_SeCrEt0123456789"
 NAME = "Tian-Suan"

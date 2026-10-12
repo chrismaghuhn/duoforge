@@ -2,7 +2,7 @@
 """Random play under the POOL data kind end to end, with Node and the pinned Showdown: a team that carries U-turn
 (step G5) plays battles that all PASS under POOL, and some of them pivot with [from] U-turn.
 
-usage: python3 tools/reference/test_diff_pool_smoke.py <node> <checkout> <runner> <work dir>
+usage: python3 tools/reference/tests/test_diff_pool_smoke.py <node> <checkout> <runner> <work dir>
 
 CTest runs it as duoforge.reference.diff_pool_smoke. Ten battles of `--team D=tests/reference/teams/team_pivot.txt
 --pairings DA,AD,DC,DD,DB` (seed 5, two workers, no machine lock, --keep-traces): the team has U-turn (an id of the pool
@@ -20,7 +20,7 @@ import sys
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 DRIVER = os.path.join(HERE, 'diff_driver.py')
 TEAM = os.path.join(ROOT, 'tests', 'reference', 'teams', 'team_pivot.txt')

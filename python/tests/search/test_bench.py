@@ -25,7 +25,7 @@ import duoforge
 from duoforge import _layout, features
 from duoforge_search import belief, honest
 
-from ._pivot_fixture import SETUP as PIVOT_SETUP, play_to_pivot
+from python.tests.support._pivot_fixture import SETUP as PIVOT_SETUP, play_to_pivot
 
 C = _layout.CONSTANTS
 ENCODER = 4  # params-49333's encoder, the live search's network

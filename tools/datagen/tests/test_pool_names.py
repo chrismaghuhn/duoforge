@@ -17,14 +17,14 @@ every table:
 The same names are checked against the pinned dex (ids that Showdown knows) by
 tools/datagen/pool_families.js. No checkout is needed here.
 
-usage: python3 tools/datagen/test_pool_names.py
+usage: python3 tools/datagen/tests/test_pool_names.py
 """
 import os
 import re
 import sys
 import unittest
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'reference'))
 import trace_to_c  # noqa: E402
 

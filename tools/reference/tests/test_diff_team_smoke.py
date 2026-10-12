@@ -2,7 +2,7 @@
 """A team file of the random mode end to end, with Node and the pinned Showdown: a team file that equals team A gives the
 same battles as team A.
 
-usage: python3 tools/reference/test_diff_team_smoke.py <node> <checkout> <runner> <work dir>
+usage: python3 tools/reference/tests/test_diff_team_smoke.py <node> <checkout> <runner> <work dir>
 
 CTest runs it as duoforge.reference.diff_team_smoke. Six battles of `--pairings AB,BA` and the same six of
 `--team D=<a copy of team A> --pairings DB,BD` (seed 5, two workers, no machine lock, the copy written with Windows line
@@ -19,7 +19,7 @@ import sys
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 DRIVER = os.path.join(HERE, 'diff_driver.py')
 TEAM_A = os.path.join(ROOT, 'tests', 'reference', 'teams', 'team_a.txt')

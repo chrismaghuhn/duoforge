@@ -41,7 +41,7 @@ def _table():
 
 def _manifest(rounds=2):
     from duoforge_search import expert_data as ed
-    from python.tests.test_expert_data import manifest
+    from python.tests.search.test_expert_data import manifest
     return dataclasses.replace(manifest(ed), belief_hash=_table().sha256(), rounds=rounds, game_count=512 * rounds,
                                first_game_id=1000)
 
@@ -63,7 +63,7 @@ class Collector(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from python.tests.test_expert_teacher import FoeSensitiveNet
+        from python.tests.search.test_expert_teacher import FoeSensitiveNet
 
         class RowLocalNet(FoeSensitiveNet):
             """test_expert_teacher's network with each row's slot term its own (np.resize there spreads one row's
@@ -275,7 +275,7 @@ class Collector(unittest.TestCase):
         # The full legal distribution of a pair row is Model.full_joint_log_probs; a preview row is the team head.
         import jax
         from duoforge_learn import policy
-        from python.tests.test_learn_v2 import _scenes
+        from python.tests.learn.test_learn_v2 import _scenes
         model = policy.make(policy.v2_config("S"))
         params = model.init(jax.random.PRNGKey(7))
         _, turn = _scenes()
@@ -432,7 +432,7 @@ class Cli(unittest.TestCase):
         return code, err.getvalue()
 
     def test_cli_refusals_exit_2(self):
-        repo = Path(__file__).resolve().parents[2]
+        repo = Path(__file__).resolve().parents[3]
         other = ["--allow-other-init", "--out", str(self.dir / "out")]
         r = self.right
         cases = {"inside the repository": (r, ["--out", str(repo / "collect-out")]),

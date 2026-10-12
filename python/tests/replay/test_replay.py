@@ -16,7 +16,7 @@ import unittest
 from duoforge import _layout
 from duoforge_live import data, lines
 
-from python.tests._replay_reference import Reference, true_stats_of
+from python.tests.support._replay_reference import Reference, true_stats_of
 
 C = _layout.CONSTANTS
 TEAM_SELECTION = C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]
@@ -337,7 +337,7 @@ class SpectatorTest(unittest.TestCase):
 
     def test_fixture_is_showdowns_output(self):
         # the unit tests' committed spectator log is the pinned Showdown's, never stale
-        fixture = data.ROOT / "python" / "tests" / "data" / "replay" / "c12_real_cb_4.log"
+        fixture = data.ROOT / "python" / "tests" / "support" / "data" / "replay" / "c12_real_cb_4.log"
         battle = next(b for b in self.ref.battles if b.name == "c12_real_cb_4")
         self.assertEqual(fixture.read_text(encoding="utf-8").splitlines(), battle.lines)
 

@@ -2,7 +2,7 @@
 """The team registry (data/teams, tools/reference/team_registry.py): the committed registry as it must be, and the checks
 that say so on made-up ones. Python only, no Node and no Showdown checkout.
 
-usage: python3 tools/reference/test_team_registry.py
+usage: python3 tools/reference/tests/test_team_registry.py
 
 CTest runs it as duoforge.reference.team_registry. What is held: every team of the index has its file and every file its
 entry; the files are in the registry's form (the importer's), each with the SHA-256 that the index says (a team never
@@ -23,10 +23,12 @@ import unittest.mock
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import team_registry as reg  # noqa: E402
 import trace_to_c  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 _IDS = [e['id'] for e in reg.entries(ROOT)]
 _FIRST = [next(i for i in _IDS if i.startswith(p)) for p in ('PP_', 'LL_')]

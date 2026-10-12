@@ -1,7 +1,7 @@
 """duoforge.python.replay_teams: tools/reference/replay_teams.py, the private team corpus from the open sheets of the
 replays (owner, 2026-10-11), in the random-team corpus format (#397) that duoforge.teams.load_corpus reads.
 
-The sources are made-up JSON lines of the committed fixture log (python/tests/data/replay/c12_real_cb_4.log), written
+The sources are made-up JSON lines of the committed fixture log (python/tests/support/data/replay/c12_real_cb_4.log), written
 to a temporary directory outside the repository. Needs the library (the POOL tables and the engine check).
 """
 import json
@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools" / "reference"))
 sys.dont_write_bytecode = True
 
@@ -20,7 +20,7 @@ from duoforge import _layout, teams  # noqa: E402
 
 import replay_teams  # noqa: E402
 
-FIXTURE = Path(__file__).resolve().parent / "data" / "replay" / "c12_real_cb_4.log"
+FIXTURE = Path(__file__).resolve().parent.parent / "support" / "data" / "replay" / "c12_real_cb_4.log"
 FORMAT = "gen9championsvgc2026regmcbo3"
 
 

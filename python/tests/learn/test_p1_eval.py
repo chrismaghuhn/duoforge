@@ -35,11 +35,11 @@ from duoforge import _layout, features, teams
 C = _layout.CONSTANTS
 STEPS = 40  # the tests' cut-off (production: p1_eval.MAX_STEPS)
 NAMES = ("pilot", "control", "frozen", "BC", "3600", "11000", "ladder")
-REPO = Path(__file__).resolve().parents[2]
+REPO = Path(__file__).resolve().parents[3]
 
 
 def _pool():
-    from python.tests.test_expert_eval import pool
+    from python.tests.search.test_expert_eval import pool
     return pool()
 
 
@@ -127,7 +127,7 @@ class Schedule(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from duoforge_search import expert_eval as ev
-        from python.tests.test_expert_eval import HEXES
+        from python.tests.search.test_expert_eval import HEXES
         cls.ev = ev
         cls.pool = _pool()
         cls.manifest = ev.make_manifest(cls.pool, seed=99, first_game_id=10**6, checkpoints=HEXES)
@@ -142,7 +142,7 @@ class Schedule(unittest.TestCase):
         return records, counts, fake
 
     def test_one_call_per_block_arm_bucket_and_seat(self):
-        from python.tests.test_expert_eval import arms
+        from python.tests.search.test_expert_eval import arms
         ev, rows = self.ev, self.rows
         records, counts, fake = self._run(rows)
         self.assertEqual(len(fake.calls), sum(len(a) for _, _, a, _ in ev.SCHEDULE) * len(ev.BUCKETS) * 2)  # 40
@@ -406,7 +406,7 @@ class Play(unittest.TestCase):
         self.assertEqual(counts, self.counts)
 
     def test_a_refused_game_is_unfinished(self):
-        from python.tests.test_learn_v2_numpy import _fail_env_once
+        from python.tests.learn.test_learn_v2_numpy import _fail_env_once
         with mock.patch.object(duoforge.Batch, "step", _fail_env_once(duoforge.Batch.step, 1)):
             r, counts = self._play()
         # The first call's env 1 (pair 1 of the first block) was refused.

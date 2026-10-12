@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The corpus of kept fuzz battles (tests/reference/corpus, decision 0015 section 6) as it must be on disk.
 
-usage: python3 tools/reference/test_corpus_layout.py
+usage: python3 tools/reference/tests/test_corpus_layout.py
 
 CTest runs it as duoforge.reference.corpus_size. Python only, no Node. The corpus is held to:
 
@@ -22,9 +22,11 @@ import unittest
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import diff_corpus  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 
 

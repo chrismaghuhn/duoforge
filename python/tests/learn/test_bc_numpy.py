@@ -1,7 +1,7 @@
 """duoforge.python.bc_numpy: the BC data path without JAX (M11 BC spec sections 5 and 6).
 
 The fixture dataset is built with the replay pipeline from our own reference
-battle's spectator log (python/tests/data/replay/c12_real_cb_4.log), into a
+battle's spectator log (python/tests/support/data/replay/c12_real_cb_4.log), into a
 temporary directory outside the repository.
 """
 import itertools
@@ -17,7 +17,7 @@ import duoforge
 from duoforge import _layout, features
 from duoforge_live import lines
 
-FIXTURE = Path(__file__).resolve().parent / "data" / "replay" / "c12_real_cb_4.log"
+FIXTURE = Path(__file__).resolve().parent.parent / "support" / "data" / "replay" / "c12_real_cb_4.log"
 
 
 class _Stats:
@@ -351,7 +351,7 @@ class BcDataTest(unittest.TestCase):
             self.bc_data.load_memmap(out)
 
     def test_a_memmap_directory_inside_the_repository_is_refused(self):
-        root = Path(__file__).resolve().parents[2]
+        root = Path(__file__).resolve().parents[3]
         with self.assertRaisesRegex(ValueError, "inside the repository"):
             self.bc_data.load([self.out], self.context, self.mask, memmap=root / "build" / "bc-rows")
 

@@ -9,7 +9,7 @@ import unittest
 from unittest import mock
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools" / "reference"))
 sys.dont_write_bytecode = True
 

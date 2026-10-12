@@ -15,14 +15,14 @@ code of its own and without a checkout, that:
     move with a target class that the closure lacks is UNMODELED.
 The checks of the pinned handlers and of the validator itself are tools/datagen/pool_families.js.
 
-usage: python3 tools/datagen/test_pool_rows.py
+usage: python3 tools/datagen/tests/test_pool_rows.py
 """
 import json
 import os
 import re
 import unittest
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 TYPES = ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
          'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water']
 CATEGORIES = {'Physical': 0, 'Special': 1, 'Status': 2}

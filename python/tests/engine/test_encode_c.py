@@ -21,7 +21,7 @@ from duoforge import _layout, features, teams
 from duoforge._lib import load_library, ptr
 from duoforge_learn.selfplay import SelfPlay
 
-from python.tests.test_features_ext import _records
+from python.tests.engine.test_features_ext import _records
 
 C = _layout.CONSTANTS
 SEED = 0x2026100300000400
@@ -163,7 +163,7 @@ class EncodeCTest(unittest.TestCase):
 
     def test_reserve_records_match_the_reference(self):
         # Encoder 6's reserve (decision 0050): every family filled, shown by version 6, refused by 3 to 5.
-        from python.tests.test_encoder6 import _reserve
+        from python.tests.engine.test_encoder6 import _reserve
         with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups(list(range(4))), 1,
                                                        SEED) as batch:
             policy = duoforge.RandomPolicy(SEED, 4)
@@ -303,7 +303,7 @@ class EncodeCTest(unittest.TestCase):
         # battle's, so they reach the encoder through duoforge_encode. No records: the tracker keeps none.
         from duoforge_live import data
         from duoforge_replay import game, prior
-        from python.tests.test_replay_unit import FIXTURE, _Stats
+        from python.tests.replay.test_replay_unit import FIXTURE, _Stats
         result = game.process("fixture-1", "gen9championsvgc2026regmcbo3", FIXTURE.read_text(encoding="utf-8"),
                               data.load(kind="pool"),
                               prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """duoforge.reference.dump_views: the runner's --dump-views (tools/difftest).
 
-usage: python tools/reference/test_dump_views.py <duoforge_diff_runner> <closure.records>
+usage: python tools/reference/tests/test_dump_views.py <duoforge_diff_runner> <closure.records>
 
 Runs with DUOFORGE_PYTHON and DUOFORGE_LIBRARY (the first view is compared
 with the Python package). Checks, over every committed closure battle:

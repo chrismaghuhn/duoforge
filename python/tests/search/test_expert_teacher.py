@@ -171,7 +171,7 @@ class Teacher(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from duoforge_search import expert_data as ed
-        from python.tests.test_expert_data import manifest
+        from python.tests.search.test_expert_data import manifest
         cls.net = FoeSensitiveNet()
         # The manifest pins the belief: the spread table the teacher's search reads (honest.SPREAD_SOURCES
         # in production, here the reference setups' table).

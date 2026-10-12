@@ -4,7 +4,7 @@ raw pipes: what it answers, in which order, what it does with a line it cannot
 use, and that stdout carries nothing but responses. It needs Node and the
 pinned Showdown checkout.
 
-usage: python3 tools/reference/test_ps_worker.py <node> <pinned checkout>
+usage: python3 tools/reference/tests/test_ps_worker.py <node> <pinned checkout>
 
 CTest runs it as duoforge.reference.worker_protocol when the checkout and Node
 are present.
@@ -20,7 +20,7 @@ import unittest
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 WORKER = os.path.join(HERE, 'ps_worker.js')
 NODE = None

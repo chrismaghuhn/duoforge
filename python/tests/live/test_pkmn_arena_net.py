@@ -19,8 +19,8 @@ import duoforge
 from duoforge import _layout, features
 
 from duoforge_live import data, pkmn_arena, policy as live_policy, search as live_search
-from python.tests.test_live_client import FIXTURE
-from python.tests.test_pkmn_arena import ENV, NAME, OTS, ROOM, battle_messages, request_of
+from python.tests.live.test_live_client import FIXTURE
+from python.tests.live.test_pkmn_arena import ENV, NAME, OTS, ROOM, battle_messages, request_of
 
 C = _layout.CONSTANTS
 

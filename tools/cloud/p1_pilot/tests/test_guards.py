@@ -28,7 +28,7 @@ import textwrap
 import time
 import unittest
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASH = os.environ.get('DUOFORGE_BASH') or shutil.which('bash')
 ACCOUNT = '%012d' % 7  # a made-up account id, built here so that no number of that shape is in the repository
 SHA = 'b' * 40

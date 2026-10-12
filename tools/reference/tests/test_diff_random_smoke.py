@@ -2,7 +2,7 @@
 """The random mode of the driver end to end, with Node and the pinned Showdown: 16 battles that the reference
 plays itself (AB, BA, AA, BB, seed 2, two workers, no machine lock) through worker, converter and runner.
 
-usage: python3 tools/reference/test_diff_random_smoke.py <node> <checkout> <runner> <work dir> [--update-golden]
+usage: python3 tools/reference/tests/test_diff_random_smoke.py <node> <checkout> <runner> <work dir> [--update-golden]
 
 CTest runs it as duoforge.reference.diff_random_smoke. The battles are run three times: twice as one run, and a
 third time in pieces (the second half of the battles as one chunk, then what is left as another, then a run that
@@ -28,7 +28,7 @@ import sys
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 DRIVER = os.path.join(HERE, 'diff_driver.py')
 GOLDEN = os.path.join(ROOT, 'tests', 'reference', 'random_smoke_golden.json')

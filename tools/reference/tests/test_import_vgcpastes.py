@@ -12,12 +12,14 @@ import unittest
 
 sys.dont_write_bytecode = True
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import import_vgcpastes as ivp  # noqa: E402
 import team_registry as reg  # noqa: E402
 import test_import_paste as tip  # noqa: E402  (its stand-in pokedex)
 from test_team_registry import copy_registry  # noqa: E402  (A, B, C: a registry small enough to copy per test)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 
 

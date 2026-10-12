@@ -658,7 +658,7 @@ class ArenaCli(unittest.TestCase):
         summary = self._main(out, "--checkpoint", "params-400", "--agents", "N", "--s", "2", "--max-steps", "3")
         self.assertEqual(set(summary["configs"]), {"R-vs-R", "N-k2m2s2-vs-R"})
         self.assertEqual(summary["conditions"]["checkpoint"]["update"], 400)
-        repository = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        repository = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         for bad in (["--agents", "Z"], ["--search", "unknown"], ["--lam", "-0.1"], ["--lam", "1.1"],
                     ["--km", "8"], ["--s", "0"], ["--s", "16,x"], ["--checkpoint", "params-18129"],
                     ["--out", os.path.join(repository, "arena-out")]):

@@ -14,10 +14,10 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features, privileged, view
 
-from ._pivot_fixture import SETUP, play_to_pivot
+from python.tests.support._pivot_fixture import SETUP, play_to_pivot
 from duoforge_search import arena, belief, honest
-from python.tests.test_search import _v2s
-from python.tests import test_search as search_tests
+from python.tests.search.test_search import _v2s
+from python.tests.search import test_search as search_tests
 
 C = _layout.CONSTANTS
 PIVOT_STEPS = 160  # lockstep steps of the PIVOT record test

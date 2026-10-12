@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Tests of ps_play.js, the random play of the differential loop.
 //
-// usage: node tools/reference/test_ps_play.js [<pinned checkout>]
+// usage: node tools/reference/tests/test_ps_play.js [<pinned checkout>]
 //
 // Without a checkout the policy generator and the way a choice is drawn,
 // judged and enumerated run against stand-in sides. With one, real battles of
@@ -15,10 +15,10 @@
 const fs = require('fs');
 const path = require('path');
 const {play, PolicyRng, chooseFor, enumerate, draw, domainHash, domainSampled, domainSample, MAX_REJECTIONS} =
-    require('./ps_play.js');
-const {run} = require('./ps_trace.js');
+    require('../ps_play.js');
+const {run} = require('../ps_trace.js');
 
-const REPO = path.resolve(__dirname, '..', '..');
+const REPO = path.resolve(__dirname, '..', '..', '..');
 const failures = [];
 
 function check(name, cond, detail) {

@@ -344,7 +344,7 @@ class EvalManifestCli(unittest.TestCase):
         import hashlib
         from duoforge import _layout
         from duoforge_search import eval_manifest, expert_eval as ev
-        root = Path(__file__).resolve().parents[2] / "data" / "teams"
+        root = Path(__file__).resolve().parents[3] / "data" / "teams"
         ids = "A,B,C,LL_6A3CEAB783FD320299BCFBFF_89,LL_6A47CA1965724DB9DED3B322_79"
         weights = "1,2,1,1,3"
         with tempfile.TemporaryDirectory() as tmp:
@@ -537,7 +537,7 @@ class TrickRoom(unittest.TestCase):
         # field starts seen from outside.
         from pathlib import Path
         from duoforge_search import expert_eval as ev
-        root = Path(__file__).resolve().parents[2] / "data" / "teams"
+        root = Path(__file__).resolve().parents[3] / "data" / "teams"
         p = teams.load(self.ctx, ["B", "C"], root=str(root))
         n = 16
         side0, side1 = np.arange(n) % 2, (np.arange(n) // 2) % 2

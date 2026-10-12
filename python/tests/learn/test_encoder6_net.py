@@ -11,8 +11,8 @@ import numpy as np
 import duoforge
 from duoforge import features
 
-from python.tests.test_encoder6 import _reserve
-from python.tests.test_features_ext import _records, _turn_scene
+from python.tests.engine.test_encoder6 import _reserve
+from python.tests.engine.test_features_ext import _records, _turn_scene
 
 
 class ReserveNetworkTest(unittest.TestCase):
@@ -87,7 +87,7 @@ class ReserveNetworkTest(unittest.TestCase):
         import os
         import tempfile
         from duoforge_learn import checkpoint, policy, runstate
-        from python.tests.test_ledger import _SMALL, _init_checkpoint, _train
+        from python.tests.learn.test_ledger import _SMALL, _init_checkpoint, _train
         with tempfile.TemporaryDirectory() as folder:
             path = os.path.join(folder, "params-e4.npz")
             _init_checkpoint(path, encoder=4)

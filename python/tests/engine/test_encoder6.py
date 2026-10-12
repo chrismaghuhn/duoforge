@@ -14,7 +14,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features
 
-from python.tests.test_features_ext import _records, _turn_scene
+from python.tests.engine.test_features_ext import _records, _turn_scene
 
 C = _layout.CONSTANTS
 COL = {name: i for i, name in enumerate(features.FEATURE_NAMES)}
@@ -34,7 +34,7 @@ def _header():
     global _HEADER
     if _HEADER is None:
         import os
-        path = os.path.join(os.path.dirname(__file__), "..", "..", "include", "duoforge", "duoforge.h")
+        path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "include", "duoforge", "duoforge.h")
         with open(path, encoding="ascii") as f:
             _HEADER = f.read()
     return _HEADER

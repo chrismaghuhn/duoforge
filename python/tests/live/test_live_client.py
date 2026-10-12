@@ -1,6 +1,6 @@
 """Part of duoforge.python.live_unit: the live client's protocol with a fake server.
 
-The battle stream is python/tests/data/live_stream_ab.json: the first ten
+The battle stream is python/tests/support/data/live_stream_ab.json: the first ten
 messages that the pinned Showdown sends p1 in m5_real_ab_1 (Team A, members
 reordered, against Team B), written by tools/reference/ps_client.js. Spec
 sections 6 and 7: challenges and refusals, open team sheets, invalid choices,
@@ -17,7 +17,7 @@ from unittest import mock
 
 from duoforge_live import client, data, teams
 
-FIXTURE = json.loads((data.ROOT / "python" / "tests" / "data" / "live_stream_ab.json").read_text(encoding="utf-8"))
+FIXTURE = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "live_stream_ab.json").read_text(encoding="utf-8"))
 ROOM = "battle-gen9championsvgc2026regmc-1"
 FOE = "chris"
 # Showdown's refusal of a switch of a hidden-trapped last active (Side.emitChoiceError, sim/side.ts:527-534, 984-1000).

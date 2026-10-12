@@ -68,7 +68,7 @@ class LedgerTest(unittest.TestCase):
         self.assertLess(third["cpu_core_seconds"], second["cpu_core_seconds"] + 0.05)
 
     def test_ledger_inside_the_repository_is_refused(self):
-        inside = Path(__file__).resolve().parents[2] / "ledger-should-not-exist.json"
+        inside = Path(__file__).resolve().parents[3] / "ledger-should-not-exist.json"
         with self.assertRaisesRegex(ValueError, "inside the repository"):
             ledger.Ledger(inside)
         self.assertFalse(inside.exists())

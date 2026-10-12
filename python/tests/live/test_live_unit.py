@@ -152,7 +152,7 @@ class TrackerRequestTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import json
-        cls.fixture = json.loads((data.ROOT / "python" / "tests" / "data" / "live_stream_ab.json")
+        cls.fixture = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "live_stream_ab.json")
                                  .read_text(encoding="utf-8"))
         cls.data = data.load()
 

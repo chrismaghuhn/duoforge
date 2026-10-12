@@ -312,7 +312,7 @@ class InitTest(unittest.TestCase):
     def test_init_refuses_output_in_repo(self):
         from pathlib import Path
         from duoforge_learn import train
-        inside = Path(__file__).resolve().parents[2] / "init-out-never"
+        inside = Path(__file__).resolve().parents[3] / "init-out-never"
         with self.assertRaises((SystemExit, ValueError)):
             train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "1", "--minutes", "0",
                         "--out", str(inside), "--init", str(self.ckpt)])
@@ -369,7 +369,7 @@ class TrainerTest(unittest.TestCase):
     def test_bc_refuses_output_in_repo(self):
         from pathlib import Path
         from duoforge_learn import bc
-        inside = Path(__file__).resolve().parents[2] / "bc-out-never"
+        inside = Path(__file__).resolve().parents[3] / "bc-out-never"
         with self.assertRaises((ValueError, SystemExit)):
             bc.main(["--data", str(self.data), "--out", str(inside), "--epochs", "1"])
         self.assertFalse(inside.exists())
@@ -456,7 +456,7 @@ class TrainerTest(unittest.TestCase):
         import sys
         from pathlib import Path
         env = {**os.environ, "JAX_PLATFORMS": "cpu"}
-        root = Path(__file__).resolve().parents[2]
+        root = Path(__file__).resolve().parents[3]
         outs = []
         for name in ("det-a", "det-b"):
             out = self.tmp / name

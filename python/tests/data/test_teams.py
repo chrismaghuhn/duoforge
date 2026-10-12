@@ -13,7 +13,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, data, teams
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "teams")
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "data", "teams")
 TEAM_C = _layout.CONSTANTS["DUOFORGE_DATA_KIND_TEAM_C"]
 INVALID = "DUOFORGE_E_INVALID_ARGUMENT"
 

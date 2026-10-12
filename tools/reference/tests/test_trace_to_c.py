@@ -2,7 +2,7 @@
 """trace_to_c.py as a library: refusals, data and the generated headers. It
 needs Python only, no Node and no Showdown checkout.
 
-usage: python3 tools/reference/test_trace_to_c.py
+usage: python3 tools/reference/tests/test_trace_to_c.py
 
 CTest runs it as duoforge.reference.converter_api. The negative controls
 change in-memory copies of committed battles; each asserts the rule, the
@@ -26,9 +26,11 @@ from unittest import mock
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import trace_to_c  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 SCRIPT = os.path.join(HERE, 'trace_to_c.py')
 HEADERS = ('conformance.h', 'conformance_team_c.h', 'conformance_pool.h', 'conformance_types.h')

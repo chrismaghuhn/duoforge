@@ -195,7 +195,7 @@ class FeaturesExtTest(unittest.TestCase):
     def test_closure_battles_keep_encoder_2_and_an_empty_block(self):
         # Under CLOSURE the records have revision 0: the first 607 columns are encoder 2's, and the block is that of
         # an empty record (mask 0: all zero; every bit: only the "none" of Encore and Disable).
-        from python.tests import _reference_features as reference
+        from python.tests.support import _reference_features as reference
         empty_columns = sorted(COL[f"ext.{o}.pos{k}.{g}.none"] for o in ("own", "foe") for k in range(2)
                                for g in ("encore", "disable"))
         policy = duoforge.RandomPolicy(SEED, ENVS)
@@ -436,7 +436,7 @@ class FeaturesExtTest(unittest.TestCase):
                     features.encode_batch(ob, d, ext, ALL, encoder=5)
 
     def test_as_encoder_serves_the_old_versions(self):
-        from python.tests import _reference_features as reference
+        from python.tests.support import _reference_features as reference
         ob, d = self.obs, self.domains
         part = features.encode_batch(ob, d, _records(ob), ALL)[0]
         self.assertIs(features.as_encoder(part, ob, 6), part)

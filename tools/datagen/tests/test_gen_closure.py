@@ -9,11 +9,14 @@ a learnset that the validator contradicts, an ability the pin does not release.
 The texts copy the pinned data/moves.ts, data/items.ts, data/abilities.ts and
 data/mods/champions/learnsets.ts layout, so no checkout is needed.
 
-usage: python3 tools/datagen/test_gen_closure.py
+usage: python3 tools/datagen/tests/test_gen_closure.py
 """
+import sys
 import io
 import os
 import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import gen_closure
 
@@ -1473,7 +1476,7 @@ class Bounds(unittest.TestCase):
 
     def setUp(self):
         import tempfile
-        self.repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         for rel in gen_closure.BOUND_SOURCES.values():
@@ -2308,7 +2311,7 @@ class BulletFlag(unittest.TestCase):
 
     def test_the_committed_table_marks_the_pins_26_bullet_moves(self):
         import re
-        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         with open(os.path.join(root, 'src', 'data', 'pool_tables.c'), encoding='utf-8') as f:
             text = f.read()
         m = re.search(r'const uint8_t dfi_pool_move_flags3\[DFI_POOL_MOVE_COUNT\] = \{(.*?)\n\};', text, re.S)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The paste importer with the pinned Showdown for the pokedex (Node): the facts, the owner's raw pastes, the registry.
 
-usage: python3 tools/reference/test_import_paste_pin.py <node> <checkout>
+usage: python3 tools/reference/tests/test_import_paste_pin.py <node> <checkout>
 
 CTest runs it as duoforge.reference.import_paste_pin (label reference). It checks what the stand-in pokedex of
 test_import_paste.py cannot: that tools/reference/ps_species.js reads the facts of the pinned pokedex as the importer needs
@@ -20,12 +20,14 @@ import unittest
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import import_paste as imp  # noqa: E402
 import team_registry as reg  # noqa: E402
 from test_team_registry import copy_registry  # noqa: E402
 import trace_to_c  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 NODE = CHECKOUT = None  # the arguments (set by main)
 DECISION = os.path.join(ROOT, 'docs', 'decisions', '0004-owner-selections-champions-reference-teams.md')

@@ -294,7 +294,7 @@ class InPlaySuite(unittest.TestCase):
         _same_calls(self, c.calls, a.calls)
 
     def test_observers_see_the_dead_mask(self):
-        from python.tests.test_learn_v2_numpy import _fail_env_once
+        from python.tests.learn.test_learn_v2_numpy import _fail_env_once
         rec = _Recorder()
         records, _ = self._observed(40, (rec,), step=_fail_env_once(duoforge.Batch.step, 1))
         self.assertTrue(records["unresolved"][1])

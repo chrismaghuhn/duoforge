@@ -4,7 +4,7 @@ reference plays itself (AB, BA, AA, BB, seed 6, two workers, no machine lock) wi
 (--domain-rate 1.0): the set of choices that Showdown accepts, judged option by option, against the engine's
 candidates for the side, before every step.
 
-usage: python3 tools/reference/test_diff_domain_smoke.py <node> <checkout> <runner> <work dir>
+usage: python3 tools/reference/tests/test_diff_domain_smoke.py <node> <checkout> <runner> <work dir>
 
 CTest runs it as duoforge.reference.diff_domain_smoke. The same 8 battles are run once more without the check
 (--domain-rate 0). It requires
@@ -26,7 +26,7 @@ import sys
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DRIVER = os.path.join(HERE, 'diff_driver.py')
 SEED = 6
 BATTLES = 8

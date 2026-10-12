@@ -9,7 +9,7 @@ import duoforge
 from duoforge import _layout, privileged, view
 from tools.layout.gen_view_layout import generate
 
-from ._pivot_fixture import SETUP, play_to_pivot
+from python.tests.support._pivot_fixture import SETUP, play_to_pivot
 
 STEPS = 128  # lockstep steps of the random round trip
 

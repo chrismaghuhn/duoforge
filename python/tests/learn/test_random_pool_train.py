@@ -10,10 +10,10 @@ import os
 import tempfile
 import unittest
 
-from python.tests.test_ledger import _SMALL, _train
-from python.tests.test_random_pool import _registry_ids, make_corpus
+from python.tests.learn.test_ledger import _SMALL, _train
+from python.tests.data.test_random_pool import _registry_ids, make_corpus
 
-REGISTRY = os.path.join(os.path.dirname(__file__), "..", "..", "data", "teams")
+REGISTRY = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "teams")
 
 
 class RandomPoolTrainTest(unittest.TestCase):

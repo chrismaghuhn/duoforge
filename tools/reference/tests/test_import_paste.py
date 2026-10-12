@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The paste importer (tools/reference/import_paste.py) without Node: what it normalises, what it refuses, what it writes.
 
-usage: python3 tools/reference/test_import_paste.py
+usage: python3 tools/reference/tests/test_import_paste.py
 
 CTest runs it as duoforge.reference.import_paste. The pokedex is a stand-in with the facts of the species the tests ask
 about, in the shape tools/reference/ps_species.js writes them (a stand-in for the Node run, so the importer's own reading of
@@ -21,11 +21,13 @@ import unittest.mock
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import import_paste as imp  # noqa: E402
 import team_registry as reg  # noqa: E402
 import trace_to_c  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 from test_team_registry import BASE, copy_registry  # noqa: E402  (a small registry: the tests of writing need no more)
 SpeciesInfo = imp.SpeciesInfo  # the real class: main() is run with one that asks the stand-in

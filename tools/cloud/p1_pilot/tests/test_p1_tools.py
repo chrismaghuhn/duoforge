@@ -3,7 +3,7 @@
 RUN_ID/RUN_PREFIX guard (run.sh --check-env: no file, no aws call). Standard library only; the guard tests need
 bash on the PATH (Git Bash on Windows) and are skipped without it.
 
-    python tools/cloud/p1_pilot/test_p1_tools.py
+    python tools/cloud/p1_pilot/tests/test_p1_tools.py
 """
 import argparse
 import json
@@ -15,7 +15,7 @@ import sys
 import tempfile
 import unittest
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, HERE)
 
 import p1_manifest  # noqa: E402

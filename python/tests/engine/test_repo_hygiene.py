@@ -7,7 +7,7 @@ import subprocess
 import unittest
 from pathlib import Path, PurePosixPath
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 WEIGHT_SUFFIXES = {".npz", ".npy", ".pkl", ".pickle", ".pt", ".pth", ".ckpt", ".safetensors", ".msgpack", ".h5",
                    ".onnx"}
 RUN_DIRECTORIES = {"runs", "checkpoints", "league"}
@@ -27,7 +27,7 @@ class RepoHygieneTest(unittest.TestCase):
                      "latest.json", "model.safetensors", "w.pt"):
             self.assertTrue(forbidden(path), path)
         for path in ("python/duoforge_learn/checkpoint.py", "docs/learning/RUNBOOK.md", "tests/test_pool_g41.c",
-                     "python/tests/data/live_stream_ab.json", "src/batch/batch.c"):
+                     "python/tests/support/data/live_stream_ab.json", "src/batch/batch.c"):
             self.assertFalse(forbidden(path), path)
 
     def test_no_tracked_weights_or_run_outputs(self):

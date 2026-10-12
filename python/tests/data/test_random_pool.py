@@ -19,7 +19,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, teams
 
-REGISTRY = os.path.join(os.path.dirname(__file__), "..", "..", "data", "teams")
+REGISTRY = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "teams")
 
 
 def _registry_ids(count):

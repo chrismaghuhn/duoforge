@@ -20,7 +20,7 @@ import sys
 import time
 import unittest
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 
 

@@ -27,7 +27,7 @@ _PAUSE = {}
 def setUpModule():
     # The builds here honour the fuzz pause file. The machine's own one ($TEMP/duoforge-fuzz.pause) exists while a
     # measurement runs, and would hold every build of this module until it ends (a ctest timeout): the module gets a
-    # pause file of its own, absent, as tools/reference/test_diff_random.py does.
+    # pause file of its own, absent, as tools/reference/tests/test_diff_random.py does.
     import os
     _PAUSE["dir"] = tempfile.TemporaryDirectory()
     _PAUSE["saved"] = os.environ.get("DUOFORGE_FUZZ_PAUSE")
@@ -1192,7 +1192,7 @@ class RevivalLabelTest(unittest.TestCase):
 
 
 
-FIXTURE = Path(__file__).resolve().parent / "data" / "replay" / "c12_real_cb_4.log"
+FIXTURE = Path(__file__).resolve().parent.parent / "support" / "data" / "replay" / "c12_real_cb_4.log"
 
 
 class _Stats:

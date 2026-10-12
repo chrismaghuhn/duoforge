@@ -11,7 +11,7 @@
 - the complete side-choice domains in documented order (team picks; TURN, REPLACEMENT and PIVOT joint slot choices with the reserve, Mega and forced-switch constraints; Struggle when no move has PP left; for closure data Fake Out disabled after a move action and a locked move offered alone; nothing at TERMINAL);
 - the observation v2 of decision 0007 (544 bytes): what a player sees.
 
-It was written from the decision notes (`docs/decisions/0002`, `0005`, `0006` section 3), **not** from the C sources. It is **not** a model of Pokémon combat rules, and CTest does not run it, except its POOL tail part: `test_model_pins.py` (CTest `duoforge.state.model_pool_tail`) computes the envelope, the example and the byte sweep and compares them with `ENVELOPE_HEX`, `TAIL_HEX` and `sweep[]` of `tests/data/test_pool_tail.c`, so a step that adds a tail byte or rule without the model fails there (and `duoforge.data.model_pool_hash` compares its `POOL_TABLE_HASH`). Python and bindings must not contain hidden rule implementation (AGENTS.md); this file is test evidence only.
+It was written from the decision notes (`docs/decisions/0002`, `0005`, `0006` section 3), **not** from the C sources. It is **not** a model of Pokémon combat rules, and CTest does not run it, except its POOL tail part: `tests/test_model_pins.py` (CTest `duoforge.state.model_pool_tail`) computes the envelope, the example and the byte sweep and compares them with `ENVELOPE_HEX`, `TAIL_HEX` and `sweep[]` of `tests/data/test_pool_tail.c`, so a step that adds a tail byte or rule without the model fails there (and `duoforge.data.model_pool_hash` compares its `POOL_TABLE_HASH`). Python and bindings must not contain hidden rule implementation (AGENTS.md); this file is test evidence only.
 
 It prints every golden value the C tests assert:
 
@@ -33,7 +33,7 @@ With `--goldens` it prints `tests/support/goldens.c` (the C1 context bytes and t
 python3 tools/state_model/state_v3_model.py > model_out.txt
 python3 tools/state_model/state_v3_model.py --goldens > tests/support/goldens.c
 python3 tools/state_model/state_v3_model.py --pool-tail   # only the POOL tail: tests/data/test_pool_tail.c pins its envelope, example bytes and byte sweep
-python3 tools/state_model/test_model_pins.py              # the model's pins against the C tests (CTest runs it; the tail sweep takes about 15 s)
+python3 tools/state_model/tests/test_model_pins.py              # the model's pins against the C tests (CTest runs it; the tail sweep takes about 15 s)
 ```
 
 The run takes about three minutes (the mutation sweeps decode about 770,000 inputs). The output is identical on every platform (LF line ends).

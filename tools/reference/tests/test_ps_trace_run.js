@@ -8,7 +8,7 @@
 // 3. Five specs run again in reverse order, closure and Team C battles, one
 //    of them ending the battle: no state may leak from one run to the next.
 //
-// usage: node tools/reference/test_ps_trace_run.js <pinned checkout>
+// usage: node tools/reference/tests/test_ps_trace_run.js <pinned checkout>
 //
 // CTest runs it as duoforge.reference.trace_run when the checkout and Node are
 // present (the checkout is not needed otherwise: the traces are committed).
@@ -16,9 +16,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const {run, PIN, HARNESS_VERSION} = require('./ps_trace.js');
+const {run, PIN, HARNESS_VERSION} = require('../ps_trace.js');
 
-const REPO = path.resolve(__dirname, '..', '..');
+const REPO = path.resolve(__dirname, '..', '..', '..');
 const SPECS = path.join(REPO, 'tests', 'reference', 'specs');
 const TRACES = path.join(REPO, 'tests', 'reference', 'traces');
 

@@ -11,8 +11,8 @@ from duoforge import features
 
 
 def _scenes():
-    """test_learn_v2's real observations, both when the tests run as a package (CTest: python.tests.test_distill)
-    and from python/tests."""
+    """test_learn_v2's real observations, both when the tests run as a package (CTest: python.tests.learn.test_distill)
+    and from python/tests/learn."""
     if __package__:
         from .test_learn_v2 import _scenes as scenes
     else:
@@ -830,7 +830,7 @@ class ResumeTest(unittest.TestCase):
             self._fit(self.root / "fresh", resume=True)
         with self.assertRaisesRegex(ValueError, "not empty"):
             self._fit(out)
-        repo = Path(__file__).resolve().parents[2]
+        repo = Path(__file__).resolve().parents[3]
         self.assertEqual(distill.main(["--init", "x", "--reference", "x", "--shards", "x", "--manifest", "x",
                                        "--out", str(repo / "distill-should-not-exist")]), 2)
         self.assertFalse((repo / "distill-should-not-exist").exists())

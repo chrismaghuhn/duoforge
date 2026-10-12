@@ -300,7 +300,7 @@ class BookTest(unittest.TestCase):
         self.assertEqual(json.loads(proc.stdout)["turn_1"], [])
 
     def test_schema_two_exporter_output_is_consumed_without_adaptation(self):
-        from python.tests.test_openings import FakeData, LOG
+        from python.tests.replay.test_openings import FakeData, LOG
 
         game = openings.extract_game("synthetic", "gen9championsvgc2026regmc", LOG, FakeData())
         payload = {"schema_version": 2, **openings.aggregate([game] * 20)}

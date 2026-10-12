@@ -14,7 +14,7 @@ import unittest
 import numpy as np
 
 from duoforge_learn import policy
-from python.tests.test_ledger import _SMALL, _train
+from python.tests.learn.test_ledger import _SMALL, _train
 
 
 def _flat(tree):

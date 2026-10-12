@@ -82,7 +82,7 @@ def _budget_cases():
     """(kind, tables, weights) for the budget identity pin: both float
     fixtures, random and near-duplicate worlds, and small exact rescues."""
     for name in ("bayes-arena-16x8x8.json", "bayes-arena-16x8x8-tiny-pivot.json"):
-        saved = json.loads((Path(__file__).with_name("fixtures") / name).read_text())
+        saved = json.loads(((Path(__file__).resolve().parent.parent / "support" / "fixtures") / name).read_text())
         yield "bayes", np.asarray(saved["tables"], dtype=np.float64), np.asarray(saved["weights"], dtype=np.float64)
     rng = np.random.default_rng(20261009)
     for w, k, m in ((2, 2, 2), (4, 8, 8), (16, 8, 8), (3, 5, 1), (5, 1, 4)):
@@ -677,7 +677,7 @@ class BayesRule(unittest.TestCase):
     def _assert_fast_reproduction(self, filename, value, float_pivots):
         # "Fast" is pinned as work, not time: the float path and its stable retry certify the fixture with exactly
         # this many float pivots and no exact work at all (the WorkLedger counts the same on every machine).
-        fixture = Path(__file__).with_name("fixtures") / filename
+        fixture = (Path(__file__).resolve().parent.parent / "support" / "fixtures") / filename
         saved = json.loads(fixture.read_text())
         tables, weights = saved["tables"], saved["weights"]
         timings = []
@@ -1093,7 +1093,7 @@ class SpreadSources(unittest.TestCase):
         import duoforge
         from duoforge import _layout
         from duoforge_search import honest
-        root = Path(__file__).resolve().parents[2] / "data" / "teams"
+        root = Path(__file__).resolve().parents[3] / "data" / "teams"
         with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             _, _, info = honest.spread_table(ctx)
             self.assertEqual(len(honest.SPREAD_SOURCES), 79)

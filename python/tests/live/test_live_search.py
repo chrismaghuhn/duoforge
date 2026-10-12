@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest import mock
 
 from duoforge_live import client, data, search, teams, tracker
-from python.tests.test_live_client import FIXTURE, FOE, ROOM, UNAVAILABLE, FakePolicy, FakeServer, Clock, room
+from python.tests.live.test_live_client import FIXTURE, FOE, ROOM, UNAVAILABLE, FakePolicy, FakeServer, Clock, room
 
 PARTS = {"request": None, "observation": None, "record": None, "status": 0, "causes": 0}
 

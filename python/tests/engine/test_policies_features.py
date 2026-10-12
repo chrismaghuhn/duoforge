@@ -102,7 +102,7 @@ def _play_encoded(ctx, setups, test):
     observations and factored domains (2E,) and encode_batch's obs_part
     (2E, OBS_SIZE), whose first BASE_OBS_SIZE columns the reference encoder
     equals and whose block is zero (no extension)."""
-    from python.tests import _reference_features as reference
+    from python.tests.support import _reference_features as reference
     envs = setups.shape[0]
     policy = duoforge.RandomPolicy(SEED, envs)
     policy.start_episodes(np.arange(envs), np.zeros(envs, dtype=np.uint64))
@@ -267,7 +267,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
     def test_encode_batch_equals_the_reference(self):
         # Every player of 32 environments at every step of a battle, both
         # forms of domain (team selection, slots, no request).
-        from python.tests import _reference_features as reference
+        from python.tests.support import _reference_features as reference
         policy = duoforge.RandomPolicy(SEED, ENVS)
         compared = 0
         with duoforge.Batch(self.ctx, _setups(), 4, SEED) as batch:
@@ -309,7 +309,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
                     diff = features.encode(changed, d)[0] - before
                     self.assertEqual(np.flatnonzero(diff).tolist(), [first + k])
                     self.assertEqual(float(diff[first + k]), 1.0)
-            from python.tests import _reference_features as reference
+            from python.tests.support import _reference_features as reference
             for bad in (8, 16, 32, 64, 128):
                 ob["sides"][me]["positions"][0]["reserved"] = bad
                 with self.assertRaisesRegex(ValueError, "position flags"):
@@ -339,7 +339,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
     def test_team_c_values_equal_the_reference(self):
         # Psychic Terrain and every position flag, set at random on the
         # observations of real battles, encode alike in both encoders.
-        from python.tests import _reference_features as reference
+        from python.tests.support import _reference_features as reference
         rng = np.random.default_rng(0x2026100216)
         policy = duoforge.RandomPolicy(SEED, ENVS)
         compared = 0
@@ -396,7 +396,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
         # of the CLOSURE pairings 0 and 2 and of the DEV rosters, byte for
         # byte the reference encoder's encoder=1; only Rillaboom's present
         # differs from encoder 2 (Team A at roster 0, own side and foe).
-        from python.tests import _reference_features as reference
+        from python.tests.support import _reference_features as reference
         steps = _play_encoded(self.ctx, duoforge.reference_setups([0, 2] * 4), self)
         with duoforge.Context(data_kind=3) as dev:  # DUOFORGE_DATA_KIND_CLOSURE_DEV
             steps += _play_encoded(dev, _dev_setups(), self)

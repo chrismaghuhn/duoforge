@@ -3,7 +3,7 @@
 (tools/reference/conformance_records.py) without Node and without a Showdown
 checkout.
 
-usage: python3 tools/reference/test_diff_driver.py
+usage: python3 tools/reference/tests/test_diff_driver.py
 
 CTest runs it as duoforge.reference.diff_driver, with DUOFORGE_DIFF_RUNNER set
 to the runner it has built. The bucket logic runs with a fake worker and a fake
@@ -31,11 +31,13 @@ from unittest import mock
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import conformance_records  # noqa: E402
 import diff_driver as driver  # noqa: E402
 import trace_to_c  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 RUNNER = os.environ.get('DUOFORGE_DIFF_RUNNER')
 CLOSURE, TEAM_C = 's2_turn_core_1', 'c05_helmet_order'  # a small battle of each kind

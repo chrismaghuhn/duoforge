@@ -2,7 +2,7 @@
 """The random training teams (tools/reference/random_teams.py): the paste translation, the team composition and the
 output guard without Node or the library; with <node> <checkout>, also the pinned generator's determinism.
 
-usage: python3 tools/reference/test_random_teams.py [<node> <checkout>]
+usage: python3 tools/reference/tests/test_random_teams.py [<node> <checkout>]
 
 CTest runs it as duoforge.reference.random_teams (no arguments) and, with the pinned Showdown, as
 duoforge.reference.random_teams_pin (label reference).
@@ -16,9 +16,10 @@ import unittest
 
 sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the source tree
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'python'))
+
 import random_teams as rt  # noqa: E402
 from duoforge import teams  # noqa: E402
 
