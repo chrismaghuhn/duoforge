@@ -2,7 +2,7 @@
 #define DUOFORGE_COMBAT_ABILITIES_PINCH_H
 
 #include "combat/abilities/current.h"
-#include "combat/damage_chain.h"
+#include "core/modifier.h"
 
 #define DFI_PINCH_MODIFIER 6144u /* chainModify(1.5) */
 

@@ -1,6 +1,7 @@
 #include "combat/turn.h"
 
 #include "combat/abilities/families.h"
+#include "combat/abilities/fairy_aura.h"
 #include "combat/damage_chain.h"
 #include "combat/multiaccuracy.h"
 #include "combat/residual_order.h"
@@ -308,22 +309,9 @@ static uint32_t dfi_move_weather(const dfi_run *r, const dfi_member *user, bool 
 
 
 
-#define DFI_FAIRY_AURA_MODIFIER 5448u /* chainModify([5448, 4096]) */
 
-/* Fairy Aura (data/abilities.ts:1266-1282, onAnyBasePower, priority 20): a Pokemon on the field with the ability (the
- * Mega Floette's only one; a fainted Pokemon is no longer on the field). It boosts the Fairy moves of every Pokemon on
- * the field once each (move.auraBooster: a second holder changes nothing), the foes' included. Aura Break (3072/4096
- * instead) is in no pool forme's legal abilities (checked by tests/test_pool_tables.c). */
-static bool dfi_fairy_aura_on_field(struct duoforge_battle *b)
-{
-    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        const dfi_member *m = dfi_at(b, flat);
-        if (m != NULL && m->hp != 0u && dfi_ability(b, m, DFI_ABILITY_FAIRYAURA)) {
-            return true;
-        }
-    }
-    return false;
-}
+
+
 
 /* Flower Veil (data/abilities.ts:1419-1457): the holder protects every Grass-type Pokemon of its side, itself
  * included (it is Fairy, so what it covers is its allies), against stat drops and statuses that another Pokemon
@@ -1876,11 +1864,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_sf_boosts(r->b, a, md)) {
         ok = ok && dfi_chain_modify(bp_chain, DFI_SHEER_FORCE_MODIFIER, &bp_chain);
     }
-    /* Fairy Aura (the Mega Floette's ability, onAnyBasePower priority 20: after Tough Claws, before the items): a
-     * Fairy move of anyone on the field, unless it targets its own user, 5448/4096 once. */
-    if (move_type == DFI_TYPE_FAIRY && user != target && dfi_fairy_aura_on_field(r->b)) {
-        ok = ok && dfi_chain_modify(bp_chain, DFI_FAIRY_AURA_MODIFIER, &bp_chain);
-    }
+    ok = dfi_fairy_aura_base_power(r->b, user, target, move_type, ok, &bp_chain);
     /* Sharpness (step G34, data/abilities.ts:4174-4186, priority 19: after Fairy Aura's 20, before the items' 15): the slicing
      * flag, x1.5. */
     if ((bp_flags2 & DFI_MOVE_FLAG2_SLICING) != 0u && dfi_ability(r->b, a, DFI_ABILITY_SHARPNESS)) {

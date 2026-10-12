@@ -2,7 +2,7 @@
 #define DUOFORGE_COMBAT_ABILITIES_ATE_H
 
 #include "combat/abilities/current.h"
-#include "combat/damage_chain.h"
+#include "core/modifier.h"
 
 #define DFI_ATE_MODIFIER 4915u /* chainModify([4915, 4096]) */
 
