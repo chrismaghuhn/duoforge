@@ -14,10 +14,11 @@ stream. A contradiction is:
 - the fold's hook (Tracker.check_foe_sheet): move-not-on-set, choice-lock;
 - at a decision point, the engine refusing the particle's record (public_parts raises: a Damp Rock's weather lasting past
   the 5 turns of a drawn set without it);
-- the fold raising (a lines.Stop or a ValueError) in some particles but not in all: the drawn sets disagree with a line
-  the other particles fold (an ability the line names, a Pressure the own PP do not show). When every particle that
-  folded the line raises the same, or UNIFORM redraws in a row do, the line is no contradiction: the tracker raises it,
-  as an open-sheet tracker would.
+- the fold raising (a lines.Stop or a ValueError): the drawn sets may disagree with the line (an ability the line names,
+  a Pressure the own PP do not show), or the line stops every fold (a feature the tracker does not fold). The particle is
+  drawn again. Rejection cannot tell the two apart (a set the log needs may be rare in the prior), so MAX_ATTEMPTS
+  failed draws stop the tracker by name, "cts:redraw-cap stop:<reason>" or "cts:redraw-cap error:<type>", with the last
+  exception as the cause.
 A draw that breaks the Item Clause is drawn again without a fold (MAX_DRAWS draws). Every redraw is counted by its reason
 (counters); MAX_ATTEMPTS contradicted folds of one particle in a row stop the tracker with "cts:redraw-cap <reason>". No
 set agreeing with a member's facts stops it with "cts:no-consistent-set <species>", facts the log cannot give with
@@ -27,7 +28,6 @@ The draw of member m of particle i at its attempt a takes the word of (seed, key
 belief (setbelief.word): the same stream, seed and key give the same particles.
 """
 import collections
-import copy
 import json
 
 from duoforge_replay import facts as _facts
@@ -41,7 +41,6 @@ from .tracker import SheetContradiction, Tracker
 PARTICLES = 16  # one per world of the live search (HONEST_SETTINGS s)
 MAX_ATTEMPTS = 64  # contradicted draws of one particle in a row, each a fold from the start
 MAX_DRAWS = 4096  # draws of one attempt that break the Item Clause (no fold: a draw is cheap)
-UNIFORM = 8  # attempts in a row that raise the same: the line, not the drawn sets, is the cause
 LEVEL = 50  # the format's level; the open sheets show it, and no stat points
 _key = trace_to_c.key
 
@@ -218,12 +217,11 @@ class ParticleTracker:
         self._events.append(("lines", received))
         facts = self._facts()
         epoch = self.epoch
-        failed, folded = {}, 0
+        failed = {}
         for i, p in enumerate(self.particles):
             if not all(agrees(s, f) for s, f in zip(p.sets, facts)):
                 failed[i] = ("facts", None)
                 continue
-            folded += 1
 
             def step(p=p):
                 p.tracker.feed(received)
@@ -232,9 +230,6 @@ class ParticleTracker:
             out = self._outcome(step)
             if out is not None:
                 failed[i] = out
-        raised = [e for _, e in failed.values() if e is not None]
-        if folded and len(raised) == folded and len({(type(e), str(e)) for e in raised}) == 1:
-            raise raised[0]  # every particle that folded the line stops at it: no particle's sets are the cause
         for i, (reason, _) in sorted(failed.items()):
             self.particles[i] = self._redraw(i, facts, reason, epoch)
 
@@ -249,7 +244,7 @@ class ParticleTracker:
             if not found:
                 raise lines.Stop(f"cts:no-consistent-set {member.species}")
             candidates.append(found)
-        last, streak = reason, []
+        last, error = reason, None
         for _ in range(MAX_ATTEMPTS):
             p = Particle(self._draw(i, candidates, facts), None)
 
@@ -262,21 +257,15 @@ class ParticleTracker:
                 return p
             last, error = out
             self.counters[f"redraw.{last}"] += 1
-            if error is None or (streak and (type(streak[0]), str(streak[0])) != (type(error), str(error))):
-                streak = []
-            if error is not None:
-                streak.append(error)
-            if len(streak) == UNIFORM:
-                raise streak[0]  # every draw stops at the same line: the line, not the sets, is the cause
-        raise lines.Stop(f"cts:redraw-cap {last}")
+        raise lines.Stop(f"cts:redraw-cap {last}") from error
 
     def _draw(self, i, candidates, facts):
         """The particle's next sets under the Item Clause: MAX_DRAWS draws that break it stop the tracker."""
         for _ in range(MAX_DRAWS):
             attempt = self._attempts[i]
             self._attempts[i] += 1
-            sets = [_sheet(copy.deepcopy(found[_pick(word(self.seed, self.key, 1 - self.side, m, attempt, i),
-                                                     [w for _, w in found])][0]), member.gender)
+            sets = [_sheet(found[_pick(word(self.seed, self.key, 1 - self.side, m, attempt, i),
+                                          [w for _, w in found])][0], member.gender)
                     for m, (found, member) in enumerate(zip(candidates, facts))]
             items = [_key(s["item"]) for s in sets if s["item"]]
             if len(items) == len(set(items)):

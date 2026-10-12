@@ -200,10 +200,10 @@ class CtsTest(unittest.TestCase):
             self.run_closed(sets, upto=3)
         self.assertEqual(caught.exception.reason, "cts:redraw-cap item-clause")
 
-    def test_a_line_every_particle_stops_at_stops_the_tracker_as_it_stops_an_open_one(self):
-        """A Substitute stops the open-sheet tracker whatever the sheets. In the same batch, Farigiraf's Protect
-        contradicts half of the particles, whose redraws meet the Substitute too: the tracker stops with the open
-        tracker's reason, not with a redraw cap."""
+    def test_a_line_every_draw_stops_at_stops_the_tracker_by_name(self):
+        """A Substitute stops the open-sheet tracker whatever the sheets: every draw stops at it (in the same batch,
+        Farigiraf's Protect contradicts half of the particles), and after MAX_ATTEMPTS the tracker stops by name, with the
+        open tracker's Stop as the cause."""
         messages = closed(FIXTURE["messages"])
         messages[6] = messages[6][:2] + ["|-start|p2a: Grimmsnarl|Substitute"] + messages[6][2:]
         sets = with_species(foe_sets(), "Farigiraf", farigiraf(),
@@ -211,7 +211,8 @@ class CtsTest(unittest.TestCase):
         for n in (1, 16):
             with self.assertRaises(lines.Stop) as caught:
                 Run(self.particles(sets, n=n), messages)
-            self.assertEqual(caught.exception.reason, "feature:SUBSTITUTE", n)
+            self.assertEqual(caught.exception.reason, "cts:redraw-cap stop:feature:SUBSTITUTE", n)
+            self.assertEqual(caught.exception.__cause__.reason, "feature:SUBSTITUTE", n)
 
     def test_an_item_clause_that_few_draws_keep_costs_no_fold(self):
         """Grimmsnarl and Farigiraf hold a Sitrus Berry in 400 of 401 sets each: about 1 draw in 200 keeps the Item

@@ -74,15 +74,26 @@ gives its own observation and public record. The honest search builds world `w` 
 - Some contradictions make the open-sheet fold raise. For example, `lines.check` stops at an ability or item announcement that is
   not the holder's sheet's. Another example is the own-PP check of the request, which disagrees when a drawn foe has a Pressure
   the lines never showed. The rule:
-  - A fold that raises (a `lines.Stop` or a `ValueError`) in **some** particles but not in all is a contradiction of those
-    particles' sets. They are replaced, counted as `stop:<reason>` or `error:<type>`.
-  - When **every** particle raises the same at a line, the line is no contradiction. The particle tracker raises it as an
-    open-sheet tracker would, and the live mode's fallback takes it, as today.
+  - A particle whose fold raises (a `lines.Stop` or a `ValueError`) is replaced, counted as `stop:<reason>` or
+    `error:<type>`.
+  - A line that stops every fold (a feature the tracker does not fold) makes every draw fail too. Rejection cannot tell that
+    from a set the log needs that is rare in the prior. In the wide-prior test, no particle held Politoed's Damp Rock and all
+    four were refused alike, and 64 draws did not find it either. So the tracker never guesses which of the two it is:
+    after `MAX_ATTEMPTS` failed draws it stops by name with `cts:redraw-cap stop:<reason>` or
+    `cts:redraw-cap error:<type>`, the last exception chained as the cause. The live mode's fallback takes such a stop as
+    it takes a tracker stop today.
+  - The cost is `MAX_ATTEMPTS` folds of one particle, once, at the line that ends the battle's tracking.
+- **The engine's record check.** At each decision point, every particle's record goes through the engine's check
+  (`public_parts`). A record the engine refuses contradicts the particle's sets: for example, a rain that outlasts a drawn
+  Politoed's 5 turns without Damp Rock. This is the only "absent line" evidence that version 1 catches, and the engine
+  catches it.
 - An item consumed or knocked off needs no rule here: the open-sheet fold follows it (`item_used`, `item_now`, `REVEALED_*`), and
   `side_facts` takes the item the line names as the original.
-- Redraws are capped: after `MAX_ATTEMPTS` draws (64) for one particle at one batch, the tracker stops with
-  `cts:redraw-cap <reason>`.
-- Every redraw is counted by its reason (`facts`, `move-not-on-set`, `choice-lock`, `item-clause`), and so is every stop.
+- Redraws are capped. `MAX_ATTEMPTS` (64) folded draws of one particle that all fail stop the tracker with
+  `cts:redraw-cap <reason>`. A draw that breaks the Item Clause is drawn again **before** any fold, because drawing is cheap;
+  `MAX_DRAWS` (4096) such draws stop it with `cts:redraw-cap item-clause`.
+- Every redraw is counted by its reason (`facts`, `move-not-on-set`, `choice-lock`, `item-clause`, `stop:<reason>`,
+  `error:<type>`), and so is every stop.
 
 **Exactness.** A particle is a draw from the prior given the facts and the absence of a contradiction. With a 0/1 consistency
 check, keeping the consistent particles and replacing the others by rejection gives draws of the same posterior as drawing all of
@@ -97,9 +108,9 @@ Protect does not become likelier because Protect was used). That is the replay's
 | reason | cause |
 |---|---|
 | `cts:no-consistent-set <species>` | no set of the prior agrees with the member's facts (a species outside the prior included) |
-| `cts:redraw-cap <reason>` | `MAX_ATTEMPTS` draws of one particle in one batch all contradicted the log |
+| `cts:redraw-cap <reason>` | `MAX_ATTEMPTS` folded draws of one particle all failed: they contradicted the log, or the line stops every fold (`stop:<reason>`, `error:<type>`; the last exception is the cause) |
+| `cts:redraw-cap item-clause` | `MAX_DRAWS` draws of one particle all broke the Item Clause |
 | `cts:facts <skip>` | `side_facts` cannot describe the prefix (a Transform, a possible Illusion, a preview it cannot match) |
-| a particle's own `lines.Stop` | as under open sheets; it stops the particle tracker as it stops a tracker |
 
 ## Not conditioned on in version 1: the absence of a line (named, to be measured)
 
@@ -107,7 +118,9 @@ The conditioning above uses what the log **shows**. Some evidence is a line that
 - an entry ability that announces itself (Intimidate, a weather or terrain setter, Pressure, Unnerve) and did not;
 - an item whose effect would have printed and did not: Leftovers or Black Sludge at the end of a turn, a Sitrus Berry below half
   HP, a Focus Sash at a KO;
-- a duration an item lengthens: Light Clay's screens and a rock's weather, which end on turn 5 instead of 8.
+- a duration an item lengthens, where it ends on turn 5 although the drawn set holds Light Clay or a rock. The reverse, a rain
+  outlasting a drawn Politoed's 5 turns, is caught: the engine refuses that record (see above). Whether every duration of this
+  kind is caught that way is part of the audit below.
 
 The open-sheet fold never predicts lines, so a particle that holds such a set is kept. Predicting them means knowing when the
 rule would print a line, which is a battle rule. Under AGENTS.md it belongs in the engine, not in a Python list. Version 1
