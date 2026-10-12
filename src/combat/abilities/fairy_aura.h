@@ -10,7 +10,7 @@
 /* Fairy Aura (data/abilities.ts:1266-1282, onAnyBasePower, priority 20): a Pokemon on the field with the ability (the
  * Mega Floette's only one; a fainted Pokemon is no longer on the field). It boosts the Fairy moves of every Pokemon on
  * the field once each (move.auraBooster: a second holder changes nothing), the foes' included. Aura Break (3072/4096
- * instead) is in no pool forme's legal abilities (checked by tests/test_pool_tables.c). */
+ * instead) is in no pool forme's legal abilities (checked by tests/data/test_pool_tables.c). */
 static inline bool dfi_fairy_aura_on_field(struct duoforge_battle *b)
 {
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
