@@ -13,6 +13,7 @@
 #include "state/knowledge.h"
 #include "support/check.h"
 #include "support/fixtures.h"
+#include "support/pool.h"
 
 static bool api_equal(df_test *t, const duoforge_context *ctx, const duoforge_battle *a, const duoforge_battle *b)
 {
@@ -237,17 +238,52 @@ int main(void)
     DF_CHECK(&t, api_equal(&t, c1, f1, k));
     df_encode(c1, f1, e1);
     {
-        /* decision 0066: a non-POOL state decodes with no cant count, whatever the destination held before */
-        duoforge_battle *dd = NULL;
-        DF_CHECK(&t, duoforge_battle_clone(c1, f1, &dd) == DUOFORGE_OK && dd != NULL);
-        memset(dd, 0xAA, sizeof *dd);
-        DF_CHECK_EQ_U64(&t, duoforge_battle_decode(c1, dd, e1, sizeof e1), DUOFORGE_OK);
+        /* decision 0066: a destination that holds a POOL state with a nonzero cant count is overwritten by a decode of a state
+         * with none, through the official API (the object is never memset: its header binds the context). */
+        duoforge_context *kp = df_make_context(&df_config_pool);
+        duoforge_battle_setup ps;
+        df_setup_teams(&ps);
+        duoforge_battle *pb = df_make_battle(kp, &ps);
+        pb->sides[0].members[0].status = (uint8_t)DUOFORGE_AILMENT_SLEEP;
+        pb->sides[0].members[0].status_counter = 2u;
+        pb->tail.sides[0].sleep_cant[0] = 1u;
+        DF_CHECK(&t, duoforge_battle_check(kp, pb) == DUOFORGE_OK);
+        duoforge_battle *dst = NULL;
+        DF_CHECK(&t, duoforge_battle_clone(kp, pb, &dst) == DUOFORGE_OK && dst != NULL);
+        DF_CHECK_EQ_U64(&t, dst->tail.sides[0].sleep_cant[0], 1u);
+        /* the same battle once the sleeper has woken: a state with no count */
+        pb->sides[0].members[0].status = (uint8_t)DUOFORGE_AILMENT_NONE;
+        pb->sides[0].members[0].status_counter = 0u;
+        pb->tail.sides[0].sleep_cant[0] = 0u;
+        DF_CHECK(&t, duoforge_battle_check(kp, pb) == DUOFORGE_OK);
+        static uint8_t without[DF_STATE_ENCODED_MAX];
+        size_t n_without = 0u;
+        DF_CHECK(&t, duoforge_battle_encode(kp, pb, without, sizeof without, &n_without) == DUOFORGE_OK);
+        DF_CHECK(&t, duoforge_battle_decode(kp, dst, without, n_without) == DUOFORGE_OK);
         for (unsigned s2 = 0u; s2 < DUOFORGE_SIDE_COUNT; ++s2) {
             for (unsigned m2 = 0u; m2 < DUOFORGE_MAX_ROSTER; ++m2) {
-                DF_CHECK_EQ_U64(&t, dd->tail.sides[s2].sleep_cant[m2], 0u);
+                DF_CHECK_EQ_U64(&t, dst->tail.sides[s2].sleep_cant[m2], 0u);
             }
         }
-        duoforge_battle_destroy(dd);
+        /* a freshly decoded object of the same state gives the same encoding and digest */
+        duoforge_battle *fresh = NULL;
+        DF_CHECK(&t, duoforge_battle_clone(kp, pb, &fresh) == DUOFORGE_OK && fresh != NULL);
+        DF_CHECK(&t, duoforge_battle_decode(kp, fresh, without, n_without) == DUOFORGE_OK);
+        static uint8_t e_dst[DF_STATE_ENCODED_MAX];
+        static uint8_t e_fresh[DF_STATE_ENCODED_MAX];
+        size_t n_dst = 0u, n_fresh = 0u;
+        DF_CHECK(&t, duoforge_battle_encode(kp, dst, e_dst, sizeof e_dst, &n_dst) == DUOFORGE_OK);
+        DF_CHECK(&t, duoforge_battle_encode(kp, fresh, e_fresh, sizeof e_fresh, &n_fresh) == DUOFORGE_OK);
+        DF_CHECK_BYTES(&t, e_dst, e_fresh, n_fresh, "decode into a used destination");
+        uint8_t dig_dst[DUOFORGE_DIGEST_SIZE];
+        uint8_t dig_fresh[DUOFORGE_DIGEST_SIZE];
+        DF_CHECK(&t, duoforge_battle_digest(kp, dst, dig_dst) == DUOFORGE_OK);
+        DF_CHECK(&t, duoforge_battle_digest(kp, fresh, dig_fresh) == DUOFORGE_OK);
+        DF_CHECK_BYTES(&t, dig_dst, dig_fresh, DUOFORGE_DIGEST_SIZE, "digest after decode into a used destination");
+        duoforge_battle_destroy(fresh);
+        duoforge_battle_destroy(dst);
+        duoforge_battle_destroy(pb);
+        duoforge_context_destroy(kp);
     }
     df_encode(c1, k, e2);
     DF_CHECK_BYTES(&t, e2, e1, sizeof e1, "clone encoding");
