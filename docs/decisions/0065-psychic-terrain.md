@@ -39,4 +39,19 @@ The tracker folds Psychic Terrain on main (`python/duoforge_live`, `_FOLD_FIELD`
 
 ## 6. Final evidence (the lock job on the final head)
 
-Open until run: the clean build and the sanity battle (fz_96_2-equivalent), the runner hash, the mutants P1-P6 each with its catching test (rebuild after each, restore, `git diff` clean), and the campaigns seed 96 (300), 97 (300), 98 (100) with the trigger counters (blocks, airborne not blocked, [still], Psychic Seed uses and boosts, sets), counted separately and as a sum.
+Run on the C head 841b64a5 (lock job `g96-final-evidence`; the later commit 1f7b1df0 changes only the Python pin `POOL_OUTCOME` equal 11590 to 11604, from the CI log of 841b64a5).
+
+- **Build and sanity:** clean build, then the sanity replay of `g96_psychic_terrain_block` (the recorded Psychic Terrain battle): PASS, before and after the mutants.
+- **Runner sha256:** `4ab071c3bfb92de3f9363857cb2b2d113a11badd16ff759e1557a010db97332b` (the clean build); `a050bdb3135f4de6d2f4a843426279dea4e0dd13dd6af4facd2c7b998c674b96` (the clean rebuild after the mutants, same sources). The Windows link is not byte-reproducible (link timestamp); the sanity replay passes on both.
+- **Mutants P1-P6** (one edit each in `src/combat/turn.c`, rebuild, catching tests, restore from HEAD, `git diff` empty after the restore): P1 the priority block off, P2 the block also on airborne foes, P3 the Psychic boost off, P5 the block on priority 0 moves, P6 the setter without the Psychic branch: each caught by `duoforge.reference.conformance_pool_data` and `duoforge.reference.tiebreak_pool_data`. P4 (setting the terrain that is up does not fail): caught by `conformance_pool_data`. **6 of 6 caught.** Baseline: 6 of 6 tests pass.
+- **Campaigns** (teams X and Y, pairings XY YX XX YY, keep-traces, the HEAD runner):
+
+| seed | battles | result | sets | blocks | airborne not blocked | [still] | Seed uses | Seed boosts | Psychic damage under terrain |
+|---|---|---|---|---|---|---|---|---|---|
+| 96 | 300 | PASS 300 | 140 | 54 | 3 | 68 | 135 | 135 | 110 |
+| 97 | 300 | PASS 299, UNSUPPORTED 1 | 127 | 45 | 1 | 73 | 121 | 121 | 118 |
+| 98 | 100 | PASS 100 | 49 | 27 | 1 | 24 | 42 | 42 | 18 |
+| **sum** | **700** | **PASS 699, UNSUPPORTED 1** | **316** | **126** | **5** | **165** | **298** | **298** | **246** |
+
+- **The known refusal in seed 97** (fz_97_254, step 24, XX): not a Psychic Terrain refusal. Snorlax's burn kills it at the last step; the battle has no terrain. The refusal is `dfi_residual_pair_draws`, `turn.c:10321`: an equal-speed residual group of three or more ("a bigger group: its shuffle is not modelled"). Pin `sim/battle.ts:429-456` (`speedSort` with `prng.shuffle`). Intended, the same refusal as the residual speed tie of the earlier base.
+- **Goal:** blocks 126 in total against 100 (the seed 98 campaign reached 27 on its own). The "blocks" counter is the protocol count of `-activate ... move: Psychic Terrain`; the block against grounded targets only, airborne targets are counted apart.
