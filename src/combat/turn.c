@@ -3480,38 +3480,7 @@ static duoforge_status dfi_thief(dfi_run *r, uint32_t user, uint32_t target, uin
     return DUOFORGE_OK;
 }
 
-/* White Herb's check (onStart, data/items.ts): its standing holder has a
- * lowered stat. */
-static bool dfi_herb_due(struct duoforge_battle *b, uint32_t flat)
-{
-    const dfi_member *m = dfi_at(b, flat);
-    if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_WHITEHERB)) {
-        return false;
-    }
-    const dfi_active_slot *pos = dfi_pos(b, flat);
-    bool lowered = false;
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        lowered = lowered || pos->stages[i] < DFI_STAGE_NEUTRAL;
-    }
-    return lowered;
-}
 
-/* White Herb (Team C, data/items.ts): when it is due, its holder uses it:
- * [-enditem], then the lowered stages go back to 0 ([-clearnegativeboost]
- * is [silent]), then AfterUseItem (Unburden). */
-static void dfi_white_herb(dfi_run *r, uint32_t flat)
-{
-    if (!dfi_herb_due(r->b, flat)) {
-        return;
-    }
-    dfi_use_item(r, flat);
-    dfi_active_slot *pos = dfi_pos(r->b, flat);
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        if (pos->stages[i] < DFI_STAGE_NEUTRAL) {
-            pos->stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
-        }
-    }
-}
 
 /* Battle.speedSort (sim/battle.ts) over handlers that differ only by their
  * holder's speed: a selection sort, faster first, that shuffles each group
@@ -3559,13 +3528,6 @@ static duoforge_status dfi_speed_shuffle(dfi_run *r, uint32_t list[DFI_POSITIONS
     return DUOFORGE_OK;
 }
 
-/* A standing Pokemon whose White Herb is unused: it has the herb's
- * handlers (side.allies() keeps only Pokemon with HP). */
-static bool dfi_herb_holder(struct duoforge_battle *b, uint32_t flat)
-{
-    const dfi_member *m = dfi_at(b, flat);
-    return m != NULL && m->hp != 0u && dfi_holds(b, m, DFI_ITEM_WHITEHERB);
-}
 
 /* White Herb's onAnyAfterMove and onAnyAfterMega (Team C), the only
  * handlers of these events in the data. runEvent collects them from the
@@ -3588,7 +3550,7 @@ static duoforge_status dfi_herb_event(dfi_run *r, uint32_t user)
         return st;
     }
     for (uint32_t i = 0u; i < n; ++i) {
-        dfi_white_herb(r, list[i]);
+        dfi_white_herb(r, list[i], dfi_use_item);
     }
     return DUOFORGE_OK;
 }
@@ -10657,7 +10619,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
             m->ability == 1u + DFI_ABILITY_HOSPITALITY) {
             dfi_hospitality(r, list[i]);
         }
-        dfi_white_herb(r, list[i]);
+        dfi_white_herb(r, list[i], dfi_use_item);
     }
     return DUOFORGE_OK;
 }
@@ -11648,7 +11610,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                     return mst;
                 }
             } else {
-                dfi_white_herb(r, list[i].flat);
+                dfi_white_herb(r, list[i].flat, dfi_use_item);
             }
             dfi_residual_faints(r); /* a callback: faintMessages follows it */
             if (r->ended) {

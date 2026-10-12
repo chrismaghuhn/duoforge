@@ -24,4 +24,9 @@ DFI_ITEM_PRIVATE duoforge_status dfi_resist_berry_hit(dfi_run *r, uint32_t targe
                                                     bool *ok, uint32_t *chain, uint32_t *mlist, uint32_t *mods,
                                                     dfi_item_use_fn use_item);
 
+/* The turn chooses handler order and supplies its unchanged useItem path. */
+DFI_ITEM_PRIVATE bool dfi_herb_due(struct duoforge_battle *b, uint32_t flat);
+DFI_ITEM_PRIVATE bool dfi_herb_holder(struct duoforge_battle *b, uint32_t flat);
+DFI_ITEM_PRIVATE void dfi_white_herb(dfi_run *r, uint32_t flat, dfi_item_use_fn use_item);
+
 #endif
