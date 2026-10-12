@@ -416,9 +416,10 @@ class ClientSearchTest(unittest.TestCase):
             cli._arguments(base + ["--search", "nash"])
         self.assertEqual(caught.exception.code, 2)
         # The live search's settings are the approved spec's: X (mix, lambda 0.5), K = M = 8, 16 worlds, the pinned
-        # live spread table, a missing spread prior refused.
+        # live spread table; a foe species without a spread prior draws the belief's general levels, named in the record
+        # (owner 2026-10-12: a refused decision played whole games raw).
         self.assertEqual(search.HONEST_SETTINGS, {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5,
-                                                  "species_prior": True, "capacity": 1024})
+                                                  "species_prior": "count", "capacity": 1024})
         # the leaf buffer is the decision's leaves (K * M * S): the padded 16384 rows were 93% of a decision (#355)
         s = search.HONEST_SETTINGS
         self.assertEqual(s["capacity"], s["k"] * s["m"] * s["s"])

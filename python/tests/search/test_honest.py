@@ -157,20 +157,46 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual(sampled["stat_points"].shape, (16, 6, 6))
 
     def test_live_spread_table_is_pinned(self):
-        # Live play's belief (owner, 2026-10-10): every A/B/C and PP_ team of the registry, pinned by its table hash; P1's
-        # and the evaluation's 79 SPREAD_SOURCES stay as they are. A registry change fails here until it is re-pinned.
-        import json
-        from pathlib import Path
+        # Live play's belief (owner 2026-10-12): the spreads derived from Smogon's usage stats of Reg M-C (the committed
+        # data/belief table, smogon_spreads: the highest rating cutoff with enough weight per species), the registry's
+        # stated A/B/C and PP_ spreads for a species Smogon lacks; pinned by the table's hash. P1's and the evaluation's 79 SPREAD_SOURCES stay as they are.
+        from duoforge import data as ddata
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             table, ids, info = honest.live_spread_table(ctx)
             self.assertEqual(info["sha256"], honest.LIVE_SPREAD_SHA256)
-            registry = json.loads((Path(honest.__file__).resolve().parents[2] / "data/teams/index.json")
-                                  .read_text(encoding="utf-8"))["teams"]
-            self.assertEqual(set(ids), {r["id"] for r in registry if r["id"] in ("A", "B", "C") or r["id"].startswith("PP_")})
-            self.assertTrue(set(honest.SPREAD_SOURCES) < set(ids))
+            self.assertTrue(set(honest.SPREAD_SOURCES) < set(ids))  # the registry's teams fill and leave themselves out
+            toxapex = ddata.find(ctx, ddata.TABLE_SPECIES, "toxapex")
+            level, rows = table.candidates(toxapex, 0, 0)
+            self.assertLessEqual(level, 3)  # the species has a prior (MoccaOTS's Toxapex refused every decision)
+            self.assertTrue((table.team[rows] == -1).all())  # from Smogon, not the registry
+            self.assertGreater(info["smogon"]["species"], 200)
             with mock.patch.object(honest, "LIVE_SPREAD_SHA256", "0" * 64), \
                     self.assertRaisesRegex(honest.SearchError, "pinned"):
                 honest.live_spread_table(ctx)
+
+    def test_a_species_without_prior_draws_the_counted_fallback(self):
+        # Owner 2026-10-12: with species_prior "count" a foe species without spreads in the table is drawn from the
+        # belief's general levels (its nature over every species, else every spread) instead of refusing the decision;
+        # every such species is named in the record, never silently.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            other = belief.SpreadTable.from_sides(duoforge.reference_setups([2])["sides"].reshape(-1))  # no Politoed team
+            own = belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
+            for table, fallback in ((other, True), (own, False)):
+                with self.subTest(fallback=fallback), \
+                        duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                        self.make(ctx, table=table, species_prior="count") as search:
+                    self.preview(search, b)
+                    self.start_turn(b)
+                    _, records = search.decide(b, [0], [0], [456], [False])
+                    self.assertEqual(records[0]["kind"], "searched")
+                    foe = [int(m["species_id"]) for m in b.observations[0, 0]["sides"][1]["members"][:6]]
+                    named = records[0]["spread_fallback"]
+                    self.assertEqual(bool(named), fallback)
+                    self.assertTrue(set(named) <= set(foe))
+                    if fallback:
+                        self.assertTrue(all(int(sp) not in set(table.species.tolist()) for sp in named))
+            with self.assertRaisesRegex(ValueError, "species_prior"):
+                self.make(ctx, species_prior="sometimes")
 
     def test_species_without_prior_is_refused_when_required(self):
         # Live play (owner, 2026-10-10): a foe species without a stated spread in the table is not drawn from the
@@ -997,6 +1023,107 @@ class FoeArena(unittest.TestCase):
         self.assertEqual(Search.calls, [([3], [1], [7], [False]), ([5], [0], [8], [True])])
         self.assertEqual([r["env"] for r in records], [3, 5])
         self.assertTrue(all(r["wall"] >= 0 for r in records))
+
+
+class SmogonSpreads(unittest.TestCase):
+    """The live belief's Smogon source (duoforge_search.smogon_spreads; owner 2026-10-12): spreads checked and
+    counted, the highest rating cutoff with enough weight per species, weights as whole draws, pinned files."""
+
+    @staticmethod
+    def stats(spreads, battles=1000):
+        return {"info": {"number of battles": battles}, "data": {name: {"Spreads": sp} for name, sp in spreads.items()}}
+
+    def test_a_spread_is_parsed_and_its_stat_points_checked(self):
+        from duoforge_search import smogon_spreads as ss
+        self.assertEqual(ss.parse_spread("Bold:32/0/18/0/16/0"), ("Bold", (32, 0, 18, 0, 16, 0)))
+        self.assertIsNone(ss.parse_spread("Bold:33/0/0/0/0/0"))  # past 32 in one stat
+        self.assertIsNone(ss.parse_spread("Bold:32/32/2/1/0/0"))  # past 66 in all
+        for bad in ("Bold", "Bold:32/0/18/0/16", "Bold:a/0/0/0/0/0"):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                ss.parse_spread(bad)
+
+    def test_each_species_takes_the_highest_cutoff_with_enough_weight(self):
+        from duoforge_search import smogon_spreads as ss
+        heavy, light = ss.MIN_WEIGHT, ss.MIN_WEIGHT / 4
+        sources = {
+            ("gen9championsvgc2026regmc", 1760): self.stats({"Toxapex": {"Bold:32/0/18/0/16/0": light}}),
+            ("gen9championsvgc2026regmcbo3", 1760): self.stats({"Toxapex": {"Relaxed:32/0/18/0/16/0": light},
+                                                                "Amoonguss": {"Calm:32/0/16/0/18/0": heavy},
+                                                                "Garchomp-Mega-Z": {"Jolly:2/32/0/0/0/32": heavy}}),
+            ("gen9championsvgc2026regmc", 1630): self.stats({"Toxapex": {"Bold:32/0/18/0/16/0": heavy / 2}}),
+            ("gen9championsvgc2026regmcbo3", 1630): self.stats({"Toxapex": {"Relaxed:32/0/18/0/16/0": heavy / 2}}),
+            ("gen9championsvgc2026regmc", 0): self.stats({"Toxapex": {"Bold:32/0/32/2/0/0": 9 * heavy},
+                                                          "Pikachu": {"Timid:0/0/0/32/2/32": 1.0}}),
+        }
+        chosen, counts = ss.species_spreads(sources)
+        # 1760 has Toxapex with too little weight (both formats summed), 1630 enough: its two formats' spreads
+        self.assertEqual(chosen["Toxapex"][0], 1630)
+        self.assertEqual(chosen["Toxapex"][1], {("Bold", (32, 0, 18, 0, 16, 0)): heavy / 2,
+                                                ("Relaxed", (32, 0, 18, 0, 16, 0)): heavy / 2})
+        self.assertEqual(chosen["Amoonguss"][0], 1760)
+        self.assertEqual(chosen["Pikachu"][0], 0)  # too light everywhere: the lowest cutoff's, as the fill
+        # a Mega forme's users bring the base species with its stone (an open sheet names the base): merged into it
+        self.assertEqual(chosen["Garchomp"], (1760, {("Jolly", (2, 32, 0, 0, 0, 32)): heavy}))
+        self.assertNotIn("Garchomp-Mega-Z", chosen)
+        self.assertEqual(counts["mega_merged"], 1)
+        self.assertEqual(counts["origin"], {"1760": 2, "1630": 1, "0": 1})
+
+    def test_weights_become_whole_draws_and_the_light_ones_are_counted(self):
+        from duoforge_search import smogon_spreads as ss
+        chosen = {"Toxapex": (1760, {("Bold", (32, 0, 18, 0, 16, 0)): 3.0, ("Calm", (32, 0, 16, 0, 18, 0)): 1.0,
+                                     ("Bold", (0, 0, 0, 0, 0, 1)): 1e-6})}
+        derived, dropped = ss.quantize(chosen)
+        self.assertEqual(derived, {"Toxapex": {"cutoff": 1760, "spreads": [["Bold", "32/0/18/0/16/0", 750],
+                                                                           ["Calm", "32/0/16/0/18/0", 250]]}})
+        self.assertEqual(dropped, {"below_resolution": 1, "beyond_max_spreads": 0})  # too light for one draw
+        many = {"Toxapex": (0, {("Bold", (i % 33, 0, 0, 0, 0, i // 33)): 1.0 + i for i in range(ss.MAX_SPREADS + 5)})}
+        kept, dropped = ss.quantize(many)
+        self.assertEqual(len(kept["Toxapex"]["spreads"]), ss.MAX_SPREADS)  # the heaviest MAX_SPREADS, renormalised
+        self.assertEqual(sum(n for _, _, n in kept["Toxapex"]["spreads"]), ss.RESOLUTION)
+        self.assertEqual(dropped["beyond_max_spreads"], 5)
+
+    def test_rows_repeat_each_spread_by_its_draws_and_count_unknown_species(self):
+        from duoforge import data as ddata
+        from duoforge_search import smogon_spreads as ss
+        derived = {"Toxapex": {"cutoff": 1760, "spreads": [["Bold", "32/0/18/0/16/0", 3], ["Calm", "32/0/16/0/18/0", 1]]},
+                   "Notamon": {"cutoff": 1760, "spreads": [["Bold", "32/0/18/0/16/0", 5]]}}
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            (team, species, nature, item, spreads), counts = ss.rows(ctx, derived)
+            toxapex = ddata.find(ctx, ddata.TABLE_SPECIES, "toxapex")
+            bold = ddata.find(ctx, ddata.TABLE_NATURE, "bold")
+        self.assertEqual(species, [toxapex] * 4)
+        self.assertEqual((set(team), set(item)), ({-1}, {-1}))  # no team to leave out; no item stated with a spread
+        self.assertEqual([n == bold for n in nature], [True, True, True, False])
+        self.assertEqual([list(x) for x in spreads[:1]], [[32, 0, 18, 0, 16, 0]])
+        self.assertEqual(counts, {"species": 1, "outside_context": 1})
+
+    def test_the_committed_table_credits_its_source_and_regenerates(self):
+        # Owner 2026-10-12: a derived table may be committed with credits; the raw stats stay outside the repository.
+        from duoforge_search import smogon_spreads as ss
+        table = ss.load_table()
+        header = table["source"]
+        self.assertIn("smogon.com/stats", header["credit"])
+        self.assertEqual(header["month"], ss.MONTH)
+        self.assertEqual(header["cutoffs"], list(ss.CUTOFFS))
+        self.assertEqual(header["files"], ss.SOURCES)
+        self.assertIn("Toxapex", table["species"])
+        tox = table["species"]["Toxapex"]["spreads"]
+        self.assertEqual(sum(n for _, _, n in tox), ss.RESOLUTION)
+        with open(ss.TABLE_PATH, "rb") as f:
+            self.assertEqual(hashlib.sha256(f.read()).hexdigest(), ss.TABLE_SHA256)  # the pin of the committed file
+        self.assertEqual(ss.render(table), open(ss.TABLE_PATH, encoding="utf-8").read())  # one rendering: --check
+
+    def test_the_cached_files_must_be_the_pinned_ones(self):
+        from duoforge_search import smogon_spreads as ss
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(honest.SearchError, "missing"):
+                ss.load(tmp)
+            for name in ss.SOURCES:
+                with open(os.path.join(tmp, name), "w", encoding="utf-8") as f:
+                    json.dump(self.stats({}), f)
+            with self.assertRaisesRegex(honest.SearchError, "pinned"):
+                ss.load(tmp)
+
 
 PINNED_OWN = [[103, 97], [289, 295], [358, 352]]
 PINNED_FOE = [[261, 293], [165, 162], [171, 165]]
