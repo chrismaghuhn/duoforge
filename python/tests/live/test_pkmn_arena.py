@@ -467,6 +467,26 @@ class ArenaTest(unittest.TestCase):
         self.assertEqual(log["fallback_battles"], {})
         self.assertEqual(log["counts"]["wins"], 1)
 
+    def test_a_replay_with_new_timestamps_resyncs(self):
+        # The arena's replay gives every |t:| line the time of the replay (live, 2026-10-13, #455): a timestamp is
+        # no battle line, so the resync must not compare it
+        def stamped(messages, t):
+            return [[f"|t:|{t + k}"] + m for k, m in enumerate(messages)]
+        stamped_fixture = stamped(FIXTURE["messages"][:6], 1791847600)
+        first = LOGIN + [room(["|init|battle", f"|title|{NAME} vs. Opponent", "|j|☆Opponent"])] + \
+            [room(m) for m in stamped_fixture]
+        lines = ["|init|battle", f"|title|{NAME} vs. Opponent", "|j|☆Opponent"]
+        lines += [l for m in stamped(FIXTURE["messages"][:6], 0) for l in m
+                  if not l.startswith("|request|")]
+        replay = [room([l if not l.startswith("|t:|") else "|t:|1791847914" for l in lines])]
+        second = LOGIN + replay + [room(FIXTURE["messages"][5])] + [room(m) for m in FIXTURE["messages"][6:8]] + \
+            [room(["|win|" + NAME])]
+        self.make(connections=[(first, 1006), (second, 4001)])
+        self.run_bot()
+        chosen = [s for s in self.sent if "/choose" in s]
+        self.assertTrue(chosen[-1].endswith(f"|{request_of(7)['rqid']}") and "default" not in chosen[-1], chosen)
+        self.assertEqual(self.run_log()["fallback_battles"], {})
+
     def test_a_replay_that_differs_falls_back(self):
         lines = self.replay(6)[0].split("\n")
         changed = [lines[0]] + [l.replace("Grimmsnarl, L50, M|100/100", "Grimmsnarl, L50, M|90/100") for l in lines[1:]]
