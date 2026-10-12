@@ -111,7 +111,6 @@ if(DUOFORGE_ENABLE_IPO)
 endif()
 
 set(DUOFORGE_ITEM_SOURCES
-    src/combat/items/held.c
     src/combat/items/families.c
     src/combat/items/white_herb.c
 )

@@ -1,4 +1,8 @@
-#include "combat/items/items.h"
+#ifndef DUOFORGE_COMBAT_ITEMS_HELD_H
+#define DUOFORGE_COMBAT_ITEMS_HELD_H
+
+/* Hot held-item access stays visible to every caller, including without IPO. */
+#include "state/battle_internal.h"
 
 /* The item a member holds now, stored as 1 + id (0 = none): the one the member's sheet says unless it has been used
  * up, or the one that the POOL tail's item_now holds for it (zero under every other kind, and zero unless something
@@ -6,7 +10,7 @@
  * yet). Every rule of the turn code reads the item through this, never through dfi_member.item, which is the sheet's
  * (and what the Mega Evolution reads: a Mega Stone is never taken from its own species). `m` is a member of `b`; no
  * heap, one tail read for a member that is found on a side. */
-uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m)
+static inline uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m)
 {
     if (m == NULL || m->item_consumed != 0u) {
         return 0u; /* used up, whichever item it was */
@@ -28,7 +32,7 @@ uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m)
 }
 
 /* The member holds item `id` and has not used it up or lost it (items are stored as 1 + id). */
-bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
+static inline bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
 {
     return m != NULL && dfi_item_code(b, m) == 1u + id;
 }
@@ -39,8 +43,10 @@ bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id
  * with the Pokemon itself as the source, so a Mega Stone on another species, and every other item, is taken.
  * dfi_member.mega_capable is exactly "holds the stone of its own base forme" (the member invariant) and stays after
  * the Mega Evolution, as the Pokemon's baseSpecies does. */
-bool dfi_item_takeable(const struct duoforge_battle *b, const dfi_member *m)
+static inline bool dfi_item_takeable(const struct duoforge_battle *b, const dfi_member *m)
 {
     const uint32_t item = dfi_item_code(b, m);
     return item != 0u && !(m->mega_capable != 0u && item == m->item);
 }
+
+#endif

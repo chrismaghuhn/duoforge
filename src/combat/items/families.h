@@ -9,7 +9,7 @@
  * chooses its place in the chain and retains the useItem/AfterUseItem path.
  *
  * The functions are pure and take the item the holder has now (1 + id, 0 for
- * none: items/held.c's dfi_item_code, which knows what is used up or taken), so that
+ * none: items/held.h's dfi_item_code, which knows what is used up or taken), so that
  * a test can run every item against every type (tests/items/test_item_family.c). No
  * item means no family.
  */
@@ -27,7 +27,7 @@
 #define DFI_RESIST_BERRY_MODIFIER 2048u
 
 /* The family row of an item, given as 1 + id (0 = no item: what a member holds now, the used-up and the lost item
- * included, is the caller's: items/held.c's dfi_item_code); the row of no family without one. The member invariant bounds
+ * included, is the caller's: items/held.h's dfi_item_code); the row of no family without one. The member invariant bounds
  * the item id, so the guard on it only keeps the read in the table. */
 static inline dfi_item_family dfi_held_family(uint32_t item)
 {
