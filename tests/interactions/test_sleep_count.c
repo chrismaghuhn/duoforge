@@ -174,14 +174,14 @@ static void check_attempts(df_test *t, const duoforge_context *ctx, uint32_t sta
     DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
     /* move slot 0 of each lead: the own leads (flat 0, 1) hit the foe's (flat 2, 3); the sleeper (flat 2) hits the own lead */
     static const uint8_t move[2][2] = {{0u, 0u}, {0u, 0u}};
-    static const uint8_t target[2][2] = {{2u, 3u}, {0u, 1u}};
+    static const uint8_t target[2][2] = {{2u, 3u}, {DUOFORGE_TARGET_NONE, 0u}}; /* the sleeper's Protect takes no target */
     uint32_t counter = start;
     uint32_t cant = 0u;
     for (uint32_t attempt = 1u; attempt <= start; ++attempt) {
         duoforge_decision_bundle bd;
         turn_bundle(&bd, b, move, target);
         duoforge_step_result res;
-        DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, duoforge_battle_step(ctx, b, &bd, &res), DUOFORGE_OK);
         if (attempt < start) {
             /* a cant: the counter goes down, the count goes up, the sleep goes on */
             ++cant;
