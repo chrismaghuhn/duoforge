@@ -2307,6 +2307,13 @@ class FactsTest(unittest.TestCase):
         self.assertEqual(f[0].moves, frozenset({"Meteor Beam"}))
         self.assertEqual(f[1].moves, frozenset({"Knock Off"}))  # a called move's charge is not its own
 
+    def test_a_cant_line_of_an_ability_names_its_holders_ability(self):
+        # decision 0081: cant|holder|ability: Armor Tail|Move|[of] user (the pin, data/abilities.ts armortail) shows the
+        # holder's ability; the stopped user's ability stays unknown
+        f = self.facts("|cant|p2b: Giraffe|ability: Armor Tail|Fake Out|[of] p1b: Roar", side=1)
+        self.assertEqual(f[1].ability, "Armor Tail")
+        self.assertEqual(self.facts("|cant|p2b: Giraffe|ability: Armor Tail|Fake Out|[of] p1b: Roar")[1].ability, None)
+
     def test_ally_switch_swaps_the_occupants(self):
         # review C1: after |swap| both positions name the other member
         f = self.facts("|move|p1b: Roar|Ally Switch|p1b: Roar", "|swap|p1b: Roar|0|[from] move: Ally Switch",
