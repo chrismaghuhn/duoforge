@@ -33,9 +33,10 @@ if(DUOFORGE_PCG_REFERENCE_DIR)
             "-DOUT=${CMAKE_CURRENT_BINARY_DIR}/pcg32_kat_vectors.h"
             "-DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/data/pcg32_kat_vectors.h"
             -P "${PROJECT_SOURCE_DIR}/cmake/checks/kat_regen.cmake")
-    set_tests_properties(duoforge.rng.kat_regen PROPERTIES TIMEOUT 120 LABELS reference)
+    duoforge_label_test(duoforge.rng.kat_regen quick flow ci-rng)
+    set_tests_properties(duoforge.rng.kat_regen PROPERTIES TIMEOUT 120)
 
     duoforge_add_test(NAME duoforge.rng.reference_differential
         SOURCES flow/test_rng_reference_differential.c WHITEBOX
-        TIMEOUT 120 LABELS reference LIBS duoforge_pcg_reference)
+        TIMEOUT 120 LABELS ci-rng LIBS duoforge_pcg_reference TIER quick AREA flow)
 endif()

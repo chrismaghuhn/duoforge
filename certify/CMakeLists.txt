@@ -1,3 +1,4 @@
+include("${PROJECT_SOURCE_DIR}/tests/support/labels.cmake")
 # The certified dataset of the closure matchups (docs/decisions/0010, M5
 # step 4). The reference teams come from the test support, so the tool
 # builds with the tests.
@@ -11,16 +12,19 @@ endif()
 
 add_test(NAME duoforge.certify.dataset
     COMMAND duoforge_certify verify "${PROJECT_SOURCE_DIR}/docs/certification/closure-v1/dataset.txt")
-set_tests_properties(duoforge.certify.dataset PROPERTIES TIMEOUT 600 LABELS certify)
+duoforge_label_test(duoforge.certify.dataset quick certify)
+set_tests_properties(duoforge.certify.dataset PROPERTIES TIMEOUT 600)
 foreach(_kind IN ITEMS digest choice seed)
     add_test(NAME duoforge.certify.negative.${_kind}
         COMMAND "${CMAKE_COMMAND}" "-DCERTIFY=$<TARGET_FILE:duoforge_certify>"
             "-DDATASET=${PROJECT_SOURCE_DIR}/docs/certification/closure-v1/dataset.txt"
             "-DOUT=${CMAKE_CURRENT_BINARY_DIR}/dataset_${_kind}.txt" "-DKIND=${_kind}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/mutate_check.cmake")
-    set_tests_properties(duoforge.certify.negative.${_kind} PROPERTIES TIMEOUT 600 LABELS certify)
+    duoforge_label_test(duoforge.certify.negative.${_kind} quick certify)
+    set_tests_properties(duoforge.certify.negative.${_kind} PROPERTIES TIMEOUT 600)
 endforeach()
 # M5 step 5: a battle of the dataset shrunk to its first Mega Evolution.
 add_test(NAME duoforge.certify.minimize
     COMMAND duoforge_certify minimize "${PROJECT_SOURCE_DIR}/docs/certification/closure-v1/dataset.txt" 7 event:31)
-set_tests_properties(duoforge.certify.minimize PROPERTIES TIMEOUT 600 LABELS certify)
+duoforge_label_test(duoforge.certify.minimize quick certify)
+set_tests_properties(duoforge.certify.minimize PROPERTIES TIMEOUT 600)

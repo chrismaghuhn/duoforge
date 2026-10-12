@@ -1,3 +1,4 @@
+include("${PROJECT_SOURCE_DIR}/tests/support/labels.cmake")
 # Benchmark API, action tally and driver (docs/decisions/0008). The reference
 # teams come from the test support, so the benchmark builds with the tests.
 
@@ -55,15 +56,18 @@ endif()
 # A functional smoke run (tiny workload; it checks the report, not the speed).
 add_test(NAME duoforge.bench.smoke
     COMMAND duoforge_bench --battles 2 --repetitions 1 --warmup 0 --out ${CMAKE_CURRENT_BINARY_DIR}/bench_smoke.json)
-set_tests_properties(duoforge.bench.smoke PROPERTIES TIMEOUT 120 LABELS bench)
+duoforge_label_test(duoforge.bench.smoke quick bench)
+set_tests_properties(duoforge.bench.smoke PROPERTIES TIMEOUT 120)
 add_test(NAME duoforge.bench.batch_smoke
     COMMAND duoforge_bench --battles 64 --repetitions 1 --warmup 0 --families batch --workers 1,2,3
             --out ${CMAKE_CURRENT_BINARY_DIR}/bench_batch_smoke.json)
-set_tests_properties(duoforge.bench.batch_smoke PROPERTIES TIMEOUT 120 LABELS bench)
+duoforge_label_test(duoforge.bench.batch_smoke quick bench)
+set_tests_properties(duoforge.bench.batch_smoke PROPERTIES TIMEOUT 120)
 
 # The action tally on random real-team battles.
 add_executable(duoforge_bench_tally test_tally.c)
 target_link_libraries(duoforge_bench_tally PRIVATE duoforge_bench_lib)
 duoforge_configure_target(duoforge_bench_tally)
 add_test(NAME duoforge.bench.tally COMMAND duoforge_bench_tally)
-set_tests_properties(duoforge.bench.tally PROPERTIES TIMEOUT 60 LABELS bench)
+duoforge_label_test(duoforge.bench.tally quick bench)
+set_tests_properties(duoforge.bench.tally PROPERTIES TIMEOUT 60)

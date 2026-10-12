@@ -1,0 +1,44 @@
+[
+  {
+    "first_line": 57,
+    "last_line": 79,
+    "new": "tests/data/provenance.cmake",
+    "old": "tests/CMakeLists.txt"
+  },
+  {
+    "first_line": 118,
+    "last_line": 125,
+    "new": "tests/data/license.cmake",
+    "old": "tests/CMakeLists.txt"
+  },
+  {
+    "first_line": 128,
+    "last_line": 154,
+    "new": "tests/header_check/tests.cmake",
+    "old": "tests/CMakeLists.txt"
+  },
+  {
+    "first_line": 171,
+    "last_line": 189,
+    "new": "cmake/checks/tests.cmake",
+    "old": "tests/CMakeLists.txt"
+  },
+  {
+    "first_line": 190,
+    "last_line": 212,
+    "new": "tests/canary/tests.cmake",
+    "old": "tests/CMakeLists.txt"
+  },
+  {
+    "first_line": 104,
+    "last_line": 107,
+    "new": "tools/cloud/aws_fuzz/tests.cmake",
+    "old": "tests/CMakeLists.txt"
+  },
+  {
+    "first_line": 109,
+    "last_line": 113,
+    "new": "tools/cloud/gcp_watch/tests.cmake",
+    "old": "tests/CMakeLists.txt"
+  }
+]
