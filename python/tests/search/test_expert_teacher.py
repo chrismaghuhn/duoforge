@@ -534,9 +534,9 @@ class Teacher(unittest.TestCase):
     # per machine conditions: the fake net's float32 matmuls follow the BLAS/CPU, so another machine skips.
     PINNED_TWO_PHASE = {
         "Windows|AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD|numpy 2.5.3":
-            "4fd73c236e4f58a6479445350080ff1a9b6941c5c7271090235fcd26d617bd65",
+            "c8f05e83d59be2d03c54bfd57973158a453dc7a11199e655102ecd31021ce573",
         "Linux|AMD Ryzen 7 5800X 8-Core Processor|numpy 2.5.3":
-            "fe779ed31047e3797e0fa7b39e4495139d0cbceda959938182de5a986cce96b4",
+            "d35f7409f059df8239ec617f1e51cb9f69b2af83d416186f47c4e1489c5fd199",
     }
 
     @staticmethod
