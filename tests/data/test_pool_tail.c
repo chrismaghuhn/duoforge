@@ -1314,8 +1314,8 @@ int main(void)
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
         /* step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes; step G90 adds the elapsed count
          * (one byte of a position's reserved four) and a pad byte per position, so each position is an even 36 bytes */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 324u); /* 316 + the Ally Switch byte and the pad of each position (G80) */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 156u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 336u); /* 316 + the Ally Switch byte and the pad of each position (G80); decision 0066: +12 member bytes (9) */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 162u); /* decision 0066: the six sleep-count bytes are data, the reserved byte gone */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 38u); /* 35 data bytes, pos_pad (G90), the Ally Switch byte and its pad (G80) */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
         unsigned reserved = 0u;
