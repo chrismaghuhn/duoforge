@@ -106,3 +106,20 @@ answer. The former weighted fill for these kinds is removed with the table (sect
 ## 10. Open points
 
 1. The 7 mutants of the step report: decrement off by one; the old {3,3,2} fill; S = 2 allowed at c = 2; `sleep_cant` not reset at a clear site; `sleep_cant` incremented on a switch or on the wake; threshold 1/2 instead of 1/3; counter != S - c.
+
+## 11. Mutant results (step 442, local, one lock job)
+
+Each mutant was applied to the committed source, `duoforge_view_sleep_count` rebuilt and run, and the source restored from git.
+Every mutant is caught (exit 1):
+
+| mutant | caught by (first failing check) | failures |
+|---|---|---|
+| M1 the first cant is not counted | `sleep_cant == cant` after the first attempt | 3 |
+| M2 old 1..3 fill (counter 1 + pick) | `rebuilt counter == S - c` | 33 |
+| M3 S = 2 allowed at c = 2 | `from_view == OK` (counter 0) | 12 |
+| M4 the wake keeps the count | `duoforge_battle_step == OK` (invariant) | 6 |
+| M5 the wake increments the count | `duoforge_battle_step == OK` (invariant) | 6 |
+| M6 threshold 1/2 instead of 1/3 | rebuilt counter == expected counter | 5 |
+| M7 counter = S instead of S - c | `rebuilt counter == S - c` | 18 |
+
+Clean rebuild after the mutants: exit 0, 0 failures. Runner (duoforge_view_sleep_count) SHA-256 2fd26bcb97bcbbb0f038eb60111b7ac44186c763837c902dfb0047f41389060d.
