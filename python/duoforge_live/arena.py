@@ -258,14 +258,17 @@ def main(argv=None):
     p.add_argument("--server-dir", default=None,
                    help="a pinned Showdown checkout to start with --no-security, bound to --host only "
                         "(on Windows with WSL bots: tools/live/local_server.ps1 starts it on the WSL host address)")
+    from . import search
+    search.add_foe_net_arguments(p)  # the search bot's foe model, as in play
     args = p.parse_args(argv)
     if args.games % 2 or args.games < 2:
         raise SystemExit("the arena plays pairs: --games must be even")
     check_host(args.host)  # before anything is loaded or connected
+    foe_net = search.foe_net_path(search.foe_net_of(args))  # an unconfigured foe model stops here too
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
     from duoforge_learn import checkpoint
-    from . import client, data, policy, search
+    from . import client, data, policy
     out = Path(args.out)
     (out / "logs").mkdir(parents=True, exist_ok=True)
     _, config = checkpoint.load(args.checkpoint)
@@ -295,7 +298,8 @@ def main(argv=None):
             cfg = client.Config(name=f"dfarena{lane}{role}bot", team="own", log_dir=str(out / "logs"),
                                 team_link=None, server=url)
             return client.Bot(cfg, tables, net, login=lambda *a: "", search=live, team_texts={"own": ""})
-        return bot("s", search.load(args.checkpoint)), bot("r", None)
+        return bot("s", search.load(args.checkpoint, foe_net=foe_net,
+                                    foe_net_sha256=search.foe_net_sha256_of(args))), bot("r", None)
 
     def progress(record):
         done = len(records)

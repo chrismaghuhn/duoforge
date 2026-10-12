@@ -4,7 +4,7 @@ The password of a registered name comes only from the environment variable
 DUOFORGE_PS_PASSWORD; without it the bot logs in as a guest.
 
     python -m duoforge_live --server arena --format ID --checkpoint P [--team FILE] [--team-pool FILE]
-                            [--search honest [--foe-net P]] ...
+                            [--search honest [--foe-net P | --no-foe-net]] ...
 
 plays on PKMN Arena (pkmn_arena): the bot's name comes from ARENA_BOT_NAME and its token from ARENA_BOT_TOKEN, only
 from the environment; no option takes the token.
@@ -38,6 +38,7 @@ def _arguments(argv):
                    help="honest: the honest search X plays the turn decisions (plan 2026-10-10-live-honest-search); "
                         "--checkpoint must then be the trained (not widened) format-2 file")
     p.add_argument("--challenge-format", default="gen9championsvgc2026regmc", choices=sorted(client.FORMATS))
+    search.add_foe_net_arguments(p)  # with --search honest: the pinned foe model BC6 (owner 2026-10-12)
     return p.parse_args(argv)
 
 
@@ -54,10 +55,7 @@ def _arena_arguments(argv):
                         "is played by the policy only when one of them matches its request")
     p.add_argument("--search", default="raw", choices=("raw", "honest"),
                    help="honest: the honest search X plays the turn decisions (a trained format-2 checkpoint)")
-    p.add_argument("--foe-net", default=None,
-                   help="with --search honest: the checkpoint that models the foe in the search's worlds (Honest's "
-                        "foe_net, M7); recommended (owner, 2026-10-12): the same BC6 file as --checkpoint")
-    p.add_argument("--foe-net-sha256", default=None, help="with --foe-net: the file's SHA-256, checked before loading")
+    search.add_foe_net_arguments(p)  # with --search honest: the pinned foe model BC6 (owner 2026-10-12)
     p.add_argument("--log-dir", default=_log_dir(), help="private logs, outside the repository")
     return p.parse_args(argv)
 
@@ -70,9 +68,9 @@ def _is_arena(argv):
 def arena_main(argv):
     pkmn_arena.check_argv(argv)  # before argparse, whose errors echo the arguments
     args = _arena_arguments(argv)
-    if args.foe_net is not None and args.search != "honest":
+    if (args.foe_net is not None or args.no_foe_net or args.foe_net_sha256 is not None) and args.search != "honest":
         pkmn_arena._refuse("--foe-net models the foe in the honest search: it needs --search honest")
-    if args.foe_net_sha256 is not None and args.foe_net is None:
+    if args.foe_net_sha256 is not None and args.no_foe_net:
         pkmn_arena._refuse("--foe-net-sha256 pins the file of --foe-net")
     name = pkmn_arena.credentials()  # the token's value is never shown
     from duoforge_replay.dataset import refuse_repository
@@ -84,19 +82,21 @@ def arena_main(argv):
     pool = pkmn_arena.read_pool(args.team_pool) if args.team_pool else []
     if team_text is None and not pool:
         pkmn_arena._refuse("--team (the team ladder) or --team-pool (the random-team ladder) is needed")
+    foe_path = None
     if args.search == "honest":
         from .tracker import Tracker
         search.check_tracker(Tracker)
+        try:  # the pinned foe model BC6 by default (owner 2026-10-12): unconfigured stops here, before any loading
+            foe_path = search.foe_net_path(search.foe_net_of(args))
+        except ValueError as err:
+            pkmn_arena._refuse(str(err))
     net, tables = policy.load(args.checkpoint), data.for_checkpoint(args.checkpoint)
     pkmn_arena.check_teams(tables, team_text, pool)
     live, foe_check = None, None
     if args.search == "honest":
-        settings = None
-        if args.foe_net is not None:
-            foe, foe_check = pkmn_arena.load_foe_net(args.foe_net, args.foe_net_sha256)
-            settings = dict(search.HONEST_SETTINGS, foe_net=foe)
-        live = search.load(args.checkpoint, settings)
-    mode = args.search + ("+foe_net" if args.foe_net is not None else "")
+        live = search.load(args.checkpoint, foe_net=foe_path, foe_net_sha256=search.foe_net_sha256_of(args))
+        foe_check = live.foe_check
+    mode = args.search + ("+foe_net" if foe_path is not None else "")
     bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
                               search=live, mode=mode, foe_check=foe_check)
     try:
@@ -117,12 +117,16 @@ def main(argv=None):
     config = client.Config(name=args.name, team=args.team, log_dir=args.log_dir, team_link=args.team_link,
                            challenge=args.challenge, challenge_format=args.challenge_format, server=args.server)
     client.check_arguments(config)  # before anything is loaded or connected
+    foe_path = None
     if args.search == "honest":
         from .tracker import Tracker
         search.check_tracker(Tracker)
+        foe_path = search.foe_net_path(search.foe_net_of(args))  # an unconfigured foe model stops here, before loading
     # the tables of the network's data kind, a format-2 file's fingerprint checked: a mismatch stops here, before a game
     net, tables = policy.load(args.checkpoint), data.for_checkpoint(args.checkpoint)
-    live = search.load(args.checkpoint) if args.search == "honest" else None
+    live = None
+    if args.search == "honest":
+        live = search.load(args.checkpoint, foe_net=foe_path, foe_net_sha256=search.foe_net_sha256_of(args))
     bot = client.Bot(config, tables, net, search=live)  # bot.close() closes the search too
     try:
         asyncio.run(bot.run())
