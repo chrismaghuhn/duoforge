@@ -79,6 +79,16 @@ class Unreconstructible(Exception):
     """An explicitly counted absence of a supported public reconstruction."""
 
 
+# How a refused leaf (its engine step is E_UNSUPPORTED) enters a decision's table (#436): "score" counts it as the
+# agent's loss, as the arena does (expert.py keeps it, pinned by its manifest); "drop" removes its own candidate.
+REFUSED = ("score", "drop")
+
+
+def _check_refused(refused):
+    if refused not in REFUSED:
+        raise ValueError(f"refused must be one of {REFUSED} (got {refused!r})")
+
+
 def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
     """Read the pinned A/B/C and PP_ stated spreads, never LL_ importer guesses
     (sources=None: every A/B/C and PP_ team of an explicitly chosen root).
@@ -565,7 +575,8 @@ class Honest(lookahead.Lookahead):
                             raise SearchError("no pair of the root's mask is in the engine's domain")
                         if (legal != root_mask).any():
                             own, own_p = lookahead.select(pp[d], legal, self.k)
-                        result = self._decision(p, int(keys[d]), own, own_p, weights, bool(last_step[d]), costs)
+                        result = self._decision(p, int(keys[d]), own, own_p, weights, bool(last_step[d]), costs,
+                                                refused="drop")
                         result["cut_pairs"] = int((root_mask & ~legal).sum())  # the root's pairs the engine refuses
                         self.last[-1]["hypotheses"] = hypotheses.copy()
                         result.update({"bench_dropped": dropped, "respreads": respreads, "exclude_team": excluded,
@@ -616,9 +627,10 @@ class Honest(lookahead.Lookahead):
                 history["turn_start"] = record.copy()
         return history
 
-    def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None):
+    def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None, *, refused="score"):
+        _check_refused(refused)
         request = self._prepare(p, key, own, weights, last_step, costs)
-        return self._finish(request, self._values(request, costs), own_p, costs, budget)
+        return self._finish(request, self._values(request, costs), own_p, costs, budget, refused=refused)
 
     def _prepare(self, p, key, own, weights, last_step, costs):
         """Phase one of a decision on the current worlds: the worlds' policy,
@@ -700,10 +712,14 @@ class Honest(lookahead.Lookahead):
             costs["network"] += time.perf_counter() - t
         return values
 
-    def _finish(self, request, values, own_p, costs, budget=None):
+    def _finish(self, request, values, own_p, costs, budget=None, *, refused="score"):
         """Phase two: the table from the request's leaves and their values
         (float32; non-open leaves are never read: a SearchError reproduction
-        records them as given), the reduction and the decision record."""
+        records them as given), the reduction and the decision record.
+        refused="drop" (#436): an own candidate with a refused leaf is left
+        out of the solve and named in refused_pairs; when none remains the
+        decision is Unreconstructible."""
+        _check_refused(refused)
         values = np.asarray(values)
         if values.shape != request.step.shape or values.dtype != np.float32:
             raise ValueError("a request needs one float32 value per leaf")
@@ -721,6 +737,18 @@ class Honest(lookahead.Lookahead):
                                 "choices": request.choices.tobytes().hex()}
             raise
         tables = tab.values.transpose(2, 0, 1)
+        raw, refused_pairs = int(own[0]), []
+        if refused == "drop":
+            # The own candidates with a refused leaf are no outcome of the engine: they leave the solve (#436).
+            refused_rows = np.unique(i[request.step == lookahead._UNSUPPORTED])
+            if refused_rows.size:
+                keep = np.setdiff1d(np.arange(own.size), refused_rows)
+                if not keep.size:
+                    raise Unreconstructible("engine_refused_leaves")
+                refused_pairs = [int(own[r]) for r in refused_rows]
+                own, own_p = own[keep], np.asarray(own_p)[keep]
+                tab = lookahead.Table(tab.a[keep], tab.stderr[keep], tab.counts, tab.values[keep])
+                tables = tab.values.transpose(2, 0, 1)
         rank = np.arange(own.size)
         try:
             outcomes, reduced = reduce(tables, weights, qs, rank,
@@ -734,9 +762,11 @@ class Honest(lookahead.Lookahead):
                           "samples": w.copy(), "values": tab.values.copy()})
         foe_pairs = request.foe_pairs
         action = int(own[outcomes[self.rule]])
+        dropped = {} if refused == "score" else {"refused_pairs": refused_pairs}
         return {"kind": "searched", "rule": self.rule, "k": own.size, "m": foe_pairs.shape[1], "s": self.s,
                 "own_pairs": own.tolist(), "own_probs": own_p.tolist(), "foe_pairs": foe_pairs.tolist(),
                 "foe_probs": qs.tolist(), "weights": weights.tolist(), "coverage": float(np.sum(weights * qs.sum(axis=1))),
                 "table": tab.a.tolist(), "tables": tables.tolist(), "stderr": tab.stderr.tolist(),
-                "choice": action, "raw": int(own[0]), "changed": action != int(own[0]), "outcomes": outcomes,
-                "leaves": tab.counts, "near_duplicates": lookahead.near_duplicates(tab.a), "split": None, **reduced}
+                "choice": action, "raw": raw, "changed": action != raw, "outcomes": outcomes,
+                "leaves": tab.counts, "near_duplicates": lookahead.near_duplicates(tab.a), "split": None, **dropped,
+                **reduced}
