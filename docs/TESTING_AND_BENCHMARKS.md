@@ -1,5 +1,30 @@
 # Testing, conformance, diagnostics and benchmarks
 
+## Test tiers and areas
+
+Every CTest has one tier (`quick`, `full`, `reference`, or `slow`) and one owner area.
+`reference` requires the pinned Showdown/Node; `slow` covers JAX learning checks or checks
+whose measured typical duration is at least two minutes. The remaining checks are
+`quick` below about five seconds, otherwise `full`; required fixture setup counts
+towards that duration. Durations use the median of the
+two full Linux Release CI logs on the restructure baseline; see the PR's borderline cases.
+Areas follow the C/Python test folders; tools/check scripts use `tools`, and the
+benchmark/certification drivers retain `bench`/`certify`. Labels are set by each folder's
+registration. The `python` label is retained; `requires-jax` describes the dependency
+independently of the `learn` area.
+
+```bash
+ctest --test-dir build -L '^quick$' --output-on-failure
+ctest --test-dir build -L '^<area>$' --output-on-failure  # e.g. flow, items, live, search
+ctest --test-dir build -LE '^slow$' --output-on-failure
+```
+
+`-LE slow` still includes pinned-reference checks: it is not an offline-only suite.
+PCG checkout checks are short native checks; select that exact pair with
+`ctest --test-dir build -L '^ci-rng$'`. CI's `ci-*` labels preserve its exact
+TSan, MSVC smoke, skip-guard and presence-check selections independently of tiers/areas.
+The full hosted CI matrix remains the merge gate.
+
 ## 1. Test layers
 
 ### Unit and arithmetic tests

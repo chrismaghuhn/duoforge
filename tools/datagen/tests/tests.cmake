@@ -1,12 +1,14 @@
 # The table generator refuses move shapes it does not model (no checkout needed).
 add_test(NAME duoforge.data.gen_closure_refusals
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_gen_closure.py")
+duoforge_label_test(duoforge.data.gen_closure_refusals quick tools)
 set_tests_properties(duoforge.data.gen_closure_refusals PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 # The generated names of the data query API against the macros of the headers and the
 # key() mapping of the trace converter (no checkout needed).
 add_test(NAME duoforge.data.pool_names
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_pool_names.py")
+duoforge_label_test(duoforge.data.pool_names quick tools)
 set_tests_properties(duoforge.data.pool_names PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 # The whole-pool rows (decision 0015 section 4.2) against the committed output of the pinned validator, with code
@@ -14,5 +16,6 @@ set_tests_properties(duoforge.data.pool_names PROPERTIES TIMEOUT 60
 # the UNMODELED markers (no checkout needed).
 add_test(NAME duoforge.data.pool_rows
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_pool_rows.py")
+duoforge_label_test(duoforge.data.pool_rows quick tools)
 set_tests_properties(duoforge.data.pool_rows PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
