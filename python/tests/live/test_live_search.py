@@ -32,7 +32,7 @@ class Searcher:
             self.gate.wait(5)
         if self.error is not None:
             raise self.error
-        record = {"kind": self.kind, "choice": 7}
+        record = {"kind": self.kind, "choice": 7, **getattr(self, "extra", {})}
         if self.reason is not None:
             record["reason"] = self.reason
         if self.causes is not None:
@@ -68,6 +68,21 @@ class LiveSearchTest(unittest.TestCase):
         self.assertEqual(live.searcher.calls, [(1, 99)])
         env, seat, parts = live.roots.set_calls[0]
         self.assertEqual((env, seat, parts["episode"], parts["obs"], parts["pairs"]), (0, 1, 3, "obs", "pairs"))
+
+    def test_a_counted_spread_fallback_reaches_the_log_and_the_summary(self):
+        # species_prior "count" (owner 2026-10-12): a searched decision that drew a foe species from the belief's
+        # general levels says so in its outcome (the live log's line) and the game's summary counts it; never silent.
+        from types import SimpleNamespace
+        from duoforge_live import game
+        searcher = Searcher()
+        searcher.extra = {"spread_fallback": [288], "spread_redrawn": [95]}
+        named = _decide(self.make(searcher))
+        self.assertEqual((named.cause, named.spread_fallback, named.spread_redrawn), ("searched", [288], [95]))
+        self.assertEqual(named.as_dict()["spread_fallback"], [288])
+        plain = _decide(self.make(Searcher()))
+        self.assertEqual((plain.spread_fallback, plain.spread_redrawn), (None, None))
+        summary = game.Game.summary(SimpleNamespace(outcomes=[named, plain, named], dirty=None))
+        self.assertEqual((summary["spread_fallback"], summary["spread_redrawn"]), (2, 2))
 
     def test_a_named_refusal_is_class_a(self):
         live = self.make(Searcher("unreconstructible", "no spread prior for foe species [52]"))
@@ -416,9 +431,10 @@ class ClientSearchTest(unittest.TestCase):
             cli._arguments(base + ["--search", "nash"])
         self.assertEqual(caught.exception.code, 2)
         # The live search's settings are the approved spec's: X (mix, lambda 0.5), K = M = 8, 16 worlds, the pinned
-        # live spread table, a missing spread prior refused.
+        # live spread table; a foe species without a spread prior draws the belief's general levels, named in the record
+        # (owner 2026-10-12: a refused decision played whole games raw).
         self.assertEqual(search.HONEST_SETTINGS, {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5,
-                                                  "species_prior": True, "capacity": 1024})
+                                                  "species_prior": "count", "capacity": 1024})
         # the leaf buffer is the decision's leaves (K * M * S): the padded 16384 rows were 93% of a decision (#355)
         s = search.HONEST_SETTINGS
         self.assertEqual(s["capacity"], s["k"] * s["m"] * s["s"])

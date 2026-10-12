@@ -47,6 +47,17 @@ The team registry holds Pokémon Champions teams that players published. The set
 - **Limitless** ([online tournament platform](https://play.limitlesstcg.com), [API](https://docs.limitlesstcg.com/developer.html)): the teams with an id `LL_` are the team lists of its online tournaments (standings and open team sheets), read through its public API, which needs no key. Its [Terms of Service](https://play.limitlesstcg.com/tos) were read before: they do not forbid the use.
 - **MunchStats** ([munchstats.com/teams](https://munchstats.com/teams)): the aggregator of the VGCPastes Repository and of the Limitless results through which these teams were found. Its robots.txt (a crawl delay of 10 seconds) was kept.
 
+## Smogon usage statistics (`data/belief/`)
+
+`data/belief/smogon-spreads-regmc-2026-09.json` is derived from [Smogon's usage statistics](https://www.smogon.com/stats). With thanks to Smogon and its statistics maintainers. The live search draws its belief of a foe's spreads from it.
+
+- **Source:** the "chaos" JSON files of `gen9championsvgc2026regmc` and `gen9championsvgc2026regmcbo3`.
+  - Month 2026-09, rating cutoffs 1760, 1630, 1500 and 0.
+  - Fetched on 2026-10-12.
+  - Each file is pinned by its SHA-256 in the table's header and in `python/duoforge_search/smogon_spreads.py` (`SOURCES`).
+- **What is committed:** only the derived table, never the raw files (owner, 2026-10-12). Per species, it holds the stat-point spreads of the highest cutoff with enough weight, at most 32 of them, as whole draws.
+- **Regenerating:** `python -m duoforge_search.smogon_spreads --stats DIR` builds the table from a cache of the raw files. `--fetch` downloads a missing one, and `--check` verifies the committed table.
+
 ## Pokémon
 
 Pokémon and Pokémon character names are trademarks of Nintendo, Creatures Inc. and GAME FREAK inc. DuoForge is an independent research project and is not affiliated with or endorsed by them or by Pokémon Showdown.

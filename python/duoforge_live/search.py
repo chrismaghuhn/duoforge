@@ -4,10 +4,11 @@ LiveSearch runs duoforge_search.honest.Honest on the tracker's public parts (Tra
 observation, the public record and its status and causes) through a RecordRoots of one environment. It decides no
 rule itself; it only classifies the search's answer by the owner's failure classes of 2026-10-10:
 
-- searched: the search's pair is played;
+- searched: the search's pair is played; a foe species the belief drew from its general levels (species_prior
+  "count", owner 2026-10-12) is named in the outcome (spread_fallback, spread_redrawn) and counted per game;
 - forced, raw, team: the search has nothing to add (one legal pair, k = 1, team preview); the raw ranking is played,
   no fallback;
-- (a) a named refusal (kind "unreconstructible": a public refusal, a missing history, no spread prior): that decision
+- (a) a named refusal (kind "unreconstructible": a public refusal, a missing history): that decision
   is played raw, logged and counted;
 - deadline: the search did not answer within min(2 s, 10% of the remaining turn time); played raw, counted apart from
   (a). A search still running from an earlier decision is waited for, never run beside ("busy");
@@ -32,9 +33,11 @@ _TIMER_ON = "|inactive|Battle timer is ON"
 _TIMER_OFF = "|inactiveoff|"
 _NO_FALLBACK = ("searched", "forced", "raw", "team")
 # The approved spec's search (owner, 2026-10-10): X (mix, lambda 0.5) at K = M = 8 and 16 worlds over the pinned live
-# spread table, a foe species without a spread prior refused. The leaf buffer is the decision's K * M * S leaves: the
+# spread table (Smogon's usage stats first, owner 2026-10-12); a foe species without a spread prior draws the belief's
+# general levels, named (species_prior "count"; refusing played whole games raw). The leaf buffer is the decision's K * M * S leaves: the
 # padded 16384-row value call was 93% of a decision (#355, docs/benchmarks/2026-10-11-honest-search-breakdown).
-HONEST_SETTINGS = {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5, "species_prior": True, "capacity": 1024}
+HONEST_SETTINGS = {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5, "species_prior": "count",
+                   "capacity": 1024}
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,8 @@ class Outcome:
     fallback: object  # None, "a", "deadline" or "b"
     reason: object  # the search's named reason or the error, or None
     seconds: float
+    spread_fallback: object = None  # a searched decision's foe species without a spread prior (species_prior "count")
+    spread_redrawn: object = None  # ... and those whose spreads a redraw exhausted
 
     def as_dict(self):
         return asdict(self)
@@ -122,7 +127,8 @@ class LiveSearch:
             return Outcome(None, "error", "b", f"{type(err).__name__}: {err}", seconds)
         kind = record.get("kind")
         if kind == "searched":
-            return Outcome(int(record["choice"]), kind, None, None, seconds)
+            return Outcome(int(record["choice"]), kind, None, None, seconds, record.get("spread_fallback"),
+                           record.get("spread_redrawn"))
         if kind in _NO_FALLBACK:
             return Outcome(None, kind, None, None, seconds)
         if kind == "unreconstructible":
