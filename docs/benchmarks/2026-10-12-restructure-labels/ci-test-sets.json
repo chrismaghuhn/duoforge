@@ -9732,7 +9732,7 @@
         "duoforge.rng.kat_regen",
         "duoforge.rng.reference_differential"
       ],
-      "after_selection": "-L ^ci-rng-reference$",
+      "after_selection": "-L ^ci-rng$",
       "before": [
         "duoforge.rng.kat_regen",
         "duoforge.rng.reference_differential"

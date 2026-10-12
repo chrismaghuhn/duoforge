@@ -55,12 +55,14 @@ stay equal. The old dependency label `learn` becomes `requires-jax` (same 17);
 `learn` now means the Python folder area. No workflow selected the old `learn`
 label. Full-profile `reference` retains the same 1,151 tests. In the no-Showdown
 PCG profile, `reference` now correctly labels the two Python fallback tests;
-RNG CI selects `ci-rng-reference`, preserving its two native PCG checks.
+RNG CI selects `ci-rng`, preserving its two native PCG checks.
 
 [profile-comparison.json](profile-comparison.json) records before/after CTest
 JSON comparisons for six configurations (including absent interpreter/JAX
 fallbacks, ASan, TSan and PCG). Only LABELS and registration backtrace locations
-differ; test order and every runtime/scheduling property are identical. Full
+differ; test order and every runtime/scheduling property are identical. Generated
+`add_test` commands are also compared, including executables not built in the
+optional profiles. Full
 Windows selection is additionally checked against the actual baseline Windows
 CI log, not inferred from the Linux configuration alone.
 
@@ -71,6 +73,13 @@ of 19 missing Linux-required rows, and an empty trace set. No test is rerun or
 filtered by that checker.
 
 ## P1–P6 and setup
+
+Main `7f9ee4da` (#439) was merged into this branch without rebase. Inventory,
+commands and labels still match the recorded baseline. The affected `honest`
+and `live_search` tests, benchmark signature, repository hygiene and source
+lint were rechecked: all five passed, zero CTest skips. The PR diff contains
+no engine or Python module/test implementation changes against that main.
+
 
 [verification.json](verification.json) contains the proof counts and hashes.
 The baseline sorted [inventory](test-inventory.txt) has SHA-256

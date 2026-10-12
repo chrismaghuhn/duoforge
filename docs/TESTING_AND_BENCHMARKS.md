@@ -21,7 +21,7 @@ ctest --test-dir build -LE '^slow$' --output-on-failure
 
 `-LE slow` still includes pinned-reference checks: it is not an offline-only suite.
 PCG checkout checks are short native checks; select that exact pair with
-`ctest --test-dir build -L '^ci-rng-reference$'`. CI's `ci-*` labels preserve its exact
+`ctest --test-dir build -L '^ci-rng$'`. CI's `ci-*` labels preserve its exact
 TSan, MSVC smoke, skip-guard and presence-check selections independently of tiers/areas.
 The full hosted CI matrix remains the merge gate.
 

@@ -88,6 +88,21 @@
   },
   "baseline": "d19839e381b569d17c9885bafd55a126db49b82a",
   "hosted_head_matrix": "Required before merge; see PR checks. Baseline runs passed; local checks do not replace the hosted matrix.",
+  "integrated_main": "7f9ee4da51db4770011c4a26306543c76f555f4a",
+  "integration_recheck": {
+    "ctest_metadata_identical": true,
+    "ctest_skips": 0,
+    "failures": 0,
+    "names": [
+      "duoforge.python.repo_hygiene",
+      "duoforge.python.bench",
+      "duoforge.python.honest",
+      "duoforge.python.live_search",
+      "duoforge.lint.sources"
+    ],
+    "seconds": 55.0,
+    "tests": 5
+  },
   "local_quick_and_full": {
     "command": "OPENBLAS_NUM_THREADS=1 ctest --test-dir build/restructure -L '^(quick|full)$' --parallel 4 --output-on-failure",
     "ctest_skips": 0,
