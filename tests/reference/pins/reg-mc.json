@@ -1,0 +1,9 @@
+{
+  "maintenance": "Independent owner-reviewed pins. Hand-maintained; no generator updates this file. Names hash: sorted ASCII names, each followed by LF.",
+  "format": "reg-mc",
+  "sets": {
+    "closure": {"battles": 90, "certified": 26, "fixture_matches": 0, "live_stop_total": 0, "live_stops": {}, "names_sha256": "e329f515401db0c81d230dab60ebbd38c4d78d4507357e40d6f566059811fe18", "outcomes": {"equal": 2594, "refused": 310}, "own_pp_stops": 0, "tiebreak_stops": 833},
+    "team_c": {"battles": 73, "certified": 23, "fixture_matches": 144, "live_stop_total": 0, "live_stops": {}, "names_sha256": "9d129e36d93cadd1cc5a063f72b686705006813c88df07c43cb30ca23dffcb9e", "outcomes": {}, "own_pp_stops": 0, "tiebreak_stops": 734},
+    "pool": {"battles": 966, "certified": 966, "fixture_matches": 0, "live_stop_total": 162, "live_stops": {"feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 20, "feature:FORME_CHANGE": 10, "feature:ILLUSION": 2, "feature:ROOST": 8, "feature:SUBSTITUTE": 110, "line:-end": 2}, "names_sha256": "0d00e27ddff13c25409f7758ffdd4987b3afd8dd7db16ac758af8a6ae58296ee", "outcomes": {"equal": 11604, "refused": 639, "tracker refuses: unburden-without-item-line": 4}, "own_pp_stops": 12, "tiebreak_stops": 5324}
+  }
+}

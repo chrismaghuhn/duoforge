@@ -44,6 +44,7 @@
 #include "state/tiebreak.h"
 #include "support/check.h"
 #include "support/reference_digest.h"
+#include "reference_pins.h"
 #include "support/fixtures.h"
 
 typedef struct tb_counts {
@@ -268,18 +269,18 @@ int main(int argc, char **argv)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_BATTLE_COUNT);
-    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_POOL_STOPS);
+    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_PIN_BATTLES);
+    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_PIN_TIEBREAK_STOPS);
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&
                      counts.by_stage[4] > 0u);
 #if defined(DF_CONFORMANCE_TEAM_C)
-    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_BATTLE_COUNT);
-    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_TEAM_C_STOPS);
+    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_PIN_BATTLES);
+    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_PIN_TIEBREAK_STOPS);
 #else
-    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_BATTLE_COUNT);
-    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_CLOSURE_STOPS);
+    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_PIN_BATTLES);
+    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_PIN_TIEBREAK_STOPS);
 #endif
 #endif
     duoforge_context_destroy(k1);

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Regenerate/check frozen reference pins per battle (no weights or private data).
+"""Seed/check frozen reference pins per battle (no weights or private data).
 
 Needs the same library, runner, Node and pinned Showdown as python.live.
-Usage: python tools/reference/capture_battle_pins.py <repo> [--check]
+Usage: python tools/reference/capture_battle_pins.py <repo> [--check | --update-existing]
 Only test observations and public API calls are used. The unchanged functional
 record comparisons must pass before a pin is written. Ordinary tests always
-compare to the frozen pins; this explicit generator is how a deliberate pin
-update is reproduced.
+compare to the frozen pins. Existing expectations are changed only with
+--update-existing, which reports every changed file and field.
 """
 import argparse
 import collections
@@ -83,7 +83,7 @@ def certificates(root, names):
             ctx.close()
 
 
-def live_observations():
+def live_observations(names):
     from python.tests.live import test_live as live
     checker = unittest.TestCase()
     live.RecordAssemblerTest.setUpClass()
@@ -100,48 +100,92 @@ def live_observations():
         checker.assertEqual(set(outcome) - allowed, set(), where)
         ref = cls.pool if cls is live.RecordAssemblerPoolTest else cls.ref
         for b in ref.battles:
-            result[b.name] = {'outcomes': dict(by_battle[b.name]), 'stops': {}, 'own_pp_stops': []}
+            if b.name in names:
+                result[b.name] = {'outcomes': dict(by_battle[b.name]), 'stops': {}, 'own_pp_stops': []}
     for name, stops in live.RecordAssemblerPoolTest.stops_by_battle.items():
-        result[name]['stops'] = dict(stops)
+        if name in result:
+            result[name]['stops'] = dict(stops)
     for name, player in live.RecordAssemblerPoolTest.raised:
-        result[name]['own_pp_stops'].append(player)
+        if name in result:
+            result[name]['own_pp_stops'].append(player)
     for row in result.values():
         row['own_pp_stops'].sort()
     return result
 
 
+def differences(old, new, field='pins'):
+    """Every changed leaf, including removed keys and whole list changes."""
+    if isinstance(old, dict) or isinstance(new, dict):
+        before = old if isinstance(old, dict) else {}
+        after = new if isinstance(new, dict) else {}
+        for key in sorted(set(before) | set(after)):
+            child = f'{field}.{key}' if field else key
+            yield from differences(before.get(key), after.get(key), child)
+    elif old != new or type(old) is not type(new):
+        yield field, old, new
+
+
+def write_pins(target, identity, pins, check=False, update_existing=False):
+    """Protect frozen expectations even when called separately from the CLI."""
+    have = json.loads(target.read_text(encoding='ascii')) if target.exists() else {}
+    if check:
+        changes = list(differences(have.get('pins'), pins))
+        for field, old, new in changes:
+            print(f'reference pins: {target}: {field}: frozen={old!r}, observed={new!r}', file=sys.stderr)
+        return int(bool(changes))
+    if target.exists() and not update_existing:
+        return 0
+    if target.exists():
+        proposed = dict(have, **identity, pins=pins)
+        changes = list(differences(have, proposed, field=''))
+        if not changes:
+            return 0
+        for field, old, new in changes:
+            print(f'reference pins UPDATE: {target}: {field}: {old!r} -> {new!r}')
+    else:
+        print(f'reference pins NEW: {target}')
+    have.update(identity, pins=pins)
+    content = json.dumps(have, indent=2, sort_keys=True) + '\n'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if not target.exists() or target.read_text(encoding='ascii') != content:
+        target.write_text(content, encoding='ascii')
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('repo', type=Path)
-    parser.add_argument('--check', action='store_true')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--check', action='store_true')
+    mode.add_argument('--update-existing', action='store_true')
     args = parser.parse_args()
     root = args.repo.resolve()
     sys.path.insert(0, str(root))
     sys.path.insert(0, str(root / 'python'))
     from tools.reference import trace_to_c
     names = sorted(p.stem for p in (root / 'tests/reference/traces').glob('*.json'))
-    real, matches = certificates(root, names)
-    live = live_observations()
-    rc = 0
+    targets = {}
     for name in names:
         spec, _ = trace_to_c.load_battle(str(root), name)
         kind = trace_to_c.spec_data(name, spec)
-        target = root / 'tests/reference/battles/reg-mc' / kind / (name + '.json')
-        have = json.loads(target.read_text()) if target.exists() else {}
+        targets[name] = (kind, root / 'tests/reference/battles/reg-mc' / kind / (name + '.json'))
+    if not args.check and not args.update_existing:
+        names = [name for name in names if not targets[name][1].exists()]
+    if not names:
+        print('reference pins: no new battles; existing pins preserved')
+        return 0
+    real, matches = certificates(root, names)
+    live_names = {name for name in names if targets[name][0] != 'team_c'}
+    live = live_observations(live_names) if live_names else {}
+    rc = 0
+    for name in names:
+        kind, target = targets[name]
         pins = {'certified': real[name], 'fixture_matches': matches[name]}
         if name in live:
             pins['live'] = live[name]
-        if args.check:
-            if have.get('pins') != pins:
-                print(f'reference pins: {target} differs from the observations', file=sys.stderr)
-                rc = 1
-        else:
-            have.update({'generated_by': 'tools/reference/trace_to_c.py, tiebreak_ref.js, capture_battle_pins.py',
-                         'format': 'reg-mc', 'set': kind, 'name': name, 'pins': pins})
-            target.parent.mkdir(parents=True, exist_ok=True)
-            content = json.dumps(have, indent=2, sort_keys=True) + '\n'
-            if not target.exists() or target.read_text(encoding='ascii') != content:
-                target.write_text(content, encoding='ascii')
+        identity = {'generated_by': 'tools/reference/trace_to_c.py, tiebreak_ref.js, capture_battle_pins.py',
+                    'format': 'reg-mc', 'set': kind, 'name': name}
+        rc |= write_pins(target, identity, pins, args.check, args.update_existing)
     print(f'reference pins: {len(names)} battles, {len(live)} live battles; {"checked" if args.check else "written"}')
     return rc
 

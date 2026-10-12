@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(__GNUC__) || defined(__clang__)
+static void append(df_reference_digest *d, const char *format, ...)
+    __attribute__((format(printf, 2, 3)));
+#endif
 static void append(df_reference_digest *d, const char *format, ...)
 {
     va_list args;
@@ -84,7 +88,13 @@ bool df_reference_digest_open(df_reference_digest *d, int argc, char **argv)
         fprintf(stderr, "usage: %s [--digest-out <file>]\n", argv[0]);
         return false;
     }
+#if defined(_MSC_VER)
+    if (fopen_s(&d->out, argv[2], "wb") != 0) {
+        d->out = NULL;
+    }
+#else
     d->out = fopen(argv[2], "wb");
+#endif
     if (d->out == NULL) {
         fprintf(stderr, "reference digest: cannot open %s\n", argv[2]);
         return false;

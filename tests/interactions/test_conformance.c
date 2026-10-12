@@ -53,6 +53,7 @@
 #include "state/request.h"
 #include "support/check.h"
 #include "support/reference_digest.h"
+#include "reference_pins.h"
 #include "support/conformance_compare.h"
 #include "support/fixtures.h"
 
@@ -188,13 +189,13 @@ int main(int argc, char **argv)
         duoforge_battle_destroy(b);
     }
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_BATTLE_COUNT);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_PIN_BATTLES);
     /* All of them under POOL itself: the sets are the real members', with
      * a real ability each, the new items are marked (decision 0015 step P2). */
-    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_REAL_BATTLES);
+    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_PIN_CERTIFIED);
 #elif defined(DF_CONFORMANCE_TEAM_C)
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_BATTLE_COUNT);
-    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_REAL_BATTLES);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_PIN_BATTLES);
+    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_PIN_CERTIFIED);
     /* The real Team C of the recorded gate battles (team-c.txt through the
      * specs) is the gate's fixture (df_put_team_c, duoforge.combat.
      * team_c_gate): each Team C member of a c12_real battle equals the
@@ -234,15 +235,15 @@ int main(int argc, char **argv)
                 }
             }
         }
-        DF_CHECK_EQ_U64(&t, matched, DF_REFERENCE_FIXTURE_MATCHES); /* Team C on 4 x 4 + 4 x 2 sides */
+        DF_CHECK_EQ_U64(&t, matched, DF_REFERENCE_PIN_FIXTURE_MATCHES); /* Team C on 4 x 4 + 4 x 2 sides */
     }
 #else
-    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_BATTLE_COUNT);
+    DF_CHECK_EQ_U64(&t, sizeof conf_battles / sizeof conf_battles[0], DF_REFERENCE_PIN_BATTLES);
     /* Exactly the battles of the real teams run under CLOSURE, the certified
      * profile (decision 0010): the closure gate's 8, the 16 of M5 step 3 and
      * d01_noguard_accuracy_tie and d02_electro_shot_lock_emergency_exit, cuts
      * of battles found by the differential loop. */
-    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_REAL_BATTLES);
+    DF_CHECK_EQ_U64(&t, real, DF_REFERENCE_PIN_CERTIFIED);
 #endif
 #if defined(DF_CONFORMANCE_POOL) || defined(DF_CONFORMANCE_POOL_DATA)
     fprintf(stderr, "  %u of the battles run under POOL data\n", real);

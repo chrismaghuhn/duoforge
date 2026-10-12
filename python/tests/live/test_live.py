@@ -765,8 +765,8 @@ def _closure_assembler_observations(points):
     import re
     outcome, fields, where = collections.Counter(), collections.Counter(), {}
     by_battle = collections.defaultdict(collections.Counter)
-    for (name, player), points in points.items():
-        for k, parts in points:
+    for (name, player), decisions in points.items():
+        for k, parts in decisions:
             result = record_diff(name, k, player, parts["record"])
             if result["engine_status"] != 0:
                 same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
@@ -790,8 +790,8 @@ def _pool_assembler_observations(points, verifier):
     import re
     outcome, fields, where = collections.Counter(), collections.Counter(), {}
     by_battle = collections.defaultdict(collections.Counter)
-    for (name, player), points in points.items():
-        for k, parts in points:
+    for (name, player), decisions in points.items():
+        for k, parts in decisions:
             result = record_diff(name, k, player, parts["record"])
             if result["engine_status"] != 0:
                 same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (

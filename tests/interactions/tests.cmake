@@ -85,4 +85,9 @@ target_compile_definitions(duoforge_reference_tiebreak_pool PRIVATE DF_CONFORMAN
 target_compile_definitions(duoforge_reference_tiebreak_team_c_pool PRIVATE DF_CONFORMANCE_TEAM_C
     DF_CONFORMANCE_POOL)
 target_compile_definitions(duoforge_reference_tiebreak_pool_data PRIVATE DF_CONFORMANCE_POOL_DATA)
+foreach(_kind IN ITEMS conformance tiebreak)
+    foreach(_suffix IN ITEMS "" _team_c _pool _team_c_pool _pool_data)
+        target_include_directories(duoforge_reference_${_kind}${_suffix} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    endforeach()
+endforeach()
 duoforge_add_test(NAME duoforge.state.pool_g47 SOURCES interactions/test_pool_g47.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
