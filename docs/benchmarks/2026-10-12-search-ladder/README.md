@@ -88,7 +88,7 @@ buffer matches the leaves. The S arms are the arms with an s lever.
 | `b-k16` | k = 16 | ×2 | 512 | `bot` |
 | `b-m16` | m = 16 | ×2 | 512 | `bot` |
 | `b-km16` | k = m = 16 | ×4 | 512 | `bot`, `ppo` |
-| `b-km16-s64` | k = m = 16, s = 64 | ×16 | 256 | `bot`, `ppo` (S arm) |
+| `b-km16-s64` | k = m = 16, s = 64 | ×16 | 256 | `bot` (the costliest arm; `ppo` covers the S arms and b-km16) |
 
 **The pairing.** Each arm is paired by prefix with step 0's recorded run (`--paired-with`), not replayed against it.
 - The arm plays this run's games, and its `step_vs_recorded` is the paired h against step 0's step arm on the first
