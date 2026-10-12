@@ -715,7 +715,7 @@ class HonestSearch(unittest.TestCase):
                 self.assertIn(2 * split.s, foe.apply_rows)  # the foe network ranked the worlds
                 self.assertGreater(main.values, 0)  # the leaves are valued by the main network
                 self.assertEqual(foe.values, 0)
-                # The foe's candidates are the foe network's team ranking of the built worlds, under the sampled weights.
+                # The foe's candidates: the foe network's team ranking of the built worlds, under the sampled weights.
                 o, sl, pm = split.worlds.query_encoded(foe_encoder, foe_ext)
                 n = 2 * split.s
                 _, team, _ = foe.apply(foe_params, o.reshape(n, -1), sl.reshape((n,) + sl.shape[2:]),
