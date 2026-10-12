@@ -1,5 +1,6 @@
 # DuoForge tests. Every test is finite and has an explicit timeout.
 include(support/labels.cmake)
+include(reference/data.cmake)
 
 # duoforge_add_test(NAME <ctest name> SOURCES <files...> [WHITEBOX]
 #                   [TIMEOUT <s>] TIER <tier> AREA <area> [LABELS <selectors...>] [LIBS <libs...>] [ARGS <arguments...>])
@@ -13,7 +14,7 @@ function(duoforge_add_test)
     endif()
     string(REPLACE "." "_" _exe "${T_NAME}")
     add_executable(${_exe} ${T_SOURCES})
-    target_link_libraries(${_exe} PRIVATE duoforge ${T_LIBS})
+    target_link_libraries(${_exe} PRIVATE duoforge duoforge_reference_data ${T_LIBS})
     if(TARGET duoforge_test_support)
         target_link_libraries(${_exe} PRIVATE duoforge_test_support)
     endif()

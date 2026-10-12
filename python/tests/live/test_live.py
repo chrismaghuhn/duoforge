@@ -696,41 +696,11 @@ def record_diff(battle_name, k, viewer, record):
     return out
 
 
-# The outcome of every decision point of the committed corpus (deterministic): byte-identical records, refusals equal to the
-# engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
-# (lines.Stop: an unfolded feature's line), by reason.
-CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
-# Batch 7 pins (deliberate, measured on hs/batch7-python; main had equal 9898 / refused 487 and the stops {SUBSTITUTE 78,
-# FORME_CHANGE 10, DESTINY_BOND 10, DRAGON_CHEER 8, ROOST 8, line:-end 2, ILLUSION 2}): the 865 pool battles now hold the
-# conformance battles of G84 to G92 (Leech Seed, Curse, Belly Drum, Confuse Ray, Swagger, Flatter, Teeter Dance, Memento and
-# the sub-fixes), so more decision points are compared; no "move-result-not-determined" refusal is left (the classifier maps
-# those handlers, src/state/view.c mr_family_of). The tracker folds Leech Seed (EXT_FOLDS, step G84): the 12 streams that
-# stopped on feature:LEECH_SEED run on (equal 10470 -> 10558, +88 decision points; 2 of them stop on a later Substitute,
-# 96 -> 98), and the feature has no stop of its own any more.
-# lane B batch 5c (G71 Cute Charm, G75 cheap set): +144 equal and +2 refused records; 12 streams stop on the Attract lines
-# (unfolded:DUOFORGE_POSITION_EXT_ATTRACT, the tracker fold of the ATTRACT bit comes after G71), 4 more on Dragon Cheer (the
-# G75 crit battles). Lane B batch 5d (G79 Cloud Nine, G81 Frisk): +170 equal and +18 refused records, no new stop.
-# PR #393 (the Attract fold, G71 on the tracker): the 12 unfolded:DUOFORGE_POSITION_EXT_ATTRACT streams are gone (the fold
-# reaches their later points): +30 equal, +4 refused, and 42 infatuated points whose tracker refusal is the engine check's
-# verdict (duoforge_public_record_check refuses a world with an infatuated occupant, lead's option B), counted apart. Measured
-# on the merged tree (CI, Linux and Windows Python jobs, identical): 10242 equal, 511 refused, 42 engine-check refusals.
-# lane B G83 (Iron Ball, Bulletproof, Rivalry, Leaf Guard): +64 equal; +4 refused, all g83_ironball_ground under the
-# visible-confusion cause (mask 2); no new stop. Measured on the merged tree (main 6c16c960 + G83): 10306 equal, 515 refused.
-# Batch 7 (base: main before batch 7, equal 9898 / refused 487): G84 Leech Seed fold, the G86, G92 and C4 moves and the
-# sub-fixes-2 moves add +660 equal and +122 refused; the SUBSTITUTE stops go 78 -> 98 (the Leech Seed streams run on to a
-# later Substitute). Main (+408 equal, +28 refused): Attract #393, lane B G79/G81/G83 and the infatuated engine check.
-# Measured on the merged tree (CI 38140646950, Windows Python job): 10966 equal, 637 refused.
-# lane B G87 (the Attract source public; HS fold hs/g87-python): the 42 infatuated points build now: +42 equal, the engine-check
-# refusal is gone. Lane B G77 (crit package): +74 equal (its eight battles), no new refused record or stop. Measured on the
-# merged tree (main 0bc8d8d9 + G77 + G87): 11082 equal, 637 refused.
-# Batch 8 pins (HS's measurement on aa0d8c65 with mismatch 0; to be confirmed by the CI log of the batch head): the record
-# assembler's equal 11590, refused 639, the unburden refusal 4 (the infatuated key of batch 7 is gone with G87). The tracker's
-# stops: 162 streams = SUBSTITUTE 110 + DRAGON_CHEER 20 + FORME_CHANGE 10 + DESTINY_BOND 10 + ROOST 8 + line:-end 2 + ILLUSION 2.
-# G96 Psychic Terrain (decision 0065) on the batch-8 base: the record assembler's equal 11604 (CI 38194785871, Windows Python job, the
-# pool tracker stops unchanged at 162); refused 639 and the unburden refusal 4 are main's.
-POOL_OUTCOME = {"equal": 11604, "refused": 639, "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 110, "feature:DRAGON_CHEER": 20, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
-              "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
+# Frozen expectations live with their reference battles; all aggregate values
+# in the tests are derived, not manually updated when a battle is added.
+# Read expected pins at assertion time so their explicit generator can observe
+# a newly added battle before its frozen pin file exists.
+from python.tests.support import _reference_pins
 
 
 INFATUATED_REFUSAL = "engine check refuses: infatuated occupant (from_view, option B)"
@@ -875,10 +845,14 @@ class RecordAssemblerTest(unittest.TestCase):
                         tracker.accepted(step["input"][pid])
 
     def test_record_equals_engine(self):
+        CLOSURE_PINS = _reference_pins.load('closure')
+        CLOSURE_OUTCOME = _reference_pins.totals(CLOSURE_PINS, 'outcomes')
         outcome, fields, where, by_battle = _closure_assembler_observations(self.points)
         print(f"\nrecord assembler: {dict(sorted(outcome.items()))}")
         self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
         self.assertEqual(dict(outcome), CLOSURE_OUTCOME, {key: where[key] for key in outcome})
+        for name, pins in CLOSURE_PINS.items():
+            self.assertEqual(dict(by_battle[name]), pins['outcomes'], name)
 
     def test_request_equals_engine(self):
         for (name, player), points in self.points.items():
@@ -913,7 +887,7 @@ class RecordAssemblerTest(unittest.TestCase):
                         self.assertEqual(duoforge.status_name(record.check(ctx, bad)), "DUOFORGE_E_MALFORMED",
                                          (name, k, player))
                         refused += 1
-            self.assertEqual((checked, refused), (CLOSURE_OUTCOME["equal"], 50))
+            self.assertEqual((checked, refused), (_reference_pins.totals(_reference_pins.load('closure'), 'outcomes')["equal"], 50))
         finally:
             for ctx in contexts.values():
                 ctx.close()
@@ -933,9 +907,6 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                         "own-command-unknown", "pivot-switch-reason-unknown"}
     # The tracker's own-PP check (Tracker._on_request) refuses these player streams before a record: Pressure the lines
     # cannot attribute (a [still] target, a clamped extra), Dragon Darts' split, the Pressure of a disguised Illusion.
-    OWN_PP_STOPS = {("g53_field_trick_room", 0), ("g53_still_pressure", 1), ("g78_ee_t", 0), ("g78_fainted_ally", 0),
-                    ("g78_fainted_target", 0), ("g78_ko_t_hit1", 0), ("g78_partner_absent", 0), ("g78_pressure2", 0),
-                    ("g78_split", 0), ("i2_bench_swap", 0), ("i2_illusion_break", 0), ("i2_unbroken_switchout", 0)}
 
     @classmethod
     def setUpClass(cls):
@@ -971,15 +942,22 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                     cls.raised.add((battle.name, player))
 
     def test_pool_records_equal_engine(self):
+        POOL_PINS = _reference_pins.load('pool')
+        POOL_OUTCOME = _reference_pins.totals(POOL_PINS, 'outcomes')
+        POOL_STOPS = _reference_pins.totals(POOL_PINS, 'stops')
+        OWN_PP_STOPS = {(name, player) for name, pins in POOL_PINS.items() for player in pins['own_pp_stops']}
         outcome, fields, where, by_battle = _pool_assembler_observations(self.points, self)
         print(f"\npool record assembler: {dict(sorted(outcome.items()))}")
         print(f"pool tracker stops: {sum(self.stops.values())} streams, {dict(self.stops.most_common())}")
         self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
         allowed = {"equal", "refused", INFATUATED_REFUSAL} | {f"tracker refuses: {reason}" for reason in self.TRACKER_REFUSALS}
         self.assertEqual(set(outcome) - allowed, set(), {key: where[key] for key in outcome})
-        self.assertEqual(self.raised, self.OWN_PP_STOPS)
+        self.assertEqual(self.raised, OWN_PP_STOPS)
         self.assertEqual(dict(outcome), POOL_OUTCOME)
         self.assertEqual(dict(self.stops), POOL_STOPS)
+        for name, pins in POOL_PINS.items():
+            self.assertEqual(dict(by_battle[name]), pins['outcomes'], name)
+            self.assertEqual(dict(self.stops_by_battle[name]), pins['stops'], name)
 
     def test_tracker_of_a_pool_checkpoint_assembles_pool_records(self):
         # the live path's tables (data.for_config of a POOL checkpoint): the tracker's records are of the POOL context,
@@ -1092,7 +1070,7 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                         self.assertEqual(duoforge.status_name(record.check(ctx, bad)), "DUOFORGE_E_MALFORMED",
                                          (name, k, player))
                         refused += 1
-            self.assertEqual((checked, refused), (POOL_OUTCOME["equal"], 50))
+            self.assertEqual((checked, refused), (_reference_pins.totals(_reference_pins.load('pool'), 'outcomes')["equal"], 50))
         finally:
             for ctx in contexts.values():
                 ctx.close()
