@@ -124,6 +124,9 @@ class ParticleTracker:
         self.counters = collections.Counter()
         self._events = []  # ("lines", [...]), ("sheets", None) and ("accepted", text), in the order received
         self._attempts = [0] * self.n
+        # Before the team-preview request: an open-sheet tracker folds the lines as it would (a battle line before the
+        # sheets raises, a battle over before them has ended); the particles fold them again
+        self._before = Tracker(data, own_text)
 
     # ------------------------------------------------------------------ input
     def feed(self, received):
@@ -134,16 +137,20 @@ class ParticleTracker:
         for i, line in enumerate(received):
             side = _preview_side(line)
             if side is not None:
+                self._before.feed(received[:i + 1])
                 self.side = side
                 self._events += [("lines", received[:i + 1]), ("sheets", None)]
                 facts = self._facts()
-                self.particles = [self._redraw(p, facts, None, 0) for p in range(self.n)]
+                self.particles = [self._redraw(p, facts, None) for p in range(self.n)]
                 if received[i + 1:]:
                     self._advance(received[i + 1:])
                 return
+        self._before.feed(received)
         self._events.append(("lines", received))
 
     def accepted(self, text):
+        if self.particles is None:
+            raise ValueError("no team preview yet: no choice can have been accepted")
         self._events.append(("accepted", text))
         for p in self.particles:
             p.tracker.accepted(text)
@@ -163,7 +170,7 @@ class ParticleTracker:
 
     @property
     def ended(self):
-        return self.particles is not None and self.particles[0].tracker.ended
+        return self._before.ended if self.particles is None else self.particles[0].tracker.ended
 
     def domain(self):
         """The own decision point's domain and slot lists: the own side's, the same in every particle."""
@@ -192,7 +199,12 @@ class ParticleTracker:
         try:
             return _facts.side_facts(self._lines(), 1 - self.side, self.data)
         except Skip as skip:
-            raise lines.Stop(f"cts:facts {skip.reason}") from None
+            raise self._stop(f"cts:facts {skip.reason}") from None
+
+    def _stop(self, reason):
+        """The named Stop of a reason, counted by its first word (stop.cts:facts, stop.cts:redraw-cap, ...)."""
+        self.counters[f"stop.{reason.split(' ')[0]}"] += 1
+        return lines.Stop(reason)
 
     @staticmethod
     def _outcome(call):
@@ -208,10 +220,10 @@ class ParticleTracker:
             return f"error:{type(err).__name__}", err
 
     @staticmethod
-    def _view(p):
-        """Takes the particle's parts at its decision point: the engine's check of its record (public_parts) and its
+    def _view(t):
+        """The tracker's parts at its decision point: the engine's check of its record (public_parts) and its
         observation. A record the engine refuses (a Damp Rock's weather lasting past a drawn set's 5 turns) raises."""
-        p.view = (p.tracker.epoch, p.tracker.public_parts(), p.tracker.observation())
+        return t.epoch, t.public_parts(), t.observation()
 
     def _advance(self, received):
         self._events.append(("lines", received))
@@ -226,38 +238,36 @@ class ParticleTracker:
             def step(p=p):
                 p.tracker.feed(received)
                 if p.tracker.ready and p.tracker.epoch > epoch:
-                    self._view(p)
+                    p.view = self._view(p.tracker)
             out = self._outcome(step)
             if out is not None:
                 failed[i] = out
         for i, (reason, _) in sorted(failed.items()):
-            self.particles[i] = self._redraw(i, facts, reason, epoch)
+            self.particles[i] = self._redraw(i, facts, reason)
 
-    def _redraw(self, i, facts, reason, epoch):
-        """Particle i drawn anew under `facts` and folded from the start (reason: why, None for the first draw). A
-        decision point past `epoch` (the one before the last batch) has its view taken and checked."""
+    def _redraw(self, i, facts, reason):
+        """Particle i drawn anew under `facts` and folded from the start (reason: why, None for the first draw), its
+        record checked at every decision point it folds, as a kept particle's was."""
         if reason is not None:
             self.counters[f"redraw.{reason}"] += 1
         candidates = []
         for member in facts:
             found = [(s, w) for s, w in self.prior.candidates(member.species) if w > 0 and agrees(s, member)]
             if not found:
-                raise lines.Stop(f"cts:no-consistent-set {member.species}")
+                raise self._stop(f"cts:no-consistent-set {member.species}")
             candidates.append(found)
         last, error = reason, None
         for _ in range(MAX_ATTEMPTS):
             p = Particle(self._draw(i, candidates, facts), None)
 
             def fold(p=p):
-                p.tracker = self._fold(p.sets)
-                if p.tracker.ready and p.tracker.epoch > epoch:
-                    self._view(p)
+                p.tracker, p.view = self._fold(p.sets)
             out = self._outcome(fold)
             if out is None:
                 return p
             last, error = out
             self.counters[f"redraw.{last}"] += 1
-        raise lines.Stop(f"cts:redraw-cap {last}") from error
+        raise self._stop(f"cts:redraw-cap {last}") from error
 
     def _draw(self, i, candidates, facts):
         """The particle's next sets under the Item Clause: MAX_DRAWS draws that break it stop the tracker."""
@@ -271,20 +281,25 @@ class ParticleTracker:
             if len(items) == len(set(items)):
                 return sets
             self.counters["redraw.item-clause"] += 1
-        raise lines.Stop("cts:redraw-cap item-clause")
+        raise self._stop("cts:redraw-cap item-clause")
 
     def _fold(self, sets):
-        """A tracker that folded every event so far with `sets` as the foe's sheet."""
+        """A tracker that folded every event so far with `sets` as the foe's sheet, and its view of the last decision
+        point. Each decision point it reaches is checked as it was when its batch came (review of 2026-10-12: a
+        particle drawn anew must pass every check a kept one passed)."""
         t = Tracker(self.data, self.own_text)
         t.check_foe_sheet = True
         t.record_kind = self.record_kind
         own = teams.pack(self.own_text)
         foe = teams.pack(teams.to_text(sets))
+        view = None
         for kind, payload in self._events:
-            if kind == "lines":
-                t.feed(payload)
-            elif kind == "sheets":
-                t.feed([f"|showteam|p{s + 1}|" + (own if s == self.side else foe) for s in (0, 1)])
-            else:
+            if kind == "accepted":
                 t.accepted(payload)
-        return t
+            elif kind == "lines":
+                t.feed(payload)
+            else:
+                t.feed([f"|showteam|p{s + 1}|" + (own if s == self.side else foe) for s in (0, 1)])
+            if t.ready and (view is None or t.epoch > view[0]):
+                view = self._view(t)  # a decision point is ready (at team preview: with the sheets)
+        return t, view

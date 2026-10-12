@@ -122,12 +122,62 @@ class CtsTest(unittest.TestCase):
         self.assertGreater(run.t.counters["redraw.facts"], 0)
 
     def test_the_particles_of_a_prefix_do_not_depend_on_the_rest_of_the_stream(self):
+        """Two streams with the same first turn and different second turns (Trick Room, or Helping Hand) give the same
+        particles up to turn 2's decision point, and different ones after."""
         sets = with_species(foe_sets(), "Farigiraf", farigiraf(),
                             farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))
-        full = self.run_closed(sets, n=16)
-        for upto in (4, 6, 8):
-            prefix = self.run_closed(sets, upto=upto, n=16)
-            self.assertEqual([p["sets"] for p in prefix.points], [p["sets"] for p in full.points[:len(prefix.points)]])
+        other = closed(FIXTURE["messages"])
+        other[8] = [line.replace("|move|p2b: Farigiraf|Trick Room|p2b: Farigiraf", "|move|p2b: Farigiraf|Helping Hand|p2a: Grimmsnarl")
+                    for line in other[8] if not line.startswith("|-fieldstart|move: Trick Room")]
+        self.assertNotEqual(other[8], closed(FIXTURE["messages"])[8])
+        a = self.run_closed(sets, n=16)
+        b = Run(self.particles(sets, n=16), other)
+        self.assertEqual([p["sets"] for p in a.points[:3]], [p["sets"] for p in b.points[:3]])
+        self.assertNotEqual(a.points[3]["sets"], b.points[3]["sets"])
+
+    def test_a_redrawn_particle_passes_the_engine_check_of_every_earlier_decision_point(self):
+        """Review of 2026-10-12: a particle drawn anew mid-game is folded from the start, and its record must pass the
+        engine's check at every decision point it folds, as a kept particle's did. Here the check refuses Farigiraf's
+        Mental Herb set at turn 1's decision point (a stand-in for a refusal such as Damp Rock's); turn 2's Trick Room
+        then redraws the particles without it, and none of them may come back with the Mental Herb set."""
+        from unittest import mock
+        real = tracker.Tracker.public_parts
+
+        def checked(t):
+            if t.epoch == 2 and any(s["species"] == "Farigiraf" and s["item"] == "MentalHerb" for s in t.foe_sets):
+                raise ValueError("the engine does not take the assembled record back: DUOFORGE_E_MALFORMED (stand-in)")
+            return real(t)
+        sets = with_species(foe_sets(), "Farigiraf", farigiraf(), farigiraf(item="Mental Herb"),
+                            farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))
+        with mock.patch.object(tracker.Tracker, "public_parts", checked):
+            run = self.run_closed(sets, n=16)
+        self.assertGreater(run.t.counters["redraw.facts"], 0)
+        self.assertGreater(run.t.counters["redraw.error:ValueError"], 0)
+        for point in (2, 3):
+            self.assertFalse(any(s[1] == "Mental Herb" for s in self.held(run, point, "Farigiraf")), point)
+
+    def test_a_battle_line_before_the_team_preview_fails_as_it_fails_an_open_tracker(self):
+        """Review of 2026-10-12: before the preview request the particle tracker folds the lines as an open tracker
+        does: a battle line before the sheets raises, and a battle over before them has ended."""
+        messages = closed(FIXTURE["messages"])
+        switch = "|switch|p2a: Grimmsnarl|Grimmsnarl, L50, M|100/100"
+        t = self.particles(foe_sets())
+        t.feed(messages[0])
+        with self.assertRaisesRegex(ValueError, "before both open team sheets"):
+            t.feed([switch])
+        t = self.particles(foe_sets())
+        t.feed(messages[0] + messages[1] + ["|win|p1"])
+        self.assertTrue(t.ended)
+        self.assertFalse(t.ready)
+        with self.assertRaisesRegex(ValueError, "no team preview"):
+            self.particles(foe_sets()).accepted("team 1234")
+
+    def test_every_stop_is_counted(self):
+        sets = with_species(foe_sets(), "Farigiraf", farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))
+        t = self.particles(sets)
+        with self.assertRaises(lines.Stop):
+            Run(t, closed(FIXTURE["messages"]))
+        self.assertEqual(t.counters["stop.cts:no-consistent-set"], 1)
 
     # ---------------------------------------------------------------- contradictions
     def test_a_choice_lock_against_a_later_different_move_is_never_kept(self):
@@ -228,8 +278,9 @@ class CtsTest(unittest.TestCase):
         self.assertGreater(t.counters["redraw.item-clause"], 16 * 64)
 
     def test_the_parts_are_those_of_the_decision_point(self):
-        """The parts are taken when a decision point's request is folded: none before the first, and a particle redrawn
-        later in the turn has the next decision point's only."""
+        """The parts are taken when a decision point's request is folded: none before the first. A particle drawn anew
+        later in the turn folds the stream from the start and takes them at the same points, so every particle shows
+        the last decision point's."""
         t = self.particles(foe_sets())
         with self.assertRaises(ValueError):
             t.public_parts()
@@ -238,12 +289,16 @@ class CtsTest(unittest.TestCase):
         t = self.particles(sets, n=16)
         messages = closed(FIXTURE["messages"])
         Run(t, messages, upto=8)  # turn 2's request
+        before = [p["record"].tobytes() for p in t.public_parts()]
         t.feed(messages[8])  # turn 2's lines: Trick Room redraws the particles without it, mid-turn
         self.assertGreater(t.counters["redraw.facts"], 0)
-        with self.assertRaises(ValueError):
-            t.public_parts()
+        after = t.public_parts()
+        self.assertEqual(len(after), 16)
+        self.assertEqual({int(p["record"]["turn"]) for p in after}, {2})
+        kept = [i for i, p in enumerate(after) if p["record"].tobytes() == before[i]]
+        self.assertTrue(kept and len(kept) < 16, kept)  # the kept particles' parts did not move
         t.feed(messages[9])  # turn 3's request
-        self.assertEqual(len(t.public_parts()), 16)
+        self.assertEqual({int(p["record"]["turn"]) for p in t.public_parts()}, {3})
 
     def test_facts_the_log_cannot_give_stop_by_name(self):
         messages = closed(FIXTURE["messages"])

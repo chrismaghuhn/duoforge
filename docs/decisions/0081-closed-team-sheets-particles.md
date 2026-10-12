@@ -32,8 +32,9 @@ comes, so the tracker never becomes ready. The arena mode therefore answered eve
   spread draw, as under open sheets.
 
 The replay's `bo1_belief` takes the facts of the **whole** game: a training row of turn 3 knows a move first used on turn 7. That is
-right for hindsight labels, but wrong live. The particle tracker calls `side_facts` on the lines received so far only. A test pins
-this: two logs with the same prefix and different futures give the same particles at every decision point of the prefix.
+right for hindsight labels, but wrong live. The particle tracker calls `side_facts` on the lines received so far only. Two tests pin
+this. A move first used on turn 2 counts from its line on, never before. And two streams with the same first turn and different
+second turns give the same particles up to turn 2's decision point.
 
 ## The particles
 
@@ -93,7 +94,11 @@ gives its own observation and public record. The honest search builds world `w` 
   `cts:redraw-cap <reason>`. A draw that breaks the Item Clause is drawn again **before** any fold, because drawing is cheap;
   `MAX_DRAWS` (4096) such draws stop it with `cts:redraw-cap item-clause`.
 - Every redraw is counted by its reason (`facts`, `move-not-on-set`, `choice-lock`, `item-clause`, `stop:<reason>`,
-  `error:<type>`), and so is every stop.
+  `error:<type>`), and every named stop by its first word (`stop.cts:facts`, `stop.cts:no-consistent-set`,
+  `stop.cts:redraw-cap`).
+- **Before the team preview,** the particles do not exist yet. An open-sheet tracker folds the lines meanwhile, so a battle line
+  before the sheets raises and a battle over before them has ended, exactly as under open sheets. A stream that never brings a
+  team-preview request is never ready; the arena mode's deadline fallback answers it, as today.
 
 **Exactness.** A particle is a draw from the prior given the facts and the absence of a contradiction. With a 0/1 consistency
 check, keeping the consistent particles and replacing the others by rejection gives draws of the same posterior as drawing all of
@@ -101,7 +106,14 @@ them anew. The posterior weights a set only by whether it agrees with the log, n
 Protect does not become likelier because Protect was used). That is the replay's set belief too, and it is named here as the model.
 
 **Determinism.** The draw of member `m` of particle `i` at attempt `a` uses the word SHA-256(`seed|key|side|m|a|i`), as
-`setbelief.word`. The same stream, seed and key always give the same particles.
+`setbelief.word`. The same stream in the same batches, with the same seed and key, always gives the same particles. The facts are
+taken per batch, so where the batches split decides when a particle is redrawn. A live log that is to reproduce the particles
+must keep the batches (the arena PR).
+
+**A redrawn particle passes every check a kept one passed.** A particle drawn anew folds the stream from the start and takes its
+parts at every decision point it reaches, so the engine checks its record at each of them. It is kept only if every check passes.
+Without this, a fresh draw would skip the record checks of earlier decision points (review of 2026-10-12). The decision point's
+parts are those taken when its request was folded, so a particle redrawn mid-turn shows the same decision point as the others.
 
 ## Explicitly refused (never silent)
 
@@ -129,6 +141,14 @@ therefore does not condition on missing lines. Two measurements, reported with t
 - **Audit:** the cases where a kept particle's ability or item would have printed a line that the log does not have.
 
 The engine query that would close this gap is an item for HauptSession to decide.
+
+## A known gap of the open-sheet fold: Klutz
+
+The open-sheet tracker's Choice lock (`choice_slot`) does not ask whether the holder ignores its item. At the pin, a Klutz holder
+of a Choice item is not locked. Under open sheets this case has not come up; in a particle the hook would count such a holder's
+true set as `choice-lock` and draw it again. Klutz is in the pool tables, and the case needs a Choice item on a Klutz holder (a
+Trick target, say). The tracker's lock is not changed here: that would change open-sheet behaviour and belongs with the tracker's
+own tests. It is named for HauptSession.
 
 ## The named limit of version 1 (HauptSession, 2026-10-12)
 
@@ -161,11 +181,13 @@ player has seen) is the version-2 item of #385.
   The redraws include `facts`, `choice-lock` (#423) and `item-clause`.
 - **Damp Rock**, reference tier. A rain past 5 turns rules out a drawn Politoed without Damp Rock, through the engine's record
   check.
-- **Unit tier** (`duoforge.python.live_cts`, 20 tests):
+- **Unit tier** (`duoforge.python.live_cts`, 23 tests):
   - the live fixture's pin;
   - no hindsight;
   - contradictions: Choice lock, move off the set, revealed ability, Item Clause, and a cheap Item Clause redraw;
-  - the named stops;
+  - a redrawn particle passes the engine check of every earlier decision point;
+  - lines before the team preview fold as under open sheets;
+  - the named stops, each counted;
   - determinism and weights;
   - the hook off for every plain tracker.
 - **Cost**, measured on this machine (Windows, under the machine lock, with another lane's job in the other slot):
