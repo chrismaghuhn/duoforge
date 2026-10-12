@@ -36,7 +36,7 @@ endfunction()
 # Shared test support (explicit test context, no globals).
 add_library(duoforge_test_support STATIC support/check.c support/fixtures.c support/goldens.c
             support/goldens_legacy.c support/team_c.c support/pool.c support/factored.c
-            support/conformance_compare.c)
+            support/conformance_compare.c support/reference_digest.c)
 target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 # The F2 fixture builder and the conformance comparators are white-box.
 target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")

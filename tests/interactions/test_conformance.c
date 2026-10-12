@@ -55,6 +55,7 @@
 #include "state/battle_internal.h"
 #include "state/request.h"
 #include "support/check.h"
+#include "support/reference_digest.h"
 #include "support/conformance_compare.h"
 #include "support/fixtures.h"
 
@@ -84,8 +85,12 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
     }
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+    df_reference_digest digest;
+    if (!df_reference_digest_open(&digest, argc, argv)) {
+        return 2;
+    }
     df_test t;
 #if defined(DF_CONFORMANCE_POOL_DATA)
     df_test_begin(&t, "duoforge.reference.conformance_pool_data");
@@ -130,6 +135,7 @@ int main(void)
             fprintf(stderr, "  %s: the setup is rejected: %s\n", cb->name, duoforge_status_name(created));
             continue;
         }
+        df_reference_digest_begin(&digest, cb->name, ctx, b);
         unsigned bad = 0;
         for (uint32_t si = 0; si < cb->step_count && bad == 0u; ++si) {
             const df_conf_step *st = &cb->steps[si];
@@ -173,12 +179,15 @@ int main(void)
                 ++bad;
                 break;
             }
+            df_reference_digest_step(&digest, ctx, b, used, &res);
+            df_reference_digest_events(&digest, buffers);
             bad += df_conf_compare_state(stderr, ctx, b, st, cb->name, si);
             bad += df_conf_compare_observation(stderr, ctx, b, st, cb, si);
             bad += df_conf_compare_events(stderr, st, cb->name, si, buffers, conf_events, &event_reports);
             DF_CHECK(&t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
+        df_reference_digest_end(&digest);
         duoforge_battle_destroy(b);
     }
 #if defined(DF_CONFORMANCE_POOL_DATA)
@@ -247,5 +256,6 @@ int main(void)
 #endif
     duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
-    return df_test_end(&t);
+    const int result = df_test_end(&t);
+    return df_reference_digest_close(&digest) ? result : 2;
 }
