@@ -77,7 +77,9 @@ BC6=/mnt/c/Dev/datasets/m11-bc-runs/bc6-M/bc.npz
 
 - `--foe-net P` gives the search's worlds the foe's policy from P (Honest's `foe_net`, M7). It needs `--search honest`. Without it, the search models the foe with its own network. The default of the Showdown mode is unchanged.
 - `--team-pool FILE` holds the random ladder's published teams (see below).
-- Every checkpoint's tables must be the library's: a checkpoint whose pool fingerprint differs is refused at start, never played on other tables.
+- `--foe-net-sha256 HEX` pins the foe network's file: another digest is refused before loading.
+- **Tables across data versions** (owner via HauptSession, 2026-10-12; both modes, the network and the foe network). The battle is always played on the current library's tables. A checkpoint with the same data fingerprint starts as before. A checkpoint with another fingerprint starts only when `checkpoint.check_ids` holds against those tables: every id its network embeds still names the same row, and the tables only grew at the end. Otherwise it is refused, as before. `checkpoint.check_data` is the one helper for this check. The run log names both fingerprints and the result (`same tables` or `carried over`) for the network and the foe network.
+- On main, BC6 (fingerprint `064f44c4`) and params-49333 (`887c0e6c`) differ from the library's `e3f308c9`, and both carry over. Before this change, the fingerprint equality refused both in the live start, including the Showdown mode with params-49333.
 
 **Name and token.**
 - The name comes only from `ARENA_BOT_NAME` and the token only from `ARENA_BOT_TOKEN`. No option takes either.

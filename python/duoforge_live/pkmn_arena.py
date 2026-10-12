@@ -140,16 +140,28 @@ def request_matches(pokemon, paste):
     return got == want
 
 
-def load_foe_net(path):
-    """Honest's foe_net (model, params, encoder, ext_supported) of a format-2 checkpoint in its trained layout: the
-    network that models the foe in the search's worlds (M7). Its tables must be the library's (data.for_checkpoint
-    raises ValueError for another fingerprint), as for the main network."""
+def sha256_of(path):
+    import hashlib
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def load_foe_net(path, sha256=None):
+    """(Honest's foe_net (model, params, encoder, ext_supported) of a format-2 checkpoint in its trained layout, how it
+    reads the library's tables): the network that models the foe in the search's worlds (M7). It must read the current
+    tables as the main network must (data.for_checkpoint: checkpoint.check_data); with sha256 the file must have that
+    digest. ValueError otherwise."""
     from duoforge_learn import checkpoint
     from .data import for_checkpoint
-    for_checkpoint(path)
+    if sha256 is not None and sha256_of(path).lower() != sha256.lower():
+        raise ValueError(f"the foe network {path} is not the pinned file (SHA-256 {sha256})")
+    check = for_checkpoint(path).checkpoint_check
     params, config = checkpoint.load_trained(path)
     return (checkpoint.trained_model(config, params), params, checkpoint.encoder_of(config),
-            checkpoint.ext_supported_of(config))
+            checkpoint.ext_supported_of(config)), check
 
 
 def close_code(err):
@@ -161,10 +173,12 @@ def close_code(err):
 class RunLog:
     """The run's aggregates (arena-run-<UTC start>.json in the log directory): counts only, no room or user ids."""
 
-    def __init__(self, log_dir, mode, fmt, now=None):
+    def __init__(self, log_dir, mode, fmt, now=None, tables=None):
         start = now or datetime.now(timezone.utc)
         self.path = Path(log_dir) / f"arena-run-{start.strftime('%Y%m%dT%H%M%SZ')}.json"
         self.head = {"started": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "mode": mode, "format": fmt}
+        if tables:  # how each checkpoint reads the library's tables: both fingerprints, the check_ids result
+            self.head["tables"] = tables
         self.counts = Counter()  # logins, reconnects, battles, wins, losses, ties, decisions, rejected choices, ...
         self.fallback_battles = Counter()  # battles that fell back to /choose default, by reason
         self.fallback_decisions = Counter()  # decisions answered with /choose default, by the battle's reason
@@ -215,7 +229,7 @@ class ArenaBot(client.Bot):
 
     def __init__(self, name, data, policy, log_dir, fmt, team_text=None, pool=(), search=None, mode="raw",
                  connect=None, connection_errors=None, sleep=asyncio.sleep, clock=time.monotonic, environ=None,
-                 deadline=DECISION_DEADLINE, max_retries=MAX_RETRIES, sheet_wait=SHEET_WAIT):
+                 deadline=DECISION_DEADLINE, max_retries=MAX_RETRIES, sheet_wait=SHEET_WAIT, foe_check=None):
         config = client.Config(name=name, team="own", log_dir=log_dir)
         super().__init__(config, data, policy, login=None, clock=clock, team_texts={"own": team_text},
                          search=search)
@@ -225,7 +239,8 @@ class ArenaBot(client.Bot):
         self.connect, self.connection_errors, self.sleep = connect, connection_errors, sleep
         self.environ = environ  # None: os.environ, read at each login (the token is never kept on the bot)
         self.deadline, self.max_retries, self.sheet_wait = deadline, max_retries, sheet_wait
-        self.run_log = RunLog(log_dir, mode, fmt)
+        checks = {"network": getattr(data, "checkpoint_check", None), "foe_net": foe_check}
+        self.run_log = RunLog(log_dir, mode, fmt, tables={k: v for k, v in checks.items() if v is not None})
         self._executor = ThreadPoolExecutor(1, thread_name_prefix="duoforge-arena-policy")
         self._worker = None  # the future of the last decision; a late one blocks the next (no two at once)
         self._dropped = ()  # the connection's errors: never a battle's fallback, the run loop reconnects

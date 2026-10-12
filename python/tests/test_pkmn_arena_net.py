@@ -110,8 +110,11 @@ class ArenaNetworkTest(unittest.TestCase):
     def test_the_recommended_search_models_the_foe_with_the_same_bc_file(self):
         # Owner, 2026-10-12: the honest search with foe_net = BC6, the same file as the network (M7: F 0.892 against
         # M 0.862). The search's worlds take the foe's policy from the foe network, encoded with its own encoder.
-        foe = pkmn_arena.load_foe_net(self.path)
+        foe, check = pkmn_arena.load_foe_net(self.path, pkmn_arena.sha256_of(self.path))
         self.assertEqual(foe[2:], (6, self.mask))
+        self.assertEqual(check["ids"], "same tables")
+        with self.assertRaisesRegex(ValueError, "pinned"):
+            pkmn_arena.load_foe_net(self.path, "0" * 64)
         live = live_search.load(self.path, dict(live_search.HONEST_SETTINGS, foe_net=foe))
         self.assertIsNotNone(live.searcher.foe_net)
         self.assertEqual(live.searcher.foe_net[2:], (6, self.mask))
@@ -123,6 +126,21 @@ class ArenaNetworkTest(unittest.TestCase):
         self.assertFalse([o for o in outcomes if o["fallback"] == "b"], outcomes)
         self.assertEqual(dict(bot.run_log.fallback_battles), {})
         self.assertNotIn("default", " ".join(self.chosen()))
+
+
+BC6 = os.environ.get("DUOFORGE_BC6", "/mnt/c/Dev/datasets/m11-bc-runs/bc6-M/bc.npz" if os.name != "nt"
+                     else r"C:\Dev\datasets\m11-bc-runs\bc6-M\bc.npz")
+
+
+@unittest.skipUnless(os.path.exists(BC6), "the private BC6 file is not on this machine (never committed)")
+class PrivateBc6Test(unittest.TestCase):
+    def test_bc6_starts_on_the_current_library(self):
+        # BC6 was trained on older pool tables (another fingerprint); its embedded ids carry over to today's tables
+        net, tables = live_policy.load(BC6), data.for_checkpoint(BC6)
+        self.assertEqual((net.encoder, tables.kind), (6, "pool"))
+        self.assertIn(tables.checkpoint_check["ids"], ("same tables", "carried over"))
+        foe, check = pkmn_arena.load_foe_net(BC6)
+        self.assertEqual(check, tables.checkpoint_check)
 
 
 if __name__ == "__main__":

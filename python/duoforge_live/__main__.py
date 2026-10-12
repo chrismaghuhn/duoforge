@@ -57,6 +57,7 @@ def _arena_arguments(argv):
     p.add_argument("--foe-net", default=None,
                    help="with --search honest: the checkpoint that models the foe in the search's worlds (Honest's "
                         "foe_net, M7); recommended (owner, 2026-10-12): the same BC6 file as --checkpoint")
+    p.add_argument("--foe-net-sha256", default=None, help="with --foe-net: the file's SHA-256, checked before loading")
     p.add_argument("--log-dir", default=_log_dir(), help="private logs, outside the repository")
     return p.parse_args(argv)
 
@@ -71,6 +72,8 @@ def arena_main(argv):
     args = _arena_arguments(argv)
     if args.foe_net is not None and args.search != "honest":
         pkmn_arena._refuse("--foe-net models the foe in the honest search: it needs --search honest")
+    if args.foe_net_sha256 is not None and args.foe_net is None:
+        pkmn_arena._refuse("--foe-net-sha256 pins the file of --foe-net")
     name = pkmn_arena.credentials()  # the token's value is never shown
     from duoforge_replay.dataset import refuse_repository
     try:
@@ -86,15 +89,16 @@ def arena_main(argv):
         search.check_tracker(Tracker)
     net, tables = policy.load(args.checkpoint), data.for_checkpoint(args.checkpoint)
     pkmn_arena.check_teams(tables, team_text, pool)
-    live = None
+    live, foe_check = None, None
     if args.search == "honest":
         settings = None
         if args.foe_net is not None:
-            settings = dict(search.HONEST_SETTINGS, foe_net=pkmn_arena.load_foe_net(args.foe_net))
+            foe, foe_check = pkmn_arena.load_foe_net(args.foe_net, args.foe_net_sha256)
+            settings = dict(search.HONEST_SETTINGS, foe_net=foe)
         live = search.load(args.checkpoint, settings)
     mode = args.search + ("+foe_net" if args.foe_net is not None else "")
     bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
-                              search=live, mode=mode)
+                              search=live, mode=mode, foe_check=foe_check)
     try:
         asyncio.run(bot.run())
     finally:

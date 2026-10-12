@@ -45,6 +45,7 @@ class Data:
         import duoforge
         from duoforge import _layout, data as api
         self.kind = kind
+        self.checkpoint_check = None  # for_config: how a format-2 checkpoint reads these tables (checkpoint.check_data)
         self._ctx = None  # the context of the alias lookups and the legality (_context)
         self._legal = {}  # forme -> (setup_legal, abilities, no_ability, moves): setup_issue
         self.tables = trace_to_c.load_tables(str(Path(root)), kind == "pool")
@@ -256,10 +257,12 @@ def load(root=ROOT, kind="closure"):
 
 def for_config(config, root=ROOT):
     """The tables of a checkpoint's config: its data kind (policy.table_kind: "closure" for a format-1 file, which names
-    none) and, for a format-2 file, the fingerprint of that context (its "data"), which the library's context of the kind
-    must have. The live tracker reads the battle with them, and its public record is of that context. A format-2 config
-    without its data, a kind without live tables (team_c) or another fingerprint raises ValueError before a game starts,
-    never another kind."""
+    none), always the current library's context of that kind. The live tracker reads the battle with them, and its
+    public record is of that context. A format-2 file must read these rows as it was trained (checkpoint.check_data):
+    the same fingerprint, or another one whose embedded ids carry over (checkpoint.check_ids; the tables only grew at
+    the end); the result is the tables' checkpoint_check. A format-2 config without its data, a kind without live
+    tables (team_c) or another fingerprint whose ids do not carry over raises ValueError before a game starts, never
+    another kind."""
     from .policy import table_kind
     if not isinstance(config, dict):
         raise ValueError("the checkpoint names no data kind and fingerprint (no config)")
@@ -275,11 +278,12 @@ def for_config(config, root=ROOT):
         kind = table_kind(config)
     except ValueError as err:
         raise ValueError(f"the checkpoint's data kind {entry['kind']!r} has no live tables ({err})") from None
-    tables = Data(root, kind)
-    found = tables.context().fingerprint().hex()
-    if found != entry["fingerprint"]:
-        raise ValueError(f"the checkpoint's {kind} fingerprint {entry['fingerprint']} is not the library's {found}: "
-                         "the network was trained on other tables than these")
+    from duoforge_learn import checkpoint
+    tables = Data(root, kind)  # the current library's tables: the game is played with today's engine
+    try:
+        tables.checkpoint_check = checkpoint.check_data(config, tables.context())
+    except ValueError as err:
+        raise ValueError(f"the {kind} tables: {err}") from None
     return tables
 
 

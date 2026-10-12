@@ -545,6 +545,17 @@ class ArenaTest(unittest.TestCase):
         self.assertTrue(pkmn_arena.request_matches(list(reversed(pokemon)), FIXTURE["team"]))
         self.assertFalse(pkmn_arena.request_matches(pokemon, teams.text("B")))
 
+    def test_the_run_log_names_how_the_checkpoints_read_the_tables(self):
+        check = {"checkpoint": "aa" * 32, "library": "bb" * 32, "ids": "carried over"}
+        tables = data.load()
+        tables.checkpoint_check = check
+        bot = pkmn_arena.ArenaBot(NAME, tables, FakePolicy(), self.tmp.name, OTS, team_text=FIXTURE["team"],
+                                  foe_check=check)
+        self.addCleanup(bot.close)
+        bot.run_log.write()
+        log = json.loads(bot.run_log.path.read_text(encoding="utf-8"))
+        self.assertEqual(log["tables"], {"network": check, "foe_net": check})
+
     def test_read_pool(self):
         path = Path(self.tmp.name, "pool.txt")
         path.write_text(f"=== [{OTS}] one ===\n\n{FIXTURE['team']}\n=== [{OTS}] two ===\n\n{teams.text('B')}",
@@ -552,6 +563,46 @@ class ArenaTest(unittest.TestCase):
         pool = pkmn_arena.read_pool(path)
         self.assertEqual(len(pool), 2)
         self.assertEqual(data.load().team(pool[1]), data.load().team(teams.text("B")))
+
+
+class CheckpointDataTest(unittest.TestCase):
+    """The live start's table check (checkpoint.check_data through data.for_config): the same fingerprint, or another
+    one whose embedded ids carry over to the current library's tables; the tracker always reads today's tables."""
+
+    @classmethod
+    def setUpClass(cls):
+        import duoforge
+        from duoforge import _layout
+        from duoforge_learn import checkpoint
+        with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            cls.fingerprint, cls.ids = ctx.fingerprint().hex(), checkpoint.ids_of(ctx)
+
+    def config(self, fingerprint, ids):
+        return {"format": 2, "data": {"kind": "pool", "fingerprint": fingerprint}, "ids": ids}
+
+    def test_the_same_fingerprint_is_accepted(self):
+        tables = data.for_config(self.config(self.fingerprint, None))
+        self.assertEqual(tables.checkpoint_check,
+                         {"checkpoint": self.fingerprint, "library": self.fingerprint, "ids": "same tables"})
+
+    def test_another_fingerprint_whose_ids_carry_over_is_accepted_and_named(self):
+        older = {kind: names[:max(1, len(names) - 3)] for kind, names in self.ids.items()}  # tables that grew since
+        tables = data.for_config(self.config("ab" * 32, older))
+        self.assertEqual(tables.kind, "pool")
+        self.assertEqual(tables.checkpoint_check, {"checkpoint": "ab" * 32, "library": self.fingerprint,
+                                                   "ids": "carried over"})
+        self.assertEqual(tables.context().fingerprint().hex(), self.fingerprint)  # today's tables
+
+    def test_another_fingerprint_with_a_moved_row_is_refused(self):
+        moved = {kind: list(names) for kind, names in self.ids.items()}
+        moved["move"][1], moved["move"][2] = moved["move"][2], moved["move"][1]
+        with self.assertRaisesRegex(ValueError, "fingerprint .* do not carry over.*move id 1"):
+            data.for_config(self.config("ab" * 32, moved))
+        gone = {kind: list(names) + (["extra"] if kind == "item" else []) for kind, names in self.ids.items()}
+        with self.assertRaisesRegex(ValueError, "item id .* is gone"):
+            data.for_config(self.config("ab" * 32, gone))
+        with self.assertRaisesRegex(ValueError, "fingerprint .* no id tables"):
+            data.for_config(self.config("ab" * 32, None))
 
 
 class CommandLineTest(unittest.TestCase):
@@ -592,6 +643,12 @@ class CommandLineTest(unittest.TestCase):
                                   ENV)
         self.assertEqual(stop.code, 2)
         self.assertIn("--search honest", err)
+
+    def test_the_sha_pin_needs_a_foe_net(self):
+        stop, err = self.run_main(["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--search", "honest",
+                                   "--foe-net-sha256", "0" * 64], ENV)
+        self.assertEqual(stop.code, 2)
+        self.assertIn("--foe-net", err)
 
     def test_arena_logs_never_go_into_the_repository(self):
         argv = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--log-dir",

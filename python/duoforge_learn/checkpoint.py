@@ -141,6 +141,28 @@ def check_ids(config, context):
                 raise ValueError(f"{kind} id {i}: {a} -> {b} (the tables changed below the network's ids)")
 
 
+def check_data(config, context):
+    """Whether a format-2 checkpoint's network reads the rows of `context` (the tables a game is played with) as it was
+    trained: {"checkpoint": its data fingerprint, "library": the context's, "ids": "same tables" when they are equal,
+    else "carried over" when check_ids holds (every embedded id names the same row; the tables only grew at the end)}.
+    ValueError naming both fingerprints and the first id that moved, for a config without data or id tables, or for
+    another fingerprint whose ids do not carry over. The live client's start runs it for the network and the foe
+    network (owner via HauptSession, 2026-10-12): the exact invariant the fingerprint equality protected."""
+    entry = config.get("data") if isinstance(config, dict) else None
+    if not isinstance(entry, dict) or "fingerprint" not in entry:
+        raise ValueError("the checkpoint names no data fingerprint (config['data']): its tables are unknown")
+    stored, found = str(entry["fingerprint"]), context.fingerprint().hex()
+    result = {"checkpoint": stored, "library": found, "ids": "same tables"}
+    if stored != found:
+        try:
+            check_ids(config, context)
+        except ValueError as err:
+            raise ValueError(f"the checkpoint's fingerprint {stored} is not the library's {found}, and its embedded ids "
+                             f"do not carry over to these tables: {err}") from None
+        result["ids"] = "carried over"
+    return result
+
+
 def save(path, params, config):
     """Writes params (nested dicts and lists of arrays) and a format-2 config;
     ValueError naming a missing key."""
