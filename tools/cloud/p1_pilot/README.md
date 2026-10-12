@@ -21,7 +21,7 @@ test approach); read its README for the background.
 | `check.sh` | the permission check: read-only and `--dry-run` calls, a list of what is missing, the role statement to add |
 | `launch.sh` | prints the request (default) or, with `--i-have-owner-approval`, makes it |
 | `user_data.sh` | what the box runs around `run.sh`: wall cap, clone, log sync, interruption hook, upload, power off |
-| `test_guards.py` | offline tests with a stub `aws` and stand-ins for the box (CTest: `duoforge.cloud.p1_pilot_guards`) |
+| `tests/test_guards.py` | offline tests with a stub `aws` and stand-ins for the box (CTest: `duoforge.cloud.p1_pilot_guards`) |
 
 ## The rules every script follows
 
@@ -219,7 +219,7 @@ The security group `duoforge-fuzz`, the instance profile `duoforge-fuzz` and the
 
 ## Tests
 
-`duoforge.cloud.p1_pilot_guards` (`test_guards.py`, needs bash; no AWS access, a stub `aws` is first on the PATH):
+`duoforge.cloud.p1_pilot_guards` (`tests/test_guards.py`, needs bash; no AWS access, a stub `aws` is first on the PATH):
 the identity refusal; the type allow-list and its order; `--max-hours` 1 to 4 and `--max-price` 0.10 to 1.50, and the
 printed cost cap; the commit (shape, on `origin/main`, `run.sh` in it, in a repository of the test's own); the
 security group; one box at a time; the image checks; the shape of the request and its tags; the three
