@@ -50,7 +50,7 @@ def summaries(root, format_name='reg-mc'):
                     raise ValueError(f'{file}: invalid own-PP stops')
                 own_pp += len(players)
         specs = {p.stem for p in (root / 'tests/reference/specs').glob('*.json')
-                 if (json.loads(p.read_text()).get('data') or 'closure') == dataset}
+                 if (json.loads(p.read_text(encoding="utf-8")).get('data') or 'closure') == dataset}
         if set(names) != specs:
             raise ValueError(f'{dataset}: battle files and specs differ')
         result[dataset] = dict(battles=len(names),

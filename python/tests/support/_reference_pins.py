@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[3]
 def load(dataset):
     directory = ROOT / 'tests/reference/battles/reg-mc' / dataset
     expected = {p.stem for p in (ROOT / 'tests/reference/specs').glob('*.json')
-                if (json.loads(p.read_text()).get('data') or 'closure') == dataset}
+                if (json.loads(p.read_text(encoding="utf-8")).get('data') or 'closure') == dataset}
     files = sorted(directory.glob('*.json'))
     if {p.stem for p in files} != expected or not files:
         raise AssertionError(f'{dataset}: per-battle pins do not cover the committed specs')

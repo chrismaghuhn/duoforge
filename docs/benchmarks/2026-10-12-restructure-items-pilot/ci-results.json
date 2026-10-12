@@ -1,0 +1,97 @@
+{
+  "full_matrix": {
+    "conclusion": "success",
+    "jobs": [
+      {
+        "completedAt": "2026-10-12T20:16:29Z",
+        "conclusion": "success",
+        "name": "Linux / clang / TSan",
+        "startedAt": "2026-10-12T20:15:16Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:23:09Z",
+        "conclusion": "success",
+        "name": "Linux / clang / Release",
+        "startedAt": "2026-10-12T20:15:17Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:19:47Z",
+        "conclusion": "success",
+        "name": "Linux / clang / Debug",
+        "startedAt": "2026-10-12T20:15:15Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:20:19Z",
+        "conclusion": "success",
+        "name": "Linux / gcc / ASan+UBSan",
+        "startedAt": "2026-10-12T20:15:15Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:57:15Z",
+        "conclusion": "success",
+        "name": "Linux / gcc / Release / Python, JAX, reference",
+        "startedAt": "2026-10-12T20:15:17Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:25:14Z",
+        "conclusion": "success",
+        "name": "Windows / MSVC / Win32 / Release",
+        "startedAt": "2026-10-12T20:15:17Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:19:00Z",
+        "conclusion": "success",
+        "name": "Linux / gcc / Debug",
+        "startedAt": "2026-10-12T20:15:17Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:30:27Z",
+        "conclusion": "success",
+        "name": "Windows / gcc / Debug / Python, reference",
+        "startedAt": "2026-10-12T20:15:16Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:21:48Z",
+        "conclusion": "success",
+        "name": "Windows / clang / Release",
+        "startedAt": "2026-10-12T20:15:16Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:30:39Z",
+        "conclusion": "success",
+        "name": "Windows / MSVC / x64 / Release",
+        "startedAt": "2026-10-12T20:15:17Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:30:18Z",
+        "conclusion": "success",
+        "name": "Windows / gcc / Release / IPO",
+        "startedAt": "2026-10-12T20:15:16Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:25:35Z",
+        "conclusion": "success",
+        "name": "Windows / MSVC / x64 / Debug",
+        "startedAt": "2026-10-12T20:15:17Z"
+      },
+      {
+        "completedAt": "2026-10-12T20:15:13Z",
+        "conclusion": "skipped",
+        "name": "Quick profile / no open pull request",
+        "startedAt": "2026-10-12T20:15:13Z"
+      }
+    ],
+    "passed_jobs": 12,
+    "run": 38302940369,
+    "status": "completed"
+  },
+  "pr_head_ci_required_after_slot_release": true,
+  "pr_opened": false,
+  "rng": {
+    "conclusion": "success",
+    "headSha": "3a9d04d16f01f7429447237a5d0dcec802ad1312",
+    "run": 38306118385,
+    "status": "completed"
+  },
+  "source_commit": "3a9d04d16f01f7429447237a5d0dcec802ad1312"
+}
