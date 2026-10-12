@@ -11,6 +11,7 @@ import subprocess
 import unittest
 
 from duoforge import _layout
+from duoforge._lib import load_library
 
 
 def _dump():
@@ -46,6 +47,14 @@ class LayoutTest(unittest.TestCase):
     def test_factored_sizes(self):
         self.assertEqual(_layout.FACTORED_DOMAIN.itemsize, 652)
         self.assertEqual(_layout.FACTORED_CHOICE.itemsize, 8)
+
+    def test_item_helpers_are_not_shared_library_exports(self):
+        library = load_library()
+        for name in ("dfi_item_code", "dfi_holds", "dfi_item_takeable", "dfi_type_booster_base_power",
+                     "dfi_resist_berry_hit", "dfi_herb_due", "dfi_herb_holder", "dfi_white_herb"):
+            with self.subTest(symbol=name):
+                with self.assertRaises(AttributeError):
+                    getattr(library, name)
 
 
 if __name__ == "__main__":
