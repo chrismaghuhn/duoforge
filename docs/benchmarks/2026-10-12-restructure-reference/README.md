@@ -4,10 +4,64 @@ The generated reference payloads and frozen observations now belong to each batt
 All 1,129 public reference battles retain their results. The original 1,403-test
 baseline on `a9e44f8c` is preserved below. After the slot was released, main
 `5c99fbd0` was merged without rebasing: it adds `duoforge.python.ladder` and
-`duoforge.python.live_cts`, so main and this branch both register **1,405** tests.
+`duoforge.python.live_cts`, so before the review additions main and this branch both registered **1,405** tests.
 [main-slot-comparison.json](main-slot-comparison.json) proves identical names,
 commands, all runtime properties and registration order against that main.
 The full hosted PR-head matrix remains the merge gate; local checks do not replace it.
+
+## HS review follow-up (current implementation)
+
+The sections below retain the original measurements and historical inventories.
+The review adds two safeguards: **1,407** CTests now preserve all 1,405 names and
+runtime properties from merged main, adding only
+`duoforge.reference.format_pins` (quick/tools) and
+`duoforge.reference.battle_pins` (full/tools). The full tier for the latter is
+explicitly requested by HS; it requires the normal Python/Node/Showdown setup.
+Both carry `ci-no-skip`, so configured full CI jobs must execute them.
+
+`tests/reference/pins/reg-mc.json` is independently hand-maintained, with one
+line per dataset. It freezes counts **90/73/966**, SHA-256 of each sorted ASCII
+name list (one LF per name), certified totals **26/23/966**, fixture matches
+**0/144/0**, tiebreak stops **833/734/5,324**, all live outcomes and stop types,
+tracker stops **162**, and **12** own-PP battle/player pairs. The values are the
+pre-restructure baseline observations, not regenerated expectations. Generators
+never write this file. The per-battle sums remain derived for convenience, with
+this independent guard added as the owner's clarification of the plan.
+
+The quick test checks every discovered payload and sum against those pins.
+Mutation controls coordinate deletion/renaming of a spec, trace and battle file,
+with a still-consistent discovered registry, and separately mutate certification,
+fixture, tiebreak, live outcome, live stop and own-PP sums. Each fails the
+independent pin. Native aggregate assertions and the configure battle-count
+guard now read the independent pin instead of comparing a derived count to itself.
+
+`capture_battle_pins.py` defaults to seeding missing battle files only. Existing
+pins are untouched, and when no battle is new the observers are not even called.
+`--update-existing` is the explicit opt-in: every changed file and field,
+including removed keys, is printed. `--check` observes all **1,129** battle pins
+and **1,056** live pins without writing; it is now CTest-registered. Tests verify
+that a regressed certification cannot silently replace a frozen expectation.
+The `write_pins` extraction originates at
+`tools/reference/capture_battle_pins.py@70e30119:130-144`; its controlled-update
+logic is new. No generated reference payload changed in this follow-up.
+
+Configure guards reject stale tape/event/tiebreak array bounds and per-battle
+row-count mismatches before compiling; mutation controls exercise each guard.
+The two live helper loops use `decisions` rather than shadowing their `points`
+parameter. Old-head CI also exposed Clang `-Wformat-nonliteral` and MSVC C4996:
+the digest helper now declares its printf-format contract for GCC/Clang and uses
+`fopen_s` on MSVC. Warning policies and test behavior are unchanged.
+
+The review rerun passes **12/12 distinct affected CTests**, including both new
+registrations, plus all ten native P2 captures. Every pin observation and P2–P6
+result remains unchanged. The converter first timed out under concurrent IPO
+build pressure; its unchanged rerun after the build passed in **29.26 s**. Both
+attempts are recorded. No test limits or checks were changed.
+
+Current verification is recorded in [review-verification.json](review-verification.json)
+and [review-inventory-comparison.json](review-inventory-comparison.json).
+Historical CI results on `70e30119` do not authorize a merge; the complete matrix
+must pass on the updated head. No CI timeout or scheduling changes are included.
 
 ## Data and pins
 
