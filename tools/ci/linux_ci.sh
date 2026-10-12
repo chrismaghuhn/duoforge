@@ -23,8 +23,8 @@ PY=$HOME/df-venv/bin/python
 mkdir -p "$OUT"
 git config --global --add safe.directory "$SRC" 2>/dev/null
 
-job() { # name cc cxx test-regex configure-arguments...
-    local name=$1 cc=$2 cxx=$3 regex=$4
+job() { # name cc cxx test-label configure-arguments...
+    local name=$1 cc=$2 cxx=$3 label=$4
     shift 4
     local dir="$OUT/$name" log="$OUT/$name.log"
     rm -rf "$dir"
@@ -38,7 +38,7 @@ job() { # name cc cxx test-regex configure-arguments...
         return
     fi
     local filter=()
-    [ -n "$regex" ] && filter=(-R "$regex")
+    [ -n "$label" ] && filter=(-L "^${label}$")
     local result
     # setarch -R: ThreadSanitizer cannot map its shadow memory under full ASLR.
     result=$(cd "$dir" && TSAN_OPTIONS="halt_on_error=1" setarch "$(uname -m)" -R \
@@ -64,7 +64,7 @@ for j in "$@"; do
         job "$j" gcc g++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON "${py[@]}"
         ;;
     clang-release-ipo) job "$j" clang clang++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON ;;
-    clang-tsan) job "$j" clang clang++ 'duoforge\.((batch|search)\.|view$|encode$)' -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDUOFORGE_ENABLE_TSAN=ON ;;
+    clang-tsan) job "$j" clang clang++ ci-tsan -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDUOFORGE_ENABLE_TSAN=ON ;;
     --setup-python)
         if python3 -m venv "$HOME/df-venv" && "$PY" -m pip install --quiet --upgrade numpy; then
             echo "RESULT setup-python PASS numpy $("$PY" -c 'import numpy; print(numpy.__version__)')"
