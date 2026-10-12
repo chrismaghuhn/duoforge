@@ -1,6 +1,6 @@
 #include "combat/turn.h"
 
-#include "combat/ability_family.h"
+#include "combat/abilities/families.h"
 #include "combat/damage_chain.h"
 #include "combat/multiaccuracy.h"
 #include "combat/residual_order.h"
@@ -246,34 +246,11 @@ static uint32_t dfi_field_start_turns(const struct duoforge_battle *b, const dfi
 }
 
 
-/* The member's ability now, stored as 1 + id (0 = none): the one the member's sheet says, or the one that the POOL tail's
- * ability_now holds for it (Trace and the other effects that change an ability; zero under every other kind, and zero
- * unless something changed it). Every rule of the turn code reads the ability through this, never through
- * dfi_member.ability, which is the sheet's (and the Mega forme's) ability. `m` is a member of `b`; no heap, one tail
- * read for a member that is found on a side. */
-static uint32_t dfi_ability_code(const struct duoforge_battle *b, const dfi_member *m)
-{
-    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
-        const dfi_member *first = &b->sides[s].members[0];
-        if (m >= first && m < first + DUOFORGE_MAX_ROSTER) {
-            const uint32_t now = b->tail.sides[s].ability_now[m - first];
-            return now != 0u ? now : m->ability;
-        }
-    }
-    return m->ability;
-}
 
-/* The family row of the member's ability now (src/combat/ability_family.h). */
-static dfi_ability_family dfi_ability_family_now(const struct duoforge_battle *b, const dfi_member *m)
-{
-    return dfi_ability_family_for(m == NULL ? 0u : dfi_ability_code(b, m));
-}
 
-/* The member's ability is `id` (abilities are stored as 1 + id). */
-static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
-{
-    return m != NULL && dfi_ability_code(b, m) == 1u + id;
-}
+
+
+
 
 /* ---------------------------------------------------------------- weather (step G79)
  *
@@ -1863,12 +1840,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_ability(r->b, a, DFI_ABILITY_TECHNICIAN) && power <= 60u) {
         ok = dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
-    /* An -ate ability (the ATE family: Aerilate, Pixilate and Refrigerate,
-     * decision 0015): a Normal move it turned into its type gets 4915/4096
-     * (data/abilities.ts, onBasePowerPriority 23: first). */
-    if (!dfi_ate_excluded(md) && dfi_ate_boosts_fam(dfi_ability_family_now(r->b, a), md->type, move_type)) {
-        ok = ok && dfi_chain_modify(bp_chain, DFI_ATE_MODIFIER, &bp_chain);
-    }
+    ok = dfi_ate_base_power(r->b, a, md, move_type, ok, &bp_chain);
     /* Rivalry (step G83, data/abilities.ts:3881-3898, onBasePowerPriority 24, after Technician's 30 and before Iron Fist's 23): the
      * attacker and the defender both have a gender (male or female): chainModify(1.25) for the same gender, chainModify(0.75)
      * for the other one, and nothing when either is genderless. Its holder is the attacker, and the rival is the defender. */
@@ -2000,9 +1972,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * move of its type at a third of the HP or less, Flash Fire's boost for
      * Fire moves once it took one; 1.5 each. */
     uint32_t atk_chain = 4096u;
-    if (dfi_pinch_applies_fam(dfi_ability_family_now(r->b, a), a, move_type)) {
-        ok = ok && dfi_chain_modify(atk_chain, DFI_PINCH_MODIFIER, &atk_chain);
-    }
+    ok = dfi_pinch_attack(r->b, a, move_type, ok, &atk_chain);
     if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FLASHFIRE) &&
         ((uint32_t)ap->flags & DFI_VOL_FLASH_FIRE) != 0u) {
         ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
