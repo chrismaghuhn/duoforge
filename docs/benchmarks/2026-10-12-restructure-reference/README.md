@@ -1,10 +1,13 @@
 # Restructure step 2: reference data and pins per battle
 
 The generated reference payloads and frozen observations now belong to each battle.
-All 1,129 public reference battles retain their results. All 1,403 CTest names,
-commands and runtime properties match the baseline `a9e44f8c`. The complete hosted
-PR-head matrix remains pending until the maintainer releases the PR slot; local
-checks do not replace that merge gate.
+All 1,129 public reference battles retain their results. The original 1,403-test
+baseline on `a9e44f8c` is preserved below. After the slot was released, main
+`5c99fbd0` was merged without rebasing: it adds `duoforge.python.ladder` and
+`duoforge.python.live_cts`, so main and this branch both register **1,405** tests.
+[main-slot-comparison.json](main-slot-comparison.json) proves identical names,
+commands, all runtime properties and registration order against that main.
+The full hosted PR-head matrix remains the merge gate; local checks do not replace it.
 
 ## Data and pins
 
@@ -144,6 +147,33 @@ mechanic/benchmark reports remain historical; their old commands are not current
 regeneration instructions. No CI selector or test registration change is needed.
 C17 warnings-as-errors passed. Coverage has no configured repository gate; UI e2e
 is not applicable. Self-review found no blocking correctness/security findings.
+
+## Maintainer slot and merged-main validation
+
+Main `5c99fbd0` (including #445, #446, #447 and the #444 timeout update) was
+merged into the pushed branch with a merge commit, never rebased. Its two added
+CTest names are inherited; restructure adds/removes **zero** names. The sorted
+[test-inventory-main-slot.txt](test-inventory-main-slot.txt) has **1,405** entries,
+SHA-256 `23cc8e86a2589d1a5c3430b2ffccc25da796fadf75ff8c4e570cc21b4587ad2c`.
+Tier counts: **206 quick + 30 full + 1,151 reference + 18 slow = 1,405**.
+The full JSON comparison against main again excludes backtrace locations only.
+
+The merged-head rerun passed **242/242 CTests, 0 failures/skips/disabled**:
+236 quick/full tests plus the same six affected reference checks. The full live
+suite now runs **53** cases (three inherited CTS pool checks), replay **13**;
+the per-battle pin generator again checks **1,129 / 1,056** battle/live pins.
+[main-slot-test-results.json](main-slot-test-results.json) and
+[main-slot-verification.json](main-slot-verification.json) record this separate
+rerun; the original prepared-branch results above are historical. The inherited
+CTS tests ran without modification under their unchanged 900-second test limit.
+
+P2 was repeated after the merge: every per-battle result remains byte-equal to
+`a9e44f8c` and the observer witness. P6 and engine/data/public/binding/perft/bench
+source scope were checked again. [main-slot-proof-surface.json](main-slot-proof-surface.json)
+records their equality; neither the PR diff nor the restructure changes the CI
+workflow. The Linux JAX job inherits main's **60-minute** limit from #444.
+The historical build measurement above remains a comparison against `a9e44f8c`;
+it has not been relabeled as a new whole-repository measurement.
 
 ## Reproduction
 

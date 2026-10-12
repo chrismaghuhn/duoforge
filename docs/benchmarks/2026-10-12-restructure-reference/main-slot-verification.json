@@ -1,0 +1,15 @@
+{
+  "ctest_disabled": 0,
+  "ctest_failed": 0,
+  "ctest_passed": 242,
+  "ctest_skipped": 0,
+  "hosted_pr_head_matrix": "pending PR opening",
+  "linux_jax_job_timeout_minutes": 60,
+  "live_unittest_cases": 53,
+  "merge_commit": "37ffd291df8b0f90e953ed53859e0b84f1411aa6",
+  "merged_main": "5c99fbd0",
+  "pin_check_battles": 1129,
+  "pin_check_live_battles": 1056,
+  "reference_results_byte_equal_original_baseline": true,
+  "replay_unittest_cases": 13
+}
