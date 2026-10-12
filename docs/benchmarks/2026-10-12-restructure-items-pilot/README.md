@@ -10,12 +10,114 @@ search signature, public layout and exported symbol. Timing results are mixed;
 this report makes no performance-neutrality or speedup claim.
 
 Baseline: **`ca17e507`**. Implementation/visibility regression/format-fact naming:
-**`3a9d04d1`**. After HS released the PR slot, current main **`36b55704`** was
+**initially `3a9d04d1`, reviewed source `9b7fa521`**. After HS released the PR slot, current main **`36b55704`** was
 merged into `restructure/3-items-pilot` in **`0e2652d4`**, without rebase or main
 push. Main's only addition since the baseline is the content-files design
 specification; engine, tests, workflows and proof inputs are unchanged by that
 merge. The baseline remains `ca17e507`. Fresh PR-head CI is required before HS
 merges; the successful implementation CI below does not replace that gate.
+
+## HS review: inlining and paired measurement (current)
+
+Reviewed engine source: **`9b7fa521`**, baseline **`ca17e507`**. The three
+held-item accessors now live as private `static inline` definitions in
+`src/combat/items/held.h`. Their function bodies are **byte-identical** to the
+initial extraction ([inline-body-equivalence.json](inline-body-equivalence.json)).
+Rename-only commit `62dbbd33` comes before qualifier/include/CMake edits in
+`9b7fa521`. No compiler thresholds, assertions, input workload, generated
+records or rule behavior changed.
+The supplementary no-IPO events interval still allows +3.63% time despite a
++0.14% point estimate; only the IPO release gate has the tighter bound.
+
+| Review claim | Decision | Result |
+|---|---|---|
+| Prove hot-helper inlining | FIX_NOW | Before/pilot/inline objdump call-site counts below |
+| At least 15 interleaved IPO rounds, <=2% loss | FIX_NOW | 30 balanced A/B pairs, all samples retained; both point and upper 95% limits pass |
+| Private static inline access if not inlined | FIX_NOW | All three accessors in `held.h`, unchanged bodies, unchanged exports and P2 |
+
+[inlining.json](inlining.json) retains each surviving call and caller from
+`objdump -d`, including `.part`/`.lto_priv` suffixes. Counts are static call
+sites, not invocation counts. The shared library and benchmark executable
+have the same count vectors in each profile:
+
+| Helper | Baseline | Initial pilot | Private inline |
+|---|---:|---:|---:|
+| `dfi_holds` | 0 | 13 | 0 |
+| `dfi_item_code` | 14 | 2 | 13 |
+| `dfi_item_takeable` | 0 | 0 | 0 |
+
+GCC completely inlines `dfi_holds` and `dfi_item_takeable` again. It still
+outlines a **local** part of `dfi_item_code`, as it already did in the baseline
+(13 sites now, 14 before). `static inline` permits that compiler decision; it
+does not force every local symbol to disappear. No new DLL export appears.
+Only the other five item helpers need external hidden declarations.
+
+[paired-bench-ipo.json](paired-bench-ipo.json) has **30 pairs / 90 timed samples
+per workload per side**; [paired-bench-noipo.json](paired-bench-noipo.json) has
+**15 pairs / 45 samples per workload per side**. Each invocation uses two
+warmups and three measured repetitions, fixed seeds 20261001/7001, 512 battles
+for each of the four closure pairings (2,048 battles, cap 128 steps). The
+order alternates AB on odd pairs and BA on even pairs to balance order drift.
+The harness binds every child to **CPU 4** with `sched_setaffinity`, and no
+local build/test runs concurrently. The native manifest's `affinity: "none"`
+is a pre-existing unconditional driver string; the harness's protocol records
+the actual applied affinity without editing that raw manifest. Same GCC 14.2,
+Release `-O3 -DNDEBUG`, four-CPU quota and fixture fingerprint throughout.
+The no-IPO binary's dirty marker reflects proof-document edits only; its
+engine/test/tool/public-header tree matches `9b7fa521` exactly.
+
+For each pair, take the median of its three repetitions per side, then compute
+**after/before time**. The table uses the median of those paired quotients,
+not a quotient of independently collected overall medians. The 95% interval is
+20,000 paired bootstrap resamples with seed 20261012. Baseline spread is its
+minimum/maximum per-pair median divided by its overall median.
+
+| IPO | Workload | Median time ratio | Change | 95% paired-bootstrap CI | Full ratio range | Baseline relative spread |
+|---|---|---:|---:|---|---|---|
+| on | plain | 0.988287 | -1.17% | [0.965748, 1.017639] | [0.575128, 1.538917] | [0.954665, 1.737943] |
+| on | events | 0.975470 | -2.45% | [0.929935, 1.003846] | [0.707030, 1.824222] | [0.918454, 1.339208] |
+| off | plain | 0.981521 | -1.85% | [0.945069, 1.017362] | [0.648444, 1.355472] | [0.948017, 2.046693] |
+| off | events | 1.001415 | +0.14% | [0.954886, 1.036258] | [0.918780, 1.647596] | [0.958947, 2.079209] |
+
+**IPO release gate passes:** both time medians and their upper 95% bootstrap
+limits are <=1.02, and both medians/intervals lie within their baseline's own
+spread. Median throughput ratios are **1.011851 (plain)** and **1.025147
+(events)**, above the spec's 0.98 threshold. These cloud observations retain
+large outliers; no causal speedup or absolute no-regression guarantee is
+claimed. Every sample is retained, including those outliers. All measurements
+report zero CPU/wall disturbed flags, zero errors/truncations and identical
+**37,199 steps / 27,204 turns / 66,803 side decisions**, including the complete
+aggregate move/choice tallies.
+
+[paired-bench-original-pilot.json](paired-bench-original-pilot.json) also retains
+the diagnostic 15 one-repetition pairs on the initial pilot: plain median
+0.980811, events 1.000896, with wide intervals. The missing `dfi_holds` inlining,
+rather than those noisy point estimates, triggered the header fix. The earlier
+unpaired timings below are historical and do not establish this release gate.
+
+**Correctness rechecked after the header fix:**
+[review-verification.json](review-verification.json) records **14/14 IPO** and
+**10/10 no-IPO CTests**, plus **4/4 source-lint/repository-hygiene checks**,
+zero failure/skip, including all five area item tests,
+format-pins, perft, search bench and both layout suites; the IPO selection also
+reruns all three generated-data checks and tiebreak regeneration. All ten
+native reference variants are recaptured in **each** build: 2,584 executions,
+1,129 unique battles and every byte match the frozen baseline JSON. The 1,407
+CTest commands/runtime properties, 238 exported entries, 33 structs/250
+constants and 20 data/generator/public-layout/pin source hashes remain equal.
+P1–P6 numbers and all reference SHA-256 values below remain valid; the larger
+242/6 initial local selections and 12-job source CI below are historical.
+Fresh full CI on the final PR head remains HS's merge gate.
+
+Reproduce (outputs must remain outside the repository):
+
+```sh
+python docs/benchmarks/2026-10-12-restructure-items-pilot/paired-bench.py \
+  --before <ca17e507-ipo-build>/bench/duoforge_bench \
+  --after <9b7fa521-ipo-build>/bench/duoforge_bench \
+  --rounds 30 --repetitions 3 --warmup 2 --cpu 4 --out <outside-repo-ipo.json>
+# For no IPO: use the corresponding OFF binaries and add --ipo off --rounds 15.
+```
 
 ## Implementation and lineage
 
@@ -37,6 +139,7 @@ The turn file decreases from **12,678 to 12,489 lines** (189 lines).
 | File move | Destination | Move commit |
 |---|---|---|
 | `src/combat/item_family.h` | `src/combat/items/families.h` | `67987baf`, git mv, **100% rename only** |
+| `src/combat/items/held.c` (initial pilot) | `src/combat/items/held.h` | `62dbbd33`, git mv, **100% rename only**, before inline edits |
 
 Includes/comments are edited only after that move commit. Function splits carry
 their source credit: family/common extraction `6d4bab9d`, White Herb `7c3a5c52`.
@@ -49,9 +152,9 @@ The complete [function-extractions.json](function-extractions.json) map is:
 | `dfi_at` | `src/combat/turn.c@ca17e507:127-134` | `src/combat/run_internal.h:88-95` |
 | `dfi_emit` | `src/combat/turn.c@ca17e507:459-464` | `src/combat/run_internal.h:97-102` |
 | `dfi_ev` | `src/combat/turn.c@ca17e507:467-474` | `src/combat/run_internal.h:105-112` |
-| `dfi_item_code` | `src/combat/turn.c@ca17e507:305-324` | `src/combat/items/held.c:9-28` |
-| `dfi_holds` | `src/combat/turn.c@ca17e507:327-330` | `src/combat/items/held.c:31-34` |
-| `dfi_item_takeable` | `src/combat/turn.c@ca17e507:370-374` | `src/combat/items/held.c:42-46` |
+| `dfi_item_code` | `src/combat/turn.c@ca17e507:305-324` | `src/combat/items/held.h:13-32` |
+| `dfi_holds` | `src/combat/turn.c@ca17e507:327-330` | `src/combat/items/held.h:35-38` |
+| `dfi_item_takeable` | `src/combat/turn.c@ca17e507:370-374` | `src/combat/items/held.h:46-50` |
 | `dfi_type_booster_base_power` | `src/combat/turn.c@ca17e507:2078-2083` | `src/combat/items/families.c:4-14` |
 | `dfi_resist_berry_hit` | `src/combat/turn.c@ca17e507:2302-2310` | `src/combat/items/families.c:19-33` |
 | `dfi_herb_due` | `src/combat/turn.c@ca17e507:3636-3648` | `src/combat/items/white_herb.c:5-17` |
@@ -64,7 +167,9 @@ reads in `format_pins.py` and `_reference_pins.load` gain `encoding="utf-8"`.
 Both readers pass under an ASCII default locale for **1,129 specs / 1,056 live
 pins** ([utf8-check.json](utf8-check.json)); no parsing/assertion/expected-value
 changes. `70af1214` adds one case to the existing Python layout suite (4 → 5)
-to reject all eight newly shared item helper names at the actual DLL boundary.
+to reject all eight extracted item helper names at the actual DLL boundary.
+The three hot accessors are now private static inline definitions; the other
+five remain hidden shared helpers.
 It introduces no CTest name or property change.
 
 ## P1: test inventory and execution
@@ -80,7 +185,7 @@ Exactly one tier each: **207 quick + 31 full + 1,151 reference + 18 slow**.
 CI selectors and workflows have no diff.
 
 [local-test-results.json](local-test-results.json): **242/242 CTests** on the
-final IPO implementation (238 quick/full + 3 data regenerations + tiebreak
+initial IPO implementation (238 quick/full + 3 data regenerations + tiebreak
 regeneration), plus **6/6** selected no-IPO checks; no failure/skip/disabled.
 The IPO run includes frozen-pin `--check`: **1,129 certificates/fixture pins
 and 1,056 live pins**. The baseline proof selection passed 9/9.
@@ -152,7 +257,7 @@ keeps its existing shared-library IPO policy. Existing exports remain public;
 the new layout case verifies eight negative symbol lookups, including Windows
 MinGW. No public API/ABI change or library-wide visibility change.
 
-## Bench with IPO on and off
+## Initial unpaired bench with IPO on and off (historical)
 
 [bench-comparison.json](bench-comparison.json) records samples, CPU/wall timing,
 manifests and counter equality. Same cloud/toolchain: GCC 14.2.0, Release

@@ -29,17 +29,17 @@
     },
     "dfi_holds": {
       "interface_substitutions": [],
-      "new_file": "src/combat/items/held.c",
+      "new_file": "src/combat/items/held.h",
       "normalized_body_equal": true
     },
     "dfi_item_code": {
       "interface_substitutions": [],
-      "new_file": "src/combat/items/held.c",
+      "new_file": "src/combat/items/held.h",
       "normalized_body_equal": true
     },
     "dfi_item_takeable": {
       "interface_substitutions": [],
-      "new_file": "src/combat/items/held.c",
+      "new_file": "src/combat/items/held.h",
       "normalized_body_equal": true
     },
     "dfi_pos": {
@@ -57,6 +57,7 @@
       "normalized_body_equal": true
     }
   },
+  "held_header_review": "The three accessor bodies also compare byte-for-byte against ceb9d377 held.c; only static inline qualifiers and header wiring change.",
   "run_definition_byte_equal": true,
-  "source_commit": "3a9d04d1"
+  "source_commit": "9b7fa521"
 }
