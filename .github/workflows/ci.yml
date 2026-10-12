@@ -206,30 +206,11 @@ jobs:
         # These tests report themselves skipped when their interpreter or
         # checkout is missing; in this job that is a broken setup, not a pass.
         run: |
-          if grep -E '\*\*\*Skipped' ctest.log | grep -E 'duoforge\.(python|reference)\.'; then
-            echo "Python or reference tests were skipped"
-            exit 1
-          fi
-          grep -c -E 'Test +#[0-9]+: duoforge\.reference\.trace\.' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.learn ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.learn_v2 ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.bc ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.search ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.honest ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.luck ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.ledger ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.pfsp ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.value_rows ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.distill ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.collect_expert ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.learner_contract ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.p1_eval ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.encoder6_net ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.random_pool_train ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.mmd ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.perft ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.data\.model_pool_hash ' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.state\.model_pool_tail ' ctest.log
+          ctest --test-dir build --show-only=json-v1 > "$RUNNER_TEMP/ctest-inventory.json"
+          python tools/ci/check_ctest_labels.py \
+            --inventory "$RUNNER_TEMP/ctest-inventory.json" --log ctest.log \
+            --no-skip-label ci-no-skip --present-label ci-linux-proof \
+            --present-count 19 --nonempty-label ci-ps-trace
 
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan
@@ -285,7 +266,7 @@ jobs:
       - name: Test
         # setarch -R: ThreadSanitizer cannot map its shadow memory under the
         # runner kernel's full address-space randomization.
-        run: setarch "$(uname -m)" -R ctest --test-dir build --output-on-failure --no-tests=error --timeout 300 -R "duoforge\\.((batch|search)\\.|view$|encode$)"
+        run: setarch "$(uname -m)" -R ctest --test-dir build --output-on-failure --no-tests=error --timeout 300 -L '^ci-tsan$'
 
   windows:
     name: Windows / MSVC / ${{ matrix.arch }} / ${{ matrix.config }}
@@ -317,7 +298,7 @@ jobs:
       - name: Check tested bitness
         shell: bash
         run: |
-          ctest --test-dir build -C ${{ matrix.config }} -R '^duoforge_smoke_test$' -V > smoke.log
+          ctest --test-dir build -C ${{ matrix.config }} -L '^ci-msvc-smoke$' -V > smoke.log
           grep "pointer_bits=${{ matrix.bits }} " smoke.log
 
   # MinGW GCC Debug with the Python package tests and every reference test on
@@ -386,12 +367,11 @@ jobs:
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 2>&1 | tee ctest.log
       - name: No Python or reference test skipped (the JAX tests are Linux-only)
         run: |
-          if grep -E '\*\*\*Skipped' ctest.log | grep -E 'duoforge\.(python|reference)\.' | grep -v -E 'duoforge\.python\.(learn(_v2)?|bc|search|honest|luck|ledger|pfsp|value_rows|distill|collect_expert|learner_contract|p1_eval|encoder6_net|random_pool_train|mmd|pkmn_arena_net) '; then
-            echo "Python or reference tests were skipped"
-            exit 1
-          fi
-          grep -c -E 'Test +#[0-9]+: duoforge\.reference\.trace\.' ctest.log
-          grep -E 'Test +#[0-9]+: duoforge\.python\.perft ' ctest.log
+          ctest --test-dir build --show-only=json-v1 > "$RUNNER_TEMP/ctest-inventory.json"
+          python tools/ci/check_ctest_labels.py \
+            --inventory "$RUNNER_TEMP/ctest-inventory.json" --log ctest.log \
+            --no-skip-label ci-no-skip --exclude-label requires-jax \
+            --present-label ci-windows-proof --present-count 1 --nonempty-label ci-ps-trace
 
   windows-gcc-release-ipo:
     name: Windows / gcc / Release / IPO

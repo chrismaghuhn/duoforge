@@ -1,0 +1,120 @@
+{
+  "P1": {
+    "all_other_test_properties_and_registration_order_identical": true,
+    "all_tests_one_tier_and_area": true,
+    "area_counts": {
+      "abilities": 15,
+      "bench": 3,
+      "certify": 5,
+      "data": 23,
+      "engine": 18,
+      "flow": 27,
+      "forms": 6,
+      "interactions": 42,
+      "items": 5,
+      "learn": 17,
+      "live": 7,
+      "mechanics": 12,
+      "moves": 33,
+      "replay": 5,
+      "search": 12,
+      "tools": 1173
+    },
+    "baseline": "d19839e381b569d17c9885bafd55a126db49b82a",
+    "ci_guard_controls": {
+      "negative_controls": 28,
+      "real_linux_log": "passed",
+      "real_windows_log": "passed"
+    },
+    "duration_measurement": "median of both full Linux Release CTest runs; fixture setup cost included in consuming tests",
+    "full_baseline_ci_runs": [
+      38239492848,
+      38210931789
+    ],
+    "inventory_count": 1403,
+    "inventory_sha256": "ab415dad8fa1b4923bcc60cfd9715d5e66036693696ca7e1c01deead10b8fd40",
+    "tier_counts": {
+      "full": 30,
+      "quick": 204,
+      "reference": 1151,
+      "slow": 18
+    }
+  },
+  "P2": {
+    "battle_executions_per_capture": 2584,
+    "before_after_file_equal": true,
+    "conformance_steps": 11236,
+    "sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+    "tiebreak_stops": 8458,
+    "variants": 10
+  },
+  "P3": {
+    "depth_pins": 24,
+    "passed": true,
+    "pins_sha256": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+    "positions": 10,
+    "test": "duoforge.python.perft"
+  },
+  "P4": {
+    "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+    "passed": true,
+    "roots": 8,
+    "searched": 7,
+    "test": "duoforge.python.bench"
+  },
+  "P5": {
+    "all_passed": true,
+    "canonical_sha256": {
+      "closure": "86ca9d9f548042473c0980c496e9bd6bebbde4b3df0ed10a9ba25aa62316ef5c",
+      "pool": "9453a57d2ad9ccf4b38aec7d5291f0656f83b8f10515f9136c252816ba4769c3",
+      "team-c": "d16b1cef1b41f0a573ae74c10102c932c1f4de0ec3c1f33449f920e533a943e5"
+    },
+    "checks": [
+      "closure",
+      "team-c",
+      "pool"
+    ],
+    "unchanged_source_hashes": 33
+  },
+  "P6": {
+    "constants": 250,
+    "exports": 238,
+    "exports_sha256": "1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5",
+    "header_diff_empty": true,
+    "layout_ctest_passed": true,
+    "layout_equal": true,
+    "layout_sha256": "502ecc2e08dc76cf3004d31115948bc4e69d7843ce5cd5d2492d950464e07e8e",
+    "structs": 33
+  },
+  "baseline": "d19839e381b569d17c9885bafd55a126db49b82a",
+  "hosted_head_matrix": "Required before merge; see PR checks. Baseline runs passed; local checks do not replace the hosted matrix.",
+  "integrated_main": "7f9ee4da51db4770011c4a26306543c76f555f4a",
+  "integration_recheck": {
+    "ctest_metadata_identical": true,
+    "ctest_skips": 0,
+    "failures": 0,
+    "names": [
+      "duoforge.python.repo_hygiene",
+      "duoforge.python.bench",
+      "duoforge.python.honest",
+      "duoforge.python.live_search",
+      "duoforge.lint.sources"
+    ],
+    "seconds": 55.0,
+    "tests": 5
+  },
+  "local_quick_and_full": {
+    "command": "OPENBLAS_NUM_THREADS=1 ctest --test-dir build/restructure -L '^(quick|full)$' --parallel 4 --output-on-failure",
+    "ctest_skips": 0,
+    "failures": 0,
+    "note": "Combined tier membership is identical before/after fixture-cost tier refinement; no test command changed.",
+    "seconds": 207.05,
+    "tests": 234
+  },
+  "optional_pcg": {
+    "ctest_skips": 0,
+    "failures": 0,
+    "passed": 2,
+    "seconds": 0.04
+  }
+}

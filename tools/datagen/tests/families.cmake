@@ -5,4 +5,5 @@
 add_test(NAME duoforge.data.pool_families
     COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/datagen/pool_families.js"
         "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}")
-set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 600 LABELS reference)
+duoforge_label_test(duoforge.data.pool_families reference tools)
+set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 600)
