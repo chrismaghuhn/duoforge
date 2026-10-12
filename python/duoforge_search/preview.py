@@ -25,12 +25,20 @@ def rollout(search, n, player, steps, costs):
     """Raw greedy play until the next TURN after turn 1 or TERMINAL.
     Only active leaves step; intermediate pivots/replacements are C requests.
     A bound exhaustion is an explicit whole-decision raw fallback.
+    With a foe network (step 1b of the ladder, #440) the foe seat plays with it: its rows come from the foe encoding,
+    its policy from the foe network, and its pair is chosen from the foe encoding's mask, which must be the main
+    encoding's for every asked foe seat. The player seat keeps the main network and encoder; the returned rows are the
+    player's.
     """
     batch = search.leaves
+    foe = 1 - player
     failed = np.zeros(n, np.uint32)
     for rollout_step in range(steps + 1):
         t = time.perf_counter()
         obs, slots, masks = batch.query_encoded(search.encoder, search.ext_supported)
+        if search.foe_net is not None:  # copied before the foe query, which may reuse the batch's buffers
+            obs, slots, masks = obs.copy(), slots.copy(), masks.copy()
+            foe_obs, foe_slots, foe_masks = (x.copy() for x in batch.query_encoded(*search.foe_net[2:]))
         batch.query()  # the existing joint-index step consumes this public domain
         done = np.array([batch.result(e) != 0 for e in range(n)])
         at_next_turn = ((batch.requests[:n, player]["boundary_kind"] == C["DUOFORGE_BOUNDARY_TURN"]) &
@@ -45,13 +53,30 @@ def rollout(search, n, player, steps, costs):
             raise Unreconstructible("preview_rollout_limit")
         obs, slots, masks = obs.copy(), slots.copy(), masks.copy()
         obs[n:], slots[n:], masks[n:] = 0, 0, False
-        pp, team_logp, seconds = search._policy(obs.reshape(2 * batch.envs, -1),
-            slots.reshape((2 * batch.envs,) + slots.shape[2:]), masks.reshape((2 * batch.envs,) + masks.shape[2:]))
-        costs["network"] += seconds
-        pp = pp.reshape(batch.envs, 2, -1)
         indices = np.full((batch.envs, 2), _layout.NO_CHOICE, np.uint16)
         asked = active[:, None] & (batch.requests["requested"] != 0)
-        legal = masks.reshape(batch.envs, 2, -1)
+        if search.foe_net is None:
+            pp, _, seconds = search._policy(obs.reshape(2 * batch.envs, -1),
+                slots.reshape((2 * batch.envs,) + slots.shape[2:]), masks.reshape((2 * batch.envs,) + masks.shape[2:]))
+            pp = pp.reshape(batch.envs, 2, -1)
+            legal = masks.reshape(batch.envs, 2, -1)
+        else:  # each seat's rows go to its own network: the player's to the main one, the foe's to the foe network
+            foe_obs[n:], foe_slots[n:], foe_masks[n:] = 0, 0, False
+            main_pp, _, main_seconds = search._policy(obs[:, player].reshape(batch.envs, -1), slots[:, player],
+                masks[:, player])
+            foe_pp, _, foe_seconds = search._policy(foe_obs[:, foe].reshape(batch.envs, -1), foe_slots[:, foe],
+                foe_masks[:, foe], net=search.foe_net)
+            seconds = main_seconds + foe_seconds
+            if foe_pp.shape != main_pp.shape:
+                raise SearchError("the foe network's policy has another width than the main network's")
+            pp = np.empty((batch.envs, 2) + main_pp.shape[1:], main_pp.dtype)
+            pp[:, player], pp[:, foe] = main_pp, foe_pp
+            legal = np.empty(pp.shape, bool)
+            legal[:, player] = masks[:, player].reshape(batch.envs, -1)
+            legal[:, foe] = foe_masks[:, foe].reshape(batch.envs, -1)
+            if not np.array_equal(legal[asked[:, foe], foe], masks[asked[:, foe], foe].reshape(-1, pp.shape[2])):
+                raise SearchError("the foe network's encoder gives the rollout another pair mask")
+        costs["network"] += seconds
         if asked.any():
             if not legal[asked].any(axis=1).all() or not np.isfinite(pp[asked][legal[asked]]).all():
                 raise SearchError("raw rollout needs a finite legal policy")

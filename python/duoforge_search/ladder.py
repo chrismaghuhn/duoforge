@@ -43,7 +43,11 @@ STEPS = {"0": {"base": None, "settings": {}},
          # controls (the best answer to the foe model, and the live mix rule).
          "1": {"base": "0", "settings": {"preview_mode": "value", "preview_rule": "nash"}},
          "1e": {"base": "0", "settings": {"preview_mode": "value", "preview_rule": "ev"}},
-         "1x": {"base": "0", "settings": {"preview_mode": "value", "preview_rule": "mix"}}}
+         "1x": {"base": "0", "settings": {"preview_mode": "value", "preview_rule": "mix"}},
+         # Step 1b (#440): the turn-1 rollout, the only preview form that gained in #241, its foe seat played by the
+         # foe network; "1b" plays its table by the ev rule (the best answer), "1bn" by nash (its control).
+         "1b": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev"}},
+         "1bn": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "nash"}}}
 
 
 def step_settings(name):

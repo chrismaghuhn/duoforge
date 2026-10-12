@@ -270,13 +270,11 @@ class Honest(lookahead.Lookahead):
         # foe. Every policy call on the worlds (the foe's team draw, its queued pair and its menu) goes to it, encoded
         # with its own encoder; the own candidates (the root's policy) and the leaf values stay with the main network.
         # None: the main network models the foe, as before. A value preview (step 1 of the ladder, #440) takes its foe
-        # candidates from it the same way; a turn1 preview's rollout plays both seats with the main network, so the two
-        # are refused together.
+        # candidates from it the same way. A turn1 preview's rollout plays the foe seat with it too (step 1b, #440, the
+        # rollout takes the foe seat's rows from the foe encoding and its policy from the foe network), so every preview
+        # form takes the foe seat from the foe network; the player's seat and the leaf values stay with the main one.
         self.foe_net = None
         if foe_net is not None:
-            if preview_mode == "turn1":  # preview.rollout plays both seats with the main network: two foe models
-                raise ValueError("a foe network is not supported with a turn1 preview search (its rollout plays both "
-                                 "seats with the main network)")
             if len(foe_net) != 4:
                 raise ValueError("a foe network is (model, params, encoder, ext_supported)")
             foe_model, foe_params, foe_encoder, foe_ext = foe_net

@@ -11,8 +11,8 @@ Worlds and gameplay seeds are shared across cells; N/E/X use the existing Bayesi
 No rule, entry effect or move outcome is implemented in Python.
 `preview_rule` (step 1 of the search ladder, #440) names the rule that plays the preview's table ("nash", "ev" or
 "mix"); None plays the search's own `rule`. The record's `rule` field names the rule actually played. A foe network
-(`foe_net`) is accepted with `preview_mode="value"`: the foe candidates come from it, the own candidates and the leaf
-values from the main network. With `turn1` it is refused, because that rollout plays both seats with the main network.
+(`foe_net`) is accepted with `preview_mode="value"` and `"turn1"`: the foe candidates come from it, the own
+candidates and the leaf values from the main network.
 This is the Champions open-team-list regime: stat alignment (the stat-changing Nature effect) is public,
 while the actual stats remain hidden. The official [2026 VGC handbook](https://mcdn.pokemon.com/pokemon-prod/raw/upload/v1/live/static-assets/content-assets/cms2/pdf/play-pokemon/rules/play-pokemon-vgc-tournament-handbook-en.pdf)
 section 2.5 lists stat alignment and excludes only stats from disclosure; [Pokemon.com's NAIC discussion](https://www.pokemon.com/uk/features/2026-north-america-international-championships-pokemon-vgc-roundtable)
@@ -28,6 +28,12 @@ Two evaluators are measured on the same pairings/seeds:
   reconstruction is counted explicitly. Other engine/encoding failures stop the run. Leaf refusals and terminal
   scores follow the existing search protocol. At an evaluation cutoff, use the core's tiebreak instead of extending
   beyond the game's last step.
+
+With a foe network (`foe_net`, step 1b of the ladder, #440) the turn-1 rollout plays the foe seat with it: the foe
+seat's rows come from the foe encoding and its policy from the foe network, while the player's seat keeps the main
+network and encoder and the value rows stay the player's main-encoder rows. The foe's pair is chosen from the foe
+encoding's legal mask; where the main encoding gives an asked foe seat another mask, the decision raises
+`SearchError` rather than picking from either one. Without a foe network the rollout is unchanged.
 
 Candidate ties use the lower tuple rank. Decisions are deterministic with the same seeds, device/runtime,
 capacity and shapes. Leaves/value calls use the fixed existing capacity and padding. Buffers are native batch
