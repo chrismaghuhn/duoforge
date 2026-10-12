@@ -1,5 +1,6 @@
 """The search ladder's harness (issue #440, step 0): pure functions over NumPy arrays and the CLI's guards. No
 network and no checkpoint: every guard runs before any network is loaded."""
+import hashlib
 import json
 import os
 import tempfile
@@ -8,6 +9,8 @@ from unittest import mock
 
 import numpy as np
 
+from duoforge import teams
+from duoforge_learn import suite
 from duoforge_live.data import ROOT
 from duoforge_live.search import HONEST_SETTINGS
 from duoforge_search import foe_arena, ladder
@@ -289,6 +292,168 @@ class CliGuardTest(unittest.TestCase):
                 json.dump({"conditions": {"step": {"name": "7", "settings": {}}}}, f)
             self.assertRefused("measured step", self.argv(out, extra=("--previous", "0", "--previous-run", recorded)),
                                out)
+
+
+def packed_set(name, species="", item="", ability="", moves=(), nature="", evs="", gender="", level="50"):
+    """One set of a Showdown packed team: its 12 fields, the IVs, shininess and happiness left empty."""
+    return "|".join([name, species, item, ability, ",".join(moves), nature, evs, gender, "", "", level, ""])
+
+
+PACKED = "]".join([
+    packed_set("Rillaboom", item="MiracleSeed", ability="GrassySurge", moves=("WoodHammer", "GrassyGlide"),
+               nature="Adamant", evs="18,32,2,,,8"),
+    packed_set("Staraptor", item="Staraptite", ability="Intimidate", moves=("BraveBird",), nature="Jolly",
+               gender="F")])  # no EVs: all zero
+
+
+def write_bytes(directory, name, raw):
+    path = os.path.join(directory, name)
+    with open(path, "wb") as f:
+        f.write(raw)
+    return path
+
+
+class MatchupRowsTest(unittest.TestCase):
+    def test_the_learner_plays_team_zero_on_both_seats(self):
+        rows = ladder.matchup_rows(3)
+        self.assertEqual(rows.dtype, suite.SUITE)
+        self.assertEqual(rows.shape, (6,))
+        learner = np.where(rows["learner_seat"] == 0, rows["side0"], rows["side1"])
+        foe = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
+        self.assertTrue((learner == 0).all())
+        self.assertTrue((foe == 1).all())
+
+    def test_the_seats_alternate_and_each_pair_is_one_game_index(self):
+        rows = ladder.matchup_rows(2)
+        self.assertEqual(rows["learner_seat"].tolist(), [0, 1, 0, 1])
+        self.assertEqual(rows["side0"].tolist(), [0, 1, 0, 1])
+        self.assertEqual(rows["side1"].tolist(), [1, 0, 1, 0])
+        self.assertEqual(rows["game"].tolist(), [0, 0, 1, 1])
+
+    def test_at_least_one_pair_is_needed(self):
+        with self.assertRaises(ValueError):
+            ladder.matchup_rows(0)
+
+
+class ReadTeamTest(unittest.TestCase):
+    def test_a_packed_team_is_unpacked_into_members(self):
+        raw = (PACKED + "\n").encode("ascii")
+        with tempfile.TemporaryDirectory() as tmp:
+            members, packed, digest = ladder.read_team(write_bytes(tmp, "foe.packed", raw))
+        self.assertTrue(packed)
+        self.assertEqual(digest, hashlib.sha256(raw).hexdigest())
+        self.assertEqual(members, [
+            {"species": "Rillaboom", "gender": None, "item": "MiracleSeed", "ability": "GrassySurge",
+             "nature": "Adamant", "moves": ["WoodHammer", "GrassyGlide"], "stat_points": [18, 32, 2, 0, 0, 8]},
+            {"species": "Staraptor", "gender": "F", "item": "Staraptite", "ability": "Intimidate",
+             "nature": "Jolly", "moves": ["BraveBird"], "stat_points": [0] * 6}])
+
+    def test_a_packed_level_other_than_fifty_is_refused(self):
+        raw = packed_set("Rillaboom", ability="GrassySurge", moves=("WoodHammer",), nature="Adamant",
+                         level="100").encode("ascii")
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "level 50"):
+                ladder.read_team(write_bytes(tmp, "foe.packed", raw))
+
+    def test_a_registry_paste_is_parsed_as_before(self):
+        path = os.path.join(str(ROOT), "data", "teams", "A.txt")
+        with open(path, "rb") as f:
+            raw = f.read()
+        members, packed, digest = ladder.read_team(path)
+        self.assertFalse(packed)
+        self.assertEqual(digest, hashlib.sha256(raw).hexdigest())
+        self.assertEqual(members, teams.parse(raw.decode("utf-8"), path))
+        self.assertEqual(len(members), 6)
+
+
+def spread_table(*spreads, species="charizard"):
+    """A hand-made table of the Smogon table's shape: the spreads (nature, "a/b/c/d/e/f", weight) of one species."""
+    return {"species": {species: {"cutoff": 0, "spreads": [list(s) for s in spreads]}}}
+
+
+def member(species, nature, stat_points=(0,) * 6):
+    return {"species": species, "gender": None, "item": None, "ability": "Blaze", "nature": nature,
+            "moves": ["Flare Blitz"], "stat_points": list(stat_points)}
+
+
+class FillStatPointsTest(unittest.TestCase):
+    TABLE = spread_table(("Jolly", "0/252/0/0/4/252", 900), ("Adamant", "4/252/0/0/0/252", 400),
+                         ("Adamant", "0/252/0/0/4/252", 600))
+
+    def test_the_heaviest_spread_of_the_members_nature_is_taken(self):
+        out, filled = ladder.fill_stat_points([member("Charizard", "Adamant")], self.TABLE)
+        self.assertEqual(out[0]["stat_points"], [0, 252, 0, 0, 4, 252])  # not the table's heaviest (Jolly, 900)
+        self.assertEqual(filled, [{"species": "Charizard", "nature": "Adamant", "spread": "0/252/0/0/4/252"}])
+
+    def test_a_tie_keeps_the_first_spread_of_the_table(self):
+        table = spread_table(("Adamant", "4/252/0/0/0/252", 500), ("Adamant", "0/252/0/0/4/252", 500))
+        out, _ = ladder.fill_stat_points([member("Charizard", "Adamant")], table)
+        self.assertEqual(out[0]["stat_points"], [4, 252, 0, 0, 0, 252])
+
+    def test_a_member_with_stat_points_is_untouched(self):
+        out, filled = ladder.fill_stat_points([member("Charizard", "Adamant", (1, 2, 3, 4, 5, 6))], self.TABLE)
+        self.assertEqual(out[0]["stat_points"], [1, 2, 3, 4, 5, 6])
+        self.assertEqual(filled, [])
+
+    def test_the_species_is_keyed_by_its_showdown_id(self):
+        table = spread_table(("Timid", "0/0/0/252/4/252", 10), species="mrmime")
+        out, filled = ladder.fill_stat_points([member("Mr. Mime", "Timid")], table)
+        self.assertEqual(out[0]["stat_points"], [0, 0, 0, 252, 4, 252])
+        self.assertEqual(filled[0]["species"], "Mr. Mime")
+
+    def test_a_missing_species_is_refused_naming_it(self):
+        with self.assertRaisesRegex(SystemExit, "Pikachu"):
+            ladder.fill_stat_points([member("Pikachu", "Jolly")], self.TABLE)
+
+    def test_a_missing_nature_is_refused_never_guessed(self):
+        with self.assertRaisesRegex(SystemExit, "Modest"):
+            ladder.fill_stat_points([member("Charizard", "Modest")], self.TABLE)
+
+    def test_the_input_members_are_not_changed(self):
+        members = [member("Charizard", "Adamant")]
+        ladder.fill_stat_points(members, self.TABLE)
+        self.assertEqual(members[0]["stat_points"], [0] * 6)
+
+    def test_each_filled_member_is_named_in_the_list(self):
+        table = spread_table(("Adamant", "0/252/0/0/4/252", 600))
+        table["species"]["mrmime"] = {"cutoff": 0, "spreads": [["Timid", "0/0/0/252/4/252", 10]]}
+        members = [member("Charizard", "Adamant"), member("Mr. Mime", "Timid"),
+                   member("Charizard", "Adamant", (1, 0, 0, 0, 0, 0))]
+        out, filled = ladder.fill_stat_points(members, table)
+        self.assertEqual([f["species"] for f in filled], ["Charizard", "Mr. Mime"])
+        self.assertEqual(out[2]["stat_points"], [1, 0, 0, 0, 0, 0])
+
+
+class MatchupGuardTest(unittest.TestCase):
+    """The --matchup guards raise SystemExit before any network or checkpoint is loaded."""
+
+    def argv(self, out, *extra):
+        return ["--checkpoint", "missing/main.npz", "--foe-net", "missing/foe.npz", "--step", "0", "--out", out,
+                "--opponent", "bot=missing/bot.npz", *extra]
+
+    def test_teams_from_and_matchup_are_exclusive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            ours = os.path.join(str(ROOT), "data", "teams", "A.txt")
+            with self.assertRaisesRegex(SystemExit, "exactly one"):
+                ladder.main(self.argv(out, "--teams-from", "missing/pool.npz", "--matchup", ours, ours))
+            self.assertFalse(os.path.exists(out))
+
+    def test_one_of_teams_from_and_matchup_is_required(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            with self.assertRaisesRegex(SystemExit, "exactly one"):
+                ladder.main(self.argv(out))
+            self.assertFalse(os.path.exists(out))
+
+    def test_a_foe_without_stat_points_needs_the_fill(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            foe = write_bytes(tmp, "foe.packed", PACKED.encode("ascii"))
+            ours = os.path.join(str(ROOT), "data", "teams", "A.txt")
+            with self.assertRaisesRegex(SystemExit, "foe.*Staraptor.*--fill-stat-points"):
+                ladder.main(self.argv(out, "--matchup", ours, foe))
+            self.assertFalse(os.path.exists(out))
 
 
 if __name__ == "__main__":
