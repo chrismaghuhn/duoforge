@@ -368,7 +368,7 @@ class Teacher(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         ex.label_decision(search, b, env=0, seat=0, key=key, raw_action=raw, raw_logp=bad_logp,
                                           last_step=False, config=cfg, manifest=m)
-                # Visible sleep has no supported public reconstruction: a named public refusal.
+                # Decision 0066: a visible sleep under POOL is no public refusal (its cant count is public); the row is labelled.
                 decode = b._lib.duoforge_battle_decode
                 decode.restype = ctypes.c_uint32
                 decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
@@ -379,8 +379,7 @@ class Teacher(unittest.TestCase):
                 b.query_factored()
                 ex.observe(search, b, [1], [0])
                 refused = self.label(search, b, 1, 0, raw, cfg, game=502)
-                self.assertEqual((refused.status, refused.cause, refused.action, refused.behavior_logp),
-                                 (ed.RowStatus.PUBLIC_REFUSAL, "public:visible_sleep", raw, -1.25))
+                self.assertNotEqual(refused.status, ed.RowStatus.PUBLIC_REFUSAL)
                 search.history[b][(1, 0)]["observed"] = -1
                 with self.assertRaisesRegex(ValueError, "observe"):  # a request needs observe() first
                     self.label(search, b, 1, 0, raw, cfg, game=502)
@@ -668,7 +667,7 @@ class Teacher(unittest.TestCase):
             with mock.patch.object(search, "_hypotheses", side_effect=AssertionError("worlds built first")), \
                     self.assertRaisesRegex(ValueError, "key"):
                 ex.label_tick(search, b, [tick[0], tick[1], bad], last_step=False, config=cfg, manifest=self.manifest)
-            # Visible sleep in one environment: that root refuses publicly, the others are unchanged.
+            # Visible sleep in one environment (decision 0066: no public refusal under POOL; the others are unchanged).
             decode = b._lib.duoforge_battle_decode
             decode.restype = ctypes.c_uint32
             decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
@@ -680,7 +679,7 @@ class Teacher(unittest.TestCase):
             ex.observe(search, b, [0, 1, 2, 3], [0] * 4)
             tick = [dataclasses.replace(r, raw_action=self.low_raw(search, b, r.env, 0)) for r in roots_of(b, range(4))]
             mixed = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
-            self.assertEqual(mixed[1].status, ex.RowStatus.PUBLIC_REFUSAL)
+            self.assertNotEqual(mixed[1].status, ex.RowStatus.PUBLIC_REFUSAL)  # decision 0066
             self.assertEqual([ex.decision_bytes(d) for d in mixed], per_root(search, b, tick, cfg))
             with self.assertRaises(ValueError):  # one root per environment
                 ex.label_tick(search, b, [tick[0], tick[0]], last_step=False, config=cfg, manifest=self.manifest)

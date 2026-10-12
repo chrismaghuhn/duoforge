@@ -425,3 +425,4 @@ def _tail(t, s, boundary):
         for m, member in enumerate(members):
             s.put(f"{pre}member{m}.item_now", member.item_now)
             s.put(f"{pre}member{m}.toxic_stage", member.toxic_stage)
+            s.put(f"{pre}member{m}.sleep_cant", member.sleep_cant)  # decision 0066: the public cant count of a sleep

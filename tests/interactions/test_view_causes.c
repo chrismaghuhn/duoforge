@@ -25,6 +25,8 @@
 #include "data/pool_tables.h"
 #include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
+#include "state/context_internal.h"
 #include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
@@ -51,6 +53,12 @@ static void team_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
             c->picks[i] = (uint8_t)i;
         }
     }
+}
+
+/* Decision 0066: a visible sleep is a cause only where the public record carries no cant count (every kind but POOL). */
+static uint32_t sleep_cause(const duoforge_context *ctx)
+{
+    return dfi_kind_limits_of(ctx->data_kind).pool_rules ? 0u : DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP;
 }
 
 static duoforge_battle *turn_battle(df_test *t, const duoforge_context *ctx)
@@ -105,7 +113,7 @@ static void test_causes_cases(df_test *t, const duoforge_context *ctx)
             b->sides[side].members[member].status = (uint8_t)DUOFORGE_AILMENT_SLEEP;
             b->sides[side].members[member].status_counter = (uint8_t)counter;
             DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
-            check_agreement(t, ctx, b, DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP);
+            check_agreement(t, ctx, b, sleep_cause(ctx));
         }
     }
     /* sleep only, on a bench member of side 1 that is not brought: its status is in the view of its own side only (the
@@ -114,7 +122,7 @@ static void test_causes_cases(df_test *t, const duoforge_context *ctx)
     b->sides[1].members[5].status = (uint8_t)DUOFORGE_AILMENT_SLEEP;
     b->sides[1].members[5].status_counter = 2u;
     DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
-    DF_CHECK(t, causes_of(t, ctx, b, 1u) == DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP);
+    DF_CHECK(t, causes_of(t, ctx, b, 1u) == sleep_cause(ctx));
     DF_CHECK(t, causes_of(t, ctx, b, 0u) == 0u);
     {
         duoforge_public_state v0;
@@ -137,13 +145,13 @@ static void test_causes_cases(df_test *t, const duoforge_context *ctx)
     b->sides[0].members[b->sides[0].positions[0].occupant].status_counter = 1u;
     b->sides[1].positions[1].confusion_turns = 3u;
     DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
-    check_agreement(t, ctx, b, DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP | DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION);
+    check_agreement(t, ctx, b, sleep_cause(ctx) | DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION);
     *b = original;
     b->sides[1].members[b->sides[1].positions[1].occupant].status = (uint8_t)DUOFORGE_AILMENT_SLEEP;
     b->sides[1].members[b->sides[1].positions[1].occupant].status_counter = 2u;
     b->sides[1].positions[0].confusion_turns = 5u;
     DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
-    check_agreement(t, ctx, b, DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP | DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION);
+    check_agreement(t, ctx, b, sleep_cause(ctx) | DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION);
     *b = original;
     duoforge_battle_destroy(b);
 }
@@ -203,7 +211,7 @@ static void test_hidden_values_do_not_change_the_mask(df_test *t, const duoforge
     uint32_t reference[2];
     for (uint32_t p = 0u; p < 2u; ++p) {
         reference[p] = causes_of(t, ctx, b, p);
-        DF_CHECK(t, reference[p] == DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP);
+        DF_CHECK(t, reference[p] == sleep_cause(ctx));
     }
     for (uint32_t counter = 1u; counter <= 3u; ++counter) {
         for (uint32_t rng = 0u; rng < 3u; ++rng) {
