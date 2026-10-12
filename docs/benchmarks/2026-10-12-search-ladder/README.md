@@ -63,6 +63,36 @@ Step 0 has no previous step and no strength gate. **Its checks:**
 
 Step 0 against R is reported, paired with its 95% interval, as the first point of the curve.
 
+## Step 1: the team preview as a Nash matrix game (#363)
+
+**Change.** At team preview, the search solves the bring-four and lead choices of both sides as a Bayes matrix game. It plays the Nash mix (`preview_mode` "value", `preview_rule` "nash"); turns stay as in step 0.
+- **Own candidates:** the top 8 of BC6's team head.
+- **Foe candidates:** the top 8 of the foe model's team head, BC6, over the sampled worlds.
+- **Payoff:** BC6's value after both previews and the entry effects.
+
+Before this step, the team preview was raw by design. A foe network was refused with any preview search. Now it is refused only with the turn-1 rollout (`turn1`), whose rollout plays both seats with the main network.
+
+**Prior evidence (#241, 49333, no foe network).**
+- N-value against raw: +0.002 [−0.024, 0.029].
+- E-turn1 gained +0.068 against raw self-play only, and nothing against the panel.
+
+A small or no gain is the expected outcome here.
+
+**Arms:**
+
+| arm | `preview_rule` | role |
+|---|---|---|
+| 1 | nash | the step (#363) |
+| 1e | ev | control: the best answer to the foe model, the form #240/#241 measured |
+| 1x | mix (λ = 0.5) | control: the live turns' rule |
+
+**Runs:**
+- **Step 1:** `--step 1 --previous 0 --h2h --previous-run <step 0's ladder.json>` against `bot`, `bc6` and `ppo`, 1024 pairs. All gates of the table above apply. The gate "reproduced" checks that step 0's games on this code equal step 0's recorded run.
+- **1e and 1x:** the head-to-head against step 0, and the paired arms against `bot`, 1024 pairs each. These are reported, not gated.
+- **Latency:** step 1 against `bot`, 16 pairs, under `--exclusive`.
+
+**Step 1b (later, HauptSession 2026-10-12).** E/N-turn1 with the foe network needs the rollout to play the foe seat with the foe network. That is not built yet. It is listed here, so that a lead choice that depends on the foe's turn 1 is tested after step 1.
+
 ## Results
 
 (after the run)
