@@ -27,8 +27,6 @@ _Static_assert(sizeof(duoforge_public_state) == 1396u, "public state layout (the
 _Static_assert(sizeof(duoforge_hypothesis) == 280u, "hypothesis layout");
 _Static_assert(sizeof(((duoforge_hypothesis *)0)->queue_order) == DFI_QUEUE_CAPACITY, "queue permutation capacity");
 
-/* The weights of a running hidden counter's value v = 1, 2, ... (a draw seen at a random point of its run). */
-static const uint32_t dfi_sleep_weights[3] = {3u, 3u, 2u};           /* sample([2, 3, 3]) */
 static const uint32_t dfi_confusion_weights[5] = {4u, 4u, 3u, 2u, 1u}; /* random(2, 6): 2..5 */
 
 /* ---- integer uniforms ---- */
@@ -308,9 +306,12 @@ static bool dfi_view_turn_history_risk(const duoforge_context *ctx, const duofor
 static uint32_t dfi_view_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation)
 {
     uint32_t mask = 0u;
+    /* Decision 0066: under POOL the sleep's cant count is public (the member's tail byte), so a visible sleep is no cause there; the
+     * other kinds carry no count and keep the refusal. */
+    const bool sleep_count_public = dfi_kind_limits_of(ctx->data_kind).pool_rules;
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
-            if (observation->sides[side].members[m].status == DUOFORGE_AILMENT_SLEEP) {
+            if (observation->sides[side].members[m].status == DUOFORGE_AILMENT_SLEEP && !sleep_count_public) {
                 mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP;
             }
         }
@@ -378,6 +379,38 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
     }
     *out_mask = mask;
     return DUOFORGE_OK;
+}
+
+/* Decision 0066 (the review of the search lane): a sleeping POOL member with Early Bird (its counter decrements twice per attempt,
+ * data/conditions.ts:68-69) or with Sleep Talk or Snore among its moves (a sleepUsable move runs after its cant line, data/moves.ts:
+ * 16875, 17161) has no counted posterior. The rebuild and the public record refuse it (E_UNSUPPORTED), never guess; the engine
+ * refuses the attempt itself (turn.c, the sleep branch of dfi_before_move). Reads the encoded state only. */
+static bool dfi_sleep_source_unsupported(uint8_t *s)
+{
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        const uint32_t count = side_at(s, side)[DFI_ENC_SIDE_MEMBER_COUNT_OFF];
+        for (uint32_t m = 0u; m < count && m < DUOFORGE_MAX_ROSTER; ++m) {
+            uint8_t *mb = member_at(s, side, m);
+            if (mb[DFI_ENC_MEMBER_STATUS_OFF] != DFI_STATUS_SLP) {
+                continue;
+            }
+            const uint8_t *tb = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE +
+                                DFI_ENC_TAIL_MEMBER_OFF + m * DFI_ENC_TAIL_MEMBER_SIZE;
+            const uint32_t now = rd16(tb + DFI_ENC_TAIL_MEMBER_ABILITY_OFF);
+            const uint32_t own = mb[DFI_ENC_MEMBER_ABILITY_OFF];
+            if ((now != 0u ? now : own) == DFI_ABILITY_EARLYBIRD + 1u) {
+                return true;
+            }
+            const uint32_t moves = mb[DFI_ENC_MEMBER_MOVE_COUNT_OFF];
+            for (uint32_t k = 0u; k < moves && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+                const uint32_t id = rd16(mb + DFI_ENC_MOVE_OFF + k * DFI_ENC_MOVE_SIZE);
+                if (id == DFI_MOVE_SLEEPTALK || id == DFI_MOVE_SNORE) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 /* The counter refusal of duoforge_battle_public: E_UNSUPPORTED while the one predicate names a cause. */
@@ -1493,14 +1526,35 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
             tb[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] = (uint8_t)(duration - elapsed); /* wide-operands-reviewed: 1..6 */
         }
     }
-    /* the hidden counters of both sides and the foe's charging targets */
+    /* the hidden counters of both sides and the foe's charging targets. Decision 0066: a sleeping member's start S is 2 (1/3) or 3
+     * (2/3) by its hypothesis word; the public cant count c of its tail byte fixes the rest: c = 2 leaves S = 3, c in {0, 1} takes S
+     * from the word, and the counter is S - c. A hidden counter needs the POOL tail and hypothesis revision 4 (E_UNSUPPORTED
+     * otherwise); the words of members that show no hidden counter are ignored. */
+    if (pool_tail && dfi_sleep_source_unsupported(s)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             uint8_t *mb = member_at(s, side, m);
-            if (mb[DFI_ENC_MEMBER_STATUS_COUNTER_OFF] == DUOFORGE_VIEW_HIDDEN) {
-                mb[DFI_ENC_MEMBER_STATUS_COUNTER_OFF] =
-                    (uint8_t)(1u + dfi_pick_weighted(hypothesis->sleep[side][m], dfi_sleep_weights, 3u)); /* wide-operands-reviewed: 1..3 */
+            const uint8_t *tb = pool_tail ? s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE +
+                                                DFI_ENC_TAIL_MEMBER_OFF + m * DFI_ENC_TAIL_MEMBER_SIZE
+                                          : NULL;
+            const uint32_t cant = tb != NULL ? tb[DFI_ENC_TAIL_MEMBER_SLEEP_CANT_OFF] : 0u;
+            if (mb[DFI_ENC_MEMBER_STATUS_COUNTER_OFF] != DUOFORGE_VIEW_HIDDEN) {
+                if (cant != 0u) {
+                    return DUOFORGE_E_INVALID_ARGUMENT; /* a sleep count without a hidden sleep */
+                }
+                continue;
             }
+            if (!pool_tail || hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION) {
+                return DUOFORGE_E_UNSUPPORTED; /* no count is public outside POOL; revisions before 4 have no exact law */
+            }
+            if (mb[DFI_ENC_MEMBER_STATUS_OFF] != DFI_STATUS_SLP || cant > DFI_TAIL_SLEEP_CANT_MAX) {
+                return DUOFORGE_E_MALFORMED; /* a hidden counter is a sleep, and no start fits c above 2 */
+            }
+            const uint32_t start = cant == DFI_TAIL_SLEEP_CANT_MAX ? 3u
+                                   : dfi_pick(hypothesis->sleep[side][m], 3u) == 0u ? 2u : 3u;
+            mb[DFI_ENC_MEMBER_STATUS_COUNTER_OFF] = (uint8_t)(start - cant); /* wide-operands-reviewed: 1..3 */
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             uint8_t *pb = position_at(s, side, p);
@@ -1790,8 +1844,12 @@ duoforge_status duoforge_battle_hypothesis(const duoforge_context *ctx, const du
         const dfi_side *sd = &battle->sides[side];
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             const dfi_member *mem = &sd->members[m];
-            if (mem->status == DFI_STATUS_SLP && mem->status_counter >= 1u && mem->status_counter <= 3u) {
-                h.sleep[side][m] = dfi_word_of_weighted(mem->status_counter - 1u, dfi_sleep_weights, 3u);
+            /* Decision 0066: the true start S = counter + c picks the bucket of its word (S = 2: bucket 0 of 3; S = 3: bucket 1) */
+            const uint32_t cant = battle->tail.sides[side].sleep_cant[m];
+            if (mem->status == DFI_STATUS_SLP && mem->status_counter >= 1u && cant <= DFI_TAIL_SLEEP_CANT_MAX &&
+                (uint32_t)mem->status_counter + cant >= 2u && (uint32_t)mem->status_counter + cant <= 3u) {
+                h.sleep[side][m] = dfi_word_of(
+                    (uint32_t)mem->status_counter + cant == 2u ? 0u : 1u, 3u);
             }
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
