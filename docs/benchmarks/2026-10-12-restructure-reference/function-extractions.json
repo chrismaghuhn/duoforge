@@ -1,0 +1,63 @@
+[
+  {
+    "first_line": 822,
+    "last_line": 840,
+    "new": "python/tests/live/test_live.py",
+    "new_first_line": 763,
+    "new_function": "_closure_assembler_observations",
+    "old": "python/tests/live/test_live.py@a9e44f8c"
+  },
+  {
+    "first_line": 934,
+    "last_line": 958,
+    "new": "python/tests/live/test_live.py",
+    "new_first_line": 788,
+    "new_function": "_pool_assembler_observations",
+    "old": "python/tests/live/test_live.py@a9e44f8c"
+  },
+  {
+    "first_line": 9,
+    "last_line": 13,
+    "new": "tests/support/reference_digest.c",
+    "new_first_line": 42,
+    "new_function": "number",
+    "note": "ASCII encoding adapted to optional buffered digest output; equality witness cc8d3fc7",
+    "old": "tools/restructure/observe.h@a9e44f8c"
+  },
+  {
+    "first_line": 14,
+    "last_line": 42,
+    "new": "tests/support/reference_digest.c",
+    "new_first_line": 47,
+    "new_function": "state",
+    "note": "ASCII encoding adapted to optional buffered digest output; equality witness cc8d3fc7",
+    "old": "tools/restructure/observe.h@a9e44f8c"
+  },
+  {
+    "first_line": 43,
+    "last_line": 57,
+    "new": "tests/support/reference_digest.c",
+    "new_first_line": 108,
+    "new_function": "df_reference_digest_step",
+    "note": "ASCII encoding adapted to optional buffered digest output; equality witness cc8d3fc7",
+    "old": "tools/restructure/observe.h@a9e44f8c"
+  },
+  {
+    "first_line": 58,
+    "last_line": 87,
+    "new": "tests/support/reference_digest.c",
+    "new_first_line": 126,
+    "new_function": "df_reference_digest_events",
+    "note": "ASCII encoding adapted to optional buffered digest output; equality witness cc8d3fc7",
+    "old": "tools/restructure/observe.h@a9e44f8c"
+  },
+  {
+    "first_line": 88,
+    "last_line": 113,
+    "new": "tests/support/reference_digest.c",
+    "new_first_line": 159,
+    "new_function": "df_reference_digest_tiebreak",
+    "note": "ASCII encoding adapted to optional buffered digest output; equality witness cc8d3fc7",
+    "old": "tools/restructure/observe.h@a9e44f8c"
+  }
+]

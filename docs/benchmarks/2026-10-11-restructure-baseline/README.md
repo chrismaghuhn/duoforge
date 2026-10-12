@@ -124,6 +124,15 @@ replays and run directories are not committed. The existing tests compare
 these same executions to the pinned reference. These digests are a regression
 baseline, not an independent proof of all game rules.
 
+## Observer retirement
+
+Step 2 verified the internal `--digest-out` output against this observer on
+commit `cc8d3fc7`: all 10 variants / 2,584 battle executions agreed byte for
+byte with the recorded baseline. `tools/restructure/observe.h` is retired;
+`tools/restructure/capture_reference.py` now invokes the built runners directly.
+The historical encoding definition above is unchanged. The reproduction command
+below uses that replacement collector (no compiler instrumentation is needed).
+
 ## Reproduction
 
 With the versions above installed, from the repository root (substitute your

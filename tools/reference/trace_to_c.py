@@ -5,11 +5,12 @@ tables for the conformance test (decision 0006 sections 5.1 and 7).
 usage: python tools/reference/trace_to_c.py <repo root> [--check]
 
 Reads tests/reference/specs/*.json and tests/reference/traces/*.json and
-writes tests/reference/conformance.h, conformance_team_c.h (the Team C
-battles), conformance_pool.h (the battles whose spec says "data": "pool",
-decision 0015) and conformance_types.h (the record types they include), or,
-with --check, compares them (conformance_pool.h only when a pool battle is
-committed).
+writes each battle's conformance payload under battles/reg-mc/<set>/.
+The frozen pins there are generated explicitly by capture_battle_pins.py.
+Small conformance.h, conformance_team_c.h and conformance_pool.h declaration
+headers retain the existing C interface; CMake builds their arrays from the
+battle directory. conformance_types.h still holds their record types.
+With --check, compares all payloads and headers without writing anything.
 
 As a library: load_battle(root, name) reads a spec and a trace (the only file
 IO of a conversion), convert_battle(name, spec, trace, tables) turns them into
@@ -2879,8 +2880,15 @@ class FoePressure:
         return uses
 
 
+class _COffset:
+    def __init__(self, base, value):
+        self.base, self.value = base, value
+
+
 def c_init(value):
     """A C initializer of nested int tuples: (1, (2, 3)) is {1u, {2u, 3u}}."""
+    if isinstance(value, _COffset):
+        return '(%s + %du)' % (value.base, value.value)
     if isinstance(value, (tuple, list)):
         return '{%s}' % ', '.join(c_init(v) for v in value)
     return '%du' % value
@@ -2898,7 +2906,7 @@ def step_record(st, tape_off, ev_off, ev_len):
             st['mons'], tuple(ev_off), tuple(ev_len))
 
 
-def format_battle(data, out, all_tape, all_events):
+def format_battle(data, out, all_tape, all_events, symbolic_offsets=False):
     """The C tables of a battle from convert_battle's data. The lines go to
     `out`; the tape entries and events of each step are appended to the shared
     arrays all_tape and all_events, where the step records its offsets.
@@ -2919,8 +2927,11 @@ def format_battle(data, out, all_tape, all_events):
             ev_off.append(len(all_events))
             ev_len.append(len(evs))
             all_events.extend(evs)
-        steps.append('    %s,  /* %d draws dropped */' % (c_init(step_record(st, tape_off, ev_off, ev_len)),
-                                                           st['dropped']))
+        row = step_record(st, tape_off, ev_off, ev_len)
+        if symbolic_offsets:
+            row = (row[:3] + (_COffset('DF_REFERENCE_TAPE_BASE', tape_off),) + row[4:15] +
+                   (tuple(_COffset('DF_REFERENCE_EVENT_BASE', x) for x in ev_off),) + row[16:])
+        steps.append('    %s,  /* %d draws dropped */' % (c_init(row), st['dropped']))
     w('static const df_conf_step conf_%s_steps[] = {' % name)
     out.extend(steps)
     w('};')
@@ -3014,6 +3025,13 @@ def main():
     if pool:
         rc |= write_header(root, pool, load_tables(root, True), True, check, pool=True)
     rc |= write_types(root, check)
+    wanted = {os.path.abspath(battle_path(root, n, spec_data(n, load_json(root, 'specs', n)))) for n in names}
+    directory = os.path.join(root, 'tests', 'reference', 'battles', FORMAT)
+    actual = {os.path.abspath(os.path.join(path, f)) for path, _, files in os.walk(directory)
+              for f in files if f.endswith('.json')}
+    if actual != wanted:
+        sys.stderr.write('trace_to_c: battle directory differs from the traces\n')
+        rc = 1
     return rc
 
 
@@ -3092,63 +3110,110 @@ def write_types(root, check):
                 'the template in trace_to_c.py')
 
 
+FORMAT = 'reg-mc'
+GENERATED_BY = 'tools/reference/trace_to_c.py, tiebreak_ref.js, capture_battle_pins.py'
+
+
+def battle_path(root, name, dataset):
+    return os.path.join(root, 'tests', 'reference', 'battles', FORMAT, dataset, name + '.json')
+
+
+def build_battle_record(data):
+    """One battle, with local offsets and independent tape/event slices.
+
+    CMake supplies the directory-derived bases at compilation, retaining the
+    original flat C arrays and every consumer's indexing semantics.
+    """
+    body, tape, events = [], [], []
+    entry = format_battle(data, body, tape, events, symbolic_offsets=True)
+    return dict(definitions='\n'.join(body) + '\n', entry=entry,
+                tape=''.join('    {%du, %du, %du, %du},\n' % e for e in tape),
+                events=''.join('    {%du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, {0u, 0u}},\n' % e
+                               for e in events),
+                tape_count=len(tape), event_count=len(events), step_count=len(data['steps']))
+
+
+def battle_records(root, names, tables):
+    return {name: build_battle_record(convert_battle(name, *load_battle(root, name), tables)) for name in names}
+
+
+def read_battle_record(root, name, dataset):
+    target = battle_path(root, name, dataset)
+    if not os.path.exists(target):
+        raise ConversionError('reference-pins', 'trace_to_c: %s needs capture_battle_pins.py first' % target)
+    value = load_json_file(target)
+    if set(value) - {'generated_by', 'format', 'set', 'name', 'pins', 'conformance', 'tiebreak'}:
+        raise ConversionError('reference-schema', 'trace_to_c: %s has unknown fields' % target)
+    if (value.get('name'), value.get('set'), value.get('format')) != (name, dataset, FORMAT):
+        raise ConversionError('reference-identity', 'trace_to_c: %s has the wrong battle identity' % target)
+    real = value.get('pins', {}).get('certified')
+    if type(real) is not int or real not in (0, 1):
+        raise ConversionError('reference-pins', 'trace_to_c: %s needs a certified-context pin' % target)
+    matched = value['pins'].get('fixture_matches')
+    if type(matched) is not int or matched < 0:
+        raise ConversionError('reference-pins', 'trace_to_c: %s needs a fixture-membership pin' % target)
+    return value
+
+
+def load_json_file(path):
+    with io.open(path, encoding='ascii') as f:
+        return json.load(f)
+
+
 def write_header(root, names, tables, team_c, check, pool=False):
-    text, n_tape, n_events = build_header(root, names, tables, team_c, pool)
+    dataset = 'pool' if pool else 'team_c' if team_c else 'closure'
+    records = battle_records(root, names, tables)
+    rc = 0
+    for name in names:
+        target = battle_path(root, name, dataset)
+        value = read_battle_record(root, name, dataset)
+        value.update(generated_by=GENERATED_BY, conformance=records[name])
+        text = json.dumps(value, indent=2, sort_keys=True) + '\n'
+        have = read_ascii(target).replace('\r\n', '\n')
+        if check:
+            if have != text:
+                sys.stderr.write('trace_to_c: %s differs from the traces\n' % target)
+                rc = 1
+        elif have != text:
+            with io.open(target, 'w', encoding='ascii', newline='\n') as f:
+                f.write(text)
+    text, n_tape, n_events = build_header(root, names, tables, team_c, pool, records=records)
     fname = 'conformance_pool.h' if pool else 'conformance_team_c.h' if team_c else 'conformance.h'
     target = os.path.join(root, 'tests', 'reference', fname)
-    return emit(target, text, check, 'the traces',
-                ' (%d battles, %d tape entries, %d events)' % (len(names), n_tape, n_events))
+    return rc | emit(target, text, check, 'the traces',
+                     ' (%d battles, %d tape entries, %d events)' % (len(names), n_tape, n_events))
 
 
-def build_header(root, names, tables, team_c, pool=False):
-    """The text of conformance.h (conformance_team_c.h for Team C,
-    conformance_pool.h for the pool battles) over the committed battles
-    `names`, and the sizes of its tape and event arrays."""
+def build_header(root, names, tables, team_c, pool=False, records=None):
+    """A small declaration header; definitions come from the battle directory."""
+    dataset = 'pool' if pool else 'team_c' if team_c else 'closure'
+    if records is None:
+        records = battle_records(root, names, tables)
+    have = [read_battle_record(root, name, dataset) for name in names]
+    n_tape = sum(row['tape_count'] for row in records.values())
+    n_events = sum(row['event_count'] for row in records.values())
+    real = sum(row['pins']['certified'] for row in have)
+    matched = sum(row['pins']['fixture_matches'] for row in have)
     guard = ('DUOFORGE_TESTS_REFERENCE_CONFORMANCE_POOL_H' if pool else
              'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_TEAM_C_H' if team_c else 'DUOFORGE_TESTS_REFERENCE_CONFORMANCE_H')
-    source_line = (' * tests/reference/traces, the pool battles (decision 0015; pinned Showdown' if pool else
-                   ' * tests/reference/traces, the Team C battles (decision 0009; pinned Showdown' if team_c else
-                   ' * tests/reference/traces (pinned Showdown b2cb775b0616115b775534eaeff50300e1fc81fc).')
-    out = ['/*', ' * GENERATED by tools/reference/trace_to_c.py from tests/reference/specs and', source_line]
-    if team_c:
-        out.append(' * b2cb775b0616115b775534eaeff50300e1fc81fc), read with the %s tables.' %
-                   ('pool' if pool else 'extended'))
-    out += [' * Do not edit by hand. Draw drop rules: tools/reference/trace_to_c.py.', ' */',
-            '#ifndef %s' % guard, '#define %s' % guard,
-           '#include <stdint.h>', '', '#include <duoforge/duoforge.h>', '', '#include "rng/draw.h"', '',
-           '#include "reference/conformance_types.h"', '']
-    all_tape = []
-    all_events = []
-    entries = []
-    body = []
-    for n in names:
-        spec, trace = load_battle(root, n)
-        entries.append(format_battle(convert_battle(n, spec, trace, tables), body, all_tape, all_events))
-    out.extend(body)
-    out.append('')
-    out.append('/* Every kept draw of every battle: site, lo, hi, value. */')
-    out.append('static const dfi_tape_entry conf_tape[] = {')
-    for e in all_tape:
-        out.append('    {%du, %du, %du, %du},' % e)
-    if not all_tape:
-        out.append('    {0u, 0u, 0u, 0u},')
-    out.append('};')
-    out.append('')
-    out.append('/* Every step\'s events per player (decision 0007 section 6), from the')
-    out.append(' * protocol lines the game shows that player. */')
-    out.append('static const duoforge_event conf_events[] = {')
-    for e in all_events:
-        out.append('    {%du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, %du, {0u, 0u}},' % e)
-    if not all_events:
-        out.append('    {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},')
-    out.append('};')
-    out.append('')
-    out.append('static const df_conf_battle conf_battles[] = {')
-    out.extend(entries)
-    out.append('};')
-    out.append('')
-    out.append('#endif')
-    return '\n'.join(out) + '\n', len(all_tape), len(all_events)
+    out = ['/* GENERATED by tools/reference/trace_to_c.py. Do not edit by hand.',
+           ' * Data and pins: tests/reference/battles/reg-mc/%s/ (one JSON file per battle).' % dataset,
+           ' * CMake builds the registry from that directory. */',
+           '#ifndef %s' % guard, '#define %s' % guard,
+           '#include <stdint.h>', '#include <duoforge/duoforge.h>', '#include "rng/draw.h"',
+           '#include "reference/conformance_types.h"', '',
+           '#define DF_REFERENCE_BATTLE_COUNT %du' % len(names),
+           '#define DF_REFERENCE_REAL_BATTLES %du' % real,
+           '#define DF_REFERENCE_FIXTURE_MATCHES %du' % matched,
+           '#define DF_REFERENCE_TAPE_COUNT %du' % max(1, n_tape),
+           '#define DF_REFERENCE_EVENT_COUNT %du' % max(1, n_events),
+           '#define conf_battles df_reference_%s_battles' % dataset,
+           '#define conf_tape df_reference_%s_tape' % dataset,
+           '#define conf_events df_reference_%s_events' % dataset,
+           'extern const df_conf_battle conf_battles[DF_REFERENCE_BATTLE_COUNT];',
+           'extern const dfi_tape_entry conf_tape[DF_REFERENCE_TAPE_COUNT];',
+           'extern const duoforge_event conf_events[DF_REFERENCE_EVENT_COUNT];', '', '#endif']
+    return '\n'.join(out) + '\n', n_tape, n_events
 
 
 if __name__ == '__main__':

@@ -685,7 +685,12 @@ class Library(unittest.TestCase):
             with self.subTest(fname):
                 chosen = [n for n in names if trace_to_c.is_pool(ROOT, n) == pool and
                           (pool or trace_to_c.is_team_c(ROOT, n) == team_c)]
-                text, _, _ = trace_to_c.build_header(ROOT, chosen, tables(team_c), team_c, pool)
+                records = trace_to_c.battle_records(ROOT, chosen, tables(team_c))
+                dataset = 'pool' if pool else 'team_c' if team_c else 'closure'
+                for name in chosen:
+                    have = trace_to_c.read_battle_record(ROOT, name, dataset)
+                    self.assertEqual(have['conformance'], records[name], name)
+                text, _, _ = trace_to_c.build_header(ROOT, chosen, tables(team_c), team_c, pool, records=records)
                 self.assertEqual(text, committed(fname))
                 self.assertIn('#include "reference/conformance_types.h"\n', text)
                 self.assertNotIn('typedef struct df_conf_', text)  # the types live in their own header
@@ -2724,6 +2729,11 @@ class Cli(unittest.TestCase):
             os.makedirs(os.path.join(tmp, 'tests', 'reference', kind))
         for name in names:
             spec, trace = battle(name)
+            dataset = trace_to_c.spec_data(name, spec)
+            source = trace_to_c.battle_path(ROOT, name, dataset)
+            target = trace_to_c.battle_path(tmp, name, dataset)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.copy(source, target)
             if mutate:
                 mutate(name, spec, trace)
             for kind, obj in (('specs', spec), ('traces', trace)):
@@ -2741,6 +2751,32 @@ class Cli(unittest.TestCase):
                                     ('conformance_pool.h', 'the traces'),
                                     ('conformance_types.h', 'the template in trace_to_c.py'))]
         self.assertEqual(p.stdout.splitlines(), want)
+
+    def test_check_rejects_every_battle_payload_component_and_directory_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.tree(tmp, self.BATTLES)
+            self.assertEqual(self.run_cli(tmp).returncode, 0)
+            name = 's2_turn_core_1'
+            path = trace_to_c.battle_path(tmp, name, 'closure')
+            with io.open(path, encoding='ascii') as f:
+                good = f.read()
+            for key in ('definitions', 'entry', 'tape', 'events', 'tape_count', 'event_count', 'step_count'):
+                value = json.loads(good)
+                del value['conformance'][key]
+                with io.open(path, 'w', encoding='ascii') as f:
+                    json.dump(value, f, indent=2, sort_keys=True)
+                    f.write('\n')
+                p = self.run_cli(tmp, '--check')
+                self.assertEqual(p.returncode, 1, key)
+                self.assertEqual(p.stderr, 'trace_to_c: %s differs from the traces\n' % path, key)
+            with io.open(path, 'w', encoding='ascii') as f:
+                f.write(good)
+            extra = os.path.join(os.path.dirname(path), 'stale.json')
+            shutil.copy(path, extra)
+            self.assertEqual(self.run_cli(tmp, '--check').returncode, 1)
+            os.remove(extra)
+            os.remove(path)
+            self.assertEqual(self.run_cli(tmp, '--check').returncode, 1)
 
     def test_usage(self):
         p = self.run_cli()

@@ -1,0 +1,66 @@
+{
+  "P1": {
+    "converter_unittest_cases_after": 133,
+    "converter_unittest_cases_before": 132,
+    "hosted_pr_head_matrix": "pending: PR not opened; maintainer PR-slot gate",
+    "inventory": 1403,
+    "live_unittest_cases": 50,
+    "local_ctest_failed": 0,
+    "local_ctest_passed": 240,
+    "local_ctest_skipped": 0,
+    "replay_unittest_cases": 13
+  },
+  "P2": {
+    "baseline_and_after_byte_equal": true,
+    "executions": 2584,
+    "observer_agreement_commit": "cc8d3fc7d4a9dd5541d2cdeb2034e054d901cae8",
+    "reference_results_sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+    "steps": 11236,
+    "stops": 8458,
+    "unique_battles": 1129,
+    "variants": 10
+  },
+  "P3": {
+    "passed": true,
+    "pin_file_sha256": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+    "pinned_depths": 24,
+    "positions": 10
+  },
+  "P4": {
+    "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+    "passed": true,
+    "roots": 8,
+    "searched_roots": 7
+  },
+  "P5": {
+    "UNMODELED_pins_unchanged_until_step_5": {
+      "abilities": 90,
+      "items": 18,
+      "moves": 146
+    },
+    "canonical_data_sha256": {
+      "closure": "86ca9d9f548042473c0980c496e9bd6bebbde4b3df0ed10a9ba25aa62316ef5c",
+      "pool": "9453a57d2ad9ccf4b38aec7d5291f0656f83b8f10515f9136c252816ba4769c3",
+      "team_c": "d16b1cef1b41f0a573ae74c10102c932c1f4de0ec3c1f33449f920e533a943e5"
+    },
+    "closure_extended_pool_check_passed": true,
+    "engine_data_and_generator_hashes_unchanged": true,
+    "per_battle_pin_check_passed": true,
+    "reference_conformance_and_tiebreak_checks_passed": true
+  },
+  "P6": {
+    "exported_symbols": 238,
+    "exports_and_layout_unchanged": true,
+    "layout_constants": 250,
+    "layout_structs": 33,
+    "public_header_diff_empty": true
+  },
+  "baseline_commit": "a9e44f8c5b375cc7086ca75642f6b82933de80af",
+  "gates": {
+    "C17_warnings_as_errors": "pass",
+    "coverage": "not applicable: no configured coverage tooling/gate",
+    "e2e": "not applicable: internal test-data restructure",
+    "security_review": "no blocking finding; no secrets/private output/core/public API changes"
+  },
+  "implementation_commit": "f83564ccec32bf77a3842d3a792ad0735e39d639"
+}

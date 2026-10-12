@@ -1,0 +1,21 @@
+{
+  "all_runtime_properties_and_order_equal_main": true,
+  "head_count": 1405,
+  "ignored_difference": "registration backtrace locations only",
+  "inventory_sha256": "23cc8e86a2589d1a5c3430b2ffccc25da796fadf75ff8c4e570cc21b4587ad2c",
+  "main_added_names": [
+    "duoforge.python.ladder",
+    "duoforge.python.live_cts"
+  ],
+  "main_count": 1405,
+  "merged_main": "5c99fbd0",
+  "original_baseline": "a9e44f8c",
+  "original_count": 1403,
+  "restructure_added_or_removed_names": [],
+  "tier_counts": {
+    "full": 30,
+    "quick": 206,
+    "reference": 1151,
+    "slow": 18
+  }
+}

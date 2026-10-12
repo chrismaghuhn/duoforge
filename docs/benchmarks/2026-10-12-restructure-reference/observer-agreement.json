@@ -1,0 +1,9 @@
+{
+  "commit": "cc8d3fc7d4a9dd5541d2cdeb2034e054d901cae8",
+  "variants": 10,
+  "battle_executions": 2584,
+  "unique_battles": 1129,
+  "baseline_internal_observer_equal": true,
+  "reference_results_sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+  "cli_rejection_controls": 3
+}
