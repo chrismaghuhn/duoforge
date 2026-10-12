@@ -1,12 +1,13 @@
 # DuoForge tests. Every test is finite and has an explicit timeout.
+include(support/labels.cmake)
 
 # duoforge_add_test(NAME <ctest name> SOURCES <files...> [WHITEBOX]
-#                   [TIMEOUT <s>] [LABELS <labels...>] [LIBS <libs...>] [ARGS <arguments...>])
+#                   [TIMEOUT <s>] TIER <tier> AREA <area> [LABELS <selectors...>] [LIBS <libs...>] [ARGS <arguments...>])
 # The executable name is NAME with '.' replaced by '_'. WHITEBOX adds src/ to
 # the include path so a test can exercise internal functions. ARGS are the
 # command line arguments of the test.
 function(duoforge_add_test)
-    cmake_parse_arguments(T "WHITEBOX" "NAME;TIMEOUT" "SOURCES;LABELS;LIBS;ARGS" ${ARGN})
+    cmake_parse_arguments(T "WHITEBOX" "NAME;TIMEOUT;TIER;AREA" "SOURCES;LABELS;LIBS;ARGS" ${ARGN})
     if(NOT T_TIMEOUT)
         set(T_TIMEOUT 30)
     endif()
@@ -23,9 +24,7 @@ function(duoforge_add_test)
     duoforge_configure_target(${_exe})
     add_test(NAME ${T_NAME} COMMAND ${_exe} ${T_ARGS})
     set_tests_properties(${T_NAME} PROPERTIES TIMEOUT ${T_TIMEOUT})
-    if(T_LABELS)
-        set_tests_properties(${T_NAME} PROPERTIES LABELS "${T_LABELS}")
-    endif()
+    duoforge_label_test("${T_NAME}" "${T_TIER}" "${T_AREA}" ${T_LABELS})
     if(DUOFORGE_ENABLE_SANITIZERS)
         # Never abort_on_error: CTest would report an abort even when the
         # expected output matched (docs/decisions/0003).

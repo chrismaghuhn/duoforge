@@ -22,6 +22,7 @@ if(CMAKE_CXX_COMPILER AND NOT DUOFORGE_ENABLE_SANITIZERS AND NOT DUOFORGE_ENABLE
         endif()
     endif()
     add_test(NAME duoforge.api.cxx_link COMMAND duoforge_cxx_link)
+    duoforge_label_test(duoforge.api.cxx_link quick engine)
     set_tests_properties(duoforge.api.cxx_link PROPERTIES TIMEOUT 30)
 endif()
 
