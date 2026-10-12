@@ -742,7 +742,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ENDEAVOR, DFI_SPECIAL_PARTIAL_TRAP + 1u); /* step C5 (decision 0015 5cy): Endeavor follows the partial trap (batch 8 merge order) */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_PSYCH_UP, DFI_SPECIAL_ENDEAVOR + 1u); /* step G80 (decision 0044) */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ALLY_SWITCH, DFI_SPECIAL_PSYCH_UP + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ALLY_SWITCH + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PSYCHIC_TERRAIN + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TAUNT].special, DFI_SPECIAL_TAUNT);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_YAWN].special, DFI_SPECIAL_YAWN);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PERISHSONG].special, DFI_SPECIAL_PERISH_SONG);

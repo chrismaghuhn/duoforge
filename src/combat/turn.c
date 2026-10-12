@@ -8240,12 +8240,15 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         r->mres |= DFI_MRES_TRUE; /* Field.setWeather returns true */
         return DUOFORGE_OK;
     }
-    if (status_move && (md->special == DFI_SPECIAL_ELECTRIC_TERRAIN || md->special == DFI_SPECIAL_MISTY_TERRAIN)) {
+    if (status_move && (md->special == DFI_SPECIAL_ELECTRIC_TERRAIN || md->special == DFI_SPECIAL_MISTY_TERRAIN ||
+                        md->special == DFI_SPECIAL_PSYCHIC_TERRAIN)) {
         /* Electric Terrain and Misty Terrain (moveHit, sim/battle-actions.ts:1252-1255): Field.setTerrain
          * (sim/field.ts:130-157) fails when the same terrain is up (the move fails) and otherwise replaces the terrain
-         * for 5 turns (Terrain Extender is not marked) with `-fieldstart|move: X Terrain` and no [from]; the replaced
-         * terrain ends without a line, and TerrainChange runs the seeds. */
-        const uint32_t terrain = md->special == DFI_SPECIAL_ELECTRIC_TERRAIN ? DFI_TERRAIN_ELECTRIC : DFI_TERRAIN_MISTY;
+         * for 5 turns (8 with Terrain Extender, G55) with `-fieldstart|move: X Terrain` and no [from]; the replaced
+         * terrain ends without a line, and TerrainChange runs the seeds. Psychic Terrain (step G96, data/moves.ts:14095-14160)
+         * is the same setter; its block and boost are the terrain rules above. */
+        const uint32_t terrain = md->special == DFI_SPECIAL_ELECTRIC_TERRAIN ? DFI_TERRAIN_ELECTRIC
+                                 : md->special == DFI_SPECIAL_MISTY_TERRAIN ? DFI_TERRAIN_MISTY : DFI_TERRAIN_PSYCHIC;
         if (b->terrain == terrain) {
             dfi_fail_still(r, user);
             return DUOFORGE_OK;
@@ -8356,7 +8359,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_CONFUSE && md->special != DFI_SPECIAL_OHKO &&
         md->special != DFI_SPECIAL_MEMENTO && md->special != DFI_SPECIAL_LEVEL_DAMAGE &&
         md->special != DFI_SPECIAL_PARTIAL_TRAP &&
-        md->special != DFI_SPECIAL_PSYCH_UP && md->special != DFI_SPECIAL_ALLY_SWITCH) { /* step G84, G92, G90, G80 */
+        md->special != DFI_SPECIAL_PSYCH_UP && md->special != DFI_SPECIAL_ALLY_SWITCH &&
+        md->special != DFI_SPECIAL_PSYCHIC_TERRAIN) { /* step G84, G92, G90, G80; G96 (Psychic Terrain) */
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */

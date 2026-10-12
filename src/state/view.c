@@ -825,6 +825,7 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
     case DFI_SPECIAL_SUNNY_DAY:
     case DFI_SPECIAL_ELECTRIC_TERRAIN:
     case DFI_SPECIAL_MISTY_TERRAIN:
+    case DFI_SPECIAL_PSYCHIC_TERRAIN: /* G96: the same setter as Electric and Misty Terrain, true when set, -fail false */
     case DFI_SPECIAL_AURORA_VEIL:
     case DFI_SPECIAL_IMPRISON:
     /* G84 Leech Seed (dfi_leech_seed: the seed that started true; a Grass target's -immune and a standing seed's -fail false),
