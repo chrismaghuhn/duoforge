@@ -1,5 +1,5 @@
-"""The search ladder's harness (issue #440, step 0): pure functions over NumPy arrays and the CLI's guards. No network and
-no checkpoint: every guard runs before any network is loaded."""
+"""The search ladder's harness (issue #440, step 0): pure functions over NumPy arrays and the CLI's guards. No
+network and no checkpoint: every guard runs before any network is loaded."""
 import json
 import os
 import tempfile

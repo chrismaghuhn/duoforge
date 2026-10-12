@@ -14,17 +14,18 @@ Each opponent (a raw greedy network: bc6, bot or ppo) meets the arms "step", "pr
 team pair, its teams and seats swapped. A searching arm leaves the opponent's own team out of the spread table, as
 foe_arena does. --h2h plays step N against the previous step, both searching, over the same rows.
 
-The gates (GATES, verdict()): strength (the head-to-head's lower bound above 0.50), no harm (each gated opponent, bot and
-bc6, at most 0.50 at its upper bound against the previous step), fallbacks (raw decisions at most 5 %, or the previous
-share plus 1 point where that is above 5 %) and latency (the step's p99 wall seconds per searched decision at most 2.0;
-the lead reruns the latency exclusively, as this run shares the machine with its workers).
-The output directory lies outside the repository; the networks stay private and the report holds aggregates and per-game
-scores only.
+The gates (GATES, verdict()): strength (the head-to-head's lower bound above 0.50), no harm (each gated opponent, bot
+and bc6, at most 0.50 at its upper bound against the previous step), fallbacks (raw decisions at most 5 %, or the
+previous share plus 1 point where that is above 5 %) and latency (the step's p99 wall seconds per searched decision at
+most 2.0; the lead reruns the latency exclusively, as this run shares the machine with its workers). The output
+directory lies outside the repository; the networks stay private and the report holds aggregates and per-game scores
+only.
 """
 import argparse
 import copy
 import json
 import os
+import subprocess
 import sys
 import time
 
@@ -42,7 +43,8 @@ STEPS = {"0": {"base": None, "settings": {}}}
 
 def step_settings(name):
     """The settings of a step for honest.Honest: the live HONEST_SETTINGS with the deltas of its base chain applied,
-    base first. A fresh dict: HONEST_SETTINGS is never changed. ValueError for an unknown step or a broken base chain."""
+    base first. A fresh dict: HONEST_SETTINGS is never changed. ValueError for an unknown step or a broken base
+    chain."""
     if name not in STEPS:
         raise ValueError(f"unknown step {name!r}: the known steps are {sorted(STEPS)}")
     chain, seen, current = [], set(), name
@@ -124,6 +126,36 @@ def verdict(h2h, paired, records_new, records_prev, p99_seconds):
              "latency": p99_seconds is not None and p99_seconds <= GATES["p99_seconds"]}
     return {"h2h": h2h, "paired": paired, "fallback_share_new": share_new, "fallback_share_previous": share_prev,
             "fallback_allowed": allowed, "p99_seconds": p99_seconds, "gates": gates, "adopt": all(gates.values())}
+
+
+def wsl_path(path):
+    """The WSL spelling of a Windows drive path ("C:/x" -> "/mnt/c/x"); any other path unchanged."""
+    if len(path) >= 3 and path[1] == ":" and path[2] in "/\\":
+        return f"/mnt/{path[0].lower()}/" + path[3:].replace("\\", "/")
+    return path
+
+
+def _checkout():
+    """(commit, dirty) of this checkout. arena._commit runs git in it; under WSL, git cannot follow a Windows worktree's
+    .git pointer ("gitdir: C:/..."), so the gitdir the pointer names is given to git as GIT_DIR instead."""
+    from . import arena
+    commit, dirty = arena._commit()
+    if commit is not None:
+        return commit, dirty
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    try:
+        with open(os.path.join(root, ".git"), encoding="utf-8") as f:
+            pointer = f.read().strip()
+        if not pointer.startswith("gitdir:"):
+            return None, None
+        env = dict(os.environ, GIT_DIR=wsl_path(pointer[len("gitdir:"):].strip()), GIT_WORK_TREE=root)
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True, env=env,
+                                cwd=root).stdout.strip()
+        status = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], capture_output=True,
+                                text=True, check=True, env=env, cwd=root).stdout.strip()
+        return commit, bool(status)
+    except (OSError, subprocess.CalledProcessError):
+        return None, None
 
 
 def same_games(scores_a, scores_b):
@@ -238,7 +270,7 @@ def main(argv=None):
     paths = {"main": args.checkpoint, "foe": args.foe_net, "teams": args.teams_from,
              **{f"opponent {name}": path for name, path in opponents.items()}}
     digests = {role: arena._sha256(path) for role, path in paths.items()}
-    commit, dirty = arena._commit()
+    commit, dirty = _checkout()
     foe_tuple = (foe_net["model"], foe_net["params"], foe_net["encoder"], foe_net["ext"])
     os.makedirs(args.out, exist_ok=True)
 
@@ -304,7 +336,20 @@ def main(argv=None):
             with searcher(args.step, excluded(opponent_team)) as learner_search, \
                     searcher(args.previous, excluded(learner_team)) as opponent_search:
                 learner = arena.SearchPlayer(foe_arena.Timed(learner_search), "step", args.seed)
-                opponent = arena.SearchPlayer(foe_arena.Timed(opponent_search), "previous", args.seed)
+
+                class SearchingOpponent(evaluate.Player):
+                    """play_suite takes an evaluate.Player as its opponent and calls its indices; the searching
+                    player has the same interface, so it is wrapped rather than changed."""
+
+                    def __init__(self, player):
+                        super().__init__(None, None, None, player.name)
+                        self.player = player
+
+                    def indices(self, batch, choices, step=None, seats=None, last_step=None):
+                        return self.player.indices(batch, choices, step=step, seats=seats, last_step=last_step)
+
+                opponent = SearchingOpponent(arena.SearchPlayer(foe_arena.Timed(opponent_search), "previous",
+                                                                args.seed))
                 records = evaluate.play_suite(ctx, pool, rows, learner, opponent, args.workers, args.seed,
                                               max_steps=args.max_steps)
             h2h = {**pair_interval(arena.scores(records)), "unfinished": int(records["unfinished"].sum()),
