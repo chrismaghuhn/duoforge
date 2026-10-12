@@ -15,11 +15,11 @@ team pair, its teams and seats swapped. A searching arm leaves the opponent's ow
 foe_arena does. --h2h plays step N against the previous step, both searching, over the same rows.
 
 The gates (GATES, verdict()): strength (the head-to-head's lower bound above 0.50), no harm (each gated opponent, bot
-and bc6, at most 0.50 at its upper bound against the previous step), fallbacks (raw decisions at most 5 %, or the
-previous share plus 1 point where that is above 5 %) and latency (the step's p99 wall seconds per searched decision at
-most 2.0; the lead reruns the latency exclusively, as this run shares the machine with its workers). The output
-directory lies outside the repository; the networks stay private and the report holds aggregates and per-game scores
-only.
+and bc6, measured and at least 0.50 at its upper bound against the previous step), fallbacks (raw decisions at most
+5 %, or the previous share plus 1 point where that is above 5 %) and latency (the step's p99 wall seconds per searched
+decision at most 2.0; the lead reruns the latency exclusively, as this run shares the machine with its workers). The
+output directory lies outside the repository; the networks stay private and the report holds aggregates and per-game
+scores only.
 """
 import argparse
 import copy
@@ -114,14 +114,15 @@ def refused_leaves(decisions):
 
 def verdict(h2h, paired, records_new, records_prev, p99_seconds):
     """The predeclared gates (GATES). h2h: pair_interval of the step's head-to-head scores; paired: opponent name ->
-    paired_h(step, previous); records_new and records_prev: the decision records of the step and of the previous step;
-    p99_seconds: the step's p99 wall seconds per searched decision, None without evidence (the latency fails)."""
+    paired_h(step, previous), each gated opponent needed (a missing one fails no harm); records_new and
+    records_prev: the decision records of the step and of the previous step; p99_seconds: the step's p99 wall seconds per searched decision, None without evidence (the latency fails)."""
     share_new, share_prev = foe_arena.fallback_share(records_new), foe_arena.fallback_share(records_prev)
     allowed = GATES["fallback_share"] if share_prev <= GATES["fallback_share"] \
         else share_prev + GATES["fallback_over_previous"]
     gates = {"strength": h2h["95"][0] > GATES["lower_bound"],
-             "no_harm": all(paired[name]["95"][1] >= GATES["no_harm_upper"]
-                            for name in GATED_OPPONENTS if name in paired),
+             # a gated opponent without a measurement is no evidence of no harm
+             "no_harm": all(name in paired and paired[name]["95"][1] >= GATES["no_harm_upper"]
+                            for name in GATED_OPPONENTS),
              "fallback": share_new <= allowed + 1e-12,  # shares are ratios of counts: the tolerance is float noise only
              "latency": p99_seconds is not None and p99_seconds <= GATES["p99_seconds"]}
     return {"h2h": h2h, "paired": paired, "fallback_share_new": share_new, "fallback_share_previous": share_prev,

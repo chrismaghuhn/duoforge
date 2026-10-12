@@ -151,11 +151,15 @@ class VerdictTest(unittest.TestCase):
         self.assertTrue(self.passing(paired=paired)["gates"]["no_harm"])
 
     def test_ppo_is_reported_but_not_gated(self):
-        paired = {"bot": {"pairs": 4, "95": [0.5, 0.6]}, "ppo": {"pairs": 4, "95": [0.0, 0.1]}}
+        paired = {"bot": {"pairs": 4, "95": [0.5, 0.6]}, "bc6": {"pairs": 4, "95": [0.5, 0.6]},
+                  "ppo": {"pairs": 4, "95": [0.0, 0.1]}}
         self.assertTrue(self.passing(paired=paired)["gates"]["no_harm"])
 
-    def test_a_gated_opponent_not_in_paired_is_not_checked(self):
-        self.assertTrue(self.passing(paired={})["gates"]["no_harm"])
+    def test_a_gated_opponent_without_a_measurement_fails_the_gate(self):
+        # No measurement against a gated opponent is no evidence of no harm (as a missing p99 fails the latency).
+        self.assertFalse(self.passing(paired={})["gates"]["no_harm"])
+        only_bot = {"bot": {"pairs": 4, "95": [0.5, 0.6]}, "ppo": {"pairs": 4, "95": [0.5, 0.6]}}
+        self.assertFalse(self.passing(paired=only_bot)["gates"]["no_harm"])
 
     def test_fallback_at_most_five_percent_passes(self):
         got = self.passing(records_new=decisions(raw=1), records_prev=decisions())  # 1 of 20 = 0.05
