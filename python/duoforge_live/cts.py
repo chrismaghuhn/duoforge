@@ -180,6 +180,7 @@ class ParticleTracker:
         self.counters = collections.Counter()
         self._events = []  # ("lines", [...]), ("sheets", None) and ("accepted", text), in the order received
         self._attempts = [0] * self.n
+        self._candidates = {}  # (species, item, ability, moves) -> (level, its sets): the facts decide them, not the draw
         # Before the team-preview request: an open-sheet tracker folds the lines as it would (a battle line before the
         # sheets raises, a battle over before them has ended); the particles fold them again
         self._before = Tracker(data, own_text)
@@ -308,13 +309,9 @@ class ParticleTracker:
             self.counters[f"redraw.{reason}"] += 1
         candidates = []
         for member in facts:
-            sets = self.prior.candidates(member.species)
-            found = [(s, w) for s, w in sets if w > 0 and agrees(s, member)]
-            for level, rebuild in (("level1", level1), ("level2", level2)):
-                if not found:
-                    found = rebuild(self.data, sets, member)
-                    if found:
-                        self.counters[level] += 1
+            level, found = self._candidates_of(member)
+            if level is not None:
+                self.counters[level] += 1
             if not found:
                 raise self._stop(f"cts:no-consistent-set {member.species}")
             candidates.append(found)
@@ -330,6 +327,19 @@ class ParticleTracker:
             last, error = out
             self.counters[f"redraw.{last}"] += 1
         raise self._stop(f"cts:redraw-cap {last}") from error
+
+    def _candidates_of(self, member):
+        """(the level: None, "level1" or "level2"; the sets a member's facts allow), kept per facts, so the levels'
+        engine checks run once for all particles that draw under the same facts."""
+        key = (member.species, member.item, member.ability, member.moves)
+        if key not in self._candidates:
+            sets = self.prior.candidates(member.species)
+            found, level = [(s, w) for s, w in sets if w > 0 and agrees(s, member)], None
+            for name, rebuild in (("level1", level1), ("level2", level2)):
+                if not found:
+                    found, level = rebuild(self.data, sets, member), name
+            self._candidates[key] = (level if found else None, found)
+        return self._candidates[key]
 
     def _draw(self, i, candidates, facts):
         """The particle's next sets under the Item Clause: MAX_DRAWS draws that break it stop the tracker."""
