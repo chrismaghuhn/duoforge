@@ -142,13 +142,17 @@ therefore does not condition on missing lines. Two measurements, reported with t
 
 The engine query that would close this gap is an item for HauptSession to decide.
 
-## A known gap of the open-sheet fold: Klutz
+## A known gap of the hook: Klutz (#448)
 
-The open-sheet tracker's Choice lock (`choice_slot`) does not ask whether the holder ignores its item. At the pin, a Klutz holder
-of a Choice item is not locked. Under open sheets this case has not come up; in a particle the hook would count such a holder's
-true set as `choice-lock` and draw it again. Klutz is in the pool tables, and the case needs a Choice item on a Klutz holder (a
-Trick target, say). The tracker's lock is not changed here: that would change open-sheet behaviour and belongs with the tracker's
-own tests. It is named for HauptSession.
+At the pin, a Choice item adds the `choicelock` volatile to every holder, but a holder that ignores its item (Klutz) is not held
+by it (`data/conditions.ts` choicelock: `onBeforeMove` and `onDisableMove` skip `ignoringItem()`). Such a holder may use another
+move while it carries the lock. The tracker's `choice_slot` follows the volatile, but the `choice-lock` hook assumes that a locked
+holder never uses another move. It would count a Klutz holder's true Choice set as a contradiction and draw it again: a bias,
+never a silent stop.
+
+Today the case is not reachable. The engine marks Klutz `DFI_HANDLER_UNMODELED`, so every world with a Klutz holder is refused by
+the support gate. The fix belongs with Klutz's modelling: the hook asks the engine whether the item is ignored, never a Python list
+of abilities. Issue #448 holds the minimal example.
 
 ## The named limit of version 1 (HauptSession, 2026-10-12)
 
@@ -193,7 +197,11 @@ player has seen) is the version-2 item of #385.
 - **Cost**, measured on this machine (Windows, under the machine lock, with another lane's job in the other slot):
   - One open-sheet tracker folds a pool stream at 30 us per line at p50 (42 us at p95). A full refold of a 600-line game is
     therefore about 20 ms per particle.
-  - The particle tracker's `feed` per message with 16 particles and the wide prior (28384 messages): p50 17 ms, p95 53 ms,
-    p99 77 ms, max 1.4 s. The maximum is a redraw cap, which ends the battle's tracking.
+  - The particle tracker's `feed` per message with 16 particles and the wide prior (28384 messages): p50 18 ms, p95 87 ms,
+    p99 168 ms, max 3.4 s.
+    - Before the review's fix: p50 17, p95 53, p99 77 ms, max 1.4 s. A redrawn particle now passes the engine check at every
+      earlier decision point, which costs the tail.
+    - The maximum is a redraw cap (64 folds with their checks), which ends the battle's tracking. It is far below the arena's
+      45 s per request.
   - This cost includes the 16 records and observations of each decision point, which the search needs anyway.
   - The decision latency of the search over 16 records is measured with the arena PR.
