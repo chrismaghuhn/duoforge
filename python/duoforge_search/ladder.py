@@ -361,6 +361,9 @@ def main(argv=None):
         raise SystemExit("give exactly one of --teams-from (a pool network's teams) and --matchup OURS FOE")
     if args.fill_stat_points is not None and args.matchup is None:
         raise SystemExit("--fill-stat-points applies to --matchup only")
+    if args.h2h and args.matchup is not None:  # the previous step, searching as the foe team, would know our spreads
+        raise SystemExit("--h2h is not supported with --matchup: no matchup team has a registry id to leave out of "
+                         "the searching foe's belief")
     matchup = None if args.matchup is None else matchup_teams(*args.matchup, fill=args.fill_stat_points)
     if args.h2h and args.previous is None:
         raise SystemExit("--h2h needs --previous (the step it plays against)")

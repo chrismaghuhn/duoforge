@@ -455,6 +455,16 @@ class MatchupGuardTest(unittest.TestCase):
                 ladder.main(self.argv(out, "--matchup", ours, foe))
             self.assertFalse(os.path.exists(out))
 
+    def test_a_matchup_has_no_head_to_head(self):
+        # In a head-to-head the previous step searches as the foe team, and its belief about our team would draw on
+        # our registry team's own stated spreads (no matchup team has a registry id to leave out): refused.
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            ours = os.path.join(str(ROOT), "data", "teams", "A.txt")
+            with self.assertRaisesRegex(SystemExit, "--h2h.*--matchup"):
+                ladder.main(self.argv(out, "--matchup", ours, ours, "--previous", "0", "--h2h"))
+            self.assertFalse(os.path.exists(out))
+
 
 if __name__ == "__main__":
     unittest.main()
