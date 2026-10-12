@@ -187,7 +187,8 @@ class ParticleTracker:
         self.counters = collections.Counter()
         self._events = []  # ("lines", [...]), ("sheets", None) and ("accepted", text), in the order received
         self._attempts = [0] * self.n
-        self._candidates = {}  # (species, item, ability, moves) -> (level, its sets): the facts decide them, not the draw
+        self._candidates = {}  # (species, item, ability, moves, no Choice) -> its sets: the facts decide them, not the draw
+        self._no_choice = set()  # foe members whose original item a contradicted Choice lock shows is no Choice item
         # Before the team-preview request: an open-sheet tracker folds the lines as it would (a battle line before the
         # sheets raises, a battle over before them has ended); the particles fold them again
         self._before = Tracker(data, own_text)
@@ -270,13 +271,13 @@ class ParticleTracker:
         self.counters[f"stop.{reason.split(' ')[0]}"] += 1
         return lines.Stop(reason)
 
-    @staticmethod
-    def _outcome(call):
+    def _outcome(self, call):
         """None when call() returns, else (reason, the exception, None for a SheetContradiction)."""
         try:
             call()
             return None
         except SheetContradiction as c:
+            self._note(c)
             return c.reason, None
         except lines.Stop as stop:
             return f"stop:{stop.reason}", stop
@@ -314,12 +315,7 @@ class ParticleTracker:
         record checked at every decision point it folds, as a kept particle's was."""
         if reason is not None:
             self.counters[f"redraw.{reason}"] += 1
-        candidates = []
-        for member in facts:
-            found = self._candidates_of(member)
-            if not found:
-                raise self._stop(f"cts:no-consistent-set {member.species}")
-            candidates.append(found)
+        candidates = self._all_candidates(facts)
         last, error = reason, None
         for _ in range(MAX_ATTEMPTS):
             p = Particle(self._draw(i, candidates, facts), None)
@@ -330,16 +326,39 @@ class ParticleTracker:
             if out is None:
                 return p
             last, error = out
+            if last == "choice-lock":
+                candidates = self._all_candidates(facts)  # the member's Choice sets are out now (_note)
             self.counters[f"redraw.{last}"] += 1
         raise self._stop(f"cts:redraw-cap {last}") from error
 
-    def _candidates_of(self, member):
+    def _note(self, contradiction):
+        """A contradicted Choice lock shows that the member's original item is no Choice item: the tracker assumes a
+        lock only for an item no line changed, and Showdown enforces the lock (a Klutz holder aside, #448). Every draw
+        of that member leaves Choice sets out from now on (counted once per member: choice-excluded)."""
+        if contradiction.reason == "choice-lock" and contradiction.member not in self._no_choice:
+            self._no_choice.add(contradiction.member)
+            self.counters["choice-excluded"] += 1
+
+    def _all_candidates(self, facts):
+        """Every member's candidate sets (_candidates_of); a member without any stops the tracker by name."""
+        out = []
+        for m, member in enumerate(facts):
+            found = self._candidates_of(member, m in self._no_choice)
+            if not found:
+                raise self._stop(f"cts:no-consistent-set {member.species}")
+            out.append(found)
+        return out
+
+    def _candidates_of(self, member, no_choice=False):
         """The sets a member's facts allow, kept per facts, so the levels' engine checks run once for all particles that
         draw under the same facts. Counted once per distinct facts: level1 or level2 (the level that gave the sets) and
-        levels.refused (the rebuilt sets the engine refused)."""
-        key = (member.species, member.item, member.ability, member.moves)
+        levels.refused (the rebuilt sets the engine refused). no_choice leaves sets with a Choice item out (_note)."""
+        from duoforge_search.smogon_sets import CHOICE_ITEMS
+        key = (member.species, member.item, member.ability, member.moves, no_choice)
         if key not in self._candidates:
             sets = self.prior.candidates(member.species)
+            if no_choice:
+                sets = [(s, w) for s, w in sets if _key(s["item"]).lower() not in CHOICE_ITEMS]
             found = [(s, w) for s, w in sets if w > 0 and agrees(s, member)]
             for name, rebuild in (("level1", level1), ("level2", level2)):
                 if not found:

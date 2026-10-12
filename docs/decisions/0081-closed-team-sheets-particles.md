@@ -72,6 +72,11 @@ gives its own observation and public record. The honest search builds world `w` 
     tracker's own `choice_slot`, which the open-sheet fold already keeps: it is set by the move line of a holder, and cleared when
     the item is gone or the holder leaves.
   The particle is then replaced as above.
+- A contradicted Choice lock names its member (#385 step 3). The tracker assumes a lock only for an item no line changed, and
+  Showdown enforces the lock (a Klutz holder aside, #448). So that member's **original** item is no Choice item, and every
+  set with one contradicts the log in every particle. From then on, the member's draws leave Choice sets out. This changes
+  only how fast rejection finds a set, not which sets are kept. It is counted once per member (`choice-excluded`).
+  Without it, a species the prior gives mostly Choice items, met with an unusual moveset, ran into the redraw cap.
 - Some contradictions make the open-sheet fold raise. For example, `lines.check` stops at an ability or item announcement that is
   not the holder's sheet's. Another example is the own-PP check of the request, which disagrees when a drawn foe has a Pressure
   the lines never showed. The rule:

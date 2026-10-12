@@ -332,9 +332,10 @@ class SheetContradiction(Exception):
     """A line that contradicts the foe's sheet (only with Tracker.check_foe_sheet, decision 0081): the sheet was drawn,
     not shown (reason: the counter's name)."""
 
-    def __init__(self, reason):
+    def __init__(self, reason, member=None):
         super().__init__(reason)
         self.reason = reason
+        self.member = member  # the roster index of the foe member whose drawn set the line contradicts
 
 
 class Tracker:
@@ -1113,7 +1114,7 @@ class Tracker:
                 if ident not in m.sheet["moves"]:
                     raise SheetContradiction("move-not-on-set")
                 if p.choice_slot != MOVE_SLOT_NONE and holds_choice and m.sheet["moves"][p.choice_slot] != ident:
-                    raise SheetContradiction("choice-lock")
+                    raise SheetContradiction("choice-lock", member=p.occupant)
             if (p.choice_slot == MOVE_SLOT_NONE and holds_choice and ident in m.sheet["moves"]
                     and e[3] != trace_to_c.CAUSE["ABILITY"]):
                 # A Choice item locks its holder into the move of its |move| line (data/items.ts onModifyMove,

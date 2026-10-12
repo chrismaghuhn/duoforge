@@ -190,6 +190,19 @@ class CtsTest(unittest.TestCase):
         self.assertFalse(any(s[1] == "Choice Scarf" for s in self.held(run, 3, "Farigiraf")))
         self.assertGreater(run.t.counters["redraw.choice-lock"], 0)
 
+    def test_a_choice_lock_rules_out_choice_sets_of_that_member_for_every_draw(self):
+        """A prior that gives Farigiraf a Choice Scarf in 1000 of 1001 sets: once its lock is contradicted (Protect,
+        then Trick Room), rejection alone would rarely find the Sitrus set. The contradiction names the member, and a
+        set holding a Choice item contradicts the log for every particle (Showdown enforces the lock; a lock the tracker
+        assumed means no line changed the item), so that member's draws leave Choice sets out, counted."""
+        scarf = teams._paste(farigiraf(item="Choice Scarf"))[0]
+        sitrus = teams._paste(farigiraf())[0]
+        sets = [(s, 1) for s in foe_sets() if s["species"] != "Farigiraf"] + [(scarf, 1000), (sitrus, 1)]
+        t = cts.ParticleTracker(self.data, FIXTURE["team"], cts.SetPrior(self.data, sets), seed=SEED, key=KEY, n=16)
+        run = Run(t, closed(FIXTURE["messages"]))
+        self.assertEqual({s[1] for s in self.held(run, 3, "Farigiraf")}, {"Sitrus Berry"})
+        self.assertEqual(t.counters["choice-excluded"], 1)
+
     def test_the_hook_finds_a_choice_lock_and_a_move_off_the_set(self):
         def fold(sheet):
             t = tracker.Tracker(self.data, FIXTURE["team"])
