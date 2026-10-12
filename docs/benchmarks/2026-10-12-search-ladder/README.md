@@ -33,7 +33,7 @@ This document is committed before any measurement of the ladder. Each later step
 | latency | p99 wall seconds per searched decision **≤ 2.0** in the exclusive latency run (`--latency-run`, same step and commit). Without that run the verdict is **pending** and `adopt` is None |
 | errors | none: a SearchError stops the run, and a stopped run gives no verdict |
 
-**Tightened after the harness review of PR #445 (2026-10-12), before any step-1 result was known.**
+**Tightened after the harness review of PR #445 (2026-10-12).** This was before any result of step 1's gated runs was known. Only the ungated sanity arm on one arena matchup was in at that point. Every change makes a gate stricter:
 - Strength also needs 0 unresolved head-to-head games: evaluate scores an engine-refused or untiebreakable game as the learner's loss, and the learner is the step.
 - Fallbacks are gated per gated opponent, not pooled: pooling over `ppo` could hide a regression against `bot`. The pooled share is reported.
 - Reproduced compares the per-game scores and a digest of every decision, not the scores alone.
