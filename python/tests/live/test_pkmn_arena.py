@@ -487,6 +487,21 @@ class ArenaTest(unittest.TestCase):
         self.assertTrue(chosen[-1].endswith(f"|{request_of(7)['rqid']}") and "default" not in chosen[-1], chosen)
         self.assertEqual(self.run_log()["fallback_battles"], {})
 
+    def test_a_stamped_replay_with_a_different_battle_line_still_falls_back(self):
+        # ignoring |t:| must not ignore the battle lines around it
+        stamped = [[f"|t:|{1791847600 + k}"] + m for k, m in enumerate(FIXTURE["messages"][:6])]
+        first = LOGIN + [room(["|init|battle", f"|title|{NAME} vs. Opponent", "|j|☆Opponent"])] + \
+            [room(m) for m in stamped]
+        lines = ["|init|battle", f"|title|{NAME} vs. Opponent", "|j|☆Opponent"]
+        lines += ["|t:|1791847914" if l.startswith("|t:|") else
+                  l.replace("Grimmsnarl, L50, M|100/100", "Grimmsnarl, L50, M|90/100")
+                  for m in stamped for l in m if not l.startswith("|request|")]
+        self.make(connections=[(first, 1006), (LOGIN + [room(lines), room(FIXTURE["messages"][5])], 4001)])
+        self.run_bot()
+        chosen = [s for s in self.sent if "/choose" in s]
+        self.assertEqual(chosen[-1], f"{ROOM}|/choose default|{request_of(5)['rqid']}")
+        self.assertEqual(self.run_log()["fallback_battles"], {"reconnect": 1})
+
     def test_a_replay_that_differs_falls_back(self):
         lines = self.replay(6)[0].split("\n")
         changed = [lines[0]] + [l.replace("Grimmsnarl, L50, M|100/100", "Grimmsnarl, L50, M|90/100") for l in lines[1:]]
