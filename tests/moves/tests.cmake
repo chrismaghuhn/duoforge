@@ -56,3 +56,4 @@ duoforge_add_test(NAME duoforge.state.pool_g71 SOURCES moves/test_pool_g71.c WHI
 # the refusal of an inconsistent view byte, the pair invariant, and the corpus of every recorded pool battle (every decision point with an
 # infatuated occupant, both players' views built into worlds and compared with the engine).
 duoforge_add_test(NAME duoforge.state.pool_g87 SOURCES moves/test_pool_g87.c WHITEBOX LIBS duoforge_batch TIMEOUT 600)
+duoforge_add_test(NAME duoforge.state.pool_g82 SOURCES moves/test_pool_g82.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
