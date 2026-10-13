@@ -220,7 +220,7 @@ switched on, a corrected width is measured again, on the ladder and in the mirro
 lead pair's seat order. Only the bench order merges: 180 combinations of 2 tuples each. Own candidates are the 8
 likeliest plus the cover (k' ≤ 10); foe candidates are the 8 likeliest. The preview's table is at most 10 × 8 × 16:
 20,124 tableau cells, under the unchanged limit of 20,898. The bench order is part of the network's input too:
-merging it is an assumption the owner judged harmless (#462).
+merging it is an assumption, which the HauptSession approved because the pins give equal values (#462).
 
 **Runs, on main after #459:**
 1. **Gated:** `--step 1bws --previous 0 --h2h --previous-run <the rebaselined step 0's ladder.json (step 2's
