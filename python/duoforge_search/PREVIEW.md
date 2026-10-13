@@ -28,7 +28,7 @@ confirms this change. This does not authorize assuming Nature known in closed-sh
   approximation, not evaluator equality (the review of #462).
 - `"seats"` (arm 1bws): as `"distinct"`, but the lead seats are kept and only the bench order merges
   (180 combinations). The order of the two back members is part of the network's input too, so this merge is an
-  assumption as well, which the HauptSession approved because the pins give equal values (#462). No test checks it
+  assumption as well, which the HauptSession approved because #462's pins give equal values. No test checks it
   in battle.
 
 The record names a width other than `"top"` (`preview_width`). The preview's Bayesian LP is held to the size limit
