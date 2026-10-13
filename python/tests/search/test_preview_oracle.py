@@ -111,6 +111,39 @@ class ForcedPreviewTest(unittest.TestCase):
             oracle.ForcedPreview(timed, 42).decide(None, np.array([0]), np.array([0]), np.array([1]), np.zeros(1, bool))
 
 
+class FoeLeadTest(unittest.TestCase):
+    SPECIES = ["Charizard", "Venusaur", "Garchomp", "Incineroar", "Sylveon", "Farigiraf"]
+
+    def test_the_mask_keeps_the_rows_that_lead_with_the_pair(self):
+        keep = oracle.lead_mask(self.SPECIES, "Venusaur, charizard")
+        self.assertEqual(int(keep.sum()), 2 * 4 * 3)  # two lead orders, then 4 * 3 ordered benches
+        self.assertTrue(all(sorted(TEAM_TABLE[i, :2].tolist()) == [0, 1] for i in np.flatnonzero(keep)))
+
+    def test_bad_pairs_are_refused_by_name(self):
+        with self.assertRaisesRegex(SystemExit, "no 'Pikachu'"):
+            oracle.lead_mask(self.SPECIES, "Charizard,Pikachu")
+        with self.assertRaisesRegex(SystemExit, "two species"):
+            oracle.lead_mask(self.SPECIES, "Charizard")
+        with self.assertRaisesRegex(SystemExit, "twice"):
+            oracle.lead_mask(self.SPECIES, "Charizard,Charizard")
+
+    def test_a_masked_draw_leads_with_the_pair(self):
+        keep = oracle.lead_mask(self.SPECIES, "Charizard,Venusaur")
+        probs = np.full(len(TEAM_TABLE), 1.0 / len(TEAM_TABLE)) * keep
+        for k in range(200):
+            self.assertEqual(sorted(TEAM_TABLE[oracle.draw_choice(probs, k, oracle.SEED), :2].tolist()), [0, 1])
+
+
+class FallbackCausesTest(unittest.TestCase):
+    def test_causes_reason_or_kind(self):
+        decisions = [{"kind": "searched"}, {"kind": "team"},
+                     {"kind": "unreconstructible", "causes": ["visible_sleep"], "reason": "x"},
+                     {"kind": "unreconstructible", "reason": "missing team-preview record"},
+                     {"kind": "raw"}, {"kind": "unreconstructible", "causes": ["visible_sleep", "substitute"]}]
+        self.assertEqual(oracle.fallback_causes(decisions),
+                         {"missing team-preview record": 1, "raw": 1, "substitute": 1, "visible_sleep": 2})
+
+
 class StatisticsTest(unittest.TestCase):
     def test_paired_difference_in_points(self):
         a = np.array([1, 1, 1, 0, 1, 1, 0, 0], np.float64)

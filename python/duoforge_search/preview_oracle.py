@@ -1,7 +1,8 @@
 """The preview oracle (issue #458): what the team preview costs in one matchup, before an opening book is built.
 
     python -m duoforge_search.preview_oracle --checkpoint MAIN --foe-net FOE --ours OURS --foe FOE_TEAM --out DIR
-        [--arms all | today,LEADS|BENCH,...] [--pairs 32] [--seed SEED] [--workers 8] [--max-steps 1000]
+        [--arms all | today,LEADS|BENCH,...] [--foe-lead SPECIES,SPECIES] [--pairs 32] [--seed SEED] [--workers 8]
+        [--max-steps 1000]
     python -m duoforge_search.preview_oracle summary DIR
 
 Our team OURS (a registry paste or a packed team) meets the foe team FOE_TEAM in --pairs game pairs (ladder.matchup_rows:
@@ -15,7 +16,9 @@ spread table. An arm fixes our team preview:
   them and "today"). A lead's side (left or right) and the bench order are fixed by the ascending order.
 
 The foe's preview is drawn from the foe search's own team head (the main network's, as it plays raw at preview) by a
-word of the game's decision key (draw_choice): the same draw in every arm, so the arms differ in our preview only. Each
+word of the game's decision key (draw_choice): the same draw in every arm, so the arms differ in our preview only.
+--foe-lead fixes the foe's two leads (by species; the draw keeps only the team head's rows that lead with them, so its
+bench still comes from the head): the case of an opponent who always leads so (#458, the sun lead). Each
 arm plays the same suite rows on the same batch seed (common random numbers): a game of two arms is the same game up to
 our preview. A foe draw that differs between two arms stops the run (named), as does any SearchError.
 
@@ -135,8 +138,8 @@ class DrawnPreview:
     is the search's. drawn maps each game (env) to its drawn row; heads keeps the team head's probabilities per seat
     (the first seen, and every later one must equal it: the preview's view of a matchup does not change)."""
 
-    def __init__(self, timed, search, seed):
-        self.timed, self.search, self.seed = timed, search, int(seed)
+    def __init__(self, timed, search, seed, keep=None):
+        self.timed, self.search, self.seed, self.keep = timed, search, int(seed), keep
         self.drawn, self.heads = {}, {}
 
     def clear(self):
@@ -160,9 +163,41 @@ class DrawnPreview:
             if not np.allclose(first, probs, rtol=0, atol=1e-6):
                 raise RuntimeError(f"the foe's team head differs between games of seat {p} (env {e})")
             r["own_choice"] = r["choice"]
+            if self.keep is not None:
+                probs = probs * self.keep
             actions[d] = r["choice"] = draw_choice(probs, int(keys[d]), self.seed)
             self.drawn[e] = r["choice"]
         return actions, records
+
+
+def lead_mask(species, text):
+    """The TEAM_TABLE rows (bool) that lead with the two members named in text ("Charizard,Venusaur", either order) of
+    a team with these species; SystemExit naming a species the team lacks or a pair that is no two members."""
+    from duoforge import data
+    from duoforge_learn.selfplay import TEAM_TABLE
+    ids = [data.to_id(x) for x in species]
+    names = [x.strip() for x in text.split(",") if x.strip()]
+    if len(names) != 2:
+        raise SystemExit(f"--foe-lead names two species (got {text!r})")
+    members = []
+    for name in names:
+        if data.to_id(name) not in ids:
+            raise SystemExit(f"--foe-lead: the foe team has no {name!r} (its species: {', '.join(species)})")
+        members.append(ids.index(data.to_id(name)))
+    if members[0] == members[1]:
+        raise SystemExit(f"--foe-lead names one member twice ({text!r})")
+    return (np.sort(TEAM_TABLE[:, :2], axis=1) == np.array(sorted(members), TEAM_TABLE.dtype)).all(axis=1)
+
+
+def fallback_causes(decisions):
+    """{cause: count} of the decisions that played raw (foe_arena.FALLBACK_KINDS): each record's causes, else its
+    reason, else its kind."""
+    out = {}
+    for r in decisions:
+        if r["kind"] in foe_arena.FALLBACK_KINDS:
+            for cause in r.get("causes") or [r.get("reason") or r["kind"]]:
+                out[str(cause)] = out.get(str(cause), 0) + 1
+    return dict(sorted(out.items()))
 
 
 def paired_difference(a, b, resamples=2000, seed=SEED):
@@ -226,7 +261,7 @@ def summarize(out_dir):
         per_arm[name] = {**({"members": _names(ours, name)} if name != TODAY else {"own_choice": e["own_choice"]}),
                          "score": ladder.pair_interval(scores[name]),
                          "unfinished": e["unfinished"], "unresolved": e["unresolved"],
-                         "fallback_share": e["fallback_share"]}
+                         "fallback_share": e["fallback_share"], "fallback_causes": e.get("fallback_causes")}
         if today is not None and name != TODAY:
             per_arm[name]["vs_today"] = paired_difference(scores[name], today)
     combo_scores = {name: s for name, s in scores.items() if name != TODAY}
@@ -300,6 +335,7 @@ def _arm_entry(arm, records, ours_decisions, foe_decisions, foe_drawn, seconds):
             "foe_drawn": foe_drawn, "own_choice": own,
             "fallback_share": {"ours": foe_arena.fallback_share(ours_decisions),
                                "foe": foe_arena.fallback_share(foe_decisions)},
+            "fallback_causes": {"ours": fallback_causes(ours_decisions), "foe": fallback_causes(foe_decisions)},
             "decisions_sha256": {"ours": ladder.decisions_digest(ours_decisions),
                                  "foe": ladder.decisions_digest(foe_decisions)},
             "decisions": {"ours": len(ours_decisions), "foe": len(foe_decisions)},
@@ -326,6 +362,8 @@ def main(argv=None):
     p.add_argument("--foe", required=True, help="the foe team: a paste or a packed team, with its stat points")
     p.add_argument("--out", required=True, help="the output directory, outside the repository")
     p.add_argument("--arms", default="all", help="'all' (today and the 90 combinations) or a comma list")
+    p.add_argument("--foe-lead", metavar="SPECIES,SPECIES",
+                   help="fix the foe's two leads; its bench is drawn from its team head given them")
     p.add_argument("--pairs", type=int, default=32)
     p.add_argument("--seed", type=lambda text: int(text, 0), default=SEED)
     p.add_argument("--workers", type=int, default=8)
@@ -345,6 +383,8 @@ def main(argv=None):
         raise SystemExit("--pairs must be positive")
     matchup = ladder.matchup_teams(args.ours, args.foe)  # members without stat points are refused, never filled
     ours_id, foe_id = registry_id(args.ours), registry_id(args.foe)
+    foe_species = [m["species"] for m in matchup["foe"]["members"]]
+    keep = None if args.foe_lead is None else lead_mask(foe_species, args.foe_lead)
 
     from . import arena
     paths = {"main": args.checkpoint, "foe": args.foe_net}
@@ -380,6 +420,7 @@ def main(argv=None):
             "tool": "preview_oracle", "seed": hex(args.seed), "pairs": args.pairs, "games": int(n),
             "max_steps": args.max_steps, "step": {"name": STEP, "settings": settings},
             "foe_preview": "drawn from the foe search's raw team head (draw_choice)",
+            "foe_lead": None if args.foe_lead is None else sorted(x.strip() for x in args.foe_lead.split(",")),
             "ours_sha256_prefix": matchup["ours"]["sha256"][:12], "foe_sha256_prefix": matchup["foe"]["sha256"][:12],
             "registry": {"ours": ours_id, "foe": foe_id},
             "left_out": {"ours_search": source_ids.get(foe_id), "foe_search": source_ids.get(ours_id)},
@@ -425,7 +466,7 @@ def main(argv=None):
                 foe_search.clear()
                 forced = None if arm == TODAY else team_index(arm)
                 learner = arena.SearchPlayer(ForcedPreview(foe_arena.Timed(ours_search), forced), "ours", args.seed)
-                drawn = DrawnPreview(foe_arena.Timed(foe_search), foe_search, args.seed)
+                drawn = DrawnPreview(foe_arena.Timed(foe_search), foe_search, args.seed, keep)
                 opponent = SearchingOpponent(arena.SearchPlayer(drawn, "foe", args.seed))
                 started = time.perf_counter()
                 records = evaluate.play_suite(ctx, pool, rows, learner, opponent, args.workers, args.seed,
