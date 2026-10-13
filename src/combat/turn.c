@@ -2,6 +2,7 @@
 
 #include "combat/abilities/families.h"
 #include "combat/abilities/fairy_aura.h"
+#include "combat/abilities/protect_bypass.h"
 #include "combat/damage_chain.h"
 #include "combat/moves/multiaccuracy.h"
 #include "combat/residual_order.h"
@@ -2200,6 +2201,16 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     if (chain != 4096u) {
         damage = dfi_modify(damage, chain);
+    }
+    /* Step K2 (Piercing Drill, data/mods/champions/scripts.ts, the bypassProtect block after ModifyDamage): x0.25 of the hit that
+     * passed a protection, then the holder's [-ability] (the attacker, Piercing Drill is an Ability effect) and [-zbroken] on the
+     * target. Both lines print in this getDamage, after the critical and effectiveness lines above. */
+    if (((r->protect_bypass >> target) & 1u) != 0u) {
+        damage = dfi_modify(damage, DFI_PIERCING_DRILL_BYPASS_MOD);
+        const duoforge_event ab =
+            dfi_ev(DUOFORGE_EVENT_ABILITY, user, DUOFORGE_CAUSE_NONE, 1u + DFI_ABILITY_PIERCINGDRILL, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &ab); /* [-ability] attacker|Piercing Drill */
+        dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT_BROKEN, target); /* [-zbroken] target (decision 0015 5dd, provisional kind 51) */
     }
     *out = dfi_final_damage(damage);
     *crit_out = crit; /* the roll's result after the Shell Armor test: the critical hit the holder's Anger Point reads (step G77) */
@@ -6693,7 +6704,15 @@ static duoforge_status dfi_protect_targets(dfi_run *r, uint32_t user, const uint
          * Status move passes it; a move without the protect flag passes every variant (the flag test above). */
         const uint32_t kind = r->b->tail.sides[t / 2u].positions[t % 2u].protect_kind;
         const bool kings_passes = kind == DFI_PROTECT_KINGS_SHIELD && md->category == DFI_CATEGORY_STATUS;
-        hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) && !kings_passes);
+        const bool guard_up = (((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) && !kings_passes;
+        /* Step K2 (Piercing Drill, data/abilities.ts:3282-3294): the holder's HitProtect returns false, so the check passes the
+         * move: no block, no -activate, no punishment, and the hit's damage gets the bypass (dfi_get_damage). */
+        if (guard_up && dfi_piercing_drill_passes(r->b, dfi_at(r->b, user), md)) {
+            r->protect_bypass |= 1u << t;
+            hit[i] = true;
+            continue;
+        }
+        hit[i] = !guard_up;
         if (!hit[i]) {
             r->mres |= DFI_MRES_NULL; /* Protect's TryHit returns NOT_FAIL (data/moves.ts:13998): no failure */
             stops += 1u;
@@ -8208,12 +8227,19 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * has the protect flag (checkMoveBypassesProtect, sim/battle.ts:1300-1309), whatever its category and however many
      * targets are left, one -activate line per guarded target. A guarded target that also protects gets this line
      * only (its Protect handler is skipped). */
+    /* Step K2: the protect bypass of this hit starts empty (Piercing Drill, protect_bypass.h). */
+    r->protect_bypass = 0u;
     bool guarded[DFI_POSITIONS] = {false, false, false, false};
     if ((target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES || target_class == DFI_TARGET_CLASS_ALL_ADJACENT) &&
         (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
             if (!inv_miss[i] && b->tail.sides[t / 2u].wide_guard != 0u) {
+                /* Step K2: a Piercing Drill holder's move passes Wide Guard's check (HitProtect returns false): no line */
+                if (dfi_piercing_drill_passes(b, dfi_at(b, user), md)) {
+                    r->protect_bypass |= 1u << t;
+                    continue;
+                }
                 guarded[i] = true;
                 duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
                 e.detail = (uint8_t)DUOFORGE_BLOCK_WIDE_GUARD; /* [-activate] move: Wide Guard */
@@ -8229,6 +8255,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
             if (b->tail.sides[t / 2u].quick_guard != 0u && !guarded[i] && !inv_miss[i]) {
+                /* Step K2: a Piercing Drill holder's move passes Quick Guard's check too (see Wide Guard above) */
+                if (dfi_piercing_drill_passes(b, dfi_at(b, user), md)) {
+                    r->protect_bypass |= 1u << t;
+                    continue;
+                }
                 guarded[i] = true;
                 duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
                 e.detail = (uint8_t)DUOFORGE_BLOCK_QUICK_GUARD; /* [-activate] move: Quick Guard */
@@ -12074,7 +12105,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u, 0u};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -12192,7 +12223,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u, 0u};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
