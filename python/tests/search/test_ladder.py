@@ -651,6 +651,45 @@ class MainVerdictCliTest(unittest.TestCase):
                     ladder.main(["verdict", run])
 
 
+class MirrorTest(unittest.TestCase):
+    """--mirror (owner on #440, 2026-10-13): the live search pilots the matchup's foe team, and its spread table leaves
+    out our registry team. Its guards raise SystemExit before any network is loaded."""
+
+    def argv(self, out, *extra):
+        return ["--checkpoint", "missing/main.npz", "--foe-net", "missing/foe.npz", "--step", "1bw", "--previous", "0",
+                "--out", out, "--mirror", *extra]
+
+    def test_a_registry_team_is_found_by_its_text_and_another_file_by_none(self):
+        self.assertEqual(ladder.registry_id(os.path.join(str(ROOT), "data", "teams", "A.txt")), "A")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(ladder.registry_id(write_bytes(tmp, "foe.packed", PACKED.encode("ascii"))))
+
+    def test_the_mirror_is_an_opponent_of_its_own(self):
+        self.assertEqual(ladder._opponents([], allow_empty=True), {})
+        with self.assertRaisesRegex(SystemExit, "at least one"):
+            ladder._opponents([])
+
+    def test_the_mirror_needs_a_matchup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            with self.assertRaisesRegex(SystemExit, "--mirror needs --matchup"):
+                ladder.main(self.argv(out, "--teams-from", "missing/pool.npz"))
+            self.assertFalse(os.path.exists(out))
+
+    def test_the_mirror_excludes_recorded_runs(self):
+        ours = os.path.join(str(ROOT), "data", "teams", "A.txt")
+        for flag in ("--previous-run", "--paired-with"):
+            with self.subTest(flag=flag), tempfile.TemporaryDirectory() as tmp:
+                out = os.path.join(tmp, "out")
+                argv = self.argv(out, "--matchup", ours, ours, flag, "missing/ladder.json")
+                if flag == "--paired-with":  # --paired-with refuses --previous first, by its own guard
+                    argv.remove("--previous")
+                    argv.remove("0")
+                with self.assertRaisesRegex(SystemExit, f"--mirror excludes {flag}"):
+                    ladder.main(argv)
+                self.assertFalse(os.path.exists(out))
+
+
 # --- budget scaling, --paired-with and the duplicate-row share (owner, 2026-10-12) ---
 
 # The budget-scaling arms, written out again: each is step 0's settings plus exactly this delta.
