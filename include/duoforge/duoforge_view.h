@@ -55,7 +55,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VIEW_REVISION 2u
-#define DUOFORGE_HYPOTHESIS_REVISION 3u
+/* Revision 4 (decision 0066, visible sleep): the sleep word of a hidden counter is read with the exact law (the start S = 2 or 3,
+   with the public cant count), and a hidden sleeper needs it (revision 3 and below: E_UNSUPPORTED for a POOL sleeper). */
+#define DUOFORGE_HYPOTHESIS_REVISION 4u
 /* The revision before trap_pick (reserved2 was zero): accepted for views without an active partial trap; a trapped view with it is
    E_UNSUPPORTED (decision 0060, hidden counters). */
 #define DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP 2u

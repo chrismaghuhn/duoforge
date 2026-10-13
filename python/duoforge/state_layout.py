@@ -123,7 +123,7 @@ def fields(pool=True):
                 ("ability_now", "TAIL_MEMBER_ABILITY_OFF"), ("forme_now", "TAIL_MEMBER_FORME_OFF"),
                 ("soak_type", "TAIL_MEMBER_SOAK_OFF"), ("item_now", "TAIL_MEMBER_ITEM_OFF"),
                 ("toxic_stage", "TAIL_MEMBER_TOXIC_OFF"), ("type2", "TAIL_MEMBER_TYPE2_OFF"),
-                ("flags", "TAIL_MEMBER_FLAGS_OFF"), ("reserved", "TAIL_MEMBER_RESERVED_OFF"))), _o("TAIL_MEMBER_SIZE"))
+                ("flags", "TAIL_MEMBER_FLAGS_OFF"), ("sleep_cant", "TAIL_MEMBER_SLEEP_CANT_OFF"))), _o("TAIL_MEMBER_SIZE"))
     tail5 = tail + _o("TAIL_REV4_SIZE")
     for s in range(SIDE_COUNT):
         out += _block(f"tail5.side{s}.", tail5 + _o("TAIL5_SIDES_OFF") + s * _o("TAIL5_SIDE_SIZE"), _sub((

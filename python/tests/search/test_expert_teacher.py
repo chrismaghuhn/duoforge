@@ -368,7 +368,7 @@ class Teacher(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         ex.label_decision(search, b, env=0, seat=0, key=key, raw_action=raw, raw_logp=bad_logp,
                                           last_step=False, config=cfg, manifest=m)
-                # Visible sleep has no supported public reconstruction: a named public refusal.
+                # Decision 0066: a visible sleep under POOL is no public refusal (its cant count is public); the row is labelled.
                 decode = b._lib.duoforge_battle_decode
                 decode.restype = ctypes.c_uint32
                 decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
@@ -379,8 +379,13 @@ class Teacher(unittest.TestCase):
                 b.query_factored()
                 ex.observe(search, b, [1], [0])
                 refused = self.label(search, b, 1, 0, raw, cfg, game=502)
-                self.assertEqual((refused.status, refused.cause, refused.action, refused.behavior_logp),
-                                 (ed.RowStatus.PUBLIC_REFUSAL, "public:visible_sleep", raw, -1.25))
+                # The record is accepted: the row is the search's TARGET (no fallback cause, a sparse target), and its
+                # behavior likelihood is the play probability of the search, not the raw one that a fallback row would carry.
+                self.assertEqual((refused.status, refused.cause), (ed.RowStatus.TARGET, None))
+                self.assertIsNotNone(refused.target)
+                self.assertNotEqual(refused.behavior_logp, -1.25)
+                self.assertIsNotNone(refused.action)  # a TARGET row carries the search's action
+                self.assertNotEqual(refused.action, refused.raw_action)  # not the raw fallback action
                 search.history[b][(1, 0)]["observed"] = -1
                 with self.assertRaisesRegex(ValueError, "observe"):  # a request needs observe() first
                     self.label(search, b, 1, 0, raw, cfg, game=502)
@@ -535,9 +540,9 @@ class Teacher(unittest.TestCase):
     # per machine conditions: the fake net's float32 matmuls follow the BLAS/CPU, so another machine skips.
     PINNED_TWO_PHASE = {
         "Windows|AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD|numpy 2.5.3":
-            "4fd73c236e4f58a6479445350080ff1a9b6941c5c7271090235fcd26d617bd65",
+            "c8f05e83d59be2d03c54bfd57973158a453dc7a11199e655102ecd31021ce573",
         "Linux|AMD Ryzen 7 5800X 8-Core Processor|numpy 2.5.3":
-            "fe779ed31047e3797e0fa7b39e4495139d0cbceda959938182de5a986cce96b4",
+            "d35f7409f059df8239ec617f1e51cb9f69b2af83d416186f47c4e1489c5fd199",
     }
 
     @staticmethod
@@ -668,7 +673,7 @@ class Teacher(unittest.TestCase):
             with mock.patch.object(search, "_hypotheses", side_effect=AssertionError("worlds built first")), \
                     self.assertRaisesRegex(ValueError, "key"):
                 ex.label_tick(search, b, [tick[0], tick[1], bad], last_step=False, config=cfg, manifest=self.manifest)
-            # Visible sleep in one environment: that root refuses publicly, the others are unchanged.
+            # Visible sleep in one environment (decision 0066: no public refusal under POOL; the others are unchanged).
             decode = b._lib.duoforge_battle_decode
             decode.restype = ctypes.c_uint32
             decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
@@ -680,7 +685,11 @@ class Teacher(unittest.TestCase):
             ex.observe(search, b, [0, 1, 2, 3], [0] * 4)
             tick = [dataclasses.replace(r, raw_action=self.low_raw(search, b, r.env, 0)) for r in roots_of(b, range(4))]
             mixed = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
-            self.assertEqual(mixed[1].status, ex.RowStatus.PUBLIC_REFUSAL)
+            # decision 0066: the accepted record is the search's TARGET row (no fallback cause, a sparse target)
+            self.assertEqual((mixed[1].status, mixed[1].cause), (ex.RowStatus.TARGET, None))
+            self.assertIsNotNone(mixed[1].target)
+            self.assertIsNotNone(mixed[1].action)  # a TARGET row carries the search's action
+            self.assertNotEqual(mixed[1].action, mixed[1].raw_action)  # not the raw fallback action
             self.assertEqual([ex.decision_bytes(d) for d in mixed], per_root(search, b, tick, cfg))
             with self.assertRaises(ValueError):  # one root per environment
                 ex.label_tick(search, b, [tick[0], tick[0]], last_step=False, config=cfg, manifest=self.manifest)

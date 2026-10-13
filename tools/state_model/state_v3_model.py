@@ -93,6 +93,9 @@ TAIL_GRAVITY_MAX = 5
 TAIL_ITEM_NONE = 255
 TAIL_TOXIC_STAGE_MAX = 15
 TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet (the status bound of every kind is below)
+# Decision 0066 (visible sleep): the cant lines of a sleeping member, the member byte 9 (a POOL tail byte; twelve of them).
+TAIL_SLEEP_CANT_MAX = 2             # the start is 2 or 3 and the wake is the attempt after the last cant line
+TAIL_SLEEP_STATUS = 4               # DFI_STATUS_SLP (src/data/closure_tables.h)
 # What the pool tables hold (decision 0015 section 2, tests/test_pool_tables.c): the bounds of the member overrides.
 POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 347, 511, 166, 215
 POOL_AEGISLASH_FORME = 244              # DFI_FORME_AEGISLASH (src/data/pool_tables.h)
@@ -115,7 +118,7 @@ TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_r
                          'hazard_order']
 # hazard_order (rev 4): the creation order of the hazards that are up, 2 bits per slot (slot 0 in bits 1:0); the kind codes
 HAZARD_STEALTH_ROCK, HAZARD_SPIKES, HAZARD_TOXIC_SPIKES, HAZARD_STICKY_WEB = 0, 1, 2, 3
-TAIL_MEMBER_LIST_FIELDS = ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage', 'type2', 'member_flags')
+TAIL_MEMBER_LIST_FIELDS = ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage', 'type2', 'member_flags', 'sleep_cant')
 TYPE_COUNT = 18
 assert STATE_SIZE == 1009 and QUEUE_OFF + QUEUE_CAP * QUEUE_REC_SIZE == HEADER_SIZE
 MAX_ROSTER = 6
@@ -1149,8 +1152,8 @@ def check_tail(ctx, st):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
             ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]
-            t2, mf = ts['type2'][m], ts['member_flags'][m]
-            if ab == 0 and fo == 0 and ty == 0 and it == 0 and tx == 0 and t2 == 0 and mf == 0:
+            t2, mf, sc = ts['type2'][m], ts['member_flags'][m], ts['sleep_cant'][m]
+            if ab == 0 and fo == 0 and ty == 0 and it == 0 and tx == 0 and t2 == 0 and mf == 0 and sc == 0:
                 continue
             if m >= sd['member_count']:
                 return 'TAIL_MEMBER'
@@ -1181,6 +1184,9 @@ def check_tail(ctx, st):
             if mf & ~TAIL_MEMBER_FLAGS_MASK != 0:
                 return 'TAIL_MEMBER'
             if tx != 0 and (tx > TAIL_TOXIC_STAGE_MAX or not on_field or mem['status'] != TAIL_TOXIC_STATUS):
+                return 'TAIL_MEMBER'
+            # Decision 0066: the cant count belongs to a sleeping member (on the field or on the bench), at most 2.
+            if sc != 0 and (sc > TAIL_SLEEP_CANT_MAX or mem['status'] != TAIL_SLEEP_STATUS):
                 return 'TAIL_MEMBER'
     # Step G71: the Attract sources, one per flat position (attract_byte_ok).
     if not all(attract_byte_ok(st, f) for f in range(4)):
@@ -1244,7 +1250,8 @@ def tail_bytes(tail):
             out += bytes([tp[f] for f in TAIL_POS_REV4_FIELDS]) + bytes(3)
         for m in range(MAX_ROSTER):
             out += struct.pack('<HH', ts['ability_now'][m], ts['forme_now'][m])
-            out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], ts['type2'][m], ts['member_flags'][m], 0])
+            out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], ts['type2'][m], ts['member_flags'][m],
+                          ts['sleep_cant'][m]])
     assert len(out) == TAIL_REV4_SIZE
     for ts in tail['sides']:
         out += bytes(ill_values(ts['ill']))
@@ -1261,19 +1268,18 @@ def tail_bytes(tail):
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 33 reserved bytes: 25 of the rev 4 part (step G46: the field block's +1..+6 are
+    """The offsets (within the tail) of the 21 reserved bytes: 13 of the rev 4 part (step G46: the field block's +1..+6 are
     party_order; step G90: a position's byte +32 is trap_elapsed) and the 8 of the rev 5 reserve at the end that are not the
-    Attract sources 0..3 (step G71) or the Ally Switch bytes 4..7 (step G80)."""
+    Attract sources 0..3 (step G71) or the Ally Switch bytes 4..7 (step G80). Decision 0066 took the member bytes +9 (sleep cant)."""
     offs = [TAIL_FIELD_SIZE - 1]
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
         for p in range(2):
             offs += [so + 8 + TAIL_POS_SIZE * p + 33 + i for i in range(3)]
-        offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
-    assert len(offs) == 25
+    assert len(offs) == 13
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
     offs += [rev5_reserve + i for i in range(TAIL5_ALLY_OFF + 4, TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 33
+    assert len(offs) == 21
     return offs
 
 
@@ -1308,6 +1314,7 @@ def parse_tail(b):
             ts['toxic_stage'].append(b[mo + 6])
             ts['type2'].append(b[mo + 7])
             ts['member_flags'].append(b[mo + 8])
+            ts['sleep_cant'].append(b[mo + 9])
         tail['sides'].append(ts)
     # The rev 5 block (after the rev 4 part): the Illusion state per side, then the two bytes per position in flat order.
     r5 = o + TAIL_REV4_SIZE

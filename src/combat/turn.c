@@ -2492,6 +2492,10 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     }
     m->status = (uint8_t)status;          /* <= DFI_STATUS_TOX */
     m->status_counter = (uint8_t)counter; /* <= 3 */
+    if (status == DFI_STATUS_SLP) {
+        /* decision 0066: the cant lines of this sleep start at 0 (the member's byte of the tail, POOL only) */
+        r->b->tail.sides[flat / 2u].sleep_cant[dfi_pos(r->b, flat)->occupant] = 0u;
+    }
     if (status == DFI_STATUS_TOX) {
         /* tox's onStart sets the stage to 0 (data/conditions.ts:141-150): a toxic status cured by Lum Berry and set again
          * starts from 0 */
@@ -2571,6 +2575,7 @@ static duoforge_status dfi_lum_cure(dfi_run *r, uint32_t flat)
         }
         m->status = (uint8_t)DFI_STATUS_NONE;
         m->status_counter = 0u;
+        b->tail.sides[flat / 2u].sleep_cant[dfi_pos(b, flat)->occupant] = 0u; /* decision 0066 */
     }
     dfi_active_slot *pos = dfi_pos(b, flat);
     if (pos->confusion_turns != 0u) {
@@ -4224,6 +4229,16 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
     }
     const bool defrost = m->status == DFI_STATUS_FRZ && ((uint32_t)md->flags & DFI_MOVE_FLAG_DEFROST) != 0u;
     if ((m->status == DFI_STATUS_SLP || m->status == DFI_STATUS_FRZ) && !defrost) {
+        /* the count of a sleep exists under POOL only (the tail's member byte; invariant TAIL_KIND elsewhere): the other kinds keep
+         * their sleep as it was */
+        const bool sleep_counted = dfi_kind_limits_of(r->ctx->data_kind).pool_rules;
+        if (m->status == DFI_STATUS_SLP && sleep_counted &&
+            (move_id == DFI_MOVE_SLEEPTALK || move_id == DFI_MOVE_SNORE || dfi_ability_code(r->b, m) == DFI_ABILITY_EARLYBIRD + 1u)) {
+            /* decision 0066 (review of the search lane): a sleeper that decrements its counter twice per attempt (Early
+             * Bird, data/conditions.ts:68-69) or that runs a sleepUsable move after its cant line (Sleep Talk, Snore,
+             * data/moves.ts:16875, 17161) has no counted posterior: refused, never guessed. Both are unmarked today. */
+            return DUOFORGE_E_UNSUPPORTED;
+        }
         const uint32_t left = m->status_counter > 0u ? (uint32_t)m->status_counter - 1u : 0u;
         bool cured = left == 0u;
         if (!cured && m->status == DFI_STATUS_FRZ) {
@@ -4234,6 +4249,11 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
         }
         if (!cured) {
             m->status_counter = (uint8_t)left; /* <= 2 */
+            if (m->status == DFI_STATUS_SLP && sleep_counted) {
+                /* decision 0066: one more cant line of this sleep (c <= 2: the start is 2 or 3 and the wake is the next attempt) */
+                uint8_t *cant = &r->b->tail.sides[user / 2u].sleep_cant[pos->occupant];
+                *cant = (uint8_t)(*cant + 1u); /* wide-operands-reviewed: c <= 2 by the start (2 or 3) */
+            }
             const uint32_t why = m->status == DFI_STATUS_SLP ? DUOFORGE_CAUSE_SLEEP : DUOFORGE_CAUSE_FREEZE;
             const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, why, 0u, DUOFORGE_NO_POSITION);
             dfi_emit(r, &e); /* [cant] slp or frz */
@@ -4245,6 +4265,7 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
         dfi_emit(r, &cure); /* [-curestatus] [msg] */
         m->status = (uint8_t)DFI_STATUS_NONE;
         m->status_counter = 0u;
+        r->b->tail.sides[user / 2u].sleep_cant[pos->occupant] = 0u; /* decision 0066: the wake ends the count */
     }
     if (((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) {
         const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_FLINCH, 0u, DUOFORGE_NO_POSITION);
@@ -7622,6 +7643,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         dfi_emit(r, &cure);
         m->status = (uint8_t)DFI_STATUS_NONE;
         m->status_counter = 0u;
+        r->b->tail.sides[user / 2u].sleep_cant[dfi_pos(r->b, user)->occupant] = 0u; /* decision 0066 */
     }
     /* Choice Scarf's onModifyMove (Team C, data/items.ts:983-1005) adds
      * choicelock, whose onStart stores the move used (data/conditions.ts);
@@ -9175,6 +9197,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 dfi_emit(r, &cure); /* [-curestatus] frz [msg] */
                 tm->status = (uint8_t)DFI_STATUS_NONE;
                 tm->status_counter = 0u;
+                r->b->tail.sides[targets[i] / 2u].sleep_cant[dfi_pos(r->b, targets[i])->occupant] = 0u; /* decision 0066 */
             }
             if (dfi_ability(r->b, tm, DFI_ABILITY_STAMINA)) {
                 static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
@@ -9433,6 +9456,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                     dfi_emit(r, &cure); /* [-curestatus] frz [msg] */
                     tm->status = (uint8_t)DFI_STATUS_NONE;
                     tm->status_counter = 0u;
+                    r->b->tail.sides[targets[i] / 2u].sleep_cant[dfi_pos(r->b, targets[i])->occupant] = 0u; /* decision 0066 */
                 }
             }
         }
@@ -9656,6 +9680,7 @@ static duoforge_status dfi_run_revive(dfi_run *r, const dfi_queue_record *q)
     }
     dfi_member *m = &sd->members[reserve];
     m->status = DUOFORGE_AILMENT_NONE;
+    b->tail.sides[side].sleep_cant[reserve] = 0u; /* decision 0066: the revival cures the sleep and its count */
     m->hp = (uint16_t)(m->hp_max / 2u); /* sethp(maxhp / 2): trunc, and maxhp is at least 2; wide-operands-reviewed: < 256 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_REVIVE, side * 2u + (uint32_t)q->slot);
     e.id = (uint16_t)reserve; /* wide-operands-reviewed: a roster index */
@@ -10408,6 +10433,7 @@ static duoforge_status dfi_wish_heal(dfi_run *r, uint32_t flat)
     }
     m->status = (uint8_t)DFI_STATUS_NONE;
     m->status_counter = 0u;
+    b->tail.sides[flat / 2u].sleep_cant[dfi_pos(b, flat)->occupant] = 0u; /* decision 0066 */
     b->tail.sides[flat / 2u].positions[flat % 2u].position_flags =
         (uint8_t)(b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & ~DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed */
     dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_HEAL, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_HEALINGWISH, DUOFORGE_NO_POSITION));
@@ -11777,6 +11803,7 @@ static void dfi_check_fainted(struct duoforge_battle *b)
             if (sd->members[m].hp == 0u) {
                 sd->members[m].status = (uint8_t)DFI_STATUS_NONE;
                 sd->members[m].status_counter = 0u;
+                b->tail.sides[s].sleep_cant[m] = 0u; /* decision 0066 */
             }
         }
     }
