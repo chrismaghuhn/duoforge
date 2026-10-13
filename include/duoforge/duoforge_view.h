@@ -131,6 +131,10 @@ typedef struct duoforge_hypothesis {
  * 5 and 6) are not carried by the view, and they are live mid-turn, so duoforge_battle_from_view and the public record refuse
  * with this cause. A turn boundary is not affected (the bits are zero there). */
 #define DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY 64u
+/* SPEED_SWAP (step K3, decision 0015 5de): either side, any active position whose speed
+ * was swapped and is still live (the presence bit DUOFORGE_POSITION_EXT_SPEED_SWAPPED). The swapped values are not public, so
+ * duoforge_battle_public, duoforge_battle_from_view and duoforge_public_record_check refuse with this cause while it stands. */
+#define DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP 128u
 
 /* Argument errors touch no output. Otherwise statuses are per environment,
  * the return is the first failure, and each failing environment is atomic.

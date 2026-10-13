@@ -109,7 +109,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {24, 0, 231, 0, 0, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0}, /* step K3 (decision 0015 5de): single_turn bit 2 (Speed Swap) is OK: 2, 4 and 6 */
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -145,7 +145,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {24, 0, 231, 0, 0, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0}, /* step K3 (decision 0015 5de): single_turn bit 2 (Speed Swap) is OK: 2, 4 and 6 */
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -249,7 +249,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {24, 0, 231, 0, 0, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0}, /* step K3 (decision 0015 5de): single_turn bit 2 (Speed Swap) is OK: 2, 4 and 6 */
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
@@ -285,7 +285,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {24, 0, 231, 0, 0, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0}, /* step K3 (decision 0015 5de): single_turn bit 2 (Speed Swap) is OK: 2, 4 and 6 */
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
@@ -893,7 +893,7 @@ MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
 MUT(m_move_result_high, p0->move_result = 0x40u) /* bits 6-7 are zero (step G42: bits 4 and 5 are the unclassified bits) */
 MUT(m_unclass_now_with_result, p0->move_result = 0x11u) /* unclassified this turn, but this turn is TRUE */
 MUT(m_unclass_last_with_result, p0->move_result = 0x28u) /* unclassified last turn, but last turn is FALSE */
-MUT(m_single_turn_bit2, p0->single_turn = 4u)
+MUT(m_single_turn_bit2, p0->single_turn = 8u) /* bit 2 is Speed Swap (step K3); bit 3 is still undefined */
 MUT(m_rage_no_follow_me, p0->single_turn = DFI_SINGLE_TURN_RAGE_POWDER) /* the Follow Me flag is down */
 MUT(m_hits_taken7, p0->hits_taken = 7u)
 MUT(m_ability_state7, p0->ability_state = 7u)
@@ -1171,7 +1171,7 @@ static const tail_case cases[] = {
     {"a move result above its two nibbles and its two unclassified bits", DFI_INV_TAIL_POSITION, false, m_move_result_high},
     {"an unclassified this-turn bit with a this-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_now_with_result},
     {"an unclassified last-turn bit with a last-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_last_with_result},
-    {"a single-turn bit that is not defined", DFI_INV_TAIL_POSITION, false, m_single_turn_bit2},
+    {"a single-turn bit that is not defined (bit 3)", DFI_INV_TAIL_POSITION, false, m_single_turn_bit2},
     {"Rage Powder's marker without the Follow Me flag", DFI_INV_TAIL_POSITION, false, m_rage_no_follow_me},
     {"hits taken above 6", DFI_INV_TAIL_POSITION, false, m_hits_taken7},
     {"an ability state above 6", DFI_INV_TAIL_POSITION, false, m_ability_state7},

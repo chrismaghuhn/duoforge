@@ -378,6 +378,15 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
             }
         }
     }
+    /* Step K3 (decision 0015 5de): a live Speed Swap on either side. The swapped Speed values are not
+     * public (only the presence bit is), so the record and the rebuild refuse while the bit stands. */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            if ((b->tail.sides[side].positions[p].single_turn & DFI_SINGLE_TURN_SPEED_SWAP) != 0u) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP;
+            }
+        }
+    }
     *out_mask = mask;
     return DUOFORGE_OK;
 }

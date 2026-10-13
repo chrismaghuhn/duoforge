@@ -403,6 +403,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->imprison != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_IMPRISON : 0u;
                 /* Step G42: Roost's Flying type is off until the residual of order 25 (-singleturn move: Roost, public). */
                 vol |= (tail->single_turn & DFI_SINGLE_TURN_ROOST) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ROOST : 0u;
+                /* Step K3 (decision 0015 5de): Speed Swap's presence (the values are never public). */
+                vol |= (tail->single_turn & DFI_SINGLE_TURN_SPEED_SWAP) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_SPEED_SWAPPED : 0u;
                 /* Step G60 (decision 0032): the Substitute is up: presence only, its HP is never in the observation. */
                 vol |= tail->substitute_hp != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_SUBSTITUTE : 0u;
                 /* Step G90 (decision 0060): the partial trap is up (-activate at its start, -end at its end): presence only; the

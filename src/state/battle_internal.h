@@ -272,10 +272,15 @@ typedef struct dfi_side {
 #define DFI_MOVE_RESULT_UNCLASSIFIED_LAST 0x20u
 #define DFI_TAIL_MOVE_RESULT_MASK 0x3Fu /* bits 6-7 are zero */
 /* single_turn: one-turn volatiles that the position's flags byte (full) cannot hold; both end in the residual of the turn, on
- * switch-out and on faint. RAGE_POWDER belongs to the Follow Me flag (the move that set it also sets that flag). */
+ * switch-out and on faint (ROOST); the bits of the other volatiles held here are listed below. RAGE_POWDER belongs to the Follow Me
+ * flag (the move that set it also sets that flag). */
 #define DFI_SINGLE_TURN_RAGE_POWDER 1u
 #define DFI_SINGLE_TURN_ROOST 2u
-#define DFI_TAIL_SINGLE_TURN_MASK 3u    /* bits 2-7 are free and zero */
+/* Step K3 (decision 0015 5de): the occupant's Speed was swapped (Speed Swap) and the swap is still live. A presence bit, not a
+ * one-turn volatile: it ends with the occupant (dfi_tail_clear_occupant), at a Mega Evolution (the stats are rebuilt), and it is
+ * NOT cleared at the residual. The swapped values live in the member's stats[SPE]. Bits 3-7 are free and zero. */
+#define DFI_SINGLE_TURN_SPEED_SWAP 4u
+#define DFI_TAIL_SINGLE_TURN_MASK 7u    /* bits 3-7 are free and zero */
 #define DFI_TAIL_HITS_TAKEN_MAX 6u      /* Rage Fist: power 50 + 50 * n is capped at 350 */
 #define DFI_TAIL_ABILITY_STATE_MAX 6u   /* Supreme Overlord 0-5 fallen allies, Protean 0/1, Illusion roster index + 1 */
 #define DFI_TAIL_LOCK_TURNS_MAX 3u      /* lockedmove (Outrage, Thrash, Petal Dance): 2 or 3 turns */

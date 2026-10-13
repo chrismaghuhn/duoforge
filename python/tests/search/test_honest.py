@@ -57,6 +57,7 @@ class PublicCauses(unittest.TestCase):
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"], "temp_forme"), honest._CAUSES)
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"], "raised_this_turn"), honest._CAUSES)
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY"], "turn_history"), honest._CAUSES)
+        self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP"], "speed_swap"), honest._CAUSES)  # step K3 (decision 0015 5de)
 
 
 class HonestSearch(unittest.TestCase):

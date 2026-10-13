@@ -52,6 +52,15 @@ void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat)
      * it stays across a switch-out, a faint and the replacement's entry, and only the heal of an entrant clears it. The other
      * bits end with the occupant, as before. */
     dfi_tail_pos *tp = &ts->positions[flat % DUOFORGE_ACTIVE_PER_SIDE];
+    /* Step K3 (decision 0015 5de): a live Speed Swap ends with the occupant. clearVolatile's setSpecies (sim/pokemon.ts:1559)
+     * rebuilds the stored stats from the forme, so the member's Speed is its derived one again; the other stats are derived already. */
+    if ((tp->single_turn & DFI_SINGLE_TURN_SPEED_SWAP) != 0u && occupant < DUOFORGE_MAX_ROSTER) {
+        dfi_member *swapped = &b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].members[occupant];
+        dfi_member fresh = *swapped;
+        if (dfi_closure_member_derive(&fresh)) {
+            swapped->stats[DFI_STAT_SPE - 1u] = fresh.stats[DFI_STAT_SPE - 1u];
+        }
+    }
     const uint8_t healing_wish = (uint8_t)(tp->position_flags & DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed: a mask of one bit */
     *tp = (dfi_tail_pos){0u};
     tp->position_flags = healing_wish;

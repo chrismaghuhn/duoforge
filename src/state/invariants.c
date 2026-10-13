@@ -88,6 +88,18 @@ uint32_t dfi_side_occupied_mask(const dfi_side *side)
 
 /* `full`: also the derived values and the move legality of a CLOSURE member
  * (dfi_state_check_query passes false). */
+/* Step K3 (decision 0015 5de): the member's position (any active one) carries the live Speed Swap presence bit. */
+static bool dfi_member_speed_swapped(const struct duoforge_battle *b, uint32_t side, uint32_t member)
+{
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (b->sides[side].positions[p].occupant == member &&
+            (b->tail.sides[side].positions[p].single_turn & DFI_SINGLE_TURN_SPEED_SWAP) != 0u) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const dfi_member *m, bool full)
 {
     if (m->species_id >= ctx->species_count) {
@@ -212,6 +224,17 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                     inv = DFI_INV_MEMBER_EXTRA;
                 } else {
                     inv = dfi_check_member(ctx, &sheet, full);
+                }
+            } else if (!same && full && dfi_member_speed_swapped(b, s, m)) {
+                /* Step K3 (decision 0015 5de): the Speed of a Speed Swap is the partner's, not the formula's, while the presence bit
+                 * stands. The check runs on a copy with the derived Speed; the other stats are checked as always. */
+                dfi_member fix = side->members[m];
+                dfi_member derived = side->members[m];
+                if (!dfi_closure_member_derive(&derived)) {
+                    inv = DFI_INV_MEMBER_EXTRA;
+                } else {
+                    fix.stats[DFI_STAT_SPE - 1u] = derived.stats[DFI_STAT_SPE - 1u];
+                    inv = dfi_check_member(ctx, &fix, full);
                 }
             } else if (!same) {
                 /* Every other case (the sheet's forme, or a permanent one): the stats are the sheet's, checked as always. */
