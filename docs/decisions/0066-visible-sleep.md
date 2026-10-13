@@ -149,3 +149,24 @@ POOL has no Hypnosis episode with S = 3. One recording is open: a POOL battle in
 `hypnosis` in `data/mods/champions/learnsets.ts`; Gengar, Gardevoir, Musharna and Espathra are in the pool tables) lands the
 move and the foe wakes at attempt 3. The seed decides S (sample([2, 3, 3])), so the spec needs a seed with S = 3, at most two
 attempts. Not recorded in this step.
+
+## 14. Campaign (random differential, Showdown judge, seed 442)
+
+Two POOL team files (X: a Hypnosis team with Milotic, from `g22_liquid_voice` team 0; Y: a Sleep Powder team, from `g30_powder_a` team 0),
+pairings XY, YX, XX, YY, 300 battles, `--keep-traces`, `tools/reference/diff_driver.py random`. Result: PASS 300, 0 divergences.
+
+| measure | value |
+|---|---|
+| battles with a sleep | 172 of 300 |
+| sleep starts, Hypnosis | 208 |
+| sleep starts, Sleep Powder | 140 |
+| sleep starts, total | 348 (no Sing or Yawn: these teams do not use them) |
+| cant lines (cant|X|slp) | 521 |
+| wakes, Hypnosis at attempt 2 (S = 2) / attempt 3 (S = 3) | 66 / 97 |
+| wakes, Sleep Powder at attempt 2 / attempt 3 | 41 / 60 |
+| episodes with a count above 2 | 0 |
+
+The count is checked by the evidence logic of section 4: the engine's invariants (c <= 2, only SLP) run on every step, and the
+counter comparison of the replay covers S - c at every step, so an explicit comparison of c in the driver is not needed.
+Each woken episode woke at exactly S - 1 cant lines plus one (attempt 2 or 3), as section 4 says. The POOL Hypnosis S = 3 case
+of section 13 is therefore recorded by this campaign (97 episodes), and section 13 is closed.
