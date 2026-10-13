@@ -19,6 +19,7 @@ duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES moves/test_pool_g50.c WHI
 duoforge_add_test(NAME duoforge.state.pool_g60 SOURCES moves/test_pool_g60.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g74 SOURCES moves/test_pool_g74.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g70 SOURCES moves/test_pool_g70.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
+duoforge_add_test(NAME duoforge.state.pool_k3 SOURCES moves/test_pool_k3.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g58 SOURCES moves/test_pool_g58.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 # Step G72b: Alluring Voice (the stats-raised position flag) and Dragon Cheer (the crit stage), the PIVOT refusal of the public
 # record (decision 0015 5ce); the recorded battles are duoforge.reference.conformance_pool_data.

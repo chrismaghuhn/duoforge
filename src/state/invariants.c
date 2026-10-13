@@ -217,9 +217,14 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                  * (forme_now = the Blade's id + 1). The formula check runs on a copy with the sheet's stats. */
                 dfi_member sheet = side->members[m];
                 uint16_t want[DFI_MEMBER_STAT_COUNT];
-                if (side->members[m].species_id != DFI_FORME_AEGISLASH ||
-                    !dfi_closure_member_derive(&sheet) ||
-                    !dfi_closure_member_forme_stats(&side->members[m], DFI_FORME_AEGISLASHBLADE, want) ||
+                /* Step K3 (decision 0015 5de): while the Speed Swap presence bit stands, the Speed is the swapped one, not the Blade's. */
+                const bool blade_ok = side->members[m].species_id == DFI_FORME_AEGISLASH &&
+                                      dfi_closure_member_derive(&sheet) &&
+                                      dfi_closure_member_forme_stats(&side->members[m], DFI_FORME_AEGISLASHBLADE, want);
+                if (blade_ok && dfi_member_speed_swapped(b, s, m)) {
+                    want[DFI_STAT_SPE - 1u] = side->members[m].stats[DFI_STAT_SPE - 1u];
+                }
+                if (!blade_ok ||
                     !dfi_bytes_equal((const uint8_t *)want, (const uint8_t *)side->members[m].stats, sizeof want)) {
                     inv = DFI_INV_MEMBER_EXTRA;
                 } else {

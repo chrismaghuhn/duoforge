@@ -1079,6 +1079,7 @@ VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 VOLATILE_LEECH_SEED = 13  # DUOFORGE_VOLATILE_LEECH_SEED (step G84, decision 0047): START only, no END line
 VOLATILE_CURSE = 14  # DUOFORGE_VOLATILE_CURSE (step G84b, decision 0063): START only, the Ghost Curse's [of] source
+VOLATILE_SPEED_SWAP = 16  # DUOFORGE_VOLATILE_SPEED_SWAP (step K3, decision 0015 5de): START only, position = source, other = target
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
 VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
 VOLATILE_ATTRACT = 11      # DUOFORGE_VOLATILE_ATTRACT (step G71, decision 0034): START, and the visible END of Mental Herb and Oblivious
@@ -1972,6 +1973,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 # ACTIVATE with cause MOVE, id2 = the move, other = the source (the converter's rule for the volatile's start).
                 _, _, other = ev_cause(attrs, tables)
                 e = ev_tuple(EV['ACTIVATE'], pos, other, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
+            elif what == 'move: Speed Swap' and len(args) == 2 and len(attrs) == 1 and attrs[0].startswith('[of] '):
+                # Step K3 (decision 0015 5de; data/moves.ts:17443): `-activate|S|move: Speed Swap|[of] T`, the swap of the two stored
+                # Speeds: VOLATILE_START of the source's position, other = the target. No END line (the swap ends silently).
+                target = ev_pos(attrs[0][5:])
+                if pos is None or target is None:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Speed Swap position')
+                e = ev_tuple(EV['VOLATILE_START'], pos, target, detail=VOLATILE_SPEED_SWAP)
             elif what == 'move: Poltergeist' and len(args) == 3:
                 # Step G64 (Poltergeist's onTryHit, data/moves.ts:13601-13604): -activate|X|move: Poltergeist|Item, an ACTIVATE of
                 # the move with no state of its own. The item is the one X holds now; the name must be an item of the tables.

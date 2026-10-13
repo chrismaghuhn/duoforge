@@ -7409,6 +7409,8 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
         m->stats[i] = stats[i];
     }
     *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
+    /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats, so a live Speed Swap ends here. */
+    b->tail.sides[user / 2u].positions[user % 2u].single_turn &= (uint8_t)~DFI_SINGLE_TURN_SPEED_SWAP; /* wide-operands-reviewed: a byte mask */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
     e.id = (uint16_t)forme;
     e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;

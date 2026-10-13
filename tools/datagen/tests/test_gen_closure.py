@@ -808,14 +808,15 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G82_HANDLERS], [115])
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G90_HANDLERS], [116])  # G90: the partial trap (decision 0060)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G96_HANDLERS], [120])  # G96 (decision 0015 5cz): Psychic Terrain
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 121)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.K3_HANDLERS], [121])  # K3 (decision 0015 5de): Speed Swap
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 122)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.C5_HANDLERS], [117])  # C5: Endeavor (decision 0015 entry 5cy)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G80_HANDLERS], [118, 119])  # G80: Psych Up, Ally Switch (decision 0044)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.G70_HANDLERS) | set(gen_closure.G66_HANDLERS) | set(gen_closure.G72B_HANDLERS) | set(gen_closure.G74_HANDLERS) | set(gen_closure.G76_HANDLERS) | set(gen_closure.G78_HANDLERS) | set(gen_closure.G88_HANDLERS) | set(gen_closure.G86_HANDLERS) | set(gen_closure.C4_HANDLERS) | set(gen_closure.G84_HANDLERS) | set(gen_closure.G92_HANDLERS) | set(gen_closure.G64_HANDLERS) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
-                         set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G94_HANDLERS) | set(gen_closure.C5_HANDLERS) | set(gen_closure.G96_HANDLERS) | set(gen_closure.G28_HANDLERS) |
+                         set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G94_HANDLERS) | set(gen_closure.C5_HANDLERS) | set(gen_closure.G96_HANDLERS) | set(gen_closure.K3_HANDLERS) | set(gen_closure.G28_HANDLERS) |
                          set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
                          set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | set(gen_closure.G42_HANDLERS) | set(gen_closure.G56_HANDLERS) | set(gen_closure.G52_HANDLERS) | set(gen_closure.G54_HANDLERS) | set(gen_closure.G62_HANDLERS) | set(gen_closure.G60_HANDLERS) | set(gen_closure.G58_HANDLERS) | set(gen_closure.G68_HANDLERS) | set(gen_closure.G66_HANDLERS) | set(gen_closure.G82_HANDLERS) | set(gen_closure.G90_HANDLERS) | set(gen_closure.G80_HANDLERS) | {'DARKEST_LARIAT'})
 
@@ -1123,7 +1124,7 @@ class PoolMoves(unittest.TestCase):
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
                         set(gen_closure.G2_MOVES) | {'outrage', 'thrash', 'petaldance', 'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
-                                                                'substitute', 'kingsshield', 'banefulbunker', 'psychicterrain', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts', 'psychup', 'allyswitch', 'bind', 'wrap', 'firespin', 'sandtomb', 'snaptrap', 'infestation', 'lashout', 'assurance', 'leechseed', 'curse',
+                                                                'substitute', 'kingsshield', 'banefulbunker', 'psychicterrain', 'speedswap', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts', 'psychup', 'allyswitch', 'bind', 'wrap', 'firespin', 'sandtomb', 'snaptrap', 'infestation', 'lashout', 'assurance', 'leechseed', 'curse',
                                                                 'substitute', 'kingsshield', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts',
                                                                 'confuseray', 'swagger', 'flatter', 'teeterdance', 'fissure', 'guillotine', 'horndrill', 'memento', 'nightshade',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
@@ -2309,11 +2310,11 @@ class MoveHandlerTables(unittest.TestCase):
     def test_existing_lists_have_frozen_phase_counts(self):
         import move_handler_source
         rows = move_handler_source.rows()
-        self.assertEqual(len(rows), 122)
-        self.assertEqual(sum(r.hit_guard for r in rows), 96)
-        self.assertEqual(sum(r.status_hit for r in rows), 18)
+        self.assertEqual(len(rows), 123)  # K3: Speed Swap is the 123rd row
+        self.assertEqual(sum(r.hit_guard for r in rows), 97)  # K3: Speed Swap is a late-guard row
+        self.assertEqual(sum(r.status_hit for r in rows), 19)  # K3: Speed Swap is a status-hit row
         self.assertEqual([r.name for r in rows], gen_closure.SPECIAL_IDS_P)
-        self.assertEqual([r.value for r in rows], list(range(122)))
+        self.assertEqual([r.value for r in rows], list(range(123)))
 
     def test_writer_rejects_bad_rows(self):
         from dataclasses import replace

@@ -2670,7 +2670,7 @@ C5_HANDLERS = ['ENDEAVOR']
 G96_HANDLERS = ['PSYCHIC_TERRAIN']
 # Step K3 (decision 0015 5de): Speed Swap's onHit (data/moves.ts:17439-17444, Champions has no
 # override): the two storedStats.spe values are exchanged, then the line -activate|source|move: Speed Swap|[of] target.
-G97_HANDLERS = ['SPEED_SWAP']
+K3_HANDLERS = ['SPEED_SWAP']
 SPEED_SWAP_ONHIT = ("onHit(target, source) { const targetSpe = target.storedStats.spe; target.storedStats.spe = source.storedStats.spe; "
                     "source.storedStats.spe = targetSpe; this.add('-activate', source, 'move: Speed Swap', `[of] ${target}`); },")
 G96_TERRAIN_COMMON = ('terrain: \'psychicterrain\',', 'category: "Status",', 'accuracy: true,', 'target: "all",', 'duration: 5,',
@@ -2848,7 +2848,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + G82_HANDLERS + G90_HANDLERS + C5_HANDLERS + G80_HANDLERS + G96_HANDLERS + G97_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + G82_HANDLERS + G90_HANDLERS + C5_HANDLERS + G80_HANDLERS + G96_HANDLERS + K3_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
