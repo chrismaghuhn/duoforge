@@ -286,6 +286,28 @@ class GuardTest(unittest.TestCase):
         self.assertEqual(oracle.resume_changes(old, conditions), [])
         self.assertEqual(oracle.resume_changes(dict(old, pairs=256, seed="0x2"), conditions), ["seed", "pairs"])
 
+    def test_a_run_from_before_the_foe_side_resumes_as_the_ours_side(self):
+        old = {"seed": "0x1", "pairs": 32}
+        self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "ours"}), [])
+        self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe"}), ["side"])
+
+    def test_our_own_preview_must_be_one_per_seat(self):
+        a, b = oracle.team_index("24|01"), oracle.team_index("01|23")
+        swapped = int(np.flatnonzero((TEAM_TABLE == np.array([4, 2, 1, 0], TEAM_TABLE.dtype)).all(axis=1))[0])
+        team = lambda seat, own: {"boundary": "TEAM_SELECTION", "seat": seat, "own_choice": own}
+        oracle.check_constant_own("45|23", [team(0, a), team(0, swapped), team(1, b), {"boundary": "TURN"}])
+        with self.assertRaisesRegex(SystemExit, r"arm 45\|23: our own preview differs between games \(\{0: "):
+            oracle.check_constant_own("45|23", [team(0, a), team(0, b), team(1, b)])
+
+    def test_the_foe_previews_come_from_the_draw_or_the_team_records(self):
+        drawn = oracle.DrawnPreview(None, None, oracle.SEED)
+        drawn.drawn = {0: 5, 1: 6}
+        self.assertEqual(oracle.foe_previews(drawn, []), {0: 5, 1: 6})
+        forced = oracle.ForcedPreview(None, 7)
+        decisions = [{"boundary": "TEAM_SELECTION", "env": 1, "choice": 7}, {"boundary": "TURN", "env": 0, "choice": 2},
+                     {"boundary": "TEAM_SELECTION", "env": 0, "choice": 7}]
+        self.assertEqual(oracle.foe_previews(forced, decisions), {0: 7, 1: 7})
+
     def test_every_game_needs_a_foe_draw(self):
         oracle.check_drawn("24|01", {0: 1, 1: 2}, 2)
         with self.assertRaisesRegex(SystemExit, r"arm 24\|01: the foe drew no preview in 1 game"):

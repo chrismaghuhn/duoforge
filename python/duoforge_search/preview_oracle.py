@@ -255,7 +255,8 @@ def spread(scores):
 def resume_changes(old, conditions):
     """The condition keys in which a run's existing conditions.json (old) records another measurement than this run's
     conditions: every key but commit, dirty, cpu and workers (the commit is recorded per arm, and the arms' digests show
-    whether it played alike)."""
+    whether it played alike). A conditions.json without a side is the ours side's (written before the foe side)."""
+    old = {"side": "ours", **old}
     keys = [k for k in conditions if k not in ("commit", "dirty", "cpu", "workers")]
     return [k for k in keys if old.get(k) != json.loads(json.dumps(_finite(conditions[k])))]
 
@@ -275,6 +276,25 @@ def check_played(arm, decisions, who="our"):
     played = {arm_of(r["choice"]) for r in decisions if r["boundary"] == "TEAM_SELECTION"}
     if played != {arm}:
         raise SystemExit(f"arm {arm}: {who} preview played {sorted(played)}")
+
+
+def check_constant_own(arm, decisions):
+    """SystemExit unless our own preview (each team record's own_choice, side and bench order dropped) is one
+    combination per seat over all the arm's games: on the foe side, the arms are paired only if ours is the same."""
+    own = {}
+    for r in decisions:
+        if r["boundary"] == "TEAM_SELECTION":
+            own.setdefault(int(r["seat"]), set()).add(arm_of(r["own_choice"]))
+    varied = {seat: sorted(v) for seat, v in sorted(own.items()) if len(v) > 1}
+    if varied:
+        raise SystemExit(f"arm {arm}: our own preview differs between games ({varied})")
+
+
+def foe_previews(preview, decisions):
+    """env -> the foe's played team row: a DrawnPreview's draws, else the foe's team records' choices."""
+    if isinstance(preview, DrawnPreview):
+        return dict(preview.drawn)
+    return {int(r["env"]): r["choice"] for r in decisions if r["boundary"] == "TEAM_SELECTION"}
 
 
 def _names(members, arm):
@@ -335,7 +355,8 @@ def summarize(out_dir):
             "best_answer": best, "our_preview": arms[DRAWN]["own_choice"],
             "points": paired_difference(reference, combo_scores[best]),
             "note": "the foe's best answer of the combinations played here, selected on these games: biased toward the "
-                    "foe by the selection; a confirmation run on fresh seeds measures it without that bias"}
+                    "foe by the selection. In a confirmation run, the screen's best answer's vs_drawn is the number "
+                    "not selected on these games"}
     today = reference if side == "ours" else None
     if today is not None and ranking:
         best = ranking[0]
@@ -556,8 +577,7 @@ def main(argv=None):
                 seconds = time.perf_counter() - started
                 ours_decisions = [r for row in sorted(learner.records) for r in learner.records[row]]
                 foe_decisions = [r for row in sorted(opponent.player.records) for r in opponent.player.records[row]]
-                played = (foe_preview.drawn if isinstance(foe_preview, DrawnPreview) else
-                          {int(r["env"]): r["choice"] for r in foe_decisions if r["boundary"] == "TEAM_SELECTION"})
+                played = foe_previews(foe_preview, foe_decisions)
                 check_drawn(arm, played, n)
                 entry = _arm_entry(arm, records, ours_decisions, foe_decisions, [int(played[e]) for e in range(n)],
                                    seconds)
@@ -566,6 +586,7 @@ def main(argv=None):
                     check_played(arm, ours_decisions)
                 else:
                     check_played(arm, foe_decisions, "the foe's")
+                    check_constant_own(arm, ours_decisions)
                 with open(target + ".tmp", "w", encoding="utf-8") as f:
                     json.dump(_finite(entry), f, indent=1, allow_nan=False)
                 os.replace(target + ".tmp", target)
