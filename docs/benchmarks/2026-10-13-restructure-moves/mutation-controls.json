@@ -1,0 +1,30 @@
+[
+  {
+    "name": "control",
+    "exit_code": 0,
+    "expected_failure": false,
+    "stdout": "  special guards: 122 defined / 256 storage values, 96 late handlers, 18 status hits\nduoforge.combat.move_rules: 2098 checks, 0 failures\n",
+    "stderr": ""
+  },
+  {
+    "name": "reject_valid_grass_knot",
+    "exit_code": 1,
+    "expected_failure": true,
+    "stdout": "  special guards: 122 defined / 256 storage values, 96 late handlers, 18 status hits\nduoforge.combat.move_rules: 2098 checks, 2 failures\n",
+    "stderr": "/workspace/duoforge/tests/moves/test_move_rules.c:110: CHECK FAILED: guard == df_test_old_special_guard(special)\n/workspace/duoforge/tests/moves/test_move_rules.c:115: CHECK FAILED: permitted == 96u (actual 0x5f, expected 0x60)\n"
+  },
+  {
+    "name": "bypass_wrong_fake_out",
+    "exit_code": 1,
+    "expected_failure": true,
+    "stdout": "  special guards: 122 defined / 256 storage values, 96 late handlers, 18 status hits\nduoforge.combat.move_rules: 2098 checks, 2 failures\n",
+    "stderr": "/workspace/duoforge/tests/moves/test_move_rules.c:111: CHECK FAILED: status == df_test_old_status_hit(special)\n/workspace/duoforge/tests/moves/test_move_rules.c:116: CHECK FAILED: status_hit == 18u (actual 0x13, expected 0x12)\n"
+  },
+  {
+    "name": "permit_unknown_unmodeled",
+    "exit_code": 1,
+    "expected_failure": true,
+    "stdout": "  special guards: 122 defined / 256 storage values, 96 late handlers, 18 status hits\nduoforge.combat.move_rules: 2098 checks, 2 failures\n",
+    "stderr": "/workspace/duoforge/tests/moves/test_move_rules.c:110: CHECK FAILED: guard == df_test_old_special_guard(special)\n/workspace/duoforge/tests/moves/test_move_rules.c:115: CHECK FAILED: permitted == 96u (actual 0x61, expected 0x60)\n"
+  }
+]

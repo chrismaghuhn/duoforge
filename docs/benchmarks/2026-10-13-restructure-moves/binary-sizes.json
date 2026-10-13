@@ -1,0 +1,34 @@
+{
+  "ipo": {
+    "after": {
+      "bss_bytes": 8,
+      "data_bytes": 19856,
+      "file_bytes": 644176,
+      "sha256": "116235480072188c7c12af9a4e8bbdf939f95b57a025e022d3b72e7c64a18e92",
+      "text_bytes": 595639
+    },
+    "baseline": {
+      "bss_bytes": 8,
+      "data_bytes": 19856,
+      "file_bytes": 644080,
+      "sha256": "a352144bc9030afd46fe635bca8bd66b5fb57a7cb50ab741baa527cd9b3b7f14",
+      "text_bytes": 594679
+    }
+  },
+  "noipo": {
+    "after": {
+      "bss_bytes": 8,
+      "data_bytes": 19848,
+      "file_bytes": 635632,
+      "sha256": "5c3c2eebc027a9743787d79267c1fb49ac3cc5d62d7244ceee832f2b42040233",
+      "text_bytes": 585585
+    },
+    "baseline": {
+      "bss_bytes": 8,
+      "data_bytes": 19848,
+      "file_bytes": 635536,
+      "sha256": "e5d5c9e63b61df95e6ce657d7b9f61a7c1a608213579e19fcaa517783e97bd8a",
+      "text_bytes": 585425
+    }
+  }
+}

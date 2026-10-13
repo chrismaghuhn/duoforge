@@ -121,8 +121,8 @@ Campaign: `diff_driver.py random`, 300 battles, the teams of `g78_split` and `g7
 
 **Engine and tables.** `src/combat/turn.c`: `dfi_smart_targets` (the partner after the redirections, the refusals R2 and R5),
 the `smart` flag (silent while set, cleared by a drop, as in the pin), the split in the hit loop (hit k on the k-th target, the
-`-anim` before hit 2, the move line retargeted on the first hit), `dfi_move_hits` (two hits, a number: no draw), the whitelist of
-handled specials, Emergency Exit skipped for the first target of a split (the pin's damage array). Pool row: `DFI_SPECIAL_DRAGON_DARTS`
+`-anim` before hit 2, the move line retargeted on the first hit), `dfi_move_hits` in `src/combat/moves/multihit.h` (two hits, a number: no draw), the generated
+special-guard tables in `src/combat/generated/move_handlers.h`, Emergency Exit skipped for the first target of a split (the pin's damage array). Pool row: `DFI_SPECIAL_DRAGON_DARTS`
 = 97, UNMODELED = 98, marked moves 198 (was 197), UNMODELED moves 180 (was 181); pool hash `34f64221af56...bd14da0`.
 
 **Setup finding.** Sneasler's set in the first draft had Sucker Punch, which is not in DuoForge's learnset for that forme (Showdown

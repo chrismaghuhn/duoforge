@@ -1,0 +1,1162 @@
+{
+  "after-ipo": {
+    "failed": 0,
+    "fresh": true,
+    "passed": 62,
+    "skipped": 0,
+    "source_commit": "3affb183",
+    "tests": [
+      {
+        "name": "duoforge.state.clone_equal",
+        "passed": true,
+        "seconds": 0.020299
+      },
+      {
+        "name": "duoforge.combat.move_rules",
+        "passed": true,
+        "seconds": 0.00381104
+      },
+      {
+        "name": "duoforge.state.pool_g8",
+        "passed": true,
+        "seconds": 0.00983212
+      },
+      {
+        "name": "duoforge.state.pool_g11",
+        "passed": true,
+        "seconds": 0.010387
+      },
+      {
+        "name": "duoforge.state.pool_g9",
+        "passed": true,
+        "seconds": 0.00614233
+      },
+      {
+        "name": "duoforge.state.pool_g17",
+        "passed": true,
+        "seconds": 0.0115491
+      },
+      {
+        "name": "duoforge.state.pool_g19",
+        "passed": true,
+        "seconds": 0.00545487
+      },
+      {
+        "name": "duoforge.state.pool_g26",
+        "passed": true,
+        "seconds": 0.00975405
+      },
+      {
+        "name": "duoforge.state.pool_g48",
+        "passed": true,
+        "seconds": 0.00459161
+      },
+      {
+        "name": "duoforge.state.pool_g50",
+        "passed": true,
+        "seconds": 0.00476395
+      },
+      {
+        "name": "duoforge.state.pool_g60",
+        "passed": true,
+        "seconds": 0.00405483
+      },
+      {
+        "name": "duoforge.state.pool_g74",
+        "passed": true,
+        "seconds": 0.00667877
+      },
+      {
+        "name": "duoforge.state.pool_g70",
+        "passed": true,
+        "seconds": 0.00408147
+      },
+      {
+        "name": "duoforge.state.pool_g58",
+        "passed": true,
+        "seconds": 0.00704074
+      },
+      {
+        "name": "duoforge.state.pool_g72b",
+        "passed": true,
+        "seconds": 0.00668948
+      },
+      {
+        "name": "duoforge.state.pool_g76",
+        "passed": true,
+        "seconds": 0.00585078
+      },
+      {
+        "name": "duoforge.state.pool_g78",
+        "passed": true,
+        "seconds": 0.00505082
+      },
+      {
+        "name": "duoforge.state.pool_g88",
+        "passed": true,
+        "seconds": 0.00518181
+      },
+      {
+        "name": "duoforge.state.pool_g86",
+        "passed": true,
+        "seconds": 0.00397515
+      },
+      {
+        "name": "duoforge.state.pool_g92",
+        "passed": true,
+        "seconds": 0.00351936
+      },
+      {
+        "name": "duoforge.state.pool_g90",
+        "passed": true,
+        "seconds": 0.021979
+      },
+      {
+        "name": "duoforge.state.pool_g80",
+        "passed": true,
+        "seconds": 0.00512509
+      },
+      {
+        "name": "duoforge.state.pool_g42",
+        "passed": true,
+        "seconds": 0.0069144
+      },
+      {
+        "name": "duoforge.state.pool_g44",
+        "passed": true,
+        "seconds": 0.00291572
+      },
+      {
+        "name": "duoforge.state.pool_g54",
+        "passed": true,
+        "seconds": 0.00429256
+      },
+      {
+        "name": "duoforge.state.pool_g56",
+        "passed": true,
+        "seconds": 0.0107203
+      },
+      {
+        "name": "duoforge.state.pool_g64",
+        "passed": true,
+        "seconds": 0.00338256
+      },
+      {
+        "name": "duoforge.state.pool_g68",
+        "passed": true,
+        "seconds": 0.00211873
+      },
+      {
+        "name": "duoforge.state.pool_g62",
+        "passed": true,
+        "seconds": 0.00245407
+      },
+      {
+        "name": "duoforge.state.pool_g38",
+        "passed": true,
+        "seconds": 0.00586816
+      },
+      {
+        "name": "duoforge.state.pool_g31",
+        "passed": true,
+        "seconds": 0.00772152
+      },
+      {
+        "name": "duoforge.state.pool_g71",
+        "passed": true,
+        "seconds": 0.0051194
+      },
+      {
+        "name": "duoforge.state.pool_g87",
+        "passed": true,
+        "seconds": 0.145672
+      },
+      {
+        "name": "duoforge.state.pool_g82",
+        "passed": true,
+        "seconds": 0.00427628
+      },
+      {
+        "name": "duoforge.state.pool_tail",
+        "passed": true,
+        "seconds": 0.222305
+      },
+      {
+        "name": "duoforge.view",
+        "passed": true,
+        "seconds": 1.96337
+      },
+      {
+        "name": "duoforge.view.causes",
+        "passed": true,
+        "seconds": 0.273332
+      },
+      {
+        "name": "duoforge.view.sleep_count",
+        "passed": true,
+        "seconds": 0.0542082
+      },
+      {
+        "name": "duoforge.state.pool_g33",
+        "passed": true,
+        "seconds": 0.00839806
+      },
+      {
+        "name": "duoforge.data.closure_regen",
+        "passed": true,
+        "seconds": 0.179163
+      },
+      {
+        "name": "duoforge.data.extended_regen",
+        "passed": true,
+        "seconds": 0.214841
+      },
+      {
+        "name": "duoforge.data.pool_regen",
+        "passed": true,
+        "seconds": 0.512546
+      },
+      {
+        "name": "duoforge.reference.tiebreak_ref",
+        "passed": true,
+        "seconds": 164.551
+      },
+      {
+        "name": "duoforge.reference.format_pins",
+        "passed": true,
+        "seconds": 3.37979
+      },
+      {
+        "name": "duoforge.data.gen_closure_refusals",
+        "passed": true,
+        "seconds": 0.534574
+      },
+      {
+        "name": "duoforge.python.layout",
+        "passed": true,
+        "seconds": 0.190849
+      },
+      {
+        "name": "duoforge.python.repo_hygiene",
+        "passed": true,
+        "seconds": 0.158732
+      },
+      {
+        "name": "duoforge.python.view",
+        "passed": true,
+        "seconds": 1.42183
+      },
+      {
+        "name": "duoforge.python.perft",
+        "passed": true,
+        "seconds": 21.6091
+      },
+      {
+        "name": "duoforge.python.state_layout",
+        "passed": true,
+        "seconds": 0.412904
+      },
+      {
+        "name": "duoforge.python.bench",
+        "passed": true,
+        "seconds": 9.06506
+      },
+      {
+        "name": "duoforge.python.smogon_sets",
+        "passed": true,
+        "seconds": 1.2234
+      },
+      {
+        "name": "duoforge.python.ladder",
+        "passed": true,
+        "seconds": 0.812295
+      },
+      {
+        "name": "duoforge.python.live_unit",
+        "passed": true,
+        "seconds": 0.595475
+      },
+      {
+        "name": "duoforge.python.live_cts",
+        "passed": true,
+        "seconds": 5.09232
+      },
+      {
+        "name": "duoforge.python.pkmn_arena",
+        "passed": true,
+        "seconds": 1.06555
+      },
+      {
+        "name": "duoforge.python.live",
+        "passed": true,
+        "seconds": 517.189
+      },
+      {
+        "name": "duoforge.lint.sources",
+        "passed": true,
+        "seconds": 5.15959
+      },
+      {
+        "name": "duoforge.lint.selftest",
+        "passed": true,
+        "seconds": 0.28408
+      },
+      {
+        "name": "duoforge.lint.no_mutable_globals",
+        "passed": true,
+        "seconds": 0.0300844
+      },
+      {
+        "name": "duoforge.data.model_pool_hash",
+        "passed": true,
+        "seconds": 0.140531
+      },
+      {
+        "name": "duoforge.state.model_pool_tail",
+        "passed": true,
+        "seconds": 21.1056
+      }
+    ]
+  },
+  "after-noipo": {
+    "failed": 0,
+    "fresh": true,
+    "passed": 57,
+    "skipped": 0,
+    "source_commit": "3affb183",
+    "tests": [
+      {
+        "name": "duoforge.state.clone_equal",
+        "passed": true,
+        "seconds": 0.0270579
+      },
+      {
+        "name": "duoforge.combat.move_rules",
+        "passed": true,
+        "seconds": 0.00298636
+      },
+      {
+        "name": "duoforge.state.pool_g8",
+        "passed": true,
+        "seconds": 0.0130577
+      },
+      {
+        "name": "duoforge.state.pool_g11",
+        "passed": true,
+        "seconds": 0.0145496
+      },
+      {
+        "name": "duoforge.state.pool_g9",
+        "passed": true,
+        "seconds": 0.00656303
+      },
+      {
+        "name": "duoforge.state.pool_g17",
+        "passed": true,
+        "seconds": 0.0111972
+      },
+      {
+        "name": "duoforge.state.pool_g19",
+        "passed": true,
+        "seconds": 0.0159195
+      },
+      {
+        "name": "duoforge.state.pool_g26",
+        "passed": true,
+        "seconds": 0.0153976
+      },
+      {
+        "name": "duoforge.state.pool_g48",
+        "passed": true,
+        "seconds": 0.00777724
+      },
+      {
+        "name": "duoforge.state.pool_g50",
+        "passed": true,
+        "seconds": 0.00490638
+      },
+      {
+        "name": "duoforge.state.pool_g60",
+        "passed": true,
+        "seconds": 0.00774992
+      },
+      {
+        "name": "duoforge.state.pool_g74",
+        "passed": true,
+        "seconds": 0.00800081
+      },
+      {
+        "name": "duoforge.state.pool_g70",
+        "passed": true,
+        "seconds": 0.0117034
+      },
+      {
+        "name": "duoforge.state.pool_g58",
+        "passed": true,
+        "seconds": 0.0147722
+      },
+      {
+        "name": "duoforge.state.pool_g72b",
+        "passed": true,
+        "seconds": 0.0102782
+      },
+      {
+        "name": "duoforge.state.pool_g76",
+        "passed": true,
+        "seconds": 0.01618
+      },
+      {
+        "name": "duoforge.state.pool_g78",
+        "passed": true,
+        "seconds": 0.00730138
+      },
+      {
+        "name": "duoforge.state.pool_g88",
+        "passed": true,
+        "seconds": 0.00875576
+      },
+      {
+        "name": "duoforge.state.pool_g86",
+        "passed": true,
+        "seconds": 0.00421492
+      },
+      {
+        "name": "duoforge.state.pool_g92",
+        "passed": true,
+        "seconds": 0.00477901
+      },
+      {
+        "name": "duoforge.state.pool_g90",
+        "passed": true,
+        "seconds": 0.0260665
+      },
+      {
+        "name": "duoforge.state.pool_g80",
+        "passed": true,
+        "seconds": 0.00632001
+      },
+      {
+        "name": "duoforge.state.pool_g42",
+        "passed": true,
+        "seconds": 0.00867705
+      },
+      {
+        "name": "duoforge.state.pool_g44",
+        "passed": true,
+        "seconds": 0.00318251
+      },
+      {
+        "name": "duoforge.state.pool_g54",
+        "passed": true,
+        "seconds": 0.0074423
+      },
+      {
+        "name": "duoforge.state.pool_g56",
+        "passed": true,
+        "seconds": 0.00896048
+      },
+      {
+        "name": "duoforge.state.pool_g64",
+        "passed": true,
+        "seconds": 0.00432807
+      },
+      {
+        "name": "duoforge.state.pool_g68",
+        "passed": true,
+        "seconds": 0.00306832
+      },
+      {
+        "name": "duoforge.state.pool_g62",
+        "passed": true,
+        "seconds": 0.00545182
+      },
+      {
+        "name": "duoforge.state.pool_g38",
+        "passed": true,
+        "seconds": 0.00919025
+      },
+      {
+        "name": "duoforge.state.pool_g31",
+        "passed": true,
+        "seconds": 0.0119175
+      },
+      {
+        "name": "duoforge.state.pool_g71",
+        "passed": true,
+        "seconds": 0.0093345
+      },
+      {
+        "name": "duoforge.state.pool_g87",
+        "passed": true,
+        "seconds": 0.134787
+      },
+      {
+        "name": "duoforge.state.pool_g82",
+        "passed": true,
+        "seconds": 0.00786966
+      },
+      {
+        "name": "duoforge.state.pool_tail",
+        "passed": true,
+        "seconds": 0.940536
+      },
+      {
+        "name": "duoforge.view",
+        "passed": true,
+        "seconds": 2.60024
+      },
+      {
+        "name": "duoforge.view.causes",
+        "passed": true,
+        "seconds": 0.180935
+      },
+      {
+        "name": "duoforge.view.sleep_count",
+        "passed": true,
+        "seconds": 0.0967476
+      },
+      {
+        "name": "duoforge.state.pool_g33",
+        "passed": true,
+        "seconds": 0.00527857
+      },
+      {
+        "name": "duoforge.reference.format_pins",
+        "passed": true,
+        "seconds": 3.10359
+      },
+      {
+        "name": "duoforge.data.gen_closure_refusals",
+        "passed": true,
+        "seconds": 0.953911
+      },
+      {
+        "name": "duoforge.python.layout",
+        "passed": true,
+        "seconds": 0.274433
+      },
+      {
+        "name": "duoforge.python.repo_hygiene",
+        "passed": true,
+        "seconds": 0.265176
+      },
+      {
+        "name": "duoforge.python.view",
+        "passed": true,
+        "seconds": 1.41875
+      },
+      {
+        "name": "duoforge.python.perft",
+        "passed": true,
+        "seconds": 38.9297
+      },
+      {
+        "name": "duoforge.python.state_layout",
+        "passed": true,
+        "seconds": 0.446063
+      },
+      {
+        "name": "duoforge.python.bench",
+        "passed": true,
+        "seconds": 13.1083
+      },
+      {
+        "name": "duoforge.python.smogon_sets",
+        "passed": true,
+        "seconds": 1.46535
+      },
+      {
+        "name": "duoforge.python.ladder",
+        "passed": true,
+        "seconds": 0.84531
+      },
+      {
+        "name": "duoforge.python.live_unit",
+        "passed": true,
+        "seconds": 0.76288
+      },
+      {
+        "name": "duoforge.python.live_cts",
+        "passed": true,
+        "seconds": 7.1275
+      },
+      {
+        "name": "duoforge.python.pkmn_arena",
+        "passed": true,
+        "seconds": 1.54286
+      },
+      {
+        "name": "duoforge.lint.sources",
+        "passed": true,
+        "seconds": 8.95621
+      },
+      {
+        "name": "duoforge.lint.selftest",
+        "passed": true,
+        "seconds": 0.399692
+      },
+      {
+        "name": "duoforge.lint.no_mutable_globals",
+        "passed": true,
+        "seconds": 0.0216645
+      },
+      {
+        "name": "duoforge.data.model_pool_hash",
+        "passed": true,
+        "seconds": 0.146929
+      },
+      {
+        "name": "duoforge.state.model_pool_tail",
+        "passed": true,
+        "seconds": 23.4309
+      }
+    ]
+  },
+  "baseline-extra-ipo": {
+    "failed": 0,
+    "passed": 12,
+    "provenance": "immutable recorded fbc8b24f baseline; reused without changes",
+    "skipped": 0,
+    "tests": [
+      {
+        "name": "duoforge.state.clone_equal",
+        "passed": true,
+        "seconds": 0.0445755
+      },
+      {
+        "name": "duoforge.state.pool_tail",
+        "passed": true,
+        "seconds": 0.539444
+      },
+      {
+        "name": "duoforge.view",
+        "passed": true,
+        "seconds": 2.87479
+      },
+      {
+        "name": "duoforge.view.causes",
+        "passed": true,
+        "seconds": 0.279526
+      },
+      {
+        "name": "duoforge.python.view",
+        "passed": true,
+        "seconds": 1.29471
+      },
+      {
+        "name": "duoforge.python.smogon_sets",
+        "passed": true,
+        "seconds": 1.03918
+      },
+      {
+        "name": "duoforge.python.ladder",
+        "passed": true,
+        "seconds": 0.699061
+      },
+      {
+        "name": "duoforge.python.live_unit",
+        "passed": true,
+        "seconds": 0.892062
+      },
+      {
+        "name": "duoforge.python.live_cts",
+        "passed": true,
+        "seconds": 7.81119
+      },
+      {
+        "name": "duoforge.python.pkmn_arena",
+        "passed": true,
+        "seconds": 2.04148
+      },
+      {
+        "name": "duoforge.data.model_pool_hash",
+        "passed": true,
+        "seconds": 0.120936
+      },
+      {
+        "name": "duoforge.state.model_pool_tail",
+        "passed": true,
+        "seconds": 15.865
+      }
+    ]
+  },
+  "baseline-extra-noipo": {
+    "failed": 0,
+    "passed": 12,
+    "provenance": "immutable recorded fbc8b24f baseline; reused without changes",
+    "skipped": 0,
+    "tests": [
+      {
+        "name": "duoforge.state.clone_equal",
+        "passed": true,
+        "seconds": 0.0294545
+      },
+      {
+        "name": "duoforge.state.pool_tail",
+        "passed": true,
+        "seconds": 0.615575
+      },
+      {
+        "name": "duoforge.view",
+        "passed": true,
+        "seconds": 2.11914
+      },
+      {
+        "name": "duoforge.view.causes",
+        "passed": true,
+        "seconds": 0.269011
+      },
+      {
+        "name": "duoforge.python.view",
+        "passed": true,
+        "seconds": 1.45245
+      },
+      {
+        "name": "duoforge.python.smogon_sets",
+        "passed": true,
+        "seconds": 0.930191
+      },
+      {
+        "name": "duoforge.python.ladder",
+        "passed": true,
+        "seconds": 0.819717
+      },
+      {
+        "name": "duoforge.python.live_unit",
+        "passed": true,
+        "seconds": 0.641788
+      },
+      {
+        "name": "duoforge.python.live_cts",
+        "passed": true,
+        "seconds": 6.46351
+      },
+      {
+        "name": "duoforge.python.pkmn_arena",
+        "passed": true,
+        "seconds": 1.21518
+      },
+      {
+        "name": "duoforge.data.model_pool_hash",
+        "passed": true,
+        "seconds": 0.179682
+      },
+      {
+        "name": "duoforge.state.model_pool_tail",
+        "passed": true,
+        "seconds": 16.1404
+      }
+    ]
+  },
+  "baseline-ipo": {
+    "failed": 0,
+    "passed": 40,
+    "provenance": "immutable recorded fbc8b24f baseline; reused without changes",
+    "skipped": 0,
+    "tests": [
+      {
+        "name": "duoforge.combat.move_rules",
+        "passed": true,
+        "seconds": 0.0024261
+      },
+      {
+        "name": "duoforge.state.pool_g8",
+        "passed": true,
+        "seconds": 0.00829921
+      },
+      {
+        "name": "duoforge.state.pool_g11",
+        "passed": true,
+        "seconds": 0.0109469
+      },
+      {
+        "name": "duoforge.state.pool_g9",
+        "passed": true,
+        "seconds": 0.00579315
+      },
+      {
+        "name": "duoforge.state.pool_g17",
+        "passed": true,
+        "seconds": 0.00669272
+      },
+      {
+        "name": "duoforge.state.pool_g19",
+        "passed": true,
+        "seconds": 0.00508367
+      },
+      {
+        "name": "duoforge.state.pool_g26",
+        "passed": true,
+        "seconds": 0.0143596
+      },
+      {
+        "name": "duoforge.state.pool_g48",
+        "passed": true,
+        "seconds": 0.00545877
+      },
+      {
+        "name": "duoforge.state.pool_g50",
+        "passed": true,
+        "seconds": 0.0047552
+      },
+      {
+        "name": "duoforge.state.pool_g60",
+        "passed": true,
+        "seconds": 0.00605526
+      },
+      {
+        "name": "duoforge.state.pool_g74",
+        "passed": true,
+        "seconds": 0.00582507
+      },
+      {
+        "name": "duoforge.state.pool_g70",
+        "passed": true,
+        "seconds": 0.00552576
+      },
+      {
+        "name": "duoforge.state.pool_g58",
+        "passed": true,
+        "seconds": 0.00455463
+      },
+      {
+        "name": "duoforge.state.pool_g72b",
+        "passed": true,
+        "seconds": 0.00461052
+      },
+      {
+        "name": "duoforge.state.pool_g76",
+        "passed": true,
+        "seconds": 0.00608338
+      },
+      {
+        "name": "duoforge.state.pool_g78",
+        "passed": true,
+        "seconds": 0.00521918
+      },
+      {
+        "name": "duoforge.state.pool_g88",
+        "passed": true,
+        "seconds": 0.00510807
+      },
+      {
+        "name": "duoforge.state.pool_g86",
+        "passed": true,
+        "seconds": 0.00302195
+      },
+      {
+        "name": "duoforge.state.pool_g92",
+        "passed": true,
+        "seconds": 0.00309632
+      },
+      {
+        "name": "duoforge.state.pool_g90",
+        "passed": true,
+        "seconds": 0.0155064
+      },
+      {
+        "name": "duoforge.state.pool_g80",
+        "passed": true,
+        "seconds": 0.0040517
+      },
+      {
+        "name": "duoforge.state.pool_g42",
+        "passed": true,
+        "seconds": 0.00720834
+      },
+      {
+        "name": "duoforge.state.pool_g44",
+        "passed": true,
+        "seconds": 0.00297977
+      },
+      {
+        "name": "duoforge.state.pool_g54",
+        "passed": true,
+        "seconds": 0.00435638
+      },
+      {
+        "name": "duoforge.state.pool_g56",
+        "passed": true,
+        "seconds": 0.00729555
+      },
+      {
+        "name": "duoforge.state.pool_g64",
+        "passed": true,
+        "seconds": 0.00216861
+      },
+      {
+        "name": "duoforge.state.pool_g68",
+        "passed": true,
+        "seconds": 0.00274506
+      },
+      {
+        "name": "duoforge.state.pool_g62",
+        "passed": true,
+        "seconds": 0.00215426
+      },
+      {
+        "name": "duoforge.state.pool_g38",
+        "passed": true,
+        "seconds": 0.0057118
+      },
+      {
+        "name": "duoforge.state.pool_g31",
+        "passed": true,
+        "seconds": 0.00767227
+      },
+      {
+        "name": "duoforge.state.pool_g71",
+        "passed": true,
+        "seconds": 0.00597838
+      },
+      {
+        "name": "duoforge.state.pool_g87",
+        "passed": true,
+        "seconds": 0.101153
+      },
+      {
+        "name": "duoforge.state.pool_g82",
+        "passed": true,
+        "seconds": 0.0049979
+      },
+      {
+        "name": "duoforge.view.sleep_count",
+        "passed": true,
+        "seconds": 0.0466965
+      },
+      {
+        "name": "duoforge.reference.format_pins",
+        "passed": true,
+        "seconds": 2.2474
+      },
+      {
+        "name": "duoforge.python.layout",
+        "passed": true,
+        "seconds": 0.209117
+      },
+      {
+        "name": "duoforge.python.perft",
+        "passed": true,
+        "seconds": 26.3339
+      },
+      {
+        "name": "duoforge.python.state_layout",
+        "passed": true,
+        "seconds": 0.244341
+      },
+      {
+        "name": "duoforge.python.bench",
+        "passed": true,
+        "seconds": 6.79316
+      },
+      {
+        "name": "duoforge.python.live",
+        "passed": true,
+        "seconds": 580.957
+      }
+    ]
+  },
+  "baseline-noipo": {
+    "failed": 0,
+    "passed": 39,
+    "provenance": "immutable recorded fbc8b24f baseline; reused without changes",
+    "skipped": 0,
+    "tests": [
+      {
+        "name": "duoforge.combat.move_rules",
+        "passed": true,
+        "seconds": 0.00289754
+      },
+      {
+        "name": "duoforge.state.pool_g8",
+        "passed": true,
+        "seconds": 0.0171093
+      },
+      {
+        "name": "duoforge.state.pool_g11",
+        "passed": true,
+        "seconds": 0.0146943
+      },
+      {
+        "name": "duoforge.state.pool_g9",
+        "passed": true,
+        "seconds": 0.0256844
+      },
+      {
+        "name": "duoforge.state.pool_g17",
+        "passed": true,
+        "seconds": 0.0203507
+      },
+      {
+        "name": "duoforge.state.pool_g19",
+        "passed": true,
+        "seconds": 0.035656
+      },
+      {
+        "name": "duoforge.state.pool_g26",
+        "passed": true,
+        "seconds": 0.0195668
+      },
+      {
+        "name": "duoforge.state.pool_g48",
+        "passed": true,
+        "seconds": 0.00615555
+      },
+      {
+        "name": "duoforge.state.pool_g50",
+        "passed": true,
+        "seconds": 0.0108036
+      },
+      {
+        "name": "duoforge.state.pool_g60",
+        "passed": true,
+        "seconds": 0.0184943
+      },
+      {
+        "name": "duoforge.state.pool_g74",
+        "passed": true,
+        "seconds": 0.015129
+      },
+      {
+        "name": "duoforge.state.pool_g70",
+        "passed": true,
+        "seconds": 0.00482987
+      },
+      {
+        "name": "duoforge.state.pool_g58",
+        "passed": true,
+        "seconds": 0.0193049
+      },
+      {
+        "name": "duoforge.state.pool_g72b",
+        "passed": true,
+        "seconds": 0.00629113
+      },
+      {
+        "name": "duoforge.state.pool_g76",
+        "passed": true,
+        "seconds": 0.00713417
+      },
+      {
+        "name": "duoforge.state.pool_g78",
+        "passed": true,
+        "seconds": 0.0065115
+      },
+      {
+        "name": "duoforge.state.pool_g88",
+        "passed": true,
+        "seconds": 0.00837091
+      },
+      {
+        "name": "duoforge.state.pool_g86",
+        "passed": true,
+        "seconds": 0.00868318
+      },
+      {
+        "name": "duoforge.state.pool_g92",
+        "passed": true,
+        "seconds": 0.00527644
+      },
+      {
+        "name": "duoforge.state.pool_g90",
+        "passed": true,
+        "seconds": 0.0515638
+      },
+      {
+        "name": "duoforge.state.pool_g80",
+        "passed": true,
+        "seconds": 0.00641471
+      },
+      {
+        "name": "duoforge.state.pool_g42",
+        "passed": true,
+        "seconds": 0.00731349
+      },
+      {
+        "name": "duoforge.state.pool_g44",
+        "passed": true,
+        "seconds": 0.0352843
+      },
+      {
+        "name": "duoforge.state.pool_g54",
+        "passed": true,
+        "seconds": 0.00775993
+      },
+      {
+        "name": "duoforge.state.pool_g56",
+        "passed": true,
+        "seconds": 0.0134313
+      },
+      {
+        "name": "duoforge.state.pool_g64",
+        "passed": true,
+        "seconds": 0.00457038
+      },
+      {
+        "name": "duoforge.state.pool_g68",
+        "passed": true,
+        "seconds": 0.00221429
+      },
+      {
+        "name": "duoforge.state.pool_g62",
+        "passed": true,
+        "seconds": 0.0140205
+      },
+      {
+        "name": "duoforge.state.pool_g38",
+        "passed": true,
+        "seconds": 0.0402796
+      },
+      {
+        "name": "duoforge.state.pool_g31",
+        "passed": true,
+        "seconds": 0.0287348
+      },
+      {
+        "name": "duoforge.state.pool_g71",
+        "passed": true,
+        "seconds": 0.0117342
+      },
+      {
+        "name": "duoforge.state.pool_g87",
+        "passed": true,
+        "seconds": 0.276062
+      },
+      {
+        "name": "duoforge.state.pool_g82",
+        "passed": true,
+        "seconds": 0.00658248
+      },
+      {
+        "name": "duoforge.view.sleep_count",
+        "passed": true,
+        "seconds": 0.219234
+      },
+      {
+        "name": "duoforge.reference.format_pins",
+        "passed": true,
+        "seconds": 13.5717
+      },
+      {
+        "name": "duoforge.python.layout",
+        "passed": true,
+        "seconds": 0.319235
+      },
+      {
+        "name": "duoforge.python.perft",
+        "passed": true,
+        "seconds": 57.8319
+      },
+      {
+        "name": "duoforge.python.state_layout",
+        "passed": true,
+        "seconds": 0.342947
+      },
+      {
+        "name": "duoforge.python.bench",
+        "passed": true,
+        "seconds": 20.7643
+      }
+    ]
+  }
+}

@@ -12,7 +12,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "combat/move_rules.h"
+#include "combat/moves/families.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "support/check.h"
