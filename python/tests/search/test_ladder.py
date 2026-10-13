@@ -517,12 +517,12 @@ class CliGuardTest(unittest.TestCase):
             self.assertRefused("known steps", self.argv(out, step="nope"), out)
 
     def test_steps_above_the_lp_size_limit_are_refused_by_name_before_loading(self):
-        # owner on #440: b-s64 and b-km16 stopped in the exact rescue; the limit is step 0's and b-k16's size class
+        # owner on #440: b-s64 and b-km16 stopped in the exact rescue; the limit is b-k16's tableau
         above = {"b-s32", "b-s64", "b-s128", "b-s256", "b-m16", "b-km16", "b-km16-s64", "2w", "2wd"}
         for name in ladder.STEPS:
             with self.subTest(step=name):
                 self.assertEqual(ladder.size_refusal(name) is not None, name in above)
-        self.assertIn("above the limit of 129 rows and 32 variables", ladder.size_refusal("b-km16"))
+        self.assertIn("above the limit of 20898 cells", ladder.size_refusal("b-km16"))
         self.assertIn("k=72", ladder.size_refusal("2w"))  # width slots: k + 2 * 32 own pairs at most
         from duoforge import _layout
         self.assertEqual(ladder.SLOT_OPTIONS, _layout.MAX_SLOT_OPTIONS)

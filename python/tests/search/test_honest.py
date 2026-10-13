@@ -546,7 +546,7 @@ class HonestSearch(unittest.TestCase):
                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx, width="slots") as wide:
             self.preview(wide, b)
             self.start_turn(b)
-            with mock.patch.object(honest.matrix, "MAX_BAYES_VARIABLES", 3):
+            with mock.patch.object(honest.matrix, "MAX_BAYES_CELLS", 100):  # built at 50 cells; its table has more
                 with self.assertRaisesRegex(honest.SearchError, "this decision's table.*above the limit"):
                     wide.decide(b, [0], [0], [456], [False])
 

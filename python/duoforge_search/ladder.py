@@ -84,7 +84,7 @@ SLOT_OPTIONS = 32  # duoforge._layout.MAX_SLOT_OPTIONS, written out: this guard 
 
 def size_refusal(name):
     """Why step `name` is refused before any run, or None: its Bayesian LP is above the size limit (matrix.
-    MAX_BAYES_ROWS, MAX_BAYES_VARIABLES; owner on #440, 2026-10-13: b-s64 and b-km16 stopped in the exact rescue).
+    MAX_BAYES_CELLS; owner on #440, 2026-10-13: b-s64 and b-km16 stopped in the exact rescue).
     The struck arms stay declared above. Width "slots" may add every option of both slots (SLOT_OPTIONS each): its
     bound is k + 2 * SLOT_OPTIONS own pairs (2w's k' reached 34 on the arena logs, median 19)."""
     from . import matrix

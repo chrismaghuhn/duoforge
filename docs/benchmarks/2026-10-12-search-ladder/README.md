@@ -396,23 +396,35 @@ queued S arms above s = 64 will likely stop the same way, and a stop loses the w
 **b-km16 stopped the same way** (03:38, `ppo` arm; the `bot` arm had finished): 257 rows and 32 variables, although
 `b-m16` (257, 24) and `b-s32` (257, 40), no smaller, finished. The stop is rare and not monotone in the size.
 
-| arm | rows (s·m + 1) | variables (k + s) | result |
-|---|---|---|---|
-| 0, `b-k16` | 129 | 24, 32 | never failed |
-| `b-m16`, `b-s32` | 257 | 24, 40 | finished (1–2 exact rescues each) |
-| `b-km16` | 257 | 32 | **stopped** in the exact rescue |
-| `b-s64` | 513 | 72 | **stopped** in the exact rescue |
+| arm | rows (s·m + 1) | variables (k + s) | tableau cells | result |
+|---|---|---|---|---|
+| 0 | 129 | 24 | 19,866 | never failed |
+| `b-k16` | 129 | 32 | 20,898 | never failed |
+| `b-m16` | 257 | 24 | 72,474 | finished |
+| `b-km16` | 257 | 32 | 74,530 | **stopped** in the exact rescue |
+| `b-s32` | 257 | 40 | 76,586 | finished |
+| `b-s64` | 513 | 72 | 300,618 | **stopped** in the exact rescue |
+
+Tableau cells are those of the exact rescue: rows × (variables + rows + 1).
 
 **Decided (owner, #440, 2026-10-13): a size limit instead of a list of names.** A search whose Bayesian LP can exceed
-the size class without any failure, **129 rows and 32 variables** (step 0, `b-k16`), is refused by name when it is built
-(`matrix.check_bayes_size`, called by `honest.Honest`) and, for a ladder step, before any network loads
-(`ladder.size_refusal`). The literal "larger than the largest that succeeded" would admit `b-km16`, which is smaller than
-`b-s32` and failed, so the limit is the class without a failure. The arms above it stay declared and are never run.
-The exact rescue is repaired only if more budget, or a wider step, needs it:
-- **1bw** (preview, 129 rows, at most 10 + 16 = 26 variables) is under the limit;
-- **2w** is not: over the 1285 searched decisions of the arena logs its k' has median 19, p90 31 and maximum 34, so
-  only 33 % of the decisions stay at 16 own pairs or fewer. The solver repair comes before step 2's width arms.
-- Live play (8 × 8 × 16: 129 rows, 24 variables) is under the limit.
+**20,898 tableau cells** (b-k16's, the largest that never failed) is refused by name: by `honest.Honest` when it is
+built, and for a ladder step before any network loads (`ladder.size_refusal`, `matrix.check_bayes_size`). Step 2's
+width "slots" knows its pairs only at a decision, so there each table is checked before its solve. The arms above the
+limit stay declared and are never run.
+
+The literal "larger than the largest that succeeded" would admit `b-km16`, which is smaller than `b-s32` and failed.
+Two consistent readings remain; this one takes the safe one:
+- **b-k16's tableau (20,898 cells), implemented:** the largest size that never failed.
+- **b-m16's tableau (72,474 cells), the owner's choice to make:** the largest success below the smallest failure. It
+  would admit 2w (below).
+
+Where the planned steps stand:
+- **1bw** (preview: 129 rows, at most 10 + 16 = 26 variables, 20,124 cells) is under the limit.
+- **2w** is not. Over the 1285 searched decisions of the arena logs its k' has median 19, p90 31 and maximum 34. Only
+  33 % of the decisions stay at 16 own pairs or fewer, and k' = 34 is 23,220 cells. The solver repair comes before
+  step 2's width arms; 2d, 2e and 2l are under the limit.
+- **Live play** (8 × 8 × 16: 19,866 cells) is under the limit.
 
 **Provenance.** search/budget at 25883412 (`dirty: false`), paired by prefix with step 0's run at 1cb3e2d9. 20:29 to
 02:13 on two shared lock slots. Raw output private, outside the repository.
