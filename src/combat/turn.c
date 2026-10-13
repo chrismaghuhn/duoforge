@@ -2210,7 +2210,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         const duoforge_event ab =
             dfi_ev(DUOFORGE_EVENT_ABILITY, user, DUOFORGE_CAUSE_NONE, 1u + DFI_ABILITY_PIERCINGDRILL, DUOFORGE_NO_POSITION);
         dfi_emit(r, &ab); /* [-ability] attacker|Piercing Drill */
-        dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT_BROKEN, target); /* [-zbroken] target (decision 0015 5dd, provisional kind 51) */
+        dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT_BROKEN, target); /* [-zbroken] target (decision 0015 5dd, kind 51 from the HS register, chrismaghuhn/duoforge#478) */
     }
     *out = dfi_final_damage(damage);
     *crit_out = crit; /* the roll's result after the Shell Armor test: the critical hit the holder's Anger Point reads (step G77) */

@@ -7,7 +7,7 @@
  * its ModifyDamage chain, and prints -ability and -zbroken. The engine row is in the generated handler column (DFI_HANDLER_NONE),
  * the bypass is src/combat/abilities/protect_bypass.h, and Excadrite is the stone that takes Excadrill to Excadrill-Mega.
  *
- * This file checks the marks, the stone link, the event kind of -zbroken (provisional number 51 until HS confirms it), and the
+ * This file checks the marks, the stone link, the event kind of -zbroken (number 51, assigned in the HS register), and the
  * 0.25 modifier arithmetic (dfi_modify with 1024/4096). The battle behaviour is covered by the recorded battles of entry 5dd.
  */
 #include <stddef.h>
@@ -36,7 +36,7 @@ static void test_excadrite_takes_excadrill_to_its_mega(df_test *t)
     DF_CHECK(t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_EXCADRILL, DFI_ITEM_EXCADRITE + 1u));
 }
 
-/* The -zbroken line's event kind: DUOFORGE_EVENT_PROTECT_BROKEN, the next free value after COPY_BOOST (provisional, decision 0015 5dd). */
+/* The -zbroken line's event kind: DUOFORGE_EVENT_PROTECT_BROKEN, the next free value after COPY_BOOST (decision 0015 5dd). */
 static void test_protect_broken_event_kind(df_test *t)
 {
     DF_CHECK_EQ_U64(t, DUOFORGE_EVENT_PROTECT_BROKEN, 51u);
