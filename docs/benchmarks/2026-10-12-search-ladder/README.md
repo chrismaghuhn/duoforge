@@ -193,6 +193,20 @@ reported as adopted on the ladder, but it is no live candidate.
 Nationals sun team (`--matchup`, members with their known stat points), 256 pairs, `bot` and `ppo` as the sun team's
 pilots. The mirror arm (our own search piloting the sun team) follows when the harness can seat a searcher on the foe side.
 
+**Amendment before any step-2 run (owner, 2026-10-13, #440).**
+- **Arms:** phase A screens `2d`, `2e` and `2l` only.
+  - The KO check found the misses mostly among the candidates but not chosen: with an own KO available, 293 not
+    chosen against 31 not a candidate. That is the target of these three arms.
+  - `2w` and `2wd` are above the LP size limit (k' up to 34 on the arena logs: 23,220 tableau cells). They are
+    refused by name until the solver is repaired.
+  - The selection rule above is unchanged, over these three arms.
+- **The baseline is step 0 rerun on main after #459** (the visible-sleep fix changes step 0's play):
+  - `--step 0` against `bot`, `bc6` and `ppo`, 1024 pairs, on this branch with main merged.
+  - It is phase A's `--paired-with` run (its first 512 pairs) and phase B's `--previous-run`.
+  - The recorded step-0 run at 1cb3e2d9 is no longer today's step 0, and no step-2 arm is paired with it.
+- **The KO check** (`ko_check`, same arena logs) runs for step 0 on this code and for each screened arm, as a
+  reported metric, not a gate.
+
 ## Results
 
 ### Step 0 (2026-10-12)
