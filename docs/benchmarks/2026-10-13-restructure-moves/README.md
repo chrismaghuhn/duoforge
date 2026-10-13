@@ -7,14 +7,18 @@ Tri Attack. The bounded Beat Up preparation and OHKO classifier move out of
 are private `static inline`. `dfi_get_damage`'s entire body is byte-identical.
 No new translation unit, CMake source entry, public API, hook mask or function
 pointer dispatch. The turn keeps every invocation, effect order and RNG draw.
-`turn.c` shrinks **12,443 -> 12,358 lines (-85)**.
+`turn.c` shrinks **12,470 -> 12,385 lines (-85)**.
 
-Baseline **657dae45**, compiled source **75c77c7a**, branch `restructure/4-moves`.
-Later commits only fix source citations and add documentation/evidence. **No PR
+Baseline **0a5db340**, compiled source **80c7b6a1** (merge of updated main), branch `restructure/4-moves`.
+The original 657dae45 evidence is superseded by this fresh comparison against
+main with #459. No conflict resolution changed engine logic: a complete turn
+token comparison, except the explicitly defined restructure, is recorded in
+[merge-audit.json](merge-audit.json). Subsequent commits add evidence only. **No PR
 opened:** HS must explicitly release the window, regardless of `gh pr list`.
-Lane A (#442) and CTS have priority. Merge current main without rebase immediately
+#459 sleep, #456 arena and #461 verdict fixes are merged into this branch.
+CTS PR #460 still has priority. Merge current main without rebase immediately
 before opening and refresh proofs affected by that merge. Hosted CI is pending;
-its complete matrix and RNG remain HS's merge gate.
+all twelve CI matrix jobs plus RNG remain HS's merge gate.
 
 ## Source lineage and location audit
 
@@ -33,7 +37,7 @@ and `src/combat/turn.c@657dae45`; guard commit **75c77c7a** credits the same tur
 baseline. [function-extractions.json](function-extractions.json) maps all twelve
 byte-identical bodies:
 
-| Function | Old location @657dae45 | New location |
+| Function | Old location @0a5db340 | New location |
 |---|---|---|
 | `dfi_move_first_turn_only` | `src/combat/move_rules.h:19-22` | `src/combat/moves/first_turn_only.h:14-17` |
 | `dfi_move_power_by_weight` | `src/combat/move_rules.h:27-30` | `src/combat/moves/weight_power.h:12-15` |
@@ -41,12 +45,12 @@ byte-identical bodies:
 | `dfi_heavy_slam_power` | `src/combat/move_rules.h:44-53` | `src/combat/moves/weight_power.h:29-38` |
 | `dfi_hard_press_power` | `src/combat/move_rules.h:57-62` | `src/combat/moves/hp_power.h:11-16` |
 | `dfi_multihit_count` | `src/combat/multihit_count.h:12-16` | `src/combat/moves/multihit.h:14-18` |
-| `dfi_move_hits` | `src/combat/turn.c:6026-6033` | `src/combat/moves/multihit.h:22-29` |
+| `dfi_move_hits` | `src/combat/turn.c:6047-6054` | `src/combat/moves/multihit.h:22-29` |
 | `dfi_multiaccuracy_proven` | `src/combat/multiaccuracy.h:19-22` | `src/combat/moves/multiaccuracy.h:19-22` |
 | `dfi_power_trip_positive_stages` | `src/combat/power_trip.h:16-25` | `src/combat/moves/power_trip.h:16-25` |
 | `dfi_tri_attack_chance_hit` | `src/combat/secondary_rolls.h:14-17` | `src/combat/moves/tri_attack.h:14-17` |
 | `dfi_is_ohko` | `src/combat/turn.c:1561-1564` | `src/combat/moves/ohko.h:12-15` |
-| `dfi_beat_up_hits` | `src/combat/turn.c:6077-6095` | `src/combat/moves/beat_up.h:14-32` |
+| `dfi_beat_up_hits` | `src/combat/turn.c:6098-6116` | `src/combat/moves/beat_up.h:14-32` |
 
 Location audit covers C/C++, Python, CMake, shell, CI workflows, JS, generators
 and documentation. Active source paths fixed in turn/request, six C tests,
@@ -65,9 +69,9 @@ status_hit)` rows and emits `src/combat/generated/move_handlers.h`. CF1 replaces
 **only this reader**, retaining the row schema and byte-identical writer output.
 The generated artifact is marked linguist-generated and never hand-edited.
 
-The late guard at old `turn.c:8085-8128` becomes
-`dfi_move_special_has_handler`; the neighboring generic-status list at old
-`turn.c:8060-8068` becomes `dfi_move_special_status_hit`. This migrates two pure
+The late guard at main `turn.c:8104-8147` becomes
+`dfi_move_special_has_handler`; the neighboring generic-status list at main
+`turn.c:8079-8087` becomes `dfi_move_special_status_hit`. This migrates two pure
 eligibility predicates, without splitting a second large execution phase or
 moving the Damage/Hit loop. Other status/boost/forced-switch/heal conditions
 stay in their original positions. In particular these are **not overall support
@@ -95,17 +99,28 @@ suite adds sixteen negative DLL lookups (fourteen functions and both tables),
 
 ## P1: inventory and tests
 
-**1,407 before = 1,407 after**; sorted inventory SHA-256
-`fbd60c25eedbe427e6097993964249e12d5b39e30fdd167137fbb00b2b305913`.
+**1,408 before = 1,408 after**; sorted inventory SHA-256
+`cc670a904b1290fd4c0d7c641a44b1a104edbff8f126b109ec4f2144e0891060`.
 The complete CTest JSON's ordering/commands/runtime properties compare identical
-(excluding registration backtraces only). Tier counts stay **207 quick + 31 full
+(excluding registration backtraces only). Tier counts stay **208 quick + 31 full
 + 1,151 reference + 18 slow**. [local-test-results.json](local-test-results.json):
-baseline **37/37 in each build**, final **48/48 IPO** and **44/44 no-IPO**, zero
+baseline **40/40 IPO**, **39/39 no-IPO**, plus 10/10 related regressions
+in each build; final **60/60 IPO** and **55/55 no-IPO**, zero
 failures/skips/disabled. These include all **33 Moves tests**, mixed multihit
 interplay G33, both layouts, perft, bench, frozen format pins, the generator's
-151 cases and all four lint/hygiene checks. IPO also runs closure/extended/pool
+151 cases and all four lint/hygiene checks. Main's new sleep/view/clone checks,
+independent model pins and changed arena/verdict regressions run too. The full
+53-case Live suite runs before/after with IPO; [live-summary.json](live-summary.json)
+retains the fresh aggregate output. It checks the updated per-battle
+POOL pins (**equal 11,680 / refused 563**, four Unburden refusals, 162 stops).
+No-IPO reruns all ten native digest variants and sleep/view/model regressions.
+IPO also runs closure/extended/pool
 regeneration and tiebreak regeneration. All native tests/runners were relinked
-against the changed core, including the statically linked ten reference runners.
+against the changed core, including all ten reference runners and the separate
+`duoforge_diff_runner` used by the Live reference views. An initial baseline
+Live failure (76 invariant refusals) exposed a stale diff runner; relinking it
+restored exactly 11,680/563 without changing a pin, assertion or source file.
+The full Live suite was then rerun and passed on main.
 Full hosted CI is **not yet run on this branch**: the PR waits for HS's release.
 No CI selectors, scheduling, timeouts or test behavior were changed.
 
@@ -116,24 +131,28 @@ All four captures (baseline/after x IPO on/off) are **byte-equal**. Per profile:
 runner kinds (**11,236 conformance + 11,236 tiebreak**) and **8,458 stops**.
 [reference-results.json](reference-results.json) retains every per-battle hash;
 [verification.json](verification.json) records every byte comparison. Full JSON
-SHA-256 `712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7`.
+SHA-256 `9753fed420cbcddceaa7e4de1e77a73fda9195b093e4cf9e98a06140dd6c7dfd`.
 The internal digest captures state/requests/events/RNG/stops using
 `tools/restructure/capture_reference.py`; the step-2 same-commit observer witness
 remains valid. Every runner's original assertions execute during capture.
-No reference data, generator, independent battle pin or live pin changed.
+No reference data, generator, independent battle pin or live pin changed
+relative to current main. #459 changed the canonical sleep bytes of **43 unique
+battles / 86 variant records** relative to 657dae45; these upstream differences
+are listed in [upstream-digest-changes.json](upstream-digest-changes.json). All
+updated-main records compare identical to the restructured branch.
 
 | Variant | Battles | Before = after, IPO on/off SHA-256 |
 |---|---:|---|
 | `duoforge_reference_conformance` | 90 | `620dd6f94faa5fc2751158f062c58edf75f48394aba7a9a49e6bc96bf8f9f271` |
-| `duoforge_reference_conformance_pool` | 90 | `af3d4958fd43894492aac19e7911b5b5d9e266fc7afa81cb7a70cc0d878be174` |
-| `duoforge_reference_conformance_pool_data` | 966 | `c452a188b6fd32a5796f9b3181a69542b6be335d4ea5a2c9a1b286da3b36d36b` |
+| `duoforge_reference_conformance_pool` | 90 | `8be6753e961e86e6a8dbcb77e053f308ea71c31c12a6c11b5212a954fccf79a6` |
+| `duoforge_reference_conformance_pool_data` | 966 | `8fbc168fb2199930340a1fabf4923bce5d2553ede17253bd215b7f1ad5b4d200` |
 | `duoforge_reference_conformance_team_c` | 73 | `1acfad0da5393e2095176d094ab2748800b305cfbfee048e04f127a1720c39c5` |
-| `duoforge_reference_conformance_team_c_pool` | 73 | `a951cbfde3e2f00a7ccd9848f7e031f8e3199eea29ce9505cd9bb44713784812` |
+| `duoforge_reference_conformance_team_c_pool` | 73 | `4459b937648f3e470ffee6da4761ce0f3d54b2c19f59906774888844bb515792` |
 | `duoforge_reference_tiebreak` | 90 | `b374c2d908d5bd00776a571f7bc6842722f0fb6e6401c9770b3f27001c07e4ea` |
-| `duoforge_reference_tiebreak_pool` | 90 | `5d2dcf40c944203659d77ed19f7b1e42eaaece4cde930b9bf5d392971eaeaab9` |
-| `duoforge_reference_tiebreak_pool_data` | 966 | `866ff996d0a311c1f394a5cbc42a8683ae8c24852ed6ad5854e1d5dd8b7d625b` |
+| `duoforge_reference_tiebreak_pool` | 90 | `f0d14608caf783a1f99c79dfb78265e18878aaa139865c7ce3500f10635d41cb` |
+| `duoforge_reference_tiebreak_pool_data` | 966 | `9bc7b21e8cfc6994147dcc7843581d2a1a08f63aaf1d9db2417511615cd1049f` |
 | `duoforge_reference_tiebreak_team_c` | 73 | `78e1cb58a1fd273b438d99fb9d5db2bdc876b174da5bc73339bc002b2de7fb34` |
-| `duoforge_reference_tiebreak_team_c_pool` | 73 | `6eb6ff381045b710ff04748b0faa5ce587cdcb961a31afc73fddf5af93a40fec` |
+| `duoforge_reference_tiebreak_team_c_pool` | 73 | `c63fe2df60c180eff91e1c81d297036b2873a342cc32016dab93ae8165ad913b` |
 
 ## P3-P6
 
@@ -142,7 +161,7 @@ No reference data, generator, independent battle pin or live pin changed.
 - **P4:** both builds pass **2 cases / 8 roots / 7 searched roots** with
   `BENCH_SHA256` `8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798`.
 - **P5:** all three `gen_closure --check` modes, tiebreak regeneration and frozen
-  format pins pass. [source-hashes.json](source-hashes.json): **20 existing**
+  format pins pass. [source-hashes.json](source-hashes.json): **22 existing**
   data/generator/public-header/layout/perft/bench sources byte-unchanged. Existing
   generated tables, ids/order and canonical bytes stay frozen. Only the new
   move-phase artifact is generated; its own `--check` passes in both builds.
@@ -150,7 +169,7 @@ No reference data, generator, independent battle pin or live pin changed.
 - **P6:** public-header diff empty; **238 exported type/name entries** identical
   in both builds, SHA `1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5`.
   **33 layout structs / 250 constants** identical, canonical sorted/indented JSON
-  SHA `502ecc2e08dc76cf3004d31115948bc4e69d7843ce5cd5d2492d950464e07e8e`.
+  SHA `2dead3e584403acac03ccc90926c7590593776242c089777b4e0c74a9b215395`.
   The raw dump bytes also compare identical; raw SHA is in verification.json.
   Sixteen new negative shared-library symbol lookups pass in both builds.
 
@@ -184,17 +203,16 @@ speedup or absolute no-regression claim.
 
 | IPO | Workload | Median after/before time | Change | 95% paired-bootstrap CI | Full range |
 |---|---|---:|---:|---|---|
-| on | plain | 0.994459 | -0.55% | [0.975916, 1.007867] | [0.820598, 1.170956] |
-| on | events | 0.998980 | -0.10% | [0.990179, 1.006590] | [0.644778, 1.076725] |
-| off | plain | 1.004789 | +0.48% | [0.989076, 1.018875] | [0.853127, 1.234294] |
-| off | events | 1.007206 | +0.72% | [0.994464, 1.026995] | [0.855571, 1.467977] |
+| on | plain | 1.009509 | +0.95% | [0.978158, 1.030763] | [0.835365, 1.168044] |
+| on | events | 0.989913 | -1.01% | [0.974150, 1.008060] | [0.714477, 1.387192] |
+| off | plain | 1.003695 | +0.37% | [0.997885, 1.011187] | [0.560993, 1.063922] |
+| off | events | 0.995074 | -0.49% | [0.949712, 1.028058] | [0.593828, 2.125589] |
 
 
-Both IPO profiles pass the declared median runtime gate. The no-IPO/events
-95% upper limit is **1.026995**, above 1.02: this sample does not statistically
-rule out a loss above 2%, even though the median passes. IPO/plain retains one
-after-side disturbed repetition; nothing was dropped or rerun to remove it.
-Full paired data:
+Both IPO profiles pass the declared median runtime gate. The 95% intervals
+cross 1.02 for ipo/plain: upper 95% limit 1.030763, noipo/events: upper 95% limit 1.028058. These samples do not
+statistically rule out a loss above 2% in those workloads. All raw ranges and
+disturbed counts remain visible; no sample is discarded. Full paired data:
 [paired-bench-ipo.json](paired-bench-ipo.json),
 [paired-bench-noipo.json](paired-bench-noipo.json). The closure workload exercises
 common first-turn/weight/guard paths; the full pool captures cover Beat Up/OHKO
@@ -210,19 +228,18 @@ not a causal compile-speed claim or a whole-project measurement.
 
 | IPO | Before wall s | After wall s | Before CPU s | After CPU s |
 |---|---:|---:|---:|---:|
-| on | 20.296 | 21.837 | 61.688 | 65.417 |
-| off | 12.835 | 14.860 | 36.219 | 38.057 |
+| on | 28.637 | 23.181 | 81.553 | 62.731 |
+| off | 16.145 | 16.724 | 39.530 | 40.150 |
 
 
-Both observations are slower after the split; there is no claimed build-speed
-improvement. [compile-times.json](compile-times.json) retains CPU and wall times;
+These are single build observations, not a claimed build-speed improvement. [compile-times.json](compile-times.json) retains CPU and wall times;
 [binary-sizes.json](binary-sizes.json) retains both profiles' file/text/data/bss
 sizes and hashes. No new translation unit is introduced.
 
 | IPO | Before text+readonly | After text+readonly | Before/after data | Before/after bss |
 |---|---:|---:|---|---|
-| on | 591,519 | 591,583 | 19,856 / 19,856 | 8 / 8 |
-| off | 580,965 | 581,109 | 19,848 / 19,848 | 8 / 8 |
+| on | 594,679 | 595,639 | 19,856 / 19,856 | 8 / 8 |
+| off | 585,425 | 585,585 | 19,848 / 19,848 | 8 / 8 |
 
 ## Reproduction and review notes
 
@@ -240,8 +257,8 @@ ctest --test-dir <build> -R '^duoforge.data.gen_closure_refusals$' --output-on-f
 python tools/datagen/gen_move_handlers.py --check
 python tools/restructure/capture_reference.py . <build> <outside-repo-capture>
 python docs/benchmarks/2026-10-12-restructure-items-pilot/paired-bench.py \
-  --before <657dae45-ipo-build>/bench/duoforge_bench \
-  --after <75c77c7a-ipo-build>/bench/duoforge_bench \
+  --before <0a5db340-ipo-build>/bench/duoforge_bench \
+  --after <80c7b6a1-ipo-build>/bench/duoforge_bench \
   --rounds 30 --repetitions 3 --warmup 2 --cpu 4 --out <outside-repo-ipo.json>
 # Repeat with no-IPO binaries and --ipo off.
 ```

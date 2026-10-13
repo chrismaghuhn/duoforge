@@ -10,26 +10,26 @@
     {
       "mode": "ipo",
       "side": "before",
-      "wall_seconds": 20.29585559699626,
-      "cpu_seconds": 61.688311
+      "wall_seconds": 28.637471802998334,
+      "cpu_seconds": 81.55309900000002
     },
     {
       "mode": "ipo",
       "side": "after",
-      "wall_seconds": 21.836791124005686,
-      "cpu_seconds": 65.417033
+      "wall_seconds": 23.180830299999798,
+      "cpu_seconds": 62.73096500000001
     },
     {
       "mode": "noipo",
       "side": "after",
-      "wall_seconds": 14.86028316699958,
-      "cpu_seconds": 38.057131
+      "wall_seconds": 16.72390870700474,
+      "cpu_seconds": 40.14965599999999
     },
     {
       "mode": "noipo",
       "side": "before",
-      "wall_seconds": 12.835059650009498,
-      "cpu_seconds": 36.21872700000003
+      "wall_seconds": 16.145330451006885,
+      "cpu_seconds": 39.529707
     }
   ]
 }

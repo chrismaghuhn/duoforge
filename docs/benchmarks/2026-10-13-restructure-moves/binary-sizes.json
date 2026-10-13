@@ -3,32 +3,32 @@
     "after": {
       "bss_bytes": 8,
       "data_bytes": 19856,
-      "file_bytes": 640072,
-      "sha256": "b260fd4f3e289f7a0c0241809488429176601c135af0be1715ab7b67e099aac8",
-      "text_bytes": 591583
+      "file_bytes": 644176,
+      "sha256": "116235480072188c7c12af9a4e8bbdf939f95b57a025e022d3b72e7c64a18e92",
+      "text_bytes": 595639
     },
     "baseline": {
       "bss_bytes": 8,
       "data_bytes": 19856,
-      "file_bytes": 639976,
-      "sha256": "72fd984e0a6f0ba171e05325aa72c2fbec4ed1491c89409c9002c6666c5d84a7",
-      "text_bytes": 591519
+      "file_bytes": 644080,
+      "sha256": "a352144bc9030afd46fe635bca8bd66b5fb57a7cb50ab741baa527cd9b3b7f14",
+      "text_bytes": 594679
     }
   },
   "noipo": {
     "after": {
       "bss_bytes": 8,
       "data_bytes": 19848,
-      "file_bytes": 631528,
-      "sha256": "eac45c0f0cac91e5523dc4b98b28adcfc70b2894b4567e50b139150a5c395fd7",
-      "text_bytes": 581109
+      "file_bytes": 635632,
+      "sha256": "5c3c2eebc027a9743787d79267c1fb49ac3cc5d62d7244ceee832f2b42040233",
+      "text_bytes": 585585
     },
     "baseline": {
       "bss_bytes": 8,
       "data_bytes": 19848,
-      "file_bytes": 631432,
-      "sha256": "34fbe11d2f1b45dbe4011e08d83288156e35e4ba356e45e8cac553726e81afc6",
-      "text_bytes": 580965
+      "file_bytes": 635536,
+      "sha256": "e5d5c9e63b61df95e6ce657d7b9f61a7c1a608213579e19fcaa517783e97bd8a",
+      "text_bytes": 585425
     }
   }
 }

@@ -1,14 +1,14 @@
 {
   "P1": {
-    "after": 1407,
-    "before": 1407,
+    "after": 1408,
+    "before": 1408,
     "commands_order_and_runtime_properties_identical": true,
     "excluded": "registration backtraces only",
     "full_ci": "not run on this branch: PR opening waits for explicit HS window release",
-    "inventory_sha256": "fbd60c25eedbe427e6097993964249e12d5b39e30fdd167137fbb00b2b305913",
+    "inventory_sha256": "cc670a904b1290fd4c0d7c641a44b1a104edbff8f126b109ec4f2144e0891060",
     "tier_counts": {
       "full": 31,
-      "quick": 207,
+      "quick": 208,
       "reference": 1151,
       "slow": 18
     }
@@ -16,7 +16,7 @@
   "P2": {
     "all_four_captures_byte_equal": true,
     "executions_per_profile": 2584,
-    "sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+    "sha256": "9753fed420cbcddceaa7e4de1e77a73fda9195b093e4cf9e98a06140dd6c7dfd",
     "steps_per_profile": 22472,
     "stops_per_profile": 8458,
     "unique_battles": 1129,
@@ -42,7 +42,11 @@
       "moves": 146
     },
     "all_three_gen_closure_checks_passed": true,
-    "existing_sources_unchanged": 20,
+    "current_main_pool_outcomes": {
+      "equal": 11680,
+      "refused": 563
+    },
+    "existing_sources_unchanged": 22,
     "format_pins_passed": true,
     "new_generated_file": "src/combat/generated/move_handlers.h",
     "new_generated_sha256": "beb77f26a35314b1ef87e1dd1975f325ad95d8c66a4845b77c43ce1b550e9d16",
@@ -56,14 +60,14 @@
     "layout_cases_after": 7,
     "layout_cases_before": 6,
     "layout_constants": 250,
-    "layout_sha256": "502ecc2e08dc76cf3004d31115948bc4e69d7843ce5cd5d2492d950464e07e8e",
+    "layout_sha256": "2dead3e584403acac03ccc90926c7590593776242c089777b4e0c74a9b215395",
     "layout_structs": 33,
     "new_negative_symbol_lookups": 16,
     "public_header_diff_empty": true,
-    "raw_layout_sha256": "7617ec50403bb29b8556e27e762adaa1164df3986e9de66b21a0ca055e81c8a6"
+    "raw_layout_sha256": "0bad5754bb4c85b07bbd99aa54a5700a8f2c82135b4eb75734b9fe86c8a3530e"
   },
   "PR_status": "not opened: wait for HS explicitly; an empty gh pr list alone does not release the window",
-  "baseline": "657dae45efcb330bf5131f17fd6d9a02fedf6593",
+  "baseline": "0a5db3406b24bd7201857d56843394876676877e",
   "body_equivalence": {
     "get_damage_entire_body_byte_equal": true,
     "original_functions_byte_equal": 12
@@ -82,10 +86,136 @@
     "status_hit": 18,
     "storage_values_each": 256
   },
+  "live_pin_results": {
+    "equal": 11680,
+    "full_live_cases": 53,
+    "passed_baseline_and_after_ipo": true,
+    "refused": 563,
+    "tracker_stops": 162,
+    "unburden_refusals": 4
+  },
+  "main_merge_audit": {
+    "get_damage_body_byte_equal": true,
+    "main": "0a5db340",
+    "main_guard_predicates_byte_equal_to_original_657_witness": true,
+    "merged_commit": "80c7b6a14df4f8141ea179f7442bde0504b137c7",
+    "turn_tokens_equal_except_defined_restructure": true
+  },
   "performance": {
     "median_time_ratios_at_most_1_02": true,
     "rounds_per_profile": 30,
     "within_baseline_spread": true
   },
-  "source_commit": "75c77c7a"
+  "source_commit": "80c7b6a1",
+  "upstream_digest_changes": {
+    "by_variant": {
+      "duoforge_reference_conformance": [],
+      "duoforge_reference_conformance_pool": [
+        "m5_real_aa_1",
+        "m5_real_aa_2",
+        "m5_real_aa_3",
+        "m5_real_aa_4",
+        "m5_real_ab_1",
+        "m5_real_ab_3",
+        "m5_real_ba_4",
+        "s13_real_aa_2",
+        "s13_real_aa_3",
+        "s13_real_ab_4",
+        "s13_real_ba_1",
+        "s13_real_ba_3",
+        "s14_status_updates",
+        "s4_paralysis_sleep",
+        "s4_status_edges",
+        "s7_gold_armor_prankster"
+      ],
+      "duoforge_reference_conformance_pool_data": [
+        "g25_electric_surge_voltage",
+        "g30_overcoat_powder",
+        "g30_powder_b",
+        "g31_yawn_a",
+        "g31_yawn_electric_flying",
+        "g31_yawn_flower_veil_yawning",
+        "g31_yawn_misty_steel_roller",
+        "g31_yawn_tie_a",
+        "g31_yawn_tie_b",
+        "g34_accuracy",
+        "g54_sing_a",
+        "g54_sing_b",
+        "g54_sing_c",
+        "g74_pass_no_reserve",
+        "g74_pass_no_reserve_sitrus",
+        "g74_pass_yawn_passer",
+        "h18_absorbed_secondary_psychic_sitrus_mirror"
+      ],
+      "duoforge_reference_conformance_team_c": [],
+      "duoforge_reference_conformance_team_c_pool": [
+        "c06_dire_claw",
+        "c07_scarf_abort",
+        "c08_herb_mirror",
+        "c12_real_ac_2",
+        "c12_real_ac_4",
+        "c12_real_bc_4",
+        "c12_real_ca_1",
+        "c12_real_ca_2",
+        "c12_real_ca_3",
+        "c12_real_ca_4"
+      ],
+      "duoforge_reference_tiebreak": [],
+      "duoforge_reference_tiebreak_pool": [
+        "m5_real_aa_1",
+        "m5_real_aa_2",
+        "m5_real_aa_3",
+        "m5_real_aa_4",
+        "m5_real_ab_1",
+        "m5_real_ab_3",
+        "m5_real_ba_4",
+        "s13_real_aa_2",
+        "s13_real_aa_3",
+        "s13_real_ab_4",
+        "s13_real_ba_1",
+        "s13_real_ba_3",
+        "s14_status_updates",
+        "s4_paralysis_sleep",
+        "s4_status_edges",
+        "s7_gold_armor_prankster"
+      ],
+      "duoforge_reference_tiebreak_pool_data": [
+        "g25_electric_surge_voltage",
+        "g30_overcoat_powder",
+        "g30_powder_b",
+        "g31_yawn_a",
+        "g31_yawn_electric_flying",
+        "g31_yawn_flower_veil_yawning",
+        "g31_yawn_misty_steel_roller",
+        "g31_yawn_tie_a",
+        "g31_yawn_tie_b",
+        "g34_accuracy",
+        "g54_sing_a",
+        "g54_sing_b",
+        "g54_sing_c",
+        "g74_pass_no_reserve",
+        "g74_pass_no_reserve_sitrus",
+        "g74_pass_yawn_passer",
+        "h18_absorbed_secondary_psychic_sitrus_mirror"
+      ],
+      "duoforge_reference_tiebreak_team_c": [],
+      "duoforge_reference_tiebreak_team_c_pool": [
+        "c06_dire_claw",
+        "c07_scarf_abort",
+        "c08_herb_mirror",
+        "c12_real_ac_2",
+        "c12_real_ac_4",
+        "c12_real_bc_4",
+        "c12_real_ca_1",
+        "c12_real_ca_2",
+        "c12_real_ca_3",
+        "c12_real_ca_4"
+      ]
+    },
+    "changed_executions": 86,
+    "from": "657dae45",
+    "reason": "upstream #459 sleep counter serialization; not a restructure delta",
+    "to": "0a5db340",
+    "unique_changed_battles": 43
+  }
 }

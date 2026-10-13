@@ -1404,4 +1404,5 @@ duoforge.unit.modifier
 duoforge.unit.sha256
 duoforge.view
 duoforge.view.causes
+duoforge.view.sleep_count
 duoforge_smoke_test
