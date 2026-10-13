@@ -178,10 +178,12 @@ def close_code(err):
 class RunLog:
     """The run's aggregates (arena-run-<UTC start>.json in the log directory): counts only, no room or user ids."""
 
-    def __init__(self, log_dir, mode, fmt, now=None, tables=None):
+    def __init__(self, log_dir, mode, fmt, now=None, tables=None, code=None):
         start = now or datetime.now(timezone.utc)
         self.path = Path(log_dir) / f"arena-run-{start.strftime('%Y%m%dT%H%M%SZ')}.json"
         self.head = {"started": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "mode": mode, "format": fmt}
+        if code is not None:  # the bot's commit and dirty state (arena.provenance)
+            self.head["code"] = code
         if tables:  # how each checkpoint reads the library's tables: both fingerprints, the check_ids result
             self.head["tables"] = tables
         self.counts = Counter()  # logins, reconnects, battles, wins, losses, ties, decisions, rejected choices, ...
@@ -269,7 +271,10 @@ class ArenaBot(client.Bot):
         self.environ = environ  # None: os.environ, read at each login (the token is never kept on the bot)
         self.deadline, self.max_retries, self.sheet_wait = deadline, max_retries, sheet_wait
         checks = {"network": getattr(data, "checkpoint_check", None), "foe_net": foe_check}
-        self.run_log = RunLog(log_dir, mode, fmt, tables={k: v for k, v in checks.items() if v is not None})
+        from .arena import provenance
+        self.code = provenance()  # every result names the code that ran (HauptSession, 2026-10-13); none refuses
+        self.run_log = RunLog(log_dir, mode, fmt, tables={k: v for k, v in checks.items() if v is not None},
+                              code=self.code)
         self._executor = ThreadPoolExecutor(1, thread_name_prefix="duoforge-arena-policy")
         self._worker = None  # the future of the last decision; a late one blocks the next (no two at once)
         self._dropped = ()  # the connection's errors: never a battle's fallback, the run loop reconnects
@@ -648,7 +653,7 @@ class ArenaBot(client.Bot):
         self.run_log.counts[result] += 1
         b.write({"end": line})
         if b.game is not None and b.game.search is not None:
-            b.write({"summary": b.game.summary()})
+            b.write({"summary": {**b.game.summary(), "code": self.code}})
         if b.game is not None and b.game.closed:
             for key, n in b.game.tracker.counters.items():  # aggregates only: a stop's kind, never its text
                 self.run_log.cts[cts.counter_kind(key)] += n

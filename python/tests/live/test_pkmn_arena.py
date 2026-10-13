@@ -313,6 +313,26 @@ class ArenaTest(unittest.TestCase):
             self.assertNotIn(private, text)
         self.assertEqual(self.run_log()["counts"]["losses"], 1)
 
+    def test_the_run_log_and_each_summary_name_the_bots_commit_and_dirty_state(self):
+        # HauptSession, 2026-10-13: every result names the code that ran, its commit and whether the tree was dirty
+        # (a summary's own "dirty" is the game's class (b) reason, not the code's state).
+        from duoforge_live import search as live_search
+
+        class RawSearch:
+            def decide(self, *args, **kwargs):
+                return live_search.Outcome(None, "raw", None, None, 0.0)
+
+            def close(self):
+                pass
+        self.make(search=RawSearch())
+        self.feed(*battle_messages())
+        self.feed(room(["|win|Opponent"]))
+        code = self.run_log()["code"]
+        self.assertRegex(code["commit"], "^[0-9a-f]{40}$")
+        self.assertIn(code["dirty"], (True, False))
+        summary = next(r["summary"] for r in self.battle() if "summary" in r)
+        self.assertEqual(summary["code"], code)
+
     def test_a_wait_request_gets_no_answer_and_a_tie_ends_the_battle(self):
         self.make()
         self.feed(*battle_messages(upto=6))
