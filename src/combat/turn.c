@@ -3,15 +3,17 @@
 #include "combat/abilities/families.h"
 #include "combat/abilities/fairy_aura.h"
 #include "combat/damage_chain.h"
-#include "combat/multiaccuracy.h"
+#include "combat/moves/multiaccuracy.h"
 #include "combat/residual_order.h"
 #include "combat/events.h"
 #include "combat/items/items.h"
-#include "combat/move_rules.h"
-#include "combat/multihit_count.h"
-#include "combat/power_trip.h"
-#include "combat/secondary_rolls.h"
+#include "combat/moves/families.h"
+#include "combat/moves/multihit.h"
+#include "combat/moves/power_trip.h"
+#include "combat/moves/tri_attack.h"
 #include "combat/sheer_force.h"
+#include "combat/moves/ohko.h"
+#include "combat/moves/beat_up.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -1555,13 +1557,7 @@ static uint32_t dfi_level_of(const dfi_member *m)
     return DFI_LEVEL;
 }
 
-/* The OHKO moves: Sheer Cold (ohko 'Ice', step G64) and the moves with ohko true (Fissure, Guillotine, Horn Drill; step G92).
- * Their accuracy and immunity steps are the same (hitStepAccuracy's ohko branch); they differ in the accuracy (dfi_ohko_accuracy)
- * and in the Ice-type immunity, which only Sheer Cold has. */
-static bool dfi_is_ohko(const dfi_move_data *md)
-{
-    return md->special == DFI_SPECIAL_SHEER_COLD || md->special == DFI_SPECIAL_OHKO;
-}
+
 
 static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md,
                                       uint32_t move_type, bool spread, uint32_t *out, bool *crit_out)
@@ -5991,7 +5987,7 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
         if (dfi_holds(b, victim, DFI_ITEM_BRIGHTPOWDER)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        /* The rational comparison below is proved for the accuracy 90 only (combat/multiaccuracy.h, checkG33): a new
+        /* The rational comparison below is proved for the accuracy 90 only (combat/moves/multiaccuracy.h, checkG33): a new
          * multiaccuracy move extends the proof before it runs. */
         if (!dfi_multiaccuracy_proven(base_accuracy)) {
             return DUOFORGE_E_UNSUPPORTED;
@@ -6021,16 +6017,7 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
     return dfi_draw_chance(r->draws, DFI_SITE_ACCURACY, accuracy, 100u, out);
 }
 
-/* The number of hits of a move (step G33): the pin's `multihit`, kept in the handler of the three rows that the engine runs
- * (Dual Wingbeat and Twin Beam 2, Triple Axel 3), 1 for every other move. */
-static uint32_t dfi_move_hits(const dfi_move_data *md)
-{
-    return md->special == DFI_SPECIAL_MULTI_HIT_2 ? 2u
-           : md->special == DFI_SPECIAL_TRIPLE_AXEL ? 3u
-           : md->special == DFI_SPECIAL_MULTI_HIT_10 ? 10u
-           : md->special == DFI_SPECIAL_DRAGON_DARTS ? 2u /* multihit: 2, a number: no draw (decision 0043) */
-           : 1u;
-}
+
 
 /* A Pokemon that stands and has Pressure (step G53). */
 static bool dfi_pressure_holder(struct duoforge_battle *b, uint32_t flat)
@@ -6068,31 +6055,7 @@ static uint32_t dfi_pressure_extra(struct duoforge_battle *b, uint32_t user, uin
     return extra;
 }
 
-/* Beat Up (step G64, data/moves.ts:1150-1179): onModifyMove keeps the Pokemon of the user's side that are the user or are not
- * fainted and have no status, in side.pokemon order (party_order, the brought members), and sets multihit to their number; each
- * hit's basePowerCallback takes the next of them and gives 5 + floor(base Attack of its set species / 10). The set species is
- * the member's forme, never its Mega forme (species_id stays the set's). Returns the hit count and fills r->beat_up_bp; a
- * member that is fainted or has a status is no hit, and nothing of the user's side changes during the move but the user's own
- * HP, which never removes the user from the list. */
-static uint32_t dfi_beat_up_hits(dfi_run *r, uint32_t user)
-{
-    struct duoforge_battle *b = r->b;
-    const uint32_t side = user / 2u;
-    const dfi_member *self = dfi_at(b, user);
-    uint32_t hits = 0u;
-    for (uint32_t k = 0u; k < r->ctx->brought_count && k < DUOFORGE_MAX_ROSTER; ++k) {
-        const uint32_t e = dfi_party_entry(&b->tail, side, k);
-        if (e == 0u) {
-            break;
-        }
-        const dfi_member *m = &b->sides[side].members[e - 1u];
-        if (m == self || (m->hp != 0u && m->status == DFI_STATUS_NONE)) {
-            r->beat_up_bp[hits] = 5u + (uint32_t)dfi_pool_formes[m->species_id].base[DFI_STAT_ATK] / 10u;
-            hits += 1u;
-        }
-    }
-    return hits;
-}
+
 
 /* Revival Blessing (decision 0025 item 6; data/moves.ts revivalblessing): onTryHit fails with a plain -fail when the user's
  * side has no fainted Pokemon. Otherwise the user's slot is flagged to switch at a PIVOT, with no check of a living reserve

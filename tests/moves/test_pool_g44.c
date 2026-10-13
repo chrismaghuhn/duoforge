@@ -15,7 +15,7 @@
  *   - the guard: Ice Fang and Tri Attack bypass the generic secondaries path, so they skip the pin's ModifySecondaries
  *     (sim/battle-actions.ts:1340-1341), which Shield Dust, Covert Cloak and Serene Grace change. None of the three is marked
  *     or a row of the pool today; marking any of them later fails here until these paths honour it;
- *   - Power Trip's positive-stage sum at every stat, white-box (combat/power_trip.h): the battles of this step carry two stages
+ *   - Power Trip's positive-stage sum at every stat, white-box (combat/moves/power_trip.h): the battles of this step carry two stages
  *     of attack and defense only, so an accuracy or evasion stage is checked here.
  */
 #include <stdio.h>
@@ -23,8 +23,8 @@
 
 #include <duoforge/duoforge.h>
 
-#include "combat/power_trip.h"
-#include "combat/secondary_rolls.h"
+#include "combat/moves/power_trip.h"
+#include "combat/moves/tri_attack.h"
 #include "data/closure_tables.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
@@ -139,7 +139,7 @@ static void check_unmarked(df_test *t)
 }
 
 /* The Tri Attack chance (20 of random(100)): the roll 19 passes, 20 fails, at both edges and at the ends. No recorded battle has
- * a roll of 19 on that draw, so the edges are checked here (combat/secondary_rolls.h). */
+ * a roll of 19 on that draw, so the edges are checked here (combat/moves/tri_attack.h). */
 static void check_tri_attack_edges(df_test *t)
 {
     DF_CHECK(t, dfi_tri_attack_chance_hit(0u));

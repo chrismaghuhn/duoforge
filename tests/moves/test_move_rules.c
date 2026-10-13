@@ -1,6 +1,6 @@
 /*
  * duoforge.combat.move_rules (white-box): the rules that several moves share
- * (src/combat/move_rules.h, step G10) against literal values written from
+ * (src/combat/moves/families.h, step G10) against literal values written from
  * the pinned handlers.
  *
  * Fake Out and First Impression are the moves of the first-turn rule, no
@@ -14,7 +14,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "combat/move_rules.h"
+#include "combat/moves/families.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "support/check.h"

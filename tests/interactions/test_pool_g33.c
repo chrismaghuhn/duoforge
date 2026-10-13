@@ -17,7 +17,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "combat/multiaccuracy.h"
+#include "combat/moves/multiaccuracy.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
