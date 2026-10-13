@@ -74,6 +74,29 @@ def select(logp, mask, k):
     return top.astype(np.int64), np.exp(logp[top].astype(np.float64))
 
 
+
+WIDTHS = ("joint", "slots")  # the own candidates: the top k joint pairs, or those and every slot option's best pair
+
+
+def select_slots(logp, mask, k):
+    """The candidate pairs of one row by slot (#433, ladder step 2): select's top k joint pairs together with, for
+    every legal option of either slot, its most likely legal pair (equal values to the lower flat index). A slot
+    option the joint ranking leaves out (a move behind a reflex like Fake Out) is evaluated by the engine, paired with
+    its likeliest partner. Ranked as select ranks, so the first pair is select's; k' = k + the options added."""
+    top, _ = select(logp, mask, k)
+    logp = np.asarray(logp).reshape(-1)
+    legal = np.asarray(mask, dtype=bool).reshape(OPTIONS, OPTIONS)
+    chosen = set(top.tolist())
+    flat = np.arange(PAIRS).reshape(OPTIONS, OPTIONS)
+    for lines, oks in ((flat, legal), (flat.T, legal.T)):  # rows: slot 0's options; columns: slot 1's
+        for line, ok in zip(lines, oks):
+            pairs = line[ok]
+            if pairs.size:
+                chosen.add(int(pairs[np.argsort(-logp[pairs], kind="stable")[0]]))
+    chosen = np.array(sorted(chosen), dtype=np.int64)
+    ranked = chosen[np.argsort(-logp[chosen], kind="stable")]
+    return ranked, np.exp(logp[ranked].astype(np.float64))
+
 def leaf_plan(k_counts, m_counts, s):
     """(decision, i, j, sample) of every leaf, int64 arrays ordered by
     decision, then i, j and sample: decision d has k_counts[d] x m_counts[d]

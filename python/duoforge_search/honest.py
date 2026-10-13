@@ -22,6 +22,7 @@ from .errors import SearchError
 
 C = _layout.CONSTANTS
 RULES = lookahead.RULES
+PRUNES = ("none", "dominated")
 MAX_RESPREADS = 256
 # The byte of each position's trap_turns in a public record's state (state_layout field names, tail rev 5 position blocks)
 _TRAP_TURNS = [dict((name, start) for name, start, _ in state_layout.fields(pool=True))
@@ -266,7 +267,15 @@ class Honest(lookahead.Lookahead):
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="mix",
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
                  table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
-                 species_prior=False, foe_net=None, preview_rule=None):
+                 species_prior=False, foe_net=None, preview_rule=None, width="joint", prune="none"):
+        # width and prune (#433, ladder step 2): the own candidates of a turn ("joint": the top k pairs; "slots": those
+        # and every slot option's best pair, lookahead.select_slots), and whether the own rows weakly dominated in every
+        # world leave the solve ("dominated", matrix.weakly_dominated) or not ("none").
+        if width not in lookahead.WIDTHS:
+            raise ValueError(f"width must be one of {lookahead.WIDTHS} (got {width!r})")
+        if prune not in PRUNES:
+            raise ValueError(f"prune must be one of {PRUNES} (got {prune!r})")
+        self.width, self.prune = width, prune  # read before the foe network's check reuses the name width
         # species_prior (live play, owner 2026-10-10): True refuses a decision whose foe species has no stated spread in
         # the table instead of drawing from the belief's nature-only or table-wide levels (4 and 5); "count" (owner
         # 2026-10-12, live play) draws from those general levels and names the species in the record: spread_fallback
@@ -562,7 +571,7 @@ class Honest(lookahead.Lookahead):
                         stop.reproduction = {**base, "public_view": record.tobytes().hex() if statuses[e] == 0 else None}
                         raise stop from error
             else:
-                own, own_p = lookahead.select(pp[d], pairs[e, p], self.k)
+                own, own_p = self._own(pp[d], pairs[e, p])
                 actions[d] = int(own[0])
                 result = {"kind": "forced" if pairs[e, p].sum() == 1 else "raw", "choice": int(actions[d])}
                 excluded = None if self.exclude_teams is None else self.exclude_teams[e]
@@ -582,7 +591,7 @@ class Honest(lookahead.Lookahead):
                         if not legal.any():
                             raise SearchError("no pair of the root's mask is in the engine's domain")
                         if (legal != root_mask).any():
-                            own, own_p = lookahead.select(pp[d], legal, self.k)
+                            own, own_p = self._own(pp[d], legal)
                         result = self._decision(p, int(keys[d]), own, own_p, weights, bool(last_step[d]), costs,
                                                 refused="drop")
                         result["cut_pairs"] = int((root_mask & ~legal).sum())  # the root's pairs the engine refuses
@@ -609,6 +618,12 @@ class Honest(lookahead.Lookahead):
                                     "engine": costs["public_records"] + costs["world_builds"] + costs["leaves"],
                                     "reduction": costs["solve"], "split": 0.0}})
         return actions, output
+
+    def _own(self, logp, mask):
+        """The own candidate pairs of a turn root and their probabilities, by the search's width."""
+        if self.width == "slots":
+            return lookahead.select_slots(logp, mask, self.k)
+        return lookahead.select(logp, mask, self.k)
 
     def _observe(self, roots, e, p, record, status):
         """The public history of seat p in environment e (team preview,
@@ -757,6 +772,16 @@ class Honest(lookahead.Lookahead):
                 own, own_p = own[keep], np.asarray(own_p)[keep]
                 tab = lookahead.Table(tab.a[keep], tab.stderr[keep], tab.counts, tab.values[keep])
                 tables = tab.values.transpose(2, 0, 1)
+        dominated_pairs = []
+        if self.prune == "dominated":
+            # The own rows weakly dominated in every world leave the solve; each keeps a dominator, so the value stays.
+            dominated = matrix.weakly_dominated(tables)
+            if dominated.any():
+                keep = np.flatnonzero(~dominated)
+                dominated_pairs = [int(x) for x in own[dominated]]
+                own, own_p = own[keep], np.asarray(own_p)[keep]
+                tab = lookahead.Table(tab.a[keep], tab.stderr[keep], tab.counts, tab.values[keep])
+                tables = tab.values.transpose(2, 0, 1)
         rank = np.arange(own.size)
         try:
             outcomes, reduced = reduce(tables, weights, qs, rank,
@@ -771,6 +796,8 @@ class Honest(lookahead.Lookahead):
         foe_pairs = request.foe_pairs
         action = int(own[outcomes[self.rule]])
         dropped = {} if refused == "score" else {"refused_pairs": refused_pairs}
+        if self.prune != "none":
+            dropped["dominated_pairs"] = dominated_pairs
         return {"kind": "searched", "rule": self.rule, "k": own.size, "m": foe_pairs.shape[1], "s": self.s,
                 "own_pairs": own.tolist(), "own_probs": own_p.tolist(), "foe_pairs": foe_pairs.tolist(),
                 "foe_probs": qs.tolist(), "weights": weights.tolist(), "coverage": float(np.sum(weights * qs.sum(axis=1))),

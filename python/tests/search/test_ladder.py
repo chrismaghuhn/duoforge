@@ -661,6 +661,27 @@ def stand_in_files(directory):
     return files
 
 
+# The step-2 arms (#433), written out again: each is step 0's settings plus exactly this delta.
+STEP2 = {"2w": {"width": "slots"}, "2d": {"prune": "dominated"}, "2wd": {"width": "slots", "prune": "dominated"},
+         "2e": {"rule": "ev"}, "2l": {"lam": 0.25}}
+
+
+class Step2Test(unittest.TestCase):
+    def test_each_step2_arm_is_declared_on_base_zero(self):
+        for name, delta in STEP2.items():
+            with self.subTest(step=name):
+                self.assertEqual(ladder.STEPS[name], {"base": "0", "settings": delta})
+
+    def test_each_step2_arm_is_step_zero_plus_exactly_its_delta(self):
+        base = ladder.step_settings("0")
+        self.assertEqual((base["rule"], base["lam"]), ("mix", 0.5))
+        self.assertNotIn("width", base)
+        self.assertNotIn("prune", base)
+        for name, delta in STEP2.items():
+            with self.subTest(step=name):
+                self.assertEqual(ladder.step_settings(name), {**base, **delta})
+
+
 class BudgetStepsTest(unittest.TestCase):
     def test_step_zero_is_unchanged_and_each_budget_arm_is_declared_on_base_zero(self):
         self.assertEqual(ladder.STEPS["0"], {"base": None, "settings": {}})

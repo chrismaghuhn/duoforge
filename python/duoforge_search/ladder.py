@@ -68,7 +68,14 @@ STEPS = {"0": {"base": None, "settings": {}},
          "b-k16": {"base": "0", "settings": {"k": 16, "capacity": 2048}},
          "b-m16": {"base": "0", "settings": {"m": 16, "capacity": 2048}},
          "b-km16": {"base": "0", "settings": {"k": 16, "m": 16, "capacity": 4096}},
-         "b-km16-s64": {"base": "0", "settings": {"k": 16, "m": 16, "s": 64, "capacity": 16384}}}
+         "b-km16-s64": {"base": "0", "settings": {"k": 16, "m": 16, "s": 64, "capacity": 16384}},
+         # Step 2 (#433): the width of the own candidates and the rule, each lever alone on step 0, screened by
+         # --paired-with; the README predeclares the screen, the gated run of its winner and their gates.
+         "2w": {"base": "0", "settings": {"width": "slots"}},  # every slot option's best pair joins the top k
+         "2d": {"base": "0", "settings": {"prune": "dominated"}},  # own rows dominated in every world leave the solve
+         "2wd": {"base": "0", "settings": {"width": "slots", "prune": "dominated"}},
+         "2e": {"base": "0", "settings": {"rule": "ev"}},  # the best answer to the foe model, no Nash mix (lambda 0)
+         "2l": {"base": "0", "settings": {"lam": 0.25}}}  # a smaller Nash share in the mix
 
 
 def step_settings(name):

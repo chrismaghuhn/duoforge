@@ -479,6 +479,58 @@ class LookaheadParts(unittest.TestCase):
         with self.assertRaises(SearchError):
             lookahead.select(bad, mask, 2)
 
+    def test_select_slots_adds_each_slot_options_best_pair(self):
+        # #433: a reflex (slot 0's option 0, Fake Out) fills the joint top k; slot 0's option 1 (Grassy Glide) and
+        # option 2 enter with their likeliest partner, and slot 1's options with theirs.
+        logp = np.full(1024, -50.0, dtype=np.float32)
+        mask = np.zeros(1024, dtype=bool)
+        values = {(0, 0): -0.1, (0, 1): -0.2, (0, 2): -0.3, (0, 3): -0.4, (1, 0): -5.0, (1, 1): -4.0, (1, 2): -6.0,
+                  (1, 3): -7.0, (2, 0): -8.0, (2, 1): -9.0, (2, 2): -8.0, (2, 3): -10.0}
+        for (a, b), v in values.items():
+            mask[a * 32 + b] = True
+            logp[a * 32 + b] = v
+        logp[5] = 0.0  # the best value, but illegal
+        self.assertEqual(lookahead.select(logp, mask, 2)[0].tolist(), [0, 1])
+        pairs, probs = lookahead.select_slots(logp, mask, 2)
+        # slot 0: option 1's best is (1, 1) = 33, option 2's tie (2, 0) / (2, 2) goes to the lower flat index 64;
+        # slot 1: columns 2 and 3 enter with (0, 2) and (0, 3). Ranked as select ranks.
+        self.assertEqual(pairs.tolist(), [0, 1, 2, 3, 33, 64])
+        np.testing.assert_array_equal(probs, np.exp(logp[[0, 1, 2, 3, 33, 64]].astype(np.float64)))
+        self.assertEqual(lookahead.select_slots(logp, mask.reshape(32, 32), 2)[0].tolist(), [0, 1, 2, 3, 33, 64])
+        # k at least the legal pairs: the joint ranking already holds every option, nothing is added
+        np.testing.assert_array_equal(lookahead.select_slots(logp, mask, 16)[0], lookahead.select(logp, mask, 16)[0])
+        self.assertEqual(lookahead.WIDTHS, ("joint", "slots"))
+        with self.assertRaises(SearchError):
+            lookahead.select_slots(logp, np.zeros(1024, dtype=bool), 1)
+        with self.assertRaises(ValueError):
+            lookahead.select_slots(logp, mask, 0)
+
+    def test_weakly_dominated_rows_over_every_world(self):
+        tables = np.array([[[1, 1], [1, 0], [2, 0], [1, 1], [0, 0]],
+                           [[1, 1], [1, 1], [0, 2], [1, 1], [5, 0]]], dtype=np.float64)  # (W=2, K=5, M=2)
+        # row 1: at most row 0 everywhere, below it once; row 3 equals row 0 (neither drops); row 4 is above row 0 in
+        # world 1, so it is not dominated although world 0 alone would drop it.
+        self.assertEqual(matrix.weakly_dominated(tables).tolist(), [False, True, False, False, False])
+        chain = np.array([[[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]])  # row 0 < row 1 < row 2: both lower rows drop
+        self.assertEqual(matrix.weakly_dominated(chain).tolist(), [True, True, False])
+        for bad in (np.zeros((2, 2)), np.zeros((1, 0, 2))):
+            with self.assertRaises(SearchError):
+                matrix.weakly_dominated(bad)
+
+    def test_dropping_dominated_rows_keeps_the_bayesian_value(self):
+        rng = np.random.default_rng(433)
+        for _ in range(50):
+            w, k, m = rng.integers(1, 5), rng.integers(2, 7), rng.integers(1, 5)
+            tables = rng.normal(size=(w, k, m))
+            for i in rng.choice(k, size=k // 2, replace=False):  # some rows below another row in every cell
+                j = (i + 1) % k
+                tables[:, i, :] = tables[:, j, :] - rng.uniform(0.0, 0.5, size=(w, m)) * (rng.random((w, m)) < 0.8)
+            weights = rng.dirichlet(np.ones(w))
+            keep = ~matrix.weakly_dominated(tables)
+            full = matrix.solve_bayes(tables, weights)
+            pruned = matrix.solve_bayes(tables[:, keep, :], weights)
+            self.assertAlmostEqual(full.value, pruned.value, delta=1e-9 * (1 + np.ptp(tables)))
+
     def test_leaf_plan_order(self):
         d, i, j, s = lookahead.leaf_plan([2, 1], [1, 3], 2)
         self.assertEqual(list(zip(d.tolist(), i.tolist(), j.tolist(), s.tolist())),

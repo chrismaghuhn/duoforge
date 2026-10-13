@@ -566,6 +566,20 @@ def bayes_certify(tables, weights, x, ys, tol=CERTIFICATE):
     return gap * span
 
 
+
+def weakly_dominated(tables):
+    """The own rows of tables (W, K, M) weakly dominated in every world: another row is at least as high in every cell
+    of every world and higher in one. Dominance is strict in the row sums, so it has no cycle: every dropped row has a
+    kept dominator, and dropping all of them at once leaves sum_w p_w min_j (x a_w)_j's maximum unchanged for any
+    world weights (#433). Exact float comparisons; (K,) bool."""
+    a = np.asarray(tables, dtype=np.float64)
+    if a.ndim != 3 or 0 in a.shape:
+        raise SearchError(f"dominance needs tables (W, K, M) with entries (got shape {a.shape})")
+    rows = a.transpose(1, 0, 2).reshape(a.shape[1], -1)  # (K, W * M)
+    at_least = (rows[None, :, :] >= rows[:, None, :]).all(axis=2)  # [i, j]: row j >= row i everywhere
+    above = (rows[None, :, :] > rows[:, None, :]).any(axis=2)  # [i, j]: row j > row i somewhere
+    return (at_least & above).any(axis=1)
+
 def _bayes_tableau(b, p, zero, one):
     """The rows of the LP above over a number type (float or Fraction)."""
     nw, k, m = len(b), len(b[0]), len(b[0][0])

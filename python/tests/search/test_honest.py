@@ -15,7 +15,7 @@ import duoforge
 from duoforge import _layout, features, privileged, view
 
 from python.tests.support._pivot_fixture import SETUP, play_to_pivot
-from duoforge_search import arena, belief, honest
+from duoforge_search import arena, belief, honest, lookahead, matrix
 from python.tests.search.test_search import _v2s
 from python.tests.search import test_search as search_tests
 
@@ -513,6 +513,48 @@ class HonestSearch(unittest.TestCase):
             # cost and time are wall-clock measurements; every other field of the record must match exactly.
             self.assertEqual({k: v for k, v in drop[0].items() if k not in ("refused_pairs", "cost", "time")},
                              {k: v for k, v in score[0].items() if k not in ("cost", "time")})
+
+    def test_width_and_prune_must_be_named_settings(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            for bad in ({"width": "pairs"}, {"prune": True}, {"prune": "weak"}):
+                with self.subTest(**bad), self.assertRaises(ValueError):
+                    self.make(ctx, **bad)
+
+    def test_slot_width_keeps_the_raw_pair_first_and_adds_each_slot_option(self):
+        # #433, step 2w: the joint top k and every slot option's best pair; the first pair (raw) is the joint one's.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as joint,                 self.make(ctx, width="slots") as slots:
+            self.preview(joint, b)
+            self.preview(slots, b)
+            self.start_turn(b)
+            _, (narrow,) = joint.decide(b, [0], [0], [456], [False])
+            _, (wide,) = slots.decide(b, [0], [0], [456], [False])
+            self.assertEqual((narrow["kind"], wide["kind"]), ("searched", "searched"))
+            self.assertEqual(wide["raw"], narrow["raw"])
+            self.assertEqual(wide["own_pairs"][0], narrow["own_pairs"][0])
+            self.assertTrue(set(narrow["own_pairs"]) < set(wide["own_pairs"]))  # 2 joint pairs, then the slots' options
+            self.assertEqual(wide["k"], len(wide["own_pairs"]))
+            self.assertEqual(np.asarray(wide["table"]).shape[0], wide["k"])
+            options = {pair // lookahead.OPTIONS for pair in wide["own_pairs"]}
+            self.assertGreater(len(options), len({pair // lookahead.OPTIONS for pair in narrow["own_pairs"]}))
+            self.assertNotIn("dominated_pairs", wide)
+
+    def test_dominated_rows_leave_the_solve_and_are_named(self):
+        # #433, step 2d: the own rows weakly dominated in every world leave the solve; the choice is a kept row.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b,                 self.make(ctx, width="slots") as plain, self.make(ctx, width="slots", prune="dominated") as pruned:
+            self.preview(plain, b)
+            self.preview(pruned, b)
+            self.start_turn(b)
+            _, (full,) = plain.decide(b, [0], [0], [456], [False])
+            _, (kept,) = pruned.decide(b, [0], [0], [456], [False])
+            tables = np.asarray(full["tables"])
+            dominated = matrix.weakly_dominated(tables)
+            self.assertTrue(dominated.any())  # the fixture's root has dominated rows: the test is not vacuous
+            self.assertEqual(kept["dominated_pairs"], [p for p, d in zip(full["own_pairs"], dominated) if d])
+            self.assertEqual(kept["own_pairs"], [p for p, d in zip(full["own_pairs"], dominated) if not d])
+            self.assertNotIn(kept["choice"], kept["dominated_pairs"])
+            self.assertEqual(kept["raw"], full["raw"])
+            np.testing.assert_array_equal(np.asarray(kept["tables"]), tables[:, ~dominated, :])
+            self.assertAlmostEqual(kept["value"], full["value"], delta=1e-9 * (1 + np.ptp(tables)))
 
     def test_refused_mode_must_be_score_or_drop(self):
         costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}

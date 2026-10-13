@@ -143,6 +143,56 @@ reported with its point, but is not a candidate for adoption.
 **The result** is a curve: h against step 0, over the p50 seconds per decision, one line per lever. A smoke run of 4
 pairs checks the harness only and is not a result.
 
+## Step 2: the width of the own candidates and the rule (#433; predeclared 2026-10-13)
+
+**Question.** Steps 1, 1b and the ×2 budget arms moved nothing. Two causes are left that more budget cannot fix: the own
+candidates miss the right action, and the mix rule plays rows that are worse in every world. This section is a
+predeclaration: it is committed before any step-2 run.
+
+**Evidence before the runs.**
+- **Live (#433, 2026-10-13):** a fresh Rillaboom used Fake Out on the foe's last Pokémon, a Ghost. Grassy Glide would have
+  won that turn. All of the top 3 joint pairs held Fake Out, and Grassy Glide was not among the K = 8 joint pairs: the
+  search could not choose it.
+- **The sun-team sanity arm (above):** the team preview's top 8 never bring Gholdengo; the same kind of blind spot.
+- **Offline, step 0's recorded tables against `bot`** (19,404 searched decisions; the same tables re-reduced, no game
+  played, so this measures decisions, not strength):
+  - 63% of the decisions have at least one own row weakly dominated in every world; 23% of the rows are.
+  - The played choice was such a dominated row in 2.4% of the decisions; dropping the dominated rows changes the
+    choice in 2.5%.
+  - The best answer (λ = 0) plays another pair than the mix in 23.9% of the decisions; λ = 0.25 in 13.7%.
+
+**The arms.** Each is one lever on step 0 (`ladder.STEPS`); turns only, the team preview stays raw.
+
+| arm | setting | change |
+|---|---|---|
+| `2w` | `width` "slots" | the top 8 joint pairs, plus every legal option of each slot with its likeliest legal partner (`lookahead.select_slots`). The engine evaluates the action a reflex hides. k' grows by the options the joint top 8 miss (the screen reports the mean k'); the first pair, the raw one, stays |
+| `2d` | `prune` "dominated" | own rows weakly dominated in every world (at least as low in every cell, lower in one) leave the solve (`matrix.weakly_dominated`). Every dropped row keeps a dominator, so the game value is unchanged; the Nash part of the mix no longer plays them. Named in the record (`dominated_pairs`) |
+| `2wd` | both | the dominance pruning of 2w's wider tables |
+| `2e` | `rule` "ev" | the best answer to the foe model and the worlds (λ = 0), no Nash share. The solve still runs and is recorded |
+| `2l` | `lam` 0.25 | a smaller Nash share in the mix (step 0: 0.5) |
+
+`2d` compares exact float values of the estimated table (16 worlds, 8 foe pairs): "dominated" is a statement about the
+estimate, not about the game.
+
+**Phase A, the screen (no gate).** Each arm: `--step 2x --paired-with <step 0's ladder.json>`, 512 pairs, against `bot`
+and `ppo`, as the budget arms. Reported per arm: h against step 0 per opponent with its 95 % interval; fallbacks;
+p50 / p99 of the shared run; the mean k' (2w, 2wd), the dropped-row share (2d, 2wd) and the duplicate-row share.
+
+**The selection, fixed now.** The arm with the highest mean of its two h points (`bot`, `ppo`) goes to phase B, if that
+mean is at least 0.505 and neither of its intervals lies below 0.50 (upper bound < 0.50). Ties go to the arm with the
+lower shared p50. If no arm qualifies, step 2 closes as "no gain" and there is no gated run; double oracle (#433) comes
+next. A combination of two qualifying levers is a new arm, predeclared here before its run.
+
+**Phase B, the gated run.** The selected arm: `--step <arm> --previous 0 --h2h --previous-run <step 0's ladder.json>`
+against `bot`, `bc6` and `ppo`, 1024 pairs, then its exclusive latency run (16 pairs against `bot`). Every gate of the
+table above applies unchanged: strength, no harm, reproduced (scores and decision digests), fallbacks, latency p99
+≤ 2.0 s. For live play the budget step's VPS bound applies on top: an adopted arm with an exclusive p99 above 1.67 s is
+reported as adopted on the ladder, but it is no live candidate.
+
+**The touchstone (#458), reported apart and not gated.** The phase-B arm and step 0 each play Team A against the
+Nationals sun team (`--matchup`, members with their known stat points), 256 pairs, `bot` and `ppo` as the sun team's
+pilots. The mirror arm (our own search piloting the sun team) follows when the harness can seat a searcher on the foe side.
+
 ## Results
 
 ### Step 0 (2026-10-12)
