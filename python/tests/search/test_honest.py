@@ -561,25 +561,61 @@ class HonestSearch(unittest.TestCase):
                     raw = np.frombuffer(original, np.uint8).copy()
                     raw[215 + 15 + 15] = 1 + e
                     self.assertEqual(decode(ctx.handle, b._battle(e), raw.ctypes.data, raw.size), 0)
-                with mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("privileged ABI")),                         mock.patch.object(b._lib, "duoforge_battle_step_events", side_effect=AssertionError("privileged ABI")),                         mock.patch.object(b._lib, "duoforge_battle_clone", side_effect=AssertionError("privileged ABI")):
+                with mock.patch.object(b._lib, "duoforge_battle_hypothesis",
+                                       side_effect=AssertionError("privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_step_events",
+                                          side_effect=AssertionError("privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_clone",
+                                          side_effect=AssertionError("privileged ABI")):
                     actions, records = search.decide(b, [0, 1], [0, 0], [456, 456], [False, False])
                 self.assertEqual(actions[0], actions[1])
                 self.assertTrue(all(r["kind"] == "unreconstructible" and r["causes"] == [cause] for r in records))
                 stats = arena.diagnostics(records, 2)
                 self.assertEqual(stats["unreconstructible_by_cause"][cause], {"decisions": 2, "share_of_decisions": 1.0})
-            # Decision 0066: a visible sleep under POOL is no fallback. Its count is the tail byte of side 0's member 0 (1009 + 8 +
-            # 80 + 9), its counter the true start less the count (215 + 109 + 28): the rebuild draws the start, so both
-            # environments decide.
-            for e in range(2):
+
+    def test_visible_sleep_under_pool_is_searched_and_follows_the_start_law(self):
+        # Decision 0066: a visible sleep under POOL is no fallback. Env e has the sleeper (side 0, member 0)
+        # with count c = e (tail byte) and counter 3 - e (the true start 3 less the count). The rebuild draws
+        # each world's start from its sleep word with the exact law: S = 2 when the word is in bucket 0 of 3
+        # (for c in {0, 1}), else 3; for c = 2, S = 3.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 3), 3, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            decode = b._lib.duoforge_battle_decode
+            decode.restype = ctypes.c_uint32
+            decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
+            original = b.encode(0)
+            for e in range(3):
+                # Privileged codec fixtures only: schema-3 offsets, no live rule implementation.
                 raw = np.frombuffer(original, np.uint8).copy()
                 raw[215 + 109 + 27] = C["DUOFORGE_AILMENT_SLEEP"]
                 raw[215 + 109 + 28] = 3 - e
                 raw[1009 + 8 + 80 + 9] = e
                 self.assertEqual(decode(ctx.handle, b._battle(e), raw.ctypes.data, raw.size), 0)
-            with mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("privileged ABI")),                     mock.patch.object(b._lib, "duoforge_battle_step_events", side_effect=AssertionError("privileged ABI")),                     mock.patch.object(b._lib, "duoforge_battle_clone", side_effect=AssertionError("privileged ABI")):
-                actions, records = search.decide(b, [0, 1], [0, 0], [456, 456], [False, False])
-            self.assertEqual(actions[0], actions[1])
-            self.assertTrue(all(r["kind"] != "unreconstructible" for r in records), [r["kind"] for r in records])
+            with mock.patch.object(b._lib, "duoforge_battle_hypothesis",
+                                   side_effect=AssertionError("privileged ABI")), \
+                    mock.patch.object(b._lib, "duoforge_battle_step_events",
+                                      side_effect=AssertionError("privileged ABI")), \
+                    mock.patch.object(b._lib, "duoforge_battle_clone",
+                                      side_effect=AssertionError("privileged ABI")):
+                actions, records = search.decide(b, [0, 1, 2], [0, 0, 0], [456, 456, 456], [False, False, False])
+            self.assertEqual([r["kind"] for r in records], ["searched"] * 3)
+            shares = []
+            for e in range(3):
+                words = [int(w) for w in search.last[e]["hypotheses"]["sleep"][:, 0, 0]]
+                # (a) counter = S - c with S in {2, 3}; the Python side sees the start only through the sleep word
+                starts = [3 if e == 2 else (2 if w * 3 < 2 ** 64 else 3) for w in words]
+                self.assertTrue(all(start in (2, 3) for start in starts))
+                counters = [start - e for start in starts]
+                self.assertTrue(all(counter >= 1 for counter in counters))
+                if e == 2:
+                    # (b) c = 2: every world has S = 3 and counter 1
+                    self.assertEqual(counters, [1] * len(words))
+                if e == 0:
+                    # (c) the S = 2 / S = 3 split is about 1 : 2 for this fixed key (few worlds, so a loose bound)
+                    shares.append(sum(1 for start in starts if start == 2) / len(starts))
+            self.assertTrue(all(abs(share - 1 / 3) < 0.35 for share in shares), shares)
 
     def test_record_roots_reproduce_batch_decisions(self):
         # The live path (plan 2026-10-10-live-honest-search, Task 2): decide() over RecordRoots filled with a batch's
