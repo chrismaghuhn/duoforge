@@ -593,29 +593,35 @@ def ratio(num, den, group, groups, b=BOOTSTRAP, seed=SEED):
     return {"value": float(point), "ci": interval(samples[np.isfinite(samples)]), "n": int(np.sum(den > 0))}
 
 
+def auc_of(score, positive):
+    """The weighted Mann-Whitney AUC of fixed scores as a function of the row weights: the chance that a positive row
+    scores above a negative one (ties half). The scores are sorted once, for every bootstrap replicate."""
+    score, positive = np.asarray(score, np.float64), np.asarray(positive, bool)
+    order = np.argsort(score, kind="stable")
+    s, pos = score[order], positive[order]
+    block = np.cumsum(np.r_[True, s[1:] != s[:-1]]) - 1 if len(s) else np.zeros(0, np.int64)
+
+    def of(weight=None):
+        w = np.ones(len(s)) if weight is None else np.asarray(weight, np.float64)[order]
+        wp, wn = np.where(pos, w, 0.0), np.where(pos, 0.0, w)
+        total = wp.sum() * wn.sum()
+        if total == 0:
+            return float("nan")
+        neg_in = np.bincount(block, weights=wn)  # per tie block: the negatives inside it and below it
+        neg_below = np.cumsum(neg_in) - neg_in
+        return float(np.sum(wp * (neg_below[block] + 0.5 * neg_in[block])) / total)
+    return of
+
+
 def auc(score, positive, weight=None):
     """The weighted Mann-Whitney AUC: the chance that a positive row scores above a negative one (ties half)."""
-    score, positive = np.asarray(score, np.float64), np.asarray(positive, bool)
-    weight = np.ones(len(score)) if weight is None else np.asarray(weight, np.float64)
-    order = np.argsort(score, kind="stable")
-    s, pos, w = score[order], positive[order], weight[order]
-    wp, wn = np.where(pos, w, 0.0), np.where(pos, 0.0, w)
-    # per tie block: the negatives below it and the negatives inside it
-    first = np.r_[True, s[1:] != s[:-1]]
-    block = np.cumsum(first) - 1
-    neg_in = np.bincount(block, weights=wn)
-    neg_below = np.cumsum(neg_in) - neg_in
-    total = wp.sum() * wn.sum()
-    if total == 0:
-        return float("nan")
-    return float(np.sum(wp * (neg_below[block] + 0.5 * neg_in[block])) / total)
+    return auc_of(score, positive)(weight)
 
 
 def auc_ci(score, positive, group, groups, b=BOOTSTRAP, seed=SEED):
-    point = auc(score, positive)
-    samples = [auc(score, positive, w[group]) for ws in replicate_weights(groups, b, seed) for w in ws]
-    samples = np.asarray(samples)
-    return {"value": point, "ci": interval(samples[np.isfinite(samples)]), "n": int(len(score))}
+    of = auc_of(score, positive)
+    samples = np.asarray([of(w[group]) for ws in replicate_weights(groups, b, seed) for w in ws])
+    return {"value": of(), "ci": interval(samples[np.isfinite(samples)]), "n": int(len(score))}
 
 
 def value_metrics(value, z, group, groups, b=BOOTSTRAP, seed=SEED, bins=10):
@@ -646,13 +652,10 @@ def paired_difference(a, b_, group, groups, b=BOOTSTRAP, seed=SEED):
 
 
 def auc_difference(score_a, score_b, positive, group, groups, b=BOOTSTRAP, seed=SEED):
-    point = auc(score_a, positive) - auc(score_b, positive)
-    samples = []
-    for ws in replicate_weights(groups, b, seed):
-        for w in ws:
-            samples.append(auc(score_a, positive, w[group]) - auc(score_b, positive, w[group]))
-    samples = np.asarray(samples)
-    return {"value": point, "ci": interval(samples[np.isfinite(samples)])}
+    """AUC(score_a) - AUC(score_b) on the same rows, with its interval (the same replicates for both)."""
+    of_a, of_b = auc_of(score_a, positive), auc_of(score_b, positive)
+    samples = np.asarray([of_a(w[group]) - of_b(w[group]) for ws in replicate_weights(groups, b, seed) for w in ws])
+    return {"value": of_a() - of_b(), "ci": interval(samples[np.isfinite(samples)])}
 
 
 # --- report -------------------------------------------------------------------------------------------------------
