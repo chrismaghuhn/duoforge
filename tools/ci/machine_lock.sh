@@ -24,14 +24,18 @@
 # holds or waits (the record of an idle machine is replaced).
 #
 # One job per label: a call whose label a live process already holds a slot
-# or waits with is refused at once with status 3; it does not queue. A dead
-# process's slot or ticket does not count, and the same label is free again
-# once its job has ended (2026-10-13: one queue started twice ran the same job
-# twice into one output directory). A background task that Claude Code reports
-# as "stopped" may still run: check its processes before a restart.
+# or waits with is refused at once with status 73 ($MACHINE_LOCK_TAKEN); it
+# does not queue (a wrapped command that exits 73 itself cannot be told from
+# it). The label is checked when the ticket is written and again right before
+# a slot is taken. A dead process's slot or ticket does not count, and the
+# same label is free again once its job has ended (2026-10-13: one queue
+# started twice ran the same job twice into one output directory). Jobs that
+# may run at the same time need distinct labels. A background task that
+# Claude Code reports as "stopped" may still run: check its processes before
+# a restart.
 #
 # usage (Git Bash):
-#   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases; status 3: the label runs
+#   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases; status 73: the label runs
 #   source tools/ci/machine_lock.sh; machine_lock_acquire [--exclusive] <label> || exit; ...; machine_lock_release
 # environment:
 #   DUOFORGE_MACHINE_LOCK        slot 0, the lock directory (default: $TEMP/duoforge-machine.lock)
@@ -44,6 +48,8 @@ MACHINE_LOCK=${DUOFORGE_MACHINE_LOCK:-"${TEMP:-/tmp}/duoforge-machine.lock"}
 # A slot directory without an owner file this long (seconds) was left by a job killed between mkdir and writing
 # the owner: it is stale.
 MACHINE_LOCK_ORPHAN=300
+# The status of a call refused because a live job with its label holds a slot or waits.
+MACHINE_LOCK_TAKEN=73
 
 # The Windows process id of this shell (Git Bash), or its own pid elsewhere.
 machine_lock_pid() {
@@ -106,25 +112,39 @@ machine_lock_held() { # dir
 # The label of an owner or ticket line: "<pid> <label> since <date>".
 machine_lock_label() { # line
     local rest=${1#* }
-    echo "${rest% since *}"
+    printf '%s\n' "${rest% since *}"
 }
 
 # Whether a live process other than this shell holds a slot or waits with label $1, older than ticket $2 (a waiter
 # with the same label behind it is refused by its own check); prints that line.
 machine_lock_duplicate() { # label ticket
+    # The queue first, then the slots: a waiter writes its slot's owner before it removes its ticket, so a waiter that
+    # moves from its ticket into a slot meanwhile is seen in one of the two.
     local label=$1 ticket=$2 me dir line t
     me=$(machine_lock_pid)
-    for dir in "$MACHINE_LOCK" "$MACHINE_LOCK".slot*; do
-        line=$(machine_lock_held "$dir") || continue # a stale slot is removed, not counted
-        [ "${line%% *}" != "$me" ] && [ "$(machine_lock_label "$line")" = "$label" ] && echo "$line" && return 0
-    done
     for t in "$MACHINE_LOCK.queue"/*; do
         [ -e "$t" ] && [ "$t" != "$ticket" ] && [[ "$t" < "$ticket" ]] || continue
         line=$(head -n 1 "$t" 2> /dev/null || true)
         [ "$(machine_lock_label "$line")" = "$label" ] || continue
-        machine_lock_alive "${t##*-}" && echo "$line" && return 0
+        machine_lock_alive "${t##*-}" && printf '%s\n' "$line" && return 0
+    done
+    for dir in "$MACHINE_LOCK" "$MACHINE_LOCK".slot*; do
+        line=$(machine_lock_held "$dir") || continue # a stale slot is removed, not counted
+        if [ "${line%% *}" != "$me" ] && [ "$(machine_lock_label "$line")" = "$label" ]; then
+            printf '%s\n' "$line"
+            return 0
+        fi
     done
     return 1
+}
+
+# Refuses this call (removes its ticket, says why) when machine_lock_duplicate finds its label; true if refused.
+machine_lock_refuse() { # label ticket
+    local line
+    line=$(machine_lock_duplicate "$1" "$2") || return 1
+    rm -f "$2"
+    echo "machine lock: a job labelled '$1' already runs or waits ($line): refused, not queued" >&2
+    return 0
 }
 
 # True when no slot directory exists and no live ticket waits (other than this shell's).
@@ -185,14 +205,14 @@ machine_lock_acquire() { # [--exclusive] label
     fi
     mark=slots
     [ "$exclusive" = 1 ] && mark="slots exclusive"
-    ticket="$queue/$(printf '%019d' "$(date +%s%N)")-$me"
-    printf '%s\n%s\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" "$mark" > "$ticket"
-    # Checked after the ticket is written: of two calls with one label at the same moment, the later ticket goes.
-    if line=$(machine_lock_duplicate "$label" "$ticket"); then
-        rm -f "$ticket"
-        echo "machine lock: a job labelled '$label' already runs or waits ($line): refused, not queued" >&2
-        return 3
-    fi
+    local since stamp
+    since=$(date '+%Y-%m-%d %H:%M:%S')
+    stamp=$(date +%s%N)
+    # The ticket is written right after its time is taken (no process started in between), so that tickets appear
+    # in the order of their names. Checked after it is written: of two calls with one label, the later ticket goes.
+    printf -v ticket '%s/%019d-%s' "$queue" "$stamp" "$me"
+    printf '%s\n%s\n' "$me $label since $since" "$mark" > "$ticket"
+    machine_lock_refuse "$label" "$ticket" && return "$MACHINE_LOCK_TAKEN"
     while :; do
         for t in "$queue"/*; do
             [ -e "$t" ] && [ "$t" != "$ticket" ] || continue
@@ -238,13 +258,13 @@ machine_lock_acquire() { # [--exclusive] label
         fi
         if [ "$exclusive" = 1 ]; then
             if [ "$ahead" -eq 0 ] && [ "${#free[@]}" -eq "$slots" ]; then
+                machine_lock_refuse "$label" "$ticket" && return "$MACHINE_LOCK_TAKEN" # again, right before
                 local got=()
                 for k in "${free[@]}"; do
                     dir=$(machine_lock_slot "$k")
                     if mkdir "$dir" 2> /dev/null; then got+=("$dir"); else break; fi
                 done
                 if [ "${#got[@]}" -eq "$slots" ]; then
-                    local since
                     since=$(date '+%Y-%m-%d %H:%M:%S') # one owner line for every slot of the job
                     for dir in "${got[@]}"; do
                         printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
@@ -255,6 +275,7 @@ machine_lock_acquire() { # [--exclusive] label
                 for dir in "${got[@]}"; do rmdir "$dir" 2> /dev/null; done # somebody was faster: all or nothing
             fi
         elif [ "$ahead" -lt "${#free[@]}" ]; then
+            machine_lock_refuse "$label" "$ticket" && return "$MACHINE_LOCK_TAKEN" # again, right before
             local order=("${free[@]}") i
             if [ "$ahead" -gt 0 ]; then
                 order=()

@@ -84,8 +84,10 @@ refuses a directory that belongs to another one), partial/ holds the result of
 each finished battle, cases/ the cases.
 
 Chunks. Without --no-lock the run is a loop of chunk subprocesses, each
-started as `bash tools/ci/machine_lock.sh fuzz <python> diff_driver.py random
-... --start K --chunk-minutes M --no-lock` (M defaults to 10): the chunk holds
+started as `bash tools/ci/machine_lock.sh 'fuzz <out>' <python> diff_driver.py
+random ... --start K --chunk-minutes M --no-lock` (M defaults to 10; the label
+names the run's output directory, since the lock runs one job per label and
+refuses a second one with status 73): the chunk holds
 the machine lock, stops starting battles after M minutes, finishes the running
 ones and exits; between chunks the lock is free and the loop sleeps 30 s, so a
 waiting CI or benchmark gets it. --no-lock runs all battles from --start in
@@ -171,6 +173,7 @@ DEFAULT_CHUNK_MINUTES = 10
 CHUNK_PAUSE = 30  # seconds between chunks, the lock released
 PAUSE_POLL = 15  # seconds between two looks at the pause file
 PAUSED_STATUS = 75  # a chunk that found the pause file once it held the lock leaves with this (EX_TEMPFAIL)
+LABEL_TAKEN_STATUS = 73  # tools/ci/machine_lock.sh refused the chunk: a live job holds or waits with its label
 LOCK_HELD_ENV = 'DUOFORGE_FUZZ_LOCK_HELD'  # set in the environment of the chunks the loop starts: they hold the lock
 WORKER_TIMEOUT = 300  # seconds for one answer of the worker (a play of 300 steps is a few seconds)
 RUNNER_TIMEOUT = 60  # seconds for one battle in the engine
@@ -961,16 +964,23 @@ def find_bash(windows=os.name == 'nt', which=shutil.which, environ=os.environ):
     return None
 
 
-def chunk_command(args_forward, start, minutes, python=None, driver_script=None, bash=None, lock_script=None):
-    """The command of one chunk: the driver, held by tools/ci/machine_lock.sh, from battle `start`, for `minutes`."""
+def chunk_command(args_forward, start, minutes, python=None, driver_script=None, bash=None, lock_script=None,
+                  label='fuzz'):
+    """The command of one chunk: the driver, held by tools/ci/machine_lock.sh with `label`, from battle `start`, for
+    `minutes`."""
     bash = bash or find_bash()
     if bash is None:
         raise base.ToolError('bash is not on the PATH: the chunks run under tools/ci/machine_lock.sh (--no-lock to run without)')
     python = (python or sys.executable).replace('\\', '/')
     driver_script = (driver_script or os.path.join(base.HERE, 'diff_driver.py')).replace('\\', '/')
     lock_script = (lock_script or os.path.join(base.ROOT, 'tools', 'ci', 'machine_lock.sh')).replace('\\', '/')
-    return [bash, lock_script, 'fuzz', python, driver_script, 'random'] + list(args_forward) + [
+    return [bash, lock_script, label, python, driver_script, 'random'] + list(args_forward) + [
         '--start', str(start), '--chunk-minutes', str(minutes), '--no-lock']
+
+
+def run_label(outdir):
+    """The machine-lock label of a run's chunks: 'fuzz <its output directory>', one label per run."""
+    return 'fuzz %s' % os.path.abspath(outdir).replace('\\', '/')
 
 
 def run_process(command):
@@ -1008,16 +1018,21 @@ def orchestrate(params, outdir, args_forward, minutes, start=0, run=run_process,
     from there has one; each is a process that holds the machine lock, and between two the lock is free for
     CHUNK_PAUSE seconds. Before each chunk the pause file `pause` (pause_path() by default) must not exist: while it
     does the loop waits (wait_while_paused), and a chunk that found it after it got the lock (PAUSED_STATUS) is no
-    failure but the same wait. Returns when the last chunk is done."""
+    failure but the same wait. Returns when the last chunk is done. The chunks' lock label names the run's output
+    directory: the lock runs one job per label, so two fuzz runs into other directories never refuse each other."""
     pause = pause_path() if pause is None else pause
+    label = run_label(outdir)
     done = first_missing(outdir, params.battles, start)
     while done < params.battles:
         wait_while_paused(pause, sleep, poll, out)
-        command = chunk_command(args_forward, done, minutes, python, driver_script, bash, lock_script)
+        command = chunk_command(args_forward, done, minutes, python, driver_script, bash, lock_script, label)
         print('diff_random: chunk from battle %d of %d' % (done, params.battles), file=out, flush=True)
         status = run(command)
         if status == PAUSED_STATUS:
             continue  # it found the pause file and the lock is free again: the wait at the top of the loop
+        if status == LABEL_TAKEN_STATUS:
+            raise base.ToolError('a chunk (from battle %d) was refused by the machine lock: a live job labelled %r '
+                                 'already holds a slot or waits (another run into the same directory?)' % (done, label))
         if status != 0:
             raise base.ToolError('a chunk (from battle %d) exited with status %d' % (done, status))
         progress = first_missing(outdir, params.battles, done)

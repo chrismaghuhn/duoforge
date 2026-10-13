@@ -1327,6 +1327,23 @@ class Lock(unittest.TestCase):
                                 lock_script='l', python='p', driver_script='d', out=io.StringIO())
             self.assertIn('made no progress', str(cm.exception))
 
+    def test_a_run_labels_its_chunks_by_its_output_directory_and_a_refused_label_stops_it_by_name(self):
+        # The lock runs one job per label (2026-10-13): two fuzz runs into other directories must not refuse each other,
+        # and a refusal (status 73) names the label instead of a bare status.
+        params = PARAMS._replace(battles=8)
+        with tempfile.TemporaryDirectory() as tmp:
+            commands = []
+            with self.assertRaises(driver.ToolError) as cm:
+                rnd.orchestrate(params, tmp, [], 5, run=lambda command: commands.append(command) or 73,
+                                sleep=lambda s: None, bash='bash', lock_script='l', python='p', driver_script='d',
+                                out=io.StringIO())
+            label = 'fuzz %s' % os.path.abspath(tmp).replace('\\', '/')
+            self.assertEqual(rnd.run_label(tmp), label)
+            self.assertEqual([c[2] for c in commands], [label])
+            self.assertIn('refused by the machine lock', str(cm.exception))
+            self.assertIn(label, str(cm.exception))
+        self.assertNotEqual(rnd.run_label(os.path.join(tmp, 'a')), rnd.run_label(os.path.join(tmp, 'b')))
+
     def test_the_command_of_a_chunk(self):
         command = rnd.chunk_command(['--seed', '1'], 40, 10, python='C:\\Py\\python.exe', driver_script='C:\\r\\diff_driver.py',
                                     bash='bash', lock_script='C:\\r\\tools\\ci\\machine_lock.sh')
@@ -1679,7 +1696,7 @@ class Lock(unittest.TestCase):
             self.assertEqual(sorted(os.listdir(tmp)), ['lock.queue', 'marks'])
 
     # One job per label (2026-10-13): a queue started twice ran one job twice into one output directory. A label that a
-    # live process holds a slot or waits with is refused at once, status 3, without a ticket.
+    # live process holds a slot or waits with is refused at once, status 73, without a ticket.
 
     def test_a_label_that_a_live_holder_has_is_refused_at_once_and_not_queued(self):
         holder = '4242 fuzz since 2026-10-13 17:05:00'
@@ -1687,7 +1704,7 @@ class Lock(unittest.TestCase):
             lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire fuzz; '
                                               'echo "status $? rounds $n"; ls "$MACHINE_LOCK.queue" | wc -l',
                                          alive=(4242,), holders=[(0, holder)])
-            self.assertEqual(done.stdout.split(), ['status', '3', 'rounds', '0', '0'])  # no wait, no ticket left
+            self.assertEqual(done.stdout.split(), ['status', '73', 'rounds', '0', '0'])  # no wait, no ticket left
             self.assertEqual(done.stderr.splitlines(), [
                 "machine lock: a job labelled 'fuzz' already runs or waits (%s): refused, not queued" % holder])
             with io.open(os.path.join(lock, 'owner'), encoding='ascii') as f:  # the holder is untouched
@@ -1699,7 +1716,7 @@ class Lock(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             _, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire fuzz; echo "status $?"',
                                       alive=(4242,), tickets=[older])
-            self.assertEqual(done.stdout.split(), ['status', '3'])
+            self.assertEqual(done.stdout.split(), ['status', '73'])
         with tempfile.TemporaryDirectory() as tmp:
             # Of two calls with one label at the same moment the later ticket goes: the younger waiter is refused by
             # its own check, not this call. Two slots, so this call passes it as any waiter behind it.
@@ -1734,7 +1751,42 @@ class Lock(unittest.TestCase):
             self.assertEqual(done.stdout.splitlines()[0], 'rounds 0')  # beside the other label, in slot 1
             self.assertRegex(done.stdout.splitlines()[1], r'^\d+ fuzz since ')
 
-    def test_a_wrapped_job_with_a_running_label_exits_with_status_3(self):
+    def test_an_exclusive_or_old_script_holder_and_a_label_with_spaces_are_matched_as_well(self):
+        # An exclusive holder writes its owner line into every slot; a holder of the old script writes no mark; a
+        # label may hold spaces (local_ci's 'local_ci <checkout> <args>') and even ' since '.
+        cases = [('fuzz', [(0, '4242 fuzz since 2026-10-13 17:05:00'), (1, '4242 fuzz since 2026-10-13 17:05:00')]),
+                 ('fuzz', [(0, '4242 fuzz since 2026-10-13 17:05:00', False)]),
+                 ('local_ci wt --quick', [(0, '4242 local_ci wt --quick since 2026-10-13 17:05:00')]),
+                 ('x since y', [(0, '4242 x since y since 2026-10-13 17:05:00')])]
+        for label, holders in cases:
+            with self.subTest(label=label, holders=len(holders)), tempfile.TemporaryDirectory() as tmp:
+                _, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire "%s"; echo "status $?"'
+                                          % label, alive=(4242,), holders=holders)
+                self.assertEqual(done.stdout.split(), ['status', '73'], done.stderr)
+        with tempfile.TemporaryDirectory() as tmp:  # a label that only begins like a held one is another label
+            _, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire "local_ci wt" && '
+                                           'echo "status $?" && machine_lock_release', alive=(4242,),
+                                      holders=[(0, '4242 local_ci wt --quick since 2026-10-13 17:05:00')])
+            self.assertEqual(done.stdout.split(), ['status', '0'], done.stderr)
+
+    def test_a_waiter_that_moves_from_its_ticket_into_a_slot_during_the_check_is_seen(self):
+        # Review of #466: with the slots read first and their list already expanded, such a waiter was missed. Two
+        # defences now: the check reads the queue first, then the slots (a waiter writes its slot's owner before it
+        # removes its ticket), and the label is checked again right before a slot is taken. The stand-in plays that
+        # waiter while slot 0's holder is asked about: it takes slot 1 and leaves the queue.
+        waiter = '4242 fuzz since 2026-10-13 17:05:00'
+        move = ('if [ "$1" = 4343 ] && [ ! -d "$MACHINE_LOCK.slot1" ]; then mkdir "$MACHINE_LOCK.slot1"; '
+                'printf "%s\nslots\n" > "$MACHINE_LOCK.slot1/owner"; rm -f "$MACHINE_LOCK.queue/"*-4242; fi; '
+                % waiter)
+        with tempfile.TemporaryDirectory() as tmp:
+            _, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire fuzz; echo "status $?"',
+                                      alive=(4242, 4343), slots='3', before=move,
+                                      holders=[(0, '4343 other since 2026-10-13 17:00:00')],
+                                      tickets=[('0000000000000000001-4242', waiter + '\nslots\n')])
+            self.assertEqual(done.stdout.split(), ['status', '73'], done.stderr)
+            self.assertIn(waiter, done.stderr)
+
+    def test_a_wrapped_job_with_a_running_label_exits_with_status_73(self):
         # Real processes, the wrapper form: the first job holds its slot until the second has been refused.
         wait = ('import os, sys, time\n'
                 'end = time.time() + 30\n'
@@ -1754,7 +1806,7 @@ class Lock(unittest.TestCase):
                     time.sleep(0.1)
                 second = subprocess.run([rnd.find_bash(), script, 'step0', 'true'], capture_output=True, text=True,
                                         timeout=60, env=env)
-                self.assertEqual(second.returncode, 3, second.stderr)
+                self.assertEqual(second.returncode, 73, second.stderr)
                 self.assertIn("a job labelled 'step0' already runs or waits", second.stderr)
                 other = subprocess.run([rnd.find_bash(), script, 'step2', 'true'], capture_output=True, text=True,
                                        timeout=60, env=env)
