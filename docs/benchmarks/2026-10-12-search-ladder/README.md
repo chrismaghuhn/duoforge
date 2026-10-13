@@ -489,7 +489,17 @@ search/2-width at af168d56 (`dirty: false`), the same commit and library as its 
 
 - **Caveat:** for step 0, "played" is the move logged live; today's step 0 matches it in 83% of the decisions. For the
   arms it is the arm's own choice.
-- 2e plays 59 more of the available KOs than the logged moves.
+- **The fair comparison** (HS): step 0 counted by its own choice too (`--played search`, search/ko-check at 7b082e1f,
+  `dirty: false`; it differs from the arms' 35172ab6 by that option only):
+
+  | by its own choice | step 0 | 2d | 2e | 2l |
+  |---|---|---|---|---|
+  | own KO played (of 811) | 458 | 456 | **508** | 480 |
+  | a candidate, not chosen | 316 | 288 | 266 | 294 |
+  | foe KO threats answered (of 680) | **160** | **160** | 145 | 153 |
+
+  2e plays 50 more of the available KOs than step 0, and answers 15 fewer foe threats. The best answer takes the KO
+  more often and protects less often; 2d keeps step 0's answers.
 - 2d drops KO moves from the candidates (not a candidate: 36 → 66), but answers more foe threats.
 
 **Phase B** (predeclared), for 2e:
