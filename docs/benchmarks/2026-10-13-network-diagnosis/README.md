@@ -99,7 +99,7 @@ The plan above said the local PC in WSL; the owner moved the run to the project 
 - the logged top three equal BC6's raw ranking in 363 of 407 raw decisions, and 49333's in 19;
 - 97.0% of the turn actions we sent are in BC6's top 8, against 47.7% in 49333's.
 
-The arena bot of 2026-10-12/13 therefore ran with BC6 as its main network (its candidates and its raw choices), not with 49333 as this design assumed. The 44 raw decisions where BC6's ranking differs from the log are not explained here.
+The arena bot of 2026-10-12/13 therefore ran with BC6 as its main network (its candidates and its raw choices). The bot was configured that way; only this design's assumption (49333 as the live main network) was wrong. The 44 raw decisions where BC6's ranking differs from the log are an open question (see Limits).
 
 ### Indicators
 
@@ -118,6 +118,10 @@ The arena bot of 2026-10-12/13 therefore ran with BC6 as its main network (its c
 For V1, in the decisions where the search overrides the raw choice, the top player plays:
 - with 49333 as the main network: the search's choice 12.9%, the raw choice 12.4%, neither 74.7%;
 - with BC6 as the main network: the search's choice 15.3%, the raw choice 18.5%, neither 66.2%.
+
+**P2 and the live bot:**
+- P2 and V1 were fixed with 49333 as the live main network, and that is the network the bold rows use.
+- The bot's actual main network is BC6. Its rows are the live ones (P2 26.7%, V1 −3.2 points), but they are in-sample.
 
 ### Reading (the rule fixed before the run)
 
@@ -225,3 +229,7 @@ Every preview's 8 candidates hold exactly 4 distinct value rows for both network
 - **In-sample for BC6:** the top player's games were in BC6's training; the held-out games were its validation set.
 - **Top player's search:** it uses the rebuilt prior (`6b01a417…`), not the original.
 - **No new search:** the arena's search causes are read from the logs; no search was rerun there.
+- **Open question: the 44 raw decisions.**
+  - In 44 of 407 raw arena decisions (11%), BC6's ranking on the replayed log differs from the logged one.
+  - Likely cause: the observation's inputs built today differ from the bot's at the time, i.e. the prior or the spreads the live bot used then. This is not checked here.
+  - The arena's value and rank numbers are read on today's inputs.
