@@ -98,5 +98,41 @@ class LiveEvalTest(unittest.TestCase):
         self.assertEqual((runs["fallback_battles"], runs["cts"]), ({"stop:cts:redraw-cap": 2}, {"redraw.facts": 6}))
 
 
+class ReplayTest(unittest.TestCase):
+    """--replay (#473-#477): a battle log replayed through the particles counts its decision points and those where the
+    engine refuses a particle's record, with the unmodelled content each refused particle holds."""
+
+    def test_the_fixture_replays_with_its_decision_points_and_no_refusal(self):
+        from duoforge_live import cts, tracker
+        fixture = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "live_stream_ab.json")
+                             .read_text(encoding="utf-8"))
+        tables = data.load(kind="pool")
+        records, t, done = [], tracker.Tracker(tables, fixture["team"]), 0
+        for m in fixture["messages"]:  # the batches as fed and the choices accepted, as the bot's log keeps them
+            records.append({"feed": [line for line in m if not line.startswith("|showteam|")]})
+            t.feed(m)
+            if t.ready and t.epoch > done:
+                done = t.epoch
+                records.append({"accepted": fixture["inputs"][done - 1]})
+                t.accepted(fixture["inputs"][done - 1])
+        out = ev.replay(records, tables, cts.SetPrior.from_table(tables), fixture["team"], "battle-test-1",
+                        ev.unmodelled(""))
+        self.assertEqual(out["points"], 3)  # turns 1 to 3 (the team preview is not a searched decision)
+        self.assertEqual(out["refused"], [])
+
+    def test_unmodelled_content_is_read_from_the_tables_and_named_per_set(self):
+        text = ("    /* Speed Swap -- data/moves.ts:1-2  [unmodelled: callback onHit] */\n"
+                " *   piercingdrill -- data/abilities.ts:3-4  [unmodelled: callback onHitProtect]\n"
+                "    /* Excadrill-Mega -- abilities: piercingdrill */\n"
+                "    /* Flare Blitz -- data/moves.ts:5-6 */\n")
+        u = ev.unmodelled(text)
+        self.assertEqual(ev.held({"species": "Alakazam", "item": "Focus Sash", "ability": "Magic Guard",
+                                  "moves": ["Speed Swap", "Psychic"]}, u), {"move:speedswap"})
+        self.assertEqual(ev.held({"species": "Excadrill", "item": "Excadrite", "ability": "Sand Rush",
+                                  "moves": ["Flare Blitz"]}, u), {"mega:excadrillmega(piercingdrill)"})
+        self.assertEqual(ev.held({"species": "Charizard", "item": "Charcoal", "ability": "Blaze",
+                                  "moves": ["Flare Blitz"]}, u), set())
+
+
 if __name__ == "__main__":
     unittest.main()
