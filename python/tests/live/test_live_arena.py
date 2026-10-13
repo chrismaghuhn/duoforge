@@ -29,6 +29,20 @@ class Arena(unittest.TestCase):
         self.assertEqual(games, [(0, 0, pairs[0][0], pairs[0][1]), (0, 1, pairs[0][1], pairs[0][0]),
                                  (1, 0, pairs[1][0], pairs[1][1]), (1, 1, pairs[1][1], pairs[1][0])])
 
+    def test_every_result_names_its_commit_and_dirty_state(self):
+        # HauptSession, 2026-10-13: every measurement names the commit it measured and whether the tree was dirty, never
+        # code=None. A copy without git (the WSL runs) takes them from DUOFORGE_COMMIT and DUOFORGE_DIRTY.
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(arena.provenance(tmp, {"DUOFORGE_COMMIT": "8c4fe662", "DUOFORGE_DIRTY": "0"}),
+                             {"commit": "8c4fe662", "dirty": False})
+            self.assertEqual(arena.provenance(tmp, {"DUOFORGE_COMMIT": "8c4fe662", "DUOFORGE_DIRTY": "1"})["dirty"], True)
+            for environ in ({}, {"DUOFORGE_COMMIT": "8c4fe662"}, {"DUOFORGE_COMMIT": "", "DUOFORGE_DIRTY": "0"}):
+                with self.subTest(environ=environ), self.assertRaisesRegex(SystemExit, "DUOFORGE_COMMIT"):
+                    arena.provenance(tmp, environ)
+        here = arena.provenance(Path(arena.__file__).parent, {})  # a git checkout names itself
+        self.assertRegex(here["commit"], "^[0-9a-f]{40}$")
+        self.assertIn(here["dirty"], (True, False))
+
     def test_the_pool_is_a_pool_networks_and_a_network_without_one_is_refused(self):
         # BC6 (the live network) names no team pool: the pool comes from a pool network's config (--teams-from), as in
         # the search ladder, never an empty draw.
@@ -99,6 +113,15 @@ class Arena(unittest.TestCase):
             with self.subTest(gate=gate):
                 self.assertFalse(arena.evaluate(games, planned=100, closed=True)["gates"][gate])
         self.assertFalse(arena.evaluate(weak[:98], planned=100, closed=True)["gates"]["all_played"])
+        # Review of #385 step 5: a line neither bot folds stops both in one game: one game, not two
+        both = [{**g, "forfeit": "stop:feature:X", "raw_forfeit": "stop:feature:X"} if i < 5 else g
+                for i, g in enumerate(weak)]
+        report = arena.evaluate(both, planned=100, closed=True)
+        self.assertEqual((report["tracker_stops"], report["completed_share"]), (5, 0.95))
+        self.assertTrue(report["gates"]["completed_share"])
+        # under closed sheets no forfeit but a stop is expected: a sheets forfeit is a crash there
+        sheets = [{**weak[0], "forfeit": "no open team sheets in time"}] + weak[1:]
+        self.assertEqual(arena.evaluate(sheets, planned=100, closed=True)["crashes"], 1)
 
     def test_every_planned_game_must_be_scored(self):
         # Review of #401: a game that never ends, a missing game (a lane stopped) or a pair with one scored game fails

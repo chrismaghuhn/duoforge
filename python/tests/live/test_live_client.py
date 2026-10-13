@@ -517,7 +517,14 @@ class ClosedClientTest(unittest.TestCase):
             elif "accepted" in record:
                 again.accepted(record["accepted"])
         self.assertGreater(game.epoch, 2)
+        self.assertEqual(again.epoch, game.epoch)
         self.assertEqual([p.sets for p in again.particles], [p.sets for p in game.tracker.particles])
+        self.assertEqual([p["record"].tobytes() for p in again.public_parts()],
+                         [p["record"].tobytes() for p in game.tracker.public_parts()])
+        sent = [s.split("|/choose ", 1)[1].rsplit("|", 1)[0] for s in self.server.take() if "/choose" in s]
+        accepted = [r["accepted"] for r in self.log() if "accepted" in r]
+        self.assertTrue(accepted)
+        self.assertEqual(accepted, sent[:len(accepted)])  # each choice the game accepted, as it was sent
         counters = {cts.counter_kind(k): n for k, n in game.tracker.counters.items()}
         self.feed(room(["|win|chris"]))
         self.assertIn({"cts": counters}, self.log())

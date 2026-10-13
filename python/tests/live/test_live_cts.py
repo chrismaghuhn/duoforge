@@ -622,6 +622,38 @@ class ClosedGameTest(unittest.TestCase):
                              [[r.tobytes() for r, _ in h] for h in g.tracker.histories()])
         self.assertEqual([o.cause for o in g.outcomes], ["raw"] * 4)
 
+    def test_a_refused_decision_names_every_particles_reason(self):
+        # Review of #385 step 5: the #464 count reads the outcome's reason, so every particle's named reason is in it,
+        # not only the first one's.
+        from duoforge_search.record_roots import RecordRoots
+
+        class Refusing:
+            encoder, s = 4, ClosedGameTest.N
+
+            def decide(self, roots, envs, seats, keys, last_step):
+                return np.zeros(1, np.int64), [{"kind": "unreconstructible", "reason": "DUOFORGE_E_UNSUPPORTED: x"}]
+
+        live = live_search.LiveSearch(Refusing(), roots=RecordRoots(1))
+        self.addCleanup(live.close)
+        for g in self.points(self.game(FakePolicy(), live)):
+            parts = g.tracker.public_parts()
+            for i, reason in enumerate((None, "visible-confusion", "engine-refuses-record", "visible-confusion")):
+                parts[i]["reason"] = reason
+            g.candidates()
+            if not g.request.get("teamPreview"):
+                break
+        self.assertEqual(g.outcomes[-1].reason,
+                         "DUOFORGE_E_UNSUPPORTED: x; tracker: engine-refuses-record,visible-confusion")
+
+
+class TrueSheetTest(unittest.TestCase):
+    def test_the_true_sheet_is_what_the_pinned_server_shows(self):
+        # Review of #385 step 5: the oracle arm's foe sheet must be the open sheet Showdown sends (no stat points,
+        # sim/battle.ts showOpenTeamSheets), never the paste with its EVs; the particles fold the same form.
+        real = next(line for m in FIXTURE["messages"] for line in m if line.startswith("|showteam|p2|"))
+        self.assertEqual("|showteam|p2|" + cts.true_sheet(FIXTURE["foe_team"]), real)
+        self.assertNotEqual(cts.true_sheet(FIXTURE["foe_team"]), teams.pack(FIXTURE["foe_team"]))  # the EVs differ
+
 
 class CounterKindTest(unittest.TestCase):
     def test_a_redraw_by_a_stop_keeps_the_stops_kind_only(self):

@@ -113,14 +113,24 @@ def _ready(url, timeout):
     return False
 
 
-def _commit():
-    """The code's commit (the report's provenance), or None outside a git checkout."""
+def provenance(cwd=None, environ=None):
+    """{"commit", "dirty"} of the code that runs (HauptSession, 2026-10-13: every result names both, never None): from
+    git in a checkout, else from DUOFORGE_COMMIT and DUOFORGE_DIRTY ("0" or "1", a copy without git such as a WSL run's).
+    SystemExit when neither names them."""
+    import os
+    environ = os.environ if environ is None else environ
+    cwd = Path(__file__).resolve().parent if cwd is None else Path(cwd)
     try:
-        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parent, capture_output=True,
-                             text=True, timeout=10)
-        return out.stdout.strip() or None
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True, timeout=10)
+        status = subprocess.run(["git", "status", "--porcelain"], cwd=cwd, capture_output=True, text=True, timeout=30)
+        if head.returncode == 0 and status.returncode == 0 and head.stdout.strip():
+            return {"commit": head.stdout.strip(), "dirty": bool(status.stdout.strip())}
     except OSError:
-        return None
+        pass
+    commit, dirty = environ.get("DUOFORGE_COMMIT", ""), environ.get("DUOFORGE_DIRTY", "")
+    if not commit or dirty not in ("0", "1"):
+        raise SystemExit("no commit to name: run from a git checkout, or set DUOFORGE_COMMIT and DUOFORGE_DIRTY (0 or 1)")
+    return {"commit": commit, "dirty": dirty == "1"}
 
 
 def read_game(log_path, search_name):
@@ -177,8 +187,11 @@ def evaluate(games, planned, closed=False):
         deadline += s.get("fallback", {}).get("deadline", 0)
         seconds += g.get("seconds", [])
     stops = sum(1 for g in games for f in (g.get("forfeit"), g.get("raw_forfeit")) if f and f.startswith("stop:"))
+    stopped = sum(1 for g in games if any(f and f.startswith("stop:") for f in (g.get("forfeit"), g.get("raw_forfeit"))))
+    # open sheets: a forfeit for the sheets is the etiquette's, no crash; closed sheets: no forfeit but a stop is expected
     crashes = sum(1 for g in games for f in (g.get("forfeit"), g.get("raw_forfeit"))
-                  if f and not f.startswith("stop:") and "sheets" not in f) + sum(1 for g in games if g.get("crash"))
+                  if f and not f.startswith("stop:") and (closed or "sheets" not in f)) \
+        + sum(1 for g in games if g.get("crash"))
     out = {
         "games": len(games), "played": len(played), "pairs": len(means), "score": mean,
         "lower_bound": mean - half, "upper_bound": mean + half,
@@ -201,7 +214,7 @@ def evaluate(games, planned, closed=False):
         searched = sum((g.get("summary") or {}).get("causes", {}).get("searched", 0) for g in played)
         out.update({"engine_refuses_record": refusals, "engine_refuses_record_share": refusals / max(1, decisions),
                     "searched_share": searched / max(1, decisions), "cts": counters,
-                    "completed_share": 1.0 - stops / max(1, len(games))})
+                    "tracker_stops": stopped, "completed_share": 1.0 - stopped / max(1, len(games))})  # per game
         out["gates"] = {"crashes": out["crashes"] <= CTS_GATES["crashes"], "class_b": out["class_b"] <= CTS_GATES["class_b"],
                         "timer_losses": out["timer_losses"] <= CTS_GATES["timer_losses"],
                         "completed_share": out["completed_share"] >= CTS_GATES["completed_share"],
@@ -313,6 +326,7 @@ def main(argv=None):
     foe_net = search.foe_net_path(search.foe_net_of(args))  # an unconfigured foe model stops here too
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
+    code = provenance()  # before anything is loaded or played: a result without its commit is refused
     from duoforge_learn import checkpoint
     from . import client, data, policy
     out = Path(args.out)
@@ -372,7 +386,7 @@ def main(argv=None):
     report = {"foe_net": None if foe_net is None else {"sha256": search.foe_net_sha256_of(args)},  # the arm
               "checkpoint_config_teams": len(ids) + len(refused), "playable_teams": len(ids),
               "refused_teams": refused, "seed": args.seed, "games_planned": len(games),
-              "lanes": args.lanes, "seconds": time.monotonic() - start, "code": _commit(), "closed": args.closed,
+              "lanes": args.lanes, "seconds": time.monotonic() - start, "code": code, "closed": args.closed,
               **evaluate(records, len(games), closed=args.closed)}
     (out / "games.json").write_text(json.dumps(records, indent=1), encoding="utf-8")
     (out / "arena.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

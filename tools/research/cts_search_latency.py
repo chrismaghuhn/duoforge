@@ -53,7 +53,6 @@ import glob
 import hashlib
 import json
 import platform
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -157,12 +156,13 @@ def dump_local(args):
 
 def _with_sheets(lines, own, foe):
     """A batch with both true open sheets put in right after its team-preview request (the oracle arm), as
-    cts.ParticleTracker puts in a particle's."""
+    cts.ParticleTracker puts in a particle's: the foe's true team in the particles' form (cts.true_sheet: no stat
+    points, as the server shows it; review of #385 step 5)."""
     from duoforge_live import cts, teams
     for i, line in enumerate(lines):
         side = cts._preview_side(line)
-        if side is not None:
-            packed = (teams.pack(own), teams.pack(foe))
+        if side is not None:  # the own sheet as the particles put it in, the foe's as the server shows it (no EVs)
+            packed = (teams.pack(own), cts.true_sheet(foe))
             sheets = [f"|showteam|p{s + 1}|" + (packed[0] if s == side else packed[1]) for s in (0, 1)]
             return lines[:i + 1] + sheets + lines[i + 1:]
     return lines
@@ -312,6 +312,8 @@ class _Play:
 
 def measure(args):
     _refuse_repository(args.out)
+    from duoforge_live.arena import provenance
+    code = provenance(ROOT)  # the commit and dirty state, named in the report (never None)
     from duoforge_live import cts, data, policy, search as live_search
     streams = json.loads(Path(args.streams).read_text(encoding="utf-8"))["streams"]
     warmup = json.loads(Path(args.warmup or args.streams).read_text(encoding="utf-8"))["streams"]
@@ -335,11 +337,10 @@ def measure(args):
             play.stream(s, counted=True)
     finally:
         live.close()
-    head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     every = [x for k, v in play.decision.items() if k != "searched" for x in v]
     every_complete = [x for k, v in play.complete.items() if k != "searched" for x in v]
     report = {
-        "arm": args.arm, "streams": len(drawn), "warmup_streams": warmed, "seed": args.seed, "commit": head,
+        "arm": args.arm, "streams": len(drawn), "warmup_streams": warmed, "seed": args.seed, "code": code,
         "decision": {**{k: _quantiles(v) for k, v in sorted(play.decision.items())}, "all": _quantiles(every)},
         "complete": {**{k: _quantiles(v) for k, v in sorted(play.complete.items())}, "all": _quantiles(every_complete)},
         "feed": _quantiles(play.feed), "causes": dict(play.causes), "fallback": dict(play.fallback),

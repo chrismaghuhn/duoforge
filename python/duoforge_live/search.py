@@ -171,8 +171,8 @@ class LiveSearch:
                                   observations=[w["observation"] for w, *_ in worlds],
                                   obs=np.stack([r[0] for r in rows]), slots=np.stack([r[1] for r in rows]),
                                   histories=[h for *_, h in worlds])
-            reasons = [w["reason"] for w, *_ in worlds if w.get("reason")]
-            parts = dict(parts, reason=reasons[0] if reasons else None)
+            reasons = sorted({w["reason"] for w, *_ in worlds if w.get("reason")})  # every particle's, named once
+            parts = dict(parts, reason=",".join(reasons) if reasons else None)
         future = self._executor.submit(self.searcher.decide, self.roots, [0], [seat], [key], [False])
         try:
             future.result(timeout=max(0.0, budget))
