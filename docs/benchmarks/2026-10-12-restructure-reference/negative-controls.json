@@ -1,0 +1,7 @@
+{
+  "digest_parser_rejection_controls": 7,
+  "live_pin_schema_and_coverage_rejection_controls": 11,
+  "native_cli_and_write_error_controls": 4,
+  "native_default_checks_pass": true,
+  "new_battle_collector_import_without_expected_pins": true
+}

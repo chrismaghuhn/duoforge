@@ -4,7 +4,7 @@ Status: **accepted** (H16, lane A batch 5, step 5ch). The lead approved the mode
 
 ## Problem
 
-Dragon Darts (`data/moves.ts:4118-4132`: Dragon, Physical, base power 50, accuracy 100, pp 10, `multihit: 2`, `smartTarget: true`, target `normal`, flags protect, mirror, metronome, noparentalbond; no contact flag) does not hit the same Pokemon twice. Its first hit goes to the chosen foe, its second hit goes to that foe's partner, when the partner can be hit. The engine has no two-target single-move path: `dfi_move_targets` (`src/combat/turn.c:1311`) returns one target for the NORMAL class, and the hit loop (`turn.c:6980-7060`) hits every target of a move on every hit. The multi-hit refusal `hits_total != 1 && (count != 1 || spread)` (`turn.c:6952`) is the only place where a multi-hit spread move is turned away today. The 5ca entry dropped the row for this reason.
+Dragon Darts (`data/moves.ts:4118-4132`: Dragon, Physical, base power 50, accuracy 100, pp 10, `multihit: 2`, `smartTarget: true`, target `normal`, flags protect, mirror, metronome, noparentalbond; no contact flag) does not hit the same Pokemon twice. Its first hit goes to the chosen foe, its second hit goes to that foe's partner, when the partner can be hit. The engine has no two-target single-move path: `dfi_move_targets` (`src/combat/turn.c (dfi_move_targets)`) returns one target for the NORMAL class, and the hit loop (`src/combat/turn.c (dfi_run_move_body)`) hits every target of a move on every hit. The multi-hit refusal `hits_total != 1 && (count != 1 || spread)` (`src/combat/turn.c (dfi_run_move_body)`) is the only place where a multi-hit spread move is turned away today. The 5ca entry dropped the row for this reason.
 
 ## The pin (Showdown b2cb775; the Champions mod changes only the hit loop)
 
@@ -14,7 +14,7 @@ Dragon Darts (`data/moves.ts:4118-4132`: Dragon, Physical, base power 50, accura
 - **`getTarget`** (`sim/battle.ts:2451-2454`): a smart move takes the chosen slot unless it is fainted, then `getRandomTarget` (one draw, the existing `DFI_SITE_RANDOM_TARGET`).
 - **Move line:** `addMove('move', ..., target)` (`sim/battle-actions.ts:457`) is printed before `getMoveTargets`, with the chosen target. `retargetLastMove` (`sim/battle.ts:3141-3146`) rewrites that line's target field.
 - **`useMoveInner`** (`sim/battle-actions.ts:467-470`) keeps `targets` (both) and sets `target = targets[last]` for the local only; `runMove`'s AfterMove (`:311-312`) takes getTarget's result (the chosen target), so the engine's `r->move_target = targets[0]` stays right.
-- **`trySpreadMoveHit`** (`:551`): `spreadHit` is never set for a smart move, so no 0.75 (the damage's `spread` flag stays false; `turn.c:1873` is the only use of 0.75). `:607`: `if (move.smartTarget && atLeastOneFailure) move.smartTarget = false;` after any step whose results contain a `false`. The steps (gen 9): invulnerability `:633-637`, TryHit (Protect), type immunity `:661`, accuracy `:739-748`, break protect, steal boosts, then the hit loop.
+- **`trySpreadMoveHit`** (`:551`): `spreadHit` is never set for a smart move, so no 0.75 (the damage's `spread` flag stays false; `src/combat/turn.c (dfi_get_damage)` is the only use of 0.75). `:607`: `if (move.smartTarget && atLeastOneFailure) move.smartTarget = false;` after any step whose results contain a `false`. The steps (gen 9): invulnerability `:633-637`, TryHit (Protect), type immunity `:661`, accuracy `:739-748`, break protect, steal boosts, then the hit loop.
 - **Invulnerability** (`:633-640`): a dropped target sets smartTarget false silently; otherwise `[miss]` on the move line (`:636`) and `-miss`.
 - **Protect** (`data/moves.ts:1008-1014`, and the same text at `:2043-2049`): with smartTarget set, it sets `move.smartTarget = false` and prints nothing; otherwise `-activate|X|move: Protect`. It returns `NOT_FAIL` (`data/moves.ts:1025`, the empty string), so `hitStepTryHitEvent` (`sim/battle-actions.ts:643-655`) does not count it as a failure.
 - **Type immunity** (`:661`): `runImmunity(move, !move.smartTarget)`. `runImmunity` with message false returns false silently (`sim/pokemon.ts:2255`). So a Fairy target (immune to Dragon) prints nothing while smartTarget is set, and prints `-immune|X` once it is cleared.
@@ -34,11 +34,11 @@ Dragon Darts (`data/moves.ts:4118-4132`: Dragon, Physical, base power 50, accura
 
 ## Engine today
 
-- `dfi_move_targets` (`turn.c:1311-1426`): NORMAL returns one target, with the existing random retarget (`dfi_random_foe`) when the chosen foe is gone.
-- The hit loop (`turn.c:6980-7060`): per hit, every target with `hit[i]`, the `spread` flag set when count > 1 (`:6700`, `:6883`, `:6937-6944`).
-- The multi-hit draw `DFI_SITE_MULTIHIT_COUNT` (`turn.c:6944-6947`) is G54's only; Dragon Darts draws none.
-- `dfi_pressure_extra` (`turn.c:5126-5146`) already counts the targets list and the holders.
-- ANIMATION is already emitted (`turn.c:6342`, Weather skip), and the converter maps `-anim` to it (`tools/reference/trace_to_c.py:1661-1668`).
+- `dfi_move_targets` (`src/combat/turn.c (dfi_move_targets)`): NORMAL returns one target, with the existing random retarget (`dfi_random_foe`) when the chosen foe is gone.
+- The hit loop (`src/combat/turn.c (dfi_run_move_body)`): per hit, every target with `hit[i]`, the `spread` flag set when count > 1 (the spread/`smart` gates in `dfi_run_move_body`).
+- The multi-hit draw `DFI_SITE_MULTIHIT_COUNT` (`src/combat/turn.c (dfi_run_move_body)`) is G54's only; Dragon Darts draws none.
+- `dfi_pressure_extra` (`src/combat/turn.c (dfi_pressure_extra)`) already counts the targets list and the holders.
+- ANIMATION is already emitted (`src/combat/turn.c (dfi_run_move_body)`, Weather skip), and the converter maps `-anim` to it (`tools/reference/trace_to_c.py:1661-1668`).
 - Stomping Tantrum reads the mres classifier (`DFI_MRES_*`), which already gives TRUE for a surviving target, FALSE for a failed step, NULL for a Protect-only block.
 
 ## Proposed model

@@ -1,11 +1,12 @@
 #include "combat/turn.h"
 
-#include "combat/ability_family.h"
+#include "combat/abilities/families.h"
+#include "combat/abilities/fairy_aura.h"
 #include "combat/damage_chain.h"
 #include "combat/multiaccuracy.h"
 #include "combat/residual_order.h"
 #include "combat/events.h"
-#include "combat/item_family.h"
+#include "combat/items/items.h"
 #include "combat/move_rules.h"
 #include "combat/multihit_count.h"
 #include "combat/power_trip.h"
@@ -34,78 +35,8 @@
 #define DFI_SPEED_BIAS 10000u   /* speed key: 10000 + speed, or 10000 - speed under Trick Room */
 #define DFI_SPEED_CAP 10000u    /* getStat caps Speed at 10000 (sim/pokemon.ts:636) */
 #define DFI_LEVEL 50u
-#define DFI_POSITIONS 4u
 #define DFI_STALL_DURATION 2u /* data/conditions.ts: stall */
 
-typedef struct dfi_run {
-    const struct duoforge_context *ctx;
-    struct duoforge_battle *b;
-    dfi_draws *draws;
-    /* Pokemon whose HP reached 0 during the current action, in that order
-     * (the reference's faintQueue). */
-    uint32_t faint_queue[DFI_POSITIONS];
-    uint32_t faint_count;
-    uint32_t faint_announced; /* how many of them a faintMessages already showed */
-    uint32_t last_fainted; /* flat position of the last processed faint */
-    bool ended;
-    /* The result a hit loop's faintMessages already showed (DFI_RESULT_*),
-     * DFI_RESULT_NONE when the end of the action shows it. */
-    uint32_t early_result;
-    /* pokemon.speed: the speed key of each position at the reference's last
-     * updateSpeed while its Pokemon stood (a fainted Pokemon keeps it). */
-    uint32_t speed_seen[DFI_POSITIONS];
-    /* residualPokemon: each position's HP before the residual events. */
-    uint32_t residual_hp[DFI_POSITIONS];
-    /* The step's events (docs/decisions/0007 section 6), NULL for none, and
-     * the index of the current action's move event, which later protocol
-     * lines amend (attrLastMove, retargetLastMove), or UINT32_MAX. */
-    dfi_events *events;
-    uint32_t last_move;
-    /* The current move action got past BeforeMove and used its move
-     * (useMove ran): the AfterMove event follows. */
-    bool move_used;
-    /* runMove's target, which AfterMove gets (DFI_MOVE_TARGET_*). */
-    uint32_t move_target;
-    /* move.hit (step G33): the hit of a multi-hit move that is being made, 1 for every other move. */
-    uint32_t hit_index;
-    /* step G46: the positions whose switch flag (forceSwitchFlag) a forced switch set and that have not been dragged in
-     * yet (bit flat). Transient: it lives in the run, never in the state, and only the phazing step after the action
-     * clears it. Emergency Exit and Eject Button ignore such a holder (Champions abilities.ts:24, items.ts:270). */
-    uint32_t drag_pending;
-    /* step G56: the positions whose lockedmove (Outrage, Thrash, Petal Dance) duration is 2 in this step: started, or
-     * restarted with a count of 2 or more (onRestart). Transient, like drag_pending; read and cleared by the AfterMove of the use (the
-     * count goes down there, so no residual of a later call needs it). */
-    uint32_t lock_restarted;
-    /* step G42: the classification of the current move action's result (DFI_MRES_*, bits; 0 = none seen). */
-    uint32_t mres;
-    /* Step G45, Moxie: the cause of the last faint queued (faintData, the last of faintQueue, sim/battle.ts:2549-2601): the
-     * flat position of the Pokemon that caused it, and whether it is the direct damage of a Move (effect.effectType 'Move').
-     * Read only while faint_count is not 0; every queued faint sets both.
-     * Run-scoped scratch, not state: they are set and read inside one step's dfi_run (between the faint announcement and
-     * AfterFaint, or the process of the same action), never saved in the battle, the codec or the digest. The epilogue of
-     * every action runs dfi_process_faints before the step can end (a PIVOT boundary included), which resets faint_count, so
-     * the fields are dead at a step boundary. If that ever stopped being true they would be state: stop and report. */
-    uint32_t last_faint_by;
-    bool last_faint_move;
-    /* step G64, Beat Up: the base power of each hit of the move being made (dfi_beat_up_hits fills it when the move is used; the
-     * hit count is the number of entries). Transient, read only by dfi_get_damage of that move. Last in the struct: the
-     * initializers of dfi_run are positional, so a field before the end would shift their values. */
-    uint32_t beat_up_bp[DUOFORGE_MAX_ROSTER];
-    /* Decision 0032: set only while the damage of a Substitute's hit is computed. The damage then ignores the target's resist
-     * berry (pin: `hitSub`, data/items.ts:1030-1046 and its siblings: the berry is not eaten for a hit that the Substitute takes). */
-    bool sub_hit;
-    /* step G78, Dragon Darts (decision 0043): the move's smartTarget flag during one move. It is set when the move is split
-     * over two targets and cleared by a drop of a step, as Showdown clears it (sim/battle-actions.ts:607, :633, :661, :739,
-     * data/moves.ts:1010-1011). Run-scoped scratch, never state. Last in the struct (positional initializers). */
-    bool smart;
-    /* Step G69, Symbiosis: an E_UNSUPPORTED found inside a handler that returns nothing (dfi_use_item_of and the eaters around
-     * it). The turn runs on a working copy (src/state/request.c), so dfi_turn_run returns it at its end and nothing is
-     * committed. Last in the struct: the initializers of dfi_run are positional. */
-    duoforge_status deferred;
-    /* The pin's activeTarget for the Substitute hit that sub_hit marks (sim/battle-actions.ts:693, :1154). Last in the struct
-     * (positional initializers, which take 0u here). */
-    uint32_t sub_active;
-} dfi_run;
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
 #define DFI_MOVE_TARGET_SPREAD (DFI_POSITIONS + 1u) /* a spread move's random foe, not drawn */
@@ -118,20 +49,7 @@ typedef struct dfi_key {
 
 /* ---------------------------------------------------------------- access */
 
-static dfi_active_slot *dfi_pos(struct duoforge_battle *b, uint32_t flat)
-{
-    return &b->sides[flat / 2u].positions[flat % 2u];
-}
 
-/* The member at a flat position, or NULL when it is empty. */
-static dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
-{
-    const uint32_t occupant = dfi_pos(b, flat)->occupant;
-    if (occupant >= DUOFORGE_MAX_ROSTER) {
-        return NULL;
-    }
-    return &b->sides[flat / 2u].members[occupant];
-}
 
 /* Tail rev 5 position flags (G72b, decision 0015 5ce): the stats-raised bit of a position (Alluring Voice's statsRaisedThisTurn)
  * and the Dragon Cheer crit stage (0, 1 or 2; the holder's onModifyCritRatio, read in dfi_get_damage). */
@@ -266,8 +184,6 @@ static bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, u
 
 static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id);
 
-static uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m);
-static bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id);
 
 /* isGrounded with the data (sim/pokemon.ts:2148-2160): an Iron Ball holder is grounded first (step G83: `if (item === 'ironball')
  * return true`, before the Flying and Levitate tests, so it is grounded whatever its types and ability); otherwise not a Flying
@@ -296,38 +212,7 @@ static uint32_t dfi_terrain_field_detail(uint32_t terrain)
 /* eachEvent('TerrainChange'), defined with the seeds below: a terrain that starts or ends runs it. */
 static duoforge_status dfi_terrain_change(dfi_run *r);
 
-/* The item a member holds now, stored as 1 + id (0 = none): the one the member's sheet says unless it has been used
- * up, or the one that the POOL tail's item_now holds for it (zero under every other kind, and zero unless something
- * took or changed the item: DFI_TAIL_ITEM_NONE after a Knock Off, an item id + 1 after a Trick, which nothing does
- * yet). Every rule of the turn code reads the item through this, never through dfi_member.item, which is the sheet's
- * (and what the Mega Evolution reads: a Mega Stone is never taken from its own species). `m` is a member of `b`; no
- * heap, one tail read for a member that is found on a side. */
-static uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m)
-{
-    if (m == NULL || m->item_consumed != 0u) {
-        return 0u; /* used up, whichever item it was */
-    }
-    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
-        const dfi_member *first = &b->sides[s].members[0];
-        if (m >= first && m < first + DUOFORGE_MAX_ROSTER) {
-            const uint32_t now = b->tail.sides[s].item_now[m - first];
-            if (now == DFI_TAIL_ITEM_NONE) {
-                return 0u;
-            }
-            if (now != 0u) {
-                return now;
-            }
-            break;
-        }
-    }
-    return m->item;
-}
 
-/* The member holds item `id` and has not used it up or lost it (items are stored as 1 + id). */
-static bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
-{
-    return m != NULL && dfi_item_code(b, m) == 1u + id;
-}
 
 /* The genders that Rivalry reads (step G83): a male or a female member. A genderless one (DUOFORGE_GENDER_NONE) has none, so
  * its Rivalry does nothing (data/abilities.ts:3884, `attacker.gender && defender.gender`). */
@@ -361,46 +246,12 @@ static uint32_t dfi_field_start_turns(const struct duoforge_battle *b, const dfi
     return dfi_holds(b, setter, item) ? DFI_FIELD_TURNS_EXTENDED_MAX : DFI_FIELD_TURNS_MAX;
 }
 
-/* singleEvent TakeItem of the item (data/items.ts, the onTakeItem of the Mega Stones: they refuse their own species,
- * Floettite's variant at :2194 gives the same result; the Champions mod changes none): a Pokemon that holds an item
- * that can be taken from it. The only items of the pool with an onTakeItem are the Mega Stones, and takeItem() asks
- * with the Pokemon itself as the source, so a Mega Stone on another species, and every other item, is taken.
- * dfi_member.mega_capable is exactly "holds the stone of its own base forme" (the member invariant) and stays after
- * the Mega Evolution, as the Pokemon's baseSpecies does. */
-static bool dfi_item_takeable(const struct duoforge_battle *b, const dfi_member *m)
-{
-    const uint32_t item = dfi_item_code(b, m);
-    return item != 0u && !(m->mega_capable != 0u && item == m->item);
-}
 
-/* The member's ability now, stored as 1 + id (0 = none): the one the member's sheet says, or the one that the POOL tail's
- * ability_now holds for it (Trace and the other effects that change an ability; zero under every other kind, and zero
- * unless something changed it). Every rule of the turn code reads the ability through this, never through
- * dfi_member.ability, which is the sheet's (and the Mega forme's) ability. `m` is a member of `b`; no heap, one tail
- * read for a member that is found on a side. */
-static uint32_t dfi_ability_code(const struct duoforge_battle *b, const dfi_member *m)
-{
-    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
-        const dfi_member *first = &b->sides[s].members[0];
-        if (m >= first && m < first + DUOFORGE_MAX_ROSTER) {
-            const uint32_t now = b->tail.sides[s].ability_now[m - first];
-            return now != 0u ? now : m->ability;
-        }
-    }
-    return m->ability;
-}
 
-/* The family row of the member's ability now (src/combat/ability_family.h). */
-static dfi_ability_family dfi_ability_family_now(const struct duoforge_battle *b, const dfi_member *m)
-{
-    return dfi_ability_family_for(m == NULL ? 0u : dfi_ability_code(b, m));
-}
 
-/* The member's ability is `id` (abilities are stored as 1 + id). */
-static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
-{
-    return m != NULL && dfi_ability_code(b, m) == 1u + id;
-}
+
+
+
 
 /* ---------------------------------------------------------------- weather (step G79)
  *
@@ -456,39 +307,11 @@ static uint32_t dfi_move_weather(const dfi_run *r, const dfi_member *user, bool 
 
 /* ---------------------------------------------------------------- events */
 
-static void dfi_emit(dfi_run *r, const duoforge_event *e)
-{
-    if (r->events != NULL) {
-        dfi_events_push(r->events, e);
-    }
-}
 
-/* An event about `position` with a cause ([from], [of]). */
-static duoforge_event dfi_ev(uint32_t kind, uint32_t position, uint32_t cause, uint32_t id2, uint32_t other)
-{
-    duoforge_event e = dfi_event_make(kind, position);
-    e.cause = (uint8_t)cause; /* <= DUOFORGE_CAUSE_POISON */
-    e.id2 = (uint16_t)id2;    /* < 2^16 */
-    e.other = (uint8_t)other; /* < 4 or DUOFORGE_NO_POSITION */
-    return e;
-}
 
-#define DFI_FAIRY_AURA_MODIFIER 5448u /* chainModify([5448, 4096]) */
 
-/* Fairy Aura (data/abilities.ts:1266-1282, onAnyBasePower, priority 20): a Pokemon on the field with the ability (the
- * Mega Floette's only one; a fainted Pokemon is no longer on the field). It boosts the Fairy moves of every Pokemon on
- * the field once each (move.auraBooster: a second holder changes nothing), the foes' included. Aura Break (3072/4096
- * instead) is in no pool forme's legal abilities (checked by tests/test_pool_tables.c). */
-static bool dfi_fairy_aura_on_field(struct duoforge_battle *b)
-{
-    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        const dfi_member *m = dfi_at(b, flat);
-        if (m != NULL && m->hp != 0u && dfi_ability(b, m, DFI_ABILITY_FAIRYAURA)) {
-            return true;
-        }
-    }
-    return false;
-}
+
+
 
 /* Flower Veil (data/abilities.ts:1419-1457): the holder protects every Grass-type Pokemon of its side, itself
  * included (it is Fairy, so what it covers is its allies), against stat drops and statuses that another Pokemon
@@ -2005,12 +1828,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_ability(r->b, a, DFI_ABILITY_TECHNICIAN) && power <= 60u) {
         ok = dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
-    /* An -ate ability (the ATE family: Aerilate, Pixilate and Refrigerate,
-     * decision 0015): a Normal move it turned into its type gets 4915/4096
-     * (data/abilities.ts, onBasePowerPriority 23: first). */
-    if (!dfi_ate_excluded(md) && dfi_ate_boosts_fam(dfi_ability_family_now(r->b, a), md->type, move_type)) {
-        ok = ok && dfi_chain_modify(bp_chain, DFI_ATE_MODIFIER, &bp_chain);
-    }
+    ok = dfi_ate_base_power(r->b, a, md, move_type, ok, &bp_chain);
     /* Rivalry (step G83, data/abilities.ts:3881-3898, onBasePowerPriority 24, after Technician's 30 and before Iron Fist's 23): the
      * attacker and the defender both have a gender (male or female): chainModify(1.25) for the same gender, chainModify(0.75)
      * for the other one, and nothing when either is genderless. Its holder is the attacker, and the rival is the defender. */
@@ -2046,11 +1864,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (dfi_sf_boosts(r->b, a, md)) {
         ok = ok && dfi_chain_modify(bp_chain, DFI_SHEER_FORCE_MODIFIER, &bp_chain);
     }
-    /* Fairy Aura (the Mega Floette's ability, onAnyBasePower priority 20: after Tough Claws, before the items): a
-     * Fairy move of anyone on the field, unless it targets its own user, 5448/4096 once. */
-    if (move_type == DFI_TYPE_FAIRY && user != target && dfi_fairy_aura_on_field(r->b)) {
-        ok = ok && dfi_chain_modify(bp_chain, DFI_FAIRY_AURA_MODIFIER, &bp_chain);
-    }
+    ok = dfi_fairy_aura_base_power(r->b, user, target, move_type, ok, &bp_chain);
     /* Sharpness (step G34, data/abilities.ts:4174-4186, priority 19: after Fairy Aura's 20, before the items' 15): the slicing
      * flag, x1.5. */
     if ((bp_flags2 & DFI_MOVE_FLAG2_SLICING) != 0u && dfi_ability(r->b, a, DFI_ABILITY_SHARPNESS)) {
@@ -2075,12 +1889,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
             ok = ok && dfi_chain_modify(bp_chain, 4505u, &bp_chain);
         }
     }
-    /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
-     * and the sixteen others, decision 0015): 4915/4096 for a move of its
-     * type (onBasePowerPriority 15). */
-    if (dfi_type_booster_applies(dfi_item_code(r->b, a), move_type)) {
-        ok = ok && dfi_chain_modify(bp_chain, DFI_TYPE_BOOSTER_MODIFIER, &bp_chain);
-    }
+    ok = dfi_type_booster_base_power(r->b, a, move_type, ok, &bp_chain);
     /* Helping Hand's volatile (Team C): chainModify(1.5) at
      * onBasePowerPriority 10, after the items (15) and before Grassy Terrain
      * (6) (data/moves.ts:8590-8597). */
@@ -2147,9 +1956,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * move of its type at a third of the HP or less, Flash Fire's boost for
      * Fire moves once it took one; 1.5 each. */
     uint32_t atk_chain = 4096u;
-    if (dfi_pinch_applies_fam(dfi_ability_family_now(r->b, a), a, move_type)) {
-        ok = ok && dfi_chain_modify(atk_chain, DFI_PINCH_MODIFIER, &atk_chain);
-    }
+    ok = dfi_pinch_attack(r->b, a, move_type, ok, &atk_chain);
     if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FLASHFIRE) &&
         ((uint32_t)ap->flags & DFI_VOL_FLASH_FIRE) != 0u) {
         ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
@@ -2295,18 +2102,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         }
     }
     /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
-     * others, decision 0015; combat/item_family.h) is eaten by a super
+     * others, decision 0015; combat/items/families.h) is eaten by a super
      * effective hit of its type, the Normal berry by any Normal hit. */
     const uint32_t berry_item = dfi_item_code(r->b, d);
     if (dfi_resist_berry_applies(berry_item, move_type, mod) && !dfi_unnerved(r->b, target) && !r->sub_hit) {
-        dfi_use_item(r, target); /* [-enditem] [eat] */
-        duoforge_event weaken =
-            dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_NONE, berry_item, DUOFORGE_NO_POSITION);
-        weaken.detail = 1u;
-        dfi_emit(r, &weaken); /* [-enditem] [weaken] */
-        ok = ok && dfi_chain_modify(chain, DFI_RESIST_BERRY_MODIFIER, &chain);
-        if (!dfi_mods_push(mlist, &mods, DFI_RESIST_BERRY_MODIFIER)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+        const duoforge_status berry_status =
+            dfi_resist_berry_hit(r, target, berry_item, &ok, &chain, mlist, &mods, dfi_use_item);
+        if (berry_status != DUOFORGE_OK) {
+            return berry_status;
         }
     }
     /* Aurora Veil (step G20, data/moves.ts:846-860) weakens both categories by the same 2732/4096 and returns without an
@@ -3631,38 +3434,7 @@ static duoforge_status dfi_thief(dfi_run *r, uint32_t user, uint32_t target, uin
     return DUOFORGE_OK;
 }
 
-/* White Herb's check (onStart, data/items.ts): its standing holder has a
- * lowered stat. */
-static bool dfi_herb_due(struct duoforge_battle *b, uint32_t flat)
-{
-    const dfi_member *m = dfi_at(b, flat);
-    if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_WHITEHERB)) {
-        return false;
-    }
-    const dfi_active_slot *pos = dfi_pos(b, flat);
-    bool lowered = false;
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        lowered = lowered || pos->stages[i] < DFI_STAGE_NEUTRAL;
-    }
-    return lowered;
-}
 
-/* White Herb (Team C, data/items.ts): when it is due, its holder uses it:
- * [-enditem], then the lowered stages go back to 0 ([-clearnegativeboost]
- * is [silent]), then AfterUseItem (Unburden). */
-static void dfi_white_herb(dfi_run *r, uint32_t flat)
-{
-    if (!dfi_herb_due(r->b, flat)) {
-        return;
-    }
-    dfi_use_item(r, flat);
-    dfi_active_slot *pos = dfi_pos(r->b, flat);
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        if (pos->stages[i] < DFI_STAGE_NEUTRAL) {
-            pos->stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
-        }
-    }
-}
 
 /* Battle.speedSort (sim/battle.ts) over handlers that differ only by their
  * holder's speed: a selection sort, faster first, that shuffles each group
@@ -3710,13 +3482,6 @@ static duoforge_status dfi_speed_shuffle(dfi_run *r, uint32_t list[DFI_POSITIONS
     return DUOFORGE_OK;
 }
 
-/* A standing Pokemon whose White Herb is unused: it has the herb's
- * handlers (side.allies() keeps only Pokemon with HP). */
-static bool dfi_herb_holder(struct duoforge_battle *b, uint32_t flat)
-{
-    const dfi_member *m = dfi_at(b, flat);
-    return m != NULL && m->hp != 0u && dfi_holds(b, m, DFI_ITEM_WHITEHERB);
-}
 
 /* White Herb's onAnyAfterMove and onAnyAfterMega (Team C), the only
  * handlers of these events in the data. runEvent collects them from the
@@ -3739,7 +3504,7 @@ static duoforge_status dfi_herb_event(dfi_run *r, uint32_t user)
         return st;
     }
     for (uint32_t i = 0u; i < n; ++i) {
-        dfi_white_herb(r, list[i]);
+        dfi_white_herb(r, list[i], dfi_use_item);
     }
     return DUOFORGE_OK;
 }
@@ -3894,7 +3659,7 @@ static void dfi_heal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause,
 
 /* Sturdy's onDamage (step G39, data/abilities.ts:4673-4691, priority -30, so before Focus Sash's -40): a Move's damage that
  * would take all of a full-HP holder's HP is -ability|holder|Sturdy and leaves 1 HP. The damage of a Move is a move hit and
- * the confusion hit (effectType 'Move', as for the Sash, combat/item_family.h); recoil, items, status and weather are not.
+ * the confusion hit (effectType 'Move', as for the Sash, combat/items/families.h); recoil, items, status and weather are not.
  * Its onTryHit makes the holder immune to OHKO moves: none is modelled (the generator refuses the field), which
  * tests/test_pool_g39.c pins. The ability is breakable: Mold Breaker is not marked. */
 static bool dfi_sturdy_saves(dfi_run *r, uint32_t flat, uint32_t *damage)
@@ -8926,7 +8691,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                     hp_before[i] = before; /* Emergency Exit asks for the HP before the whole move */
                     hp_set[i] = true;
                 }
-                /* Focus Sash (combat/item_family.h): a move hit that would take
+                /* Focus Sash (combat/items/families.h): a move hit that would take
                  * all of a full-HP holder's HP uses the item up ([-enditem],
                  * before the [-damage] line) and leaves 1 HP. Each target decides
                  * for itself. Only the damage of a Move comes here (and the
@@ -10808,7 +10573,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
             m->ability == 1u + DFI_ABILITY_HOSPITALITY) {
             dfi_hospitality(r, list[i]);
         }
-        dfi_white_herb(r, list[i]);
+        dfi_white_herb(r, list[i], dfi_use_item);
     }
     return DUOFORGE_OK;
 }
@@ -11799,7 +11564,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                     return mst;
                 }
             } else {
-                dfi_white_herb(r, list[i].flat);
+                dfi_white_herb(r, list[i].flat, dfi_use_item);
             }
             dfi_residual_faints(r); /* a callback: faintMessages follows it */
             if (r->ended) {

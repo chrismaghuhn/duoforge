@@ -39,22 +39,84 @@ As a module, `require('./ps_trace.js')` gives `run(root, spec, specFile)`, `PIN`
 
 ## `trace_to_c.py`
 
-Turns every spec and trace into `tests/reference/conformance.h`: the teams in DuoForge ids, the slot commands per step, the expected members (HP, PP, stages, stall counter, the item still held), status, status counter and confusion turns, the boundary and result after the step, the occupants of the positions, the order of the entries, weather, terrain, Trick Room and the side conditions with their remaining turns, the moves each request offers, and the tape. Each player's view of the other side (seen members and their last public HP display) is rebuilt from the public copy of the protocol lines; a public HP that is not a Champions percent display stops the conversion. Each player's events of every step (decision 0007 section 11) are rebuilt from the protocol lines that player sees: the own copy of a split line for its owner, the public copy for the opponent; attributes that amend a move line are folded into its event, `[silent]` lines and hints are not events, and an unknown line or attribute stops the conversion. Residual ties between callbacks (burn, Grassy Terrain) are kept, because the engine draws them; entry-order ties are kept when two entering Pokémon have entry abilities; `each:` ties are kept when two tied Pokémon hold Sitrus Berry or Grassy Seed (their order is the order of their lines); when both sides' same side condition ends in one residual, the tie becomes an entry stating which side's end line comes first; queue-insertion ties among entries that run together and ties between screen handlers are dropped. The converter rejects a gender the species cannot have: the reference fixes it silently, DuoForge refuses the team. A `pass` the reference wants for a slot that a replacement does not ask becomes no command. A move for a slot whose request offers only Struggle becomes Struggle without a Mega declaration (the reference drops a typed `mega` with it); a slot without PP whose request is not Struggle stops the conversion. Draws without effect are dropped by named rules whose preconditions it checks (decision 0006 section 5.1); each step records how many were dropped. Shuffle draws become relative to their group. CTest checks that the committed headers are what the script makes of the traces (`duoforge.reference.conformance_tables`).
+Turns every spec and trace into its generated conformance payload under `tests/reference/battles/reg-mc/<set>/<name>.json`: the teams in DuoForge ids, the slot commands per step, the expected members (HP, PP, stages, stall counter, the item still held), status, status counter and confusion turns, the boundary and result after the step, the occupants of the positions, the order of the entries, weather, terrain, Trick Room and the side conditions with their remaining turns, the moves each request offers, and the tape. Each player's view of the other side (seen members and their last public HP display) is rebuilt from the public copy of the protocol lines; a public HP that is not a Champions percent display stops the conversion. Each player's events of every step (decision 0007 section 11) are rebuilt from the protocol lines that player sees: the own copy of a split line for its owner, the public copy for the opponent; attributes that amend a move line are folded into its event, `[silent]` lines and hints are not events, and an unknown line or attribute stops the conversion. Residual ties between callbacks (burn, Grassy Terrain) are kept, because the engine draws them; entry-order ties are kept when two entering Pokémon have entry abilities; `each:` ties are kept when two tied Pokémon hold Sitrus Berry or Grassy Seed (their order is the order of their lines); when both sides' same side condition ends in one residual, the tie becomes an entry stating which side's end line comes first; queue-insertion ties among entries that run together and ties between screen handlers are dropped. The converter rejects a gender the species cannot have: the reference fixes it silently, DuoForge refuses the team. A `pass` the reference wants for a slot that a replacement does not ask becomes no command. A move for a slot whose request offers only Struggle becomes Struggle without a Mega declaration (the reference drops a typed `mega` with it); a slot without PP whose request is not Struggle stops the conversion. Draws without effect are dropped by named rules whose preconditions it checks (decision 0006 section 5.1); each step records how many were dropped. Shuffle draws become relative to their group. CTest checks every committed per-battle payload and declaration header against the traces (`duoforge.reference.conformance_tables`).
 
 ```sh
-python tools/reference/trace_to_c.py .           # write the headers below
-python tools/reference/trace_to_c.py . --check   # compare them
+python tools/reference/trace_to_c.py .           # write payloads and declaration headers
+python tools/reference/trace_to_c.py . --check   # compare all payloads and headers
 ```
 
-It writes four files. `tests/reference/conformance.h` holds the closure battles, `conformance_team_c.h` the battles whose spec says `"data": "team_c"` (read with the extended tables) and `conformance_pool.h` the battles whose spec says `"data": "pool"` (decision 0015; read with the pool tables, which keep every extended id and add the new items and abilities; `spec_is_team_c` holds for both, `spec_is_pool` tells them apart; the pool file is written only when such a battle is committed). The record types of all three (`df_conf_member`, `df_conf_step` and the others) are written to `tests/reference/conformance_types.h` from one template in the script; the data headers include it, and so do the comparators of `tests/support/conformance_compare.c` (the checks of the replay, which later runners share).
+There is one generated JSON file per battle in `tests/reference/battles/reg-mc/{closure,team_c,pool}/`.
+Each file owns its conformance arrays, tiebreak stops and frozen pins. Conformance tape/event offsets
+are local to the battle; `tests/reference/data.cmake` discovers the files and builds the original flat
+arrays with directory-derived bases. The arrays are compiled once in a test-only static library.
+Native builds need neither Python nor Node. Existing C consumers still include the small generated
+`conformance.h`, `conformance_team_c.h`, `conformance_pool.h` and `tiebreak_ref.h` declaration headers.
+Their counts and totals are derived from the per-battle files. `conformance_types.h` retains the
+unchanged record declarations from the converter's template.
 
 The script is also a library (`import trace_to_c` from `tools/reference`). `load_battle(root, name)` reads a spec and a trace and is the only file IO of a conversion. `convert_battle(name, spec, trace, tables)` is pure and returns plain data in the field order of the `df_conf_*` types: the name, the purpose, the member count, the members as int tuples, and per step the `df_conf_step` fields, with the step's own tape entries (site, lo, hi, value) and each player's event tuples in place of offsets into the shared arrays, and the number of dropped draws; with the total dropped. `format_battle(data, out, all_tape, all_events)` writes that data as the C tables, appending to the shared tape and event arrays, and `spec_is_team_c(name, spec)` reads the Team C decision from a spec. `step_record(st, tape_off, ev_off, ev_len)` is one step as the nested int tuple of its `df_conf_step` in declaration order, the one place in Python where that order is written down; `format_battle` prints it, and a runner that writes records can flatten the same tuple (the member rows and the event tuples are in declaration order already). The drop rules stay in one place and are checked as before.
 
 Whatever the converter does not model raises `ConversionError`, a `SystemExit` with a short stable `rule` (for example `protocol-line`, `unclassified-draw`, `residual-tie-callbacks`, `struggle-request`; it is the first argument of each `raise` in the script) and an optional `detail` that groups the cases (the protocol line kind, the attribute, the effects of the tie). The message is unchanged, so a script that does not catch it still prints it to stderr and exits with status 1.
 
-CTest also runs `tests/test_trace_to_c.py` as `duoforge.reference.converter_api` (Python only, no Node and no checkout). Its negative controls change in-memory copies of committed battles and assert the rule, the detail and the exact message of each refusal. It checks that the library reproduces the three committed headers, the shape of the data against the declarations of the record types (and `step_record` against the declared field names), that `convert_battle` does no file IO and leaves its inputs alone, that a choice passing both slots of a switch request converts, and the command line: `--check`, the usage message, a refused trace (status 1 and its message) and write and check of all three files on a small copy.
+CTest also runs `tools/reference/tests/test_trace_to_c.py` as `duoforge.reference.converter_api` (Python only, no Node and no checkout). Its negative controls change in-memory copies of committed battles and assert the rule, the detail and the exact message of each refusal. It checks that the library reproduces every conformance payload and the three declaration headers, the shape of the data against the declarations of the record types (and `step_record` against the declared field names), that `convert_battle` does no file IO and leaves its inputs alone, that a choice passing both slots of a switch request converts, and the command line: `--check`, the usage message, a refused trace (status 1 and its message) and write and check of all three files on a small copy.
 
-To add a battle: write a spec (gender for every gendered species), record its trace with `ps_trace.js`, run `trace_to_c.py`, and raise the battle count in `tests/interactions/test_conformance.c`.
+To add a battle: write its spec (gender for every gendered species), record the trace with `ps_trace.js`,
+then explicitly capture its pins and regenerate both payload components. Deliberately update the
+dataset line in the independently maintained format pin before rebuilding and running the quick guard:
+
+```sh
+# Use the configured build's library and diff runner, PYTHONPATH=<repo>/python:<repo>,
+# DUOFORGE_NODE=Node 22, DUOFORGE_PS_REFERENCE_DIR=<pinned checkout>,
+# and OPENBLAS_NUM_THREADS=1 for multi-threaded OpenBLAS.
+python tools/reference/capture_battle_pins.py .   # seed only new battles; never rewrite existing pins
+python tools/reference/trace_to_c.py .
+node tools/reference/tiebreak_ref.js <checkout> . > tests/reference/tiebreak_ref.h
+python tools/reference/capture_battle_pins.py . --check
+python tools/reference/trace_to_c.py . --check
+node tools/reference/tiebreak_ref.js <checkout> . --check tests/reference/tiebreak_ref.h
+```
+
+`tests/reference/pins/reg-mc.json` is an **independently hand-maintained** format pin:
+counts, sorted-name SHA-256 (ASCII name plus LF), certified/fixture counts, tiebreak stops,
+live outcomes, tracker stops and own-PP totals. Adding a battle requires a deliberate edit
+to its dataset's line. No generator updates this file. `duoforge.reference.format_pins`
+checks it in the quick tier, including coordinated deletion/rename controls. The native
+runners compare aggregate counts to this independent pin rather than their array bounds.
+
+The pin capture tool seeds only missing battle files by default. It does not observe or
+change existing pins in that mode. A deliberate re-pin must use `--update-existing`;
+every changed file and field is printed, including removals and nested outcome/stop keys:
+
+```sh
+python tools/reference/capture_battle_pins.py . --update-existing
+```
+
+Review that output and update the independent format pin deliberately if intended.
+`duoforge.reference.battle_pins` registers `--check` in the full tier. This particular
+full-tier tool depends on the configured Python/library/runner/Node/pinned Showdown;
+unconfigured profiles retain a visible skip. The Python/reference CI jobs require it
+to execute through the unchanged `ci-no-skip` guard.
+
+`capture_battle_pins.py` freezes the public engine setup's certified/dev outcome, Team C fixture membership,
+and the existing live assembler comparisons for each battle. Normal tests compare against these frozen
+pins; they never refresh them. An intentional pin change requires reviewing the per-battle difference.
+The live test derives its global outcomes/stops and own-PP refusal set from those independent pins.
+UNMODELED table-row counts remain global until the definition-file work in restructure step 5.
+
+Both native reference runners accept `--digest-out <file>`. They emit one ASCII TSV row per battle:
+name, SHA-256, step count, stop count. The hash covers canonical state, requests, step results,
+RNG consumption, ordered events (conformance), and stop/tiebreak results (tiebreak). Without the
+option their behavior is unchanged. The encoding lives in `tests/support/reference_digest.*`;
+it adds no public API. Capture all ten dataset/context variants into an outside-repository directory:
+
+```sh
+python tools/restructure/capture_reference.py . build <outside-repo-output>
+```
+
+The internal output was proven byte-equal to the step-0 observer on commit `cc8d3fc7` for all
+2,584 executions before retiring the observer in a separate commit. The step-2 report records
+that witness, the baseline comparison and the build measurement.
 
 The checkout needs `npm ci --ignore-scripts --omit=dev` and `node build` once, so that `dist/sim` exists.
 

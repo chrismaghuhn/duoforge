@@ -1,0 +1,156 @@
+[
+  {
+    "function": "dfi_run (unchanged layout)",
+    "kind": "private scratch type",
+    "new_file": "src/combat/run_internal.h",
+    "new_first_line": 12,
+    "new_last_line": 80,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 40,
+    "old_last_line": 108
+  },
+  {
+    "function": "dfi_pos",
+    "kind": "function",
+    "new_file": "src/combat/run_internal.h",
+    "new_first_line": 82,
+    "new_last_line": 85,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 121,
+    "old_last_line": 124
+  },
+  {
+    "function": "dfi_at",
+    "kind": "function",
+    "new_file": "src/combat/run_internal.h",
+    "new_first_line": 88,
+    "new_last_line": 95,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 127,
+    "old_last_line": 134
+  },
+  {
+    "function": "dfi_emit",
+    "kind": "function",
+    "new_file": "src/combat/run_internal.h",
+    "new_first_line": 97,
+    "new_last_line": 102,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 459,
+    "old_last_line": 464
+  },
+  {
+    "function": "dfi_ev",
+    "kind": "function",
+    "new_file": "src/combat/run_internal.h",
+    "new_first_line": 105,
+    "new_last_line": 112,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 467,
+    "old_last_line": 474
+  },
+  {
+    "function": "dfi_item_code",
+    "kind": "function",
+    "new_file": "src/combat/items/held.h",
+    "new_first_line": 13,
+    "new_last_line": 32,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 305,
+    "old_last_line": 324
+  },
+  {
+    "function": "dfi_holds",
+    "kind": "function",
+    "new_file": "src/combat/items/held.h",
+    "new_first_line": 35,
+    "new_last_line": 38,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 327,
+    "old_last_line": 330
+  },
+  {
+    "function": "dfi_item_takeable",
+    "kind": "function",
+    "new_file": "src/combat/items/held.h",
+    "new_first_line": 46,
+    "new_last_line": 50,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 370,
+    "old_last_line": 374
+  },
+  {
+    "function": "dfi_type_booster_base_power",
+    "kind": "function",
+    "new_file": "src/combat/items/families.c",
+    "new_first_line": 4,
+    "new_last_line": 14,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 2078,
+    "old_last_line": 2083
+  },
+  {
+    "function": "dfi_resist_berry_hit",
+    "kind": "function",
+    "new_file": "src/combat/items/families.c",
+    "new_first_line": 19,
+    "new_last_line": 33,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 2302,
+    "old_last_line": 2310
+  },
+  {
+    "function": "dfi_herb_due",
+    "kind": "function",
+    "new_file": "src/combat/items/white_herb.c",
+    "new_first_line": 5,
+    "new_last_line": 17,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 3636,
+    "old_last_line": 3648
+  },
+  {
+    "function": "dfi_white_herb",
+    "kind": "function",
+    "new_file": "src/combat/items/white_herb.c",
+    "new_first_line": 22,
+    "new_last_line": 34,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 3653,
+    "old_last_line": 3665
+  },
+  {
+    "function": "dfi_herb_holder",
+    "kind": "function",
+    "new_file": "src/combat/items/white_herb.c",
+    "new_first_line": 38,
+    "new_last_line": 42,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 3715,
+    "old_last_line": 3719
+  },
+  {
+    "function": "DFI_POSITIONS",
+    "kind": "existing named format constant",
+    "new_file": "src/combat/run_internal.h",
+    "new_first_line": 10,
+    "new_last_line": 10,
+    "old_commit": "ca17e507",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 37,
+    "old_last_line": 37
+  }
+]

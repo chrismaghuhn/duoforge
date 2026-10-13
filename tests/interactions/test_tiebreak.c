@@ -43,6 +43,8 @@
 #include "state/request.h"
 #include "state/tiebreak.h"
 #include "support/check.h"
+#include "support/reference_digest.h"
+#include "reference_pins.h"
 #include "support/fixtures.h"
 
 typedef struct tb_counts {
@@ -89,7 +91,7 @@ static bool has_bits(const dfi_tiebreak_report *r, uint32_t side, uint64_t bits)
 /* The engine at one stop against the reference's. Returns the number of
  * differences found. */
 static unsigned check_stop(df_test *t, const duoforge_context *ctx, const struct duoforge_battle *b,
-                           const df_tb_stop *st, const char *name, tb_counts *counts)
+                           const df_tb_stop *st, const char *name, tb_counts *counts, df_reference_digest *digest)
 {
     unsigned bad = 0;
     struct duoforge_battle before;
@@ -98,6 +100,7 @@ static unsigned check_stop(df_test *t, const duoforge_context *ctx, const struct
     uint32_t out = 0xDEADBEEFu;
     const duoforge_status rs = dfi_battle_tiebreak_report(ctx, b, &r);
     const duoforge_status ps = duoforge_battle_tiebreak(ctx, b, &out);
+    df_reference_digest_tiebreak(digest, st->prefix, st->ended != 0u, &r, rs, ps, out);
     counts->stops += 1u;
     if (!DF_CHECK(t, rs == DUOFORGE_OK)) {
         fprintf(stderr, "  %s @%u: report %s\n", name, (unsigned)st->prefix, duoforge_status_name(rs));
@@ -147,8 +150,12 @@ static unsigned check_stop(df_test *t, const duoforge_context *ctx, const struct
     return bad;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+    df_reference_digest digest;
+    if (!df_reference_digest_open(&digest, argc, argv)) {
+        return 2;
+    }
     df_test t;
 #if defined(DF_CONFORMANCE_POOL_DATA)
     df_test_begin(&t, "duoforge.reference.tiebreak_pool_data");
@@ -200,6 +207,7 @@ int main(void)
             continue;
         }
         battles += 1u;
+        df_reference_digest_begin(&digest, cb->name, ctx, b);
         unsigned bad = 0;
         uint32_t stop = 0u;
         /* The stops with `done` choice entries made: before the first step, and after each. */
@@ -242,14 +250,16 @@ int main(void)
                     ++bad;
                     break;
                 }
+                df_reference_digest_step(&digest, ctx, b, used, &res);
             }
             while (stop < tb->stop_count && tb->stops[stop].prefix == done) {
-                bad += check_stop(&t, ctx, b, &tb->stops[stop], cb->name, &counts);
+                bad += check_stop(&t, ctx, b, &tb->stops[stop], cb->name, &counts, &digest);
                 stop += 1u;
             }
         }
         DF_CHECK_EQ_U64(&t, stop, tb->stop_count); /* every recorded stop was reached */
         DF_CHECK_EQ_U64(&t, bad, 0u);
+        df_reference_digest_end(&digest);
         duoforge_battle_destroy(b);
     }
     fprintf(stderr, "  %u battles, %u stops (%u of an ended battle); the pin decided %u by the count, %u by the HP "
@@ -259,21 +269,22 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 966u); /* + g96_psychic_terrain_block */ /* the pool battles of test_conformance (+ G77's eight): 762 on main, the seven G88 battles, the two C1 battles */
-    DF_CHECK_EQ_U64(&t, counts.stops, 5324u); /* + 6 stops of g96_psychic_terrain_block */ /* base 4505 (main before batch 7) + batch 7 320 + main (lane B G71 to G83) 212 + G77's 35 (counted from tiebreak_ref.h) */
+    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_PIN_BATTLES);
+    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_PIN_TIEBREAK_STOPS);
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&
                      counts.by_stage[4] > 0u);
 #if defined(DF_CONFORMANCE_TEAM_C)
-    DF_CHECK_EQ_U64(&t, battles, 73u);
-    DF_CHECK_EQ_U64(&t, counts.stops, 734u);
+    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_PIN_BATTLES);
+    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_PIN_TIEBREAK_STOPS);
 #else
-    DF_CHECK_EQ_U64(&t, battles, 90u);
-    DF_CHECK_EQ_U64(&t, counts.stops, 833u);
+    DF_CHECK_EQ_U64(&t, battles, DF_REFERENCE_PIN_BATTLES);
+    DF_CHECK_EQ_U64(&t, counts.stops, DF_REFERENCE_PIN_TIEBREAK_STOPS);
 #endif
 #endif
     duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
-    return df_test_end(&t);
+    const int result = df_test_end(&t);
+    return df_reference_digest_close(&digest) ? result : 2;
 }

@@ -1,0 +1,227 @@
+{
+  "P2": {
+    "byte_equal_baseline_and_observer": true,
+    "executions": 2584,
+    "sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+    "steps": 11236,
+    "stops": 8458,
+    "unique_battles": 1129,
+    "variants": 10
+  },
+  "P3": {
+    "perft_positions": 10,
+    "pin_file_sha256": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+    "pinned_depths": 24
+  },
+  "P4": {
+    "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+    "cases": 2,
+    "roots": 8,
+    "searched_roots": 7
+  },
+  "P5": {
+    "battle_pin_check": true,
+    "closure_extended_pool_checks": true,
+    "conformance_check": true,
+    "engine_generator_data_source_diff_empty": true,
+    "tiebreak_check": true
+  },
+  "P6": {
+    "core_and_binding_layout_diff_empty": true,
+    "exported_sha256": "1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5",
+    "exported_symbols": 238,
+    "layout_constants": 250,
+    "layout_sha256": "502ecc2e08dc76cf3004d31115948bc4e69d7843ce5cd5d2492d950464e07e8e",
+    "layout_structs": 33,
+    "public_header_diff_empty": true
+  },
+  "baseline": "a9e44f8c",
+  "ctest_attempts": [
+    {
+      "name": "duoforge.data.closure_regen",
+      "passed": true,
+      "seconds": 0.248037,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.data.extended_regen",
+      "passed": true,
+      "seconds": 0.231871,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.data.pool_regen",
+      "passed": true,
+      "seconds": 0.461973,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.reference.tiebreak_ref",
+      "passed": true,
+      "seconds": 221.207,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.reference.conformance_tables",
+      "passed": true,
+      "seconds": 14.1829,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.reference.converter_api",
+      "passed": false,
+      "seconds": 120.076,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.python.layout",
+      "passed": true,
+      "seconds": 0.274634,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.python.perft",
+      "passed": true,
+      "seconds": 25.3517,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.python.state_layout",
+      "passed": true,
+      "seconds": 0.29598,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.python.bench",
+      "passed": true,
+      "seconds": 8.65515,
+      "skipped": false,
+      "source": "review-short.xml"
+    },
+    {
+      "name": "duoforge.reference.converter_api",
+      "passed": true,
+      "seconds": 29.2609,
+      "skipped": false,
+      "source": "review-converter-rerun.xml"
+    },
+    {
+      "name": "duoforge.reference.format_pins",
+      "passed": true,
+      "seconds": 8.39985,
+      "skipped": false,
+      "source": "review-pins.xml"
+    },
+    {
+      "name": "duoforge.reference.battle_pins",
+      "passed": true,
+      "seconds": 398.389,
+      "skipped": false,
+      "source": "review-pins.xml"
+    },
+    {
+      "name": "duoforge.reference.format_pins",
+      "passed": true,
+      "seconds": 6.92656,
+      "skipped": false,
+      "source": "review-quick-final.xml"
+    }
+  ],
+  "ctest_final_results": [
+    {
+      "name": "duoforge.data.closure_regen",
+      "passed": true,
+      "seconds": 0.248037,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.data.extended_regen",
+      "passed": true,
+      "seconds": 0.231871,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.data.pool_regen",
+      "passed": true,
+      "seconds": 0.461973,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.python.bench",
+      "passed": true,
+      "seconds": 8.65515,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.python.layout",
+      "passed": true,
+      "seconds": 0.274634,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.python.perft",
+      "passed": true,
+      "seconds": 25.3517,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.python.state_layout",
+      "passed": true,
+      "seconds": 0.29598,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.reference.battle_pins",
+      "passed": true,
+      "seconds": 398.389,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.reference.conformance_tables",
+      "passed": true,
+      "seconds": 14.1829,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.reference.converter_api",
+      "passed": true,
+      "seconds": 29.2609,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.reference.format_pins",
+      "passed": true,
+      "seconds": 6.92656,
+      "skipped": false
+    },
+    {
+      "name": "duoforge.reference.tiebreak_ref",
+      "passed": true,
+      "seconds": 221.207,
+      "skipped": false
+    }
+  ],
+  "ctest_latest_failed": 0,
+  "ctest_latest_skipped": 0,
+  "ctest_unique_passed": 12,
+  "existing_tests_unchanged": 1405,
+  "generated_battle_and_declaration_changes_this_followup": [],
+  "hosted_ci": "New complete PR-head matrix and RNG required before maintainer merge; pending normal push",
+  "inventory_count": 1407,
+  "local_timeout_note": "converter_api timed out at its unchanged 120-second limit while the IPO build and reference regeneration competed for the 4-CPU quota; after build completion its unchanged rerun passed in 29.26 seconds.",
+  "merged_main": "5c99fbd0",
+  "new_tests": 2,
+  "pin_check_battles": 1129,
+  "pin_check_live_battles": 1056,
+  "regression_unittest_cases": 7,
+  "source_commit": "03b7386b859836d43b2fa8ca9fb86675efe8571a"
+}

@@ -219,8 +219,10 @@ class _Battle(client._Battle):
 
 
 def _history_line(line):
+    # |t:| is a timestamp, not a battle line: the arena's replay after a reconnect gives every one the time of the
+    # replay (live, 2026-10-13, #455), so the resync compares the battle lines only
     kind = line_kind(line)
-    return not _room_line(line) and kind not in ("request", "sentchoice")
+    return not _room_line(line) and kind not in ("request", "sentchoice", "t:")
 
 
 class ArenaBot(client.Bot):
