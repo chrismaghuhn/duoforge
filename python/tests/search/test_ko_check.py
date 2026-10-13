@@ -192,6 +192,29 @@ class ReplayTest(unittest.TestCase):
         for world, columns in enumerate(first["foe_sets"]):
             self.assertTrue(set(search_record["foe_pairs"][world]) <= set(columns) or columns == [lookahead.NO_FOE])
 
+    def test_the_cli_counts_step_zeros_own_choice_with_played_search(self):
+        # Step 2's KO comparison (HS, 2026-10-13): step 0 counted by its own choice, as the arms are, not by the logged
+        # move. The default of step 0 stays the log.
+        team = os.path.join(self.tmp.name, "team.txt")
+        with open(team, "w", encoding="utf-8") as f:
+            f.write(FIXTURE["team"])
+        for played in ("search", None):
+            with self.subTest(played=played), tempfile.TemporaryDirectory() as out, \
+                    mock.patch.dict(os.environ, ENV), contextlib.redirect_stdout(io.StringIO()):
+                extra = [] if played is None else ["--played", played]
+                ko_check.main(["--logs", self.logs, "--team", team, "--checkpoint", self.path, "--step", "0",
+                               "--samples-per-world", "1", "--out", os.path.join(out, "r"), *extra])
+                with open(os.path.join(out, "r", "report.json"), encoding="utf-8") as f:
+                    report = json.load(f)
+                with open(os.path.join(out, "r", "decisions.jsonl"), encoding="utf-8") as f:
+                    rows = [json.loads(line) for line in f]
+                self.assertEqual(report["played"], played or "log")
+                self.assertTrue(rows)
+                self.assertEqual({r["played"] for r in rows}, {played or "log"})
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            ko_check.main(["--logs", self.logs, "--team", team, "--checkpoint", self.path, "--played", "raw",
+                           "--out", os.path.join(self.tmp.name, "never")])
+
     def test_the_cli_refuses_an_output_inside_the_repository(self):
         from duoforge_live.data import ROOT
         with self.assertRaises(SystemExit):

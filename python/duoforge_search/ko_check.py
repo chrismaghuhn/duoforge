@@ -328,6 +328,9 @@ def main(argv=None):
     p.add_argument("--checkpoint", required=True, help="the live network (BC6)")
     p.add_argument("--foe-net", default=None, help="the foe model (default: the checkpoint itself)")
     p.add_argument("--step", default="0", help="the ladder step whose search is replayed (ladder.STEPS)")
+    p.add_argument("--played", choices=("log", "search"), default=None,
+                   help="what counts as played: the pair the bot sent (log, the default of step 0) or the replayed "
+                        "step's own choice (search, the default of every other step)")
     p.add_argument("--samples-per-world", type=int, default=SAMPLES_PER_WORLD)
     p.add_argument("--limit", type=int, default=None, help="at most this many log files (a smoke run)")
     p.add_argument("--out", required=True, help="the report directory, outside the repository")
@@ -339,6 +342,7 @@ def main(argv=None):
         raise SystemExit(str(err)) from None
     if args.samples_per_world < 1:
         raise SystemExit("--samples-per-world must be at least 1")
+    played = args.played or ("log" if args.step == "0" else "search")
     from . import ladder
     try:
         settings = ladder.step_settings(args.step)
@@ -367,7 +371,7 @@ def main(argv=None):
                 try:
                     for game, record, searched in replay(path, tables, net, live, team_text, episode):
                         row = decision_row(game, net, live, record, searched, args.samples_per_world,
-                                           played_from="log" if args.step == "0" else "search")
+                                           played_from=played)
                         rows.append(row)
                         f.write(json.dumps(row) + "\n")
                     games["followed"] += 1
@@ -376,7 +380,7 @@ def main(argv=None):
                 print(f"{episode + 1}/{len(files)} games, {len(rows)} decisions", file=sys.stderr, flush=True)
     finally:
         live.close()
-    report = {"step": args.step, "played": "log" if args.step == "0" else "search", "settings": {k: v for k, v in settings.items() if k != "foe_net"},
+    report = {"step": args.step, "played": played, "settings": {k: v for k, v in settings.items() if k != "foe_net"},
               "samples_per_world": args.samples_per_world, "thresholds": {"likely": LIKELY, "sure": SURE},
               "games": {"files": len(files), **games, "refused": dict(refused)}, **aggregate(rows)}
     with open(os.path.join(args.out, "report.json"), "w", encoding="utf-8") as f:
