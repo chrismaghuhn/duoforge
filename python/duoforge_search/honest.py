@@ -307,6 +307,8 @@ class Honest(lookahead.Lookahead):
             self.foe_net = (foe_model, foe_params, int(foe_encoder), int(foe_ext))
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
+        if k != 1:  # one candidate plays raw and solves nothing; the turns' and the preview's LPs are k x m x s at most
+            matrix.check_bayes_size(k, m, s, "the honest search")  # width "slots" is checked per decision (_finish)
         if preview_mode not in ("raw", "value", "turn1") or type(preview_steps) is not int or preview_steps < 1:
             raise ValueError("preview requires raw/value/turn1 and a positive rollout bound")
         if preview_only and preview_mode == "raw":
@@ -782,6 +784,10 @@ class Honest(lookahead.Lookahead):
                 own, own_p = own[keep], np.asarray(own_p)[keep]
                 tab = lookahead.Table(tab.a[keep], tab.stderr[keep], tab.counts, tab.values[keep])
                 tables = tab.values.transpose(2, 0, 1)
+        try:  # width "slots" knows its own pairs only now: a table above the LP size limit stops by name (#440)
+            matrix.check_bayes_size(tables.shape[1], tables.shape[2], tables.shape[0], "this decision's table")
+        except ValueError as err:
+            raise SearchError(str(err)) from None
         rank = np.arange(own.size)
         try:
             outcomes, reduced = reduce(tables, weights, qs, rank,

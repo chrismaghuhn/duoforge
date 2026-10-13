@@ -522,7 +522,9 @@ class HonestSearch(unittest.TestCase):
 
     def test_slot_width_keeps_the_raw_pair_first_and_adds_each_slot_option(self):
         # #433, step 2w: the joint top k and every slot option's best pair; the first pair (raw) is the joint one's.
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as joint,                 self.make(ctx, width="slots") as slots:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as joint, \
+                self.make(ctx, width="slots") as slots:
             self.preview(joint, b)
             self.preview(slots, b)
             self.start_turn(b)
@@ -538,9 +540,21 @@ class HonestSearch(unittest.TestCase):
             self.assertGreater(len(options), len({pair // lookahead.OPTIONS for pair in narrow["own_pairs"]}))
             self.assertNotIn("dominated_pairs", wide)
 
+    def test_a_wide_table_above_the_lp_size_limit_stops_by_name(self):
+        # width "slots" knows its own pairs only at the decision: a table above the limit is a named stop, never solved
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx, width="slots") as wide:
+            self.preview(wide, b)
+            self.start_turn(b)
+            with mock.patch.object(honest.matrix, "MAX_BAYES_VARIABLES", 3):
+                with self.assertRaisesRegex(honest.SearchError, "this decision's table.*above the limit"):
+                    wide.decide(b, [0], [0], [456], [False])
+
     def test_dominated_rows_leave_the_solve_and_are_named(self):
         # #433, step 2d: the own rows weakly dominated in every world leave the solve; the choice is a kept row.
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b,                 self.make(ctx, width="slots") as plain, self.make(ctx, width="slots", prune="dominated") as pruned:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                self.make(ctx, width="slots") as plain, self.make(ctx, width="slots", prune="dominated") as pruned:
             self.preview(plain, b)
             self.preview(pruned, b)
             self.start_turn(b)
@@ -555,6 +569,15 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual(kept["raw"], full["raw"])
             np.testing.assert_array_equal(np.asarray(kept["tables"]), tables[:, ~dominated, :])
             self.assertAlmostEqual(kept["value"], full["value"], delta=1e-9 * (1 + np.ptp(tables)))
+
+    def test_a_search_above_the_lp_size_limit_is_refused_when_built(self):
+        # #440: the exact rescue is known to finish up to 129 rows and 32 variables; one candidate solves nothing
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            for k, m, s in ((16, 16, 16), (8, 8, 32), (17, 8, 16)):
+                with self.subTest(k=k, m=m, s=s), self.assertRaisesRegex(ValueError, "above the limit"):
+                    honest.Honest(ctx, self.model, self.params, 4, 0, k=k, m=m, s=s)
+            with honest.Honest(ctx, self.model, self.params, 4, 0, k=1, m=64, s=4, capacity=16, workers=1):
+                pass
 
     def test_refused_mode_must_be_score_or_drop(self):
         costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}

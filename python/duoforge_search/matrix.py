@@ -68,6 +68,13 @@ from .errors import SearchError
 CERTIFICATE = 1e-9  # the largest exploitability a solution may have, and at most this times the table's range
 PROBABILITY_FLOOR = 1e-9  # a mixed strategy's probabilities below it are played as 0
 MAX_ITERATIONS = 10_000
+# The largest Bayesian LP a search may build (#440, owner 2026-10-13): the largest size class without a failure in any
+# run. Step 0 and b-k16 (16 worlds x 8 foe pairs + 1 = 129 rows; at most 16 own pairs + 16 worlds = 32 variables)
+# never failed. Every arm at 257 rows met the exact rescue, and b-km16 (257 rows, 32 variables) stopped in it although
+# b-m16 and b-s32, no smaller, finished: the failure is rare (about one exact rescue in 10,000 decisions) and not
+# monotone in the size, so only the class without one is safe until the exact rescue is repaired.
+MAX_BAYES_ROWS = 129
+MAX_BAYES_VARIABLES = 32
 _EPS = 1e-12  # a reduced cost or a pivot entry must exceed it to count as positive
 
 
@@ -579,6 +586,20 @@ def weakly_dominated(tables):
     at_least = (rows[None, :, :] >= rows[:, None, :]).all(axis=2)  # [i, j]: row j >= row i everywhere
     above = (rows[None, :, :] > rows[:, None, :]).any(axis=2)  # [i, j]: row j > row i somewhere
     return (at_least & above).any(axis=1)
+
+def bayes_size(k, m, worlds):
+    """(rows, variables) of the Bayesian LP of k own pairs, m foe pairs and `worlds` worlds (_bayes_tableau)."""
+    return worlds * m + 1, k + worlds
+
+
+def check_bayes_size(k, m, worlds, what):
+    """ValueError, naming `what`, when the Bayesian LP of at most k own pairs, m foe pairs and `worlds` worlds is above
+    MAX_BAYES_ROWS or MAX_BAYES_VARIABLES."""
+    rows, variables = bayes_size(k, m, worlds)
+    if rows > MAX_BAYES_ROWS or variables > MAX_BAYES_VARIABLES:
+        raise ValueError(f"{what}: a Bayesian LP of up to {rows} rows and {variables} variables (k={k}, m={m}, "
+                         f"worlds={worlds}) is above the limit of {MAX_BAYES_ROWS} rows and {MAX_BAYES_VARIABLES} "
+                         f"variables, where the exact rescue is known to finish (#440)")
 
 def _bayes_tableau(b, p, zero, one):
     """The rows of the LP above over a number type (float or Fraction)."""

@@ -516,6 +516,24 @@ class CliGuardTest(unittest.TestCase):
             out = os.path.join(tmp, "out")
             self.assertRefused("known steps", self.argv(out, step="nope"), out)
 
+    def test_steps_above_the_lp_size_limit_are_refused_by_name_before_loading(self):
+        # owner on #440: b-s64 and b-km16 stopped in the exact rescue; the limit is step 0's and b-k16's size class
+        above = {"b-s32", "b-s64", "b-s128", "b-s256", "b-m16", "b-km16", "b-km16-s64", "2w", "2wd"}
+        for name in ladder.STEPS:
+            with self.subTest(step=name):
+                self.assertEqual(ladder.size_refusal(name) is not None, name in above)
+        self.assertIn("above the limit of 129 rows and 32 variables", ladder.size_refusal("b-km16"))
+        self.assertIn("k=72", ladder.size_refusal("2w"))  # width slots: k + 2 * 32 own pairs at most
+        from duoforge import _layout
+        self.assertEqual(ladder.SLOT_OPTIONS, _layout.MAX_SLOT_OPTIONS)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            for name in ("b-km16", "b-s64"):
+                with self.subTest(step=name):
+                    self.assertRefused(f"step '{name}'.*above the limit", self.argv(out, step=name), out)
+                    self.assertRefused(f"step '{name}'.*above the limit", self.argv(out, extra=("--previous", name)),
+                                       out)
+
     def test_previous_run_must_have_measured_the_previous_step(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "out")
@@ -780,7 +798,7 @@ class PairedWithCliTest(unittest.TestCase):
 
     def argv(self, out, extra=()):
         return ["--checkpoint", "missing/main.npz", "--foe-net", "missing/foe.npz", "--teams-from", "missing/pool.npz",
-                "--step", "b-s32", "--opponent", "bot=missing/bot.npz", "--out", out, *extra]
+                "--step", "b-k16", "--opponent", "bot=missing/bot.npz", "--out", out, *extra]  # under the LP limit
 
     def test_it_excludes_previous_h2h_and_previous_run(self):
         cases = {"--previous": ("--previous", "0"), "--h2h": ("--h2h",),
@@ -802,7 +820,7 @@ class PairedWithCliTest(unittest.TestCase):
             recorded = os.path.join(tmp, "recorded", "ladder.json")
             write_json(recorded, paired_recorded(pairs=4, sha=sha))
             argv = ["--checkpoint", files["main"][0], "--foe-net", files["foe"][0], "--teams-from", files["teams"][0],
-                    "--step", "b-s32", "--paired-with", recorded, "--opponent", f"bot={files['bot'][0]}",
+                    "--step", "b-k16", "--paired-with", recorded, "--opponent", f"bot={files['bot'][0]}",
                     "--pairs", "4", "--out", out]
             with self.assertRaisesRegex(SystemExit, "sha256_prefix of main"):
                 ladder.main(argv)
