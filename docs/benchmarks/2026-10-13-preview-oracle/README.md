@@ -61,7 +61,7 @@ This document was committed before the first measurement (`3fda5ad2`); the resul
 
 ### Stage 1: screen (commit `3fda5ad2`, dirty: false, library built from `d19839e3`, 2026-10-13)
 
-The library's sources (`src/`, `include/`) are those of `3fda5ad2`; the two commits differ only in test registrations. 91 arms of 32 pairs (64 games each, 5,824 games). No game was unfinished or unresolved. All arms played the same foe draws.
+The library's sources are those of `3fda5ad2`: the two commits have the same `src/` and `include/`, and their CMake files differ only in test registrations. The Python ran from `3fda5ad2`. 91 arms of 32 pairs (64 games each, 5,824 games). No game was unfinished or unresolved. All arms played the same foe draws.
 
 - **Our preview today:** BC6's raw top-1 is the combination Milotic + Raichu in the lead, Rillaboom + Ceruledge in the back (`24|03`). The arm `today` scored **65.6 %** [53.1, 76.6]; its combination with the fixed sides and bench order scored 70.3 %.
 - **Best combination (selected on these games, so biased upward):** Milotic + Ceruledge in the lead, Rillaboom + Raichu in the back (`23|04`): **85.9 %** [78.1, 93.8]. Against `today`: **+20.3 points** [6.3, 34.4], paired.
@@ -79,7 +79,8 @@ The library's sources (`src/`, `include/`) are those of `3fda5ad2`; the two comm
 - **Spread of the 90 combinations:**
   - range 76.6 points (9.4 % to 85.9 %), standard deviation 15.8 points;
   - noise of one score 6.0 points;
-  - spread left after the noise **14.6 points**.
+  - spread left after the noise **14.6 points** (predeclared formula).
+  - Added after the runs: the arms play the same games, so their noises are correlated and the predeclared formula subtracts too much noise; it is a lower bound. Subtracting only the noise of the arms' differences (5.8 points) leaves 14.7 points.
 - **Worst:** Rillaboom + Staraptor in the lead with Raichu + Gholdengo in the back (`01|45`), 9.4 %.
 - **Marginals:**
   - Bring-4, by mean over its 6 lead pairs:
@@ -99,13 +100,17 @@ The library's sources (`src/`, `include/`) are those of `3fda5ad2`; the two comm
 - **Fallbacks per arm** (share of searched decisions that fell back to the raw policy):
   - median 18.4 % (ours) and 19.2 % (foe), maximum 27.5 % on both seats;
   - causes: visible sleep (ours 10,468; foe 10,620 decisions over all arms), plus 304 foe decisions with an unsupported public record;
-  - **32 arms lie more than 2 points above the median on our seat.** Their causes are visible sleep only. Four of the five top arms are among them (all but `24|13`); `today` (20.0 %) is not.
+  - **32 arms lie more than 2 points above the median on our seat**, with visible sleep as their only cause (4,947 decisions):
+    `02|13`, `02|15`, `02|34`, `02|35`, `03|12`, `03|25`, `05|23`, `12|03`, `12|04`, `12|05`, `12|34`, `12|45`, `13|02`, `15|24`, `23|01`, `23|04`, `23|05`, `23|14`, `23|15`, `23|45`, `24|03`, `24|15`, `24|35`, `25|03`, `25|04`, `25|13`, `25|14`, `25|34`, `34|02`, `35|02`, `35|12`, `45|23`.
+    - Four of the five top arms are among them (all but `24|13`); `today` (20.0 %) is not.
+  - **32 arms lie more than 2 points above the median on the foe's seat**, with visible sleep (5,045 decisions) and an unsupported public record (73):
+    `02|13`, `02|14`, `02|15`, `02|34`, `02|35`, `02|45`, `03|12`, `03|25`, `05|23`, `12|03`, `12|04`, `12|05`, `12|34`, `12|45`, `13|02`, `15|24`, `23|01`, `23|04`, `23|05`, `23|45`, `24|03`, `24|15`, `24|35`, `25|04`, `25|13`, `25|14`, `25|34`, `34|02`, `35|02`, `35|12`, `35|24`, `45|23`.
   - The share rises with the arm's score: correlation 0.69 (ours) and 0.65 (foe) over the 90 combinations. Sleep therefore hits the arms unequally, mostly the winning ones.
   - Stages 2 and 3 ran with #459 (visible sleep) merged, see below.
 
 ### Stage 2: confirmation (commit `37e7f508`, dirty: false, library built from it, 2026-10-13)
 
-`37e7f508` is stage 1's commit with main merged in up to `8d3c0808`. That merge is the whole difference to stage 1's code: 62 commits of main, #459 (visible sleep) among them, which change 21 files under `src/` and `include/`. The oracle's own code is unchanged. Seed `0x2026101300000459`, 7 arms of 256 pairs (512 games each, 3,584 games). No game was unfinished or unresolved, and all arms played the same foe draws.
+`37e7f508` is stage 1's commit with main merged in up to `0a5db340` (#461). That merge is the whole difference to stage 1's code: 62 commits of main, #459 (visible sleep, `8d3c0808`) among them, which change 21 files under `src/` and `include/`. The oracle's own code is unchanged. Seed `0x2026101300000459`, 7 arms of 256 pairs (512 games each, 3,584 games). No game was unfinished or unresolved, and all arms played the same foe draws.
 
 | Arm | Lead | Back | Score [95 %] | Against `today`, points [95 %] |
 |---|---|---|---|---|
@@ -146,7 +151,7 @@ The code, library and seed of stage 2, with the foe's leads fixed to Charizard +
   - the best of these arms, `24|13`, gains **+20.1 points [14.8, 25.6]** over `today`; it is selected on these games, so the number is biased upward;
   - the stage-1 winner `23|04`, not selected on these games, gains **+12.5 points [6.6, 18.6]**.
 - **Reading (the predeclared thresholds):** both lower bounds are above 5 points. Against an opponent who always leads Charizard + Venusaur, the preview is a real lever.
-- **Spread of the 6 combinations:** range 21.3 points, standard deviation 7.4, noise of one score 2.2, spread left after the noise 7.0 points.
+- **Spread of the 6 combinations:** range 21.3 points, standard deviation 7.4, noise of one score 2.2, spread left after the noise 7.0 points (7.1 with the paired noise of stage 1's note, 2.1 points).
 - **Against stage 2:** the order agrees with stage 2's games against the same lead (113 games per arm there), e.g. `today` 34 %, `23|04` 56 %, `24|13` 55 %.
 - **Foe preview:** Charizard + Venusaur in all 512 games; brought with them most often Garchomp + Incineroar (134) and Incineroar + Farigiraf (127).
 - **Fallbacks per arm:** none on our seat; on the foe seat at most 0.3 % (55 decisions over all arms, all with an unsupported public record). No arm is more than 2 points above the median.
@@ -155,6 +160,6 @@ The code, library and seed of stage 2, with the foe's leads fixed to Charizard +
 
 - **Against the opponent's usual previews** (BC6's team head), the best confirmed choice gains +8.2 points [2.9, 13.7]: Milotic + Ceruledge in the lead, Rillaboom + Raichu in the back. This is the predeclared middle case.
 - **Against the fixed sun lead,** five of the six confirmed combinations beat `today` (all but `02|34`). The stage-1 winner gains +12.5 points [6.6, 18.6], and the best arm +20.1, selected on these games. The preview is a real lever there.
-- **The spread of the 90 combinations** after the noise is 14.6 points (stage 1).
+- **The spread of the 90 combinations** after the noise is 14.6 points by the predeclared formula, a lower bound under common random numbers (14.7 with the paired noise; stage 1).
 - **The lead sides and the bench order count:** `today` and `24|03` bring the same four with the same leads and lie 5.9 points [0.6, 10.9] apart (stage 2).
 - **Only this one team and BC6's preview on the foe side were measured.** A Book entry from this holds against this team; the archetype "sun" needs further teams. The opponent's best answer to our preview (its exploitability) is the next step of #458, with its own predeclaration.
