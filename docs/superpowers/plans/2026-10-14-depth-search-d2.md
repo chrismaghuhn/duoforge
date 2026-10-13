@@ -1,6 +1,6 @@
 # Depth search D2: the two-turn tree, the plan
 
-**Status:** plan, for owner review (2026-10-14). Nothing is built yet. Step D2 of the depth-search design
+**Status:** plan approved by the owner and the HS (2026-10-14), with the decisions at the end; step 1 built. Step D2 of the depth-search design
 (`docs/superpowers/specs/2026-10-13-depth-search-design.md`, sections 4, 7, 8 "D2 in detail", 9.2, Q1–Q6), on top of
 D1 (#481, merged with #482). Branch `search/d2-tree` from main c8ca7cee.
 
@@ -30,7 +30,7 @@ Astra's field step is merged, no change to the team preview, the P1 teacher or t
 | `depth` | 1, 2 | 1 | 1 = today's search; 2 = the two-turn tree |
 | `k2`, `m2` | ≥ 1 | 2, 2 | our candidates per depth-1 information set, the foe's per depth-1 node |
 | `chance` (C) | 1 | 1 | samples per (world, edge); C > 1 is refused by name until a later step |
-| `info_key` | `"digest"` (and see question 1) | `"digest"` | the observation key of our depth-1 nodes |
+| `info_key` | `"digest"`, `"record"` (tests only) | `"digest"` | the observation key of our depth-1 nodes (decision 1) |
 | `evaluator` | `"jax"`, `"engine"` | `"jax"` | the leaf evaluation (spec 6.3); `"engine"` is refused by name until #485 lands |
 | `foe_below` | `"nash"`, `"model"` | `"nash"` | Q4: the foe below the root plays the solver's equilibrium, or its network's policy |
 
@@ -113,14 +113,16 @@ The flow of spec 8, behind `depth == 2` in `_decision`:
    network at the fixed shape of the whole node batch (spec 7.2).
 3. Keys per open node (step 2). Our information sets = groups by (i, key) among the nodes where we are requested.
    Within an information set the engine's own pair masks must agree, or the decision stops with a named SearchError
-   (the key merged states that differ for us). Our K2 candidates per information set from the p_w-weighted mean of the
-   policy probabilities over its nodes (as `_mean_policy` does for the root under closed sheets; see question 3). The
-   foe's M2 candidates per node from the foe network on the foe row of that node.
+   (the key merged states that differ for us). Our K2 candidates per information set from the mean of the policy
+   probabilities over its nodes, node (w, i, j) weighted by p_w × the foe model's prior of j × its chance weight
+   (1 at C = 1), renormalized (decision 3). The foe's M2 candidates per node from the foe network on the foe row of
+   that node.
 4. The depth-2 leaves: node n's leaves are seeded with its node key
    `splitmix64(splitmix64(decision key + DEPTH_TAG) + flat index of n)` and sample 0, through the evaluator.
 5. Build the `Tree`, solve it (step 1), derive the root tables.
-6. `_finish`'s outcome path: the ev row from the root tables, nash and mix from the tree's root average x, the same
-   draw and play uniform (`_outcomes`, unchanged; see question 4).
+6. The root rule of spec section 5, unchanged: today's `reduce` plays the root tables under the averaged
+   continuation with `rule`, `lam` (λ = 0 of #486 included), the dominance filter and the root solver; the tree's own
+   root average and gap are recorded beside it (decision 4).
 
 Tests (`test_honest.py`, a new class `DepthTwo`):
 
@@ -130,6 +132,7 @@ Tests (`test_honest.py`, a new class `DepthTwo`):
   different keys are separate.
 - **Node kinds at depth 1:** TERMINAL, cut-off, our-only (REPLACEMENT), foe-only (a foe PIVOT/REPLACEMENT), both.
 - **Twice computed:** every decision of an A/B/C game computed twice gives the same record (timeless).
+- **λ = 0 at depth 2:** the ev row of the root tables is played (decision 4, #486).
 
 ### Step 5. Refusals at depth 2 (#436's meaning per information set)
 
@@ -145,9 +148,11 @@ Tests (`test_honest.py`, a new class `DepthTwo`):
 ### Step 6. The cut-off below the root
 
 A depth-2 leaf is at the arena's cut-off when the root's step is the second-to-last. `decide` only gets `last_step`
-today. Proposal (question 2): `decide(..., steps_left=None)`, passed by `arena.SearchPlayer` from play_suite's step and
-`MAX_STEPS`. `depth = 2` without `steps_left` is refused by name; `depth = 1` ignores it, so its records do not change.
-Test: at two steps left the depth-2 leaves take the tiebreak and are counted as cut off.
+today. `decide(..., steps_left=None)`, passed by `arena.SearchPlayer` from play_suite's step and `MAX_STEPS`; live
+play passes an explicit "no limit" value (`honest.NO_STEP_LIMIT`). `depth = 2` with `steps_left` None is refused by
+name, never a silent default; `depth = 1` ignores it, so its records do not change (decision 2, agreed with the search
+lane via the owner). Tests: at two steps left the depth-2 leaves take the tiebreak and are counted as cut off; None is
+refused at depth 2; the no-limit value values every depth-2 leaf.
 
 ### Step 7. `foe_below = "model"` (Q4's arm)
 
@@ -177,28 +182,35 @@ prior; nash and model coincide where the foe has one candidate.
   digest independent of worker, chunk and leaf position) and in Python (`info_key = "digest"` replaces the stub; the
   stub tests stay as tests of the tree).
 
-### Step 10. Measurement README (no run)
+### Step 10. D2's own offline pass (before any measurement)
+
+D1's `RM_MAX_ITERATIONS` (1,770, from the search lane's offline pass) holds for D1's root only. The tree has other
+tables and another cost per iteration, so D2 sets its own `TREE_MAX_ITERATIONS` by accuracy and time: a README first,
+then the pass under the lock, its timing part with `--exclusive`, on recorded depth-2 trees (streamed, never all loaded
+at once; the search lane's `rm_offline.py` is the template). `solver_unconverged` stays a named class-a decision:
+counted, played without search, never a silent LP fallback. Arms count it separately; above 0.1 % of decisions the bound
+is re-assessed.
+
+### Step 11. Measurement README (no run)
 
 `docs/benchmarks/<date>-depth-d2/README.md` with spec 9.2's arms ((2, 2), (3, 3), (4, 4), one `foe_below = "model"`
 arm at the best width), the equal-time control, the gates, the kill criterion and the diagnostics, fixed before any
 run. The run starts only after D1's offline pass, the predeclaration, and the HS's go, under `--exclusive` for latency,
 or on AWS (#484) with the equality proof.
 
-### Step 11. Review and PR
+### Step 12. Review and PR
 
 A review agent checks the whole branch. Its findings and their outcomes go into the PR body. The PR opens only after
 Astra's field-step PR is merged and no Astra PR is open, then a green CI. The HS merges.
 
-## Questions for the owner and HS
+## Decisions (owner and HS, 2026-10-14)
 
-1. **An interim key before the digest?** `info_key = "record"`: the node's public record bytes for the viewer. For open
-   sheets it never splits by a hidden fact (every world gives the root record back, `_check_worlds`), but it may merge
-   two nodes whose lines differ yet fold to the same record (a loss of information for us, never strategy fusion).
-   Under closed sheets it would split by particle, so it is refused there by name. Proposal: allowed for integration
-   tests on the real engine now; a measurement with it only if the HS decides so, otherwise D2 measures with the digest.
-2. **`steps_left` in `decide` and `SearchPlayer`** (step 6): a small change to the search lane's harness. Agree?
-3. **Our depth-1 candidates per information set:** the p_w-weighted mean of the policy probabilities over the set's
-   nodes (under open sheets every node of a set has the same row, so it is that row's policy). Agree?
-4. **The root play:** nash and mix play the tree's root average x; ev reads the root tables under the averaged
-   continuation. A re-solve of the root tables (`reduce` with "rm") would give another x of the same game. At the
-   degenerate tree both are D1 exactly. Agree?
+1. **`info_key = "record"`** (the node's public record bytes for the viewer) is for tests only, refused by name under
+   closed sheets. A measurement with it only on the HS's explicit decision.
+2. **`steps_left`:** yes, agreed with the search lane via the owner. Live play passes an explicit "no limit" value;
+   None stays refused at depth 2. Tested.
+3. **Candidate weight per node:** p_w × the foe model's prior of j × the chance weight, renormalized.
+4. **The root rule of spec section 5 stays unchanged**, λ = 0 of #486 included, with a test of λ = 0 at depth 2.
+5. **The digest** is a new sibling call, no ABI break of `duoforge_batch_expand`, shareable with the D4 call. Where the
+   fold lies after the field step, Astra answers in the D4 spec.
+6. **D2's iteration bound** comes from its own offline pass (step 10), not from D1's.
