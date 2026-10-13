@@ -68,13 +68,12 @@ from .errors import SearchError
 CERTIFICATE = 1e-9  # the largest exploitability a solution may have, and at most this times the table's range
 PROBABILITY_FLOOR = 1e-9  # a mixed strategy's probabilities below it are played as 0
 MAX_ITERATIONS = 10_000
-# The largest Bayesian LP a search may build (#440, owner 2026-10-13): the largest size class without a failure in any
-# run. Step 0 and b-k16 (16 worlds x 8 foe pairs + 1 = 129 rows; at most 16 own pairs + 16 worlds = 32 variables)
-# never failed. Every arm at 257 rows met the exact rescue, and b-km16 (257 rows, 32 variables) stopped in it although
-# b-m16 and b-s32, no smaller, finished: the failure is rare (about one exact rescue in 10,000 decisions) and not
-# monotone in the size, so only the class without one is safe until the exact rescue is repaired.
-MAX_BAYES_ROWS = 129
-MAX_BAYES_VARIABLES = 32
+# The largest Bayesian LP a search may build (#440, owner 2026-10-13), in cells of the exact rescue's tableau
+# (rows x (variables + rows + 1), _bland): b-k16's, the largest that never failed in any run (129 rows: 16 worlds x 8
+# foe pairs + 1; 32 variables: 16 own pairs + 16 worlds). b-km16 (74,530 cells) stopped in the exact rescue although
+# b-m16 (72,474) and b-s32 (76,586) finished: the failure is rare (about one exact rescue in 10,000 decisions) and not
+# monotone in the size, so the limit stays below every size class that has failed until the exact rescue is repaired.
+MAX_BAYES_CELLS = 20898
 _EPS = 1e-12  # a reduced cost or a pivot entry must exceed it to count as positive
 
 
@@ -575,18 +574,20 @@ def bayes_certify(tables, weights, x, ys, tol=CERTIFICATE):
 
 
 def bayes_size(k, m, worlds):
-    """(rows, variables) of the Bayesian LP of k own pairs, m foe pairs and `worlds` worlds (_bayes_tableau)."""
-    return worlds * m + 1, k + worlds
+    """(rows, variables, cells) of the Bayesian LP of k own pairs, m foe pairs and `worlds` worlds (_bayes_tableau),
+    cells those of the exact rescue's tableau (_bland: rows x (variables + slacks + right-hand side))."""
+    rows, variables = worlds * m + 1, k + worlds
+    return rows, variables, rows * (variables + rows + 1)
 
 
 def check_bayes_size(k, m, worlds, what):
-    """ValueError, naming `what`, when the Bayesian LP of at most k own pairs, m foe pairs and `worlds` worlds is above
-    MAX_BAYES_ROWS or MAX_BAYES_VARIABLES."""
-    rows, variables = bayes_size(k, m, worlds)
-    if rows > MAX_BAYES_ROWS or variables > MAX_BAYES_VARIABLES:
+    """ValueError, naming `what`, when the Bayesian LP of at most k own pairs, m foe pairs and `worlds` worlds has a
+    tableau above MAX_BAYES_CELLS."""
+    rows, variables, cells = bayes_size(k, m, worlds)
+    if cells > MAX_BAYES_CELLS:
         raise ValueError(f"{what}: a Bayesian LP of up to {rows} rows and {variables} variables (k={k}, m={m}, "
-                         f"worlds={worlds}) is above the limit of {MAX_BAYES_ROWS} rows and {MAX_BAYES_VARIABLES} "
-                         f"variables, where the exact rescue is known to finish (#440)")
+                         f"worlds={worlds}; {cells} tableau cells) is above the limit of {MAX_BAYES_CELLS} cells "
+                         f"(b-k16's), where the exact rescue is known to finish (#440)")
 
 def _bayes_tableau(b, p, zero, one):
     """The rows of the LP above over a number type (float or Fraction)."""
