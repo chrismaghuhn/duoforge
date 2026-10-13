@@ -29,6 +29,34 @@ class FakeTimed:
         return np.array([r["choice"] for r in records], np.int64), records
 
 
+class FakeSearch:
+    """The two pieces of a search that DrawnPreview reads: encoder and ext_supported for roots.query_encoded, and
+    _policy, whose team head is heads[env] (log probabilities over TEAM_TABLE)."""
+    encoder, ext_supported = 4, 0
+
+    def __init__(self, heads):
+        self.heads = heads
+
+    def _policy(self, obs, slots, pairs):
+        with np.errstate(divide="ignore"):  # a zero probability is log 0 = -inf, as a masked head's
+            return None, np.log(self.heads[int(obs[0])])[None, :], None
+
+
+class FakeRoots:
+    """query_encoded's three arrays, indexed [env, seat]: obs carries the env, so FakeSearch finds its head."""
+
+    def __init__(self, games):
+        self.games = games
+
+    def query_encoded(self, encoder, ext_supported):
+        obs = np.repeat(np.arange(self.games)[:, None], 2, axis=1)
+        return obs, np.zeros_like(obs), np.zeros_like(obs)
+
+
+def uniform_head():
+    return np.full(len(TEAM_TABLE), 1.0 / len(TEAM_TABLE))
+
+
 class ArmsTest(unittest.TestCase):
     def test_ninety_combinations_each_one_team_row(self):
         names = oracle.combos()
@@ -111,6 +139,58 @@ class ForcedPreviewTest(unittest.TestCase):
             oracle.ForcedPreview(timed, 42).decide(None, np.array([0]), np.array([0]), np.array([1]), np.zeros(1, bool))
 
 
+class DrawnPreviewTest(unittest.TestCase):
+    def test_team_decisions_are_drawn_from_the_head_and_recorded(self):
+        timed = FakeTimed({0: ("TEAM_SELECTION", "team", 11), 1: ("TEAM_SELECTION", "team", 12),
+                           2: ("TURN", "searched", 5)})
+        head = uniform_head()
+        drawn = oracle.DrawnPreview(timed, FakeSearch({0: head, 1: head, 2: head}), oracle.SEED)
+        keys = np.array([101, 102, 103], np.uint64)
+        actions, records = drawn.decide(FakeRoots(3), np.array([0, 1, 2]), np.array([1, 1, 1]), keys,
+                                        np.zeros(3, bool))
+        expected = [oracle.draw_choice(head, int(k), oracle.SEED) for k in keys[:2]]
+        self.assertEqual(actions.tolist(), expected + [5])
+        self.assertEqual(drawn.drawn, {0: expected[0], 1: expected[1]})
+        self.assertEqual([r["own_choice"] for r in records[:2]], [11, 12])
+        self.assertNotIn("own_choice", records[2])
+        drawn.clear()
+        self.assertEqual(drawn.drawn, {})
+        self.assertEqual(timed.cleared, 1)
+
+    def test_the_keep_mask_restricts_the_draw(self):
+        keep = oracle.lead_mask(FoeLeadTest.SPECIES, "Charizard,Venusaur")
+        plays = {e: ("TEAM_SELECTION", "team", 0) for e in range(40)}
+        head = uniform_head()
+        drawn = oracle.DrawnPreview(FakeTimed(plays), FakeSearch({e: head for e in range(40)}), oracle.SEED, keep)
+        keys = np.arange(40, dtype=np.uint64)
+        actions, _ = drawn.decide(FakeRoots(40), np.arange(40), np.zeros(40, np.int64), keys, np.zeros(40, bool))
+        self.assertTrue(all(keep[a] for a in actions))
+        self.assertEqual(actions.tolist(), [oracle.draw_choice(head * keep, int(k), oracle.SEED) for k in keys])
+
+    def test_a_head_that_differs_between_games_of_a_seat_is_refused(self):
+        other = uniform_head()
+        other[:2] = [2.0 / len(TEAM_TABLE), 0.0]
+        timed = FakeTimed({0: ("TEAM_SELECTION", "team", 0), 1: ("TEAM_SELECTION", "team", 0)})
+        drawn = oracle.DrawnPreview(timed, FakeSearch({0: uniform_head(), 1: other}), oracle.SEED)
+        with self.assertRaisesRegex(RuntimeError, "differs between games of seat 0"):
+            drawn.decide(FakeRoots(2), np.array([0, 1]), np.array([0, 0]), np.array([1, 2], np.uint64),
+                         np.zeros(2, bool))
+
+    def test_the_two_seats_keep_their_own_heads(self):
+        other = uniform_head()
+        other[:2] = [2.0 / len(TEAM_TABLE), 0.0]
+        timed = FakeTimed({0: ("TEAM_SELECTION", "team", 0), 1: ("TEAM_SELECTION", "team", 0)})
+        drawn = oracle.DrawnPreview(timed, FakeSearch({0: uniform_head(), 1: other}), oracle.SEED)
+        drawn.decide(FakeRoots(2), np.array([0, 1]), np.array([0, 1]), np.array([1, 2], np.uint64), np.zeros(2, bool))
+        self.assertEqual(sorted(drawn.heads), [0, 1])
+
+    def test_a_searched_preview_is_refused(self):
+        timed = FakeTimed({0: ("TEAM_SELECTION", "unreconstructible", 0)})
+        drawn = oracle.DrawnPreview(timed, FakeSearch({0: uniform_head()}), oracle.SEED)
+        with self.assertRaisesRegex(RuntimeError, "unreconstructible"):
+            drawn.decide(FakeRoots(1), np.array([0]), np.array([0]), np.array([1], np.uint64), np.zeros(1, bool))
+
+
 class FoeLeadTest(unittest.TestCase):
     SPECIES = ["Charizard", "Venusaur", "Garchomp", "Incineroar", "Sylveon", "Farigiraf"]
 
@@ -173,6 +253,45 @@ class StatisticsTest(unittest.TestCase):
         self.assertAlmostEqual(out["noise_points"], 0.0)
         self.assertAlmostEqual(out["true_sd_points"], out["sd_points"])
         self.assertAlmostEqual(out["sd_points"], 50.0)
+
+
+    def test_common_noise_is_not_subtracted_by_the_paired_estimate(self):
+        rng = np.random.default_rng(458)
+        common = rng.random(400)  # the same games in every arm: only the offsets differ
+        offsets = {"a": 0.0, "b": 0.1, "c": 0.2}
+        out = oracle.spread({name: common + off for name, off in offsets.items()})
+        self.assertAlmostEqual(out["paired_noise_points"], 0.0, places=9)
+        self.assertAlmostEqual(out["true_sd_paired_points"], out["sd_points"], places=9)
+        self.assertAlmostEqual(out["sd_points"], 10.0, places=9)
+        self.assertLess(out["true_sd_points"], out["true_sd_paired_points"])  # the predeclared one is a lower bound
+
+    def test_independent_noise_is_estimated_alike_by_both(self):
+        rng = np.random.default_rng(459)
+        out = oracle.spread({name: rng.random(20000) for name in "abcdefgh"})
+        self.assertAlmostEqual(out["paired_noise_points"], out["noise_points"], delta=0.1)
+
+
+class GuardTest(unittest.TestCase):
+    def test_resume_ignores_commit_dirty_cpu_and_workers_only(self):
+        conditions = {"seed": "0x1", "pairs": 32, "commit": "b", "dirty": True, "cpu": "y", "workers": 4}
+        old = {"seed": "0x1", "pairs": 32, "commit": "a", "dirty": False, "cpu": "x", "workers": 8}
+        self.assertEqual(oracle.resume_changes(old, conditions), [])
+        self.assertEqual(oracle.resume_changes(dict(old, pairs=256, seed="0x2"), conditions), ["seed", "pairs"])
+
+    def test_every_game_needs_a_foe_draw(self):
+        oracle.check_drawn("24|01", {0: 1, 1: 2}, 2)
+        with self.assertRaisesRegex(SystemExit, r"arm 24\|01: the foe drew no preview in 1 game"):
+            oracle.check_drawn("24|01", {0: 1}, 2)
+
+    def test_our_preview_must_play_the_arm(self):
+        row = oracle.team_index("24|01")
+        swapped = int(np.flatnonzero((TEAM_TABLE == np.array([4, 2, 1, 0], TEAM_TABLE.dtype)).all(axis=1))[0])
+        turn = {"boundary": "TURN", "choice": 3}
+        oracle.check_played("24|01", [{"boundary": "TEAM_SELECTION", "choice": row},
+                                      {"boundary": "TEAM_SELECTION", "choice": swapped}, turn])
+        oracle.check_played("today", [{"boundary": "TEAM_SELECTION", "choice": 0}])
+        with self.assertRaisesRegex(SystemExit, r"played \['01\|23'\]"):
+            oracle.check_played("24|01", [{"boundary": "TEAM_SELECTION", "choice": oracle.team_index("01|23")}])
 
 
 class SummaryTest(unittest.TestCase):

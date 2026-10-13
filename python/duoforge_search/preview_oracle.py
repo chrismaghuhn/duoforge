@@ -20,7 +20,7 @@ word of the game's decision key (draw_choice): the same draw in every arm, so th
 --foe-lead fixes the foe's two leads (by species; the draw keeps only the team head's rows that lead with them, so its
 bench still comes from the head): the case of an opponent who always leads so (#458, the sun lead). Each
 arm plays the same suite rows on the same batch seed (common random numbers): a game of two arms is the same game up to
-our preview. A foe draw that differs between two arms stops the run (named), as does any SearchError.
+our preview. A SearchError stops the run; the summary refuses arms whose foe draws differ ("not paired").
 
 Each finished arm is written to DIR/arms/ARM.json (per-game scores, the foe's drawn choice per game, the decision
 digests and fallback shares) and a rerun skips it when its conditions match; `summary` (also run at the end) writes
@@ -214,20 +214,52 @@ def paired_difference(a, b, resamples=2000, seed=SEED):
 def spread(scores):
     """How far the combinations lie apart, from their per-game scores (arm -> array, the same pairs each): the range
     and standard deviation of their means in points, the mean noise of a mean (its standard error over the pairs, in
-    points) and the true spread left after it: sqrt(max(0, var(means) - mean(se^2))), a random-effects estimate."""
+    points) and the true spread left after it: sqrt(max(0, var(means) - mean(se^2))), a random-effects estimate
+    (predeclared, #458).
+
+    The arms play the same games (common random numbers), so their noises are positively correlated and that estimate
+    subtracts too much: it is a lower bound. true_sd_paired_points subtracts only the noise of the arms' differences,
+    (tr S - 1'S1/K) / (K - 1) with S the covariance of the K arms' means, i.e. the variance of each arm's per-pair
+    score around the pair's mean over all arms (added after the runs, reported beside the predeclared one)."""
     names = sorted(scores)
     if len(names) < 2:
         raise ValueError("a spread needs at least two combinations")
-    means, se2 = [], []
-    for name in names:
-        per_pair = np.asarray(scores[name], np.float64).reshape(-1, 2).mean(axis=1)
-        means.append(per_pair.mean())
-        se2.append(per_pair.var(ddof=1) / per_pair.size if per_pair.size > 1 else 0.0)
-    means, se2 = np.array(means), np.array(se2)
+    per_pair = np.stack([np.asarray(scores[name], np.float64).reshape(-1, 2).mean(axis=1) for name in names], axis=1)
+    pairs, k = per_pair.shape
+    means = per_pair.mean(axis=0)
+    se2 = per_pair.var(axis=0, ddof=1) / pairs if pairs > 1 else np.zeros(k)
     var = float(means.var(ddof=1))
+    around = per_pair - per_pair.mean(axis=1, keepdims=True)
+    paired_noise = float(around.var(axis=0, ddof=1).sum()) / pairs / (k - 1) if pairs > 1 else 0.0
     return {"combinations": len(names), "range_points": 100.0 * float(means.max() - means.min()),
             "sd_points": 100.0 * var ** 0.5, "noise_points": 100.0 * float(se2.mean()) ** 0.5,
-            "true_sd_points": 100.0 * max(0.0, var - float(se2.mean())) ** 0.5}
+            "true_sd_points": 100.0 * max(0.0, var - float(se2.mean())) ** 0.5,
+            "paired_noise_points": 100.0 * paired_noise ** 0.5,
+            "true_sd_paired_points": 100.0 * max(0.0, var - paired_noise) ** 0.5}
+
+
+def resume_changes(old, conditions):
+    """The condition keys in which a run's existing conditions.json (old) records another measurement than this run's
+    conditions: every key but commit, dirty, cpu and workers (the commit is recorded per arm, and the arms' digests show
+    whether it played alike)."""
+    keys = [k for k in conditions if k not in ("commit", "dirty", "cpu", "workers")]
+    return [k for k in keys if old.get(k) != json.loads(json.dumps(_finite(conditions[k])))]
+
+
+def check_drawn(arm, drawn, games):
+    """SystemExit unless the foe drew a preview in each of the games (drawn: env -> row)."""
+    if sorted(drawn) != list(range(games)):
+        raise SystemExit(f"arm {arm}: the foe drew no preview in {games - len(set(drawn) & set(range(games)))} "
+                         f"game(s)")
+
+
+def check_played(arm, decisions):
+    """SystemExit unless every team-preview decision of ours played the arm's combination (today plays its own)."""
+    if arm == TODAY:
+        return
+    played = {arm_of(r["choice"]) for r in decisions if r["boundary"] == "TEAM_SELECTION"}
+    if played != {arm}:
+        raise SystemExit(f"arm {arm}: our preview played {sorted(played)}")
 
 
 def _names(members, arm):
@@ -430,10 +462,8 @@ def main(argv=None):
             "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},
             "table_sha256": table_info["sha256"], "workers": args.workers}
         path = os.path.join(args.out, "conditions.json")
-        if os.path.exists(path):  # a rerun resumes only the same measurement (the commit may differ: it is recorded
-            old = ladder._load_json(path)  # per arm, and the arms' digests show whether it played alike)
-            keys = [k for k in conditions if k not in ("commit", "dirty", "cpu", "workers")]
-            changed = [k for k in keys if old.get(k) != json.loads(json.dumps(_finite(conditions[k])))]
+        if os.path.exists(path):  # a rerun resumes only the same measurement
+            changed = resume_changes(ladder._load_json(path), conditions)
             if changed:
                 raise SystemExit(f"{path} records another measurement (differs in {changed}): use a new --out")
         else:
@@ -472,17 +502,13 @@ def main(argv=None):
                 records = evaluate.play_suite(ctx, pool, rows, learner, opponent, args.workers, args.seed,
                                               max_steps=args.max_steps)
                 seconds = time.perf_counter() - started
-                if sorted(drawn.drawn) != list(range(n)):
-                    raise SystemExit(f"arm {arm}: the foe drew no preview in {n - len(drawn.drawn)} game(s)")
+                check_drawn(arm, drawn.drawn, n)
                 ours_decisions = [r for row in sorted(learner.records) for r in learner.records[row]]
                 foe_decisions = [r for row in sorted(opponent.player.records) for r in opponent.player.records[row]]
                 entry = _arm_entry(arm, records, ours_decisions, foe_decisions,
                                    [int(drawn.drawn[e]) for e in range(n)], seconds)
                 entry["commit"] = commit
-                if arm != TODAY:
-                    played = {arm_of(r["choice"]) for r in ours_decisions if r["boundary"] == "TEAM_SELECTION"}
-                    if played != {arm}:
-                        raise SystemExit(f"arm {arm}: our preview played {sorted(played)}")
+                check_played(arm, ours_decisions)
                 with open(target + ".tmp", "w", encoding="utf-8") as f:
                     json.dump(_finite(entry), f, indent=1, allow_nan=False)
                 os.replace(target + ".tmp", target)
