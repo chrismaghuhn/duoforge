@@ -324,7 +324,7 @@ class Honest(lookahead.Lookahead):
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="mix",
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
                  table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
-                 species_prior=False, foe_net=None):
+                 species_prior=False, foe_net=None, preview_rule=None, preview_width="top"):
         # species_prior (live play, owner 2026-10-10): True refuses a decision whose foe species has no stated spread in
         # the table instead of drawing from the belief's nature-only or table-wide levels (4 and 5); "count" (owner
         # 2026-10-12, live play) draws from those general levels and names the species in the record: spread_fallback
@@ -337,11 +337,12 @@ class Honest(lookahead.Lookahead):
         # foe_net (M7, owner 2026-10-11): (model, params, encoder, ext_supported) of a second network that models the
         # foe. Every policy call on the worlds (the foe's team draw, its queued pair and its menu) goes to it, encoded
         # with its own encoder; the own candidates (the root's policy) and the leaf values stay with the main network.
-        # None: the main network models the foe, as before.
+        # None: the main network models the foe, as before. A value preview (step 1 of the ladder, #440) takes its foe
+        # candidates from it the same way. A turn1 preview's rollout plays the foe seat with it too (step 1b, #440, the
+        # rollout takes the foe seat's rows from the foe encoding and its policy from the foe network), so every preview
+        # form takes the foe seat from the foe network; the player's seat and the leaf values stay with the main one.
         self.foe_net = None
         if foe_net is not None:
-            if preview_mode != "raw":  # preview.rollout plays both seats with the main network: two foe models at once
-                raise ValueError("a foe network is not supported with a preview search (preview_mode must be raw)")
             if len(foe_net) != 4:
                 raise ValueError("a foe network is (model, params, encoder, ext_supported)")
             foe_model, foe_params, foe_encoder, foe_ext = foe_net
@@ -355,11 +356,30 @@ class Honest(lookahead.Lookahead):
             self.foe_net = (foe_model, foe_params, int(foe_encoder), int(foe_ext))
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
+        if k != 1:  # one candidate plays raw and solves nothing; the turns' and the top preview's LPs are k x m x s
+            matrix.check_bayes_size(k, m, s, "the honest search")
         if preview_mode not in ("raw", "value", "turn1") or type(preview_steps) is not int or preview_steps < 1:
             raise ValueError("preview requires raw/value/turn1 and a positive rollout bound")
         if preview_only and preview_mode == "raw":
             raise ValueError("preview_only requires preview search")
+        # preview_rule (step 1 of the ladder, #440): the rule that plays the team preview's table, None for the search's
+        # own rule. A raw search has no preview to play, so naming one there is refused, not ignored.
+        if preview_rule is not None and preview_rule not in RULES:
+            raise ValueError(f"preview_rule must be None or one of {RULES} (got {preview_rule!r})")
+        if preview_rule is not None and preview_mode == "raw":
+            raise ValueError("preview_rule requires a preview search (preview_mode value or turn1)")
         self.preview_mode, self.preview_only, self.preview_steps = preview_mode, preview_only, preview_steps
+        self.preview_rule = preview_rule
+        # preview_width (#440, owner 2026-10-13): the preview's candidates, "top" tuples of the team heads or one
+        # "distinct" tuple per bring-and-lead combination with every own member covered (preview.distinct).
+        from . import preview
+        if preview_width not in preview.WIDTHS:
+            raise ValueError(f"preview_width must be one of {preview.WIDTHS} (got {preview_width!r})")
+        if preview_width != "top" and preview_mode == "raw":
+            raise ValueError("preview_width requires a preview search (preview_mode value or turn1)")
+        if preview_width == "distinct":  # the cover adds up to preview.COVER_MAX own rows to the preview's table
+            matrix.check_bayes_size(k + preview.COVER_MAX, m, s, "the distinct preview")
+        self.preview_width = preview_width
         if table is None:
             table, _, self.table_info = spread_table(context)
         else:
