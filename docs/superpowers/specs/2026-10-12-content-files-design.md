@@ -34,7 +34,7 @@ files plus regenerated output; with the pin per entry (section 6) no shared hand
 | Pool rows | 511 moves (340 marked), 215 abilities (125 marked), 166 items (132 marked), 347 formes; about 295 unmarked rows |
 | Move handler ids | `DFI_SPECIAL_*` 0-121 in a `uint8_t` column, positional in the generator's `SPECIAL_IDS` list |
 | Dispatch in `turn.c` (12,678 lines, about 300 functions) | about 150 `md->special ==` comparisons, about 270 `DFI_ABILITY_*` references, 50 `dfi_holds(...)`; families exist for two item kinds and four ability kinds only (`item_family.h`, `ability_family.h`) |
-| The central allow-list | about 90 `md->special != DFI_SPECIAL_*` terms at `turn.c:8318` |
+| The move-special phase gate (step-4 update) | Generated `dfi_special_has_handler` / `dfi_special_status_hit` tables in `src/combat/generated/move_handlers.h`, from explicit phase classes in `tools/datagen/move_handler_source.py`; checked against the frozen old predicates |
 | Facts against the pin | about 60 `*_FACTS` tuples and 35 `check_g*_facts` functions in the 5,885-line generator |
 | Number spaces assigned by hand | draw sites (26 used of 34, lane ranges frozen by HS), residual kinds (26), volatile and position flag bits, tail bytes, 52 view-extension feature bits |
 | Classification (`docs/research/expansion/data/classification.json`, an older head) | moves: 140 pure data, 146 data plus a generic extension, 142 family members, 87 bespoke; abilities: 186 family, 128 bespoke; items: 81 Mega Stones, 68 family, 17 bespoke |
@@ -264,8 +264,8 @@ points; the entry files say who answers. The kinds follow the extension spec's l
 ## 5. Stubs and the support status
 
 - A stub is an entry file with `status = "refused"` and a refusal text. The generator leaves its manifest mark at 0 and
-  emits no handler. Setup and the move body refuse it with `E_UNSUPPORTED` exactly as today (`dfi_support` at `turn.c:7775`
-  and `:10047`). Nothing is silent: a `supported` entry without evidence fails `duoforge.data.entries`.
+  emits no handler. Setup and the move body refuse it with `E_UNSUPPORTED` exactly as today (the `dfi_support` checks in
+  `src/combat/turn.c`, including `dfi_run_move_body`). Nothing is silent: a `supported` entry without evidence fails `duoforge.data.entries`.
 - **By name.** The refusal text is data: `dfi_pool_<kind>_refusal[id]` (generated, replaces `*_unmodeled`), read by the test
   support, by the scenario runner's `expect refused <entry>` (spec C1) and by the status report. Which ids are refused is
   public already through `duoforge_data_supported`; Python names the refused entry through that query (data, no rule).

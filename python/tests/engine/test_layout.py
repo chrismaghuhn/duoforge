@@ -66,6 +66,17 @@ class LayoutTest(unittest.TestCase):
                 with self.assertRaises(AttributeError):
                     getattr(library, name)
 
+    def test_move_helpers_are_not_shared_library_exports(self):
+        library = load_library()
+        for name in ("dfi_move_first_turn_only", "dfi_move_power_by_weight", "dfi_weight_power",
+                     "dfi_heavy_slam_power", "dfi_hard_press_power", "dfi_multihit_count", "dfi_move_hits",
+                     "dfi_multiaccuracy_proven", "dfi_power_trip_positive_stages", "dfi_tri_attack_chance_hit",
+                     "dfi_is_ohko", "dfi_beat_up_hits", "dfi_move_special_has_handler", "dfi_move_special_status_hit",
+                     "dfi_special_has_handler", "dfi_special_status_hit"):
+            with self.subTest(symbol=name):
+                with self.assertRaises(AttributeError):
+                    getattr(library, name)
+
 
 if __name__ == "__main__":
     unittest.main()

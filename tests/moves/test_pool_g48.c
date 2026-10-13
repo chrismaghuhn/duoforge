@@ -24,7 +24,7 @@
 
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
-#include "combat/multiaccuracy.h"
+#include "combat/moves/multiaccuracy.h"
 #include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
 #include "state/request.h"
@@ -44,7 +44,7 @@ static void check_facts(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_CEASELESSEDGE].special, DFI_SPECIAL_CEASELESS_EDGE);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].special, DFI_SPECIAL_MULTI_HIT_10);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_QUICKGUARD].special, DFI_SPECIAL_QUICK_GUARD); /* step G54 */
-    /* Population Bomb: ten hits, and the accuracy 90 that the later-hit proof covers (combat/multiaccuracy.h) */
+    /* Population Bomb: ten hits, and the accuracy 90 that the later-hit proof covers (combat/moves/multiaccuracy.h) */
     DF_CHECK(t, dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][0] == 10u && dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][1] == 10u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].accuracy, 90u);
     DF_CHECK(t, dfi_multiaccuracy_proven(dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].accuracy));

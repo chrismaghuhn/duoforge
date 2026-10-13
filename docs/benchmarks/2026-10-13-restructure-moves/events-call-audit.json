@@ -1,0 +1,2171 @@
+{
+  "after_source": "3affb183",
+  "before_source": "fbc8b24f",
+  "binary_sha256": {
+    "bench": {
+      "after": "cadc3aa2a72884a1030afa01bdf7723b7b7016921f60e90f42abf37921ef1e0e",
+      "baseline": "31c2a396bf8f85ccf124dc86d4331fdcc69756c0d14c3e5b00320044b6ac1ac6"
+    },
+    "shared": {
+      "after": "5c3c2eebc027a9743787d79267c1fb49ac3cc5d62d7244ceee832f2b42040233",
+      "baseline": "e5d5c9e63b61df95e6ce657d7b9f61a7c1a608213579e19fcaa517783e97bd8a"
+    }
+  },
+  "method": "objdump -d: static call instructions; reachable graph includes direct calls, tail jumps, cold blocks and branch edges; same-library PLT calls resolve to their definitions, indirect calls are reported separately; not dynamic invocation counts",
+  "profiles": {
+    "bench": {
+      "callee_counts": [
+        {
+          "after": 25,
+          "before": 25,
+          "callee": "dfi_ability",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_accuracy_check",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_accuracy_targets",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_add_hazard",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_add_volatile",
+          "delta": 0
+        },
+        {
+          "after": 12,
+          "before": 12,
+          "callee": "dfi_announce_faints",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_apply_team_selection",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_attract_update",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_base_damage",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_battle_step_events_tape",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_before_move",
+          "delta": 0
+        },
+        {
+          "after": 38,
+          "before": 38,
+          "callee": "dfi_boost",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_bounce",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_can_switch",
+          "delta": 0
+        },
+        {
+          "after": 63,
+          "before": 63,
+          "callee": "dfi_chain_modify",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_champions_pp_max",
+          "delta": 0
+        },
+        {
+          "after": 7,
+          "before": 7,
+          "callee": "dfi_champions_stat",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_check_tail",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_choice_lock_ends",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_clear_terrain",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_closure_battle_supported",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_closure_member_derive",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_closure_member_forme_stats",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_closure_member_mega_evolve",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_closure_member_ranges",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_closure_member_valid",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_context_fingerprint_matches",
+          "delta": 0
+        },
+        {
+          "after": 9,
+          "before": 9,
+          "callee": "dfi_context_is_closure",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_crit_damage",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_cursed_body",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_cute_charm",
+          "delta": 0
+        },
+        {
+          "after": 19,
+          "before": 19,
+          "callee": "dfi_deal",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_disable_start",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_drag_at_hit",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_drag_blocked",
+          "delta": 0
+        },
+        {
+          "after": 42,
+          "before": 42,
+          "callee": "dfi_draw",
+          "delta": 0
+        },
+        {
+          "after": 10,
+          "before": 10,
+          "callee": "dfi_draw_chance",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_draws_from_rng",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_each_order",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_emergency_exit",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_emit_hp",
+          "delta": 0
+        },
+        {
+          "after": 7,
+          "before": 7,
+          "callee": "dfi_entry_ability",
+          "delta": 0
+        },
+        {
+          "after": 249,
+          "before": 249,
+          "callee": "dfi_event_make",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_event_project",
+          "delta": 0
+        },
+        {
+          "after": 10,
+          "before": 10,
+          "callee": "dfi_event_set_hp",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_event_switch",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_events_fold_knowledge",
+          "delta": 0
+        },
+        {
+          "after": 198,
+          "before": 198,
+          "callee": "dfi_events_push",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_events_write",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_fail_line",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_final_damage",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_flame_body",
+          "delta": 0
+        },
+        {
+          "after": 8,
+          "before": 8,
+          "callee": "dfi_flower_veil_holder",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_get_damage",
+          "delta": 0
+        },
+        {
+          "after": 22,
+          "before": 22,
+          "callee": "dfi_grounded",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_has_entry",
+          "delta": 0
+        },
+        {
+          "after": 12,
+          "before": 12,
+          "callee": "dfi_heal",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_herb_due",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_herb_event",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_herb_holder",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_herbs_matter",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_hospitality",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_hp_display",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_hp_display_valid",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_illusion_disguise_up",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_illusion_lead_disguise",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_illusion_shown_occupant",
+          "delta": 0
+        },
+        {
+          "after": 8,
+          "before": 8,
+          "callee": "dfi_immune",
+          "delta": 0
+        },
+        {
+          "after": 13,
+          "before": 13,
+          "callee": "dfi_item_code",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_key_of",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_kind_full_roster",
+          "delta": 0
+        },
+        {
+          "after": 30,
+          "before": 30,
+          "callee": "dfi_kind_limits_of",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_leaf_guard_sun",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_lum_berry",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_lum_cure",
+          "delta": 0
+        },
+        {
+          "after": 17,
+          "before": 17,
+          "callee": "dfi_mega_of",
+          "delta": 0
+        },
+        {
+          "after": 18,
+          "before": 18,
+          "callee": "dfi_modify",
+          "delta": 0
+        },
+        {
+          "after": 8,
+          "before": 8,
+          "callee": "dfi_move_priority",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_move_targets",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_move_type_now",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_move_weather",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pair_allowed",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pcg32_accept",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pcg32_output",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pcg32_step",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pcg32_threshold",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pivot_of_flag",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pivot_of_move",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_place",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_poison_touch",
+          "delta": 0
+        },
+        {
+          "after": 11,
+          "before": 11,
+          "callee": "dfi_process_faints",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_protect_targets",
+          "delta": 0
+        },
+        {
+          "after": 7,
+          "before": 7,
+          "callee": "dfi_random_foe",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_randomize",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_residual_events_run",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_residual_sort",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_resist_berry_hit",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_resolve_target",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_rng_bounded_u32",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_rng_is_valid",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_run_entries",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_run_heal_fraction",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_run_move_body",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_seed_terrain",
+          "delta": 0
+        },
+        {
+          "after": 14,
+          "before": 14,
+          "callee": "dfi_semi_invulnerable",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_set_held",
+          "delta": 0
+        },
+        {
+          "after": 8,
+          "before": 8,
+          "callee": "dfi_sf_strips",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_side_lists",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_side_occupied_mask",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_skill_swap_decision",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_skill_swap_start",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_slot_clear",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_slot_volatile_is_clear",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_sort_front",
+          "delta": 0
+        },
+        {
+          "after": 19,
+          "before": 19,
+          "callee": "dfi_speed_key",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_spicy_spray",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_stage_accuracy",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_stage_stat",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_state_check",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_state_check_since",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_static",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_status_effects",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_status_updates",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_sturdy_saves",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_substitute_takes",
+          "delta": 0
+        },
+        {
+          "after": 13,
+          "before": 13,
+          "callee": "dfi_swap",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_swap_position_state",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_switch_in",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_switch_trapped",
+          "delta": 0
+        },
+        {
+          "after": 15,
+          "before": 15,
+          "callee": "dfi_symbiosis",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_tail_clear_occupant",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_terrain_change",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_terrain_seed",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_thief",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_toxic_debris",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_try_hit_abilities",
+          "delta": 0
+        },
+        {
+          "after": 13,
+          "before": 13,
+          "callee": "dfi_try_status",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_turn_run",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_turn_start",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_type_booster_base_power",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_type_damage",
+          "delta": 0
+        },
+        {
+          "after": 42,
+          "before": 42,
+          "callee": "dfi_types_of",
+          "delta": 0
+        },
+        {
+          "after": 13,
+          "before": 13,
+          "callee": "dfi_unburden_on_take",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_unnerved",
+          "delta": 0
+        },
+        {
+          "after": 22,
+          "before": 22,
+          "callee": "dfi_update",
+          "delta": 0
+        },
+        {
+          "after": 16,
+          "before": 16,
+          "callee": "dfi_use_item_core",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_user_target_class",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_vacate",
+          "delta": 0
+        },
+        {
+          "after": 27,
+          "before": 27,
+          "callee": "dfi_weather_suppressed",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_white_herb",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_will_move",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_win_result",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "memmove@plt",
+          "delta": 0
+        }
+      ],
+      "changed_edges": [],
+      "direct_call_instructions": {
+        "after": 1306,
+        "baseline": 1306
+      },
+      "indirect_calls": {
+        "after": [
+          {
+            "caller": "_init",
+            "instruction": "b010:\tff d0                \tcall   *%rax"
+          },
+          {
+            "caller": "dfi_resist_berry_hit",
+            "instruction": "6f530:\tff 94 24 88 00 00 00 \tcall   *0x88(%rsp)"
+          },
+          {
+            "caller": "dfi_white_herb",
+            "instruction": "6f794:\t41 ff d3             \tcall   *%r11"
+          }
+        ],
+        "baseline": [
+          {
+            "caller": "_init",
+            "instruction": "b010:\tff d0                \tcall   *%rax"
+          },
+          {
+            "caller": "dfi_resist_berry_hit",
+            "instruction": "6f790:\tff 94 24 88 00 00 00 \tcall   *0x88(%rsp)"
+          },
+          {
+            "caller": "dfi_white_herb",
+            "instruction": "6f9f4:\t41 ff d3             \tcall   *%r11"
+          }
+        ]
+      },
+      "moved_helpers": [
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_first_turn_only"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_power_by_weight"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_weight_power"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_heavy_slam_power"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_hard_press_power"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_multihit_count"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_hits"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_multiaccuracy_proven"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_power_trip_positive_stages"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_tri_attack_chance_hit"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_is_ohko"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_beat_up_hits"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_special_has_handler"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_special_status_hit"
+        }
+      ],
+      "reachable_functions": {
+        "after": 174,
+        "baseline": 174
+      }
+    },
+    "shared": {
+      "callee_counts": [
+        {
+          "after": 25,
+          "before": 25,
+          "callee": "dfi_ability",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_accuracy_check",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_accuracy_targets",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_add_hazard",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_add_volatile",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_ally_swap_wish_blocked@plt",
+          "delta": 0
+        },
+        {
+          "after": 12,
+          "before": 12,
+          "callee": "dfi_announce_faints",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_apply_team_selection@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_attract_source_flat@plt",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_attract_update",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_base_damage@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_battle_step_events_tape@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_before_move",
+          "delta": 0
+        },
+        {
+          "after": 38,
+          "before": 38,
+          "callee": "dfi_boost",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_bounce",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_can_switch",
+          "delta": 0
+        },
+        {
+          "after": 63,
+          "before": 63,
+          "callee": "dfi_chain_modify@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_champions_pp_max@plt",
+          "delta": 0
+        },
+        {
+          "after": 7,
+          "before": 7,
+          "callee": "dfi_champions_stat@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_check_tail",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_choice_lock_ends",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_clear_terrain",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_closure_battle_supported@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_closure_member_derive@plt",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_closure_member_forme_stats@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_closure_member_mega_evolve@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_closure_member_ranges@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_closure_member_valid@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_context_fingerprint_matches@plt",
+          "delta": 0
+        },
+        {
+          "after": 9,
+          "before": 9,
+          "callee": "dfi_context_is_closure@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_crit_damage@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_cursed_body",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_cute_charm",
+          "delta": 0
+        },
+        {
+          "after": 19,
+          "before": 19,
+          "callee": "dfi_deal",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_disable_start",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_drag_at_hit",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_drag_blocked",
+          "delta": 0
+        },
+        {
+          "after": 43,
+          "before": 43,
+          "callee": "dfi_draw@plt",
+          "delta": 0
+        },
+        {
+          "after": 10,
+          "before": 10,
+          "callee": "dfi_draw_chance@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_draws_from_rng@plt",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_each_order",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_emergency_exit",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_emit_hp",
+          "delta": 0
+        },
+        {
+          "after": 7,
+          "before": 7,
+          "callee": "dfi_entry_ability",
+          "delta": 0
+        },
+        {
+          "after": 250,
+          "before": 250,
+          "callee": "dfi_event_make@plt",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_event_project@plt",
+          "delta": 0
+        },
+        {
+          "after": 11,
+          "before": 11,
+          "callee": "dfi_event_set_hp@plt",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_event_switch@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_events_fold_knowledge@plt",
+          "delta": 0
+        },
+        {
+          "after": 198,
+          "before": 198,
+          "callee": "dfi_events_push@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_events_write",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_fail_line",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_final_damage@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_flame_body",
+          "delta": 0
+        },
+        {
+          "after": 8,
+          "before": 8,
+          "callee": "dfi_flower_veil_holder",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_forme_ability_legal@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_forme_move_legal@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_gender_legal@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_get_damage",
+          "delta": 0
+        },
+        {
+          "after": 22,
+          "before": 22,
+          "callee": "dfi_grounded",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_has_entry",
+          "delta": 0
+        },
+        {
+          "after": 12,
+          "before": 12,
+          "callee": "dfi_heal",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_herb_due",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_herb_event",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_herb_holder",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_herbs_matter",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_hospitality",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_hp_display@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_hp_display_valid@plt",
+          "delta": 0
+        },
+        {
+          "after": 7,
+          "before": 7,
+          "callee": "dfi_illusion_disguise_up@plt",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_illusion_lead_disguise@plt",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_illusion_shown_occupant@plt",
+          "delta": 0
+        },
+        {
+          "after": 8,
+          "before": 8,
+          "callee": "dfi_immune",
+          "delta": 0
+        },
+        {
+          "after": 13,
+          "before": 13,
+          "callee": "dfi_item_code",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_key_of",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_kind_full_roster@plt",
+          "delta": 0
+        },
+        {
+          "after": 30,
+          "before": 30,
+          "callee": "dfi_kind_limits_of@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_leaf_guard_sun",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_lum_berry",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_lum_cure",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_manifest_ability@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_manifest_item@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_manifest_mega_of@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_manifest_move@plt",
+          "delta": 0
+        },
+        {
+          "after": 24,
+          "before": 24,
+          "callee": "dfi_mega_of@plt",
+          "delta": 0
+        },
+        {
+          "after": 18,
+          "before": 18,
+          "callee": "dfi_modify@plt",
+          "delta": 0
+        },
+        {
+          "after": 8,
+          "before": 8,
+          "callee": "dfi_move_priority",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_move_targets",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_move_type_now",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_move_weather",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pair_allowed",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pcg32_accept@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pcg32_output@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pcg32_step@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pcg32_threshold@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pivot_of_flag@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_pivot_of_move@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_place@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_poison_touch",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_position_flat@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_position_valid@plt",
+          "delta": 0
+        },
+        {
+          "after": 11,
+          "before": 11,
+          "callee": "dfi_process_faints",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_protect_targets",
+          "delta": 0
+        },
+        {
+          "after": 7,
+          "before": 7,
+          "callee": "dfi_random_foe",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_randomize@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_residual_events_run",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_residual_sort",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_resist_berry_hit",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_resolve_target",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_rng_bounded_u32@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_rng_is_valid@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_rng_next_u32@plt",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_run_entries",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_run_heal_fraction",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_run_move_body",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_seed_terrain",
+          "delta": 0
+        },
+        {
+          "after": 14,
+          "before": 14,
+          "callee": "dfi_semi_invulnerable",
+          "delta": 0
+        },
+        {
+          "after": 5,
+          "before": 5,
+          "callee": "dfi_set_held",
+          "delta": 0
+        },
+        {
+          "after": 8,
+          "before": 8,
+          "callee": "dfi_sf_strips",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_side_lists",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_side_occupied_mask@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_skill_swap_decision@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_skill_swap_start",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_slot_clear@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_slot_volatile_is_clear@plt",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_sort_front",
+          "delta": 0
+        },
+        {
+          "after": 19,
+          "before": 19,
+          "callee": "dfi_speed_key",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_spicy_spray",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_stage_accuracy@plt",
+          "delta": 0
+        },
+        {
+          "after": 6,
+          "before": 6,
+          "callee": "dfi_stage_stat@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_stat_points_valid@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_state_check@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_state_check_since@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_static",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_status_effects",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_status_updates",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_sturdy_saves",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_substitute_takes",
+          "delta": 0
+        },
+        {
+          "after": 13,
+          "before": 13,
+          "callee": "dfi_swap",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_swap_position_state@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_switch_in",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_switch_trapped@plt",
+          "delta": 0
+        },
+        {
+          "after": 15,
+          "before": 15,
+          "callee": "dfi_symbiosis",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_tail_clear_occupant@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_target_class_for_types@plt",
+          "delta": 0
+        },
+        {
+          "after": 4,
+          "before": 4,
+          "callee": "dfi_terrain_change",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_terrain_seed",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_thief",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_toxic_debris",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_try_hit_abilities",
+          "delta": 0
+        },
+        {
+          "after": 13,
+          "before": 13,
+          "callee": "dfi_try_status",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_turn_run@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_turn_start@plt",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_type_booster_base_power",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_type_damage@plt",
+          "delta": 0
+        },
+        {
+          "after": 41,
+          "before": 41,
+          "callee": "dfi_types_of",
+          "delta": 0
+        },
+        {
+          "after": 13,
+          "before": 13,
+          "callee": "dfi_unburden_on_take",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_unnerved",
+          "delta": 0
+        },
+        {
+          "after": 22,
+          "before": 22,
+          "callee": "dfi_update",
+          "delta": 0
+        },
+        {
+          "after": 16,
+          "before": 16,
+          "callee": "dfi_use_item_core",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_user_target_class@plt",
+          "delta": 0
+        },
+        {
+          "after": 1,
+          "before": 1,
+          "callee": "dfi_vacate@plt",
+          "delta": 0
+        },
+        {
+          "after": 27,
+          "before": 27,
+          "callee": "dfi_weather_suppressed",
+          "delta": 0
+        },
+        {
+          "after": 3,
+          "before": 3,
+          "callee": "dfi_white_herb",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_will_move",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "dfi_win_result",
+          "delta": 0
+        },
+        {
+          "after": 2,
+          "before": 2,
+          "callee": "memmove@plt",
+          "delta": 0
+        }
+      ],
+      "changed_edges": [],
+      "direct_call_instructions": {
+        "after": 1339,
+        "baseline": 1339
+      },
+      "indirect_calls": {
+        "after": [
+          {
+            "caller": "_init",
+            "instruction": "e010:\tff d0                \tcall   *%rax"
+          },
+          {
+            "caller": "dfi_resist_berry_hit",
+            "instruction": "63cc0:\tff 94 24 88 00 00 00 \tcall   *0x88(%rsp)"
+          },
+          {
+            "caller": "dfi_white_herb",
+            "instruction": "63f24:\t41 ff d3             \tcall   *%r11"
+          }
+        ],
+        "baseline": [
+          {
+            "caller": "_init",
+            "instruction": "e010:\tff d0                \tcall   *%rax"
+          },
+          {
+            "caller": "dfi_resist_berry_hit",
+            "instruction": "63d20:\tff 94 24 88 00 00 00 \tcall   *0x88(%rsp)"
+          },
+          {
+            "caller": "dfi_white_herb",
+            "instruction": "63f84:\t41 ff d3             \tcall   *%r11"
+          }
+        ]
+      },
+      "moved_helpers": [
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_first_turn_only"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_power_by_weight"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_weight_power"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_heavy_slam_power"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_hard_press_power"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_multihit_count"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_hits"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_multiaccuracy_proven"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_power_trip_positive_stages"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_tri_attack_chance_hit"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_is_ohko"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_beat_up_hits"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_special_has_handler"
+        },
+        {
+          "after": 0,
+          "before": 0,
+          "helper": "dfi_move_special_status_hit"
+        }
+      ],
+      "reachable_functions": {
+        "after": 187,
+        "baseline": 187
+      }
+    }
+  },
+  "roots": [
+    "duoforge_battle_step_events",
+    "dfi_battle_step_events_tape"
+  ]
+}

@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "combat/move_rules.h"
+#include "combat/moves/families.h"
 #include "combat/turn.h"
 #include "core/arith.h"
 #include "core/bytes.h"

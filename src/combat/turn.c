@@ -3,15 +3,18 @@
 #include "combat/abilities/families.h"
 #include "combat/abilities/fairy_aura.h"
 #include "combat/damage_chain.h"
-#include "combat/multiaccuracy.h"
+#include "combat/moves/multiaccuracy.h"
 #include "combat/residual_order.h"
 #include "combat/events.h"
 #include "combat/items/items.h"
-#include "combat/move_rules.h"
-#include "combat/multihit_count.h"
-#include "combat/power_trip.h"
-#include "combat/secondary_rolls.h"
+#include "combat/moves/families.h"
+#include "combat/moves/multihit.h"
+#include "combat/moves/power_trip.h"
+#include "combat/moves/tri_attack.h"
 #include "combat/sheer_force.h"
+#include "combat/moves/ohko.h"
+#include "combat/moves/beat_up.h"
+#include "combat/moves/special_handlers.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -1555,13 +1558,7 @@ static uint32_t dfi_level_of(const dfi_member *m)
     return DFI_LEVEL;
 }
 
-/* The OHKO moves: Sheer Cold (ohko 'Ice', step G64) and the moves with ohko true (Fissure, Guillotine, Horn Drill; step G92).
- * Their accuracy and immunity steps are the same (hitStepAccuracy's ohko branch); they differ in the accuracy (dfi_ohko_accuracy)
- * and in the Ice-type immunity, which only Sheer Cold has. */
-static bool dfi_is_ohko(const dfi_move_data *md)
-{
-    return md->special == DFI_SPECIAL_SHEER_COLD || md->special == DFI_SPECIAL_OHKO;
-}
+
 
 static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md,
                                       uint32_t move_type, bool spread, uint32_t *out, bool *crit_out)
@@ -6012,7 +6009,7 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
         if (dfi_holds(b, victim, DFI_ITEM_BRIGHTPOWDER)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        /* The rational comparison below is proved for the accuracy 90 only (combat/multiaccuracy.h, checkG33): a new
+        /* The rational comparison below is proved for the accuracy 90 only (combat/moves/multiaccuracy.h, checkG33): a new
          * multiaccuracy move extends the proof before it runs. */
         if (!dfi_multiaccuracy_proven(base_accuracy)) {
             return DUOFORGE_E_UNSUPPORTED;
@@ -6042,16 +6039,7 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
     return dfi_draw_chance(r->draws, DFI_SITE_ACCURACY, accuracy, 100u, out);
 }
 
-/* The number of hits of a move (step G33): the pin's `multihit`, kept in the handler of the three rows that the engine runs
- * (Dual Wingbeat and Twin Beam 2, Triple Axel 3), 1 for every other move. */
-static uint32_t dfi_move_hits(const dfi_move_data *md)
-{
-    return md->special == DFI_SPECIAL_MULTI_HIT_2 ? 2u
-           : md->special == DFI_SPECIAL_TRIPLE_AXEL ? 3u
-           : md->special == DFI_SPECIAL_MULTI_HIT_10 ? 10u
-           : md->special == DFI_SPECIAL_DRAGON_DARTS ? 2u /* multihit: 2, a number: no draw (decision 0043) */
-           : 1u;
-}
+
 
 /* A Pokemon that stands and has Pressure (step G53). */
 static bool dfi_pressure_holder(struct duoforge_battle *b, uint32_t flat)
@@ -6089,31 +6077,7 @@ static uint32_t dfi_pressure_extra(struct duoforge_battle *b, uint32_t user, uin
     return extra;
 }
 
-/* Beat Up (step G64, data/moves.ts:1150-1179): onModifyMove keeps the Pokemon of the user's side that are the user or are not
- * fainted and have no status, in side.pokemon order (party_order, the brought members), and sets multihit to their number; each
- * hit's basePowerCallback takes the next of them and gives 5 + floor(base Attack of its set species / 10). The set species is
- * the member's forme, never its Mega forme (species_id stays the set's). Returns the hit count and fills r->beat_up_bp; a
- * member that is fainted or has a status is no hit, and nothing of the user's side changes during the move but the user's own
- * HP, which never removes the user from the list. */
-static uint32_t dfi_beat_up_hits(dfi_run *r, uint32_t user)
-{
-    struct duoforge_battle *b = r->b;
-    const uint32_t side = user / 2u;
-    const dfi_member *self = dfi_at(b, user);
-    uint32_t hits = 0u;
-    for (uint32_t k = 0u; k < r->ctx->brought_count && k < DUOFORGE_MAX_ROSTER; ++k) {
-        const uint32_t e = dfi_party_entry(&b->tail, side, k);
-        if (e == 0u) {
-            break;
-        }
-        const dfi_member *m = &b->sides[side].members[e - 1u];
-        if (m == self || (m->hp != 0u && m->status == DFI_STATUS_NONE)) {
-            r->beat_up_bp[hits] = 5u + (uint32_t)dfi_pool_formes[m->species_id].base[DFI_STAT_ATK] / 10u;
-            hits += 1u;
-        }
-    }
-    return hits;
-}
+
 
 /* Revival Blessing (decision 0025 item 6; data/moves.ts revivalblessing): onTryHit fails with a plain -fail when the user's
  * side has no fainted Pokemon. Otherwise the user's slot is flagged to switch at a PIVOT, with no check of a living reserve
@@ -8079,14 +8043,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     }
     /* A status move whose only effect is its forced switch (Roar, Whirlwind; step G46) is modelled by the forced-switch step
      * below, not refused here. */
-    if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
-        md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_HEAL_PULSE && md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
-        md->special != DFI_SPECIAL_AFTER_YOU && md->special != DFI_SPECIAL_QUASH && /* step G62: their own hit, below (after the Protect and immunity steps) */
-        md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO && md->special != DFI_SPECIAL_SKILL_SWAP &&
-        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN && md->special != DFI_SPECIAL_DRAGON_CHEER &&
-        md->special != DFI_SPECIAL_PSYCH_UP && md->special != DFI_SPECIAL_ALLY_SWITCH && /* step G80: their own hits, in the hit loop */
-        md->special != DFI_SPECIAL_LEECH_SEED && /* step G84: its own hit in the target loop (dfi_leech_seed) */
-        md->boost_role != DFI_BOOST_ROLE_PRIMARY_TARGET && md->special != DFI_SPECIAL_CONFUSE &&
+    if (status_move && md->primary_status == DFI_STATUS_NONE && !dfi_move_special_status_hit(md->special) &&
+        md->boost_role != DFI_BOOST_ROLE_PRIMARY_TARGET &&
         (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) == 0u) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id, targets, count);
@@ -8104,50 +8062,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     }
     /* A handler this build does not have fails explicitly; the Team C
      * specials of later steps are also kept out by the support manifest. */
-    if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
-        md->special != DFI_SPECIAL_WILL_CRIT && md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
-        md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
-        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
-        md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE &&
-        md->special != DFI_SPECIAL_GLAIVE_RUSH && md->special != DFI_SPECIAL_ACROBATICS &&
-        md->special != DFI_SPECIAL_BLIZZARD && md->special != DFI_SPECIAL_FEINT &&
-        md->special != DFI_SPECIAL_STEEL_ROLLER && md->special != DFI_SPECIAL_BRICK_BREAK &&
-        md->special != DFI_SPECIAL_PSYCHIC_FANGS && md->special != DFI_SPECIAL_SOLAR_BEAM &&
-        md->special != DFI_SPECIAL_HP_POWER && md->special != DFI_SPECIAL_BODY_PRESS &&
-        md->special != DFI_SPECIAL_FOUL_PLAY && md->special != DFI_SPECIAL_PSYSHOCK &&
-        md->special != DFI_SPECIAL_FREEZE_DRY && md->special != DFI_SPECIAL_CLANGING_SCALES &&
-        md->special != DFI_SPECIAL_RISING_VOLTAGE && md->special != DFI_SPECIAL_TERRAIN_PULSE &&
-        md->special != DFI_SPECIAL_MULTI_HIT_2 && md->special != DFI_SPECIAL_TRIPLE_AXEL &&
-        md->special != DFI_SPECIAL_DOUBLE_SHOCK &&
-        md->special != DFI_SPECIAL_RAGE_FIST && md->special != DFI_SPECIAL_STONE_AXE &&
-        md->special != DFI_SPECIAL_CEASELESS_EDGE && md->special != DFI_SPECIAL_MULTI_HIT_10 &&
-        md->special != DFI_SPECIAL_IMPRISON && md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
-        md->special != DFI_SPECIAL_THIEF && md->special != DFI_SPECIAL_COVET && md->special != DFI_SPECIAL_SUPER_FANG &&
-        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
-        md->special != DFI_SPECIAL_ROOST && md->special != DFI_SPECIAL_STOMPING_TANTRUM &&
-        md->special != DFI_SPECIAL_POWER_TRIP && md->special != DFI_SPECIAL_THUNDER && md->special != DFI_SPECIAL_ICE_FANG &&
-        md->special != DFI_SPECIAL_TRI_ATTACK && md->special != DFI_SPECIAL_LOCKED_MOVE &&
-        md->special != DFI_SPECIAL_MULTI_HIT_2_5 &&
-        md->special != DFI_SPECIAL_SCALE_SHOT && md->special != DFI_SPECIAL_QUICK_GUARD &&
-        md->special != DFI_SPECIAL_UPPER_HAND && md->special != DFI_SPECIAL_HEAL_PULSE &&
-        md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_POLTERGEIST &&
-        md->special != DFI_SPECIAL_BEAT_UP && md->special != DFI_SPECIAL_SHEER_COLD &&
-        md->special != DFI_SPECIAL_BUG_BITE && md->special != DFI_SPECIAL_AFTER_YOU &&
-        md->special != DFI_SPECIAL_QUASH && md->special != DFI_SPECIAL_SUBSTITUTE && md->special != DFI_SPECIAL_PHANTOM_FORCE &&
-        md->special != DFI_SPECIAL_STEEL_BEAM && md->special != DFI_SPECIAL_THUNDER_WAVE &&
-        md->special != DFI_SPECIAL_SKILL_SWAP &&
-        md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
-        md->special != DFI_SPECIAL_FINAL_GAMBIT && md->special != DFI_SPECIAL_ENDEAVOR &&
-        md->special != DFI_SPECIAL_DRAGON_DARTS &&
-        md->special != DFI_SPECIAL_LASH_OUT && md->special != DFI_SPECIAL_ASSURANCE &&
-        md->special != DFI_SPECIAL_HEAVY_SLAM && md->special != DFI_SPECIAL_HARD_PRESS &&
-        md->special != DFI_SPECIAL_ICE_SPINNER && md->special != DFI_SPECIAL_BELLY_DRUM &&
-        md->special != DFI_SPECIAL_LEECH_SEED &&
-        md->special != DFI_SPECIAL_CONFUSE && md->special != DFI_SPECIAL_OHKO &&
-        md->special != DFI_SPECIAL_MEMENTO && md->special != DFI_SPECIAL_LEVEL_DAMAGE &&
-        md->special != DFI_SPECIAL_PARTIAL_TRAP &&
-        md->special != DFI_SPECIAL_PSYCH_UP && md->special != DFI_SPECIAL_ALLY_SWITCH &&
-        md->special != DFI_SPECIAL_PSYCHIC_TERRAIN) { /* step G84, G92, G90, G80; G96 (Psychic Terrain) */
+    if (!dfi_move_special_has_handler(md->special)) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
