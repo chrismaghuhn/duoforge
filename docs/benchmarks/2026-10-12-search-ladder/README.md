@@ -303,3 +303,45 @@ touchstone (#458) needs a stronger pilot: at least our own search with that team
 
 **Provenance.** search/1b-rollout at 7db476a6, 01:01 to 01:33, p99 0.72 s in the shared run. Team files and raw output
 stay private; the report records the teams' SHA-256 prefixes only.
+
+### Arm 1bw (2026-10-13): the preview width; ladder gates hold, the touchstone criterion fails
+
+**Change.** Step 1b with `preview_width` "distinct" (see the predeclaration above).
+
+**Ladder verdict (`ladder verdict` with the exclusive latency run): every gate holds.** It is the first arm whose
+head-to-head lower bound is above 0.50.
+
+| gate | result |
+|---|---|
+| strength: head-to-head, 1bw against step 0 (1024 pairs) | **0.554 [0.534, 0.574]**, 0 unfinished, 0 unresolved |
+| no harm: 1bw against step 0, paired | `bot` 0.500 [0.490, 0.509]; `bc6` 0.523 [0.511, 0.535] |
+| reproduced: step 0 rerun on 1bw's code | identical per-game scores and decision digests |
+| fallbacks | `bot` 2.7% (step 0: 2.7%); `bc6` 2.4% (2.3%); `ppo` 2.5% (2.6%, not gated) |
+| latency | exclusive p99 **1.085 s** (≤ 2.0 s; also under the VPS bound of 1.67 s). Shared run: 1.58 s |
+
+| opponent | 1bw | step 0 | 1bw against step 0, paired |
+|---|---|---|---|
+| `bot` | 0.862 | 0.863 | 0.500 [0.490, 0.509] |
+| `bc6` | 0.743 | 0.698 | 0.523 [0.511, 0.535] |
+| `ppo` | 0.498 | 0.471 | 0.514 [0.501, 0.527] |
+
+**Touchstone (#458): Team A against the Nationals sun team, 256 pairs. The criterion fails for the `bot` pilot.**
+
+| pilot of the sun team | 1bw | step 0 | raw (R) | 1bw against 0 | 1bw against R |
+|---|---|---|---|---|---|
+| `bot` | 0.943 | 0.982 | 0.961 | **0.480 [0.469, 0.492]** | 0.491 [0.478, 0.505] |
+| `ppo` | 0.938 | 0.938 | 0.934 | 0.500 [0.485, 0.516] | 0.502 [0.489, 0.515] |
+
+- **Our four, every game (both pilots, both seats):** 1bw leads Raichu + Milotic with Ceruledge + Staraptor behind;
+  step 0 brings Rillaboom + Ceruledge behind the same lead. 1bw changes the raw choice in all 1024 of its preview
+  decisions, always to this one set. Gholdengo is never brought; Staraptor is brought in every 1bw game.
+- Against the `bot` pilot this swap costs about 4 points (0.982 → 0.943), and the upper bound 0.492 is below 0.50.
+
+**Outcome by the predeclared criteria: 1bw does not pass.** The ladder gates hold, but the touchstone shows harm for
+one pilot. No PR. As noted for the sanity arm, neither sim pilot plays the sun team well; whether this touchstone
+should veto a ladder gain is the owner's decision, not changed after the run.
+
+**Provenance.**
+- **Code:** search/preview-width at b3e1c0a2; both runs recorded `dirty: false`.
+- **Runs:** gated 04:06 to 09:30, two shared lock slots; touchstone 04:06 to 04:55; exclusive latency 09:30 to 09:32.
+- **Raw output:** private, outside the repository; team files are recorded by SHA-256 prefix only.
