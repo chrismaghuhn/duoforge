@@ -27,6 +27,9 @@ This document is committed before the first measurement. Results are added below
 
 1. **Screen:** all 91 arms (`--arms all`) with 32 pairs each (64 games), seed `0x2026101300000458`.
 2. **Confirm:** on a fresh seed `0x2026101300000459`, 256 pairs each (512 games). The arms are `today`, the stage-1 top 5 by score (ties by name), and `today`'s own combination if it is not among them.
+3. **Fixed sun lead (HS, 2026-10-13):** the same arms, the same seed and the same pair count as stage 2, with the foe's leads fixed to Charizard + Venusaur (`--foe-lead Charizard,Venusaur`). The bench is still drawn from the foe's team head, given those leads. This is how the arena opponent with this team led in its last set; BC6's team head probably chooses otherwise. It is reported apart from stage 2, with its own loss and spread.
+
+**Code for stages 2 and 3.** If #459 (visible sleep) is merged before stage 2 starts, stages 2 and 3 run on the new main with a library built from it, and the report names both commits. Stage 1 is a screen only and stays on this branch.
 
 ## What is reported
 
@@ -41,7 +44,7 @@ This document is committed before the first measurement. Results are added below
   - the foe's preview distribution, i.e. its drawn leads and its brought four;
   - every arm's score split by the foe's lead;
   - unfinished and unresolved games;
-  - both seats' raw-fallback shares.
+  - **per arm**, both seats' raw-fallback shares and their causes (visible sleep among them). Sleep must not hit the arms unequally: an arm whose fallback share is more than 2 points above the arms' median is named, with its causes.
 
 ## How it is read (predeclared)
 
