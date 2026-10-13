@@ -153,6 +153,12 @@ def level2(data, sets, member):
     return _rebuilt(data, sets, member, lambda s: True)
 
 
+def true_sheet(text):
+    """A paste's team packed as the open sheets show it (the oracle of #385 step 5): each set in the particles' form
+    (_sheet: level 50, no stat points, the paste's gender), as the pinned server's |showteam| line carries it."""
+    return teams.pack(teams.to_text([_sheet(s, s.get("gender", "")) for s in teams._paste(text)]))
+
+
 def _sheet(s, gender):
     """A set as the open sheets show it: level 50, no stat points, the preview's gender."""
     return {"name": s["species"], "species": s["species"], "item": s["item"], "ability": s["ability"],

@@ -261,7 +261,7 @@ class ArenaBot(client.Bot):
             self.prior = prior
         config = client.Config(name=name, team="own", log_dir=log_dir)
         super().__init__(config, data, policy, login=None, clock=clock, team_texts={"own": team_text},
-                         search=search)
+                         search=search, prior=self.prior)  # client.Bot keeps it: the closed sheets
         self.format = fmt
         self.team_text, self.pool = team_text, list(pool)
         self.packed = teams.pack(team_text) if team_text is not None else None
