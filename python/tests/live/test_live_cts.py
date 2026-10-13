@@ -655,6 +655,29 @@ class LogReplayTest(unittest.TestCase):
         self.assertEqual(list(replay), [])
         self.assertEqual(replay.stopped, "stop:cts:no-consistent-set")
 
+    def test_a_fallback_of_the_bot_is_named_and_a_divergence_found(self):
+        # Review of the replay core: the bot's own fallback ends its feeds; the replay names it, and a log whose bot
+        # stopped the tracker where the replay does not (or the reverse) is a divergence, never silent.
+        tables = data.load(kind="pool")
+        prior = cts.SetPrior(tables, foe_sets())
+        feeds = [{"feed": m} for m in closed(FIXTURE["messages"])[:4]]
+        replay = cts.LogReplay(feeds + [{"fallback": "deadline", "detail": "no decision within 20 s"}], tables, None,
+                               FIXTURE["team"], prior, KEY)
+        self.assertEqual(len(list(replay)), 1)  # the team preview
+        self.assertEqual((replay.stopped, replay.diverged, replay.complete), ("fallback:deadline", None, True))
+        replay = cts.LogReplay(feeds + [{"fallback": "stop:cts:redraw-cap", "detail": "stop:cts:redraw-cap x"}], tables,
+                               None, FIXTURE["team"], prior, KEY)
+        list(replay)
+        self.assertEqual(replay.stopped, "fallback:stop:cts:redraw-cap")
+        self.assertIn("the bot stopped", replay.diverged)
+        partial = cts.LogReplay(feeds, tables, None, FIXTURE["team"], prior, KEY)
+        next(iter(partial))
+        self.assertFalse(partial.complete)  # a consumer that stops early: no verdict
+
+    def test_a_record_that_is_no_object_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "record 1"):
+            cts.LogReplay([{"feed": []}, "x"], data.load(kind="pool"), None, FIXTURE["team"], None, KEY)
+
     def test_the_key_is_the_room_the_log_is_named_by(self):
         from pathlib import Path
         self.assertEqual(cts.room_of_log(Path("x/battle-gen9championsvgc2026regmc-75-lingce.jsonl"), "Ling-Ce"),

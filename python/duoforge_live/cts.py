@@ -69,23 +69,37 @@ class LogReplay:
     seed, key and prior as the bot's: the same particles), and yields (game, record) at every decision point where the
     bot was asked (game.asked(), a new epoch), before the choice is accepted: game.tracker is the ParticleTracker as the
     search found it, and game.candidates(budget) decides as live with a search. record is the bot's log record of that
-    decision (its "decision" is the request's rqid, with "sent" and "search"), None where it wrote none or answered
-    with /choose default. After the iteration, stopped is None, "stop:<name>" for a tracker stop (as the bot's battle
-    fell back there) or "error:<type>" for another failure the bot's battle catches."""
+    decision (its "decision" is the request's rqid, with "sent", the first choice tried, and "search"), with
+    "accepted": the choice the game accepted there (after a refused one, the next) or None; record is None where the
+    bot wrote none or answered with /choose default.
+
+    After an iteration that ran out (complete): stopped is None (the log ran to its end), "stop:<name>" or
+    "error:<type>" (the replay's own tracker stopped or failed), or "fallback:<reason>" (the bot fell back there, the
+    log's {"fallback"} record, and its feeds end); diverged names a mismatch between the two (the bot stopped its
+    tracker where the replay does not, or the reverse), None when they agree. A consumer that stops early leaves
+    complete False and no verdict."""
 
     def __init__(self, records, data, policy, own_text, prior, key, search=None, seed=SEED, n=PARTICLES):
-        self.records, self.data, self.policy, self.own_text, self.prior = list(records), data, policy, own_text, prior
+        self.records = list(records)
+        bad = next((k for k, r in enumerate(self.records) if not isinstance(r, dict)), None)
+        if bad is not None:  # a malformed log, never counted as a failure of the bot
+            raise ValueError(f"log record {bad} is no object")
+        self.data, self.policy, self.own_text, self.prior = data, policy, own_text, prior
         self.key, self.search, self.seed, self.n = key, search, seed, n
         self.game = None
-        self.stopped = None
+        self.stopped = self.diverged = None
+        self.complete = False
+        # the bot's own fallback: the first {"fallback": reason} record (not a defaulted decision's)
+        self.fallback = next((r["fallback"] for r in self.records if "fallback" in r and "sent" not in r), None)
 
     def __iter__(self):
         from .data import trace_to_c
         from .game import Game
-        self.stopped = None
+        self.stopped = self.diverged = None
+        self.complete = False
         game = self.game = Game.closed_sheets(self.data, self.policy, self.own_text, self.prior, search=self.search,
                                               room=self.key, seed=self.seed, n=self.n)
-        done = 0
+        done, stopped = 0, None
         try:
             for i, r in enumerate(self.records):
                 if "accepted" in r:
@@ -102,11 +116,28 @@ class LogReplay:
                 rqid = game.request.get("rqid")
                 record = next((x for x in self.records[i + 1:] if x.get("decision") == rqid and "sent" in x
                                and x.get("sent") != "default"), None)
+                if record is not None:
+                    accepted = None
+                    for x in self.records[i + 1:]:  # the choice accepted at this point: before the next batch
+                        if "feed" in x:
+                            break
+                        if "accepted" in x:
+                            accepted = x["accepted"]
+                            break
+                    record = dict(record, accepted=accepted)
                 yield game, record
         except lines.Stop as stop:
-            self.stopped = "stop:" + stop.reason.split(" ")[0].rstrip(":")
+            stopped = "stop:" + stop.reason.split(" ")[0].rstrip(":")
         except (Exception, trace_to_c.ConversionError) as err:  # what the bot's battle catches (ConversionError: SystemExit)
-            self.stopped = f"error:{type(err).__name__}"
+            stopped = f"error:{type(err).__name__}"
+        bot = self.fallback
+        bot_stopped = bot is not None and (bot.startswith("stop:") or bot.startswith("error:"))
+        if stopped is not None and not (bot_stopped and stopped.startswith(bot)):
+            self.diverged = f"the replay {stopped}, the bot {'fell back: ' + bot if bot else 'did not'}"
+        elif stopped is None and bot_stopped:
+            self.diverged = f"the bot stopped ({bot}), the replay did not"
+        self.stopped = stopped if stopped is not None else (None if bot is None else "fallback:" + bot)
+        self.complete = True
 
 
 def counter_kind(key):

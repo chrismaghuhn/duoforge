@@ -450,6 +450,24 @@ class ArenaTest(unittest.TestCase):
             self.assertEqual(record["decision"], rqid)  # the decision's own log record, with what was sent
             self.assertIn("sent", record)
 
+    def test_a_replayed_decision_names_the_choice_played_after_a_refusal(self):
+        # Review of the replay core: "sent" is the first try; after "[Invalid choice]" the bot plays the next one, and
+        # the replay's record names it as "accepted"
+        self.make(fmt=CTS)
+        closed = f"battle-{CTS}-7"
+        self.feed(*self.closed_messages(closed, upto=6))
+        self.take()
+        self.feed(room(["|error|[Invalid choice] Can't move: no."], closed))
+        (again,) = self.take()
+        played = again.split("|/choose ", 1)[1].rsplit("|", 1)[0]
+        self.feed(*[room([l for l in m if not l.startswith("|showteam|")], closed) for m in FIXTURE["messages"][6:9]])
+        replay = cts.LogReplay(self.battle(closed), self.bot.data, self.bot.policy, FIXTURE["team"], self.bot.prior,
+                               closed)
+        records = {g.request["rqid"]: record for g, record in replay}
+        record = records[request_of(5)["rqid"]]
+        self.assertNotEqual(record["sent"], played)
+        self.assertEqual(record["accepted"], played)
+
     def test_a_random_closed_sheet_battle_plays_its_pool_team_over_the_particles(self):
         self.make(team=False, pool=[teams.text("B"), FIXTURE["team"]], fmt=CTS)
         rnd = f"battle-{CTS}random-9"

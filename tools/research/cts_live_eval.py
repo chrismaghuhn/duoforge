@@ -259,7 +259,10 @@ def replay(records, tables, prior, team, room, names):
         if bad:  # a refused particle holding no foe content is put on the own team's, when that has any
             out["refused"].append([sorted(set().union(*(held(s, names, tables) for s in t.particles[i].sets))
                                           or {"own:" + c for c in own}) for i in bad])
+    # the replay's own stop or failure, else the bot's named fallback; a failure of this tool (public_parts, held)
+    # propagates and ends --replay: it is no fallback of the bot
     out["stopped"] = replayed.stopped
+    out["diverged"] = replayed.diverged
     return out
 
 
@@ -328,6 +331,8 @@ def replay_all(directory, bot, root, labels=None, since=None):
             group["refused"] += len(out["refused"])
         if out["stopped"]:
             stopped[out["stopped"]] += 1
+        if out["diverged"]:
+            skipped["diverged"] += 1  # the replay and the bot disagree on a stop: a determinism break, named
         for held_by in out["refused"]:
             refused += 1
             union = set().union(*map(set, held_by))
