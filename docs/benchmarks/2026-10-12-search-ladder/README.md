@@ -229,11 +229,10 @@ merging it is an assumption the owner judged harmless (#462).
    seats alternating. The sun team is piloted by the live search (step 0), whose spread table leaves out Team A. A new
    pilot is made for each arm. 1bws is paired against step 0 on the same games, with the 95% pair interval.
 
-The sim-pilot touchstone (`bot` and `ppo` piloting the sun team, part of 1bw's criteria) is not part of 1bws's: after
-1bw the owner made switch-on depend on the mirror run, since neither sim pilot plays that team well. **This change to
-a predeclared criterion awaits explicit approval by the owner or the HauptSession (PR of 1bws).** If it is not
-approved, the sim-pilot touchstone is added back before any 1bws run: 256 pairs, `bot` and `ppo` as pilots, an upper
-bound of at least 0.50 per pilot.
+**The sim-pilot touchstone is reported, not gated** (`--matchup <Team A> <the Nationals sun team> --step 1bws
+--previous 0 --raw`, 256 pairs, `bot` and `ppo` as the sun team's pilots). It was part of 1bw's criteria. After 1bw
+the owner made switch-on depend on the mirror run, since neither sim pilot plays that team well. **Approved by the
+HauptSession on 2026-10-13, before any 1bws run** (PR of 1bws): the mirror touchstone decides.
 
 **Criteria, fixed now.** 1bws may be switched on live when:
 - every ladder gate holds against step 0 (strength, no harm, reproduced, fallbacks, latency p99 ≤ 2.0 s), and the
