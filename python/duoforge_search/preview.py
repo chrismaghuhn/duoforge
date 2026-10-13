@@ -23,7 +23,9 @@ def top(logp, count):
 
 # The preview candidates' width (#440, owner 2026-10-13): "top", the top tuples of the team head; "distinct", one tuple
 # per bring-and-lead combination (the leads and the two behind them, each unordered: 90 combinations), the own side
-# covering every member of the team.
+# covering every member of the team. An approximation, not an equality: the two lead seats are separate positions in
+# battle and in the network's input, so merging the seat orders drops candidates that can play differently. Only the
+# bench order was meant to merge (review of #462); "distinct" stays as measured, and a corrected width is a new arm.
 WIDTHS = ("top", "distinct")
 
 
@@ -41,7 +43,8 @@ COVER_MAX = ROSTER - 4  # the members a combination leaves out: the cover adds a
 def distinct(probabilities, count, cover=False):
     """The candidates of one side by combination: (tuple ids, their combinations' probabilities). A combination's
     probability is the sum over its orderings (bench order and lead seats), its tuple the likeliest ordering (equal
-    values to the lower id), so no two candidates differ only in order. The count likeliest combinations (equal sums to
+    values to the lower id), so no two candidates differ only in order. Merging the lead seats is an approximation:
+    the seats differ in battle, and the swapped tuple is not evaluated. The count likeliest combinations (equal sums to
     the lower tuple id); with cover, for each of the six members no candidate brings, the likeliest combination that
     brings it is added. Ranked by the combinations' probabilities. probabilities: (360,) or (W, 360), the latter summed
     over its first axis for the ranking."""

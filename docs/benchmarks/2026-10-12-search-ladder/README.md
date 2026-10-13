@@ -115,6 +115,12 @@ answer):
   world's probability of a column is its combination's.
 - The raw choice and the record's `raw` stay the team head's top tuple.
 
+**Correction (review of #462, 2026-10-13).** Merging the 4 orderings also merges the two lead seats (Raichu left and
+Milotic right against the reverse). The seats are separate positions in battle and in the network's input, so this is
+an approximation, an assumption no test checks, not an equality of the evaluator. Only the bench order was meant to
+merge. 1bw's results below measure this approximation. Before 1bw is switched on, a corrected width that merges the
+bench order only is a new arm, measured again on the ladder and in the mirror touchstone (owner).
+
 **Runs, after the machine is free:**
 1. **Gated:** `--step 1bw --previous 0 --h2h --previous-run <step 0's ladder.json>` against `bot`, `bc6` and `ppo`, 1024
    pairs, then its exclusive latency run (16 pairs against `bot`).
@@ -193,6 +199,9 @@ the live search pilots the sun team.
 - **Paired:** 1bw against step 0, on the same games against the mirror.
 - **Reported, not gated:** the scores per arm, our four and leads decoded from the records, and the fallback shares of
   both sides.
+
+The run started at 15:47 measures 1bw as merged, lead seats included. After the correction above it is reported,
+but it no longer decides alone. The corrected width is measured in its own mirror run.
 
 **Criterion, fixed now:** no measurable harm. The upper bound of the 95% interval of 1bw against step 0 must be at
 least 0.50.
@@ -289,7 +298,8 @@ exclusive run, and reports no pooled fallback share (the old report has no count
 
 **What follows:**
 - **Step 1b:** the turn-1 rollout, its foe seat played by the foe network, with the best answer. #241 measured this as the only preview form with a gain. It is measured next.
-- **Preview dedup:** the team candidates are deduplicated by evaluator equality, the network's identical inputs in every cell.
+- **Preview dedup:** the plan was to deduplicate the team candidates only where the evaluator cannot tell them apart.
+  Arm 1bw below does not do that (correction, review of #462): it merges the lead seats too, an approximation.
 - A rerun of step 1 with 2048 pairs is optional. 1b supersedes it as the preview step.
 
 **Provenance.**
@@ -409,7 +419,7 @@ head-to-head lower bound is above 0.50.
 one pilot. The criterion is not changed after the run.
 
 **The owner's decision (2026-10-13, #440):**
-1. 1bw lands on main as an option, switched off. Without it the search is bit-identical to main:
+1. 1bw lands on main as an option, switched off. It merges the lead seats, an approximation (see the correction above). Without it the search is bit-identical to main:
    `test_the_default_preview_width_previews_as_on_main` pins main's previews, and the turn pins are unchanged.
 2. It is switched on live only if it passes the mirror touchstone above, which was predeclared before its run.
 
