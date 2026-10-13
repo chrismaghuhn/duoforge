@@ -1,46 +1,171 @@
-# Restructure step 4: move families and generated special guards
+# Restructure 4: Moves — Events calls and matched controls
 
-Existing shared move rules now live under `src/combat/moves/`, named by family:
-first-turn-only, weight power, HP power, multihit, multiaccuracy, Power Trip and
-Tri Attack. The bounded Beat Up preparation and OHKO classifier move out of
-`turn.c` too. Twelve original function bodies are byte-identical; all hot helpers
-are private `static inline`. `dfi_get_damage`'s entire body is byte-identical.
-No new translation unit, CMake source entry, public API, hook mask or function
-pointer dispatch. The turn keeps every invocation, effect order and RNG draw.
-`turn.c` shrinks **12,470 -> 12,385 lines (-85)**.
+The proposed call-out explanation is not supported by `objdump`: the No-IPO
+Events graph has **1,306 -> 1,306** static direct call instructions in the bench
+and **1,339 -> 1,339** in the shared library. Every moved/new helper has **0 -> 0**
+calls and no out-of-line definition or tail jump. They already live as private
+`static inline` functions in headers. This follow-up changes no engine code.
 
-**Readiness is blocked by performance:** the follow-up no-IPO/events median
-ratio is **1.053301 (+5.33%)**, above the 1.02 gate. All local functional proofs
-pass; hosted CI is pending PR opening. Short, control and longer measurements
-are retained below; strong variability also appears with an identical binary.
+All fresh local functional proofs pass. Baseline is **fbc8b24f**, current compiled
+source **3affb183**, branch `restructure/4-moves`. The immutable baseline evidence
+is reused unchanged; the after suites and both native captures were rerun.
+**No PR opened:** HS must explicitly approve opening; hosted CI is pending.
 
-Baseline **fbc8b24f**, compiled source **2b9b2de6** (merge of updated main), branch `restructure/4-moves`.
-The original 657dae45 evidence is superseded by this fresh comparison against
-main with #459 and #460. No conflict resolution changed engine logic: a complete turn
-token comparison, except the explicitly defined restructure, is recorded in
-[merge-audit.json](merge-audit.json). Subsequent commits add evidence only. **No PR
-opened:** HS must explicitly release the window, regardless of `gh pr list`.
-#459 sleep, #456 arena and #461 verdict fixes are merged into this branch.
-#460 CTS set-table changes are merged and its smogon_sets/live_cts regressions
-run on baseline and branch in both builds. Hosted CI is pending;
-all twelve CI matrix jobs plus RNG remain HS's merge gate.
+**Bench result:** three medians satisfy the +2% numeric check. No-IPO/events is
+**+2.42%**, so its numeric check **FAILS**, while it is inside the identical-binary
+control's 95% band **[-3.62%, +6.89%]**. All four satisfy the user's stated
+“≤+2% or within own scatter” criterion when these two checks are kept separate.
+This is **not** proof of an absolute ≤2% performance loss. No sample is excluded,
+and no numeric failure is relabelled as a numeric pass.
 
-## Source lineage and location audit
+## Static Events call comparison
 
-Pure `git mv` commit **3aa2ac7d** contains these five 100% renames and nothing else:
+[events-call-audit.json](events-call-audit.json) enumerates counts per target,
+all changed caller/callee edges (none), helper counts and indirect call sites.
+The traversal starts at `duoforge_battle_step_events` and
+`dfi_battle_step_events_tape`, includes direct calls, tail jumps, cold blocks and
+branch edges, and resolves same-library PLT calls to their own definitions.
+It is a conservative static reachable graph, **not dynamic invocation counts**.
+Bench: **174 -> 174** reachable functions; shared: **187 -> 187**.
+Indirect `call` instructions: **3 -> 3** in each artifact, unchanged.
+No callee's call count and no normalized caller/callee edge count increased.
+Compiler `.constprop`, `.isra`, `.part` and `.cold` suffixes are handled explicitly.
 
-| Old path | New path after the move | Subsequent grouping |
+| Helper | Before No-IPO calls | After No-IPO calls |
+|---|---:|---:|
+| `dfi_move_first_turn_only` | 0 | 0 |
+| `dfi_move_power_by_weight` | 0 | 0 |
+| `dfi_weight_power` | 0 | 0 |
+| `dfi_heavy_slam_power` | 0 | 0 |
+| `dfi_hard_press_power` | 0 | 0 |
+| `dfi_multihit_count` | 0 | 0 |
+| `dfi_move_hits` | 0 | 0 |
+| `dfi_multiaccuracy_proven` | 0 | 0 |
+| `dfi_power_trip_positive_stages` | 0 | 0 |
+| `dfi_tri_attack_chance_hit` | 0 | 0 |
+| `dfi_is_ohko` | 0 | 0 |
+| `dfi_beat_up_hits` | 0 | 0 |
+| `dfi_move_special_has_handler` | 0 | 0 |
+| `dfi_move_special_status_hit` | 0 | 0 |
+
+[inlining.json](inlining.json) also verifies all 14 helpers in **all eight**
+before/after × IPO on/off × bench/shared binaries: zero direct calls, zero
+out-of-line definitions and zero tail jumps. No helper became a cross-file
+call, so there is no source correction to make for that hypothesis.
+
+## Paired measurements and identical-binary controls
+
+The protocol was fixed before execution: **32 pairs for each of four series**:
+IPO change, IPO A/A, no-IPO change, no-IPO A/A. The four series rotate through
+four positions each round, **eight times in each position**. Change pairs run AB
+on odd rounds and BA on even rounds (**16 of each**). Every A/A pair executes
+exactly the same baseline file twice; its two SHA-256 values are equal.
+
+Every run uses **1,024 battles per closure pairing**, **three timed repetitions**
+per workload and side (**96 samples per side/workload/series**), **two warmups**,
+CPU affinity **4**, seeds **20261001 / 7001**, max steps **128**, and both
+`step,events` workloads. Compiler: GCC **14.2.0**, Release `-O3 -DNDEBUG`;
+IPO is checked from each manifest. No local build or test overlaps these runs.
+The driver's old raw `affinity: none` string is preserved; the outer harness
+actually sets child affinity, recorded in `protocol.cpu_affinity`.
+
+Every record and choice tally agrees across all four series:
+**4,096 battles, 73,337 steps, 53,625 turns,
+131,721 side decisions**, zero errors/truncations/skipped runs.
+Each pair uses median(after's three samples) / median(before's three samples);
+the reported value is the median of these paired ratios. The 95% intervals use
+**20,000 paired-resample medians**, fixed seed **20261012**. Full ranges,
+absolute before/after medians, all individual wall/CPU samples and disturbed
+flags remain in the JSON. The additional round-matched change/A-A ratios and
+intervals are reported separately; they do not replace the primary measurements.
+
+| IPO | Workload | Median time change | Change 95% CI | A/A median change | A/A 95% CI | Numeric ≤+2% | Inside A/A CI |
+|---|---|---:|---|---:|---|---|---|
+| on | plain | -1.33% | [-4.46%, +1.41%] | -0.39% | [-3.71%, +2.55%] | pass | yes |
+| on | events | +1.48% | [-3.43%, +2.56%] | -1.28% | [-3.57%, +1.42%] | pass | no |
+| off | plain | +1.51% | [-0.82%, +2.44%] | +0.25% | [-1.30%, +2.42%] | pass | yes |
+| off | events | +2.42% | [-0.96%, +5.93%] | +0.09% | [-3.62%, +6.89%] | FAIL | yes |
+
+The numeric 1.02 threshold is unchanged. The separate own-scatter check asks
+whether the observed change median lies within the matching A/A 95% interval.
+Large A/A outliers demonstrate measurement variation even with no code change.
+These intervals cannot statistically establish a hard 2% non-regression bound.
+There is no causal speedup claim and no change to tests, timeouts or CI selection.
+
+Raw series: [IPO change](paired-bench-ipo.json), [no-IPO change](paired-bench-noipo.json),
+[IPO A/A](paired-bench-control32-ipo.json), [no-IPO A/A](paired-bench-control32-noipo.json).
+
+## P1–P6 against fbc8b24f
+
+- **P1:** **1,409 before = 1,409 after**, sorted inventory SHA-256
+  `43e1460e9916439235c3012548241aecf538a6d985bcf9c5a42c349ee36756fe`.
+  Full CTest ordering, names, commands, working directories, environments and
+  labels compare equal, excluding registration backtraces only. Tiers:
+  **209 quick + 31 full + 1,151 reference + 18 slow**. Fresh after suites:
+  **62/62 IPO**, **57/57 no-IPO**, zero failures/skips/disabled. Includes all
+  **33 Moves tests**, mixed G33, layout, model pins, sleep/view/clone regressions,
+  smogon_sets/live_cts and lint/hygiene. Recorded main baseline: **40/40 IPO**,
+  **39/39 no-IPO** and **12/12 related checks in each profile**; reused unchanged.
+  Full hosted CI waits for PR opening and remains HS's merge gate.
+- **P2:** both fresh after captures equal both recorded baseline captures,
+  **10 variants / 2,584 executions / 1,129 unique battles / 22,472 steps /
+  8,458 stops per profile**, full canonical JSON SHA-256
+  `9753fed420cbcddceaa7e4de1e77a73fda9195b093e4cf9e98a06140dd6c7dfd`.
+  `capture_reference.py` invokes the test-only `--digest-out`, covering state,
+  requests, events, RNG use and stops; original runner assertions execute.
+  Live **53/53** rerun with IPO: **11680 equal / 563 refused**, four Unburden
+  refusals, **162 tracker stops**. [live-summary.json](live-summary.json).
+- **P3:** both profiles pass **10 perft positions / 24 pinned depths**;
+  pins SHA `90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56`.
+- **P4:** both profiles pass **2 cases / 8 roots / 7 searched roots**;
+  `BENCH_SHA256` remains
+  `8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798`.
+- **P5:** all three `gen_closure --check` modes, tiebreak regeneration, independent
+  format pins and `gen_move_handlers.py --check` pass. **22 existing source hashes**
+  unchanged. New generated table SHA
+  `beb77f26a35314b1ef87e1dd1975f325ad95d8c66a4845b77c43ce1b550e9d16`.
+  UNMODELED data-row pins **146 moves / 18 items / 90 abilities** stay until step 5.
+- **P6:** public header diff empty, **238 exports** byte-equal in both modes,
+  normalized type/name SHA
+  `1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5`.
+  **33 layout structs / 250 constants** equal, canonical SHA
+  `2dead3e584403acac03ccc90926c7590593776242c089777b4e0c74a9b215395`;
+  raw dump bytes also equal. **16 negative symbol lookups** pass; layout suite
+  **6 -> 7 cases**, existing checks retained.
+
+The independent old-predicate test still compares every **122 defined specials
+and all 256 uint8 storage values**, plus UINT32_MAX: **2,098 checks**, zero failures
+(original **1,581 retained**), **96 late handlers / 26 excluded** and
+**18 own-status hits / 104 excluded**. Datagen suite **147 -> 151** cases.
+Fresh isolated mutation control passes; all three wrong-table mutants are caught.
+No committed generated file is hand-edited. [mutation-controls.json](mutation-controls.json).
+
+| Variant | Battles | Before = after SHA-256 |
+|---|---:|---|
+| `duoforge_reference_conformance` | 90 | `620dd6f94faa5fc2751158f062c58edf75f48394aba7a9a49e6bc96bf8f9f271` |
+| `duoforge_reference_conformance_pool` | 90 | `8be6753e961e86e6a8dbcb77e053f308ea71c31c12a6c11b5212a954fccf79a6` |
+| `duoforge_reference_conformance_pool_data` | 966 | `8fbc168fb2199930340a1fabf4923bce5d2553ede17253bd215b7f1ad5b4d200` |
+| `duoforge_reference_conformance_team_c` | 73 | `1acfad0da5393e2095176d094ab2748800b305cfbfee048e04f127a1720c39c5` |
+| `duoforge_reference_conformance_team_c_pool` | 73 | `4459b937648f3e470ffee6da4761ce0f3d54b2c19f59906774888844bb515792` |
+| `duoforge_reference_tiebreak` | 90 | `b374c2d908d5bd00776a571f7bc6842722f0fb6e6401c9770b3f27001c07e4ea` |
+| `duoforge_reference_tiebreak_pool` | 90 | `f0d14608caf783a1f99c79dfb78265e18878aaa139865c7ce3500f10635d41cb` |
+| `duoforge_reference_tiebreak_pool_data` | 966 | `9bc7b21e8cfc6994147dcc7843581d2a1a08f63aaf1d9db2417511615cd1049f` |
+| `duoforge_reference_tiebreak_team_c` | 73 | `78e1cb58a1fd273b438d99fb9d5db2bdc876b174da5bc73339bc002b2de7fb34` |
+| `duoforge_reference_tiebreak_team_c_pool` | 73 | `c63fe2df60c180eff91e1c81d297036b2873a342cc32016dab93ae8165ad913b` |
+
+## Source moves, lineage and dependency audit
+
+Pure `git mv` commit **3aa2ac7d** contains five 100% renames only; separate
+split commit **1df05170** credits source `move_rules.h@657dae45` and
+`turn.c@657dae45`. Guard commit **75c77c7a** adds the generated phase table.
+
+| Old path | New path | Grouping |
 |---|---|---|
-| `src/combat/move_rules.h` | `src/combat/moves/families.h` | umbrella; first_turn_only.h, weight_power.h, hp_power.h |
-| `src/combat/multihit_count.h` | `src/combat/moves/multihit.h` | adds the unchanged dfi_move_hits body |
+| `src/combat/move_rules.h` | `src/combat/moves/families.h` | first_turn_only.h, weight_power.h, hp_power.h |
+| `src/combat/multihit_count.h` | `src/combat/moves/multihit.h` | unchanged count + unchanged dfi_move_hits |
 | `src/combat/multiaccuracy.h` | `src/combat/moves/multiaccuracy.h` | unchanged |
 | `src/combat/power_trip.h` | `src/combat/moves/power_trip.h` | unchanged |
 | `src/combat/secondary_rolls.h` | `src/combat/moves/tri_attack.h` | unchanged |
-
-Split commit **1df05170** credits `split from src/combat/move_rules.h@657dae45`
-and `src/combat/turn.c@657dae45`; guard commit **75c77c7a** credits the same turn
-baseline. [function-extractions.json](function-extractions.json) maps all twelve
-byte-identical bodies:
 
 | Function | Old location @fbc8b24f | New location |
 |---|---|---|
@@ -57,237 +182,63 @@ byte-identical bodies:
 | `dfi_is_ohko` | `src/combat/turn.c:1561-1564` | `src/combat/moves/ohko.h:12-15` |
 | `dfi_beat_up_hits` | `src/combat/turn.c:6098-6116` | `src/combat/moves/beat_up.h:14-32` |
 
-Location audit covers C/C++, Python, CMake, shell, CI workflows, JS, generators
-and documentation. Active source paths fixed in turn/request, six C tests,
-decision 0015, decision 0048 and the Dragon Darts source summary. Test files,
-names, commands, working directories and environments are unchanged; no assertion
-was removed or adjusted. Historical reports/research with an explicit old source
-revision and the content spec's ca17e507 measurement retain their frozen citations.
-A historical G54 mutation filename now also points to its current file.
+All **12 original bodies** and the entire `dfi_get_damage` body are byte-equal.
+[merge-audit.json](merge-audit.json) compares whole-turn tokens to updated main,
+except the three declared moves, include paths and two equivalent predicates.
+`turn.c` remains **12,470 -> 12,385 lines (-85)**. No new translation unit,
+allocation, hook mask, function-pointer dispatch, CMake entry, public API or ABI.
 
-## Generated special guard: exact phase semantics
+The special writer is separate from `move_handler_source.py`, which reads the
+existing generator's frozen `SPECIAL_IDS_P`/`SPECIAL_POOL` lists. CF1 switches
+only this reader to entry files while keeping output byte-identical. Its table
+bits describe **phase eligibility**, not support marks: early-returning effects
+can have false late-handler rows. Source eligibility and effect/RNG order stay
+unchanged. The frozen predicate witness is independent and never regenerated
+from these annotations.
 
-`tools/datagen/move_handler_source.py` reads the existing `SPECIAL_IDS_P` and
-`SPECIAL_POOL` lists and annotates existing phase ownership. The writer
-`tools/datagen/gen_move_handlers.py` consumes `(name, value, hit_guard,
-status_hit)` rows and emits `src/combat/generated/move_handlers.h`. CF1 replaces
-**only this reader**, retaining the row schema and byte-identical writer output.
-The generated artifact is marked linguist-generated and never hand-edited.
+Location audit covers C, Python, CMake, shell, JS, CI, generators and docs.
+Active includes and citations were adjusted in turn/request, six tests,
+decisions 0015/0048 and the Dragon Darts summary. Historical source-revision
+citations remain frozen. No later source-location change is needed by this
+follow-up. No assertions or expected values are removed or changed.
 
-The late guard at main `turn.c:8104-8147` becomes
-`dfi_move_special_has_handler`; the neighboring generic-status list at main
-`turn.c:8079-8087` becomes `dfi_move_special_status_hit`. This migrates two pure
-eligibility predicates, without splitting a second large execution phase or
-moving the Damage/Hit loop. Other status/boost/forced-switch/heal conditions
-stay in their original positions. In particular these are **not overall support
-marks**: 23 specials return before the late guard; SCALD/RECOVER are unused
-legacy ids; UNMODELED remains refused. The late table preserves **96 true / 26
-false** rows, while the own-status-hit table preserves **18 true / 104 false**.
-All **122 existing ids** have generated compile-time guards against their old
-values. Unknown ids retain the same invariant failure; no new handler is enabled.
+## Reproduction and retained measurements
 
-`tests/support/special_predicates.h` is an independent, hand-frozen copy of the
-old conditions. It is never regenerated from the new annotations. The existing
-**quick-tier** `duoforge.combat.move_rules` compares each table to its old witness
-for **all 122 defined specials and all 256 uint8_t storage values**, plus an
-out-of-range UINT32_MAX boundary. Original **1,581 C checks** remain; now **2,098
-checks**, zero failures. [mutation-controls.json](mutation-controls.json): the
-unmodified control passes, all three injected table mistakes are caught (remove
-Grass Knot, wrongly bypass Fake Out, permit UNMODELED). Mutants use isolated
-outside-repository headers and leave committed output untouched.
-
-The existing quick `duoforge.data.gen_closure_refusals` suite runs generator
-`--check` and rejects missing/stale output and malformed rows. **147 original
-Python cases -> 151**, with no altered assertions; no new CTest names. The layout
-suite adds sixteen negative DLL lookups (fourteen functions and both tables),
-**6 -> 7 cases**, without changing existing item/ability guards.
-
-## P1: inventory and tests
-
-**1,409 before = 1,409 after**; sorted inventory SHA-256
-`43e1460e9916439235c3012548241aecf538a6d985bcf9c5a42c349ee36756fe`.
-The complete CTest JSON's ordering/commands/runtime properties compare identical
-(excluding registration backtraces only). Tier counts stay **209 quick + 31 full
-+ 1,151 reference + 18 slow**. [local-test-results.json](local-test-results.json):
-baseline **40/40 IPO**, **39/39 no-IPO**, plus 12/12 related regressions
-in each build; final **62/62 IPO** and **57/57 no-IPO**, zero
-failures/skips/disabled. These include all **33 Moves tests**, mixed multihit
-interplay G33, both layouts, perft, bench, frozen format pins, the generator's
-151 cases and all four lint/hygiene checks. Main's new sleep/view/clone checks,
-independent model pins, arena/verdict regressions and CTS set-table tests run too. The full
-53-case Live suite runs before/after with IPO; [live-summary.json](live-summary.json)
-retains the fresh aggregate output. It checks the updated per-battle
-POOL pins (**equal 11,680 / refused 563**, four Unburden refusals, 162 stops).
-No-IPO reruns all ten native digest variants and sleep/view/model regressions.
-IPO also runs closure/extended/pool
-regeneration and tiebreak regeneration. All native tests/runners were relinked
-against the changed core, including all ten reference runners and the separate
-`duoforge_diff_runner` used by the Live reference views. The previous 0a5db340 refresh exposed a stale statically linked diff runner
-(76 extra invariant refusals); relinking it restored 11,680/563 without source
-or pin changes. This fbc8b24f refresh relinks it before every proof run.
-Full hosted CI is **not yet run on this branch**: the PR waits for HS's release.
-No CI selectors, scheduling, timeouts or test behavior were changed.
-
-## P2: all reference records
-
-All four captures (baseline/after x IPO on/off) are **byte-equal**. Per profile:
-**10 variants, 2,584 executions, 1,129 unique battles, 22,472 steps** across both
-runner kinds (**11,236 conformance + 11,236 tiebreak**) and **8,458 stops**.
-[reference-results.json](reference-results.json) retains every per-battle hash;
-[verification.json](verification.json) records every byte comparison. Full JSON
-SHA-256 `9753fed420cbcddceaa7e4de1e77a73fda9195b093e4cf9e98a06140dd6c7dfd`.
-The internal digest captures state/requests/events/RNG/stops using
-`tools/restructure/capture_reference.py`; the step-2 same-commit observer witness
-remains valid. Every runner's original assertions execute during capture.
-No reference data, generator, independent battle pin or live pin changed
-relative to current main. #459 changed the canonical sleep bytes of **43 unique
-battles / 86 variant records** relative to 657dae45; these upstream differences
-are listed in [upstream-digest-changes.json](upstream-digest-changes.json). All
-updated-main records compare identical to the restructured branch.
-
-| Variant | Battles | Before = after, IPO on/off SHA-256 |
-|---|---:|---|
-| `duoforge_reference_conformance` | 90 | `620dd6f94faa5fc2751158f062c58edf75f48394aba7a9a49e6bc96bf8f9f271` |
-| `duoforge_reference_conformance_pool` | 90 | `8be6753e961e86e6a8dbcb77e053f308ea71c31c12a6c11b5212a954fccf79a6` |
-| `duoforge_reference_conformance_pool_data` | 966 | `8fbc168fb2199930340a1fabf4923bce5d2553ede17253bd215b7f1ad5b4d200` |
-| `duoforge_reference_conformance_team_c` | 73 | `1acfad0da5393e2095176d094ab2748800b305cfbfee048e04f127a1720c39c5` |
-| `duoforge_reference_conformance_team_c_pool` | 73 | `4459b937648f3e470ffee6da4761ce0f3d54b2c19f59906774888844bb515792` |
-| `duoforge_reference_tiebreak` | 90 | `b374c2d908d5bd00776a571f7bc6842722f0fb6e6401c9770b3f27001c07e4ea` |
-| `duoforge_reference_tiebreak_pool` | 90 | `f0d14608caf783a1f99c79dfb78265e18878aaa139865c7ce3500f10635d41cb` |
-| `duoforge_reference_tiebreak_pool_data` | 966 | `9bc7b21e8cfc6994147dcc7843581d2a1a08f63aaf1d9db2417511615cd1049f` |
-| `duoforge_reference_tiebreak_team_c` | 73 | `78e1cb58a1fd273b438d99fb9d5db2bdc876b174da5bc73339bc002b2de7fb34` |
-| `duoforge_reference_tiebreak_team_c_pool` | 73 | `c63fe2df60c180eff91e1c81d297036b2873a342cc32016dab93ae8165ad913b` |
-
-## P3-P6
-
-- **P3:** both builds pass **10 perft positions / 24 pinned depths**; pins SHA
-  `90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56`.
-- **P4:** both builds pass **2 cases / 8 roots / 7 searched roots** with
-  `BENCH_SHA256` `8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798`.
-- **P5:** all three `gen_closure --check` modes, tiebreak regeneration and frozen
-  format pins pass. [source-hashes.json](source-hashes.json): **22 existing**
-  data/generator/public-header/layout/perft/bench sources byte-unchanged. Existing
-  generated tables, ids/order and canonical bytes stay frozen. Only the new
-  move-phase artifact is generated; its own `--check` passes in both builds.
-  UNMODELED pins stay **146 moves / 18 items / 90 abilities** until step 5.
-- **P6:** public-header diff empty; **238 exported type/name entries** identical
-  in both builds, SHA `1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5`.
-  **33 layout structs / 250 constants** identical, canonical sorted/indented JSON
-  SHA `2dead3e584403acac03ccc90926c7590593776242c089777b4e0c74a9b215395`.
-  The raw dump bytes also compare identical; raw SHA is in verification.json.
-  Sixteen new negative shared-library symbol lookups pass in both builds.
-
-## Inlining and paired runtime gate
-
-[inlining.json](inlining.json) records `objdump -d` call counts and surviving
-call sites, including compiler suffixes, for the IPO and no-IPO shared library
-and benchmark. **All twelve old helpers: 0 calls before = 0 after**, and both
-new table predicates have **0 residual calls**, in all four artifacts. These
-count static direct call sites, not dynamic invocations. No out-of-line helper
-definition or tail jump survives either, in all eight before/after binaries. There is no extra call
-or exported helper; every hot helper remains private static inline.
-
-The follow-up protocol was fixed before its runs: **16 balanced A/B pairs per IPO profile**, three timed
-repetitions per side/workload/pair (**48 samples per side**), two warmups,
-AB on odd pairs, BA on even pairs, all samples retained. Every child is bound
-by the existing Items harness to CPU 4. The raw driver's `affinity: "none"` is
-its old unconditional string; outer `protocol.cpu_affinity` records actual
-binding without editing raw output. No local builds/tests overlap these timing
-runs. GCC **14.2.0**, Release `-O3 -DNDEBUG`, four-CPU quota, seeds **20261001/7001**,
-2,048 battles per closure pairing AB/BA/AA/BB, 128-step cap. Every record and choice
-tally matches: **8,192 battles, 147,730 steps, 108,018 turns, 265,252 side decisions**,
-zero errors/truncations. Disturbed flags and outliers remain in the raw reports.
-
-For each pair, median(after's three repetitions) / median(before's three);
-report the median of these time ratios. The interval is 20,000 paired-bootstrap
-median resamples, seed 20261012. Gate: **median after/before time <=1.02** and
-within the baseline's own relative min/max pair spread (throughput >=0.98).
-Confidence intervals and full ranges show the practical uncertainty; no causal
-speedup or absolute no-regression claim.
-
-| IPO | Workload | Median after/before time | Change | 95% paired-bootstrap CI | Full range |
-|---|---|---:|---:|---|---|
-| on | plain | 0.963700 | -3.63% | [0.803494, 1.123812] | [0.722102, 2.220211] |
-| on | events | 0.980012 | -2.00% | [0.936763, 1.106341] | [0.671444, 1.663115] |
-| off | plain | 0.953021 | -4.70% | [0.882997, 1.036469] | [0.678890, 1.431762] |
-| off | events | 1.053301 | +5.33% | [0.984320, 1.152673] | [0.496553, 1.484347] |
-
-
-The original fixed 30-pair/512-battle run remains in [short IPO](paired-bench-short-ipo.json) and [short no-IPO](paired-bench-short-noipo.json); it is not discarded. Its results:
-
-| IPO | Workload | Median time ratio | 95% interval | Gate |
-|---|---|---:|---|---|
-| ipo | events | 0.988491 | [0.936557, 1.062515] | pass |
-| ipo | plain | 1.015386 | [0.971359, 1.055232] | pass |
-| noipo | events | 1.031864 | [0.995875, 1.095754] | FAIL |
-| noipo | plain | 1.053877 | [0.952388, 1.088434] | FAIL |
-
-The no-IPO failure prompted diagnostics, not source changes. [code-epoch-comparison.json](code-epoch-comparison.json) shows all four benchmark .text sections byte-identical to the previous 0a5db340 proof binaries, within each before/after profile. Git metadata differs; this does not claim whole-binary identity. The [same-binary control](paired-bench-control-noipo.json) uses identical before/after SHA-256 binaries, 16 balanced pairs at 512 battles. Its ratios are events 0.930340, plain 1.028638. Even that control misses the plain 2% gate, demonstrating that the short cloud measurement can produce an apparent loss with no code difference. All initial, control and follow-up samples remain visible. The follow-up increases each timed workload fourfold and has a fixed 16 pairs per profile; no sample selection or engine/test change.
-
-
-The follow-up median runtime gate is NOT met; performance blocks PR readiness. The 95% intervals cross 1.02 for ipo/events: upper 95% limit 1.106341, ipo/plain: upper 95% limit 1.123812, noipo/events: upper 95% limit 1.152673, noipo/plain: upper 95% limit 1.036469. These samples do not statistically rule out a loss above 2% in those workloads. All raw ranges and
-disturbed counts remain visible; no sample is discarded. Full paired data:
-[paired-bench-ipo.json](paired-bench-ipo.json),
-[paired-bench-noipo.json](paired-bench-noipo.json). The closure workload exercises
-common first-turn/weight/guard paths; the full pool captures cover Beat Up/OHKO
-integration. This is not a new hook-dispatch or random-team workload migration.
-
-## Compile time and binary size
-
-Fresh identical **core + shared** Release builds, parallel 4; configuration
-excluded; separate compile-only `BUILD_TESTING=OFF` configs. Neither test proof
-profile disables tests. Before/after with IPO; after/before without IPO. One
-observation each, shared filesystem caches and cloud noise: report the numbers,
-not a causal compile-speed claim or a whole-project measurement.
-
-| IPO | Before wall s | After wall s | Before CPU s | After CPU s |
-|---|---:|---:|---:|---:|
-| on | 48.237 | 45.790 | 130.314 | 143.386 |
-| off | 21.007 | 19.850 | 58.623 | 56.523 |
-
-
-These are single build observations, not a claimed build-speed improvement. [compile-times.json](compile-times.json) retains CPU and wall times;
-[binary-sizes.json](binary-sizes.json) retains both profiles' file/text/data/bss
-sizes and hashes. No new translation unit is introduced.
-
-| IPO | Before text+readonly | After text+readonly | Before/after data | Before/after bss |
-|---|---:|---:|---|---|
-| on | 594,679 | 595,639 | 19,856 / 19,856 | 8 / 8 |
-| off | 585,425 | 585,585 | 19,848 / 19,848 | 8 / 8 |
-
-## Reproduction and review notes
-
-Use CI's Python 3.12/NumPy/JAX/optax, `OPENBLAS_NUM_THREADS=1`, Node 22.23.3,
-and Showdown **b2cb775b0616115b775534eaeff50300e1fc81fc**. Configure separate
-Release builds with IPO on/off and existing Python/Node/PS options. Relink the
-Moves tests, mixed G33, layouts, benchmark and all ten reference runners before
-running the proofs; stale statically linked runners are not evidence.
+Use Node **22.23.3**, pinned Showdown
+**b2cb775b0616115b775534eaeff50300e1fc81fc**, CI's Python dependencies,
+`OPENBLAS_NUM_THREADS=1`, and separate GCC Release builds with IPO on/off.
+Rebuild the shared library, Moves tests, layouts, bench, all ten reference
+runners and **duoforge_diff_runner** before the after proofs.
 
 ```sh
 ctest --test-dir <build> -N
 ctest --test-dir <build> --show-only=json-v1
 ctest --test-dir <build> -L '^moves$' --output-on-failure
-ctest --test-dir <build> -R '^duoforge.data.gen_closure_refusals$' --output-on-failure
 python tools/datagen/gen_move_handlers.py --check
-python tools/restructure/capture_reference.py . <build> <outside-repo-capture>
-python docs/benchmarks/2026-10-12-restructure-items-pilot/paired-bench.py \
-  --before <fbc8b24f-ipo-build>/bench/duoforge_bench \
-  --after <2b9b2de6-ipo-build>/bench/duoforge_bench \
-  --rounds 16 --repetitions 3 --warmup 2 --battles 2048 --cpu 4 --out <outside-repo-ipo.json>
-# Repeat with no-IPO binaries and --ipo off.
+python tools/restructure/capture_reference.py . <build> <outside-repo-output>
+objdump -d <before-noipo-bench> > <outside-repo-baseline>/bench-noipo-objdump.txt
+objdump -d <after-noipo-bench> > <outside-repo-after>/bench-noipo-objdump.txt
 ```
 
-One **pre-existing audit finding**, unchanged here: `BulletFlag` in
-`tools/datagen/tests/test_gen_closure.py` is defined after `unittest.main()`, so
-its two cases are not reached by CTest's direct-script invocation. The new four
-cases are deliberately inserted before that main block and demonstrably execute;
-147 old direct-script cases remain, now 151. Registering the old two cases is
-separate maintenance, not a test change hidden in this restructure.
+[matched-bench.py](matched-bench.py) is the exact outside-repo measurement script;
+[events-calls.py](events-calls.py) is the exact static traversal. Their path
+constants describe this environment's immutable baseline and after copies;
+change paths to reproduce in another workspace, preserve protocol values.
+The perft/BENCH global pins and generated output are not edited for measurement.
 
-No trained weights, checkpoints, replay payloads, live logs or run directories
-are committed. Reports contain public fixture names/hashes, source paths, counts
-and timing samples only. Security/self-review: no code or security blocker; the performance gate remains blocked above; no new
-allocation, public input/dependency/config/secret. Existing lint and tests pass;
-coverage tooling is not configured (outside this PR), UI E2E not applicable to
-private C headers. HS reviews and merges; this branch neither merges PRs nor
-enables auto-merge, and the next area waits for this PR's merge.
+[PREVIOUS_3AFFB183.md](PREVIOUS_3AFFB183.md) preserves the preceding full report:
+original 30-pair/512-battle measurements, 16-pair/512-battle self-control and
+16-pair/2048-battle follow-up, including every failed gate. Its former primary
+JSONs are retained as [long IPO](paired-bench-long16-ipo.json) and
+[long no-IPO](paired-bench-long16-noipo.json). The previous short runs and
+self-control remain at their original filenames. Nothing is discarded to obtain
+a passing measurement. Previous single compile-only core/shared build timings
+are retained, **not freshly remeasured in this call-audit follow-up**, because
+engine source is unchanged. [compile-times.json](compile-times.json).
+
+Pre-existing `BulletFlag` cases after `unittest.main()` remain a separate audit
+finding; the new four datagen cases are before it and demonstrably run. No
+trained weights, checkpoints, replay payloads, live logs or run directories are
+published. Reports contain public fixture names, hashes, code paths and timing
+aggregates/samples only. No code/security blocker was found. HS approves opening,
+reviews and merges; this branch never merges a PR or enables auto-merge.

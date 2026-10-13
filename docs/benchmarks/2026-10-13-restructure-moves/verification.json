@@ -1,6 +1,7 @@
 {
   "P1": {
     "after": 1409,
+    "baseline_provenance": "immutable fbc8b24f baseline reused; after suites rerun freshly on 3affb183",
     "before": 1409,
     "commands_order_and_runtime_properties_identical": true,
     "excluded": "registration backtraces only",
@@ -15,6 +16,7 @@
   },
   "P2": {
     "all_four_captures_byte_equal": true,
+    "baseline_provenance": "recorded baseline digests reused; both after captures rerun and byte-compared",
     "executions_per_profile": 2584,
     "sha256": "9753fed420cbcddceaa7e4de1e77a73fda9195b093e4cf9e98a06140dd6c7dfd",
     "steps_per_profile": 22472,
@@ -66,11 +68,45 @@
     "public_header_diff_empty": true,
     "raw_layout_sha256": "0bad5754bb4c85b07bbd99aa54a5700a8f2c82135b4eb75734b9fe86c8a3530e"
   },
-  "PR_status": "not opened: performance median gate failed; explicit HS approval also remains required",
+  "PR_status": "not opened: HS approval required; no-IPO/events fails numeric +2% but is inside own control interval",
   "baseline": "fbc8b24f7900637dfe12d9dd06fcb053c61a5be2",
   "body_equivalence": {
     "get_damage_entire_body_byte_equal": true,
     "original_functions_byte_equal": 12
+  },
+  "events_calls": {
+    "bench": {
+      "all_moved_helpers_zero_calls": true,
+      "changed_edges": 0,
+      "direct_call_instructions": {
+        "after": 1306,
+        "baseline": 1306
+      },
+      "indirect_call_instructions": {
+        "after": 3,
+        "baseline": 3
+      },
+      "reachable_functions": {
+        "after": 174,
+        "baseline": 174
+      }
+    },
+    "shared": {
+      "all_moved_helpers_zero_calls": true,
+      "changed_edges": 0,
+      "direct_call_instructions": {
+        "after": 1339,
+        "baseline": 1339
+      },
+      "indirect_call_instructions": {
+        "after": 3,
+        "baseline": 3
+      },
+      "reachable_functions": {
+        "after": 187,
+        "baseline": 187
+      }
+    }
   },
   "guard_equivalence": {
     "c_checks_after": 2098,
@@ -98,31 +134,826 @@
     "get_damage_body_byte_equal": true,
     "main": "fbc8b24f",
     "main_guard_predicates_byte_equal_to_original_657_witness": true,
-    "merged_commit": "2b9b2de6901a2f5ba407f38f057f2d117b9ae750",
+    "merged_commit": "3affb18316e1c99b46b46ac825ebbcde3cf499f5",
     "turn_tokens_equal_except_defined_restructure": true
   },
   "performance": {
-    "battles_per_pairing": 2048,
-    "initial_protocol": {
-      "IPO_passed": true,
-      "all_samples_retained": true,
-      "battles_per_pairing": 512,
-      "noIPO_passed": false,
-      "rounds_per_profile": 30
-    },
-    "median_time_ratios_at_most_1_02": false,
-    "rounds_per_profile": 16,
-    "same_binary_control": {
-      "median_time_ratios": {
-        "events": 0.930339587056075,
-        "plain": 1.0286376407566777
+    "all_prior_measurements_retained": true,
+    "battles_per_pairing": 1024,
+    "change": {
+      "ipo": {
+        "events": {
+          "after_median_ms": 753.225801,
+          "after_sample_ms": [
+            735.045204,
+            716.154509,
+            705.399313,
+            906.381687,
+            782.972145,
+            980.366226,
+            897.839527,
+            698.419415,
+            724.026543,
+            736.758835,
+            729.861067,
+            876.687566,
+            728.548773,
+            702.608663,
+            862.024442,
+            727.467691,
+            749.852936,
+            760.198529,
+            751.397266,
+            757.492632,
+            779.45814,
+            774.657359,
+            768.69674,
+            755.054336,
+            721.566375,
+            700.350433,
+            729.950529,
+            1226.715953,
+            747.747682,
+            822.849505,
+            767.177986,
+            779.398726
+          ],
+          "baseline_median_ms": 753.0808945,
+          "baseline_relative_spread": [
+            0.917979604912152,
+            1.5882272644748392
+          ],
+          "baseline_sample_ms": [
+            720.200269,
+            782.169257,
+            754.17402,
+            889.078637,
+            691.312902,
+            736.953519,
+            697.196874,
+            730.849975,
+            769.515198,
+            714.342205,
+            706.415103,
+            741.839781,
+            822.09392,
+            711.314514,
+            727.724089,
+            712.422191,
+            1184.898307,
+            741.219054,
+            770.638564,
+            762.263218,
+            753.038148,
+            760.619565,
+            753.123641,
+            746.668012,
+            1196.063609,
+            733.961665,
+            763.266496,
+            819.725004,
+            885.872518,
+            750.644035,
+            770.9316,
+            872.687663
+          ],
+          "change_percent": 1.4843699919335096,
+          "disturbed_repetitions": {
+            "after": 0,
+            "before": 0
+          },
+          "median_loss_at_most_2_percent": true,
+          "median_throughput_ratio": 0.9853734127526091,
+          "median_time_ratio": 1.014843699919335,
+          "paired_bootstrap_95ci": [
+            0.9656914069104001,
+            1.0256057570263162
+          ],
+          "ratio_range": [
+            0.6032842815134927,
+            1.4964969313050258
+          ],
+          "round_matched_change_over_control_95ci": [
+            0.9918273320959446,
+            1.1180108754926623
+          ],
+          "round_matched_change_over_control_ratio": 1.0425165878088263,
+          "same_binary_control_95ci": [
+            0.9642787621076586,
+            1.0141552405001872
+          ],
+          "same_binary_control_median_ratio": 0.9871976418454782,
+          "within_baseline_spread": true,
+          "within_control_95ci": false
+        },
+        "plain": {
+          "after_median_ms": 743.2276385,
+          "after_sample_ms": [
+            722.762556,
+            745.217965,
+            1028.35977,
+            762.084703,
+            683.886347,
+            726.327923,
+            661.13113,
+            673.662493,
+            680.580711,
+            700.528163,
+            699.545878,
+            857.081644,
+            752.321349,
+            922.430906,
+            736.146612,
+            728.885699,
+            758.329731,
+            741.237312,
+            753.822282,
+            724.359977,
+            732.584981,
+            780.212997,
+            782.863738,
+            905.716439,
+            932.933926,
+            691.6419,
+            841.830765,
+            713.079275,
+            760.364112,
+            757.28821,
+            748.833731,
+            687.911378
+          ],
+          "baseline_median_ms": 744.7745215,
+          "baseline_relative_spread": [
+            0.8958042612095451,
+            1.5555665930497329
+          ],
+          "baseline_sample_ms": [
+            733.131192,
+            703.162152,
+            711.462973,
+            829.730603,
+            700.012836,
+            711.470807,
+            667.17219,
+            709.822731,
+            689.218114,
+            853.3919,
+            709.991743,
+            780.055165,
+            800.884653,
+            731.548096,
+            725.891656,
+            709.223429,
+            912.369719,
+            764.493956,
+            747.806644,
+            741.742399,
+            730.899641,
+            730.943923,
+            774.455975,
+            754.762006,
+            994.772598,
+            781.863803,
+            761.232154,
+            757.68792,
+            837.193283,
+            737.279151,
+            826.279612,
+            1158.546365
+          ],
+          "change_percent": -1.333756199044922,
+          "disturbed_repetitions": {
+            "after": 0,
+            "before": 0
+          },
+          "median_loss_at_most_2_percent": true,
+          "median_throughput_ratio": 1.0135178572494923,
+          "median_time_ratio": 0.9866624380095508,
+          "paired_bootstrap_95ci": [
+            0.955352170049134,
+            1.0141273920360367
+          ],
+          "ratio_range": [
+            0.5937711245591798,
+            1.4454157265047158
+          ],
+          "round_matched_change_over_control_95ci": [
+            0.9379492278481985,
+            1.0941907162228524
+          ],
+          "round_matched_change_over_control_ratio": 0.9691608054616758,
+          "same_binary_control_95ci": [
+            0.9628691772168809,
+            1.025453773551213
+          ],
+          "same_binary_control_median_ratio": 0.9961445214097586,
+          "within_baseline_spread": true,
+          "within_control_95ci": true
+        }
       },
-      "rounds": 16,
-      "sha256": "31c2a396bf8f85ccf124dc86d4331fdcc69756c0d14c3e5b00320044b6ac1ac6"
+      "noipo": {
+        "events": {
+          "after_median_ms": 807.499808,
+          "after_sample_ms": [
+            895.05621,
+            733.331394,
+            791.198102,
+            753.143072,
+            786.597596,
+            735.820382,
+            1098.559264,
+            741.075095,
+            972.11962,
+            757.599918,
+            1720.162431,
+            1690.724827,
+            816.661869,
+            783.91856,
+            750.550913,
+            742.883729,
+            829.539034,
+            918.013899,
+            837.711655,
+            789.615379,
+            790.739739,
+            962.341795,
+            806.320673,
+            858.820457,
+            808.678943,
+            786.531249,
+            939.382589,
+            871.273937,
+            802.4968,
+            838.910751,
+            777.574603,
+            830.252529
+          ],
+          "baseline_median_ms": 790.879797,
+          "baseline_relative_spread": [
+            0.9262121447262105,
+            2.2039056359913567
+          ],
+          "baseline_sample_ms": [
+            782.740966,
+            826.248879,
+            884.880227,
+            737.995233,
+            742.816107,
+            732.522473,
+            735.281626,
+            748.288393,
+            758.70931,
+            1743.024442,
+            1315.010901,
+            1017.294399,
+            774.682919,
+            777.731509,
+            915.527519,
+            773.642355,
+            806.992402,
+            780.573319,
+            790.852871,
+            829.973145,
+            797.708748,
+            1286.10375,
+            790.906723,
+            802.329282,
+            910.164671,
+            759.722773,
+            754.355982,
+            767.259023,
+            844.098496,
+            808.759995,
+            915.84,
+            773.527549
+          ],
+          "change_percent": 2.423237400564915,
+          "disturbed_repetitions": {
+            "after": 0,
+            "before": 0
+          },
+          "median_loss_at_most_2_percent": false,
+          "median_throughput_ratio": 0.9763409411568595,
+          "median_time_ratio": 1.0242323740056491,
+          "paired_bootstrap_95ci": [
+            0.9903602700944206,
+            1.0592509501049785
+          ],
+          "ratio_range": [
+            0.43464675522892066,
+            1.6619818497595011
+          ],
+          "round_matched_change_over_control_95ci": [
+            0.9243713516442922,
+            1.0878159033922679
+          ],
+          "round_matched_change_over_control_ratio": 1.0088192624829637,
+          "same_binary_control_95ci": [
+            0.9638247188328721,
+            1.0688730570536187
+          ],
+          "same_binary_control_median_ratio": 1.0008647494361964,
+          "within_baseline_spread": true,
+          "within_control_95ci": true
+        },
+        "plain": {
+          "after_median_ms": 774.8503055,
+          "after_sample_ms": [
+            770.081885,
+            768.185333,
+            819.910603,
+            718.095769,
+            717.571404,
+            730.224931,
+            723.511744,
+            716.785066,
+            751.545672,
+            748.066661,
+            805.464305,
+            1080.939742,
+            756.740291,
+            817.552339,
+            798.662393,
+            761.712388,
+            781.20512,
+            884.381961,
+            770.43369,
+            776.24726,
+            773.647861,
+            1697.928898,
+            863.608637,
+            803.224994,
+            833.187756,
+            774.929079,
+            798.313361,
+            774.771532,
+            763.749616,
+            810.65921,
+            835.782795,
+            756.923069
+          ],
+          "baseline_median_ms": 773.9616895,
+          "baseline_relative_spread": [
+            0.9098502258618577,
+            1.9548437416552515
+          ],
+          "baseline_sample_ms": [
+            774.612436,
+            762.043064,
+            791.92593,
+            835.964495,
+            707.143127,
+            704.189218,
+            762.863118,
+            740.510377,
+            742.430317,
+            731.348363,
+            745.496947,
+            914.88878,
+            767.142709,
+            799.541557,
+            786.437163,
+            746.649058,
+            805.714715,
+            773.310943,
+            822.656798,
+            1512.974165,
+            1203.34065,
+            1240.978114,
+            755.932292,
+            792.495177,
+            813.353172,
+            755.62003,
+            769.76037,
+            756.902091,
+            771.927061,
+            776.081924,
+            863.68822,
+            869.857735
+          ],
+          "change_percent": 1.514606725937373,
+          "disturbed_repetitions": {
+            "after": 0,
+            "before": 0
+          },
+          "median_loss_at_most_2_percent": true,
+          "median_throughput_ratio": 0.9850799133761469,
+          "median_time_ratio": 1.0151460672593737,
+          "paired_bootstrap_95ci": [
+            0.9917788283196479,
+            1.0243861887834378
+          ],
+          "ratio_range": [
+            0.5130604857353925,
+            1.3682182456281418
+          ],
+          "round_matched_change_over_control_95ci": [
+            0.9635706811879646,
+            1.0630558641657433
+          ],
+          "round_matched_change_over_control_ratio": 1.0152036929905248,
+          "same_binary_control_95ci": [
+            0.9870116364933469,
+            1.024162476923463
+          ],
+          "same_binary_control_median_ratio": 1.002482404309236,
+          "within_baseline_spread": true,
+          "within_control_95ci": true
+        }
+      }
     },
-    "within_baseline_spread": true
+    "control": {
+      "ipo": {
+        "events": {
+          "after_median_ms": 745.9557815,
+          "after_sample_ms": [
+            735.253263,
+            721.570513,
+            833.374809,
+            937.298022,
+            700.012508,
+            671.271013,
+            755.05412,
+            705.426911,
+            728.566058,
+            737.982688,
+            832.117822,
+            754.944499,
+            831.990173,
+            733.284296,
+            733.112584,
+            712.242636,
+            752.385177,
+            748.938534,
+            753.298008,
+            740.651682,
+            803.170357,
+            763.140744,
+            753.938752,
+            754.423115,
+            789.680778,
+            756.641913,
+            791.377222,
+            725.826777,
+            719.773818,
+            740.094689,
+            719.959254,
+            742.973029
+          ],
+          "baseline_median_ms": 755.591589,
+          "baseline_relative_spread": [
+            0.9177849622674928,
+            1.3968989231297544
+          ],
+          "baseline_sample_ms": [
+            772.124005,
+            706.120012,
+            700.920326,
+            1055.485077,
+            725.944131,
+            693.470598,
+            703.116585,
+            771.690458,
+            694.252346,
+            710.228124,
+            805.718921,
+            762.505552,
+            815.220757,
+            766.83904,
+            725.774889,
+            732.670998,
+            742.781585,
+            856.534341,
+            766.273874,
+            724.620967,
+            806.706065,
+            941.90534,
+            795.237101,
+            882.823971,
+            779.403507,
+            713.990867,
+            748.677626,
+            715.695929,
+            742.070578,
+            773.874911,
+            731.434476,
+            905.119923
+          ],
+          "change_percent": -1.2802358154521798,
+          "disturbed_repetitions": {
+            "after": 0,
+            "before": 0
+          },
+          "median_loss_at_most_2_percent": true,
+          "median_throughput_ratio": 1.0129683840518389,
+          "median_time_ratio": 0.9871976418454782,
+          "paired_bootstrap_95ci": [
+            0.9642787621076586,
+            1.0141552405001872
+          ],
+          "ratio_range": [
+            0.810209594947195,
+            1.1889722384794987
+          ],
+          "within_baseline_spread": true
+        },
+        "plain": {
+          "after_median_ms": 733.1682785,
+          "after_sample_ms": [
+            715.18226,
+            1096.621969,
+            792.185302,
+            795.663271,
+            745.921296,
+            719.037655,
+            689.995082,
+            668.914784,
+            687.530278,
+            715.997041,
+            731.986648,
+            757.856461,
+            717.017981,
+            712.96423,
+            796.087118,
+            702.154143,
+            729.728901,
+            734.349909,
+            758.208717,
+            727.957284,
+            754.613164,
+            754.94731,
+            771.243331,
+            717.055928,
+            1018.213365,
+            718.875513,
+            748.093771,
+            850.894782,
+            819.827583,
+            777.083095,
+            710.505549,
+            729.504751
+          ],
+          "baseline_median_ms": 740.542126,
+          "baseline_relative_spread": [
+            0.9086154958320359,
+            2.0330723481353985
+          ],
+          "baseline_sample_ms": [
+            793.772066,
+            709.852689,
+            685.210335,
+            703.483482,
+            910.741649,
+            695.087462,
+            672.868051,
+            673.565738,
+            677.81009,
+            789.045716,
+            1505.575719,
+            764.103664,
+            701.480302,
+            748.54279,
+            722.016723,
+            746.141992,
+            751.434678,
+            734.94226,
+            723.828951,
+            713.291754,
+            728.755326,
+            948.66157,
+            859.044059,
+            728.974761,
+            834.172381,
+            705.069737,
+            776.942277,
+            708.699824,
+            832.328009,
+            747.491104,
+            1142.986181,
+            846.122573
+          ],
+          "change_percent": -0.3855478590241379,
+          "disturbed_repetitions": {
+            "after": 0,
+            "before": 0
+          },
+          "median_loss_at_most_2_percent": true,
+          "median_throughput_ratio": 1.0038704008378072,
+          "median_time_ratio": 0.9961445214097586,
+          "paired_bootstrap_95ci": [
+            0.9628691772168809,
+            1.025453773551213
+          ],
+          "ratio_range": [
+            0.48618388219370584,
+            1.544858512186322
+          ],
+          "within_baseline_spread": true
+        }
+      },
+      "noipo": {
+        "events": {
+          "after_median_ms": 813.584607,
+          "after_sample_ms": [
+            777.089905,
+            767.082535,
+            810.815091,
+            749.498913,
+            1196.630161,
+            721.27029,
+            750.942973,
+            740.890882,
+            788.755172,
+            783.840279,
+            780.066275,
+            1203.035368,
+            765.009439,
+            770.714988,
+            1021.400205,
+            773.398001,
+            1011.827999,
+            1032.203664,
+            1012.075303,
+            816.354123,
+            829.85112,
+            846.421224,
+            1077.839514,
+            877.017757,
+            1426.480583,
+            966.956088,
+            821.390476,
+            1006.068717,
+            1164.388959,
+            772.444184,
+            793.885548,
+            764.126225
+          ],
+          "baseline_median_ms": 812.6712935,
+          "baseline_relative_spread": [
+            0.8965816706308946,
+            1.502322350703286
+          ],
+          "baseline_sample_ms": [
+            788.772926,
+            809.729191,
+            1016.626352,
+            940.210699,
+            728.626186,
+            747.642273,
+            779.128153,
+            734.583993,
+            957.730381,
+            836.972308,
+            771.784793,
+            1026.298131,
+            787.858487,
+            815.416078,
+            823.7671,
+            778.737149,
+            811.161727,
+            887.446196,
+            803.188973,
+            793.183205,
+            814.18086,
+            781.189084,
+            854.632937,
+            824.652326,
+            776.687593,
+            775.916306,
+            883.33965,
+            1220.894248,
+            1089.361315,
+            822.231433,
+            1012.835778,
+            774.436988
+          ],
+          "change_percent": 0.08647494361964103,
+          "disturbed_repetitions": {
+            "after": 0,
+            "before": 0
+          },
+          "median_loss_at_most_2_percent": true,
+          "median_throughput_ratio": 0.9991359977092974,
+          "median_time_ratio": 1.0008647494361964,
+          "paired_bootstrap_95ci": [
+            0.9638247188328721,
+            1.0688730570536187
+          ],
+          "ratio_range": [
+            0.7838245500841697,
+            1.8366207930400145
+          ],
+          "within_baseline_spread": true
+        },
+        "plain": {
+          "after_median_ms": 772.7615795,
+          "after_sample_ms": [
+            748.454796,
+            739.506455,
+            766.444087,
+            733.017833,
+            709.450491,
+            737.539198,
+            732.350439,
+            739.880728,
+            923.269377,
+            868.371742,
+            763.880055,
+            835.094446,
+            806.057071,
+            740.866407,
+            845.947684,
+            767.784196,
+            778.023344,
+            790.713436,
+            827.238532,
+            786.734911,
+            1313.284043,
+            800.166162,
+            774.592374,
+            808.563949,
+            750.899936,
+            737.691214,
+            770.930785,
+            778.092069,
+            1366.444373,
+            746.86194,
+            766.064644,
+            780.626825
+          ],
+          "baseline_median_ms": 778.6322535,
+          "baseline_relative_spread": [
+            0.906485876775974,
+            1.4130673807233955
+          ],
+          "baseline_sample_ms": [
+            767.844253,
+            741.29749,
+            839.082789,
+            810.328904,
+            705.819141,
+            870.147335,
+            820.873182,
+            720.300717,
+            1100.259839,
+            761.151973,
+            762.155191,
+            825.162196,
+            775.606677,
+            769.818513,
+            805.172869,
+            774.312485,
+            770.773691,
+            790.213296,
+            793.383995,
+            784.615141,
+            1074.556767,
+            758.585198,
+            835.327886,
+            780.250056,
+            877.745445,
+            747.3987,
+            736.516958,
+            777.014451,
+            785.732017,
+            785.002037,
+            758.996359,
+            753.270605
+          ],
+          "change_percent": 0.24824043092359638,
+          "disturbed_repetitions": {
+            "after": 0,
+            "before": 0
+          },
+          "median_loss_at_most_2_percent": true,
+          "median_throughput_ratio": 0.9975237427624014,
+          "median_time_ratio": 1.002482404309236,
+          "paired_bootstrap_95ci": [
+            0.9870116364933469,
+            1.024162476923463
+          ],
+          "ratio_range": [
+            0.8391375784824952,
+            1.739071774390988
+          ],
+          "within_baseline_spread": true
+        }
+      }
+    },
+    "cpu_affinity": [
+      4
+    ],
+    "hard_2_percent_nonregression_established": false,
+    "method": "four comparisons rotate through four positions, eight times each; AB odd / BA even",
+    "numeric_all_passed": false,
+    "numeric_time_gate": 1.02,
+    "own_spread_definition": "95% paired-bootstrap interval of the corresponding identical-binary control, 32 pairs; numeric and noise checks reported separately",
+    "repetitions": 3,
+    "requested_numeric_or_own_spread_all_passed": true,
+    "rounds_per_mode_per_comparison": 32,
+    "warmup": 2
   },
-  "source_commit": "2b9b2de6",
+  "source_commit": "3affb183",
   "upstream_digest_changes": {
     "by_variant": {
       "duoforge_reference_conformance": [],
