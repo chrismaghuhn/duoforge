@@ -237,10 +237,12 @@ class _Play:
             events = [tuple(e) for e in s["events"]]
         else:
             events = [("feed", m) for m in s["messages"]]
-        if self.arm in ("closed", "oracle"):
+        # a stream without the foe's true team (the warm-up's pool streams) plays the oracle arm as it is: open sheets
+        oracle = self.arm == "oracle" and "foe_team" in s
+        if self.arm == "closed" or oracle:
             events = [(k, [line for line in p if not line.startswith("|showteam|")] if k == "feed" else p)
                       for k, p in events]
-        if self.arm == "oracle":
+        if oracle:
             events = [(k, _with_sheets(p, s["team"], s["foe_team"]) if k == "feed" else p) for k, p in events]
         if self.arm == "closed":
             g = game.Game.closed_sheets(self.tables, self.net, s["team"], self.prior, search=self.live,
