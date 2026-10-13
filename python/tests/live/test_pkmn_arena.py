@@ -422,6 +422,34 @@ class ArenaTest(unittest.TestCase):
         self.assertEqual([p["record"].tobytes() for p in again.public_parts()],
                          [p["record"].tobytes() for p in game.tracker.public_parts()])
 
+    def test_the_bots_own_log_replays_to_the_same_particles_at_every_decision(self):
+        # cts.LogReplay (#385, the one replay core of cts_live_eval and Search's ko_check): the bot's log, replayed under
+        # the same seed, key and prior, gives at every decision point the particles and records the bot decided on,
+        # before the choice is accepted, with that decision's log record.
+        from duoforge_live import game as game_module
+        self.make(fmt=CTS)
+        closed = f"battle-{CTS}-6"
+        seen, real = [], game_module.Game.candidates
+
+        def candidates(g, *args, **kwargs):
+            seen.append((g.epoch, g.request["rqid"], [p.sets for p in g.tracker.particles],
+                         [p["record"].tobytes() for p in g.tracker.public_parts()]))
+            return real(g, *args, **kwargs)
+        with mock.patch.object(game_module.Game, "candidates", candidates):
+            self.feed(*self.closed_messages(closed, upto=9))
+        self.assertGreaterEqual(len(seen), 3)
+        path = Path(self.tmp.name, f"{closed}-{client.toid(NAME)}.jsonl")
+        self.assertEqual(cts.room_of_log(path, NAME), closed)
+        replay = cts.LogReplay(self.battle(closed), self.bot.data, self.bot.policy, FIXTURE["team"], self.bot.prior,
+                               cts.room_of_log(path, NAME))
+        points = [(g.epoch, g.request["rqid"], [p.sets for p in g.tracker.particles],
+                   [p["record"].tobytes() for p in g.tracker.public_parts()], record) for g, record in replay]
+        self.assertIsNone(replay.stopped)
+        self.assertEqual([p[:4] for p in points], seen)
+        for epoch, rqid, _, _, record in points:
+            self.assertEqual(record["decision"], rqid)  # the decision's own log record, with what was sent
+            self.assertIn("sent", record)
+
     def test_a_random_closed_sheet_battle_plays_its_pool_team_over_the_particles(self):
         self.make(team=False, pool=[teams.text("B"), FIXTURE["team"]], fmt=CTS)
         rnd = f"battle-{CTS}random-9"

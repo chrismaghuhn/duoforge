@@ -246,33 +246,20 @@ def replay(records, tables, prior, team, room, names):
     """One battle log replayed through the particles: {"points", "refused": [the content per refused particle, per
     refused point], "stopped": None or the named reason the replay ended with}. What the bot's own fold catches ends
     the replay by name, as the bot's battle fell back there."""
-    from duoforge_live import cts, lines
-    from duoforge_live.data import trace_to_c
-    t = cts.ParticleTracker(tables, team, prior, cts.SEED, room, cts.PARTICLES)
+    from duoforge_live import cts
     own = set().union(*(held(s, names, tables) for s in teams_sets(team)))
-    out, done = {"points": 0, "refused": [], "stopped": None}, 0
-    try:
-        for r in records:
-            if "accepted" in r:
-                t.accepted(r["accepted"])
-                continue
-            if "feed" not in r:
-                continue
-            t.feed(r["feed"])
-            if not (t.ready and t.epoch > done):
-                continue
-            done = t.epoch
-            if t.request.get("wait") or t.request.get("teamPreview"):
-                continue
-            out["points"] += 1
-            bad = [i for i, p in enumerate(t.public_parts()) if p["reason"] == ENGINE_REFUSES]
-            if bad:  # a refused particle holding no foe content is put on the own team's, when that has any
-                out["refused"].append([sorted(set().union(*(held(s, names, tables) for s in t.particles[i].sets))
-                                              or {"own:" + c for c in own}) for i in bad])
-    except lines.Stop as stop:
-        out["stopped"] = "stop:" + named(stop.reason).split(" ")[0]
-    except (Exception, trace_to_c.ConversionError) as err:  # what the bot's battle catches (ConversionError: SystemExit)
-        out["stopped"] = f"error:{type(err).__name__}"
+    out = {"points": 0, "refused": [], "stopped": None}
+    replayed = cts.LogReplay(records, tables, None, team, prior, room)  # the one replay core (Search's ko_check too)
+    for game, _ in replayed:
+        t = game.tracker
+        if t.request.get("teamPreview"):
+            continue
+        out["points"] += 1
+        bad = [i for i, p in enumerate(t.public_parts()) if p["reason"] == ENGINE_REFUSES]
+        if bad:  # a refused particle holding no foe content is put on the own team's, when that has any
+            out["refused"].append([sorted(set().union(*(held(s, names, tables) for s in t.particles[i].sets))
+                                          or {"own:" + c for c in own}) for i in bad])
+    out["stopped"] = replayed.stopped
     return out
 
 
@@ -332,7 +319,7 @@ def replay_all(directory, bot, root, labels=None, since=None):
         if played and hashlib.sha256(team[0].encode("utf-8")).hexdigest() not in played:
             skipped["team_differs"] += 1  # the registry paste is not the --team the bot played (its stats may differ)
             continue
-        out = replay(records, tables, prior, team[0], path.name[:-len(f"-{bot}.jsonl")], names)
+        out = replay(records, tables, prior, team[0], cts.room_of_log(path, bot), names)
         points += out["points"]
         if labels is not None:
             group = per[labels.get(opponent(records, bot), "?")]

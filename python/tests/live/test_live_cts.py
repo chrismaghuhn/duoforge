@@ -646,6 +646,23 @@ class ClosedGameTest(unittest.TestCase):
                          "DUOFORGE_E_UNSUPPORTED: x; tracker: engine-refuses-record,visible-confusion")
 
 
+class LogReplayTest(unittest.TestCase):
+    def test_a_stop_ends_the_replay_under_its_name(self):
+        tables = data.load(kind="pool")
+        prior = cts.SetPrior(tables, [s for s in foe_sets() if s["species"] != "Farigiraf"])
+        records = [{"feed": m} for m in closed(FIXTURE["messages"])]
+        replay = cts.LogReplay(records, tables, None, FIXTURE["team"], prior, KEY)
+        self.assertEqual(list(replay), [])
+        self.assertEqual(replay.stopped, "stop:cts:no-consistent-set")
+
+    def test_the_key_is_the_room_the_log_is_named_by(self):
+        from pathlib import Path
+        self.assertEqual(cts.room_of_log(Path("x/battle-gen9championsvgc2026regmc-75-lingce.jsonl"), "Ling-Ce"),
+                         "battle-gen9championsvgc2026regmc-75")
+        with self.assertRaises(ValueError):
+            cts.room_of_log(Path("battle-x-1-other.jsonl"), "Ling-Ce")
+
+
 class TrueSheetTest(unittest.TestCase):
     def test_the_true_sheet_is_what_the_pinned_server_shows(self):
         # Review of #385 step 5: the oracle arm's foe sheet must be the open sheet Showdown sends (no stat points,

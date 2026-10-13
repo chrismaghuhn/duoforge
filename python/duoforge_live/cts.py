@@ -47,6 +47,68 @@ MOVES = 4
 _key = trace_to_c.key
 
 
+def room_of_log(path, bot):
+    """The battle room of a bot's battle log, the particles' key: pkmn_arena._open names the log "<room>-<bot id>.jsonl",
+    with the room as the server sent it ("battle-<format>-<number>"), and the bot's game takes that room as its key
+    (game.Game.closed_sheets). ValueError for a file that is not one of this bot's battle logs."""
+    import re
+    from pathlib import Path
+    suffix = "-" + re.sub(r"[^a-z0-9]", "", bot.lower()) + ".jsonl"
+    name = Path(path).name
+    if not (name.startswith("battle-") and name.endswith(suffix)):
+        raise ValueError(f"not a battle log of {bot!r}: {name}")
+    return name[:-len(suffix)]
+
+
+class LogReplay:
+    """A closed-sheet battle log replayed as the bot played it: the one replay core of the live evaluation
+    (tools/research/cts_live_eval.py --replay) and Search's ko_check.
+
+    records: the log's records in order. The bot writes every batch as fed ({"feed": [...]}) and every choice the game
+    accepted ({"accepted": "..."}). Iterating feeds and accepts them into a game.Game.closed_sheets of its own (the
+    seed, key and prior as the bot's: the same particles), and yields (game, record) at every decision point where the
+    bot was asked (game.asked(), a new epoch), before the choice is accepted: game.tracker is the ParticleTracker as the
+    search found it, and game.candidates(budget) decides as live with a search. record is the bot's log record of that
+    decision (its "decision" is the request's rqid, with "sent" and "search"), None where it wrote none or answered
+    with /choose default. After the iteration, stopped is None, "stop:<name>" for a tracker stop (as the bot's battle
+    fell back there) or "error:<type>" for another failure the bot's battle catches."""
+
+    def __init__(self, records, data, policy, own_text, prior, key, search=None, seed=SEED, n=PARTICLES):
+        self.records, self.data, self.policy, self.own_text, self.prior = list(records), data, policy, own_text, prior
+        self.key, self.search, self.seed, self.n = key, search, seed, n
+        self.game = None
+        self.stopped = None
+
+    def __iter__(self):
+        from .data import trace_to_c
+        from .game import Game
+        self.stopped = None
+        game = self.game = Game.closed_sheets(self.data, self.policy, self.own_text, self.prior, search=self.search,
+                                              room=self.key, seed=self.seed, n=self.n)
+        done = 0
+        try:
+            for i, r in enumerate(self.records):
+                if "accepted" in r:
+                    game.accepted(r["accepted"])
+                    continue
+                if "feed" not in r:
+                    continue
+                game.feed(r["feed"])
+                if not (game.ready and game.epoch > done):
+                    continue
+                done = game.epoch
+                if not game.asked():
+                    continue
+                rqid = game.request.get("rqid")
+                record = next((x for x in self.records[i + 1:] if x.get("decision") == rqid and "sent" in x
+                               and x.get("sent") != "default"), None)
+                yield game, record
+        except lines.Stop as stop:
+            self.stopped = "stop:" + stop.reason.split(" ")[0].rstrip(":")
+        except (Exception, trace_to_c.ConversionError) as err:  # what the bot's battle catches (ConversionError: SystemExit)
+            self.stopped = f"error:{type(err).__name__}"
+
+
 def counter_kind(key):
     """A counter's key as an aggregate (the arena's run log): a redraw by a stop keeps the stop's kind only
     (redraw.stop:structure, redraw.stop:cts:...), never the stop's text, which can name a nickname or a line."""
