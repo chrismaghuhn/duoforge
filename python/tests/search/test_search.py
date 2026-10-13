@@ -660,6 +660,7 @@ class ArenaCli(unittest.TestCase):
         self.assertEqual(summary["conditions"]["checkpoint"]["update"], 400)
         repository = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         for bad in (["--agents", "Z"], ["--search", "unknown"], ["--lam", "-0.1"], ["--lam", "1.1"],
+                    ["--search", "honest", "--km", "2x2,16x16", "--s", "16"],  # above the LP size limit (#440)
                     ["--km", "8"], ["--s", "0"], ["--s", "16,x"], ["--checkpoint", "params-18129"],
                     ["--out", os.path.join(repository, "arena-out")]):
             with self.assertRaises(SystemExit):

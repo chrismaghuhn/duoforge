@@ -149,6 +149,11 @@ class PreviewWidthStepTest(unittest.TestCase):
         self.assertEqual(ladder.step_settings("1bw"), {**ladder.step_settings("0"), **delta})
         self.assertEqual(ladder.step_settings("1bw"), {**ladder.step_settings("1b"), "preview_width": "distinct"})
 
+    def test_the_corrected_width_is_1bw_with_the_lead_seats_kept(self):
+        self.assertEqual(ladder.STEPS["1bws"], {"base": "0", "settings": {**ladder.STEPS["1bw"]["settings"],
+                                                                          "preview_width": "seats"}})
+        self.assertEqual(ladder.step_settings("1bws"), {**ladder.step_settings("1bw"), "preview_width": "seats"})
+
 
 class PairIntervalTest(unittest.TestCase):
     def test_opposite_results_within_a_pair_give_a_zero_width_interval(self):
@@ -565,10 +570,12 @@ class CliGuardTest(unittest.TestCase):
         # refused by a limit between step 0's k and k + 2, where step 1b's top preview still passes.
         from duoforge_search import matrix, preview
         self.assertIsNone(ladder.size_refusal("1bw"))
+        self.assertIsNone(ladder.size_refusal("1bws"))
         _, _, at_k = matrix.bayes_size(8, 8, 16)
         with mock.patch.object(matrix, "MAX_BAYES_CELLS", at_k):
             self.assertIsNone(ladder.size_refusal("1b"))
-            self.assertIn(f"k={8 + preview.COVER_MAX}", ladder.size_refusal("1bw"))
+            for name in ("1bw", "1bws"):
+                self.assertIn(f"k={8 + preview.COVER_MAX}", ladder.size_refusal(name))
 
     def test_previous_run_must_have_measured_the_previous_step(self):
         with tempfile.TemporaryDirectory() as tmp:

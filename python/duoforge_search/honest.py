@@ -371,14 +371,17 @@ class Honest(lookahead.Lookahead):
         self.preview_mode, self.preview_only, self.preview_steps = preview_mode, preview_only, preview_steps
         self.preview_rule = preview_rule
         # preview_width (#440, owner 2026-10-13): the preview's candidates, "top" tuples of the team heads or one
-        # "distinct" tuple per bring-and-lead combination with every own member covered (preview.distinct).
+        # "distinct" tuple per bring-and-lead combination with every own member covered (preview.distinct); "seats"
+        # the same with the lead seats kept, only the bench order merged (the correction of #462's review).
         from . import preview
         if preview_width not in preview.WIDTHS:
             raise ValueError(f"preview_width must be one of {preview.WIDTHS} (got {preview_width!r})")
         if preview_width != "top" and preview_mode == "raw":
             raise ValueError("preview_width requires a preview search (preview_mode value or turn1)")
-        if preview_width == "distinct":  # the cover adds up to preview.COVER_MAX own rows to the preview's table
-            matrix.check_bayes_size(k + preview.COVER_MAX, m, s, "the distinct preview")
+        if preview_width != "top" and k == 1:  # one candidate plays raw: no preview table to widen
+            raise ValueError("preview_width requires k > 1 (with k = 1 the preview plays raw)")
+        if preview_width != "top":  # the cover adds up to preview.COVER_MAX own rows to the preview's table
+            matrix.check_bayes_size(k + preview.COVER_MAX, m, s, f"the {preview_width} preview")
         self.preview_width = preview_width
         if table is None:
             table, _, self.table_info = spread_table(context)
