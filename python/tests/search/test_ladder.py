@@ -577,6 +577,16 @@ class CliGuardTest(unittest.TestCase):
             for name in ("1bw", "1bws"):
                 self.assertIn(f"k={8 + preview.COVER_MAX}", ladder.size_refusal(name))
 
+    def test_an_rm_step_is_not_held_to_the_lp_limit(self):
+        # D1 (#481): CFR+ at the turns has no tableau, so b-km16's size passes with root_solver "rm"; a preview still
+        # solves an LP and keeps the limit.
+        steps = {**ladder.STEPS, "rm-km16": {"base": "b-km16", "settings": {"root_solver": "rm"}},
+                 "rm-km16-1b": {"base": "rm-km16", "settings": {"preview_mode": "turn1", "preview_rule": "ev"}}}
+        with mock.patch.object(ladder, "STEPS", steps):
+            self.assertIsNotNone(ladder.size_refusal("b-km16"))
+            self.assertIsNone(ladder.size_refusal("rm-km16"))
+            self.assertIn("above the limit", ladder.size_refusal("rm-km16-1b"))
+
     def test_previous_run_must_have_measured_the_previous_step(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "out")

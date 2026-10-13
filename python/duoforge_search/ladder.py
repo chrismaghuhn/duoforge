@@ -86,6 +86,8 @@ def size_refusal(name):
         return None
     from . import preview
     most = settings["k"] + (preview.COVER_MAX if settings.get("preview_width", "top") != "top" else 0)
+    if settings.get("root_solver", "lp") == "rm" and settings.get("preview_mode", "raw") == "raw":
+        return None  # the turns' CFR+ has no tableau (D1, #481); only a preview still solves an LP
     try:
         matrix.check_bayes_size(most, settings["m"], settings["s"], f"step {name!r}")
     except ValueError as err:
