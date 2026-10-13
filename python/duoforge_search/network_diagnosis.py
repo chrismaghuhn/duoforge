@@ -315,11 +315,18 @@ def read_log(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
+def battle_end(line):
+    """The live client's end of a battle: a |win| or |tie line (`client._battle`)."""
+    return line.startswith("|win|") or line == "|tie" or line.startswith("|tie|")
+
+
 def battle_steps(records):
     """The client's feed of one battle log, in order: ("accept", text) where the client accepts its last choice,
     ("feed", lines) for the battle lines since the last decision (error lines are not fed), ("decision", record),
     ("stop", reason) where the replay cannot follow the client (a rejected choice: the next candidate is not logged;
-    a second battle start: a reconnect's replayed log), and ("end", line)."""
+    a second battle start: a reconnect's replayed log), and ("end", line) at the battle's |win| or |tie line. As in
+    the live client, which ends the battle at that line's message and feeds none of it, the lines since the last
+    decision are not fed: the tracker never sees the result line, and no decision follows them."""
     from duoforge_live.client import _room_line
     pending = None  # the choice sent last, accepted before the next non-room battle line
     lines, starts = [], 0
@@ -328,6 +335,9 @@ def battle_steps(records):
             line = rec["in"]
             if line.startswith("|error|"):
                 continue
+            if battle_end(line):
+                yield "end", line
+                return
             if line == "|start":
                 starts += 1
                 if starts > 1:
@@ -352,8 +362,6 @@ def battle_steps(records):
             yield "stop", "rejected_choice"
             return
         elif "end" in rec:
-            if lines:
-                yield "feed", lines
             yield "end", rec["end"]
             return
         elif "forfeit" in rec:
@@ -412,6 +420,7 @@ def arena_game(path, records, tables, nets, previews, own_id):
     from duoforge import features
     from duoforge_live import options, search as live_search, teams
     from duoforge_live.game import TEAM_TABLE
+    from duoforge_live.lines import Stop
     from duoforge_live.tracker import Tracker
     team = own_team(records, own_id)
     if team is None:
@@ -420,7 +429,10 @@ def arena_game(path, records, tables, nets, previews, own_id):
     rows, result = [], None
     for step, item in battle_steps(records):
         if step == "feed":
-            tracker.feed(item)
+            try:
+                tracker.feed(item)
+            except Stop as e:  # the live client forfeits here; its log goes on, but not as the tracker saw it
+                return None, f"tracker_stop.{e.reason}"
         elif step == "accept":
             tracker.accepted(item)
         elif step == "stop":

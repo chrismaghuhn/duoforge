@@ -147,12 +147,22 @@ class BattleSteps(unittest.TestCase):
                    {"in": "|request|{}"}, {"decision": 2, "top": [], "sent": "move 1"},
                    {"in": "|win|someone"}, {"end": "|win|someone"}]
         steps = list(nd.battle_steps(records))
-        self.assertEqual([s for s, _ in steps], ["feed", "decision", "feed", "accept", "feed", "decision", "accept",
-                                                 "feed", "end"])
+        self.assertEqual([s for s, _ in steps], ["feed", "decision", "feed", "accept", "feed", "decision", "end"])
         self.assertEqual(steps[2][1], ["|j|☆someone"])  # a room line does not accept the choice
         self.assertEqual(steps[3][1], "team 1234")
         self.assertEqual(steps[4][1], ["|start", "|switch|p1a: X|X|100/100", "|request|{}"])  # no error line
-        self.assertEqual(steps[6][1], "move 1")
+        self.assertEqual(steps[6][1], "|win|someone")
+
+    def test_the_result_line_ends_the_battle_unfed_as_in_the_live_client(self):
+        for end in ("|win|Some-One", "|tie", "|tie|"):
+            records = [{"in": "|request|{}"}, {"decision": 1, "top": [], "sent": "move 1"},
+                       {"in": "|move|p1a: X|Tackle|p2a: Y"}, {"in": end}, {"in": "|deinit"}, {"end": end}]
+            steps = list(nd.battle_steps(records))
+            # the |move| line accepts the choice (as when it comes in a message of its own), but is not fed
+            self.assertEqual(steps, [("feed", ["|request|{}"]), ("decision", records[1]), ("accept", "move 1"),
+                                     ("end", end)])
+        self.assertFalse(nd.battle_end("|winner|x"))
+        self.assertFalse(nd.battle_end("|tier|x"))
 
     def test_an_unavailable_choice_is_not_accepted(self):
         records = [{"in": "|request|{}"}, {"decision": 1, "top": [], "sent": "move 1"},
