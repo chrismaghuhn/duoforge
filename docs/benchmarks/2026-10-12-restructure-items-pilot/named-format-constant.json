@@ -1,0 +1,22 @@
+{
+  "existing_value": "2u",
+  "public_constant": "DUOFORGE_ACTIVE_PER_SIDE",
+  "translation_units": {
+    "src/combat/items/families.c": {
+      "preprocessed_input_byte_equal": true,
+      "sha256": "cfd787496f99c6ee7755d4a0873b57661e2dc726e1a692025f53acb021bae58e"
+    },
+    "src/combat/items/held.c": {
+      "preprocessed_input_byte_equal": true,
+      "sha256": "d92ec07353783a14a5bbe85c51db3ef4c19f83ebe7c56409efed5df57aa00915"
+    },
+    "src/combat/items/white_herb.c": {
+      "preprocessed_input_byte_equal": true,
+      "sha256": "7e058cce86524c6a12769b7a5e406b47ff94f331f97b6168a45cc39476a637e0"
+    },
+    "src/combat/turn.c": {
+      "preprocessed_input_byte_equal": true,
+      "sha256": "7d8e4304eef8681c7e8f1ebe6da0d928780ba9bc1bf716de6b5092e04cdd79d7"
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "targets": [
+    "duoforge",
+    "duoforge_shared"
+  ],
+  "parallel": 4,
+  "procedure": "fresh identical core/shared Release builds, IPO before/after then OFF after/before; configuration excluded",
+  "limitations": "One build observation each, shared filesystem caches and host noise; no whole-project or causal claim",
+  "samples": [
+    {
+      "mode": "ipo",
+      "side": "before",
+      "wall_seconds": 24.255905958998483,
+      "cpu_seconds": 68.856253
+    },
+    {
+      "mode": "ipo",
+      "side": "after",
+      "wall_seconds": 20.297276728000725,
+      "cpu_seconds": 61.425066000000015
+    },
+    {
+      "mode": "noipo",
+      "side": "after",
+      "wall_seconds": 14.150461159995757,
+      "cpu_seconds": 37.50130899999999
+    },
+    {
+      "mode": "noipo",
+      "side": "before",
+      "wall_seconds": 26.66832196600444,
+      "cpu_seconds": 63.891254
+    }
+  ]
+}

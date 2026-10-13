@@ -1351,11 +1351,13 @@ class TrapPicks(unittest.TestCase):
         self.assertFalse(np.array_equal(one, b.sample([(1, 3, 7)], 8, seed=5, key=10)["trap"]))
         self.assertFalse(np.array_equal(one, b.sample([(1, 3, 7)], 8, seed=6, key=9)["trap"]))
 
-    def test_the_hypotheses_are_revision_three(self):
+    def test_the_hypotheses_are_revision_four(self):
         from duoforge import _layout, view
         h = view.hypotheses(3)
         self.assertEqual((h["revision"] != 0).all(), True)
-        self.assertEqual(int(h["revision"][0]), 3)  # DUOFORGE_HYPOTHESIS_REVISION (trap_pick), not the NO_TRAP revision 2
+        # Decision 0066 (visible sleep): revision 4 reads the sleep word with the exact law (revision 3 has trap_pick, the
+        # sleep word of revision 4 is the start S's bucket); the NO_TRAP revision 2 stays a different value
+        self.assertEqual(int(h["revision"][0]), 4)
         self.assertEqual(int(h["revision"][0]), _layout.CONSTANTS["DUOFORGE_HYPOTHESIS_REVISION"])
         self.assertEqual(h["trap_pick"].shape, (3, 4))
 

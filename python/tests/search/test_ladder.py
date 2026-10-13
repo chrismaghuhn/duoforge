@@ -421,6 +421,25 @@ class VerdictTest(unittest.TestCase):
         self.assertFalse(got["gates"]["fallback"])
         self.assertLessEqual(got["fallback"]["pooled"]["step"], 0.05)
 
+    def test_an_old_report_without_the_counts_gets_gates_and_no_pooled_share(self):
+        report = passing_report()
+        for entry in report["opponents"].values():  # step 1's report: per-opponent shares only
+            for summary in entry["arms"].values():
+                del summary["fallback_decisions"], summary["non_team_decisions"]
+        got = ladder.verdict(report, latency_run())
+        self.assertTrue(got["adopt"])
+        self.assertEqual(got["fallback"]["pooled"], {"step": None, "previous": None})
+        self.assertEqual(len(got["notes"]), 1)
+        self.assertIn("old-format report", got["notes"][0])
+
+    def test_an_old_report_still_fails_the_per_opponent_fallback_gate(self):
+        report = passing_report()
+        report["opponents"]["bot"]["arms"]["step"]["fallback_share"] = 0.2
+        for entry in report["opponents"].values():
+            for summary in entry["arms"].values():
+                del summary["fallback_decisions"], summary["non_team_decisions"]
+        self.assertFalse(ladder.verdict(report, latency_run())["gates"]["fallback"])
+
     def test_reports_the_inputs_and_the_notes(self):
         got = ladder.verdict(passing_report(), latency_run())
         for key in ("h2h", "paired", "fallback", "p99_seconds", "p99_source", "gates", "adopt", "notes"):

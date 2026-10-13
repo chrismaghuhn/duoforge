@@ -1,0 +1,60 @@
+{
+  "P2": {
+    "before_equals_ipo_equals_noipo": true,
+    "executions_per_profile": 2584,
+    "sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+    "steps_per_profile": 11236,
+    "stops_per_profile": 8458,
+    "unique_battles": 1129,
+    "variants_per_profile": 10
+  },
+  "P3": {
+    "pinned_depths": 24,
+    "pins_sha256": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+    "positions": 10
+  },
+  "P4": {
+    "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+    "cases": 2,
+    "passed_both_profiles": true,
+    "roots": 8,
+    "searched_roots": 7
+  },
+  "P5": {
+    "closure_extended_pool_check": true,
+    "conformance_check": true,
+    "frozen_battle_pins": 1129,
+    "frozen_live_pins": 1056,
+    "generated_files_changed": [],
+    "tiebreak_check": true
+  },
+  "P6": {
+    "both_profiles_identical": true,
+    "exported_sha256": "1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5",
+    "exports": 238,
+    "layout_constants": 250,
+    "layout_sha256": "502ecc2e08dc76cf3004d31115948bc4e69d7843ce5cd5d2492d950464e07e8e",
+    "layout_structs": 33,
+    "public_header_diff_empty": true,
+    "windows_gcc_full_private_export_guard_passed": true
+  },
+  "baseline": "ca17e50718ab9591473abe06234904a06439c466",
+  "ci_status": "All 12 full matrix jobs and RNG passed on implementation 3a9d04d1. Subsequent commits and merged main change proof/docs only. HS released the PR slot; fresh PR-head CI remains the merge gate.",
+  "hosted_ci_all_12_jobs_green": true,
+  "hosted_ci_run": 38302940369,
+  "hosted_rng_green": true,
+  "hosted_rng_run": 38306118385,
+  "inventory": 1407,
+  "main_changes_since_baseline": [
+    "docs/superpowers/specs/2026-10-12-content-files-design.md"
+  ],
+  "main_merge_commit": "0e2652d4",
+  "merged_main": "36b55704",
+  "source_commit": "3a9d04d16f01f7429447237a5d0dcec802ad1312",
+  "tier_counts": {
+    "full": 31,
+    "quick": 207,
+    "reference": 1151,
+    "slow": 18
+  }
+}

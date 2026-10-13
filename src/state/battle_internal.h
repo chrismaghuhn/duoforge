@@ -335,6 +335,7 @@ _Static_assert((DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLA
 /* rev 2, per roster member */
 #define DFI_TAIL_ITEM_NONE 255u       /* item_now: the member holds nothing (0 = as the member says, 1..254 = item id + 1) */
 #define DFI_TAIL_TOXIC_STAGE_MAX 15u  /* the toxic counter stops at 15 */
+#define DFI_TAIL_SLEEP_CANT_MAX 2u    /* decision 0066: the cant lines of a sleeper: its start is 2 or 3 and it wakes at the start */
 #define DFI_TAIL_TOXIC_STATUS 6u      /* DUOFORGE_AILMENT_TOX (DFI_STATUS_TOX): the status that a toxic stage needs. POOL only (the
                                        * status bound of the other kinds is below it, step G36). */
 
@@ -424,6 +425,9 @@ typedef struct dfi_tail_side {
     uint8_t member_flags[DUOFORGE_MAX_ROSTER]; /* tail rev 4, per roster member: DFI_TAIL_MEMBER_FLAG_* (Zero to Hero's message shown) */
     uint8_t hazard_order;                      /* tail rev 4: the creation order of the hazards that are up, 2 bits per slot (see above) */
     dfi_tail_illusion illusion;                /* tail rev 5 (decision 0026): the foe's shown state of the holder, zero until Illusion */
+    uint8_t sleep_cant[DUOFORGE_MAX_ROSTER];   /* decision 0066 (the member byte +9 of the rev 4 member block): the cant lines a
+                                                * sleeping member has printed since its sleep started, 0..2, 0 when awake; POOL only.
+                                                * Public: the view copies it, the counter stays hidden. */
 } dfi_tail_side;
 
 /* Illusion (decision 0026): the position's disguise is up (1) or not (0). ability_state is the state of the occupant's current ability

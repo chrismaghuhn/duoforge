@@ -1,0 +1,1425 @@
+{
+  "constants": {
+    "DUOFORGE_ABILITY_FAMILY_ATE": 1,
+    "DUOFORGE_ABILITY_FAMILY_NONE": 0,
+    "DUOFORGE_ABILITY_FAMILY_PINCH": 2,
+    "DUOFORGE_ABILITY_FAMILY_TERRAIN_SETTER": 4,
+    "DUOFORGE_ABILITY_FAMILY_WEATHER_SETTER": 3,
+    "DUOFORGE_ACTIVE_PER_SIDE": 2,
+    "DUOFORGE_AILMENT_BURN": 1,
+    "DUOFORGE_AILMENT_FREEZE": 2,
+    "DUOFORGE_AILMENT_NONE": 0,
+    "DUOFORGE_AILMENT_PARALYSIS": 3,
+    "DUOFORGE_AILMENT_POISON": 5,
+    "DUOFORGE_AILMENT_SLEEP": 4,
+    "DUOFORGE_AILMENT_TOX": 6,
+    "DUOFORGE_BATCH_AUTORESET": 1,
+    "DUOFORGE_BATCH_MAX_ENVS": 65536,
+    "DUOFORGE_BATCH_NO_CHOICE": 65535,
+    "DUOFORGE_BOUNDARY_PIVOT": 4,
+    "DUOFORGE_BOUNDARY_REPLACEMENT": 3,
+    "DUOFORGE_BOUNDARY_TEAM_SELECTION": 1,
+    "DUOFORGE_BOUNDARY_TERMINAL": 5,
+    "DUOFORGE_BOUNDARY_TURN": 2,
+    "DUOFORGE_CAUSE_CURSE": 23,
+    "DUOFORGE_CAUSE_LEECH_SEED": 22,
+    "DUOFORGE_CHOICE_SLOTS": 2,
+    "DUOFORGE_CHOICE_TEAM_SELECTION": 1,
+    "DUOFORGE_DATA_KIND_CLOSURE": 2,
+    "DUOFORGE_DATA_KIND_CLOSURE_DEV": 3,
+    "DUOFORGE_DATA_KIND_POOL": 6,
+    "DUOFORGE_DATA_KIND_POOL_DEV": 7,
+    "DUOFORGE_DATA_KIND_SYNTHETIC": 1,
+    "DUOFORGE_DATA_KIND_TEAM_C": 4,
+    "DUOFORGE_DATA_MAX_FORME_ABILITIES": 3,
+    "DUOFORGE_DATA_MAX_FORME_MOVES": 512,
+    "DUOFORGE_DATA_NONE": 4294967295,
+    "DUOFORGE_DATA_TABLE_ABILITY": 4,
+    "DUOFORGE_DATA_TABLE_COUNT": 5,
+    "DUOFORGE_DATA_TABLE_ITEM": 3,
+    "DUOFORGE_DATA_TABLE_MOVE": 2,
+    "DUOFORGE_DATA_TABLE_NATURE": 5,
+    "DUOFORGE_DATA_TABLE_SPECIES": 1,
+    "DUOFORGE_DIGEST_SIZE": 32,
+    "DUOFORGE_EVENT_CANT": 7,
+    "DUOFORGE_EVENT_CLEAR_ALL_BOOSTS": 47,
+    "DUOFORGE_EVENT_COPY_BOOST": 50,
+    "DUOFORGE_EVENT_CRIT": 9,
+    "DUOFORGE_EVENT_DAMAGE": 4,
+    "DUOFORGE_EVENT_DRAG": 45,
+    "DUOFORGE_EVENT_FAIL": 13,
+    "DUOFORGE_EVENT_FAINT": 6,
+    "DUOFORGE_EVENT_FIELD_END": 26,
+    "DUOFORGE_EVENT_FIELD_START": 25,
+    "DUOFORGE_EVENT_ITEM_SHOWN": 48,
+    "DUOFORGE_EVENT_MISS": 8,
+    "DUOFORGE_EVENT_MOVE": 3,
+    "DUOFORGE_EVENT_REVIVE": 43,
+    "DUOFORGE_EVENT_SWAP": 49,
+    "DUOFORGE_E_INVALID_ARGUMENT": 2,
+    "DUOFORGE_E_UNSUPPORTED": 11,
+    "DUOFORGE_FAIL_SUBSTITUTE_EXISTS": 1,
+    "DUOFORGE_FAIL_SUBSTITUTE_WEAK": 2,
+    "DUOFORGE_FIELD_TRICK_ROOM": 2,
+    "DUOFORGE_GENDER_BIT_FEMALE": 2,
+    "DUOFORGE_GENDER_BIT_MALE": 1,
+    "DUOFORGE_GENDER_BIT_NONE": 4,
+    "DUOFORGE_GENDER_FEMALE": 2,
+    "DUOFORGE_GENDER_MALE": 1,
+    "DUOFORGE_GENDER_NONE": 3,
+    "DUOFORGE_HP_EXACT": 1,
+    "DUOFORGE_HP_PERCENT": 2,
+    "DUOFORGE_HYPOTHESIS_REVISION": 3,
+    "DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP": 2,
+    "DUOFORGE_ITEM_FAMILY_NONE": 0,
+    "DUOFORGE_ITEM_FAMILY_RESIST_BERRY": 2,
+    "DUOFORGE_ITEM_FAMILY_TYPE_BOOSTER": 1,
+    "DUOFORGE_ITEM_NOW_NONE": 255,
+    "DUOFORGE_LOCATION_ACTIVE": 2,
+    "DUOFORGE_LOCATION_BENCH": 1,
+    "DUOFORGE_LOCATION_NOT_BROUGHT": 3,
+    "DUOFORGE_LOCATION_UNDETERMINED": 0,
+    "DUOFORGE_MAX_CANDIDATES": 784,
+    "DUOFORGE_MAX_EVENTS": 512,
+    "DUOFORGE_MAX_ROSTER": 6,
+    "DUOFORGE_MAX_SLOT_OPTIONS": 32,
+    "DUOFORGE_MOVE_CATEGORY_PHYSICAL": 0,
+    "DUOFORGE_MOVE_CATEGORY_SPECIAL": 1,
+    "DUOFORGE_MOVE_CATEGORY_STATUS": 2,
+    "DUOFORGE_MOVE_SLOT_NONE": 255,
+    "DUOFORGE_MOVE_SLOT_RECHARGE": 5,
+    "DUOFORGE_MOVE_SLOT_STRUGGLE": 4,
+    "DUOFORGE_MOVE_STATIC_FLAG_BITE": 8,
+    "DUOFORGE_MOVE_STATIC_FLAG_BULLET": 16,
+    "DUOFORGE_MOVE_STATIC_FLAG_CONTACT": 1,
+    "DUOFORGE_MOVE_STATIC_FLAG_DANCE": 256,
+    "DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE": 4096,
+    "DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE": 2048,
+    "DUOFORGE_MOVE_STATIC_FLAG_POWDER": 512,
+    "DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE": 1024,
+    "DUOFORGE_MOVE_STATIC_FLAG_PULSE": 32,
+    "DUOFORGE_MOVE_STATIC_FLAG_PUNCH": 4,
+    "DUOFORGE_MOVE_STATIC_FLAG_SLICING": 64,
+    "DUOFORGE_MOVE_STATIC_FLAG_SOUND": 2,
+    "DUOFORGE_MOVE_STATIC_FLAG_WIND": 128,
+    "DUOFORGE_NO_POSITION": 255,
+    "DUOFORGE_OBSERVATION_EXT_REVISION": 1,
+    "DUOFORGE_OBSERVATION_EXT_SIZE": 192,
+    "DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_HI": 8192,
+    "DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_LO": 4096,
+    "DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT0": 16,
+    "DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT1": 32,
+    "DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT2": 64,
+    "DUOFORGE_POSITION_EXT_ATTRACT": 134217728,
+    "DUOFORGE_POSITION_EXT_CHARGE": 16384,
+    "DUOFORGE_POSITION_EXT_CURSE": 2048,
+    "DUOFORGE_POSITION_EXT_DESTINY_BOND": 1024,
+    "DUOFORGE_POSITION_EXT_DRAGON_CHEER": 64,
+    "DUOFORGE_POSITION_EXT_FOCUS_ENERGY": 32,
+    "DUOFORGE_POSITION_EXT_GLAIVE_RUSH": 512,
+    "DUOFORGE_POSITION_EXT_HEALING_WISH": 4194304,
+    "DUOFORGE_POSITION_EXT_HEAL_BLOCK": 32768,
+    "DUOFORGE_POSITION_EXT_ILLUSION_UP": 524288,
+    "DUOFORGE_POSITION_EXT_IMPRISON": 4,
+    "DUOFORGE_POSITION_EXT_LEECH_SEED": 8,
+    "DUOFORGE_POSITION_EXT_MUST_RECHARGE": 128,
+    "DUOFORGE_POSITION_EXT_NO_RETREAT": 4096,
+    "DUOFORGE_POSITION_EXT_PARTIAL_TRAP": 256,
+    "DUOFORGE_POSITION_EXT_RAGE_POWDER": 131072,
+    "DUOFORGE_POSITION_EXT_ROOST": 1048576,
+    "DUOFORGE_POSITION_EXT_SALT_CURE": 8192,
+    "DUOFORGE_POSITION_EXT_SUBSTITUTE": 1,
+    "DUOFORGE_POSITION_EXT_TAUNT": 2,
+    "DUOFORGE_POSITION_EXT_THROAT_CHOP": 65536,
+    "DUOFORGE_POSITION_EXT_TRANSFORMED": 2097152,
+    "DUOFORGE_POSITION_EXT_TYPE_CHANGED": 262144,
+    "DUOFORGE_POSITION_EXT_YAWN": 16,
+    "DUOFORGE_POSITION_FLAG_FOLLOW_ME": 1,
+    "DUOFORGE_POSITION_FLAG_HELPING_HAND": 2,
+    "DUOFORGE_POSITION_FLAG_UNBURDEN": 4,
+    "DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE": 4,
+    "DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN": 32,
+    "DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE": 8,
+    "DUOFORGE_PUBLIC_CAUSE_TEMP_FORME": 16,
+    "DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY": 64,
+    "DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION": 2,
+    "DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP": 1,
+    "DUOFORGE_RESULT_SIDE_0": 1,
+    "DUOFORGE_RESULT_SIDE_1": 2,
+    "DUOFORGE_RESULT_TIE": 3,
+    "DUOFORGE_ROSTER_NONE": 255,
+    "DUOFORGE_SIDE_COUNT": 2,
+    "DUOFORGE_SIDE_GUARD_QUICK_GUARD": 2,
+    "DUOFORGE_SIDE_GUARD_WIDE_GUARD": 1,
+    "DUOFORGE_SLOT_MOVE": 1,
+    "DUOFORGE_SLOT_NONE": 0,
+    "DUOFORGE_SLOT_PASS": 3,
+    "DUOFORGE_SLOT_REVIVE": 4,
+    "DUOFORGE_SLOT_SWITCH": 2,
+    "DUOFORGE_TARGET_CLASS_STATIC_COUNT": 15,
+    "DUOFORGE_TARGET_NONE": 255,
+    "DUOFORGE_TERRAIN_ELECTRIC": 3,
+    "DUOFORGE_TERRAIN_GRASSY": 1,
+    "DUOFORGE_TERRAIN_MISTY": 4,
+    "DUOFORGE_TERRAIN_NONE": 0,
+    "DUOFORGE_TERRAIN_PSYCHIC": 2,
+    "DUOFORGE_TYPE_BUG": 0,
+    "DUOFORGE_TYPE_DARK": 1,
+    "DUOFORGE_TYPE_DRAGON": 2,
+    "DUOFORGE_TYPE_ELECTRIC": 3,
+    "DUOFORGE_TYPE_FAIRY": 4,
+    "DUOFORGE_TYPE_FIGHTING": 5,
+    "DUOFORGE_TYPE_FIRE": 6,
+    "DUOFORGE_TYPE_FLYING": 7,
+    "DUOFORGE_TYPE_GHOST": 8,
+    "DUOFORGE_TYPE_GRASS": 9,
+    "DUOFORGE_TYPE_GROUND": 10,
+    "DUOFORGE_TYPE_ICE": 11,
+    "DUOFORGE_TYPE_NONE": 255,
+    "DUOFORGE_TYPE_NORMAL": 12,
+    "DUOFORGE_TYPE_POISON": 13,
+    "DUOFORGE_TYPE_PSYCHIC": 14,
+    "DUOFORGE_TYPE_ROCK": 15,
+    "DUOFORGE_TYPE_STEEL": 16,
+    "DUOFORGE_TYPE_WATER": 17,
+    "DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE": 2,
+    "DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX": 10,
+    "DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE": 53,
+    "DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL": 3,
+    "DUOFORGE_VIEWEXT_FEATURE_CHARGE": 31,
+    "DUOFORGE_VIEWEXT_FEATURE_COUNT": 43,
+    "DUOFORGE_VIEWEXT_FEATURE_CURSE": 36,
+    "DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND": 35,
+    "DUOFORGE_VIEWEXT_FEATURE_DISABLE": 21,
+    "DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER": 24,
+    "DUOFORGE_VIEWEXT_FEATURE_ENCORE": 7,
+    "DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS": 63,
+    "DUOFORGE_VIEWEXT_FEATURE_FOCUS_ENERGY": 29,
+    "DUOFORGE_VIEWEXT_FEATURE_FORME_CHANGE": 19,
+    "DUOFORGE_VIEWEXT_FEATURE_GLAIVE_RUSH": 20,
+    "DUOFORGE_VIEWEXT_FEATURE_GRAVITY": 27,
+    "DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH": 43,
+    "DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK": 16,
+    "DUOFORGE_VIEWEXT_FEATURE_ILLUSION": 26,
+    "DUOFORGE_VIEWEXT_FEATURE_IMPRISON": 12,
+    "DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE": 11,
+    "DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED": 28,
+    "DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED": 41,
+    "DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE": 15,
+    "DUOFORGE_VIEWEXT_FEATURE_NO_RETREAT": 37,
+    "DUOFORGE_VIEWEXT_FEATURE_PARTIAL_TRAP": 18,
+    "DUOFORGE_VIEWEXT_FEATURE_PERISH": 4,
+    "DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD": 38,
+    "DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER": 39,
+    "DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS": 61,
+    "DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES": 59,
+    "DUOFORGE_VIEWEXT_FEATURE_ROOST": 40,
+    "DUOFORGE_VIEWEXT_FEATURE_SALT_CURE": 34,
+    "DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS": 62,
+    "DUOFORGE_VIEWEXT_FEATURE_SPIKES": 30,
+    "DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK": 13,
+    "DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB": 33,
+    "DUOFORGE_VIEWEXT_FEATURE_STOCKPILE": 22,
+    "DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE": 23,
+    "DUOFORGE_VIEWEXT_FEATURE_TAUNT": 14,
+    "DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC": 5,
+    "DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY": 32,
+    "DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP": 6,
+    "DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES": 8,
+    "DUOFORGE_VIEWEXT_FEATURE_TRANSFORM": 42,
+    "DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED": 45,
+    "DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE": 9,
+    "DUOFORGE_VIEWEXT_FEATURE_VOLATILES2": 60,
+    "DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND": 0,
+    "DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW": 1,
+    "DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD": 17,
+    "DUOFORGE_VIEWEXT_FEATURE_YAWN": 25,
+    "DUOFORGE_VIEW_HIDDEN": 255,
+    "DUOFORGE_VIEW_HIDDEN_TARGET": 254,
+    "DUOFORGE_VIEW_PICK_NONE": 255,
+    "DUOFORGE_VIEW_REVISION": 2,
+    "DUOFORGE_VIEW_STATE_MAX": 1357,
+    "DUOFORGE_VOLATILE_ATTRACT": 11,
+    "DUOFORGE_VOLATILE_CURSE": 14,
+    "DUOFORGE_VOLATILE_DRAGONCHEER": 10,
+    "DUOFORGE_VOLATILE_LEECH_SEED": 13,
+    "DUOFORGE_VOLATILE_PARTIAL_TRAP": 12,
+    "DUOFORGE_VOLATILE_SUBSTITUTE": 9,
+    "DUOFORGE_WEATHER_NONE": 0,
+    "DUOFORGE_WEATHER_RAIN": 1,
+    "DUOFORGE_WEATHER_SAND": 3,
+    "DUOFORGE_WEATHER_SNOW": 4,
+    "DUOFORGE_WEATHER_SUN": 2
+  },
+  "structs": {
+    "duoforge_ability_static": {
+      "fields": {
+        "family": [
+          0,
+          4
+        ],
+        "family_param": [
+          4,
+          4
+        ]
+      },
+      "size": 8
+    },
+    "duoforge_batch_config": {
+      "fields": {
+        "env_count": [
+          0,
+          4
+        ],
+        "seed": [
+          8,
+          8
+        ],
+        "setups": [
+          16,
+          8
+        ],
+        "worker_count": [
+          4,
+          4
+        ]
+      },
+      "size": 24
+    },
+    "duoforge_batch_episode": {
+      "fields": {
+        "decisions": [
+          12,
+          4
+        ],
+        "digest": [
+          24,
+          32
+        ],
+        "env": [
+          0,
+          4
+        ],
+        "episode": [
+          4,
+          4
+        ],
+        "result": [
+          20,
+          4
+        ],
+        "steps": [
+          8,
+          4
+        ],
+        "turns": [
+          16,
+          4
+        ]
+      },
+      "size": 56
+    },
+    "duoforge_battle_setup": {
+      "fields": {
+        "rng_initseq": [
+          8,
+          8
+        ],
+        "rng_initstate": [
+          0,
+          8
+        ],
+        "sides": [
+          16,
+          1064
+        ]
+      },
+      "size": 1080
+    },
+    "duoforge_context_config": {
+      "fields": {
+        "brought_count": [
+          8,
+          4
+        ],
+        "data_kind": [
+          0,
+          4
+        ],
+        "max_roster": [
+          4,
+          4
+        ],
+        "move_count": [
+          16,
+          4
+        ],
+        "move_target_classes": [
+          24,
+          8
+        ],
+        "species_count": [
+          12,
+          4
+        ]
+      },
+      "size": 32
+    },
+    "duoforge_decision_bundle": {
+      "fields": {
+        "epoch": [
+          0,
+          4
+        ],
+        "reserved": [
+          5,
+          3
+        ],
+        "response_mask": [
+          4,
+          1
+        ],
+        "responses": [
+          8,
+          64
+        ]
+      },
+      "size": 72
+    },
+    "duoforge_event": {
+      "fields": {
+        "amount": [
+          16,
+          1
+        ],
+        "cause": [
+          3,
+          1
+        ],
+        "detail": [
+          15,
+          1
+        ],
+        "flags": [
+          17,
+          1
+        ],
+        "hp": [
+          8,
+          2
+        ],
+        "hp_flag": [
+          13,
+          1
+        ],
+        "hp_kind": [
+          12,
+          1
+        ],
+        "hp_max": [
+          10,
+          2
+        ],
+        "id": [
+          4,
+          2
+        ],
+        "id2": [
+          6,
+          2
+        ],
+        "kind": [
+          0,
+          1
+        ],
+        "other": [
+          2,
+          1
+        ],
+        "position": [
+          1,
+          1
+        ],
+        "reserved": [
+          18,
+          2
+        ],
+        "status": [
+          14,
+          1
+        ]
+      },
+      "size": 20
+    },
+    "duoforge_factored_choice": {
+      "fields": {
+        "picks": [
+          2,
+          6
+        ],
+        "slot": [
+          0,
+          2
+        ]
+      },
+      "size": 8
+    },
+    "duoforge_factored_domain": {
+      "fields": {
+        "allowed": [
+          524,
+          128
+        ],
+        "epoch": [
+          0,
+          4
+        ],
+        "kind": [
+          4,
+          1
+        ],
+        "member_count": [
+          7,
+          1
+        ],
+        "pick_count": [
+          8,
+          1
+        ],
+        "reserved": [
+          9,
+          3
+        ],
+        "slot_count": [
+          5,
+          2
+        ],
+        "slots": [
+          12,
+          512
+        ]
+      },
+      "size": 652
+    },
+    "duoforge_field_ext": {
+      "fields": {
+        "flags": [
+          2,
+          2
+        ],
+        "gravity_turns": [
+          0,
+          1
+        ],
+        "reserved": [
+          4,
+          12
+        ],
+        "reserved0": [
+          1,
+          1
+        ]
+      },
+      "size": 16
+    },
+    "duoforge_forme_info": {
+      "fields": {
+        "abilities": [
+          44,
+          12
+        ],
+        "ability_count": [
+          40,
+          4
+        ],
+        "base_species": [
+          12,
+          4
+        ],
+        "dex_num": [
+          0,
+          4
+        ],
+        "gender_mask": [
+          32,
+          4
+        ],
+        "is_mega": [
+          4,
+          4
+        ],
+        "mega_ability": [
+          24,
+          4
+        ],
+        "mega_species": [
+          16,
+          4
+        ],
+        "mega_stone": [
+          20,
+          4
+        ],
+        "mega_supported": [
+          28,
+          4
+        ],
+        "move_count": [
+          56,
+          4
+        ],
+        "no_ability": [
+          36,
+          4
+        ],
+        "setup_legal": [
+          8,
+          4
+        ]
+      },
+      "size": 60
+    },
+    "duoforge_forme_static": {
+      "fields": {
+        "base_stats": [
+          8,
+          24
+        ],
+        "default_ability": [
+          36,
+          4
+        ],
+        "is_mega": [
+          40,
+          4
+        ],
+        "types": [
+          0,
+          8
+        ],
+        "weight_hg": [
+          32,
+          4
+        ]
+      },
+      "size": 44
+    },
+    "duoforge_hypothesis": {
+      "fields": {
+        "charge_target": [
+          232,
+          16
+        ],
+        "confusion": [
+          200,
+          32
+        ],
+        "hp": [
+          56,
+          48
+        ],
+        "pick_order": [
+          44,
+          6
+        ],
+        "queue_order": [
+          264,
+          12
+        ],
+        "queued": [
+          248,
+          16
+        ],
+        "reserved0": [
+          4,
+          4
+        ],
+        "reserved1": [
+          50,
+          6
+        ],
+        "revision": [
+          0,
+          4
+        ],
+        "sleep": [
+          104,
+          96
+        ],
+        "stat_points": [
+          8,
+          36
+        ],
+        "trap_pick": [
+          276,
+          4
+        ]
+      },
+      "size": 280
+    },
+    "duoforge_item_static": {
+      "fields": {
+        "family": [
+          0,
+          4
+        ],
+        "family_type": [
+          4,
+          4
+        ],
+        "is_mega_stone": [
+          8,
+          4
+        ],
+        "mega_species": [
+          12,
+          4
+        ]
+      },
+      "size": 16
+    },
+    "duoforge_mega_info": {
+      "fields": {
+        "base_species": [
+          0,
+          4
+        ],
+        "mega_ability": [
+          12,
+          4
+        ],
+        "mega_species": [
+          8,
+          4
+        ],
+        "stone": [
+          4,
+          4
+        ],
+        "supported": [
+          16,
+          4
+        ]
+      },
+      "size": 20
+    },
+    "duoforge_member_ext": {
+      "fields": {
+        "forme": [
+          0,
+          2
+        ],
+        "item_now": [
+          2,
+          1
+        ],
+        "reserved": [
+          3,
+          1
+        ]
+      },
+      "size": 4
+    },
+    "duoforge_member_setup": {
+      "fields": {
+        "ability": [
+          80,
+          4
+        ],
+        "gender": [
+          48,
+          4
+        ],
+        "hp_max": [
+          4,
+          4
+        ],
+        "item": [
+          84,
+          4
+        ],
+        "mega_capable": [
+          12,
+          4
+        ],
+        "move_count": [
+          8,
+          4
+        ],
+        "moves": [
+          16,
+          32
+        ],
+        "nature": [
+          52,
+          4
+        ],
+        "species_id": [
+          0,
+          4
+        ],
+        "stat_points": [
+          56,
+          24
+        ]
+      },
+      "size": 88
+    },
+    "duoforge_member_view": {
+      "fields": {
+        "ability": [
+          47,
+          1
+        ],
+        "gender": [
+          45,
+          1
+        ],
+        "hp": [
+          2,
+          2
+        ],
+        "hp_flag": [
+          40,
+          1
+        ],
+        "hp_kind": [
+          39,
+          1
+        ],
+        "hp_max": [
+          4,
+          2
+        ],
+        "is_mega": [
+          44,
+          1
+        ],
+        "item": [
+          48,
+          1
+        ],
+        "item_used": [
+          49,
+          1
+        ],
+        "location": [
+          42,
+          1
+        ],
+        "mega_capable": [
+          43,
+          1
+        ],
+        "move_count": [
+          38,
+          1
+        ],
+        "move_ids": [
+          6,
+          8
+        ],
+        "nature": [
+          46,
+          1
+        ],
+        "pp": [
+          24,
+          4
+        ],
+        "pp_kind": [
+          41,
+          1
+        ],
+        "pp_max": [
+          28,
+          4
+        ],
+        "reserved": [
+          51,
+          1
+        ],
+        "species_id": [
+          0,
+          2
+        ],
+        "stat_points": [
+          32,
+          6
+        ],
+        "stats": [
+          14,
+          10
+        ],
+        "status": [
+          50,
+          1
+        ]
+      },
+      "size": 52
+    },
+    "duoforge_move_setup": {
+      "fields": {
+        "move_id": [
+          0,
+          4
+        ],
+        "pp_max": [
+          4,
+          4
+        ]
+      },
+      "size": 8
+    },
+    "duoforge_move_static": {
+      "fields": {
+        "accuracy": [
+          12,
+          4
+        ],
+        "base_power": [
+          8,
+          4
+        ],
+        "category": [
+          4,
+          4
+        ],
+        "crit_stage": [
+          32,
+          4
+        ],
+        "drain": [
+          36,
+          8
+        ],
+        "flags": [
+          28,
+          4
+        ],
+        "hits_max": [
+          60,
+          4
+        ],
+        "hits_min": [
+          56,
+          4
+        ],
+        "pp": [
+          16,
+          4
+        ],
+        "priority": [
+          20,
+          4
+        ],
+        "recoil": [
+          44,
+          8
+        ],
+        "secondary_chance": [
+          52,
+          4
+        ],
+        "target_class": [
+          24,
+          4
+        ],
+        "type": [
+          0,
+          4
+        ]
+      },
+      "size": 64
+    },
+    "duoforge_nature_static": {
+      "fields": {
+        "lowered_stat": [
+          4,
+          4
+        ],
+        "raised_stat": [
+          0,
+          4
+        ]
+      },
+      "size": 8
+    },
+    "duoforge_observation": {
+      "fields": {
+        "boundary_kind": [
+          4,
+          1
+        ],
+        "epoch": [
+          0,
+          4
+        ],
+        "player": [
+          5,
+          1
+        ],
+        "requested": [
+          6,
+          1
+        ],
+        "reserved": [
+          15,
+          1
+        ],
+        "sides": [
+          16,
+          720
+        ],
+        "slot_mask": [
+          7,
+          1
+        ],
+        "terrain": [
+          12,
+          1
+        ],
+        "terrain_turns": [
+          13,
+          1
+        ],
+        "trick_room_turns": [
+          14,
+          1
+        ],
+        "turn": [
+          8,
+          2
+        ],
+        "weather": [
+          10,
+          1
+        ],
+        "weather_turns": [
+          11,
+          1
+        ]
+      },
+      "size": 736
+    },
+    "duoforge_observation_ext": {
+      "fields": {
+        "epoch": [
+          4,
+          4
+        ],
+        "field": [
+          16,
+          16
+        ],
+        "player": [
+          1,
+          1
+        ],
+        "reserved0": [
+          2,
+          2
+        ],
+        "reserved1": [
+          176,
+          16
+        ],
+        "revision": [
+          0,
+          1
+        ],
+        "sides": [
+          32,
+          128
+        ],
+        "supported": [
+          8,
+          8
+        ],
+        "volatiles2": [
+          160,
+          16
+        ]
+      },
+      "size": 192
+    },
+    "duoforge_position_ext": {
+      "fields": {
+        "ability_now": [
+          4,
+          2
+        ],
+        "disable_slot": [
+          9,
+          1
+        ],
+        "encore_slot": [
+          8,
+          1
+        ],
+        "move_failed": [
+          12,
+          1
+        ],
+        "perish": [
+          11,
+          1
+        ],
+        "reserved": [
+          14,
+          2
+        ],
+        "stockpile": [
+          10,
+          1
+        ],
+        "transform_source": [
+          13,
+          1
+        ],
+        "type_now": [
+          6,
+          2
+        ],
+        "volatiles": [
+          0,
+          4
+        ]
+      },
+      "size": 16
+    },
+    "duoforge_position_view": {
+      "fields": {
+        "acted": [
+          11,
+          1
+        ],
+        "charging": [
+          8,
+          1
+        ],
+        "confused": [
+          7,
+          1
+        ],
+        "flash_fire": [
+          13,
+          1
+        ],
+        "locked_slot": [
+          9,
+          1
+        ],
+        "locked_target": [
+          10,
+          1
+        ],
+        "protect_chain": [
+          12,
+          1
+        ],
+        "protecting": [
+          14,
+          1
+        ],
+        "reserved": [
+          15,
+          1
+        ],
+        "stages": [
+          0,
+          7
+        ]
+      },
+      "size": 16
+    },
+    "duoforge_public_state": {
+      "fields": {
+        "boundary": [
+          12,
+          4
+        ],
+        "epoch": [
+          24,
+          4
+        ],
+        "foe_leads": [
+          29,
+          2
+        ],
+        "foe_pending_mask": [
+          31,
+          1
+        ],
+        "foe_seen_mask": [
+          28,
+          1
+        ],
+        "pad": [
+          1393,
+          3
+        ],
+        "player": [
+          4,
+          4
+        ],
+        "queue_count": [
+          32,
+          1
+        ],
+        "request_mask": [
+          20,
+          4
+        ],
+        "reserved": [
+          33,
+          3
+        ],
+        "revision": [
+          0,
+          4
+        ],
+        "state": [
+          36,
+          1357
+        ],
+        "state_size": [
+          8,
+          4
+        ],
+        "turn": [
+          16,
+          4
+        ]
+      },
+      "size": 1396
+    },
+    "duoforge_request": {
+      "fields": {
+        "boundary_kind": [
+          8,
+          1
+        ],
+        "candidate_count": [
+          4,
+          4
+        ],
+        "epoch": [
+          0,
+          4
+        ],
+        "player": [
+          9,
+          1
+        ],
+        "requested": [
+          10,
+          1
+        ],
+        "slot_mask": [
+          11,
+          1
+        ]
+      },
+      "size": 12
+    },
+    "duoforge_side_choice": {
+      "fields": {
+        "epoch": [
+          0,
+          4
+        ],
+        "kind": [
+          5,
+          1
+        ],
+        "pick_count": [
+          6,
+          1
+        ],
+        "picks": [
+          7,
+          6
+        ],
+        "reserved": [
+          13,
+          3
+        ],
+        "side": [
+          4,
+          1
+        ],
+        "slots": [
+          16,
+          16
+        ]
+      },
+      "size": 32
+    },
+    "duoforge_side_ext": {
+      "fields": {
+        "aurora_veil_turns": [
+          56,
+          1
+        ],
+        "conditions": [
+          62,
+          1
+        ],
+        "guard_flags": [
+          61,
+          1
+        ],
+        "members": [
+          32,
+          24
+        ],
+        "positions": [
+          0,
+          32
+        ],
+        "reserved": [
+          63,
+          1
+        ],
+        "spikes": [
+          58,
+          1
+        ],
+        "stealth_rock": [
+          57,
+          1
+        ],
+        "sticky_web": [
+          60,
+          1
+        ],
+        "toxic_spikes": [
+          59,
+          1
+        ]
+      },
+      "size": 64
+    },
+    "duoforge_side_setup": {
+      "fields": {
+        "member_count": [
+          0,
+          4
+        ],
+        "members": [
+          4,
+          528
+        ]
+      },
+      "size": 532
+    },
+    "duoforge_side_view": {
+      "fields": {
+        "brought_order": [
+          348,
+          6
+        ],
+        "light_screen_turns": [
+          357,
+          1
+        ],
+        "mega_used": [
+          347,
+          1
+        ],
+        "member_count": [
+          344,
+          1
+        ],
+        "members": [
+          0,
+          312
+        ],
+        "occupant": [
+          345,
+          2
+        ],
+        "positions": [
+          312,
+          32
+        ],
+        "reflect_turns": [
+          356,
+          1
+        ],
+        "requested": [
+          354,
+          1
+        ],
+        "requested_slots": [
+          355,
+          1
+        ],
+        "reserved": [
+          359,
+          1
+        ],
+        "tailwind_turns": [
+          358,
+          1
+        ]
+      },
+      "size": 360
+    },
+    "duoforge_slot_command": {
+      "fields": {
+        "kind": [
+          0,
+          1
+        ],
+        "mega": [
+          3,
+          1
+        ],
+        "move_slot": [
+          1,
+          1
+        ],
+        "reserve": [
+          4,
+          1
+        ],
+        "reserved": [
+          5,
+          3
+        ],
+        "target": [
+          2,
+          1
+        ]
+      },
+      "size": 8
+    },
+    "duoforge_step_result": {
+      "fields": {
+        "boundary_kind": [
+          5,
+          1
+        ],
+        "epoch": [
+          0,
+          4
+        ],
+        "kind": [
+          4,
+          1
+        ],
+        "request_mask": [
+          6,
+          1
+        ],
+        "reserved": [
+          7,
+          1
+        ]
+      },
+      "size": 8
+    }
+  }
+}

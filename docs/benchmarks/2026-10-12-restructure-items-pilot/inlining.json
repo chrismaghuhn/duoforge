@@ -1,0 +1,429 @@
+{
+  "baseline_bench": {
+    "calls": {
+      "dfi_holds": [],
+      "dfi_item_code": [
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "36b82:\te8 99 ab 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "37181:\te8 9a a5 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "373e6:\te8 35 a3 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3a034:\te8 e7 76 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3b7e2:\te8 39 5f 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3b9ff:\te8 1c 5d 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3baf3:\te8 28 5c 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3c72b:\te8 f0 4f 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3d44d:\te8 ce 42 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3dad8:\te8 43 3c 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3dc17:\te8 04 3b 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3f3f9:\te8 22 23 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3f617:\te8 04 21 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3f861:\te8 ba 1e 00 00       \tcall   41720 <dfi_item_code.part.0.lto_priv.0>"
+        }
+      ],
+      "dfi_item_takeable": []
+    },
+    "counts": {
+      "dfi_holds": 0,
+      "dfi_item_code": 14,
+      "dfi_item_takeable": 0
+    }
+  },
+  "baseline_shared": {
+    "calls": {
+      "dfi_holds": [],
+      "dfi_item_code": [
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "46262:\te8 39 af 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4685d:\te8 3e a9 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "47169:\te8 32 a0 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4860a:\te8 91 8b 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "48c1b:\te8 80 85 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "48d42:\te8 59 84 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "49b42:\te8 59 76 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4b938:\te8 63 58 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4bbe2:\te8 b9 55 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4bce7:\te8 b4 54 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4cab9:\te8 e2 46 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4d23d:\te8 5e 3f 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4d30d:\te8 8e 3e 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4d599:\te8 02 3c 00 00       \tcall   511a0 <dfi_item_code.part.0.lto_priv.0>"
+        }
+      ],
+      "dfi_item_takeable": []
+    },
+    "counts": {
+      "dfi_holds": 0,
+      "dfi_item_code": 14,
+      "dfi_item_takeable": 0
+    }
+  },
+  "binary_sizes": {
+    "baseline-build-ipo/libduoforge_shared.so": "648240",
+    "current/libduoforge_shared.so": "648136",
+    "inline/libduoforge_shared.so": "639976"
+  },
+  "current_bench": {
+    "calls": {
+      "dfi_holds": [
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "372d0:\te8 9b e1 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "372ea:\te8 81 e1 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3784a:\te8 21 dc 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "37f2c:\te8 3f d5 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3aa86:\te8 e5 a9 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3ac94:\te8 d7 a7 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3b02e:\te8 3d a4 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3c30e:\te8 5d 91 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3c442:\te8 29 90 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3d4a0:\te8 cb 7f 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3e48d:\te8 de 6f 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3f456:\te8 15 60 00 00       \tcall   45470 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3f582:\te8 e9 5e 00 00       \tcall   45470 <dfi_holds>"
+        }
+      ],
+      "dfi_item_code": [
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3ba99:\te8 d2 9f 00 00       \tcall   45a70 <dfi_item_code>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3f9b4:\te8 b7 60 00 00       \tcall   45a70 <dfi_item_code>"
+        }
+      ],
+      "dfi_item_takeable": []
+    },
+    "counts": {
+      "dfi_holds": 13,
+      "dfi_item_code": 2,
+      "dfi_item_takeable": 0
+    }
+  },
+  "current_shared": {
+    "calls": {
+      "dfi_holds": [
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "45174:\te8 27 ab 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4518e:\te8 0d ab 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "45753:\te8 48 a5 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "45e34:\te8 67 9e 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "487fe:\te8 9d 74 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "48d7d:\te8 1e 6f 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "48f2c:\te8 6f 6d 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "497d9:\te8 c2 64 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "49a30:\te8 6b 62 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4a1a5:\te8 f6 5a 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4b193:\te8 08 4b 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4b333:\te8 68 49 00 00       \tcall   4fca0 <dfi_holds>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4c964:\te8 37 33 00 00       \tcall   4fca0 <dfi_holds>"
+        }
+      ],
+      "dfi_item_code": [
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4864d:\te8 ee 76 00 00       \tcall   4fd40 <dfi_item_code>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4ab98:\te8 a3 51 00 00       \tcall   4fd40 <dfi_item_code>"
+        }
+      ],
+      "dfi_item_takeable": []
+    },
+    "counts": {
+      "dfi_holds": 13,
+      "dfi_item_code": 2,
+      "dfi_item_takeable": 0
+    }
+  },
+  "inline_bench": {
+    "calls": {
+      "dfi_holds": [],
+      "dfi_item_code": [
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "35662:\te8 d9 eb 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "35c61:\te8 da e5 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "375f8:\te8 43 cc 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3780d:\te8 2e ca 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3919a:\te8 a1 b0 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3a3dc:\te8 5f 9e 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3a5ef:\te8 4c 9c 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3a6e3:\te8 58 9b 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3af91:\te8 aa 92 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3c83d:\te8 fe 79 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3d559:\te8 e2 6c 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3d621:\te8 1a 6c 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "3d86b:\te8 d0 69 00 00       \tcall   44240 <dfi_item_code.part.0.lto_priv.0>"
+        }
+      ],
+      "dfi_item_takeable": []
+    },
+    "counts": {
+      "dfi_holds": 0,
+      "dfi_item_code": 13,
+      "dfi_item_takeable": 0
+    }
+  },
+  "inline_shared": {
+    "calls": {
+      "dfi_holds": [],
+      "dfi_item_code": [
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "44d02:\te8 d9 af 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "452fd:\te8 de a9 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "47974:\te8 67 83 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "47f85:\te8 56 7d 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "480ac:\te8 2f 7c 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4838a:\te8 51 79 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4a478:\te8 63 58 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4a722:\te8 b9 55 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4a827:\te8 b4 54 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4b5f7:\te8 e4 46 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4bd7d:\te8 5e 3f 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4be4d:\te8 8e 3e 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        },
+        {
+          "caller": "dfi_run_move_body.lto_priv.0",
+          "instruction": "4c0d9:\te8 02 3c 00 00       \tcall   4fce0 <dfi_item_code.part.0.lto_priv.0>"
+        }
+      ],
+      "dfi_item_takeable": []
+    },
+    "counts": {
+      "dfi_holds": 0,
+      "dfi_item_code": 13,
+      "dfi_item_takeable": 0
+    }
+  },
+  "provenance": {
+    "baseline": "ca17e507",
+    "initial_pilot": "ceb9d377 (compiled source 3a9d04d1)",
+    "inline_source": "9b7fa521",
+    "method": "objdump -d; count direct call/callq targets, including compiler suffixes; preserve caller and instruction. Static call sites, not dynamic execution counts."
+  }
+}

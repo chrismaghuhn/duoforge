@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Reference values of Battle.tiebreak() from the pinned Pokemon Showdown
-// (the engine's duoforge_battle_tiebreak, tests/test_tiebreak.c).
+// (the engine's duoforge_battle_tiebreak, tests/interactions/test_tiebreak.c).
 //
 // usage: node tools/reference/tiebreak_ref.js <pinned checkout> <repo root> [--check <file>]
 //
@@ -22,10 +22,11 @@
 // winner against this script's own copy of the three steps, so a drift of
 // either is an error of the script, not a silent fixture.
 //
-// Without --check it prints tests/reference/tiebreak_ref.h to stdout. With
-// --check it compares the output to the given file byte for byte and exits
-// non-zero on a difference. CTest never needs Node: the header is committed,
-// and the check runs only when DUOFORGE_PS_REFERENCE_DIR is set.
+// Without --check it writes each battle's tiebreak payload under
+// tests/reference/battles/reg-mc/<set>/ and prints the small declaration
+// header to stdout. With --check it compares every payload and that header
+// byte for byte without writing. Native tests need no Node: CMake compiles
+// the committed payloads. Regeneration checks require the pinned checkout.
 'use strict';
 
 const fs = require('fs');
@@ -157,6 +158,7 @@ function main() {
 
     const names = fs.readdirSync(specDir).filter((f) => f.endsWith('.json')).sort().map((f) => f.slice(0, -5));
     const tables = [];
+    const FORMAT = 'reg-mc';
     const stats = {stops: 0, ended: 0, byStage: [0, 0, 0, 0, 0], winners: {p1: 0, p2: 0, '': 0}};
     for (const name of names) {
         const specFile = path.join(specDir, name + '.json');
@@ -166,6 +168,8 @@ function main() {
         if (trace.pin !== PIN || trace.spec !== name + '.json') {
             throw new Error(`${name}: the trace is not of this spec and pin`);
         }
+        const dataset = spec.data || 'closure';
+        if (!['closure', 'team_c', 'pool'].includes(dataset)) throw new Error(`${name}: unknown data ${dataset}`);
         const rows = [];
         for (const prefix of stopsOf(trace.steps.length)) {
             const battle = replay(spec, trace, prefix);
@@ -217,20 +221,46 @@ function main() {
             rows.push(`    {${prefix}u, ${ended}u, ${result}u, ${stage}u, {${notFainted.map((x) => x + 'u').join(', ')}}, ` +
                 `{${total.map((x) => x + 'u').join(', ')}}, {${pct.map(bitsOf).join(', ')}}},`);
         }
-        tables.push({name, entries: trace.steps.length, rows});
+        tables.push({name, dataset, entries: trace.steps.length, rows});
     }
 
+    // Each independently generated battle file owns both reference payloads
+    // and its frozen observations. Preserve the other generators' fields.
+    const sortObject = (value) => {
+        if (Array.isArray(value)) return value.map(sortObject);
+        if (value && typeof value === 'object') {
+            return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortObject(value[key])]));
+        }
+        return value;
+    };
+    let mismatch = false;
+    const totals = {closure: 0, team_c: 0, pool: 0};
     for (const t of tables) {
-        line(`static const df_tb_stop tb_${t.name}[] = {`);
-        for (const r of t.rows) line(r);
-        line('};');
+        const file = path.join(repo, 'tests', 'reference', 'battles', FORMAT, t.dataset, t.name + '.json');
+        if (!fs.existsSync(file)) throw new Error(`${file}: run capture_battle_pins.py and trace_to_c.py first`);
+        const value = JSON.parse(fs.readFileSync(file, 'utf8'));
+        if (value.name !== t.name || value.set !== t.dataset || value.format !== FORMAT) {
+            throw new Error(`${file}: wrong battle identity`);
+        }
+        const expected = {entries: t.entries, rows: t.rows.join('\n') + '\n', stop_count: t.rows.length};
+        if (args.length === 4) {
+            if (JSON.stringify(sortObject(value.tiebreak)) !== JSON.stringify(sortObject(expected))) {
+                process.stderr.write(`tiebreak_ref: ${file} differs from the reference run\n`);
+                mismatch = true;
+            }
+        } else {
+            value.tiebreak = expected;
+            const content = JSON.stringify(sortObject(value), null, 2) + '\n';
+            if (fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n') !== content) fs.writeFileSync(file, content);
+        }
+        totals[t.dataset] += t.rows.length;
     }
-    line('');
-    line('static const df_tb_battle tb_battles[] = {');
-    for (const t of tables) {
-        line(`    {"${t.name}", ${t.entries}u, tb_${t.name}, sizeof tb_${t.name} / sizeof tb_${t.name}[0]},`);
+    line('#define DF_REFERENCE_TIEBREAK_COUNT ' + tables.length + 'u');
+    for (const [dataset, total] of Object.entries(totals)) {
+        line('#define DF_REFERENCE_' + dataset.toUpperCase() + '_STOPS ' + total + 'u');
     }
-    line('};');
+    line('#define tb_battles df_reference_tiebreak_battles');
+    line('extern const df_tb_battle tb_battles[DF_REFERENCE_TIEBREAK_COUNT];');
     line('');
     line(`/* ${stats.stops} stops: ${stats.ended} of an ended battle; decided by the count ${stats.byStage[1]},`);
     line(` * the HP percentage ${stats.byStage[2]}, the total HP ${stats.byStage[3]}, a tie ${stats.byStage[4]};`);
@@ -240,7 +270,7 @@ function main() {
 
     if (args.length === 4) {
         const have = fs.readFileSync(args[3], 'utf8').replace(/\r\n/g, '\n');
-        if (have !== text) {
+        if (have !== text || mismatch) {
             process.stderr.write('tiebreak_ref: ' + args[3] + ' differs from the reference run\n');
             process.exit(1);
         }
