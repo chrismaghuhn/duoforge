@@ -101,6 +101,11 @@ class EngineTest(unittest.TestCase):
         self.assertEqual(y, ["weather:sun"])
         self.assertEqual(x, [])
 
+    def test_a_mega_stone_of_another_species_gives_no_mega_tags(self):
+        tags = archetypes.member_tags(self.ctx, self.resolved,
+                                      member("Venusaur", "Overgrow", "Charizardite Y", ["Protect"]))
+        self.assertEqual(tags, [])
+
     def test_the_own_ability_counts_beside_the_mega_ability(self):
         tags = archetypes.member_tags(self.ctx, self.resolved,
                                       member("Staraptor", "Intimidate", "Staraptite", ["Tailwind"]))

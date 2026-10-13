@@ -98,7 +98,8 @@ def resolve(ctx, table):
 
 def member_tags(ctx, resolved, member):
     """The sorted tags of one member (teams.parse's shape: ability, item, moves): its ability's, its moves', its item's
-    and, for a Mega Stone, its Mega forme's ability's. TagError naming a name the engine does not know."""
+    and, for a Mega Stone of its own species, its Mega forme's ability's (another species' stone gives none: it
+    takes the holder to no Mega forme). TagError naming a name the engine does not know."""
     import duoforge
     from duoforge import data
 
@@ -117,10 +118,12 @@ def member_tags(ctx, resolved, member):
     if member.get("item"):
         item = find(data.TABLE_ITEM, member["item"], "item")
         tags.update(resolved["items"].get(item, []))
-        info = data.item_static(ctx, item)
-        if info["is_mega_stone"]:
-            mega_ability = data.forme_static(ctx, info["mega_species"])["default_ability"]
-            tags.update(resolved["abilities"].get(mega_ability, []))
+        if data.item_static(ctx, item)["is_mega_stone"]:  # only the holder's own stones (the engine's Mega links)
+            species = find(data.TABLE_SPECIES, member["species"], "species")
+            for k in range(data.mega_count(ctx, species)):
+                mega = data.mega_at(ctx, species, k)
+                if mega["stone"] == item:
+                    tags.update(resolved["abilities"].get(mega["mega_ability"], []))
     return sorted(tags)
 
 
