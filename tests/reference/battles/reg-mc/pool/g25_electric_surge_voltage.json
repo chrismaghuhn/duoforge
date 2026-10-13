@@ -16,8 +16,7 @@
     "fixture_matches": 0,
     "live": {
       "outcomes": {
-        "equal": 10,
-        "refused": 4
+        "equal": 14
       },
       "own_pp_stops": [],
       "stops": {}

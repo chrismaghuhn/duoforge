@@ -322,6 +322,9 @@ class _Member:
         self.item_consumed = 0  # its item was used up (the record; a taken item is not), until it gets one
         self.toxic = 0  # badly poisoned, from the status lines of either side (the toxic stage counts only then)
         self.toxic_stage = 0  # the toxic counter (the POOL record): 0 at the status and at an entry, +1 per poison tick
+        # Decision 0066 (visible sleep): the cant lines printed since this sleep started (the POOL record's member byte, 0..2): +1 at
+        # each cant|X|slp, 0 at the sleep's start and at its end (a cure, a faint, a Wish heal, a revival)
+        self.sleep_cant = 0
         # The own side, from the requests.
         self.hp = 0
         self.hp_max = 0
@@ -1161,10 +1164,13 @@ class Tracker:
             m.hp_percent, m.hp_flag = 0, 0
             m.status, m.freeze_turns = 0, 0  # a fainted member has no status (the views show none; the record holds none)
             m.toxic = m.toxic_stage = 0
+            m.sleep_cant = 0  # decision 0066: the sleep's count ends with it
         elif kind == EV["CANT"]:
             # An ability's block (Armor Tail) names its holder; the move's user, [of], took the action.
             blocked = e[3] == trace_to_c.CAUSE["ABILITY"]
             actor = self._at(e[2] if blocked else pos)
+            if e[3] == trace_to_c.CAUSE["SLEEP"] and actor.occupant != ROSTER_NONE:
+                self._member(pos // 2)[actor.occupant].sleep_cant += 1  # decision 0066: one more cant line of this sleep
             actor.acted = 1
             if not blocked:
                 self._move_action(actor)  # a block follows the user's own [move] line: the same action
@@ -1290,6 +1296,7 @@ class Tracker:
                 self._at(pos).wish = 0
                 m.status, m.freeze_turns = 0, 0
                 m.toxic = m.toxic_stage = 0
+                m.sleep_cant = 0  # decision 0066
         elif kind == EV["REVIVE"]:
             # Step G52 (decision 0025): Revival Blessing brings a fainted member of the user's side back at half HP,
             # its status cured; ident is its roster index (the line names it without a position)
@@ -1299,6 +1306,7 @@ class Tracker:
             else:
                 self._own_display(m, hp, e[7])
             m.status = 0
+            m.sleep_cant = 0  # decision 0066: the revival cures the sleep and its count
             user = self._rb_pending.pop(pos // 2, None)
             if user is not None:
                 self._at(user).flag = 0  # the revive answers the request: the flag goes
@@ -1309,12 +1317,14 @@ class Tracker:
             m.freeze_turns = FREEZE_TURNS if detail == STATUS["frz"] else 0
             m.toxic = 1 if detail == STATUS["tox"] else 0
             m.toxic_stage = 0  # tox's onStart
+            m.sleep_cant = 0  # decision 0066: a new sleep counts from 0 (the status line of a sleep is public for both)
         elif kind == EV["CURE_STATUS"]:
             m = self._occupant(pos)
             if public:
                 m.status = 0
             m.freeze_turns = 0
             m.toxic = m.toxic_stage = 0
+            m.sleep_cant = 0  # decision 0066: the cure ends the sleep and its count
         elif kind in (EV["BOOST"], EV["UNBOOST"]):
             p = self._at(pos)
             sign = 1 if kind == EV["BOOST"] else -1
