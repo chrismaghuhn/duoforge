@@ -11,6 +11,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features, teams
 from duoforge_learn import evaluate
+from duoforge_learn.selfplay import TEAM_TABLE
 from duoforge_search import arena, belief, honest, matrix, preview, preview_ab
 
 C = _layout.CONSTANTS
@@ -48,11 +49,11 @@ class FoeSensitiveModel(ToyModel):
 
 
 class PreviewSearchTest(unittest.TestCase):
-    def make(self, context, mode="value", capacity=4, workers=1, steps=16, k=2, rule="mix"):
+    def make(self, context, mode="value", capacity=4, workers=1, steps=16, k=2, rule="mix", **extra):
         table = belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         return honest.Honest(context, ToyModel(), None, features.ENCODER, 0, k=k, m=2, s=2,
                              rule=rule, capacity=capacity, workers=workers, table=table,
-                             preview_mode=mode, preview_only=mode != "raw", preview_steps=steps)
+                             preview_mode=mode, preview_only=mode != "raw", preview_steps=steps, **extra)
 
     def decide(self, search, roots, envs=None, keys=None, seat=0):
         envs = list(range(roots.envs)) if envs is None else envs
@@ -211,6 +212,104 @@ class PreviewSearchTest(unittest.TestCase):
         with duoforge.Context() as context:
             with self.assertRaises(ValueError):
                 self.make(context, mode="invalid")
+
+    def test_combinations_are_the_unordered_leads_and_backs(self):
+        self.assertEqual(preview.COMBINATIONS, 90)  # 15 bring-fours x 6 lead pairs
+        self.assertEqual(np.bincount(preview.COMBINATION).tolist(), [4] * 90)  # 2 lead orders x 2 back orders
+        for t, combination in enumerate(preview.COMBINATION.tolist()):
+            lead, back = TEAM_TABLE[t][:2], TEAM_TABLE[t][2:]
+            same = [u for u in range(360) if preview.COMBINATION[u] == combination]
+            self.assertEqual({(frozenset(TEAM_TABLE[u][:2]), frozenset(TEAM_TABLE[u][2:])) for u in same},
+                             {(frozenset(lead), frozenset(back))})
+
+    def test_distinct_merges_orderings_and_covers_every_member(self):
+        index = {tuple(t): i for i, t in enumerate(TEAM_TABLE.tolist())}
+        p = np.full(360, 1e-6)
+        # The arena's top 8 (#440): 4 orderings of Raichu + Milotic | Rillaboom + Ceruledge, 4 of Milotic + Staraptor.
+        for t, v in (((4, 2, 0, 3), .036), ((4, 2, 3, 0), .036), ((2, 4, 0, 3), .024), ((2, 4, 3, 0), .024),
+                     ((2, 1, 0, 3), .020), ((2, 1, 3, 0), .020), ((1, 2, 0, 3), .017), ((1, 2, 3, 0), .017)):
+            p[index[t]] = v
+        ids, mass = preview.distinct(p, 2)
+        self.assertEqual(ids.tolist(), [index[(4, 2, 0, 3)], index[(2, 1, 0, 3)]])  # the likeliest ordering each
+        np.testing.assert_allclose(mass, [.12, .074])  # the sums over the four orderings
+        ids, mass = preview.distinct(p, 2, cover=True)
+        brought = set(np.concatenate([TEAM_TABLE[t] for t in ids]).tolist())
+        self.assertEqual(brought, set(range(6)))  # Gholdengo (5) joins by its likeliest combination
+        self.assertEqual(ids[:2].tolist(), [index[(4, 2, 0, 3)], index[(2, 1, 0, 3)]])
+        self.assertEqual(len(set(preview.COMBINATION[ids].tolist())), len(ids))
+        self.assertTrue(all(np.diff(mass) <= 0))
+        worlds = np.stack([p, 2 * p])
+        np.testing.assert_allclose(preview.combination_probabilities(worlds, ids)[1],
+                                   2 * preview.combination_probabilities(worlds, ids)[0])
+        with self.assertRaises(honest.SearchError):
+            preview.distinct(np.zeros(1024), 2)
+        with self.assertRaises(honest.SearchError):
+            preview.distinct(-p, 2)
+        with self.assertRaises(ValueError):
+            preview.distinct(p, 0)
+
+    def test_seated_combinations_keep_the_lead_seats_and_merge_the_bench_order(self):
+        # The correction of #462's review: the lead seats are separate positions; only the bench order merges.
+        self.assertEqual(preview.SEATINGS, 180)  # 15 bring-fours x 12 ordered lead pairs
+        self.assertEqual(np.bincount(preview.SEATED).tolist(), [2] * 180)  # the 2 bench orders
+        for t, seating in enumerate(preview.SEATED.tolist()):
+            same = [u for u in range(360) if preview.SEATED[u] == seating]
+            self.assertEqual({(tuple(TEAM_TABLE[u][:2]), frozenset(TEAM_TABLE[u][2:])) for u in same},
+                             {(tuple(TEAM_TABLE[t][:2]), frozenset(TEAM_TABLE[t][2:]))})
+
+    def test_seats_keeps_both_lead_seat_orders(self):
+        index = {tuple(t): i for i, t in enumerate(TEAM_TABLE.tolist())}
+        p = np.full(360, 1e-6)
+        for t, v in (((4, 2, 0, 3), .036), ((4, 2, 3, 0), .036), ((2, 4, 0, 3), .024), ((2, 4, 3, 0), .024),
+                     ((2, 1, 0, 3), .020), ((2, 1, 3, 0), .020), ((1, 2, 0, 3), .017), ((1, 2, 3, 0), .017)):
+            p[index[t]] = v
+        ids, mass = preview.distinct(p, 4, seats=True)
+        self.assertEqual(ids.tolist(), [index[(4, 2, 0, 3)], index[(2, 4, 0, 3)], index[(2, 1, 0, 3)],
+                                        index[(1, 2, 0, 3)]])  # both seat orders of each lead pair stay
+        np.testing.assert_allclose(mass, [.072, .048, .04, .034])  # the sums over the two bench orders
+        self.assertEqual(preview.distinct(p, 2)[0].tolist(), [index[(4, 2, 0, 3)], index[(2, 1, 0, 3)]])
+        ids, _ = preview.distinct(p, 4, cover=True, seats=True)
+        self.assertEqual(set(np.concatenate([TEAM_TABLE[t] for t in ids]).tolist()), set(range(6)))
+        self.assertEqual(len(ids), 4 + 1)  # Gholdengo (5) joins by its likeliest seating
+        worlds = np.stack([p, 2 * p])
+        np.testing.assert_allclose(preview.combination_probabilities(worlds, ids[:4], seats=True)[0],
+                                   [.072, .048, .04, .034])
+
+    def test_seats_preview_decides_over_seated_combinations(self):
+        with duoforge.Context() as context, duoforge.Batch(context, duoforge.reference_setups([0]), 1, 42) as root:
+            with self.make(context, preview_width="seats") as search:
+                actions, (record,) = self.decide(search, root)
+            self.assertEqual(record["kind"], "searched")
+            self.assertEqual(record["preview_width"], "seats")
+            self.assertEqual(record["raw"], 0)  # the team head's top tuple
+            own = record["own_teams"]
+            self.assertEqual(set(np.concatenate([TEAM_TABLE[t] for t in own]).tolist()), set(range(6)))
+            self.assertEqual(len(set(preview.SEATED[own].tolist())), len(own))
+            self.assertEqual(len(set(preview.SEATED[record["foe_teams"]].tolist())), len(record["foe_teams"]))
+            self.assertEqual(record["k"], len(own))
+            self.assertEqual(int(actions[0]), record["choice"])
+
+    def test_distinct_preview_decides_over_combinations(self):
+        with duoforge.Context() as context, duoforge.Batch(context, duoforge.reference_setups([0]), 1, 42) as root:
+            with self.make(context, preview_width="distinct") as search:
+                actions, (record,) = self.decide(search, root)
+            self.assertEqual(record["kind"], "searched")
+            self.assertEqual(record["preview_width"], "distinct")
+            self.assertEqual(record["raw"], 0)  # the team head's top tuple
+            own = record["own_teams"]
+            self.assertEqual(own[:2], [0, 120])  # the toy's two combinations, then the members they leave out
+            self.assertEqual(set(np.concatenate([TEAM_TABLE[t] for t in own]).tolist()), set(range(6)))
+            self.assertEqual(len(set(preview.COMBINATION[own].tolist())), len(own))
+            self.assertEqual(len(set(preview.COMBINATION[record["foe_teams"]].tolist())), len(record["foe_teams"]))
+            self.assertEqual(record["k"], len(own))
+            self.assertEqual(int(actions[0]), record["choice"])
+            with self.make(context) as top:
+                _, (plain,) = self.decide(top, root)
+            self.assertNotIn("preview_width", plain)
+            with self.assertRaisesRegex(ValueError, "preview_width"):
+                self.make(context, preview_width="wide")
+            with self.assertRaisesRegex(ValueError, "preview_width"):
+                self.make(context, mode="raw", preview_width="distinct")
 
     def test_private_measurement_smoke_pairs_modes_and_counts_actual_baseline_changes(self):
         with tempfile.TemporaryDirectory(prefix="duoforge_preview_ab_") as temp, duoforge.Context() as context:

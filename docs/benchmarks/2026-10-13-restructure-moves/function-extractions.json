@@ -1,0 +1,134 @@
+[
+  {
+    "function": "dfi_move_first_turn_only",
+    "old_file": "src/combat/move_rules.h",
+    "old_first_line": 19,
+    "old_last_line": 22,
+    "new_file": "src/combat/moves/first_turn_only.h",
+    "new_first_line": 14,
+    "new_last_line": 17,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_move_power_by_weight",
+    "old_file": "src/combat/move_rules.h",
+    "old_first_line": 27,
+    "old_last_line": 30,
+    "new_file": "src/combat/moves/weight_power.h",
+    "new_first_line": 12,
+    "new_last_line": 15,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_weight_power",
+    "old_file": "src/combat/move_rules.h",
+    "old_first_line": 32,
+    "old_last_line": 40,
+    "new_file": "src/combat/moves/weight_power.h",
+    "new_first_line": 17,
+    "new_last_line": 25,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_heavy_slam_power",
+    "old_file": "src/combat/move_rules.h",
+    "old_first_line": 44,
+    "old_last_line": 53,
+    "new_file": "src/combat/moves/weight_power.h",
+    "new_first_line": 29,
+    "new_last_line": 38,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_hard_press_power",
+    "old_file": "src/combat/move_rules.h",
+    "old_first_line": 57,
+    "old_last_line": 62,
+    "new_file": "src/combat/moves/hp_power.h",
+    "new_first_line": 11,
+    "new_last_line": 16,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_multihit_count",
+    "old_file": "src/combat/multihit_count.h",
+    "old_first_line": 12,
+    "old_last_line": 16,
+    "new_file": "src/combat/moves/multihit.h",
+    "new_first_line": 14,
+    "new_last_line": 18,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_move_hits",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 6047,
+    "old_last_line": 6054,
+    "new_file": "src/combat/moves/multihit.h",
+    "new_first_line": 22,
+    "new_last_line": 29,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_multiaccuracy_proven",
+    "old_file": "src/combat/multiaccuracy.h",
+    "old_first_line": 19,
+    "old_last_line": 22,
+    "new_file": "src/combat/moves/multiaccuracy.h",
+    "new_first_line": 19,
+    "new_last_line": 22,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_power_trip_positive_stages",
+    "old_file": "src/combat/power_trip.h",
+    "old_first_line": 16,
+    "old_last_line": 25,
+    "new_file": "src/combat/moves/power_trip.h",
+    "new_first_line": 16,
+    "new_last_line": 25,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_tri_attack_chance_hit",
+    "old_file": "src/combat/secondary_rolls.h",
+    "old_first_line": 14,
+    "old_last_line": 17,
+    "new_file": "src/combat/moves/tri_attack.h",
+    "new_first_line": 14,
+    "new_last_line": 17,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_is_ohko",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 1561,
+    "old_last_line": 1564,
+    "new_file": "src/combat/moves/ohko.h",
+    "new_first_line": 12,
+    "new_last_line": 15,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  },
+  {
+    "function": "dfi_beat_up_hits",
+    "old_file": "src/combat/turn.c",
+    "old_first_line": 6098,
+    "old_last_line": 6116,
+    "new_file": "src/combat/moves/beat_up.h",
+    "new_first_line": 14,
+    "new_last_line": 32,
+    "body_byte_equal": true,
+    "baseline_sha": "fbc8b24f"
+  }
+]

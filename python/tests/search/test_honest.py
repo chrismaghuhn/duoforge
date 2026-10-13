@@ -15,7 +15,8 @@ import duoforge
 from duoforge import _layout, features, privileged, state_layout, view
 
 from python.tests.support._pivot_fixture import SETUP, play_to_pivot
-from duoforge_search import arena, belief, honest
+from duoforge_learn.selfplay import TEAM_TABLE
+from duoforge_search import arena, belief, honest, preview
 from python.tests.search.test_search import _v2s
 from python.tests.search import test_search as search_tests
 
@@ -362,6 +363,24 @@ class HonestSearch(unittest.TestCase):
             searched += 1
         self.assertGreater(searched, 0)
 
+    def test_the_default_preview_width_previews_as_on_main(self):
+        # Arm 1bw (#440) adds preview_width. Without it, and with "top" named, the value and turn-1 previews of A/B/C
+        # are main's at 0a5db340 bit for bit: the pinned choices, candidates and tables, no preview_width field.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            pool = duoforge.teams.load(ctx, ["A", "B", "C"])
+            table = belief.SpreadTable.from_sides(pool.sides)
+            setups = pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0]))
+            for mode, pin in PINNED_PREVIEWS.items():
+                for width in ({}, {"preview_width": "top"}):
+                    with self.subTest(mode=mode, **width), duoforge.Batch(ctx, setups, 2, 42) as roots,                             self.make(ctx, table=table, excluded=[1, 2, 0], preview_mode=mode, **width) as search:
+                        actions, records = self.preview(search, roots)
+                        self.assertEqual(np.asarray(actions).tolist(), pin["actions"])
+                        self.assertEqual([r["own_teams"] for r in records], pin["own"])
+                        self.assertEqual([r["foe_teams"] for r in records], pin["foe"])
+                        for r, tables in zip(records, pin["tables"]):
+                            self.assertEqual(sorted(r), PINNED_PREVIEW_FIELDS)
+                            np.testing.assert_allclose(r["tables"], tables, rtol=0, atol=1e-6)
+
     def test_pinned_abc_decisions(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             pool = duoforge.teams.load(ctx, ["A", "B", "C"])
@@ -515,6 +534,15 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual({k: v for k, v in drop[0].items() if k not in ("refused_pairs", "cost", "time")},
                              {k: v for k, v in score[0].items() if k not in ("cost", "time")})
 
+    def test_a_search_above_the_lp_size_limit_is_refused_when_built(self):
+        # #440: the exact rescue is known to finish up to 129 rows and 32 variables; one candidate solves nothing
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            for k, m, s in ((16, 16, 16), (8, 8, 32), (17, 8, 16)):
+                with self.subTest(k=k, m=m, s=s), self.assertRaisesRegex(ValueError, "above the limit"):
+                    honest.Honest(ctx, self.model, self.params, 4, 0, k=k, m=m, s=s)
+            with honest.Honest(ctx, self.model, self.params, 4, 0, k=1, m=64, s=4, capacity=16, workers=1):
+                pass
+
     def test_refused_mode_must_be_score_or_drop(self):
         costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
@@ -581,9 +609,13 @@ class HonestSearch(unittest.TestCase):
         # c = e (tail byte) and counter 3 - e (the true start 3 less the count). Each world that the search rebuilds
         # from the root's sample carries the exact law: S = 2 when the sleep word is in bucket 0 of 3 (for c in {0, 1}),
         # else 3; for c = 2, S = 3. The counter read from the world's encoding is S - c.
+        # The S = 2 split needs WORLDS worlds. Their 2 x 2 tables have a tableau of 25,284 cells, above the size limit of
+        # #440 (b-k16's 20,898). The limit is not under test here, so it is raised to this search's size.
         offs = {name: start for name, start, _ in state_layout.fields()}
+        _, _, cells = honest.matrix.bayes_size(2, 2, WORLDS)
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 3), 3, 42) as b, \
+                mock.patch.object(honest.matrix, "MAX_BAYES_CELLS", cells), \
                 self.make(ctx, s=WORLDS) as search:
             self.preview(search, b)
             self.start_turn(b)
@@ -968,6 +1000,55 @@ class HonestSearch(unittest.TestCase):
         self.assertTrue(rollout_main, "the main network was not called on the rollout's player seat")
         self.assertEqual(len(rollout_foe), len(rollout_main))  # one foe-seat call for each player-seat call
 
+    def test_a_distinct_turn1_preview_with_a_foe_net_covers_every_member(self):
+        # The preview width (owner, 2026-10-13) on step 1b's search: distinct combinations on both sides, the own side
+        # bringing every member, the rollout's foe seat still played by the foe network. "seats" (1bws) the same, with
+        # the lead seats kept.
+        groups = {"distinct": preview.COMBINATION, "seats": preview.SEATED}
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            foe_net = self.encoder3_net(ctx)
+            with self.make(ctx, foe_net=foe_net, preview_mode="turn1", preview_rule="ev") as top:
+                _, (narrow,) = self.preview(top, b)
+            records = {}
+            for width in groups:
+                with self.make(ctx, foe_net=foe_net, preview_mode="turn1", preview_rule="ev",
+                               preview_width=width) as wide:
+                    _, (records[width],) = self.preview(wide, b)
+        for width, group in groups.items():
+            with self.subTest(width=width):
+                record = records[width]
+                self.assertEqual((narrow["kind"], record["kind"]), ("searched", "searched"))
+                self.assertEqual(record["raw"], narrow["raw"])
+                self.assertEqual(record["preview_width"], width)
+                own, foe = record["own_teams"], record["foe_teams"]
+                self.assertEqual(set(np.concatenate([TEAM_TABLE[t] for t in own]).tolist()), set(range(6)))
+                self.assertEqual(len(set(group[own].tolist())), len(own))
+                self.assertEqual(len(set(group[foe].tolist())), len(foe))
+                self.assertIn(record["choice"], own)
+
+    def test_a_distinct_preview_above_the_lp_size_limit_stops_by_name(self):
+        # #440: the cover adds up to preview.COVER_MAX own rows, so the build checks k + 2; a limit between k and k + 2
+        # refuses the widened previews only ("distinct" and "seats"). Each preview's own table is checked again before
+        # its rollouts. With k = 1 the preview plays raw, so a widened one is refused.
+        _, _, at_k = honest.matrix.bayes_size(2, 2, 2)
+        _, _, at_most = honest.matrix.bayes_size(2 + preview.COVER_MAX, 2, 2)
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            for width in ("distinct", "seats"):
+                with self.subTest(width=width):
+                    with mock.patch.object(honest.matrix, "MAX_BAYES_CELLS", at_most - 1):
+                        with self.make(ctx, preview_mode="turn1"):
+                            pass
+                        with self.assertRaisesRegex(ValueError, f"the {width} preview.*above the limit"):
+                            self.make(ctx, preview_mode="turn1", preview_width=width)
+                    with self.make(ctx, preview_mode="turn1", preview_width=width) as wide:
+                        with mock.patch.object(honest.matrix, "MAX_BAYES_CELLS", at_k - 1), \
+                                self.assertRaisesRegex(honest.SearchError, "this preview's table.*above the limit"):
+                            self.preview(wide, b)
+                    with self.assertRaisesRegex(ValueError, "k > 1"):
+                        self.make(ctx, k=1, preview_mode="turn1", preview_width=width)
+
     def test_rollout_masks_must_agree(self):
         # Step 1b (#440): the foe seat's pair is chosen from the foe encoding's legal mask; a mask the main encoding
         # gives the same asked foe seat differently stops the decision, as _prepare does, and nothing is picked from either.
@@ -1113,6 +1194,213 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual(calls, 256)
             for name in ("public_view", "preview", "turn_start", "exclude_team", "search_seed"):
                 self.assertIn(name, stopped.exception.reproduction)
+
+
+class WorldRecords(unittest.TestCase):
+    """Closed team sheets (decision 0081): the search builds world w from particle w's own record."""
+    make = HonestSearch.make
+    preview = HonestSearch.preview
+    start_turn = HonestSearch.start_turn
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model, cls.params = _v2s()
+
+    @staticmethod
+    def swapped_items():
+        """The reference setup 0 and a copy whose foe (seat 1) members 0 and 1 hold each other's items: the same
+        species, so the same team preview, and two different open sheets."""
+        ref = duoforge.reference_setups([0])
+        other = ref.copy()
+        members = other["sides"][0][1]["members"]
+        members[0]["item"], members[1]["item"] = int(members[1]["item"]), int(members[0]["item"])
+        return np.concatenate([ref, other])
+
+    @staticmethod
+    def set_roots(roots, b, search, worlds, seat=0, past=None):
+        """Seat `seat` of b's environment 0 as the root of roots, with worlds' environments as its world records
+        (None: one record for every world). past (a list per world) collects each world's (record, status) at every
+        decision point, its history. Returns the batch's records of the seat and its encoded rows."""
+        b.query_factored()
+        obs, slots, pairs = b.query_encoded(search.encoder, search.ext_supported)
+        records, statuses = (x.copy() for x in b.public(np.full(b.envs, seat, np.uint32)))
+        causes, _ = b.public_causes(np.full(b.envs, seat, np.uint32))
+        roots.set(0, seat, request=b.requests[0, seat], observation=b.observations[0, seat], obs=obs[0, seat],
+                  slots=slots[0, seat], pairs=pairs[0, seat], record=records[0], status=int(statuses[0]),
+                  episode=b.episode(0), causes=int(causes[0]))
+        if worlds is not None:
+            past = [[] for _ in worlds] if past is None else past
+            for w, e in enumerate(worlds):
+                past[w].append((records[e].copy(), int(statuses[e])))
+            roots.set_worlds(0, seat, records=records[worlds], statuses=statuses[worlds], causes=causes[worlds],
+                             observations=b.observations[worlds, seat], obs=obs[worlds, seat],
+                             slots=slots[worlds, seat], histories=past)
+        return records, obs, slots, pairs
+
+    def test_sample_worlds_draws_each_world_for_its_own_roster(self):
+        table = belief.SpreadTable.from_sides(duoforge.reference_setups([0, 1, 2, 3])["sides"].reshape(-1), min_sets=1)
+        rows = [(int(table.species[i]), int(table.nature[i]), int(table.item[i])) for i in range(6)]
+        a, b = rows[:3], rows[3:]
+        draws = belief.Belief(table)
+        for key in (1, 2, 99):
+            alone = draws.sample(a, 3, 7, key)
+            same = draws.sample_worlds([a, a, a], 7, key)
+            for name in alone:
+                np.testing.assert_array_equal(same[name], alone[name], name)
+            mixed = draws.sample_worlds([a, b], 7, key)
+            np.testing.assert_array_equal(mixed["stat_points"][0], draws.sample(a, 2, 7, key)["stat_points"][0])
+            np.testing.assert_array_equal(mixed["stat_points"][1], draws.sample(b, 2, 7, key)["stat_points"][1])
+
+    def test_worlds_of_one_record_decide_as_that_record(self):
+        # Open sheets stay as they were: every world given the one record decides as the record alone, bit for bit.
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                self.make(ctx) as search, self.make(ctx) as twin:
+            one, worlds, past = RecordRoots(1), RecordRoots(1), [[], []]
+            for turn in (False, True):
+                if turn:
+                    self.start_turn(b)
+                self.set_roots(one, b, search, None)
+                self.set_roots(worlds, b, twin, [0, 0], past=past)
+                want, want_records = search.decide(one, [0], [0], [456], [False])
+                got, got_records = twin.decide(worlds, [0], [0], [456], [False])
+                np.testing.assert_array_equal(got, want)
+                self.assertEqual(got_records[0]["kind"], "searched" if turn else "team")
+                for name in ("kind", "choice", "own_pairs", "own_probs", "foe_pairs", "foe_probs", "weights",
+                             "tables", "outcomes", "respreads"):
+                    self.assertEqual(got_records[0].get(name), want_records[0].get(name), name)
+
+    def test_each_world_is_built_from_its_own_record(self):
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            self.preview(search, roots)
+            self.start_turn(b)
+            records, obs, slots, pairs = self.set_roots(roots, b, search, [0, 1], past=past)
+            self.assertNotEqual(records[0].tobytes(), records[1].tobytes())  # the open sheets differ
+            built = []
+            real = search.worlds.from_view
+
+            def from_view(views, hypotheses):
+                built.append(np.array(views, copy=True))
+                return real(views, hypotheses)
+            with mock.patch.object(search.worlds, "from_view", side_effect=from_view):
+                _, out = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual(out[0]["kind"], "searched")
+            self.assertEqual([v.tobytes() for v in built[0]], [past[0][0][0].tobytes(), past[1][0][0].tobytes()])
+            self.assertEqual([v.tobytes() for v in built[-1]], [records[0].tobytes(), records[1].tobytes()])
+            # The root's own candidates: the mean of the policy over the worlds' rows, which differ here.
+            self.assertFalse(np.array_equal(obs[0, 0], obs[1, 0]))
+            logp, _, _ = search._policy(obs[:, 0], slots[:, 0], np.repeat(pairs[:1, 0], 2, axis=0))
+            mean = np.exp(logp.astype(np.float64)).mean(axis=0)
+            np.testing.assert_allclose(out[0]["own_probs"], mean[out[0]["own_pairs"]], rtol=1e-12)
+            legal = np.flatnonzero(pairs[0, 0].reshape(-1))
+            best = legal[np.argsort(-mean[legal], kind="stable")[:len(out[0]["own_pairs"])]]
+            self.assertEqual(out[0]["own_pairs"], best.tolist())
+
+    def test_a_world_redrawn_since_the_preview_brings_its_own_preview_record(self):
+        # Review of #385 step 4: a particle drawn anew is another world. Its team-preview record is the new particle's
+        # (its history), never the record the search kept from the particle it replaced.
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            self.preview(search, roots)
+            self.start_turn(b)
+            redrawn = [[], []]  # world 1 is now environment 0's particle: its whole history is environment 0's
+            redrawn[0].append(past[0][0])
+            redrawn[1].append(past[0][0])
+            self.set_roots(roots, b, search, [0, 0], past=redrawn)
+            built = []
+            real = search.worlds.from_view
+
+            def from_view(views, hypotheses):
+                built.append(np.array(views, copy=True))
+                return real(views, hypotheses)
+            with mock.patch.object(search.worlds, "from_view", side_effect=from_view):
+                _, out = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual(out[0]["kind"], "searched")
+            self.assertNotEqual(past[0][0][0].tobytes(), past[1][0][0].tobytes())
+            self.assertEqual([v.tobytes() for v in built[0]], [past[0][0][0].tobytes()] * 2)
+
+    def test_queue_masks_are_taken_per_world_once_per_distinct_pair(self):
+        # A PIVOT with a foe command pending is refused since the view audit of 2026-10-10, so no live record reaches
+        # the queue mask today; the per-world masks are pinned on their own: world w's from its own two records.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            b.query_factored()
+            records, _ = (x.copy() for x in b.public(np.zeros(2, np.uint32)))
+            calls = []
+
+            def queue_mask(context, start, record):
+                calls.append((start.tobytes(), record.tobytes()))
+                return np.full((32, 32), len(calls) % 2 == 1)
+            with mock.patch.object(duoforge, "queue_mask", side_effect=queue_mask):
+                masks = search._queue_masks(records[[0, 1]], records[[0, 1]])
+                self.assertEqual(calls, [(r.tobytes(), r.tobytes()) for r in records[[0, 1]]])
+                self.assertTrue(masks[0].all() and not masks[1].any())
+                calls.clear()
+                masks = search._queue_masks(records[[1, 1]], records[[1, 1]])
+                self.assertEqual(len(calls), 1)  # one call for the worlds of one pair of records
+                self.assertTrue(np.array_equal(masks[0], masks[1]))
+
+    def test_a_world_without_its_preview_record_is_unreconstructible(self):
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            self.preview(search, roots)
+            self.start_turn(b)
+            past[1].clear()  # world 1's history lacks the team preview
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            _, out = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual((out[0]["kind"], out[0]["reason"]), ("unreconstructible", "missing team-preview record"))
+
+    def test_a_world_record_the_engine_refuses_is_unreconstructible_by_its_causes(self):
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            self.preview(search, roots)
+            self.start_turn(b)
+            records, obs, slots, _ = self.set_roots(roots, b, search, [0, 1], past=past)
+            refused = np.array([0, C["DUOFORGE_E_UNSUPPORTED"]], np.uint32)
+            causes = np.array([0, C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"]], np.uint32)
+            roots.set_worlds(0, 0, records=records[[0, 1]], statuses=refused, causes=causes,
+                             observations=b.observations[[0, 1], 0], obs=obs[[0, 1], 0], slots=slots[[0, 1], 0],
+                             histories=past)
+            _, out = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual(out[0]["kind"], "unreconstructible")
+            self.assertEqual(out[0]["causes"], ["visible_sleep"])
+
+    def test_worlds_disagreeing_on_a_public_field_or_their_count_are_named(self):
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            self.preview(search, roots)
+            self.start_turn(b)
+            records, obs, slots, _ = self.set_roots(roots, b, search, [0, 1], past=past)
+            records = records.copy()
+            records[1]["foe_seen_mask"] ^= 1 << 5
+            roots.set_worlds(0, 0, records=records[[0, 1]], statuses=np.zeros(2), causes=np.zeros(2),
+                             observations=b.observations[[0, 1], 0], obs=obs[[0, 1], 0], slots=slots[[0, 1], 0],
+                             histories=past)
+            with self.assertRaisesRegex(honest.SearchError, "disagree on the public field foe_seen_mask"):
+                search.decide(roots, [0], [0], [456], [False])
+            three = [0, 1, 1]
+            roots.set_worlds(0, 0, records=records[three], statuses=np.zeros(3), causes=np.zeros(3),
+                             observations=b.observations[three, 0], obs=obs[three, 0], slots=slots[three, 0],
+                             histories=past + past[1:])
+            with self.assertRaisesRegex(ValueError, "3 world records for 2 worlds"):
+                search.decide(roots, [0], [0], [456], [False])
 
 
 class LiveModelPolicy(unittest.TestCase):
@@ -1573,6 +1861,33 @@ PINNED_TABLES = [
      [[0.0020258380100131035, 0.0020160749554634094], [0.0013299547135829926, 0.0013069864362478256]]],
     [[[0.0012448998168110847, 0.0012224335223436356], [0.003726405091583729, 0.0037659434601664543]],
      [[0.0012306282296776772, 0.0012039029970765114], [0.0037127695977687836, 0.0029854867607355118]]],
+]
+
+
+# main's A/B/C previews at 0a5db340 (test_the_default_preview_width_previews_as_on_main), tables to 7 places.
+PINNED_PREVIEWS = {
+    "value": {"actions": [149, 89, 62], "own": [[149, 154], [89, 94], [62, 69]],
+              "foe": [[85, 90], [65, 70], [204, 207]],
+              "tables": [
+                  [[[-0.0006192, -0.0006192], [-0.0006192, -0.0006192]],
+                   [[-0.0006192, -0.0006192], [-0.0006192, -0.0006192]]],
+                  [[[0.0008383, 0.0008383], [0.0008383, 0.0008383]], [[0.0008383, 0.0008383], [0.0008383, 0.0008383]]],
+                  [[[0.0026269, 0.0026269], [0.0026269, 0.0026269]], [[0.0026269, 0.0026269], [0.0026269, 0.0026269]]],
+              ]},
+    "turn1": {"actions": [149, 89, 62], "own": [[149, 154], [89, 94], [62, 69]],
+              "foe": [[85, 90], [65, 70], [204, 207]],
+              "tables": [
+                  [[[-0.0019022, -0.0019022], [-0.0019022, -0.0019022]],
+                   [[-0.0022884, -0.0022884], [-0.0022884, -0.0022884]]],
+                  [[[0.0008994, 0.0008994], [0.0008994, 0.0008994]], [[0.0026048, 0.0026048], [0.0026048, 0.0026048]]],
+                  [[[0.0030818, 0.0030818], [0.0030818, 0.0030818]], [[0.0030818, 0.0030818], [0.0030818, 0.0030818]]],
+              ]},
+}
+PINNED_PREVIEW_FIELDS = [
+    "boundary", "certificate_gap", "changed", "choice", "cost", "coverage", "env", "epoch", "exact", "expected",
+    "foe_probs", "foe_teams", "k", "key", "kind", "lam", "last_step", "leaves", "m", "near_duplicates", "outcomes",
+    "own_probs", "own_teams", "pi_X", "preview_eval", "raw", "rollout_steps_limit", "rule", "s", "search", "seat",
+    "split", "stderr", "support", "table", "table_sha256", "tables", "time", "u", "value", "w", "weights", "x", "ys",
 ]
 
 

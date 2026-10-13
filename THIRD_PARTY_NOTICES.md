@@ -58,6 +58,11 @@ The team registry holds Pokémon Champions teams that players published. The set
 - **What is committed:** only the derived table, never the raw files (owner, 2026-10-12). Per species, it holds the stat-point spreads of the highest cutoff with enough weight, at most 32 of them, as whole draws.
 - **Regenerating:** `python -m duoforge_search.smogon_spreads --stats DIR` builds the table from a cache of the raw files. `--fetch` downloads a missing one, and `--check` verifies the committed table.
 
+`data/belief/smogon-sets-regmc-2026-09.json` is derived from the same files, the same way credited. The closed-sheet search draws a foe's whole sets from it (decision 0081).
+
+- **What is committed:** only the derived table, never the raw files. Per species, it holds whole sets of the team registry (`data/teams`), reweighted toward Smogon's item, ability, nature and move shares. Sets drawn from those shares fill a species the registry covers thinly. At most 128 sets per species, as whole draws.
+- **Regenerating:** `python -m duoforge_search.smogon_sets --stats DIR` (the same cache, `--fetch` and `--check`).
+
 ## Smogon dex VGC sets (`data/book/`)
 
 `data/book/smogon-dex-vgc-2026-10.json` is derived from [Smogon's Champions dex](https://www.smogon.com/dex/champions/). With thanks to Smogon and its VGC analysis writers. It checks the archetype tag table (`data/book/archetype-tags.json`) against the roles Smogon's sets are named for (issue #458).

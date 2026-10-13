@@ -1,6 +1,6 @@
 /*
  * duoforge.combat.move_rules (white-box): the rules that several moves share
- * (src/combat/move_rules.h, step G10) against literal values written from
+ * (src/combat/moves/families.h, step G10) against literal values written from
  * the pinned handlers.
  *
  * Fake Out and First Impression are the moves of the first-turn rule, no
@@ -14,10 +14,12 @@
 
 #include <duoforge/duoforge.h>
 
-#include "combat/move_rules.h"
+#include "combat/moves/families.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "support/check.h"
+#include "combat/moves/special_handlers.h"
+#include "support/special_predicates.h"
 
 int main(void)
 {
@@ -97,5 +99,23 @@ int main(void)
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_SCALD] != 0u);
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_RECOVER] != 0u);
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_LOWKICK] != 0u);
+    /* Frozen, independently retained turn.c@657dae45 predicates. Every defined
+     * special and every remaining value of the uint8_t storage column is checked. */
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COUNT, 122u);
+    uint32_t permitted = 0u;
+    uint32_t status_hit = 0u;
+    for (uint32_t special = 0u; special <= UINT8_MAX; ++special) {
+        const bool guard = dfi_move_special_has_handler(special);
+        const bool status = dfi_move_special_status_hit(special);
+        DF_CHECK(&t, guard == df_test_old_special_guard(special));
+        DF_CHECK(&t, status == df_test_old_status_hit(special));
+        permitted += guard ? 1u : 0u;
+        status_hit += status ? 1u : 0u;
+    }
+    DF_CHECK_EQ_U64(&t, permitted, 96u);
+    DF_CHECK_EQ_U64(&t, status_hit, 18u);
+    DF_CHECK(&t, !dfi_move_special_has_handler(UINT32_MAX));
+    DF_CHECK(&t, !dfi_move_special_status_hit(UINT32_MAX));
+    printf("  special guards: 122 defined / 256 storage values, 96 late handlers, 18 status hits\n");
     return df_test_end(&t);
 }

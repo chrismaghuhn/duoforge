@@ -18,9 +18,9 @@ from unittest import mock
 import duoforge
 from duoforge import _layout, features
 
-from duoforge_live import data, pkmn_arena, policy as live_policy, search as live_search
+from duoforge_live import cts, data, pkmn_arena, policy as live_policy, search as live_search
 from python.tests.live.test_live_client import FIXTURE
-from python.tests.live.test_pkmn_arena import ENV, NAME, OTS, ROOM, battle_messages, request_of
+from python.tests.live.test_pkmn_arena import CTS, ENV, NAME, OTS, ROOM, battle_messages, request_of
 
 C = _layout.CONSTANTS
 
@@ -54,9 +54,9 @@ class ArenaNetworkTest(unittest.TestCase):
         self.addCleanup(self.logs.cleanup)
         self.sent = []
 
-    def play(self, search=None):
+    def play(self, search=None, fmt=OTS, messages=None):
         net, tables = live_policy.load(self.path), data.for_checkpoint(self.path)
-        bot = pkmn_arena.ArenaBot(NAME, tables, net, self.logs.name, OTS, team_text=FIXTURE["team"], search=search,
+        bot = pkmn_arena.ArenaBot(NAME, tables, net, self.logs.name, fmt, team_text=FIXTURE["team"], search=search,
                                   mode="raw" if search is None else "honest")
         self.addCleanup(bot.close)
 
@@ -65,7 +65,7 @@ class ArenaNetworkTest(unittest.TestCase):
 
         async def go():
             bot.connection = type("Socket", (), {"send": staticmethod(send)})()
-            for m in battle_messages():
+            for m in messages or battle_messages():
                 await bot.handle(m)
         with contextlib.redirect_stderr(io.StringIO()):
             asyncio.run(go())
@@ -125,6 +125,29 @@ class ArenaNetworkTest(unittest.TestCase):
         self.assertIn("searched", [o["cause"] for o in outcomes], outcomes)
         self.assertFalse([o for o in outcomes if o["fallback"] == "b"], outcomes)
         self.assertEqual(dict(bot.run_log.fallback_battles), {})
+        self.assertNotIn("default", " ".join(self.chosen()))
+
+    def test_an_honest_search_over_the_particles_of_a_closed_sheet_battle(self):
+        # Decision 0081 (#385 step 4): the CTS format played with the live search, its 16 worlds built from the 16
+        # particles' own records (assembled by the tracker, each checked by the search's round trip), the foe modelled
+        # by the foe network: the turns are searched and nothing falls back.
+        foe, _ = pkmn_arena.load_foe_net(self.path, pkmn_arena.sha256_of(self.path))
+        live = live_search.load(self.path, dict(live_search.HONEST_SETTINGS, foe_net=foe))
+        self.assertEqual(live.searcher.s, cts.PARTICLES)
+        room_id = f"battle-{CTS}-8"
+        messages = [m.replace(ROOM, room_id) for m in battle_messages()]
+        messages = ["\n".join(line for line in m.split("\n") if not line.startswith("|showteam|")) for m in messages]
+        with mock.patch.object(live_search, "DEADLINE_CAP", 120.0):  # the first decisions compile the networks
+            bot = self.play(search=live, fmt=CTS, messages=messages)
+        text = Path(self.logs.name, f"{room_id}-tiansuan.jsonl").read_text(encoding="utf-8")
+        outcomes = [json.loads(line)["search"] for line in text.splitlines() if '"search"' in line]
+        self.assertEqual(len(outcomes), 4)
+        self.assertEqual(outcomes[0]["cause"], "team")
+        self.assertIn("searched", [o["cause"] for o in outcomes[1:]], outcomes)
+        self.assertFalse([o for o in outcomes if o["fallback"] == "b"], outcomes)
+        self.assertIsNone(bot.paused)
+        self.assertEqual(dict(bot.run_log.fallback_battles), {})
+        self.assertEqual(bot.run_log.cts["battles"], 1)
         self.assertNotIn("default", " ".join(self.chosen()))
 
 

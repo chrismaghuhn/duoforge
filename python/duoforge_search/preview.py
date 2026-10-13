@@ -5,7 +5,7 @@ import numpy as np
 
 import duoforge
 from duoforge import _layout, view
-from duoforge_learn.selfplay import TEAM_TABLE
+from duoforge_learn.selfplay import BROUGHT, ROSTER, TEAM_TABLE
 
 from . import lookahead, matrix, seeds
 from .errors import SearchError
@@ -19,6 +19,75 @@ def top(logp, count):
         raise SearchError("preview policy must give finite probabilities over the 360 team tuples")
     ids = np.argsort(-logp, kind="stable")[:count]
     return ids, np.exp(logp[ids])
+
+
+# The preview candidates' width (#440, owner 2026-10-13): "top", the top tuples of the team head; "distinct", one tuple
+# per bring-and-lead combination (the leads and the two behind them, each unordered: 90 combinations), the own side
+# covering every member of the team. An approximation, not an equality: the two lead seats are separate positions in
+# battle and in the network's input, so merging the seat orders drops candidates that can play differently. Only the
+# bench order was meant to merge (review of #462); "distinct" stays as measured. "seats" is the corrected width: the
+# same, with the lead seats kept (180 combinations), so only the bench order merges.
+WIDTHS = ("top", "distinct", "seats")
+
+
+def _combinations(seats=False):
+    """Each tuple's combination index: its (lead pair, back pair), the back pair unordered and the lead pair unordered
+    too unless seats (then its seat order is kept), numbered in sorted order."""
+    keys = [(tuple(t[:2]) if seats else tuple(sorted(t[:2])), tuple(sorted(t[2:]))) for t in TEAM_TABLE.tolist()]
+    index = {key: i for i, key in enumerate(sorted(set(keys)))}
+    return np.array([index[key] for key in keys], np.int64), len(index)
+
+
+COMBINATION, COMBINATIONS = _combinations()  # 90 combinations of the 360 tuples
+SEATED, SEATINGS = _combinations(seats=True)  # 180: the lead seats kept, the bench order merged
+COVER_MAX = ROSTER - BROUGHT  # the members a combination leaves out: the cover adds at most this many own candidates
+
+
+def _grouping(seats):
+    """(each tuple's combination index, the number of combinations) of width "seats" (seats) or "distinct"."""
+    return (SEATED, SEATINGS) if seats else (COMBINATION, COMBINATIONS)
+
+
+def distinct(probabilities, count, cover=False, seats=False):
+    """The candidates of one side by combination: (tuple ids, their combinations' probabilities). A combination's
+    probability is the sum over its orderings (bench order and lead seats), its tuple the likeliest ordering (equal
+    values to the lower id), so no two candidates differ only in order. Merging the lead seats is an approximation:
+    the seats differ in battle, and the swapped tuple is not evaluated. With seats the lead seats are kept and only the
+    bench order merges (width "seats", review of #462). The count likeliest combinations (equal sums to
+    the lower tuple id); with cover, for each of the six members no candidate brings, the likeliest combination that
+    brings it is added. Ranked by the combinations' probabilities. probabilities: (360,) or (W, 360), the latter summed
+    over its first axis for the ranking."""
+    p = np.asarray(probabilities, np.float64)
+    if p.shape[-1:] != (len(TEAM_TABLE),) or p.ndim not in (1, 2) or not np.isfinite(p).all() or (p < 0).any():
+        raise SearchError("a distinct preview needs finite probabilities over the 360 team tuples")
+    if int(count) < 1:
+        raise ValueError(f"count must be at least 1 (got {count})")
+    rank = p if p.ndim == 1 else p.sum(axis=0)
+    group, groups = _grouping(seats)
+    mass = np.zeros(groups)
+    np.add.at(mass, group, rank)
+    order = np.lexsort((np.arange(len(TEAM_TABLE)), -rank))  # likeliest tuple first, ties to the lower id
+    best = np.full(groups, -1, np.int64)
+    for t in order:
+        if best[group[t]] < 0:
+            best[group[t]] = t
+    ranked = best[np.lexsort((best, -mass))]  # likeliest combination first, ties to its tuple's lower id
+    chosen = set(ranked[:int(count)].tolist())
+    if cover:
+        for member in range(ROSTER):
+            if not any(member in TEAM_TABLE[t] for t in chosen):
+                chosen.add(int(next(t for t in ranked if member in TEAM_TABLE[t])))
+    ids = np.array([t for t in ranked if t in chosen], np.int64)
+    return ids, mass[group[ids]]
+
+
+def combination_probabilities(probabilities, ids, seats=False):
+    """(W, len(ids)): each world's probability of each candidate's combination, the sum over its orderings."""
+    p = np.asarray(probabilities, np.float64)
+    group, groups = _grouping(seats)
+    mass = np.zeros((p.shape[0], groups))
+    np.add.at(mass, (slice(None), group), p)
+    return mass[:, group[np.asarray(ids)]]
 
 
 def rollout(search, n, player, steps, costs):
@@ -98,8 +167,11 @@ def rollout(search, n, player, steps, costs):
 
 
 def decide(search, record, observation, player, key, logp_team, excluded, last_step, costs):
-    """Own top K; foe top M by mean sampled-world team probability.
-    Columns keep the same roster tuple across worlds; no true foe row is read.
+    """The preview's table and choice. Width "top": the own top K tuples of the team head and the foe's top M by mean
+    sampled-world team probability. Widths "distinct" and "seats": the own K likeliest combinations plus the cover
+    (at most K + COVER_MAX), the foe's M likeliest without it, each combination played by its likeliest tuple
+    (distinct). The table's size is checked against the LP limit before any rollout. Columns keep the same roster
+    tuple across worlds; no true foe row is read.
     """
     from .honest import reduce
     if int(record["boundary"]) != C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
@@ -121,13 +193,25 @@ def decide(search, record, observation, player, key, logp_team, excluded, last_s
     costs["team_head"] += seconds
     if not all(np.array_equal(obs[w, player], obs[0, player]) for w in range(search.s)):
         raise SearchError("preview own row differs across worlds")
-    own, own_probs = top(logp_team, search.k)
     probabilities = np.exp(team[:, foe].astype(np.float64))
     if not np.isfinite(probabilities).all():
         raise SearchError("foe preview policy is not finite")
     mean = np.sum(sampled["weights"][:, None] * probabilities, axis=0)
-    other = np.argsort(-mean, kind="stable")[:search.m]
-    qs = probabilities[:, other]
+    if search.preview_width in ("distinct", "seats"):
+        seats = search.preview_width == "seats"
+        top(logp_team, 1)  # the same finiteness check as the top width
+        own, own_probs = distinct(np.exp(np.asarray(logp_team, np.float64)), search.k, cover=True, seats=seats)
+        other, _ = distinct(mean, search.m, seats=seats)
+        qs = combination_probabilities(probabilities, other, seats=seats)
+    else:
+        own, own_probs = top(logp_team, search.k)
+        other = np.argsort(-mean, kind="stable")[:search.m]
+        qs = probabilities[:, other]
+    raw = int(np.argmax(np.asarray(logp_team, np.float64)))  # the raw choice: the team head's top tuple
+    try:  # a combination width knows its own candidates only now: a table above the LP size limit stops by name (#440)
+        matrix.check_bayes_size(len(own), len(other), search.s, "this preview's table")
+    except ValueError as err:
+        raise SearchError(str(err)) from None
     i, j, w = np.indices((len(own), len(other), search.s)).reshape(3, -1)
     total = len(w)
     choices = np.zeros((total, 2), _layout.FACTORED_CHOICE)
@@ -187,6 +271,7 @@ def decide(search, record, observation, player, key, logp_team, excluded, last_s
         "own_teams": own.tolist(), "foe_teams": other.tolist(), "own_probs": own_probs.tolist(),
         "foe_probs": qs.tolist(), "weights": sampled["weights"].tolist(), "coverage": float(qs.mean(axis=0).sum()),
         "table": table.a.tolist(), "tables": tables.tolist(), "stderr": table.stderr.tolist(),
-        "choice": chosen, "raw": int(own[0]), "changed": chosen != int(own[0]),
+        "choice": chosen, "raw": raw, "changed": chosen != raw,
         "outcomes": outcomes, "leaves": table.counts, "near_duplicates": lookahead.near_duplicates(table.a),
-        "split": None, "certificate_gap": gap, **reduced}
+        "split": None, "certificate_gap": gap, **reduced,
+        **({"preview_width": search.preview_width} if search.preview_width != "top" else {})}

@@ -413,6 +413,15 @@ def main(argv=None):
         raise SystemExit("--luck must be 0 (off) or a positive number of alternatives")
     if min(samples) < 1 or args.games < 1 or args.capacity < 1 or args.workers < 1 or args.max_steps < 1:
         raise SystemExit("samples, games, capacity, workers and max-steps must be positive")
+    if args.search == "honest":  # every configuration of the grid against the LP size limit, before any game (#440)
+        from . import matrix
+        for k, m in km:
+            for s in samples:
+                try:
+                    if k != 1:  # one candidate plays raw and solves nothing, as in honest.Honest
+                        matrix.check_bayes_size(k, m, s, f"--search honest at {k}x{m}, s={s}")
+                except ValueError as err:
+                    raise SystemExit(str(err)) from None
     from duoforge_replay.dataset import refuse_repository
     try:
         refuse_repository(args.out)

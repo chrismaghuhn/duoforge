@@ -188,7 +188,12 @@ def visible_causes(roots, env, player):
     masks, statuses = roots.public_causes(players)
     if statuses[env] != 0:
         raise SearchError(f"public causes refused: {duoforge.status_name(int(statuses[env]))}")
-    mask = int(masks[env])
+    return cause_names(masks[env])
+
+
+def cause_names(mask):
+    """The names of a DUOFORGE_PUBLIC_CAUSE_* mask's bits, in _CAUSES order."""
+    mask = int(mask)
     return [name for bit, name in _CAUSES if mask & bit]
 
 
@@ -206,11 +211,64 @@ def trapped_positions(record):
 def trap_picks(words, record):
     """trap_pick of the hypotheses of the worlds (hypothesis revision 3): (n, 4) uint8. A trapped position of the record takes
     the top byte of its world's trap word (belief.WORDS["trap"]); every other position takes zero, as the engine refuses a
-    nonzero word where the record shows no hidden trap (E_INVALID_ARGUMENT). The engine maps the byte to the duration."""
+    nonzero word where the record shows no hidden trap (E_INVALID_ARGUMENT). The engine maps the byte to the duration.
+    record is one record for every world, or one per world (n,)."""
     words = np.asarray(words, dtype=np.uint64)
     picks = (words >> np.uint64(56)).astype(np.uint8)
-    picks[:, [not trapped for trapped in trapped_positions(record)]] = 0
+    if np.ndim(record) == 0:
+        picks[:, [not trapped for trapped in trapped_positions(record)]] = 0
+        return picks
+    for w, r in enumerate(record):  # a record per world (closed team sheets): each world takes its own record's traps
+        picks[w, [not trapped for trapped in trapped_positions(r)]] = 0
     return picks
+
+
+def _record_groups(records):
+    """For each world, the first world with the same record (bytes)."""
+    first = {}
+    return np.array([first.setdefault(r.tobytes(), w) for w, r in enumerate(np.asarray(records))], np.int64)
+
+
+def _world_history(histories, turn):
+    """The team-preview and turn-start records of a record per world from each world's own (record, status) history,
+    taken as Honest._observe keeps them: the last unrefused team-selection record, and the last unrefused turn record
+    of the current turn with both requests open. A key is set only when every world has its record."""
+    previews, starts = [], []
+    for past in histories:
+        preview = start = None
+        for record, status in past:
+            if status != 0:
+                continue
+            boundary = int(record["boundary"])
+            if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
+                preview = record
+            elif boundary == C["DUOFORGE_BOUNDARY_TURN"] and int(record["request_mask"]) == 3 \
+                    and int(record["turn"]) == turn:
+                start = record
+        previews.append(preview)
+        starts.append(start)
+    history = {}
+    for key, found in (("preview", previews), ("turn_start", starts)):
+        if all(r is not None for r in found):
+            out = np.zeros(len(found), dtype=view.PUBLIC_STATE)
+            for w, r in enumerate(found):
+                out[w] = r
+            history[key] = out
+    return history
+
+
+def _world_causes(worlds):
+    """The cause names of the worlds whose record is refused (E_UNSUPPORTED), over all of them."""
+    refused = np.asarray(worlds["statuses"]) == C["DUOFORGE_E_UNSUPPORTED"]
+    mask = 0
+    for m in np.asarray(worlds["causes"])[refused]:
+        mask |= int(m)
+    return cause_names(mask)
+
+
+def _hex(record):
+    """A record's bytes as hex, or a list of the worlds' (a record per world)."""
+    return record.tobytes().hex() if np.ndim(record) == 0 else [r.tobytes().hex() for r in record]
 
 
 def draw_word(probabilities, word):
@@ -266,7 +324,7 @@ class Honest(lookahead.Lookahead):
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="mix",
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
                  table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
-                 species_prior=False, foe_net=None, preview_rule=None):
+                 species_prior=False, foe_net=None, preview_rule=None, preview_width="top"):
         # species_prior (live play, owner 2026-10-10): True refuses a decision whose foe species has no stated spread in
         # the table instead of drawing from the belief's nature-only or table-wide levels (4 and 5); "count" (owner
         # 2026-10-12, live play) draws from those general levels and names the species in the record: spread_fallback
@@ -298,6 +356,8 @@ class Honest(lookahead.Lookahead):
             self.foe_net = (foe_model, foe_params, int(foe_encoder), int(foe_ext))
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
+        if k != 1:  # one candidate plays raw and solves nothing; the turns' and the top preview's LPs are k x m x s
+            matrix.check_bayes_size(k, m, s, "the honest search")
         if preview_mode not in ("raw", "value", "turn1") or type(preview_steps) is not int or preview_steps < 1:
             raise ValueError("preview requires raw/value/turn1 and a positive rollout bound")
         if preview_only and preview_mode == "raw":
@@ -310,6 +370,19 @@ class Honest(lookahead.Lookahead):
             raise ValueError("preview_rule requires a preview search (preview_mode value or turn1)")
         self.preview_mode, self.preview_only, self.preview_steps = preview_mode, preview_only, preview_steps
         self.preview_rule = preview_rule
+        # preview_width (#440, owner 2026-10-13): the preview's candidates, "top" tuples of the team heads or one
+        # "distinct" tuple per bring-and-lead combination with every own member covered (preview.distinct); "seats"
+        # the same with the lead seats kept, only the bench order merged (the correction of #462's review).
+        from . import preview
+        if preview_width not in preview.WIDTHS:
+            raise ValueError(f"preview_width must be one of {preview.WIDTHS} (got {preview_width!r})")
+        if preview_width != "top" and preview_mode == "raw":
+            raise ValueError("preview_width requires a preview search (preview_mode value or turn1)")
+        if preview_width != "top" and k == 1:  # one candidate plays raw: no preview table to widen
+            raise ValueError("preview_width requires k > 1 (with k = 1 the preview plays raw)")
+        if preview_width != "top":  # the cover adds up to preview.COVER_MAX own rows to the preview's table
+            matrix.check_bayes_size(k + preview.COVER_MAX, m, s, f"the {preview_width} preview")
+        self.preview_width = preview_width
         if table is None:
             table, _, self.table_info = spread_table(context)
         else:
@@ -349,8 +422,21 @@ class Honest(lookahead.Lookahead):
         pair, team, _ = model.apply(params, *inputs)
         return np.asarray(pair), np.asarray(team), time.perf_counter() - t
 
+    def _per_world(self, record):
+        """(s,) records: one record for every world (open sheets), or the worlds' own records (closed team sheets,
+        decision 0081: world w is built from particle w's record), whose public header fields must agree."""
+        record = np.asarray(record)
+        if record.shape == ():
+            return np.repeat(record.reshape(1), self.s)
+        if record.shape != (self.s,):
+            raise SearchError(f"{record.size} world records for {self.s} worlds")
+        for name in record.dtype.names:
+            if name not in ("state", "pad") and (record[name] != record[name][0]).any():
+                raise SearchError(f"the worlds' records disagree on the public field {name}")
+        return record
+
     def _build(self, record, hypotheses):
-        statuses = self.worlds.from_view(np.repeat(record.reshape(1), self.s), hypotheses).copy()
+        statuses = self.worlds.from_view(self._per_world(record), hypotheses).copy()
         if (statuses == C["DUOFORGE_E_UNSUPPORTED"]).any():
             raise Unreconstructible("DUOFORGE_E_UNSUPPORTED: world build")
         bad = np.flatnonzero((statuses != 0) & (statuses != C["DUOFORGE_E_INVALID_ARGUMENT"]))
@@ -370,12 +456,28 @@ class Honest(lookahead.Lookahead):
                 pairs.copy(), obs.copy(), slots.copy(), query_seconds)
 
     def _hypotheses(self, record, observation, history, key, excluded, costs):
+        """The worlds' hypotheses of a record and the player's observation: one of each for every world, or one per
+        world (closed team sheets: world w draws the spreads of particle w's members, its record and observation)."""
         if "preview" not in history:
             raise Unreconstructible("missing team-preview record")
+        # One record for every world (open sheets) is built and checked as it is; a record per world as the worlds'
+        # records, whose public header fields agree (_per_world), so the first one's stand for all.
+        per_world = np.ndim(record) != 0
+        built = self._per_world(record) if per_world else record
+        if per_world:
+            record = built[0]
+        observations = observation if per_world else [observation]
         foe = 1 - int(record["player"])
-        side = observation["sides"][foe]
-        members = [(int(m["species_id"]), int(m["nature"]), int(m["item"]))
-                   for m in side["members"][:int(side["member_count"])]]
+        rosters = []
+        for o in observations:
+            side = o["sides"][foe]
+            rosters.append([(int(m["species_id"]), int(m["nature"]), int(m["item"]))
+                            for m in side["members"][:int(side["member_count"])]])
+        if len(rosters) != (self.s if per_world else 1):
+            raise SearchError(f"{len(rosters)} observations for {self.s} world records")
+        if any([m[0] for m in r] != [m[0] for m in rosters[0]] for r in rosters):
+            raise SearchError("the worlds' observations disagree on the foe's species")
+        members = rosters[0]  # the species, which every world shares (the team preview shows them)
         attempts = np.zeros((self.s, 6), np.int64)
         dropped = respreads = 0
         queue_mask = None
@@ -385,11 +487,16 @@ class Honest(lookahead.Lookahead):
         # are needed only for a record that still has one.
         if pivot and int(record["foe_pending_mask"]) != 0:
             start = history.get("turn_start")
-            if start is None or int(start["turn"]) != int(record["turn"]) or int(start["player"]) != int(record["player"]):
+            first = None if start is None else np.asarray(start).reshape(-1)[0]
+            if first is None or int(first["turn"]) != int(record["turn"]) or int(first["player"]) != int(record["player"]):
                 raise Unreconstructible("missing or stale turn-start record")
             t = time.perf_counter()
             try:
-                queue_mask = duoforge.queue_mask(self.worlds.context, history["turn_start"], record)
+                if per_world:
+                    queue_mask = self._queue_masks(history["turn_start"], built)
+                else:
+                    mask = duoforge.queue_mask(self.worlds.context, history["turn_start"], record)
+                    queue_mask = [mask] * self.s
             except duoforge.DuoforgeError as err:
                 if err.status_name == "DUOFORGE_E_UNSUPPORTED":
                     raise Unreconstructible("DUOFORGE_E_UNSUPPORTED: queue mask") from err
@@ -398,13 +505,17 @@ class Honest(lookahead.Lookahead):
                 costs["public_records"] += time.perf_counter() - t
         initial = None
         if self.species_prior is not False:  # from the first draw's level: a redraw raises it (SpreadTable.draw)
-            initial = [self.belief.table.candidates(sp, nature, item, excluded)[0] for sp, nature, item in members]
-            missing = [members[m][0] for m, level in enumerate(initial) if level >= 4]
+            initial = np.array([[self.belief.table.candidates(sp, nature, item, excluded)[0]
+                                 for sp, nature, item in roster] for roster in rosters], np.int64).reshape(len(rosters), -1)
+            missing = [members[m][0] for m in range(len(members)) if (initial[:, m] >= 4).any()]
             if missing and self.species_prior is True:
                 raise Unreconstructible(f"no spread prior for foe species {missing}")
         for _ in range(MAX_RESPREADS):
             t = time.perf_counter()
-            sampled = self.belief.sample(members, self.s, self.seed, key, excluded, attempts)
+            if per_world:  # world w draws for particle w's members (natures and items)
+                sampled = self.belief.sample_worlds(rosters, self.seed, key, excluded, attempts)
+            else:
+                sampled = self.belief.sample(members, self.s, self.seed, key, excluded, attempts)
             if self.species_prior is True:
                 past = np.flatnonzero((sampled["levels"][:, :len(members)] >= 4).any(axis=0))
                 if past.size:  # every stated spread of the species contradicted the public view
@@ -447,7 +558,7 @@ class Honest(lookahead.Lookahead):
                 costs["world_builds"] += query_seconds
                 costs["network"] += elapsed
                 for w in range(self.s):
-                    probs = np.exp(pp[w, foe].astype(np.float64)) * queue_mask.reshape(-1) * legal[w, foe].reshape(-1)
+                    probs = np.exp(pp[w, foe].astype(np.float64)) * queue_mask[w].reshape(-1) * legal[w, foe].reshape(-1)
                     pair = draw_word(probs, sampled["queue"][w])
                     queue_pairs.append(pair)
                     indices = divmod(pair, lookahead.OPTIONS)
@@ -458,21 +569,35 @@ class Honest(lookahead.Lookahead):
                 for w in range(self.s):
                     h[w]["queue_order"][:int(record["queue_count"])] = np.arange(int(record["queue_count"]), dtype=np.uint8)
             t = time.perf_counter()
-            h["trap_pick"] = trap_picks(sampled["trap"], record)
-            statuses = self._build(record, h)
+            h["trap_pick"] = trap_picks(sampled["trap"], built)
+            statuses = self._build(built, h)
             costs["world_builds"] += time.perf_counter() - t
             if not statuses.any():
-                self._check_worlds(record, costs)
+                self._check_worlds(built, costs)
                 if initial is not None:  # the species drawn from the general levels (species_prior "count")
-                    general = (sampled["levels"][:, :len(members)] >= 4).any(axis=0)
-                    self._spread_fallback = sorted({members[m][0] for m in range(len(members)) if initial[m] >= 4})
-                    self._spread_redrawn = sorted({members[m][0] for m in np.flatnonzero(general) if initial[m] < 4})
+                    general = (sampled["levels"][:, :len(members)] >= 4) & (initial < 4)
+                    self._spread_fallback = sorted({members[m][0] for m in range(len(members))
+                                                    if (initial[:, m] >= 4).any()})
+                    self._spread_redrawn = sorted({members[m][0] for m in np.flatnonzero(general.any(axis=0))}
+                                                  - set(self._spread_fallback))
                 return h, weights, dropped, respreads, queue_pairs
             # The current C API reports a failed world, not the member. Redraw
             # all its spreads; keep its HP/counter/bench/queue words unchanged.
             attempts[statuses != 0] += 1
             respreads += int((statuses != 0).sum())
         raise SearchError(f"a world still contradicts the public view after {MAX_RESPREADS} spread draws")
+
+    def _queue_masks(self, turn_start, records):
+        """(s, OPTIONS, OPTIONS): each world's queue mask (duoforge.queue_mask) of its turn-start record and its record,
+        computed once per distinct pair (one call when every world shares one record)."""
+        starts = self._per_world(turn_start)
+        out, seen = [], {}
+        for start, record in zip(starts, records):
+            k = (start.tobytes(), record.tobytes())
+            if k not in seen:
+                seen[k] = np.asarray(duoforge.queue_mask(self.worlds.context, start, record))
+            out.append(seen[k])
+        return np.stack(out)
 
     def _engine_pairs(self, p):
         """(OPTIONS, OPTIONS) bool: the pairs the engine's domain allows seat p in the built worlds, which agree on
@@ -492,13 +617,15 @@ class Honest(lookahead.Lookahead):
         """Every world built from a record (the root, the team preview's, the turn start's) gives it back (from_view, then public, byte for byte). A
         record assembled outside the engine (the live tracker's) that fills a field the engine masks, or contradicts
         itself, stops here with the differing fields named, instead of being searched. Engine records always pass
-        (duoforge.view); the check costs one public() call per decision."""
+        (duoforge.view); the check costs one public() call per decision. With a record per world, each world gives its own
+        back."""
+        records = self._per_world(record)
         t = time.perf_counter()
-        again, statuses = self.worlds.public(np.full(self.worlds.envs, int(record["player"]), np.uint32))
+        again, statuses = self.worlds.public(np.full(self.worlds.envs, int(records[0]["player"]), np.uint32))
         costs["public_records"] += time.perf_counter() - t
-        want = np.asarray(record).tobytes()
         for w in range(self.s):
-            if int(statuses[w]) == 0 and again[w].tobytes() == want:
+            record = records[w]
+            if int(statuses[w]) == 0 and again[w].tobytes() == record.tobytes():
                 continue
             if int(statuses[w]) != 0:
                 raise SearchError(f"world {w} built from the record refuses its public record "
@@ -531,49 +658,63 @@ class Honest(lookahead.Lookahead):
         self.last = []
         for d, (e, p) in enumerate(zip(envs, seats)):
             e, p = int(e), int(p)
-            record = records[e:e + 1].reshape(()).copy()
-            history = self._observe(roots, e, p, record, statuses[e])
-            boundary = int(roots.requests[e, p]["boundary_kind"])
             costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
             costs["public_records"], costs["network"] = public_time, network_time / n
+            worlds = self._worlds_of(roots, e, p)
+            if worlds is None:  # one record for every world
+                record, status, observation = records[e:e + 1].reshape(()).copy(), int(statuses[e]), \
+                    roots.observations[e, p]
+                own_logp, team_logp, groups = pp[d], pt[d], None
+            else:  # closed team sheets (decision 0081): world w is built from the worlds' record w
+                record, observation = worlds["records"], worlds["observations"]
+                status = self._world_status(worlds["statuses"])
+                own_logp, team_logp, seconds = self._mean_policy(worlds, obs[e, p], slots[e, p], pairs[e, p], pp[d],
+                                                                 pt[d])
+                costs["network"] += seconds
+                groups = _record_groups(record)
+            # a record per world: each world's own history, never the search's memory of an earlier particle there
+            history = self._observe(roots, e, p, record, status) if worlds is None else \
+                _world_history(worlds["histories"], int(roots.observations[e, p]["turn"]))
+            boundary = int(roots.requests[e, p]["boundary_kind"])
             base = {"env": e, "seat": p, "key": int(keys[d]), "epoch": int(roots.requests[e, p]["epoch"]),
                     "boundary": lookahead._BOUNDARIES[boundary], "last_step": bool(last_step[d]),
                     "search": "honest", "w": self.s, "table_sha256": self.table_info["sha256"], "lam": self.lam}
             if self.foe_net is not None:  # which encoding modelled the foe (a reproduction needs it)
                 base["foe_net"] = {"encoder": self.foe_net[2], "ext_supported": self.foe_net[3]}
             if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
-                actions[d] = int(np.argmax(pt[d]))
+                actions[d] = int(np.argmax(team_logp))
                 result = {"kind": "team", "choice": int(actions[d])}
                 if self.preview_mode != "raw" and self.k != 1:
                     excluded = None if self.exclude_teams is None else self.exclude_teams[e]
                     try:
-                        if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
+                        if status == C["DUOFORGE_E_UNSUPPORTED"]:
                             raise Unreconstructible("preview_public_record_unsupported")
-                        if statuses[e] != 0:
-                            raise SearchError(f"preview public record refused: {duoforge.status_name(int(statuses[e]))}")
+                        if status != 0:
+                            raise SearchError(f"preview public record refused: {duoforge.status_name(status)}")
                         from . import preview
-                        result = preview.decide(self, record, roots.observations[e, p], p, int(keys[d]),
-                                                pt[d], excluded, bool(last_step[d]), costs)
+                        result = preview.decide(self, record, observation, p, int(keys[d]),
+                                                team_logp, excluded, bool(last_step[d]), costs)
                         actions[d] = result["choice"]
                     except Unreconstructible as error:
                         result.update(kind="unreconstructible", reason=str(error), causes=[str(error)])
                     except (SearchError, duoforge.DuoforgeError, ValueError) as error:
                         stop = SearchError(str(error))
-                        stop.reproduction = {**base, "public_view": record.tobytes().hex() if statuses[e] == 0 else None}
+                        stop.reproduction = {**base, "public_view": _hex(record) if status == 0 else None}
                         raise stop from error
             else:
-                own, own_p = lookahead.select(pp[d], pairs[e, p], self.k)
+                own, own_p = lookahead.select(own_logp, pairs[e, p], self.k)
                 actions[d] = int(own[0])
                 result = {"kind": "forced" if pairs[e, p].sum() == 1 else "raw", "choice": int(actions[d])}
                 excluded = None if self.exclude_teams is None else self.exclude_teams[e]
                 if result["kind"] != "forced" and self.k != 1 and not self.preview_only:
                     try:
-                        if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
-                            result["causes"] = visible_causes(roots, e, p) or ["public_record_unsupported"]
+                        if status == C["DUOFORGE_E_UNSUPPORTED"]:
+                            names = visible_causes(roots, e, p) if worlds is None else _world_causes(worlds)
+                            result["causes"] = names or ["public_record_unsupported"]
                             raise Unreconstructible("DUOFORGE_E_UNSUPPORTED: public record")
-                        if statuses[e] != 0:
-                            raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")
-                        hypotheses, weights, dropped, respreads, queue_pairs = self._hypotheses(record, roots.observations[e, p], history,
+                        if status != 0:
+                            raise SearchError(f"public record refused: {duoforge.status_name(status)}")
+                        hypotheses, weights, dropped, respreads, queue_pairs = self._hypotheses(record, observation, history,
                                                                          int(keys[d]), excluded, costs)
                         # A root's pair mask may be provisional (the live tracker's: Showdown judges a pair); the own
                         # candidates are the engine's own pairs of the worlds (the searcher's side is exact in each).
@@ -582,9 +723,9 @@ class Honest(lookahead.Lookahead):
                         if not legal.any():
                             raise SearchError("no pair of the root's mask is in the engine's domain")
                         if (legal != root_mask).any():
-                            own, own_p = lookahead.select(pp[d], legal, self.k)
+                            own, own_p = lookahead.select(own_logp, legal, self.k)
                         result = self._decision(p, int(keys[d]), own, own_p, weights, bool(last_step[d]), costs,
-                                                refused="drop")
+                                                refused="drop", groups=groups)
                         result["cut_pairs"] = int((root_mask & ~legal).sum())  # the root's pairs the engine refuses
                         self.last[-1]["hypotheses"] = hypotheses.copy()
                         result.update({"bench_dropped": dropped, "respreads": respreads, "exclude_team": excluded,
@@ -599,10 +740,10 @@ class Honest(lookahead.Lookahead):
                     except (SearchError, duoforge.DuoforgeError, ValueError) as err:
                         stop = SearchError(str(err))
                         stop.reproduction = {**getattr(err, "reproduction", {}), **base,
-                                             "public_view": record.tobytes().hex() if statuses[e] == 0 else None,
+                                             "public_view": _hex(record) if status == 0 else None,
                                              "search_seed": self.seed, "exclude_team": excluded,
-                                             "preview": history["preview"].tobytes().hex() if "preview" in history else None,
-                                             "turn_start": history["turn_start"].tobytes().hex() if "turn_start" in history else None}
+                                             "preview": _hex(history["preview"]) if "preview" in history else None,
+                                             "turn_start": _hex(history["turn_start"]) if "turn_start" in history else None}
                         raise stop from err
             output.append({**base, **result, "cost": costs,
                            "time": {"network": costs["network"] + costs["team_head"],
@@ -624,27 +765,64 @@ class Honest(lookahead.Lookahead):
         boundary = int(roots.requests[e, p]["boundary_kind"])
         current_turn = int(roots.observations[e, p]["turn"])
         start = history.get("turn_start")
-        if start is not None and int(start["turn"]) != current_turn:
+        if start is not None and int(np.asarray(start).reshape(-1)[0]["turn"]) != current_turn:
             history.pop("turn_start")
         if boundary == C["DUOFORGE_BOUNDARY_TURN"] and roots.requests[e, 0]["requested"] and roots.requests[e, 1]["requested"]:
             history.pop("turn_start", None)
-        if status == 0:
+        if status == 0:  # a record per world (closed team sheets) is kept as the worlds' records
             if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
                 history["preview"] = record.copy()
-            if boundary == C["DUOFORGE_BOUNDARY_TURN"] and int(record["request_mask"]) == 3:
+            if boundary == C["DUOFORGE_BOUNDARY_TURN"] and int(np.asarray(record).reshape(-1)[0]["request_mask"]) == 3:
                 history["turn_start"] = record.copy()
         return history
 
-    def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None, *, refused="score"):
+    def _worlds_of(self, roots, e, p):
+        """The worlds' own parts of seat p in environment e (RecordRoots.set_worlds), or None. ValueError when their
+        count is not the search's or a preview search would read them (it builds its worlds from one record)."""
+        worlds = roots.worlds(e, p) if callable(getattr(roots, "worlds", None)) else None
+        if worlds is None:
+            return None
+        if len(worlds["records"]) != self.s:
+            raise ValueError(f"{len(worlds['records'])} world records for {self.s} worlds")
+        if self.preview_mode != "raw":
+            raise ValueError("a preview search builds its worlds from one record: not with a record per world")
+        return worlds
+
+    @staticmethod
+    def _world_status(statuses):
+        """The decision's status of the worlds' records: E_UNSUPPORTED when any world's record is refused for a public
+        cause, else the first other refusal, else 0."""
+        statuses = np.asarray(statuses).reshape(-1)
+        if (statuses == C["DUOFORGE_E_UNSUPPORTED"]).any():
+            return int(C["DUOFORGE_E_UNSUPPORTED"])
+        bad = np.flatnonzero(statuses)
+        return int(statuses[bad[0]]) if bad.size else 0
+
+    def _mean_policy(self, worlds, obs, slots, pairs, pair_logp, team_logp):
+        """(pair, team log-probabilities, seconds) of the root under a record per world: the mean of the policy's
+        probabilities over the worlds' rows, each world weighing 1/W as in the belief (decision 0081: the root's own
+        candidates and team). Worlds whose rows are all the root's own give the root's (pair_logp, team_logp)."""
+        rows, slot_rows = np.asarray(worlds["obs"]), np.asarray(worlds["slots"])
+        if all(np.array_equal(r, obs) for r in rows) and all(np.array_equal(r, slots) for r in slot_rows):
+            return pair_logp, team_logp, 0.0
+        masks = np.repeat(np.asarray(pairs)[None], rows.shape[0], axis=0)
+        pair, team, seconds = self._policy(rows, slot_rows, masks)
+        with np.errstate(divide="ignore"):  # a pair outside the mask has probability 0 in every world
+            return (np.log(np.exp(pair.astype(np.float64)).mean(axis=0)),
+                    np.log(np.exp(team.astype(np.float64)).mean(axis=0)), seconds)
+
+    def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None, *, refused="score", groups=None):
         _check_refused(refused)
-        request = self._prepare(p, key, own, weights, last_step, costs)
+        request = self._prepare(p, key, own, weights, last_step, costs, groups)
         return self._finish(request, self._values(request, costs), own_p, costs, budget, refused=refused)
 
-    def _prepare(self, p, key, own, weights, last_step, costs):
+    def _prepare(self, p, key, own, weights, last_step, costs, groups=None):
         """Phase one of a decision on the current worlds: the worlds' policy,
         the foe's pairs and every expand chunk with its tiebreaks. The rows
         and statuses are copied out, so later roots may reuse the worlds and
-        the leaf batch before this request is finished (stage 3 P2)."""
+        the leaf batch before this request is finished (stage 3 P2).
+        groups (a record per world): each world's first world of the same
+        record; the viewer's rows must agree within a group, its pairs in all."""
         pp, _, elapsed, masks, obs, slots, query_seconds = self._world_policy()
         if self.foe_net is not None:  # the viewer's check below reads the main encoder's rows, as without a foe network
             t = time.perf_counter()
@@ -655,8 +833,9 @@ class Honest(lookahead.Lookahead):
         costs["world_builds"] += query_seconds
         costs["network"] += elapsed
         for w in range(1, self.s):
-            if not np.array_equal(obs[w, p], obs[0, p]) or not np.array_equal(slots[w, p], slots[0, p]) or \
-                    not np.array_equal(masks[w, p], masks[0, p]):
+            g = 0 if groups is None else int(groups[w])
+            if not np.array_equal(masks[w, p], masks[0, p]) or g != w and (
+                    not np.array_equal(obs[w, p], obs[g, p]) or not np.array_equal(slots[w, p], slots[g, p])):
                 raise SearchError("the viewer's encoded row differs across worlds")
         foe = 1 - p
         if self.worlds.requests[0, foe]["requested"]:

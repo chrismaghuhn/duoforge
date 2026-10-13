@@ -3,7 +3,7 @@
     python -m duoforge_search.ladder --checkpoint MAIN --foe-net FOE (--teams-from POOLNET | --matchup OURS FOE
         [--fill-stat-points smogon]) --step N [--previous P] [--raw] [--h2h] --opponent NAME=PATH [--opponent ...]
         --out DIR [--pairs 1024] [--seed SEED] [--workers 8] [--max-steps 1000] [--previous-run OLD/ladder.json]
-        [--latency-run LATENCY/ladder.json]
+        [--latency-run LATENCY/ladder.json] [--paired-with RUN/ladder.json]
     python -m duoforge_search.ladder verdict RUN/ladder.json [--latency-run LATENCY/ladder.json]
 
 The networks stay fixed along the ladder: MAIN (BC6) searches and plays, FOE (BC6) is the foe model in the searched
@@ -17,7 +17,9 @@ honest.Honest: step N is its base step's settings plus its own delta (STEPS, ste
 Each opponent (a raw greedy network: bc6, bot or ppo) meets the arms "step", "previous" (with --previous) and "R" (with
 --raw: MAIN's raw play) over the same suite rows and batch seed, so their games are paired: rows 2k and 2k + 1 are one
 team pair, its teams and seats swapped. A searching arm leaves the opponent's own team out of the spread table, as
-foe_arena does. --h2h plays step N against the previous step, both searching, over the same rows.
+foe_arena does. --h2h plays step N against the previous step, both searching, over the same rows. --paired-with RUN/
+ladder.json pairs step N with a recorded run's step arm on that run's first games, without replaying it (exclusive with
+--previous, --h2h and --previous-run; paired_guard checks the recorded run before any network is loaded).
 
 The gates (GATES, verdict()), a pure function of a finished report: strength (the head-to-head's lower bound above 0.50,
 with no unresolved game), no harm (each gated opponent, bot and bc6, measured and at least 0.50 at its upper bound
@@ -55,7 +57,40 @@ STEPS = {"0": {"base": None, "settings": {}},
          # Step 1b (#440): the turn-1 rollout, the only preview form that gained in #241, its foe seat played by the
          # foe network; "1b" plays its table by the ev rule (the best answer), "1bn" by nash (its control).
          "1b": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev"}},
-         "1bn": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "nash"}}}
+         "1bn": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "nash"}},
+         # Preview width (owner, 2026-10-13): 1b with one candidate per bring-and-lead combination, every own member
+         # brought by at least one (the arena's top 8 were 4 orderings of 2 combinations, none with Gholdengo).
+         "1bw": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev", "preview_width": "distinct"}},
+         # 1bw corrected (review of #462): the lead seats kept, only the bench order merged.
+         "1bws": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev", "preview_width": "seats"}},
+         # The budget-scaling arms (owner, 2026-10-12): one lever or one fixed combination each. Budget = k * m * s
+         # leaves, relative to step 0's 8 * 8 * 16 = 1024 (the factors x2 to x16); capacity = k * m * s, so the leaf
+         # buffer matches.
+         "b-s32": {"base": "0", "settings": {"s": 32, "capacity": 2048}},
+         "b-s64": {"base": "0", "settings": {"s": 64, "capacity": 4096}},
+         "b-s128": {"base": "0", "settings": {"s": 128, "capacity": 8192}},
+         "b-s256": {"base": "0", "settings": {"s": 256, "capacity": 16384}},
+         "b-k16": {"base": "0", "settings": {"k": 16, "capacity": 2048}},
+         "b-m16": {"base": "0", "settings": {"m": 16, "capacity": 2048}},
+         "b-km16": {"base": "0", "settings": {"k": 16, "m": 16, "capacity": 4096}},
+         "b-km16-s64": {"base": "0", "settings": {"k": 16, "m": 16, "s": 64, "capacity": 16384}}}
+
+
+def size_refusal(name):
+    """Why step `name` is refused before any run, or None: its Bayesian LP is above the size limit (matrix.
+    MAX_BAYES_CELLS; owner on #440, 2026-10-13: b-s64 and b-km16 stopped in the exact rescue).
+    The struck arms stay declared above."""
+    from . import matrix
+    settings = step_settings(name)
+    if settings["k"] == 1:
+        return None
+    from . import preview
+    most = settings["k"] + (preview.COVER_MAX if settings.get("preview_width", "top") != "top" else 0)
+    try:
+        matrix.check_bayes_size(most, settings["m"], settings["s"], f"step {name!r}")
+    except ValueError as err:
+        return str(err)
+    return None
 
 
 def step_settings(name):
@@ -139,6 +174,27 @@ def refused_leaves(decisions):
             "unreconstructible_engine_refused": sum(r["kind"] == "unreconstructible"
                                                     and r.get("reason") == "engine_refused_leaves"
                                                     for r in decisions)}
+
+
+def duplicate_rows(decisions, tolerance=1e-6):
+    """The table rows of the searched decisions that equal an earlier row of their own table: a row counts when its
+    entries differ from an earlier row's by at most tolerance (the largest absolute difference). VALUE-equality: a hint
+    of redundancy in the search, not a proof of equivalence. Only searched records without preview_eval count; each
+    record's table must be k x m (ValueError otherwise). share is 0.0 without rows."""
+    records = [r for r in decisions if r["kind"] == "searched" and "preview_eval" not in r]
+    rows = duplicates = with_duplicates = 0
+    for r in records:
+        table = np.asarray(r["table"], np.float64)
+        if table.shape != (r["k"], r["m"]):
+            raise ValueError(f"a searched record's table is {table.shape}, not k x m = {(r['k'], r['m'])}")
+        gap = np.abs(table[:, None, :] - table[None, :, :]).max(axis=2)  # gap[i, j]: row i against row j
+        repeated = np.tril(gap <= tolerance, k=-1).any(axis=1)  # row i equals an earlier row j < i
+        count = int(repeated.sum())
+        rows += table.shape[0]
+        duplicates += count
+        with_duplicates += int(count > 0)
+    return {"decisions": len(records), "decisions_with_duplicates": with_duplicates, "rows": rows,
+            "duplicate_rows": duplicates, "share": duplicates / rows if rows else 0.0}
 
 
 def fallback_allowed(previous_share):
@@ -305,6 +361,50 @@ def recorded_reproduction(scores, digest, recorded_arm, recorded_dir, name):
     return recorded == digest
 
 
+def paired_guard(recorded, seed, pairs, max_steps, digests):
+    """SystemExit naming the field unless this run can be paired with the recorded run (--paired-with), checked before
+    any network is loaded: the same seed and max_steps; at least this run's pairs (this run plays the recorded run's
+    first games); the same sha256 prefix of main, foe, teams and every opponent of this run; and a recorded step arm for
+    each opponent with at least 2 * pairs games. digests: role -> this run's sha256 hex."""
+    conditions = recorded.get("conditions", {})
+    for field, value in (("seed", hex(seed)), ("max_steps", max_steps)):
+        if conditions.get(field) != value:
+            raise SystemExit(f"--paired-with's {field} is {conditions.get(field)!r}, this run's is {value!r}")
+    recorded_pairs = conditions.get("pairs")
+    if not isinstance(recorded_pairs, int) or recorded_pairs < pairs:
+        raise SystemExit(f"--paired-with's pairs is {recorded_pairs!r}, this run's is {pairs!r}: "
+                         "the recorded run needs at least as many")
+    sha = conditions.get("sha256_prefix", {})
+    for role, digest in digests.items():
+        if sha.get(role) != digest[:12]:
+            raise SystemExit(f"--paired-with's sha256_prefix of {role} is {sha.get(role)!r}, "
+                             f"this run's is {digest[:12]!r}")
+    opponents = recorded.get("opponents", {})
+    for role in digests:
+        if not role.startswith("opponent "):
+            continue
+        name = role[len("opponent "):]
+        arm = opponents.get(name, {}).get("arms", {}).get("step")
+        if arm is None:
+            raise SystemExit(f"--paired-with's run has no step arm for opponent {name!r}: nothing to pair with")
+        games = len(arm.get("scores", []))
+        if games < 2 * pairs:
+            raise SystemExit(f"--paired-with's step arm of {name!r} has {games} games, this run needs {2 * pairs}")
+
+
+def paired_against_recorded(score, recorded, name, pairs):
+    """step_vs_recorded: this run's step scores against the recorded run's step arm of the same opponent, on the same
+    games (its first 2 * pairs games; paired_guard checked there are that many). The recorded step is not replayed."""
+    old = recorded["opponents"][name]["arms"]["step"]["scores"][:2 * pairs]
+    return paired_h(score, old)
+
+
+def paired_with_condition(recorded, path):
+    """The conditions' record of --paired-with: the recorded step's name and commit and the file's basename only."""
+    return {"step": recorded["conditions"]["step"]["name"], "commit": recorded["conditions"]["commit"],
+            "file": os.path.basename(path)}
+
+
 def wall_seconds(decisions):
     """The p50, p95, p99 and max wall seconds of the searched decisions; None without any."""
     wall = np.array([r["wall"] for r in decisions if r["kind"] == "searched"], np.float64)
@@ -326,7 +426,8 @@ def _summary(records, games, decisions=None, seconds=None):
                     "fallback_share": foe_arena.fallback_share(decisions),
                     "fallback_decisions": sum(r["kind"] in foe_arena.FALLBACK_KINDS for r in non_team),
                     "non_team_decisions": len(non_team), "decisions_sha256": decisions_digest(decisions),
-                    "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions)})
+                    "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions),
+                    "duplicate_rows": duplicate_rows(decisions)})
         if decisions:
             out["diagnostics"] = arena.diagnostics(decisions, games)
     if seconds is not None:
@@ -515,7 +616,14 @@ def main(argv=None):
     p.add_argument("--latency-run", metavar="LATENCY/ladder.json",
                    help="an exclusive latency run of this step on this commit: its p99 is the latency gate "
                         "(without it the verdict is pending)")
+    p.add_argument("--paired-with", metavar="RUN/ladder.json",
+                   help="a recorded run: this step is paired with its step arm on the same games (its first games), "
+                        "without replaying the recorded step; exclusive with --previous, --h2h and --previous-run")
     args = p.parse_args(argv)
+    if args.paired_with is not None:
+        for flag, given in (("--previous", args.previous), ("--h2h", args.h2h), ("--previous-run", args.previous_run)):
+            if given:
+                raise SystemExit(f"--paired-with excludes {flag}: it pairs the step with a recorded step arm")
 
     from duoforge_replay.dataset import refuse_repository
     try:
@@ -542,6 +650,10 @@ def main(argv=None):
         previous_cfg = None if args.previous is None else step_settings(args.previous)
     except ValueError as err:
         raise SystemExit(str(err)) from None
+    for name in (args.step, args.previous):
+        refusal = None if name is None else size_refusal(name)
+        if refusal is not None:
+            raise SystemExit(refusal)
     recorded = recorded_dir = None
     if args.previous_run is not None:  # every check against the recorded run runs before any network is loaded
         recorded, recorded_dir = _load_json(args.previous_run), os.path.dirname(os.path.abspath(args.previous_run))
@@ -553,11 +665,14 @@ def main(argv=None):
             if recorded["conditions"].get(field) != value:
                 raise SystemExit(f"--previous-run's {field} is {recorded['conditions'].get(field)!r}, "
                                  f"this run's is {value!r}")
+    paired_run = None if args.paired_with is None else _load_json(args.paired_with)  # loaded before any network
     from . import arena
     paths = {"main": args.checkpoint, "foe": args.foe_net,  # a matchup has no pool network: its teams are hashed
              **({"teams": args.teams_from} if args.teams_from is not None else {}),  # in its conditions instead
              **{f"opponent {name}": path for name, path in opponents.items()}}
     digests = {role: arena._sha256(path) for role, path in paths.items()}
+    if paired_run is not None:  # the same seed, pairs, networks and opponents: refused before any game or network
+        paired_guard(paired_run, args.seed, args.pairs, args.max_steps, digests)
     if recorded is not None:  # the networks and the pool must be the recorded ones. An opponent the recorded run lacks
         # is allowed (its reproduction is None).
         sha = recorded["conditions"].get("sha256_prefix", {})
@@ -607,6 +722,9 @@ def main(argv=None):
         if recorded is not None and recorded["conditions"].get("table_sha256") != table_info["sha256"]:
             raise SystemExit(f"--previous-run's table_sha256 is {recorded['conditions'].get('table_sha256')!r}, "
                              f"this run's is {table_info['sha256']!r}")
+        if paired_run is not None and paired_run["conditions"].get("table_sha256") != table_info["sha256"]:
+            raise SystemExit(f"--paired-with's table_sha256 is {paired_run['conditions'].get('table_sha256')!r}, "
+                             f"this run's is {table_info['sha256']!r}")
         learner_team = np.where(rows["learner_seat"] == 0, rows["side0"], rows["side1"])
         opponent_team = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
 
@@ -650,6 +768,11 @@ def main(argv=None):
                 scores["R"] = arena.scores(records)
             entry = {"arms": arms, "paired": paired_entry(scores),
                      "opponent_is_foe_model": digests[f"opponent {name}"] == digests["foe"]}
+            if paired_run is not None:
+                entry["paired"]["step_vs_recorded"] = paired_against_recorded(scores["step"], paired_run, name,
+                                                                              args.pairs)
+                entry["paired_with"] = {"step": paired_run["conditions"]["step"]["name"],
+                                        "commit": paired_run["conditions"]["commit"], "pairs": args.pairs}
             if recorded is not None:  # the previous step rerun on this code plays the recorded step arm's games
                 old = recorded.get("opponents", {}).get(name, {}).get("arms", {}).get("step")
                 entry["same_games_as_recorded"] = recorded_reproduction(
@@ -701,6 +824,7 @@ def main(argv=None):
         "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},
         "pool_teams": pool_teams, "games": int(rows.shape[0]), "table_sha256": table_info["sha256"],
         "opponent_team_in_table": in_table,
+        "paired_with": None if paired_run is None else paired_with_condition(paired_run, args.paired_with),
     }
     report = {"conditions": conditions, "opponents": opponent_out, "h2h": h2h, "p99_seconds": p99, "verdict": None}
     if args.h2h:

@@ -21,7 +21,7 @@ from unittest import mock
 
 import numpy as np
 
-from duoforge_live import __main__ as cli, client, data, pkmn_arena, teams
+from duoforge_live import __main__ as cli, client, cts, data, pkmn_arena, teams
 from python.tests.live.test_live_client import FIXTURE, FakePolicy
 
 TOKEN = "pka_SeCrEt0123456789"
@@ -133,11 +133,12 @@ class ArenaTest(unittest.TestCase):
         self.addCleanup(patch.stop)
         self.bot = None
 
-    def make(self, policy=None, team=True, pool=(), fmt=OTS, connections=(), **kw):
+    def make(self, policy=None, team=True, pool=(), fmt=OTS, connections=(), kind=None, **kw):
         async def sleep(seconds):
             self.slept.append(seconds)
         self.connect = FakeConnect(connections)
-        self.bot = pkmn_arena.ArenaBot(NAME, data.load(), policy or FakePolicy(), self.tmp.name, fmt,
+        kind = kind or ("pool" if fmt.startswith(CTS) and not fmt.startswith(OTS) else "closure")  # the set table's
+        self.bot = pkmn_arena.ArenaBot(NAME, data.load(kind=kind), policy or FakePolicy(), self.tmp.name, fmt,
                                        team_text=FIXTURE["team"] if team else None, pool=pool,
                                        connect=self.connect, connection_errors=(FakeClosed,), sleep=sleep,
                                        clock=self.clock, **kw)
@@ -334,18 +335,78 @@ class ArenaTest(unittest.TestCase):
         self.assertEqual(self.run_log()["counts"]["battles"], 2)
 
     # ------------------------------------------------------------------ the fallback
-    def test_closed_team_sheets_are_answered_with_default(self):
+    # ------------------------------------------------------------------ closed team sheets (decision 0081)
+    def closed_messages(self, room_id, upto=6):
+        return [room(["|init|battle"], room_id)] + \
+            [room([l for l in m if not l.startswith("|showteam|")], room_id) for m in FIXTURE["messages"][:upto]]
+
+    def test_closed_team_sheets_are_played_over_the_particles(self):
         self.make(fmt=CTS)
-        cts = f"battle-{CTS}-3"
-        messages = [room(["|init|battle"], cts)] + \
-            [room([l for l in m if not l.startswith("|showteam|")], cts) for m in FIXTURE["messages"][:6]]
-        self.feed(*messages)
+        closed = f"battle-{CTS}-3"
+        self.feed(*self.closed_messages(closed))
         rq = [request_of(2)["rqid"], request_of(5)["rqid"]]
-        self.assertEqual(self.chosen(), [f"{cts}|/choose default|{rq[0]}", f"{cts}|/choose default|{rq[1]}"])
+        sent = self.chosen()
+        self.assertEqual(len(sent), 2, sent)
+        self.assertTrue(sent[0].startswith(f"{closed}|/choose team ") and sent[0].endswith(f"|{rq[0]}"), sent)
+        self.assertTrue(sent[1].startswith(f"{closed}|/choose move ") and sent[1].endswith(f"|{rq[1]}"), sent)
+        game = self.bot.battles[closed].game
+        self.assertTrue(game.closed)
+        self.assertEqual(len(game.tracker.particles), cts.PARTICLES)
+        self.feed(room(["|win|" + NAME], closed))
         log = self.run_log()
-        self.assertEqual(log["fallback_battles"], {"closed_team_sheets": 1})
-        self.assertEqual(log["fallback_decisions"], {"closed_team_sheets": 2})
-        self.assertIn("closed_team_sheets", self.stderr.getvalue())
+        self.assertEqual((log["fallback_battles"], log["fallback_decisions"]), ({}, {}))
+        self.assertEqual(log["counts"]["decisions"], 2)
+        self.assertEqual(log["cts"]["battles"], 1)  # with the particle tracker's counters, aggregates only
+        self.assertEqual(log["cts"], {"battles": 1, **{cts.counter_kind(k): n for k, n in game.tracker.counters.items()}})
+        self.assertFalse([k for k in log["cts"] if k.count(":") > 2 or " " in k], log["cts"])
+
+    def test_a_closed_sheet_stop_falls_back_by_its_name(self):
+        tables = data.load(kind="pool")
+        prior = cts.SetPrior(tables, [s for s in teams._paste(FIXTURE["foe_team"]) if s["species"] != "Farigiraf"])
+        self.make(fmt=CTS, prior=prior)
+        closed = f"battle-{CTS}-4"
+        self.feed(*self.closed_messages(closed))
+        rq = [request_of(2)["rqid"], request_of(5)["rqid"]]
+        self.assertEqual(self.chosen(), [f"{closed}|/choose default|{rq[0]}", f"{closed}|/choose default|{rq[1]}"])
+        log = self.run_log()
+        self.assertEqual(log["fallback_battles"], {"stop:cts:no-consistent-set": 1})
+        self.assertEqual(log["fallback_decisions"], {"stop:cts:no-consistent-set": 2})
+        self.assertIn({"fallback": "stop:cts:no-consistent-set", "detail": "stop:cts:no-consistent-set Farigiraf"},
+                      self.battle(closed))
+
+    def test_the_closed_sheet_log_keeps_the_batches_that_draw_the_particles(self):
+        # The particles depend on how the stream was batched (decision 0081): the battle log keeps each batch the game
+        # was fed and each choice it accepted, so the log alone draws the same particles again.
+        self.make(fmt=CTS)
+        closed = f"battle-{CTS}-5"
+        self.feed(*self.closed_messages(closed, upto=9))
+        game = self.bot.battles[closed].game
+        again = cts.ParticleTracker(self.bot.data, FIXTURE["team"], self.bot.prior, cts.SEED, closed, cts.PARTICLES)
+        for record in self.battle(closed):
+            if "feed" in record:
+                again.feed(record["feed"])
+            elif "accepted" in record:
+                again.accepted(record["accepted"])
+        self.assertGreater(game.epoch, 2)
+        self.assertEqual(again.epoch, game.epoch)
+        self.assertEqual([p.sets for p in again.particles], [p.sets for p in game.tracker.particles])
+        self.assertEqual([p["record"].tobytes() for p in again.public_parts()],
+                         [p["record"].tobytes() for p in game.tracker.public_parts()])
+
+    def test_a_random_closed_sheet_battle_plays_its_pool_team_over_the_particles(self):
+        self.make(team=False, pool=[teams.text("B"), FIXTURE["team"]], fmt=CTS)
+        rnd = f"battle-{CTS}random-9"
+        self.feed(*self.closed_messages(rnd))
+        sent = self.chosen()
+        self.assertEqual(len(sent), 2)
+        self.assertNotIn("default", " ".join(sent))
+        self.assertTrue(self.bot.battles[rnd].game.closed)
+
+    def test_closed_sheets_need_tables_the_set_table_reads_and_one_particle_per_world(self):
+        with self.assertRaisesRegex(ValueError, "set table"):
+            self.make(fmt=CTS, kind="closure")
+        with self.assertRaisesRegex(ValueError, f"8 worlds.*{cts.PARTICLES} particles"):
+            self.make(fmt=CTS, search=SimpleNamespace(searcher=SimpleNamespace(s=8), close=lambda: None))
 
     def test_a_battle_of_another_format_falls_back(self):
         self.make()

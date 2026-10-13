@@ -2297,6 +2297,97 @@ class C5Facts(unittest.TestCase):
         self.assertIn('move surf: the Champions mod overrides it', str(cm.exception.code))
 
 
+class MoveHandlerTables(unittest.TestCase):
+    """The step-4 tables retain frozen phase semantics and fail closed on drift."""
+
+    def test_committed_tables_pass_check(self):
+        import subprocess
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        subprocess.run([sys.executable, os.path.join(root, 'tools', 'datagen', 'gen_move_handlers.py'), '--check'],
+                       check=True)
+
+    def test_existing_lists_have_frozen_phase_counts(self):
+        import move_handler_source
+        rows = move_handler_source.rows()
+        self.assertEqual(len(rows), 122)
+        self.assertEqual(sum(r.hit_guard for r in rows), 96)
+        self.assertEqual(sum(r.status_hit for r in rows), 18)
+        self.assertEqual([r.name for r in rows], gen_closure.SPECIAL_IDS_P)
+        self.assertEqual([r.value for r in rows], list(range(122)))
+
+    def test_writer_rejects_bad_rows(self):
+        from dataclasses import replace
+        import gen_move_handlers
+        import move_handler_source
+        rows = move_handler_source.rows()
+        bad_firsts = [replace(rows[0], value=1), replace(rows[0], name='lowercase'),
+                      replace(rows[0], name=rows[1].name), replace(rows[0], hit_guard=1)]
+        for first in bad_firsts:
+            with self.subTest(row=first), self.assertRaises(ValueError):
+                gen_move_handlers.render((first, *rows[1:]))
+        with self.assertRaises(ValueError):
+            gen_move_handlers.render(())
+
+    def test_generator_refuses_a_new_unclassified_special_by_name(self):
+        from pathlib import Path
+        import tempfile
+        from unittest.mock import patch
+        import gen_move_handlers
+        import move_handler_source
+        name = 'REVIEW_UNCLASSIFIED'
+        ids = [*move_handler_source.SPECIAL_IDS_P, name]
+        mapped = dict(move_handler_source.SPECIAL_POOL, review_unclassified=(name, set()))
+        with tempfile.TemporaryDirectory(prefix='move-handler-unclassified-') as temp:
+            root = Path(temp)
+            script = root / 'tools/datagen/gen_move_handlers.py'
+            with patch.object(move_handler_source, 'SPECIAL_IDS_P', ids), \
+                    patch.object(move_handler_source, 'SPECIAL_POOL', mapped), \
+                    patch.object(gen_move_handlers, '__file__', str(script)), \
+                    patch.object(sys, 'argv', [str(script)]), \
+                    self.assertRaisesRegex(ValueError, name):
+                gen_move_handlers.main()
+            self.assertFalse((root / 'src/combat/generated/move_handlers.h').exists())
+
+    def test_special_in_two_phase_classes_is_refused_by_name(self):
+        from unittest.mock import patch
+        import move_handler_source
+        with patch.object(move_handler_source, '_DATA_ONLY', move_handler_source._DATA_ONLY | {'NONE'}), \
+                self.assertRaisesRegex(ValueError, 'NONE'):
+            move_handler_source.rows()
+
+    def test_missing_phase_class_does_not_default_to_a_late_handler(self):
+        from unittest.mock import patch
+        import move_handler_source
+        with patch.object(move_handler_source, '_BEFORE_GUARD',
+                          move_handler_source._BEFORE_GUARD - {'HELPING_HAND'}), \
+                self.assertRaisesRegex(ValueError, 'HELPING_HAND'):
+            move_handler_source.rows()
+
+    def test_check_rejects_missing_and_stale_output(self):
+        from contextlib import redirect_stderr, redirect_stdout
+        from pathlib import Path
+        import tempfile
+        from unittest.mock import patch
+        import gen_move_handlers
+        with tempfile.TemporaryDirectory(prefix='move-handler-check-') as temp:
+            root = Path(temp)
+            script = root / 'tools/datagen/gen_move_handlers.py'
+            target = root / 'src/combat/generated/move_handlers.h'
+            for stale in (None, b'/* stale */\n'):
+                if stale is not None:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(stale)
+                with self.subTest(stale=stale), patch.object(gen_move_handlers, '__file__', str(script)), \
+                        patch.object(sys, 'argv', [str(script), '--check']), redirect_stderr(io.StringIO()), \
+                        self.assertRaises(SystemExit) as error:
+                    gen_move_handlers.main()
+                self.assertEqual(error.exception.code, 1)
+            target.write_bytes(gen_move_handlers.render(gen_move_handlers.rows()).encode('ascii'))
+            with patch.object(gen_move_handlers, '__file__', str(script)), \
+                    patch.object(sys, 'argv', [str(script), '--check']), redirect_stdout(io.StringIO()):
+                gen_move_handlers.main()
+
+
 if __name__ == '__main__':
     unittest.main()
 
