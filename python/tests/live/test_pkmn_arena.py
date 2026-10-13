@@ -313,6 +313,35 @@ class ArenaTest(unittest.TestCase):
             self.assertNotIn(private, text)
         self.assertEqual(self.run_log()["counts"]["losses"], 1)
 
+    def test_the_run_log_and_each_summary_name_the_bots_commit_and_dirty_state(self):
+        # HauptSession, 2026-10-13: every result names the code that ran, its commit and whether the tree was dirty
+        # (a summary's own "dirty" is the game's class (b) reason, not the code's state).
+        from duoforge_live import search as live_search
+
+        class RawSearch:
+            def decide(self, *args, **kwargs):
+                return live_search.Outcome(None, "raw", None, None, 0.0)
+
+            def close(self):
+                pass
+        code = {"commit": "8c4fe662", "dirty": False}
+        self.make(search=RawSearch(), code=code)
+        self.feed(*battle_messages())
+        self.feed(room(["|win|Opponent"]))
+        self.assertEqual(self.run_log()["code"], code)
+        import hashlib
+        self.assertEqual(self.run_log()["team_sha256"], hashlib.sha256(FIXTURE["team"].encode("utf-8")).hexdigest())
+        summary = next(r["summary"] for r in self.battle() if "summary" in r)
+        self.assertEqual(summary["code"], code)
+
+    def test_the_arena_mode_names_its_code_or_does_not_start(self):
+        from duoforge_live import arena
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(arena, "provenance", side_effect=SystemExit("no commit to name: DUOFORGE_COMMIT")):
+            argv = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--log-dir", tmp]
+            with mock.patch.dict(os.environ, ENV), self.assertRaisesRegex(SystemExit, "DUOFORGE_COMMIT"):
+                cli.main(argv)
+
     def test_a_wait_request_gets_no_answer_and_a_tie_ends_the_battle(self):
         self.make()
         self.feed(*battle_messages(upto=6))
