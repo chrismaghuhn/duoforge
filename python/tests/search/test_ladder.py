@@ -69,10 +69,15 @@ def latency_run(p99=1.0, step="1", commit="c0ffee"):
 
 
 class StepSettingsTest(unittest.TestCase):
-    def test_step_zero_is_the_live_settings_unchanged(self):
+    def test_step_zero_is_the_measured_baseline_and_2e_is_live(self):
+        # Step 0 stays the baseline every recorded run measured: the approved spec's X (mix, lambda 0.5). The live
+        # settings are step 2e since 2026-10-14 (owner), the best answer, and differ from step 0 by the rule only.
         settings = ladder.step_settings("0")
-        self.assertEqual(settings, HONEST_SETTINGS)
-        self.assertIsNot(settings, HONEST_SETTINGS)
+        self.assertEqual(settings, {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5, "species_prior": "count",
+                                    "capacity": 1024})
+        self.assertIsNot(settings, ladder.STEP0)
+        self.assertEqual(ladder.step_settings("2e"), HONEST_SETTINGS)
+        self.assertEqual({k for k in settings if settings[k] != HONEST_SETTINGS[k]}, {"rule"})
 
     def test_base_chain_applies_the_base_first(self):
         steps = {"0": {"base": None, "settings": {}}, "1": {"base": "0", "settings": {"k": 4}},
@@ -80,17 +85,18 @@ class StepSettingsTest(unittest.TestCase):
         with mock.patch.dict(ladder.STEPS, steps):
             one, two = ladder.step_settings("1"), ladder.step_settings("2")
         self.assertEqual(one["k"], 4)
-        self.assertEqual(one["rule"], HONEST_SETTINGS["rule"])
-        self.assertEqual(two["k"], 2)  # the child's delta over its base's delta over the live settings
+        self.assertEqual(one["rule"], ladder.STEP0["rule"])
+        self.assertEqual(two["k"], 2)  # the child's delta over its base's delta over step 0's settings
         self.assertEqual(two["rule"], "nash")
-        self.assertEqual(two["m"], HONEST_SETTINGS["m"])
+        self.assertEqual(two["m"], ladder.STEP0["m"])
 
-    def test_never_mutates_the_live_settings(self):
-        before = dict(HONEST_SETTINGS)
-        settings = ladder.step_settings("0")
-        settings["k"] = 99
-        self.assertEqual(HONEST_SETTINGS, before)
-        self.assertEqual(ladder.step_settings("0")["k"], HONEST_SETTINGS["k"])
+    def test_never_mutates_step_zero_or_the_live_settings(self):
+        before, live = dict(ladder.STEP0), dict(HONEST_SETTINGS)
+        for name in ("0", "2e"):
+            settings = ladder.step_settings(name)
+            settings["k"] = 99
+        self.assertEqual((ladder.STEP0, HONEST_SETTINGS), (before, live))
+        self.assertEqual(ladder.step_settings("0")["k"], ladder.STEP0["k"])
 
     def test_unknown_step_names_the_known_steps(self):
         with self.assertRaisesRegex(ValueError, "'0'"):

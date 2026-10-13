@@ -240,6 +240,69 @@ HauptSession on 2026-10-13, before any 1bws run** (PR of 1bws): the mirror touch
 - in the mirror touchstone, 1bws against step 0 shows no measurable harm: an upper bound of at least 0.50.
 
 Passing makes a small PR that switches 1bws on live. Failing either point keeps it an option, switched off.
+## Step 2: the width of the own candidates and the rule (#433; predeclared 2026-10-13)
+
+**Question.** Steps 1, 1b and the ×2 budget arms moved nothing. Two causes are left that more budget cannot fix: the own
+candidates miss the right action, and the mix rule plays rows that are worse in every world. This section is a
+predeclaration: it is committed before any step-2 run.
+
+**Evidence before the runs.**
+- **Live (#433, 2026-10-13):** a fresh Rillaboom used Fake Out on the foe's last Pokémon, a Ghost. Grassy Glide would have
+  won that turn. All of the top 3 joint pairs held Fake Out, and Grassy Glide was not among the K = 8 joint pairs: the
+  search could not choose it.
+- **The sun-team sanity arm (above):** the team preview's top 8 never bring Gholdengo; the same kind of blind spot.
+- **Offline, step 0's recorded tables against `bot`** (19,404 searched decisions; the same tables re-reduced, no game
+  played, so this measures decisions, not strength):
+  - 63% of the decisions have at least one own row weakly dominated in every world; 23% of the rows are.
+  - The played choice was such a dominated row in 2.4% of the decisions; dropping the dominated rows changes the
+    choice in 2.5%.
+  - The best answer (λ = 0) plays another pair than the mix in 23.9% of the decisions; λ = 0.25 in 13.7%.
+
+**The arms.** Each is one lever on step 0 (`ladder.STEPS`); turns only, the team preview stays raw.
+
+| arm | setting | change |
+|---|---|---|
+| `2w` | `width` "slots" | the top 8 joint pairs, plus every legal option of each slot with its likeliest legal partner (`lookahead.select_slots`). The engine evaluates the action a reflex hides. k' grows by the options the joint top 8 miss (the screen reports the mean k'); the first pair, the raw one, stays |
+| `2d` | `prune` "dominated" | own rows weakly dominated in every world (at least as low in every cell, lower in one) leave the solve (`matrix.weakly_dominated`). Every dropped row keeps a dominator, so the game value is unchanged; the Nash part of the mix no longer plays them. Named in the record (`dominated_pairs`) |
+| `2wd` | both | the dominance pruning of 2w's wider tables |
+| `2e` | `rule` "ev" | the best answer to the foe model and the worlds (λ = 0), no Nash share. The solve still runs and is recorded |
+| `2l` | `lam` 0.25 | a smaller Nash share in the mix (step 0: 0.5) |
+
+`2d` compares exact float values of the estimated table (16 worlds, 8 foe pairs): "dominated" is a statement about the
+estimate, not about the game.
+
+**Phase A, the screen (no gate).** Each arm: `--step 2x --paired-with <step 0's ladder.json>`, 512 pairs, against `bot`
+and `ppo`, as the budget arms. Reported per arm: h against step 0 per opponent with its 95 % interval; fallbacks;
+p50 / p99 of the shared run; the mean k' (2w, 2wd), the dropped-row share (2d, 2wd) and the duplicate-row share.
+
+**The selection, fixed now.** The arm with the highest mean of its two h points (`bot`, `ppo`) goes to phase B, if that
+mean is at least 0.505 and neither of its intervals lies below 0.50 (upper bound < 0.50). Ties go to the arm with the
+lower shared p50. If no arm qualifies, step 2 closes as "no gain" and there is no gated run; double oracle (#433) comes
+next. A combination of two qualifying levers is a new arm, predeclared here before its run.
+
+**Phase B, the gated run.** The selected arm: `--step <arm> --previous 0 --h2h --previous-run <step 0's ladder.json>`
+against `bot`, `bc6` and `ppo`, 1024 pairs, then its exclusive latency run (16 pairs against `bot`). Every gate of the
+table above applies unchanged: strength, no harm, reproduced (scores and decision digests), fallbacks, latency p99
+≤ 2.0 s. For live play the budget step's VPS bound applies on top: an adopted arm with an exclusive p99 above 1.67 s is
+reported as adopted on the ladder, but it is no live candidate.
+
+**The touchstone (#458), reported apart and not gated.** The phase-B arm and step 0 each play Team A against the
+tournament sun team (`--matchup`, members with their known stat points), 256 pairs, `bot` and `ppo` as the sun team's
+pilots. The mirror arm (our own search piloting the sun team) follows when the harness can seat a searcher on the foe side.
+
+**Amendment before any step-2 run (owner, 2026-10-13, #440).**
+- **Arms:** phase A screens `2d`, `2e` and `2l` only.
+  - The KO check found the misses mostly among the candidates but not chosen: with an own KO available, 293 not
+    chosen against 31 not a candidate. That is the target of these three arms.
+  - `2w` and `2wd` are above the LP size limit (k' up to 34 on the arena logs: 23,220 tableau cells). They are
+    refused by name until the solver is repaired.
+  - The selection rule above is unchanged, over these three arms.
+- **The baseline is step 0 rerun on main after #459** (the visible-sleep fix changes step 0's play):
+  - `--step 0` against `bot`, `bc6` and `ppo`, 1024 pairs, on this branch with main merged.
+  - It is phase A's `--paired-with` run (its first 512 pairs) and phase B's `--previous-run`.
+  - The recorded step-0 run at 1cb3e2d9 is no longer today's step 0, and no step-2 arm is paired with it.
+- **The KO check** (`ko_check`, same arena logs) runs for step 0 on this code and for each screened arm, as a
+  reported metric, not a gate.
 
 ## Results
 
@@ -546,3 +609,118 @@ fails. 1bw stays an option, switched off.
 
 **Provenance.** search/mirror at 68050692 (`dirty: false`), library of main at 0a5db340, 15:47 to 16:55 on one lock slot
 (the 1bw arm 2,446 s, step 0 1,493 s). Raw output private, outside the repository.
+### Step 0 rebaselined on main after #459 (2026-10-13)
+
+`--step 0` against `bot`, `bc6` and `ppo`, 1024 pairs: the base of step 2's phase A (`--paired-with`) and phase B
+(`--previous-run`). On search/2-width at af168d56 (`dirty: false`), with main merged through #461 and the library of
+main at 0a5db340. The recorded step 0 at 1cb3e2d9 predates #459 (the visible-sleep fix) and is not paired with step 2.
+
+| opponent | score | fallbacks (at 1cb3e2d9) | p50 / p99 (shared) |
+|---|---|---|---|
+| `bot` | 0.862 (0.863) | 1.9% (2.7%) | 0.078 / 0.173 s |
+| `bc6` | 0.700 (0.698) | 1.5% (2.3%) | 0.074 / 0.139 s |
+| `ppo` | 0.470 (0.471) | 1.5% (2.6%) | 0.064 / 0.121 s |
+
+The scores are unchanged; the visible-sleep fix lowers the fallbacks by about a third. 0 unresolved games.
+
+**Provenance.** 17:24 to 18:44 on one lock slot. An earlier start ran twice into one directory (two controllers of one
+queue). Both runs were stopped and the directory voided, and nothing of it is used (queue.log). Raw output private.
+
+### Step 2, phase A (2026-10-13): 2e qualifies
+
+Each arm: 512 pairs against `bot` and `ppo`, paired with the rebaselined step 0 (`--paired-with`, its first 512 pairs).
+search/2-width at af168d56 (`dirty: false`), the same commit and library as its step 0.
+
+| arm | h against step 0, `bot` | h, `ppo` | mean | qualifies |
+|---|---|---|---|---|
+| 2d (prune dominated rows) | 0.500 [0.498, 0.502] | 0.501 [0.500, 0.502] | 0.501 | no |
+| **2e (the best answer, λ = 0)** | **0.514 [0.503, 0.526]** | **0.512 [0.497, 0.528]** | **0.513** | **yes** |
+| 2l (λ = 0.25) | 0.504 [0.494, 0.515] | 0.503 [0.491, 0.516] | 0.504 | no |
+
+- **The selection, as fixed:** the highest mean of the two h points, at least 0.505, and neither upper bound below
+  0.50. 2e is the only arm that qualifies, so it goes to phase B.
+- 0 unresolved games. Fallbacks 1.5–2.0%. Shared p50 0.05–0.07 s, p99 0.07–0.17 s. Duplicate-row share 4–8%.
+- 2d's games are nearly step 0's: dropping weakly dominated rows rarely changes the play.
+
+**The KO check** (`ko_check`, 153 arena games followed, 1530 searched decisions, KO chance ≥ 0.5; search/ko-check at
+35172ab6, `dirty: false`):
+
+| | step 0 | 2d | 2e | 2l |
+|---|---|---|---|---|
+| own KO available | 811 | 810 | 811 | 811 |
+| played | 449 | 456 | **508** | 480 |
+| a candidate, not chosen | 326 | 288 | 266 | 294 |
+| not a candidate | 36 | 66 | 37 | 37 |
+| foe KO threats answered (of 680; 317 unavoidable) | 141 | 160 | 145 | 153 |
+
+- **Caveat:** for step 0, "played" is the move logged live; today's step 0 matches it in 83% of the decisions. For the
+  arms it is the arm's own choice.
+- **The fair comparison** (HS): step 0 counted by its own choice too (`--played search`, search/ko-check at 7b082e1f,
+  `dirty: false`; it differs from the arms' 35172ab6 by that option only):
+
+  | by its own choice | step 0 | 2d | 2e | 2l |
+  |---|---|---|---|---|
+  | own KO played (of 811) | 458 | 456 | **508** | 480 |
+  | a candidate, not chosen | 316 | 288 | 266 | 294 |
+  | foe KO threats answered (of 680) | **160** | **160** | 145 | 153 |
+
+  2e plays 50 more of the available KOs than step 0, and answers 15 fewer foe threats. The best answer takes the KO
+  more often and protects less often; 2d keeps step 0's answers.
+- 2d drops KO moves from the candidates (not a candidate: 36 → 66), but answers more foe threats.
+
+**Phase B** (predeclared), for 2e:
+1. The gated run: `--h2h`, 1024 pairs against `bot`, `bc6` and `ppo`, with `--previous-run` of the rebaselined step 0.
+2. Its exclusive latency run.
+3. The touchstone, reported only.
+
+It starts once the HauptSession has set its order with the CTS lane.
+
+### Step 2, phase B (2026-10-13/14): 2e passes every gate; the mirror touchstone shows no measurable harm
+
+The runs, all `dirty: false`, use the same library file: `libduoforge_shared.so` built from 0a5db340, sha256 `48629702…2ee564`. Main and foe network are BC6 (`bda5de8e4e96`), with the same spread table and seed.
+
+| run | settings | commit |
+|---|---|---|
+| gated | `--step 2e --previous 0 --h2h --previous-run <step 0 rebaselined>`, 1024 pairs, `bot`, `bc6`, `ppo` | af168d56 |
+| latency | `--step 2e`, 16 pairs against `bot`, `--exclusive` | af168d56 |
+| mirror | `--mirror --step 2e --previous 0`, Team A against the tournament sun team, 512 pairs | a778d71f |
+
+a778d71f is af168d56 plus one commit, `ladder --mirror`, which touches only `ladder.py` and `test_ladder.py`. The search, the engine and the library are unchanged.
+
+**Gates, as predeclared (`ladder verdict --latency-run`):**
+
+| gate | measured | |
+|---|---|---|
+| strength: h2h lower bound > 0.50 | **0.535 [0.517, 0.554]**, unfinished 0 | pass |
+| no harm: upper bound ≥ 0.50, `bot` and `bc6` | `bot` 0.514 [0.506, 0.522], `bc6` 0.541 [0.531, 0.551] | pass |
+| reproduced: step 0's scores and decision digests | equal to its rebaselined run | pass |
+| fallbacks ≤ 5 % and ≤ previous + 1 pp | `bot` 1.90 % (step 0: 1.89 %), `bc6` 1.48 % (1.51 %) | pass |
+| latency: exclusive p99 ≤ 2.0 s (VPS bound 1.67 s) | p99 **0.081 s**, p50 0.046 s | pass |
+
+**`adopt: true`.**
+- Reported only: `ppo` 0.512 [0.502, 0.523], with fallbacks of 1.47 % (step 0: 1.52 %).
+- The latency run's own fallbacks were 10 of 302 decisions. All 10 are `unreconstructible`, with reason `DUOFORGE_E_UNSUPPORTED: public record` and cause `public_record_unsupported`: the engine refused the public record, and no named cause bit was set. None was a deadline or an error.
+
+**The mirror touchstone (reported, not gated).** Team A plays the tournament sun team, and the sun team is piloted by our step-0 live search. Its spread table leaves out our registry team.
+
+| arm | score, 512 pairs | 95 % |
+|---|---|---|
+| 2e | 0.874 | [0.854, 0.894] |
+| step 0 | 0.869 | [0.849, 0.889] |
+| paired, 2e vs step 0 | **0.502** | **[0.492, 0.513]** |
+
+- **Not clearly negative:** the upper bound is ≥ 0.50, so going live needs no owner exception.
+- **No measurable gain:** the lower bound is < 0.50.
+- Fallbacks 0, unfinished 0.
+
+**Not run in phase B:** the predeclared touchstone with `bot` and `ppo` piloting the sun team (256 pairs). Phase B ran in the HauptSession's order: gated run, latency, mirror.
+
+**The KO check** is unchanged from phase A's fair comparison above:
+- 2e plays 508 of the 811 available own KOs, against step 0's 458.
+- 2e answers 145 of the 680 foe threats, against step 0's 160.
+
+**Live.** Owner decision, relayed by the HauptSession on 2026-10-14: λ = 0 (2e) goes live.
+- `HONEST_SETTINGS` takes 2e's `rule` "ev", and `lam` stays 0.5 as measured. Under "ev" the played row is the best answer; the mix is still computed and recorded.
+- The ladder's step 0 stays the measured baseline (mix, λ = 0.5), pinned as `ladder.STEP0`. Its records and every arm above stay reproducible.
+
+**Not yet run:** the touchstone with `bot`/`ppo` pilots. It follows later as information, not as a gate (HauptSession).
