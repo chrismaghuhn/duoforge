@@ -94,9 +94,17 @@ class ArmsTest(unittest.TestCase):
 
     def test_a_comma_list_is_checked(self):
         self.assertEqual(oracle.arms_of("today, 24|01"), ["today", "24|01"])
-        for bad in ("", "24|01,24|01", "today,42|01"):
+        for bad in ("", "24|01,24|01", "today,42|01", "drawn"):
             with self.assertRaises(ValueError, msg=bad):
                 oracle.arms_of(bad)
+
+    def test_the_foe_side_has_drawn_for_today(self):
+        self.assertEqual(oracle.arms_of("all", "foe"), ["drawn"] + oracle.combos())
+        self.assertEqual(oracle.arms_of("drawn,24|01", "foe"), ["drawn", "24|01"])
+        with self.assertRaisesRegex(ValueError, "foe side"):
+            oracle.arms_of("today,24|01", "foe")
+        with self.assertRaises(ValueError):
+            oracle.arms_of("all", "both")
 
 
 class DrawChoiceTest(unittest.TestCase):
@@ -278,6 +286,28 @@ class GuardTest(unittest.TestCase):
         self.assertEqual(oracle.resume_changes(old, conditions), [])
         self.assertEqual(oracle.resume_changes(dict(old, pairs=256, seed="0x2"), conditions), ["seed", "pairs"])
 
+    def test_a_run_from_before_the_foe_side_resumes_as_the_ours_side(self):
+        old = {"seed": "0x1", "pairs": 32}
+        self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "ours"}), [])
+        self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe"}), ["side"])
+
+    def test_our_own_preview_must_be_one_per_seat(self):
+        a, b = oracle.team_index("24|01"), oracle.team_index("01|23")
+        swapped = int(np.flatnonzero((TEAM_TABLE == np.array([4, 2, 1, 0], TEAM_TABLE.dtype)).all(axis=1))[0])
+        team = lambda seat, own: {"boundary": "TEAM_SELECTION", "seat": seat, "own_choice": own}
+        oracle.check_constant_own("45|23", [team(0, a), team(0, swapped), team(1, b), {"boundary": "TURN"}])
+        with self.assertRaisesRegex(SystemExit, r"arm 45\|23: our own preview differs between games \(\{0: "):
+            oracle.check_constant_own("45|23", [team(0, a), team(0, b), team(1, b)])
+
+    def test_the_foe_previews_come_from_the_draw_or_the_team_records(self):
+        drawn = oracle.DrawnPreview(None, None, oracle.SEED)
+        drawn.drawn = {0: 5, 1: 6}
+        self.assertEqual(oracle.foe_previews(drawn, []), {0: 5, 1: 6})
+        forced = oracle.ForcedPreview(None, 7)
+        decisions = [{"boundary": "TEAM_SELECTION", "env": 1, "choice": 7}, {"boundary": "TURN", "env": 0, "choice": 2},
+                     {"boundary": "TEAM_SELECTION", "env": 0, "choice": 7}]
+        self.assertEqual(oracle.foe_previews(forced, decisions), {0: 7, 1: 7})
+
     def test_every_game_needs_a_foe_draw(self):
         oracle.check_drawn("24|01", {0: 1, 1: 2}, 2)
         with self.assertRaisesRegex(SystemExit, r"arm 24\|01: the foe drew no preview in 1 game"):
@@ -290,6 +320,7 @@ class GuardTest(unittest.TestCase):
         oracle.check_played("24|01", [{"boundary": "TEAM_SELECTION", "choice": row},
                                       {"boundary": "TEAM_SELECTION", "choice": swapped}, turn])
         oracle.check_played("today", [{"boundary": "TEAM_SELECTION", "choice": 0}])
+        oracle.check_played("drawn", [{"boundary": "TEAM_SELECTION", "choice": 0}])
         with self.assertRaisesRegex(SystemExit, r"played \['01\|23'\]"):
             oracle.check_played("24|01", [{"boundary": "TEAM_SELECTION", "choice": oracle.team_index("01|23")}])
 
@@ -297,15 +328,16 @@ class GuardTest(unittest.TestCase):
 class SummaryTest(unittest.TestCase):
     SPECIES = {"ours": ["O0", "O1", "O2", "O3", "O4", "O5"], "foe": ["F0", "F1", "F2", "F3", "F4", "F5"]}
 
-    def write(self, out, arms, foe_drawn=None):
+    def write(self, out, arms, foe_drawn=None, side=None, own=None):
         os.makedirs(os.path.join(out, "arms"), exist_ok=True)
         with open(os.path.join(out, "conditions.json"), "w", encoding="utf-8") as f:
-            json.dump({"species": self.SPECIES}, f)
+            json.dump({"species": self.SPECIES, **({"side": side} if side else {})}, f)
         lead01 = oracle.team_index("01|23")
         for name, scores in arms.items():
             entry = {"arm": name, "scores": scores, "unfinished": 0, "unresolved": 0,
                      "foe_drawn": foe_drawn.get(name, [lead01] * len(scores)) if foe_drawn else [lead01] * len(scores),
-                     "own_choice": {"0": "24|01", "1": "24|01"}, "fallback_share": {"ours": 0.0, "foe": 0.0}}
+                     "own_choice": (own or {}).get(name, {"0": "24|01", "1": "24|01"}),
+                     "fallback_share": {"ours": 0.0, "foe": 0.0}}
             with open(os.path.join(out, "arms", name.replace("|", "-") + ".json"), "w", encoding="utf-8") as f:
                 json.dump(entry, f)
 
@@ -332,6 +364,32 @@ class SummaryTest(unittest.TestCase):
                 oracle.summarize(tmp)
 
 
+    def test_the_foe_side_ranks_the_foes_best_answers_first(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = {"drawn": oracle.team_index("01|23"), "45|23": oracle.team_index("45|23"),
+                    "02|13": oracle.team_index("02|13")}
+            self.write(tmp, {"drawn": [1, 1, 1, 0], "45|23": [0, 0, 1, 0], "02|13": [1, 1, 1, 1]}, side="foe",
+                       foe_drawn={name: [row] * 4 for name, row in rows.items()})
+            out = oracle.summarize(tmp)
+            self.assertEqual(out["ranking"], ["45|23", "02|13"])
+            self.assertEqual(out["exploitability"]["best_answer"], "45|23")
+            self.assertAlmostEqual(out["exploitability"]["points"]["points"], 50.0)  # drawn 0.75 against 0.25
+            self.assertEqual(out["exploitability"]["our_preview"], {"0": "24|01", "1": "24|01"})
+            self.assertAlmostEqual(out["arms"]["45|23"]["vs_drawn"]["points"], -50.0)
+            self.assertEqual(out["arms"]["45|23"]["members"], {"leads": ["F4", "F5"], "bench": ["F2", "F3"]})
+            self.assertEqual(out["marginals"]["leads"]["45"]["members"], ["F4", "F5"])
+            self.assertEqual(out["foe_preview"]["leads"], {"F0 + F1": 4})  # the drawn arm's previews
+            self.assertNotIn("loss", out)
+            self.assertNotIn("by_foe_lead", out)
+
+    def test_the_foe_side_refuses_arms_where_our_preview_differs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.write(tmp, {"drawn": [1, 1], "45|23": [0, 1]}, side="foe",
+                       own={"45|23": {"0": "24|01", "1": "02|34"}})
+            with self.assertRaisesRegex(SystemExit, "our previews differ: the arms are not paired"):
+                oracle.summarize(tmp)
+
+
 class CliGuardTest(unittest.TestCase):
     """Each refusal raises SystemExit before any network is loaded and before the output directory exists."""
 
@@ -352,6 +410,12 @@ class CliGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "out")
             self.assertRefused("ascending", self.argv(out, ("--arms", "42|01")), out)
+
+    def test_the_foe_side_takes_no_foe_lead_and_no_today(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            self.assertRefused("--foe-lead", self.argv(out, ("--side", "foe", "--foe-lead", "A,B")), out)
+            self.assertRefused("foe side", self.argv(out, ("--side", "foe", "--arms", "today")), out)
 
     def test_pairs_must_be_positive(self):
         with tempfile.TemporaryDirectory() as tmp:

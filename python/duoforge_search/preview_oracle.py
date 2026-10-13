@@ -1,8 +1,8 @@
 """The preview oracle (issue #458): what the team preview costs in one matchup, before an opening book is built.
 
     python -m duoforge_search.preview_oracle --checkpoint MAIN --foe-net FOE --ours OURS --foe FOE_TEAM --out DIR
-        [--arms all | today,LEADS|BENCH,...] [--foe-lead SPECIES,SPECIES] [--pairs 32] [--seed SEED] [--workers 8]
-        [--max-steps 1000]
+        [--side ours|foe] [--arms all | today,LEADS|BENCH,...] [--foe-lead SPECIES,SPECIES] [--pairs 32] [--seed SEED]
+        [--workers 8] [--max-steps 1000]
     python -m duoforge_search.preview_oracle summary DIR
 
 Our team OURS (a registry paste or a packed team) meets the foe team FOE_TEAM in --pairs game pairs (ladder.matchup_rows:
@@ -21,6 +21,11 @@ word of the game's decision key (draw_choice): the same draw in every arm, so th
 bench still comes from the head): the case of an opponent who always leads so (#458, the sun lead). Each
 arm plays the same suite rows on the same batch seed (common random numbers): a game of two arms is the same game up to
 our preview. A SearchError stops the run; the summary refuses arms whose foe draws differ ("not paired").
+
+--side foe turns the oracle around (the preview exploitability of #458): our preview is today's in every arm, and an
+arm fixes the foe's preview instead ("LEADS|BENCH" indexes FOE_TEAM). Its reference arm "drawn" draws the foe's
+preview from its team head as above; the summary ranks the foe's best answers first and reports the exploitability,
+our score against drawn minus our score against the best answer, and refuses arms whose our previews differ.
 
 Each finished arm is written to DIR/arms/ARM.json (per-game scores, the foe's drawn choice per game, the decision
 digests and fallback shares) and a rerun skips it when its conditions match; `summary` (also run at the end) writes
@@ -45,6 +50,8 @@ DRAW_TAG = 0x5052455649455700  # "PREVIEW": the foe preview's draw word, apart f
 STEP = "0"  # the live search on both seats; its team preview is the raw top-1, so forcing it replaces nothing searched
 ROSTER, BROUGHT = 6, 4
 TODAY = "today"
+DRAWN = "drawn"  # the foe side's reference arm: the foe's preview drawn from its team head, as on the ours side
+SIDES = ("ours", "foe")
 
 
 def combos():
@@ -86,15 +93,22 @@ def arm_of(choice):
     return f"{leads[0]}{leads[1]}|{bench[0]}{bench[1]}"
 
 
-def arms_of(text):
-    """The arm list of --arms: "all" (today, then the 90 combinations) or a comma list, each arm at most once."""
+def arms_of(text, side="ours"):
+    """The arm list of --arms for the side whose preview the arms fix: "all" (the reference arm, then the 90
+    combinations) or a comma list, each arm at most once. The ours side's reference is "today", the foe side's
+    "drawn"."""
+    if side not in SIDES:
+        raise ValueError(f"the side is one of {SIDES} (got {side!r})")
+    reference = TODAY if side == "ours" else DRAWN
     if text == "all":
-        return [TODAY] + combos()
+        return [reference] + combos()
     out = [x.strip() for x in text.split(",") if x.strip()]
     if not out:
         raise ValueError("--arms names no arm")
     for name in out:
-        if name != TODAY:
+        if name in (TODAY, DRAWN) and name != reference:
+            raise ValueError(f"{name!r} is no arm of the {side} side (its reference arm is {reference!r})")
+        if name != reference:
             parse_arm(name)
     if len(set(out)) != len(out):
         raise ValueError(f"--arms names an arm twice ({text!r})")
@@ -241,7 +255,8 @@ def spread(scores):
 def resume_changes(old, conditions):
     """The condition keys in which a run's existing conditions.json (old) records another measurement than this run's
     conditions: every key but commit, dirty, cpu and workers (the commit is recorded per arm, and the arms' digests show
-    whether it played alike)."""
+    whether it played alike). A conditions.json without a side is the ours side's (written before the foe side)."""
+    old = {"side": "ours", **old}
     keys = [k for k in conditions if k not in ("commit", "dirty", "cpu", "workers")]
     return [k for k in keys if old.get(k) != json.loads(json.dumps(_finite(conditions[k])))]
 
@@ -253,26 +268,52 @@ def check_drawn(arm, drawn, games):
                          f"game(s)")
 
 
-def check_played(arm, decisions):
-    """SystemExit unless every team-preview decision of ours played the arm's combination (today plays its own)."""
-    if arm == TODAY:
+def check_played(arm, decisions, who="our"):
+    """SystemExit unless every team-preview decision in decisions played the arm's combination (the reference arms
+    today and drawn play their own)."""
+    if arm in (TODAY, DRAWN):
         return
     played = {arm_of(r["choice"]) for r in decisions if r["boundary"] == "TEAM_SELECTION"}
     if played != {arm}:
-        raise SystemExit(f"arm {arm}: our preview played {sorted(played)}")
+        raise SystemExit(f"arm {arm}: {who} preview played {sorted(played)}")
+
+
+def check_constant_own(arm, decisions):
+    """SystemExit unless our own preview (each team record's own_choice, side and bench order dropped) is one
+    combination per seat over all the arm's games: on the foe side, the arms are paired only if ours is the same."""
+    own = {}
+    for r in decisions:
+        if r["boundary"] == "TEAM_SELECTION":
+            own.setdefault(int(r["seat"]), set()).add(arm_of(r["own_choice"]))
+    varied = {seat: sorted(v) for seat, v in sorted(own.items()) if len(v) > 1}
+    if varied:
+        raise SystemExit(f"arm {arm}: our own preview differs between games ({varied})")
+
+
+def foe_previews(preview, decisions):
+    """env -> the foe's played team row: a DrawnPreview's draws, else the foe's team records' choices."""
+    if isinstance(preview, DrawnPreview):
+        return dict(preview.drawn)
+    return {int(r["env"]): r["choice"] for r in decisions if r["boundary"] == "TEAM_SELECTION"}
 
 
 def _names(members, arm):
-    if arm == TODAY:
+    if arm in (TODAY, DRAWN):
         return None
     leads, bench = parse_arm(arm)
     return {"leads": [members[m] for m in leads], "bench": [members[m] for m in bench]}
 
 
 def summarize(out_dir):
-    """oracle.json from DIR/conditions.json and DIR/arms/*.json: per arm its score, interval and difference to today,
-    the ranking, the loss of today against the best combination, the spread of the combinations, the marginals per
-    bring set and per lead pair, and the foe's preview distribution. Returns the dict (also written)."""
+    """oracle.json from DIR/conditions.json and DIR/arms/*.json: per arm its score, interval and difference to the
+    reference arm, the ranking, the spread of the combinations, the marginals per bring set and per lead pair, and the
+    foe's preview distribution. Returns the dict (also written).
+
+    The ours side (the arms fix our preview; the foe's is drawn alike in every arm): the reference is today, the
+    ranking is ours (best first), the loss is today against the best combination, and the scores are split by the
+    foe's lead. The foe side (the arms fix the foe's preview; ours is today's in every arm): the reference is drawn,
+    the ranking is the foe's best answers first (our lowest scores), and the exploitability is our score against drawn
+    minus our score against the best answer. Scores are always ours."""
     conditions = ladder._load_json(os.path.join(out_dir, "conditions.json"))
     arm_dir = os.path.join(out_dir, "arms")
     arms = {}
@@ -282,25 +323,41 @@ def summarize(out_dir):
             arms[entry["arm"]] = entry
     if not arms:
         raise SystemExit(f"{arm_dir} holds no finished arm")
-    drawn = {tuple(e["foe_drawn"]) for e in arms.values()}
-    if len(drawn) != 1:
-        raise SystemExit("the arms' foe previews differ: the arms are not paired")
+    side = conditions.get("side", "ours")
+    if side == "ours":
+        if len({tuple(e["foe_drawn"]) for e in arms.values()}) != 1:
+            raise SystemExit("the arms' foe previews differ: the arms are not paired")
+    elif len({json.dumps(e["own_choice"], sort_keys=True) for e in arms.values()}) != 1:
+        raise SystemExit("the arms' our previews differ: the arms are not paired")
     ours, foe = conditions["species"]["ours"], conditions["species"]["foe"]
+    fixed = ours if side == "ours" else foe  # the team whose preview the arms fix
+    reference_name = TODAY if side == "ours" else DRAWN
     scores = {name: np.asarray(e["scores"], np.float64) for name, e in arms.items()}
-    today = scores.get(TODAY)
+    reference = scores.get(reference_name)
     per_arm = {}
     for name, e in arms.items():
-        per_arm[name] = {**({"members": _names(ours, name)} if name != TODAY else {"own_choice": e["own_choice"]}),
+        per_arm[name] = {**({"members": _names(fixed, name)} if name != reference_name
+                            else {"own_choice": e["own_choice"]}),
                          "score": ladder.pair_interval(scores[name]),
                          "unfinished": e["unfinished"], "unresolved": e["unresolved"],
                          "fallback_share": e["fallback_share"], "fallback_causes": e.get("fallback_causes")}
-        if today is not None and name != TODAY:
-            per_arm[name]["vs_today"] = paired_difference(scores[name], today)
-    combo_scores = {name: s for name, s in scores.items() if name != TODAY}
-    ranking = sorted(combo_scores, key=lambda n: (-combo_scores[n].mean(), n))
+        if reference is not None and name != reference_name:
+            per_arm[name]["vs_" + reference_name] = paired_difference(scores[name], reference)
+    combo_scores = {name: s for name, s in scores.items() if name != reference_name}
+    sign = -1.0 if side == "ours" else 1.0  # ours: our best first; foe: the foe's best answers (our lowest) first
+    ranking = sorted(combo_scores, key=lambda n: (sign * combo_scores[n].mean(), n))
     out = {"conditions": conditions, "arms": per_arm, "ranking": ranking}
     if len(combo_scores) >= 2:
         out["spread"] = spread(combo_scores)
+    if side == "foe" and reference is not None and ranking:
+        best = ranking[0]
+        out["exploitability"] = {
+            "best_answer": best, "our_preview": arms[DRAWN]["own_choice"],
+            "points": paired_difference(reference, combo_scores[best]),
+            "note": "the foe's best answer of the combinations played here, selected on these games: biased toward the "
+                    "foe by the selection. In a confirmation run, the screen's best answer's vs_drawn is the number "
+                    "not selected on these games"}
+    today = reference if side == "ours" else None
     if today is not None and ranking:
         best = ranking[0]
         own = arms[TODAY]["own_choice"]
@@ -314,10 +371,13 @@ def summarize(out_dir):
         bring = "".join(str(m) for m in sorted(leads + bench))
         marg["bring"].setdefault(bring, []).append(s.mean())
         marg["leads"].setdefault("".join(map(str, leads)), []).append(s.mean())
-    out["marginals"] = {kind: {key: {"members": [ours[int(c)] for c in key], "combinations": len(v),
+    out["marginals"] = {kind: {key: {"members": [fixed[int(c)] for c in key], "combinations": len(v),
                                      "mean": float(np.mean(v)), "max": float(np.max(v)), "min": float(np.min(v))}
                                for key, v in sorted(table.items())} for kind, table in marg.items()}
-    foe_drawn = next(iter(arms.values()))["foe_drawn"]
+    if side == "foe":  # the foe's drawn previews are the reference arm's
+        foe_drawn = arms[DRAWN]["foe_drawn"] if DRAWN in arms else []
+    else:
+        foe_drawn = next(iter(arms.values()))["foe_drawn"]
     leads, brings = {}, {}
     for choice in foe_drawn:
         leads_, bench = parse_arm(arm_of(choice))
@@ -327,14 +387,15 @@ def summarize(out_dir):
         brings[bring_key] = brings.get(bring_key, 0) + 1
     out["foe_preview"] = {"games": len(foe_drawn), "leads": dict(sorted(leads.items(), key=lambda kv: -kv[1])),
                           "brought": dict(sorted(brings.items(), key=lambda kv: -kv[1]))}
-    by_lead = {}
-    for name, s in scores.items():
-        rows = {}
-        for g, choice in enumerate(foe_drawn):
-            leads_, _ = parse_arm(arm_of(choice))
-            rows.setdefault(" + ".join(foe[m] for m in leads_), []).append(s[g])
-        by_lead[name] = {k: {"games": len(v), "score": float(np.mean(v))} for k, v in rows.items()}
-    out["by_foe_lead"] = by_lead
+    if side == "ours":  # on the foe side, each arm is one foe lead
+        by_lead = {}
+        for name, s in scores.items():
+            rows = {}
+            for g, choice in enumerate(foe_drawn):
+                leads_, _ = parse_arm(arm_of(choice))
+                rows.setdefault(" + ".join(foe[m] for m in leads_), []).append(s[g])
+            by_lead[name] = {k: {"games": len(v), "score": float(np.mean(v))} for k, v in rows.items()}
+        out["by_foe_lead"] = by_lead
     with open(os.path.join(out_dir, "oracle.json"), "w", encoding="utf-8") as f:
         json.dump(_finite(out), f, indent=1, allow_nan=False)
     return out
@@ -379,7 +440,8 @@ def main_summary(argv):
     p.add_argument("out")
     args = p.parse_args(argv)
     out = summarize(args.out)
-    print(json.dumps(_finite({k: out[k] for k in ("loss", "spread", "foe_preview") if k in out}), indent=1))
+    print(json.dumps(_finite({k: out[k] for k in ("loss", "exploitability", "spread", "foe_preview") if k in out}),
+                     indent=1))
     return 0
 
 
@@ -393,9 +455,12 @@ def main(argv=None):
     p.add_argument("--ours", required=True, help="our team: a registry paste or a packed team")
     p.add_argument("--foe", required=True, help="the foe team: a paste or a packed team, with its stat points")
     p.add_argument("--out", required=True, help="the output directory, outside the repository")
-    p.add_argument("--arms", default="all", help="'all' (today and the 90 combinations) or a comma list")
+    p.add_argument("--side", choices=SIDES, default="ours",
+                   help="whose preview the arms fix: ours (the foe's is drawn) or the foe's (ours is today's)")
+    p.add_argument("--arms", default="all",
+                   help="'all' (the side's reference arm, today or drawn, and the 90 combinations) or a comma list")
     p.add_argument("--foe-lead", metavar="SPECIES,SPECIES",
-                   help="fix the foe's two leads; its bench is drawn from its team head given them")
+                   help="fix the foe's two leads; its bench is drawn from its team head given them (ours side only)")
     p.add_argument("--pairs", type=int, default=32)
     p.add_argument("--seed", type=lambda text: int(text, 0), default=SEED)
     p.add_argument("--workers", type=int, default=8)
@@ -407,8 +472,10 @@ def main(argv=None):
         refuse_repository(args.out)
     except ValueError:
         raise SystemExit(f"--out {args.out} is inside the repository (AGENTS.md)") from None
+    if args.side == "foe" and args.foe_lead is not None:
+        raise SystemExit("--foe-lead fixes the foe's leads on the ours side; on the foe side the arms fix them")
     try:
-        arms = arms_of(args.arms)
+        arms = arms_of(args.arms, args.side)
     except ValueError as err:
         raise SystemExit(str(err)) from None
     if args.pairs < 1:
@@ -451,7 +518,9 @@ def main(argv=None):
         conditions = {
             "tool": "preview_oracle", "seed": hex(args.seed), "pairs": args.pairs, "games": int(n),
             "max_steps": args.max_steps, "step": {"name": STEP, "settings": settings},
-            "foe_preview": "drawn from the foe search's raw team head (draw_choice)",
+            "side": args.side,
+            "foe_preview": ("drawn from the foe search's raw team head (draw_choice)" if args.side == "ours" else
+                            "fixed per arm; in the arm drawn, drawn from the foe search's raw team head (draw_choice)"),
             "foe_lead": None if args.foe_lead is None else sorted(x.strip() for x in args.foe_lead.split(",")),
             "ours_sha256_prefix": matchup["ours"]["sha256"][:12], "foe_sha256_prefix": matchup["foe"]["sha256"][:12],
             "registry": {"ours": ours_id, "foe": foe_id},
@@ -488,33 +557,43 @@ def main(argv=None):
 
         with searcher(source_ids.get(foe_id)) as ours_search, searcher(source_ids.get(ours_id)) as foe_search:
             for arm in arms:
-                target = os.path.join(arm_dir, ("today" if arm == TODAY else arm.replace("|", "-")) + ".json")
+                target = os.path.join(arm_dir, (arm if arm in (TODAY, DRAWN) else arm.replace("|", "-")) + ".json")
                 if os.path.exists(target):
                     print(f"{arm}: done before, skipped", flush=True)
                     continue
                 ours_search.clear()
                 foe_search.clear()
-                forced = None if arm == TODAY else team_index(arm)
-                learner = arena.SearchPlayer(ForcedPreview(foe_arena.Timed(ours_search), forced), "ours", args.seed)
-                drawn = DrawnPreview(foe_arena.Timed(foe_search), foe_search, args.seed, keep)
-                opponent = SearchingOpponent(arena.SearchPlayer(drawn, "foe", args.seed))
+                fixes_ours = args.side == "ours" and arm != TODAY
+                learner = arena.SearchPlayer(ForcedPreview(foe_arena.Timed(ours_search),
+                                                           team_index(arm) if fixes_ours else None), "ours", args.seed)
+                if args.side == "foe" and arm != DRAWN:
+                    foe_preview = ForcedPreview(foe_arena.Timed(foe_search), team_index(arm))
+                else:
+                    foe_preview = DrawnPreview(foe_arena.Timed(foe_search), foe_search, args.seed, keep)
+                opponent = SearchingOpponent(arena.SearchPlayer(foe_preview, "foe", args.seed))
                 started = time.perf_counter()
                 records = evaluate.play_suite(ctx, pool, rows, learner, opponent, args.workers, args.seed,
                                               max_steps=args.max_steps)
                 seconds = time.perf_counter() - started
-                check_drawn(arm, drawn.drawn, n)
                 ours_decisions = [r for row in sorted(learner.records) for r in learner.records[row]]
                 foe_decisions = [r for row in sorted(opponent.player.records) for r in opponent.player.records[row]]
-                entry = _arm_entry(arm, records, ours_decisions, foe_decisions,
-                                   [int(drawn.drawn[e]) for e in range(n)], seconds)
+                played = foe_previews(foe_preview, foe_decisions)
+                check_drawn(arm, played, n)
+                entry = _arm_entry(arm, records, ours_decisions, foe_decisions, [int(played[e]) for e in range(n)],
+                                   seconds)
                 entry["commit"] = commit
-                check_played(arm, ours_decisions)
+                if args.side == "ours":
+                    check_played(arm, ours_decisions)
+                else:
+                    check_played(arm, foe_decisions, "the foe's")
+                    check_constant_own(arm, ours_decisions)
                 with open(target + ".tmp", "w", encoding="utf-8") as f:
                     json.dump(_finite(entry), f, indent=1, allow_nan=False)
                 os.replace(target + ".tmp", target)
                 print(f"{arm}: score {np.mean(entry['scores']):.3f} over {n} games, {seconds:.0f} s", flush=True)
     out = summarize(args.out)
-    print(json.dumps(_finite({k: out[k] for k in ("loss", "spread", "foe_preview") if k in out}), indent=1))
+    print(json.dumps(_finite({k: out[k] for k in ("loss", "exploitability", "spread", "foe_preview") if k in out}),
+                     indent=1))
     return 0
 
 
