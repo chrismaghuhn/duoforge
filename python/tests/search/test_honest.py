@@ -63,11 +63,13 @@ class HonestSearch(unittest.TestCase):
         cls.model, cls.params = _v2s()
 
     def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False, model=None,
-             foe_net=None):
+             foe_net=None, **extra):
         table = table or belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
             mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
-        options = {} if foe_net is None else {"foe_net": foe_net}
+        options = dict(extra)
+        if foe_net is not None:
+            options["foe_net"] = foe_net
         return honest.Honest(ctx, model or self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
                              capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam,
                              species_prior=species_prior, **options)
@@ -749,6 +751,98 @@ class HonestSearch(unittest.TestCase):
                     for name in ("hypotheses", "choices", "values"):
                         np.testing.assert_array_equal(split.last[-1][name], plain.last[-1][name])
 
+    def test_the_main_net_as_foe_net_previews_bit_for_bit_as_without(self):
+        # Step 1 (#440): the value preview's foe candidates come from the foe network; given the main network itself,
+        # every field of the team-preview record is the default's, the wall times and the foe network's name aside.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx) as probe:
+                same = (self.model, self.params, 4, probe.ext_supported)
+            with self.make(ctx, preview_mode="value") as plain, \
+                    self.make(ctx, preview_mode="value", foe_net=same) as split:
+                for seat in (0, 1):
+                    for key in (456, 457):
+                        _, (a,) = plain.decide(b, [0], [seat], [key], [False])
+                        _, (r,) = split.decide(b, [0], [seat], [key], [False])
+                        self.assertEqual(a["kind"], "searched")
+                        drop = ("cost", "time", "foe_net")
+                        self.assertEqual(r["foe_net"], {"encoder": 4, "ext_supported": probe.ext_supported})
+                        self.assertEqual({k: v for k, v in r.items() if k not in drop},
+                                         {k: v for k, v in a.items() if k not in drop})
+                        for name in ("hypotheses", "choices", "tables"):
+                            np.testing.assert_array_equal(split.last[-1][name], plain.last[-1][name])
+
+    def test_a_foe_nets_team_head_picks_the_preview_foe_candidates(self):
+        # Step 1 (#440): the foe candidates are the foe network's ranking of the worlds' team draws, weighted by the
+        # sampled worlds; the own candidates and the leaf values stay with the main network.
+        class Spy:
+            def __init__(self, inner):
+                self.inner, self.apply_rows, self.values = inner, [], 0
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+            def apply(self, params, obs, *rest):
+                self.apply_rows.append(np.asarray(obs).shape[0])
+                return self.inner.apply(params, obs, *rest)
+
+            def value(self, params, rows):
+                self.values += 1
+                return self.inner.value(params, rows)
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            foe_model, foe_params, foe_encoder, foe_ext = self.encoder3_net(ctx)
+            main, foe = Spy(self.model), Spy(foe_model)
+            with self.make(ctx, preview_mode="value") as plain, \
+                    self.make(ctx, model=main, preview_mode="value",
+                              foe_net=(foe, foe_params, foe_encoder, foe_ext)) as split:
+                _, (a,) = plain.decide(b, [0], [0], [456], [False])
+                main.apply_rows.clear()
+                foe.apply_rows.clear()
+                _, (r,) = split.decide(b, [0], [0], [456], [False])
+                self.assertEqual((a["kind"], r["kind"]), ("searched", "searched"))
+                self.assertEqual(r["own_teams"], a["own_teams"])  # the root's team head: the main network
+                self.assertEqual(r["own_probs"], a["own_probs"])
+                self.assertNotIn(2 * split.s, main.apply_rows)  # the main network saw no world row
+                self.assertIn(2 * split.s, foe.apply_rows)  # the foe network ranked the worlds
+                self.assertGreater(main.values, 0)  # the leaves are valued by the main network
+                self.assertEqual(foe.values, 0)
+                # The foe's candidates: the foe network's team ranking of the built worlds, under the sampled weights.
+                o, sl, pm = split.worlds.query_encoded(foe_encoder, foe_ext)
+                n = 2 * split.s
+                _, team, _ = foe.apply(foe_params, o.reshape(n, -1), sl.reshape((n,) + sl.shape[2:]),
+                                       pm.reshape((n,) + pm.shape[2:]))
+                probabilities = np.exp(np.asarray(team).reshape(split.s, 2, -1)[:, 1].astype(np.float64))
+                mean = np.sum(np.asarray(r["weights"])[:, None] * probabilities, axis=0)
+                other = np.argsort(-mean, kind="stable")[:split.m]
+                self.assertEqual(r["foe_teams"], other.tolist())
+                np.testing.assert_array_equal(r["foe_probs"], probabilities[:, other])
+                self.assertNotEqual(r["foe_teams"], a["foe_teams"], "the two networks rank the foe alike: no evidence")
+
+    def test_preview_rule(self):
+        # Step 1 (#440): the preview plays outcomes[preview_rule] and names it; None keeps the search's own rule.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx, rule="ev", preview_mode="value") as default, \
+                    self.make(ctx, rule="mix", preview_mode="value", preview_rule="nash") as named, \
+                    self.make(ctx, rule="nash", preview_mode="value") as nash:
+                _, (d,) = default.decide(b, [0], [0], [456], [False])
+                _, (x,) = named.decide(b, [0], [0], [456], [False])
+                _, (n,) = nash.decide(b, [0], [0], [456], [False])
+                self.assertEqual((d["kind"], x["kind"]), ("searched", "searched"))
+                self.assertEqual(d["rule"], "ev")
+                self.assertEqual(d["choice"], d["own_teams"][d["outcomes"]["ev"]])
+                self.assertEqual(x["rule"], "nash")
+                self.assertEqual(x["choice"], x["own_teams"][x["outcomes"]["nash"]])
+                drop = ("cost", "time", "rule")  # the named preview is the nash rule's, whatever the search's rule
+                self.assertEqual({k: v for k, v in x.items() if k not in drop},
+                                 {k: v for k, v in n.items() if k not in drop})
+            with self.assertRaisesRegex(ValueError, "preview_rule"):
+                self.make(ctx, preview_mode="value", preview_rule="other")
+            with self.assertRaisesRegex(ValueError, "preview_rule"):
+                self.make(ctx, preview_rule="nash")  # a raw search has no preview to rule
+
     def test_a_foe_net_must_read_its_encoders_rows(self):
         # A foe network trained on another encoder is refused when the search is built, not at its first decision.
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
@@ -760,18 +854,90 @@ class HonestSearch(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "foe network's extension mask"):
                 self.make(ctx, foe_net=(model, params, 3, features.version_features(4)))
 
-    def test_a_foe_net_refuses_a_preview_search(self):
-        # The preview's turn-1 rollout plays both seats with the main network: with a foe network it would model the foe
-        # with two networks at once, so the combination is refused, not silently half applied (review of #415).
+    def test_a_foe_net_is_accepted_with_a_turn1_preview_search(self):
+        # Step 1b (#440): the turn-1 rollout plays the foe seat with the foe network, so the combination is accepted.
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             foe = self.encoder3_net(ctx)
-            table = belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
+            with self.make(ctx, foe_net=foe, preview_mode="turn1") as search:
+                self.assertEqual(search.foe_net[2:], (3, foe[3]))
+
+    def test_the_main_net_as_foe_net_rolls_out_bit_for_bit_as_without(self):
+        # Step 1b (#440): the rollout's foe seat takes the foe network's rows and policy; given the main network itself,
+        # every field of the turn-1 preview record is the default's, the wall times and the foe network's name aside.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
             with self.make(ctx) as probe:
-                mask = probe.ext_supported
-            for mode in ("value", "turn1"):
-                with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, "preview"):
-                    honest.Honest(ctx, self.model, self.params, 4, mask, k=2, m=2, s=2, capacity=16, workers=2,
-                                  table=table, preview_mode=mode, foe_net=foe)
+                same = (self.model, self.params, 4, probe.ext_supported)
+            with self.make(ctx, preview_mode="turn1") as plain, \
+                    self.make(ctx, preview_mode="turn1", foe_net=same) as split:
+                for seat in (0, 1):
+                    for key in (456, 457):
+                        _, (a,) = plain.decide(b, [0], [seat], [key], [False])
+                        _, (r,) = split.decide(b, [0], [seat], [key], [False])
+                        self.assertEqual((a["kind"], a["preview_eval"]), ("searched", "turn1"))
+                        drop = ("cost", "time", "foe_net")
+                        self.assertEqual(r["foe_net"], {"encoder": 4, "ext_supported": probe.ext_supported})
+                        self.assertEqual({k: v for k, v in r.items() if k not in drop},
+                                         {k: v for k, v in a.items() if k not in drop})
+                        for name in ("hypotheses", "choices", "tables"):
+                            np.testing.assert_array_equal(split.last[-1][name], plain.last[-1][name])
+
+    def test_the_turn1_rollout_plays_the_foe_seat_with_the_foe_net(self):
+        # Step 1b (#440): each rollout step asks the foe network for the foe seat's rows only, and the main network for
+        # the player seat's rows only; both see the rollout batch's rows (one per environment), not the worlds' rows.
+        class Spy:
+            def __init__(self, inner):
+                self.inner, self.rows = inner, []
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+            def apply(self, params, obs, *rest):
+                self.rows.append(np.asarray(obs).shape[0])
+                return self.inner.apply(params, obs, *rest)
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            model, params, encoder, mask = self.encoder3_net(ctx)
+            main, foe = Spy(self.model), Spy(model)
+            with self.make(ctx, model=main, foe_net=(foe, params, encoder, mask), preview_mode="turn1") as search:
+                envs = search.leaves.envs
+                self.assertNotEqual(envs, 2 * search.s)  # the worlds' policy calls have 2 * s rows: told apart
+                main.rows.clear()
+                foe.rows.clear()
+                self.preview(search, b)
+        rollout_foe = [r for r in foe.rows if r == envs]
+        rollout_main = [r for r in main.rows if r == envs]
+        self.assertTrue(rollout_foe, "the foe network was not called on the rollout's foe seat")
+        self.assertTrue(rollout_main, "the main network was not called on the rollout's player seat")
+        self.assertEqual(len(rollout_foe), len(rollout_main))  # one foe-seat call for each player-seat call
+
+    def test_rollout_masks_must_agree(self):
+        # Step 1b (#440): the foe seat's pair is chosen from the foe encoding's legal mask; a mask the main encoding
+        # gives the same asked foe seat differently stops the decision, as _prepare does, and nothing is picked from either.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx, foe_net=self.encoder3_net(ctx), preview_mode="turn1") as search:
+                real = search.leaves.query_encoded
+
+                def query(version, ext=0):
+                    obs, slots, pairs = real(version, ext)
+                    if version == 4:  # the main encoding: the foe seat (seat 1) has no legal pair at all
+                        pairs = pairs.copy()
+                        pairs[:, 1] = False
+                    return obs, slots, pairs
+
+                with mock.patch.object(search.leaves, "query_encoded", side_effect=query):
+                    with self.assertRaisesRegex(honest.SearchError, "another pair mask"):
+                        search.decide(b, [0], [0], [456], [False])
+
+    def test_a_foe_net_is_accepted_with_a_value_preview_search(self):
+        # The value preview's rollout is none: the foe's team candidates come from the foe network, the own candidates
+        # and the leaf values from the main one (step 1 of the search ladder, #440).
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            foe = self.encoder3_net(ctx)
+            with self.make(ctx, foe_net=foe, preview_mode="value") as search:
+                self.assertEqual(search.foe_net[2:], (3, foe[3]))
 
     def test_the_foe_and_main_encodings_must_give_the_worlds_one_pair_mask(self):
         # _prepare ranks the foe's menu on the foe encoding's mask and checks the viewer on the main encoding's rows: a

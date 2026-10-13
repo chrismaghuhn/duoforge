@@ -69,6 +69,36 @@ Step 0 has no previous step and no strength gate. **Its checks:**
 
 Step 0 against R is reported, paired with its 95% interval, as the first point of the curve.
 
+## Step 1: the team preview as a Nash matrix game (#363)
+
+**Change.** At team preview, the search solves the bring-four and lead choices of both sides as a Bayes matrix game. It plays the Nash mix (`preview_mode` "value", `preview_rule` "nash"); turns stay as in step 0.
+- **Own candidates:** the top 8 of BC6's team head.
+- **Foe candidates:** the top 8 of the foe model's team head, BC6, over the sampled worlds.
+- **Payoff:** BC6's value after both previews and the entry effects.
+
+Before this step, the team preview was raw by design. A foe network was refused with any preview search. Now it is refused only with the turn-1 rollout (`turn1`), whose rollout plays both seats with the main network.
+
+**Prior evidence (#241, 49333, no foe network).**
+- N-value against raw: +0.002 [−0.024, 0.029].
+- E-turn1 gained +0.068 against raw self-play only, and nothing against the panel.
+
+A small or no gain is the expected outcome here.
+
+**Arms:**
+
+| arm | `preview_rule` | role |
+|---|---|---|
+| 1 | nash | the step (#363) |
+| 1e | ev | control: the best answer to the foe model, the form #240/#241 measured |
+| 1x | mix (λ = 0.5) | control: the live turns' rule |
+
+**Runs:**
+- **Step 1:** `--step 1 --previous 0 --h2h --previous-run <step 0's ladder.json>` against `bot`, `bc6` and `ppo`, 1024 pairs. All gates of the table above apply. The gate "reproduced" checks that step 0's games on this code equal step 0's recorded run.
+- **1e and 1x:** the head-to-head against step 0, and the paired arms against `bot`, 1024 pairs each. These are reported, not gated.
+- **Latency:** step 1 against `bot`, 16 pairs, under `--exclusive`.
+
+**Step 1b (later, HauptSession 2026-10-12).** E/N-turn1 with the foe network needs the rollout to play the foe seat with the foe network. That is not built yet. It is listed here, so that a lead choice that depends on the foe's turn 1 is tested after step 1.
+
 ## The budget step (owner, 2026-10-12)
 
 **Question.** With everything else of the search unchanged, how much strength does more search budget alone bring, and
@@ -165,6 +195,124 @@ pairs checks the harness only and is not a result.
 - **Spread table:** `5f079072…`. 256 of the 2048 games' opponent teams are in it, and each was left out of the belief for its game.
 - **Networks** (SHA-256 prefixes): BC6 `bda5de8e4e96`, bc6-bot-M `213b773b3448`, params-49333 `ef1abe65f637`.
 - **Raw output:** `ladder.json` and the decision records stay private, outside the repository.
+
+### Step 1 (2026-10-12): the team preview as a Nash game; no measurable gain
+
+**Verdict: strength misses its gate narrowly; every other gate holds. Step 1 is not adopted.**
+
+The run predates `ladder verdict`'s count fields, so the verdict was first computed by hand. Since the old-report fix
+(`search/verdict-old-reports`), `ladder verdict` reads the report: it gives the same gates, adds the latency from the
+exclusive run, and reports no pooled fallback share (the old report has no counts to pool).
+
+| gate | result |
+|---|---|
+| strength: head-to-head, step 1 against step 0 (1024 pairs) | **0.519 [0.498, 0.538]**, 0 unresolved. The lower bound is not above 0.50 |
+| no harm: step 1 against step 0, paired | `bot` 0.499 [0.489, 0.508]; `bc6` 0.512 [0.501, 0.523] |
+| reproduced: step 0 rerun on step 1's code | identical per-game scores **and** decision digests, for `bot`, `bc6` and `ppo` |
+| fallbacks | `bot` 2.3% (step 0: 2.7%); `bc6` 2.2% (2.3%) |
+| latency: exclusive run, 16 pairs against `bot` (2026-10-13) | **p99 0.102 s**, passes (p50 0.055 s) |
+
+**Scores per opponent (2048 games each):**
+
+| opponent | step 1 | step 0 |
+|---|---|---|
+| `bot` | 0.860 | 0.863 |
+| `bc6` | 0.721 | 0.698 |
+| `ppo` | 0.475 | 0.471 |
+
+- `ppo`, paired: 0.502 [0.489, 0.513].
+- The step arm had one unresolved game each against `bot` and `bc6`. These are engine-refused games, scored as the step's loss.
+
+**Diagnosis.** It comes from the ungated sanity arm and the preview records:
+- **The Nash solution is pure.** In the sanity arm it had support 1 in every game, so the step plays the best answer of BC6's value head.
+- **The worlds play no part.** The value head reads the searcher's public view, which holds no hidden spreads before turn 1. A cell's spread over the worlds is 0.
+- **The candidates are half duplicates.** The top-8 team tuples come in pairs the network cannot tell apart (the same bring-four and leads, the bench order swapped). In effect there are 4 candidates.
+- **Sanity arm, Team A against an arena sun team (512 games):** step 1 against step 0 h 0.478 [0.466, 0.489] (`bot`) and 0.462 [0.443, 0.481] (`ppo`). This is one fixed team decision replicated 512 times (n = 1), not a general effect.
+
+**What follows:**
+- **Step 1b:** the turn-1 rollout, its foe seat played by the foe network, with the best answer. #241 measured this as the only preview form with a gain. It is measured next.
+- **Preview dedup:** the team candidates are deduplicated by evaluator equality, the network's identical inputs in every cell.
+- A rerun of step 1 with 2048 pairs is optional. 1b supersedes it as the preview step.
+
+**Provenance.**
+- **Code:** search/1-preview-nash at 1b2e5964; the run recorded `dirty: false`.
+- **Run:** 16:49 to 20:29, two shared lock slots.
+- **Raw output:** private, outside the repository.
+
+### Step 1b (2026-10-12/13): the turn-1 rollout with the foe network; no measurable gain
+
+**Change.** Step 0 plus a team preview by the turn-1 rollout (`preview_mode` "turn1"), whose foe seat is played by the
+foe network (BC6), played by the best answer (`preview_rule` "ev"). Turns stay as in step 0.
+
+**Verdict (`ladder verdict`): strength misses its gate narrowly; no harm, reproduction and fallbacks hold. Step 1b is
+not adopted.** The exclusive latency run is queued behind the budget arms; it cannot change the verdict.
+
+| gate | result |
+|---|---|
+| strength: head-to-head, step 1b against step 0 (1024 pairs) | **0.517 [0.497, 0.535]**, 0 unresolved. The lower bound is not above 0.50 |
+| no harm: step 1b against step 0, paired | `bot` 0.497 [0.488, 0.506]; `bc6` 0.516 [0.506, 0.528] |
+| reproduced: step 0 rerun on step 1b's code | identical per-game scores **and** decision digests, for `bot`, `bc6` and `ppo` |
+| fallbacks | `bot` 2.5% (step 0: 2.7%); `bc6` 2.2% (2.3%); `ppo` 2.5% (2.6%, not gated) |
+| latency | pending (exclusive run queued). In the shared run, p99 was 0.94–1.09 s, against 0.13–0.19 s for step 0 |
+
+**Scores per opponent (2048 games each):**
+
+| opponent | step 1b | step 0 | step 1b against step 0, paired |
+|---|---|---|---|
+| `bot` | 0.857 | 0.863 | 0.497 [0.488, 0.506] |
+| `bc6` | 0.730 | 0.698 | 0.516 [0.506, 0.528] |
+| `ppo` | 0.481 | 0.471 | 0.505 [0.493, 0.517] |
+
+- `bc6` is the foe model and the rollout's foe seat at once, so its row is an upper bound, as in step 0.
+- The step arm had one unresolved game against `bc6`, an engine-refused game scored as the step's loss.
+- **Cost.** The preview rollout is the expensive decision: it lifts the shared run's p95 from about 0.11 s to
+  0.68–0.86 s, and the step arm took about 3,000–3,400 s per opponent against 1,500–1,800 s for step 0.
+- **Reading.** Two preview forms (step 1, Nash on the value head; step 1b, the best answer on the turn-1 rollout) both
+  land at about +0.02 head-to-head with the lower bound at 0.497. Neither is a measured gain.
+
+**Provenance.**
+- **Code:** search/1b-rollout at 7db476a6; the run recorded `dirty: false`.
+- **Run:** 19:09 to 01:01, two shared lock slots.
+- **Raw output:** private, outside the repository.
+
+### Sanity arm 1b: Team A against the arena sun team (2026-10-13)
+
+`--matchup` with our Team A against the sun team of the live arena (members without stat points take their Smogon
+spread), `--step 1b --previous 0 --raw`, 256 pairs against `bot` and `ppo` as the sun team's pilots. Ungated.
+
+| opponent (pilot of the sun team) | step 1b | step 0 | raw (R) | 1b against 0 | 1b against R |
+|---|---|---|---|---|---|
+| `bot` | 0.977 | 0.977 | 0.906 | 0.500 [0.500, 0.500] | 0.535 [0.521, 0.550] |
+| `ppo` | 0.945 | 0.945 | 0.998 | 0.500 [0.500, 0.500] | **0.474 [0.463, 0.483]** |
+
+**Step 1b plays every game exactly as step 0.** In 1024 preview decisions (both arms, both pilots, both seats) the
+search changed the raw choice 0 times:
+- **Our four, every game:** lead Raichu + Milotic, back Rillaboom + Ceruledge. Staraptor (immune to Ground) and Gholdengo
+  (immune to Poison) are never brought, the same choice as on the arena, where we lost 7:13 with it.
+- **The candidates cannot do anything else.** The top 8 of BC6's team head are 4 distinct sets, each twice with the bench
+  order swapped: lead Raichu + Milotic or Milotic + Raichu, Milotic + Staraptor or Staraptor + Milotic, always with
+  Rillaboom + Ceruledge behind. No candidate brings Gholdengo. BC6's prior is flat: the best tuple has 0.036.
+- **The opponent's lead is one per pilot,** since both pilots play the preview greedily and every game has the same two
+  teams (reconstructed from the networks' greedy preview on the suite's batch, t = 0; the decision records hold our
+  choices only). `bot` leads the sun + sleep pair (Charizard + Venusaur, back Incineroar + Toxapex) in all 512 games;
+  `ppo` leads Sylveon + Charizard (back Garchomp + Venusaur) in all 512. A split by the opponent's lead is therefore the
+  split by pilot above.
+- **The predeclared extra arm** (the foe's preview fixed to the sun + sleep lead) is not needed for `bot`, which plays that
+  lead always. For `ppo` it would be; it needs a fixed-preview opponent in the harness, not built yet.
+
+**Search against raw with `ppo` as the pilot: 0.474.** The search loses 28 games that raw play wins and wins 1 that raw
+play loses. Two facts from the step arm's records:
+- **Visible sleep:** 16.6% of the searcher's decisions against `ppo` (12.4% against `bot`) are unreconstructible and played
+  raw (`visible_sleep`), against about 1% in the pool runs. This matchup sits far above the 5% fallback gate. #442 / PR
+  #459 is the fix to measure here.
+- In the lost-but-raw-won games, the search changed the raw choice in 87% of its searched decisions (78% over all games).
+
+**Representativeness.** In the simulator Team A wins 95–98% against the sun team; on the arena we lost 4:15 against
+MoccaOTS's own bot. Neither sim pilot plays the sun team well, so this arm says nothing yet about the arena loss. The
+touchstone (#458) needs a stronger pilot: at least our own search with that team (a mirror arm).
+
+**Provenance.** search/1b-rollout at 7db476a6, 01:01 to 01:33, p99 0.72 s in the shared run. Team files and raw output
+stay private; the report records the teams' SHA-256 prefixes only.
 
 ### The budget step (2026-10-12/13): interim, ×2 arms done
 
