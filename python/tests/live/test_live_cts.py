@@ -530,13 +530,47 @@ class ClosedGameTest(unittest.TestCase):
             call = search.calls[-1]
             parts = g.tracker.public_parts()
             self.assertEqual(len(call["worlds"]), self.N)
-            for (world, obs_part, slot_part), want in zip(call["worlds"], parts):
+            for (world, obs_part, slot_part, history), want in zip(call["worlds"], parts):
                 self.assertIs(world, want)
+                self.assertEqual(len(history), g.epoch)  # its (record, status) at every decision point so far
+                self.assertEqual(history[-1][0].tobytes(), want["record"].tobytes())
                 self.assertEqual(obs_part.shape, call["obs_part"].shape)
                 self.assertEqual(slot_part is None, bool(g.request.get("teamPreview")))
             self.assertIs(call["parts"], parts[0])  # the root's request and own pairs: every particle's
             self.assertIs(call["obs_part"], call["worlds"][0][1])
         self.assertEqual(len(search.calls), 4)
+
+    def preview_record(self, sets):
+        """The team-preview record an open-sheet tracker shows with `sets` as the foe's sheet."""
+        t = tracker.Tracker(self.data, FIXTURE["team"])
+        own, foe = teams.pack(FIXTURE["team"]), teams.pack(teams.to_text(sets))
+        for m in closed(FIXTURE["messages"]):
+            for i, line in enumerate(m):
+                side = cts._preview_side(line)
+                if side is not None:
+                    t.feed(m[:i + 1])
+                    t.feed([f"|showteam|p{s + 1}|" + (own if s == side else foe) for s in (0, 1)])
+                    return t.public_parts()["record"]
+            t.feed(m)
+        raise AssertionError("no team preview")
+
+    def test_a_particle_drawn_anew_brings_the_preview_record_of_its_own_sets(self):
+        # Review of #385 step 4: the search builds world w's team preview from particle w's history, so a particle drawn
+        # after the preview must carry the preview record of its own sets, not of the particle it replaced.
+        prior = cts.SetPrior(self.data, with_species(foe_sets(), "Farigiraf", farigiraf(),
+                                                     farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")),
+                                                     farigiraf(item="Leftovers")))
+        g = game.Game.closed_sheets(self.data, FakePolicy(), FIXTURE["team"], prior, room=KEY, seed=SEED, n=8)
+        at_preview, changed = None, 0
+        for g in self.points(g):
+            histories = g.tracker.histories()
+            if at_preview is None:
+                at_preview = [h[0][0].tobytes() for h in histories]
+            for p, h in zip(g.tracker.particles, histories):
+                self.assertEqual(h[0][0].tobytes(), self.preview_record(p.sets).tobytes())
+            changed = sum(a != h[0][0].tobytes() for a, h in zip(at_preview, histories))
+        self.assertGreater(g.tracker.counters["redraw.facts"], 0)
+        self.assertGreater(changed, 0)  # a particle redrawn after the preview: another preview record
 
     def test_each_particle_shows_its_own_extension_record(self):
         for g in self.points(self.game(FakePolicy())):
@@ -570,7 +604,18 @@ class ClosedGameTest(unittest.TestCase):
             self.assertEqual([o.tobytes() for o in got["observations"]], [p["observation"].tobytes() for p in parts])
             self.assertEqual(len(got["obs"]), self.N)
             self.assertEqual(len(got["slots"]), self.N)
+            self.assertEqual([[r.tobytes() for r, _ in h] for h in got["histories"]],
+                             [[r.tobytes() for r, _ in h] for h in g.tracker.histories()])
         self.assertEqual([o.cause for o in g.outcomes], ["raw"] * 4)
+
+
+class CounterKindTest(unittest.TestCase):
+    def test_a_redraw_by_a_stop_keeps_the_stops_kind_only(self):
+        self.assertEqual(cts.counter_kind("redraw.stop:structure:p2a: Nickname names no member seen yet"),
+                         "redraw.stop:structure")
+        self.assertEqual(cts.counter_kind("redraw.stop:cts:redraw-cap error:ValueError"), "redraw.stop:cts:redraw-cap")
+        for key in ("redraw.facts", "redraw.error:ValueError", "stop.cts:facts", "level1", "choice-excluded"):
+            self.assertEqual(cts.counter_kind(key), key)
 
 
 class WordTest(unittest.TestCase):

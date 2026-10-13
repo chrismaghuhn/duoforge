@@ -650,7 +650,8 @@ class ArenaBot(client.Bot):
         if b.game is not None and b.game.search is not None:
             b.write({"summary": b.game.summary()})
         if b.game is not None and b.game.closed:
-            self.run_log.cts.update(b.game.tracker.counters)
+            for key, n in b.game.tracker.counters.items():  # aggregates only: a stop's kind, never its text
+                self.run_log.cts[cts.counter_kind(key)] += n
         b.log.close()
         del self.battles[b.room]
         self.finished.add(b.room)

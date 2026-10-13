@@ -11,9 +11,10 @@ serves exactly those from what the caller sets per (environment, seat):
   possible Illusion; Batch.public_causes), 0 otherwise;
 - episode: the game, so the search's history (team preview record) belongs to one game;
 - worlds (set_worlds, closed team sheets, decision 0081): one record per world of the search instead of the seat's one
-  record. World w is built from worlds' record w and draws the spreads of its observation's members; the root's own
-  candidates come from the mean of the policy over the worlds' rows. The seat's set() parts stay its request and pair
-  mask.
+  record. World w is built from worlds' record w and draws the spreads of its observation's members; its team-preview
+  and turn-start records come from its own history (a particle drawn anew brings its own), not from the search's
+  memory of earlier decisions. The root's own candidates come from the mean of the policy over the worlds' rows. The
+  seat's set() parts stay its request and pair mask.
 
 Plays nothing and holds no rule: decide() over a RecordRoots filled from a batch gives the batch's decisions
 (test_honest)."""
@@ -44,10 +45,11 @@ class RecordRoots:
         self._worlds.pop((int(env), int(seat)), None)
         self._episodes[env] = int(episode)
 
-    def set_worlds(self, env, seat, *, records, statuses, causes, observations, obs, slots):
+    def set_worlds(self, env, seat, *, records, statuses, causes, observations, obs, slots, histories):
         """The worlds' own parts of seat `seat` in environment `env` (after its set()): records (W,) PUBLIC_STATE with
-        their statuses and cause masks, observations (W,) OBSERVATION, and each world's encoded rows obs (W, ...) and
-        slots (W, ...). W must be the search's world count (Honest checks it)."""
+        their statuses and cause masks, observations (W,) OBSERVATION, each world's encoded rows obs (W, ...) and
+        slots (W, ...), and histories: per world, its (record, status) at every decision point of the game so far, the
+        current one last. W must be the search's world count (Honest checks it)."""
         key = (int(env), int(seat))
         if key not in self._parts:
             raise ValueError(f"environment {env} seat {seat} has no parts set")
@@ -56,9 +58,11 @@ class RecordRoots:
         out = {"records": records, "statuses": np.asarray(statuses, np.uint32).reshape(-1),
                "causes": np.asarray(causes, np.uint32).reshape(-1),
                "observations": np.array(observations, dtype=_layout.OBSERVATION, copy=True).reshape(-1),
-               "obs": np.array(obs, copy=True), "slots": np.array(slots, copy=True)}
-        if w < 1 or any(len(out[k]) != w for k in ("statuses", "causes", "observations", "obs", "slots")):
-            raise ValueError("the worlds need one record, status, cause mask, observation and row each")
+               "obs": np.array(obs, copy=True), "slots": np.array(slots, copy=True),
+               "histories": [[(np.array(r, dtype=view.PUBLIC_STATE, copy=True).reshape(()), int(st)) for r, st in past]
+                             for past in histories]}
+        if w < 1 or any(len(out[k]) != w for k in ("statuses", "causes", "observations", "obs", "slots", "histories")):
+            raise ValueError("the worlds need one record, status, cause mask, observation, row and history each")
         self._worlds[key] = out
 
     def worlds(self, env, seat):

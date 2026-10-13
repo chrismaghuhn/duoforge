@@ -3,7 +3,8 @@
 Status: plan accepted by HauptSession on 2026-10-12 (#385, number 0081, one lean PR with this note, `cts.py`, the tracker hook and
 the tests). Builds on decision 0016 (the live adapter and its tracker), decision 0023 (the public view and its worlds), and decision
 0019 together with the M11 Bo1 spec (the replay's set belief, `bo1_belief`). The arena switch (`pkmn_arena`), the set-prior table
-from Smogon's usage stats and the honest search over one record per world each come in their own PRs.
+from Smogon's usage stats (#385 step 3) and the honest search over one record per world with the arena path (#385 step 4)
+each come in their own PRs.
 
 ## The problem
 
@@ -60,7 +61,7 @@ synthesized `|showteam|` lines:
 
 This is the place and form of the real lines under open sheets (`teams.pack`, level 50, no stat points). From then on, every
 particle folds every line. The tracker is the **unchanged** open-sheet tracker: no battle rule moves into Python. Each particle
-gives its own observation and public record. The honest search builds world `w` from particle `w`'s record (that PR comes later).
+gives its own observation and public record. The honest search builds world `w` from particle `w`'s record (#385 step 4, below).
 
 **Conditioning.** Before a batch of lines is folded, the facts of the prefix including the batch are taken.
 - A particle whose sets contradict a fact is replaced: a fresh draw under the current facts, then a fold of the whole received
@@ -235,6 +236,50 @@ This bias is measured, not assumed: the same CTS games are searched once with pa
 upper bound), and the difference is what version 1 costs. Reveal tracking in the state and view (the engine marks which facts each
 player has seen) is the version-2 item of #385.
 
+## The search over one record per world (#385 step 4)
+
+The live search (`duoforge_search.honest.Honest`, decision 0023) built all of its `S` worlds from the one public record of the
+root. Under closed sheets each particle has its own record, so world `w` is built from particle `w`'s record (`S` = 16 =
+`cts.PARTICLES`; the arena refuses a search with another world count at start).
+- **Input.** `RecordRoots.set_worlds` gives a seat the worlds' own parts: each particle's record, status, cause mask,
+  observation and encoded rows. The seat's own `set()` parts stay its request and pair mask (the own side is the same in every
+  particle).
+- **Spreads.** World `w` draws the stat points of particle `w`'s members (`Belief.sample_worlds`): the spread table's key is
+  (species, nature, item), and the drawn natures and items differ between particles. The words are those of `sample()` for
+  world `w`, so the worlds of one record draw exactly what they drew before.
+- **History.** The team-preview record and the turn-start record are kept per world; a PIVOT's queue mask is taken per world
+  from its own two records (once per distinct pair).
+- **Checks.** Every world must give its own record back, byte for byte (`_check_worlds`). The worlds' records must agree on
+  every public header field (turn, boundary, seen and pending masks, leads, ...); a disagreement stops by name. The check that
+  the viewer's encoded row is the same in every world becomes: the same in every world **of one record**, because the row
+  shows the drawn foe sheet (the named v1 limit). The pair masks must still agree in all worlds.
+- **A refused record.** When any particle's record is refused for a public cause (`E_UNSUPPORTED`), the decision is
+  unreconstructible with the union of the causes, as under open sheets; another refusal stops by name.
+- **The root's own candidates.** The policy reads the drawn foe sheet in each particle's row. The root's K candidates, their
+  prior and the team head therefore take the **mean of the policy's probabilities over the particles' rows**, each particle
+  weighing 1/16, as each world does in the belief. The live raw ranking (`game.Game.closed_sheets`, played when the search
+  refuses or is off) is the same mean, ties to the lower index. When every particle's rows are the root's own, the root's own
+  probabilities are used unchanged.
+- **Open sheets are unchanged.** One record for every world takes the earlier path with the same calls, and a test pins that
+  worlds given the same record decide as that record alone, bit for bit. A preview search builds its worlds from one record:
+  it is refused with a record per world (the live search plays the preview raw).
+
+## Closed sheets in the arena (#385 step 4)
+
+`pkmn_arena` plays the CTS format (`gen9championsvgc2026regmc` and its random-team ladder) over the particles, instead of the
+`closed_team_sheets` fallback:
+- Each battle is a `game.Game.closed_sheets`: 16 particles from the pinned set table, seed `cts.SEED`, the battle room as the key.
+  The table loads at start; tables it cannot read (a closure checkpoint's) stop the bot at start by name.
+- The bot never accepts open sheets in this format: real `|showteam|` lines would meet the particles' own.
+- A particle tracker's stop falls back to `/choose default` like any tracker stop, under its name (`stop:cts:redraw-cap`,
+  `stop:cts:no-consistent-set`, `stop:cts:facts`).
+- **Determinism from the log.** The battle log keeps every batch as it was fed (`feed`) and every choice the game accepted
+  (`accepted`). A test draws the particles again from the log alone and gets the same sets and records.
+- The particle trackers' counters (redraws by reason, levels, stops, Choice exclusions) are added to the run log at each battle's
+  end (`cts`), aggregates only.
+- The particle tracker folds each message on the event loop, as the open tracker does. Its cost (p99 about 0.3 s, a redraw cap
+  2.3 s at most) is spent before the decision's deadline starts; the arena gives 45 s per request.
+
 ## Evidence (PR #447)
 
 - **Pin**, reference tier (`duoforge.python.live`, `ClosedSheetsPoolTest`). Input: every committed pool battle's client streams
@@ -275,7 +320,7 @@ player has seen) is the version-2 item of #385.
     - The maximum is a redraw cap (64 folds with their checks), which ends the battle's tracking. It is far below the arena's
       45 s per request.
   - This cost includes the 16 records and observations of each decision point, which the search needs anyway.
-  - The decision latency of the search over 16 records is measured with the arena PR.
+  - The decision latency of the search over 16 records: see the evidence of step 4.
 
 ## Evidence of the set prior (#385 step 3)
 

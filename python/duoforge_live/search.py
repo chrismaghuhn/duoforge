@@ -142,8 +142,9 @@ class LiveSearch:
 
     def decide(self, parts, obs_part, slot_part, pair_mask, *, key, episode, budget, worlds=None):
         """The Outcome of a decision point: parts (Tracker.public_parts) and the live features of the player's
-        observation; worlds (closed team sheets, decision 0081): [(parts, obs_part, slot_part)] of each particle, world
-        w of the search built from particle w's record, the root's request and pair mask those of parts."""
+        observation; worlds (closed team sheets, decision 0081): [(parts, obs_part, slot_part, history)] of each
+        particle (history: its (record, status) at every decision point so far), world w of the search built from
+        particle w's records, the root's request and pair mask those of parts."""
         start = self.clock()
         if self._running is not None:
             try:  # the late search gets this decision's budget to finish; the new one gets what is left
@@ -164,12 +165,13 @@ class LiveSearch:
         self.roots.set(0, seat, request=parts["request"], observation=observation, obs=obs, slots=slots, pairs=pairs,
                        record=parts["record"], status=parts["status"], episode=episode, causes=parts["causes"])
         if worlds is not None:
-            rows = [_encoded(self.searcher, w["observation"], o, s, pair_mask)[:2] for w, o, s in worlds]
-            self.roots.set_worlds(0, seat, records=[w["record"] for w, _, _ in worlds],
-                                  statuses=[w["status"] for w, _, _ in worlds], causes=[w["causes"] for w, _, _ in worlds],
-                                  observations=[w["observation"] for w, _, _ in worlds],
-                                  obs=np.stack([r[0] for r in rows]), slots=np.stack([r[1] for r in rows]))
-            reasons = [w["reason"] for w, _, _ in worlds if w.get("reason")]
+            rows = [_encoded(self.searcher, w["observation"], o, s, pair_mask)[:2] for w, o, s, _ in worlds]
+            self.roots.set_worlds(0, seat, records=[w["record"] for w, *_ in worlds],
+                                  statuses=[w["status"] for w, *_ in worlds], causes=[w["causes"] for w, *_ in worlds],
+                                  observations=[w["observation"] for w, *_ in worlds],
+                                  obs=np.stack([r[0] for r in rows]), slots=np.stack([r[1] for r in rows]),
+                                  histories=[h for *_, h in worlds])
+            reasons = [w["reason"] for w, *_ in worlds if w.get("reason")]
             parts = dict(parts, reason=reasons[0] if reasons else None)
         future = self._executor.submit(self.searcher.decide, self.roots, [0], [seat], [key], [False])
         try:

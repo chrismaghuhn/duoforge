@@ -357,6 +357,8 @@ class ArenaTest(unittest.TestCase):
         self.assertEqual((log["fallback_battles"], log["fallback_decisions"]), ({}, {}))
         self.assertEqual(log["counts"]["decisions"], 2)
         self.assertEqual(log["cts"]["battles"], 1)  # with the particle tracker's counters, aggregates only
+        self.assertEqual(log["cts"], {"battles": 1, **{cts.counter_kind(k): n for k, n in game.tracker.counters.items()}})
+        self.assertFalse([k for k in log["cts"] if k.count(":") > 2 or " " in k], log["cts"])
 
     def test_a_closed_sheet_stop_falls_back_by_its_name(self):
         tables = data.load(kind="pool")

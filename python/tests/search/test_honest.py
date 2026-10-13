@@ -970,9 +970,10 @@ class WorldRecords(unittest.TestCase):
         return np.concatenate([ref, other])
 
     @staticmethod
-    def set_roots(roots, b, search, worlds, seat=0):
+    def set_roots(roots, b, search, worlds, seat=0, past=None):
         """Seat `seat` of b's environment 0 as the root of roots, with worlds' environments as its world records
-        (None: one record for every world). Returns the batch's records of the seat and its encoded rows."""
+        (None: one record for every world). past (a list per world) collects each world's (record, status) at every
+        decision point, its history. Returns the batch's records of the seat and its encoded rows."""
         b.query_factored()
         obs, slots, pairs = b.query_encoded(search.encoder, search.ext_supported)
         records, statuses = (x.copy() for x in b.public(np.full(b.envs, seat, np.uint32)))
@@ -981,9 +982,12 @@ class WorldRecords(unittest.TestCase):
                   slots=slots[0, seat], pairs=pairs[0, seat], record=records[0], status=int(statuses[0]),
                   episode=b.episode(0), causes=int(causes[0]))
         if worlds is not None:
+            past = [[] for _ in worlds] if past is None else past
+            for w, e in enumerate(worlds):
+                past[w].append((records[e].copy(), int(statuses[e])))
             roots.set_worlds(0, seat, records=records[worlds], statuses=statuses[worlds], causes=causes[worlds],
                              observations=b.observations[worlds, seat], obs=obs[worlds, seat],
-                             slots=slots[worlds, seat])
+                             slots=slots[worlds, seat], histories=past)
         return records, obs, slots, pairs
 
     def test_sample_worlds_draws_each_world_for_its_own_roster(self):
@@ -1006,12 +1010,12 @@ class WorldRecords(unittest.TestCase):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
                 self.make(ctx) as search, self.make(ctx) as twin:
-            one, worlds = RecordRoots(1), RecordRoots(1)
+            one, worlds, past = RecordRoots(1), RecordRoots(1), [[], []]
             for turn in (False, True):
                 if turn:
                     self.start_turn(b)
                 self.set_roots(one, b, search, None)
-                self.set_roots(worlds, b, twin, [0, 0])
+                self.set_roots(worlds, b, twin, [0, 0], past=past)
                 want, want_records = search.decide(one, [0], [0], [456], [False])
                 got, got_records = twin.decide(worlds, [0], [0], [456], [False])
                 np.testing.assert_array_equal(got, want)
@@ -1024,11 +1028,11 @@ class WorldRecords(unittest.TestCase):
         from duoforge_search.record_roots import RecordRoots
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
-            roots = RecordRoots(1)
-            self.set_roots(roots, b, search, [0, 1])
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
             self.preview(search, roots)
             self.start_turn(b)
-            records, obs, slots, pairs = self.set_roots(roots, b, search, [0, 1])
+            records, obs, slots, pairs = self.set_roots(roots, b, search, [0, 1], past=past)
             self.assertNotEqual(records[0].tobytes(), records[1].tobytes())  # the open sheets differ
             built = []
             real = search.worlds.from_view
@@ -1039,6 +1043,7 @@ class WorldRecords(unittest.TestCase):
             with mock.patch.object(search.worlds, "from_view", side_effect=from_view):
                 _, out = search.decide(roots, [0], [0], [456], [False])
             self.assertEqual(out[0]["kind"], "searched")
+            self.assertEqual([v.tobytes() for v in built[0]], [past[0][0][0].tobytes(), past[1][0][0].tobytes()])
             self.assertEqual([v.tobytes() for v in built[-1]], [records[0].tobytes(), records[1].tobytes()])
             # The root's own candidates: the mean of the policy over the worlds' rows, which differ here.
             self.assertFalse(np.array_equal(obs[0, 0], obs[1, 0]))
@@ -1049,19 +1054,59 @@ class WorldRecords(unittest.TestCase):
             best = legal[np.argsort(-mean[legal], kind="stable")[:len(out[0]["own_pairs"])]]
             self.assertEqual(out[0]["own_pairs"], best.tolist())
 
+    def test_a_world_redrawn_since_the_preview_brings_its_own_preview_record(self):
+        # Review of #385 step 4: a particle drawn anew is another world. Its team-preview record is the new particle's
+        # (its history), never the record the search kept from the particle it replaced.
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            self.preview(search, roots)
+            self.start_turn(b)
+            redrawn = [[], []]  # world 1 is now environment 0's particle: its whole history is environment 0's
+            redrawn[0].append(past[0][0])
+            redrawn[1].append(past[0][0])
+            self.set_roots(roots, b, search, [0, 0], past=redrawn)
+            built = []
+            real = search.worlds.from_view
+
+            def from_view(views, hypotheses):
+                built.append(np.array(views, copy=True))
+                return real(views, hypotheses)
+            with mock.patch.object(search.worlds, "from_view", side_effect=from_view):
+                _, out = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual(out[0]["kind"], "searched")
+            self.assertNotEqual(past[0][0][0].tobytes(), past[1][0][0].tobytes())
+            self.assertEqual([v.tobytes() for v in built[0]], [past[0][0][0].tobytes()] * 2)
+
+    def test_a_world_without_its_preview_record_is_unreconstructible(self):
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            self.preview(search, roots)
+            self.start_turn(b)
+            past[1].clear()  # world 1's history lacks the team preview
+            self.set_roots(roots, b, search, [0, 1], past=past)
+            _, out = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual((out[0]["kind"], out[0]["reason"]), ("unreconstructible", "missing team-preview record"))
+
     def test_a_world_record_the_engine_refuses_is_unreconstructible_by_its_causes(self):
         from duoforge_search.record_roots import RecordRoots
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
-            roots = RecordRoots(1)
-            self.set_roots(roots, b, search, [0, 1])
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
             self.preview(search, roots)
             self.start_turn(b)
-            records, obs, slots, _ = self.set_roots(roots, b, search, [0, 1])
+            records, obs, slots, _ = self.set_roots(roots, b, search, [0, 1], past=past)
             refused = np.array([0, C["DUOFORGE_E_UNSUPPORTED"]], np.uint32)
             causes = np.array([0, C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"]], np.uint32)
             roots.set_worlds(0, 0, records=records[[0, 1]], statuses=refused, causes=causes,
-                             observations=b.observations[[0, 1], 0], obs=obs[[0, 1], 0], slots=slots[[0, 1], 0])
+                             observations=b.observations[[0, 1], 0], obs=obs[[0, 1], 0], slots=slots[[0, 1], 0],
+                             histories=past)
             _, out = search.decide(roots, [0], [0], [456], [False])
             self.assertEqual(out[0]["kind"], "unreconstructible")
             self.assertEqual(out[0]["causes"], ["visible_sleep"])
@@ -1070,20 +1115,22 @@ class WorldRecords(unittest.TestCase):
         from duoforge_search.record_roots import RecordRoots
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
-            roots = RecordRoots(1)
-            self.set_roots(roots, b, search, [0, 1])
+            roots, past = RecordRoots(1), [[], []]
+            self.set_roots(roots, b, search, [0, 1], past=past)
             self.preview(search, roots)
             self.start_turn(b)
-            records, obs, slots, _ = self.set_roots(roots, b, search, [0, 1])
+            records, obs, slots, _ = self.set_roots(roots, b, search, [0, 1], past=past)
             records = records.copy()
             records[1]["foe_seen_mask"] ^= 1 << 5
             roots.set_worlds(0, 0, records=records[[0, 1]], statuses=np.zeros(2), causes=np.zeros(2),
-                             observations=b.observations[[0, 1], 0], obs=obs[[0, 1], 0], slots=slots[[0, 1], 0])
+                             observations=b.observations[[0, 1], 0], obs=obs[[0, 1], 0], slots=slots[[0, 1], 0],
+                             histories=past)
             with self.assertRaisesRegex(honest.SearchError, "disagree on the public field foe_seen_mask"):
                 search.decide(roots, [0], [0], [456], [False])
             three = [0, 1, 1]
             roots.set_worlds(0, 0, records=records[three], statuses=np.zeros(3), causes=np.zeros(3),
-                             observations=b.observations[three, 0], obs=obs[three, 0], slots=slots[three, 0])
+                             observations=b.observations[three, 0], obs=obs[three, 0], slots=slots[three, 0],
+                             histories=past + past[1:])
             with self.assertRaisesRegex(ValueError, "3 world records for 2 worlds"):
                 search.decide(roots, [0], [0], [456], [False])
 

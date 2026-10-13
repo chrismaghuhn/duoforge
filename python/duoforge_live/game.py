@@ -148,7 +148,8 @@ class Game:
 
     def _search(self, obs_parts, slot_parts, pair_mask, budget):
         """The search's outcome over the parts of the decision point: obs_parts and slot_parts one per particle
-        (closed sheets: world w is particle w) or the one of open sheets; slot_parts None at team preview."""
+        (closed sheets: world w is particle w, with its own records of every decision point) or the one of open
+        sheets; slot_parts None at team preview."""
         if self.search is None:
             return None
         if self.dirty is not None:
@@ -158,7 +159,7 @@ class Game:
                 slots = [None] * len(obs_parts) if slot_parts is None else slot_parts
                 worlds = None
                 if self.closed:
-                    worlds = list(zip(self.tracker.public_parts(), obs_parts, slots))
+                    worlds = list(zip(self.tracker.public_parts(), obs_parts, slots, self.tracker.histories()))
                     parts = worlds[0][0]
                 else:
                     parts = self.tracker.public_parts()

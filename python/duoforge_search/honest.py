@@ -229,6 +229,34 @@ def _record_groups(records):
     return np.array([first.setdefault(r.tobytes(), w) for w, r in enumerate(np.asarray(records))], np.int64)
 
 
+def _world_history(histories, turn):
+    """The team-preview and turn-start records of a record per world from each world's own (record, status) history,
+    taken as Honest._observe keeps them: the last unrefused team-selection record, and the last unrefused turn record
+    of the current turn with both requests open. A key is set only when every world has its record."""
+    previews, starts = [], []
+    for past in histories:
+        preview = start = None
+        for record, status in past:
+            if status != 0:
+                continue
+            boundary = int(record["boundary"])
+            if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
+                preview = record
+            elif boundary == C["DUOFORGE_BOUNDARY_TURN"] and int(record["request_mask"]) == 3 \
+                    and int(record["turn"]) == turn:
+                start = record
+        previews.append(preview)
+        starts.append(start)
+    history = {}
+    for key, found in (("preview", previews), ("turn_start", starts)):
+        if all(r is not None for r in found):
+            out = np.zeros(len(found), dtype=view.PUBLIC_STATE)
+            for w, r in enumerate(found):
+                out[w] = r
+            history[key] = out
+    return history
+
+
 def _world_causes(worlds):
     """The cause names of the worlds whose record is refused (E_UNSUPPORTED), over all of them."""
     refused = np.asarray(worlds["statuses"]) == C["DUOFORGE_E_UNSUPPORTED"]
@@ -424,6 +452,8 @@ class Honest(lookahead.Lookahead):
                             for m in side["members"][:int(side["member_count"])]])
         if len(rosters) != (self.s if per_world else 1):
             raise SearchError(f"{len(rosters)} observations for {self.s} world records")
+        if any([m[0] for m in r] != [m[0] for m in rosters[0]] for r in rosters):
+            raise SearchError("the worlds' observations disagree on the foe's species")
         members = rosters[0]  # the species, which every world shares (the team preview shows them)
         attempts = np.zeros((self.s, 6), np.int64)
         dropped = respreads = 0
@@ -525,7 +555,8 @@ class Honest(lookahead.Lookahead):
                     general = (sampled["levels"][:, :len(members)] >= 4) & (initial < 4)
                     self._spread_fallback = sorted({members[m][0] for m in range(len(members))
                                                     if (initial[:, m] >= 4).any()})
-                    self._spread_redrawn = sorted({members[m][0] for m in np.flatnonzero(general.any(axis=0))})
+                    self._spread_redrawn = sorted({members[m][0] for m in np.flatnonzero(general.any(axis=0))}
+                                                  - set(self._spread_fallback))
                 return h, weights, dropped, respreads, queue_pairs
             # The current C API reports a failed world, not the member. Redraw
             # all its spreads; keep its HP/counter/bench/queue words unchanged.
@@ -618,7 +649,9 @@ class Honest(lookahead.Lookahead):
                                                                  pt[d])
                 costs["network"] += seconds
                 groups = _record_groups(record)
-            history = self._observe(roots, e, p, record, status)
+            # a record per world: each world's own history, never the search's memory of an earlier particle there
+            history = self._observe(roots, e, p, record, status) if worlds is None else \
+                _world_history(worlds["histories"], int(roots.observations[e, p]["turn"]))
             boundary = int(roots.requests[e, p]["boundary_kind"])
             base = {"env": e, "seat": p, "key": int(keys[d]), "epoch": int(roots.requests[e, p]["epoch"]),
                     "boundary": lookahead._BOUNDARIES[boundary], "last_step": bool(last_step[d]),
