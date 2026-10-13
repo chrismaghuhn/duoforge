@@ -228,14 +228,13 @@
 #define DFI_ENC_TAIL_MEMBER_TOXIC_OFF 6u
 #define DFI_ENC_TAIL_MEMBER_TYPE2_OFF 7u /* rev 4 */
 #define DFI_ENC_TAIL_MEMBER_FLAGS_OFF 8u /* rev 4 */
-#define DFI_ENC_TAIL_MEMBER_RESERVED_OFF 9u
-#define DFI_ENC_TAIL_MEMBER_RESERVED_SIZE 1u
+/* Decision 0066 (visible sleep): the cant lines of a sleeping member (0..2), the member byte that was reserved before. */
+#define DFI_ENC_TAIL_MEMBER_SLEEP_CANT_OFF 9u
 /* The reserved bytes of the whole tail: the rev 4 part's, then the rev 5 reserve. */
 #define DFI_ENC_TAIL_RESERVED_COUNT                                                                                   \
     (DFI_ENC_TAIL_FIELD_RESERVED_SIZE +                                                                                \
      DUOFORGE_SIDE_COUNT * (DFI_ENC_TAIL_SIDE_RESERVED_SIZE +                                                          \
-                            DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE +                                \
-                            DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE) +                                 \
+                            DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE) +                               \
      (DFI_ENC_TAIL5_RESERVED_SIZE - DFI_ENC_TAIL5_ATTRACT_SIZE - DFI_ENC_TAIL5_ALLY_SWITCH_COUNT))
 /* The encoded size of a state under a POOL kind, and the largest of any kind: buffers of tests and tools that do
  * not ask duoforge_battle_encoded_size. Not a public constant. */
@@ -338,9 +337,9 @@ _Static_assert(DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF + 1u == DFI_ENC_TAIL_POS_RESERV
 _Static_assert(DFI_ENC_TAIL_QUICK_GUARD_OFF + 1u == DFI_ENC_TAIL_HAZARD_ORDER_OFF &&
                    DFI_ENC_TAIL_HAZARD_ORDER_OFF + 1u == DFI_ENC_TAIL_SIDE_RESERVED_OFF,
                "the hazard order ends the side's data");
-_Static_assert(DFI_ENC_TAIL_MEMBER_TYPE2_OFF == DFI_ENC_TAIL_MEMBER_TOXIC_OFF + 1u && DFI_ENC_TAIL_MEMBER_FLAGS_OFF + 1u == DFI_ENC_TAIL_MEMBER_RESERVED_OFF,
-               "the member's rev 4 bytes follow the toxic stage");
-_Static_assert(DFI_ENC_TAIL_MEMBER_RESERVED_OFF + DFI_ENC_TAIL_MEMBER_RESERVED_SIZE == DFI_ENC_TAIL_MEMBER_SIZE,
+_Static_assert(DFI_ENC_TAIL_MEMBER_TYPE2_OFF == DFI_ENC_TAIL_MEMBER_TOXIC_OFF + 1u && DFI_ENC_TAIL_MEMBER_FLAGS_OFF + 1u == DFI_ENC_TAIL_MEMBER_SLEEP_CANT_OFF,
+               "the member's rev 4 bytes follow the toxic stage; the sleep cant count (decision 0066) is the byte after them");
+_Static_assert(DFI_ENC_TAIL_MEMBER_SLEEP_CANT_OFF + 1u == DFI_ENC_TAIL_MEMBER_SIZE,
                "tail member block is 10 bytes");
 _Static_assert(DFI_ENC_TAIL_REV4_SIZE == 288u, "the rev 4 part of the tail is 288 bytes");
 _Static_assert(DFI_ENC_TAIL5_SIZE == 60u, "the rev 5 block is 60 bytes");
@@ -352,9 +351,10 @@ _Static_assert(DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_
                "the positions' rev 5 bytes end the block's data");
 _Static_assert(DFI_ENC_TAIL5_ALLY_SWITCH_COUNT == DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE,
                "one Ally Switch byte per flat position (step G80)");
-_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 33u,
-               "33 of them are reserved (step G46 takes 6 of the field block's 7, step G90 the position block's byte 32 "
-               "of its four, the Attract (G71) and Ally Switch (G80) bytes of the rev 5 reserve are data)");
+_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 21u,
+               "21 of them are reserved (step G46 takes 6 of the field block's 7, step G90 the position block's byte 32 "
+               "of its four, decision 0066 the member byte 9 of its twelve members (2 sides x 6), the Attract (G71) and "
+               "Ally Switch (G80) bytes of the rev 5 reserve are data)");
 _Static_assert(DFI_ENC_TAIL5_ATTRACT_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE <= DFI_ENC_TAIL5_SIZE, "the Attract bytes are in the rev 5 block");
 _Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1357u, "the state with the POOL tail is 1357 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data
@@ -364,8 +364,7 @@ _Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE - DFI_ENC_TAIL_POS_
                "a position's tail in memory: its data, the Ally Switch byte (G80), the pos_pad (G90) and the Ally Switch pad (G80)");
 _Static_assert(sizeof(dfi_tail_illusion) == DFI_ENC_TAIL5_SIDE_SIZE, "the Illusion block is its 18 bytes");
 _Static_assert(sizeof(dfi_tail_side) == DFI_ENC_TAIL_SIDE_SIZE - DFI_ENC_TAIL_SIDE_RESERVED_SIZE -
-                                            DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE -
-                                            DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE +
+                                            DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE +
     DUOFORGE_ACTIVE_PER_SIDE * (DFI_ENC_TAIL5_POS_SIZE + 3u) + DFI_ENC_TAIL5_SIDE_SIZE,
                "a side's tail in memory: its data, the Ally Switch bytes and the positions' pads");
 _Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVED_COUNT + 1u +

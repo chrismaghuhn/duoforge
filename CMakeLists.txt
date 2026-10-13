@@ -110,6 +110,10 @@ if(DUOFORGE_ENABLE_IPO)
     set(DUOFORGE_IPO ON)
 endif()
 
+set(DUOFORGE_ITEM_SOURCES
+    src/combat/items/families.c
+    src/combat/items/white_herb.c
+)
 set(DUOFORGE_SOURCES
     src/duoforge.c
     src/core/alloc.c
@@ -138,6 +142,7 @@ set(DUOFORGE_SOURCES
     src/codec/state_codec.c
     src/combat/events.c
     src/combat/turn.c
+    ${DUOFORGE_ITEM_SOURCES}
 )
 # The tiebreak (src/state/tiebreak.c) reproduces the reference's binary64 arithmetic
 # bit for bit: nothing may contract into a fused multiply-add. GCC's ISO modes
@@ -177,8 +182,32 @@ target_link_libraries(duoforge_batch PUBLIC duoforge Threads::Threads)
 duoforge_configure_target(duoforge_batch)
 
 # The shared library of the Python package (M7, decision 0013): the core and
-# the batch runtime in one module, every function exported.
-add_library(duoforge_shared SHARED ${DUOFORGE_SOURCES} ${DUOFORGE_BATCH_SOURCES})
+# the batch runtime in one module, retaining its existing export surface.
+set(_duoforge_shared_sources ${DUOFORGE_SOURCES})
+if(WIN32)
+    # MSVC has no per-function hidden visibility. CMake's automatic export
+    # scan reads this target's objects, not linked archives: keep the new
+    # private item helpers in an archive so none becomes a DLL export.
+    list(REMOVE_ITEM _duoforge_shared_sources ${DUOFORGE_ITEM_SOURCES})
+    add_library(duoforge_items_private STATIC ${DUOFORGE_ITEM_SOURCES})
+    target_include_directories(duoforge_items_private PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    set_target_properties(duoforge_items_private PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    if(MSVC)
+        set_target_properties(duoforge_items_private PROPERTIES
+            INTERPROCEDURAL_OPTIMIZATION OFF INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
+    endif()
+    duoforge_configure_target(duoforge_items_private)
+endif()
+add_library(duoforge_shared SHARED ${_duoforge_shared_sources} ${DUOFORGE_BATCH_SOURCES})
+if(WIN32)
+    target_link_libraries(duoforge_shared PRIVATE duoforge_items_private)
+    if(MINGW)
+        # GNU PE auto-export also scans linked archives; exclude this one.
+        target_link_options(duoforge_shared PRIVATE
+            "LINKER:--exclude-libs,$<TARGET_FILE_NAME:duoforge_items_private>")
+    endif()
+endif()
 target_include_directories(duoforge_shared
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")

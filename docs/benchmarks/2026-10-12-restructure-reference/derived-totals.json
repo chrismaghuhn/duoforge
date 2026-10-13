@@ -1,0 +1,93 @@
+{
+  "closure": {
+    "battles": 90,
+    "certified": 26,
+    "fixture_matches": 0,
+    "live_stops": {},
+    "outcomes": {
+      "equal": 2594,
+      "refused": 310
+    },
+    "own_pp_stops": [],
+    "tiebreak_stops": 833
+  },
+  "pool": {
+    "battles": 966,
+    "certified": 966,
+    "fixture_matches": 0,
+    "live_stops": {
+      "feature:DESTINY_BOND": 10,
+      "feature:DRAGON_CHEER": 20,
+      "feature:FORME_CHANGE": 10,
+      "feature:ILLUSION": 2,
+      "feature:ROOST": 8,
+      "feature:SUBSTITUTE": 110,
+      "line:-end": 2
+    },
+    "outcomes": {
+      "equal": 11604,
+      "refused": 639,
+      "tracker refuses: unburden-without-item-line": 4
+    },
+    "own_pp_stops": [
+      [
+        "g53_field_trick_room",
+        0
+      ],
+      [
+        "g53_still_pressure",
+        1
+      ],
+      [
+        "g78_ee_t",
+        0
+      ],
+      [
+        "g78_fainted_ally",
+        0
+      ],
+      [
+        "g78_fainted_target",
+        0
+      ],
+      [
+        "g78_ko_t_hit1",
+        0
+      ],
+      [
+        "g78_partner_absent",
+        0
+      ],
+      [
+        "g78_pressure2",
+        0
+      ],
+      [
+        "g78_split",
+        0
+      ],
+      [
+        "i2_bench_swap",
+        0
+      ],
+      [
+        "i2_illusion_break",
+        0
+      ],
+      [
+        "i2_unbroken_switchout",
+        0
+      ]
+    ],
+    "tiebreak_stops": 5324
+  },
+  "team_c": {
+    "battles": 73,
+    "certified": 23,
+    "fixture_matches": 144,
+    "live_stops": {},
+    "outcomes": {},
+    "own_pp_stops": [],
+    "tiebreak_stops": 734
+  }
+}

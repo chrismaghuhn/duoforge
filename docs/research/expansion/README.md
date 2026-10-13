@@ -2,6 +2,18 @@
 
 Status: **research draft**, agent-generated on 2026-10-01. Four read-only research agents of the Team C session produced it (legal pool, effort classes, usage, differential testing), and that session synthesised and spot-checked it. It is not a contract, not evidence and not a support claim (see `../README.md`). Showdown pin `b2cb775b0616115b775534eaeff50300e1fc81fc`. The DuoForge state analysed is Team C step 5 (closure plus Team C tables).
 
+
+**Historical source citations.** Numbered DuoForge citations in this research,
+its curated generator entries and generated `team-gaps.md`/`data/team_gaps.json`
+refer to the recorded research snapshots, not to current line numbers:
+[`cfe18c0`](https://github.com/chrismaghuhn/duoforge/blob/cfe18c0a29e82a16856f49eb2ad3788def26d0cf/src/combat/turn.c)
+for the expansion inventory, with decision 0015 from `1aab4c2` as stated in the
+generated metadata. The earlier third-team inventory uses `3133fcc`. These
+generated historical reports are retained unchanged. For current implementation
+locations, use the named helpers: item access in `src/combat/items/held.c`, type
+booster/resist-berry effects in `src/combat/items/families.c`, White Herb in
+`src/combat/items/white_herb.c`; scheduling and RNG remain in `src/combat/turn.c`.
+
 ## 1. Summary
 
 - **Pool size.** The format's legal pool is about ten times what DuoForge's tables hold:

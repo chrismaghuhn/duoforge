@@ -37,7 +37,7 @@ Pin: Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`). No Champions override of 
 
 `position_flags` (`src/state/battle_internal.h:259-268`): bit 0 Healing Wish (zero), bit 1 `DFI_POSFLAG_STATS_RAISED`, bits 2-3 Dragon Cheer stage. This step adds:
 
-- **`DFI_POSFLAG_LOWERED` = bit 5 (0x20).** Set in `dfi_boost` (`src/combat/turn.c:1205-1213`, next to the raised bit) where `after < before`, POOL only. Cleared at the turn boundary (next to `turn.c:9641-9643`) and with the occupant (`dfi_tail_clear_occupant`).
+- **`DFI_POSFLAG_LOWERED` = bit 5 (0x20).** Set in `dfi_boost` (`src/combat/turn.c (dfi_boost)`, next to the raised bit) where `after < before`, POOL only. Cleared at the turn boundary (next to `src/combat/turn.c (dfi_end_turn)`) and with the occupant (`dfi_tail_clear_occupant`).
 - **`DFI_POSFLAG_HURT` = bit 6 (0x40).** Set where a spread damage removes HP (after the cap, POOL only, the spread path only, decision 5). Cleared as above.
 - No new byte, no reserve byte. Bits 0 and 4 stay as they are on main (bit 4 is Destiny Bond on batch 5's branch); bit 7 stays zero.
 - **Invariant:** `DFI_POSFLAG_VALID_MASK` widens from `0x0F` to `0x6F` (bits 0-3, 5, 6); the new bits only with an occupant. Mirror in `tools/state_model/state_v3_model.py` (`position_flags_valid` at `:975`, the flags-only occupant rule at `:1055-1056`).

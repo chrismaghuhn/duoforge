@@ -1,0 +1,8 @@
+{
+  "baseline": "ca17e507",
+  "before_count": 1407,
+  "after_count": 1407,
+  "identical_names_order_commands_and_runtime_properties": true,
+  "excluded": "registration backtraces only",
+  "inventory_sha256": "fbd60c25eedbe427e6097993964249e12d5b39e30fdd167137fbb00b2b305913"
+}

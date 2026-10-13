@@ -1,0 +1,177 @@
+[
+  {
+    "document": "docs/decisions/0045-healing-wish.md",
+    "old": "src/combat/turn.c:9771",
+    "new": "src/combat/turn.c (dfi_finish_turn)"
+  },
+  {
+    "document": "docs/decisions/0045-healing-wish.md",
+    "old": "src/combat/turn.c:8388-8440",
+    "new": "src/combat/turn.c (dfi_run_entries)"
+  },
+  {
+    "document": "docs/decisions/0045-healing-wish.md",
+    "old": "src/combat/turn.c:8388",
+    "new": "src/combat/turn.c (dfi_run_entries)"
+  },
+  {
+    "document": "docs/decisions/0045-healing-wish.md",
+    "old": "turn.c:8388-8440",
+    "new": "src/combat/turn.c (dfi_run_entries)"
+  },
+  {
+    "document": "docs/decisions/0044-ally-switch.md",
+    "old": "src/combat/turn.c:5427-5447",
+    "new": "src/combat/turn.c (dfi_swap_position_state)"
+  },
+  {
+    "document": "docs/decisions/0044-ally-switch.md",
+    "old": "src/combat/turn.c:7847",
+    "new": "src/combat/turn.c (dfi_party_switch)"
+  },
+  {
+    "document": "docs/decisions/0042-baton-pass.md",
+    "old": "src/combat/turn.c:7971-7977",
+    "new": "src/state/identity.c (dfi_place)"
+  },
+  {
+    "document": "docs/decisions/0042-baton-pass.md",
+    "old": "turn.c:7937",
+    "new": "src/combat/turn.c (dfi_switch_in)"
+  },
+  {
+    "document": "docs/decisions/0042-baton-pass.md",
+    "old": "turn.c:7987-7995",
+    "new": "src/combat/turn.c (dfi_switch_in)"
+  },
+  {
+    "document": "docs/decisions/0042-baton-pass.md",
+    "old": "turn.c:2289",
+    "new": "src/combat/turn.c (dfi_residual_events_run)"
+  },
+  {
+    "document": "docs/decisions/0041-skill-swap.md",
+    "old": "turn.c:332-354",
+    "new": "src/combat/turn.c (dfi_ability_code)"
+  },
+  {
+    "document": "docs/decisions/0041-skill-swap.md",
+    "old": "turn.c:7629",
+    "new": "src/combat/turn.c (dfi_switch_in)"
+  },
+  {
+    "document": "docs/decisions/0041-skill-swap.md",
+    "old": "turn.c:8267-8276",
+    "new": "src/combat/turn.c (dfi_speed_boost)"
+  },
+  {
+    "document": "docs/decisions/0065-psychic-terrain.md",
+    "old": "turn.c:10321",
+    "new": "src/combat/turn.c (dfi_residual_pair_draws)"
+  },
+  {
+    "document": "docs/decisions/0065-psychic-terrain.md",
+    "old": "turn.c:10321",
+    "new": "src/combat/turn.c (dfi_residual_pair_draws)"
+  },
+  {
+    "document": "docs/decisions/0040-aegislash.md",
+    "old": "src/combat/turn.c:3810-3840",
+    "new": "src/combat/turn.c (dfi_run_protect)"
+  },
+  {
+    "document": "docs/decisions/0040-aegislash.md",
+    "old": "src/combat/turn.c:5322-5336",
+    "new": "src/combat/turn.c (dfi_run_move_body)"
+  },
+  {
+    "document": "docs/decisions/0040-aegislash.md",
+    "old": "src/combat/turn.c:6142-6146",
+    "new": "src/combat/turn.c (dfi_run_move_body)"
+  },
+  {
+    "document": "docs/decisions/0040-aegislash.md",
+    "old": "turn.c:4469",
+    "new": "src/combat/turn.c (dfi_boost)"
+  },
+  {
+    "document": "docs/decisions/0040-aegislash.md",
+    "old": "turn.c:5910-5925",
+    "new": "src/combat/turn.c (dfi_run_move_body)"
+  },
+  {
+    "document": "docs/decisions/0040-aegislash.md",
+    "old": "turn.c:8100-8104",
+    "new": "src/combat/turn.c (dfi_run_mega)"
+  },
+  {
+    "document": "docs/decisions/0046-turn-history-moves.md",
+    "old": "src/combat/turn.c:1205-1213",
+    "new": "src/combat/turn.c (dfi_boost)"
+  },
+  {
+    "document": "docs/decisions/0046-turn-history-moves.md",
+    "old": "turn.c:9641-9643",
+    "new": "src/combat/turn.c (dfi_end_turn)"
+  },
+  {
+    "document": "docs/decisions/0015-content-expansion-pool.md",
+    "old": "turn.c:1367-1368",
+    "new": "src/combat/turn.c (dfi_get_damage)"
+  },
+  {
+    "document": "docs/decisions/0015-content-expansion-pool.md",
+    "old": "turn.c:1694",
+    "new": "src/combat/turn.c (dfi_get_damage)"
+  },
+  {
+    "document": "docs/decisions/0015-content-expansion-pool.md",
+    "old": "turn.c:1694",
+    "new": "src/combat/turn.c (dfi_get_damage)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "src/combat/turn.c:1311",
+    "new": "src/combat/turn.c (dfi_move_targets)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "turn.c:6980-7060",
+    "new": "src/combat/turn.c (dfi_run_move_body)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "turn.c:6952",
+    "new": "src/combat/turn.c (dfi_run_move_body)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "turn.c:1873",
+    "new": "src/combat/turn.c (dfi_get_damage)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "turn.c:1311-1426",
+    "new": "src/combat/turn.c (dfi_move_targets)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "turn.c:6980-7060",
+    "new": "src/combat/turn.c (dfi_run_move_body)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "turn.c:6944-6947",
+    "new": "src/combat/turn.c (dfi_run_move_body)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "turn.c:5126-5146",
+    "new": "src/combat/turn.c (dfi_pressure_extra)"
+  },
+  {
+    "document": "docs/decisions/0043-dragon-darts.md",
+    "old": "turn.c:6342",
+    "new": "src/combat/turn.c (dfi_run_move_body)"
+  }
+]

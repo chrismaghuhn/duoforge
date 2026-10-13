@@ -150,7 +150,12 @@ def fallback_allowed(previous_share):
 
 
 def _pooled_share(opponents, arm):
-    """The fallback share of an arm over all opponents' non-team decisions (reported, not gated)."""
+    """The fallback share of an arm over all opponents' non-team decisions (reported, not gated). None when an
+    opponent's arm lacks the counts: reports written before fallback_decisions and non_team_decisions were added
+    (step 1's) carry the per-opponent shares only, and a pooled share cannot be recovered from shares."""
+    if any("fallback_decisions" not in entry["arms"][arm] or "non_team_decisions" not in entry["arms"][arm]
+           for entry in opponents.values()):
+        return None
     fallbacks = sum(entry["arms"][arm]["fallback_decisions"] for entry in opponents.values())
     non_team = sum(entry["arms"][arm]["non_team_decisions"] for entry in opponents.values())
     return fallbacks / max(1, non_team)
@@ -221,15 +226,17 @@ def verdict(report, latency=None):
         latency_gate = p99 is not None and p99 <= GATES["p99_seconds"]
         source = {"run": "latency", "step": latency["conditions"]["step"]["name"],
                   "commit": latency["conditions"]["commit"]}
+    pooled = {"step": _pooled_share(opponents, "step"), "previous": _pooled_share(opponents, "previous")}
+    if None in pooled.values():
+        notes.append("pooled fallback shares not reported: the report has no fallback_decisions or "
+                     "non_team_decisions (an old-format report); the fallback gate reads the per-opponent shares")
     gates = {"strength": strength, "no_harm": no_harm, "reproduced": reproduced, "fallback": fallback,
              "latency": latency_gate}
     return {"gates": gates, "adopt": None if latency is None else all(gates.values()),
             "h2h": h2h,
             "paired": {name: entry["paired"]["step_vs_previous"] for name, entry in opponents.items()
                        if "step_vs_previous" in entry.get("paired", {})},
-            "fallback": {"per_opponent": fallback_per,
-                         "pooled": {"step": _pooled_share(opponents, "step"),
-                                    "previous": _pooled_share(opponents, "previous")}},
+            "fallback": {"per_opponent": fallback_per, "pooled": pooled},
             "p99_seconds": p99, "p99_source": source, "notes": notes}
 
 

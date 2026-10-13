@@ -926,7 +926,7 @@ static void play(df_test *t, const duoforge_context_config *config, const char *
             if (st == DUOFORGE_E_UNSUPPORTED) {
                 break; /* a mechanic the manifest does not mark: the game ends here */
             }
-            DF_CHECK(t, st == DUOFORGE_OK);
+            DF_CHECK_EQ_U64(t, st, DUOFORGE_OK); /* the status is reported with the failure */
             if (st != DUOFORGE_OK) {
                 break;
             }
@@ -1688,8 +1688,13 @@ int main(void)
     printf("queue masks: %u sound, %u explicitly unsupported\n", masks_checked, masks_refused);
     /* Since the view audit of 2026-10-10 a PIVOT with a queued move left is refused (a silent flinch may be outstanding on
      * it), so no public record carries a foe's pending command: the masks checked are those of PIVOTs with no move left
-     * (20 sound and 32 refused before), and no world varies a queued command. */
-    DF_CHECK(&t, masks_checked == 6u && masks_refused == 6u);
+     * (20 sound and 32 refused before), and no world varies a queued command.
+     * #442 (decision 0066), POOL only (closure 1/1 and Team C 1/5 unchanged vs main): the now-accepted visible-sleep views
+     * (game 4 from step 9) draw hypothesis words from the shared driver generator rs in check_state (:273-275, :329), which
+     * main skipped; this shifts the random stream of the later POOL games (17, 18, 34, 46, 65), which reach new PIVOT
+     * boundaries: 8 sound and 12 refused (main 4/0 for POOL). The 6 refused masks return E_UNSUPPORTED from the first
+     * neutral() call in duoforge_public_queue_mask, as on main. */
+    DF_CHECK(&t, masks_checked == 8u && masks_refused == 12u);
     DF_CHECK(&t, varied_picks > 0u && varied_commands == 0u);
     corpus_move_results(&t);
     printf("move results: %u actions classified, %u refused, %u slots compared with the engine\n", mr_classified,
