@@ -162,8 +162,15 @@ class Belief:
         6), confusion (n, 2, 2), charge_target (n, 2) uint64 words, bench and
         queue (n,) uint64 words, trap (n, 4) uint64 words (one per flat
         position, G90), levels (n, 6), and weights (n,) float64."""
-        members = list(members)
-        if len(members) > ROSTER:
+        return self.sample_worlds([list(members)] * int(n), seed, key, exclude_team, attempts)
+
+    def sample_worlds(self, rosters, seed, key, exclude_team=None, attempts=None):
+        """sample() with one roster per world: world w draws its spreads for rosters[w]'s (species, nature, item)
+        ids, from its own words as in sample() (closed team sheets, decision 0081: world w is particle w, whose
+        drawn natures and items differ). Equal rosters give sample()'s result."""
+        rosters = [list(members) for members in rosters]
+        n = len(rosters)
+        if any(len(members) > ROSTER for members in rosters):
             raise ValueError(f"at most {ROSTER} foe members")
         attempts = np.zeros((n, ROSTER), dtype=np.int64) if attempts is None else np.asarray(attempts)
         if attempts.shape != (n, ROSTER) or not np.issubdtype(attempts.dtype, np.integer) or \
@@ -183,7 +190,7 @@ class Belief:
         }
         for w in range(n):
             words = world_words(seed, key, w, np.arange(64))
-            for m, (species, nature, item) in enumerate(members):
+            for m, (species, nature, item) in enumerate(rosters[w]):
                 a = int(attempts[w, m])
                 k = WORDS["spread"] + m if a == 0 else WORDS["respread"] + 8 * (a - 1) + m
                 word = words[k] if a == 0 else world_words(seed, key, w, [k])[0]

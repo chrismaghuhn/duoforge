@@ -95,13 +95,14 @@ BC6=/mnt/c/Dev/datasets/m11-bc-runs/bc6-M/bc.npz
 
 **Open team sheets.** At team preview, `|showteam|` reveals both sides' species, items, abilities, moves and natures, but not their stat points. The tracker folds these lines as it does on Showdown (section 2): the foe's members in the observation carry the revealed sets, and their stat points and stats stay unknown, as in DuoForge's own view. The honest search gets the same public record.
 
+**Closed team sheets** (decision 0081, #385 step 4). The CTS format is played over 16 particles, each a drawn foe team folded by the tracker above; the search builds world `w` from particle `w`'s record. Until then it fell back with the reason `closed_team_sheets`.
+
 **Fallback.** When the engine cannot represent a battle, the rest of that battle is answered with `/choose default`. The server's simulator then picks; Python picks no move. Each such battle and each defaulted decision is counted by its reason in the run log. The reasons are:
 
 | reason | cause |
 |---|---|
-| `closed_team_sheets` | a battle without open team sheets: the tracker needs both |
 | `no_open_sheets` | the sheets did not arrive within 20 s of the team preview request |
-| `stop:<kind>`, `error:<type>` | a tracker Stop, or an exception of the tracker, the options or the policy |
+| `stop:<kind>`, `error:<type>` | a tracker Stop, or an exception of the tracker, the options or the policy; a particle tracker's stop by its name (`stop:cts:redraw-cap`, ...) |
 | `rejections` | more than 16 refused choices at one decision point |
 | `unavailable` | more than two unavailable choices at one decision point |
 | `deadline`, `policy_busy` | the decision took more than 20 s; or a late decision still runs (never two at once) |

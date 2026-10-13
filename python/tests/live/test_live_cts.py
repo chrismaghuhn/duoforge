@@ -5,12 +5,15 @@ Team A against Team B, with open team sheets) without its |showteam| lines: what
 Team B. Turn 1: Farigiraf uses Protect, its Armor Tail stops Ceruledge's Shadow Sneak, Grimmsnarl uses Spirit Break.
 Turn 2: Grimmsnarl uses Spirit Break, Farigiraf uses Trick Room.
 """
+import hashlib
 import json
 import unittest
 
 import numpy as np
 
-from duoforge_live import cts, data, lines, teams, tracker
+from duoforge import features
+from duoforge_live import cts, data, game, lines, options, search as live_search, teams, tracker
+from python.tests.live.test_live_client import FakePolicy
 
 FIXTURE = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "live_stream_ab.json").read_text(encoding="utf-8"))
 SEED, KEY = 7, "battle-gen9championsvgc2026regmc-1"
@@ -420,6 +423,199 @@ class CtsTest(unittest.TestCase):
         bad = teams._paste(FIXTURE["foe_team"].split("\n\n")[0].replace("- Spirit Break", "- Snarl"))
         with self.assertRaises(ValueError):
             cts.SetPrior(self.data, bad)
+
+
+class SpyPolicy:
+    """Ranks every allowed choice with probabilities that depend on the observation it is shown, and keeps what it was
+    shown: the mean over the particles is under test, not the network."""
+    encoder = 2
+
+    def __init__(self):
+        self.seen = []
+
+    @staticmethod
+    def weights(observation, count):
+        h = hashlib.sha256(np.asarray(observation).tobytes()).digest()
+        w = [h[k % len(h)] % 7 + 1 for k in range(count)]
+        return [x / sum(w) for x in w]
+
+    def rank_pairs(self, observation, obs_part, slot_part, pair_mask):
+        self.seen.append(np.asarray(observation).tobytes())
+        n = pair_mask.shape[1]
+        allowed = np.flatnonzero(pair_mask.reshape(-1))
+        ranked = [(int(i) // n, int(i) % n, p) for i, p in zip(allowed, self.weights(observation, allowed.size))]
+        return sorted(ranked, key=lambda r: -r[2])
+
+    def rank_teams(self, observation, obs_part):
+        self.seen.append(np.asarray(observation).tobytes())
+        return sorted(enumerate(self.weights(observation, 360)), key=lambda r: -r[1])
+
+
+class RawSearch:
+    """A LiveSearch in shape: keeps every call and plays raw."""
+
+    def __init__(self):
+        self.calls = []
+
+    def decide(self, parts, obs_part, slot_part, pair_mask, *, key, episode, budget, worlds=None):
+        self.calls.append({"parts": parts, "obs_part": obs_part, "slot_part": slot_part, "pair_mask": pair_mask,
+                           "worlds": worlds})
+        return live_search.Outcome(None, "raw", None, None, 0.0)
+
+
+class ClosedGameTest(unittest.TestCase):
+    """game.Game.closed_sheets: a closed-sheet battle played over the particles."""
+    N = 4
+
+    @classmethod
+    def setUpClass(cls):
+        cls.data = data.load(kind="pool")
+
+    def game(self, policy, search=None):
+        prior = cts.SetPrior(self.data, with_species(foe_sets(), "Farigiraf", farigiraf(), farigiraf(item="Leftovers"),
+                                                     farigiraf(item="Mental Herb")))
+        return game.Game.closed_sheets(self.data, policy, FIXTURE["team"], prior, search=search, room=KEY, seed=SEED,
+                                       n=self.N)
+
+    @staticmethod
+    def mean(values):
+        """The mean as game.mean_ranking takes it: summed in particle order, without compensation (sum() of Python 3.12
+        compensates)."""
+        total, n = 0.0, 0
+        for v in values:
+            total, n = total + v, n + 1
+        return total / n
+
+    @staticmethod
+    def points(g):
+        """The game at each decision point of the closed stream (before the fixture's choice is accepted)."""
+        done = 0
+        for m in closed(FIXTURE["messages"]):
+            g.feed(m)
+            if g.ready and g.epoch > done:
+                done = g.epoch
+                yield g
+                g.accepted(FIXTURE["inputs"][done - 1])
+
+    def test_the_raw_ranking_is_the_mean_over_the_particles(self):
+        spy = SpyPolicy()
+        checked = 0
+        for g in self.points(self.game(spy)):
+            spy.seen.clear()
+            got = g.candidates()
+            observations = g.tracker.observations()
+            self.assertEqual(spy.seen, [o.tobytes() for o in observations])  # each particle once, in order
+            self.assertGreater(len(set(spy.seen)), 1)  # the particles' observations differ: a mean to take
+            if g.request.get("teamPreview"):
+                ws = [spy.weights(o, 360) for o in observations]
+                mean = [self.mean(w[k] for w in ws) for k in range(360)]
+                want = [(options.team_text(game.TEAM_TABLE[k]), mean[k])
+                        for k in sorted(range(360), key=lambda k: (-mean[k], k))]
+            else:
+                domain, lists = g.tracker.domain()
+                _, _, mask = features.encode(observations[0], domain, g.tracker.observation_exts()[0], 0)
+                n, allowed = mask.shape[1], np.flatnonzero(mask.reshape(-1))
+                ws = [spy.weights(o, allowed.size) for o in observations]
+                mean = [self.mean(w[k] for w in ws) for k in range(allowed.size)]
+                want = [(options.pair_text(lists[0][allowed[k] // n], lists[1][allowed[k] % n]), mean[k])
+                        for k in sorted(range(allowed.size), key=lambda k: (-mean[k], allowed[k]))]
+            self.assertEqual([(c.text, c.probability) for c in got], want)
+            checked += 1
+        self.assertEqual(checked, 4)
+
+    def test_the_search_gets_one_world_per_particle(self):
+        search = RawSearch()
+        for g in self.points(self.game(FakePolicy(), search)):
+            g.candidates()
+            call = search.calls[-1]
+            parts = g.tracker.public_parts()
+            self.assertEqual(len(call["worlds"]), self.N)
+            for (world, obs_part, slot_part, history), want in zip(call["worlds"], parts):
+                self.assertIs(world, want)
+                self.assertEqual(len(history), g.epoch)  # its (record, status) at every decision point so far
+                self.assertEqual(history[-1][0].tobytes(), want["record"].tobytes())
+                self.assertEqual(obs_part.shape, call["obs_part"].shape)
+                self.assertEqual(slot_part is None, bool(g.request.get("teamPreview")))
+            self.assertIs(call["parts"], parts[0])  # the root's request and own pairs: every particle's
+            self.assertIs(call["obs_part"], call["worlds"][0][1])
+        self.assertEqual(len(search.calls), 4)
+
+    def preview_record(self, sets):
+        """The team-preview record an open-sheet tracker shows with `sets` as the foe's sheet."""
+        t = tracker.Tracker(self.data, FIXTURE["team"])
+        own, foe = teams.pack(FIXTURE["team"]), teams.pack(teams.to_text(sets))
+        for m in closed(FIXTURE["messages"]):
+            for i, line in enumerate(m):
+                side = cts._preview_side(line)
+                if side is not None:
+                    t.feed(m[:i + 1])
+                    t.feed([f"|showteam|p{s + 1}|" + (own if s == side else foe) for s in (0, 1)])
+                    return t.public_parts()["record"]
+            t.feed(m)
+        raise AssertionError("no team preview")
+
+    def test_a_particle_drawn_anew_brings_the_preview_record_of_its_own_sets(self):
+        # Review of #385 step 4: the search builds world w's team preview from particle w's history, so a particle drawn
+        # after the preview must carry the preview record of its own sets, not of the particle it replaced.
+        prior = cts.SetPrior(self.data, with_species(foe_sets(), "Farigiraf", farigiraf(),
+                                                     farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")),
+                                                     farigiraf(item="Leftovers")))
+        g = game.Game.closed_sheets(self.data, FakePolicy(), FIXTURE["team"], prior, room=KEY, seed=SEED, n=8)
+        at_preview, changed = None, 0
+        for g in self.points(g):
+            histories = g.tracker.histories()
+            if at_preview is None:
+                at_preview = [h[0][0].tobytes() for h in histories]
+            for p, h in zip(g.tracker.particles, histories):
+                self.assertEqual(h[0][0].tobytes(), self.preview_record(p.sets).tobytes())
+            changed = sum(a != h[0][0].tobytes() for a, h in zip(at_preview, histories))
+        self.assertGreater(g.tracker.counters["redraw.facts"], 0)
+        self.assertGreater(changed, 0)  # a particle redrawn after the preview: another preview record
+
+    def test_each_particle_shows_its_own_extension_record(self):
+        for g in self.points(self.game(FakePolicy())):
+            self.assertEqual([e.tobytes() for e in g.tracker.observation_exts()],
+                             [p.tracker.observation_ext().tobytes() for p in g.tracker.particles])
+
+    def test_the_live_search_sets_the_particles_as_its_worlds(self):
+        from duoforge_search.record_roots import RecordRoots
+
+        class Searcher:
+            encoder, s = 4, ClosedGameTest.N
+
+            def __init__(self):
+                self.worlds = []
+
+            def decide(self, roots, envs, seats, keys, last_step):
+                self.worlds.append(roots.worlds(int(envs[0]), int(seats[0])))
+                return np.zeros(1, np.int64), [{"kind": "raw"}]
+
+        searcher = Searcher()
+        live = live_search.LiveSearch(searcher, roots=RecordRoots(1))
+        self.addCleanup(live.close)
+        g = self.game(FakePolicy(), live)
+        for g in self.points(g):
+            g.candidates()
+            got = searcher.worlds[-1]
+            parts = g.tracker.public_parts()
+            self.assertEqual([r.tobytes() for r in got["records"]], [p["record"].tobytes() for p in parts])
+            self.assertEqual(got["statuses"].tolist(), [p["status"] for p in parts])
+            self.assertEqual(got["causes"].tolist(), [p["causes"] for p in parts])
+            self.assertEqual([o.tobytes() for o in got["observations"]], [p["observation"].tobytes() for p in parts])
+            self.assertEqual(len(got["obs"]), self.N)
+            self.assertEqual(len(got["slots"]), self.N)
+            self.assertEqual([[r.tobytes() for r, _ in h] for h in got["histories"]],
+                             [[r.tobytes() for r, _ in h] for h in g.tracker.histories()])
+        self.assertEqual([o.cause for o in g.outcomes], ["raw"] * 4)
+
+
+class CounterKindTest(unittest.TestCase):
+    def test_a_redraw_by_a_stop_keeps_the_stops_kind_only(self):
+        self.assertEqual(cts.counter_kind("redraw.stop:structure:p2a: Nickname names no member seen yet"),
+                         "redraw.stop:structure")
+        self.assertEqual(cts.counter_kind("redraw.stop:cts:redraw-cap error:ValueError"), "redraw.stop:cts:redraw-cap")
+        for key in ("redraw.facts", "redraw.error:ValueError", "stop.cts:facts", "level1", "choice-excluded"):
+            self.assertEqual(cts.counter_kind(key), key)
 
 
 class WordTest(unittest.TestCase):

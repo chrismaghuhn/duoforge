@@ -3,7 +3,8 @@
 Status: plan accepted by HauptSession on 2026-10-12 (#385, number 0081, one lean PR with this note, `cts.py`, the tracker hook and
 the tests). Builds on decision 0016 (the live adapter and its tracker), decision 0023 (the public view and its worlds), and decision
 0019 together with the M11 Bo1 spec (the replay's set belief, `bo1_belief`). The arena switch (`pkmn_arena`), the set-prior table
-from Smogon's usage stats and the honest search over one record per world each come in their own PRs.
+from Smogon's usage stats (#385 step 3) and the honest search over one record per world with the arena path (#385 step 4)
+each come in their own PRs.
 
 ## The problem
 
@@ -60,7 +61,7 @@ synthesized `|showteam|` lines:
 
 This is the place and form of the real lines under open sheets (`teams.pack`, level 50, no stat points). From then on, every
 particle folds every line. The tracker is the **unchanged** open-sheet tracker: no battle rule moves into Python. Each particle
-gives its own observation and public record. The honest search builds world `w` from particle `w`'s record (that PR comes later).
+gives its own observation and public record. The honest search builds world `w` from particle `w`'s record (#385 step 4, below).
 
 **Conditioning.** Before a batch of lines is folded, the facts of the prefix including the batch are taken.
 - A particle whose sets contradict a fact is replaced: a fresh draw under the current facts, then a fold of the whole received
@@ -235,6 +236,57 @@ This bias is measured, not assumed: the same CTS games are searched once with pa
 upper bound), and the difference is what version 1 costs. Reveal tracking in the state and view (the engine marks which facts each
 player has seen) is the version-2 item of #385.
 
+## The search over one record per world (#385 step 4)
+
+The live search (`duoforge_search.honest.Honest`, decision 0023) built all of its `S` worlds from the one public record of the
+root. Under closed sheets each particle has its own record, so world `w` is built from particle `w`'s record (`S` = 16 =
+`cts.PARTICLES`; the arena refuses a search with another world count at start).
+- **Input.** `RecordRoots.set_worlds` gives a seat the worlds' own parts: each particle's record, status, cause mask,
+  observation and encoded rows. The seat's own `set()` parts stay its request and pair mask (the own side is the same in every
+  particle).
+- **Spreads.** World `w` draws the stat points of particle `w`'s members (`Belief.sample_worlds`): the spread table's key is
+  (species, nature, item), and the drawn natures and items differ between particles. The words are those of `sample()` for
+  world `w`, so the worlds of one record draw exactly what they drew before.
+- **History.** Each world's team-preview and turn-start records come from its own particle: the particle tracker keeps each
+  particle's (record, status) at every decision point it folded (`ParticleTracker.histories`), and the search takes them
+  from there, chosen as it keeps its own history under open sheets. A particle drawn anew after the team preview is another
+  world and brings the records of its own fold, never those the search kept from the particle it replaced (review of
+  #385 step 4). A world without its team-preview record is unreconstructible by name. A PIVOT's queue mask is taken per
+  world from its own two records (once per distinct pair).
+- **Species.** The worlds' observations must name the same foe species in the same order (the team preview shows them);
+  otherwise the decision stops by name. A species named in `spread_fallback` is not named again in `spread_redrawn`.
+- **Checks.** Every world must give its own record back, byte for byte (`_check_worlds`). The worlds' records must agree on
+  every public header field (turn, boundary, seen and pending masks, leads, ...); a disagreement stops by name. The check that
+  the viewer's encoded row is the same in every world becomes: the same in every world **of one record**, because the row
+  shows the drawn foe sheet (the named v1 limit). The pair masks must still agree in all worlds.
+- **A refused record.** When any particle's record is refused for a public cause (`E_UNSUPPORTED`), the decision is
+  unreconstructible with the union of the causes, as under open sheets; another refusal stops by name.
+- **The root's own candidates.** The policy reads the drawn foe sheet in each particle's row. The root's K candidates, their
+  prior and the team head therefore take the **mean of the policy's probabilities over the particles' rows**, each particle
+  weighing 1/16, as each world does in the belief. The live raw ranking (`game.Game.closed_sheets`, played when the search
+  refuses or is off) is the same mean, ties to the lower index. When every particle's rows are the root's own, the root's own
+  probabilities are used unchanged.
+- **Open sheets are unchanged.** One record for every world takes the earlier path with the same calls, and a test pins that
+  worlds given the same record decide as that record alone, bit for bit. A preview search builds its worlds from one record:
+  it is refused with a record per world (the live search plays the preview raw).
+
+## Closed sheets in the arena (#385 step 4)
+
+`pkmn_arena` plays the CTS format (`gen9championsvgc2026regmc` and its random-team ladder) over the particles, instead of the
+`closed_team_sheets` fallback:
+- Each battle is a `game.Game.closed_sheets`: 16 particles from the pinned set table, seed `cts.SEED`, the battle room as the key.
+  The table loads at start; tables it cannot read (a closure checkpoint's) stop the bot at start by name.
+- The bot never accepts open sheets in this format: real `|showteam|` lines would meet the particles' own.
+- A particle tracker's stop falls back to `/choose default` like any tracker stop, under its name (`stop:cts:redraw-cap`,
+  `stop:cts:no-consistent-set`, `stop:cts:facts`).
+- **Determinism from the log.** The battle log keeps every batch as it was fed (`feed`) and every choice the game accepted
+  (`accepted`). A test draws the particles again from the log alone and gets the same sets and records.
+- The particle trackers' counters (redraws by reason, levels, stops, Choice exclusions) are added to the run log at each battle's
+  end (`cts`), aggregates only: a redraw by a stop keeps the stop's kind, never its text (`cts.counter_kind`; a stop's text can
+  name a nickname).
+- The particle tracker folds each message on the event loop, as the open tracker does. Its cost (p99 about 0.3 s, a redraw cap
+  2.3 s at most) is spent before the decision's deadline starts; the arena gives 45 s per request.
+
 ## Evidence (PR #447)
 
 - **Pin**, reference tier (`duoforge.python.live`, `ClosedSheetsPoolTest`). Input: every committed pool battle's client streams
@@ -275,7 +327,7 @@ player has seen) is the version-2 item of #385.
     - The maximum is a redraw cap (64 folds with their checks), which ends the battle's tracking. It is far below the arena's
       45 s per request.
   - This cost includes the 16 records and observations of each decision point, which the search needs anyway.
-  - The decision latency of the search over 16 records is measured with the arena PR.
+  - The decision latency of the search over 16 records: see the evidence of step 4.
 
 ## Evidence of the set prior (#385 step 3)
 
@@ -308,3 +360,65 @@ the strictest case:
   - 41 with a possible Illusion;
   - 22 with a Transform;
   - 19 with a forme name the tables lack: Palafin-Hero 12, Alcremie-Salted-Cream 3, Mimikyu-Busted 2, Latios 1, Tapu Lele 1.
+
+## Evidence of the search over the particles (#385 step 4)
+
+**Tests.**
+- `duoforge.python.honest`, class `WorldRecords`:
+  - worlds given one record decide as that record alone, bit for bit;
+  - each world is built from its own record;
+  - the root's candidates are the mean over the worlds' rows;
+  - a world redrawn since the preview brings its own preview record (red with the search's memory instead);
+  - a world without its preview record, a refused world record with its causes, and disagreeing public fields or world
+    counts are each named.
+- The open-sheet search suites (`honest`, `search`, `preview_search`, `expert_teacher`) pass unchanged; they mock
+  `belief.sample` and `_build`, so the one-record path keeps its call shapes.
+- `duoforge.python.live_cts`, class `ClosedGameTest`:
+  - the raw ranking is the mean over the particles;
+  - the search gets one world per particle, with its history;
+  - a particle drawn anew carries the preview record of its own sets;
+  - `LiveSearch` sets the particles as its worlds.
+- `duoforge.python.pkmn_arena`: closed sheets played over the particles, a stop under its name, the log drawing the same
+  particles again, the random-team ladder, and the start checks.
+- `duoforge.python.pkmn_arena_net`: a closed-sheet battle with the live search and a real network (16 worlds, the foe
+  network). The turns are searched, with no class (b) and no fallback.
+
+**Latency** (`tools/research/cts_search_latency.py`). Measured under `machine_lock --exclusive` on 2026-10-13 at commit
+`89b179b4`:
+- WSL on the owner's machine, the private BC6 as network and foe network, `HONEST_SETTINGS` (16 worlds), with no deadline, so
+  the search's own times;
+- *complete* is the feed of the batch that completed the decision point (particles, redraws, record checks) plus the decision
+  (16 encodings, the mean policy, the search).
+
+| streams | decisions | decision p99 / max | complete p99 / max |
+|---|---|---|---|
+| real closed-sheet battles of Ling-Ce on PKMN Arena (10, all) | 126 (116 searched) | 0.16 s / 0.17 s | 0.31 s / 0.37 s |
+| pinned simulator, pool teams, closed (64 streams) | 413 | 0.15 s / 0.17 s | 0.17 s / 0.20 s |
+| the same streams, open sheets (one record) | 419 | 0.08 s / 0.13 s | 0.08 s / 0.13 s |
+
+- **The real battles** are Ling-Ce's logs of 2026-10-12, which it answered with `/choose default` then. They are private (match
+  and user ids) and stay outside the repository, read anonymously (`dump-arena`).
+  - The logs of that time keep no batches, so each batch is taken to end at a request line.
+  - The own team is the one registry team the requests match.
+  - All 10 battles fold to their end: no stop, no fallback, 226 redraws on facts and 83 on the Item Clause.
+- **The pool streams** are a stress case with artificial teams; their feed reaches 0.63 s at most per batch. Stops, the same
+  streams in both arms:
+  - SUBSTITUTE ×6, FORME_CHANGE ×1 and a possible Illusion ×1 (under closed sheets `cts:redraw-cap stop:feature` and
+    `cts:facts skip:illusion`);
+  - a tracker domain error, the same in both arms;
+  - one more stream under closed sheets with `cts:redraw-cap error:ValueError`.
+- Every maximum is under 1 % of the arena's 45 s per request.
+
+**A record per world that the engine refuses** (named; HauptSession's decision of 2026-10-13, #464). On the pool streams,
+141 of 413 closed-sheet decisions are unreconstructible, against 15 under open sheets.
+- The cause: the engine refuses (E_UNSUPPORTED, `engine-refuses-record`) the records of some particles, whose drawn sets it
+  does not represent at that point. Examples: Mega Stones such as Sharpedonite and Gyaradosite, abilities such as Early Bird
+  and Tangled Feet, and mostly combinations.
+- Some but not all particles are refused at 146 of 415 decision points.
+- A decision with any refused world is played raw under its name, as under open sheets.
+- **None of the 116 searched decisions of the real battles met it.**
+- **Decided** (HauptSession, #464): the decision stays honest. When even one particle holds content the engine does not
+  represent, the whole decision is played raw under its name. There is no search over the represented particles only: it would
+  condition the belief on what the engine represents.
+  - The missing content is to be prioritized later by its prior mass, under the content-files plan.
+  - How often the case occurs live is measured by the local control (step 5) and by live play.

@@ -39,11 +39,21 @@ from .data import trace_to_c
 from .tracker import SheetContradiction, Tracker
 
 PARTICLES = 16  # one per world of the live search (HONEST_SETTINGS s)
+SEED = 0x2026101300000385  # the live draw's seed; the battle room is the key (game.Game.closed_sheets)
 MAX_ATTEMPTS = 64  # contradicted draws of one particle in a row, each a fold from the start
 MAX_DRAWS = 4096  # draws of one attempt that break the Item Clause (no fold: a draw is cheap)
 LEVEL = 50  # the format's level; the open sheets show it, and no stat points
 MOVES = 4
 _key = trace_to_c.key
+
+
+def counter_kind(key):
+    """A counter's key as an aggregate (the arena's run log): a redraw by a stop keeps the stop's kind only
+    (redraw.stop:structure, redraw.stop:cts:...), never the stop's text, which can name a nickname or a line."""
+    if not key.startswith("redraw.stop:"):
+        return key
+    reason = key[len("redraw.stop:"):]
+    return "redraw.stop:" + (reason.split(" ")[0] if reason.startswith("cts:") else reason.split(":")[0])
 
 
 def _species_key(data, name):
@@ -160,7 +170,8 @@ def agrees(s, member):
 class Particle:
     def __init__(self, sets, tracker):
         self.sets, self.tracker = sets, tracker
-        self.view = None  # (epoch, public parts, observation) of its last decision point
+        self.view = None  # (epoch, public parts, observation, extension record) of its last decision point
+        self.history = []  # (record, status) of its public parts at each decision point it folded, in order
 
 
 def _preview_side(line):
@@ -249,6 +260,16 @@ class ParticleTracker:
     def observations(self):
         return [view[2] for view in self._views()]
 
+    def histories(self):
+        """Each particle's (record, status) at every decision point so far, the current one last: a particle drawn
+        anew brings the records of its own fold (the search's team-preview and turn-start records of world w)."""
+        self._views()
+        return [list(p.history) for p in self.particles]
+
+    def observation_exts(self):
+        """Each particle's OBSERVATION_EXT record (Tracker.observation_ext) of the decision point."""
+        return [view[3] for view in self._views()]
+
     def _views(self):
         views = [p.view for p in self.particles or ()]
         if not self.ready or any(v is None or v[0] != self.epoch for v in views):
@@ -286,9 +307,10 @@ class ParticleTracker:
 
     @staticmethod
     def _view(t):
-        """The tracker's parts at its decision point: the engine's check of its record (public_parts) and its
-        observation. A record the engine refuses (a Damp Rock's weather lasting past a drawn set's 5 turns) raises."""
-        return t.epoch, t.public_parts(), t.observation()
+        """The tracker's parts at its decision point: the engine's check of its record (public_parts), its
+        observation and extension record. A record the engine refuses (a Damp Rock's weather lasting past a drawn
+        set's 5 turns) raises."""
+        return t.epoch, t.public_parts(), t.observation(), t.observation_ext()
 
     def _advance(self, received):
         self._events.append(("lines", received))
@@ -304,6 +326,7 @@ class ParticleTracker:
                 p.tracker.feed(received)
                 if p.tracker.ready and p.tracker.epoch > epoch:
                     p.view = self._view(p.tracker)
+                    p.history.append((p.view[1]["record"], p.view[1]["status"]))
             out = self._outcome(step)
             if out is not None:
                 failed[i] = out
@@ -321,7 +344,7 @@ class ParticleTracker:
             p = Particle(self._draw(i, candidates, facts), None)
 
             def fold(p=p):
-                p.tracker, p.view = self._fold(p.sets)
+                p.tracker, p.view, p.history = self._fold(p.sets)
             out = self._outcome(fold)
             if out is None:
                 return p
@@ -384,15 +407,16 @@ class ParticleTracker:
         raise self._stop("cts:redraw-cap item-clause")
 
     def _fold(self, sets):
-        """A tracker that folded every event so far with `sets` as the foe's sheet, and its view of the last decision
-        point. Each decision point it reaches is checked as it was when its batch came (review of 2026-10-12: a
-        particle drawn anew must pass every check a kept one passed)."""
+        """A tracker that folded every event so far with `sets` as the foe's sheet, its view of the last decision point
+        and the (record, status) of each decision point (Particle.history). Each decision point it reaches is checked as
+        it was when its batch came (review of 2026-10-12: a particle drawn anew must pass every check a kept one
+        passed)."""
         t = Tracker(self.data, self.own_text)
         t.check_foe_sheet = True
         t.record_kind = self.record_kind
         own = teams.pack(self.own_text)
         foe = teams.pack(teams.to_text(sets))
-        view = None
+        view, history = None, []
         for kind, payload in self._events:
             if kind == "accepted":
                 t.accepted(payload)
@@ -402,4 +426,5 @@ class ParticleTracker:
                 t.feed([f"|showteam|p{s + 1}|" + (own if s == self.side else foe) for s in (0, 1)])
             if t.ready and (view is None or t.epoch > view[0]):
                 view = self._view(t)  # a decision point is ready (at team preview: with the sheets)
-        return t, view
+                history.append((view[1]["record"], view[1]["status"]))
+        return t, view, history
