@@ -58,6 +58,14 @@ The team registry holds Pokémon Champions teams that players published. The set
 - **What is committed:** only the derived table, never the raw files (owner, 2026-10-12). Per species, it holds the stat-point spreads of the highest cutoff with enough weight, at most 32 of them, as whole draws.
 - **Regenerating:** `python -m duoforge_search.smogon_spreads --stats DIR` builds the table from a cache of the raw files. `--fetch` downloads a missing one, and `--check` verifies the committed table.
 
+## Smogon dex VGC sets (`data/book/`)
+
+`data/book/smogon-dex-vgc-2026-10.json` is derived from [Smogon's Champions dex](https://www.smogon.com/dex/champions/). With thanks to Smogon and its VGC analysis writers. It checks the archetype tag table (`data/book/archetype-tags.json`) against the roles Smogon's sets are named for (issue #458).
+
+- **Source:** the dex pages of the 100 species with the most points on [Limitless VGC](https://limitlessvgc.com/pokemon) (Reg M-C, 2026-10-13); kept are their sets of VGC26 Regulation M-A and M-B. Fetched on 2026-10-13, one request every 3 seconds.
+- **What is committed:** only facts of each set (its name, items, abilities, moves, stat points and natures). The analyses' text is never copied, and the raw pages stay in a cache outside the repository (owner, #458).
+- **Regenerating:** `python -m duoforge_search.smogon_dex --cache DIR` builds the table from the cached pages; `--fetch SLUGS` downloads missing ones, and `--check` verifies the committed table.
+
 ## Pokémon
 
 Pokémon and Pokémon character names are trademarks of Nintendo, Creatures Inc. and GAME FREAK inc. DuoForge is an independent research project and is not affiliated with or endorsed by them or by Pokémon Showdown.
