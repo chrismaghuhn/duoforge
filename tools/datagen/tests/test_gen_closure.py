@@ -2328,6 +2328,41 @@ class MoveHandlerTables(unittest.TestCase):
         with self.assertRaises(ValueError):
             gen_move_handlers.render(())
 
+    def test_generator_refuses_a_new_unclassified_special_by_name(self):
+        from pathlib import Path
+        import tempfile
+        from unittest.mock import patch
+        import gen_move_handlers
+        import move_handler_source
+        name = 'REVIEW_UNCLASSIFIED'
+        ids = [*move_handler_source.SPECIAL_IDS_P, name]
+        mapped = dict(move_handler_source.SPECIAL_POOL, review_unclassified=(name, set()))
+        with tempfile.TemporaryDirectory(prefix='move-handler-unclassified-') as temp:
+            root = Path(temp)
+            script = root / 'tools/datagen/gen_move_handlers.py'
+            with patch.object(move_handler_source, 'SPECIAL_IDS_P', ids), \
+                    patch.object(move_handler_source, 'SPECIAL_POOL', mapped), \
+                    patch.object(gen_move_handlers, '__file__', str(script)), \
+                    patch.object(sys, 'argv', [str(script)]), \
+                    self.assertRaisesRegex(ValueError, name):
+                gen_move_handlers.main()
+            self.assertFalse((root / 'src/combat/generated/move_handlers.h').exists())
+
+    def test_special_in_two_phase_classes_is_refused_by_name(self):
+        from unittest.mock import patch
+        import move_handler_source
+        with patch.object(move_handler_source, '_DATA_ONLY', move_handler_source._DATA_ONLY | {'NONE'}), \
+                self.assertRaisesRegex(ValueError, 'NONE'):
+            move_handler_source.rows()
+
+    def test_missing_phase_class_does_not_default_to_a_late_handler(self):
+        from unittest.mock import patch
+        import move_handler_source
+        with patch.object(move_handler_source, '_BEFORE_GUARD',
+                          move_handler_source._BEFORE_GUARD - {'HELPING_HAND'}), \
+                self.assertRaisesRegex(ValueError, 'HELPING_HAND'):
+            move_handler_source.rows()
+
     def test_check_rejects_missing_and_stale_output(self):
         from contextlib import redirect_stderr, redirect_stdout
         from pathlib import Path
