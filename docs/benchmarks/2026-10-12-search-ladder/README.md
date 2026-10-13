@@ -743,8 +743,8 @@ in the HauptSession's order: gated run, latency, mirror.
   - per-world records under closed sheets;
   - 1bws (off).
 
-  The defaults' LP path is pinned by tests. Bit-equality of 2e's decisions between af168d56 and this main was not
-  measured.
+  The defaults' LP path is pinned by tests. Bit-equality of 2e's decisions between af168d56 and this main was measured
+  before the merge: equal decision digests (#486).
 
 **Not yet run:** the touchstone with `bot` and `ppo` pilots. It follows later as information, not as a gate
 (HauptSession).
