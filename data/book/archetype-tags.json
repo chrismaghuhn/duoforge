@@ -1,0 +1,28 @@
+{
+ "format": 1,
+ "about": "Archetype tags of a team sheet for the team-preview opening book (issue #458): which abilities, moves and items give a team which tag. A feature for a prior, not a battle rule: the search still decides. Checked by python -m duoforge_search.archetypes --check.",
+ "credits": [
+  "Tag families: issue #458 (owner, 2026-10-13): weather, speed control, setup, support.",
+  "Weather setters are not listed here: they are the engine's own weather-setter abilities (duoforge_data_ability_static, family WEATHER_SETTER), and a Mega Stone gives the tags of its Mega forme's ability (duoforge_data_item_static, duoforge_data_forme_static).",
+  "Move, ability and item names: the engine's pool data (Pokemon Showdown's data, see THIRD_PARTY_NOTICES.md)."
+ ],
+ "tags": {
+  "setup": {"moves": ["bellydrum", "bulkup", "calmmind", "coil", "curse", "dragondance", "irondefense", "nastyplot", "quiverdance", "shellsmash", "swordsdance"]},
+  "speed:drop": {"moves": ["electroweb", "icywind", "lowsweep", "rocktomb", "scaryface"]},
+  "speed:paralysis": {"moves": ["glare", "nuzzle", "stunspore", "thunderwave"]},
+  "speed:tailwind": {"moves": ["tailwind"]},
+  "speed:trick_room": {"moves": ["trickroom"]},
+  "support:fake_out": {"moves": ["fakeout"]},
+  "support:intimidate": {"abilities": ["intimidate"]},
+  "support:redirection": {"abilities": ["lightningrod"], "moves": ["followme", "ragepowder"]},
+  "support:sleep": {"moves": ["hypnosis", "sing", "sleeppowder", "yawn"]},
+  "weather:rain": {"setter": "rain", "moves": ["raindance"]},
+  "weather:rain_abuser": {"abilities": ["swiftswim"]},
+  "weather:sand": {"setter": "sand", "moves": ["sandstorm"]},
+  "weather:sand_abuser": {"abilities": ["sandrush"]},
+  "weather:snow": {"setter": "snow", "moves": ["snowscape"]},
+  "weather:snow_abuser": {"abilities": ["slushrush"]},
+  "weather:sun": {"setter": "sun", "moves": ["sunnyday"]},
+  "weather:sun_abuser": {"abilities": ["chlorophyll", "solarpower"]}
+ }
+}
