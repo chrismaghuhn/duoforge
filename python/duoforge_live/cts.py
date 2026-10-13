@@ -39,6 +39,7 @@ from .data import trace_to_c
 from .tracker import SheetContradiction, Tracker
 
 PARTICLES = 16  # one per world of the live search (HONEST_SETTINGS s)
+SEED = 0x2026101300000385  # the live draw's seed; the battle room is the key (game.Game.closed_sheets)
 MAX_ATTEMPTS = 64  # contradicted draws of one particle in a row, each a fold from the start
 MAX_DRAWS = 4096  # draws of one attempt that break the Item Clause (no fold: a draw is cheap)
 LEVEL = 50  # the format's level; the open sheets show it, and no stat points
@@ -160,7 +161,7 @@ def agrees(s, member):
 class Particle:
     def __init__(self, sets, tracker):
         self.sets, self.tracker = sets, tracker
-        self.view = None  # (epoch, public parts, observation) of its last decision point
+        self.view = None  # (epoch, public parts, observation, extension record) of its last decision point
 
 
 def _preview_side(line):
@@ -249,6 +250,10 @@ class ParticleTracker:
     def observations(self):
         return [view[2] for view in self._views()]
 
+    def observation_exts(self):
+        """Each particle's OBSERVATION_EXT record (Tracker.observation_ext) of the decision point."""
+        return [view[3] for view in self._views()]
+
     def _views(self):
         views = [p.view for p in self.particles or ()]
         if not self.ready or any(v is None or v[0] != self.epoch for v in views):
@@ -286,9 +291,10 @@ class ParticleTracker:
 
     @staticmethod
     def _view(t):
-        """The tracker's parts at its decision point: the engine's check of its record (public_parts) and its
-        observation. A record the engine refuses (a Damp Rock's weather lasting past a drawn set's 5 turns) raises."""
-        return t.epoch, t.public_parts(), t.observation()
+        """The tracker's parts at its decision point: the engine's check of its record (public_parts), its
+        observation and extension record. A record the engine refuses (a Damp Rock's weather lasting past a drawn
+        set's 5 turns) raises."""
+        return t.epoch, t.public_parts(), t.observation(), t.observation_ext()
 
     def _advance(self, received):
         self._events.append(("lines", received))

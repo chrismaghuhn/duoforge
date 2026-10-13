@@ -949,6 +949,145 @@ class HonestSearch(unittest.TestCase):
                 self.assertIn(name, stopped.exception.reproduction)
 
 
+class WorldRecords(unittest.TestCase):
+    """Closed team sheets (decision 0081): the search builds world w from particle w's own record."""
+    make = HonestSearch.make
+    preview = HonestSearch.preview
+    start_turn = HonestSearch.start_turn
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model, cls.params = _v2s()
+
+    @staticmethod
+    def swapped_items():
+        """The reference setup 0 and a copy whose foe (seat 1) members 0 and 1 hold each other's items: the same
+        species, so the same team preview, and two different open sheets."""
+        ref = duoforge.reference_setups([0])
+        other = ref.copy()
+        members = other["sides"][0][1]["members"]
+        members[0]["item"], members[1]["item"] = int(members[1]["item"]), int(members[0]["item"])
+        return np.concatenate([ref, other])
+
+    @staticmethod
+    def set_roots(roots, b, search, worlds, seat=0):
+        """Seat `seat` of b's environment 0 as the root of roots, with worlds' environments as its world records
+        (None: one record for every world). Returns the batch's records of the seat and its encoded rows."""
+        b.query_factored()
+        obs, slots, pairs = b.query_encoded(search.encoder, search.ext_supported)
+        records, statuses = (x.copy() for x in b.public(np.full(b.envs, seat, np.uint32)))
+        causes, _ = b.public_causes(np.full(b.envs, seat, np.uint32))
+        roots.set(0, seat, request=b.requests[0, seat], observation=b.observations[0, seat], obs=obs[0, seat],
+                  slots=slots[0, seat], pairs=pairs[0, seat], record=records[0], status=int(statuses[0]),
+                  episode=b.episode(0), causes=int(causes[0]))
+        if worlds is not None:
+            roots.set_worlds(0, seat, records=records[worlds], statuses=statuses[worlds], causes=causes[worlds],
+                             observations=b.observations[worlds, seat], obs=obs[worlds, seat],
+                             slots=slots[worlds, seat])
+        return records, obs, slots, pairs
+
+    def test_sample_worlds_draws_each_world_for_its_own_roster(self):
+        table = belief.SpreadTable.from_sides(duoforge.reference_setups([0, 1, 2, 3])["sides"].reshape(-1), min_sets=1)
+        rows = [(int(table.species[i]), int(table.nature[i]), int(table.item[i])) for i in range(6)]
+        a, b = rows[:3], rows[3:]
+        draws = belief.Belief(table)
+        for key in (1, 2, 99):
+            alone = draws.sample(a, 3, 7, key)
+            same = draws.sample_worlds([a, a, a], 7, key)
+            for name in alone:
+                np.testing.assert_array_equal(same[name], alone[name], name)
+            mixed = draws.sample_worlds([a, b], 7, key)
+            np.testing.assert_array_equal(mixed["stat_points"][0], draws.sample(a, 2, 7, key)["stat_points"][0])
+            np.testing.assert_array_equal(mixed["stat_points"][1], draws.sample(b, 2, 7, key)["stat_points"][1])
+
+    def test_worlds_of_one_record_decide_as_that_record(self):
+        # Open sheets stay as they were: every world given the one record decides as the record alone, bit for bit.
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                self.make(ctx) as search, self.make(ctx) as twin:
+            one, worlds = RecordRoots(1), RecordRoots(1)
+            for turn in (False, True):
+                if turn:
+                    self.start_turn(b)
+                self.set_roots(one, b, search, None)
+                self.set_roots(worlds, b, twin, [0, 0])
+                want, want_records = search.decide(one, [0], [0], [456], [False])
+                got, got_records = twin.decide(worlds, [0], [0], [456], [False])
+                np.testing.assert_array_equal(got, want)
+                self.assertEqual(got_records[0]["kind"], "searched" if turn else "team")
+                for name in ("kind", "choice", "own_pairs", "own_probs", "foe_pairs", "foe_probs", "weights",
+                             "tables", "outcomes", "respreads"):
+                    self.assertEqual(got_records[0].get(name), want_records[0].get(name), name)
+
+    def test_each_world_is_built_from_its_own_record(self):
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots = RecordRoots(1)
+            self.set_roots(roots, b, search, [0, 1])
+            self.preview(search, roots)
+            self.start_turn(b)
+            records, obs, slots, pairs = self.set_roots(roots, b, search, [0, 1])
+            self.assertNotEqual(records[0].tobytes(), records[1].tobytes())  # the open sheets differ
+            built = []
+            real = search.worlds.from_view
+
+            def from_view(views, hypotheses):
+                built.append(np.array(views, copy=True))
+                return real(views, hypotheses)
+            with mock.patch.object(search.worlds, "from_view", side_effect=from_view):
+                _, out = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual(out[0]["kind"], "searched")
+            self.assertEqual([v.tobytes() for v in built[-1]], [records[0].tobytes(), records[1].tobytes()])
+            # The root's own candidates: the mean of the policy over the worlds' rows, which differ here.
+            self.assertFalse(np.array_equal(obs[0, 0], obs[1, 0]))
+            logp, _, _ = search._policy(obs[:, 0], slots[:, 0], np.repeat(pairs[:1, 0], 2, axis=0))
+            mean = np.exp(logp.astype(np.float64)).mean(axis=0)
+            np.testing.assert_allclose(out[0]["own_probs"], mean[out[0]["own_pairs"]], rtol=1e-12)
+            legal = np.flatnonzero(pairs[0, 0].reshape(-1))
+            best = legal[np.argsort(-mean[legal], kind="stable")[:len(out[0]["own_pairs"])]]
+            self.assertEqual(out[0]["own_pairs"], best.tolist())
+
+    def test_a_world_record_the_engine_refuses_is_unreconstructible_by_its_causes(self):
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots = RecordRoots(1)
+            self.set_roots(roots, b, search, [0, 1])
+            self.preview(search, roots)
+            self.start_turn(b)
+            records, obs, slots, _ = self.set_roots(roots, b, search, [0, 1])
+            refused = np.array([0, C["DUOFORGE_E_UNSUPPORTED"]], np.uint32)
+            causes = np.array([0, C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"]], np.uint32)
+            roots.set_worlds(0, 0, records=records[[0, 1]], statuses=refused, causes=causes,
+                             observations=b.observations[[0, 1], 0], obs=obs[[0, 1], 0], slots=slots[[0, 1], 0])
+            _, out = search.decide(roots, [0], [0], [456], [False])
+            self.assertEqual(out[0]["kind"], "unreconstructible")
+            self.assertEqual(out[0]["causes"], ["visible_sleep"])
+
+    def test_worlds_disagreeing_on_a_public_field_or_their_count_are_named(self):
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            roots = RecordRoots(1)
+            self.set_roots(roots, b, search, [0, 1])
+            self.preview(search, roots)
+            self.start_turn(b)
+            records, obs, slots, _ = self.set_roots(roots, b, search, [0, 1])
+            records = records.copy()
+            records[1]["foe_seen_mask"] ^= 1 << 5
+            roots.set_worlds(0, 0, records=records[[0, 1]], statuses=np.zeros(2), causes=np.zeros(2),
+                             observations=b.observations[[0, 1], 0], obs=obs[[0, 1], 0], slots=slots[[0, 1], 0])
+            with self.assertRaisesRegex(honest.SearchError, "disagree on the public field foe_seen_mask"):
+                search.decide(roots, [0], [0], [456], [False])
+            three = [0, 1, 1]
+            roots.set_worlds(0, 0, records=records[three], statuses=np.zeros(3), causes=np.zeros(3),
+                             observations=b.observations[three, 0], obs=obs[three, 0], slots=slots[three, 0])
+            with self.assertRaisesRegex(ValueError, "3 world records for 2 worlds"):
+                search.decide(roots, [0], [0], [456], [False])
+
+
 class LiveModelPolicy(unittest.TestCase):
     def test_a_v2_checkpoint_plays_through_its_own_network(self):
         # The live bot's raw ranking (its play without the search, and the search's fallback) of a model-v2 checkpoint

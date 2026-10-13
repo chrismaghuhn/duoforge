@@ -10,13 +10,18 @@ logged, never written to a file, and every text the mode prints or logs passes t
 "/trn NAME,0,TOKEN" after |challstr|; the team (--team) goes with /utm after every login, so after every reconnect too.
 
 The server puts the bot in battles (no /accept); it plays every one, one at a time, with the request's rqid on every
-/choose. The tracker needs open team sheets (decision 0016 section 2: |showteam| shows the foe's items, abilities,
-moves and natures, its stat points stay hidden as in DuoForge's observation), so the OTS format is the one the policy
-plays. When the engine cannot represent a battle -- closed team sheets, a tracker Stop, an error of the tracker, the
-options or the policy, more refused choices than MAX_RETRIES, a decision not made within DECISION_DEADLINE -- the rest
-of that battle is answered with "/choose default": the server's simulator picks, never a Python rule. Each such battle
-and each defaulted decision is counted by its reason in the run log (aggregates only, arena-run-*.json); the battle
-logs hold match ids and stay private, outside the repository (the CLI refuses a log directory inside it).
+/choose. Under open team sheets (the OTS format) the tracker folds the foe's |showteam| (decision 0016 section 2: its
+items, abilities, moves and natures; its stat points stay hidden as in DuoForge's observation). Under closed team sheets
+(the CTS format, decision 0081) the battle is played over the particles of game.Game.closed_sheets: 16 drawn foe teams
+from the pinned set table (cts.SetPrior.from_table), the search's world w built from particle w's record; the bot
+then never accepts open sheets. Its battle log keeps every batch the game was fed ("feed") and every choice it accepted
+("accepted"), so the log draws the same particles again, and the particle tracker's counters go to the run log ("cts").
+When the engine cannot represent a battle -- a tracker Stop (a particle tracker's named cts: stops among them), an
+error of the tracker, the options or the policy, more refused choices than MAX_RETRIES, a decision not made within
+DECISION_DEADLINE -- the rest of that battle is answered with "/choose default": the server's simulator picks, never a
+Python rule. Each such battle and each defaulted decision is counted by its reason in the run log (aggregates only,
+arena-run-*.json); the battle logs hold match ids and stay private, outside the repository (the CLI refuses a log
+directory inside it).
 
 The random-team ladders (the format id with "random" appended) give the bot a published team it learns only from the
 first request; the request lacks the natures and stat points the tracker's own sheet needs, so such a battle is played
@@ -39,7 +44,7 @@ from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
 
-from . import client, search as live_search, teams
+from . import client, cts, search as live_search, teams
 from .client import toid, _room_line
 from .data import trace_to_c
 from .game import Game
@@ -185,11 +190,12 @@ class RunLog:
         self.closes = Counter()  # dropped connections by close code
         self.formats = Counter()  # battles by format id
         self.search = Counter()  # the search's outcome causes over every decision it played
+        self.cts = Counter()  # closed-sheet battles and their particle trackers' counters (redraws, levels, stops)
 
     def as_dict(self):
         return {**self.head, "counts": dict(self.counts), "fallback_battles": dict(self.fallback_battles),
                 "fallback_decisions": dict(self.fallback_decisions), "closes": dict(self.closes),
-                "formats": dict(self.formats), "search_causes": dict(self.search)}
+                "formats": dict(self.formats), "search_causes": dict(self.search), "cts": dict(self.cts)}
 
     def write(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -218,6 +224,12 @@ class _Battle(client._Battle):
             self.log.flush()
 
 
+def _stop_key(reason):
+    """The fallback reason of a tracker Stop: a particle tracker's stop by its name (stop:cts:redraw-cap, ...), any
+    other by its kind (stop:feature, ...)."""
+    return "stop:" + (reason.split(" ")[0] if reason.startswith("cts:") else reason.split(":")[0])
+
+
 def _history_line(line):
     # |t:| is a timestamp, not a battle line: the arena's replay after a reconnect gives every one the time of the
     # replay (live, 2026-10-13, #455), so the resync compares the battle lines only
@@ -231,7 +243,22 @@ class ArenaBot(client.Bot):
 
     def __init__(self, name, data, policy, log_dir, fmt, team_text=None, pool=(), search=None, mode="raw",
                  connect=None, connection_errors=None, sleep=asyncio.sleep, clock=time.monotonic, environ=None,
-                 deadline=DECISION_DEADLINE, max_retries=MAX_RETRIES, sheet_wait=SHEET_WAIT, foe_check=None):
+                 deadline=DECISION_DEADLINE, max_retries=MAX_RETRIES, sheet_wait=SHEET_WAIT, foe_check=None,
+                 prior=None):
+        # closed team sheets: the set prior (the pinned table unless given), one particle per world of the search
+        self.prior = None
+        if not fmt.startswith(FORMATS[1]):
+            if prior is None:
+                try:
+                    prior = cts.SetPrior.from_table(data)
+                except ValueError as err:
+                    raise ValueError(f"closed team sheets: the set table does not load under the {data.kind!r} "
+                                     f"tables: {err}") from None
+            worlds = getattr(getattr(search, "searcher", None), "s", cts.PARTICLES)
+            if worlds != cts.PARTICLES:
+                raise ValueError(f"closed team sheets: the search has {worlds} worlds, the tracker {cts.PARTICLES} "
+                                 "particles (world w is particle w)")
+            self.prior = prior
         config = client.Config(name=name, team="own", log_dir=log_dir)
         super().__init__(config, data, policy, login=None, clock=clock, team_texts={"own": team_text},
                          search=search)
@@ -365,8 +392,6 @@ class ArenaBot(client.Bot):
         random_teams = fmt == self.format + "random"
         if fmt != self.format and not random_teams:
             self._mark(b, "format", f"a battle of {fmt!r}, the bot plays {self.format!r}")
-        elif not fmt.startswith(FORMATS[1]):
-            self._mark(b, "closed_team_sheets", "the tracker needs both open team sheets (decision 0016)")
         elif not random_teams and self.team_text is None:
             self._mark(b, "no_team", "a team battle without --team")
         elif not random_teams:
@@ -375,7 +400,12 @@ class ArenaBot(client.Bot):
 
     def _game(self, room, text):
         search = self.search if self.paused is None else None  # after a class (b) error every game is raw
-        game = Game(self.data, self.policy, text, search=search, room=room, episode=self.episodes)
+        if self.prior is not None:  # closed team sheets: the bot's format (a battle of another fell back)
+            game = Game.closed_sheets(self.data, self.policy, text, self.prior, search=search, room=room,
+                                      episode=self.episodes)
+            self.run_log.cts["battles"] += 1
+        else:
+            game = Game(self.data, self.policy, text, search=search, room=room, episode=self.episodes)
         self.episodes += 1
         return game
 
@@ -462,7 +492,7 @@ class ArenaBot(client.Bot):
             elif line.startswith("|win|") or line == "|tie" or line.startswith("|tie|"):
                 await self._end(b, line)
                 return
-            elif line.startswith("|uhtml|otsrequest|") and b.fallback is None:
+            elif line.startswith("|uhtml|otsrequest|") and b.fallback is None and self.prior is None:
                 await self.send(f"{room}|/acceptopenteamsheets")
         battle_lines = [line for line in lines if not line.startswith("|error|")]
         if b.stopped or not battle_lines:
@@ -479,9 +509,13 @@ class ArenaBot(client.Bot):
         try:
             # a resent open request alone is no sign that the choice was taken
             if b.pending is not None and resent is None and not all(_room_line(line) for line in battle_lines):
+                if b.game.closed:
+                    b.write({"accepted": b.pending})
                 b.game.accepted(b.pending)
                 b.pending = None
             b.history.extend(line for line in battle_lines if _history_line(line))
+            if b.game.closed:  # the batch as fed: the particles depend on it (decision 0081)
+                b.write({"feed": battle_lines})
             b.game.feed(battle_lines)
             await self._after_feed(b)
             if resent is not None and b.fallback is None and b.candidates and b.game.request is not None \
@@ -490,7 +524,7 @@ class ArenaBot(client.Bot):
         except self._dropped:
             raise  # a dropped connection, not the battle: the run loop reconnects and the request comes again
         except Stop as e:  # a line the tracker cannot represent
-            await self._fall(b, f"stop:{e.reason.split(':')[0]}", f"stop:{e.reason}")
+            await self._fall(b, _stop_key(e.reason), f"stop:{e.reason}")
         except (Exception, trace_to_c.ConversionError) as e:  # ConversionError is a SystemExit
             await self._fall(b, f"error:{type(e).__name__}", f"{type(e).__name__}: {e}")
 
@@ -507,7 +541,7 @@ class ArenaBot(client.Bot):
                 except self._dropped:
                     raise
                 except Stop as e:
-                    await self._fall(b, f"stop:{e.reason.split(':')[0]}", f"stop:{e.reason}")
+                    await self._fall(b, _stop_key(e.reason), f"stop:{e.reason}")
                 except (Exception, trace_to_c.ConversionError) as e:
                     await self._fall(b, f"error:{type(e).__name__}", f"{type(e).__name__}: {e}")
 
@@ -615,6 +649,8 @@ class ArenaBot(client.Bot):
         b.write({"end": line})
         if b.game is not None and b.game.search is not None:
             b.write({"summary": b.game.summary()})
+        if b.game is not None and b.game.closed:
+            self.run_log.cts.update(b.game.tracker.counters)
         b.log.close()
         del self.battles[b.room]
         self.finished.add(b.room)
