@@ -193,6 +193,34 @@ reported as adopted on the ladder, but it is no live candidate.
 Nationals sun team (`--matchup`, members with their known stat points), 256 pairs, `bot` and `ppo` as the sun team's
 pilots. The mirror arm (our own search piloting the sun team) follows when the harness can seat a searcher on the foe side.
 
+## The KO check (owner, 2026-10-13; a metric, fixed before its first run)
+
+**What.** Over every searched turn decision of the arena's battle logs, in both directions (`duoforge_search.ko_check`):
+1. **Own KOs:** had we a pair that knocks out a foe Pokémon this turn? Was it played, and was it among the candidates?
+2. **Foe KOs:** had the foe a pair that knocks out one of ours against our raw pair? Was it among the search's foe
+   columns, and did the played pair answer it (Protect, a switch, a faster KO)?
+
+**How.** The replay feeds each log's lines through the live `Game` (between two decision records as one batch, the
+previous choice accepted first, as the bot does) and lets the step's search decide each decision point. Its worlds then
+take the probes: each own pair against each foe pair of each world, stepped one turn by the engine (`Batch.expand`,
+4 samples per world). A KO is a member whose public HP reached 0 in that turn; no rule in Python decides it.
+- Own pairs probed: the candidates, the played and the raw pair, and every legal option of each slot with its likeliest
+  partner (`lookahead.select_slots`).
+- Foe pairs per world: the search's columns and every foe slot option with its likeliest partner under the foe model.
+- **ko** of an own pair: its KO probability, worlds by weight, foe pairs by the foe model's probability.
+- **threat** of an own pair: the probability of losing a member against the foe's worst pair in each world.
+
+**Groups, at "likely" (≥ 0.5) and "sure" (≥ 0.9):**
+- own: KO available; played; missed and **not among the candidates** (width, 2w) or **among the candidates, not
+  chosen** (evaluation or rule: 2d, 2e, 2l).
+- foe: threatened (the raw pair at the threshold); answered (the played pair below it); unanswered and unavoidable (no
+  probed pair below it), not among the candidates, or among the candidates and not chosen; known (the weight share of
+  the threatening worlds whose worst foe pair is a column of the search).
+
+**Runs.** Step 0 on all logs as the baseline before step 2; then each step-2 arm on the same logs, where the arm's own
+choice stands for "played". Logs and per-decision rows are private; the report holds counts only. The replay plays
+today's code and BC6, so it also reports how often today's step 0 chooses the logged pair.
+
 ## Results
 
 ### Step 0 (2026-10-12)
