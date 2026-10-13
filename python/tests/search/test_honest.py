@@ -12,7 +12,7 @@ from unittest import mock
 import numpy as np
 
 import duoforge
-from duoforge import _layout, features, privileged, view
+from duoforge import _layout, features, privileged, state_layout, view
 
 from python.tests.support._pivot_fixture import SETUP, play_to_pivot
 from duoforge_search import arena, belief, honest
@@ -21,6 +21,7 @@ from python.tests.search import test_search as search_tests
 
 C = _layout.CONSTANTS
 PIVOT_STEPS = 160  # lockstep steps of the PIVOT record test
+WORLDS = 64  # worlds per search in the visible-sleep case (the S = 2 split needs many)
 
 
 class CanonicalReduction(unittest.TestCase):
@@ -63,12 +64,12 @@ class HonestSearch(unittest.TestCase):
         cls.model, cls.params = _v2s()
 
     def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False, model=None,
-             foe_net=None):
+             foe_net=None, s=2):
         table = table or belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
             mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         options = {} if foe_net is None else {"foe_net": foe_net}
-        return honest.Honest(ctx, model or self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
+        return honest.Honest(ctx, model or self.model, self.params, 4, mask, k=k, m=2, s=s, rule=rule,
                              capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam,
                              species_prior=species_prior, **options)
 
@@ -574,12 +575,14 @@ class HonestSearch(unittest.TestCase):
                 self.assertEqual(stats["unreconstructible_by_cause"][cause], {"decisions": 2, "share_of_decisions": 1.0})
 
     def test_visible_sleep_under_pool_is_searched_and_follows_the_start_law(self):
-        # Decision 0066: a visible sleep under POOL is no fallback. Env e has the sleeper (side 0, member 0)
-        # with count c = e (tail byte) and counter 3 - e (the true start 3 less the count). The rebuild draws
-        # each world's start from its sleep word with the exact law: S = 2 when the word is in bucket 0 of 3
-        # (for c in {0, 1}), else 3; for c = 2, S = 3.
+        # Decision 0066: a visible sleep under POOL is no fallback. Env e has the sleeper (side 0, member 0) with count
+        # c = e (tail byte) and counter 3 - e (the true start 3 less the count). Each world that the search rebuilds
+        # from the root's sample carries the exact law: S = 2 when the sleep word is in bucket 0 of 3 (for c in {0, 1}),
+        # else 3; for c = 2, S = 3. The counter read from the world's encoding is S - c.
+        offs = {name: start for name, start, _ in state_layout.fields()}
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
-                duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 3), 3, 42) as b, self.make(ctx) as search:
+                duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 3), 3, 42) as b, \
+                self.make(ctx, s=WORLDS) as search:
             self.preview(search, b)
             self.start_turn(b)
             decode = b._lib.duoforge_battle_decode
@@ -587,11 +590,11 @@ class HonestSearch(unittest.TestCase):
             decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
             original = b.encode(0)
             for e in range(3):
-                # Privileged codec fixtures only: schema-3 offsets, no live rule implementation.
+                # Privileged codec fixtures only: the layout's offsets, no live rule implementation.
                 raw = np.frombuffer(original, np.uint8).copy()
-                raw[215 + 109 + 27] = C["DUOFORGE_AILMENT_SLEEP"]
-                raw[215 + 109 + 28] = 3 - e
-                raw[1009 + 8 + 80 + 9] = e
+                raw[offs["side0.member0.status"]] = C["DUOFORGE_AILMENT_SLEEP"]
+                raw[offs["side0.member0.status_counter"]] = 3 - e
+                raw[offs["tail.side0.member0.sleep_cant"]] = e
                 self.assertEqual(decode(ctx.handle, b._battle(e), raw.ctypes.data, raw.size), 0)
             with mock.patch.object(b._lib, "duoforge_battle_hypothesis",
                                    side_effect=AssertionError("privileged ABI")), \
@@ -601,21 +604,31 @@ class HonestSearch(unittest.TestCase):
                                       side_effect=AssertionError("privileged ABI")):
                 actions, records = search.decide(b, [0, 1, 2], [0, 0, 0], [456, 456, 456], [False, False, False])
             self.assertEqual([r["kind"] for r in records], ["searched"] * 3)
-            shares = []
+            publics, statuses = b.public(np.zeros(3, np.uint32))
+            self.assertTrue((statuses == 0).all())
+            publics = publics.copy()
             for e in range(3):
-                words = [int(w) for w in search.last[e]["hypotheses"]["sleep"][:, 0, 0]]
-                # (a) counter = S - c with S in {2, 3}; the Python side sees the start only through the sleep word
-                starts = [3 if e == 2 else (2 if w * 3 < 2 ** 64 else 3) for w in words]
-                self.assertTrue(all(start in (2, 3) for start in starts))
-                counters = [start - e for start in starts]
-                self.assertTrue(all(counter >= 1 for counter in counters))
+                # the worlds of root e, rebuilt from the sample that decide used for it (its last hypotheses)
+                hypotheses = search.last[e]["hypotheses"]
+                built = search._build(publics[e:e + 1].reshape(()).copy(), hypotheses)
+                self.assertTrue((built == 0).all())
+                words = [int(x) for x in hypotheses["sleep"][:, 0, 0]]
+                starts, counters = [], []
+                for w in range(WORLDS):
+                    enc = np.frombuffer(search.worlds.encode(w), np.uint8)
+                    self.assertEqual(int(enc[offs["side0.member0.status"]]), C["DUOFORGE_AILMENT_SLEEP"])
+                    self.assertEqual(int(enc[offs["tail.side0.member0.sleep_cant"]]), e)
+                    start = 3 if e == 2 else (2 if words[w] * 3 < 2 ** 64 else 3)  # the exact law, from the word
+                    counter = int(enc[offs["side0.member0.status_counter"]])
+                    self.assertEqual(counter, start - e)  # (a) the counter from_view built is S - c, S in {2, 3}
+                    starts.append(start)
+                    counters.append(counter)
                 if e == 2:
-                    # (b) c = 2: every world has S = 3 and counter 1
-                    self.assertEqual(counters, [1] * len(words))
+                    self.assertEqual(set(counters), {1})  # (b) c = 2: every world starts at 3 and its counter is 1
                 if e == 0:
-                    # (c) the S = 2 / S = 3 split is about 1 : 2 for this fixed key (few worlds, so a loose bound)
-                    shares.append(sum(1 for start in starts if start == 2) / len(starts))
-            self.assertTrue(all(abs(share - 1 / 3) < 0.35 for share in shares), shares)
+                    # (c) the S = 2 / S = 3 split of the fixed key is about 1 : 2 (a loose bound for 64 worlds)
+                    share = sum(1 for start in starts if start == 2) / WORLDS
+                    self.assertLess(abs(share - 1 / 3), 0.2, share)
 
     def test_record_roots_reproduce_batch_decisions(self):
         # The live path (plan 2026-10-10-live-honest-search, Task 2): decide() over RecordRoots filled with a batch's

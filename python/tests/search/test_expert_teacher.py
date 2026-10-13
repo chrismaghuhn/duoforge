@@ -384,6 +384,8 @@ class Teacher(unittest.TestCase):
                 self.assertEqual((refused.status, refused.cause), (ed.RowStatus.TARGET, None))
                 self.assertIsNotNone(refused.target)
                 self.assertNotEqual(refused.behavior_logp, -1.25)
+                self.assertIsNotNone(refused.action)  # a TARGET row carries the search's action
+                self.assertNotEqual(refused.action, refused.raw_action)  # not the raw fallback action
                 search.history[b][(1, 0)]["observed"] = -1
                 with self.assertRaisesRegex(ValueError, "observe"):  # a request needs observe() first
                     self.label(search, b, 1, 0, raw, cfg, game=502)
@@ -686,6 +688,8 @@ class Teacher(unittest.TestCase):
             # decision 0066: the accepted record is the search's TARGET row (no fallback cause, a sparse target)
             self.assertEqual((mixed[1].status, mixed[1].cause), (ex.RowStatus.TARGET, None))
             self.assertIsNotNone(mixed[1].target)
+            self.assertIsNotNone(mixed[1].action)  # a TARGET row carries the search's action
+            self.assertNotEqual(mixed[1].action, mixed[1].raw_action)  # not the raw fallback action
             self.assertEqual([ex.decision_bytes(d) for d in mixed], per_root(search, b, tick, cfg))
             with self.assertRaises(ValueError):  # one root per environment
                 ex.label_tick(search, b, [tick[0], tick[0]], last_step=False, config=cfg, manifest=self.manifest)
