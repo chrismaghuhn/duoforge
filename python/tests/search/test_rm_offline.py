@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -52,6 +53,23 @@ class RMOffline(unittest.TestCase):
                 report = json.load(f)
         self.assertEqual((report["decisions"], report["converged"], report["unconverged"]), (1, 0, 1))
         self.assertEqual(report["solved_by"]["2"], 0.0)
+
+    def test_workers_give_the_rows_of_one_worker_in_order(self):
+        # The pool takes the decisions a block at a time (bounded memory); the rows and their order stay those of one
+        # worker, the seconds aside.
+        rng = np.random.default_rng(11)
+        records = [_record(rng) for _ in range(7)]
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(rm_offline, "BLOCK", 2):
+            path = self.write(tmp, records)
+            runs = []
+            for workers in ("1", "2"):
+                out = os.path.join(tmp, f"out{workers}")
+                rm_offline.main(["--decisions", path, "--out", out, "--workers", workers])
+                with open(os.path.join(out, "rows.jsonl"), encoding="utf-8") as f:
+                    runs.append([{k: v for k, v in json.loads(line).items() if not k.endswith("seconds")}
+                                 for line in f])
+        self.assertEqual(len(runs[0]), 7)
+        self.assertEqual(runs[0], runs[1])
 
     def test_every_and_limit_take_a_fixed_subsample(self):
         rng = np.random.default_rng(3)

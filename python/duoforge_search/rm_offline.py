@@ -17,6 +17,7 @@ Timing is only meaningful in a run of its own under the machine lock with --excl
 (report.json) holds counts and quantiles; the rows (rows.jsonl) stay with the run, outside the repository.
 """
 import argparse
+import itertools
 import json
 import math
 import os
@@ -27,6 +28,7 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 
 QUANTILES = (0.5, 0.9, 0.99, 1.0)
+BLOCK = 64  # decisions per worker handed to the pool at a time (a bounded memory)
 
 
 def decisions(paths, limit=None, every=1):
@@ -150,19 +152,20 @@ def main(argv=None):
     items = decisions(args.decisions, args.limit, args.every)
     rows = []
     with open(os.path.join(args.out, "rows.jsonl"), "w", encoding="utf-8") as f:
-        if args.workers == 1:
+        pool = None if args.workers == 1 else ProcessPoolExecutor(args.workers)
+        if pool is None:
             results = (solve_one(item, args.max_iterations, epsilon, check_every) for item in items)
         else:
-            pool = ProcessPoolExecutor(args.workers)
-            results = pool.map(solve_one, items, *(_repeat(x) for x in (args.max_iterations, epsilon, check_every)),
-                               chunksize=16)
-        for row in results:  # in decision order: map keeps it
-            rows.append(row)
-            f.write(json.dumps(row) + "\n")
-            if len(rows) % 1000 == 0:
-                print(f"{len(rows)} decisions", file=sys.stderr, flush=True)
-        if args.workers != 1:
-            pool.shutdown()
+            results = _bounded_map(pool, items, args.workers * BLOCK, args.max_iterations, epsilon, check_every)
+        try:
+            for row in results:  # in decision order
+                rows.append(row)
+                f.write(json.dumps(row) + "\n")
+                if len(rows) % 1000 == 0:
+                    print(f"{len(rows)} decisions", file=sys.stderr, flush=True)
+        finally:
+            if pool is not None:
+                pool.shutdown()
     report = {"decision_files": [os.path.basename(x) for x in args.decisions], "workers": args.workers,
               "limit": args.limit, "every": args.every,
               **summarize(rows, epsilon, args.max_iterations, check_every)}
@@ -172,9 +175,14 @@ def main(argv=None):
     return 0
 
 
-def _repeat(value):
+def _bounded_map(pool, items, block, *args):
+    """The rows of items in order, solved by the pool one block at a time. Executor.map takes its whole iterable at
+    once, which held every recorded table in memory (D1's first accuracy run, 2026-10-14, stopped at 2.7 GB)."""
     while True:
-        yield value
+        chunk = list(itertools.islice(items, block))
+        if not chunk:
+            return
+        yield from pool.map(solve_one, chunk, *(itertools.repeat(a, len(chunk)) for a in args), chunksize=16)
 
 
 if __name__ == "__main__":
