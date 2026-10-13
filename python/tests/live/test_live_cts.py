@@ -173,10 +173,11 @@ class CtsTest(unittest.TestCase):
             self.particles(foe_sets()).accepted("team 1234")
 
     def test_every_stop_is_counted(self):
-        sets = with_species(foe_sets(), "Farigiraf", farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))
-        t = self.particles(sets)
+        messages = closed(FIXTURE["messages"])
+        messages[6] = [line.replace("ability: Armor Tail", "ability: Drizzle") for line in messages[6]]
+        t = self.particles(foe_sets())
         with self.assertRaises(lines.Stop):
-            Run(t, closed(FIXTURE["messages"]))
+            Run(t, messages)
         self.assertEqual(t.counters["stop.cts:no-consistent-set"], 1)
 
     # ---------------------------------------------------------------- contradictions
@@ -188,6 +189,19 @@ class CtsTest(unittest.TestCase):
         self.assertTrue(any(s[1] == "Choice Scarf" for s in self.held(run, 2, "Farigiraf")))
         self.assertFalse(any(s[1] == "Choice Scarf" for s in self.held(run, 3, "Farigiraf")))
         self.assertGreater(run.t.counters["redraw.choice-lock"], 0)
+
+    def test_a_choice_lock_rules_out_choice_sets_of_that_member_for_every_draw(self):
+        """A prior that gives Farigiraf a Choice Scarf in 1000 of 1001 sets: once its lock is contradicted (Protect,
+        then Trick Room), rejection alone would rarely find the Sitrus set. The contradiction names the member, and a
+        set holding a Choice item contradicts the log for every particle (Showdown enforces the lock; a lock the tracker
+        assumed means no line changed the item), so that member's draws leave Choice sets out, counted."""
+        scarf = teams._paste(farigiraf(item="Choice Scarf"))[0]
+        sitrus = teams._paste(farigiraf())[0]
+        sets = [(s, 1) for s in foe_sets() if s["species"] != "Farigiraf"] + [(scarf, 1000), (sitrus, 1)]
+        t = cts.ParticleTracker(self.data, FIXTURE["team"], cts.SetPrior(self.data, sets), seed=SEED, key=KEY, n=16)
+        run = Run(t, closed(FIXTURE["messages"]))
+        self.assertEqual({s[1] for s in self.held(run, 3, "Farigiraf")}, {"Sitrus Berry"})
+        self.assertEqual(t.counters["choice-excluded"], 1)
 
     def test_the_hook_finds_a_choice_lock_and_a_move_off_the_set(self):
         def fold(sheet):
@@ -217,11 +231,69 @@ class CtsTest(unittest.TestCase):
         for point in (2, 3):
             self.assertFalse(any(s[2] == "Cud Chew" for s in self.held(run, point, "Farigiraf")), point)
 
-    def test_a_used_move_off_every_set_stops_by_name(self):
+    def test_a_used_move_off_every_set_draws_a_level_one_set(self):
+        """Level 1 (the replay's set belief, #385 step 3): no set of the prior has Trick Room, which Farigiraf uses on
+        turn 2. A set that agrees on the item and ability is the base: its moves become the used ones (Protect, Trick
+        Room) and then its own others, and the engine's setup accepts it. Counted, never silent."""
         sets = with_species(foe_sets(), "Farigiraf", farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))
+        run = self.run_closed(sets, n=4)
+        after = self.held(run, 3, "Farigiraf")
+        self.assertEqual(len(after), 4)
+        for s in after:
+            self.assertEqual(set(s[3]), {"Protect", "Trick Room", "Psychic", "Grass Knot"}, s)
+        self.assertGreater(run.t.counters["level1"], 0)
+
+    def test_a_revealed_ability_no_set_has_draws_a_level_two_set(self):
+        """Level 2: Armor Tail, shown on turn 1, against a prior whose Farigiraf has only Cud Chew. Level 1 keeps the
+        item and ability, so it has no base; level 2 takes every set of the species as a base and puts the log's item,
+        ability and moves on it, as long as the engine's setup accepts the result. Counted."""
+        sets = with_species(foe_sets(), "Farigiraf", farigiraf(ability="Cud Chew"))
+        run = self.run_closed(sets, n=4)
+        self.assertEqual({s[2] for s in self.held(run, 3, "Farigiraf")}, {"Armor Tail"})
+        self.assertGreater(run.t.counters["level2"], 0)
+
+    def test_level_two_keeps_no_protect_with_a_choice_item(self):
+        """Level 2's fill follows the table's rule: a Choice item's holder carries no Protect or Detect (the used moves
+        stay as the log shows them)."""
+        from duoforge_replay.facts import MemberFacts
+        member = MemberFacts("Farigiraf", "F", frozenset({"Psychic"}), "Choice Scarf", None)
+        base = teams._paste(farigiraf(moves=("Psychic", "Protect", "Trick Room", "Helping Hand")))[0]
+        found, refused = cts.level2(self.data, [(base, 3)], member)
+        self.assertEqual(refused, 0)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0][0]["item"], "Choice Scarf")
+        self.assertNotIn("Protect", found[0][0]["moves"])
+        self.assertEqual(found[0][1], 3)
+        unknown = MemberFacts("Farigiraf", "F", frozenset({"Psychic"}), "Notanitem", None)
+        self.assertEqual(cts.level2(self.data, [(base, 3)], unknown), ([], 1))  # a name the tables lack: refused, counted
+
+    def test_a_set_the_engine_refuses_at_every_level_stops_by_name(self):
+        """No level gives a set the engine accepts: Farigiraf with an ability it cannot have stops the tracker by name."""
+        messages = closed(FIXTURE["messages"])
+        messages[6] = [line.replace("ability: Armor Tail", "ability: Drizzle") for line in messages[6]]
+        t = self.particles(foe_sets())
         with self.assertRaises(lines.Stop) as caught:
-            self.run_closed(sets)
+            Run(t, messages)
         self.assertEqual(caught.exception.reason, "cts:no-consistent-set Farigiraf")
+        # every rebuilt set the engine refused is counted, never dropped in silence (review of 2026-10-12)
+        self.assertGreater(t.counters["levels.refused"], 0)
+
+    def test_the_level_counters_count_facts_not_draws(self):
+        """level1 counts the distinct facts of a member that needed level 1, once, not once per particle and redraw."""
+        sets = with_species(foe_sets(), "Farigiraf", farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))
+        run = self.run_closed(sets, n=16)
+        self.assertEqual(run.t.counters["level1"], 1)  # Farigiraf after Trick Room: one set of facts
+
+    def test_a_setup_check_that_fails_for_another_reason_raises(self):
+        """setup_issue names an unknown name ("name"); any other failure of the check is a bug and raises."""
+        from unittest import mock
+        s = teams._paste(farigiraf())[0]
+        self.assertIsNone(cts.setup_issue(self.data, s))
+        self.assertEqual(cts.setup_issue(self.data, dict(s, item="Notanitem")), ("name", None))
+        for call in ("team", "setup_issue"):
+            with mock.patch.object(type(self.data), call, side_effect=KeyError("a bug")):
+                with self.assertRaises(KeyError):
+                    cts.setup_issue(self.data, s)
 
     def test_a_species_without_a_set_stops_at_team_preview(self):
         sets = [s for s in foe_sets() if s["species"] != "Politoed"]
@@ -324,6 +396,24 @@ class CtsTest(unittest.TestCase):
         t = cts.ParticleTracker(self.data, FIXTURE["team"], prior, seed=SEED, key=KEY, n=16)
         Run(t, closed(FIXTURE["messages"]), upto=3)
         self.assertFalse(any(s["item"] == "Mental Herb" for p in t.particles for s in p.sets))
+
+    def test_the_committed_set_table_is_a_prior(self):
+        """SetPrior.from_table: the pinned table of duoforge_search.smogon_sets, every set checked by the engine."""
+        from duoforge_search import smogon_sets
+        prior = cts.SetPrior.from_table(self.data)
+        found = prior.candidates("Farigiraf")
+        self.assertGreater(len(found), 10)
+        self.assertEqual(sum(w for _, w in found), smogon_sets.RESOLUTION)
+        self.assertTrue(any(s["item"] == "sitrusberry" and "trickroom" in s["moves"] for s, _ in found))
+        with self.assertRaises(ValueError):
+            cts.SetPrior.from_table(self.data, sha256="0" * 64)
+
+    def test_the_committed_table_plays_the_fixture(self):
+        t = cts.ParticleTracker(self.data, FIXTURE["team"], cts.SetPrior.from_table(self.data), seed=SEED, key=KEY, n=16)
+        run = Run(t, closed(FIXTURE["messages"]))
+        self.assertEqual(len(run.points), 4)
+        for s in self.held(run, 3, "Farigiraf"):
+            self.assertTrue({"protect", "trickroom"} <= {m.lower().replace(" ", "") for m in s[3]}, s)
 
     def test_the_prior_refuses_a_set_the_engine_refuses(self):
         # Grimmsnarl does not learn Snarl in the pool tables (data.setup_issue)
