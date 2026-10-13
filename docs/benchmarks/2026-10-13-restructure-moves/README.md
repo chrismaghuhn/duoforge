@@ -242,3 +242,37 @@ trained weights, checkpoints, replay payloads, live logs or run directories are
 published. Reports contain public fixture names, hashes, code paths and timing
 aggregates/samples only. No code/security blocker was found. HS approves opening,
 reviews and merges; this branch never merges a PR or enables auto-merge.
+
+
+## HS review follow-up on PR #469
+
+The C extraction is limited to **three functions from `turn.c`**:
+`dfi_is_ohko`, `dfi_move_hits`, and `dfi_beat_up_hits`. The other source moves
+are the five header renames followed by private header grouping. The move
+body is not split into phases in this PR.
+
+The generator now requires every special to belong to **exactly one explicit
+phase class**: late handler (96), before guard (23), legacy data (2), or
+unsupported (1). It rejects missing or overlapping classes with the special's
+name, rejects unknown names in the annotations, and retains the independent
+old-predicate witness. No new special is admitted by an exclusion default.
+
+Three new regression tests fail on the reviewed generator and pass after the
+fix: a new mapped special must abort generation by name without writing a
+header; overlapping classes must fail by name; removing a classification
+must not turn an early handler into a late handler. The direct generator
+suite is now **154/154** (the prior 151 retained). Regeneration followed by
+`--check` is byte-equal to the reviewed header, SHA-256
+`beb77f26a35314b1ef87e1dd1975f325ad95d8c66a4845b77c43ce1b550e9d16`.
+
+Fresh follow-up checks: **33/33 Moves tests with IPO**, **33/33 without IPO**,
+plus **6/6** generator/mixed-G33/lint/hygiene checks. All **1,409** CTest names
+and runtime properties remain identical. Compiled C inputs, public headers,
+and generated output are unchanged from `f75283ae`; the preceding P2–P6,
+call audit and paired performance measurements are retained with their
+original provenance, rather than described as new measurements.
+
+The content-files spec now names the generated phase tables, and its old
+move-gate line reference and decision 0066's sleep/move-gate references use
+function names. The PR body records this narrower scope and the review fix.
+Full hosted CI must pass on the new head; HS alone merges.

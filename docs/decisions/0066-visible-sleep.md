@@ -14,7 +14,7 @@ Today the view hides the counter and `duoforge_hypothesis.sleep[side][member]` (
 - Base `onBeforeMove` (`data/conditions.ts:66-81`, inherited): priority 10 (line 66); each move attempt of the sleeper runs `statusState.time--` (line 71); when `time <= 0` it cures the status with no line and the move runs (lines 72-75); otherwise it prints `cant|X|slp` (line 76). A `sleepUsable` move still runs after the cant line (lines 77-79).
 - So with start S, the sleeper prints S - 1 cant lines and wakes on the S-th move attempt. S = 2: one cant line, then the wake on the second attempt. S = 3: two cant lines, then the wake on the third attempt.
 - The counted unit is the move attempt (`BeforeMove`), not the turn. A switch-out does not tick the counter: a switch is not a move. The public value is therefore the number of cant lines, not the elapsed turns.
-- The start counter is one draw, `random(3)` mapped as `sleep_turns` = {2, 3, 3} (engine `src/combat/turn.c:2544`, draw site `DFI_SITE_SLEEP_TURNS` = 7, `src/rng/draw.h:32`). The pin's `sample([2, 3, 3])` is the same draw.
+- The start counter is one draw, `random(3)` mapped as `sleep_turns` = {2, 3, 3} (engine `dfi_try_status` in `src/combat/turn.c`, draw site `DFI_SITE_SLEEP_TURNS` = 7, `src/rng/draw.h:32`). The pin's `sample([2, 3, 3])` is the same draw.
 
 ## 3. Sources
 
@@ -34,12 +34,12 @@ Champions ruleset: `Sleep Clause Mod` (`data/mods/champions/rulesets.ts:20`) lim
 
 The count is the number of `time--` decrements of the sleeper, and each non-waking decrement prints exactly one `cant|X|slp` line:
 - A plain attempt: one decrement, one cant line (pin lines 71, 76).
-- Sleep Talk and Snore (`sleepUsable`, `data/moves.ts:16875` and `17161`, the only two in the pin): the decrement and the cant line come first (pin lines 71, 76), then `sleepUsable` lets the move run (lines 77-79). The cant still counts, so the law holds per attempt. They are **refused explicitly**: the engine's move gate refuses a sleeping user that picks Sleep Talk or Snore (`E_UNSUPPORTED`, turn.c, sleep branch), so no silent posterior is ever used for them. They are unmarked today in any case (refused at the move gate, `turn.c:7775`).
+- Sleep Talk and Snore (`sleepUsable`, `data/moves.ts:16875` and `17161`, the only two in the pin): the decrement and the cant line come first (pin lines 71, 76), then `sleepUsable` lets the move run (lines 77-79). The cant still counts, so the law holds per attempt. They are **refused explicitly**: the engine's move gate refuses a sleeping user that picks Sleep Talk or Snore (`E_UNSUPPORTED`, turn.c, sleep branch), so no silent posterior is ever used for them. They are unmarked today in any case (refused by the `dfi_support.moves` gate in `dfi_run_move_body`, `src/combat/turn.c`).
 - Early Bird (`data/conditions.ts:68-69`): two decrements per attempt, so the posterior of section 4 does not hold. **Refused explicitly**: a sleeping holder of Early Bird is `E_UNSUPPORTED` in the engine's sleep branch and in `duoforge_battle_from_view`, and the public record refuses it. Unmarked today.
 
 ### 3b. Rest (point mass, never picked)
 
-Rest sets `slp` in its `onHit` and overwrites the counter with S = 3 (`data/moves.ts:14986-14987`). The engine has no Rest handler and Rest is unmarked: the move gate (`turn.c:7775`) refuses Rest before any status is set, so a Rest sleeper cannot exist in a POOL battle. The sleep draw of section 5 is never applied to a Rest sleeper. If Rest is ever marked, it needs its own path (a source bit, the point mass S = 3) and its own decision; this step does not add it. A test asserts the refusal (section 9).
+Rest sets `slp` in its `onHit` and overwrites the counter with S = 3 (`data/moves.ts:14986-14987`). The engine has no Rest handler and Rest is unmarked: the `dfi_support.moves` gate in `dfi_run_move_body` (`src/combat/turn.c`) refuses Rest before any status is set, so a Rest sleeper cannot exist in a POOL battle. The sleep draw of section 5 is never applied to a Rest sleeper. If Rest is ever marked, it needs its own path (a source bit, the point mass S = 3) and its own decision; this step does not add it. A test asserts the refusal (section 9).
 
 ## 4. The law (posterior)
 
