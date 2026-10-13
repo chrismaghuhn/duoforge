@@ -106,11 +106,18 @@ class SolveBayesRM(unittest.TestCase):
         self.assertEqual((rm.solution.value, rm.gap, rm.iterations), (0.25, 0.0, 0))
 
     def test_the_prior_breaks_ties(self):
-        # Every own row is the same: our regrets stay 0, so we play the prior (renormalized) throughout.
+        # Every own row is the same: our regrets stay 0 (no rounding-sized regret, review of D1: a non-dyadic prior
+        # makes x . u differ from the rows by an ulp), so we play the prior (renormalized) throughout.
         rng = np.random.default_rng(5)
         row = rng.random((4, 1, 3))
-        rm = matrix.solve_bayes_rm(np.repeat(row, 3, axis=1), np.ones(4), [2.0, 1.0, 1.0], np.ones((4, 3)))
-        np.testing.assert_allclose(rm.solution.x, [0.5, 0.25, 0.25], rtol=0, atol=1e-15)
+        for prior in ([2.0, 1.0, 1.0], [0.7, 0.2, 0.1], [0.1, 0.3, 0.6]):
+            with self.subTest(prior=prior):
+                rm = matrix.solve_bayes_rm(np.repeat(row, 3, axis=1), np.ones(4), prior, np.ones((4, 3)))
+                np.testing.assert_allclose(rm.solution.x, np.asarray(prior) / sum(prior), rtol=0, atol=1e-15)
+        # The same for a world's foe whose every column pays the same: it plays its prior.
+        a = np.array([[[0.2, 0.2], [0.6, 0.6]], [[1.0, 0.0], [0.0, 1.0]]])
+        rm = matrix.solve_bayes_rm(a, [1.0, 1.0], [0.5, 0.5], [[0.7, 0.3], [0.5, 0.5]])
+        np.testing.assert_allclose(rm.solution.ys[0], [0.7, 0.3], rtol=0, atol=1e-15)
 
     def test_the_iteration_bound_refuses_by_name(self):
         rng = np.random.default_rng(3)

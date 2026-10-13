@@ -79,7 +79,8 @@ class LeafRequest:
 
 
 class Unreconstructible(Exception):
-    """An explicitly counted absence of a supported public reconstruction."""
+    """An explicitly counted absence of a supported public reconstruction, or of a solve: the rm root solver's
+    solver_unconverged (D1, #481)."""
 
 
 # How a refused leaf (its engine step is E_UNSUPPORTED) enters a decision's table (#436): "score" counts it as the
@@ -283,20 +284,25 @@ def draw_word(probabilities, word):
 
 
 def reduce(tables, weights, qs, prior_rank, uniform, lam, oracle=False, budget=None, solver="lp", prior=None,
-           rm_iterations=matrix.RM_MAX_ITERATIONS, rm_epsilon=matrix.RM_EPSILON):
+           rm_iterations=None, rm_epsilon=None):
     """One strategy for all worlds, with every N/E/X outcome recorded.
     budget: an optional matrix.WorkLedger for the solve (P1 teacher).
     solver (ROOT_SOLVERS; D1 of the depth search, #481): "lp" the exact Bayes LP, "rm" CFR+ (matrix.solve_bayes_rm)
     on the same tables, started from prior (our candidates' probabilities) and the foe probabilities qs; it records its
-    gap and iterations and raises matrix.RMUnconverged at rm_iterations. The ev row, mix and draw are the same."""
+    gap and iterations and raises matrix.RMUnconverged at rm_iterations (default matrix.RM_MAX_ITERATIONS; rm_epsilon
+    default matrix.RM_EPSILON). The ev row, mix and draw are the same. The rm arguments under "lp" are refused."""
     if solver not in ROOT_SOLVERS:
         raise ValueError(f"solver must be one of {ROOT_SOLVERS} (got {solver!r})")
+    if solver == "lp" and (prior, rm_iterations, rm_epsilon) != (None, None, None):
+        raise ValueError("prior, rm_iterations and rm_epsilon belong to the rm solver (solver is lp)")
     if solver == "rm":
         if oracle or budget is not None:  # the oracle's matrix game and the P1 teacher's ledger stay on the LP
             raise ValueError("the rm solver takes no oracle and no work budget (the P1 teacher stays on the LP)")
         if prior is None:
             raise ValueError("the rm solver needs the own candidates' prior")
-        rm = matrix.solve_bayes_rm(tables, weights, prior, qs, iterations=rm_iterations, epsilon=rm_epsilon)
+        rm = matrix.solve_bayes_rm(tables, weights, prior, qs,
+                                   iterations=matrix.RM_MAX_ITERATIONS if rm_iterations is None else rm_iterations,
+                                   epsilon=matrix.RM_EPSILON if rm_epsilon is None else rm_epsilon)
         return _outcomes(tables, weights, qs, prior_rank, uniform, lam, rm.solution,
                          {"solver": "rm", "gap": rm.gap, "iterations": rm.iterations})
     # Without a budget the solvers are called exactly as before the teacher existed.
@@ -347,7 +353,7 @@ class Honest(lookahead.Lookahead):
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
                  table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
                  species_prior=False, foe_net=None, preview_rule=None, preview_width="top", root_solver="lp",
-                 rm_iterations=matrix.RM_MAX_ITERATIONS, rm_epsilon=matrix.RM_EPSILON):
+                 rm_iterations=None, rm_epsilon=None):
         # species_prior (live play, owner 2026-10-10): True refuses a decision whose foe species has no stated spread in
         # the table instead of drawing from the belief's nature-only or table-wide levels (4 and 5); "count" (owner
         # 2026-10-12, live play) draws from those general levels and names the species in the record: spread_fallback
@@ -380,15 +386,22 @@ class Honest(lookahead.Lookahead):
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
         # root_solver (D1 of the depth search, #481): the turn decisions' solver (ROOT_SOLVERS). "rm" has no tableau,
-        # so the LP size limit applies to it no longer; its own bound is rm_iterations, its named fallback
-        # solver_unconverged. The team preview stays on the LP and keeps the limit.
+        # so the LP size limit applies to it no longer; its own bound is rm_iterations (default
+        # matrix.RM_MAX_ITERATIONS), its gap target rm_epsilon (matrix.RM_EPSILON), its named fallback
+        # solver_unconverged. The team preview stays on the LP and keeps the limit. Under "lp" the rm settings are
+        # refused, not ignored.
         if root_solver not in ROOT_SOLVERS:
             raise ValueError(f"root_solver must be one of {ROOT_SOLVERS} (got {root_solver!r})")
-        if root_solver == "rm" and (type(rm_iterations) is not int or rm_iterations < 1
-                                    or not 0 < float(rm_epsilon) < 1):
-            raise ValueError(f"the rm solver needs rm_iterations >= 1 and 0 < rm_epsilon < 1 "
-                             f"(got {rm_iterations!r}, {rm_epsilon!r})")
-        self.root_solver, self.rm_iterations, self.rm_epsilon = root_solver, rm_iterations, float(rm_epsilon)
+        if root_solver == "lp" and (rm_iterations is not None or rm_epsilon is not None):
+            raise ValueError("rm_iterations and rm_epsilon require root_solver 'rm'")
+        if root_solver == "rm":
+            rm_iterations = matrix.RM_MAX_ITERATIONS if rm_iterations is None else rm_iterations
+            rm_epsilon = matrix.RM_EPSILON if rm_epsilon is None else rm_epsilon
+            if type(rm_iterations) is not int or rm_iterations < 1 or not 0 < float(rm_epsilon) < 1:
+                raise ValueError(f"the rm solver needs rm_iterations >= 1 and 0 < rm_epsilon < 1 "
+                                 f"(got {rm_iterations!r}, {rm_epsilon!r})")
+            rm_epsilon = float(rm_epsilon)
+        self.root_solver, self.rm_iterations, self.rm_epsilon = root_solver, rm_iterations, rm_epsilon
         if k != 1 and (root_solver == "lp" or preview_mode != "raw"):
             # one candidate plays raw and solves nothing; the turns' and the top preview's LPs are k x m x s
             matrix.check_bayes_size(k, m, s, "the honest search" if root_solver == "lp" else "the team preview's LP")
@@ -714,7 +727,7 @@ class Honest(lookahead.Lookahead):
                     "boundary": lookahead._BOUNDARIES[boundary], "last_step": bool(last_step[d]),
                     "search": "honest", "w": self.s, "table_sha256": self.table_info["sha256"], "lam": self.lam}
             if self.root_solver != "lp":  # the default's record stays as it was
-                base["root_solver"] = {"solver": self.root_solver, "iterations": self.rm_iterations,
+                base["root_solver"] = {"solver": self.root_solver, "max_iterations": self.rm_iterations,
                                        "epsilon": self.rm_epsilon}
             if self.foe_net is not None:  # which encoding modelled the foe (a reproduction needs it)
                 base["foe_net"] = {"encoder": self.foe_net[2], "ext_supported": self.foe_net[3]}
@@ -984,6 +997,7 @@ class Honest(lookahead.Lookahead):
                                        float(seeds.play_uniforms(self.seed, np.array([key], np.uint64))[0]), self.lam,
                                        budget=budget, **solver)
         except matrix.RMUnconverged as err:  # the named fallback solver_unconverged (Q1), counted, never silent
+            costs["solve"] += time.perf_counter() - t  # its time is the decision's, counted like a solve
             raise Unreconstructible("solver_unconverged") from err
         except SearchError as err:
             err.reproduction = {"tables": tables.tolist(), "weights": weights.tolist(), "foe_probs": qs.tolist()}

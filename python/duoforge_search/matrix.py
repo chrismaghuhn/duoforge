@@ -807,7 +807,10 @@ def solve_bayes(tables, weights, *, budget=None):
 # iteration t updates our positive regrets against the foes' current strategies, then each world's foe against our
 # new one (alternating, as in CFR+): R <- max(0, R + u - sigma . u). A strategy is R+ normalized; where every regret is
 # 0 it is the prior (the network's probabilities of the candidates, renormalized), which decides where the solver
-# starts and how ties break, not the set it converges to. The strategies played are the averages weighted by t (linear
+# starts, not the set it converges to. A side whose every action pays exactly the same against the other's strategy
+# gains no regret in that iteration (compared exactly, so a rounding-sized difference of x . u never splits a tie away
+# from the prior). Rows that are bit-identical everywhere always gain equal regrets and so share their mass equally
+# once any regret is positive; the LP plays one of them. The strategies played are the averages weighted by t (linear
 # averaging), each over the strategies whose regrets were accumulated. The exact exploitability of the averages
 # (bayes_exploitability) is computed every check_every iterations and at the last one; the solve stops at a gap of at
 # most epsilon of the tables' range, or refuses by name at `iterations` (RMUnconverged: the fallback
@@ -816,7 +819,7 @@ def solve_bayes(tables, weights, *, budget=None):
 #
 # Reproducible like the rest of this module: every product and sum is accumulated in a fixed order over the small axes
 # (columns, rows, worlds) with elementwise NumPy operations, never a reduction whose order NumPy chooses. The iteration
-# loop works in buffers allocated once per solve.
+# loop works in buffers allocated once per solve; only the exact gap check (every check_every iterations) allocates.
 
 RM_EPSILON = 1e-3  # the gap target, a share of the tables' range (owner and HS, Q1)
 # Provisional: D1's offline pass on step 0's recorded tables (spec section 9.1) fixes the default so that p99 of the
@@ -862,7 +865,8 @@ def _count(name, value):
 def solve_bayes_rm(tables, weights, prior, foe_priors, *, iterations=RM_MAX_ITERATIONS, epsilon=RM_EPSILON,
                    check_every=RM_CHECK_EVERY):
     """The RMSolution of tables (W, K, M) with world weights (W,) by CFR+ (see above). prior: our K candidates'
-    probabilities; foe_priors (W, M): each world's foe candidates' (both renormalized). RMUnconverged when the gap of
+    probabilities; foe_priors (W, M): each world's foe candidates' (both renormalized; spec section 8 sketched a
+    prior_rank here, section 3.1 asks for the prior's probabilities). RMUnconverged when the gap of
     the averages is above epsilon at `iterations`. A constant table plays the first row and column, as solve_bayes."""
     a, p = _tables(tables, weights)
     nw, k, m = a.shape
@@ -888,8 +892,8 @@ def solve_bayes_rm(tables, weights, prior, foe_priors, *, iterations=RM_MAX_ITER
     rows, row_part = np.zeros((nw, k)), np.zeros((nw, k))
     ours, x_t = np.zeros(k), np.zeros(k)
     cols, col_part, y_t = np.zeros((nw, m)), np.zeros((nw, m)), np.zeros((nw, m))
-    foe_value, foe_total = np.zeros(nw), np.zeros(nw)
-    positive, idle = np.zeros(nw, bool), np.zeros((nw, 1), bool)
+    foe_value, foe_total, foe_high, foe_low = np.zeros(nw), np.zeros(nw), np.zeros(nw), np.zeros(nw)
+    positive, idle, flat = np.zeros(nw, bool), np.zeros((nw, 1), bool), np.zeros(nw, bool)
     gap = None
     for t in range(1, iterations + 1):
         # Ours against the foes' current strategies: ours_i = sum_w p_w (s_w y_w)_i.
@@ -906,9 +910,10 @@ def solve_bayes_rm(tables, weights, prior, foe_priors, *, iterations=RM_MAX_ITER
             value += float(x[i]) * float(ours[i])
         np.multiply(x, float(t), out=x_t)
         xsum += x_t
-        rx += ours
-        rx -= value
-        np.maximum(rx, 0.0, out=rx)
+        if ours.max() != ours.min():  # every row paying the same is no regret (see above)
+            rx += ours
+            rx -= value
+            np.maximum(rx, 0.0, out=rx)
         total = 0.0
         for i in range(k):
             total += float(rx[i])
@@ -927,6 +932,11 @@ def solve_bayes_rm(tables, weights, prior, foe_priors, *, iterations=RM_MAX_ITER
             foe_value += foe_total
         np.multiply(ys, float(t), out=y_t)
         ysum += y_t
+        np.max(cols, axis=1, out=foe_high)
+        np.min(cols, axis=1, out=foe_low)
+        np.equal(foe_high, foe_low, out=flat)
+        np.copyto(foe_value, 0.0, where=flat)  # a world whose every column pays the same is no regret for its foe
+        np.copyto(cols, 0.0, where=flat[:, None])
         ry += foe_value[:, None]
         ry -= cols
         np.maximum(ry, 0.0, out=ry)
