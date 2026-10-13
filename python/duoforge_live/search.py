@@ -8,8 +8,8 @@ rule itself; it only classifies the search's answer by the owner's failure class
   "count", owner 2026-10-12) is named in the outcome (spread_fallback, spread_redrawn) and counted per game;
 - forced, raw, team: the search has nothing to add (one legal pair, k = 1, team preview); the raw ranking is played,
   no fallback;
-- (a) a named refusal (kind "unreconstructible": a public refusal, a missing history): that decision
-  is played raw, logged and counted;
+- (a) a named refusal (kind "unreconstructible": a public refusal, a missing history, the rm root solver's
+  solver_unconverged): that decision is played raw, logged and counted;
 - deadline: the search did not answer within min(2 s, 10% of the remaining turn time); played raw, counted apart from
   (a). A search still running from an earlier decision is waited for, never run beside ("busy");
 - (b) anything else (an exception, an unknown kind): played raw; the caller marks the game dirty, plays the rest of it

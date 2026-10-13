@@ -238,6 +238,8 @@ def _work(ledger, **extra):
 def _check_search(search, config, manifest):
     config.check(search)
     config.check_manifest(manifest)
+    if getattr(search, "root_solver", "lp") != "lp":  # the teacher's work ledger counts the LP (D1, #481)
+        raise ValueError(f"the P1 teacher solves on the LP (root_solver {search.root_solver!r})")
     if search.table_info["sha256"] != manifest.belief_hash:
         raise ValueError("the search's spread table (belief) differs from the manifest's belief_hash")
 
