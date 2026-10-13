@@ -247,8 +247,14 @@ root. Under closed sheets each particle has its own record, so world `w` is buil
 - **Spreads.** World `w` draws the stat points of particle `w`'s members (`Belief.sample_worlds`): the spread table's key is
   (species, nature, item), and the drawn natures and items differ between particles. The words are those of `sample()` for
   world `w`, so the worlds of one record draw exactly what they drew before.
-- **History.** The team-preview record and the turn-start record are kept per world; a PIVOT's queue mask is taken per world
-  from its own two records (once per distinct pair).
+- **History.** Each world's team-preview and turn-start records come from its own particle: the particle tracker keeps each
+  particle's (record, status) at every decision point it folded (`ParticleTracker.histories`), and the search takes them
+  from there, chosen as it keeps its own history under open sheets. A particle drawn anew after the team preview is another
+  world and brings the records of its own fold, never those the search kept from the particle it replaced (review of
+  #385 step 4). A world without its team-preview record is unreconstructible by name. A PIVOT's queue mask is taken per
+  world from its own two records (once per distinct pair).
+- **Species.** The worlds' observations must name the same foe species in the same order (the team preview shows them);
+  otherwise the decision stops by name. A species named in `spread_fallback` is not named again in `spread_redrawn`.
 - **Checks.** Every world must give its own record back, byte for byte (`_check_worlds`). The worlds' records must agree on
   every public header field (turn, boundary, seen and pending masks, leads, ...); a disagreement stops by name. The check that
   the viewer's encoded row is the same in every world becomes: the same in every world **of one record**, because the row
@@ -276,7 +282,8 @@ root. Under closed sheets each particle has its own record, so world `w` is buil
 - **Determinism from the log.** The battle log keeps every batch as it was fed (`feed`) and every choice the game accepted
   (`accepted`). A test draws the particles again from the log alone and gets the same sets and records.
 - The particle trackers' counters (redraws by reason, levels, stops, Choice exclusions) are added to the run log at each battle's
-  end (`cts`), aggregates only.
+  end (`cts`), aggregates only: a redraw by a stop keeps the stop's kind, never its text (`cts.counter_kind`; a stop's text can
+  name a nickname).
 - The particle tracker folds each message on the event loop, as the open tracker does. Its cost (p99 about 0.3 s, a redraw cap
   2.3 s at most) is spent before the decision's deadline starts; the arena gives 45 s per request.
 
