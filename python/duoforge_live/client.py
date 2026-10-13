@@ -9,6 +9,12 @@ SystemExit, included) forfeits with the internal-error message and the bot
 keeps running. The password is read from DUOFORGE_PS_PASSWORD only when a
 login needs it; it is never logged.
 
+With a set prior (prior, closed team sheets: decision 0081, #385 step 5, the local control's bots) every battle is
+played over the particles of game.Game.closed_sheets: the bot never accepts open team sheets, a foe that rejects them
+is no reason to forfeit, and the battle log keeps every batch as fed ("feed"), every accepted choice ("accepted") and,
+at the end, the particle tracker's counters by kind ("cts"). A particle tracker's stop forfeits like any tracker stop,
+under its name.
+
 With a LiveSearch (--search honest, plan 2026-10-10-live-honest-search Task 5) each decision has a budget of
 min(2 s, 10% of the turn time left), read from the bot's own timer line; with the timer on, a new decision point waits
 for its timer line (it follows the request) up to TIMER_WAIT, then logs it missing and takes the cap. A class (b)
@@ -140,9 +146,10 @@ class _Battle:
 
 class Bot:
     def __init__(self, config, data, policy, login=login, clock=time.monotonic, team_texts=None, rng=None,
-                 search=None):
+                 search=None, prior=None):
         check_tables(data, policy)  # before anything connects
         self.config = config
+        self.prior = prior  # a cts.SetPrior: closed team sheets (module docstring); None: open team sheets
         self.search = search  # a LiveSearch, or None: raw play
         self.paused = None  # a class (b) search error: no new challenge until the session is restarted
         self.episodes = 0
@@ -289,8 +296,12 @@ class Bot:
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / f"{room}-{toid(self.config.name)}.jsonl"  # two bots of one machine can share a room
         search = self.search if self.paused is None else None  # after a class (b) error every game is raw
-        b = _Battle(room, Game(self.data, self.policy, self.team_texts[team], search=search, room=room,
-                               episode=self.episodes), log_path)
+        if self.prior is not None:
+            game = Game.closed_sheets(self.data, self.policy, self.team_texts[team], self.prior, search=search, room=room,
+                                      episode=self.episodes)
+        else:
+            game = Game(self.data, self.policy, self.team_texts[team], search=search, room=room, episode=self.episodes)
+        b = _Battle(room, game, log_path)
         self.episodes += 1
         self.battles[room] = b
         return b
@@ -328,17 +339,22 @@ class Bot:
             elif line.startswith("|win|") or line == "|tie" or line.startswith("|tie|"):
                 await self._end(b, line)
                 return
-            elif line.startswith("|uhtml|otsrequest|"):
+            elif line.startswith("|uhtml|otsrequest|") and not b.game.closed:
                 await self.send(f"{room}|/acceptopenteamsheets")
-            elif line.endswith(" rejected open team sheets.") and not line.startswith(self.config.name + " "):
+            elif line.endswith(" rejected open team sheets.") and not line.startswith(self.config.name + " ") \
+                    and not b.game.closed:
                 await self._forfeit(b, self._sheets_message(), "open team sheets rejected")
         battle_lines = [line for line in lines if not line.startswith("|error|")]
         if b.stopped or not battle_lines:
             return
         try:
             if b.pending is not None and not all(_room_line(line) for line in battle_lines):
+                if b.game.closed:
+                    b.write({"accepted": b.pending})
                 b.game.accepted(b.pending)
                 b.pending = None
+            if b.game.closed:  # the batch as fed: the particles depend on it (decision 0081)
+                b.write({"feed": battle_lines})
             b.game.feed(battle_lines)
             await self._after_feed(b)
         except Stop as e:  # a line the tracker cannot represent: counted by its reason (the arena's stops)
@@ -426,6 +442,12 @@ class Bot:
         b.write({"end": line})
         if b.game.search is not None:
             b.write({"summary": b.game.summary()})
+        if b.game.closed:
+            from .cts import counter_kind
+            counts = {}
+            for key, n in b.game.tracker.counters.items():  # aggregates only: a stop's kind, never its text
+                counts[counter_kind(key)] = counts.get(counter_kind(key), 0) + n
+            b.write({"cts": counts})
         b.log.close()
         del self.battles[b.room]
         self.finished.add(b.room)

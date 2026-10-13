@@ -2,8 +2,10 @@
 
     python tools/research/cts_search_latency.py dump --out STREAMS.json
     python tools/research/cts_search_latency.py dump-arena --logs DIR --out STREAMS.json
+    python tools/research/cts_search_latency.py dump-local --arena DIR --out STREAMS.json
     python tools/research/cts_search_latency.py measure --streams STREAMS.json --checkpoint P --foe-net P --out DIR
-        [--warmup STREAMS.json] [--arm closed|open] [--count 128] [--seed S]
+        [--warmup STREAMS.json] [--arm closed|open|oracle] [--count 128] [--seed S]
+    python tools/research/cts_search_latency.py compare DIR/choices-closed.json DIR/choices-oracle.json
 
 dump (no JAX; node and the pinned Showdown checkout as the reference tests need them): every committed pool battle's
 client stream of each player, as the pinned simulator sends it, in its batches, with the player's team and the choice it
@@ -17,10 +19,20 @@ request matches (pkmn_arena.request_matches); a log matching none or several is 
 choice is read off the next request (its first four members, leads first); the turns' choices stay unknown (the server
 chose them). The battles get anonymous keys (arena-<k>): STREAMS.json holds no id, and lies outside the repository.
 
+dump-local: the search bot's games of a local closed-sheet arena (python -m duoforge_live.arena --closed: DIR/games.json
+and DIR/logs, private), each as the events the bot's game took: every batch as fed and every accepted choice, in order
+(the bot's log keeps them), with the own team and the foe's true team (the registry's pastes of the game's ids). Battles
+get anonymous keys (local-<k>).
+
 measure (JAX: the live search as python -m duoforge_live --search honest loads it, with its pinned foe network): COUNT
 streams drawn by SEED (all of them when COUNT is larger), played as the live bot plays them. arm "closed" removes any
 |showteam| line and plays over the particles (game.Game.closed_sheets, 16 particles, the committed set table); arm "open"
-plays the stream as it is (game.Game), for comparison. Timed at each decision point where the player is asked:
+plays the stream as it is (game.Game), for comparison; arm "oracle" plays a closed stream with both true open sheets
+put in after its team-preview request (a stream with the foe's true team: dump-local), as the particles put in theirs:
+the v1 bias's upper bound.
+Each arm writes the choice it played at every decision point (DIR/choices-<arm>.json, keyed by battle and epoch);
+compare gives the share of decision points where closed and oracle play the same choice, by decision kind.
+ Timed at each decision point where the player is asked:
 - decision: game.candidates(), from the particles' encoding to the ranked choices, with no deadline (BUDGET), so the
   distribution is the search's own;
 - complete: the feed of the batch that completed the decision point (the particles' redraws and checks) plus decision.
@@ -117,6 +129,61 @@ def dump_arena(args):
     print(f"{len(out)} streams, skipped {dict(skipped)}")
 
 
+def dump_local(args):
+    _refuse_repository(Path(args.out).parent)
+    from duoforge_live import data
+    games = json.loads((Path(args.arena) / "games.json").read_text(encoding="utf-8"))
+    root = data.ROOT / "data" / "teams"
+    out, skipped = [], collections.Counter()
+    for k, g in enumerate(games):
+        if g.get("result") not in ("win", "loss", "tie") or not g.get("room"):
+            skipped["not_played"] += 1
+            continue
+        logs = sorted((Path(args.arena) / "logs").glob(f"{g['room']}-*sbot.jsonl"))
+        if len(logs) != 1:
+            skipped["no_search_log"] += 1
+            continue
+        events = []
+        for r in map(json.loads, logs[0].read_text(encoding="utf-8").splitlines()):
+            if "feed" in r:
+                events.append(["feed", r["feed"]])
+            elif "accepted" in r:
+                events.append(["accepted", r["accepted"]])
+        own, foe = ((root / f"{g[key]}.txt").read_text(encoding="utf-8") for key in ("search_team", "raw_team"))
+        out.append({"battle": f"local-{k}", "player": None, "team": own, "foe_team": foe, "events": events})
+    Path(args.out).write_text(json.dumps({"streams": out, "skipped": dict(skipped)}), encoding="utf-8")
+    print(f"{len(out)} streams, skipped {dict(skipped)}")
+
+
+def _with_sheets(lines, own, foe):
+    """A batch with both true open sheets put in right after its team-preview request (the oracle arm), as
+    cts.ParticleTracker puts in a particle's."""
+    from duoforge_live import cts, teams
+    for i, line in enumerate(lines):
+        side = cts._preview_side(line)
+        if side is not None:
+            packed = (teams.pack(own), teams.pack(foe))
+            sheets = [f"|showteam|p{s + 1}|" + (packed[0] if s == side else packed[1]) for s in (0, 1)]
+            return lines[:i + 1] + sheets + lines[i + 1:]
+    return lines
+
+
+def compare(args):
+    """The share of decision points where the two arms play the same choice, by kind (aggregates only)."""
+    a, b = (json.loads(Path(p).read_text(encoding="utf-8")) for p in (args.first, args.second))
+    common = sorted(set(a) & set(b))
+    by_kind = collections.defaultdict(lambda: [0, 0])
+    for key in common:
+        kind = a[key][0]
+        by_kind[kind][1] += 1
+        by_kind[kind][0] += a[key][1] == b[key][1]
+    out = {"common": len(common), "only_first": len(set(a) - set(b)), "only_second": len(set(b) - set(a)),
+           "agree": {k: {"same": s, "of": n, "share": s / n} for k, (s, n) in sorted(by_kind.items())}}
+    same, n = sum(s for s, _ in by_kind.values()), sum(n for _, n in by_kind.values())
+    out["agree"]["all"] = {"same": same, "of": n, "share": same / max(1, n)}
+    print(json.dumps(out, indent=1))
+
+
 def _quantiles(seconds):
     import numpy as np
     if not seconds:
@@ -159,15 +226,23 @@ class _Play:
             (collections.Counter() for _ in range(7))
         self.episode = 0
         self.seen = set()  # warm-up: the decision kinds the search has compiled for (team, searched)
+        self.choices = {}  # "battle|epoch" -> (kind, the choice played), of the counted decision points
 
     def compiled(self):
         return len(getattr(self.live.searcher, "_compiled", ()))
 
     def stream(self, s, counted):
         from duoforge_live import cts, game, lines
-        messages = s["messages"]
+        if "events" in s:  # the bot's own events (dump-local): every batch as fed, every accepted choice
+            events = [tuple(e) for e in s["events"]]
+        else:
+            events = [("feed", m) for m in s["messages"]]
+        if self.arm in ("closed", "oracle"):
+            events = [(k, [line for line in p if not line.startswith("|showteam|")] if k == "feed" else p)
+                      for k, p in events]
+        if self.arm == "oracle":
+            events = [(k, _with_sheets(p, s["team"], s["foe_team"]) if k == "feed" else p) for k, p in events]
         if self.arm == "closed":
-            messages = [[line for line in m if not line.startswith("|showteam|")] for m in messages]
             g = game.Game.closed_sheets(self.tables, self.net, s["team"], self.prior, search=self.live,
                                         room=s["battle"], episode=self.episode)
         else:
@@ -175,7 +250,10 @@ class _Play:
         self.episode += 1
         done = 0
         try:
-            for m in messages:
+            for k, m in events:
+                if k == "accepted":
+                    g.accepted(m)
+                    continue
                 if any(line.startswith("|win|") or line == "|tie" or line.startswith("|tie|") for line in m):
                     break  # the battle is over: the bot ends it without feeding the batch (pkmn_arena._end)
                 start = time.perf_counter()
@@ -189,8 +267,10 @@ class _Play:
                 if g.asked():
                     before, compiled = len(g.outcomes), self.compiled()
                     start = time.perf_counter()
-                    g.candidates(BUDGET)
+                    ranked = g.candidates(BUDGET)
                     seconds = time.perf_counter() - start
+                    if counted:
+                        self.choices[f"{s['battle']}|{g.epoch}"] = (_kind(g.request), ranked[0].text)
                     outcome = g.outcomes[-1] if len(g.outcomes) > before else None
                     if outcome is not None:
                         self.seen.add(outcome.cause)
@@ -208,6 +288,8 @@ class _Play:
                             if outcome.cause == "searched":
                                 self.decision["searched"].append(seconds)
                                 self.complete["searched"].append(fed + seconds)
+                if "events" in s:
+                    continue  # the accepted choices are events of their own
                 choice = s["inputs"][done - 1] if done - 1 < len(s["inputs"]) else None
                 if choice is not None:
                     g.accepted(choice)
@@ -266,6 +348,7 @@ def measure(args):
                      "machine": platform.platform(), "python": platform.python_version()}}
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    (out / f"choices-{args.arm}.json").write_text(json.dumps(play.choices) + "\n", encoding="utf-8")
     (out / f"latency-{args.arm}.json").write_text(json.dumps(report, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({k: report[k] for k in ("decision", "complete", "causes", "stops", "errors", "left_out")}, indent=1))
 
@@ -278,6 +361,12 @@ def main(argv=None):
     a = sub.add_parser("dump-arena")
     a.add_argument("--logs", required=True)
     a.add_argument("--out", required=True)
+    loc = sub.add_parser("dump-local")
+    loc.add_argument("--arena", required=True)
+    loc.add_argument("--out", required=True)
+    c = sub.add_parser("compare")
+    c.add_argument("first")
+    c.add_argument("second")
     m = sub.add_parser("measure")
     m.add_argument("--streams", required=True)
     m.add_argument("--warmup", default=None)
@@ -285,13 +374,14 @@ def main(argv=None):
     m.add_argument("--foe-net", required=True)
     m.add_argument("--foe-net-sha256", default=None)
     m.add_argument("--out", required=True)
-    m.add_argument("--arm", choices=("closed", "open"), default="closed")
+    m.add_argument("--arm", choices=("closed", "open", "oracle"), default="closed")
     m.add_argument("--count", type=int, default=128)
     m.add_argument("--seed", type=int, default=SEED)
     m.add_argument("--detail", action="store_true",
                    help="also count the stops' and errors' own texts (never for streams with private names)")
     args = p.parse_args(argv)
-    {"dump": dump, "dump-arena": dump_arena, "measure": measure}[args.command](args)
+    {"dump": dump, "dump-arena": dump_arena, "dump-local": dump_local, "measure": measure,
+     "compare": compare}[args.command](args)
 
 
 if __name__ == "__main__":

@@ -572,6 +572,20 @@ class ClosedGameTest(unittest.TestCase):
         self.assertGreater(g.tracker.counters["redraw.facts"], 0)
         self.assertGreater(changed, 0)  # a particle redrawn after the preview: another preview record
 
+    def test_the_summary_names_the_reasons_of_the_raw_decisions(self):
+        # #385 step 5 counts the #464 refusals (engine-refuses-record) from each game's summary.
+        reason = "DUOFORGE_E_UNSUPPORTED: public record (public_record_unsupported); tracker: engine-refuses-record"
+
+        class Refusing(RawSearch):
+            def decide(self, *args, **kwargs):
+                super().decide(*args, **kwargs)
+                return live_search.Outcome(None, "unreconstructible", "a", reason, 0.0)
+        for g in self.points(self.game(FakePolicy(), Refusing())):
+            g.candidates()
+        summary = g.summary()
+        self.assertEqual(summary["fallback"], {"a": 4})
+        self.assertEqual(summary["reasons"], {reason: 4})
+
     def test_each_particle_shows_its_own_extension_record(self):
         for g in self.points(self.game(FakePolicy())):
             self.assertEqual([e.tobytes() for e in g.tracker.observation_exts()],
