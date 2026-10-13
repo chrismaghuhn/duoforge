@@ -508,3 +508,49 @@ search/2-width at af168d56 (`dirty: false`), the same commit and library as its 
 3. The touchstone, reported only.
 
 It starts once the HauptSession has set its order with the CTS lane.
+
+### Step 2, phase B (2026-10-13/14): 2e passes every gate; the mirror touchstone shows no measurable harm
+
+The runs, all `dirty: false`, use the same library file: `libduoforge_shared.so` built from 0a5db340, sha256 `48629702…2ee564`. Main and foe network are BC6 (`bda5de8e4e96`), with the same spread table and seed.
+
+| run | settings | commit |
+|---|---|---|
+| gated | `--step 2e --previous 0 --h2h --previous-run <step 0 rebaselined>`, 1024 pairs, `bot`, `bc6`, `ppo` | af168d56 |
+| latency | `--step 2e`, 16 pairs against `bot`, `--exclusive` | af168d56 |
+| mirror | `--mirror --step 2e --previous 0`, Team A against the tournament sun team, 512 pairs | a778d71f |
+
+a778d71f is af168d56 plus one commit, `ladder --mirror`, which touches only `ladder.py` and `test_ladder.py`. The search, the engine and the library are unchanged.
+
+**Gates, as predeclared (`ladder verdict --latency-run`):**
+
+| gate | measured | |
+|---|---|---|
+| strength: h2h lower bound > 0.50 | **0.535 [0.517, 0.554]**, unfinished 0 | pass |
+| no harm: upper bound ≥ 0.50, `bot` and `bc6` | `bot` 0.514 [0.506, 0.522], `bc6` 0.541 [0.531, 0.551] | pass |
+| reproduced: step 0's scores and decision digests | equal to its rebaselined run | pass |
+| fallbacks ≤ 5 % and ≤ previous + 1 pp | `bot` 1.90 % (step 0: 1.89 %), `bc6` 1.48 % (1.51 %) | pass |
+| latency: exclusive p99 ≤ 2.0 s (VPS bound 1.67 s) | p99 **0.081 s**, p50 0.046 s | pass |
+
+**`adopt: true`.**
+- Reported only: `ppo` 0.512 [0.502, 0.523], with fallbacks of 1.47 % (step 0: 1.52 %).
+- The latency run's own fallbacks were 10 of 302 decisions.
+
+**The mirror touchstone (reported, not gated).** Team A plays the tournament sun team, and the sun team is piloted by our step-0 live search. Its spread table leaves out our registry team.
+
+| arm | score, 512 pairs | 95 % |
+|---|---|---|
+| 2e | 0.874 | [0.854, 0.894] |
+| step 0 | 0.869 | [0.849, 0.889] |
+| paired, 2e vs step 0 | **0.502** | **[0.492, 0.513]** |
+
+- **Not clearly negative:** the upper bound is ≥ 0.50, so going live needs no owner exception.
+- **No measurable gain:** the lower bound is < 0.50.
+- Fallbacks 0, unfinished 0.
+
+**Not run:** the predeclared touchstone with `bot` and `ppo` piloting the sun team (256 pairs). Phase B ran in the HauptSession's order: gated run, latency, mirror.
+
+**The KO check** is unchanged from phase A's fair comparison above:
+- 2e plays 508 of the 811 available own KOs, against step 0's 458.
+- 2e answers 145 of the 680 foe threats, against step 0's 160.
+
+Going live with λ = 0 is a decision of the HauptSession and the owner.
