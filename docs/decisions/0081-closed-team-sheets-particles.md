@@ -422,3 +422,72 @@ the strictest case:
   condition the belief on what the engine represents.
   - The missing content is to be prioritized later by its prior mass, under the content-files plan.
   - How often the case occurs live is measured by the local control (step 5) and by live play.
+
+## The local control (#385 step 5)
+
+**What runs.** `python -m duoforge_live.arena --closed` plays closed-sheet games on the pinned Showdown server, started
+locally:
+- Both bots play over the particles: `client.Bot` with the pinned set table as prior.
+  - It never accepts open sheets, and a foe that rejects them is no reason to forfeit.
+  - Its log keeps every batch as fed and every accepted choice, and at the end the particle counters by kind.
+- The search bot plays with the live search, the raw bot with the mean policy.
+- Pairs are drawn from a pool network's teams (`--teams-from`; BC6 names none), and each pair is played twice with the seats
+  swapped.
+
+**The gates** (`arena.CTS_GATES`) were predeclared on #385 before the run:
+- every game played;
+- no crash: under closed sheets, every forfeit but a tracker stop counts as one;
+- no class (b) error and no timer loss;
+- at least 95 % of the games end without a tracker stop, counted per game.
+
+The score, the searched share, the deadline misses and the #464 refusals are counted, not gated.
+
+**Measured apart** (`tools/research/cts_search_latency.py`):
+- `dump-local` reads the games' own events.
+- `measure` times the complete decision on them, exclusively.
+- The oracle arm plays the same streams with the foe's true sheet as the server shows it (`cts.true_sheet`: no stat
+  points). `compare` gives how often it plays the particles' choice.
+
+**Provenance.** Every result names its commit and whether the tree was dirty (`arena.provenance`; HauptSession,
+2026-10-13), never none.
+
+## Evidence of the local control (#385 step 5)
+
+**128 games** (2026-10-13, code `8c4fe662`, clean):
+- BC6 as network and foe network, 16 particles;
+- pairs from params-49333's pool (648 teams the server accepts);
+- 2 lanes, the battle timer on, the machine held exclusively.
+
+| gate | result |
+|---|---|
+| every game played | 128 of 128, 64 complete pairs |
+| crashes / class (b) / timer losses | 0 / 0 / 0 |
+| games without a tracker stop (at least 95 %) | 100 % |
+
+- No forfeit of either bot, so the per-game stop count and the closed-sheet crash rule (both from the review of step 5)
+  change nothing here.
+- The search bot scored 0.641 against the raw bot, 95 % interval [0.567, 0.715].
+- 98.3 % of its 1186 decisions were searched and 1.6 % played raw, with no deadline miss.
+- #464 (`engine-refuses-record`) met 18 decisions (1.5 %); on step 4's pool streams it was 34 %.
+
+**Latency** on these games' 128 server streams, in their batches. Measured exclusively at `8c4fe662`, clean:
+- the complete decision: p99 0.143 s, max 0.568 s;
+- the decision alone: p99 0.119 s, max 0.555 s;
+- 1314 decision points.
+
+**The v1 bias** (code `48f38cb9`, clean, both arms on it): the same choice with the particles as with the foe's true open
+sheet.
+
+| decisions | same choice |
+|---|---|
+| all | 865 of 1314 (65.8 %) |
+| turns | 615 of 982 (62.6 %) |
+| switches after a faint | 196 of 204 (96.1 %) |
+| team preview | 54 of 128 (42.2 %) |
+
+- This counts how often the missing sheet changes the choice. It does not measure what that costs in strength: that needs
+  an arena of particles against open sheets.
+- The team preview differs most. There, the mean policy over the particles meets the policy on the true sheet, with no
+  search.
+- **A first oracle put in the foe's true stat points**, which open sheets never show. It was found by the review before any
+  measurement and fixed with `cts.true_sheet`, pinned against the pinned server's own `|showteam|` line.
