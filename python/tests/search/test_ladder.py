@@ -482,6 +482,18 @@ class CliGuardTest(unittest.TestCase):
             out = os.path.join(tmp, "out")
             self.assertRefused("known steps", self.argv(out, step="nope"), out)
 
+    def test_the_struck_budget_arms_are_refused_by_name_before_loading(self):
+        self.assertEqual(set(ladder.REFUSED_STEPS), {"b-s64", "b-s128", "b-s256", "b-km16-s64"})
+        self.assertTrue(set(ladder.REFUSED_STEPS) <= set(ladder.STEPS))  # declared, but never run
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            for name in ladder.REFUSED_STEPS:
+                with self.subTest(step=name):
+                    self.assertRefused(f"step '{name}' is refused: s >= 64", self.argv(out, step=name), out)
+                    self.assertRefused(f"step '{name}' is refused", self.argv(out, extra=("--previous", name)), out)
+            for name in ("b-s32", "b-km16"):  # the arms below s = 64 pass this guard
+                self.assertNotIn(name, ladder.REFUSED_STEPS)
+
     def test_previous_run_must_have_measured_the_previous_step(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "out")

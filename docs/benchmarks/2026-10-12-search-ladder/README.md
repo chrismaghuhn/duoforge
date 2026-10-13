@@ -195,9 +195,9 @@ The exact rescue is rare: 1 in about 10,000 searched decisions at s = 32 (1 agai
 in s = 64's `bot` arm, where it finished. Its tableau grows with s (1025 rows at s = 128, 2049 at s = 256), so the
 queued S arms above s = 64 will likely stop the same way, and a stop loses the whole run's report.
 
-**Open, to decide before a rerun of the S arms ≥ 64:** start the exact rescue at the feasible first-row vertex, as the
-float path already does, and scale the iteration limit with the tableau; or record s ≥ 64 as too large for the exact
-rescue and refuse it before the run.
+**Decided (HS/owner, #440, 2026-10-13): the arms with s ≥ 64 are struck.** `b-s64`, `b-s128`, `b-s256` and
+`b-km16-s64` stay declared but are refused by name before any run (`ladder.REFUSED_STEPS`). `b-km16` finishes. The
+exact rescue is repaired only if more budget is shown to help; the ×2 arms were flat.
 
 **Provenance.** search/budget at 25883412 (`dirty: false`), paired by prefix with step 0's run at 1cb3e2d9. 20:29 to
 02:13 on two shared lock slots. Raw output private, outside the repository.
