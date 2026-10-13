@@ -2171,7 +2171,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   parentalbond -- data/abilities.ts:3170-3188  [unmodelled: callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
  *   pickpocket -- data/abilities.ts:3239-3261  [unmodelled: callback onAfterMoveSecondary]
  *   pickup -- data/abilities.ts:3262-3281  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts]
- *   piercingdrill -- data/abilities.ts:3282-3295, data/mods/champions/abilities.ts:59-62  [unmodelled: callback onHitProtect]
+ *   piercingdrill -- data/abilities.ts:3282-3295, data/mods/champions/abilities.ts:59-62
  *   plus -- data/abilities.ts:3317-3330  [unmodelled: callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts]
  *   poisonheal -- data/abilities.ts:3331-3343  [unmodelled: callback onDamage; callback onDamagePriority]
  *   poisonpoint -- data/abilities.ts:3344-3356  [unmodelled: callback onDamagingHit]
@@ -2950,7 +2950,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_PARENTALBOND] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PICKPOCKET] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PICKUP] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_PIERCINGDRILL] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_PIERCINGDRILL] = DFI_HANDLER_NONE,
     [DFI_ABILITY_PLUS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_POISONHEAL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_POISONPOINT] = DFI_HANDLER_UNMODELED,
@@ -7042,7 +7042,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_PARENTALBOND] = "callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
     [DFI_ABILITY_PICKPOCKET] = "callback onAfterMoveSecondary",
     [DFI_ABILITY_PICKUP] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts",
-    [DFI_ABILITY_PIERCINGDRILL] = "callback onHitProtect",
     [DFI_ABILITY_PLUS] = "callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts",
     [DFI_ABILITY_POISONHEAL] = "callback onDamage; callback onDamagePriority",
     [DFI_ABILITY_POISONPOINT] = "callback onDamagingHit",
@@ -7080,10 +7079,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x94u, 0x53u, 0xa5u, 0x7du, 0x2au, 0xd9u, 0xccu, 0xf4u,
-    0xb3u, 0x8au, 0xecu, 0x7du, 0x52u, 0x91u, 0xf0u, 0x65u,
-    0x6fu, 0x83u, 0xb8u, 0xf1u, 0x05u, 0x15u, 0xf9u, 0x13u,
-    0x6cu, 0x25u, 0x28u, 0x16u, 0xbau, 0x47u, 0x69u, 0xc3u,
+    0x9du, 0xfdu, 0x85u, 0x46u, 0xc0u, 0x13u, 0x81u, 0xc4u,
+    0x5fu, 0x9fu, 0x3du, 0x10u, 0xb5u, 0xf2u, 0xc9u, 0xf8u,
+    0x50u, 0xb6u, 0xdcu, 0x95u, 0xc3u, 0x6eu, 0x6au, 0x57u,
+    0x36u, 0x4du, 0x8au, 0x31u, 0x67u, 0xbeu, 0x65u, 0x2fu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
