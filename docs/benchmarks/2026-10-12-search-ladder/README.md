@@ -165,3 +165,39 @@ pairs checks the harness only and is not a result.
 - **Spread table:** `5f079072…`. 256 of the 2048 games' opponent teams are in it, and each was left out of the belief for its game.
 - **Networks** (SHA-256 prefixes): BC6 `bda5de8e4e96`, bc6-bot-M `213b773b3448`, params-49333 `ef1abe65f637`.
 - **Raw output:** `ladder.json` and the decision records stay private, outside the repository.
+
+### The budget step (2026-10-12/13): interim, ×2 arms done
+
+**Status.** The ×2 arms are done; b-s64 stopped with a named error; b-km16 is running; b-s128, b-s256, b-km16-s64 and
+every exclusive latency run are queued. The curve's x axis needs the exclusive runs, so the wall seconds below come from
+the shared strength runs and are not the gate's numbers.
+
+| arm | budget | h against step 0, `bot` [95%] | h against step 0, `ppo` [95%] | duplicate-row share | shared p50 / p99 (s) |
+|---|---|---|---|---|---|
+| `b-k16` | ×2 | 0.490 [0.477, 0.503] | – | 9.4% | 0.131 / 0.52 |
+| `b-m16` | ×2 | 0.496 [0.486, 0.506] | – | 6.6% | 0.114 / 0.27 |
+| `b-s32` | ×2 | 0.500 [0.493, 0.508] | 0.492 [0.480, 0.503] | 7.1% (`bot`), 6.1% (`ppo`) | 0.131 / 1.55 (`bot`), 0.129 / 0.89 (`ppo`) |
+| `b-s64` | ×4 | stopped (below) | stopped | – | – |
+
+- **No ×2 arm moves the strength.** Every interval holds 0.50; `b-k16`'s point is the lowest. Fallbacks stay at
+  2.4–2.9%, every game finished and none was unresolved.
+- Read with steps 1 and 1b, this points to the evaluation (BC6's value head) as the limit rather than the search
+  budget. The ×8 and ×16 arms decide it; the network-quality measurement is #451.
+
+**b-s64 stopped with a named error, not a fallback.** In the `ppo` arm (the `bot` arm had finished):
+`SearchError: the Bayesian simplex did not finish in 10000 iterations`. The chain in `matrix.solve_bayes`:
+1. the float simplex gave an empty strategy;
+2. the stable float retry missed the certificate narrowly (exploitability 1.8e-8 on a range of 1.8, 64 tables of 8 × 8);
+3. the exact rescue (`_bland` on Fractions) starts at the origin, where all 64 · 8 world constraints are degenerate,
+   and did not finish within `MAX_ITERATIONS` = 10,000 on its 513-row tableau.
+
+The exact rescue is rare: 1 in about 10,000 searched decisions at s = 32 (1 against `bot`, 2 against `ppo`), and once
+in s = 64's `bot` arm, where it finished. Its tableau grows with s (1025 rows at s = 128, 2049 at s = 256), so the
+queued S arms above s = 64 will likely stop the same way, and a stop loses the whole run's report.
+
+**Open, to decide before a rerun of the S arms ≥ 64:** start the exact rescue at the feasible first-row vertex, as the
+float path already does, and scale the iteration limit with the tableau; or record s ≥ 64 as too large for the exact
+rescue and refuse it before the run.
+
+**Provenance.** search/budget at 25883412 (`dirty: false`), paired by prefix with step 0's run at 1cb3e2d9. 20:29 to
+02:13 on two shared lock slots. Raw output private, outside the repository.
