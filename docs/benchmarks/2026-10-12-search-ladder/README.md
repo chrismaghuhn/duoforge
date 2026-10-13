@@ -195,9 +195,26 @@ The exact rescue is rare: 1 in about 10,000 searched decisions at s = 32 (1 agai
 in s = 64's `bot` arm, where it finished. Its tableau grows with s (1025 rows at s = 128, 2049 at s = 256), so the
 queued S arms above s = 64 will likely stop the same way, and a stop loses the whole run's report.
 
-**Decided (HS/owner, #440, 2026-10-13): the arms with s ≥ 64 are struck.** `b-s64`, `b-s128`, `b-s256` and
-`b-km16-s64` stay declared but are refused by name before any run (`ladder.REFUSED_STEPS`). `b-km16` finishes. The
-exact rescue is repaired only if more budget is shown to help; the ×2 arms were flat.
+**b-km16 stopped the same way** (03:38, `ppo` arm; the `bot` arm had finished): 257 rows and 32 variables, although
+`b-m16` (257, 24) and `b-s32` (257, 40), no smaller, finished. The stop is rare and not monotone in the size.
+
+| arm | rows (s·m + 1) | variables (k + s) | result |
+|---|---|---|---|
+| 0, `b-k16` | 129 | 24, 32 | never failed |
+| `b-m16`, `b-s32` | 257 | 24, 40 | finished (1–2 exact rescues each) |
+| `b-km16` | 257 | 32 | **stopped** in the exact rescue |
+| `b-s64` | 513 | 72 | **stopped** in the exact rescue |
+
+**Decided (owner, #440, 2026-10-13): a size limit instead of a list of names.** A search whose Bayesian LP can exceed
+the size class without any failure, **129 rows and 32 variables** (step 0, `b-k16`), is refused by name when it is built
+(`matrix.check_bayes_size`, called by `honest.Honest`) and, for a ladder step, before any network loads
+(`ladder.size_refusal`). The literal "larger than the largest that succeeded" would admit `b-km16`, which is smaller than
+`b-s32` and failed, so the limit is the class without a failure. The arms above it stay declared and are never run.
+The exact rescue is repaired only if more budget, or a wider step, needs it:
+- **1bw** (preview, 129 rows, at most 10 + 16 = 26 variables) is under the limit;
+- **2w** is not: over the 1285 searched decisions of the arena logs its k' has median 19, p90 31 and maximum 34, so
+  only 33 % of the decisions stay at 16 own pairs or fewer. The solver repair comes before step 2's width arms.
+- Live play (8 × 8 × 16: 129 rows, 24 variables) is under the limit.
 
 **Provenance.** search/budget at 25883412 (`dirty: false`), paired by prefix with step 0's run at 1cb3e2d9. 20:29 to
 02:13 on two shared lock slots. Raw output private, outside the repository.

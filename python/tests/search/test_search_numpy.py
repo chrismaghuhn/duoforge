@@ -296,6 +296,19 @@ class Nash(unittest.TestCase):
                 matrix.solve(bad)
 
 
+class BayesSize(unittest.TestCase):
+    """The LP size limit (#440, owner 2026-10-13): the class of step 0 and b-k16, pinned by literals."""
+
+    def test_the_limit_and_its_edges(self):
+        self.assertEqual((matrix.MAX_BAYES_ROWS, matrix.MAX_BAYES_VARIABLES), (129, 32))
+        self.assertEqual(matrix.bayes_size(8, 8, 16), (129, 24))
+        for k, m, worlds in ((8, 8, 16), (16, 8, 16), (8, 4, 32 - 8)):
+            matrix.check_bayes_size(k, m, worlds, "inside")
+        for k, m, worlds in ((17, 8, 16), (8, 16, 16), (16, 16, 16), (8, 8, 32), (8, 8, 64)):
+            with self.subTest(k=k, m=m, worlds=worlds), self.assertRaisesRegex(ValueError, "outside: .*above the limit"):
+                matrix.check_bayes_size(k, m, worlds, "outside")
+
+
 class ExpectedValue(unittest.TestCase):
     def test_expected_choice(self):
         a = np.array([[0.0, 1.0], [0.9, 0.2], [-1.0, -1.0]])

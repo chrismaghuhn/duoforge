@@ -57,11 +57,21 @@ STEPS = {"0": {"base": None, "settings": {}},
          "b-km16": {"base": "0", "settings": {"k": 16, "m": 16, "capacity": 4096}},
          "b-km16-s64": {"base": "0", "settings": {"k": 16, "m": 16, "s": 64, "capacity": 16384}}}
 
-# The arms refused before any run (HS/owner on #440, 2026-10-13): at s >= 64 the exact Bayesian rescue
-# (matrix._bland from the degenerate origin) does not finish in matrix.MAX_ITERATIONS, b-s64 stopped after hours and
-# the ×2 arms were flat. Declared above, never run; the solver is repaired only if more budget is shown to help.
-_STRUCK = "s >= 64: the exact Bayesian rescue does not finish (b-s64 stopped, #440); refused before the run"
-REFUSED_STEPS = {name: _STRUCK for name in ("b-s64", "b-s128", "b-s256", "b-km16-s64")}
+
+
+def size_refusal(name):
+    """Why step `name` is refused before any run, or None: its Bayesian LP is above the size limit (matrix.
+    MAX_BAYES_ROWS, MAX_BAYES_VARIABLES; owner on #440, 2026-10-13: b-s64 and b-km16 stopped in the exact rescue).
+    The struck arms stay declared above."""
+    from . import matrix
+    settings = step_settings(name)
+    if settings["k"] == 1:
+        return None
+    try:
+        matrix.check_bayes_size(settings["k"], settings["m"], settings["s"], f"step {name!r}")
+    except ValueError as err:
+        return str(err)
+    return None
 
 
 def step_settings(name):
@@ -488,14 +498,15 @@ def main(argv=None):
         raise SystemExit("--previous-run needs --previous")
     if args.latency_run is not None and not args.h2h:
         raise SystemExit("--latency-run needs --h2h: the latency gate belongs to the verdict of a head-to-head")
-    for name in (args.step, args.previous):
-        if name in REFUSED_STEPS:
-            raise SystemExit(f"step {name!r} is refused: {REFUSED_STEPS[name]}")
     try:
         step_cfg = step_settings(args.step)
         previous_cfg = None if args.previous is None else step_settings(args.previous)
     except ValueError as err:
         raise SystemExit(str(err)) from None
+    for name in (args.step, args.previous):
+        refusal = None if name is None else size_refusal(name)
+        if refusal is not None:
+            raise SystemExit(refusal)
     recorded = recorded_dir = None
     if args.previous_run is not None:  # every check against the recorded run runs before any network is loaded
         recorded, recorded_dir = _load_json(args.previous_run), os.path.dirname(os.path.abspath(args.previous_run))

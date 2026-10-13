@@ -297,6 +297,8 @@ class Honest(lookahead.Lookahead):
             self.foe_net = (foe_model, foe_params, int(foe_encoder), int(foe_ext))
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
+        if k != 1:  # one candidate plays raw and solves nothing; the turns' and the preview's LPs are k x m x s at most
+            matrix.check_bayes_size(k, m, s, "the honest search")
         if preview_mode not in ("raw", "value", "turn1") or type(preview_steps) is not int or preview_steps < 1:
             raise ValueError("preview requires raw/value/turn1 and a positive rollout bound")
         if preview_only and preview_mode == "raw":

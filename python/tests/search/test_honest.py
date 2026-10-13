@@ -512,6 +512,15 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual({k: v for k, v in drop[0].items() if k not in ("refused_pairs", "cost", "time")},
                              {k: v for k, v in score[0].items() if k not in ("cost", "time")})
 
+    def test_a_search_above_the_lp_size_limit_is_refused_when_built(self):
+        # #440: the exact rescue is known to finish up to 129 rows and 32 variables; one candidate solves nothing
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            for k, m, s in ((16, 16, 16), (8, 8, 32), (17, 8, 16)):
+                with self.subTest(k=k, m=m, s=s), self.assertRaisesRegex(ValueError, "above the limit"):
+                    honest.Honest(ctx, self.model, self.params, 4, 0, k=k, m=m, s=s)
+            with honest.Honest(ctx, self.model, self.params, 4, 0, k=1, m=64, s=4, capacity=16, workers=1):
+                pass
+
     def test_refused_mode_must_be_score_or_drop(self):
         costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
