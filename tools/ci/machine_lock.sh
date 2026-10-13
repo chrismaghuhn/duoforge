@@ -23,8 +23,15 @@
 # a job with another DUOFORGE_MACHINE_LOCK_SLOTS is refused while any job
 # holds or waits (the record of an idle machine is replaced).
 #
+# One job per label: a call whose label a live process already holds a slot
+# or waits with is refused at once with status 3; it does not queue. A dead
+# process's slot or ticket does not count, and the same label is free again
+# once its job has ended (2026-10-13: one queue started twice ran the same job
+# twice into one output directory). A background task that Claude Code reports
+# as "stopped" may still run: check its processes before a restart.
+#
 # usage (Git Bash):
-#   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases
+#   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases; status 3: the label runs
 #   source tools/ci/machine_lock.sh; machine_lock_acquire [--exclusive] <label> || exit; ...; machine_lock_release
 # environment:
 #   DUOFORGE_MACHINE_LOCK        slot 0, the lock directory (default: $TEMP/duoforge-machine.lock)
@@ -96,6 +103,30 @@ machine_lock_held() { # dir
     echo "$line"
 }
 
+# The label of an owner or ticket line: "<pid> <label> since <date>".
+machine_lock_label() { # line
+    local rest=${1#* }
+    echo "${rest% since *}"
+}
+
+# Whether a live process other than this shell holds a slot or waits with label $1, older than ticket $2 (a waiter
+# with the same label behind it is refused by its own check); prints that line.
+machine_lock_duplicate() { # label ticket
+    local label=$1 ticket=$2 me dir line t
+    me=$(machine_lock_pid)
+    for dir in "$MACHINE_LOCK" "$MACHINE_LOCK".slot*; do
+        line=$(machine_lock_held "$dir") || continue # a stale slot is removed, not counted
+        [ "${line%% *}" != "$me" ] && [ "$(machine_lock_label "$line")" = "$label" ] && echo "$line" && return 0
+    done
+    for t in "$MACHINE_LOCK.queue"/*; do
+        [ -e "$t" ] && [ "$t" != "$ticket" ] && [[ "$t" < "$ticket" ]] || continue
+        line=$(head -n 1 "$t" 2> /dev/null || true)
+        [ "$(machine_lock_label "$line")" = "$label" ] || continue
+        machine_lock_alive "${t##*-}" && echo "$line" && return 0
+    done
+    return 1
+}
+
 # True when no slot directory exists and no live ticket waits (other than this shell's).
 machine_lock_idle() { # queue
     local t dir me
@@ -156,6 +187,12 @@ machine_lock_acquire() { # [--exclusive] label
     [ "$exclusive" = 1 ] && mark="slots exclusive"
     ticket="$queue/$(printf '%019d' "$(date +%s%N)")-$me"
     printf '%s\n%s\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" "$mark" > "$ticket"
+    # Checked after the ticket is written: of two calls with one label at the same moment, the later ticket goes.
+    if line=$(machine_lock_duplicate "$label" "$ticket"); then
+        rm -f "$ticket"
+        echo "machine lock: a job labelled '$label' already runs or waits ($line): refused, not queued" >&2
+        return 3
+    fi
     while :; do
         for t in "$queue"/*; do
             [ -e "$t" ] && [ "$t" != "$ticket" ] || continue
