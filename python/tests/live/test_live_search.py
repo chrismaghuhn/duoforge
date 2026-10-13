@@ -498,8 +498,8 @@ class ClientSearchTest(unittest.TestCase):
         self.assertEqual(caught.exception.code, 2)
         # The live search is ladder step 2e (owner, 2026-10-14): the best answer (rule "ev", lambda 0), K = M = 8, 16
         # worlds, the pinned live spread table; a foe species without a spread prior draws the belief's general levels,
-        # named in the record (owner 2026-10-12: a refused decision played whole games raw). It is the measured arm bit
-        # for bit: step 2e's settings, lam 0.5 included (unused by ev's play, recorded in its mix).
+        # named in the record (owner 2026-10-12: a refused decision played whole games raw). Its settings are the
+        # measured arm's: step 2e's, lam 0.5 included (unused by ev's play, recorded in its mix).
         self.assertEqual(search.HONEST_SETTINGS, {"k": 8, "m": 8, "s": 16, "rule": "ev", "lam": 0.5,
                                                   "species_prior": "count", "capacity": 1024})
         from duoforge_search import ladder

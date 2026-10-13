@@ -53,8 +53,9 @@ This document is committed before any measurement of the ladder. Each later step
 
 ## Step 0: the baseline
 
-**Settings:** today's live search, unchanged:
-- `HONEST_SETTINGS`: K = M = 8, 16 worlds, rule mix with λ = 0.5, `species_prior` "count", capacity 1024;
+**Settings:** the live search of 2026-10-12, unchanged (pinned as `ladder.STEP0` since the live search moved to
+step 2e on 2026-10-14):
+- `HONEST_SETTINGS` then: K = M = 8, 16 worlds, rule mix with λ = 0.5, `species_prior` "count", capacity 1024;
 - the live spread table, which takes the Smogon rows from #439;
 - BC6 as the foe model.
 
@@ -240,6 +241,7 @@ HauptSession on 2026-10-13, before any 1bws run** (PR of 1bws): the mirror touch
 - in the mirror touchstone, 1bws against step 0 shows no measurable harm: an upper bound of at least 0.50.
 
 Passing makes a small PR that switches 1bws on live. Failing either point keeps it an option, switched off.
+
 ## Step 2: the width of the own candidates and the rule (#433; predeclared 2026-10-13)
 
 **Question.** Steps 1, 1b and the ×2 budget arms moved nothing. Two causes are left that more budget cannot fix: the own
@@ -609,6 +611,7 @@ fails. 1bw stays an option, switched off.
 
 **Provenance.** search/mirror at 68050692 (`dirty: false`), library of main at 0a5db340, 15:47 to 16:55 on one lock slot
 (the 1bw arm 2,446 s, step 0 1,493 s). Raw output private, outside the repository.
+
 ### Step 0 rebaselined on main after #459 (2026-10-13)
 
 `--step 0` against `bot`, `bc6` and `ppo`, 1024 pairs: the base of step 2's phase A (`--paired-with`) and phase B
@@ -677,7 +680,8 @@ It starts once the HauptSession has set its order with the CTS lane.
 
 ### Step 2, phase B (2026-10-13/14): 2e passes every gate; the mirror touchstone shows no measurable harm
 
-The runs, all `dirty: false`, use the same library file: `libduoforge_shared.so` built from 0a5db340, sha256 `48629702…2ee564`. Main and foe network are BC6 (`bda5de8e4e96`), with the same spread table and seed.
+All runs are `dirty: false` and use one library file: `libduoforge_shared.so` built from 0a5db340, sha256
+`48629702…2ee564`. Main and foe network are BC6 (`bda5de8e4e96`), with the same spread table and seed.
 
 | run | settings | commit |
 |---|---|---|
@@ -685,7 +689,11 @@ The runs, all `dirty: false`, use the same library file: `libduoforge_shared.so`
 | latency | `--step 2e`, 16 pairs against `bot`, `--exclusive` | af168d56 |
 | mirror | `--mirror --step 2e --previous 0`, Team A against the tournament sun team, 512 pairs | a778d71f |
 
-a778d71f is af168d56 plus one commit, `ladder --mirror`, which touches only `ladder.py` and `test_ladder.py`. The search, the engine and the library are unchanged.
+- af168d56 is on search/2-width.
+- a778d71f (search/2e-mirror) is af168d56 plus one commit, `ladder --mirror`, which touches only `ladder.py` and
+  `test_ladder.py`. The search, the engine and the library are unchanged.
+- `--mirror` and the arms 2d and 2l are not on main. The KO check (`ko_check`) is on search/ko-check: its arms ran at
+  35172ab6 and step 0's own-choice count at 7b082e1f. Its predeclaration is there too.
 
 **Gates, as predeclared (`ladder verdict --latency-run`):**
 
@@ -699,9 +707,12 @@ a778d71f is af168d56 plus one commit, `ladder --mirror`, which touches only `lad
 
 **`adopt: true`.**
 - Reported only: `ppo` 0.512 [0.502, 0.523], with fallbacks of 1.47 % (step 0: 1.52 %).
-- The latency run's own fallbacks were 10 of 302 decisions. All 10 are `unreconstructible`, with reason `DUOFORGE_E_UNSUPPORTED: public record` and cause `public_record_unsupported`: the engine refused the public record, and no named cause bit was set. None was a deadline or an error.
+- The latency run's fallbacks were 10 of 302 decisions, all with one cause: `unreconstructible`, reason
+  `DUOFORGE_E_UNSUPPORTED: public record`, cause `public_record_unsupported`. The engine refused the public record, and
+  no named cause bit was set. None was a deadline or an error.
 
-**The mirror touchstone (reported, not gated).** Team A plays the tournament sun team, and the sun team is piloted by our step-0 live search. Its spread table leaves out our registry team.
+**The mirror touchstone (reported, not gated).** Team A plays the tournament sun team. The sun team is piloted by our
+step-0 search, the live search at the time. Its spread table leaves out our registry team.
 
 | arm | score, 512 pairs | 95 % |
 |---|---|---|
@@ -713,14 +724,27 @@ a778d71f is af168d56 plus one commit, `ladder --mirror`, which touches only `lad
 - **No measurable gain:** the lower bound is < 0.50.
 - Fallbacks 0, unfinished 0.
 
-**Not run in phase B:** the predeclared touchstone with `bot` and `ppo` piloting the sun team (256 pairs). Phase B ran in the HauptSession's order: gated run, latency, mirror.
+**Not run in phase B:** the predeclared touchstone with `bot` and `ppo` piloting the sun team (256 pairs). Phase B ran
+in the HauptSession's order: gated run, latency, mirror.
 
 **The KO check** is unchanged from phase A's fair comparison above:
 - 2e plays 508 of the 811 available own KOs, against step 0's 458.
 - 2e answers 145 of the 680 foe threats, against step 0's 160.
 
 **Live.** Owner decision, relayed by the HauptSession on 2026-10-14: λ = 0 (2e) goes live.
-- `HONEST_SETTINGS` takes 2e's `rule` "ev", and `lam` stays 0.5 as measured. Under "ev" the played row is the best answer; the mix is still computed and recorded.
-- The ladder's step 0 stays the measured baseline (mix, λ = 0.5), pinned as `ladder.STEP0`. Its records and every arm above stay reproducible.
+- `HONEST_SETTINGS` takes 2e's `rule` "ev". `lam` stays 0.5 as measured: under "ev" the played row is the best answer,
+  and the mix is still computed and recorded.
+- The ladder's step 0 stays the measured baseline (mix, λ = 0.5), pinned as `ladder.STEP0`, so its records and every
+  arm above stay reproducible.
+- **Arms predeclared on step 0** (1bws above) measure their lever over step 0. Switching one on live on top of 2e needs
+  a measurement on 2e, or an owner decision.
+- The gates ran at af168d56 and a778d71f. Main has since gained, among others:
+  - D1's rm solver (off);
+  - per-world records under closed sheets;
+  - 1bws (off).
 
-**Not yet run:** the touchstone with `bot`/`ppo` pilots. It follows later as information, not as a gate (HauptSession).
+  The defaults' LP path is pinned by tests. Bit-equality of 2e's decisions between af168d56 and this main was not
+  measured.
+
+**Not yet run:** the touchstone with `bot` and `ppo` pilots. It follows later as information, not as a gate
+(HauptSession).

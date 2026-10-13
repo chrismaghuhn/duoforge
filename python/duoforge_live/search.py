@@ -36,8 +36,8 @@ _NO_FALLBACK = ("searched", "forced", "raw", "team")
 # The live search: ladder step 2e (#440; owner, 2026-10-14), the best answer to the foe model and the worlds (rule
 # "ev", lambda 0: no Nash share), at K = M = 8 and 16 worlds over the pinned live spread table (Smogon's usage stats
 # first, owner 2026-10-12). It passed every predeclared gate against step 0, the approved spec's X (mix, lambda 0.5;
-# owner 2026-10-10), which ladder.STEP0 keeps; lam stays 0.5 as measured: the mix is still computed and recorded, the
-# played row is ev's. A foe species without a spread prior draws the belief's general levels, named (species_prior
+# owner 2026-10-10), which ladder.STEP0 keeps; lam stays 0.5 as in the measured arm's settings: the mix is still
+# computed and recorded, the played row is ev's. A foe species without a spread prior draws the belief's general levels, named (species_prior
 # "count"; refusing played whole games raw). The leaf buffer is the decision's K * M * S leaves: the padded 16384-row
 # value call was 93% of a decision (#355, docs/benchmarks/2026-10-11-honest-search-breakdown).
 HONEST_SETTINGS = {"k": 8, "m": 8, "s": 16, "rule": "ev", "lam": 0.5, "species_prior": "count",
