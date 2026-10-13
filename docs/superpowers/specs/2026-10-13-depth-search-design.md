@@ -1,6 +1,7 @@
 # Depth search: from the one-turn Bayes LP to a simultaneous-move tree
 
-Status: **design, for owner review** (2026-10-13). #450 piece 3, #367, with #358 (exact chance) and #433 (candidate
+Status: **design, for owner review** (2026-10-13). The questions Q1–Q6 are answered (section 10); the specification
+as a whole awaits the owner's approval. #450 piece 3, #367, with #358 (exact chance) and #433 (candidate
 breadth) as neighbours. Design only: no product code, no build and no run were made for this document. Every number
 below is read from the repository at 05705b44 (the search code is unchanged since 04755795) or from the aggregates on
 #440 and #450, and every number not measured here is marked as an estimate.
@@ -22,8 +23,11 @@ The design takes five PR-sized steps, D1 to D5, and every step stays switched of
 | 7 | measurement | Ladder arms with gates fixed in the README before any run, the mirror touchstone, the KO check as a metric, exclusive latency. **Equal-time controls** against a wider one-turn search, which D1 makes runnable | – |
 
 The one engine extension this needs (D2): an **observation digest per leaf** for the viewer. It is computed inside
-`duoforge_batch_expand` from the lines the viewer sees. It contains no rule logic and allocates nothing, and the owner
-decides on it (section 10, Q3).
+`duoforge_batch_expand` from the lines the viewer sees. It contains no rule logic and allocates nothing. The owner
+approved it for after Astra's restructure, agreed with Astra (section 10, Q3).
+
+Status: the owner and HS answered Q1–Q6 on 2026-10-13 (section 10). Building starts only after the owner approves this
+specification. D1 comes after stage 2 of #440, and the search lane builds it.
 
 ## 1. Starting point (what exists and what has been measured)
 
@@ -191,7 +195,8 @@ comes from the engine:
   - It merges where nothing visible differs.
   - It works the same for open and closed sheets.
   - It is computed incrementally on the stack, with no allocation and no rule logic.
-  - This is the engine change of D2. It needs its own decision record (Q3).
+  - This is the engine change of D2. It needs its own decision record, and it comes only after Astra's restructure,
+    agreed with Astra (Q3).
 - **Perfect recall:** the root observation is shared by construction. Our only earlier action is i, which is in the
   key, so the key has perfect recall over two turns. For three turns (D5) the key chains: (parent key, i2, digest).
 
@@ -275,7 +280,8 @@ These are derived from section 1.2, not measured here:
 - **The CFR+ solve on top:** T × L2 multiply-adds (8M at T = 500 and L2 = 16k), vectorized per level. Its time is
   unknown until D1 and D2 measure it.
 - **The live deadline of 2 s on the VPS** admits roughly the K2 = M2 = 2–3 rows. The ladder's VPS gate (local p99 ≤
-  1.67 s, i.e. 5 s on the VPS) admits up to 4. Anything wider needs more live time (Q2), the in-engine evaluation, or
+  1.67 s, i.e. 5 s on the VPS) admits up to 4. Anything wider needs more live time (a separate owner decision, Q2),
+  the in-engine evaluation, or
   selectivity.
 - **The 45 s arena limit** is the turn timer, not a per-decision budget. Live play spends at most 10 % of the remaining
   time, by today's rule.
@@ -303,9 +309,8 @@ These are derived from section 1.2, not measured here:
   the decision record, so a replay uses the same level.
 - **The deadline stays as the outer guard:** it plays raw and counts as `deadline`, as today, never as an answer
   silently cut short.
-- **T_max without ε:** the solver plays its average and records the gap. Q1 decides whether that is acceptable, or
-  whether it becomes a named fallback, `solver_unconverged`, counted like `deadline`. The proposal: D1 sets T_max so
-  that the recorded tables never hit it. A hit live is then the named fallback.
+- **T_max without ε (decided, Q1):** the named fallback `solver_unconverged`, counted like `deadline`, never silent.
+  D1 sets T_max so that the recorded tables never hit it. The gap is recorded with every decision.
 
 ### 7.2 Determinism
 
@@ -343,7 +348,7 @@ did. Each step's predeclared gates come before any of its runs.
 | step | content | engine change | default |
 |---|---|---|---|
 | **D1** | CFR+ root solver, `root_solver = "rm"`, same candidates as the LP | none | off |
-| **D2** | two-turn full-width tree, CFR+ over information sets; `depth = 2`, K2, M2, C | observation digest in `expand` (Q3) | off |
+| **D2** | two-turn full-width tree, CFR+ over information sets; `depth = 2`, K2, M2, C | observation digest in `expand`, after Astra's restructure (Q3) | off |
 | **D3** | selectivity: widths per node from the prior mass; node dedup by engine state equality (`duoforge_battle_equal`, or a digest); the per-slot breadth of #433 at the root, which the size limit no longer blocks once `root_solver = "rm"` | none expected | off |
 | **D4** | evaluator hook `jax` / `engine`, once #450 piece 2 exists | that piece's own | `jax` |
 | **D5** | sampled tree (RM with prior exploration; Exp3 arm), three turns, node arena in C | node arena, evaluator | off |
@@ -355,7 +360,7 @@ did. Each step's predeclared gates come before any of its runs.
 - **`reduce(..., solver="lp")`:** `"rm"` takes the new path. The `ev` row, `mix`, `draw` and the play uniform stay as
   they are.
 - **`check_bayes_size` applies only to `root_solver = "lp"`.** The RM path has its own named refusal: a gap above ε at
-  T_max, if Q1 decides so. This lifts the size limit for the RM path without touching the LP's.
+  T_max (`solver_unconverged`, Q1). This lifts the size limit for the RM path without touching the LP's.
 - **The P1 teacher** (its `WorkLedger` path and pinned manifest) stays on the LP and does not change.
 - **Tests:**
   - On the recorded step-0 tables and on random tables: the RM value lies within ε·range of the LP value, and RM's
@@ -402,8 +407,8 @@ first run. The search lane runs the arms in its queue under the machine lock. Th
   - choice agreement under nash (by the same play uniform), ev and mix;
   - the mass the RM average puts on rows the LP gives 0;
   - solve time per decision.
-- **Fixed before the offline run:** a default T such that p99 of the gap ≤ ε, with ε = 1e-3 of the range proposed
-  (Q1).
+- **Fixed before the offline run:** a default T such that p99 of the gap ≤ ε, with ε = 1e-3 of the range (decided,
+  Q1).
 - **Ladder arm D1** (`root_solver = "rm"`, otherwise step 0), 512 pairs paired with step 0's rebaseline, `bot` and
   `ppo`. **Gates:**
   - no harm (upper bound ≥ 0.50 against `bot` and `bc6`);
@@ -426,7 +431,7 @@ first run. The search lane runs the arms in its queue under the machine lock. Th
   - reproduced;
   - fallbacks;
   - exclusive latency p99 ≤ 1.67 s local, and additionally ≤ 0.67 s local for live adoption at today's 2 s VPS
-    deadline, unless Q2 raises it;
+    deadline (Q2: measured under the 2 s cap first; raising it is a separate owner decision);
   - against the equal-time control: lower bound > 0.50, 512 pairs.
 - **The mirror touchstone decides adoption next to the ladder gates:**
   - the setup: Team A against the Nationals sun team, piloted by the live search; the team file is private and stays
@@ -437,7 +442,7 @@ first run. The search lane runs the arms in its queue under the machine lock. Th
 - **KO check as a metric per arm:** the shares with intervals, split into "not a candidate" and "among the candidates,
   not chosen". The expectation fixed here: depth moves the *answered foe threat* row (146 among the candidates but
   unanswered today) more than the own-KO row. A two-turn threat (a speed change this turn, the KO next turn) is not one
-  of today's one-turn probes. Q5 asks whether the KO check gets that probe.
+  of today's one-turn probes. That probe comes later (Q5): the problem is the choice, not the detection.
 - **Kill criterion, fixed before the runs:** if no D2 width beats its equal-time control at its point estimate, depth
   with the BC6 value is parked. The evaluation (#451, #450 piece 2) then comes before D3 and D5.
 - **Diagnostics:**
@@ -459,7 +464,8 @@ paired.
    Depth evaluates positions one turn later with the same head. It may help, by playing the next turn out exactly, or
    not. The kill criterion of 9.2 bounds the cost.
 2. **Latency.** Even K2 = M2 = 3 likely exceeds today's 2 s VPS deadline (section 6.2, an estimate). Live depth
-   probably needs Q2, or the in-engine evaluation.
+   probably needs a larger live budget (a separate owner decision after D2's measurement, Q2), or the in-engine
+   evaluation.
 3. **The CFR+ average puts small mass on poor rows.** The play draw ignores mass below 1e-9 only, so a rarely played
    bad row is possible. D1 measures that mass. A purification threshold would be its own arm, never a silent rule.
 4. **Fragmented information sets.** If damage percentages split almost every node by world, the shared-strategy
@@ -473,24 +479,34 @@ paired.
    - Python sums, compares bytes and solves games.
    Any refusal stays named (#436).
 
-### Open questions (Q1–Q6, for the owner via HS)
+### Decisions on Q1–Q6 (owner and HS, 2026-10-13)
 
-- **Q1, the solver's certificate.** May the RM path play an ε-equilibrium (proposed ε = 1e-3 of the range, the gap
-  recorded per decision) where the LP certifies 1e-9? At T_max without ε: play the average with its recorded gap, or
-  the named fallback `solver_unconverged`? The proposal is the named fallback, with T_max set so that the recorded
-  tables never reach it.
-- **Q2, live time.** Should the depth arms be measured for live adoption at today's 2 s VPS cap? Or does #450 piece 5
-  raise the cap, for example to 10 % of the remaining turn time up to 5 s, at a budget level chosen before the search?
-- **Q3, the engine extension.** May D2 add the viewer's observation digest to `duoforge_batch_expand`, with its own
-  decision record (no rule logic, no allocation, deterministic)? Without it, closed team sheets would split our
-  information sets by particle, which is strategy fusion. The alternative is D2 under open sheets only, using public
-  record bytes.
-- **Q4, the foe below the root.** Is the default `foe_below = "nash"` right, with `"model"` as an arm? Or should
-  stage 2's result set it too, if 2e wins?
-- **Q5, the KO check.** Should the search lane's KO check gain a two-turn threat probe, so that depth can be judged
-  where it should act?
-- **Q6, the order against other lanes.** D1 also unblocks 2w (#433) and the equal-time controls. Should D1 go before
-  or after the search lane's 1bws measurement? D1 needs no machine time beyond one offline pass and one 512-pair arm.
+The six questions of the first version, answered by the owner and HS (relayed by the coordinator, confirmed on #450).
+The text above follows these answers.
+
+- **Q1, the solver's certificate: yes, ε = 1e-3 of the range.**
+  - The RM path plays an ε-equilibrium where the LP certifies 1e-9.
+  - The gap is recorded with every decision.
+  - A solver that misses ε at T_max gives the named fallback `solver_unconverged`, counted, never silent.
+  - T_max is set so that the recorded tables of D1's offline pass never reach it.
+- **Q2, live time: measure under today's 2 s VPS cap first.**
+  - The 2 s are our own limit; the arena allows 45 s per turn.
+  - If D2 brings measurable strength, the live budget may be raised later on purpose, for example to 5 s. That is a
+    separate owner decision and not part of this specification.
+- **Q3, the engine extension: yes, under conditions.**
+  - The viewer's observation digest goes into `duoforge_batch_expand`.
+  - It comes only after Astra's restructure and is agreed with Astra.
+  - No rule logic, and no allocation in the hot path.
+- **Q4, the foe below the root:** `foe_below = "nash"` is the default; `"model"` is an arm of its own.
+- **Q5, the KO check:** the two-turn threat probe comes later. The problem is the choice, not the detection.
+- **Q6, the order:**
+  - D1 comes after stage 2 of the search lane and takes over its root rule.
+  - The search lane builds it.
+
+Still in force:
+- this lane delivers docs only;
+- #468 is merged by HS;
+- nothing is built before the owner approves this specification.
 
 ## 11. Not in this design
 
