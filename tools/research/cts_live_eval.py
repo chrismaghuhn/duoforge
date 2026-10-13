@@ -10,10 +10,12 @@ user id or a name:
 - battles: those played over the particles (a battle log with fed batches), apart from those of before the particles
   (answered with /choose default for closed_team_sheets) and others;
 - results: wins, losses, ties, unfinished;
-- the decisions of the particle battles but the team previews: searched share, raw fallbacks (a) and their #464 part
-  (engine-refuses-record), deadline misses, decisions answered with /choose default after a fallback;
+- the decisions of the particle battles but the team previews (every decision the bot made, with a search outcome
+  or without one): searched share, raw fallbacks (a) and those whose named reasons include a refused particle
+  (engine-refuses-record, #464), deadline misses, decisions answered with /choose default after a fallback;
 - the battles' fallback reasons and named stops (named(): the reason's own words up to the first free text);
 - the search's seconds per decision (search.seconds), n, p50, p95, p99 and max;
+- --since keeps the battles by their first timestamp and the run logs by their start;
 - the run logs since --since, summed: counts (wins, reconnects, deadline misses, ...), fallbacks, closes, the search's
   causes and the particle counters (cts);
 - the code: the commit and dirty state of this tool (duoforge_live.arena.provenance).
@@ -41,7 +43,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT / "python"))  # after PYTHONPATH: a measurement may run another checkout's code
 
-ENGINE_REFUSES = "engine-refuses-record"  # the tracker's reason of a record the engine refuses (#464)
+from duoforge_live.arena import ENGINE_REFUSES  # noqa: E402  (#464: a record the engine refuses)
+
 
 
 def _toid(name):
@@ -63,12 +66,17 @@ def named(detail):
 
 
 def battle(records, bot):
-    """The aggregates of one battle log's records; bot: the bot's id (toid of its name)."""
+    """The aggregates of one battle log's records; bot: the bot's id (toid of its name). Every decision the bot made
+    is counted (review of the evaluation tool): one with a search outcome by its cause, one without (a raw game after a
+    class (b) error) as "no_search", a team choice as "team"; the seconds are the search's, but a dirty game's."""
     out = {"kind": "other", "result": "unfinished", "causes": collections.Counter(), "fallbacks": collections.Counter(),
            "engine_refuses_record": 0, "defaults": 0, "timer_missing": 0, "rejected": 0, "unavailable": 0,
-           "dirty": False, "fallback": None, "stop": None, "seconds": []}
+           "dirty": False, "fallback": None, "stop": None, "seconds": [], "start": None}
     fed = False
     for r in records:
+        line = r.get("in", "")
+        if out["start"] is None and line.startswith("|t:|"):
+            out["start"] = int(line[len("|t:|"):])  # the battle's first timestamp (unix seconds)
         if "feed" in r:
             fed = True
         elif "fallback" in r and "sent" not in r and out["fallback"] is None:
@@ -77,14 +85,15 @@ def battle(records, bot):
                 out["stop"] = named(r.get("detail", r["fallback"]))
         elif r.get("sent") == "default":
             out["defaults"] += 1
-        elif "decision" in r and "search" in r:
-            s = r["search"]
-            out["causes"][s["cause"]] += 1
-            if s.get("fallback"):
+        elif "decision" in r and "sent" in r:
+            s = r.get("search")
+            cause = "team" if str(r["sent"]).startswith("team ") else (s["cause"] if s else "no_search")
+            out["causes"][cause] += 1
+            if s and s.get("fallback"):
                 out["fallbacks"][s["fallback"]] += 1
-            if s.get("fallback") == "a" and ENGINE_REFUSES in str(s.get("reason")):
-                out["engine_refuses_record"] += 1
-            if s["cause"] != "team":
+            if s and s.get("fallback") == "a" and ENGINE_REFUSES in str(s.get("reason")):
+                out["engine_refuses_record"] += 1  # a raw decision whose named reasons include a refused particle
+            if s and s["cause"] not in ("team", "dirty"):
                 out["seconds"].append(float(s["seconds"]))
         elif r.get("timer") == "missing":
             out["timer_missing"] += 1
@@ -95,9 +104,9 @@ def battle(records, bot):
         elif "dirty" in r:
             out["dirty"] = True
         elif "end" in r:
-            line = r["end"]
-            if line.startswith("|win|"):
-                out["result"] = "win" if _toid(line[len("|win|"):]) == bot else "loss"
+            end = r["end"]
+            if end.startswith("|win|"):
+                out["result"] = "win" if _toid(end[len("|win|"):]) == bot else "loss"
             else:
                 out["result"] = "tie"
     if out["fallback"] == "closed_team_sheets":
@@ -207,71 +216,96 @@ def _key(name):
 
 
 def unmodelled(pool_tables):
-    """(names of the moves, items and abilities marked [unmodelled], {mega forme: its ability}) of pool_tables.c's text."""
+    """The names (keys) of the moves, items and abilities pool_tables.c's text marks [unmodelled]."""
     names = {_key(m.group(1)) for m in re.finditer(r"/\* ([^*\n]+?) -- data/(?:moves|items)\.ts[^\n]*\[unmodelled",
                                                     pool_tables)}
     names |= {m.group(1) for m in re.finditer(r"\*\s+([a-z0-9]+) -- data/abilities\.ts[^\n]*\[unmodelled", pool_tables)}
-    megas = {_key(m.group(1)): m.group(2)
-             for m in re.finditer(r"/\* ([A-Za-z-]+-Mega(?:-[XY])?) -- abilities: ([a-z0-9]+) \*/", pool_tables)}
-    return names, megas
+    return names
 
 
-def held(s, content):
-    """The unmodelled content a set holds: "move:", "item:", "ability:" or "mega:<forme>(<ability>)" names."""
-    names, megas = content
+def held(s, names, tables):
+    """The unmodelled content a set holds: "move:", "item:", "ability:", or "mega:<forme>(<ability>)" for a Mega Stone
+    whose Mega forme (the library's own holder and stone pairs, Data.mega_of) has an unmodelled ability."""
     out = {"move:" + _key(m) for m in s["moves"] if _key(m) in names}
     for kind in ("item", "ability"):
         if s[kind] and _key(s[kind]) in names:
             out.add(f"{kind}:{_key(s[kind])}")
-    item, species = _key(s["item"] or ""), _key(s["species"])
-    for forme, ability in megas.items():
-        if ability in names and item.endswith("ite") and forme.startswith(species) and item[:4] == forme[:4]:
-            out.add(f"mega:{forme}({ability})")
+    if s["item"]:
+        item = tables.tables["ITEM"].get(_key(s["item"]).upper())
+        mega = None if item is None else tables.mega_of(tables.forme(s["species"]), item + 1)
+        if mega is not None:
+            formes = {v: k for k, v in tables.tables["FORME"].items() if k != "COUNT"}
+            abilities = {v: k for k, v in tables.tables["ABILITY"].items() if k != "COUNT"}
+            ability = abilities.get(tables.ability_of(mega) - 1, "").lower()
+            if ability in names:
+                out.add(f"mega:{formes[mega].lower()}({ability})")
     return out
 
 
-def replay(records, tables, prior, team, room, content):
+def replay(records, tables, prior, team, room, names):
     """One battle log replayed through the particles: {"points", "refused": [the content per refused particle, per
-    refused point], "stopped": None or the named reason of a stop (the battle falls back there, as the bot's did)}."""
+    refused point], "stopped": None or the named reason the replay ended with}. What the bot's own fold catches ends
+    the replay by name, as the bot's battle fell back there."""
     from duoforge_live import cts, lines
+    from duoforge_live.data import trace_to_c
     t = cts.ParticleTracker(tables, team, prior, cts.SEED, room, cts.PARTICLES)
+    own = set().union(*(held(s, names, tables) for s in teams_sets(team)))
     out, done = {"points": 0, "refused": [], "stopped": None}, 0
-    for r in records:
-        if "accepted" in r:
-            t.accepted(r["accepted"])
-            continue
-        if "feed" not in r:
-            continue
-        try:
+    try:
+        for r in records:
+            if "accepted" in r:
+                t.accepted(r["accepted"])
+                continue
+            if "feed" not in r:
+                continue
             t.feed(r["feed"])
-        except lines.Stop as stop:
-            out["stopped"] = "stop:" + named(stop.reason).split(" ")[0]
-            return out
-        except ValueError as err:
-            out["stopped"] = f"error:{type(err).__name__}"
-            return out
-        if not (t.ready and t.epoch > done):
-            continue
-        done = t.epoch
-        if t.request.get("wait") or t.request.get("teamPreview"):
-            continue
-        out["points"] += 1
-        bad = [i for i, p in enumerate(t.public_parts()) if p["reason"] == ENGINE_REFUSES]
-        if bad:
-            out["refused"].append([sorted(set().union(*(held(s, content) for s in t.particles[i].sets)))
-                                   for i in bad])
+            if not (t.ready and t.epoch > done):
+                continue
+            done = t.epoch
+            if t.request.get("wait") or t.request.get("teamPreview"):
+                continue
+            out["points"] += 1
+            bad = [i for i, p in enumerate(t.public_parts()) if p["reason"] == ENGINE_REFUSES]
+            if bad:  # a refused particle holding no foe content is put on the own team's, when that has any
+                out["refused"].append([sorted(set().union(*(held(s, names, tables) for s in t.particles[i].sets))
+                                              or {"own:" + c for c in own}) for i in bad])
+    except lines.Stop as stop:
+        out["stopped"] = "stop:" + named(stop.reason).split(" ")[0]
+    except (Exception, trace_to_c.ConversionError) as err:  # what the bot's battle catches (ConversionError: SystemExit)
+        out["stopped"] = f"error:{type(err).__name__}"
     return out
 
 
-def replay_all(directory, bot, root, labels=None):
+def teams_sets(text):
+    from duoforge_live import teams
+    return teams._paste(text)
+
+
+def _sha256(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def replay_all(directory, bot, root, labels=None, since=None):
     """--replay over a log directory: the aggregates of replay() (module docstring); with labels (opponent id ->
-    letter) also per opponent."""
+    letter) also per opponent; with since (unix seconds) only the battles that started then or later."""
+    import os
     from duoforge_live import cts, data, pkmn_arena
     from duoforge_live.arena import provenance
     tables = data.load(kind="pool")
     prior = cts.SetPrior.from_table(tables)
     engine_root = Path(cts.__file__).resolve().parents[2]
-    content = unmodelled((engine_root / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
+    names = unmodelled((engine_root / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
+    if not names:
+        raise SystemExit("no [unmodelled] marker found in src/data/pool_tables.c: its format changed")
+    library = os.environ.get("DUOFORGE_LIBRARY")
+    import hashlib
+    played = {json.loads(p.read_text(encoding="utf-8")).get("team_sha256")
+              for p in Path(directory).glob("arena-run-*.json")} - {None}  # the bot's --team, when its run logs name it
     teams_dir = data.ROOT / "data" / "teams"
     pastes = [(teams_dir / (t["id"] + ".txt")).read_text(encoding="utf-8")
               for t in json.loads((teams_dir / "index.json").read_text(encoding="utf-8"))["teams"]]
@@ -283,13 +317,22 @@ def replay_all(directory, bot, root, labels=None):
         if not any("feed" in r for r in records):
             skipped["no_particles"] += 1
             continue
-        first = next(json.loads(r["in"][len("|request|"):]) for r in records
-                     if "in" in r and r["in"].startswith("|request|"))
+        if since is not None and (battle(records, bot)["start"] or 0) < since:
+            skipped["before_since"] += 1
+            continue
+        first = next((json.loads(r["in"][len("|request|"):]) for r in records
+                      if "in" in r and r["in"].startswith("|request|")), None)
+        if first is None:
+            skipped["no_request"] += 1
+            continue
         team = [p for p in pastes if pkmn_arena.request_matches(first["side"]["pokemon"], p)]
         if len(team) != 1:
             skipped["team_unknown"] += 1
             continue
-        out = replay(records, tables, prior, team[0], path.name[:-len(f"-{bot}.jsonl")], content)
+        if played and hashlib.sha256(team[0].encode("utf-8")).hexdigest() not in played:
+            skipped["team_differs"] += 1  # the registry paste is not the --team the bot played (its stats may differ)
+            continue
+        out = replay(records, tables, prior, team[0], path.name[:-len(f"-{bot}.jsonl")], names)
         points += out["points"]
         if labels is not None:
             group = per[labels.get(opponent(records, bot), "?")]
@@ -306,18 +349,27 @@ def replay_all(directory, bot, root, labels=None):
                 unexplained += 1
             elif len(union) == 1:
                 alone.update(union)
+    engine = {**provenance(engine_root),
+              "library_sha256": _sha256(library) if library and Path(library).exists() else None}
     return {"points": points, "refused": refused, "searchable_share": 1.0 - refused / max(1, points),
             "unexplained": unexplained, "skipped": dict(skipped), "stopped_battles": dict(stopped),
             "content": {c: {"occurs": n, "alone": alone[c]} for c, n in occurs.most_common()},
-            "engine_code": provenance(engine_root), "tool_code": provenance(root),
+            "engine_code": engine, "tool_code": provenance(root),
             **({} if labels is None else {"by_opponent": {
                 k: {**v, "searchable_share": 1.0 - v["refused"] / max(1, v["points"])} for k, v in sorted(per.items())}})}
+
+
+def _unix(iso):
+    from datetime import datetime, timezone
+    return int(datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).timestamp())
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(prog="cts_live_eval.py", description=__doc__.split("\n")[0])
     p.add_argument("--logs", required=True, help="the private log directory (outside the repository)")
-    p.add_argument("--since", default=None, help="the run logs started at or after this ISO time (UTC)")
+    p.add_argument("--since", default=None,
+                   help="only the battles (by their first timestamp) and run logs that started at or after this "
+                        "ISO time (UTC), e.g. 2026-10-13T00:00:00Z")
     p.add_argument("--bot", default="Ling-Ce", help="the bot's name: its battle logs end with -<id>.jsonl")
     p.add_argument("--out", default=None, help="a JSON file for the result (outside the repository)")
     p.add_argument("--labels", default=None,
@@ -331,32 +383,27 @@ def main(argv=None):
         refuse_repository(Path(args.out).parent)
     code = provenance(ROOT)
     bot = _toid(args.bot)
+    since = None if args.since is None else _unix(args.since)
     paths = sorted(Path(args.logs).glob(f"battle-*-{bot}.jsonl"))
+    logs = [[json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            for path in paths]
+    kept = [records for records in logs if since is None or (battle(records, bot)["start"] or 0) >= since]
     labels = None
     if args.labels:
-        labels = load_labels(args.labels)
-        found = []
-        for path in paths:
-            records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-            if opponent(records, bot):
-                found.append(opponent(records, bot))
-        labels = assign_labels(found, labels)
+        labels = assign_labels([o for o in (opponent(r, bot) for r in kept) if o], load_labels(args.labels))
         save_labels(args.labels, labels)
     if args.replay:
-        text = json.dumps({"since": None, **replay_all(args.logs, bot, ROOT, labels)}, indent=1, sort_keys=True)
-        if args.out:
-            Path(args.out).write_text(text + "\n", encoding="utf-8")
-        print(text)
-        return
-    battles, groups = [], collections.defaultdict(list)
-    for path in paths:
-        records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-        battles.append(battle(records, bot))
+        result = {"since": args.since, **replay_all(args.logs, bot, ROOT, labels, since)}
+    else:
+        battles, groups = [], collections.defaultdict(list)
+        for records in kept:
+            battles.append(battle(records, bot))
+            if labels is not None:
+                groups[labels.get(opponent(records, bot), "?")].append(battles[-1])
+        result = {"code": code, "since": args.since, "logs": len(logs), "since_kept": len(kept),
+                  **summarize(battles), "runs": run_logs(args.logs, args.since)}
         if labels is not None:
-            groups[labels.get(opponent(records, bot), "?")].append(battles[-1])
-    result = {"code": code, "since": args.since, **summarize(battles), "runs": run_logs(args.logs, args.since)}
-    if labels is not None:
-        result["by_opponent"] = {k: summarize(v) for k, v in sorted(groups.items())}
+            result["by_opponent"] = {k: summarize(v) for k, v in sorted(groups.items())}
     text = json.dumps(result, indent=1, sort_keys=True)
     if args.out:
         Path(args.out).write_text(text + "\n", encoding="utf-8")

@@ -73,6 +73,8 @@ def arena_main(argv):
     except ValueError as err:
         pkmn_arena._refuse(str(err))
     name = pkmn_arena.credentials()  # the token's value is never shown
+    from .arena import provenance
+    code = provenance()  # every result names the code that runs (HauptSession, 2026-10-13): none, no start
     from duoforge_replay.dataset import refuse_repository
     try:
         refuse_repository(args.log_dir)  # the battle logs hold match ids (AGENTS.md)
@@ -98,7 +100,7 @@ def arena_main(argv):
         foe_check = live.foe_check
     mode = args.search + ("+foe_net" if foe_path is not None else "")
     bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
-                              search=live, mode=mode, foe_check=foe_check)
+                              search=live, mode=mode, foe_check=foe_check, code=code)
     try:
         asyncio.run(bot.run())
     finally:

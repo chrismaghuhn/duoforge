@@ -324,14 +324,23 @@ class ArenaTest(unittest.TestCase):
 
             def close(self):
                 pass
-        self.make(search=RawSearch())
+        code = {"commit": "8c4fe662", "dirty": False}
+        self.make(search=RawSearch(), code=code)
         self.feed(*battle_messages())
         self.feed(room(["|win|Opponent"]))
-        code = self.run_log()["code"]
-        self.assertRegex(code["commit"], "^[0-9a-f]{40}$")
-        self.assertIn(code["dirty"], (True, False))
+        self.assertEqual(self.run_log()["code"], code)
+        import hashlib
+        self.assertEqual(self.run_log()["team_sha256"], hashlib.sha256(FIXTURE["team"].encode("utf-8")).hexdigest())
         summary = next(r["summary"] for r in self.battle() if "summary" in r)
         self.assertEqual(summary["code"], code)
+
+    def test_the_arena_mode_names_its_code_or_does_not_start(self):
+        from duoforge_live import arena
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(arena, "provenance", side_effect=SystemExit("no commit to name: DUOFORGE_COMMIT")):
+            argv = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--log-dir", tmp]
+            with mock.patch.dict(os.environ, ENV), self.assertRaisesRegex(SystemExit, "DUOFORGE_COMMIT"):
+                cli.main(argv)
 
     def test_a_wait_request_gets_no_answer_and_a_tie_ends_the_battle(self):
         self.make()
