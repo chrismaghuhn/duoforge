@@ -133,6 +133,74 @@ Passing makes it a PR: the live settings then take the preview of 1bw. A failed 
 steps 1 and 1b, whatever the touchstone shows. For live play the VPS bound applies on top: exclusive p99 ≤ 1.67 s.
 The book's preview oracle (#458) measures in parallel how much any bring-and-lead choice can gain against that team.
 
+## The budget step (owner, 2026-10-12)
+
+**Question.** With everything else of the search unchanged, how much strength does more search budget alone bring, and
+where does the curve flatten? This section is a predeclaration: it is committed before any budget run. The runs are
+`--step b-*` with `--paired-with` against step 0's recorded run.
+
+**The arms.** Each arm is one lever or one fixed combination of step 0's settings (K = M = 8, s = 16, capacity 1024).
+Its budget is k · m · s leaves, relative to step 0's 8 · 8 · 16 = 1024, and its capacity is k · m · s, so the leaf
+buffer matches the leaves. The S arms are the arms with an s lever.
+
+| arm | lever | budget (× step 0) | pairs | opponents |
+|---|---|---|---|---|
+| `b-s32` | s = 32 | ×2 | 512 | `bot`, `ppo` (S arm) |
+| `b-s64` | s = 64 | ×4 | 512 | `bot`, `ppo` (S arm) |
+| `b-s128` | s = 128 | ×8 | 256 | `bot`, `ppo` (S arm) |
+| `b-s256` | s = 256 | ×16 | 256 | `bot`, `ppo` (S arm) |
+| `b-k16` | k = 16 | ×2 | 512 | `bot` |
+| `b-m16` | m = 16 | ×2 | 512 | `bot` |
+| `b-km16` | k = m = 16 | ×4 | 512 | `bot`, `ppo` |
+| `b-km16-s64` | k = m = 16, s = 64 | ×16 | 256 | `bot` (the costliest arm; `ppo` covers the S arms and b-km16) |
+
+**The pairing.** Each arm is paired by prefix with step 0's recorded run (`--paired-with`), not replayed against it.
+- The arm plays this run's games, and its `step_vs_recorded` is the paired h against step 0's step arm on the first
+  2 · pairs games of that run, the same seed, networks, pool and spread table.
+- Before any game, the run is refused unless: `seed` and `max_steps` equal; the recorded `pairs` is at least this run's;
+  the `sha256_prefix` of main, foe, teams and each opponent equals the recorded one; the recorded run has a step arm for
+  each opponent with at least 2 · pairs games; and `table_sha256` equals the recorded one.
+- The recorded run's arm R is not used.
+
+**The latency.** Each arm is also run alone on the machine (`machine_lock.sh --exclusive`), with 16 pairs against `bot`.
+The gate reads the p99 of that run's `arms.step.wall_seconds`.
+
+**The gate.** Local p99 ≤ 1.67 s, which is ≤ 5 s on the VPS, whose cores are about 3× slower. An arm above the gate is
+reported with its point, but is not a candidate for adoption.
+
+**Reported, without a gate:**
+- the paired h against step 0 with its 95 % interval, per opponent;
+- p50, p95 and p99 of the wall seconds per searched decision, local and ×3 for the VPS;
+- the duplicate-row share per arm: `duplicate_rows.share` over the searched decisions, by value (rows that repeat an
+  earlier row of their own table within 1e-6). A hint of redundancy in the search, not an equivalence proof.
+
+**The result** is a curve: h against step 0, over the p50 seconds per decision, one line per lever. A smoke run of 4
+pairs checks the harness only and is not a result.
+
+## The mirror touchstone for 1bw (owner, 2026-10-13; predeclared before any run)
+
+**Why.** 1bw passed every ladder gate, but on the Nationals touchstone it lost 0.480 [0.469, 0.492] against step 0
+with `bot` as the sun team's pilot. Neither sim pilot plays that team well (see the sanity arm). The owner's
+decision: 1bw lands on main as an option, switched off, and it is switched on live only if it passes this run, where
+the live search pilots the sun team.
+
+**Run.** `--matchup <Team A> <the Nationals sun team> --mirror --step 1bw --previous 0`, 512 pairs, seats alternating.
+- **The mirror pilot:** the sun team is played by the live search: step 0's settings, with the same main network, foe
+  network and spread table as our side. A new mirror searcher is made for each arm, so both arms meet the same pilot
+  on the same seeds.
+- **No leaked spreads:** the mirror's spread table leaves out Team A's registry entry (A is one of the table's
+  sources), as a head-to-head leaves out the foe's team. Our side's table has no entry for the sun team.
+- **Paired:** 1bw against step 0, on the same games against the mirror.
+- **Reported, not gated:** the scores per arm, our four and leads decoded from the records, and the fallback shares of
+  both sides.
+
+**Criterion, fixed now:** no measurable harm. The upper bound of the 95% interval of 1bw against step 0 must be at
+least 0.50.
+- **Pass:** a small PR switches 1bw on live (`preview_mode` "turn1", `preview_rule` "ev", `preview_width` "distinct").
+  Its exclusive latency (p99 1.085 s) is already under the VPS bound of 1.67 s, and its preview LP (at most 10 × 8 × 16:
+  20,124 tableau cells) is under the size limit.
+- **Fail:** 1bw stays an option, switched off.
+
 ## Results
 
 ### Step 0 (2026-10-12)
@@ -338,10 +406,79 @@ head-to-head lower bound is above 0.50.
 - Against the `bot` pilot this swap costs about 4 points (0.982 → 0.943), and the upper bound 0.492 is below 0.50.
 
 **Outcome by the predeclared criteria: 1bw does not pass.** The ladder gates hold, but the touchstone shows harm for
-one pilot. No PR. As noted for the sanity arm, neither sim pilot plays the sun team well; whether this touchstone
-should veto a ladder gain is the owner's decision, not changed after the run.
+one pilot. The criterion is not changed after the run.
+
+**The owner's decision (2026-10-13, #440):**
+1. 1bw lands on main as an option, switched off. Without it the search is bit-identical to main:
+   `test_the_default_preview_width_previews_as_on_main` pins main's previews, and the turn pins are unchanged.
+2. It is switched on live only if it passes the mirror touchstone above, which was predeclared before its run.
 
 **Provenance.**
 - **Code:** search/preview-width at b3e1c0a2; both runs recorded `dirty: false`.
 - **Runs:** gated 04:06 to 09:30, two shared lock slots; touchstone 04:06 to 04:55; exclusive latency 09:30 to 09:32.
 - **Raw output:** private, outside the repository; team files are recorded by SHA-256 prefix only.
+
+### The budget step (2026-10-12/13): interim, ×2 arms done
+
+**Status.** The ×2 arms are done; b-s64 stopped with a named error; b-km16 is running; b-s128, b-s256, b-km16-s64 and
+every exclusive latency run are queued. The curve's x axis needs the exclusive runs, so the wall seconds below come from
+the shared strength runs and are not the gate's numbers.
+
+| arm | budget | h against step 0, `bot` [95%] | h against step 0, `ppo` [95%] | duplicate-row share | shared p50 / p99 (s) |
+|---|---|---|---|---|---|
+| `b-k16` | ×2 | 0.490 [0.477, 0.503] | – | 9.4% | 0.131 / 0.52 |
+| `b-m16` | ×2 | 0.496 [0.486, 0.506] | – | 6.6% | 0.114 / 0.27 |
+| `b-s32` | ×2 | 0.500 [0.493, 0.508] | 0.492 [0.480, 0.503] | 7.1% (`bot`), 6.1% (`ppo`) | 0.131 / 1.55 (`bot`), 0.129 / 0.89 (`ppo`) |
+| `b-s64` | ×4 | stopped (below) | stopped | – | – |
+
+- **No ×2 arm moves the strength.** Every interval holds 0.50; `b-k16`'s point is the lowest. Fallbacks stay at
+  2.4–2.9%, every game finished and none was unresolved.
+- Read with steps 1 and 1b, this points to the evaluation (BC6's value head) as the limit rather than the search
+  budget. The ×8 and ×16 arms decide it; the network-quality measurement is #451.
+
+**b-s64 stopped with a named error, not a fallback.** In the `ppo` arm (the `bot` arm had finished):
+`SearchError: the Bayesian simplex did not finish in 10000 iterations`. The chain in `matrix.solve_bayes`:
+1. the float simplex gave an empty strategy;
+2. the stable float retry missed the certificate narrowly (exploitability 1.8e-8 on a range of 1.8, 64 tables of 8 × 8);
+3. the exact rescue (`_bland` on Fractions) starts at the origin, where all 64 · 8 world constraints are degenerate,
+   and did not finish within `MAX_ITERATIONS` = 10,000 on its 513-row tableau.
+
+The exact rescue is rare: 1 in about 10,000 searched decisions at s = 32 (1 against `bot`, 2 against `ppo`), and once
+in s = 64's `bot` arm, where it finished. Its tableau grows with s (1025 rows at s = 128, 2049 at s = 256), so the
+queued S arms above s = 64 will likely stop the same way, and a stop loses the whole run's report.
+
+**b-km16 stopped the same way** (03:38, `ppo` arm; the `bot` arm had finished): 257 rows and 32 variables, although
+`b-m16` (257, 24) and `b-s32` (257, 40), no smaller, finished. The stop is rare and not monotone in the size.
+
+| arm | rows (s·m + 1) | variables (k + s) | tableau cells | result |
+|---|---|---|---|---|
+| 0 | 129 | 24 | 19,866 | never failed |
+| `b-k16` | 129 | 32 | 20,898 | never failed |
+| `b-m16` | 257 | 24 | 72,474 | finished |
+| `b-km16` | 257 | 32 | 74,530 | **stopped** in the exact rescue |
+| `b-s32` | 257 | 40 | 76,586 | finished |
+| `b-s64` | 513 | 72 | 300,618 | **stopped** in the exact rescue |
+
+Tableau cells are those of the exact rescue: rows × (variables + rows + 1).
+
+**Decided (owner, #440, 2026-10-13): a size limit instead of a list of names.** A search whose Bayesian LP can exceed
+**20,898 tableau cells** (b-k16's, the largest that never failed) is refused by name: by `honest.Honest` when it is
+built, and for a ladder step before any network loads (`ladder.size_refusal`, `matrix.check_bayes_size`). Step 2's
+width "slots" knows its pairs only at a decision, so there each table is checked before its solve. The arms above the
+limit stay declared and are never run.
+
+The literal "larger than the largest that succeeded" would admit `b-km16`, which is smaller than `b-s32` and failed.
+Two consistent readings remain; this one takes the safe one:
+- **b-k16's tableau (20,898 cells), implemented:** the largest size that never failed.
+- **b-m16's tableau (72,474 cells), the owner's choice to make:** the largest success below the smallest failure. It
+  would admit 2w (below).
+
+Where the planned steps stand:
+- **1bw** (preview: 129 rows, at most 10 + 16 = 26 variables, 20,124 cells) is under the limit.
+- **2w** is not. Over the 1285 searched decisions of the arena logs its k' has median 19, p90 31 and maximum 34. Only
+  33 % of the decisions stay at 16 own pairs or fewer, and k' = 34 is 23,220 cells. The solver repair comes before
+  step 2's width arms; 2d, 2e and 2l are under the limit.
+- **Live play** (8 × 8 × 16: 19,866 cells) is under the limit.
+
+**Provenance.** search/budget at 25883412 (`dirty: false`), paired by prefix with step 0's run at 1cb3e2d9. 20:29 to
+02:13 on two shared lock slots. Raw output private, outside the repository.

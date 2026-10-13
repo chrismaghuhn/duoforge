@@ -298,6 +298,8 @@ class Honest(lookahead.Lookahead):
             self.foe_net = (foe_model, foe_params, int(foe_encoder), int(foe_ext))
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
+        if k != 1:  # one candidate plays raw and solves nothing; the turns' and the top preview's LPs are k x m x s
+            matrix.check_bayes_size(k, m, s, "the honest search")
         if preview_mode not in ("raw", "value", "turn1") or type(preview_steps) is not int or preview_steps < 1:
             raise ValueError("preview requires raw/value/turn1 and a positive rollout bound")
         if preview_only and preview_mode == "raw":
@@ -317,6 +319,8 @@ class Honest(lookahead.Lookahead):
             raise ValueError(f"preview_width must be one of {preview.WIDTHS} (got {preview_width!r})")
         if preview_width != "top" and preview_mode == "raw":
             raise ValueError("preview_width requires a preview search (preview_mode value or turn1)")
+        if preview_width == "distinct":  # the cover adds up to preview.COVER_MAX own rows to the preview's table
+            matrix.check_bayes_size(k + preview.COVER_MAX, m, s, "the distinct preview")
         self.preview_width = preview_width
         if table is None:
             table, _, self.table_info = spread_table(context)

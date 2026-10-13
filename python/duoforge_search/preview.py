@@ -35,6 +35,7 @@ def _combinations():
 
 
 COMBINATION, COMBINATIONS = _combinations()  # 90 combinations of the 360 tuples
+COVER_MAX = ROSTER - 4  # the members a combination leaves out: the cover adds at most this many own candidates
 
 
 def distinct(probabilities, count, cover=False):
@@ -189,6 +190,10 @@ def decide(search, record, observation, player, key, logp_team, excluded, last_s
         other = np.argsort(-mean, kind="stable")[:search.m]
         qs = probabilities[:, other]
     raw = int(np.argmax(np.asarray(logp_team, np.float64)))  # the raw choice: the team head's top tuple
+    try:  # the distinct width knows its own candidates only now: a table above the LP size limit stops by name (#440)
+        matrix.check_bayes_size(len(own), len(other), search.s, "this preview's table")
+    except ValueError as err:
+        raise SearchError(str(err)) from None
     i, j, w = np.indices((len(own), len(other), search.s)).reshape(3, -1)
     total = len(w)
     choices = np.zeros((total, 2), _layout.FACTORED_CHOICE)

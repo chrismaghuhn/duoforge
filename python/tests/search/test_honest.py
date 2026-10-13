@@ -363,6 +363,24 @@ class HonestSearch(unittest.TestCase):
             searched += 1
         self.assertGreater(searched, 0)
 
+    def test_the_default_preview_width_previews_as_on_main(self):
+        # Arm 1bw (#440) adds preview_width. Without it, and with "top" named, the value and turn-1 previews of A/B/C
+        # are main's at 0a5db340 bit for bit: the pinned choices, candidates and tables, no preview_width field.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            pool = duoforge.teams.load(ctx, ["A", "B", "C"])
+            table = belief.SpreadTable.from_sides(pool.sides)
+            setups = pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0]))
+            for mode, pin in PINNED_PREVIEWS.items():
+                for width in ({}, {"preview_width": "top"}):
+                    with self.subTest(mode=mode, **width), duoforge.Batch(ctx, setups, 2, 42) as roots,                             self.make(ctx, table=table, excluded=[1, 2, 0], preview_mode=mode, **width) as search:
+                        actions, records = self.preview(search, roots)
+                        self.assertEqual(np.asarray(actions).tolist(), pin["actions"])
+                        self.assertEqual([r["own_teams"] for r in records], pin["own"])
+                        self.assertEqual([r["foe_teams"] for r in records], pin["foe"])
+                        for r, tables in zip(records, pin["tables"]):
+                            self.assertEqual(sorted(r), PINNED_PREVIEW_FIELDS)
+                            np.testing.assert_allclose(r["tables"], tables, rtol=0, atol=1e-6)
+
     def test_pinned_abc_decisions(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             pool = duoforge.teams.load(ctx, ["A", "B", "C"])
@@ -516,6 +534,15 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual({k: v for k, v in drop[0].items() if k not in ("refused_pairs", "cost", "time")},
                              {k: v for k, v in score[0].items() if k not in ("cost", "time")})
 
+    def test_a_search_above_the_lp_size_limit_is_refused_when_built(self):
+        # #440: the exact rescue is known to finish up to 129 rows and 32 variables; one candidate solves nothing
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            for k, m, s in ((16, 16, 16), (8, 8, 32), (17, 8, 16)):
+                with self.subTest(k=k, m=m, s=s), self.assertRaisesRegex(ValueError, "above the limit"):
+                    honest.Honest(ctx, self.model, self.params, 4, 0, k=k, m=m, s=s)
+            with honest.Honest(ctx, self.model, self.params, 4, 0, k=1, m=64, s=4, capacity=16, workers=1):
+                pass
+
     def test_refused_mode_must_be_score_or_drop(self):
         costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
@@ -582,9 +609,13 @@ class HonestSearch(unittest.TestCase):
         # c = e (tail byte) and counter 3 - e (the true start 3 less the count). Each world that the search rebuilds
         # from the root's sample carries the exact law: S = 2 when the sleep word is in bucket 0 of 3 (for c in {0, 1}),
         # else 3; for c = 2, S = 3. The counter read from the world's encoding is S - c.
+        # The S = 2 split needs WORLDS worlds. Their 2 x 2 tables have a tableau of 25,284 cells, above the size limit of
+        # #440 (b-k16's 20,898). The limit is not under test here, so it is raised to this search's size.
         offs = {name: start for name, start, _ in state_layout.fields()}
+        _, _, cells = honest.matrix.bayes_size(2, 2, WORLDS)
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 3), 3, 42) as b, \
+                mock.patch.object(honest.matrix, "MAX_BAYES_CELLS", cells), \
                 self.make(ctx, s=WORLDS) as search:
             self.preview(search, b)
             self.start_turn(b)
@@ -972,9 +1003,11 @@ class HonestSearch(unittest.TestCase):
     def test_a_distinct_turn1_preview_with_a_foe_net_covers_every_member(self):
         # The preview width (owner, 2026-10-13) on step 1b's search: distinct combinations on both sides, the own side
         # bringing every member, the rollout's foe seat still played by the foe network.
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
             foe_net = self.encoder3_net(ctx)
-            with self.make(ctx, foe_net=foe_net, preview_mode="turn1", preview_rule="ev") as top,                     self.make(ctx, foe_net=foe_net, preview_mode="turn1", preview_rule="ev",
+            with self.make(ctx, foe_net=foe_net, preview_mode="turn1", preview_rule="ev") as top, \
+                    self.make(ctx, foe_net=foe_net, preview_mode="turn1", preview_rule="ev",
                               preview_width="distinct") as wide:
                 _, (narrow,) = self.preview(top, b)
                 _, (record,) = self.preview(wide, b)
@@ -985,6 +1018,23 @@ class HonestSearch(unittest.TestCase):
         self.assertEqual(len(set(preview.COMBINATION[own].tolist())), len(own))
         self.assertEqual(len(set(preview.COMBINATION[foe].tolist())), len(foe))
         self.assertIn(record["choice"], own)
+
+    def test_a_distinct_preview_above_the_lp_size_limit_stops_by_name(self):
+        # #440: the cover adds up to preview.COVER_MAX own rows, so the build checks k + 2; a limit between k and k + 2
+        # refuses the distinct width only. Each preview's own table is checked again before its rollouts.
+        _, _, at_k = honest.matrix.bayes_size(2, 2, 2)
+        _, _, at_most = honest.matrix.bayes_size(2 + preview.COVER_MAX, 2, 2)
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with mock.patch.object(honest.matrix, "MAX_BAYES_CELLS", at_most - 1):
+                with self.make(ctx, preview_mode="turn1"):
+                    pass
+                with self.assertRaisesRegex(ValueError, "the distinct preview.*above the limit"):
+                    self.make(ctx, preview_mode="turn1", preview_width="distinct")
+            with self.make(ctx, preview_mode="turn1", preview_width="distinct") as wide:
+                with mock.patch.object(honest.matrix, "MAX_BAYES_CELLS", at_k - 1), \
+                        self.assertRaisesRegex(honest.SearchError, "this preview's table.*above the limit"):
+                    self.preview(wide, b)
 
     def test_rollout_masks_must_agree(self):
         # Step 1b (#440): the foe seat's pair is chosen from the foe encoding's legal mask; a mask the main encoding
@@ -1591,6 +1641,33 @@ PINNED_TABLES = [
      [[0.0020258380100131035, 0.0020160749554634094], [0.0013299547135829926, 0.0013069864362478256]]],
     [[[0.0012448998168110847, 0.0012224335223436356], [0.003726405091583729, 0.0037659434601664543]],
      [[0.0012306282296776772, 0.0012039029970765114], [0.0037127695977687836, 0.0029854867607355118]]],
+]
+
+
+# main's A/B/C previews at 0a5db340 (test_the_default_preview_width_previews_as_on_main), tables to 7 places.
+PINNED_PREVIEWS = {
+    "value": {"actions": [149, 89, 62], "own": [[149, 154], [89, 94], [62, 69]],
+              "foe": [[85, 90], [65, 70], [204, 207]],
+              "tables": [
+                  [[[-0.0006192, -0.0006192], [-0.0006192, -0.0006192]],
+                   [[-0.0006192, -0.0006192], [-0.0006192, -0.0006192]]],
+                  [[[0.0008383, 0.0008383], [0.0008383, 0.0008383]], [[0.0008383, 0.0008383], [0.0008383, 0.0008383]]],
+                  [[[0.0026269, 0.0026269], [0.0026269, 0.0026269]], [[0.0026269, 0.0026269], [0.0026269, 0.0026269]]],
+              ]},
+    "turn1": {"actions": [149, 89, 62], "own": [[149, 154], [89, 94], [62, 69]],
+              "foe": [[85, 90], [65, 70], [204, 207]],
+              "tables": [
+                  [[[-0.0019022, -0.0019022], [-0.0019022, -0.0019022]],
+                   [[-0.0022884, -0.0022884], [-0.0022884, -0.0022884]]],
+                  [[[0.0008994, 0.0008994], [0.0008994, 0.0008994]], [[0.0026048, 0.0026048], [0.0026048, 0.0026048]]],
+                  [[[0.0030818, 0.0030818], [0.0030818, 0.0030818]], [[0.0030818, 0.0030818], [0.0030818, 0.0030818]]],
+              ]},
+}
+PINNED_PREVIEW_FIELDS = [
+    "boundary", "certificate_gap", "changed", "choice", "cost", "coverage", "env", "epoch", "exact", "expected",
+    "foe_probs", "foe_teams", "k", "key", "kind", "lam", "last_step", "leaves", "m", "near_duplicates", "outcomes",
+    "own_probs", "own_teams", "pi_X", "preview_eval", "raw", "rollout_steps_limit", "rule", "s", "search", "seat",
+    "split", "stderr", "support", "table", "table_sha256", "tables", "time", "u", "value", "w", "weights", "x", "ys",
 ]
 
 

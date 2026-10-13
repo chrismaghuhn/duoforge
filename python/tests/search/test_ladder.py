@@ -17,7 +17,7 @@ from duoforge import teams
 from duoforge_learn import suite
 from duoforge_live.data import ROOT
 from duoforge_live.search import HONEST_SETTINGS
-from duoforge_search import foe_arena, ladder
+from duoforge_search import arena, foe_arena, ladder
 
 # The modules a verdict must never load: the verdict is a pure function of the JSON files it reads.
 LIBRARIES = {name: None for name in ("duoforge", "duoforge_learn", "duoforge_live", "duoforge_replay", "jax", "jaxlib")}
@@ -545,6 +545,31 @@ class CliGuardTest(unittest.TestCase):
             out = os.path.join(tmp, "out")
             self.assertRefused("known steps", self.argv(out, step="nope"), out)
 
+    def test_steps_above_the_lp_size_limit_are_refused_by_name_before_loading(self):
+        # owner on #440: b-s64 and b-km16 stopped in the exact rescue; the limit is b-k16's tableau
+        above = {"b-s32", "b-s64", "b-s128", "b-s256", "b-m16", "b-km16", "b-km16-s64"}
+        for name in ladder.STEPS:
+            with self.subTest(step=name):
+                self.assertEqual(ladder.size_refusal(name) is not None, name in above)
+        self.assertIn("above the limit of 20898 cells", ladder.size_refusal("b-km16"))
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            for name in ("b-km16", "b-s64"):
+                with self.subTest(step=name):
+                    self.assertRefused(f"step '{name}'.*above the limit", self.argv(out, step=name), out)
+                    self.assertRefused(f"step '{name}'.*above the limit", self.argv(out, extra=("--previous", name)),
+                                       out)
+
+    def test_a_distinct_preview_step_is_sized_with_its_cover(self):
+        # 1bw's preview brings up to k + preview.COVER_MAX own candidates (20,124 cells at k = 8): under the limit, and
+        # refused by a limit between step 0's k and k + 2, where step 1b's top preview still passes.
+        from duoforge_search import matrix, preview
+        self.assertIsNone(ladder.size_refusal("1bw"))
+        _, _, at_k = matrix.bayes_size(8, 8, 16)
+        with mock.patch.object(matrix, "MAX_BAYES_CELLS", at_k):
+            self.assertIsNone(ladder.size_refusal("1b"))
+            self.assertIn(f"k={8 + preview.COVER_MAX}", ladder.size_refusal("1bw"))
+
     def test_previous_run_must_have_measured_the_previous_step(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "out")
@@ -813,6 +838,227 @@ class MatchupGuardTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "--h2h.*--matchup"):
                 ladder.main(self.argv(out, "--matchup", ours, ours, "--previous", "0", "--h2h"))
             self.assertFalse(os.path.exists(out))
+
+
+# --- budget scaling, --paired-with and the duplicate-row share (owner, 2026-10-12) ---
+
+# The budget-scaling arms, written out again: each is step 0's settings plus exactly this delta.
+BUDGET = {"b-s32": {"s": 32, "capacity": 2048}, "b-s64": {"s": 64, "capacity": 4096},
+          "b-s128": {"s": 128, "capacity": 8192}, "b-s256": {"s": 256, "capacity": 16384},
+          "b-k16": {"k": 16, "capacity": 2048}, "b-m16": {"m": 16, "capacity": 2048},
+          "b-km16": {"k": 16, "m": 16, "capacity": 4096}, "b-km16-s64": {"k": 16, "m": 16, "s": 64, "capacity": 16384}}
+# The budget of each arm relative to step 0's 8 * 8 * 16 leaves.
+FACTORS = {"b-s32": 2, "b-s64": 4, "b-s128": 8, "b-s256": 16, "b-k16": 2, "b-m16": 2, "b-km16": 4, "b-km16-s64": 16}
+DIGESTS = {"main": "a" * 64, "foe": "b" * 64, "teams": "c" * 64, "opponent bot": "d" * 64}
+
+
+def prefixes(changed=None):
+    """The sha256_prefix of DIGESTS (12 characters each), with the roles in changed replaced."""
+    out = {role: digest[:12] for role, digest in DIGESTS.items()}
+    out.update(changed or {})
+    return out
+
+
+def paired_recorded(pairs=4, seed=ladder.SEED, max_steps=1000, sha=None, names=("bot",)):
+    """A recorded step-0 ladder.json as main writes it, for --paired-with: the conditions the guard reads, and each
+    named opponent's step arm with 2 * pairs games."""
+    conditions = {"seed": hex(seed), "pairs": pairs, "max_steps": max_steps, "commit": "c0ffee",
+                  "step": {"name": "0", "settings": {}}, "sha256_prefix": prefixes() if sha is None else sha}
+    return {"conditions": conditions,
+            "opponents": {name: {"arms": {"step": {"scores": [1.0, 0.0] * pairs}}} for name in names}}
+
+
+def table_record(table, env=0, **extra):
+    """A searched decision with its k x m table, as honest writes it: the fields duplicate_rows and _summary read."""
+    record = {**decision(env, 0, 0), **searched(len(table), len(table[0]), 1), "table": table, "wall": 0.01}
+    record.update(extra)
+    return record
+
+
+def stand_in_files(directory):
+    """Real files for the CLI's hashes (they are hashed, never loaded as networks): role -> (path, sha256 hex)."""
+    files = {}
+    for role in ("main", "foe", "bot", "teams"):
+        data = f"not a network: {role}".encode("ascii")
+        path = os.path.join(directory, f"{role}.npz")
+        with open(path, "wb") as f:
+            f.write(data)
+        files[role] = (path, hashlib.sha256(data).hexdigest())
+    return files
+
+
+class BudgetStepsTest(unittest.TestCase):
+    def test_step_zero_is_unchanged_and_each_budget_arm_is_declared_on_base_zero(self):
+        self.assertEqual(ladder.STEPS["0"], {"base": None, "settings": {}})
+        for name, delta in BUDGET.items():
+            with self.subTest(step=name):
+                self.assertEqual(ladder.STEPS[name], {"base": "0", "settings": delta})
+
+    def test_each_budget_step_is_step_zero_plus_exactly_its_delta(self):
+        base = ladder.step_settings("0")
+        for name, delta in BUDGET.items():
+            with self.subTest(step=name):
+                got = ladder.step_settings(name)
+                self.assertEqual(got, {**base, **delta})
+                self.assertEqual({key for key in got if got[key] != base[key]}, set(delta))
+
+    def test_capacity_is_k_times_m_times_s(self):
+        for name in BUDGET:
+            with self.subTest(step=name):
+                got = ladder.step_settings(name)
+                self.assertEqual(got["capacity"], got["k"] * got["m"] * got["s"])
+
+    def test_the_budget_factor_of_each_arm_is_its_declared_multiple_of_step_zero(self):
+        base = ladder.step_settings("0")
+        base_budget = base["k"] * base["m"] * base["s"]
+        self.assertEqual(base_budget, 1024)
+        for name, factor in FACTORS.items():
+            with self.subTest(step=name):
+                got = ladder.step_settings(name)
+                self.assertEqual(got["k"] * got["m"] * got["s"], factor * base_budget)
+
+
+class PairedAgainstRecordedTest(unittest.TestCase):
+    def test_the_recorded_steps_first_2_pairs_games_are_the_comparison_and_the_rest_is_ignored(self):
+        recorded = paired_recorded(pairs=4)
+        recorded["opponents"]["bot"]["arms"]["step"]["scores"] = [1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
+        scores = [1.0, 1.0, 0.0, 0.0]
+        got = ladder.paired_against_recorded(scores, recorded, "bot", 2)  # the tail would raise a shape error
+        self.assertEqual(got, ladder.paired_h(scores, [1.0, 1.0, 0.0, 0.0]))
+        self.assertEqual(got["mean"], 0.5)
+
+    def test_the_comparison_is_the_paired_h_of_this_step_against_the_recorded_step(self):
+        recorded = paired_recorded(pairs=2)  # [1, 0, 1, 0]
+        got = ladder.paired_against_recorded([0.0, 0.0, 0.0, 0.0], recorded, "bot", 2)
+        self.assertAlmostEqual(got["mean"], ladder.paired_h([0.0] * 4, [1.0, 0.0, 1.0, 0.0])["mean"])
+        self.assertAlmostEqual(got["mean"], 0.25)
+
+
+class PairedWithConditionTest(unittest.TestCase):
+    def test_the_conditions_record_the_step_commit_and_the_basename_only(self):
+        got = ladder.paired_with_condition(paired_recorded(), os.path.join("runs", "step0", "ladder.json"))
+        self.assertEqual(got, {"step": "0", "commit": "c0ffee", "file": "ladder.json"})
+
+
+class PairedGuardTest(unittest.TestCase):
+    def guard(self, recorded=None, seed=ladder.SEED, pairs=4, max_steps=1000, digests=DIGESTS):
+        ladder.paired_guard(paired_recorded() if recorded is None else recorded, seed, pairs, max_steps, digests)
+
+    def test_a_matching_run_passes_and_a_larger_recorded_run_passes(self):
+        self.guard()
+        self.guard(paired_recorded(pairs=8), pairs=4)  # the first games of the larger run are these games
+
+    def test_the_seed_and_max_steps_must_be_equal(self):
+        with self.assertRaisesRegex(SystemExit, "--paired-with's seed"):
+            self.guard(paired_recorded(seed=ladder.SEED + 1))
+        with self.assertRaisesRegex(SystemExit, "--paired-with's max_steps"):
+            self.guard(max_steps=999)
+
+    def test_the_recorded_run_needs_at_least_as_many_pairs(self):
+        with self.assertRaisesRegex(SystemExit, "--paired-with's pairs"):
+            self.guard(paired_recorded(pairs=2), pairs=4)
+
+    def test_main_foe_teams_and_each_opponent_must_match_by_prefix(self):
+        for role in ("main", "foe", "teams", "opponent bot"):
+            with self.subTest(role=role), self.assertRaisesRegex(SystemExit, f"sha256_prefix of {role}"):
+                self.guard(paired_recorded(sha=prefixes({role: "0" * 12})))
+
+    def test_a_missing_sha256_prefix_is_a_mismatch(self):
+        sha = prefixes()
+        del sha["opponent bot"]
+        with self.assertRaisesRegex(SystemExit, "sha256_prefix of opponent bot"):
+            self.guard(paired_recorded(sha=sha))
+
+    def test_an_opponent_missing_from_the_recorded_run_is_refused(self):
+        with self.assertRaisesRegex(SystemExit, "no step arm for opponent 'bot'"):
+            self.guard(paired_recorded(names=()))
+
+    def test_the_recorded_step_arm_needs_two_games_per_pair_of_this_run(self):
+        recorded = paired_recorded(pairs=4)
+        recorded["opponents"]["bot"]["arms"]["step"]["scores"] = [1.0, 0.0] * 3  # 6 games; 4 pairs need 8
+        with self.assertRaisesRegex(SystemExit, "this run needs 8"):
+            self.guard(recorded)
+
+
+class PairedWithCliTest(unittest.TestCase):
+    """--paired-with excludes --previous, --h2h and --previous-run; its guard refuses before any network is loaded."""
+
+    def argv(self, out, extra=()):
+        return ["--checkpoint", "missing/main.npz", "--foe-net", "missing/foe.npz", "--teams-from", "missing/pool.npz",
+                "--step", "b-k16", "--opponent", "bot=missing/bot.npz", "--out", out, *extra]  # under the LP limit
+
+    def test_it_excludes_previous_h2h_and_previous_run(self):
+        cases = {"--previous": ("--previous", "0"), "--h2h": ("--h2h",),
+                 "--previous-run": ("--previous-run", "missing/ladder.json")}
+        for flag, extra in cases.items():
+            with self.subTest(flag=flag), tempfile.TemporaryDirectory() as tmp:
+                out = os.path.join(tmp, "out")
+                with self.assertRaisesRegex(SystemExit, f"excludes {flag}"):
+                    ladder.main(self.argv(out, ("--paired-with", "missing/ladder.json", *extra)))
+                self.assertFalse(os.path.exists(out))
+
+    def test_a_different_main_network_is_refused_before_any_load(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            files = stand_in_files(tmp)
+            digest = {role: sha for role, (_, sha) in files.items()}
+            sha = {"main": "0" * 12, "foe": digest["foe"][:12], "teams": digest["teams"][:12],
+                   "opponent bot": digest["bot"][:12]}
+            recorded = os.path.join(tmp, "recorded", "ladder.json")
+            write_json(recorded, paired_recorded(pairs=4, sha=sha))
+            argv = ["--checkpoint", files["main"][0], "--foe-net", files["foe"][0], "--teams-from", files["teams"][0],
+                    "--step", "b-k16", "--paired-with", recorded, "--opponent", f"bot={files['bot'][0]}",
+                    "--pairs", "4", "--out", out]
+            with self.assertRaisesRegex(SystemExit, "sha256_prefix of main"):
+                ladder.main(argv)
+            self.assertFalse(os.path.exists(out))
+
+
+class DuplicateRowsTest(unittest.TestCase):
+    def test_a_row_equal_to_an_earlier_row_of_its_table_is_counted_once(self):
+        four = table_record([[1.0, 2.0], [1.0, 2.0 + 5e-7], [3.0, 4.0], [3.0, 4.0]])  # rows 1 and 3 repeat
+        two = table_record([[0.0, 0.0, 0.0], [0.0, 0.0, 0.5]])
+        got = ladder.duplicate_rows([four, two])
+        self.assertEqual(got, {"decisions": 2, "decisions_with_duplicates": 1, "rows": 6, "duplicate_rows": 2,
+                               "share": 2 / 6})
+
+    def test_the_tolerance_is_one_millionth_of_the_largest_absolute_difference(self):
+        self.assertEqual(ladder.duplicate_rows([table_record([[1.0], [1.0 + 5e-7]])])["duplicate_rows"], 1)
+        self.assertEqual(ladder.duplicate_rows([table_record([[1.0], [1.0 + 2e-6]])])["duplicate_rows"], 0)
+
+    def test_rows_are_compared_within_their_own_table_only(self):
+        same = [[1.0, 2.0], [3.0, 4.0]]
+        got = ladder.duplicate_rows([table_record(same), table_record(same)])
+        self.assertEqual(got, {"decisions": 2, "decisions_with_duplicates": 0, "rows": 4, "duplicate_rows": 0,
+                               "share": 0.0})
+
+    def test_preview_records_and_other_kinds_are_ignored(self):
+        dup = [[1.0], [1.0]]
+        records = [table_record(dup, preview_eval="full"), {"kind": "raw"}, {"kind": "team"}, table_record([[1.0]])]
+        self.assertEqual(ladder.duplicate_rows(records), {"decisions": 1, "decisions_with_duplicates": 0, "rows": 1,
+                                                          "duplicate_rows": 0, "share": 0.0})
+
+    def test_no_records_is_a_zero_share(self):
+        self.assertEqual(ladder.duplicate_rows([]), {"decisions": 0, "decisions_with_duplicates": 0, "rows": 0,
+                                                     "duplicate_rows": 0, "share": 0.0})
+
+    def test_a_table_that_is_not_k_by_m_is_refused(self):
+        bad = table_record([[1.0, 2.0], [3.0, 4.0]])
+        bad["k"] = 3
+        with self.assertRaises(ValueError):
+            ladder.duplicate_rows([bad])
+
+
+class SummaryDuplicateRowsTest(unittest.TestCase):
+    def test_a_searching_arm_stores_its_duplicate_rows_and_a_raw_arm_does_not(self):
+        records = {"result": np.array([1, -1]), "unfinished": np.zeros(2, int), "unresolved": np.zeros(2, int)}
+        decisions = [table_record([[1.0, 2.0], [1.0, 2.0]]), decision(0, 0, 1, kind="team")]
+        with mock.patch.object(arena, "diagnostics", return_value={}):
+            searching = ladder._summary(records, 2, decisions, 1.5)
+            raw = ladder._summary(records, 2)
+        self.assertEqual(searching["duplicate_rows"], ladder.duplicate_rows(decisions))
+        self.assertEqual(searching["duplicate_rows"]["duplicate_rows"], 1)
+        self.assertNotIn("duplicate_rows", raw)
 
 
 if __name__ == "__main__":
