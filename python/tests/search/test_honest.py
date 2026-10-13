@@ -47,6 +47,38 @@ class CanonicalReduction(unittest.TestCase):
         np.testing.assert_array_equal(record["ys"][0], solution.y)
 
 
+class RootSolverReduction(unittest.TestCase):
+    """reduce's solver (D1 of the depth search, #481): "rm" solves the same tables by CFR+ and keeps the rules."""
+
+    def game(self):
+        rng = np.random.default_rng(481)
+        return rng.random((4, 3, 3)).astype(np.float32).astype(np.float64), rng.random(4) + 0.1, rng.random((4, 3))
+
+    def test_rm_keeps_ev_and_records_its_gap(self):
+        tables, weights, qs = self.game()
+        lp_outcomes, lp = honest.reduce(tables, weights, qs, [0, 1, 2], 0.3, 0.5)
+        rm_outcomes, rm = honest.reduce(tables, weights, qs, [0, 1, 2], 0.3, 0.5, solver="rm", prior=[0.5, 0.3, 0.2])
+        self.assertEqual(honest.reduce(tables, weights, qs, [0, 1, 2], 0.3, 0.5, solver="lp"), (lp_outcomes, lp))
+        for name in ("solver", "gap", "iterations"):
+            self.assertNotIn(name, lp)
+        self.assertEqual(rm["solver"], "rm")
+        self.assertLessEqual(rm["gap"], honest.matrix.RM_EPSILON)
+        self.assertGreater(rm["iterations"], 0)
+        self.assertEqual(rm["expected"], lp["expected"])  # the ev row does not depend on the solver
+        self.assertEqual(rm_outcomes["ev"], lp_outcomes["ev"])
+        self.assertFalse(rm["exact"])
+        span = float(tables.max() - tables.min())
+        self.assertLessEqual(lp["value"] - rm["value"], honest.matrix.RM_EPSILON * span + 1e-12)
+
+    def test_rm_is_refused_where_the_lp_must_decide(self):
+        tables, weights, qs = self.game()
+        args = (tables, weights, qs, [0, 1, 2], 0.3, 0.5)
+        for kwargs in ({"solver": "qp"}, {"solver": "rm"}, {"solver": "rm", "prior": [1, 1, 1], "oracle": True},
+                       {"solver": "rm", "prior": [1, 1, 1], "budget": honest.matrix.WorkLedger()}):
+            with self.subTest(**{k: str(v) for k, v in kwargs.items()}), self.assertRaises(ValueError):
+                honest.reduce(*args, **kwargs)
+
+
 class PublicCauses(unittest.TestCase):
     def test_every_public_cause_bit_has_a_name(self):
         # visible_causes names the library's refusal causes; a DUOFORGE_PUBLIC_CAUSE_* bit without a name would vanish
@@ -408,6 +440,75 @@ class HonestSearch(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(raw).hexdigest(), PINNED_WORDS[i])
                     np.testing.assert_allclose(r["tables"], PINNED_TABLES[i], rtol=0, atol=1e-6)
                     self.assertEqual(r["exclude_team"], [1, 2, 0][i])
+
+    def abc_turn(self, ctx, **settings):
+        """The A/B/C turn decisions of test_pinned_abc_decisions under settings: (actions, records)."""
+        pool = duoforge.teams.load(ctx, ["A", "B", "C"])
+        table = belief.SpreadTable.from_sides(pool.sides)
+        with duoforge.Batch(ctx, pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0])), 2, 42) as roots,                 self.make(ctx, table=table, excluded=[1, 2, 0], **settings) as search:
+            self.preview(search, roots)
+            self.start_turn(roots)
+            return search.decide(roots, [0, 1, 2], [0, 0, 0], [456, 457, 458], [False] * 3)
+
+    @staticmethod
+    def timeless(records):
+        return [{k: v for k, v in r.items() if k not in ("cost", "time")} for r in records]
+
+    def test_the_default_root_solver_decides_as_on_main(self):
+        # D1 (#481) adds root_solver. Without it, and with "lp" named, the A/B/C turn decisions are main's: the pinned
+        # choices and tables (test_pinned_abc_decisions), one record for both, and no field of the rm solver.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            runs = [self.abc_turn(ctx, **named) for named in ({}, {"root_solver": "lp"})]
+        for actions, records in runs:
+            self.assertEqual(actions.tolist(), [103, 289, 352])
+            for i, r in enumerate(records):
+                for name in ("root_solver", "solver", "gap", "iterations"):
+                    self.assertNotIn(name, r)
+                np.testing.assert_allclose(r["tables"], PINNED_TABLES[i], rtol=0, atol=1e-6)
+        self.assertEqual(self.timeless(runs[0][1]), self.timeless(runs[1][1]))
+
+    def test_the_rm_root_solver_solves_the_same_tables(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            _, lp = self.abc_turn(ctx)
+            _, rm = self.abc_turn(ctx, root_solver="rm")
+            _, again = self.abc_turn(ctx, root_solver="rm")
+        self.assertEqual(self.timeless(rm), self.timeless(again))  # deterministic
+        for i, (a, b) in enumerate(zip(lp, rm)):
+            self.assertEqual(b["root_solver"], {"solver": "rm", "iterations": honest.matrix.RM_MAX_ITERATIONS,
+                                                "epsilon": honest.matrix.RM_EPSILON})
+            self.assertEqual(b["solver"], "rm")
+            self.assertLessEqual(b["gap"], honest.matrix.RM_EPSILON)
+            self.assertEqual((b["own_pairs"], b["foe_pairs"], b["tables"], b["expected"]),
+                             (a["own_pairs"], a["foe_pairs"], a["tables"], a["expected"]))
+            self.assertEqual(b["outcomes"]["ev"], a["outcomes"]["ev"])
+            span = float(np.ptp(np.asarray(a["tables"])))
+            self.assertLessEqual(a["value"] - b["value"], honest.matrix.RM_EPSILON * span + 1e-12)
+
+    def test_an_unconverged_rm_solve_is_the_named_fallback(self):
+        refusal = honest.matrix.RMUnconverged(0.5, 7, honest.matrix.RM_EPSILON)
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 mock.patch.object(honest.matrix, "solve_bayes_rm", side_effect=refusal):
+            actions, records = self.abc_turn(ctx, root_solver="rm")
+        for action, r in zip(actions.tolist(), records):
+            self.assertEqual((r["kind"], r["reason"], r["causes"]), ("unreconstructible", "solver_unconverged",
+                                                                     ["solver_unconverged"]))
+            self.assertEqual((r["gap"], r["iterations"]), (0.5, 7))
+            self.assertEqual(action, r["choice"])  # the raw pair, as every named fallback
+
+    def test_root_solver_settings_are_checked(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            for bad in ({"root_solver": "qp"}, {"root_solver": "rm", "rm_iterations": 0},
+                        {"root_solver": "rm", "rm_iterations": 10.0}, {"root_solver": "rm", "rm_epsilon": 0.0},
+                        {"root_solver": "rm", "rm_epsilon": 1.0}):
+                with self.subTest(**bad), self.assertRaises(ValueError):
+                    self.make(ctx, **bad)
+            # The LP size limit holds the LP only: rm turns pass a limit below their table, a preview's LP does not.
+            _, _, cells = honest.matrix.bayes_size(2, 2, 2)
+            with mock.patch.object(honest.matrix, "MAX_BAYES_CELLS", cells - 1):
+                with self.assertRaisesRegex(ValueError, "the honest search"):
+                    self.make(ctx)
+                self.make(ctx, root_solver="rm").close()
+                with self.assertRaisesRegex(ValueError, "the team preview's LP"):
+                    self.make(ctx, root_solver="rm", preview_mode="value")
 
     def test_engine_and_solver_failures_keep_public_reproduction(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
