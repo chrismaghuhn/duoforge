@@ -322,10 +322,22 @@ class _Member:
         self.item_consumed = 0  # its item was used up (the record; a taken item is not), until it gets one
         self.toxic = 0  # badly poisoned, from the status lines of either side (the toxic stage counts only then)
         self.toxic_stage = 0  # the toxic counter (the POOL record): 0 at the status and at an entry, +1 per poison tick
+        # Decision 0066 (visible sleep): the cant lines printed since this sleep started (the POOL record's member byte, 0..2): +1 at
+        # each cant|X|slp, 0 at the sleep's start and at its end (a cure, a faint, a Wish heal, a revival)
+        self.sleep_cant = 0
         # The own side, from the requests.
         self.hp = 0
         self.hp_max = 0
         self.stats = [0] * 5
+
+
+class SheetContradiction(Exception):
+    """A line that contradicts the foe's sheet (only with Tracker.check_foe_sheet, decision 0081): the sheet was drawn,
+    not shown (reason: the counter's name)."""
+
+    def __init__(self, reason):
+        super().__init__(reason)
+        self.reason = reason
 
 
 class Tracker:
@@ -336,6 +348,9 @@ class Tracker:
     _party = None
     _ally_move = None
     _as_pending = None
+    # A particle of closed team sheets (decision 0081) folds a drawn foe sheet: it raises SheetContradiction where a line
+    # contradicts that sheet and the open-sheet fold would go on. Off for every open-sheet tracker.
+    check_foe_sheet = False
 
     def __init__(self, data, own_text):
         self.data = data
@@ -1095,6 +1110,13 @@ class Tracker:
             holds_choice = not m.item_used and self._item_of(m) in self._choice_items
             if p.choice_slot != MOVE_SLOT_NONE and not holds_choice and e[3] != trace_to_c.CAUSE["ABILITY"]:
                 p.choice_slot = MOVE_SLOT_NONE  # choicelock's onBeforeMove: its Choice item is gone (a Trick, Knock Off)
+            if self.check_foe_sheet and pos // 2 != self.side and e[3] == trace_to_c.CAUSE["NONE"] and ident != self._struggle:
+                # A drawn foe sheet (decision 0081, cts.ParticleTracker) the line contradicts, where the open-sheet fold
+                # would go on in silence: an own move off the sheet, or another move than the one a Choice item locked
+                if ident not in m.sheet["moves"]:
+                    raise SheetContradiction("move-not-on-set")
+                if p.choice_slot != MOVE_SLOT_NONE and holds_choice and m.sheet["moves"][p.choice_slot] != ident:
+                    raise SheetContradiction("choice-lock")
             if (p.choice_slot == MOVE_SLOT_NONE and holds_choice and ident in m.sheet["moves"]
                     and e[3] != trace_to_c.CAUSE["ABILITY"]):
                 # A Choice item locks its holder into the move of its |move| line (data/items.ts onModifyMove,
@@ -1142,10 +1164,13 @@ class Tracker:
             m.hp_percent, m.hp_flag = 0, 0
             m.status, m.freeze_turns = 0, 0  # a fainted member has no status (the views show none; the record holds none)
             m.toxic = m.toxic_stage = 0
+            m.sleep_cant = 0  # decision 0066: the sleep's count ends with it
         elif kind == EV["CANT"]:
             # An ability's block (Armor Tail) names its holder; the move's user, [of], took the action.
             blocked = e[3] == trace_to_c.CAUSE["ABILITY"]
             actor = self._at(e[2] if blocked else pos)
+            if e[3] == trace_to_c.CAUSE["SLEEP"] and actor.occupant != ROSTER_NONE:
+                self._member(pos // 2)[actor.occupant].sleep_cant += 1  # decision 0066: one more cant line of this sleep
             actor.acted = 1
             if not blocked:
                 self._move_action(actor)  # a block follows the user's own [move] line: the same action
@@ -1271,6 +1296,7 @@ class Tracker:
                 self._at(pos).wish = 0
                 m.status, m.freeze_turns = 0, 0
                 m.toxic = m.toxic_stage = 0
+                m.sleep_cant = 0  # decision 0066
         elif kind == EV["REVIVE"]:
             # Step G52 (decision 0025): Revival Blessing brings a fainted member of the user's side back at half HP,
             # its status cured; ident is its roster index (the line names it without a position)
@@ -1280,6 +1306,7 @@ class Tracker:
             else:
                 self._own_display(m, hp, e[7])
             m.status = 0
+            m.sleep_cant = 0  # decision 0066: the revival cures the sleep and its count
             user = self._rb_pending.pop(pos // 2, None)
             if user is not None:
                 self._at(user).flag = 0  # the revive answers the request: the flag goes
@@ -1290,12 +1317,14 @@ class Tracker:
             m.freeze_turns = FREEZE_TURNS if detail == STATUS["frz"] else 0
             m.toxic = 1 if detail == STATUS["tox"] else 0
             m.toxic_stage = 0  # tox's onStart
+            m.sleep_cant = 0  # decision 0066: a new sleep counts from 0 (the status line of a sleep is public for both)
         elif kind == EV["CURE_STATUS"]:
             m = self._occupant(pos)
             if public:
                 m.status = 0
             m.freeze_turns = 0
             m.toxic = m.toxic_stage = 0
+            m.sleep_cant = 0  # decision 0066: the cure ends the sleep and its count
         elif kind in (EV["BOOST"], EV["UNBOOST"]):
             p = self._at(pos)
             sign = 1 if kind == EV["BOOST"] else -1

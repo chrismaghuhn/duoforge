@@ -1,0 +1,9 @@
+{
+  "before": "ceb9d377",
+  "new_file": "src/combat/items/held.h",
+  "function_bodies_byte_equal": {
+    "dfi_item_code": true,
+    "dfi_holds": true,
+    "dfi_item_takeable": true
+  }
+}

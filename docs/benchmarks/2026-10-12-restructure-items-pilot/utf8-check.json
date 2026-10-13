@@ -1,0 +1,8 @@
+{
+  "default_encoding": "ANSI_X3.4-1968",
+  "format_battles": 1129,
+  "live_pin_battles": {
+    "closure": 90,
+    "pool": 966
+  }
+}

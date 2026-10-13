@@ -1,5 +1,6 @@
 # DuoForge tests. Every test is finite and has an explicit timeout.
 include(support/labels.cmake)
+include(reference/data.cmake)
 
 # duoforge_add_test(NAME <ctest name> SOURCES <files...> [WHITEBOX]
 #                   [TIMEOUT <s>] TIER <tier> AREA <area> [LABELS <selectors...>] [LIBS <libs...>] [ARGS <arguments...>])
@@ -13,7 +14,7 @@ function(duoforge_add_test)
     endif()
     string(REPLACE "." "_" _exe "${T_NAME}")
     add_executable(${_exe} ${T_SOURCES})
-    target_link_libraries(${_exe} PRIVATE duoforge ${T_LIBS})
+    target_link_libraries(${_exe} PRIVATE duoforge duoforge_reference_data ${T_LIBS})
     if(TARGET duoforge_test_support)
         target_link_libraries(${_exe} PRIVATE duoforge_test_support)
     endif()
@@ -36,7 +37,7 @@ endfunction()
 # Shared test support (explicit test context, no globals).
 add_library(duoforge_test_support STATIC support/check.c support/fixtures.c support/goldens.c
             support/goldens_legacy.c support/team_c.c support/pool.c support/factored.c
-            support/conformance_compare.c)
+            support/conformance_compare.c support/reference_digest.c)
 target_include_directories(duoforge_test_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 # The F2 fixture builder and the conformance comparators are white-box.
 target_include_directories(duoforge_test_support PRIVATE "${PROJECT_SOURCE_DIR}/src")

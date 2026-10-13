@@ -1,6 +1,6 @@
 /*
  * duoforge.combat.item_family (white-box): the item families of decision 0015
- * as the battle reads them (src/combat/item_family.h). The type booster and
+ * as the battle reads them (src/combat/items/families.h). The type booster and
  * the resist berry decide from the family column and its type, and from
  * nothing else; here every item of the pool is run against every type, and
  * against the three kinds of hit (resisted, neutral, super effective), and
@@ -17,7 +17,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "combat/item_family.h"
+#include "combat/items/families.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "support/check.h"

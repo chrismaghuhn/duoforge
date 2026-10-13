@@ -1,0 +1,21 @@
+{
+  "existing_runtime_properties_and_order_equal_main": true,
+  "ignored_difference": "registration backtrace locations only",
+  "inventory_sha256": "fbd60c25eedbe427e6097993964249e12d5b39e30fdd167137fbb00b2b305913",
+  "main_count": 1405,
+  "merged_main": "5c99fbd0",
+  "original_baseline": "a9e44f8c",
+  "original_count": 1403,
+  "removed_names": [],
+  "review_added_names": [
+    "duoforge.reference.battle_pins",
+    "duoforge.reference.format_pins"
+  ],
+  "review_count": 1407,
+  "tier_counts": {
+    "full": 31,
+    "quick": 207,
+    "reference": 1151,
+    "slow": 18
+  }
+}

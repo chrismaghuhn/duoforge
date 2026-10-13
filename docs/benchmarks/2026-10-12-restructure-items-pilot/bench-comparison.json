@@ -1,0 +1,552 @@
+{
+  "limitations": "One cloud/toolchain sample per profile; medians of repetitions. No concurrent local build/test during timing. Mixed changes are observations, not a performance neutrality/speedup claim.",
+  "noipo_final_library_byte_equal_measured_library": true,
+  "profiles": {
+    "ipo": {
+      "after_manifest": {
+        "affinity": "none",
+        "battle_seed": 7001,
+        "battles_per_pairing": 512,
+        "build_type": "Release",
+        "c_flags": "-O3 -DNDEBUG",
+        "compiler": "GNU 14.2.0",
+        "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+        "cpu": "INTEL(R) XEON(R) PLATINUM 8573C; logical processors 5",
+        "dirty": false,
+        "engine": "duoforge 0.45.0",
+        "ipo": true,
+        "max_steps": 128,
+        "os": "linux",
+        "pairings": [
+          "A-B",
+          "B-A",
+          "A-A",
+          "B-B"
+        ],
+        "policy": "uniform random over candidates (splitmix64)",
+        "policy_seed": 20261001,
+        "repetitions": 9,
+        "revision": "3a9d04d16f01f7429447237a5d0dcec802ad1312",
+        "started_utc": "2026-10-12T20:42:21Z",
+        "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+        "warmup": 2,
+        "workers": 1,
+        "workload": "closure-pairings-v1"
+      },
+      "before_manifest": {
+        "affinity": "none",
+        "battle_seed": 7001,
+        "battles_per_pairing": 512,
+        "build_type": "Release",
+        "c_flags": "-O3 -DNDEBUG",
+        "compiler": "GNU 14.2.0",
+        "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+        "cpu": "INTEL(R) XEON(R) PLATINUM 8573C; logical processors 5",
+        "dirty": false,
+        "engine": "duoforge 0.45.0",
+        "ipo": true,
+        "max_steps": 128,
+        "os": "linux",
+        "pairings": [
+          "A-B",
+          "B-A",
+          "A-A",
+          "B-B"
+        ],
+        "policy": "uniform random over candidates (splitmix64)",
+        "policy_seed": 20261001,
+        "repetitions": 9,
+        "revision": "ca17e50718ab9591473abe06234904a06439c466",
+        "started_utc": "2026-10-12T19:50:52Z",
+        "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+        "warmup": 2,
+        "workers": 1,
+        "workload": "closure-pairings-v1"
+      },
+      "identical_choices": true,
+      "identical_record": {
+        "battles": 2048,
+        "errors": 0,
+        "side_decisions": 66803,
+        "steps": 37199,
+        "truncations": 0,
+        "turns": 27204
+      },
+      "native": [
+        {
+          "after_cpu_ns": [
+            361944485,
+            371496261,
+            384831738,
+            366202406,
+            372565239,
+            373630877,
+            365782823,
+            398450978,
+            367928560
+          ],
+          "after_disturbed": 0,
+          "after_median_ms": 371.624867,
+          "after_wall_ns": [
+            361964871,
+            371624867,
+            384816894,
+            367184686,
+            372549128,
+            373639790,
+            365868975,
+            398457303,
+            367975849
+          ],
+          "before_cpu_ns": [
+            348062561,
+            356721478,
+            368057201,
+            374097600,
+            368707096,
+            335881350,
+            357825327,
+            363434945,
+            330127413
+          ],
+          "before_disturbed": 0,
+          "before_median_ms": 357.944073,
+          "before_wall_ns": [
+            348201902,
+            357174609,
+            369012756,
+            374313552,
+            368812174,
+            336198259,
+            357944073,
+            363680030,
+            330247536
+          ],
+          "change_percent": 3.822047920877303,
+          "family": "STEP_CORE",
+          "variant": "plain"
+        },
+        {
+          "after_cpu_ns": [
+            393783509,
+            483240025,
+            404458366,
+            380703660,
+            381403118,
+            373530713,
+            376404821,
+            393715862,
+            413815961
+          ],
+          "after_disturbed": 0,
+          "after_median_ms": 393.767704,
+          "after_wall_ns": [
+            393767704,
+            483267247,
+            404485757,
+            380721720,
+            381592632,
+            373518309,
+            376383265,
+            393799692,
+            413808065
+          ],
+          "before_cpu_ns": [
+            364090093,
+            353209399,
+            370159383,
+            369445147,
+            362003885,
+            365011318,
+            366496058,
+            351988687,
+            363791272
+          ],
+          "before_disturbed": 0,
+          "before_median_ms": 364.095802,
+          "before_wall_ns": [
+            364095802,
+            353243593,
+            370194319,
+            369444857,
+            363463501,
+            364988283,
+            366515017,
+            352035665,
+            363715017
+          ],
+          "change_percent": 8.149476549031998,
+          "family": "STEP_CORE",
+          "variant": "events"
+        },
+        {
+          "after_cpu_ns": [
+            597479736,
+            583144392,
+            582367983,
+            588804081,
+            592986279,
+            724433528,
+            710443611,
+            756572437,
+            667971910
+          ],
+          "after_disturbed": 0,
+          "after_median_ms": 597.731343,
+          "after_wall_ns": [
+            597731343,
+            583160062,
+            582355798,
+            588812834,
+            592961980,
+            724580864,
+            710521867,
+            756571324,
+            667944210
+          ],
+          "before_cpu_ns": [
+            548663287,
+            564410436,
+            559916108,
+            575854260,
+            557369485,
+            603705785,
+            578734921,
+            660613777,
+            860469903
+          ],
+          "before_disturbed": 0,
+          "before_median_ms": 575.871016,
+          "before_wall_ns": [
+            548671142,
+            564386309,
+            559924660,
+            575871016,
+            559225791,
+            604971939,
+            578712457,
+            683978122,
+            860478031
+          ],
+          "change_percent": 3.7960457103470624,
+          "family": "EPISODE_NATIVE",
+          "variant": "uniform-random"
+        }
+      ],
+      "search": {
+        "after": {
+          "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+          "library_sha256": "cb42f9018f6c2e21c0991cb7289b93e07800b1051025696d18132c81f2184b2e",
+          "median_seconds": 2.5557876539969584,
+          "repetitions": 5,
+          "roots": 8,
+          "samples_seconds": [
+            2.5634874440002022,
+            2.669767961007892,
+            2.5557876539969584,
+            2.34817198899691,
+            2.309592089004582
+          ],
+          "searched_roots": 7,
+          "warmups": 1
+        },
+        "before": {
+          "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+          "library_sha256": "7988a3815ef2111b7b5846755df721dc07791aab1835aaa40c0456c925986fa9",
+          "median_seconds": 2.9824126070016064,
+          "repetitions": 5,
+          "roots": 8,
+          "samples_seconds": [
+            3.941998644004343,
+            3.914204877000884,
+            2.7769779570080573,
+            2.8690603229915723,
+            2.9824126070016064
+          ],
+          "searched_roots": 7,
+          "warmups": 1
+        },
+        "change_percent": -14.30469251649117
+      }
+    },
+    "noipo": {
+      "after_manifest": {
+        "affinity": "none",
+        "battle_seed": 7001,
+        "battles_per_pairing": 512,
+        "build_type": "Release",
+        "c_flags": "-O3 -DNDEBUG",
+        "compiler": "GNU 14.2.0",
+        "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+        "cpu": "INTEL(R) XEON(R) PLATINUM 8573C; logical processors 5",
+        "dirty": false,
+        "engine": "duoforge 0.45.0",
+        "ipo": false,
+        "max_steps": 128,
+        "os": "linux",
+        "pairings": [
+          "A-B",
+          "B-A",
+          "A-A",
+          "B-B"
+        ],
+        "policy": "uniform random over candidates (splitmix64)",
+        "policy_seed": 20261001,
+        "repetitions": 9,
+        "revision": "7c3a5c52bf49864c4b5bbfcbbc9f6fa8805fbdd2",
+        "started_utc": "2026-10-12T19:59:23Z",
+        "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+        "warmup": 2,
+        "workers": 1,
+        "workload": "closure-pairings-v1"
+      },
+      "before_manifest": {
+        "affinity": "none",
+        "battle_seed": 7001,
+        "battles_per_pairing": 512,
+        "build_type": "Release",
+        "c_flags": "-O3 -DNDEBUG",
+        "compiler": "GNU 14.2.0",
+        "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+        "cpu": "INTEL(R) XEON(R) PLATINUM 8573C; logical processors 5",
+        "dirty": false,
+        "engine": "duoforge 0.45.0",
+        "ipo": false,
+        "max_steps": 128,
+        "os": "linux",
+        "pairings": [
+          "A-B",
+          "B-A",
+          "A-A",
+          "B-B"
+        ],
+        "policy": "uniform random over candidates (splitmix64)",
+        "policy_seed": 20261001,
+        "repetitions": 9,
+        "revision": "ca17e50718ab9591473abe06234904a06439c466",
+        "started_utc": "2026-10-12T19:51:08Z",
+        "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+        "warmup": 2,
+        "workers": 1,
+        "workload": "closure-pairings-v1"
+      },
+      "identical_choices": true,
+      "identical_record": {
+        "battles": 2048,
+        "errors": 0,
+        "side_decisions": 66803,
+        "steps": 37199,
+        "truncations": 0,
+        "turns": 27204
+      },
+      "native": [
+        {
+          "after_cpu_ns": [
+            405293405,
+            401158723,
+            410374743,
+            399413261,
+            408367924,
+            418874310,
+            426889744,
+            417492812,
+            400537805
+          ],
+          "after_disturbed": 0,
+          "after_median_ms": 408.342778,
+          "after_wall_ns": [
+            405285726,
+            401133820,
+            410368363,
+            399399029,
+            408342778,
+            418842294,
+            426833595,
+            417862161,
+            400523883
+          ],
+          "before_cpu_ns": [
+            435962397,
+            434571591,
+            432287337,
+            413768611,
+            415295394,
+            509630930,
+            509116854,
+            497793144,
+            520182402
+          ],
+          "before_disturbed": 0,
+          "before_median_ms": 435.948914,
+          "before_wall_ns": [
+            435948914,
+            434744011,
+            432372781,
+            413820958,
+            415314662,
+            509767478,
+            509110969,
+            497853037,
+            520177419
+          ],
+          "change_percent": -6.332424537247494,
+          "family": "STEP_CORE",
+          "variant": "plain"
+        },
+        {
+          "after_cpu_ns": [
+            432891080,
+            458941692,
+            482651937,
+            417200061,
+            415028231,
+            423600302,
+            454449424,
+            427034163,
+            403416296
+          ],
+          "after_disturbed": 0,
+          "after_median_ms": 427.172689,
+          "after_wall_ns": [
+            432812527,
+            459156830,
+            482642205,
+            417208362,
+            415003969,
+            423593854,
+            454381747,
+            427172689,
+            403401567
+          ],
+          "before_cpu_ns": [
+            424332957,
+            653349180,
+            638047303,
+            421784068,
+            426893005,
+            414598509,
+            414712673,
+            420663013,
+            424982771
+          ],
+          "before_disturbed": 0,
+          "before_median_ms": 424.384201,
+          "before_wall_ns": [
+            424384201,
+            655714701,
+            638035852,
+            421820830,
+            426891225,
+            414578251,
+            414757643,
+            420643271,
+            425021536
+          ],
+          "change_percent": 0.657066873231682,
+          "family": "STEP_CORE",
+          "variant": "events"
+        },
+        {
+          "after_cpu_ns": [
+            727673683,
+            629146936,
+            734784984,
+            604239402,
+            615200658,
+            634722355,
+            642117850,
+            620766184,
+            634413053
+          ],
+          "after_disturbed": 0,
+          "after_median_ms": 634.386361,
+          "after_wall_ns": [
+            727642002,
+            629117829,
+            734753712,
+            604190682,
+            615165368,
+            634696104,
+            642091631,
+            620731851,
+            634386361
+          ],
+          "before_cpu_ns": [
+            704419541,
+            751439812,
+            992211640,
+            672943040,
+            657711318,
+            690122467,
+            652760048,
+            726633841,
+            1137032513
+          ],
+          "before_disturbed": 0,
+          "before_median_ms": 703.446259,
+          "before_wall_ns": [
+            703446259,
+            751297405,
+            992540946,
+            673159813,
+            657816249,
+            690097416,
+            652856933,
+            727809847,
+            1137363880
+          ],
+          "change_percent": -9.81736658862522,
+          "family": "EPISODE_NATIVE",
+          "variant": "uniform-random"
+        }
+      ],
+      "search": {
+        "after": {
+          "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+          "library_sha256": "b89980aaee8d9163efcb8964078e7ad7d1f2f0a70e8fa281bd16306ed5888538",
+          "median_seconds": 2.321056419998058,
+          "repetitions": 5,
+          "roots": 8,
+          "samples_seconds": [
+            2.334780931007117,
+            2.321056419998058,
+            2.358468357997481,
+            2.3014821139950072,
+            2.2916524140018737
+          ],
+          "searched_roots": 7,
+          "warmups": 1
+        },
+        "before": {
+          "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+          "library_sha256": "9899503b90dac715049b61975ad2637edc7ea383c938f63e5101048b22bb1b44",
+          "median_seconds": 2.4737607299903175,
+          "repetitions": 5,
+          "roots": 8,
+          "samples_seconds": [
+            2.329668776001199,
+            2.2423910789948422,
+            2.4737607299903175,
+            2.4782390850014053,
+            2.6397771589981858
+          ],
+          "searched_roots": 7,
+          "warmups": 1
+        },
+        "change_percent": -6.17296200642885
+      }
+    }
+  },
+  "setup": {
+    "OPENBLAS_NUM_THREADS": 1,
+    "build_type": "Release",
+    "compiler": "GCC 14.2.0",
+    "cpu_quota": 4,
+    "native_battles_per_pairing": 512,
+    "native_max_steps": 128,
+    "native_repetitions": 9,
+    "native_warmups": 2,
+    "search_repetitions": 5,
+    "search_warmups": 1
+  }
+}

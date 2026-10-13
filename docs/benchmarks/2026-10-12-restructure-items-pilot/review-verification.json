@@ -1,0 +1,228 @@
+{
+  "P1": {
+    "all_registration_runtime_properties_unchanged": true,
+    "inventory": 1407,
+    "inventory_sha256": "fbd60c25eedbe427e6097993964249e12d5b39e30fdd167137fbb00b2b305913",
+    "tier_counts": {
+      "full": 31,
+      "quick": 207,
+      "reference": 1151,
+      "slow": 18
+    }
+  },
+  "P2": {
+    "before_equals_ipo_equals_noipo": true,
+    "executions_per_profile": 2584,
+    "new_inline_captures_byte_equal_to_baseline": true,
+    "sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+    "steps_per_profile": 11236,
+    "stops_per_profile": 8458,
+    "unique_battles": 1129,
+    "variants_per_profile": 10
+  },
+  "P3": {
+    "pinned_depths": 24,
+    "pins_sha256": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+    "positions": 10
+  },
+  "P4": {
+    "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+    "cases": 2,
+    "passed_both_profiles": true,
+    "roots": 8,
+    "searched_roots": 7
+  },
+  "P5": {
+    "closure_extended_pool_check": true,
+    "conformance_check": true,
+    "conformance_regeneration_reused_from_initial_checks_with_unchanged_inputs": true,
+    "frozen_battle_pins": 1129,
+    "frozen_live_pins": 1056,
+    "generated_files_changed": [],
+    "regeneration_checks_rerun": true,
+    "tiebreak_check": true,
+    "unchanged_source_hashes": 20
+  },
+  "P6": {
+    "both_profiles_unchanged": true,
+    "exports": 238,
+    "exports_sha256": "1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5",
+    "layout_constants": 250,
+    "layout_sha256": "502ecc2e08dc76cf3004d31115948bc4e69d7843ce5cd5d2492d950464e07e8e",
+    "layout_structs": 33,
+    "public_header_diff_empty": true
+  },
+  "baseline": "ca17e507",
+  "ci_status": "Fresh full CI on the final PR head remains the merge gate; do not interpret historical source runs as final-head approval.",
+  "local_tests": {
+    "ipo": {
+      "failed": 0,
+      "passed": 14,
+      "skipped": 0,
+      "tests": [
+        {
+          "name": "duoforge.combat.item_family",
+          "passed": true,
+          "seconds": 0.00189186
+        },
+        {
+          "name": "duoforge.state.pool_g16",
+          "passed": true,
+          "seconds": 0.00913178
+        },
+        {
+          "name": "duoforge.state.pool_g29",
+          "passed": true,
+          "seconds": 0.00643589
+        },
+        {
+          "name": "duoforge.state.pool_g49",
+          "passed": true,
+          "seconds": 0.00741508
+        },
+        {
+          "name": "duoforge.state.pool_g55",
+          "passed": true,
+          "seconds": 0.00544169
+        },
+        {
+          "name": "duoforge.data.closure_regen",
+          "passed": true,
+          "seconds": 0.155463
+        },
+        {
+          "name": "duoforge.data.extended_regen",
+          "passed": true,
+          "seconds": 0.364353
+        },
+        {
+          "name": "duoforge.data.pool_regen",
+          "passed": true,
+          "seconds": 0.662877
+        },
+        {
+          "name": "duoforge.reference.tiebreak_ref",
+          "passed": true,
+          "seconds": 135.078
+        },
+        {
+          "name": "duoforge.reference.format_pins",
+          "passed": true,
+          "seconds": 1.92533
+        },
+        {
+          "name": "duoforge.python.layout",
+          "passed": true,
+          "seconds": 0.207287
+        },
+        {
+          "name": "duoforge.python.perft",
+          "passed": true,
+          "seconds": 25.7641
+        },
+        {
+          "name": "duoforge.python.state_layout",
+          "passed": true,
+          "seconds": 0.169734
+        },
+        {
+          "name": "duoforge.python.bench",
+          "passed": true,
+          "seconds": 8.0907
+        }
+      ]
+    },
+    "noipo": {
+      "failed": 0,
+      "passed": 10,
+      "skipped": 0,
+      "tests": [
+        {
+          "name": "duoforge.combat.item_family",
+          "passed": true,
+          "seconds": 0.00251527
+        },
+        {
+          "name": "duoforge.state.pool_g16",
+          "passed": true,
+          "seconds": 0.00482942
+        },
+        {
+          "name": "duoforge.state.pool_g29",
+          "passed": true,
+          "seconds": 0.00653301
+        },
+        {
+          "name": "duoforge.state.pool_g49",
+          "passed": true,
+          "seconds": 0.00246987
+        },
+        {
+          "name": "duoforge.state.pool_g55",
+          "passed": true,
+          "seconds": 0.00643158
+        },
+        {
+          "name": "duoforge.reference.format_pins",
+          "passed": true,
+          "seconds": 1.85379
+        },
+        {
+          "name": "duoforge.python.layout",
+          "passed": true,
+          "seconds": 0.189113
+        },
+        {
+          "name": "duoforge.python.perft",
+          "passed": true,
+          "seconds": 18.187
+        },
+        {
+          "name": "duoforge.python.state_layout",
+          "passed": true,
+          "seconds": 0.216321
+        },
+        {
+          "name": "duoforge.python.bench",
+          "passed": true,
+          "seconds": 6.37439
+        }
+      ]
+    },
+    "source_hygiene": {
+      "failed": 0,
+      "passed": 4,
+      "skipped": 0,
+      "tests": [
+        {
+          "name": "duoforge.python.repo_hygiene",
+          "passed": true,
+          "seconds": 0.137685
+        },
+        {
+          "name": "duoforge.lint.sources",
+          "passed": true,
+          "seconds": 4.96916
+        },
+        {
+          "name": "duoforge.lint.selftest",
+          "passed": true,
+          "seconds": 0.265063
+        },
+        {
+          "name": "duoforge.lint.no_mutable_globals",
+          "passed": true,
+          "seconds": 0.0252289
+        }
+      ]
+    }
+  },
+  "performance_gate_ipo": {
+    "median_ratio_at_most_1_02": true,
+    "upper_95_bootstrap_at_most_1_02": true,
+    "within_baseline_spread": true
+  },
+  "source_ci_run": 38309622125,
+  "source_commit": "9b7fa521b877f43741bd317bb2453ac657b4ef5e",
+  "source_rng_run": 38309621926
+}

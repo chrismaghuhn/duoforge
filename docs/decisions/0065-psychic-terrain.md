@@ -22,7 +22,7 @@ Status: **implemented; evidence on the final head in section 6 (mutants P1-P6 6/
 ## 3. Refusals and the one intended one
 
 - A spread move with positive priority while the Psychic Terrain is up: E_UNSUPPORTED (section 2).
-- Residual speed ties of three or more (`dfi_residual_pair_draws`, `turn.c:10321`): E_UNSUPPORTED, "a bigger group: its shuffle is not modelled". Seen once in seed 97 (fz_97_254, Snorlax's burn at the last step, no terrain in the battle). Pin: `sim/battle.ts:429-456` (`speedSort` with `prng.shuffle` for equal speeds). Intended, not a Psychic Terrain refusal.
+- Residual speed ties of three or more (`dfi_residual_pair_draws`, `src/combat/turn.c (dfi_residual_pair_draws)`): E_UNSUPPORTED, "a bigger group: its shuffle is not modelled". Seen once in seed 97 (fz_97_254, Snorlax's burn at the last step, no terrain in the battle). Pin: `sim/battle.ts:429-456` (`speedSort` with `prng.shuffle` for equal speeds). Intended, not a Psychic Terrain refusal.
 
 ## 4. Evidence on the earlier head (the campaigns ran on the G96 base; see section 6 for the final head)
 
@@ -53,5 +53,5 @@ Run on the C head 841b64a5 (lock job `g96-final-evidence`; the later commit 1f7b
 | 98 | 100 | PASS 100 | 49 | 27 | 1 | 24 | 42 | 42 | 18 |
 | **sum** | **700** | **PASS 699, UNSUPPORTED 1** | **316** | **126** | **5** | **165** | **298** | **298** | **246** |
 
-- **The known refusal in seed 97** (fz_97_254, step 24, XX): not a Psychic Terrain refusal. Snorlax's burn kills it at the last step; the battle has no terrain. The refusal is `dfi_residual_pair_draws`, `turn.c:10321`: an equal-speed residual group of three or more ("a bigger group: its shuffle is not modelled"). Pin `sim/battle.ts:429-456` (`speedSort` with `prng.shuffle`). Intended, the same refusal as the residual speed tie of the earlier base.
+- **The known refusal in seed 97** (fz_97_254, step 24, XX): not a Psychic Terrain refusal. Snorlax's burn kills it at the last step; the battle has no terrain. The refusal is `dfi_residual_pair_draws`, `src/combat/turn.c (dfi_residual_pair_draws)`: an equal-speed residual group of three or more ("a bigger group: its shuffle is not modelled"). Pin `sim/battle.ts:429-456` (`speedSort` with `prng.shuffle`). Intended, the same refusal as the residual speed tie of the earlier base.
 - **Goal:** blocks 126 in total against 100 (the seed 98 campaign reached 27 on its own). The "blocks" counter is the protocol count of `-activate ... move: Psychic Terrain`; the block against grounded targets only, airborne targets are counted apart.

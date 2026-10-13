@@ -931,7 +931,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             const bool any = ts->soak_type[m] != 0u || ts->ability_now[m] != 0u || ts->forme_now[m] != 0u ||
                              ts->item_now[m] != 0u || ts->toxic_stage[m] != 0u || ts->type2[m] != 0u ||
-                             ts->member_flags[m] != 0u;
+                             ts->member_flags[m] != 0u || ts->sleep_cant[m] != 0u;
             if (!any) {
                 continue;
             }
@@ -976,6 +976,12 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             if (ts->toxic_stage[m] != 0u &&
                 (ts->toxic_stage[m] > DFI_TAIL_TOXIC_STAGE_MAX || !standing_on_field ||
                  mem->status != DFI_TAIL_TOXIC_STATUS)) {
+                return DFI_INV_TAIL_MEMBER;
+            }
+            /* Decision 0066: the sleep cant count is a sleeping member's (asleep anywhere, on the field or on the bench), at most
+             * 2, and only under POOL, where the view publishes it; no other kind has the byte. */
+            if (ts->sleep_cant[m] != 0u &&
+                (ts->sleep_cant[m] > DFI_TAIL_SLEEP_CANT_MAX || !lim.pool_rules || mem->status != DFI_STATUS_SLP)) {
                 return DFI_INV_TAIL_MEMBER;
             }
         }

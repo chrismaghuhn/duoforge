@@ -136,7 +136,7 @@ static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
             mo[DFI_ENC_TAIL_MEMBER_TOXIC_OFF] = ts->toxic_stage[m];
             mo[DFI_ENC_TAIL_MEMBER_TYPE2_OFF] = ts->type2[m];
             mo[DFI_ENC_TAIL_MEMBER_FLAGS_OFF] = ts->member_flags[m];
-            mo[DFI_ENC_TAIL_MEMBER_RESERVED_OFF] = 0u;
+            mo[DFI_ENC_TAIL_MEMBER_SLEEP_CANT_OFF] = ts->sleep_cant[m];
         }
     }
     dfi_encode_tail5(tail, out + DFI_ENC_TAIL_REV4_SIZE);
@@ -155,9 +155,6 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
             for (uint32_t i = 0u; i < DFI_ENC_TAIL_POS_RESERVED_SIZE; ++i) {
                 any |= so[DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_RESERVED_OFF + i];
             }
-        }
-        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
-            any |= so[DFI_ENC_TAIL_MEMBER_OFF + m * DFI_ENC_TAIL_MEMBER_SIZE + DFI_ENC_TAIL_MEMBER_RESERVED_OFF];
         }
     }
     for (uint32_t i = DFI_ENC_TAIL5_ATTRACT_SIZE; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
@@ -267,6 +264,7 @@ static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
             ts->toxic_stage[m] = mo[DFI_ENC_TAIL_MEMBER_TOXIC_OFF];
             ts->type2[m] = mo[DFI_ENC_TAIL_MEMBER_TYPE2_OFF];
             ts->member_flags[m] = mo[DFI_ENC_TAIL_MEMBER_FLAGS_OFF];
+            ts->sleep_cant[m] = mo[DFI_ENC_TAIL_MEMBER_SLEEP_CANT_OFF];
         }
     }
     dfi_parse_tail5(in + DFI_ENC_TAIL_REV4_SIZE, tail);
