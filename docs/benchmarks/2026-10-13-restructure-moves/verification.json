@@ -1,0 +1,91 @@
+{
+  "P1": {
+    "after": 1407,
+    "before": 1407,
+    "commands_order_and_runtime_properties_identical": true,
+    "excluded": "registration backtraces only",
+    "full_ci": "not run on this branch: PR opening waits for explicit HS window release",
+    "inventory_sha256": "fbd60c25eedbe427e6097993964249e12d5b39e30fdd167137fbb00b2b305913",
+    "tier_counts": {
+      "full": 31,
+      "quick": 207,
+      "reference": 1151,
+      "slow": 18
+    }
+  },
+  "P2": {
+    "all_four_captures_byte_equal": true,
+    "executions_per_profile": 2584,
+    "sha256": "712387e820ed6a87f21ac8e047f384abab71fbb80ea99f0e1487a5de846d35e7",
+    "steps_per_profile": 22472,
+    "stops_per_profile": 8458,
+    "unique_battles": 1129,
+    "variants": 10
+  },
+  "P3": {
+    "passed_both_profiles": true,
+    "pinned_depths": 24,
+    "pins_sha256": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+    "positions": 10
+  },
+  "P4": {
+    "BENCH_SHA256": "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798",
+    "cases": 2,
+    "passed_both_profiles": true,
+    "roots": 8,
+    "searched_roots": 7
+  },
+  "P5": {
+    "UNMODELED": {
+      "abilities": 90,
+      "items": 18,
+      "moves": 146
+    },
+    "all_three_gen_closure_checks_passed": true,
+    "existing_sources_unchanged": 20,
+    "format_pins_passed": true,
+    "new_generated_file": "src/combat/generated/move_handlers.h",
+    "new_generated_sha256": "beb77f26a35314b1ef87e1dd1975f325ad95d8c66a4845b77c43ce1b550e9d16",
+    "new_generator_check_passed_both_profiles": true,
+    "tiebreak_regeneration_passed": true
+  },
+  "P6": {
+    "both_profiles_export_lists_byte_equal": true,
+    "exported_sha256": "1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5",
+    "exports": 238,
+    "layout_cases_after": 7,
+    "layout_cases_before": 6,
+    "layout_constants": 250,
+    "layout_sha256": "502ecc2e08dc76cf3004d31115948bc4e69d7843ce5cd5d2492d950464e07e8e",
+    "layout_structs": 33,
+    "new_negative_symbol_lookups": 16,
+    "public_header_diff_empty": true,
+    "raw_layout_sha256": "7617ec50403bb29b8556e27e762adaa1164df3986e9de66b21a0ca055e81c8a6"
+  },
+  "PR_status": "not opened: wait for HS explicitly; an empty gh pr list alone does not release the window",
+  "baseline": "657dae45efcb330bf5131f17fd6d9a02fedf6593",
+  "body_equivalence": {
+    "get_damage_entire_body_byte_equal": true,
+    "original_functions_byte_equal": 12
+  },
+  "guard_equivalence": {
+    "c_checks_after": 2098,
+    "c_checks_before": 1581,
+    "control_passed": true,
+    "defined_specials": 122,
+    "generator_cases_after": 151,
+    "generator_cases_before": 147,
+    "late_accepted": 96,
+    "late_rejected": 26,
+    "mutants_caught": 3,
+    "old_predicates": "tests/support/special_predicates.h; independently frozen, never generated",
+    "status_hit": 18,
+    "storage_values_each": 256
+  },
+  "performance": {
+    "median_time_ratios_at_most_1_02": true,
+    "rounds_per_profile": 30,
+    "within_baseline_spread": true
+  },
+  "source_commit": "75c77c7a"
+}

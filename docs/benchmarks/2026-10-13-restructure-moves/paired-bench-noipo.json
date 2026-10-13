@@ -1,0 +1,2713 @@
+{
+  "binaries": {
+    "after": {
+      "path": "/workspace/duoforge-env/step4-moves/after/duoforge_bench_noipo",
+      "sha256": "9c010c5efc7187c47eba231178b7708f1d938f4917a31393317f0a99bd144be8"
+    },
+    "before": {
+      "path": "/workspace/duoforge-env/step4-moves/baseline/duoforge_bench_noipo",
+      "sha256": "5139258e5c5c4b9a7cbb3fe2620d7ed73771d9685e41462ac3017a8f993b4cd9"
+    }
+  },
+  "choices": [
+    {
+      "choices": 33386,
+      "leads": [
+        723,
+        660,
+        626,
+        696,
+        697,
+        694
+      ],
+      "megas": 1690,
+      "move_uses": {
+        "0": 817,
+        "1": 851,
+        "10": 2817,
+        "11": 1647,
+        "12": 1668,
+        "13": 1673,
+        "14": 579,
+        "15": 995,
+        "16": 1081,
+        "17": 481,
+        "18": 1632,
+        "19": 522,
+        "2": 458,
+        "20": 2493,
+        "21": 1205,
+        "22": 1173,
+        "23": 1141,
+        "24": 1498,
+        "25": 2724,
+        "26": 641,
+        "27": 1542,
+        "28": 1495,
+        "29": 513,
+        "3": 803,
+        "30": 442,
+        "31": 1343,
+        "32": 1423,
+        "33": 487,
+        "34": 445,
+        "35": 1447,
+        "4": 1054,
+        "5": 1065,
+        "6": 378,
+        "7": 4192,
+        "8": 967,
+        "9": 549
+      },
+      "moves": 44266,
+      "passes": 5397,
+      "replacements": 4258,
+      "side": 0,
+      "slot_commands": 58789,
+      "struggles": 25,
+      "switches": 4868,
+      "target_ally": 11332,
+      "target_foe": 22713,
+      "target_none": 10221,
+      "team_selections": 2048
+    },
+    {
+      "choices": 33417,
+      "leads": [
+        697,
+        678,
+        661,
+        700,
+        682,
+        678
+      ],
+      "megas": 1692,
+      "move_uses": {
+        "0": 780,
+        "1": 750,
+        "10": 2904,
+        "11": 1711,
+        "12": 1622,
+        "13": 1621,
+        "14": 602,
+        "15": 1089,
+        "16": 1008,
+        "17": 527,
+        "18": 1569,
+        "19": 486,
+        "2": 439,
+        "20": 2575,
+        "21": 1168,
+        "22": 1210,
+        "23": 1203,
+        "24": 1736,
+        "25": 2777,
+        "26": 614,
+        "27": 1529,
+        "28": 1439,
+        "29": 509,
+        "3": 749,
+        "30": 409,
+        "31": 1435,
+        "32": 1417,
+        "33": 487,
+        "34": 462,
+        "35": 1453,
+        "4": 1080,
+        "5": 1113,
+        "6": 336,
+        "7": 3990,
+        "8": 954,
+        "9": 595
+      },
+      "moves": 44356,
+      "passes": 5402,
+      "replacements": 4299,
+      "side": 1,
+      "slot_commands": 58848,
+      "struggles": 8,
+      "switches": 4791,
+      "target_ally": 11411,
+      "target_foe": 22966,
+      "target_none": 9979,
+      "team_selections": 2048
+    }
+  ],
+  "elapsed_seconds": 304.30776929855347,
+  "manifests": {
+    "after": {
+      "affinity": "none",
+      "battle_seed": 7001,
+      "battles_per_pairing": 512,
+      "build_type": "Release",
+      "c_flags": "-O3 -DNDEBUG",
+      "compiler": "GNU 14.2.0",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "cpu": "INTEL(R) XEON(R) PLATINUM 8573C; logical processors 5",
+      "dirty": false,
+      "engine": "duoforge 0.45.0",
+      "ipo": false,
+      "max_steps": 128,
+      "os": "linux",
+      "pairings": [
+        "A-B",
+        "B-A",
+        "A-A",
+        "B-B"
+      ],
+      "policy": "uniform random over candidates (splitmix64)",
+      "policy_seed": 20261001,
+      "repetitions": 3,
+      "revision": "b6abf4c15936012c6a70872bf19272ef8b566f13",
+      "started_utc": "2026-10-13T00:19:40Z",
+      "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+      "warmup": 2,
+      "workers": 1,
+      "workload": "closure-pairings-v1"
+    },
+    "before": {
+      "affinity": "none",
+      "battle_seed": 7001,
+      "battles_per_pairing": 512,
+      "build_type": "Release",
+      "c_flags": "-O3 -DNDEBUG",
+      "compiler": "GNU 14.2.0",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "cpu": "INTEL(R) XEON(R) PLATINUM 8573C; logical processors 5",
+      "dirty": false,
+      "engine": "duoforge 0.45.0",
+      "ipo": false,
+      "max_steps": 128,
+      "os": "linux",
+      "pairings": [
+        "A-B",
+        "B-A",
+        "A-A",
+        "B-B"
+      ],
+      "policy": "uniform random over candidates (splitmix64)",
+      "policy_seed": 20261001,
+      "repetitions": 3,
+      "revision": "657dae45efcb330bf5131f17fd6d9a02fedf6593",
+      "started_utc": "2026-10-13T00:19:35Z",
+      "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+      "warmup": 2,
+      "workers": 1,
+      "workload": "closure-pairings-v1"
+    }
+  },
+  "protocol": {
+    "battles_per_pairing": 512,
+    "bootstrap": "20000 paired-resample medians, seed 20261012, percentile 95% CI",
+    "cgroup_cpu_max": "400000 100000",
+    "cpu_affinity": [
+      4
+    ],
+    "gate": "median after/before time <= 1.02, within baseline min/max relative spread",
+    "ipo": "off",
+    "order": "AB on odd rounds, BA on even rounds; all samples retained",
+    "repetitions": 3,
+    "rounds": 30,
+    "warmup": 2
+  },
+  "record": {
+    "battles": 2048,
+    "errors": 0,
+    "side_decisions": 66803,
+    "steps": 37199,
+    "truncations": 0,
+    "turns": 27204
+  },
+  "rounds": [
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              346221859,
+              343905367,
+              350742072
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 346200395,
+            "wall_ns": [
+              346200395,
+              343894381,
+              350729809
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              346605333,
+              326441377,
+              333010735
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 333000151,
+            "wall_ns": [
+              346583175,
+              326428646,
+              333000151
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              528916210,
+              338703549,
+              354168139
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 354209897,
+            "wall_ns": [
+              528923961,
+              338692280,
+              354209897
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              395580870,
+              338633756,
+              356392799
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 356381995,
+            "wall_ns": [
+              395530322,
+              338665716,
+              356381995
+            ]
+          }
+        }
+      },
+      "round": 1,
+      "time_ratios": {
+        "events": 0.9773876956351674,
+        "plain": 0.9343910626012406
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              448943284,
+              347509595,
+              344208137
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347494915,
+            "wall_ns": [
+              448971621,
+              347494915,
+              344199119
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              344939948,
+              344933961,
+              336812859
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 344913102,
+            "wall_ns": [
+              344943583,
+              344913102,
+              336799848
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              344224411,
+              363272595,
+              338683498
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 344214079,
+            "wall_ns": [
+              344214079,
+              363333820,
+              338684733
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              339495630,
+              333288907,
+              334037816
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 334019058,
+            "wall_ns": [
+              339485210,
+              333297526,
+              334019058
+            ]
+          }
+        }
+      },
+      "round": 2,
+      "time_ratios": {
+        "events": 1.0095313823581284,
+        "plain": 1.0326150371934766
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              343710564,
+              408783773,
+              344887116
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 344874670,
+            "wall_ns": [
+              343699984,
+              408769949,
+              344874670
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              328580958,
+              334156468,
+              334545230
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 334153636,
+            "wall_ns": [
+              328595012,
+              334153636,
+              334534212
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              341910488,
+              345690799,
+              343899867
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343889241,
+            "wall_ns": [
+              341890426,
+              345679420,
+              343889241
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              337729574,
+              335834876,
+              333790023
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 335823072,
+            "wall_ns": [
+              337717970,
+              335823072,
+              333790416
+            ]
+          }
+        }
+      },
+      "round": 3,
+      "time_ratios": {
+        "events": 1.0028655418155406,
+        "plain": 0.9950288227963087
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              346214531,
+              350557730,
+              344562774
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 346216604,
+            "wall_ns": [
+              346216604,
+              350537877,
+              344555088
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              333891550,
+              374653064,
+              350234231
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 350269493,
+            "wall_ns": [
+              333897663,
+              374631927,
+              350269493
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              425067876,
+              404676498,
+              342986740
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 404661380,
+            "wall_ns": [
+              425042859,
+              404661380,
+              342975878
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              336657754,
+              340262440,
+              337815937
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 337804611,
+            "wall_ns": [
+              336668350,
+              340241956,
+              337804611
+            ]
+          }
+        }
+      },
+      "round": 4,
+      "time_ratios": {
+        "events": 0.855571154331555,
+        "plain": 1.0368996798566494
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              357099407,
+              367457732,
+              343474539
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 357086923,
+            "wall_ns": [
+              357086923,
+              367987511,
+              343462863
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              357948367,
+              423504257,
+              453862985
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 423489465,
+            "wall_ns": [
+              357955204,
+              423489465,
+              453868290
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              370783783,
+              367776205,
+              346531029
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 367761921,
+            "wall_ns": [
+              370761133,
+              367761921,
+              346520569
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              372414003,
+              347097940,
+              347216748
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347345159,
+            "wall_ns": [
+              372413785,
+              347077271,
+              347345159
+            ]
+          }
+        }
+      },
+      "round": 5,
+      "time_ratios": {
+        "events": 0.9709730741807823,
+        "plain": 1.219217985416057
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              349437081,
+              351394998,
+              345701351
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 349417241,
+            "wall_ns": [
+              349417241,
+              351383209,
+              345692375
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              356667147,
+              367180938,
+              356666049
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 356647417,
+            "wall_ns": [
+              356647417,
+              367240635,
+              356636428
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              364962098,
+              408160101,
+              379918407
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 379912467,
+            "wall_ns": [
+              364948571,
+              408136353,
+              379912467
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              358235183,
+              341309919,
+              348007485
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347988267,
+            "wall_ns": [
+              358223803,
+              341296486,
+              347988267
+            ]
+          }
+        }
+      },
+      "round": 6,
+      "time_ratios": {
+        "events": 0.9197309152794926,
+        "plain": 1.0248834539010478
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              356634104,
+              338737704,
+              345776295
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 345754992,
+            "wall_ns": [
+              356612798,
+              338778144,
+              345754992
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              337476372,
+              333350838,
+              332992364
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 333350421,
+            "wall_ns": [
+              337462441,
+              333350421,
+              332984432
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              352313116,
+              342846151,
+              344826599
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 344806373,
+            "wall_ns": [
+              352301172,
+              342840759,
+              344806373
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              340325975,
+              338742484,
+              330837507
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 338731087,
+            "wall_ns": [
+              340314838,
+              338731087,
+              330818634
+            ]
+          }
+        }
+      },
+      "round": 7,
+      "time_ratios": {
+        "events": 1.0027511643469535,
+        "plain": 0.9841152282547955
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              339309245,
+              351038278,
+              345440414
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 345420303,
+            "wall_ns": [
+              339290152,
+              351035203,
+              345420303
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              335063519,
+              340274609,
+              333945729
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 335085843,
+            "wall_ns": [
+              335085843,
+              340265238,
+              333932855
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              355765849,
+              356889287,
+              351450268
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 355745348,
+            "wall_ns": [
+              355745348,
+              356869425,
+              351463494
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              335716370,
+              339628917,
+              336411892
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 336411436,
+            "wall_ns": [
+              335703215,
+              339607330,
+              336411436
+            ]
+          }
+        }
+      },
+      "round": 8,
+      "time_ratios": {
+        "events": 0.9709763035327169,
+        "plain": 0.9960596077952594
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              422806827,
+              530481105,
+              345145149
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 422782191,
+            "wall_ns": [
+              422782191,
+              530475304,
+              345124739
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              336760898,
+              348713808,
+              333828213
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 336749689,
+            "wall_ns": [
+              336749689,
+              349751359,
+              333827561
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              349727523,
+              348585331,
+              346803702
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 348593734,
+            "wall_ns": [
+              349707278,
+              348593734,
+              346794866
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              345591003,
+              340395261,
+              329155861
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 340395698,
+            "wall_ns": [
+              345571059,
+              340395698,
+              329135853
+            ]
+          }
+        }
+      },
+      "round": 9,
+      "time_ratios": {
+        "events": 1.2128221185983796,
+        "plain": 0.9892889098733557
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              355718452,
+              340196543,
+              392264769
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 355704821,
+            "wall_ns": [
+              355704821,
+              340177484,
+              392264353
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              331894738,
+              341479471,
+              333407476
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 333410983,
+            "wall_ns": [
+              331880737,
+              341479498,
+              333410983
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              344764966,
+              344070242,
+              351739954
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 344754215,
+            "wall_ns": [
+              344754215,
+              344074020,
+              351728485
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              340003776,
+              339215735,
+              368315748
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 339987840,
+            "wall_ns": [
+              339987840,
+              339205152,
+              368317795
+            ]
+          }
+        }
+      },
+      "round": 10,
+      "time_ratios": {
+        "events": 1.0317635159297471,
+        "plain": 0.9806556110947968
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              402466999,
+              402404424,
+              449901831
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 402716490,
+            "wall_ns": [
+              402716490,
+              402382477,
+              449912390
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              362431693,
+              809662520,
+              412769059
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 412734964,
+            "wall_ns": [
+              362364886,
+              848733967,
+              412734964
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              344406318,
+              378048942,
+              350032844
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 350034372,
+            "wall_ns": [
+              344385457,
+              378041897,
+              350034372
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              338609663,
+              328422587,
+              336826084
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 336827213,
+            "wall_ns": [
+              338596461,
+              328404237,
+              336827213
+            ]
+          }
+        }
+      },
+      "round": 11,
+      "time_ratios": {
+        "events": 1.1505055566371636,
+        "plain": 1.2253610993123647
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              365258799,
+              350087948,
+              340816855
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 350086273,
+            "wall_ns": [
+              365237895,
+              350086273,
+              340813551
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              331868196,
+              342286019,
+              369092673
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 342293265,
+            "wall_ns": [
+              331847232,
+              342293265,
+              369101670
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              396592045,
+              349069050,
+              337108130
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 349064257,
+            "wall_ns": [
+              396569102,
+              349064257,
+              337088165
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              339292524,
+              350423757,
+              370376800
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 350389546,
+            "wall_ns": [
+              339271841,
+              350389546,
+              370464617
+            ]
+          }
+        }
+      },
+      "round": 12,
+      "time_ratios": {
+        "events": 1.0029278735347573,
+        "plain": 0.9768934858575946
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              348750289,
+              345399567,
+              352917288
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 348738285,
+            "wall_ns": [
+              348738285,
+              345379663,
+              352903496
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              341639872,
+              340548963,
+              358878088
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 341630614,
+            "wall_ns": [
+              341630614,
+              340528868,
+              358866805
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              349126230,
+              343161613,
+              343523961
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343522504,
+            "wall_ns": [
+              349104801,
+              343149319,
+              343522504
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              337421137,
+              345283284,
+              336559422
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 338500766,
+            "wall_ns": [
+              338500766,
+              345262422,
+              336557373
+            ]
+          }
+        }
+      },
+      "round": 13,
+      "time_ratios": {
+        "events": 1.0151832294515413,
+        "plain": 1.0092462065506818
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              366647597,
+              387524763,
+              575025264
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 387507815,
+            "wall_ns": [
+              366650305,
+              387507815,
+              575035182
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              339095826,
+              343227426,
+              361759428
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343217710,
+            "wall_ns": [
+              339075696,
+              343217710,
+              361765735
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              357986654,
+              337543174,
+              351222754
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 351216957,
+            "wall_ns": [
+              357978039,
+              337531791,
+              351216957
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              364194654,
+              371694946,
+              336407531
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 364203861,
+            "wall_ns": [
+              364203861,
+              371680746,
+              336413867
+            ]
+          }
+        }
+      },
+      "round": 14,
+      "time_ratios": {
+        "events": 1.1033288891003061,
+        "plain": 0.9423780106493709
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              360559899,
+              356305870,
+              347949975
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 356285084,
+            "wall_ns": [
+              360564607,
+              356285084,
+              347942943
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              335420994,
+              346703893,
+              335591163
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 335571302,
+            "wall_ns": [
+              335409756,
+              346690561,
+              335571302
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              356283040,
+              351595311,
+              344791094
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 351573637,
+            "wall_ns": [
+              356269975,
+              351573637,
+              344796740
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              341051150,
+              344881698,
+              335655226
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 341049197,
+            "wall_ns": [
+              341049197,
+              344877287,
+              335645768
+            ]
+          }
+        }
+      },
+      "round": 15,
+      "time_ratios": {
+        "events": 1.0134010247190406,
+        "plain": 0.9839381090816642
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              366456351,
+              387112500,
+              351637438
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 366433878,
+            "wall_ns": [
+              366433878,
+              387098801,
+              351638800
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              367337883,
+              347442655,
+              401515366
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 367314779,
+            "wall_ns": [
+              367314779,
+              347422072,
+              401525751
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              377620178,
+              346200298,
+              344282610
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 346198889,
+            "wall_ns": [
+              377597365,
+              346198889,
+              344297616
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              331443147,
+              332842629,
+              341593540
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 332822988,
+            "wall_ns": [
+              331422677,
+              332822988,
+              341593481
+            ]
+          }
+        }
+      },
+      "round": 16,
+      "time_ratios": {
+        "events": 1.0584490292803914,
+        "plain": 1.1036340404467495
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              353092878,
+              361564213,
+              406414580
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 361550822,
+            "wall_ns": [
+              353121399,
+              361550822,
+              406390225
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              335156829,
+              336177130,
+              352149242
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 336156875,
+            "wall_ns": [
+              335144983,
+              336156875,
+              352135822
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              351502704,
+              353519475,
+              343185750
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 351480718,
+            "wall_ns": [
+              351480718,
+              353514164,
+              344067534
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              337628729,
+              334986260,
+              344416148
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 337607941,
+            "wall_ns": [
+              337607941,
+              334986476,
+              344418123
+            ]
+          }
+        }
+      },
+      "round": 17,
+      "time_ratios": {
+        "events": 1.0286505161856418,
+        "plain": 0.9957019198194749
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              590634672,
+              514992381,
+              359749256
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 514972847,
+            "wall_ns": [
+              590558737,
+              514972847,
+              359496820
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              369320857,
+              388744730,
+              374206731
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 374206219,
+            "wall_ns": [
+              369321073,
+              388728753,
+              374206219
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              347073665,
+              383067418,
+              350813998
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 350804422,
+            "wall_ns": [
+              347074593,
+              383061052,
+              350804422
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              401050913,
+              347296726,
+              336514664
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347282947,
+            "wall_ns": [
+              401034842,
+              347282947,
+              336503386
+            ]
+          }
+        }
+      },
+      "round": 18,
+      "time_ratios": {
+        "events": 1.4679770684304545,
+        "plain": 1.0775254651360695
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              349886582,
+              347536913,
+              344019759
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347514795,
+            "wall_ns": [
+              349894746,
+              347514795,
+              344007471
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              428631935,
+              355753595,
+              437246511
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 428605200,
+            "wall_ns": [
+              428605200,
+              355769359,
+              437220793
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              357729978,
+              360090764,
+              365856693
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 360077994,
+            "wall_ns": [
+              357732292,
+              360077994,
+              365844725
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              338301308,
+              347670640,
+              347266294
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347247212,
+            "wall_ns": [
+              338304315,
+              347658303,
+              347247212
+            ]
+          }
+        }
+      },
+      "round": 19,
+      "time_ratios": {
+        "events": 0.9651097839653039,
+        "plain": 1.2342941431593122
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              383674173,
+              358253730,
+              344972578
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 358232351,
+            "wall_ns": [
+              383706428,
+              358232351,
+              344951058
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              360824343,
+              340613749,
+              343405093
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343385249,
+            "wall_ns": [
+              360812857,
+              340621876,
+              343385249
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              347034437,
+              347774234,
+              347039982
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347022972,
+            "wall_ns": [
+              347022972,
+              348041307,
+              347020232
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              342603913,
+              347179368,
+              356507623
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347252811,
+            "wall_ns": [
+              342536059,
+              347252811,
+              356495187
+            ]
+          }
+        }
+      },
+      "round": 20,
+      "time_ratios": {
+        "events": 1.0323015474606678,
+        "plain": 0.9888624026142153
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              348939874,
+              341474322,
+              374021617
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 348918121,
+            "wall_ns": [
+              348918121,
+              341469370,
+              374022872
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              392427562,
+              417043596,
+              374600932
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 392404598,
+            "wall_ns": [
+              392404598,
+              417028078,
+              374587241
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              379751097,
+              344750016,
+              359547380
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 359589755,
+            "wall_ns": [
+              379714427,
+              344735901,
+              359589755
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              347567206,
+              333084474,
+              334400019
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 334403203,
+            "wall_ns": [
+              347546430,
+              333073325,
+              334403203
+            ]
+          }
+        }
+      },
+      "round": 21,
+      "time_ratios": {
+        "events": 0.9703227529382754,
+        "plain": 1.173447486386666
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              380289257,
+              422167981,
+              352591366
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 380272910,
+            "wall_ns": [
+              380272910,
+              422160336,
+              352593783
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              337083085,
+              336243087,
+              331391270
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 336467435,
+            "wall_ns": [
+              337085265,
+              336467435,
+              331371450
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              349817281,
+              339134862,
+              346067915
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 346056550,
+            "wall_ns": [
+              349825050,
+              339124682,
+              346056550
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              345061274,
+              334340607,
+              334949578
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 334928749,
+            "wall_ns": [
+              345050911,
+              334326891,
+              334928749
+            ]
+          }
+        }
+      },
+      "round": 22,
+      "time_ratios": {
+        "events": 1.0988750538026226,
+        "plain": 1.0045940696479299
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              343979533,
+              341362026,
+              347340464
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343957752,
+            "wall_ns": [
+              343957752,
+              341858410,
+              347338812
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              336547763,
+              352481155,
+              431740355
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 352469014,
+            "wall_ns": [
+              336525761,
+              352469014,
+              431761413
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              339318665,
+              342273049,
+              352005595
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 342286925,
+            "wall_ns": [
+              339305984,
+              342286925,
+              351993297
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              335709655,
+              333083896,
+              333257347
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 333244239,
+            "wall_ns": [
+              335687891,
+              333087803,
+              333244239
+            ]
+          }
+        }
+      },
+      "round": 23,
+      "time_ratios": {
+        "events": 1.0048813637856602,
+        "plain": 1.057689744487976
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              351890879,
+              360051799,
+              346054462
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 351868932,
+            "wall_ns": [
+              351868932,
+              360030955,
+              346071743
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              343663842,
+              361425202,
+              332046706
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343643448,
+            "wall_ns": [
+              343643448,
+              361404730,
+              332057064
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              342277855,
+              343193644,
+              343382106
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343172787,
+            "wall_ns": [
+              342262388,
+              343172787,
+              343400224
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              341054565,
+              377242869,
+              332431601
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 341040435,
+            "wall_ns": [
+              341040435,
+              377219638,
+              332451033
+            ]
+          }
+        }
+      },
+      "round": 24,
+      "time_ratios": {
+        "events": 1.025340427124252,
+        "plain": 1.007632564156212
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              342196328,
+              355520282,
+              340239650
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 342183937,
+            "wall_ns": [
+              342183937,
+              355508906,
+              340220180
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              335212010,
+              336219887,
+              404242205
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 336245579,
+            "wall_ns": [
+              335199508,
+              336245579,
+              404218618
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              340443366,
+              344128168,
+              347781440
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 344106468,
+            "wall_ns": [
+              340454125,
+              344106468,
+              347759826
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              332136747,
+              336910398,
+              334599489
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 334578193,
+            "wall_ns": [
+              332159191,
+              336913261,
+              334578193
+            ]
+          }
+        }
+      },
+      "round": 25,
+      "time_ratios": {
+        "events": 0.9944129762768655,
+        "plain": 1.0049835465517025
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              354625881,
+              432185880,
+              456973436
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 432191566,
+            "wall_ns": [
+              354603803,
+              432191566,
+              456961628
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              331393776,
+              333219271,
+              357612366
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 333202913,
+            "wall_ns": [
+              331383967,
+              333202913,
+              357628972
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              379075068,
+              340199649,
+              347553173
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 347531777,
+            "wall_ns": [
+              379061693,
+              340188021,
+              347531777
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              331250237,
+              390558062,
+              420575307
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 390566587,
+            "wall_ns": [
+              331237550,
+              390566587,
+              420575697
+            ]
+          }
+        }
+      },
+      "round": 26,
+      "time_ratios": {
+        "events": 1.2436030159049312,
+        "plain": 0.8531270315757963
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              343542204,
+              343042971,
+              340974298
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343052474,
+            "wall_ns": [
+              343528171,
+              343052474,
+              340953177
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              380564342,
+              333799203,
+              335355892
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 335334661,
+            "wall_ns": [
+              380540897,
+              333816536,
+              335334661
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              356371557,
+              346396150,
+              356368211
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 356356583,
+            "wall_ns": [
+              356373403,
+              346399178,
+              356356583
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              388459129,
+              344607604,
+              332983591
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 344616763,
+            "wall_ns": [
+              388464772,
+              344616763,
+              332964306
+            ]
+          }
+        }
+      },
+      "round": 27,
+      "time_ratios": {
+        "events": 0.9626663021404042,
+        "plain": 0.9730654367500979
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              342671513,
+              341968116,
+              342398069
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 342408324,
+            "wall_ns": [
+              342689938,
+              341947751,
+              342408324
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              338482513,
+              337637553,
+              334556648
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 337617259,
+            "wall_ns": [
+              338461371,
+              337617259,
+              334574490
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              344317783,
+              349225888,
+              341826617
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 344296857,
+            "wall_ns": [
+              344296857,
+              349218255,
+              341839605
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              330588180,
+              338546511,
+              335150652
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 335130823,
+            "wall_ns": [
+              330575855,
+              338535021,
+              335130823
+            ]
+          }
+        }
+      },
+      "round": 28,
+      "time_ratios": {
+        "events": 0.9945148119664653,
+        "plain": 1.0074192996566
+      }
+    },
+    {
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              343228972,
+              343266765,
+              349959944
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 343283710,
+            "wall_ns": [
+              343215051,
+              343283710,
+              349938822
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              335871461,
+              332398495,
+              338666344
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 338645097,
+            "wall_ns": [
+              335835872,
+              339683083,
+              338645097
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              342873284,
+              348084117,
+              361849353
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 348042163,
+            "wall_ns": [
+              342886555,
+              348042163,
+              361971812
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              332836842,
+              334346474,
+              343931775
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 334343172,
+            "wall_ns": [
+              332831696,
+              334343172,
+              343911368
+            ]
+          }
+        }
+      },
+      "round": 29,
+      "time_ratios": {
+        "events": 0.986327940962716,
+        "plain": 1.012866794839166
+      }
+    },
+    {
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              347837666,
+              350905432,
+              350474706
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 350477892,
+            "wall_ns": [
+              347815043,
+              350902223,
+              350477892
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              345525481,
+              368733675,
+              336970905
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 345502295,
+            "wall_ns": [
+              345502295,
+              368720083,
+              336972191
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              346765695,
+              346036069,
+              342823251
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 346037841,
+            "wall_ns": [
+              346762847,
+              346037841,
+              342824417
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              353317952,
+              352209571,
+              338674483
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 352196752,
+            "wall_ns": [
+              353331094,
+              352196752,
+              338676040
+            ]
+          }
+        }
+      },
+      "round": 30,
+      "time_ratios": {
+        "events": 1.0128311140399238,
+        "plain": 0.9809922807011009
+      }
+    }
+  ],
+  "summaries": {
+    "events": {
+      "after_median_ms": 349.751757,
+      "after_sample_ms": [
+        346.200395,
+        347.494915,
+        344.87467,
+        346.216604,
+        357.086923,
+        349.417241,
+        345.754992,
+        345.420303,
+        422.782191,
+        355.704821,
+        402.71649,
+        350.086273,
+        348.738285,
+        387.507815,
+        356.285084,
+        366.433878,
+        361.550822,
+        514.972847,
+        347.514795,
+        358.232351,
+        348.918121,
+        380.27291,
+        343.957752,
+        351.868932,
+        342.183937,
+        432.191566,
+        343.052474,
+        342.408324,
+        343.28371,
+        350.477892
+      ],
+      "baseline_median_ms": 348.3179485,
+      "baseline_relative_spread": [
+        0.9826852921993482,
+        1.1617586223811835
+      ],
+      "baseline_sample_ms": [
+        354.209897,
+        344.214079,
+        343.889241,
+        404.66138,
+        367.761921,
+        379.912467,
+        344.806373,
+        355.745348,
+        348.593734,
+        344.754215,
+        350.034372,
+        349.064257,
+        343.522504,
+        351.216957,
+        351.573637,
+        346.198889,
+        351.480718,
+        350.804422,
+        360.077994,
+        347.022972,
+        359.589755,
+        346.05655,
+        342.286925,
+        343.172787,
+        344.106468,
+        347.531777,
+        356.356583,
+        344.296857,
+        348.042163,
+        346.037841
+      ],
+      "change_percent": 0.7206373071894312,
+      "disturbed_repetitions": {
+        "after": 0,
+        "before": 0
+      },
+      "median_loss_at_most_2_percent": true,
+      "median_throughput_ratio": 0.9928451871785566,
+      "median_time_ratio": 1.0072063730718943,
+      "paired_bootstrap_95ci": [
+        0.9944638941216655,
+        1.026995471654947
+      ],
+      "ratio_range": [
+        0.855571154331555,
+        1.4679770684304545
+      ],
+      "within_baseline_spread": true
+    },
+    "plain": {
+      "after_median_ms": 341.9619395,
+      "after_sample_ms": [
+        333.000151,
+        344.913102,
+        334.153636,
+        350.269493,
+        423.489465,
+        356.647417,
+        333.350421,
+        335.085843,
+        336.749689,
+        333.410983,
+        412.734964,
+        342.293265,
+        341.630614,
+        343.21771,
+        335.571302,
+        367.314779,
+        336.156875,
+        374.206219,
+        428.6052,
+        343.385249,
+        392.404598,
+        336.467435,
+        352.469014,
+        343.643448,
+        336.245579,
+        333.202913,
+        335.334661,
+        337.617259,
+        338.645097,
+        345.502295
+      ],
+      "baseline_median_ms": 339.3594635,
+      "baseline_relative_spread": [
+        0.9807387852615461,
+        1.1508934596132163
+      ],
+      "baseline_sample_ms": [
+        356.381995,
+        334.019058,
+        335.823072,
+        337.804611,
+        347.345159,
+        347.988267,
+        338.731087,
+        336.411436,
+        340.395698,
+        339.98784,
+        336.827213,
+        350.389546,
+        338.500766,
+        364.203861,
+        341.049197,
+        332.822988,
+        337.607941,
+        347.282947,
+        347.247212,
+        347.252811,
+        334.403203,
+        334.928749,
+        333.244239,
+        341.040435,
+        334.578193,
+        390.566587,
+        344.616763,
+        335.130823,
+        334.343172,
+        352.196752
+      ],
+      "change_percent": 0.47888080998161886,
+      "disturbed_repetitions": {
+        "after": 0,
+        "before": 0
+      },
+      "median_loss_at_most_2_percent": true,
+      "median_throughput_ratio": 0.995234015286384,
+      "median_time_ratio": 1.0047888080998162,
+      "paired_bootstrap_95ci": [
+        0.9890756562437855,
+        1.018875124370107
+      ],
+      "ratio_range": [
+        0.8531270315757963,
+        1.2342941431593122
+      ],
+      "within_baseline_spread": true
+    }
+  }
+}
