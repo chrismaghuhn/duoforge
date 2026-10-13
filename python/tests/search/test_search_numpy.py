@@ -305,7 +305,7 @@ class BayesSize(unittest.TestCase):
         for k, m, worlds in ((8, 8, 16), (16, 8, 16), (8, 4, 32 - 8)):
             matrix.check_bayes_size(k, m, worlds, "inside")
         for k, m, worlds in ((17, 8, 16), (8, 16, 16), (16, 16, 16), (8, 8, 32), (8, 8, 64)):
-            with self.subTest(k=k, m=m, worlds=worlds), self.assertRaisesRegex(ValueError, "outside: .*above the limit"):
+            with self.subTest(k=k, m=m, worlds=worlds),                     self.assertRaisesRegex(ValueError, "outside: .*above the limit"):
                 matrix.check_bayes_size(k, m, worlds, "outside")
 
 
