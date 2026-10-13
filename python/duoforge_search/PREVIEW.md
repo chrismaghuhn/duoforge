@@ -27,7 +27,8 @@ confirms this change. This does not authorize assuming Nature known in closed-sh
   the two lead seats**. The seats are separate positions in battle and in the network's input, so this merge is an
   approximation, not evaluator equality (the review of #462).
 - `"seats"` (arm 1bws): as `"distinct"`, but the lead seats are kept and only the bench order merges
-  (180 combinations).
+  (180 combinations). The order of the two back members is part of the network's input too, so this merge is an
+  assumption as well: the owner judged it harmless (#462), and no test checks it.
 
 The record names a width other than `"top"` (`preview_width`). The preview's Bayesian LP is held to the size limit
 of `matrix.MAX_BAYES_CELLS`, where the exact rescue is known to finish. `Honest` checks K + 2 rows for a widened

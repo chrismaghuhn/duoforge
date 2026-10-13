@@ -40,12 +40,12 @@ def _combinations(seats=False):
 
 COMBINATION, COMBINATIONS = _combinations()  # 90 combinations of the 360 tuples
 SEATED, SEATINGS = _combinations(seats=True)  # 180: the lead seats kept, the bench order merged
+COVER_MAX = ROSTER - BROUGHT  # the members a combination leaves out: the cover adds at most this many own candidates
 
 
 def _grouping(seats):
     """(each tuple's combination index, the number of combinations) of width "seats" (seats) or "distinct"."""
     return (SEATED, SEATINGS) if seats else (COMBINATION, COMBINATIONS)
-COVER_MAX = ROSTER - BROUGHT  # the members a combination leaves out: the cover adds at most this many own candidates
 
 
 def distinct(probabilities, count, cover=False, seats=False):

@@ -320,6 +320,8 @@ class Honest(lookahead.Lookahead):
             raise ValueError(f"preview_width must be one of {preview.WIDTHS} (got {preview_width!r})")
         if preview_width != "top" and preview_mode == "raw":
             raise ValueError("preview_width requires a preview search (preview_mode value or turn1)")
+        if preview_width != "top" and k == 1:  # one candidate plays raw: no preview table to widen
+            raise ValueError("preview_width requires k > 1 (with k = 1 the preview plays raw)")
         if preview_width != "top":  # the cover adds up to preview.COVER_MAX own rows to the preview's table
             matrix.check_bayes_size(k + preview.COVER_MAX, m, s, f"the {preview_width} preview")
         self.preview_width = preview_width

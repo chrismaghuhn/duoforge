@@ -218,13 +218,19 @@ switched on, a corrected width is measured again, on the ladder and in the mirro
 
 **Change** (`preview_width` "seats", `preview.distinct(..., seats=True)`): as 1bw, except that a combination keeps the
 lead pair's seat order. Only the bench order merges: 180 combinations of 2 tuples each. Own candidates are the 8
-likeliest plus the cover (k' ≤ 10); foe candidates are the 8 likeliest. The size limit is unchanged: at most 20,124
-tableau cells.
+likeliest plus the cover (k' ≤ 10); foe candidates are the 8 likeliest. The preview's table is at most 10 × 8 × 16:
+20,124 tableau cells, under the unchanged limit of 20,898. The bench order is part of the network's input too:
+merging it is an assumption the owner judged harmless (#462).
 
 **Runs, on main after #459:**
 1. **Gated:** `--step 1bws --previous 0 --h2h --previous-run <the rebaselined step 0's ladder.json (step 2's
    amendment)>` against `bot`, `bc6` and `ppo`, 1024 pairs, then its exclusive latency run (16 pairs against `bot`).
-2. **Mirror touchstone:** `--matchup <Team A> <the Nationals sun team> --mirror --step 1bws --previous 0`, 512 pairs.
+2. **Mirror touchstone:** `--matchup <Team A> <the Nationals sun team> --mirror --step 1bws --previous 0`, 512 pairs,
+   seats alternating. The sun team is piloted by the live search (step 0), whose spread table leaves out Team A. A new
+   pilot is made for each arm. 1bws is paired against step 0 on the same games, with the 95% pair interval.
+
+The sim-pilot touchstone (`bot` and `ppo` piloting the sun team, part of 1bw's criteria) is not part of 1bws's. The
+owner replaced it with the mirror run after 1bw: neither sim pilot plays that team well. It is not run for 1bws.
 
 **Criteria, fixed now.** 1bws may be switched on live when:
 - every ladder gate holds against step 0 (strength, no harm, reproduced, fallbacks, latency p99 ≤ 2.0 s), and the
