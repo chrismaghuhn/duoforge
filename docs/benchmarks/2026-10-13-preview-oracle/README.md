@@ -1,4 +1,4 @@
-# Preview oracle (issue #458): what the team preview costs against the Nationals sun team
+# Preview oracle (issue #458): what the team preview costs against the tournament sun team
 
 **Question (owner, 2026-10-13).** Games are mostly lost at the team matchup or at the bring-4 choice. Before an opening book is built: against one fixed opponent, how much better than our current preview is the best bring-4 and lead choice, and how far apart do the choices lie?
 
@@ -9,7 +9,7 @@ This document was committed before the first measurement (`3fda5ad2`); the resul
 - **Tool:** `python -m duoforge_search.preview_oracle` (this branch).
 - **Teams:**
   - ours: Team A (`data/teams/A.txt`, the arena team);
-  - foe: the sun team that won two Nationals in a row (test team of #458, as of 2026-10). Its sheet with stat points is a private file. Reports name its species, never a player.
+  - foe: a top tournament sun team (test team of #458, as of 2026-10). Its sheet with stat points is a private file. Reports name its species, never a player.
   - Both sheets have full stat points: nothing is filled.
 - **Pilots: the live search on both seats** (ladder step 0, `HONEST_SETTINGS`). BC6 searches, BC6 is the foe model of the worlds. Each seat's spread table leaves out the other team's registry rows: Team A's for the foe, none for ours, because the foe team is not in the registry.
   - This replaces the raw BC pilots of the ladder's matchup arm. Those pilots played the sun team far below its arena strength: 95–98 % for Team A in the simulator, 4:15 on the arena.
