@@ -1,0 +1,14 @@
+{
+  "commands_and_all_runtime_properties_identical": true,
+  "ignored_difference": "registration backtrace locations only",
+  "inventory_sha256": "ab415dad8fa1b4923bcc60cfd9715d5e66036693696ca7e1c01deead10b8fd40",
+  "registration_order_identical": true,
+  "tests_after": 1403,
+  "tests_before": 1403,
+  "tier_counts": {
+    "full": 30,
+    "quick": 204,
+    "reference": 1151,
+    "slow": 18
+  }
+}

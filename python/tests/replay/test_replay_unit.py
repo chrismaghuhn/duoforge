@@ -2307,6 +2307,13 @@ class FactsTest(unittest.TestCase):
         self.assertEqual(f[0].moves, frozenset({"Meteor Beam"}))
         self.assertEqual(f[1].moves, frozenset({"Knock Off"}))  # a called move's charge is not its own
 
+    def test_a_cant_line_of_an_ability_names_its_holders_ability(self):
+        # decision 0081: cant|holder|ability: Armor Tail|Move|[of] user (the pin, data/abilities.ts armortail) shows the
+        # holder's ability; the stopped user's ability stays unknown
+        f = self.facts("|cant|p2b: Giraffe|ability: Armor Tail|Fake Out|[of] p1b: Roar", side=1)
+        self.assertEqual(f[1].ability, "Armor Tail")
+        self.assertEqual(self.facts("|cant|p2b: Giraffe|ability: Armor Tail|Fake Out|[of] p1b: Roar")[1].ability, None)
+
     def test_ally_switch_swaps_the_occupants(self):
         # review C1: after |swap| both positions name the other member
         f = self.facts("|move|p1b: Roar|Ally Switch|p1b: Roar", "|swap|p1b: Roar|0|[from] move: Ally Switch",
@@ -2591,6 +2598,21 @@ class BeliefGameTest(unittest.TestCase):
                     drawn = [trace_to_c.key(m) for m in s["moves"]]
                     self.assertTrue({trace_to_c.key(m) for m in member.moves} <= set(drawn), (member, s))
                     self.assertEqual(bin(bits).count("1"), len(member.moves))
+
+    def test_an_ability_a_cant_line_shows_is_never_drawn_otherwise(self):
+        # decision 0081: the fixture's cant|p2b: Farigiraf|ability: Armor Tail|Fake Out|[of] p1b: Incineroar shows
+        # Farigiraf's ability; a corpus set with another ability, however heavy, is never drawn for it
+        from duoforge_replay import corpus, setbelief
+        sets = dict(self.corpus._sets)
+        sets["FARIGIRAF"] = list(sets["FARIGIRAF"]) + [(item, "CudChew", nature, moves, 50)
+                                                       for item, _, nature, moves, _ in sets["FARIGIRAF"]]
+        belief = setbelief.SetBelief(corpus.Corpus(sets, frozenset(), "test"), self.data, min_sets=1)
+        abilities = set()
+        for draw in range(8):
+            sheets = self.G.draw_sheets(self.log, "gen9championsvgc2026regmc", self.data, belief, 7, "fixture-belief",
+                                        draw)[0]
+            abilities |= {trace_to_c.key(s["ability"]) for s in sheets[1] if trace_to_c.key(s["species"]) == "FARIGIRAF"}
+        self.assertEqual(abilities, {"ARMORTAIL"})
 
     def test_a_revealed_name_outside_the_tables_is_a_name_skip(self):
         # the 2026-10-10 run: an item a log reveals (Assault Vest) that the tables lack was a KeyError

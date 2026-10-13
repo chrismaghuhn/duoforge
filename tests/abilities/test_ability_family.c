@@ -1,6 +1,6 @@
 /*
  * duoforge.combat.ability_family (white-box): the ability families of
- * decision 0015 as the battle reads them (src/combat/ability_family.h). The
+ * decision 0015 as the battle reads them (src/combat/abilities/families.h). The
  * "-ate" and the pinch rules decide from the family column and its type and
  * the setters of the entry from the column and its weather or terrain, and
  * from nothing else; here every ability of the pool is run against every
@@ -22,7 +22,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "combat/ability_family.h"
+#include "combat/abilities/families.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "support/check.h"
@@ -33,8 +33,8 @@ typedef struct ability_type {
 } ability_type;
 
 /* ATE: a Normal move becomes the type (and gets BasePower x4915/4096). */
-/* The family row of a member's sheet ability: the rules of combat/ability_family.h work on a family row, and the turn
- * code gets the row of the ability now (dfi_ability_family_now in combat/turn.c); this test sets up members by their
+/* The family row of a member's sheet ability: the rules of combat/abilities/families.h work on a family row, and the turn
+ * code gets the row of the ability now (dfi_ability_family_now in combat/abilities/current.h); this test sets up members by their
  * sheet ability, which is the ability now when nothing changed it. */
 static dfi_ability_family fam_of(const dfi_member *m)
 {

@@ -78,6 +78,27 @@ STEPS = {"0": {"base": None, "settings": {}},
          "2l": {"base": "0", "settings": {"lam": 0.25}}}  # a smaller Nash share in the mix
 
 
+
+SLOT_OPTIONS = 32  # duoforge._layout.MAX_SLOT_OPTIONS, written out: this guard runs before the library is touched
+
+
+def size_refusal(name):
+    """Why step `name` is refused before any run, or None: its Bayesian LP is above the size limit (matrix.
+    MAX_BAYES_CELLS; owner on #440, 2026-10-13: b-s64 and b-km16 stopped in the exact rescue).
+    The struck arms stay declared above. Width "slots" may add every option of both slots (SLOT_OPTIONS each): its
+    bound is k + 2 * SLOT_OPTIONS own pairs (2w's k' reached 34 on the arena logs, median 19)."""
+    from . import matrix
+    settings = step_settings(name)
+    if settings["k"] == 1:
+        return None
+    most = settings["k"] + (2 * SLOT_OPTIONS if settings.get("width") == "slots" else 0)
+    try:
+        matrix.check_bayes_size(most, settings["m"], settings["s"], f"step {name!r}")
+    except ValueError as err:
+        return str(err)
+    return None
+
+
 def step_settings(name):
     """The settings of a step for honest.Honest: the live HONEST_SETTINGS with the deltas of its base chain applied,
     base first. A fresh dict: HONEST_SETTINGS is never changed. ValueError for an unknown step or a broken base
@@ -191,7 +212,12 @@ def fallback_allowed(previous_share):
 
 
 def _pooled_share(opponents, arm):
-    """The fallback share of an arm over all opponents' non-team decisions (reported, not gated)."""
+    """The fallback share of an arm over all opponents' non-team decisions (reported, not gated). None when an
+    opponent's arm lacks the counts: reports written before fallback_decisions and non_team_decisions were added
+    (step 1's) carry the per-opponent shares only, and a pooled share cannot be recovered from shares."""
+    if any("fallback_decisions" not in entry["arms"][arm] or "non_team_decisions" not in entry["arms"][arm]
+           for entry in opponents.values()):
+        return None
     fallbacks = sum(entry["arms"][arm]["fallback_decisions"] for entry in opponents.values())
     non_team = sum(entry["arms"][arm]["non_team_decisions"] for entry in opponents.values())
     return fallbacks / max(1, non_team)
@@ -262,15 +288,17 @@ def verdict(report, latency=None):
         latency_gate = p99 is not None and p99 <= GATES["p99_seconds"]
         source = {"run": "latency", "step": latency["conditions"]["step"]["name"],
                   "commit": latency["conditions"]["commit"]}
+    pooled = {"step": _pooled_share(opponents, "step"), "previous": _pooled_share(opponents, "previous")}
+    if None in pooled.values():
+        notes.append("pooled fallback shares not reported: the report has no fallback_decisions or "
+                     "non_team_decisions (an old-format report); the fallback gate reads the per-opponent shares")
     gates = {"strength": strength, "no_harm": no_harm, "reproduced": reproduced, "fallback": fallback,
              "latency": latency_gate}
     return {"gates": gates, "adopt": None if latency is None else all(gates.values()),
             "h2h": h2h,
             "paired": {name: entry["paired"]["step_vs_previous"] for name, entry in opponents.items()
                        if "step_vs_previous" in entry.get("paired", {})},
-            "fallback": {"per_opponent": fallback_per,
-                         "pooled": {"step": _pooled_share(opponents, "step"),
-                                    "previous": _pooled_share(opponents, "previous")}},
+            "fallback": {"per_opponent": fallback_per, "pooled": pooled},
             "p99_seconds": p99, "p99_source": source, "notes": notes}
 
 
@@ -628,6 +656,10 @@ def main(argv=None):
         previous_cfg = None if args.previous is None else step_settings(args.previous)
     except ValueError as err:
         raise SystemExit(str(err)) from None
+    for name in (args.step, args.previous):
+        refusal = None if name is None else size_refusal(name)
+        if refusal is not None:
+            raise SystemExit(refusal)
     recorded = recorded_dir = None
     if args.previous_run is not None:  # every check against the recorded run runs before any network is loaded
         recorded, recorded_dir = _load_json(args.previous_run), os.path.dirname(os.path.abspath(args.previous_run))

@@ -1,3 +1,25 @@
+# Independent format pins and mutation controls use only the standard library.
+add_test(NAME duoforge.reference.format_pins
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/tests/test_battle_pins.py")
+duoforge_label_test(duoforge.reference.format_pins quick tools ci-no-skip)
+set_tests_properties(duoforge.reference.format_pins PROPERTIES TIMEOUT 60
+    ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_CMAKE=${CMAKE_COMMAND}")
+
+# Observe every frozen certified/fixture/live pin independently in CI. Native
+# profiles retain a visible skip; configured Python/Showdown jobs must run it.
+if(DUOFORGE_PYTHON AND DUOFORGE_NODE AND DUOFORGE_PS_REFERENCE_DIR)
+    add_test(NAME duoforge.reference.battle_pins
+        COMMAND "${DUOFORGE_PYTHON}" "${PROJECT_SOURCE_DIR}/tools/reference/capture_battle_pins.py"
+            "${PROJECT_SOURCE_DIR}" --check)
+    set_tests_properties(duoforge.reference.battle_pins PROPERTIES TIMEOUT 600 ENVIRONMENT
+        "DUOFORGE_NODE=${DUOFORGE_NODE};DUOFORGE_PS_REFERENCE_DIR=${DUOFORGE_PS_REFERENCE_DIR};DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>;DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1;OPENBLAS_NUM_THREADS=1")
+else()
+    add_test(NAME duoforge.reference.battle_pins
+        COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: needs Python, Node and pinned Showdown")
+    set_tests_properties(duoforge.reference.battle_pins PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+endif()
+duoforge_label_test(duoforge.reference.battle_pins full tools ci-no-skip)
+
 add_test(NAME duoforge.reference.conformance_tables
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/trace_to_c.py"
         "${PROJECT_SOURCE_DIR}" --check)

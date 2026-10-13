@@ -296,6 +296,22 @@ class Nash(unittest.TestCase):
                 matrix.solve(bad)
 
 
+class BayesSize(unittest.TestCase):
+    """The LP size limit (#440, owner 2026-10-13): b-k16's tableau, the largest that never failed; literals."""
+
+    def test_the_limit_and_its_edges(self):
+        self.assertEqual(matrix.MAX_BAYES_CELLS, 20898)
+        self.assertEqual(matrix.bayes_size(8, 8, 16), (129, 24, 129 * (24 + 129 + 1)))
+        self.assertEqual(matrix.bayes_size(16, 8, 16)[2], 20898)  # b-k16
+        for k, m, worlds in ((8, 8, 16), (16, 8, 16), (31, 2, 2), (40, 4, 12)):
+            matrix.check_bayes_size(k, m, worlds, "inside")
+        # one more own pair than b-k16; b-m16, b-km16 (stopped), b-s32, b-s64 (stopped)
+        for k, m, worlds in ((17, 8, 16), (8, 16, 16), (16, 16, 16), (8, 8, 32), (8, 8, 64)):
+            with self.subTest(k=k, m=m, worlds=worlds), \
+                    self.assertRaisesRegex(ValueError, "outside: .*above the limit"):
+                matrix.check_bayes_size(k, m, worlds, "outside")
+
+
 class ExpectedValue(unittest.TestCase):
     def test_expected_choice(self):
         a = np.array([[0.0, 1.0], [0.9, 0.2], [-1.0, -1.0]])
@@ -1335,11 +1351,13 @@ class TrapPicks(unittest.TestCase):
         self.assertFalse(np.array_equal(one, b.sample([(1, 3, 7)], 8, seed=5, key=10)["trap"]))
         self.assertFalse(np.array_equal(one, b.sample([(1, 3, 7)], 8, seed=6, key=9)["trap"]))
 
-    def test_the_hypotheses_are_revision_three(self):
+    def test_the_hypotheses_are_revision_four(self):
         from duoforge import _layout, view
         h = view.hypotheses(3)
         self.assertEqual((h["revision"] != 0).all(), True)
-        self.assertEqual(int(h["revision"][0]), 3)  # DUOFORGE_HYPOTHESIS_REVISION (trap_pick), not the NO_TRAP revision 2
+        # Decision 0066 (visible sleep): revision 4 reads the sleep word with the exact law (revision 3 has trap_pick, the
+        # sleep word of revision 4 is the start S's bucket); the NO_TRAP revision 2 stays a different value
+        self.assertEqual(int(h["revision"][0]), 4)
         self.assertEqual(int(h["revision"][0]), _layout.CONSTANTS["DUOFORGE_HYPOTHESIS_REVISION"])
         self.assertEqual(h["trap_pick"].shape, (3, 4))
 

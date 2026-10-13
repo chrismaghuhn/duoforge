@@ -193,6 +193,20 @@ reported as adopted on the ladder, but it is no live candidate.
 Nationals sun team (`--matchup`, members with their known stat points), 256 pairs, `bot` and `ppo` as the sun team's
 pilots. The mirror arm (our own search piloting the sun team) follows when the harness can seat a searcher on the foe side.
 
+**Amendment before any step-2 run (owner, 2026-10-13, #440).**
+- **Arms:** phase A screens `2d`, `2e` and `2l` only.
+  - The KO check found the misses mostly among the candidates but not chosen: with an own KO available, 293 not
+    chosen against 31 not a candidate. That is the target of these three arms.
+  - `2w` and `2wd` are above the LP size limit (k' up to 34 on the arena logs: 23,220 tableau cells). They are
+    refused by name until the solver is repaired.
+  - The selection rule above is unchanged, over these three arms.
+- **The baseline is step 0 rerun on main after #459** (the visible-sleep fix changes step 0's play):
+  - `--step 0` against `bot`, `bc6` and `ppo`, 1024 pairs, on this branch with main merged.
+  - It is phase A's `--paired-with` run (its first 512 pairs) and phase B's `--previous-run`.
+  - The recorded step-0 run at 1cb3e2d9 is no longer today's step 0, and no step-2 arm is paired with it.
+- **The KO check** (`ko_check`, same arena logs) runs for step 0 on this code and for each screened arm, as a
+  reported metric, not a gate.
+
 ## The KO check (owner, 2026-10-13; a metric, fixed before its first run)
 
 **What.** Over every searched turn decision of the arena's battle logs, in both directions (`duoforge_search.ko_check`):
@@ -421,9 +435,38 @@ The exact rescue is rare: 1 in about 10,000 searched decisions at s = 32 (1 agai
 in s = 64's `bot` arm, where it finished. Its tableau grows with s (1025 rows at s = 128, 2049 at s = 256), so the
 queued S arms above s = 64 will likely stop the same way, and a stop loses the whole run's report.
 
-**Open, to decide before a rerun of the S arms ≥ 64:** start the exact rescue at the feasible first-row vertex, as the
-float path already does, and scale the iteration limit with the tableau; or record s ≥ 64 as too large for the exact
-rescue and refuse it before the run.
+**b-km16 stopped the same way** (03:38, `ppo` arm; the `bot` arm had finished): 257 rows and 32 variables, although
+`b-m16` (257, 24) and `b-s32` (257, 40), no smaller, finished. The stop is rare and not monotone in the size.
+
+| arm | rows (s·m + 1) | variables (k + s) | tableau cells | result |
+|---|---|---|---|---|
+| 0 | 129 | 24 | 19,866 | never failed |
+| `b-k16` | 129 | 32 | 20,898 | never failed |
+| `b-m16` | 257 | 24 | 72,474 | finished |
+| `b-km16` | 257 | 32 | 74,530 | **stopped** in the exact rescue |
+| `b-s32` | 257 | 40 | 76,586 | finished |
+| `b-s64` | 513 | 72 | 300,618 | **stopped** in the exact rescue |
+
+Tableau cells are those of the exact rescue: rows × (variables + rows + 1).
+
+**Decided (owner, #440, 2026-10-13): a size limit instead of a list of names.** A search whose Bayesian LP can exceed
+**20,898 tableau cells** (b-k16's, the largest that never failed) is refused by name: by `honest.Honest` when it is
+built, and for a ladder step before any network loads (`ladder.size_refusal`, `matrix.check_bayes_size`). Step 2's
+width "slots" knows its pairs only at a decision, so there each table is checked before its solve. The arms above the
+limit stay declared and are never run.
+
+The literal "larger than the largest that succeeded" would admit `b-km16`, which is smaller than `b-s32` and failed.
+Two consistent readings remain; this one takes the safe one:
+- **b-k16's tableau (20,898 cells), implemented:** the largest size that never failed.
+- **b-m16's tableau (72,474 cells), the owner's choice to make:** the largest success below the smallest failure. It
+  would admit 2w (below).
+
+Where the planned steps stand:
+- **1bw** (preview: 129 rows, at most 10 + 16 = 26 variables, 20,124 cells) is under the limit.
+- **2w** is not. Over the 1285 searched decisions of the arena logs its k' has median 19, p90 31 and maximum 34. Only
+  33 % of the decisions stay at 16 own pairs or fewer, and k' = 34 is 23,220 cells. The solver repair comes before
+  step 2's width arms; 2d, 2e and 2l are under the limit.
+- **Live play** (8 × 8 × 16: 19,866 cells) is under the limit.
 
 **Provenance.** search/budget at 25883412 (`dirty: false`), paired by prefix with step 0's run at 1cb3e2d9. 20:29 to
 02:13 on two shared lock slots. Raw output private, outside the repository.

@@ -40,17 +40,17 @@ Pin: Pokemon Showdown b2cb775 (read only), Champions mod checked first.
 
 ## 2. What the engine already has
 
-- `dfi_run_protect(r, user, kind)` (`src/combat/turn.c:3810-3840`): stall counter, the `DFI_VOL_PROTECT` volatile, `protect_kind` stored in the tail, `DUOFORGE_EVENT_PROTECT` (the `-singleturn` line). King's Shield is this function with a new kind.
-- Protect's TryHit step (`src/combat/turn.c:5322-5336`): `hit[i]` and the `BLOCKED` event (`-activate ... move: Protect`). King's Shield differs in two places only: the status exemption and the contact drop.
-- The dispatch on the special id (`src/combat/turn.c:6142-6146`, PROTECT and SPIKY_SHIELD).
+- `dfi_run_protect(r, user, kind)` (`src/combat/turn.c (dfi_run_protect)`): stall counter, the `DFI_VOL_PROTECT` volatile, `protect_kind` stored in the tail, `DUOFORGE_EVENT_PROTECT` (the `-singleturn` line). King's Shield is this function with a new kind.
+- Protect's TryHit step (`src/combat/turn.c (dfi_run_move_body)`): `hit[i]` and the `BLOCKED` event (`-activate ... move: Protect`). King's Shield differs in two places only: the status exemption and the contact drop.
+- The dispatch on the special id (`src/combat/turn.c (dfi_run_move_body)`, PROTECT and SPIKY_SHIELD).
 - `dfi_break_protect` (Feint G28, Phantom Force G58): already removes the variant volatile and resets `protect_kind` (so King's Shield breaks need no change).
-- The attack drop: `dfi_boost(r, attacker, {atk -1}, holder, effect)` with a move effect, as the move-caused drops at `turn.c:4469`, `:5582`. Clear Body, Hyper Cutter, Mirror Armor, Defiant and Competitive go through the existing boost path, with the holder as the source.
-- Pre-move `ModifyMove` precedent: freeze thaw and Choice Scarf emit before the move line (`turn.c:5910-5925`). Stance Change goes at the same point.
+- The attack drop: `dfi_boost(r, attacker, {atk -1}, holder, effect)` with a move effect, as the move-caused drops at `src/combat/turn.c (dfi_boost)`. Clear Body, Hyper Cutter, Mirror Armor, Defiant and Competitive go through the existing boost path, with the holder as the source.
+- Pre-move `ModifyMove` precedent: freeze thaw and Choice Scarf emit before the move line (`src/combat/turn.c (dfi_run_move_body)`). Stance Change goes at the same point.
 - Tail: `forme_now[DUOFORGE_MAX_ROSTER]` (`src/state/battle_internal.h:337`, `0 = own forme, else forme id + 1`) is already encoded (`src/codec/state_codec.c:120`, `:241`) and checked against `forme_count` (`src/state/invariants.c:707`, `:734`). Nothing writes it today. `src/state/identity.c:30-50` already says that a temporary forme clears `forme_now` itself at the switch-out.
 - Stats: `dfi_derive_stats` (`src/state/closure_member.c:353-378`) derives `hp_max` and `stats[]` from a forme's base; `dfi_closure_member_mega_evolve` (`:417-430`) writes `m->stats` for the Mega forme. A temporary forme does the same, with the Blade base.
 - Forme ids: `DFI_FORME_AEGISLASH` 244 (`src/data/pool_tables.h:266`, row `pool_tables.c:496`). **No Blade row exists**, and the ability row (`pool_tables.c:3772-3774`, abilities `stancechange`, 46 learnable moves) exists.
 - Ability id `DFI_ABILITY_STANCECHANGE` 180 (`pool_tables.h:1106`). Move id `DFI_MOVE_KINGSSHIELD` 277 (`pool_tables.h`, the move table). Both rows are UNMODELED today (`pool_tables.c:1257-1258` for the move).
-- Event `DUOFORGE_EVENT_FORME` = 30 (`include/duoforge/duoforge.h:1031`): `[detailschange] position, id: the new forme`, used by Mega only (`turn.c:8100-8104`).
+- Event `DUOFORGE_EVENT_FORME` = 30 (`include/duoforge/duoforge.h:1031`): `[detailschange] position, id: the new forme`, used by Mega only (`src/combat/turn.c (dfi_run_mega)`).
 - The view: decision 0018 already specifies `forme` (u16, bit 19 `FORME_CHANGE`, `duoforge.h:894`), and says a temporary forme "is reset when the member leaves the field". `src/state/observation.c` never writes it, and `src/encode/encode.c:270-271` reads `r->forme`, which no C code fills (see proposal G).
 
 ## 3. Proposal: what needs a decision

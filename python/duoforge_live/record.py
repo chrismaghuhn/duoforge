@@ -321,7 +321,9 @@ def _member(t, s, pre, member, own):
     s.put(pre + "gender", sheet["gender"])
     s.put(pre + "nature", sheet["nature"])
     s.put(pre + "status", member.status)
-    s.put(pre + "status_counter", member.freeze_turns)
+    # decision 0066: a sleeping member's counter is hidden for both viewers (src/state/view.c, as the engine's public record
+    # takes it back); the cant count is its own byte. A freeze shows its turns.
+    s.put(pre + "status_counter", C["DUOFORGE_VIEW_HIDDEN"] if member.status == C["DUOFORGE_AILMENT_SLEEP"] else member.freeze_turns)
     s.put(pre + "item", sheet["item"])
     s.put(pre + "item_consumed", member.item_consumed)
     s.put(pre + "ability", member.ability)
@@ -425,3 +427,4 @@ def _tail(t, s, boundary):
         for m, member in enumerate(members):
             s.put(f"{pre}member{m}.item_now", member.item_now)
             s.put(f"{pre}member{m}.toxic_stage", member.toxic_stage)
+            s.put(f"{pre}member{m}.sleep_cant", member.sleep_cant)  # decision 0066: the public cant count of a sleep

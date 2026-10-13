@@ -106,7 +106,8 @@ class Views(unittest.TestCase):
                     ob = roots.observations[e, p]
                     asleep = bool((ob["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any())
                     confused = bool(ob["sides"]["positions"]["confused"].any())
-                    self.assertEqual(bool(masks[e] & sleep), asleep, e)
+                    # Decision 0066: under POOL the sleep's cant count is public, so a visible sleep is no cause (the record shows it)
+                    self.assertFalse(bool(masks[e] & sleep), e)
                     self.assertEqual(bool(masks[e] & confusion), confused, e)
                     self.assertEqual(int(masks[e]) & ~(sleep | confusion), 0)  # ILLUSION_POSSIBLE stays 0 until Illusion
                     if masks[e]:

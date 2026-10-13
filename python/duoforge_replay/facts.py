@@ -142,6 +142,10 @@ def side_facts(lines, side, data):
             if m is not None and m not in moves_done and _own_move(parts[4:]):
                 moves[m].add(parts[3])
             continue
+        if kind == "cant" and len(parts) > 3 and parts[3].startswith("ability: "):
+            # cant|X|ability: A|... names X's own ability: Truant, or the blocker's Armor Tail, Queenly Majesty, Dazzling
+            # and Damp (the pin prints the holder first, the stopped user as [of]); decision 0081
+            note_ability(m, parts[3][len("ability: "):])
         if kind == "cant" and len(parts) > 4 and parts[4]:
             # cant|X|reason|Move (Taunt, Disable, Imprison, Throat Chop, Heal Block, Gravity): the move X chose. With
             # [of] X is the blocker (Armor Tail: cant|holder|ability: Armor Tail|Fake Out|[of] user): no move of X's

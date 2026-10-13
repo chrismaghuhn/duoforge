@@ -1,0 +1,43 @@
+{
+  "after": {
+    "compile_actions": {
+      "C": 165,
+      "CXX": 1
+    },
+    "exit_code": 0,
+    "objects_removed": 9,
+    "parallel": 4,
+    "reset_note": "The failed include/comment attempt had left only 9 test objects; all 9 were removed, the other 157 object paths were already absent. Successful log confirms all 166 compile actions.",
+    "scope": "All test/support object paths absent before measured build; core/tool object files cached",
+    "seconds": 790.4650947990012,
+    "translation_units": 166
+  },
+  "before": {
+    "base": "a9e44f8c5b375cc7086ca75642f6b82933de80af",
+    "compile_actions": {
+      "C": 160,
+      "CXX": 1
+    },
+    "exit_code": 0,
+    "objects_removed": 161,
+    "parallel": 4,
+    "scope": "All test/support object paths absent before measured build; core/tool object files cached",
+    "seconds": 933.8807883379995,
+    "translation_units": 161
+  },
+  "change_percent": -15.356959403162262,
+  "configure_after": {
+    "exit_code": 0,
+    "seconds": 9.101485453997157
+  },
+  "scope": "Every test/support translation unit rebuilt; engine/tool object files cached; dependent executables relinked in both runs. Includes the C++ public-header consumer. One warm-filesystem run per version; no CI-wide speed claim.",
+  "toolchain": {
+    "IPO": true,
+    "build_type": "Release",
+    "cloud_cpu_quota": 4,
+    "cmake": "4.4.4",
+    "compiler": "GCC 14.2",
+    "generator": "Ninja 1.13.2",
+    "parallel": 4
+  }
+}
