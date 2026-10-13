@@ -61,7 +61,7 @@ STEPS = {"0": {"base": None, "settings": {}},
 
 def size_refusal(name):
     """Why step `name` is refused before any run, or None: its Bayesian LP is above the size limit (matrix.
-    MAX_BAYES_ROWS, MAX_BAYES_VARIABLES; owner on #440, 2026-10-13: b-s64 and b-km16 stopped in the exact rescue).
+    MAX_BAYES_CELLS; owner on #440, 2026-10-13: b-s64 and b-km16 stopped in the exact rescue).
     The struck arms stay declared above."""
     from . import matrix
     settings = step_settings(name)
