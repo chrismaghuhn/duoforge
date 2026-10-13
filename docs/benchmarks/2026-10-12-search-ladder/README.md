@@ -442,3 +442,59 @@ Where the planned steps stand:
 
 **Provenance.** search/budget at 25883412 (`dirty: false`), paired by prefix with step 0's run at 1cb3e2d9. 20:29 to
 02:13 on two shared lock slots. Raw output private, outside the repository.
+
+### Step 0 rebaselined on main after #459 (2026-10-13)
+
+`--step 0` against `bot`, `bc6` and `ppo`, 1024 pairs: the base of step 2's phase A (`--paired-with`) and phase B
+(`--previous-run`). On search/2-width at af168d56 (`dirty: false`), with main merged through #461 and the library of
+main at 0a5db340. The recorded step 0 at 1cb3e2d9 predates #459 (the visible-sleep fix) and is not paired with step 2.
+
+| opponent | score | fallbacks (at 1cb3e2d9) | p50 / p99 (shared) |
+|---|---|---|---|
+| `bot` | 0.862 (0.863) | 1.9% (2.7%) | 0.078 / 0.173 s |
+| `bc6` | 0.700 (0.698) | 1.5% (2.3%) | 0.074 / 0.139 s |
+| `ppo` | 0.470 (0.471) | 1.5% (2.6%) | 0.064 / 0.121 s |
+
+The scores are unchanged; the visible-sleep fix lowers the fallbacks by about a third. 0 unresolved games.
+
+**Provenance.** 17:24 to 18:44 on one lock slot. An earlier start ran twice into one directory (two controllers of one
+queue). Both runs were stopped and the directory voided, and nothing of it is used (queue.log). Raw output private.
+
+### Step 2, phase A (2026-10-13): 2e qualifies
+
+Each arm: 512 pairs against `bot` and `ppo`, paired with the rebaselined step 0 (`--paired-with`, its first 512 pairs).
+search/2-width at af168d56 (`dirty: false`), the same commit and library as its step 0.
+
+| arm | h against step 0, `bot` | h, `ppo` | mean | qualifies |
+|---|---|---|---|---|
+| 2d (prune dominated rows) | 0.500 [0.498, 0.502] | 0.501 [0.500, 0.502] | 0.501 | no |
+| **2e (the best answer, λ = 0)** | **0.514 [0.503, 0.526]** | **0.512 [0.497, 0.528]** | **0.513** | **yes** |
+| 2l (λ = 0.25) | 0.504 [0.494, 0.515] | 0.503 [0.491, 0.516] | 0.504 | no |
+
+- **The selection, as fixed:** the highest mean of the two h points, at least 0.505, and neither upper bound below
+  0.50. 2e is the only arm that qualifies, so it goes to phase B.
+- 0 unresolved games. Fallbacks 1.5–2.0%. Shared p50 0.05–0.07 s, p99 0.07–0.17 s. Duplicate-row share 4–8%.
+- 2d's games are nearly step 0's: dropping weakly dominated rows rarely changes the play.
+
+**The KO check** (`ko_check`, 153 arena games followed, 1530 searched decisions, KO chance ≥ 0.5; search/ko-check at
+35172ab6, `dirty: false`):
+
+| | step 0 | 2d | 2e | 2l |
+|---|---|---|---|---|
+| own KO available | 811 | 810 | 811 | 811 |
+| played | 449 | 456 | **508** | 480 |
+| a candidate, not chosen | 326 | 288 | 266 | 294 |
+| not a candidate | 36 | 66 | 37 | 37 |
+| foe KO threats answered (of 680; 317 unavoidable) | 141 | 160 | 145 | 153 |
+
+- **Caveat:** for step 0, "played" is the move logged live; today's step 0 matches it in 83% of the decisions. For the
+  arms it is the arm's own choice.
+- 2e plays 59 more of the available KOs than the logged moves.
+- 2d drops KO moves from the candidates (not a candidate: 36 → 66), but answers more foe threats.
+
+**Phase B** (predeclared), for 2e:
+1. The gated run: `--h2h`, 1024 pairs against `bot`, `bc6` and `ppo`, with `--previous-run` of the rebaselined step 0.
+2. Its exclusive latency run.
+3. The touchstone, reported only.
+
+It starts once the HauptSession has set its order with the CTS lane.
