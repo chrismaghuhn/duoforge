@@ -1,7 +1,7 @@
 {
-  "from": "657dae45",
-  "to": "0a5db340",
-  "reason": "upstream #459 sleep counter serialization; not a restructure delta",
+  "from_commit": "657dae45",
+  "to_commit": "fbc8b24f",
+  "reason": "upstream #459 sleep counter serialization; CTS #460 leaves native battle digests unchanged",
   "changed_executions": 86,
   "unique_changed_battles": 43,
   "by_variant": {

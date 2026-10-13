@@ -8,7 +8,7 @@
     "new_first_line": 14,
     "new_last_line": 17,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_move_power_by_weight",
@@ -19,7 +19,7 @@
     "new_first_line": 12,
     "new_last_line": 15,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_weight_power",
@@ -30,7 +30,7 @@
     "new_first_line": 17,
     "new_last_line": 25,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_heavy_slam_power",
@@ -41,7 +41,7 @@
     "new_first_line": 29,
     "new_last_line": 38,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_hard_press_power",
@@ -52,7 +52,7 @@
     "new_first_line": 11,
     "new_last_line": 16,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_multihit_count",
@@ -63,7 +63,7 @@
     "new_first_line": 14,
     "new_last_line": 18,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_move_hits",
@@ -74,7 +74,7 @@
     "new_first_line": 22,
     "new_last_line": 29,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_multiaccuracy_proven",
@@ -85,7 +85,7 @@
     "new_first_line": 19,
     "new_last_line": 22,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_power_trip_positive_stages",
@@ -96,7 +96,7 @@
     "new_first_line": 16,
     "new_last_line": 25,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_tri_attack_chance_hit",
@@ -107,7 +107,7 @@
     "new_first_line": 14,
     "new_last_line": 17,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_is_ohko",
@@ -118,7 +118,7 @@
     "new_first_line": 12,
     "new_last_line": 15,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   },
   {
     "function": "dfi_beat_up_hits",
@@ -129,6 +129,6 @@
     "new_first_line": 14,
     "new_last_line": 32,
     "body_byte_equal": true,
-    "baseline_sha": "0a5db340"
+    "baseline_sha": "fbc8b24f"
   }
 ]

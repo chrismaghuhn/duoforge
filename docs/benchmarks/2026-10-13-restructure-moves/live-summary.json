@@ -1,8 +1,8 @@
 {
-  "source": "fresh branch IPO full Live CTest log",
+  "source": "fresh branch 2b9b2de6 IPO full Live CTest log against fbc8b24f",
   "passed": true,
   "public_aggregates": [
-    "Ran 53 tests in 400.063s",
+    "Ran 53 tests in 740.903s",
     "pool record assembler: {'equal': 11680, 'refused': 563, 'tracker refuses: unburden-without-item-line': 4}",
     "pool tracker stops: 162 streams, {'feature:SUBSTITUTE': 110, 'feature:DRAGON_CHEER': 20, 'feature:FORME_CHANGE': 10, 'feature:DESTINY_BOND': 10, 'feature:ROOST': 8, 'line:-end': 2, 'feature:ILLUSION': 2}"
   ]

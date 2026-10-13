@@ -113,6 +113,7 @@ duoforge.python.repo_hygiene
 duoforge.python.search
 duoforge.python.search_expand
 duoforge.python.search_numpy
+duoforge.python.smogon_sets
 duoforge.python.state_layout
 duoforge.python.step_events
 duoforge.python.teams

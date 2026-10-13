@@ -1,14 +1,14 @@
 {
   "P1": {
-    "after": 1408,
-    "before": 1408,
+    "after": 1409,
+    "before": 1409,
     "commands_order_and_runtime_properties_identical": true,
     "excluded": "registration backtraces only",
     "full_ci": "not run on this branch: PR opening waits for explicit HS window release",
-    "inventory_sha256": "cc670a904b1290fd4c0d7c641a44b1a104edbff8f126b109ec4f2144e0891060",
+    "inventory_sha256": "43e1460e9916439235c3012548241aecf538a6d985bcf9c5a42c349ee36756fe",
     "tier_counts": {
       "full": 31,
-      "quick": 208,
+      "quick": 209,
       "reference": 1151,
       "slow": 18
     }
@@ -66,8 +66,8 @@
     "public_header_diff_empty": true,
     "raw_layout_sha256": "0bad5754bb4c85b07bbd99aa54a5700a8f2c82135b4eb75734b9fe86c8a3530e"
   },
-  "PR_status": "not opened: wait for HS explicitly; an empty gh pr list alone does not release the window",
-  "baseline": "0a5db3406b24bd7201857d56843394876676877e",
+  "PR_status": "not opened: performance median gate failed; explicit HS approval also remains required",
+  "baseline": "fbc8b24f7900637dfe12d9dd06fcb053c61a5be2",
   "body_equivalence": {
     "get_damage_entire_body_byte_equal": true,
     "original_functions_byte_equal": 12
@@ -96,17 +96,33 @@
   },
   "main_merge_audit": {
     "get_damage_body_byte_equal": true,
-    "main": "0a5db340",
+    "main": "fbc8b24f",
     "main_guard_predicates_byte_equal_to_original_657_witness": true,
-    "merged_commit": "80c7b6a14df4f8141ea179f7442bde0504b137c7",
+    "merged_commit": "2b9b2de6901a2f5ba407f38f057f2d117b9ae750",
     "turn_tokens_equal_except_defined_restructure": true
   },
   "performance": {
-    "median_time_ratios_at_most_1_02": true,
-    "rounds_per_profile": 30,
+    "battles_per_pairing": 2048,
+    "initial_protocol": {
+      "IPO_passed": true,
+      "all_samples_retained": true,
+      "battles_per_pairing": 512,
+      "noIPO_passed": false,
+      "rounds_per_profile": 30
+    },
+    "median_time_ratios_at_most_1_02": false,
+    "rounds_per_profile": 16,
+    "same_binary_control": {
+      "median_time_ratios": {
+        "events": 0.930339587056075,
+        "plain": 1.0286376407566777
+      },
+      "rounds": 16,
+      "sha256": "31c2a396bf8f85ccf124dc86d4331fdcc69756c0d14c3e5b00320044b6ac1ac6"
+    },
     "within_baseline_spread": true
   },
-  "source_commit": "80c7b6a1",
+  "source_commit": "2b9b2de6",
   "upstream_digest_changes": {
     "by_variant": {
       "duoforge_reference_conformance": [],
@@ -213,9 +229,9 @@
       ]
     },
     "changed_executions": 86,
-    "from": "657dae45",
-    "reason": "upstream #459 sleep counter serialization; not a restructure delta",
-    "to": "0a5db340",
+    "from_commit": "657dae45",
+    "reason": "upstream #459 sleep counter serialization; CTS #460 leaves native battle digests unchanged",
+    "to_commit": "fbc8b24f",
     "unique_changed_battles": 43
   }
 }

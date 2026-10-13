@@ -51,7 +51,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "out_of_line_definitions": {
+        "definitions": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -67,7 +67,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "surviving_tail_jumps": {
+        "tail_jumps": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -117,7 +117,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "out_of_line_definitions": {
+        "definitions": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -133,7 +133,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "surviving_tail_jumps": {
+        "tail_jumps": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -185,7 +185,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "out_of_line_definitions": {
+        "definitions": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -201,7 +201,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "surviving_tail_jumps": {
+        "tail_jumps": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -251,7 +251,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "out_of_line_definitions": {
+        "definitions": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -267,7 +267,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "surviving_tail_jumps": {
+        "tail_jumps": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -321,7 +321,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "out_of_line_definitions": {
+        "definitions": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -337,7 +337,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "surviving_tail_jumps": {
+        "tail_jumps": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -387,7 +387,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "out_of_line_definitions": {
+        "definitions": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -403,7 +403,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "surviving_tail_jumps": {
+        "tail_jumps": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -455,7 +455,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "out_of_line_definitions": {
+        "definitions": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -471,7 +471,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "surviving_tail_jumps": {
+        "tail_jumps": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -521,7 +521,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "out_of_line_definitions": {
+        "definitions": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
@@ -537,7 +537,7 @@
           "dfi_move_special_has_handler": [],
           "dfi_move_special_status_hit": []
         },
-        "surviving_tail_jumps": {
+        "tail_jumps": {
           "dfi_move_first_turn_only": [],
           "dfi_move_power_by_weight": [],
           "dfi_weight_power": [],
