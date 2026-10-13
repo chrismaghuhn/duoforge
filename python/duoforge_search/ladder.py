@@ -61,6 +61,8 @@ STEPS = {"0": {"base": None, "settings": {}},
          # Preview width (owner, 2026-10-13): 1b with one candidate per bring-and-lead combination, every own member
          # brought by at least one (the arena's top 8 were 4 orderings of 2 combinations, none with Gholdengo).
          "1bw": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev", "preview_width": "distinct"}},
+         # 1bw corrected (review of #462): the lead seats kept, only the bench order merged.
+         "1bws": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev", "preview_width": "seats"}},
          # The budget-scaling arms (owner, 2026-10-12): one lever or one fixed combination each. Budget = k * m * s
          # leaves, relative to step 0's 8 * 8 * 16 = 1024 (the factors x2 to x16); capacity = k * m * s, so the leaf
          # buffer matches.
@@ -83,7 +85,7 @@ def size_refusal(name):
     if settings["k"] == 1:
         return None
     from . import preview
-    most = settings["k"] + (preview.COVER_MAX if settings.get("preview_width") == "distinct" else 0)
+    most = settings["k"] + (preview.COVER_MAX if settings.get("preview_width", "top") != "top" else 0)
     try:
         matrix.check_bayes_size(most, settings["m"], settings["s"], f"step {name!r}")
     except ValueError as err:

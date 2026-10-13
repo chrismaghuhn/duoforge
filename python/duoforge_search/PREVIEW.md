@@ -18,6 +18,22 @@ while the actual stats remain hidden. The official [2026 VGC handbook](https://m
 section 2.5 lists stat alignment and excludes only stats from disclosure; [Pokemon.com's NAIC discussion](https://www.pokemon.com/uk/features/2026-north-america-international-championships-pokemon-vgc-roundtable)
 confirms this change. This does not authorize assuming Nature known in closed-sheet formats.
 
+`preview_width` (#440) sets the candidates. It is an option, and live play keeps the default:
+- `"top"` (the default): the top tuples as above.
+- `"distinct"` (arm 1bw): one tuple per bring-and-lead combination, its likeliest ordering, with the combination's
+  probability summed over its orderings (`preview.distinct`). The own side adds, for each member none of the K
+  likeliest combinations brings, the likeliest combination that brings it, so it has at most K + 2 candidates
+  (`COVER_MAX`). The foe side has the M likeliest, without that cover. A combination merges the bench order **and
+  the two lead seats**. The seats are separate positions in battle and in the network's input, so this merge is an
+  approximation, not evaluator equality (the review of #462).
+- `"seats"` (arm 1bws): as `"distinct"`, but the lead seats are kept and only the bench order merges
+  (180 combinations).
+
+The record names a width other than `"top"` (`preview_width`). The preview's Bayesian LP is held to the size limit
+of `matrix.MAX_BAYES_CELLS`, where the exact rescue is known to finish. `Honest` checks K + 2 rows for a widened
+preview when it is built, and each preview table is checked again before its rollouts. Above the limit the search
+stops with a named error, never a silent fallback.
+
 Two evaluators are measured on the same pairings/seeds:
 
 - `value`: value head after the core applies both previews and all initial entry effects. The core is already

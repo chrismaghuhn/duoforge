@@ -210,6 +210,29 @@ least 0.50.
   20,124 tableau cells) is under the size limit.
 - **Fail:** 1bw stays an option, switched off.
 
+## The corrected preview width, arm 1bws (owner, 2026-10-13; predeclared before any run)
+
+**Why.** The review of #462 found that 1bw's `distinct` width merges the two lead seats too. Those are separate
+positions in battle, so the merge is an approximation (see the correction under 1bw). The owner's rule: before 1bw is
+switched on, a corrected width is measured again, on the ladder and in the mirror touchstone.
+
+**Change** (`preview_width` "seats", `preview.distinct(..., seats=True)`): as 1bw, except that a combination keeps the
+lead pair's seat order. Only the bench order merges: 180 combinations of 2 tuples each. Own candidates are the 8
+likeliest plus the cover (k' ≤ 10); foe candidates are the 8 likeliest. The size limit is unchanged: at most 20,124
+tableau cells.
+
+**Runs, on main after #459:**
+1. **Gated:** `--step 1bws --previous 0 --h2h --previous-run <the rebaselined step 0's ladder.json (step 2's
+   amendment)>` against `bot`, `bc6` and `ppo`, 1024 pairs, then its exclusive latency run (16 pairs against `bot`).
+2. **Mirror touchstone:** `--matchup <Team A> <the Nationals sun team> --mirror --step 1bws --previous 0`, 512 pairs.
+
+**Criteria, fixed now.** 1bws may be switched on live when:
+- every ladder gate holds against step 0 (strength, no harm, reproduced, fallbacks, latency p99 ≤ 2.0 s), and the
+  exclusive p99 is ≤ 1.67 s (the VPS bound); and
+- in the mirror touchstone, 1bws against step 0 shows no measurable harm: an upper bound of at least 0.50.
+
+Passing makes a small PR that switches 1bws on live. Failing either point keeps it an option, switched off.
+
 ## Results
 
 ### Step 0 (2026-10-12)
@@ -492,3 +515,26 @@ Where the planned steps stand:
 
 **Provenance.** search/budget at 25883412 (`dirty: false`), paired by prefix with step 0's run at 1cb3e2d9. 20:29 to
 02:13 on two shared lock slots. Raw output private, outside the repository.
+
+### Mirror touchstone, arm 1bw (2026-10-13): clear harm; 1bw is not switched on
+
+`--matchup <Team A> <the Nationals sun team> --mirror --step 1bw --previous 0`, 512 pairs. The sun team is piloted by
+the live search (step 0), whose spread table leaves out Team A (`leaves_out` "A", in the table).
+
+| arm | score against the mirror | our fallbacks | the pilot's fallbacks |
+|---|---|---|---|
+| 1bw | 0.699 | 0.0% | 1.3% |
+| step 0 | 0.869 | 0.0% | 1.4% |
+
+**1bw against step 0, paired: 0.415 [0.400, 0.429].** The upper bound is below 0.50, so the predeclared criterion
+fails. 1bw stays an option, switched off.
+- 0 unfinished and 0 unresolved games in both arms.
+- Our four, every game (both seats): 1bw leads Raichu + Milotic with Ceruledge + Staraptor behind; step 0 brings
+  Rillaboom + Ceruledge behind the same lead. 1bw changed the raw choice in all 1024 of its preview decisions.
+- Against a pilot that searches, swapping Rillaboom for Staraptor costs about 17 points. Against the sim pilots it
+  cost 4 (`bot`) and 0 (`ppo`).
+- This run measures 1bw with the lead seats merged (the approximation of the correction above). It decides on 1bw
+  only. 1bws needs its own mirror run.
+
+**Provenance.** search/mirror at 68050692 (`dirty: false`), library of main at 0a5db340, 15:47 to 16:55 on one lock slot
+(the 1bw arm 2,446 s, step 0 1,493 s). Raw output private, outside the repository.
