@@ -55,7 +55,10 @@ STEPS = {"0": {"base": None, "settings": {}},
          # Step 1b (#440): the turn-1 rollout, the only preview form that gained in #241, its foe seat played by the
          # foe network; "1b" plays its table by the ev rule (the best answer), "1bn" by nash (its control).
          "1b": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev"}},
-         "1bn": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "nash"}}}
+         "1bn": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "nash"}},
+         # Preview width (owner, 2026-10-13): 1b with one candidate per bring-and-lead combination, every own member
+         # brought by at least one (the arena's top 8 were 4 orderings of 2 combinations, none with Gholdengo).
+         "1bw": {"base": "0", "settings": {"preview_mode": "turn1", "preview_rule": "ev", "preview_width": "distinct"}}}
 
 
 def step_settings(name):

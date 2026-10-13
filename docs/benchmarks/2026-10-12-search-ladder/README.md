@@ -99,6 +99,40 @@ A small or no gain is the expected outcome here.
 
 **Step 1b (later, HauptSession 2026-10-12).** E/N-turn1 with the foe network needs the rollout to play the foe seat with the foe network. That is not built yet. It is listed here, so that a lead choice that depends on the foe's turn 1 is tested after step 1.
 
+## The preview width, arm 1bw (owner, 2026-10-13; predeclared)
+
+**Why.** In the sun-team sanity arm the preview search never changed our four, and it could not have: its top 8 tuples
+were 4 orderings each of only 2 bring-and-lead combinations, and none brought Gholdengo. This arm widens the candidates
+only. The rule stays step 1b's.
+
+**Change** (`preview_width` "distinct", `preview.distinct`), on step 1b (turn-1 rollout, foe seat played by BC6, best
+answer):
+- **A combination** is the lead pair and the pair behind it, each unordered: 90 of the 360 tuples' orderings. Its
+  probability is the sum over its 4 orderings, and its tuple is the likeliest ordering.
+- **Own candidates:** the 8 likeliest combinations, then, for each team member none of them brings, the likeliest
+  combination that brings it. Every member is brought by at least one candidate; 8 combinations bring at least 4 members, so k' is 8 to 10.
+- **Foe candidates:** the 8 likeliest combinations of the foe model's world-weighted preview, without the cover; each
+  world's probability of a column is its combination's.
+- The raw choice and the record's `raw` stay the team head's top tuple.
+
+**Runs, after the machine is free:**
+1. **Gated:** `--step 1bw --previous 0 --h2h --previous-run <step 0's ladder.json>` against `bot`, `bc6` and `ppo`, 1024
+   pairs, then its exclusive latency run (16 pairs against `bot`).
+2. **Touchstone (#458):** `--matchup <Team A> <the Nationals sun team, its stated stat points> --step 1bw --previous 0
+   --raw`, 256 pairs, `bot` and `ppo` as the sun team's pilots. Reported: 1bw against step 0 and against R per pilot,
+   and our four and leads decoded from the records, with how often Gholdengo and Staraptor are brought.
+   The private team file states no genders, which `teams.check` refuses by name (`DUOFORGE_E_INVALID_ARGUMENT`); the
+   genders are stated in the file before this run, never filled by the harness.
+
+**Criteria, fixed now.** 1bw passes when:
+- every gate of the table above holds unchanged against step 0 (strength, no harm, reproduced, fallbacks, latency p99
+  ≤ 2.0 s); and
+- on the touchstone, 1bw against step 0 is not harmful for either pilot: its upper bound is at least 0.50.
+
+Passing makes it a PR: the live settings then take the preview of 1bw. A failed strength gate means no adoption, as for
+steps 1 and 1b, whatever the touchstone shows. For live play the VPS bound applies on top: exclusive p99 ≤ 1.67 s.
+The book's preview oracle (#458) measures in parallel how much any bring-and-lead choice can gain against that team.
+
 ## Results
 
 ### Step 0 (2026-10-12)

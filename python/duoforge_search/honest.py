@@ -266,7 +266,7 @@ class Honest(lookahead.Lookahead):
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="mix",
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
                  table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
-                 species_prior=False, foe_net=None, preview_rule=None):
+                 species_prior=False, foe_net=None, preview_rule=None, preview_width="top"):
         # species_prior (live play, owner 2026-10-10): True refuses a decision whose foe species has no stated spread in
         # the table instead of drawing from the belief's nature-only or table-wide levels (4 and 5); "count" (owner
         # 2026-10-12, live play) draws from those general levels and names the species in the record: spread_fallback
@@ -310,6 +310,14 @@ class Honest(lookahead.Lookahead):
             raise ValueError("preview_rule requires a preview search (preview_mode value or turn1)")
         self.preview_mode, self.preview_only, self.preview_steps = preview_mode, preview_only, preview_steps
         self.preview_rule = preview_rule
+        # preview_width (#440, owner 2026-10-13): the preview's candidates, "top" tuples of the team heads or one
+        # "distinct" tuple per bring-and-lead combination with every own member covered (preview.distinct).
+        from . import preview
+        if preview_width not in preview.WIDTHS:
+            raise ValueError(f"preview_width must be one of {preview.WIDTHS} (got {preview_width!r})")
+        if preview_width != "top" and preview_mode == "raw":
+            raise ValueError("preview_width requires a preview search (preview_mode value or turn1)")
+        self.preview_width = preview_width
         if table is None:
             table, _, self.table_info = spread_table(context)
         else:

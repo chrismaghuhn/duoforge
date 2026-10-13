@@ -140,6 +140,16 @@ class StepOneBTest(unittest.TestCase):
                 self.assertEqual(ladder.step_settings(name), {**base, "preview_mode": "turn1", "preview_rule": rule})
 
 
+class PreviewWidthStepTest(unittest.TestCase):
+    """The preview width (owner, 2026-10-13): step 1b with one candidate per bring-and-lead combination."""
+
+    def test_the_predeclared_entry_is_step_zero_plus_exactly_its_delta(self):
+        delta = {"preview_mode": "turn1", "preview_rule": "ev", "preview_width": "distinct"}
+        self.assertEqual(ladder.STEPS["1bw"], {"base": "0", "settings": delta})
+        self.assertEqual(ladder.step_settings("1bw"), {**ladder.step_settings("0"), **delta})
+        self.assertEqual(ladder.step_settings("1bw"), {**ladder.step_settings("1b"), "preview_width": "distinct"})
+
+
 class PairIntervalTest(unittest.TestCase):
     def test_opposite_results_within_a_pair_give_a_zero_width_interval(self):
         got = ladder.pair_interval([1, 0, 0, 1, 1, 0, 0, 1])

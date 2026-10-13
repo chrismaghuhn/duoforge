@@ -15,7 +15,8 @@ import duoforge
 from duoforge import _layout, features, privileged, view
 
 from python.tests.support._pivot_fixture import SETUP, play_to_pivot
-from duoforge_search import arena, belief, honest
+from duoforge_learn.selfplay import TEAM_TABLE
+from duoforge_search import arena, belief, honest, preview
 from python.tests.search.test_search import _v2s
 from python.tests.search import test_search as search_tests
 
@@ -911,6 +912,23 @@ class HonestSearch(unittest.TestCase):
         self.assertTrue(rollout_foe, "the foe network was not called on the rollout's foe seat")
         self.assertTrue(rollout_main, "the main network was not called on the rollout's player seat")
         self.assertEqual(len(rollout_foe), len(rollout_main))  # one foe-seat call for each player-seat call
+
+    def test_a_distinct_turn1_preview_with_a_foe_net_covers_every_member(self):
+        # The preview width (owner, 2026-10-13) on step 1b's search: distinct combinations on both sides, the own side
+        # bringing every member, the rollout's foe seat still played by the foe network.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            foe_net = self.encoder3_net(ctx)
+            with self.make(ctx, foe_net=foe_net, preview_mode="turn1", preview_rule="ev") as top,                     self.make(ctx, foe_net=foe_net, preview_mode="turn1", preview_rule="ev",
+                              preview_width="distinct") as wide:
+                _, (narrow,) = self.preview(top, b)
+                _, (record,) = self.preview(wide, b)
+        self.assertEqual((narrow["kind"], record["kind"]), ("searched", "searched"))
+        self.assertEqual(record["raw"], narrow["raw"])
+        own, foe = record["own_teams"], record["foe_teams"]
+        self.assertEqual(set(np.concatenate([TEAM_TABLE[t] for t in own]).tolist()), set(range(6)))
+        self.assertEqual(len(set(preview.COMBINATION[own].tolist())), len(own))
+        self.assertEqual(len(set(preview.COMBINATION[foe].tolist())), len(foe))
+        self.assertIn(record["choice"], own)
 
     def test_rollout_masks_must_agree(self):
         # Step 1b (#440): the foe seat's pair is chosen from the foe encoding's legal mask; a mask the main encoding
