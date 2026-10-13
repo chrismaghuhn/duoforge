@@ -10,6 +10,7 @@ duoforge_add_python_test(smogon_sets python.tests.search.test_smogon_sets quick 
 duoforge_add_python_test(preview_search python.tests.search.test_preview_search quick search)
 duoforge_add_python_test(search_numpy python.tests.search.test_search_numpy full search)
 duoforge_add_python_test(root_solver python.tests.search.test_root_solver quick search)
+duoforge_add_python_test(tree python.tests.search.test_tree quick search)
 duoforge_add_python_test(ladder python.tests.search.test_ladder quick search)
 duoforge_add_python_test(network_diagnosis python.tests.search.test_network_diagnosis quick search)
 duoforge_add_python_test(preview_oracle python.tests.search.test_preview_oracle quick search)
