@@ -120,6 +120,18 @@ class ReplayTest(unittest.TestCase):
         self.assertEqual(out["points"], 3)  # turns 1 to 3 (the team preview is not a searched decision)
         self.assertEqual(out["refused"], [])
 
+    def test_a_stopped_replay_is_counted_under_its_named_reason(self):
+        # A content fix may stop the tracker at a line (Speed Swap option B: a real swap stops it, by name): under
+        # closed sheets every particle's fold stops there, the battle falls back. The replay counts it, never crashes.
+        from duoforge_live import cts, teams
+        fixture = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "live_stream_ab.json")
+                             .read_text(encoding="utf-8"))
+        tables = data.load(kind="pool")
+        prior = cts.SetPrior(tables, [s for s in teams._paste(fixture["foe_team"]) if s["species"] != "Farigiraf"])
+        records = [{"feed": [line for line in m if not line.startswith("|showteam|")]} for m in fixture["messages"]]
+        out = ev.replay(records, tables, prior, fixture["team"], "battle-test-1", ev.unmodelled(""))
+        self.assertEqual((out["points"], out["stopped"]), (0, "stop:cts:no-consistent-set"))
+
     def test_unmodelled_content_is_read_from_the_tables_and_named_per_set(self):
         text = ("    /* Speed Swap -- data/moves.ts:1-2  [unmodelled: callback onHit] */\n"
                 " *   piercingdrill -- data/abilities.ts:3-4  [unmodelled: callback onHitProtect]\n"

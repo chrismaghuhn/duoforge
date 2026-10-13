@@ -183,17 +183,24 @@ def held(s, content):
 
 def replay(records, tables, prior, team, room, content):
     """One battle log replayed through the particles: {"points", "refused": [the content per refused particle, per
-    refused point]}."""
-    from duoforge_live import cts
+    refused point], "stopped": None or the named reason of a stop (the battle falls back there, as the bot's did)}."""
+    from duoforge_live import cts, lines
     t = cts.ParticleTracker(tables, team, prior, cts.SEED, room, cts.PARTICLES)
-    out, done = {"points": 0, "refused": []}, 0
+    out, done = {"points": 0, "refused": [], "stopped": None}, 0
     for r in records:
         if "accepted" in r:
             t.accepted(r["accepted"])
             continue
         if "feed" not in r:
             continue
-        t.feed(r["feed"])
+        try:
+            t.feed(r["feed"])
+        except lines.Stop as stop:
+            out["stopped"] = "stop:" + named(stop.reason).split(" ")[0]
+            return out
+        except ValueError as err:
+            out["stopped"] = f"error:{type(err).__name__}"
+            return out
         if not (t.ready and t.epoch > done):
             continue
         done = t.epoch
@@ -218,7 +225,7 @@ def replay_all(directory, bot, root):
     teams_dir = data.ROOT / "data" / "teams"
     pastes = [(teams_dir / (t["id"] + ".txt")).read_text(encoding="utf-8")
               for t in json.loads((teams_dir / "index.json").read_text(encoding="utf-8"))["teams"]]
-    points, refused, unexplained, skipped = 0, 0, 0, collections.Counter()
+    points, refused, unexplained, skipped, stopped = 0, 0, 0, collections.Counter(), collections.Counter()
     occurs, alone = collections.Counter(), collections.Counter()
     for path in sorted(Path(directory).glob(f"battle-*-{bot}.jsonl")):
         records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -233,6 +240,8 @@ def replay_all(directory, bot, root):
             continue
         out = replay(records, tables, prior, team[0], path.name[:-len(f"-{bot}.jsonl")], content)
         points += out["points"]
+        if out["stopped"]:
+            stopped[out["stopped"]] += 1
         for per in out["refused"]:
             refused += 1
             union = set().union(*map(set, per))
@@ -242,7 +251,7 @@ def replay_all(directory, bot, root):
             elif len(union) == 1:
                 alone.update(union)
     return {"points": points, "refused": refused, "searchable_share": 1.0 - refused / max(1, points),
-            "unexplained": unexplained, "skipped": dict(skipped),
+            "unexplained": unexplained, "skipped": dict(skipped), "stopped_battles": dict(stopped),
             "content": {c: {"occurs": n, "alone": alone[c]} for c, n in occurs.most_common()},
             "engine_code": provenance(engine_root), "tool_code": provenance(root)}
 
