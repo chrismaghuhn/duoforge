@@ -3,7 +3,7 @@
     python -m duoforge_search.ladder --checkpoint MAIN --foe-net FOE (--teams-from POOLNET | --matchup OURS FOE
         [--fill-stat-points smogon]) --step N [--previous P] [--raw] [--h2h] --opponent NAME=PATH [--opponent ...]
         --out DIR [--pairs 1024] [--seed SEED] [--workers 8] [--max-steps 1000] [--previous-run OLD/ladder.json]
-        [--latency-run LATENCY/ladder.json] [--paired-with RUN/ladder.json]
+        [--latency-run LATENCY/ladder.json] [--paired-with RUN/ladder.json] [--mirror]
     python -m duoforge_search.ladder verdict RUN/ladder.json [--latency-run LATENCY/ladder.json]
 
 The networks stay fixed along the ladder: MAIN (BC6) searches and plays, FOE (BC6) is the foe model in the searched
@@ -31,6 +31,7 @@ is pending: its latency gate and adopt are None. The output directory lies outsi
 private and the report holds aggregates, per-game scores and decision digests only.
 """
 import argparse
+import contextlib
 import copy
 import hashlib
 import json
@@ -503,6 +504,19 @@ def fill_stat_points(members, table):
     return out, filled
 
 
+def registry_id(path):
+    """The id of the registry team (data/teams/index.json) whose text is this file's (teams.text_sha256 equal to its
+    entry), or None. --mirror leaves that team out of the mirror pilot's spread table."""
+    from duoforge import teams
+    from duoforge_live.data import ROOT
+    with open(path, "rb") as f:
+        digest = teams.text_sha256(f.read())
+    with open(os.path.join(str(ROOT), "data", "teams", "index.json"), encoding="utf-8") as f:
+        index = json.load(f)
+    ids = [entry["id"] for entry in index["teams"] if entry.get("sha256") == digest]
+    return ids[0] if ids else None
+
+
 def matchup_teams(ours, foe, fill=None):
     """The two teams of --matchup as {"ours": ..., "foe": ...}, each {"members", "packed", "sha256", "filled"}: the
     read_team of each file. A member without stat points is refused by SystemExit naming it, unless fill is "smogon",
@@ -541,8 +555,9 @@ def matchup_pool(ctx, matchup):
     return teams.TeamPool.from_setups(MATCHUP_LABELS, sides)
 
 
-def _opponents(items):
-    """NAME=PATH items as {name: path}: known names, each at most once, at least one."""
+def _opponents(items, allow_empty=False):
+    """NAME=PATH items as {name: path}: known names, each at most once, at least one unless allow_empty (--mirror is
+    an opponent of its own)."""
     out = {}
     for item in items:
         name, separator, path = item.partition("=")
@@ -553,7 +568,7 @@ def _opponents(items):
         if name in out:
             raise SystemExit(f"opponent {name!r} is given twice")
         out[name] = path
-    if not out:
+    if not out and not allow_empty:
         raise SystemExit("give at least one --opponent NAME=PATH")
     return out
 
@@ -617,6 +632,9 @@ def main(argv=None):
     p.add_argument("--paired-with", metavar="RUN/ladder.json",
                    help="a recorded run: this step is paired with its step arm on the same games (its first games), "
                         "without replaying the recorded step; exclusive with --previous, --h2h and --previous-run")
+    p.add_argument("--mirror", action="store_true",
+                   help="with --matchup: add opponent mirror, the live search (step 0) piloting FOE, a new one for "
+                        "each arm; its spread table leaves out OURS's registry team")
     args = p.parse_args(argv)
     if args.paired_with is not None:
         for flag, given in (("--previous", args.previous), ("--h2h", args.h2h), ("--previous-run", args.previous_run)):
@@ -628,7 +646,13 @@ def main(argv=None):
         refuse_repository(args.out)
     except ValueError:
         raise SystemExit(f"--out {args.out} is inside the repository (AGENTS.md)") from None
-    opponents = _opponents(args.opponent)
+    opponents = _opponents(args.opponent, allow_empty=args.mirror)
+    if args.mirror:  # the mirror touchstone (owner on #440, 2026-10-13): the live search pilots the foe team
+        if args.matchup is None:
+            raise SystemExit("--mirror needs --matchup: the mirror pilots the matchup's foe team")
+        for flag, given in (("--previous-run", args.previous_run), ("--paired-with", args.paired_with)):
+            if given:
+                raise SystemExit(f"--mirror excludes {flag}: no recorded run has a mirror opponent")
     if (args.teams_from is None) == (args.matchup is None):
         raise SystemExit("give exactly one of --teams-from (a pool network's teams) and --matchup OURS FOE")
     if args.fill_stat_points is not None and args.matchup is None:
@@ -637,6 +661,7 @@ def main(argv=None):
         raise SystemExit("--h2h is not supported with --matchup: no matchup team has a registry id to leave out of "
                          "the searching foe's belief")
     matchup = None if args.matchup is None else matchup_teams(*args.matchup, fill=args.fill_stat_points)
+    mirror_leaves_out = registry_id(args.matchup[0]) if args.mirror else None
     if args.h2h and args.previous is None:
         raise SystemExit("--h2h needs --previous (the step it plays against)")
     if args.previous_run is not None and args.previous is None:
@@ -735,6 +760,30 @@ def main(argv=None):
             return honest.Honest(ctx, main_net["model"], main_net["params"], main_net["encoder"], main_net["ext"],
                                  **options)
 
+        class SearchingOpponent(evaluate.Player):
+            """play_suite takes an evaluate.Player as its opponent and calls its indices; the searching player has the
+            same interface, so it is wrapped rather than changed."""
+
+            def __init__(self, player):
+                super().__init__(None, None, None, player.name)
+                self.player = player
+
+            def indices(self, batch, choices, step=None, seats=None, last_step=None):
+                return self.player.indices(batch, choices, step=step, seats=seats, last_step=last_step)
+
+        @contextlib.contextmanager
+        def pilot(name):
+            """(the opponent of one arm, its searching player or None): a raw network, or the mirror: a new step-0
+            search of the foe team (the live search), whose spread table leaves out our registry team."""
+            if name != "mirror":
+                net = opponent_nets[name]
+                yield evaluate.Player(net["model"], net["params"], net["encoder"], name, net["ext"]), None
+                return
+            leave_out = [None if mirror_leaves_out is None else source_ids.get(mirror_leaves_out)] * rows.shape[0]
+            with searcher("0", leave_out) as search:
+                player = arena.SearchPlayer(foe_arena.Timed(search), "mirror", args.seed)
+                yield SearchingOpponent(player), player
+
         def play_search(arm, step_name, opponent_player):
             with searcher(step_name, excluded(opponent_team)) as search:
                 player = arena.SearchPlayer(foe_arena.Timed(search), arm, args.seed)
@@ -745,27 +794,38 @@ def main(argv=None):
         arm_steps = [("step", args.step)] + ([("previous", args.previous)] if args.previous is not None else [])
         raw_player = evaluate.Player(main_net["model"], main_net["params"], main_net["encoder"], "R", main_net["ext"])
         opponent_out, pooled = {}, {"step": [], "previous": []}
-        for name, net in opponent_nets.items():
-            opponent_player = evaluate.Player(net["model"], net["params"], net["encoder"], name, net["ext"])
+        for name in list(opponent_nets) + (["mirror"] if args.mirror else []):
             arms, scores = {}, {}
             for arm, step_name in arm_steps:
                 started = time.perf_counter()
-                records, decisions = play_search(arm, step_name, opponent_player)
+                with pilot(name) as (opponent_player, searching):
+                    records, decisions = play_search(arm, step_name, opponent_player)
+                    flown = None if searching is None else \
+                        [r for row in sorted(searching.records) for r in searching.records[row]]
                 seconds = time.perf_counter() - started
                 pooled[arm].extend(decisions)
                 with open(os.path.join(args.out, f"{arm}-{name}-decisions.jsonl"), "w", encoding="utf-8") as f:
                     for r in decisions:
                         f.write(json.dumps(arena._finite(r), allow_nan=False) + "\n")
                 arms[arm] = _summary(records, rows.shape[0], decisions, seconds)
+                if flown is not None:  # the mirror pilot's own decisions: its shares, not a second score
+                    with open(os.path.join(args.out, f"{arm}-mirror-pilot-decisions.jsonl"), "w",
+                              encoding="utf-8") as f:
+                        for r in flown:
+                            f.write(json.dumps(arena._finite(r), allow_nan=False) + "\n")
+                    arms[arm]["pilot"] = {key: value for key, value in _summary(records, rows.shape[0], flown).items()
+                                          if key not in ("scores", "pair_interval", "unfinished", "unresolved")}
                 scores[arm] = arena.scores(records)
             if args.raw:
                 started = time.perf_counter()
-                records = evaluate.play_suite(ctx, pool, rows, raw_player, opponent_player, args.workers, args.seed,
-                                              max_steps=args.max_steps)
+                with pilot(name) as (opponent_player, _):
+                    records = evaluate.play_suite(ctx, pool, rows, raw_player, opponent_player, args.workers,
+                                                  args.seed, max_steps=args.max_steps)
                 arms["R"] = _summary(records, rows.shape[0], None, time.perf_counter() - started)
                 scores["R"] = arena.scores(records)
             entry = {"arms": arms, "paired": paired_entry(scores),
-                     "opponent_is_foe_model": digests[f"opponent {name}"] == digests["foe"]}
+                     "opponent_is_foe_model":  # the mirror searches with the main network
+                         digests["main" if name == "mirror" else f"opponent {name}"] == digests["foe"]}
             if paired_run is not None:
                 entry["paired"]["step_vs_recorded"] = paired_against_recorded(scores["step"], paired_run, name,
                                                                               args.pairs)
@@ -782,18 +842,6 @@ def main(argv=None):
             with searcher(args.step, excluded(opponent_team)) as learner_search, \
                     searcher(args.previous, excluded(learner_team)) as opponent_search:
                 learner = arena.SearchPlayer(foe_arena.Timed(learner_search), "step", args.seed)
-
-                class SearchingOpponent(evaluate.Player):
-                    """play_suite takes an evaluate.Player as its opponent and calls its indices; the searching
-                    player has the same interface, so it is wrapped rather than changed."""
-
-                    def __init__(self, player):
-                        super().__init__(None, None, None, player.name)
-                        self.player = player
-
-                    def indices(self, batch, choices, step=None, seats=None, last_step=None):
-                        return self.player.indices(batch, choices, step=step, seats=seats, last_step=last_step)
-
                 opponent = SearchingOpponent(arena.SearchPlayer(foe_arena.Timed(opponent_search), "previous",
                                                                 args.seed))
                 records = evaluate.play_suite(ctx, pool, rows, learner, opponent, args.workers, args.seed,
@@ -823,6 +871,9 @@ def main(argv=None):
         "pool_teams": pool_teams, "games": int(rows.shape[0]), "table_sha256": table_info["sha256"],
         "opponent_team_in_table": in_table,
         "paired_with": None if paired_run is None else paired_with_condition(paired_run, args.paired_with),
+        "mirror": None if not args.mirror else {
+            "step": "0", "leaves_out": mirror_leaves_out,
+            "in_table": mirror_leaves_out is not None and source_ids.get(mirror_leaves_out) is not None},
     }
     report = {"conditions": conditions, "opponents": opponent_out, "h2h": h2h, "p99_seconds": p99, "verdict": None}
     if args.h2h:
