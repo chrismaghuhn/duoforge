@@ -27,7 +27,7 @@ static inline uint32_t dfi_weather_rock(uint32_t w)
  * loop: a position with HP 0 stops suppressing once its faint is shown, and a faint that is still queued keeps suppressing
  * (dfi_faint_pending). A switch-out ends the holder before the replacement (sim/battle-actions.ts:103), which here is the
  * occupant that changes. The ability is read as it is now (Trace, Skill Swap and Mega Evolution change it). */
-static inline bool dfi_weather_suppressed(const dfi_run *r)
+static bool dfi_weather_suppression_scan(const dfi_run *r)
 {
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         const dfi_member *m = dfi_at(r->b, flat);
@@ -36,6 +36,13 @@ static inline bool dfi_weather_suppressed(const dfi_run *r)
         }
     }
     return false;
+}
+
+/* This hot interface is tiny; its scan retains the original body and
+ * ordinary static inlining budget instead of expanding it into each read. */
+static inline bool dfi_weather_suppressed(const dfi_run *r)
+{
+    return dfi_weather_suppression_scan(r);
 }
 
 /* Field.effectiveWeather (sim/field.ts:101-104): the weather the field reads, NONE while it is suppressed. */

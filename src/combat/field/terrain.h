@@ -11,13 +11,20 @@
  * and Trick move it at once). Gravity, Ingrain, Smack Down, Magnet Rise and Telekinesis are unmarked rows, so no battle has
  * them; Eelevate is an unmarked ability. The ability is the current one (a Mega's, or one that Trace copied). Stealth Rock does
  * not read it (moves.ts:17814-17838). */
-static inline bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
+static bool dfi_grounded_test(const struct duoforge_battle *b, const dfi_member *m)
 {
     if (dfi_holds(b, m, DFI_ITEM_IRONBALL)) {
         return true;
     }
     return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE) &&
            !dfi_holds(b, m, DFI_ITEM_AIRBALLOON);
+}
+
+/* Keep the hot entry point inline without duplicating the type/ability
+ * accessor work inside every caller. The predicate above retains its body. */
+static inline bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
+{
+    return dfi_grounded_test(b, m);
 }
 
 /* The FIELD_START / FIELD_END detail of a terrain (DUOFORGE_FIELD_*). */
