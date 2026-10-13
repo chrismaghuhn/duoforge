@@ -1080,6 +1080,27 @@ class WorldRecords(unittest.TestCase):
             self.assertNotEqual(past[0][0][0].tobytes(), past[1][0][0].tobytes())
             self.assertEqual([v.tobytes() for v in built[0]], [past[0][0][0].tobytes()] * 2)
 
+    def test_queue_masks_are_taken_per_world_once_per_distinct_pair(self):
+        # A PIVOT with a foe command pending is refused since the view audit of 2026-10-10, so no live record reaches
+        # the queue mask today; the per-world masks are pinned on their own: world w's from its own two records.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, self.swapped_items(), 2, 42) as b, self.make(ctx) as search:
+            b.query_factored()
+            records, _ = (x.copy() for x in b.public(np.zeros(2, np.uint32)))
+            calls = []
+
+            def queue_mask(context, start, record):
+                calls.append((start.tobytes(), record.tobytes()))
+                return np.full((32, 32), len(calls) % 2 == 1)
+            with mock.patch.object(duoforge, "queue_mask", side_effect=queue_mask):
+                masks = search._queue_masks(records[[0, 1]], records[[0, 1]])
+                self.assertEqual(calls, [(r.tobytes(), r.tobytes()) for r in records[[0, 1]]])
+                self.assertTrue(masks[0].all() and not masks[1].any())
+                calls.clear()
+                masks = search._queue_masks(records[[1, 1]], records[[1, 1]])
+                self.assertEqual(len(calls), 1)  # one call for the worlds of one pair of records
+                self.assertTrue(np.array_equal(masks[0], masks[1]))
+
     def test_a_world_without_its_preview_record_is_unreconstructible(self):
         from duoforge_search.record_roots import RecordRoots
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \

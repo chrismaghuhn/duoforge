@@ -360,3 +360,65 @@ the strictest case:
   - 41 with a possible Illusion;
   - 22 with a Transform;
   - 19 with a forme name the tables lack: Palafin-Hero 12, Alcremie-Salted-Cream 3, Mimikyu-Busted 2, Latios 1, Tapu Lele 1.
+
+## Evidence of the search over the particles (#385 step 4)
+
+**Tests.**
+- `duoforge.python.honest`, class `WorldRecords`:
+  - worlds given one record decide as that record alone, bit for bit;
+  - each world is built from its own record;
+  - the root's candidates are the mean over the worlds' rows;
+  - a world redrawn since the preview brings its own preview record (red with the search's memory instead);
+  - a world without its preview record, a refused world record with its causes, and disagreeing public fields or world
+    counts are each named.
+- The open-sheet search suites (`honest`, `search`, `preview_search`, `expert_teacher`) pass unchanged; they mock
+  `belief.sample` and `_build`, so the one-record path keeps its call shapes.
+- `duoforge.python.live_cts`, class `ClosedGameTest`:
+  - the raw ranking is the mean over the particles;
+  - the search gets one world per particle, with its history;
+  - a particle drawn anew carries the preview record of its own sets;
+  - `LiveSearch` sets the particles as its worlds.
+- `duoforge.python.pkmn_arena`: closed sheets played over the particles, a stop under its name, the log drawing the same
+  particles again, the random-team ladder, and the start checks.
+- `duoforge.python.pkmn_arena_net`: a closed-sheet battle with the live search and a real network (16 worlds, the foe
+  network). The turns are searched, with no class (b) and no fallback.
+
+**Latency** (`tools/research/cts_search_latency.py`). Measured under `machine_lock --exclusive` on 2026-10-13 at commit
+`89b179b4`:
+- WSL on the owner's machine, the private BC6 as network and foe network, `HONEST_SETTINGS` (16 worlds), with no deadline, so
+  the search's own times;
+- *complete* is the feed of the batch that completed the decision point (particles, redraws, record checks) plus the decision
+  (16 encodings, the mean policy, the search).
+
+| streams | decisions | decision p99 / max | complete p99 / max |
+|---|---|---|---|
+| real closed-sheet battles of Ling-Ce on PKMN Arena (10, all) | 126 (116 searched) | 0.16 s / 0.17 s | 0.31 s / 0.37 s |
+| pinned simulator, pool teams, closed (64 streams) | 413 | 0.15 s / 0.17 s | 0.17 s / 0.20 s |
+| the same streams, open sheets (one record) | 419 | 0.08 s / 0.13 s | 0.08 s / 0.13 s |
+
+- **The real battles** are Ling-Ce's logs of 2026-10-12, which it answered with `/choose default` then. They are private (match
+  and user ids) and stay outside the repository, read anonymously (`dump-arena`).
+  - The logs of that time keep no batches, so each batch is taken to end at a request line.
+  - The own team is the one registry team the requests match.
+  - All 10 battles fold to their end: no stop, no fallback, 226 redraws on facts and 83 on the Item Clause.
+- **The pool streams** are a stress case with artificial teams; their feed reaches 0.63 s at most per batch. Stops, the same
+  streams in both arms:
+  - SUBSTITUTE ×6, FORME_CHANGE ×1 and a possible Illusion ×1 (under closed sheets `cts:redraw-cap stop:feature` and
+    `cts:facts skip:illusion`);
+  - a tracker domain error, the same in both arms;
+  - one more stream under closed sheets with `cts:redraw-cap error:ValueError`.
+- Every maximum is under 1 % of the arena's 45 s per request.
+
+**A record per world that the engine refuses** (named; HauptSession's decision of 2026-10-13, #464). On the pool streams,
+141 of 413 closed-sheet decisions are unreconstructible, against 15 under open sheets.
+- The cause: the engine refuses (E_UNSUPPORTED, `engine-refuses-record`) the records of some particles, whose drawn sets it
+  does not represent at that point. Examples: Mega Stones such as Sharpedonite and Gyaradosite, abilities such as Early Bird
+  and Tangled Feet, and mostly combinations.
+- Some but not all particles are refused at 146 of 415 decision points.
+- A decision with any refused world is played raw under its name, as under open sheets.
+- **None of the 116 searched decisions of the real battles met it.**
+- **Decided** (HauptSession, #464): the decision stays honest. When even one particle holds content the engine does not
+  represent, the whole decision is played raw under its name. There is no search over the represented particles only: it would
+  condition the belief on what the engine represents.
+  - The missing content is to be prioritized later by its prior mass, under the content-files plan.
+  - How often the case occurs live is measured by the local control (step 5) and by live play.
