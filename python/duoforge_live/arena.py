@@ -1,7 +1,7 @@
 """The live-path arena (issue #362; plan 2026-10-10-live-honest-search, Task 6): the live search against raw play, both
 through the real live client, on a local copy of the pinned Showdown server.
 
-    python -m duoforge_live.arena --checkpoint P --out DIR [--games 400] [--lanes 2] [--server-dir PATH]
+    python -m duoforge_live.arena --checkpoint P --out DIR [--games 400] [--lanes 2] [--server-dir PATH] [--closed]
 
 Every pair of games draws two teams of the checkpoint's pool (its config's team ids) and plays them twice with the
 seats' teams swapped: the search bot ("--search honest") against the raw bot, both the same network. The battle timer is
@@ -13,6 +13,10 @@ pairs' mean scores), no crash (an internal-error forfeit or a lane that fails), 
 most 5% of the search's decisions, deadline misses at most 1%, tracker stops at most 1% of the games, no timer loss,
 and the search's p99 decision time within the 2 s cap. Logs and results stay in DIR, outside the repository: they
 hold match ids (AGENTS.md); a report quotes aggregates only.
+
+--closed (#385 step 5, the local control of closed team sheets, decision 0081): both bots play over the particles
+(client.Bot with the pinned set table as prior; no open team sheets), and the gates are CTS_GATES, predeclared before
+the run.
 """
 import argparse
 import asyncio
@@ -27,6 +31,12 @@ from pathlib import Path
 FORMAT = "gen9championsvgc2026regmc"
 GATES = {"lower_bound": 0.50, "crashes": 0, "class_b": 0, "raw_fallback_share": 0.05, "deadline_share": 0.01,
          "tracker_stop_share": 0.01, "timer_losses": 0, "p99_seconds": 2.0}
+# --closed (#385 step 5, predeclared on #385 before the run, 2026-10-13): the local control of closed team sheets. Every
+# game played, no crash, no class (b) error, no timer loss, and at least 95% of the games to their end without a tracker
+# stop. Counted, not gated: the score, the searched share, the deadline misses and the #464 refusals
+# (engine-refuses-record); the latency is measured apart, exclusively (tools/research/cts_search_latency.py).
+CTS_GATES = {"crashes": 0, "class_b": 0, "timer_losses": 0, "completed_share": 0.95}
+ENGINE_REFUSES = "engine-refuses-record"  # the tracker's reason of a record the engine refuses (#464)
 START_WAIT = 60.0  # seconds for a challenge to open its battle room
 GAME_WAIT = 1800.0  # seconds a game may take
 
@@ -38,6 +48,16 @@ def playable(ids, valid):
     if len(kept) < 2:
         raise SystemExit(f"only {len(kept)} of {len(ids)} pool teams are playable: no pair")
     return kept, [i for i in ids if i not in valid]
+
+
+def pool_ids(config):
+    """The team ids of a network's config, its pool; SystemExit for a config that names none (a BC network such as
+    BC6: take the pool of a pool network with --teams-from)."""
+    teams = config.get("teams")
+    ids = list(teams.get("ids", ())) if isinstance(teams, dict) else []
+    if not ids:
+        raise SystemExit("the network names no team pool: give --teams-from a pool network")
+    return ids
 
 
 def draw_pairs(ids, pairs, seed):
@@ -93,19 +113,30 @@ def _ready(url, timeout):
     return False
 
 
-def _commit():
-    """The code's commit (the report's provenance), or None outside a git checkout."""
+def provenance(cwd=None, environ=None):
+    """{"commit", "dirty"} of the code that runs (HauptSession, 2026-10-13: every result names both, never None): from
+    git in a checkout, else from DUOFORGE_COMMIT and DUOFORGE_DIRTY ("0" or "1", a copy without git such as a WSL run's).
+    SystemExit when neither names them."""
+    import os
+    environ = os.environ if environ is None else environ
+    cwd = Path(__file__).resolve().parent if cwd is None else Path(cwd)
     try:
-        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parent, capture_output=True,
-                             text=True, timeout=10)
-        return out.stdout.strip() or None
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True, timeout=10)
+        status = subprocess.run(["git", "status", "--porcelain"], cwd=cwd, capture_output=True, text=True, timeout=30)
+        if head.returncode == 0 and status.returncode == 0 and head.stdout.strip():
+            return {"commit": head.stdout.strip(), "dirty": bool(status.stdout.strip())}
     except OSError:
-        return None
+        pass
+    commit, dirty = environ.get("DUOFORGE_COMMIT", ""), environ.get("DUOFORGE_DIRTY", "")
+    if not commit or dirty not in ("0", "1"):
+        raise SystemExit("no commit to name: run from a git checkout, or set DUOFORGE_COMMIT and DUOFORGE_DIRTY (0 or 1)")
+    return {"commit": commit, "dirty": dirty == "1"}
 
 
 def read_game(log_path, search_name):
     """The search bot's view of one game from its private log."""
-    out = {"result": None, "summary": None, "forfeit": None, "dirty": None, "timer_loss": False, "seconds": []}
+    out = {"result": None, "summary": None, "forfeit": None, "dirty": None, "timer_loss": False, "seconds": [],
+           "cts": None}
     for line in Path(log_path).read_text(encoding="utf-8").splitlines():
         r = json.loads(line)
         text = r.get("in", "")
@@ -121,18 +152,21 @@ def read_game(log_path, search_name):
             out["forfeit"] = r["forfeit"]
         if "dirty" in r:
             out["dirty"] = r["dirty"]
+        if "cts" in r:
+            out["cts"] = r["cts"]
         if r.get("search") and r["search"].get("cause") not in ("team",):
             out["seconds"].append(float(r["search"]["seconds"]))
     return out
 
 
-def evaluate(games, planned):
+def evaluate(games, planned, closed=False):
     """The gates over the arena's game records (play_game's, with the raw bot's forfeit added), `planned` of them
     scheduled. Every planned game must be scored: a game that does not start or does not end, a missing game (a lane
     stopped) and a pair with fewer than two scored games fail all_played, so no game drops out of the score in silence.
     The shares' denominator is every decision of the search bot but the team previews and the decisions of a dirty game
     (searched, forced, raw, refused, deadline, busy, error): the raw fallbacks are the refused (class (a)) ones, the
-    deadline misses those that missed the deadline or met a search still running (busy)."""
+    deadline misses those that missed the deadline or met a search still running (busy). closed: CTS_GATES instead of
+    GATES, with the #464 refusals and the particle counters summed."""
     played = [g for g in games if g.get("result") in ("win", "loss", "tie")]
     score = {"win": 1.0, "tie": 0.5, "loss": 0.0}
     by_pair = {}
@@ -153,8 +187,11 @@ def evaluate(games, planned):
         deadline += s.get("fallback", {}).get("deadline", 0)
         seconds += g.get("seconds", [])
     stops = sum(1 for g in games for f in (g.get("forfeit"), g.get("raw_forfeit")) if f and f.startswith("stop:"))
+    stopped = sum(1 for g in games if any(f and f.startswith("stop:") for f in (g.get("forfeit"), g.get("raw_forfeit"))))
+    # open sheets: a forfeit for the sheets is the etiquette's, no crash; closed sheets: no forfeit but a stop is expected
     crashes = sum(1 for g in games for f in (g.get("forfeit"), g.get("raw_forfeit"))
-                  if f and not f.startswith("stop:") and "sheets" not in f) + sum(1 for g in games if g.get("crash"))
+                  if f and not f.startswith("stop:") and (closed or "sheets" not in f)) \
+        + sum(1 for g in games if g.get("crash"))
     out = {
         "games": len(games), "played": len(played), "pairs": len(means), "score": mean,
         "lower_bound": mean - half, "upper_bound": mean + half,
@@ -168,6 +205,23 @@ def evaluate(games, planned):
         "not_finished": sum(1 for g in games if g.get("result") == "not_finished"),
         "incomplete_pairs": incomplete, "planned": planned,
     }
+    if closed:
+        refusals, counters = 0, {}
+        for g in played:
+            refusals += sum(n for r, n in ((g.get("summary") or {}).get("reasons") or {}).items() if ENGINE_REFUSES in r)
+            for k, n in (g.get("cts") or {}).items():
+                counters[k] = counters.get(k, 0) + n
+        searched = sum((g.get("summary") or {}).get("causes", {}).get("searched", 0) for g in played)
+        out.update({"engine_refuses_record": refusals, "engine_refuses_record_share": refusals / max(1, decisions),
+                    "searched_share": searched / max(1, decisions), "cts": counters,
+                    "tracker_stops": stopped, "completed_share": 1.0 - stopped / max(1, len(games))})  # per game
+        out["gates"] = {"crashes": out["crashes"] <= CTS_GATES["crashes"], "class_b": out["class_b"] <= CTS_GATES["class_b"],
+                        "timer_losses": out["timer_losses"] <= CTS_GATES["timer_losses"],
+                        "completed_share": out["completed_share"] >= CTS_GATES["completed_share"],
+                        "all_played": out["not_started"] == 0 and out["not_finished"] == 0 and incomplete == 0
+                                      and len(games) == planned}
+        out["pass"] = all(out["gates"].values())
+        return out
     out["gates"] = {
         "lower_bound": out["lower_bound"] > GATES["lower_bound"],
         "crashes": out["crashes"] <= GATES["crashes"], "class_b": out["class_b"] <= GATES["class_b"],
@@ -255,6 +309,10 @@ def main(argv=None):
     p.add_argument("--valid-teams", default=None,
                    help="the pool ids the pinned server accepts (stdout of tools/live/validate_pool.js); pairs come "
                         "from these only, the refused ones are reported")
+    p.add_argument("--teams-from", default=None,
+                   help="a pool network whose config's team pool the pairs are drawn from (default: --checkpoint's)")
+    p.add_argument("--closed", action="store_true",
+                   help="closed team sheets: both bots play over the particles (decision 0081), gates CTS_GATES")
     p.add_argument("--server-dir", default=None,
                    help="a pinned Showdown checkout to start with --no-security, bound to --host only "
                         "(on Windows with WSL bots: tools/live/local_server.ps1 starts it on the WSL host address)")
@@ -268,12 +326,13 @@ def main(argv=None):
     foe_net = search.foe_net_path(search.foe_net_of(args))  # an unconfigured foe model stops here too
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
+    code = provenance()  # before anything is loaded or played: a result without its commit is refused
     from duoforge_learn import checkpoint
     from . import client, data, policy
     out = Path(args.out)
     (out / "logs").mkdir(parents=True, exist_ok=True)
     _, config = checkpoint.load(args.checkpoint)
-    ids = list(config["teams"]["ids"])
+    ids = pool_ids(checkpoint.load(args.teams_from)[1] if args.teams_from else config)
     refused = []
     if args.valid_teams:
         valid = {line.strip() for line in Path(args.valid_teams).read_text(encoding="utf-8").splitlines() if line.strip()}
@@ -292,13 +351,18 @@ def main(argv=None):
     url = f"ws://{args.host}:{args.port}/showdown/websocket"
     tables = data.load(kind=policy.table_kind(config))
     net = policy.load(args.checkpoint)
+    prior = None
+    if args.closed:
+        from . import cts
+        prior = cts.SetPrior.from_table(tables)  # the pinned set table; tables it cannot read stop here
     records, start = [], time.monotonic()
 
     def make_bots(lane):
         def bot(role, live):
             cfg = client.Config(name=f"dfarena{lane}{role}bot", team="own", log_dir=str(out / "logs"),
                                 team_link=None, server=url)
-            return client.Bot(cfg, tables, net, login=lambda *a: "", search=live, team_texts={"own": ""})
+            return client.Bot(cfg, tables, net, login=lambda *a: "", search=live, team_texts={"own": ""},
+                              prior=prior)
         return bot("s", search.load(args.checkpoint, foe_net=foe_net,
                                     foe_net_sha256=search.foe_net_sha256_of(args))), bot("r", None)
 
@@ -322,8 +386,8 @@ def main(argv=None):
     report = {"foe_net": None if foe_net is None else {"sha256": search.foe_net_sha256_of(args)},  # the arm
               "checkpoint_config_teams": len(ids) + len(refused), "playable_teams": len(ids),
               "refused_teams": refused, "seed": args.seed, "games_planned": len(games),
-              "lanes": args.lanes, "seconds": time.monotonic() - start, "code": _commit(),
-              **evaluate(records, len(games))}
+              "lanes": args.lanes, "seconds": time.monotonic() - start, "code": code, "closed": args.closed,
+              **evaluate(records, len(games), closed=args.closed)}
     (out / "games.json").write_text(json.dumps(records, indent=1), encoding="utf-8")
     (out / "arena.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in report.items() if k != "gates"}, indent=1), json.dumps(report["gates"]))

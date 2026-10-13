@@ -572,6 +572,20 @@ class ClosedGameTest(unittest.TestCase):
         self.assertGreater(g.tracker.counters["redraw.facts"], 0)
         self.assertGreater(changed, 0)  # a particle redrawn after the preview: another preview record
 
+    def test_the_summary_names_the_reasons_of_the_raw_decisions(self):
+        # #385 step 5 counts the #464 refusals (engine-refuses-record) from each game's summary.
+        reason = "DUOFORGE_E_UNSUPPORTED: public record (public_record_unsupported); tracker: engine-refuses-record"
+
+        class Refusing(RawSearch):
+            def decide(self, *args, **kwargs):
+                super().decide(*args, **kwargs)
+                return live_search.Outcome(None, "unreconstructible", "a", reason, 0.0)
+        for g in self.points(self.game(FakePolicy(), Refusing())):
+            g.candidates()
+        summary = g.summary()
+        self.assertEqual(summary["fallback"], {"a": 4})
+        self.assertEqual(summary["reasons"], {reason: 4})
+
     def test_each_particle_shows_its_own_extension_record(self):
         for g in self.points(self.game(FakePolicy())):
             self.assertEqual([e.tobytes() for e in g.tracker.observation_exts()],
@@ -607,6 +621,38 @@ class ClosedGameTest(unittest.TestCase):
             self.assertEqual([[r.tobytes() for r, _ in h] for h in got["histories"]],
                              [[r.tobytes() for r, _ in h] for h in g.tracker.histories()])
         self.assertEqual([o.cause for o in g.outcomes], ["raw"] * 4)
+
+    def test_a_refused_decision_names_every_particles_reason(self):
+        # Review of #385 step 5: the #464 count reads the outcome's reason, so every particle's named reason is in it,
+        # not only the first one's.
+        from duoforge_search.record_roots import RecordRoots
+
+        class Refusing:
+            encoder, s = 4, ClosedGameTest.N
+
+            def decide(self, roots, envs, seats, keys, last_step):
+                return np.zeros(1, np.int64), [{"kind": "unreconstructible", "reason": "DUOFORGE_E_UNSUPPORTED: x"}]
+
+        live = live_search.LiveSearch(Refusing(), roots=RecordRoots(1))
+        self.addCleanup(live.close)
+        for g in self.points(self.game(FakePolicy(), live)):
+            parts = g.tracker.public_parts()
+            for i, reason in enumerate((None, "visible-confusion", "engine-refuses-record", "visible-confusion")):
+                parts[i]["reason"] = reason
+            g.candidates()
+            if not g.request.get("teamPreview"):
+                break
+        self.assertEqual(g.outcomes[-1].reason,
+                         "DUOFORGE_E_UNSUPPORTED: x; tracker: engine-refuses-record,visible-confusion")
+
+
+class TrueSheetTest(unittest.TestCase):
+    def test_the_true_sheet_is_what_the_pinned_server_shows(self):
+        # Review of #385 step 5: the oracle arm's foe sheet must be the open sheet Showdown sends (no stat points,
+        # sim/battle.ts showOpenTeamSheets), never the paste with its EVs; the particles fold the same form.
+        real = next(line for m in FIXTURE["messages"] for line in m if line.startswith("|showteam|p2|"))
+        self.assertEqual("|showteam|p2|" + cts.true_sheet(FIXTURE["foe_team"]), real)
+        self.assertNotEqual(cts.true_sheet(FIXTURE["foe_team"]), teams.pack(FIXTURE["foe_team"]))  # the EVs differ
 
 
 class CounterKindTest(unittest.TestCase):

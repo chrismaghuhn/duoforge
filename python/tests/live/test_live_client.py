@@ -456,6 +456,88 @@ class ClientTest(unittest.TestCase):
         client.check_arguments(client.Config(name="DuoForgeBot", team="A", log_dir=self.tmp.name, team_link=None))
 
 
+class ClosedClientTest(unittest.TestCase):
+    """The Showdown client under closed team sheets (decision 0081, #385 step 5): the local control's bots."""
+
+    def setUp(self):
+        from duoforge_live import cts
+        self.tmp = tempfile.TemporaryDirectory()
+        self.server = FakeServer()
+        self.tables = data.load(kind="pool")
+        self.prior = cts.SetPrior(self.tables, teams._paste(FIXTURE["foe_team"]))
+        config = client.Config(name="DuoForgeBot", team="A", log_dir=self.tmp.name, team_link=None)
+        self.bot = client.Bot(config, self.tables, FakePolicy(), login=lambda *a: "ASSERTION", clock=Clock(),
+                              team_texts={"A": FIXTURE["team"]}, prior=self.prior)
+        self.bot.connection = self.server
+
+    def tearDown(self):
+        self.bot.close()
+        self.tmp.cleanup()
+
+    def feed(self, message):
+        asyncio.run(self.bot.handle(message))
+
+    def play(self, upto=6):
+        self.feed(f"|pm| {FOE}| DuoForgeBot|/challenge gen9championsvgc2026regmc|gen9championsvgc2026regmc||Accept|Reject")
+        self.server.take()
+        self.feed(room(["|init|battle", "|title|DuoForgeBot vs. chris", "|j|☆chris"]))
+        for lines in FIXTURE["messages"][:upto]:
+            self.feed(room([line for line in lines if not line.startswith("|showteam|")]))
+
+    def log(self):
+        path = Path(self.tmp.name, f"{ROOM}-duoforgebot.jsonl")
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+    def test_closed_sheets_are_played_over_the_particles_and_never_accept_open_sheets(self):
+        from duoforge_live import cts
+        self.play()
+        sent = self.server.take()
+        self.assertNotIn(f"{ROOM}|/acceptopenteamsheets", sent)  # the fixture's message 1 offers them
+        chosen = [s for s in sent if "/choose" in s]
+        self.assertEqual(len(chosen), 2, sent)
+        self.assertTrue(chosen[0].startswith(f"{ROOM}|/choose team ") and chosen[1].startswith(f"{ROOM}|/choose move "))
+        game = self.bot.battles[ROOM].game
+        self.assertTrue(game.closed)
+        self.assertEqual(len(game.tracker.particles), cts.PARTICLES)
+        self.assertFalse([s for s in sent if "/forfeit" in s])
+
+    def test_a_rejected_open_sheet_is_no_forfeit_under_closed_sheets(self):
+        self.play(upto=3)
+        self.feed(room(["chris rejected open team sheets."]))
+        self.assertFalse([s for s in self.server.take() if "/forfeit" in s])
+
+    def test_the_log_keeps_the_batches_and_the_end_the_particle_counters(self):
+        from duoforge_live import cts
+        self.play(upto=9)
+        game = self.bot.battles[ROOM].game
+        again = cts.ParticleTracker(self.tables, FIXTURE["team"], self.prior, cts.SEED, ROOM, cts.PARTICLES)
+        for record in self.log():
+            if "feed" in record:
+                again.feed(record["feed"])
+            elif "accepted" in record:
+                again.accepted(record["accepted"])
+        self.assertGreater(game.epoch, 2)
+        self.assertEqual(again.epoch, game.epoch)
+        self.assertEqual([p.sets for p in again.particles], [p.sets for p in game.tracker.particles])
+        self.assertEqual([p["record"].tobytes() for p in again.public_parts()],
+                         [p["record"].tobytes() for p in game.tracker.public_parts()])
+        sent = [s.split("|/choose ", 1)[1].rsplit("|", 1)[0] for s in self.server.take() if "/choose" in s]
+        accepted = [r["accepted"] for r in self.log() if "accepted" in r]
+        self.assertTrue(accepted)
+        self.assertEqual(accepted, sent[:len(accepted)])  # each choice the game accepted, as it was sent
+        counters = {cts.counter_kind(k): n for k, n in game.tracker.counters.items()}
+        self.feed(room(["|win|chris"]))
+        self.assertIn({"cts": counters}, self.log())
+
+    def test_a_particle_stop_forfeits_under_its_name(self):
+        from duoforge_live import cts
+        self.bot.prior = cts.SetPrior(self.tables, [s for s in teams._paste(FIXTURE["foe_team"])
+                                                    if s["species"] != "Farigiraf"])
+        self.play(upto=3)
+        self.assertIn(f"{ROOM}|/forfeit", self.server.take())
+        self.assertIn({"forfeit": "stop:cts:no-consistent-set Farigiraf"}, self.log())
+
+
 class GameTest(unittest.TestCase):
     def test_game_uses_the_policy_encoding(self):
         # A real Policy whose network reads only the own roster-0 present flag: the fixture's own roster 0 is

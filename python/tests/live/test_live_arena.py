@@ -29,6 +29,31 @@ class Arena(unittest.TestCase):
         self.assertEqual(games, [(0, 0, pairs[0][0], pairs[0][1]), (0, 1, pairs[0][1], pairs[0][0]),
                                  (1, 0, pairs[1][0], pairs[1][1]), (1, 1, pairs[1][1], pairs[1][0])])
 
+    def test_every_result_names_its_commit_and_dirty_state(self):
+        # HauptSession, 2026-10-13: every measurement names the commit it measured and whether the tree was dirty, never
+        # code=None. A copy without git (the WSL runs) takes them from DUOFORGE_COMMIT and DUOFORGE_DIRTY.
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(arena.provenance(tmp, {"DUOFORGE_COMMIT": "8c4fe662", "DUOFORGE_DIRTY": "0"}),
+                             {"commit": "8c4fe662", "dirty": False})
+            self.assertEqual(arena.provenance(tmp, {"DUOFORGE_COMMIT": "8c4fe662", "DUOFORGE_DIRTY": "1"})["dirty"], True)
+            for environ in ({}, {"DUOFORGE_COMMIT": "8c4fe662"}, {"DUOFORGE_COMMIT": "", "DUOFORGE_DIRTY": "0"}):
+                with self.subTest(environ=environ), self.assertRaisesRegex(SystemExit, "DUOFORGE_COMMIT"):
+                    arena.provenance(tmp, environ)
+        import subprocess
+        inside = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(arena.__file__).parent, capture_output=True)
+        if inside.returncode == 0:  # a git checkout names itself (a copy without git, e.g. a WSL run, has none)
+            here = arena.provenance(Path(arena.__file__).parent, {})
+            self.assertEqual(here["commit"], inside.stdout.decode().strip())
+            self.assertIn(here["dirty"], (True, False))
+
+    def test_the_pool_is_a_pool_networks_and_a_network_without_one_is_refused(self):
+        # BC6 (the live network) names no team pool: the pool comes from a pool network's config (--teams-from), as in
+        # the search ladder, never an empty draw.
+        self.assertEqual(arena.pool_ids({"teams": {"ids": ["A", "B", "PP_1"]}}), ["A", "B", "PP_1"])
+        for config in ({"teams": []}, {"teams": {"ids": []}}, {}):
+            with self.subTest(config=config), self.assertRaisesRegex(SystemExit, "--teams-from"):
+                arena.pool_ids(config)
+
     def test_only_teams_the_server_accepts_are_drawn(self):
         # Owner, 2026-10-11 (after the first 400-game run: two pool teams the pinned server's validator refuses made four
         # games unplayable): the pool is validated first (tools/live/validate_pool.js) and pairs come from the valid
@@ -63,6 +88,43 @@ class Arena(unittest.TestCase):
         self.assertFalse(arena.evaluate(fallback, planned=200)["gates"]["raw_fallback_share"])  # 10% of the decisions
         even = [_game(k, g, "win" if g == 0 else "loss") for k in range(100) for g in (0, 1)]
         self.assertFalse(arena.evaluate(even, planned=200)["gates"]["lower_bound"])  # 0.5 exactly is no pass
+
+    def test_the_closed_sheet_gates_are_the_predeclared_ones(self):
+        # #385 step 5, predeclared on #385 before the run (2026-10-13): every game played, no crash, no timer loss, no
+        # class (b) error, at least 95% of the games to their end without a tracker stop. The search's strength under
+        # closed sheets, the #464 refusals and the searched share are counted, not gated.
+        self.assertEqual(arena.CTS_GATES, {"crashes": 0, "class_b": 0, "timer_losses": 0, "completed_share": 0.95})
+        refused = "DUOFORGE_E_UNSUPPORTED: public record (public_record_unsupported); tracker: engine-refuses-record"
+        weak = [_game(k, g, "loss" if (k + g) % 4 else "win",
+                      {"causes": {"team": 1, "searched": 17, "unreconstructible": 2}, "fallback": {"a": 2},
+                       "reasons": {refused: 2}}, cts={"redraw.facts": 3})
+                for k in range(50) for g in (0, 1)]
+        report = arena.evaluate(weak, planned=100, closed=True)
+        self.assertTrue(report["pass"], report)  # a weak search under closed sheets: no strength gate
+        self.assertLess(report["score"], 0.5)
+        self.assertEqual(report["engine_refuses_record"], 200)
+        self.assertAlmostEqual(report["engine_refuses_record_share"], 200 / 1900)
+        self.assertEqual(report["cts"], {"redraw.facts": 300})
+        for stopped, ok in ((5, True), (6, False)):
+            games = [{**g, "forfeit": "stop:cts:redraw-cap stop:feature:SUBSTITUTE"} if i < stopped else g
+                     for i, g in enumerate(weak)]
+            with self.subTest(stopped=stopped):
+                self.assertEqual(arena.evaluate(games, planned=100, closed=True)["gates"]["completed_share"], ok)
+        for broken, gate in ((dict(forfeit="ValueError: boom"), "crashes"), (dict(dirty="SearchError: x"), "class_b"),
+                             (dict(timer_loss=True), "timer_losses")):
+            games = [{**weak[0], **broken}] + weak[1:]
+            with self.subTest(gate=gate):
+                self.assertFalse(arena.evaluate(games, planned=100, closed=True)["gates"][gate])
+        self.assertFalse(arena.evaluate(weak[:98], planned=100, closed=True)["gates"]["all_played"])
+        # Review of #385 step 5: a line neither bot folds stops both in one game: one game, not two
+        both = [{**g, "forfeit": "stop:feature:X", "raw_forfeit": "stop:feature:X"} if i < 5 else g
+                for i, g in enumerate(weak)]
+        report = arena.evaluate(both, planned=100, closed=True)
+        self.assertEqual((report["tracker_stops"], report["completed_share"]), (5, 0.95))
+        self.assertTrue(report["gates"]["completed_share"])
+        # under closed sheets no forfeit but a stop is expected: a sheets forfeit is a crash there
+        sheets = [{**weak[0], "forfeit": "no open team sheets in time"}] + weak[1:]
+        self.assertEqual(arena.evaluate(sheets, planned=100, closed=True)["crashes"], 1)
 
     def test_every_planned_game_must_be_scored(self):
         # Review of #401: a game that never ends, a missing game (a lane stopped) or a pair with one scored game fails
@@ -114,11 +176,12 @@ class Arena(unittest.TestCase):
             lines = [{"in": "|turn|1"}, {"decision": 3, "search": {"cause": "searched", "seconds": 0.4}},
                      {"decision": 1, "search": {"cause": "team", "seconds": 0.01}},
                      {"in": "|win|dfarena0sbot"}, {"end": "|win|dfarena0sbot"},
-                     {"summary": {"causes": {"searched": 1}, "fallback": {}}}]
+                     {"summary": {"causes": {"searched": 1}, "fallback": {}}}, {"cts": {"redraw.facts": 2}}]
             log.write_text("\n".join(json.dumps(x) for x in lines) + "\n", encoding="utf-8")
             game = arena.read_game(log, "dfarena0sbot")
         self.assertEqual((game["result"], game["seconds"], game["forfeit"]), ("win", [0.4], None))
         self.assertEqual(game["summary"]["causes"], {"searched": 1})
+        self.assertEqual(game["cts"], {"redraw.facts": 2})  # a closed-sheet game's particle counters
 
 
 if __name__ == "__main__":

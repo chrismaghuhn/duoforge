@@ -800,6 +800,169 @@ def solve_bayes(tables, weights, *, budget=None):
     return BayesSolution(x, ys, value, exact)
 
 
+# ---- the regret-matching root solver (D1 of the depth search; docs/superpowers/specs/2026-10-13-depth-search-design.md
+# sections 3.1 and 8; #481) ----
+#
+# CFR+ on the same Bayesian game as solve_bayes: one own strategy x for all worlds, a foe strategy y_w per world. Each
+# iteration t updates our positive regrets against the foes' current strategies, then each world's foe against our
+# new one (alternating, as in CFR+): R <- max(0, R + u - sigma . u). A strategy is R+ normalized; where every regret is
+# 0 it is the prior (the network's probabilities of the candidates, renormalized), which decides where the solver
+# starts, not the set it converges to. A side whose every action pays exactly the same against the other's strategy
+# gains no regret in that iteration (compared exactly, so a rounding-sized difference of x . u never splits a tie away
+# from the prior). Rows that are bit-identical everywhere always gain equal regrets and so share their mass equally
+# once any regret is positive; the LP plays one of them. The strategies played are the averages weighted by t (linear
+# averaging), each over the strategies whose regrets were accumulated. The exact exploitability of the averages
+# (bayes_exploitability) is computed every check_every iterations and at the last one; the solve stops at a gap of at
+# most epsilon of the tables' range, or refuses by name at `iterations` (RMUnconverged: the fallback
+# solver_unconverged, owner and HS, Q1). Every bound is a count, never time. It runs on the tables scaled to [0, 1]:
+# a positive scale and a shift leave every regret's sign and every ratio of regrets unchanged.
+#
+# Reproducible like the rest of this module: every product and sum is accumulated in a fixed order over the small axes
+# (columns, rows, worlds) with elementwise NumPy operations, never a reduction whose order NumPy chooses. The iteration
+# loop works in buffers allocated once per solve; only the exact gap check (every check_every iterations) allocates.
+
+RM_EPSILON = 1e-3  # the gap target, a share of the tables' range (owner and HS, Q1)
+# Provisional: D1's offline pass on step 0's recorded tables (spec section 9.1) fixes the default so that p99 of the
+# gap is at most RM_EPSILON and no recorded table reaches the bound; its README comes before any run.
+RM_MAX_ITERATIONS = 10_000
+RM_CHECK_EVERY = 10  # iterations between two exact gap computations
+
+
+class RMUnconverged(SearchError):
+    """The regret-matching solve missed its gap target at its iteration bound: the named fallback solver_unconverged,
+    never a strategy played silently. gap: the last exact gap of the averages, a share of the tables' range."""
+
+    def __init__(self, gap, iterations, epsilon):
+        super().__init__(f"solver_unconverged: gap {gap:.3e} of the range > {epsilon:.0e} after {iterations} "
+                         f"iterations")
+        self.gap, self.iterations, self.epsilon = gap, iterations, epsilon
+
+
+class RMSolution(NamedTuple):
+    """A regret-matching solution: the averages as a BayesSolution (its value sum_w p_w min_j (x a_w)_j on the tables
+    as given, exact False), their exact gap as a share of the tables' range, and the iterations run."""
+    solution: BayesSolution
+    gap: float
+    iterations: int
+
+
+def _prior(v, n, name):
+    v = np.asarray(v, dtype=np.float64)
+    if v.shape != (n,) or not np.isfinite(v).all() or (v < 0).any():
+        raise SearchError(f"{name} must be {n} nonnegative probabilities (got {v!r})")
+    total = math.fsum(v.tolist())
+    if not total > 0.0:
+        raise SearchError(f"{name} has no probability mass: {v!r}")
+    return v / total
+
+
+def _count(name, value):
+    if type(value) is not int or value < 1:
+        raise SearchError(f"{name} must be a positive integer (got {value!r})")
+    return value
+
+
+def solve_bayes_rm(tables, weights, prior, foe_priors, *, iterations=RM_MAX_ITERATIONS, epsilon=RM_EPSILON,
+                   check_every=RM_CHECK_EVERY):
+    """The RMSolution of tables (W, K, M) with world weights (W,) by CFR+ (see above). prior: our K candidates'
+    probabilities; foe_priors (W, M): each world's foe candidates' (both renormalized; spec section 8 sketched a
+    prior_rank here, section 3.1 asks for the prior's probabilities). RMUnconverged when the gap of
+    the averages is above epsilon at `iterations`. A constant table plays the first row and column, as solve_bayes."""
+    a, p = _tables(tables, weights)
+    nw, k, m = a.shape
+    iterations, check_every = _count("iterations", iterations), _count("check_every", check_every)
+    epsilon = float(epsilon)
+    if not 0.0 < epsilon < 1.0:
+        raise SearchError(f"epsilon must lie in (0, 1) (got {epsilon!r})")
+    x0 = _prior(prior, k, "prior")
+    foe_priors = np.asarray(foe_priors, dtype=np.float64)
+    if foe_priors.shape != (nw, m):
+        raise SearchError(f"foe_priors must have shape {(nw, m)} (got {foe_priors.shape})")
+    y0 = np.stack([_prior(foe_priors[w], m, f"foe_priors[{w}]") for w in range(nw)])
+    low = float(a.min())
+    span = float(a.max()) - low
+    if span == 0.0:
+        x = np.zeros(k, dtype=np.float64)
+        x[0] = 1.0
+        return RMSolution(BayesSolution(x, [np.eye(m, dtype=np.float64)[0] for _ in range(nw)], low, False), 0.0, 0)
+    s = (a - low) / span
+    x, ys = x0.copy(), y0.copy()
+    rx, ry = np.zeros(k), np.zeros((nw, m))  # the positive regrets
+    xsum, ysum = np.zeros(k), np.zeros((nw, m))  # the t-weighted strategy sums
+    rows, row_part = np.zeros((nw, k)), np.zeros((nw, k))
+    ours, x_t = np.zeros(k), np.zeros(k)
+    cols, col_part, y_t = np.zeros((nw, m)), np.zeros((nw, m)), np.zeros((nw, m))
+    foe_value, foe_total, foe_high, foe_low = np.zeros(nw), np.zeros(nw), np.zeros(nw), np.zeros(nw)
+    positive, idle, flat = np.zeros(nw, bool), np.zeros((nw, 1), bool), np.zeros(nw, bool)
+    gap = None
+    for t in range(1, iterations + 1):
+        # Ours against the foes' current strategies: ours_i = sum_w p_w (s_w y_w)_i.
+        rows.fill(0.0)
+        for j in range(m):
+            np.multiply(s[:, :, j], ys[:, j, None], out=row_part)
+            rows += row_part
+        ours.fill(0.0)
+        for w in range(nw):
+            np.multiply(rows[w], p[w], out=x_t)
+            ours += x_t
+        value = 0.0
+        for i in range(k):
+            value += float(x[i]) * float(ours[i])
+        np.multiply(x, float(t), out=x_t)
+        xsum += x_t
+        if ours.max() != ours.min():  # every row paying the same is no regret (see above)
+            rx += ours
+            rx -= value
+            np.maximum(rx, 0.0, out=rx)
+        total = 0.0
+        for i in range(k):
+            total += float(rx[i])
+        if total > 0.0:
+            np.divide(rx, total, out=x)
+        else:
+            x[:] = x0
+        # Each world's foe against our new strategy; it minimizes cols_w,j = (x s_w)_j.
+        cols.fill(0.0)
+        for i in range(k):
+            np.multiply(s[:, i, :], x[i], out=col_part)
+            cols += col_part
+        foe_value.fill(0.0)
+        for j in range(m):
+            np.multiply(ys[:, j], cols[:, j], out=foe_total)
+            foe_value += foe_total
+        np.multiply(ys, float(t), out=y_t)
+        ysum += y_t
+        np.max(cols, axis=1, out=foe_high)
+        np.min(cols, axis=1, out=foe_low)
+        np.equal(foe_high, foe_low, out=flat)
+        np.copyto(foe_value, 0.0, where=flat)  # a world whose every column pays the same is no regret for its foe
+        np.copyto(cols, 0.0, where=flat[:, None])
+        ry += foe_value[:, None]
+        ry -= cols
+        np.maximum(ry, 0.0, out=ry)
+        foe_total.fill(0.0)
+        for j in range(m):
+            foe_total += ry[:, j]
+        np.greater(foe_total, 0.0, out=positive)
+        np.logical_not(positive[:, None], out=idle)
+        np.divide(ry, foe_total[:, None], out=ys, where=positive[:, None])
+        np.copyto(ys, y0, where=idle)
+        if t % check_every == 0 or t == iterations:
+            xbar, ybar = _average(xsum), [_average(ysum[w]) for w in range(nw)]
+            gap = bayes_exploitability(s, p, xbar, ybar)
+            if gap <= epsilon:
+                break
+    else:
+        raise RMUnconverged(gap, iterations, epsilon)
+    value = math.fsum(float(p[w]) * float(np.min(_vecmat(xbar, a[w]))) for w in range(nw))
+    return RMSolution(BayesSolution(xbar, ybar, value, False), float(gap), t)
+
+
+def _average(total):
+    """A t-weighted strategy sum, normalized."""
+    return total / math.fsum(total.tolist())
+
+
 def bayes_expected_values(tables, weights, qs):
     """sum_w p_w sum_j q_w,j a_w[i, j] for every row, each q_w renormalized:
     the scores of the expected-value rule over worlds."""

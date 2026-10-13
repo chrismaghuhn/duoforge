@@ -364,6 +364,8 @@ class Teacher(unittest.TestCase):
                     ex.label_decision(search, b, env=0, seat=0, key=key, raw_action=raw, raw_logp=-1.0,
                                       last_step=False, config=cfg,
                                       manifest=dataclasses.replace(m, belief_hash="f" * 64))
+                with mock.patch.object(search, "root_solver", "rm"),                         self.assertRaisesRegex(ValueError, "solves on the LP"):  # D1's rm is no teacher (#481)
+                    self.label(search, b, 0, 0, raw, cfg)
                 for bad_logp in (0.5, float("nan")):
                     with self.assertRaises(ValueError):
                         ex.label_decision(search, b, env=0, seat=0, key=key, raw_action=raw, raw_logp=bad_logp,
