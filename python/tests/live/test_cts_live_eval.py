@@ -98,6 +98,31 @@ class LiveEvalTest(unittest.TestCase):
         self.assertEqual((runs["fallback_battles"], runs["cts"]), ({"stop:cts:redraw-cap": 2}, {"redraw.facts": 6}))
 
 
+class OpponentTest(unittest.TestCase):
+    """Per opponent (HauptSession, 2026-10-13): a private label file keeps each opponent's letter across series, so a
+    fix's before and after compare the same opponents; no name is ever printed."""
+
+    def test_the_opponent_is_the_player_that_is_not_the_bot(self):
+        records = [{"in": "|player|p1|Ling-Ce||"}, {"in": "|player|p2|Some Foe|2|"}]
+        self.assertEqual(ev.opponent(records, "lingce"), "somefoe")
+        self.assertEqual(ev.opponent([{"in": "|player|p1|Ling-Ce||"}], "lingce"), None)
+
+    def test_labels_are_kept_and_new_opponents_continue_by_battles_then_first_seen(self):
+        labels = ev.assign_labels(["x", "y", "y", "z", "y", "z"], {})
+        self.assertEqual(labels, {"y": "A", "z": "B", "x": "C"})  # most battles first, ties by first appearance
+        later = ev.assign_labels(["w", "x", "w", "v"], labels)
+        self.assertEqual(later, {"y": "A", "z": "B", "x": "C", "w": "D", "v": "E"})  # kept, then continued
+
+    def test_the_label_file_never_lies_in_the_repository(self):
+        with self.assertRaises(ValueError):
+            ev.load_labels(data.ROOT / "python" / "tests" / "labels.json")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, "labels.json")
+            self.assertEqual(ev.load_labels(path), {})
+            ev.save_labels(path, {"y": "A"})
+            self.assertEqual(ev.load_labels(path), {"y": "A"})
+
+
 class ReplayTest(unittest.TestCase):
     """--replay (#473-#477): a battle log replayed through the particles counts its decision points and those where the
     engine refuses a particle's record, with the unmodelled content each refused particle holds."""
