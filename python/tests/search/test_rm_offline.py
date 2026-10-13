@@ -71,6 +71,25 @@ class RMOffline(unittest.TestCase):
         self.assertEqual(len(runs[0]), 7)
         self.assertEqual(runs[0], runs[1])
 
+    def test_the_pool_never_reads_more_than_one_block_ahead(self):
+        # Bounded memory: _bounded_map takes the next block of decisions only after the rows of the last one are out.
+        read = []
+
+        def items():
+            for i in range(10):
+                read.append(i)
+                yield i
+
+        class Pool:
+            def map(self, fn, chunk, *args, chunksize):
+                return [x * 10 for x in chunk]
+
+        out = []
+        for row in rm_offline._bounded_map(Pool(), items(), 3):
+            out.append(row)
+            self.assertLessEqual(len(read), len(out) + 3)  # at most the current block beyond the rows given out
+        self.assertEqual(out, [x * 10 for x in range(10)])
+
     def test_every_and_limit_take_a_fixed_subsample(self):
         rng = np.random.default_rng(3)
         with tempfile.TemporaryDirectory() as tmp:
