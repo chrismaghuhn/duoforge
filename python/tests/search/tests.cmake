@@ -11,6 +11,7 @@ duoforge_add_python_test(preview_search python.tests.search.test_preview_search 
 duoforge_add_python_test(search_numpy python.tests.search.test_search_numpy full search)
 duoforge_add_python_test(root_solver python.tests.search.test_root_solver quick search)
 duoforge_add_python_test(tree python.tests.search.test_tree quick search)
+duoforge_add_python_test(infokey python.tests.search.test_infokey quick search)
 duoforge_add_python_test(ladder python.tests.search.test_ladder quick search)
 duoforge_add_python_test(network_diagnosis python.tests.search.test_network_diagnosis quick search)
 duoforge_add_python_test(preview_oracle python.tests.search.test_preview_oracle quick search)
@@ -19,3 +20,4 @@ duoforge_add_python_test(smogon_dex python.tests.search.test_smogon_dex quick se
 duoforge_add_learner_test(search python.tests.search.test_search slow search ci-linux-proof)
 duoforge_add_learner_test(honest python.tests.search.test_honest slow search ci-linux-proof)
 duoforge_add_learner_test(value_rows python.tests.search.test_value_rows slow search ci-linux-proof)
+duoforge_add_learner_test(evaluator python.tests.search.test_evaluator slow search)
