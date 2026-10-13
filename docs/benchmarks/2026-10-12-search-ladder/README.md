@@ -190,7 +190,7 @@ table above applies unchanged: strength, no harm, reproduced (scores and decisio
 reported as adopted on the ladder, but it is no live candidate.
 
 **The touchstone (#458), reported apart and not gated.** The phase-B arm and step 0 each play Team A against the
-Nationals sun team (`--matchup`, members with their known stat points), 256 pairs, `bot` and `ppo` as the sun team's
+tournament sun team (`--matchup`, members with their known stat points), 256 pairs, `bot` and `ppo` as the sun team's
 pilots. The mirror arm (our own search piloting the sun team) follows when the harness can seat a searcher on the foe side.
 
 **Amendment before any step-2 run (owner, 2026-10-13, #440).**
