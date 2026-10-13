@@ -150,12 +150,13 @@ def _sha256(path):
 class _Play:
     """Plays streams as the live bot does and keeps the timings of the counted ones."""
 
-    def __init__(self, arm, tables, net, live, prior):
+    def __init__(self, arm, tables, net, live, prior, detail=False):
         self.arm, self.tables, self.net, self.live, self.prior = arm, tables, net, live, prior
+        self.detail, self.details = detail, collections.Counter()
         self.decision, self.complete = collections.defaultdict(list), collections.defaultdict(list)
         self.feed = []
-        self.causes, self.fallback, self.stops, self.errors, self.counters, self.skipped = \
-            (collections.Counter() for _ in range(6))
+        self.causes, self.fallback, self.stops, self.errors, self.counters, self.skipped, self.reasons = \
+            (collections.Counter() for _ in range(7))
         self.episode = 0
         self.seen = set()  # warm-up: the decision kinds the search has compiled for (team, searched)
 
@@ -203,6 +204,7 @@ class _Play:
                             self.causes[outcome.cause] += 1
                             if outcome.fallback is not None:
                                 self.fallback[outcome.fallback] += 1
+                                self.reasons[str(outcome.reason)[:160]] += 1  # the named reason, the tracker's beside the search's
                             if outcome.cause == "searched":
                                 self.decision["searched"].append(seconds)
                                 self.complete["searched"].append(fed + seconds)
@@ -212,9 +214,13 @@ class _Play:
         except lines.Stop as stop:
             if counted:
                 self.stops[stop.reason.split(" ")[0] if stop.reason.startswith("cts:") else stop.reason.split(":")[0]] += 1
+                if self.detail:
+                    self.details[f"stop {stop.reason}"[:120]] += 1
         except ValueError as err:
             if counted:
                 self.errors[type(err).__name__] += 1
+                if self.detail:  # the stream's own text, only for streams that hold no private name (--detail)
+                    self.details[f"{type(err).__name__}: {err}"[:120]] += 1
         if counted and g.closed:
             for key, n in g.tracker.counters.items():
                 self.counters[cts.counter_kind(key)] += n
@@ -231,7 +237,7 @@ def measure(args):
     foe_sha = args.foe_net_sha256 or live_search.FOE_NET_SHA256
     live = live_search.load(args.checkpoint, foe_net=args.foe_net, foe_net_sha256=foe_sha)
     prior = cts.SetPrior.from_table(tables) if args.arm == "closed" else None
-    play = _Play(args.arm, tables, net, live, prior)
+    play = _Play(args.arm, tables, net, live, prior, args.detail)
     try:
         warmed = 0
         for s in _drawn(warmup, WARMUP, args.seed + 1):
@@ -253,7 +259,7 @@ def measure(args):
         "decision": {**{k: _quantiles(v) for k, v in sorted(play.decision.items())}, "all": _quantiles(every)},
         "complete": {**{k: _quantiles(v) for k, v in sorted(play.complete.items())}, "all": _quantiles(every_complete)},
         "feed": _quantiles(play.feed), "causes": dict(play.causes), "fallback": dict(play.fallback),
-        "stops": dict(play.stops), "errors": dict(play.errors), "left_out": dict(play.skipped),
+        "stops": dict(play.stops), "errors": dict(play.errors), "left_out": dict(play.skipped), "reasons": dict(play.reasons), "details": dict(play.details),
         "particle_counters": dict(play.counters),
         "settings": {"search": live_search.HONEST_SETTINGS, "particles": cts.PARTICLES if args.arm == "closed" else None,
                      "checkpoint_sha256": _sha256(args.checkpoint), "foe_net_sha256": foe_sha,
@@ -282,6 +288,8 @@ def main(argv=None):
     m.add_argument("--arm", choices=("closed", "open"), default="closed")
     m.add_argument("--count", type=int, default=128)
     m.add_argument("--seed", type=int, default=SEED)
+    m.add_argument("--detail", action="store_true",
+                   help="also count the stops' and errors' own texts (never for streams with private names)")
     args = p.parse_args(argv)
     {"dump": dump, "dump-arena": dump_arena, "measure": measure}[args.command](args)
 
