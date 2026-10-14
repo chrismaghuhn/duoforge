@@ -344,5 +344,49 @@ class StubDigestKeyed(Depth):
             self.assertEqual((r["kind"], r["reason"]), ("unreconstructible", "observation_key_refused"))
 
 
+class WorldPolicies(Depth):
+    def test_world_policies_are_the_root_worlds_policy_after_the_tree(self):
+        # Honest.world_policies (#499) at depth 2: the worlds it reads are the root's, as the root _prepare read them,
+        # after the whole tree decision. The depth-1 nodes live in their own batch; their phase queries no world and
+        # builds none, so the root _prepare is the decision's only query of the worlds.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            pool = duoforge.teams.load(ctx, ["A", "B", "C"])
+            table = belief.SpreadTable.from_sides(pool.sides)
+            with duoforge.Batch(ctx, pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0])), 2, 42) as roots, \
+                    self.make(ctx, table=table, excluded=[1, 2, 0], **DEPTH2) as search:
+                search.decide(roots, [0, 1, 2], [0, 0, 0], [123] * 3, [False] * 3, steps_left=[UNLIMITED] * 3)
+                roots.query_factored()
+                choices = np.zeros((3, 2), _layout.FACTORED_CHOICE)
+                choices["picks"][:, :, :4] = np.arange(4, dtype=np.uint8)
+                roots.step_factored(choices)
+                roots.query_factored()
+                inside, seen = [False], []
+                real_policy, real_prepare = search._world_policy, search._prepare
+
+                def policy():
+                    out = real_policy()
+                    if inside[0]:
+                        seen.append((np.array(out[0], copy=True), np.array(out[3], copy=True)))
+                    return out
+
+                def prepare(*args, **kwargs):
+                    inside[0] = True
+                    try:
+                        return real_prepare(*args, **kwargs)
+                    finally:
+                        inside[0] = False
+
+                with mock.patch.object(search, "_world_policy", policy), mock.patch.object(search, "_prepare", prepare):
+                    _, records = search.decide(roots, [0], [0], [456], [False], steps_left=[UNLIMITED])
+                self.assertEqual(records[0]["kind"], "searched")
+                self.assertGreater(records[0]["tree"]["nodes"], 0)  # the depth-1 phase ran
+                self.assertEqual(len(seen), 1)  # one root, one _prepare, one query of its worlds
+                root_pp, root_masks = seen[0]
+                for seat in (0, 1):
+                    logp, masks = search.world_policies(seat)
+                    np.testing.assert_array_equal(logp, root_pp[:, seat])
+                    np.testing.assert_array_equal(masks, np.asarray(root_masks[:, seat], bool).reshape(search.s, -1))
+
+
 if __name__ == "__main__":
     unittest.main()
