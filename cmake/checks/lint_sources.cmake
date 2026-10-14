@@ -119,8 +119,7 @@ endforeach()
 # file(STRINGS) cannot split a CRLF working copy into lines, so the defines are matched on the whole text (no group).
 if(EXISTS "${ROOT}/src/rng/draw.h")
     file(READ "${ROOT}/src/rng/draw.h" _draw_text)
-    string(REPLACE "
-" "" _draw_text "${_draw_text}")
+    string(REPLACE "" "" _draw_text "${_draw_text}")
     string(REGEX MATCHALL "#define DFI_SITE_[A-Z0-9_]+[ 	]" _site_defs "${_draw_text}")
     foreach(_site_def IN LISTS _site_defs)
         string(REPLACE "#define DFI_SITE_" "" _site "${_site_def}")
