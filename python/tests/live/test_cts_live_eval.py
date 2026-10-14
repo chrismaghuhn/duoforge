@@ -317,7 +317,9 @@ class ReplayTest(unittest.TestCase):
 
     def test_the_real_tables_name_the_known_unmodelled_content(self):
         names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-        self.assertTrue({"speedswap", "piercingdrill", "gravity", "temperflare"} <= names, sorted(names)[:10])
+        self.assertTrue({"speedswap", "gravity"} <= names, sorted(names)[:10])
+        self.assertNotIn("temperflare", names)  # modelled by #476 (the Stomping Tantrum handler)
+        self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
 
 
 if __name__ == "__main__":

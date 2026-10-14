@@ -37,6 +37,8 @@ duoforge_add_test(NAME duoforge.state.pool_g80 SOURCES moves/test_pool_g80.c WHI
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES moves/test_pool_g42.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
+# Step K1 (#476, decision 0015 entry 5dc): Temper Flare shares Stomping Tantrum's callback; the result classes of its user.
+duoforge_add_test(NAME duoforge.state.pool_k1 SOURCES moves/test_pool_k1.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES moves/test_pool_g44.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES moves/test_pool_g54.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 # Step G56: lockedmove (Outrage, Thrash, Petal Dance): the count, its refusals and the information safety of its length.
