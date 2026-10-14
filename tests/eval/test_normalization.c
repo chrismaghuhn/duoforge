@@ -60,6 +60,14 @@ static void basic(void)
     p.gamma_scale=unity;p.output_scale.shift=64;
     CHECK(dfi_eval_layernorm32(x,gamma,beta,4,p,scratch,4,out)==DUOFORGE_E_INVALID_ARGUMENT);
     p.output_scale=unity;
+#if SIZE_MAX < UINT64_MAX
+    /* Win32: reject the byte count before reading past this one input cell. */
+    const int32_t single=1;
+    dfi_eval_normalization_stats stats={77,77,77,77};
+    CHECK(dfi_eval_layernorm_moments(&single,UINT32_MAX,p,&stats)==DUOFORGE_E_CAPACITY);
+    CHECK(stats.mean==77 && stats.variance_hi==77 && stats.variance_lo==77 && stats.denominator==77);
+    CHECK(single==1);
+#endif
     CHECK(dfi_eval_layernorm32(x,gamma,beta,4,p,scratch,3,out)==DUOFORGE_E_CAPACITY);
     CHECK(dfi_eval_layernorm32(x,gamma,beta,0,p,scratch,4,out)==DUOFORGE_E_INVALID_ARGUMENT);
     CHECK(dfi_eval_layernorm32(x,gamma,NULL,4,p,scratch,4,out)==DUOFORGE_E_NULL_ARGUMENT);

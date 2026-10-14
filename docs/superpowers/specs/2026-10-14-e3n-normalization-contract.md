@@ -87,13 +87,18 @@ zero multiplier, oversized shifts and exact scratch aliasing refuse. Capacity on
 past the caller's scratch count returns E_CAPACITY. Unrepresentable intermediates
 or int32 outputs return E_EXHAUSTED. The input-buffer extents are caller preconditions;
 all scratch bytes must be disjoint from inputs and outputs, including partial overlaps.
-Inputs and final output may overlap because publication occurs last.
+LayerNorm32/residual32 final outputs may overlap same-type int32 inputs because
+publication occurs last. Residual16's int16 output must be disjoint from every
+int32 input object, including partial overlaps, to preserve portable effective-type
+and strict-aliasing rules; delayed publication alone does not grant cross-type aliasing.
 
 Additional caller scratch is exactly `4*channel_count` bytes, int32-aligned, plus
 constant-size scalar/limb locals; no vector-sized stack arrays, heap allocation,
 shared mutable state or graph-dependent automatic storage. The cold workspace later
 checks `4*count <= SIZE_MAX` and reserves this scratch for each worker. The operators
-also check that arithmetic before touching channels. Every result is computed into
+also check that arithmetic before touching channels, including standalone
+`layernorm_moments` without scratch. Conditional Win32 tests use a one-cell input
+and a too-large declared count to require no input access and no result publication. Every result is computed into
 scratch and published only after all channels pass; even a late channel refusal
 leaves the entire output unchanged. Scratch can be modified on refusal.
 `layernorm_moments` exposes the same private scalar core for the independent

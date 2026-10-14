@@ -26,14 +26,17 @@ typedef struct dfi_eval_normalization_stats {
 /* Intermediate scalar oracle, also used by layernorm32. Stats publish last. */
 DFI_PRIVATE duoforge_status dfi_eval_layernorm_moments(const int32_t *input,
     uint32_t count, dfi_eval_normalization parameters, dfi_eval_normalization_stats *out);
-/* Caller supplies count int32 scratch cells. Outputs publish only on full success.
+/* Caller supplies count int32 scratch cells, disjoint from inputs/outputs.
+   Output32 may overlap int32 inputs; publication occurs only on full success.
    count > 0, sqrt_shift <= 31, numerator_shift <= 63; arbitrary int32 inputs,
    gamma and beta. Gamma/beta must use the declared graph scales. No allocation. */
 DFI_PRIVATE duoforge_status dfi_eval_layernorm32(const int32_t *input,
     const int32_t *gamma, const int32_t *beta, uint32_t count,
     dfi_eval_normalization parameters, int32_t *scratch, uint32_t capacity, int32_t *out);
 /* Each branch is explicitly rescaled before the residual addition. Output32
-   never saturates; residual16 alone declares final int16 saturation. */
+   never saturates and may overlap int32 inputs. Residual16 alone declares final
+   int16 saturation; its output must be disjoint from int32 input objects.
+   Both operations require scratch disjoint from all inputs/outputs. */
 DFI_PRIVATE duoforge_status dfi_eval_residual32(const int32_t *left, const int32_t *right,
     uint32_t count, dfi_eval_scale left_scale, dfi_eval_scale right_scale,
     dfi_eval_scale output_scale, int32_t *scratch, uint32_t capacity, int32_t *out);

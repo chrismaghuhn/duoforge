@@ -115,8 +115,9 @@ static duoforge_status vector_arguments(const int32_t *a, const int32_t *b,
     if (!count) return DUOFORGE_E_INVALID_ARGUMENT;
     if (count > capacity || (uint64_t)count * sizeof(int32_t) > SIZE_MAX)
         return DUOFORGE_E_CAPACITY;
-    /* Scratch must be disjoint; in-place output is safe because publish is last.
-       Caller proves the full buffer extents do not overlap scratch. */
+    /* Scratch is disjoint from inputs/outputs. Output32 may overlap int32
+       inputs because publication is last; output16 is disjoint from int32
+       input objects. Caller proves buffer extents; no address-range inference. */
     if ((const void *)scratch == (const void *)a || (const void *)scratch == (const void *)b ||
         (const void *)scratch == out) return DUOFORGE_E_INVALID_ARGUMENT;
     return DUOFORGE_OK;
@@ -126,6 +127,7 @@ duoforge_status dfi_eval_layernorm_moments(const int32_t *input, uint32_t count,
 {
     if (!input || !out) return DUOFORGE_E_NULL_ARGUMENT;
     if (!count) return DUOFORGE_E_INVALID_ARGUMENT;
+    if ((uint64_t)count * sizeof(int32_t) > SIZE_MAX) return DUOFORGE_E_CAPACITY;
     duoforge_status st = normalize_parameters(p); if (st != DUOFORGE_OK) return st;
     int64_t sum = 0, mean;
     for (uint32_t i = 0; i < count; ++i) {
