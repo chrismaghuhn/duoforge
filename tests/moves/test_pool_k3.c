@@ -22,6 +22,7 @@
 #include <duoforge/duoforge.h>
 #include <duoforge/duoforge_view.h>
 
+#include "codec/state_codec.h"
 #include "combat/turn.h"
 #include "data/pool_tables.h"
 #include "reference/conformance_pool.h"
@@ -270,6 +271,13 @@ static void check_blade_swap(df_test *t, const duoforge_context *ctx)
         DF_CHECK_EQ_U64(t, stored_spe(after, 0u), K3_AEGISLASH_SPE);
         DF_CHECK(t, after->tail.sides[1].forme_now[after->sides[1].positions[0].occupant] != 0u); /* still the Blade */
         DF_CHECK(t, duoforge_battle_check(ctx, after) == DUOFORGE_OK);
+        for (uint32_t viewer = 0u; viewer < DUOFORGE_SIDE_COUNT; ++viewer) {
+            duoforge_observation_ext bext;
+            if (DF_CHECK(t, duoforge_battle_observe_ext(ctx, after, viewer, &bext) == DUOFORGE_OK)) {
+                DF_CHECK(t, (bext.sides[0].positions[0].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) != 0u);
+                DF_CHECK(t, (bext.sides[1].positions[0].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) != 0u);
+            }
+        }
         duoforge_battle_destroy(after);
     }
 }
@@ -286,9 +294,9 @@ static void check_mega_reset(df_test *t, const duoforge_context *ctx)
     if (DF_CHECK(t, after != NULL)) {
         DF_CHECK(t, after->sides[0].members[0].is_mega == 1u);
         DF_CHECK(t, !swapped(after, 0u));
-        {
+        for (uint32_t viewer = 0u; viewer < DUOFORGE_SIDE_COUNT; ++viewer) {
             duoforge_observation_ext mext;
-            if (DF_CHECK(t, duoforge_battle_observe_ext(ctx, after, 0u, &mext) == DUOFORGE_OK)) {
+            if (DF_CHECK(t, duoforge_battle_observe_ext(ctx, after, viewer, &mext) == DUOFORGE_OK)) {
                 DF_CHECK(t, (mext.sides[0].positions[0].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) == 0u); /* Alakazam: the Mega ends its swap */
                 DF_CHECK(t, (mext.sides[1].positions[0].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) != 0u); /* Milotic keeps it */
             }
@@ -422,6 +430,93 @@ static void check_owner_speed(df_test *t, const duoforge_context *ctx)
     }
 }
 
+/* The byte of the canonical state that holds the single_turn bits of position `flat` (state codec, rev 4). */
+static size_t single_turn_offset(uint32_t flat)
+{
+    const uint32_t s = flat / DUOFORGE_ACTIVE_PER_SIDE;
+    const uint32_t p = flat % DUOFORGE_ACTIVE_PER_SIDE;
+    return DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + s * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF +
+           p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_SINGLE_TURN_OFF;
+}
+
+/* The engine's record gate (step K3 proof 2a, HS brief): at a point with live swaps, the battle's own record is refused with
+ * cause 128 for both players; the same battle with the presence bits cleared gives an OK record that the gate accepts; setting
+ * the bit back in that record's state bytes makes the gate refuse it, so the engine decides from the bit, not the tracker. */
+static void check_record_gate(df_test *t, const duoforge_context *ctx, const char *name, uint32_t steps)
+{
+    duoforge_battle *b = replay(t, ctx, name, steps);
+    if (!DF_CHECK(t, b != NULL)) {
+        return;
+    }
+    uint8_t saved[DUOFORGE_SIDE_COUNT][DUOFORGE_ACTIVE_PER_SIDE];
+    uint16_t saved_spe[DUOFORGE_SIDE_COUNT][DUOFORGE_MAX_ROSTER];
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            saved_spe[s][m] = b->sides[s].members[m].stats[DFI_STAT_SPE - 1u];
+        }
+    }
+    uint32_t live[DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE];
+    uint32_t live_count = 0u;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            saved[s][p] = b->tail.sides[s].positions[p].single_turn;
+            if ((saved[s][p] & DFI_SINGLE_TURN_SPEED_SWAP) != 0u) {
+                live[live_count++] = s * DUOFORGE_ACTIVE_PER_SIDE + p;
+            }
+        }
+    }
+    DF_CHECK(t, live_count > 0u);
+    for (uint32_t player = 0u; player < DUOFORGE_SIDE_COUNT; ++player) {
+        duoforge_public_state real;
+        DF_CHECK(t, duoforge_battle_public(ctx, b, player, &real) == DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK(t, (public_mask(t, ctx, b, player) & DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP) != 0u);
+    }
+    /* the same state without the swap: each live swapped member gets its derived Speed (what a rebuild of its stats gives,
+     * the stored Speed of a Pokemon that was never swapped) and the bit ends */
+    for (uint32_t i = 0u; i < live_count; ++i) {
+        const uint32_t flat = live[i];
+        const uint32_t derived = derived_spe(b, flat);
+        if (!DF_CHECK(t, derived != 0xFFFFu)) {
+            break;
+        }
+        occupant_of(b, flat)->stats[DFI_STAT_SPE - 1u] = (uint16_t)derived;
+    }
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            b->tail.sides[s].positions[p].single_turn &= (uint8_t)~DFI_SINGLE_TURN_SPEED_SWAP;
+        }
+    }
+    for (uint32_t player = 0u; player < DUOFORGE_SIDE_COUNT; ++player) {
+        duoforge_public_state rec;
+        const uint32_t other = public_mask(t, ctx, b, player);
+        if (other != 0u) {
+            /* the same state refuses for another named cause (the Blade forme is a temporary forme, TEMP_FORME): the point
+             * proves nothing about the gate, and the refusal must be that named cause, not an invariant failure */
+            DF_CHECK(t, (other & DUOFORGE_PUBLIC_CAUSE_TEMP_FORME) != 0u);
+            DF_CHECK(t, duoforge_battle_public(ctx, b, player, &rec) == DUOFORGE_E_UNSUPPORTED);
+            continue;
+        }
+        if (DF_CHECK_EQ_U64(t, (uint64_t)duoforge_battle_public(ctx, b, player, &rec), (uint64_t)DUOFORGE_OK)) {
+            DF_CHECK(t, duoforge_public_record_check(ctx, &rec) == DUOFORGE_OK);
+            for (uint32_t i = 0u; i < live_count; ++i) {
+                const size_t off = single_turn_offset(live[i]);
+                DF_CHECK(t, (rec.state[off] & DFI_SINGLE_TURN_SPEED_SWAP) == 0u);
+                rec.state[off] = (uint8_t)(rec.state[off] | DFI_SINGLE_TURN_SPEED_SWAP);
+            }
+            DF_CHECK(t, duoforge_public_record_check(ctx, &rec) == DUOFORGE_E_UNSUPPORTED);
+        }
+    }
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            b->sides[s].members[m].stats[DFI_STAT_SPE - 1u] = saved_spe[s][m];
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            b->tail.sides[s].positions[p].single_turn = saved[s][p];
+        }
+    }
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -440,6 +535,9 @@ int main(void)
         check_faint(&t, ctx);
         check_view_bit(&t, ctx);
         check_owner_speed(&t, ctx);
+        check_record_gate(&t, ctx, "k3_speed_swap_basic", 2u);
+        check_record_gate(&t, ctx, "k3_speed_swap_mega", 3u);
+        check_record_gate(&t, ctx, "k3_aegislash_blade_swap", 3u);
         duoforge_context_destroy(ctx);
     }
     return df_test_end(&t);
