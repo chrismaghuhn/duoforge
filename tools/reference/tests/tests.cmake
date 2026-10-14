@@ -3,7 +3,7 @@ add_test(NAME duoforge.reference.format_pins
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/tests/test_battle_pins.py")
 duoforge_label_test(duoforge.reference.format_pins quick tools ci-no-skip)
 set_tests_properties(duoforge.reference.format_pins PROPERTIES TIMEOUT 60
-    ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_CMAKE=${CMAKE_COMMAND}")
+    ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_CMAKE=${CMAKE_COMMAND};DUOFORGE_CMAKE_GENERATOR=${CMAKE_GENERATOR};DUOFORGE_C_COMPILER=${CMAKE_C_COMPILER};DUOFORGE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}")
 
 # Observe every frozen certified/fixture/live pin independently in CI. Native
 # profiles retain a visible skip; configured Python/Showdown jobs must run it.

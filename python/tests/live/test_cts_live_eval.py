@@ -317,11 +317,78 @@ class ReplayTest(unittest.TestCase):
 
     def test_the_real_tables_name_the_known_unmodelled_content(self):
         names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-        self.assertTrue({"speedswap", "gravity"} <= names, sorted(names)[:10])
+        self.assertIn("gravity", names, sorted(names)[:10])
+        self.assertNotIn("speedswap", names)  # modelled by #473 (the stored-Speed swap)
         self.assertNotIn("temperflare", names)  # modelled by #476 (the Stomping Tantrum handler)
         self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
 
 
+class LuckTest(unittest.TestCase):
+    """--luck (#494): the series' aggregates of the battles' luck, and the options it needs."""
+
+    def test_the_series_holds_means_with_intervals_and_the_exclusions_by_name(self):
+        from collections import Counter
+        battles = [{"turns": [0.25, -0.5], "mixed": [False, True], "dropped": [0, 4], "worlds": 16, "result": 1.0,
+                    "partial": Counter({"rest-after-foe-pivot": 1}),
+                    "excluded": Counter({"foe-action-unknown": 1})},
+                   {"turns": [0.5], "mixed": [False], "dropped": [2], "worlds": 16, "result": -1.0,
+                    "excluded": Counter()},
+                   {"turns": [], "mixed": [], "dropped": [], "worlds": 16, "result": None,
+                    "excluded": Counter({"no-end": 1})}]
+        got = ev.luck_series(battles)
+        self.assertEqual((got["battles"], got["finished"], got["unfinished"], got["turns_valued"]), (3, 2, 1, 3))
+        self.assertEqual(got["unfinished_excluded"], {"no-end": 1})
+        self.assertEqual(got["turns_partial"], {"rest-after-foe-pivot": 1})  # valued turns, apart from the exclusions
+        self.assertEqual((got["turns_mixed"], got["mixed_share"]), (1, 1 / 3))
+        self.assertAlmostEqual(got["worlds_dropped_share"], 6 / 48)
+        self.assertAlmostEqual(got["luck_per_battle_unmixed"]["mean"], (0.25 + 0.5) / 2)
+        self.assertAlmostEqual(got["result_minus_luck_unmixed"]["mean"], ((1.0 - 0.25) + (-1.0 - 0.5)) / 2)
+        self.assertEqual(got["turns_excluded"], {"foe-action-unknown": 1})
+        self.assertAlmostEqual(got["valued_share"], 3 / 4)
+        self.assertAlmostEqual(got["luck_per_battle"]["mean"], (-0.25 + 0.5) / 2)  # the battles with a result
+        self.assertAlmostEqual(got["largest_turn"]["mean"], (-0.5 + 0.5) / 2)
+        self.assertEqual(got["result"]["mean"], 0.0)
+        self.assertAlmostEqual(got["result_minus_luck"]["mean"], ((1.0 + 0.25) + (-1.0 - 0.5)) / 2)
+        self.assertGreater(got["result_minus_luck"]["half"], 0.0)
+        self.assertIsNone(ev.interval([]))
+        self.assertIsNone(ev.interval([1.0])["half"])
+
+    def test_a_series_plays_its_bot_commits_search_and_an_unknown_commit_is_refused(self):
+        self.assertEqual([ev.search_step(c) for c in ("1ffa6a03", "a7dd956b1234", "5c503d8a")], ["0", "2e", "2e"])
+        for commit in ("deadbeef", None, ""):
+            with self.subTest(commit=commit), self.assertRaisesRegex(SystemExit, "unknown"):
+                ev.search_step(commit)
+
+    def test_a_series_without_a_code_is_its_process_only_by_its_run_logs(self):
+        with tempfile.TemporaryDirectory() as logs:
+            with self.assertRaisesRegex(SystemExit, "started"):
+                ev.check_bot_commit(logs, "1ffa6a03")  # no run log: nothing shows the process
+            Path(logs, "arena-run-20261013T192334Z.json").write_text(json.dumps({"started": "2026-10-13T19:23:34Z"}),
+                                                                     encoding="utf-8")
+            ev.check_bot_commit(logs, "1ffa6a03")
+            Path(logs, "arena-run-20261014T000433Z.json").write_text(
+                json.dumps({"started": "2026-10-14T00:04:33Z", "code": {"commit": "a7dd956b", "dirty": False},
+                            "search_settings": {"rule": "ev"}}), encoding="utf-8")
+            ev.check_bot_commit(logs, "1ffa6a03")  # a later bot's run log (with its code) is not this series'
+            self.assertEqual([h["started"] for h in ev.series_run_logs(logs, "a7dd956b")], ["2026-10-14T00:04:33Z"])
+            self.assertEqual([h["started"] for h in ev.series_run_logs(logs)], ["2026-10-13T19:23:34Z"])
+            with self.assertRaisesRegex(SystemExit, "no process start"):
+                ev.check_bot_commit(logs, "a75c380a")
+            Path(logs, "arena-run-20261012T005607Z.json").write_text(json.dumps({"started": "2026-10-12T00:56:07Z"}),
+                                                                     encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "started"):
+                ev.check_bot_commit(logs, "1ffa6a03")  # a second process in the directory: not one commit's series
+
+    def test_the_luck_needs_the_pinned_checkpoint_and_stands_alone(self):
+        with tempfile.TemporaryDirectory() as logs:
+            for argv, message in ((["--luck"], "--checkpoint"),
+                                  (["--luck", "--checkpoint", "x"], "--checkpoint"),
+                                  (["--luck", "--replay", "--checkpoint", "x", "--checkpoint-sha256", "y"], "--replay"),
+                                  (["--checkpoint", "x"], "--luck"),
+                                  (["--samples", "4"], "--luck"),
+                                  (["--bot-commit", "1ffa6a03"], "--luck")):
+                with self.subTest(argv=argv), self.assertRaisesRegex(SystemExit, message):
+                    ev.main(["--logs", logs, *argv])
 class ABTest(unittest.TestCase):
     """The A/B test of the root rule (docs/benchmarks/2026-10-14-ab-root-rule): a battle names its arm in its first
     record; the tool counts the arms' win rates with intervals, per opponent and per the foe's leads."""
