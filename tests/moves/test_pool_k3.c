@@ -286,6 +286,13 @@ static void check_mega_reset(df_test *t, const duoforge_context *ctx)
     if (DF_CHECK(t, after != NULL)) {
         DF_CHECK(t, after->sides[0].members[0].is_mega == 1u);
         DF_CHECK(t, !swapped(after, 0u));
+        {
+            duoforge_observation_ext mext;
+            if (DF_CHECK(t, duoforge_battle_observe_ext(ctx, after, 0u, &mext) == DUOFORGE_OK)) {
+                DF_CHECK(t, (mext.sides[0].positions[0].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) == 0u); /* Alakazam: the Mega ends its swap */
+                DF_CHECK(t, (mext.sides[1].positions[0].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) != 0u); /* Milotic keeps it */
+            }
+        }
         DF_CHECK_EQ_U64(t, stored_spe(after, 0u), derived_spe(after, 0u));
         duoforge_battle_destroy(after);
     }
@@ -394,6 +401,27 @@ static void check_view_bit(df_test *t, const duoforge_context *ctx)
     }
 }
 
+/* The owner's view shows its own unswapped Speed while a swap stands (the request shows baseStoredStats, sim/pokemon.ts:1159-1165;
+ * Speed Swap writes storedStats only). After Alakazam swaps with the foe Milotic (k3_speed_swap_basic, turn 1): the stored Speed
+ * of Alakazam is Milotic's 101 (internal), but viewer 0 sees Alakazam at its own 189 and never sees Milotic's Speed; viewer 1
+ * sees Milotic at its own 101 and never Alakazam's. The foe's side is not public: its Speeds read 0 to the other viewer. */
+static void check_owner_speed(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "k3_speed_swap_basic", 2u);
+    if (DF_CHECK(t, b != NULL)) {
+        DF_CHECK_EQ_U64(t, stored_spe(b, 0u), K3_MILOTIC_SPE);
+        duoforge_observation ob0, ob1;
+        if (DF_CHECK(t, duoforge_battle_observe(ctx, b, 0u, &ob0) == DUOFORGE_OK) &&
+            DF_CHECK(t, duoforge_battle_observe(ctx, b, 1u, &ob1) == DUOFORGE_OK)) {
+            DF_CHECK_EQ_U64(t, ob0.sides[0].members[0].stats[4], K3_ALAKAZAM_SPE);
+            DF_CHECK_EQ_U64(t, ob0.sides[1].members[0].stats[4], 0u);
+            DF_CHECK_EQ_U64(t, ob1.sides[1].members[0].stats[4], K3_MILOTIC_SPE);
+            DF_CHECK_EQ_U64(t, ob1.sides[0].members[0].stats[4], 0u);
+        }
+        duoforge_battle_destroy(b);
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -411,6 +439,7 @@ int main(void)
         check_same_turn(&t, ctx);
         check_faint(&t, ctx);
         check_view_bit(&t, ctx);
+        check_owner_speed(&t, ctx);
         duoforge_context_destroy(ctx);
     }
     return df_test_end(&t);

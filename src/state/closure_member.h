@@ -141,6 +141,10 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst);
 bool dfi_closure_member_derive(dfi_member *m);
 /* Step G66 (decision 0040): stats[] of m in the pool forme `forme` (a temporary forme of Stance Change; the HP is not derived). */
 bool dfi_closure_member_forme_stats(const dfi_member *m, uint32_t forme, uint16_t *stats);
+/* Step K3 (decision 0015 5de): the Speed the owner sees while a Speed Swap stands: the member's own (unswapped) stored Speed of its
+ * current forme, the Blade's while blade is set, else the derived one (sim/pokemon.ts:1159-1165: the request shows baseStoredStats,
+ * which only setSpecies rebuilds; Speed Swap writes storedStats). False if the forme data refuses it. */
+bool dfi_member_base_speed(const dfi_member *m, bool blade, uint16_t *out);
 
 /* The member invariant of combat data (reported as DFI_INV_MEMBER_EXTRA):
  * a base forme, a legal gender, nature and Stat Points in range, the current
