@@ -483,7 +483,8 @@ static void check_record_gate(df_test *t, const duoforge_context *ctx, const cha
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            b->tail.sides[s].positions[p].single_turn &= (uint8_t)~DFI_SINGLE_TURN_SPEED_SWAP;
+            b->tail.sides[s].positions[p].single_turn =
+                (uint8_t)((uint32_t)b->tail.sides[s].positions[p].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP);
         }
     }
     for (uint32_t player = 0u; player < DUOFORGE_SIDE_COUNT; ++player) {
