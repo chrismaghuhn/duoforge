@@ -1424,6 +1424,9 @@ class Tracker:
         elif kind == EV["FIELD_START"]:
             if detail == 2:
                 self._trick_room = FIELD_TURNS
+            elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
+                # K4 (#475, decision 0015 5df): Gravity counts five turns; no extender is modelled for it
+                self._gravity = FIELD_TURNS
             else:
                 # DUOFORGE_FIELD_* -> the observation's DUOFORGE_TERRAIN_*: Grassy, Psychic (Team C), Electric and Misty
                 # (POOL, step G25)
@@ -1431,6 +1434,8 @@ class Tracker:
         elif kind == EV["FIELD_END"]:
             if detail == 2:
                 self._trick_room = 0
+            elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
+                self._gravity = 0
             else:
                 self._terrain = self._terrain_turns = 0
         elif kind in (EV["SIDE_START"], EV["SIDE_END"]) and amount in _HAZARD:

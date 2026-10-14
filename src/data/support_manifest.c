@@ -378,6 +378,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_PSYCHUP] = 1u,       /* step G80 (decision 0044): the target's stages, Focus Energy and Dragon Cheer, -copyboost */
             [DFI_MOVE_HOWL] = 1u,          /* step G80: the allies class with the primary boost (Charm's role); Soundproof per target */
             [DFI_MOVE_ALLYSWITCH] = 1u,    /* step G80: the swap, the consecutive roll, the Illusion refusal (E_UNSUPPORTED) */
+            [DFI_MOVE_GRAVITY] = 1u,       /* step K4 (#475, decision 0015 5df): the field for five turns, the 27.2 residual, grounding, the re-use -fail */
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
             /* Step G88 (decision 0046): Lash Out (x2 base power when the user's stat fell this turn, LOWERED) and Assurance (x2 when
              * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */
