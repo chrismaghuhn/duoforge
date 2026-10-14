@@ -237,6 +237,8 @@ int main(int argc, char **argv)
                     }
                     /* No later file I/O: unlink before every workspace operation. */
                     DF_CHECK_EQ_U64(&t, remove(argv[2]), 0u);
+                    duoforge_context_destroy(context);
+                    context = NULL; /* model/workspace retain no borrowed context */
                     workspace_checks(&t, model, other, &a);
                     duoforge_evaluator_destroy(other);
                 }

@@ -17,7 +17,7 @@ candidate descriptors; successful E2 fixtures use a private test-only descriptor
 The format pins the encoder-6 names/order/grouping and mask, categorical capacities,
 engine context fingerprint, arithmetic version, shapes, rounding/saturation nodes
 and per-graph file/workspace bounds. Unknown entries and incompatible versions are
-named refusals. The exact byte contract belongs to E2's format documentation.
+named refusals. The exact byte contract is [DFEVAL v1](../specs/2026-10-14-dfeval-v1.md).
 
 Checkpoint, calibration/split manifests, exported file and detailed audit reports
 live in an Owner-configured private directory outside every repository checkout.
