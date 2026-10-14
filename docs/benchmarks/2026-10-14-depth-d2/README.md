@@ -191,6 +191,54 @@ ticket per label; owner files and queue are read before each start.
 - **Disclosed:** before the first run, a smoke of the switched key (1 pair against `bot`, width 2) may run to check
   that the call works; its numbers fix nothing and are not reported as a result.
 
+### Results (2026-10-14/15)
+
+#### Provenance
+
+| | |
+|---|---|
+| Commit | `56b186de` (the switch of the key to `Batch.expand_digest`), `dirty: false` |
+| Library | `libduoforge_shared.so` built from it, sha256 `40a26a6cff4f63a13cdb6943b39aae624da5d3de4f859e09e99377f60d68f2de` |
+| Networks | main and foe model `bda5de8e…` (BC6), opponent `bot` `213b773b…`, pool config `ef1abe65…` |
+| Runs | `d2-digest-a2` 23:11–23:36, `d2-digest-a3` 23:36–23:58, `d2-digest-a4` 23:58–00:21, one at a time, each exit 0, under the machine lock and the WSL watchdog, not exclusive; at least 8.5 GB free at every start |
+| Games | `--plain-check` (a2): equal; the decisions digest `5aea9b5a…` in all three runs, the same as part 1's |
+
+The smoke (1 pair, width 2) ran before the first run, as disclosed above, and is not reported.
+
+#### The gate: the bound 490 on digest-keyed trees
+
+| width | keyed decisions | refused | unconverged at 50,000 | iterations to ε (median / p99 / max) | over 490 |
+|---|---|---|---|---|---|
+| 2 | 1,162 of 1,162 | 0 | 0 | 60 / 260 / 340 | **0.0 %** |
+| 3 | 1,162 of 1,162 | 0 | 0 | 60 / 264 / 450 | **0.0 %** |
+| 4 | 1,162 of 1,162 | 0 | 0 | 70 / 270 / 490 | **0.0 %** |
+
+**The gate holds: no width is above 0.1 %, so 490 stays the bound for the arms.**
+
+**Disclosed: at width 4 the maximum is exactly 490.** The bound has no reserve there. It is the same decision whose
+count set the bound in part 1 (game environment 56, decision key 17965282637722559962; the next two, 410 and 360, are
+part 1's next two as well). Part 1's rule (twice the maximum) would give 980, as before; it is reported for
+comparison only.
+
+#### Reported, not gated
+
+- **Keys:** the digest keys every shadow decision (1,162 of 1,162); the record key keyed 956 (part 1:
+  `observation_key_refused` 17.7 %). 0 `observation_key_refused` here.
+- **Information sets:** the digest splits finer than the record key, as decision 0082 intends (its own request is in the
+  key):
+
+  | | median information sets | median merge share | median nodes |
+  |---|---|---|---|
+  | record key (part 1, A, 956 keyed) | 329 | 0.694 | 1,024 |
+  | digest (part 1b, 1,162 keyed) | 402.5 | 0.611 | 1,024 |
+
+  The tree's shape does not depend on the width, so these figures are the same at widths 2, 3 and 4.
+- **Depth-2 leaves:** 2 refused at widths 3 and 4, as in part 1; none cut off (no step limit); the rest TERMINAL or
+  open.
+- **The root choice differs from 2e's** in 619 (width 2), 615 (width 3) and 607 (width 4) of 1,162 decisions (about
+  53 %).
+- No seconds are reported: the runs were not exclusive.
+
 ## Part 2: the ladder arms (plan step 11, spec section 9.2)
 
 ### Arms
