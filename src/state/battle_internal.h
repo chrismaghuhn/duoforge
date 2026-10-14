@@ -273,12 +273,12 @@ typedef struct dfi_side {
 #define DFI_TAIL_MOVE_RESULT_MASK 0x3Fu /* bits 6-7 are zero */
 /* single_turn: one-turn volatiles that the position's flags byte (full) cannot hold; both end in the residual of the turn, on
  * switch-out and on faint (ROOST); the bits of the other volatiles held here are listed below. RAGE_POWDER belongs to the Follow Me
- * flag (the move that set it also sets that flag). */
+ * flag (the move that set it also sets that flag). Bit 2 (Speed Swap) is not one of them: it persists across turns (see below). */
 #define DFI_SINGLE_TURN_RAGE_POWDER 1u
 #define DFI_SINGLE_TURN_ROOST 2u
 /* Step K3 (decision 0015 5de): the occupant's Speed was swapped (Speed Swap) and the swap is still live. A presence bit, not a
- * one-turn volatile: it ends with the occupant (dfi_tail_clear_occupant), at a Mega Evolution (the stats are rebuilt), and it is
- * NOT cleared at the residual. The swapped values live in the member's stats[SPE]. Bits 3-7 are free and zero. */
+ * one-turn volatile: it ends at a switch-out, a faint, a Mega Evolution and a forme change (the stats are rebuilt there), and it
+ * is NOT cleared at the residual: it persists across turns, so never clear it together with the byte. The swapped values live in the member's stats[SPE]. Bits 3-7 are free and zero. */
 #define DFI_SINGLE_TURN_SPEED_SWAP 4u
 #define DFI_TAIL_SINGLE_TURN_MASK 7u    /* bits 3-7 are free and zero */
 #define DFI_TAIL_HITS_TAKEN_MAX 6u      /* Rage Fist: power 50 + 50 * n is capped at 350 */
@@ -374,7 +374,7 @@ typedef struct dfi_tail_pos {
     uint8_t protect_kind;      /* tail rev 3 (step G20): which Protect variant the DFI_VOL_PROTECT volatile is, DFI_PROTECT_*;
                                 * nonzero only while the volatile is up (it ends with it, in the residual) */
     uint8_t move_result;       /* tail rev 4: this turn's and last turn's result of the occupant's move, DFI_MOVE_RESULT_* in two bits each */
-    uint8_t single_turn;       /* tail rev 4: DFI_SINGLE_TURN_* bits of the one-turn volatiles that the flags byte has no room for */
+    uint8_t single_turn;       /* tail rev 4: DFI_SINGLE_TURN_* bits of the one-turn volatiles that the flags byte has no room for, and the persistent Speed Swap bit (2) */
     uint8_t hits_taken;        /* tail rev 4: damaging hits the occupant has taken since it came in, 0..DFI_TAIL_HITS_TAKEN_MAX (Rage Fist) */
     uint8_t ability_state;     /* tail rev 4: the state of the occupant's current ability, 0..DFI_TAIL_ABILITY_STATE_MAX (its meaning goes with the ability) */
     uint8_t lock_turns;        /* tail rev 4: the turns that a lockedmove volatile has left, 0..DFI_TAIL_LOCK_TURNS_MAX */

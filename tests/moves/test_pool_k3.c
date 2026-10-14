@@ -213,7 +213,7 @@ static void check_protect(df_test *t, const duoforge_context *ctx)
 }
 
 /* Milotic switches out on turn 2: its Speed is rebuilt from its own forme (101) and its bit ends; Alakazam keeps the swap.
- * Alakazam switches out on turn 3: its Speed is its own (158) again, and the other slot's occupant is untouched. */
+ * Alakazam switches out on turn 3: its Speed is its own (189) again, and the other slot's occupant is untouched. */
 static void check_switch_reset(df_test *t, const duoforge_context *ctx)
 {
     duoforge_battle *out = replay(t, ctx, "k3_speed_swap_switch", 3u);
@@ -307,8 +307,8 @@ static void check_mega_reset(df_test *t, const duoforge_context *ctx)
 }
 
 /* Speed Swap with the ally (k3_speed_swap_ally, flat 0 Alakazam, 1 Baxcalibur, 2 Milotic, 3 Staraptor). Turn 1: Alakazam
- * (158) swaps with Baxcalibur (107): Alakazam 107, Baxcalibur 158, both bits set, both sides refused with 128. Turn 2:
- * Baxcalibur (158) moves first, then Alakazam (107) swaps with Milotic (101): Alakazam 101, Milotic 107; three bits set. */
+ * (189) swaps with Baxcalibur (109): Alakazam 109, Baxcalibur 189, both bits set, both sides refused with 128. Turn 2:
+ * Baxcalibur (189) moves first, then Alakazam (109) swaps with Milotic (101): Alakazam 101, Milotic 109; three bits set. */
 static void check_ally(df_test *t, const duoforge_context *ctx)
 {
     const char *name = "k3_speed_swap_ally";
@@ -335,8 +335,8 @@ static void check_ally(df_test *t, const duoforge_context *ctx)
     }
 }
 
-/* Speed Swap changes the order of a later action of the same turn (k3_speed_swap_same_turn): Alakazam (158) swaps with
- * Milotic (101); Milotic (158 now) then moves before Baxcalibur (107), which it would not have done without the swap (the
+/* Speed Swap changes the order of a later action of the same turn (k3_speed_swap_same_turn): Alakazam (189) swaps with
+ * Milotic (101); Milotic (189 now) then moves before Baxcalibur (109), which it would not have done without the swap (the
  * queue re-sorts after a move, sim/battle.ts:2921). The order itself is pinned by the replay equality of the trace; here the
  * Speeds and the bits after turn 1 and turn 2 (the second swap restores them). */
 static void check_same_turn(df_test *t, const duoforge_context *ctx)
@@ -360,7 +360,7 @@ static void check_same_turn(df_test *t, const duoforge_context *ctx)
     }
 }
 
-/* A swapped Pokemon faints (k3_speed_swap_faint): Milotic (swapped to 158) is KO'd by Alakazam's Psyshock on turn 4. Alakazam
+/* A swapped Pokemon faints (k3_speed_swap_faint): Milotic (swapped to 189) is KO'd by Alakazam's Psyshock on turn 4. Alakazam
  * keeps its swapped Speed (101) and its bit, so the public record stays refused with 128. Milotic's own bit and Speed end
  * with its occupant when the replacement comes in (switch 3 = Kingambit): its Speed is its own derived one again. */
 static void check_faint(df_test *t, const duoforge_context *ctx)
@@ -421,10 +421,10 @@ static void check_owner_speed(df_test *t, const duoforge_context *ctx)
         duoforge_observation ob0, ob1;
         if (DF_CHECK(t, duoforge_battle_observe(ctx, b, 0u, &ob0) == DUOFORGE_OK) &&
             DF_CHECK(t, duoforge_battle_observe(ctx, b, 1u, &ob1) == DUOFORGE_OK)) {
-            DF_CHECK_EQ_U64(t, ob0.sides[0].members[0].stats[4], K3_ALAKAZAM_SPE);
-            DF_CHECK_EQ_U64(t, ob0.sides[1].members[0].stats[4], 0u);
-            DF_CHECK_EQ_U64(t, ob1.sides[1].members[0].stats[4], K3_MILOTIC_SPE);
-            DF_CHECK_EQ_U64(t, ob1.sides[0].members[0].stats[4], 0u);
+            DF_CHECK_EQ_U64(t, ob0.sides[0].members[0].stats[DFI_STAT_SPE - 1u], K3_ALAKAZAM_SPE);
+            DF_CHECK_EQ_U64(t, ob0.sides[1].members[0].stats[DFI_STAT_SPE - 1u], 0u);
+            DF_CHECK_EQ_U64(t, ob1.sides[1].members[0].stats[DFI_STAT_SPE - 1u], K3_MILOTIC_SPE);
+            DF_CHECK_EQ_U64(t, ob1.sides[0].members[0].stats[DFI_STAT_SPE - 1u], 0u);
         }
         duoforge_battle_destroy(b);
     }
@@ -439,7 +439,7 @@ static size_t single_turn_offset(uint32_t flat)
            p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_SINGLE_TURN_OFF;
 }
 
-/* The engine's record gate (step K3 proof 2a, HS brief): at a point with live swaps, the battle's own record is refused with
+/* The engine's record gate (step K3, #473): at a point with live swaps, the battle's own record is refused with
  * cause 128 for both players; the same battle with the presence bits cleared gives an OK record that the gate accepts; setting
  * the bit back in that record's state bytes makes the gate refuse it, so the engine decides from the bit, not the tracker. */
 static void check_record_gate(df_test *t, const duoforge_context *ctx, const char *name, uint32_t steps)
@@ -517,7 +517,7 @@ static void check_record_gate(df_test *t, const duoforge_context *ctx, const cha
     duoforge_battle_destroy(b);
 }
 
-/* The refusal ends with the last live bit (HS brief, proof 3). Each battle is replayed to the point with a live bit (refused for
+/* The refusal ends with the last live bit (step K3, #473). Each battle is replayed to the point with a live bit (refused for
  * both players with cause 128) and to the point after the last bit has ended (no cause, the record check OK). The steps are the
  * replay counts: step 0 is the lead, so k3_speed_swap_mega_end has its Mega after 3 steps and the switch-out after 4. */
 static void check_end_of_refusal(df_test *t, const duoforge_context *ctx, const char *name, uint32_t live_steps, uint32_t end_steps)

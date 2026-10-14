@@ -1273,7 +1273,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_PARTIAL_TRAP 12u
 /* VOLATILE_START (POOL kinds, step K3, decision 0015 5de): -activate|SOURCE|move: Speed Swap|[of] TARGET. Public for both
    players; position: SOURCE, other: TARGET. Both positions carry the presence bit from this event. No END: the swap ends
-   silently (a switch-out, a faint or a Mega Evolution rebuilds the stats; the pin prints nothing). */
+   silently (a switch-out, a faint, a Mega Evolution or a forme change rebuilds the stats; the pin prints nothing). */
 #define DUOFORGE_VOLATILE_SPEED_SWAP 16u
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */

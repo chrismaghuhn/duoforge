@@ -6,8 +6,9 @@
  * target.storedStats.spe and source.storedStats.spe, then prints -activate|source|move: Speed Swap|[of] target. The stored
  * Speed is the stat BEFORE the stages, the items, the abilities and the paralysis: the stages stay with each Pokemon. The
  * swapped values live in dfi_member.stats[SPE] of both members; the presence bit (DFI_SINGLE_TURN_SPEED_SWAP) of both
- * positions is what the view and the public refusal read. The swap ends with the occupant (dfi_tail_clear_occupant
- * rebuilds that member's stats from its forme) and at a Mega Evolution (dfi_closure_member_mega_evolve rebuilds them).
+ * positions is what the view and the public refusal read. The swap ends at a switch-out, a faint, a Mega Evolution and a forme
+ * change (Stance Change): the occupant's stats are rebuilt from its forme there (dfi_tail_clear_occupant, dfi_run_mega,
+ * dfi_stance_change).
  *
  * The move's flags (protect, bypasssub, reflectable: none) and its accuracy (true) are the generic rules of the pool row.
  *
