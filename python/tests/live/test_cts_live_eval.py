@@ -159,7 +159,38 @@ class MainTest(unittest.TestCase):
         for private_text in ("Some Foe", "somefoe", "Other Foe", "otherfoe", "501", "502", "Bobby"):
             self.assertNotIn(private_text, text)
         self.assertEqual(sorted(result["by_opponent"]), ["A"])  # the stopped battle has no timestamp: before --since
-        self.assertEqual((result["logs"], result["since_kept"]), (2, 1))
+        self.assertEqual((result["logs"], result["kept"]), (2, 1))
+
+
+class CodeTest(unittest.TestCase):
+    """A measurement series per bot commit (HauptSession, 2026-10-14: from a7dd956b on, Ling-Ce plays the 2e rule): the
+    battles and run logs of one commit, never mixed with another's."""
+
+    def test_a_battle_names_its_bots_code_from_its_summary(self):
+        code = {"commit": "a7dd956b" + "0" * 32, "dirty": False}
+        b = ev.battle(played() + [{"summary": {"causes": {}, "code": code}}], "lingce")
+        self.assertEqual(b["code"], code)
+        self.assertIsNone(ev.battle(played(), "lingce")["code"])
+
+    def test_main_keeps_the_battles_and_run_logs_of_one_commit(self):
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as logs:
+            for n, commit in ((1, "1ffa6a03"), (2, "a7dd956b"), (3, None)):
+                summary = [] if commit is None else [{"summary": {"code": {"commit": commit + "0" * 32, "dirty": False}}}]
+                Path(logs, f"battle-gen9x-{n}-lingce.jsonl").write_text(
+                    "\n".join(json.dumps(r) for r in played() + summary) + "\n", encoding="utf-8")
+                Path(logs, f"arena-run-{n}.json").write_text(json.dumps({
+                    "started": "2026-10-14T00:00:00Z", "counts": {"battles": 1},
+                    **({} if commit is None else {"code": {"commit": commit + "0" * 32, "dirty": False}})}),
+                    encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                ev.main(["--logs", logs, "--code", "a7dd956b"])
+        result = json.loads(out.getvalue())
+        self.assertEqual((result["logs"], result["kept"], result["code_filter"]), (3, 1, "a7dd956b"))
+        self.assertEqual(result["by_code"], {"1ffa6a03": 1, "a7dd956b": 1, "none": 1})
+        self.assertEqual(result["runs"]["files"], 1)
 
 
 class ReplayTest(unittest.TestCase):

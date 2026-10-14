@@ -71,7 +71,7 @@ def battle(records, bot):
     class (b) error) as "no_search", a team choice as "team"; the seconds are the search's, but a dirty game's."""
     out = {"kind": "other", "result": "unfinished", "causes": collections.Counter(), "fallbacks": collections.Counter(),
            "engine_refuses_record": 0, "defaults": 0, "timer_missing": 0, "rejected": 0, "unavailable": 0,
-           "dirty": False, "fallback": None, "stop": None, "seconds": [], "start": None}
+           "dirty": False, "fallback": None, "stop": None, "seconds": [], "start": None, "code": None}
     fed = False
     for r in records:
         line = r.get("in", "")
@@ -103,6 +103,8 @@ def battle(records, bot):
             out["unavailable"] += 1
         elif "dirty" in r:
             out["dirty"] = True
+        elif "summary" in r:
+            out["code"] = (r["summary"] or {}).get("code")  # the bot's commit and dirty state (pkmn_arena, since #480)
         elif "end" in r:
             end = r["end"]
             if end.startswith("|win|"):
@@ -152,14 +154,17 @@ def summarize(battles):
     return out
 
 
-def run_logs(directory, since=None):
-    """The run logs (arena-run-*.json) started at or after `since` (ISO, UTC), summed."""
+def run_logs(directory, since=None, code=None):
+    """The run logs (arena-run-*.json) started at or after `since` (ISO, UTC), with code: of a bot commit that starts
+    with it, summed."""
     out = {"files": 0, "counts": collections.Counter(), "fallback_battles": collections.Counter(),
            "fallback_decisions": collections.Counter(), "closes": collections.Counter(),
            "search_causes": collections.Counter(), "cts": collections.Counter()}
     for path in sorted(Path(directory).glob("arena-run-*.json")):
         r = json.loads(path.read_text(encoding="utf-8"))
         if since is not None and r.get("started", "") < since:
+            continue
+        if code is not None and not str((r.get("code") or {}).get("commit") or "").startswith(code):
             continue
         out["files"] += 1
         for key in ("counts", "fallback_battles", "fallback_decisions", "closes", "search_causes", "cts"):
@@ -280,7 +285,7 @@ def _sha256(path):
     return h.hexdigest()
 
 
-def replay_all(directory, bot, root, labels=None, since=None):
+def replay_all(directory, bot, root, labels=None, since=None, code=None):
     """--replay over a log directory: the aggregates of replay() (module docstring); with labels (opponent id ->
     letter) also per opponent; with since (unix seconds) only the battles that started then or later."""
     import os
@@ -309,6 +314,9 @@ def replay_all(directory, bot, root, labels=None, since=None):
             continue
         if since is not None and (battle(records, bot)["start"] or 0) < since:
             skipped["before_since"] += 1
+            continue
+        if code is not None and not _code_of(battle(records, bot)).startswith(code):
+            skipped["other_code"] += 1
             continue
         first = next((json.loads(r["in"][len("|request|"):]) for r in records
                       if "in" in r and r["in"].startswith("|request|")), None)
@@ -351,6 +359,11 @@ def replay_all(directory, bot, root, labels=None, since=None):
                 k: {**v, "searchable_share": 1.0 - v["refused"] / max(1, v["points"])} for k, v in sorted(per.items())}})}
 
 
+def _code_of(b):
+    """A battle's bot commit (its summary's code), "" when the log names none."""
+    return str((b.get("code") or {}).get("commit") or "")
+
+
 def _unix(iso):
     from datetime import datetime, timezone
     return int(datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).timestamp())
@@ -366,6 +379,8 @@ def main(argv=None):
     p.add_argument("--out", default=None, help="a JSON file for the result (outside the repository)")
     p.add_argument("--labels", default=None,
                    help="a private JSON file (outside the repository) of the opponents' letters, kept across series")
+    p.add_argument("--code", default=None,
+                   help="only the battles and run logs of a bot commit that starts with this (a measurement series)")
     p.add_argument("--replay", action="store_true",
                    help="replay the logs through the particles: the refused decision points and their content")
     args = p.parse_args(argv)
@@ -380,20 +395,24 @@ def main(argv=None):
     logs = [[json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
             for path in paths]
     kept = [records for records in logs if since is None or (battle(records, bot)["start"] or 0) >= since]
+    by_code = dict(collections.Counter(_code_of(battle(records, bot))[:8] or "none" for records in kept))
+    if args.code is not None:
+        kept = [records for records in kept if _code_of(battle(records, bot)).startswith(args.code)]
     labels = None
     if args.labels:
         labels = assign_labels([o for o in (opponent(r, bot) for r in kept) if o], load_labels(args.labels))
         save_labels(args.labels, labels)
     if args.replay:
-        result = {"since": args.since, **replay_all(args.logs, bot, ROOT, labels, since)}
+        result = {"since": args.since, "code_filter": args.code, "by_code": by_code,
+                  **replay_all(args.logs, bot, ROOT, labels, since, args.code)}
     else:
         battles, groups = [], collections.defaultdict(list)
         for records in kept:
             battles.append(battle(records, bot))
             if labels is not None:
                 groups[labels.get(opponent(records, bot), "?")].append(battles[-1])
-        result = {"code": code, "since": args.since, "logs": len(logs), "since_kept": len(kept),
-                  **summarize(battles), "runs": run_logs(args.logs, args.since)}
+        result = {"code": code, "since": args.since, "code_filter": args.code, "logs": len(logs), "kept": len(kept),
+                  "by_code": by_code, **summarize(battles), "runs": run_logs(args.logs, args.since, args.code)}
         if labels is not None:
             result["by_opponent"] = {k: summarize(v) for k, v in sorted(groups.items())}
     text = json.dumps(result, indent=1, sort_keys=True)
