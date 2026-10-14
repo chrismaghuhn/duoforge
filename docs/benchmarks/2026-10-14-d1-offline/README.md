@@ -73,12 +73,12 @@ Each run reports its commit and its `dirty` flag.
 | B, time | 0f1ad8e1 | false | every 20th decision (2,860), 1 worker, `--exclusive` | 01:18:09.5–01:19:47.1 |
 | A, accuracy | 2e3c9f09 | false | all 57,191 decisions, 8 workers | 01:25:56–01:34:45 |
 
-- **Library:** `~/df-build/search-86e46a15`, sha256 `76c9caeb…3efb`.
+- **Library:** main 86e46a15's (Release, `duoforge_shared`), sha256 `76c9caeb…3efb`.
 - **A's commit:** two commits after 0f1ad8e1:
   - fca352b1 hands the pool a bounded block at a time. The first try of A held every table in memory (2.7 GB) and was stopped at 10,000 decisions; nothing of it is used.
   - 2e3c9f09 adds a test that the pool reads at most one block ahead.
 
-  Neither changes a row (a test compares 2 workers to 1). B ran with 1 worker and never used the pool. A ran after the tool's tests passed in the same lock ticket. Its output directory is named `accA-fca352b1`, the head at queueing time.
+  Neither changes a row (a test compares 2 workers to 1). B ran with 1 worker and never used the pool. A ran after the tool's tests passed in the same lock ticket. It was queued at fca352b1 and ran at 2e3c9f09. The report did not record its commit then; it does now (commit, dirty, library, CPU).
 - **B ran alone:**
   - It waited for the whole machine from 01:09:51 (`machine_lock --exclusive`, which takes every slot) and ran 01:18:09.5–01:19:47.1 (its log's birth and last write).
   - The next holder was the D2 lane's library build, through the lock from 01:20:00. Its file times: export 01:20:00.48, cmake configure 01:20:01–01:20:15, build 01:20:15–01:20:23. There was no overlap.
@@ -89,7 +89,7 @@ Each run reports its commit and its `dirty` flag.
 | | measured | bound |
 |---|---|---|
 | T_acc: iterations to reach ε = 1e-3 of the range (A, all decisions) | median 50, p99 280, **max 1,710**; 0 unconverged at 100,000 | **2 × 1,710 = 3,420** |
-| T_time: RM seconds per iteration (B, exclusive) | median 0.126 ms, **p99 0.226 ms**, max 0.394 ms | **0.4 s / 0.226 ms → 1,770** |
+| T_time: RM seconds per iteration (B, exclusive) | median 0.126 ms, **p99 0.2256 ms** (0.22565), max 0.394 ms | **0.4 s / 0.22565 ms = 1,772.7 → 1,770** (rounded down to a multiple of 10) |
 
 **T_acc (3,420) > T_time (1,770).** By the rule fixed above, **no default is set**: the HauptSession and the owner decide.
 - **How rare the slow tail is:** only 3 of 57,191 decisions needed more than 1,280 iterations, and 31 more than 640. None needed more than 1,770, so T_time itself would not have cut any recorded decision. It would only lack the predeclared factor 2.

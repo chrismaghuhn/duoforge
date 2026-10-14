@@ -165,8 +165,13 @@ def main(argv=None):
                     print(f"{len(rows)} decisions", file=sys.stderr, flush=True)
         finally:
             if pool is not None:
-                pool.shutdown()
-    report = {"decision_files": [os.path.basename(x) for x in args.decisions], "workers": args.workers,
+                pool.shutdown(cancel_futures=True)  # a failed row ends the run: no further block is solved
+    import duoforge
+    from .arena import cpu_model
+    from .ladder import _checkout
+    commit, dirty = _checkout()
+    report = {"commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": cpu_model(),
+              "decision_files": [os.path.basename(x) for x in args.decisions], "workers": args.workers,
               "limit": args.limit, "every": args.every,
               **summarize(rows, epsilon, args.max_iterations, check_every)}
     with open(os.path.join(args.out, "report.json"), "w", encoding="utf-8") as f:

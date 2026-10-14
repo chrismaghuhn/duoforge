@@ -43,6 +43,9 @@ class RMOffline(unittest.TestCase):
         self.assertGreaterEqual(report["value_gap"]["q0.5"], -1e-12)  # the averages' guarantee lies below the value
         self.assertEqual(report["shapes"], {"16x8x8": 1, "2x4x1": 1, "4x3x3": 1})
         self.assertEqual(report["solved_by"][str(report["max_iterations"])], 1.0)
+        for key in ("commit", "dirty", "library", "cpu"):  # every report names what it measured (provenance)
+            self.assertIn(key, report)
+        self.assertRegex(report["commit"], "^[0-9a-f]{40}$")
 
     def test_an_unconverged_decision_is_counted_by_name(self):
         rng = np.random.default_rng(7)
@@ -96,6 +99,19 @@ class RMOffline(unittest.TestCase):
             path = self.write(tmp, [_record(rng) for _ in range(10)])
             got = [number for _, number, _ in rm_offline.decisions([path], limit=3, every=3)]
         self.assertEqual(got, [0, 3, 6])
+
+    def test_a_decision_that_fails_ends_the_run_without_a_report(self):
+        # A row that raises (here a table that is no number) is no dropped row: the run stops with its error and
+        # writes no report.json, with one worker and with the pool.
+        rng = np.random.default_rng(5)
+        bad = dict(_record(rng), tables="not a table")
+        for workers in ("1", "2"):
+            with self.subTest(workers=workers), tempfile.TemporaryDirectory() as tmp:
+                path = self.write(tmp, [_record(rng), bad, _record(rng)])
+                out = os.path.join(tmp, "out")
+                with self.assertRaises(ValueError):
+                    rm_offline.main(["--decisions", path, "--out", out, "--workers", workers])
+                self.assertFalse(os.path.exists(os.path.join(out, "report.json")))
 
     def test_the_output_stays_outside_the_repository(self):
         rng = np.random.default_rng(1)
