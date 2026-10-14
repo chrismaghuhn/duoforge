@@ -13,9 +13,12 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features
 from duoforge_search import SearchError, belief, evaluator, honest
+
 C = _layout.CONSTANTS
-# The tier's budget is a few seconds and the model's first initialization compiles: the smallest dimensions (the
-# comparison holds for any network; the slow tier uses test_search's preset-S model).
+# The quick tier asks for about five seconds; this module takes longer because JAX sets the floor: its import and the
+# first initialization's compilation take most of the time, the comparison itself well under two seconds (it stays in
+# the quick tier so the equality runs there too; its ctest timeout is the learner tests' 900 s). Hence the smallest
+# dimensions (the comparison holds for any network; the slow tier uses test_search's preset-S model).
 TINY = {"embed": 4, "member": 8, "position": 8, "hidden": 16, "layers": 1, "option": 8}
 
 
