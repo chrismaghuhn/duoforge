@@ -322,5 +322,36 @@ class ReplayTest(unittest.TestCase):
         self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
 
 
+class LuckTest(unittest.TestCase):
+    """--luck (#494): the series' aggregates of the battles' luck, and the options it needs."""
+
+    def test_the_series_holds_means_with_intervals_and_the_exclusions_by_name(self):
+        from collections import Counter
+        battles = [{"turns": [0.25, -0.5], "result": 1.0, "excluded": Counter({"foe-action-ambiguous": 1})},
+                   {"turns": [0.5], "result": -1.0, "excluded": Counter()},
+                   {"turns": [], "result": None, "excluded": Counter({"no-end": 1})}]
+        got = ev.luck_series(battles)
+        self.assertEqual((got["battles"], got["finished"], got["turns_valued"]), (3, 2, 3))
+        self.assertEqual(got["turns_excluded"], {"foe-action-ambiguous": 1, "no-end": 1})
+        self.assertAlmostEqual(got["valued_share"], 3 / 5)
+        self.assertAlmostEqual(got["luck_per_battle"]["mean"], (-0.25 + 0.5 + 0.0) / 3)
+        self.assertAlmostEqual(got["largest_turn"]["mean"], (-0.5 + 0.5) / 2)
+        self.assertEqual(got["result"]["mean"], 0.0)
+        self.assertAlmostEqual(got["result_minus_luck"]["mean"], ((1.0 + 0.25) + (-1.0 - 0.5)) / 2)
+        self.assertGreater(got["result_minus_luck"]["half"], 0.0)
+        self.assertIsNone(ev.interval([]))
+        self.assertIsNone(ev.interval([1.0])["half"])
+
+    def test_the_luck_needs_the_pinned_checkpoint_and_stands_alone(self):
+        with tempfile.TemporaryDirectory() as logs:
+            for argv, message in ((["--luck"], "--checkpoint"),
+                                  (["--luck", "--checkpoint", "x"], "--checkpoint"),
+                                  (["--luck", "--replay", "--checkpoint", "x", "--checkpoint-sha256", "y"], "--replay"),
+                                  (["--checkpoint", "x"], "--luck"),
+                                  (["--samples", "4"], "--luck")):
+                with self.subTest(argv=argv), self.assertRaisesRegex(SystemExit, message):
+                    ev.main(["--logs", logs, *argv])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -325,29 +325,17 @@ def _sha256(path):
     return h.hexdigest()
 
 
-def replay_all(directory, bot, root, labels=None, since=None, code=None, details=None):
-    """--replay over a log directory: the aggregates of replay() (module docstring); with labels (opponent id ->
-    letter) also per opponent; with since (unix seconds) only the battles that started then or later."""
-    import os
-    from duoforge_live import cts, data, pkmn_arena
-    from duoforge_live.arena import provenance
-    tables = data.load(kind="pool")
-    prior = cts.SetPrior.from_table(tables)
-    engine_root = Path(cts.__file__).resolve().parents[2]
-    names = unmodelled((engine_root / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-    if not names:
-        raise SystemExit("no [unmodelled] marker found in src/data/pool_tables.c: its format changed")
-    library = os.environ.get("DUOFORGE_LIBRARY")
+def selected(directory, bot, since, code, skipped):
+    """The battle logs of the bot over the particles that a replay follows, in name order: (path, records, own team
+    paste), the paste the registry team the battle's first request matches. What is left out is counted in skipped by
+    reason (no_particles, before_since, other_code, no_request, team_unknown, team_differs)."""
     import hashlib
+    from duoforge_live import data, pkmn_arena
     played = {json.loads(p.read_text(encoding="utf-8")).get("team_sha256")
               for p in Path(directory).glob("arena-run-*.json")} - {None}  # the bot's --team, when its run logs name it
     teams_dir = data.ROOT / "data" / "teams"
     pastes = [(teams_dir / (t["id"] + ".txt")).read_text(encoding="utf-8")
               for t in json.loads((teams_dir / "index.json").read_text(encoding="utf-8"))["teams"]]
-    points, refused, unexplained, skipped, stopped = 0, 0, 0, collections.Counter(), collections.Counter()
-    per = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
-    per_team = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
-    occurs, alone = collections.Counter(), collections.Counter()
     for path in sorted(Path(directory).glob(f"battle-*-{bot}.jsonl")):
         records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
         if not any("feed" in r for r in records):
@@ -371,7 +359,28 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
         if played and hashlib.sha256(team[0].encode("utf-8")).hexdigest() not in played:
             skipped["team_differs"] += 1  # the registry paste is not the --team the bot played (its stats may differ)
             continue
-        out = replay(records, tables, prior, team[0], cts.room_of_log(path, bot), names)
+        yield path, records, team[0]
+
+
+def replay_all(directory, bot, root, labels=None, since=None, code=None, details=None):
+    """--replay over a log directory: the aggregates of replay() (module docstring); with labels (opponent id ->
+    letter) also per opponent; with since (unix seconds) only the battles that started then or later."""
+    import os
+    from duoforge_live import cts, data, pkmn_arena
+    from duoforge_live.arena import provenance
+    tables = data.load(kind="pool")
+    prior = cts.SetPrior.from_table(tables)
+    engine_root = Path(cts.__file__).resolve().parents[2]
+    names = unmodelled((engine_root / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
+    if not names:
+        raise SystemExit("no [unmodelled] marker found in src/data/pool_tables.c: its format changed")
+    library = os.environ.get("DUOFORGE_LIBRARY")
+    points, refused, unexplained, skipped, stopped = 0, 0, 0, collections.Counter(), collections.Counter()
+    per = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
+    per_team = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
+    occurs, alone = collections.Counter(), collections.Counter()
+    for path, records, team in selected(directory, bot, since, code, skipped):
+        out = replay(records, tables, prior, team, cts.room_of_log(path, bot), names)
         points += out["points"]
         if labels is not None:
             o = opponent(records, bot)
@@ -410,6 +419,74 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
                 "by_team": {k: {**v, "searchable_share": 1.0 - v["refused"] / max(1, v["points"])}
                             for k, v in sorted(per_team.items())}})}
 
+
+def interval(values):
+    """(mean, half width of a normal 95% interval) of values, None for none; the half width None for one value."""
+    import statistics
+    if not values:
+        return None
+    mean = statistics.fmean(values)
+    return {"mean": mean, "half": None if len(values) < 2 else 1.96 * statistics.stdev(values) / len(values) ** 0.5,
+            "n": len(values)}
+
+
+def luck_series(battles):
+    """The luck aggregates of battles ({"turns", "result", "excluded"} each, cts_luck.battle): per battle its summed
+    luck and its largest turn, per series the mean summed luck and the result with the luck taken off, with intervals
+    (only the series' means say something; a single battle is an anecdote)."""
+    finished = [b for b in battles if b["result"] is not None]
+    excluded = collections.Counter()
+    for b in battles:
+        excluded.update(b["excluded"])
+    valued = sum(len(b["turns"]) for b in battles)
+    return {"battles": len(battles), "finished": len(finished), "turns_valued": valued,
+            "turns_excluded": dict(sorted(excluded.items())),
+            "valued_share": valued / max(1, valued + sum(excluded.values())),
+            "luck_per_battle": interval([sum(b["turns"]) for b in battles]),
+            "largest_turn": interval([max(b["turns"], key=abs) for b in battles if b["turns"]]),
+            "result": interval([b["result"] for b in finished]),
+            "result_minus_luck": interval([b["result"] - sum(b["turns"]) for b in finished])}
+
+
+def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_net_sha256, labels=None, since=None,
+             code=None, samples=None):
+    """--luck over a log directory (#494, docs/benchmarks/2026-10-14-cts-luck/README.md): every battle log a replay
+    follows (selected) valued by cts_luck.battle with the checkpoint's honest search (the bot's: its file pinned by
+    checkpoint_sha256, the foe network by foe_net_sha256); the aggregates of luck_series, per opponent and team with
+    labels, the battles the replay refuses by name."""
+    from duoforge_live import cts, cts_luck, data, pkmn_arena, policy as live_policy, search as live_search
+    from duoforge_live.arena import provenance
+    if pkmn_arena.sha256_of(checkpoint) != checkpoint_sha256:
+        raise SystemExit(f"{checkpoint}: not the pinned checkpoint {checkpoint_sha256}")
+    samples = cts_luck.SAMPLES if samples is None else samples
+    tables = data.for_checkpoint(checkpoint)
+    prior = cts.SetPrior.from_table(tables)
+    net = live_policy.load(checkpoint)
+    live = live_search.load(checkpoint, foe_net=foe_net, foe_net_sha256=foe_net_sha256)
+    skipped, refused = collections.Counter(), collections.Counter()
+    battles, per, per_team = [], collections.defaultdict(list), collections.defaultdict(list)
+    try:
+        live.searcher = cts.Capture(live.searcher)
+        with cts_luck.Meter(live.searcher.searcher, samples) as meter:
+            for path, records, team in selected(directory, bot, since, code, skipped):
+                try:
+                    out = cts_luck.battle(path, tables, net, live, team, bot, prior, meter)
+                except cts.Refused as r:
+                    refused[str(r).split(" ")[0]] += 1
+                    continue
+                battles.append(out)
+                if labels is not None:
+                    o = opponent(records, bot)
+                    per[labels.get(o, "?")].append(out)
+                    per_team[team_label(labels, o, foe_team(records, bot))].append(out)
+    finally:
+        live.close()
+    engine_root = Path(cts.__file__).resolve().parents[2]
+    return {**luck_series(battles), "skipped": dict(skipped), "refused_battles": dict(refused), "samples": samples,
+            "checkpoint_sha256": checkpoint_sha256, "foe_net_sha256": foe_net_sha256,
+            "engine_code": provenance(engine_root), "tool_code": provenance(root),
+            **({} if labels is None else {"by_opponent": {k: luck_series(v) for k, v in sorted(per.items())},
+                                          "by_team": {k: luck_series(v) for k, v in sorted(per_team.items())}})}
 
 def _code_of(b):
     """A battle's bot commit (its log's code), "" when the log names none."""
@@ -450,7 +527,22 @@ def main(argv=None):
                    help="only the battles and run logs of a bot commit that starts with this (a measurement series)")
     p.add_argument("--replay", action="store_true",
                    help="replay the logs through the particles: the refused decision points and their content")
+    p.add_argument("--luck", action="store_true",
+                   help="the luck meter (#494): replay the logs with the bot's search and value each searched turn's "
+                        "luck (needs --checkpoint and --checkpoint-sha256)")
+    p.add_argument("--checkpoint", default=None, help="--luck: the bot's checkpoint (private, outside the repository)")
+    p.add_argument("--checkpoint-sha256", default=None, help="--luck: the checkpoint's pin, checked before loading")
+    p.add_argument("--samples", type=int, default=None, help="--luck: chance seeds per world (default: cts_luck.SAMPLES)")
+    from duoforge_live import search as live_search
+    live_search.add_foe_net_arguments(p)
     args = p.parse_args(argv)
+    if args.luck and (args.replay or args.details):
+        raise SystemExit("--luck is its own replay: not with --replay or --details")
+    if args.luck and not (args.checkpoint and args.checkpoint_sha256):
+        raise SystemExit("--luck values with the bot's network: it needs --checkpoint and --checkpoint-sha256")
+    if not args.luck and (args.checkpoint or args.checkpoint_sha256 or args.samples is not None):
+        raise SystemExit("--checkpoint, --checkpoint-sha256 and --samples belong to --luck")
+    live_search.check_foe_net_arguments(args, args.luck)
     from duoforge_live.arena import provenance
     from duoforge_replay.dataset import refuse_repository
     if args.out:
@@ -476,7 +568,12 @@ def main(argv=None):
             raise SystemExit("--details is the replay's per-battle file: it needs --replay")
         refuse_repository(Path(args.details).parent)
         details = []
-    if args.replay:
+    if args.luck:
+        result = {"since": args.since, "code_filter": args.code, "by_code": by_code,
+                  **luck_all(args.logs, bot, ROOT, args.checkpoint, args.checkpoint_sha256,
+                             live_search.foe_net_of(args), live_search.foe_net_sha256_of(args), labels, since,
+                             args.code, args.samples)}
+    elif args.replay:
         result = {"since": args.since, "code_filter": args.code, "by_code": by_code,
                   **replay_all(args.logs, bot, ROOT, labels, since, args.code, details)}
         if details is not None:

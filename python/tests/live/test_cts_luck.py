@@ -88,5 +88,26 @@ class MeterTest(unittest.TestCase):
             cts_luck.foe_choice(segment, 1, lists, ctx)
 
 
+    def test_the_tool_aggregates_the_battles_luck_without_a_room_or_a_name(self):
+        import importlib.util
+        import json
+        from pathlib import Path
+        from duoforge_live.data import ROOT
+        spec = importlib.util.spec_from_file_location("cts_live_eval", ROOT / "tools" / "research" / "cts_live_eval.py")
+        ev = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ev)
+        records = [json.loads(line) for line in Path(self.log).read_text(encoding="utf-8").splitlines() if line.strip()]
+        sha = pkmn_arena.sha256_of(self.path)
+        with mock.patch.object(ev, "selected", lambda *args: iter([(Path(self.log), records, self.own)])),                 mock.patch.object(cts.SetPrior, "from_table", lambda tables: cts.SetPrior(tables, self.foe)),                 mock.patch.dict(os.environ, ENV):
+            got = ev.luck_all(self.tmp.name, BOT, ROOT, self.path, sha, self.path, sha)
+        self.assertEqual((got["battles"], got["finished"], got["turns_valued"]), (1, 1, 2))
+        self.assertEqual(got["turns_excluded"], {"foe-action-ambiguous": 1})
+        self.assertEqual((got["samples"], got["checkpoint_sha256"]), (cts_luck.SAMPLES, sha))
+        self.assertEqual(got["result"]["mean"], 1.0)
+        text = json.dumps(got)
+        self.assertNotIn("battle-", text)
+        with self.assertRaisesRegex(SystemExit, "pinned"):
+            ev.luck_all(self.tmp.name, BOT, ROOT, self.path, "0" * 64, self.path, sha)
+
 if __name__ == "__main__":
     unittest.main()
