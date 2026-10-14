@@ -534,4 +534,3 @@ bool dfi_closure_member_valid(const dfi_kind_limits *lim, const dfi_member *m)
     }
     return true;
 }
-
