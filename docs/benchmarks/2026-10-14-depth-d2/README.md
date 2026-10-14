@@ -75,6 +75,68 @@ Each run reports its commit, its `dirty` flag and the library's sha256.
   gap; the information sets and the merge share; the leaf kinds; the seconds per phase and width (run B), against
   spec section 6.2's estimates; how often the shadow's root choice differs from 2e's.
 
+### Results (2026-10-14)
+
+#### Provenance
+
+| run | label | settings | window | commit | dirty |
+|---|---|---|---|---|---|
+| A, width 2 | `d2-offline-a2` | 64 pairs vs `bot`, `--plain-check`, 8 workers | 05:21:41–05:42:23 | 060ef58d | false |
+| A, width 3 | `d2-offline-a3` | 64 pairs vs `bot`, 8 workers | 05:43:26–05:59:43 | 060ef58d | false |
+| A, width 4 | `d2-offline-a4` | 64 pairs vs `bot`, 8 workers | 06:00:06–06:16:42 | 060ef58d | false |
+| B, widths 4 and 2 | `d2-offline-b` | every 10th decision, 1 worker, `--exclusive` | 06:17:07–06:22:15 | 060ef58d | false |
+
+- **Library:** `~/df-build/d2-c8ca7cee/libduoforge_shared.so`, sha256
+  `76c9caeb2d8c59c3dff6a1e07b5e305a256b78a12c896efd2edf2312145e3efb`, the one named above (checked again after the PC
+  restart of 2026-10-14).
+- **Deviations from the predeclaration, disclosed:**
+  - **The commit:** the runs ran at 060ef58d, not at 11b7797e. Between them only the ladder's D2 STEPS entries, this
+    file's part 2 and the digest's draft decision record changed; `tree_offline`, `honest` and `tree` did not, and
+    step 2e's settings are the same (HauptSession, 2026-10-14).
+  - **The labels:** A ran as three tickets, one per width (`d2-offline-a2`, `-a3`, `-a4`), not as `d2-offline-a`
+    (HauptSession, for memory). The results do not depend on it.
+  - **Two aborted starts, nothing of them used:** the first start of A (`accA-11b7797e`, 03:14:55) and the first start
+    of a2 (`accA2-11b7797e`, 03:21:03) lost their lock wrappers (the first stopped by this lane, the second by Claude
+    Code under memory pressure) and ran on outside the lock until the HauptSession had them stopped.
+- **The games:** the played (2e) decisions digest is `5aea9b5a…` in all four runs; a2's plain run without shadows gives
+  the same digest (`equal: true`). The shadows changed no move.
+- **The memory guard:** every run started with at least 8 GB free on Windows (16,611–17,899 MB at the start); the
+  watcher never saw less than 3 GB.
+
+#### The bounds
+
+| | measured | bound |
+|---|---|---|
+| T_acc: iterations to ε = 1e-3 of the range (A, all 956 keyed decisions per width) | max 340 (width 2), 450 (width 3), **490** (width 4); 0 unconverged at 50,000 | **2 × 490 = 980** |
+| T_time: tree-solve seconds per iteration (B, exclusive, width 4) | median 0.851 ms, **p99 1.404 ms**, max 1.620 ms | **0.4 s / 1.404 ms → 280** |
+
+**T_acc (980) > T_time (280).** By the rule fixed above, **no default is set**: the HauptSession and the owner decide.
+At 280 iterations, 0.31 % (width 2), 0.84 % (width 3) and 0.84 % (width 4) of A's keyed decisions would end as
+`solver_unconverged`, above the 0.1 % at which an arm's bound is re-assessed. At 490 none would.
+
+- **Share solved by a bound T** (A, width 4): 40: 29.7 %; 80: 65.2 %; 160: 93.3 %; 320: 99.58 %; 640 and above: 100 %.
+- **Iterations to ε** (A): median 60 / 60 / 70, p99 240 / 264.5 / 270 for widths 2 / 3 / 4.
+
+#### `observation_key_refused` (the record key's gap)
+
+206 of 1,162 shadow decisions per width in A (17.7 %), 40 of 234 in B (17.1 %): a depth-1 node's public record was
+refused by the engine, so the record key had no key; those decisions are counted by name and left out of the bounds.
+The engine digest keys every node; the bound is checked again on digest-keyed trees before any arm (the gate above).
+
+#### Reported, not gated (provisional until confirmed with the digest; they do not replace spec section 6.2)
+
+- **Seconds per phase** (B, exclusive, 1 worker, 97 keyed decisions per width; the root's own work comes on top):
+
+  | width | depth-1 policy | depth-2 evaluation | tree solve | the three together |
+  |---|---|---|---|---|
+  | 2 | median 0.212 s, p99 0.277 s | median 0.495 s, p99 0.565 s | median 0.038 s, p99 0.160 s | median 0.754 s, p99 0.919 s |
+  | 4 | median 0.212 s, p99 0.246 s | median 0.545 s, p99 0.699 s | median 0.052 s, p99 0.208 s | median 0.825 s, p99 1.036 s |
+
+  The evaluation is padded to 16,384 rows at every width (spec section 7.2), so width 2 pays width 4's value call.
+- **Tree shape** (B): about 1,021 depth-1 nodes per decision, median 308 information sets, merge share median 0.709.
+- **The root choice differs from 2e's** in 54 of 97 (width 2) and 56 of 97 (width 4) decisions of B's subsample.
+- A's seconds are diagnostic only (non-exclusive) and not reported here.
+
 ## Part 2: the ladder arms (plan step 11, spec section 9.2)
 
 ### Arms
