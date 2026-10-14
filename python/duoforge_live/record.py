@@ -129,6 +129,18 @@ def move_result_byte(now, last):
             | (MR_UNCLASSIFIED_LAST if last & MR_UNCLASSIFIED_NOW else 0))
 
 
+def _record_speed_swap_bit(record):
+    """True when the record's canonical state carries the Speed Swap presence bit (DFI_SINGLE_TURN_SPEED_SWAP) of some
+    active position: the single_turn byte of each position of the tail, at the offsets the record writer uses (_FIELDS)."""
+    state = record["state"]
+    for side in range(2):
+        for pos in range(2):
+            start, _size = _FIELDS[f"tail.side{side}.position{pos}.single_turn"]
+            if int(state[start]) & SINGLE_TURN_SPEED_SWAP:
+                return True
+    return False
+
+
 def assemble(tracker, observation):
     """(record, status, causes, reason) at the tracker's current decision point: the PUBLIC_STATE record and status 0,
     or a zero record with E_UNSUPPORTED, the cause mask and the named reason of the refusal. The engine decides every
@@ -142,16 +154,20 @@ def assemble(tracker, observation):
     causes = view.observation_causes(ctx, observation)
     if causes:
         return zero, E_UNSUPPORTED, causes, ",".join(name for bit, name in CAUSE_NAMES if causes & bit)
-    if any(p.speed_swapped for side in tracker._positions for p in side):
-        # a live Speed Swap: the swapped Speeds are not public, so the engine's record check refuses the world (cause 128)
-        return zero, E_UNSUPPORTED, CAUSE_SPEED_SWAP, "speed-swap"
     try:
         record = _record(tracker, observation)  # a field it cannot reproduce exactly refuses (Refusal) too
     except Refusal as r:
         return zero, E_UNSUPPORTED, r.causes, r.reason
     status = view.public_record_check(ctx, record)
+    swapped = _record_speed_swap_bit(record)
     if status == E_UNSUPPORTED:
+        # a live Speed Swap (the presence bit of the record): the swapped Speeds are not public, so the engine refuses the record
+        # with cause 128; the observation call never reports it (the documented limit), so the name comes from the record's bit
+        if swapped:
+            return zero, E_UNSUPPORTED, CAUSE_SPEED_SWAP, "speed-swap"
         return zero, E_UNSUPPORTED, 0, "engine-refuses-record"
+    if swapped:
+        raise ValueError("the engine takes back a record with a live Speed Swap (cause 128)")
     if status != 0:
         raise ValueError(f"the engine does not take the assembled record back: {_lib.status_name(status)}")
     reason = tracker_refusal(tracker)

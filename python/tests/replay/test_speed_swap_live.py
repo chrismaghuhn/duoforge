@@ -74,7 +74,7 @@ class SpeedSwapLiveRecord(unittest.TestCase):
                         causes = int(parts["causes"])
                         if swapped:
                             self.assertEqual(parts["status"], record.E_UNSUPPORTED, (name, player, k))
-                            self.assertEqual(causes & record.CAUSE_SPEED_SWAP, record.CAUSE_SPEED_SWAP, (name, player, k))
+                            self.assertEqual(causes & record.CAUSE_SPEED_SWAP, record.CAUSE_SPEED_SWAP, (name, player, k, parts["reason"]))
                         else:
                             self.assertEqual(causes & record.CAUSE_SPEED_SWAP, 0, (name, player, k))
                     print(f"\n{name} side {player}: {len(points)} points, {len(live)} with the swap live")
