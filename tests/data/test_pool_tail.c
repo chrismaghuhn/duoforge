@@ -893,7 +893,9 @@ MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
 MUT(m_move_result_high, p0->move_result = 0x40u) /* bits 6-7 are zero (step G42: bits 4 and 5 are the unclassified bits) */
 MUT(m_unclass_now_with_result, p0->move_result = 0x11u) /* unclassified this turn, but this turn is TRUE */
 MUT(m_unclass_last_with_result, p0->move_result = 0x28u) /* unclassified last turn, but last turn is FALSE */
-MUT(m_single_turn_bit2, p0->single_turn = 8u) /* bit 2 is Speed Swap (step K3); bit 3 is still undefined */
+MUT(m_single_turn_bit3, p0->single_turn = 8u) /* bit 3 is undefined (bit 2 is Speed Swap, step K3) */
+/* step K3 (decision 0015 5de): the presence bit of a live Speed Swap ends with its occupant, so it is refused at an empty position */
+MUT(m_speed_swap_empty, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = (uint8_t)(y->sides[0].requested_slots & ~1u), p0->single_turn = DFI_SINGLE_TURN_SPEED_SWAP)
 MUT(m_rage_no_follow_me, p0->single_turn = DFI_SINGLE_TURN_RAGE_POWDER) /* the Follow Me flag is down */
 MUT(m_hits_taken7, p0->hits_taken = 7u)
 MUT(m_ability_state7, p0->ability_state = 7u)
@@ -1171,7 +1173,8 @@ static const tail_case cases[] = {
     {"a move result above its two nibbles and its two unclassified bits", DFI_INV_TAIL_POSITION, false, m_move_result_high},
     {"an unclassified this-turn bit with a this-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_now_with_result},
     {"an unclassified last-turn bit with a last-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_last_with_result},
-    {"a single-turn bit that is not defined (bit 3)", DFI_INV_TAIL_POSITION, false, m_single_turn_bit2},
+    {"a single-turn bit that is not defined (bit 3)", DFI_INV_TAIL_POSITION, false, m_single_turn_bit3},
+    {"a Speed Swap bit at an empty position", DFI_INV_TAIL_POSITION, false, m_speed_swap_empty},
     {"Rage Powder's marker without the Follow Me flag", DFI_INV_TAIL_POSITION, false, m_rage_no_follow_me},
     {"hits taken above 6", DFI_INV_TAIL_POSITION, false, m_hits_taken7},
     {"an ability state above 6", DFI_INV_TAIL_POSITION, false, m_ability_state7},

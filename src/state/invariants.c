@@ -753,6 +753,9 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     const bool rev4_ok = (tp->move_result & ~DFI_TAIL_MOVE_RESULT_MASK) == 0u && unclassified_ok &&
                          (tp->single_turn & ~DFI_TAIL_SINGLE_TURN_MASK) == 0u &&
                          ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
+                         /* Step K3 (decision 0015 5de): the Speed Swap presence bit ends with its occupant (switch-out, faint, Mega,
+                          * forme change) and is never set at an empty position; the rest-of-tail rule above also refuses it there. */
+                         ((tp->single_turn & DFI_SINGLE_TURN_SPEED_SWAP) == 0u || slot->occupant < DUOFORGE_MAX_ROSTER) &&
                          tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
                          (tp->lock_turns == 0u || slot->locked_move != 0u) && /* lockedmove (G56): its move is in the slot */
