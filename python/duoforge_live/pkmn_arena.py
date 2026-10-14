@@ -182,7 +182,8 @@ class RunLog:
     def __init__(self, log_dir, mode, fmt, now=None, tables=None, code=None, team_sha256=None):
         start = now or datetime.now(timezone.utc)
         self.path = Path(log_dir) / f"arena-run-{start.strftime('%Y%m%dT%H%M%SZ')}.json"
-        self.head = {"started": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "mode": mode, "format": fmt}
+        self.head = {"started": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "mode": mode, "format": fmt,
+                     "log_format": client.LOG_FORMAT}  # the battle logs' format
         if code is not None:  # the bot's commit and dirty state (arena.provenance, named by the command line)
             self.head["code"] = code
         if team_sha256 is not None:  # the --team paste's SHA-256: a replay checks it played this team
@@ -212,8 +213,8 @@ class RunLog:
 class _Battle(client._Battle):
     """One arena battle room: the client's battle state plus the fallback and the raw requests."""
 
-    def __init__(self, room, log_path, fmt):
-        super().__init__(room, None, log_path)
+    def __init__(self, room, log_path, fmt, head=None):
+        super().__init__(room, None, log_path, head)
         self.format = fmt
         self.fallback = None  # the reason: the rest of the battle is answered with /choose default
         self.raw = None  # the last request (JSON) of the room: its rqid, wait and teamPreview (protocol only)
@@ -287,6 +288,17 @@ class ArenaBot(client.Bot):
         super().close()
         self._executor.shutdown(wait=False)
         self.run_log.write()
+
+    def warm_up(self):
+        """The search's warm-up before the first battle (search.warm_up: a team preview and a turn of an engine
+        battle, one world per particle under closed sheets, and the network's raw ranking of each); its seconds go to
+        the run log's head. A warm-up whose search fails raises: the bot does not start. Nothing without a search."""
+        if self.search is None:
+            return None
+        seconds = live_search.warm_up(self.search, self.policy, None if self.prior is None else cts.PARTICLES)
+        self.run_log.head["warm_up"] = seconds
+        self.run_log.write()
+        return seconds
 
     # ------------------------------------------------------------------ connection
     async def run(self):
@@ -393,7 +405,8 @@ class ArenaBot(client.Bot):
         fmt = parts[1] if len(parts) >= 3 else ""
         log_dir = Path(self.config.log_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
-        b = _Battle(room, log_dir / f"{room}-{toid(self.config.name)}.jsonl", fmt)
+        b = _Battle(room, log_dir / f"{room}-{toid(self.config.name)}.jsonl", fmt,
+                    None if self.code is None else {"code": self.code})  # every battle names the code it ran
         self.battles[room] = b
         self.run_log.counts["battles"] += 1
         self.run_log.formats[fmt] += 1
@@ -648,6 +661,8 @@ class ArenaBot(client.Bot):
         await self._fall(b, "forfeit", cause)
 
     async def _end(self, b, line):
+        if b.fallback is None and b.game is not None:  # the choice the battle ended on (client.LOG_FORMAT 2)
+            b.write({"pending_at_end": b.pending})
         b.ended = b.stopped = True
         if line.startswith("|win|"):
             result = "wins" if toid(line[len("|win|"):]) == toid(self.config.name) else "losses"

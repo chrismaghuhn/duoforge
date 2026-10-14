@@ -4,6 +4,7 @@
 /* Private scratch for one turn action. Extracted without changing its layout
  * or lifetime; positional initializers remain in turn.c. No public API. */
 #include "combat/events.h"
+#include "state/observation_digest.h"
 #include "rng/draw.h"
 #include "state/battle_internal.h"
 
@@ -101,6 +102,9 @@ static inline dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
 static inline void dfi_emit(dfi_run *r, const duoforge_event *e)
 {
     if (r->events != NULL) {
+        if (r->events->observation != NULL) {
+            dfi_observation_capture(r->events->observation, r->b, e, r->events->count);
+        }
         dfi_events_push(r->events, e);
     }
 }
