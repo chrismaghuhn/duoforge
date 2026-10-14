@@ -34,6 +34,9 @@
 # Claude Code reports as "stopped" may still run: check its processes before
 # a restart.
 #
+# No timeout around a waiting machine_lock.sh: the wait counts, and the timeout kills the wrapper in the middle of its
+# job (2026-10-14). A time limit belongs inside the locked command: machine_lock.sh <label> timeout 600 <command...>.
+#
 # No nesting: the holder is told DUOFORGE_MACHINE_LOCK_HELD (its label) and
 # DUOFORGE_MACHINE_LOCK_HELD_DIR (its lock). A call on the same lock from inside it is refused at once with status 74
 # ($MACHINE_LOCK_NESTED): it would wait for slots the outer job holds (under --exclusive: forever). Run the inner work
