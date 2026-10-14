@@ -35,7 +35,8 @@ def _arguments(argv):
     p.add_argument("--team-link", default=None, help="a link to Team A and B, added to the sheet message")
     p.add_argument("--challenge", default=None, help="local server only: challenge this user after login")
     p.add_argument("--search", default="raw", choices=("raw", "honest"),
-                   help="honest: the honest search X plays the turn decisions (plan 2026-10-10-live-honest-search); "
+                   help="honest: the honest search (HONEST_SETTINGS: ladder step 2e, the best answer) plays the turn "
+                        "decisions (plan 2026-10-10-live-honest-search); "
                         "--checkpoint must then be the trained (not widened) format-2 file")
     p.add_argument("--challenge-format", default="gen9championsvgc2026regmc", choices=sorted(client.FORMATS))
     search.add_foe_net_arguments(p)  # with --search honest: the pinned foe model BC6 (owner 2026-10-12)
@@ -54,7 +55,8 @@ def _arena_arguments(argv):
                    help="the random ladder's published teams (pastes after '=== ... ===' lines): a random-team battle "
                         "is played by the policy only when one of them matches its request")
     p.add_argument("--search", default="raw", choices=("raw", "honest"),
-                   help="honest: the honest search X plays the turn decisions (a trained format-2 checkpoint)")
+                   help="honest: the honest search (HONEST_SETTINGS: ladder step 2e, the best answer) plays the turn "
+                        "decisions (a trained format-2 checkpoint)")
     search.add_foe_net_arguments(p)  # with --search honest: the pinned foe model BC6 (owner 2026-10-12)
     p.add_argument("--log-dir", default=_log_dir(), help="private logs, outside the repository")
     return p.parse_args(argv)

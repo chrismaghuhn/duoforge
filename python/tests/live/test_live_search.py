@@ -496,11 +496,14 @@ class ClientSearchTest(unittest.TestCase):
         with self.assertRaises(SystemExit) as caught, contextlib.redirect_stderr(io.StringIO()):
             cli._arguments(base + ["--search", "nash"])
         self.assertEqual(caught.exception.code, 2)
-        # The live search's settings are the approved spec's: X (mix, lambda 0.5), K = M = 8, 16 worlds, the pinned
-        # live spread table; a foe species without a spread prior draws the belief's general levels, named in the record
-        # (owner 2026-10-12: a refused decision played whole games raw).
-        self.assertEqual(search.HONEST_SETTINGS, {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5,
+        # The live search is ladder step 2e (owner, 2026-10-14): the best answer (rule "ev", lambda 0), K = M = 8, 16
+        # worlds, the pinned live spread table; a foe species without a spread prior draws the belief's general levels,
+        # named in the record (owner 2026-10-12: a refused decision played whole games raw). Its settings are the
+        # measured arm's: step 2e's, lam 0.5 included (unused by ev's play, recorded in its mix).
+        self.assertEqual(search.HONEST_SETTINGS, {"k": 8, "m": 8, "s": 16, "rule": "ev", "lam": 0.5,
                                                   "species_prior": "count", "capacity": 1024})
+        from duoforge_search import ladder
+        self.assertEqual(search.HONEST_SETTINGS, ladder.step_settings("2e"))
         # the leaf buffer is the decision's leaves (K * M * S): the padded 16384 rows were 93% of a decision (#355)
         s = search.HONEST_SETTINGS
         self.assertEqual(s["capacity"], s["k"] * s["m"] * s["s"])

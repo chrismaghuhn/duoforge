@@ -234,7 +234,7 @@ More levers recorded by the owner on 2026-10-03. Search mainly solves the endgam
 **Training and decisions:**
 
 12. **Training against the real meta:** self-play opponent teams are drawn by their ladder frequency, as the replays show it.
-13. **Mixed strategies on purpose:** the move choice is solved as a mixed strategy, as in mikumiku37's payoff table, so humans find no fixed pattern to read.
+13. **Mixed strategies on purpose:** since step 2e of the search ladder (#486), live play takes the best answer to the foe model. A deliberate mix against opponents who read patterns stays an option and needs a measurement of its own.
 14. **Ensembles and checkpoint tournaments:** several networks decide together, and large AWS tournaments pick the strongest checkpoint.
 15. **Risk by game state:** a value head that also estimates the uncertainty. The agent plays safe when ahead and takes chances when behind.
 16. **Exact chance nodes in the search:** damage rolls, critical hits and accuracy are weighted exactly by the engine instead of only sampled.

@@ -11,8 +11,8 @@ worlds, and the team pool is POOLNET's (--teams-from: a pool network's config). 
 team OURS (a registry paste or a packed team) against one fixed foe team FOE (a packed team), the learner always
 playing OURS on both seats; a packed team's members without stat points are refused unless --fill-stat-points smogon
 gives them their Smogon spread of their nature. A step is a settings dict for
-honest.Honest: step N is its base step's settings plus its own delta (STEPS, step_settings); step 0 is the live settings
-(duoforge_live.search.HONEST_SETTINGS) unchanged.
+honest.Honest: step N is its base step's settings plus its own delta (STEPS, step_settings); step 0 is the measured
+baseline (STEP0: the live settings until 2e went live, owner 2026-10-14), so every recorded run stays reproducible.
 
 Each opponent (a raw greedy network: bc6, bot or ppo) meets the arms "step", "previous" (with --previous) and "R" (with
 --raw: MAIN's raw play) over the same suite rows and batch seed, so their games are paired: rows 2k and 2k + 1 are one
@@ -48,6 +48,9 @@ OPPONENT_NAMES = ("bc6", "bot", "ppo")
 GATED_OPPONENTS = ("bot", "bc6")  # ppo is reported, not gated
 GATES = {"lower_bound": 0.50, "no_harm_upper": 0.50, "p99_seconds": 2.0, "fallback_share": 0.05,
          "fallback_over_previous": 0.01}
+# Step 0, the ladder's baseline: the live search as every step up to 2 measured it (the approved spec's X, mix with
+# lambda 0.5; owner 2026-10-10). Pinned here: the live settings moved on to step 2e (owner, 2026-10-14), step 0 did not.
+STEP0 = {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5, "species_prior": "count", "capacity": 1024}
 STEPS = {"0": {"base": None, "settings": {}},
          # Step 1 (#363): the team preview as a Nash matrix game over the foe network's candidates; 1e and 1x are its
          # controls (the best answer to the foe model, and the live mix rule).
@@ -73,7 +76,11 @@ STEPS = {"0": {"base": None, "settings": {}},
          "b-k16": {"base": "0", "settings": {"k": 16, "capacity": 2048}},
          "b-m16": {"base": "0", "settings": {"m": 16, "capacity": 2048}},
          "b-km16": {"base": "0", "settings": {"k": 16, "m": 16, "capacity": 4096}},
-         "b-km16-s64": {"base": "0", "settings": {"k": 16, "m": 16, "s": 64, "capacity": 16384}}}
+         "b-km16-s64": {"base": "0", "settings": {"k": 16, "m": 16, "s": 64, "capacity": 16384}},
+         # Step 2 (#433, predeclared 2026-10-13): 2e, the best answer to the foe model and the worlds (lambda 0, no Nash
+         # share), passed every gate (phase B, the README) and is the live search since 2026-10-14 (owner). Its
+         # siblings 2d and 2l were screened on search/2-width and did not qualify.
+         "2e": {"base": "0", "settings": {"rule": "ev"}}}
 
 
 def size_refusal(name):
@@ -96,9 +103,8 @@ def size_refusal(name):
 
 
 def step_settings(name):
-    """The settings of a step for honest.Honest: the live HONEST_SETTINGS with the deltas of its base chain applied,
-    base first. A fresh dict: HONEST_SETTINGS is never changed. ValueError for an unknown step or a broken base
-    chain."""
+    """The settings of a step for honest.Honest: STEP0 with the deltas of its base chain applied, base first. A fresh
+    dict: STEP0 is never changed. ValueError for an unknown step or a broken base chain."""
     if name not in STEPS:
         raise ValueError(f"unknown step {name!r}: the known steps are {sorted(STEPS)}")
     chain, seen, current = [], set(), name
@@ -110,8 +116,7 @@ def step_settings(name):
         seen.add(current)
         chain.append(current)
         current = STEPS[current]["base"]
-    from duoforge_live.search import HONEST_SETTINGS
-    settings = copy.deepcopy(HONEST_SETTINGS)
+    settings = copy.deepcopy(STEP0)
     for step in reversed(chain):
         settings.update(copy.deepcopy(STEPS[step]["settings"]))
     return settings
