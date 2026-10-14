@@ -67,7 +67,7 @@ ROOM_LINES = {"c", "c:", "chat", "j", "J", "l", "L", "n", "N", "raw", "html", "u
 # Battle lines whose whole effect on the view is in the line (HP, stages, status, a move, a switch, a turn) or that
 # change no field; the converter parses them and refuses what it does not know.
 GENERIC = {"move", "switch", "-damage", "-heal", "faint", "cant", "-miss", "-crit", "-supereffective", "-resisted",
-           "-immune", "-fail", "-boost", "-unboost", "-status", "-curestatus", "-prepare", "-anim", "-mega", "turn",
+           "-immune", "-fail", "-boost", "-unboost", "-status", "-curestatus", "-prepare", "-anim", "-mega", "turn", "-zbroken",
            "upkeep", "win", "tie"} | trace_to_c.NOT_EVENTS
 
 # Moves whose effect on the view no line shows: Baton Pass hands stages and volatiles to the incoming Pokemon,
