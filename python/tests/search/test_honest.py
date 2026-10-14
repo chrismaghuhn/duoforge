@@ -457,29 +457,50 @@ class HonestSearch(unittest.TestCase):
         return [{k: v for k, v in r.items() if k not in ("cost", "time")} for r in records]
 
     # The A/B/C decisions in two decide() calls (root 0, then roots 1 and 2), as main decides them: the sha256 of their
-    # choices and records (time and cost aside), computed on main e31928b7 before world_policies existed.
-    WORLD_POLICIES_MAIN_SHA256 = "1f6661645261d99c2f17554f2d08ac175318ea3a32c4fe4535a33320ddf0ef72"
+    # choices and records with every float left out (the network's probabilities and the tables vary in their last bits
+    # across machines; the existing pins compare them within 1e-6), computed on main e31928b7 before world_policies
+    # existed. On the machine that pinned it, the records with their floats were bit-identical to main's as well.
+    WORLD_POLICIES_MAIN_SHA256 = "77002787c7b57185bb426f2e49f622f6cc4fc35ce620c14bd8b9e939bfc30510"
+
+    @staticmethod
+    def exact_part(o):
+        """o with every float replaced by its kind and shape: what is the same on every machine."""
+        if isinstance(o, dict):
+            return {str(k): HonestSearch.exact_part(v) for k, v in o.items()}
+        if isinstance(o, (list, tuple)):
+            return [HonestSearch.exact_part(v) for v in o]
+        if isinstance(o, np.ndarray):
+            if o.dtype.names is not None:
+                return {name: HonestSearch.exact_part(o[name]) for name in o.dtype.names}
+            return ["float", list(o.shape)] if o.dtype.kind in "fc" else o.tolist()
+        if isinstance(o, (float, np.floating)):
+            return "float"
+        if isinstance(o, np.generic):
+            return o.item()
+        return o
 
     @classmethod
-    def decisions_sha256(cls, first, second):
-        text = json.dumps([first[0].tolist(), cls.timeless(first[1]), second[0].tolist(), cls.timeless(second[1])],
-                          sort_keys=True, default=lambda o: o.tolist() if hasattr(o, "tolist") else repr(o))
+    def decisions_sha256(cls, first, second, exact=False):
+        decisions = [first[0].tolist(), cls.timeless(first[1]), second[0].tolist(), cls.timeless(second[1])]
+        text = json.dumps(cls.exact_part(decisions) if exact else decisions, sort_keys=True,
+                          default=lambda o: o.tolist() if hasattr(o, "tolist") else repr(o))
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
     def test_world_policies_read_the_root_worlds_and_change_no_decision(self):
         # Honest.world_policies (#440, HauptSession: read only, for the KO check, the live evaluation's foe-model
         # metric and D2): the foe model on the worlds of the turn decision just searched. Calling it between two
-        # decisions changes no choice and no record: the decisions' sha256 is main's with and without the call.
+        # decisions changes no choice and no record: bit for bit in this run, and main's decisions (the pinned sha256
+        # of their exact part, main's choices) with and without the call.
         from duoforge_search.errors import SearchError
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             pool = duoforge.teams.load(ctx, ["A", "B", "C"])
             table = belief.SpreadTable.from_sides(pool.sides)
-            digests = []
+            full, exact = [], []
             for call in (False, True):
                 with duoforge.Batch(ctx, pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0])), 2, 42) as roots, \
                         self.make(ctx, table=table, excluded=[1, 2, 0]) as search:
                     self.preview(search, roots)
-                    with self.assertRaisesRegex(SearchError, "no turn decision"):
+                    with self.assertRaisesRegex(SearchError, "no searched turn decision"):
                         search.world_policies(1)  # a preview is no turn decision
                     self.start_turn(roots)
                     first = search.decide(roots, [0], [0], [456], [False])
@@ -494,18 +515,24 @@ class HonestSearch(unittest.TestCase):
                         logp[:] = 0.0  # a copy: the caller may write it
                         again, _ = search.world_policies(1)
                         np.testing.assert_array_equal(again, pp[:, 1])
-                        with self.assertRaises(ValueError):
-                            search.world_policies(2)
+                        for seat in (2, -1, True, 1.0, "1"):
+                            with self.subTest(seat=seat), self.assertRaises(ValueError):
+                                search.world_policies(seat)
+                        search.world_policies(np.int64(1))  # a numpy integer is a seat
                     second = search.decide(roots, [1, 2], [0, 0], [457, 458], [False] * 2)
                     self.assertEqual(first[0].tolist() + second[0].tolist(), [103, 289, 352])  # main's A/B/C choices
-                    digests.append(self.decisions_sha256(first, second))
-        self.assertEqual(digests, [self.WORLD_POLICIES_MAIN_SHA256] * 2)
+                    full.append(self.decisions_sha256(first, second))
+                    exact.append(self.decisions_sha256(first, second, exact=True))
+        self.assertEqual(full[0], full[1])  # every bit of every record, with and without the call
+        self.assertEqual(exact, [self.WORLD_POLICIES_MAIN_SHA256] * 2)
 
     def test_world_policies_are_the_root_worlds_policy_after_the_whole_decision(self):
-        # The worlds world_policies reads are the root's: the policy that the decision's root _prepare read (its first
-        # query of the worlds), whatever the decision computes afterwards. Here the leaves are expanded in a batch of
-        # their own and the worlds are not stepped; a deeper search (D2's depth-2 tree, its nodes in a batch of their
-        # own) must keep this: world_policies after a depth-2 decision is still its root worlds' policy.
+        # The worlds world_policies reads are the root's, as the decision's root _prepare read them (not the team-head
+        # query on the preview worlds _hypotheses makes before), whatever the decision computes afterwards. Here the
+        # leaves are expanded in a batch of their own and the worlds are not stepped; a deeper search (D2's depth-2
+        # tree, its nodes in a batch of their own) must keep this. A decide() call that searches no turn decision leaves
+        # nothing to read.
+        from duoforge_search.errors import SearchError
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             pool = duoforge.teams.load(ctx, ["A", "B", "C"])
             table = belief.SpreadTable.from_sides(pool.sides)
@@ -513,21 +540,33 @@ class HonestSearch(unittest.TestCase):
                     self.make(ctx, table=table, excluded=[1, 2, 0]) as search:
                 self.preview(search, roots)
                 self.start_turn(roots)
-                seen, real = [], search._world_policy
+                inside, seen = [False], []
+                real_policy, real_prepare = search._world_policy, search._prepare
 
-                def recording():
-                    out = real()
-                    seen.append((np.array(out[0], copy=True), np.array(out[3], copy=True)))
+                def policy():
+                    out = real_policy()
+                    if inside[0]:
+                        seen.append((np.array(out[0], copy=True), np.array(out[3], copy=True)))
                     return out
 
-                with mock.patch.object(search, "_world_policy", recording):
+                def prepare(*args, **kwargs):
+                    inside[0] = True
+                    try:
+                        return real_prepare(*args, **kwargs)
+                    finally:
+                        inside[0] = False
+
+                with mock.patch.object(search, "_world_policy", policy), mock.patch.object(search, "_prepare", prepare):
                     search.decide(roots, [2], [0], [458], [False])
-                self.assertGreaterEqual(len(seen), 1)
+                self.assertEqual(len(seen), 1)  # one root, one _prepare, one query of its worlds
                 root_pp, root_masks = seen[0]
                 for seat in (0, 1):
                     logp, masks = search.world_policies(seat)
                     np.testing.assert_array_equal(logp, root_pp[:, seat])
                     np.testing.assert_array_equal(masks, np.asarray(root_masks[:, seat], bool).reshape(2, -1))
+                search.decide(roots, [], [], [], [])  # a call that searches nothing
+                with self.assertRaisesRegex(SearchError, "no searched turn decision"):
+                    search.world_policies(1)
 
     def test_the_default_root_solver_decides_as_on_main(self):
         # D1 (#481) adds root_solver. Without it, and with "lp" named, the A/B/C turn decisions are main's: the pinned
