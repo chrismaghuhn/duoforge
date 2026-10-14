@@ -12,6 +12,7 @@
 #include <duoforge/duoforge.h>
 #include <duoforge/duoforge_batch.h>
 #include <duoforge/duoforge_view.h>
+#include <duoforge/duoforge_search.h>
 
 typedef struct layout_field {
     const char *name;
@@ -79,6 +80,8 @@ int main(void)
            FIELD(duoforge_event, hp_max), FIELD(duoforge_event, hp_kind), FIELD(duoforge_event, hp_flag),
            FIELD(duoforge_event, status), FIELD(duoforge_event, detail), FIELD(duoforge_event, amount),
            FIELD(duoforge_event, flags), FIELD(duoforge_event, reserved));
+    STRUCT(duoforge_eval_error, false, FIELD(duoforge_eval_error, leaf),
+           FIELD(duoforge_eval_error, phase), FIELD(duoforge_eval_error, reason));
     STRUCT(duoforge_step_result, false, FIELD(duoforge_step_result, epoch), FIELD(duoforge_step_result, kind),
            FIELD(duoforge_step_result, boundary_kind), FIELD(duoforge_step_result, request_mask),
            FIELD(duoforge_step_result, reserved));

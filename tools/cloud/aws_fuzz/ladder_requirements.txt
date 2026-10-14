@@ -1,0 +1,14 @@
+# The Python packages of an AWS ladder campaign (#484), pinned to the versions of the machine the equality proof
+# compares against: the search lane's local venv (Python 3.12.3, as Ubuntu 24.04's python3), 2026-10-14. CPU only: the
+# local venv's CUDA plugins (jax-cuda12-*, nvidia-*) are left out, as JAX_PLATFORMS=cpu leaves them unused there too.
+# NumPy's BLAS is scipy-openblas 0.3.34 with DYNAMIC_ARCH; the box pins its kernel (OPENBLAS_CORETYPE=Haswell, one
+# thread) and XLA's instruction set (--xla_cpu_max_isa=AVX2) to the local AVX2 machine (HauptSession condition).
+absl-py==2.5.0
+jax==0.11.2
+jaxlib==0.11.2
+ml_dtypes==0.6.0
+numpy==2.5.3
+opt_einsum==3.4.0
+optax==0.2.8
+scipy==1.18.1
+websockets==17.2
