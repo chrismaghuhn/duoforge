@@ -55,6 +55,58 @@ def _decide(live, budget=1.0, **parts):
                            budget=budget)
 
 
+class WarmUpLive:
+    """LiveSearch in shape for search.warm_up: an engine context for its battle, decide() scripted by outcome."""
+
+    def __init__(self, context, outcomes):
+        from types import SimpleNamespace
+        self.outcomes, self.calls, self.cleared, self._running = list(outcomes), [], [], None
+        self.searcher = SimpleNamespace(worlds=SimpleNamespace(context=context), ext_supported=0,
+                                        clear=lambda: self.cleared.append("history"))
+        self.roots = SimpleNamespace(clear=lambda env, seat: self.cleared.append((env, seat)))
+
+    def decide(self, parts, obs_part, slot_part, pair_mask, *, key, episode, budget, worlds=None):
+        self.calls.append({"team": pair_mask is None, "episode": episode,
+                           "distinct": None if worlds is None else len({id(o) for _, o, _, _ in worlds})})
+        return self.outcomes.pop(0)
+
+
+class WarmUpTest(unittest.TestCase):
+    """search.warm_up (#385, HauptSession 2026-10-14): the bot decides a team preview and a turn of an engine battle
+    before its first battle; one that did not search refuses the start by name (test_pkmn_arena_net: with JAX)."""
+
+    def setUp(self):
+        import duoforge
+        from duoforge import _layout
+        self.context = duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"])
+        self.addCleanup(self.context.close)
+
+    def outcome(self, cause, fallback=None, action=None):
+        return search.Outcome(action, cause, fallback, None if fallback is None else "a named reason", 0.25)
+
+    def test_a_team_preview_and_a_searched_turn_warm_up_and_leave_nothing_behind(self):
+        live = WarmUpLive(self.context, [self.outcome("team"), self.outcome("searched")])
+        self.assertEqual(search.warm_up(live, worlds=16), {"team": 0.25, "turn": 0.25})
+        self.assertEqual([c["team"] for c in live.calls], [True, False])
+        self.assertEqual({c["episode"] for c in live.calls}, {-1})  # never a game's episode (0 and on)
+        self.assertEqual({c["distinct"] for c in live.calls}, {2})  # the worlds' rows: two kinds, the shortcut defeated
+        self.assertEqual(live.cleared, [(0, 0), (0, 1), "history"])
+
+    def test_a_warm_up_that_did_not_search_refuses_the_start_by_name(self):
+        for outcomes, name in (([self.outcome("team"), self.outcome("unreconstructible", "a")], "unreconstructible"),
+                               ([self.outcome("team"), self.outcome("deadline", "deadline")], "deadline"),
+                               ([self.outcome("team"), self.outcome("forced")], "forced"),
+                               ([self.outcome("error", "b")], "error")):
+            with self.subTest(name):
+                live = WarmUpLive(self.context, outcomes)
+                with self.assertRaisesRegex(RuntimeError, f"warm-up .* came back '{name}'"):
+                    search.warm_up(live, worlds=16)
+        live = WarmUpLive(self.context, [self.outcome("team"), self.outcome("searched")])
+        live._running = object()
+        with self.assertRaisesRegex(RuntimeError, "left a search running"):
+            search.warm_up(live)
+
+
 class LiveSearchTest(unittest.TestCase):
     def make(self, searcher):
         live = search.LiveSearch(searcher, roots=Roots())
