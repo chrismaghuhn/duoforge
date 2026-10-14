@@ -2,6 +2,7 @@
 duoforge_add_python_test(live_unit python.tests.live.test_live_unit quick live)
 duoforge_add_python_test(live_client python.tests.live.test_live_client quick live)
 duoforge_add_python_test(live_search python.tests.live.test_live_search quick live)
+duoforge_add_python_test(live_ab python.tests.live.test_live_ab quick live)
 duoforge_add_python_test(live_cts python.tests.live.test_live_cts quick live)
 duoforge_add_python_test(live_arena python.tests.live.test_live_arena quick live)
 duoforge_add_python_test(pkmn_arena python.tests.live.test_pkmn_arena quick live)
