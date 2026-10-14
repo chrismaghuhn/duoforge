@@ -123,3 +123,9 @@ add_test(NAME duoforge.reference.import_vgcpastes
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/tests/test_import_vgcpastes.py")
 duoforge_label_test(duoforge.reference.import_vgcpastes full tools ci-no-skip)
 set_tests_properties(duoforge.reference.import_vgcpastes PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+
+# Independent observation wire vectors: no Showdown or private artifacts.
+add_test(NAME duoforge.observation.vectors_check
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/observation_digest_vectors.py" --check)
+duoforge_label_test(duoforge.observation.vectors_check quick tools ci-no-skip)
+set_tests_properties(duoforge.observation.vectors_check PROPERTIES TIMEOUT 30 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)

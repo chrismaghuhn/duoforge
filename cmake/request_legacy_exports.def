@@ -1,0 +1,11 @@
+; Existing request.c exports, before observation plumbing (decision 0082).
+EXPORTS
+    duoforge_battle_request
+    duoforge_battle_result
+    duoforge_battle_candidates
+    duoforge_battle_factored
+    duoforge_battle_step
+    duoforge_battle_step_events
+    dfi_battle_step_tape
+    dfi_battle_step_events_tape
+    dfi_reprompt_side

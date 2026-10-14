@@ -1,10 +1,11 @@
 # In-engine evaluation and the viewer observation digest
 
-**Status: proposed; owner and HS approval required before implementation.** Issue [#485](https://github.com/chrismaghuhn/duoforge/issues/485),
+**Status: approved by owner and HS on 2026-10-14; merged in #488 (`b796ce43`).** Issue [#485](https://github.com/chrismaghuhn/duoforge/issues/485),
 [#450](https://github.com/chrismaghuhn/duoforge/issues/450) piece 2, and the D4 hook of
 [depth search](2026-10-13-depth-search-design.md), sections 4.2, 6.3, 7.3 and Q3.
-The owner has paused restructuring after field PR #487. This is a documentation PR: no engine build,
-benchmark, export, training, checkpoint conversion or private-data run is performed here.
+The owner has paused restructuring after field PR #487. This specification was authored as a documentation PR: no engine build, benchmark, export, training, checkpoint
+conversion or private-data run was performed to write it. E1a now adds the private primitives and decision 0082;
+its verification is recorded in the implementation PR.
 
 The goal is to reach D5, the sampled three-turn tree, quickly while keeping its gates. The digest ships first,
 so D2 need not wait for a trained evaluator. The value kernels and private distillation can then proceed in parallel
@@ -157,7 +158,8 @@ Per-leaf step/terminal/encoder behavior stays that of the legacy expansion:
   Value units are `values_q / 2^20`, from the selected viewer, not averaged over worlds or policy candidates.
 - An observation/encoding refusal is distinct from a step refusal. An inference refusal has a nonzero
   `eval_statuses[i]`, not a plausible zero score. Nonconsumed values are zero with successful phase statuses.
-  A valid zero value is distinguished by status. Failed digests likewise have a status, not a zero-byte sentinel.
+  A valid zero value is distinguished by status. Digests have their own status; HS's 0082 clarification reserves
+  all-zero digest bytes for refusal, never a valid key. An actual zero SHA result is named and refused.
 - A post-step digest/encoding/inference failure does not roll back a successfully stepped leaf, just as a legacy
   encoder failure does not. Preflight failures touch nothing. No invalid digest/value is published as valid.
 
@@ -276,7 +278,7 @@ damage-display, switch-identity and move-amendment mutations; and metamorphic hi
 ### 4.3 Answers to D2 and decision 0082: what the request adds
 
 The D2 draft is `docs/superpowers/plans/2026-10-14-observation-digest-draft.md` on the inspected D2 branch.
-This section is Astra's proposed agreement for HS, not an edit or merge of that lane's draft.
+HS approved these refinements for [decision 0082](../../decisions/0082-observation-digest.md). E1a records the byte schema and vectors there; this is not an edit or merge of the D2 lane's draft.
 
 1. **Step location: yes.** `dfi_battle_step_events_tape` remains the entry point with `dfi_events staged`.
    A private variant with viewer/digest observer is appropriate. Fold final projected records there, across the
@@ -311,7 +313,7 @@ Add negative controls: same event history and boundary/mask but different own re
 availability must split; different private epochs and foe unshown options with the same visible request must not.
 Request projection failure is a refused digest with a named phase/status. Failed steps still clear all 32 bytes;
 successful steps may not use zero bytes as a valid-key marker. All three answers and the refinements to the draft
-are subject to HS's approval of 0082/#485 before implementation.
+were approved by owner and HS for 0082/#485 before E1a. The D2 lane reviews E1a via the owner.
 
 ## 5. Three network variants and their per-world inputs
 
