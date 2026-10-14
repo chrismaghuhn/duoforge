@@ -263,7 +263,7 @@ class PoolRows(unittest.TestCase):
                 self.assertTrue(all(part.strip() for part in text.split(';')))
 
     def test_nothing_that_grounds_or_lifts_a_pokemon_is_modelled_but_levitate(self):
-        """The engine's isGrounded is "not a Flying type and not a Levitate holder" (dfi_grounded, src/combat/turn.c;
+        """The engine's isGrounded is "not a Flying type and not a Levitate holder" (dfi_grounded, src/combat/field/terrain.h;
         Levitate since step G23-C), which Expanding Force (step G15) reads for its user. The pin also reads Eelevate, Air
         Balloon and Iron Ball, Gravity, Ingrain, Magnet Rise, Telekinesis and Smack Down (sim/pokemon.ts:2148-2160):
         every one of them but Air Balloon and Iron Ball is an UNMODELED row, so no battle has it; Air Balloon is an engine row
