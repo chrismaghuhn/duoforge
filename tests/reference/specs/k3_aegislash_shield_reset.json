@@ -1,6 +1,6 @@
 {
  "name": "k3_aegislash_shield_reset",
- "purpose": "Step K3 (#473): Speed Swap on Aegislash-Shield (Alakazam now 80, Aegislash 158); Aegislash's Iron Head (a non-King's-Shield move) makes it Blade: Stance Change rebuilds its stats, so its swapped Speed and the presence bit end and its Speed is 80 again.",
+ "purpose": "Step K3 (#473): Speed Swap on Aegislash-Shield (Alakazam now 80, Aegislash 189); Aegislash's Iron Head (a non-King's-Shield move) makes it Blade: Stance Change rebuilds its stats, so its swapped Speed and the presence bit end and its Speed is 80 again.",
  "data": "pool",
  "format": "gen9championsvgc2026regmc",
  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000473012",

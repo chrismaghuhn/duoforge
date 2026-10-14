@@ -1,6 +1,6 @@
 {
  "name": "k3_speed_swap_ally",
- "purpose": "Step K3 (decision 0015 5de, #473): Alakazam uses Speed Swap on its ally Baxcalibur (target -1); the two stored Speeds are exchanged inside the own side (Alakazam 158 to 107, Baxcalibur 107 to 158), and the next turn order follows them.",
+ "purpose": "Step K3 (decision 0015 5de, #473): Alakazam uses Speed Swap on its ally Baxcalibur (target -1); the two stored Speeds are exchanged inside the own side (Alakazam 189 to 109, Baxcalibur 109 to 189), and the next turn order follows them.",
  "data": "pool",
  "format": "gen9championsvgc2026regmc",
  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000473002",

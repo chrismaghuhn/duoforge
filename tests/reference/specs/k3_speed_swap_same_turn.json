@@ -1,6 +1,6 @@
 {
  "name": "k3_speed_swap_same_turn",
- "purpose": "Step K3 (decision 0015 5de, #473): Alakazam (158) swaps Speed with the foe Milotic (101) before Baxcalibur (107) acts; the swapped Milotic (158) moves before Baxcalibur in the same turn (the queue re-sorts after the swap).",
+ "purpose": "Step K3 (decision 0015 5de, #473): Alakazam (189) swaps Speed with the foe Milotic (101) before Baxcalibur (109) acts; the swapped Milotic (189) moves before Baxcalibur in the same turn (the queue re-sorts after the swap).",
  "data": "pool",
  "format": "gen9championsvgc2026regmc",
  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000473003",
