@@ -82,13 +82,18 @@ class LogReplay:
     its timer line is no sent choice). A format-1 log, a battle that fell back and a log without an end (a reconnect, a
     log still being written) give no such key.
 
+    waits=True also yields (game, None) at every new decision point where the bot was not asked (a wait request: only
+    the foe chooses, a replacement after the bot's KO). The particles' views of such a point exist (the luck meter, #494,
+    values the state that happened there); the default yields the asked points only.
+
     After an iteration that ran out (complete): stopped is None (the log ran to its end), "stop:<name>" or
     "error:<type>" (the replay's own tracker stopped or failed), or "fallback:<reason>" (the bot fell back there, the
     log's {"fallback"} record, and its feeds end); diverged names a mismatch between the two (the bot stopped its
     tracker where the replay does not, or the reverse), None when they agree. A consumer that stops early leaves
     complete False and no verdict."""
 
-    def __init__(self, records, data, policy, own_text, prior, key, search=None, seed=SEED, n=PARTICLES):
+    def __init__(self, records, data, policy, own_text, prior, key, search=None, seed=SEED, n=PARTICLES,
+                 waits=False):
         self.records = list(records)
         bad = next((k for k, r in enumerate(self.records) if not isinstance(r, dict)), None)
         if bad is not None:  # a malformed log, never counted as a failure of the bot
@@ -103,6 +108,7 @@ class LogReplay:
             raise ValueError(f"log record {late} names a log format: only the first record does")
         self.data, self.policy, self.own_text, self.prior = data, policy, own_text, prior
         self.key, self.search, self.seed, self.n = key, search, seed, n
+        self.waits = bool(waits)
         self.game = None
         self.stopped = self.diverged = None
         self.complete = False
@@ -138,6 +144,8 @@ class LogReplay:
                     continue
                 done = game.epoch
                 if not game.asked():
+                    if self.waits:
+                        yield game, None
                     continue
                 rqid = game.request.get("rqid")
                 record = next((x for x in self.records[i + 1:] if x.get("decision") == rqid and "sent" in x

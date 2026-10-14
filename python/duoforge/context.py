@@ -7,6 +7,9 @@ import numpy as np
 from . import _layout
 from ._lib import check, load_library, ptr, uint
 
+# The certified profile brings four: data/formats/reg-mc.json, facts.picked_team_size (restructure step 10).
+_FORMAT_BROUGHT_COUNT = 4
+
 
 class Context:
     """A context of the library (duoforge_context_create).
@@ -16,7 +19,8 @@ class Context:
     Its batches must be closed first: they point into it.
     """
 
-    def __init__(self, data_kind=_layout.DATA_KIND_CLOSURE, max_roster=6, brought_count=4):
+    def __init__(self, data_kind=_layout.DATA_KIND_CLOSURE, max_roster=_layout.MAX_ROSTER,
+                 brought_count=_FORMAT_BROUGHT_COUNT):
         self.handle = None  # set only after a successful create, so __del__ is safe
         self._batches = weakref.WeakSet()
         self._lib = load_library()
