@@ -134,8 +134,15 @@ static void workspace_checks(df_test *t, duoforge_evaluator *model, const duofor
 #if defined(DF_EVAL_ALLOC_WRAP)
     allocation_armed = true;
 #endif
+    DF_CHECK_EQ_U64(t, dfi_eval_workspace_acquire(w, model, wrong, 32u, 8u, &error), DUOFORGE_E_CONTEXT_MISMATCH);
+    DF_CHECK_EQ_U64(t, dfi_eval_workspace_acquire(w, model, model->context, 33u, 8u, &error), DUOFORGE_E_CAPACITY);
+    DF_CHECK_EQ_U64(t, dfi_eval_workspace_acquire(w, model, model->context, 32u, 7u, &error), DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK_EQ_U64(t, dfi_eval_workspace_acquire(w, model, model->context, 32u, 8u, &error), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, dfi_eval_workspace_acquire(w, model, model->context, 32u, 8u, &error), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, duoforge_eval_workspace_destroy(w, &error), DUOFORGE_E_UNSUPPORTED);
+    dfi_eval_workspace_release(w);
     for (size_t i = 0; i < 1000u; ++i) {
-        DF_CHECK_EQ_U64(t, dfi_eval_workspace_acquire(w, model, model->context, 32u, 8u, NULL), DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, dfi_eval_workspace_acquire(w, model, model->context, 32u, 8u, &error), DUOFORGE_OK);
         dfi_eval_workspace_release(w);
     }
 #if defined(DF_EVAL_ALLOC_WRAP)

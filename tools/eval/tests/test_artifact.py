@@ -136,6 +136,10 @@ def main():
         buf[256] = ord("x")
         run(buf, "eval_tensor_invalid:dense.weight")
         scale = struct.unpack_from("<Q", base, 328)[0]
+        buf = base.copy()
+        put(buf, scale, "I", 0xffffffff)
+        put(buf, scale + 4, "I", 63)
+        run(buf, "OK")
         for offset, value in [(scale, 0), (scale + 4, 64), (scale + 8, 0)]:
             buf = base.copy()
             put(buf, offset, "I", value)
