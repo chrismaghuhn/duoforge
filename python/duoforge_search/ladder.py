@@ -349,6 +349,18 @@ def decisions_digest(decisions):
     return hashlib.sha256("\n".join(json.dumps(row) for row in rows).encode("utf-8")).hexdigest()
 
 
+def games_digests(decisions, games):
+    """decisions_digest of each game alone, game g's decisions being those of env g (one game per env in a ladder arm):
+    a list of `games` digests, the empty game's digest where a game has no decision. Two runs whose decisions_sha256
+    differ name the first game that differs (#484: AWS against local, 2026-10-14). ValueError for an env outside."""
+    per_game = [[] for _ in range(games)]
+    for r in decisions:
+        if not 0 <= int(r["env"]) < games:
+            raise ValueError(f"a decision of env {r['env']} outside the arm's {games} games")
+        per_game[int(r["env"])].append(r)
+    return [decisions_digest(rows) for rows in per_game]
+
+
 def recorded_reproduction(scores, digest, recorded_arm, recorded_dir, name):
     """Whether this run's previous arm plays the recorded step arm's games: True when the per-game scores and the digest
     of the decisions both match, False when either differs. None when the recorded run has no such arm, or when its
@@ -433,6 +445,7 @@ def _summary(records, games, decisions=None, seconds=None):
                     "fallback_share": foe_arena.fallback_share(decisions),
                     "fallback_decisions": sum(r["kind"] in foe_arena.FALLBACK_KINDS for r in non_team),
                     "non_team_decisions": len(non_team), "decisions_sha256": decisions_digest(decisions),
+                    "games_sha256": games_digests(decisions, games),
                     "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions),
                     "duplicate_rows": duplicate_rows(decisions)})
         if decisions:
