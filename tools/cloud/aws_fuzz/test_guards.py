@@ -106,12 +106,13 @@ json.dump({'results': [entry], 'errors': 0}, open(out, 'w'))
 
 
 def fuzz_campaigns():
-    """The fuzz campaigns of campaigns/: every directory but a ladder campaign's (kind=ladder, #484, tested apart)."""
+    """The fuzz campaigns of campaigns/: every directory but a ladder (kind=ladder, #484) or preview-oracle campaign's
+    (kind=oracle, #458), each tested apart."""
     base = os.path.join(HERE, 'campaigns')
     names = []
     for name in sorted(os.listdir(base)):
         with open(os.path.join(base, name, 'campaign.conf'), encoding='utf-8') as f:
-            if 'kind=ladder' not in [line.strip() for line in f]:
+            if not {'kind=ladder', 'kind=oracle'} & {line.strip() for line in f}:
                 names.append(name)
     return names
 
@@ -1498,6 +1499,65 @@ class LadderEqual(unittest.TestCase):
                 self.assertTrue(json.load(f)['equal'])
             self.assertEqual(run(paths[0], paths[2]).returncode, 1)
             self.assertEqual(run(paths[0], os.path.join(tmp, 'missing.json')).returncode, 2)
+
+
+@unittest.skipIf(BASH is None, 'bash is not on the PATH')
+class OracleConf(unittest.TestCase):
+    """oracle_conf.py, the conf of an AWS preview-oracle campaign (#458): networks and the foe team by sha256 only, a
+    predeclared plan, no path, URL, seed, pair count or free flag. Against the stub aws only, as every class here."""
+
+    setUp = Guards.setUp
+    assert_aws_is_stub = Guards.assert_aws_is_stub
+    test_no_test_has_a_way_to_the_real_aws = LadderLaunch.test_no_test_has_a_way_to_the_real_aws
+
+    GOOD = ('kind=oracle\nplan=preview-mixed-2026-10-14\ncheckpoint=%s\nfoe_net=%s\nours=A\nfoe_team=%s\n'
+            % ('b' * 64, 'b' * 64, 'e' * 64))
+
+    def test_a_good_conf_and_its_command_line(self):
+        import oracle_conf
+        conf = oracle_conf.parse(self.GOOD)
+        self.assertEqual((conf['workers'], conf['max_steps']), (8, 1000))  # the HauptSession's 8 workers
+        self.assertEqual(oracle_conf.shas(conf), ['b' * 64])  # the same network once
+        argv = oracle_conf.argv(conf, '/n', '/t', '/o')
+        self.assertEqual(argv, ['--plan', 'preview-mixed-2026-10-14', '--checkpoint', '/n/%s.npz' % ('b' * 64),
+                                '--foe-net', '/n/%s.npz' % ('b' * 64), '--ours', 'data/teams/A.txt',
+                                '--foe', '/t/%s.txt' % ('e' * 64), '--workers', '8', '--max-steps', '1000',
+                                '--out', '/o'])
+
+    def test_a_bad_conf_is_refused_by_name(self):
+        import oracle_conf
+        bad = {'kind=ladder': 'not a preview-oracle campaign', 'plan=other': 'not a predeclared plan',
+               'checkpoint=/x/bc.npz': 'sha256', 'foe_net=https://x/y.npz': 'sha256', 'foe_team=../sun.txt': 'sha256',
+               'foe_team=%s' % ('E' * 64): 'sha256', 'ours=../A': 'registry id', 'ours=A/../../x': 'registry id',
+               'workers=17': 'workers=17', 'workers=0': 'workers=0', 'max_steps=x': 'not a number',
+               'seed=0x1': 'unknown key', 'pairs=64': 'unknown key', 'arms=all': 'unknown key',
+               'flags=--side ours': 'unknown key', 'out=/tmp/x': 'unknown key'}
+        for line, message in bad.items():
+            key = line.partition('=')[0]
+            text = '\n'.join(l for l in self.GOOD.splitlines() if not l.startswith(key + '=')) + '\n' + line + '\n'
+            with self.subTest(line=line), self.assertRaisesRegex(oracle_conf.ConfError, message):
+                oracle_conf.parse(text)
+        with self.assertRaisesRegex(oracle_conf.ConfError, "key 'ours' twice"):
+            oracle_conf.parse(self.GOOD + 'ours=B\n')
+        with self.assertRaisesRegex(oracle_conf.ConfError, 'missing key'):
+            oracle_conf.parse(self.GOOD.replace('foe_team=%s\n' % ('e' * 64), ''))
+        with self.assertRaisesRegex(oracle_conf.ConfError, 'not key=value'):
+            oracle_conf.parse(self.GOOD + 'just words\n')
+
+    def test_the_conf_tool_prints_each_answer_and_refuses_a_bad_call(self):
+        path = os.path.join(self.tmp, 'campaign.conf')
+        with open(path, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(self.GOOD)
+        tool = os.path.join(HERE, 'oracle_conf.py')
+        run = lambda *a: subprocess.run([sys.executable, tool, *a], env=self.env, capture_output=True, text=True)
+        self.assertEqual(run('check', path).returncode, 0)
+        self.assertEqual(run('shas', path).stdout.split(), ['b' * 64])
+        self.assertEqual(run('team', path).stdout.split(), ['e' * 64])
+        self.assertEqual(run('ours', path).stdout.split(), ['A'])
+        self.assertEqual(run('workers', path).stdout.split(), ['8'])
+        self.assertEqual(run('argv', path, '/n', '/t', '/o').stdout.split()[-2:], ['--out', '/o'])
+        for bad in (('workers',), ('team', path, 'x'), ('nope', path), ('check', os.path.join(self.tmp, 'missing'))):
+            self.assertEqual(run(*bad).returncode, 2, bad)
 
 
 if __name__ == '__main__':
