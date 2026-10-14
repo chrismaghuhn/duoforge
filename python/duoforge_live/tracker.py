@@ -117,6 +117,7 @@ EXT_FIELDS = {
     "RESERVE_VOLATILES": (("bit", C["DUOFORGE_POSITION_EXT_ATTRACT"]),),
     # Ghost Curse (step G84b, decision 0063): the holder's CURSED bit, the view bit of the Curse volatile
     "CURSE": (("bit", EXT_CURSE),),
+    "SPEED_SWAPPED": (("bit", C["DUOFORGE_POSITION_EXT_SPEED_SWAPPED"]),),  # K3 (decision 0015 5de): the presence bit, no values
     "HEALING_WISH": (("bit", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]),),  # G82: encoder 6's reserve volatile bit 22
     "PARTIAL_TRAP": (("bit", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]),),
     "TRAP_ELAPSED": (("v2bits", sum(EXT2_TRAP_ELAPSED)),),  # POSITION_EXT2 (volatiles2), a record field of its own
@@ -133,7 +134,8 @@ _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORG
                   ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),
                    ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]), ("cursed", EXT_CURSE),
                    ("wish", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]),
-                   ("trap", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]))
+                   ("trap", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]),
+                   ("speed_swapped", C["DUOFORGE_POSITION_EXT_SPEED_SWAPPED"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
@@ -202,6 +204,9 @@ class _Position:
 
     def reset(self):
         self.stages = [STAGE_NEUTRAL] * 7
+        # Speed Swap (step K3, decision 0015 5de): presence only; it ends with the occupant (a switch-out or a faint) and at a
+        # forme change or Mega Evolution of the position (both rebuild the stored stats), never with the turn.
+        self.speed_swapped = 0
         self.confused = 0
         self.charge = 0
         self.locked_slot = MOVE_SLOT_NONE
@@ -287,7 +292,7 @@ class _Position:
 #     guard_undo, unburden_unseen, fainted), which the engine keeps in the queue records and the run (they follow the Pokemon).
 _SWAP_MOVES = (
     "occupant", "activation", "stages", "protecting", "flash_fire", "flags", "choice_slot", "newly_switched", "chain", "stall",
-    "confused", "charge", "locked_slot", "move_actions", "flag",
+    "confused", "charge", "locked_slot", "move_actions", "flag", "speed_swapped",
     "throat_chop", "must_recharge", "taunt", "yawn", "imprison", "glaive_rush", "rage_powder", "heal_block", "attract",
     "attract_from", "trap", "trap_source", "trap_move", "trap_band", "trap_elapsed", "type_now", "type2", "disable_slot",
     "disable_turns", "encore_slot", "encore_turns", "cursed", "perish", "hits_taken", "last_slot", "last_move", "result_now",
@@ -1504,10 +1509,17 @@ class Tracker:
                 # Rage Powder (step G30): the extension's RAGE_POWDER bit for this turn, which only a PIVOT inside the
                 # turn shows (the residual ends it); the base view's Follow Me flag stays off for it
                 self._at(pos).rage_powder = 1
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_SPEED_SWAP:
+            # Speed Swap (step K3): both positions carry the presence bit; the swapped values are not public
+            self._at(pos).speed_swapped = 1
+            self._at(e[2]).speed_swapped = 1
         elif kind == EV["FORME"]:
-            pass  # the view keeps the set's species; MEGA sets is_mega and the ability
+            # the view keeps the set's species; MEGA sets is_mega and the ability. A forme change rebuilds the stored stats
+            # (setSpecies), so a live Speed Swap of the position ends (step K3)
+            self._at(pos).speed_swapped = 0
         elif kind == EV["MEGA"]:
             self._mega_used[pos // 2] = 1
+            self._at(pos).speed_swapped = 0  # formeChange -> setSpecies rebuilds the stored stats (step K3)
             self._at(pos).ability_now = 0  # the Mega forme's ability replaces a copied one (formeChange -> setAbility)
             self._at(pos).type_now = (0, 0)  # and setType(species.types) ends a type that Soak set
             self._occupant(pos).revealed |= REVEALED_MEGA

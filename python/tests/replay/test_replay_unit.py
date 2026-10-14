@@ -749,7 +749,7 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.FEATURES["ATTRACT_SOURCE"], 53)
         from duoforge import features
         self.assertEqual(lines.FEATURES, features.FEATURE_BITS)
-        self.assertEqual(len(lines.FEATURES), 43 + 5 + 3)  # tiers, the five families, HEALING_WISH, TRAP_ELAPSED, ATTRACT_SOURCE
+        self.assertEqual(len(lines.FEATURES), 43 + 5 + 3 + 1)  # tiers, the five families, HEALING_WISH, TRAP_ELAPSED, ATTRACT_SOURCE, SPEED_SWAPPED (46)
         self.assertEqual([lines.FEATURES[n] for n in ("RESERVE_VOLATILES", "VOLATILES2", "RESERVE_GUARDS",
                                                       "SIDE_CONDITIONS", "FIELD_FLAGS")], [59, 60, 61, 62, 63])
 

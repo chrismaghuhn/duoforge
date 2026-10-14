@@ -127,6 +127,9 @@ static bool dfi_line_variant(const duoforge_event *e, const dfi_line_schema *s)
         return (e->detail < 18u || e->detail == DUOFORGE_TYPE_NONE) && e->amount <= 18u;
     case DUOFORGE_EVENT_ITEM_END: return e->detail <= 1u;
     case DUOFORGE_EVENT_VOLATILE_START:
+        /* Speed Swap (step K3, #473; decision 0015 5de) is entered one by one: 15 stays refused (reserved for Focus Energy). */
+        return (e->detail >= DUOFORGE_VOLATILE_HEAL_BLOCK && e->detail <= DUOFORGE_VOLATILE_CURSE) ||
+               e->detail == DUOFORGE_VOLATILE_SPEED_SWAP;
     case DUOFORGE_EVENT_VOLATILE_END: return e->detail >= DUOFORGE_VOLATILE_HEAL_BLOCK && e->detail <= DUOFORGE_VOLATILE_CURSE;
     case DUOFORGE_EVENT_RESULT: return e->detail >= DUOFORGE_RESULT_SIDE_0 && e->detail <= DUOFORGE_RESULT_TIE;
     default: return true; /* The schema above explicitly classified this kind. */

@@ -38,7 +38,7 @@
 #define DFI_ORDER_RESIDUAL 300u
 #define DFI_SPEED_BIAS 10000u   /* speed key: 10000 + speed, or 10000 - speed under Trick Room */
 #define DFI_SPEED_CAP 10000u    /* getStat caps Speed at 10000 (sim/pokemon.ts:636) */
-#define DFI_LEVEL 50u
+#define DFI_LEVEL DFI_FORMAT_LEVEL
 #define DFI_STALL_DURATION 2u /* data/conditions.ts: stall */
 
 
@@ -6983,6 +6983,15 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                 did = did || swapped;
                 continue;
             }
+            if (md->special == DFI_SPECIAL_SPEED_SWAP) {
+                /* Speed Swap's onHit (step K3, decision 0015 5de): the stored Speeds of the two are exchanged; it cannot fail. */
+                st = dfi_speed_swap(r, user, targets[i]);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                did = true;
+                continue;
+            }
             if (md->special == DFI_SPECIAL_TRICK || md->special == DFI_SPECIAL_SWITCHEROO) {
                 bool swapped = false;
                 st = dfi_trick(r, user, targets[i], move_id, &swapped);
@@ -7319,6 +7328,8 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
         m->stats[i] = stats[i];
     }
     *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
+    /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats, so a live Speed Swap ends here. */
+    b->tail.sides[user / 2u].positions[user % 2u].single_turn = (uint8_t)((uint32_t)b->tail.sides[user / 2u].positions[user % 2u].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
     e.id = (uint16_t)forme;
     e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
@@ -10420,6 +10431,8 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
         return DUOFORGE_E_INVARIANT; /* the domain offers Mega only to a holder of its stone */
     }
     sd->mega_used = 1u;
+    /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats (the swapped Speed is gone). */
+    b->tail.sides[q->side].positions[q->slot].single_turn = (uint8_t)((uint32_t)b->tail.sides[q->side].positions[q->slot].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
     /* formeChange -> setSpecies -> setType(species.types, true): a type that Soak set ends (sim/pokemon.ts:1392,
      * 1427-1434), without a line. */
     b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;

@@ -892,6 +892,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
 #define DUOFORGE_POSITION_EXT_ATTRACT      0x08000000u /* Attract (step G71, decision 0034): the occupant is infatuated; presence only, no source */
 #define DUOFORGE_POSITION_EXT_HEALING_WISH 0x00400000u /* Healing Wish: the position's slot condition is pending (decision 0045) */
+#define DUOFORGE_POSITION_EXT_SPEED_SWAPPED 0x00800000u /* Speed Swap (step K3, decision 0015 5de): the occupant's Speed was swapped and is still live; presence only, never the values */
 /* Attract's source (step G87, decision 0080): bits 12 and 13 of duoforge_observation_ext.volatiles2 hold the flat position (0 to 3) of
    the source of the infatuated occupant (bit 12 is the low bit). Both are 0 unless DUOFORGE_POSITION_EXT_ATTRACT is set on the same
    position. Public for both players: the source is named in the Attract line of the protocol. */
@@ -918,6 +919,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    (one entry per bit: the macro compares the bit number exactly). */
 #define DUOFORGE_VIEWEXT_RESERVE_OWN(X) \
     X(RESERVE_VOLATILES, 22u, HEALING_WISH) \
+    X(RESERVE_VOLATILES, 23u, SPEED_SWAPPED) \
     X(VOLATILES2, 4u, TRAP_ELAPSED)     \
     X(VOLATILES2, 5u, TRAP_ELAPSED)     \
     X(VOLATILES2, 6u, TRAP_ELAPSED)     \
@@ -982,6 +984,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH    43u /* Healing Wish: the position's wish bit (decision 0045) */
 /* Lane A (G90, decision 0060): the partial trap's elapsed counter, the own feature of POSITION_EXT2 bits 4 to 6 (HS registry). */
 #define DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED     45u
+/* Speed Swap (step K3, decision 0015 5de): the occupant's speed was swapped (presence bit 23 of volatiles, no values). */
+#define DUOFORGE_VIEWEXT_FEATURE_SPEED_SWAPPED    46u
 #define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
 /* The content expansion's features above the tiers (HauptSession's blocks, lane B 53-58). */
 #define DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE   53u /* step G87 (decision 0080): the flat position of Attract's source, bits 12-13 of volatiles2 */
@@ -1267,6 +1271,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
    (cause MOVE, id2 the move), the end of the duration -end|X|move: M|[partiallytrapped] a VOLATILE_END with id = the move. The silent
    ends (the source left, a Substitute, a fainted source) emit nothing. The turns are a drawn counter, hidden from both viewers. */
 #define DUOFORGE_VOLATILE_PARTIAL_TRAP 12u
+/* VOLATILE_START (POOL kinds, step K3, decision 0015 5de): -activate|SOURCE|move: Speed Swap|[of] TARGET. Public for both
+   players; position: SOURCE, other: TARGET. Both positions carry the presence bit from this event. No END: the swap ends
+   silently (a switch-out, a faint, a Mega Evolution or a forme change rebuilds the stats; the pin prints nothing). */
+#define DUOFORGE_VOLATILE_SPEED_SWAP 16u
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
 #define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */

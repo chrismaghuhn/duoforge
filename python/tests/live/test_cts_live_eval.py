@@ -317,9 +317,154 @@ class ReplayTest(unittest.TestCase):
 
     def test_the_real_tables_name_the_known_unmodelled_content(self):
         names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-        self.assertTrue({"speedswap", "gravity"} <= names, sorted(names)[:10])
+        self.assertIn("gravity", names, sorted(names)[:10])
+        self.assertNotIn("speedswap", names)  # modelled by #473 (the stored-Speed swap)
         self.assertNotIn("temperflare", names)  # modelled by #476 (the Stomping Tantrum handler)
         self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
+
+
+class LuckTest(unittest.TestCase):
+    """--luck (#494): the series' aggregates of the battles' luck, and the options it needs."""
+
+    def test_the_series_holds_means_with_intervals_and_the_exclusions_by_name(self):
+        from collections import Counter
+        battles = [{"turns": [0.25, -0.5], "mixed": [False, True], "dropped": [0, 4], "worlds": 16, "result": 1.0,
+                    "partial": Counter({"rest-after-foe-pivot": 1}),
+                    "excluded": Counter({"foe-action-unknown": 1})},
+                   {"turns": [0.5], "mixed": [False], "dropped": [2], "worlds": 16, "result": -1.0,
+                    "excluded": Counter()},
+                   {"turns": [], "mixed": [], "dropped": [], "worlds": 16, "result": None,
+                    "excluded": Counter({"no-end": 1})}]
+        got = ev.luck_series(battles)
+        self.assertEqual((got["battles"], got["finished"], got["unfinished"], got["turns_valued"]), (3, 2, 1, 3))
+        self.assertEqual(got["unfinished_excluded"], {"no-end": 1})
+        self.assertEqual(got["turns_partial"], {"rest-after-foe-pivot": 1})  # valued turns, apart from the exclusions
+        self.assertEqual((got["turns_mixed"], got["mixed_share"]), (1, 1 / 3))
+        self.assertAlmostEqual(got["worlds_dropped_share"], 6 / 48)
+        self.assertAlmostEqual(got["luck_per_battle_unmixed"]["mean"], (0.25 + 0.5) / 2)
+        self.assertAlmostEqual(got["result_minus_luck_unmixed"]["mean"], ((1.0 - 0.25) + (-1.0 - 0.5)) / 2)
+        self.assertEqual(got["turns_excluded"], {"foe-action-unknown": 1})
+        self.assertAlmostEqual(got["valued_share"], 3 / 4)
+        self.assertAlmostEqual(got["luck_per_battle"]["mean"], (-0.25 + 0.5) / 2)  # the battles with a result
+        self.assertAlmostEqual(got["largest_turn"]["mean"], (-0.5 + 0.5) / 2)
+        self.assertEqual(got["result"]["mean"], 0.0)
+        self.assertAlmostEqual(got["result_minus_luck"]["mean"], ((1.0 + 0.25) + (-1.0 - 0.5)) / 2)
+        self.assertGreater(got["result_minus_luck"]["half"], 0.0)
+        self.assertIsNone(ev.interval([]))
+        self.assertIsNone(ev.interval([1.0])["half"])
+
+    def test_a_series_plays_its_bot_commits_search_and_an_unknown_commit_is_refused(self):
+        self.assertEqual([ev.search_step(c) for c in ("1ffa6a03", "a7dd956b1234", "5c503d8a")], ["0", "2e", "2e"])
+        for commit in ("deadbeef", None, ""):
+            with self.subTest(commit=commit), self.assertRaisesRegex(SystemExit, "unknown"):
+                ev.search_step(commit)
+
+    def test_a_series_without_a_code_is_its_process_only_by_its_run_logs(self):
+        with tempfile.TemporaryDirectory() as logs:
+            with self.assertRaisesRegex(SystemExit, "started"):
+                ev.check_bot_commit(logs, "1ffa6a03")  # no run log: nothing shows the process
+            Path(logs, "arena-run-20261013T192334Z.json").write_text(json.dumps({"started": "2026-10-13T19:23:34Z"}),
+                                                                     encoding="utf-8")
+            ev.check_bot_commit(logs, "1ffa6a03")
+            Path(logs, "arena-run-20261014T000433Z.json").write_text(
+                json.dumps({"started": "2026-10-14T00:04:33Z", "code": {"commit": "a7dd956b", "dirty": False},
+                            "search_settings": {"rule": "ev"}}), encoding="utf-8")
+            ev.check_bot_commit(logs, "1ffa6a03")  # a later bot's run log (with its code) is not this series'
+            self.assertEqual([h["started"] for h in ev.series_run_logs(logs, "a7dd956b")], ["2026-10-14T00:04:33Z"])
+            self.assertEqual([h["started"] for h in ev.series_run_logs(logs)], ["2026-10-13T19:23:34Z"])
+            with self.assertRaisesRegex(SystemExit, "no process start"):
+                ev.check_bot_commit(logs, "a75c380a")
+            Path(logs, "arena-run-20261012T005607Z.json").write_text(json.dumps({"started": "2026-10-12T00:56:07Z"}),
+                                                                     encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "started"):
+                ev.check_bot_commit(logs, "1ffa6a03")  # a second process in the directory: not one commit's series
+
+    def test_the_luck_needs_the_pinned_checkpoint_and_stands_alone(self):
+        with tempfile.TemporaryDirectory() as logs:
+            for argv, message in ((["--luck"], "--checkpoint"),
+                                  (["--luck", "--checkpoint", "x"], "--checkpoint"),
+                                  (["--luck", "--replay", "--checkpoint", "x", "--checkpoint-sha256", "y"], "--replay"),
+                                  (["--checkpoint", "x"], "--luck"),
+                                  (["--samples", "4"], "--luck"),
+                                  (["--bot-commit", "1ffa6a03"], "--luck")):
+                with self.subTest(argv=argv), self.assertRaisesRegex(SystemExit, message):
+                    ev.main(["--logs", logs, *argv])
+class ABTest(unittest.TestCase):
+    """The A/B test of the root rule (docs/benchmarks/2026-10-14-ab-root-rule): a battle names its arm in its first
+    record; the tool counts the arms' win rates with intervals, per opponent and per the foe's leads."""
+
+    @staticmethod
+    def log(arm, result, leads=("Garchomp", "Grimmsnarl")):
+        return [{"log_format": 2, "code": {"commit": "abc", "dirty": False},
+                 "search_rule": {"arm": arm, "index": 0, "rule": "mix" if arm == "0" else "ev", "settings": {}}},
+                {"in": "|player|p1|Ling-Ce|"}, {"in": "|player|p2|Opponent|"},
+                {"in": "|switch|p1a: Froslass|Froslass, L50, F|100/100"},
+                {"in": f"|switch|p2a: One|{leads[0]}, L50, M|100/100"},
+                {"in": f"|switch|p2b: Two|{leads[1]}, L50, M|100/100"}, {"in": "|turn|1"},
+                {"in": "|switch|p2a: Three|Pelipper, L50, M|100/100"}, {"feed": ["|turn|1"]},
+                {"end": "|win|" + ("Ling-Ce" if result == "win" else "Opponent")}]
+
+    def test_a_battle_names_its_arm_and_the_foes_leads_by_species(self):
+        b = ev.battle(self.log("2e", "win", ("Charizard", "Grimmsnarl")), "lingce")
+        self.assertEqual((b["arm"], b["foe_lead"], b["result"]), ("2e", "Charizard + Grimmsnarl", "win"))
+        self.assertIsNone(ev.battle(played(), "lingce")["arm"])
+
+    def test_the_arms_win_rates_with_intervals_per_opponent_and_lead(self):
+        rows = []
+        for arm, results, leads in (("0", ["win"] * 6 + ["loss"] * 4, ("Garchomp", "Grimmsnarl")),
+                                    ("2e", ["win"] * 3 + ["loss"] * 7, ("Charizard", "Grimmsnarl"))):
+            for r in results:
+                b = ev.battle(self.log(arm, r, leads), "lingce")
+                rows.append((b, "A", b["foe_lead"]))
+        got = ev.ab_arms(rows)
+        self.assertEqual((got["all"]["0"]["wins"], got["all"]["0"]["decided"]), (6, 10))
+        self.assertEqual((got["all"]["2e"]["wins"], got["all"]["2e"]["decided"]), (3, 10))
+        p, low, high = got["all"]["2e"]["win_rate"]
+        self.assertAlmostEqual(p, 0.3)
+        self.assertTrue(low < 0.3 < high)
+        d = got["all"]["difference"]
+        self.assertAlmostEqual(d["value"], -0.3)
+        self.assertTrue(d["low"] < -0.3 < d["high"] and d["high"] > 0)  # ten battles each: no preference yet
+        self.assertEqual(set(got["by_opponent"]), {"A"})
+        self.assertEqual(got["by_lead"]["Garchomp + Grimmsnarl"]["2e"]["decided"], 0)
+        self.assertIsNone(got["by_lead"]["Garchomp + Grimmsnarl"]["difference"])
+        self.assertIsNone(got["by_lead"]["Garchomp + Grimmsnarl"]["2e"]["win_rate"])  # an arm below the minimum: counts
+        self.assertIsNotNone(got["by_opponent"]["A"]["difference"])  # ten each: the stratum is read
+        self.assertIsNone(got["all"]["look"])  # no look before 30 decided battles per arm: nothing to read
+        self.assertIsNone(d["at_look"])
+        self.assertIsNone(got["by_opponent"]["A"]["look"])  # a stratum is described, never read at a look
+
+    def test_the_looks_read_99_percent_at_30_and_60_and_95_at_100(self):
+        for n, level in ((30, 0.99), (60, 0.99), (100, 0.95)):
+            rows = []
+            for arm, wins in (("0", n // 2), ("2e", n // 2 + n // 5)):
+                rows += [(ev.battle(self.log(arm, "win" if i < wins else "loss"), "lingce"), "A", None)
+                         for i in range(n)]
+            got = ev.ab_arms(rows)["all"]
+            d = got["difference"]
+            self.assertEqual((got["look"], d["at_look"]["level"]), (n, level))
+            if level == 0.99:
+                self.assertTrue(d["at_look"]["low"] < d["low"] and d["high"] < d["at_look"]["high"])
+            else:
+                self.assertAlmostEqual(d["at_look"]["low"], d["low"])
+        self.assertIsNone(ev.wilson(0, 0))
+
+    def test_every_battle_of_an_arm_counts_unfinished_and_unsearched_ones_too(self):
+        unfinished = self.log("0", "win")[:-1]  # no end
+        no_feed = [r for r in self.log("0", "loss") if "feed" not in r]  # never fed: counted, not decided away
+        dirty = self.log("2e", "loss") + [{"dirty": "b"}]
+        rows = [(ev.battle(r, "lingce"), "A", None) for r in (unfinished, no_feed, dirty)]
+        got = ev.ab_arms(rows)["all"]
+        self.assertEqual((got["0"]["battles"], got["0"]["decided"], got["0"]["unfinished"]), (2, 1, 1))
+        self.assertEqual(got["0"]["kinds"], {"particles": 1, "other": 1})
+        self.assertEqual(got["2e"]["without_search"], 1)
+
+    def test_newcombes_interval_matches_a_reference(self):
+        # Newcombe (1998), method 10, his example (a): 56/70 against 48/80 gives 0.2000, [0.0524, 0.3339]
+        d = ev._newcombe(ev.wilson(48, 80), ev.wilson(56, 70))
+        self.assertAlmostEqual(d["value"], 0.2, places=4)
+        self.assertAlmostEqual(d["low"], 0.0524, places=3)
+        self.assertAlmostEqual(d["high"], 0.3339, places=3)
 
 
 if __name__ == "__main__":

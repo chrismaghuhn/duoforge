@@ -101,7 +101,7 @@ int main(void)
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_LOWKICK] != 0u);
     /* Frozen, independently retained turn.c@657dae45 predicates. Every defined
      * special and every remaining value of the uint8_t storage column is checked. */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COUNT, 122u);
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COUNT, 123u); /* step K3 (decision 0015 5de): SPEED_SWAP 121 and UNMODELED 122 */
     uint32_t permitted = 0u;
     uint32_t status_hit = 0u;
     for (uint32_t special = 0u; special <= UINT8_MAX; ++special) {
@@ -112,10 +112,10 @@ int main(void)
         permitted += guard ? 1u : 0u;
         status_hit += status ? 1u : 0u;
     }
-    DF_CHECK_EQ_U64(&t, permitted, 96u);
-    DF_CHECK_EQ_U64(&t, status_hit, 18u);
+    DF_CHECK_EQ_U64(&t, permitted, 97u);
+    DF_CHECK_EQ_U64(&t, status_hit, 19u);
     DF_CHECK(&t, !dfi_move_special_has_handler(UINT32_MAX));
     DF_CHECK(&t, !dfi_move_special_status_hit(UINT32_MAX));
-    printf("  special guards: 122 defined / 256 storage values, 96 late handlers, 18 status hits\n");
+    printf("  special guards: 123 defined / 256 storage values, 97 late handlers, 19 status hits\n");
     return df_test_end(&t);
 }

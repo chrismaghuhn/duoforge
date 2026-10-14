@@ -77,6 +77,8 @@ _SIGNATURES = {
     "duoforge_search_seeds": (None, (_U64, _U64, _U32, ctypes.POINTER(_U64), ctypes.POINTER(_U64))),
     "duoforge_batch_expand": (_STATUS, (_P, _P, _U32, _U64, _U64, _P, _P, _P, _P, _U32, _P, _P, _P, _P, _P, _P, _P,
                                         _P)),
+    "duoforge_batch_expand_digest": (_STATUS, (_P, _P, _U32, _U64, _U64, _P, _P, _P, _P, _U32, _P, _P, _P,
+                                               _P, _P, _P, _P, _P, _P, _P, _P)),
     "duoforge_batch_play_random": (_STATUS, (_P, _U32, _U32, _P)),
     # the data API (decisions 0015 and 0020)
     "duoforge_data_count": (_STATUS, (_P, _U32, ctypes.POINTER(_U32))),
@@ -143,6 +145,8 @@ def _load(groups, expected):
         if matches:
             path, lib = matches[0]
             for name, (restype, argtypes) in _SIGNATURES.items():
+                if name == "duoforge_batch_expand_digest" and not hasattr(lib, name):
+                    continue  # additive capability; its call refuses by name, never falls back
                 fn = getattr(lib, name)
                 fn.restype = restype
                 fn.argtypes = argtypes

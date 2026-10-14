@@ -123,7 +123,9 @@ Every payload starts with `kind:u8`. The following letters give its remaining fi
 This is an explicit class per current event kind. Causes/flag combinations and detail variants must also belong to
 that kind's implemented class in `dfi_line_schema_of`/`dfi_line_variant`. An unknown kind or variant refuses with
 `E_UNSUPPORTED`, naming `observation_line_unclassified`, its numeric entry and kind name. In particular, reserved
-kind 44 is not accepted by a range check. Missing captured identity or a missing HP projection is `E_INVARIANT`.
+kind 44 is not accepted by a range check. New public values (event kinds, volatile details, causes, features) are
+entered in the digest classifier one by one, in the PR that introduces them, with a test; a range is not widened past a
+reserved value. The first such entry is Speed Swap (volatile detail 16, #473); detail 15 stays refused. Missing captured identity or a missing HP projection is `E_INVARIANT`.
 Reserved event bytes and non-whitelisted fields are absent. Nothing uses raw `sizeof(duoforge_event)` bytes.
 
 B carries the actually shown current species/forme and gender, not the hidden Illusion holder or arbitrary particle
@@ -269,6 +271,42 @@ scratch. There is no heap, saved hash state in a battle/codec, mutable global ha
 Windows keeps new private entry points outside automatic DLL exports; its nine pre-existing request entry points
 retain explicit exports and signatures. E1b adds only its intended public entry points.
 
+## E1b delivery: model-NULL expansion
+
+`duoforge_batch_expand_digest` is installed as the first public sibling. The evaluated sibling above remains a
+later delivery; E1b has no model, inference or weights. Both legacy and digest expansion use one private core.
+The legacy signature, required row output, status order, seed formula and rules remain unchanged. Digest expansion
+allows `obs == NULL`; version/mask preflight still runs, but no row is queried/encoded and encode statuses stay OK.
+Digest/status outputs are required for positive count. The new diagnostic record has leaf at byte 0, phase at byte
+4 (16 bytes), reason at byte 20 (128 bytes), size 148; existing public records keep their layouts.
+
+Every selected root index and viewer is checked before dispatch; even a later invalid viewer prevents every leaf
+from running. All global preflight failures name their reason and leave leaf/output arrays untouched. Optional
+`out_error` is diagnostic output and may be written on preflight; success clears its strings and sets leaf to
+`UINT32_MAX`. Refused steps have zero digests and digest/encode status OK for phases not run. A successful terminal
+leaf still has its digest and exact result, while its encoder row is zero.
+
+For a TURN root with either side's sealed re-prompt commands, E1b executes the ordinary step. On success only the
+digest refuses as `E_UNSUPPORTED`, phase `digest`, reason `observation_reprompt_unsupported`, with zero key bytes.
+The successful state, result and optional encoder row equal legacy expansion; an unavailable key never removes
+that edge or becomes `engine_refused_leaves`. A genuinely failed step retains its own step status and no digest
+phase runs. Legacy expansion keeps its existing re-prompt behavior. Observing retained commands later requires
+routing them through the same observation contract.
+
+Worker errors reduce by phase (step, digest, encode) then logical leaf index, matching the return status. Only
+failures with requested diagnostics lock a bounded stack record using the platform's literal-initialized lock;
+there is no growable error list, per-call heap, or synchronization on successful leaf work. Scratch for SHA lives
+only inside the observed-step helper; legacy expansion does not instantiate that collector.
+
+The Python adapter's `Batch.expand_digest(...)` returns legacy expansion's five arrays followed by the `(n,32)`
+uint8 digests and `(n,)` uint32 digest statuses; `encode=False` returns `None` for the first output. Buffers are
+borrowed and reused. `last_expand_error` exposes the bounded diagnostic record. `observation_keys(envs, viewer)`
+returns copied keys plus refused booleans from this sidecar, never a Python hash of a particle-filled record.
+It rejects missing keys, failed steps/digests and viewer mismatches. Adapter mutations invalidate affected keys
+(conservatively all keys for non-expand mutations); legacy expand invalidates its written prefix. Read-only
+queries do not invalidate keys. Direct privileged C mutation is outside the Python sidecar contract. The D2 lane
+owns adoption in its unchanged tree/key interfaces and reruns its offline/bound gates before a ladder arm.
+
 ## Independent vectors and gates
 
 `tools/reference/observation_digest_vectors.py` writes
@@ -295,8 +333,14 @@ Python node-batch digest sidecar. Before D2 uses the digest, E1b must also pass:
 
 - Two actual determinizations with the same public history and action, different hidden facts, and equal digests
   through the real engine step. The primitive projection controls above do not replace this E1 gate.
+  The active-opponent control reconstructs two worlds from one engine-valid public HP boundary: hidden maxima
+  202 and 170, different exact HP and attack Stat Points, both showing 50%. A real Recover emits a projected
+  HEAL at 100% in both worlds, with equal digests. The negative control starts at 25%, emits 75%, and changes
+  the digest. The public event API independently checks these HP-bearing rows. Distinct root RNG and distinct
+  expansion samples also preserve keys when the actual visible transcripts stay equal.
 - Invalid-viewer preflight before any leaf step executes, preserving outputs on refusal.
-- Reprompts in expand either refused with a named reason or processed through the observer; no unobserved path.
+- Re-prompts run the normal step, with their digest either refused by name or processed through the observer;
+  an unavailable digest never removes a successful edge or publishes a plausible key.
 
 Shown gender is public and fixed by the switch details. CTS owns the test that every particle preserves that
 recorded gender; only never-shown members may have sampled gender.

@@ -11,6 +11,7 @@ duoforge_add_python_test(batch_setups python.tests.engine.test_batch_setups quic
 duoforge_add_python_test(features_ext python.tests.engine.test_features_ext quick engine)
 duoforge_add_python_test(encoder6 python.tests.engine.test_encoder6 quick engine)
 duoforge_add_python_test(encode_c python.tests.engine.test_encode_c full engine)
+duoforge_add_python_test(search_digest python.tests.engine.test_search_digest quick engine)
 duoforge_add_python_test(search_expand python.tests.engine.test_search_expand quick engine)
 duoforge_add_python_test(repo_hygiene python.tests.engine.test_repo_hygiene quick engine)
 duoforge_add_python_test(view python.tests.engine.test_view quick engine)

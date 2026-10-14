@@ -151,7 +151,7 @@ EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
                                           "WIDE_GUARD", "STICKY_WEB",
-                                           "CURSE", "HEALING_WISH", "PARTIAL_TRAP", "TRAP_ELAPSED")) | ATTRACT_FOLD
+                                           "CURSE", "HEALING_WISH", "PARTIAL_TRAP", "TRAP_ELAPSED", "SPEED_SWAPPED")) | ATTRACT_FOLD
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -375,6 +375,12 @@ def check(line, view):
             # the start of a partial trap (step G90): -activate|T|move: M|[of] S, nothing else
             if len(args) == 2 and len(attrs) == 1 and attrs[0].startswith("[of] ") and                     flat_position(args[0]) is not None and flat_position(attrs[0][len("[of] "):]) is not None:
                 return _trap_features()
+            _unknown(kind, effect)
+        if effect == "move: Speed Swap":
+            # Speed Swap (step K3, decision 0015 5de): the swap of two stored Speeds, `-activate|S|move: Speed Swap|[of] T`; the
+            # presence bit of both positions is the feature (the values are never public). Any other form stops.
+            if len(args) == 2 and len(attrs) == 1 and attrs[0].startswith("[of] ") and flat_position(args[0]) is not None                     and flat_position(attrs[0][len("[of] "):]) is not None:
+                return _feature("SPEED_SWAPPED")
             _unknown(kind, effect)
         if effect in _FOLD_ACTIVATE:
             return "fold"

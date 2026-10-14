@@ -30,6 +30,8 @@ import os
 import re
 import sys
 
+import gen_format
+
 PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc'
 
 # More files of the pin, read only by the whole-pool rows of --pool (decision 0015 section 4.2) to find where an item or
@@ -406,6 +408,8 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text (decision 0032)' % (mid, name))
     if pool and handled[0] == 'SKILL_SWAP' and ('onHit' not in f or norm(f['onHit'][1]) != norm(SKILL_SWAP_ONHIT)):
         fail('move %s: onHit is not the pinned text' % mid)
+    if pool and handled[0] == 'SPEED_SWAP' and ('onHit' not in f or norm(f['onHit'][1]) != norm(SPEED_SWAP_ONHIT)):
+        fail('move %s: onHit is not the pinned text (decision 0015 5de)' % mid)
     if pool and handled[0] == 'BATON_PASS' and ('onHit' not in f or norm(f['onHit'][1]) != norm(BATON_PASS_ONHIT)):
         fail('move %s: onHit is not the pinned text (decision 0042)' % mid)
     if pool and handled[0] == 'YAWN':
@@ -1412,8 +1416,13 @@ size_t dfi_ext_canonical_bytes(uint8_t *out, size_t capacity)
 
 # ---- the POOL data kind (decision 0015): the extended tables plus the rows of the expansion ----
 # The closure and --team-c modes never read anything below, so their output stays byte-identical.
-FORMAT_ID = 'gen9championsvgc2026regmc'
-LEGAL_POOL = os.path.join('docs', 'research', 'expansion', 'data', 'legal_pool.json')
+# The format and its pool source come from the format definition data/formats/reg-mc.json (restructure step 10):
+# load_format checks its pool source's sha256, Showdown commit and format id.
+FORMAT = gen_format.load_format()
+if FORMAT['showdown_commit'] != PIN:
+    fail('%s is not at the pin %s' % (gen_format.FORMAT_FILE, PIN))
+FORMAT_ID = FORMAT['showdown_format_id']
+LEGAL_POOL = os.path.join(*FORMAT['pool']['source'].split('/'))
 
 # The new items in their fixed order: the families in the order of decision 0015 section 3 (type boosters, then
 # resist berries), each by Showdown id (which is also by name). Mystic Water and Miracle Seed (type boosters) and
@@ -2494,6 +2503,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'bind': ('PARTIAL_TRAP', set()), 'wrap': ('PARTIAL_TRAP', set()), 'firespin': ('PARTIAL_TRAP', set()),
     'sandtomb': ('PARTIAL_TRAP', set()), 'infestation': ('PARTIAL_TRAP', set()),  # Snap Trap is dropped (decision 0060 section 8)
     'psychicterrain': ('PSYCHIC_TERRAIN', set()),                         # G96: sets the Psychic Terrain (5 turns, 8 with Terrain Extender)
+    'speedswap': ('SPEED_SWAP', {'onHit'}),                               # K3 (decision 0015 5de): swaps the two Speed stats (stored, not staged)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2697,6 +2707,11 @@ C5_HANDLERS = ['ENDEAVOR']
 # Step G96 (decision 0015 5cz, decision 0063): Psychic Terrain's move, a field terrain setter like Electric and Misty. Its
 # condition (the priority block of grounded foes, the Psychic boost, the duration) is the engine's terrain rule (turn.c).
 G96_HANDLERS = ['PSYCHIC_TERRAIN']
+# Step K3 (decision 0015 5de): Speed Swap's onHit (data/moves.ts:17439-17444, Champions has no
+# override): the two storedStats.spe values are exchanged, then the line -activate|source|move: Speed Swap|[of] target.
+K3_HANDLERS = ['SPEED_SWAP']
+SPEED_SWAP_ONHIT = ("onHit(target, source) { const targetSpe = target.storedStats.spe; target.storedStats.spe = source.storedStats.spe; "
+                    "source.storedStats.spe = targetSpe; this.add('-activate', source, 'move: Speed Swap', `[of] ${target}`); },")
 G96_TERRAIN_COMMON = ('terrain: \'psychicterrain\',', 'category: "Status",', 'accuracy: true,', 'target: "all",', 'duration: 5,',
                       "durationCallback(source, effect) { if (source?.hasItem('terrainextender')) { return 8; } return 5; },",
                       'onBasePowerPriority: 6,',
@@ -2872,7 +2887,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + G82_HANDLERS + G90_HANDLERS + C5_HANDLERS + G80_HANDLERS + G96_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + G82_HANDLERS + G90_HANDLERS + C5_HANDLERS + G80_HANDLERS + G96_HANDLERS + K3_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
