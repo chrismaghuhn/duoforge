@@ -45,7 +45,7 @@ def log_records(messages, trace, player):
                     continue
                 seen.add(request["rqid"])
                 k += 1
-                text = trace["steps"][k]["input"].get(player)
+                text = trace["steps"][k]["input"].get(player) if k < len(trace["steps"]) else None  # past the trace
                 if text is not None and not request.get("wait"):
                     records.append({"decision": request["rqid"], "sent": text,
                                     "search": {"action": None, "cause": "fixture", "fallback": None, "reason": None,
