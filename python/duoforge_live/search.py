@@ -338,7 +338,12 @@ def warm_up(live, policy=None, worlds=None):
                 parts = {"request": b.requests[0, 0], "observation": observation, "record": records[0].copy(),
                          "status": int(statuses[0]), "causes": int(mask[0])}
                 history.append((parts["record"], parts["status"]))
-                copies = None if worlds is None else [(parts, obs_part, slot_part, list(history))] * worlds
+                # every second world's feature rows zeroed: the root's mean policy over distinct rows, as particles
+                # give it (rows all the root's own take Honest's shortcut and compile nothing); the worlds' own rows,
+                # built from the records, are the root's in every world
+                blank = np.zeros_like(np.asarray(obs_part))
+                copies = None if worlds is None else [(parts, obs_part if w % 2 == 0 else blank, slot_part,
+                                                       list(history)) for w in range(worlds)]
                 outcome = live.decide(parts, obs_part, slot_part, None if team[0] else pair_mask,
                                       key=decision_key("warm-up", step), episode=-1, budget=WARM_UP_BUDGET,  # no game's
                                       **({} if copies is None else {"worlds": copies}))
