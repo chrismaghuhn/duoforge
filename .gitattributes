@@ -13,6 +13,7 @@ src/data/extended_tables.h linguist-generated=true
 src/data/extended_tables.c linguist-generated=true
 src/data/pool_tables.h linguist-generated=true
 src/data/pool_tables.c linguist-generated=true
+src/data/format_tables.h linguist-generated=true
 python/duoforge/_state_layout.py linguist-generated=true
 python/duoforge/_view_layout.py linguist-generated=true
 tests/data/pcg32_kat_vectors.h linguist-generated=true
