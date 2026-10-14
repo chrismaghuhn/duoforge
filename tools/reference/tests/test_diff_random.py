@@ -1834,15 +1834,45 @@ if [ "$RACE" = before ]; then
     rm -f -- "$src" && echo deleted > "$RACE_LOG"
     exec "$REAL_MV" "$@"
 fi
+if [ "$RACE" = label ]; then  # a call with the same label in the moment of the claim: refused (73), never a second job
+    "$LOCK_BASH" "$LOCK_SCRIPT" racer true > /dev/null 2>&1
+    echo "same label: $?" > "$RACE_LOG"
+    exec "$REAL_MV" "$@"
+fi
+if [ "$RACE" = held ] && [ ! -e "$RACE_LOG" ]; then  # the first rename fails with the ticket still there
+    echo "held once" > "$RACE_LOG"
+    exit 1
+fi
+if [ "$RACE" = held ]; then
+    exec "$REAL_MV" "$@"
+fi
 "$REAL_MV" "$@"
 rc=$?
 if rm -- "$src" 2> /dev/null; then echo deleted > "$RACE_LOG"; else echo gone > "$RACE_LOG"; fi
 exit $rc
 """
 
-    def withdraw_env(self, lock, **extra):
+    def withdraw_env(self, lock, slots='1', **extra):
         env = self.nest_env(lock)
-        env.update(DUOFORGE_MACHINE_LOCK_SLOTS='1', DUOFORGE_MACHINE_LOCK_POLL='1', **extra)
+        env.update(DUOFORGE_MACHINE_LOCK_SLOTS=slots, DUOFORGE_MACHINE_LOCK_POLL='1', **extra)
+        return env
+
+    def mv_stub_env(self, tmp, lock, race, slots='1'):
+        """The environment of a lock call whose `mv` is MV_STUB (checked to be what `mv` is), racing as `race`."""
+        stub_dir = os.path.join(tmp, 'stub')
+        os.makedirs(stub_dir, exist_ok=True)
+        stub = os.path.join(stub_dir, 'mv')
+        with io.open(stub, 'w', encoding='ascii', newline='\n') as f:
+            f.write(self.MV_STUB)
+        os.chmod(stub, 0o755)  # Linux needs it; MSYS takes the #! line alone
+        real_mv = subprocess.run([rnd.find_bash(), '-c', 'command -v mv'], capture_output=True, text=True).stdout.strip()
+        env = self.withdraw_env(lock, slots, RACE=race, RACE_LOG=os.path.join(tmp, 'race.log').replace('\\', '/'),
+                                REAL_MV=real_mv, LOCK_BASH=rnd.find_bash().replace('\\', '/'),
+                                LOCK_SCRIPT=os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/'),
+                                PATH=stub_dir + os.pathsep + os.environ['PATH'])
+        found = subprocess.run([rnd.find_bash(), '-c', 'command -v mv'], capture_output=True, text=True,
+                               env=env).stdout.strip().replace('\\', '/')
+        self.assertTrue(found.endswith('/stub/mv'), found)  # the race is the stub's
         return env
 
     @staticmethod
@@ -1891,19 +1921,11 @@ exit $rc
         # start without a ticket, never an orphaned slot; with one slot and with --exclusive.
         script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
         python = sys.executable.replace('\\', '/')
-        real_mv = subprocess.run([rnd.find_bash(), '-c', 'command -v mv'], capture_output=True, text=True).stdout.strip()
         for race, exclusive in itertools.product(('before', 'after'), ([], ['--exclusive'])):
             with self.subTest(race=race, exclusive=exclusive), tempfile.TemporaryDirectory() as tmp:
-                stub_dir = os.path.join(tmp, 'stub')
-                os.mkdir(stub_dir)
-                with io.open(os.path.join(stub_dir, 'mv'), 'w', encoding='ascii', newline='\n') as f:
-                    f.write(self.MV_STUB)
                 lock, ran, log = (os.path.join(tmp, n) for n in ('lock', 'ran', 'race.log'))
-                env = self.withdraw_env(lock, RACE=race, RACE_LOG=log.replace('\\', '/'), REAL_MV=real_mv,
-                                        PATH=stub_dir + os.pathsep + os.environ['PATH'])
-                found = subprocess.run([rnd.find_bash(), '-c', 'command -v mv'], capture_output=True, text=True,
-                                       env=env).stdout.strip().replace('\\', '/')
-                self.assertTrue(found.endswith('/stub/mv'), found)  # the race is the stub's
+                # --exclusive takes both slots of two: every one of them goes back on a withdrawal
+                env = self.mv_stub_env(tmp, lock, race, slots='2' if exclusive else '1')
                 done = subprocess.run([rnd.find_bash(), script, *exclusive, 'racer', python, '-c', self.touch(ran)],
                                       capture_output=True, text=True, timeout=60, env=env)
                 with io.open(log, encoding='ascii') as f:
@@ -1919,6 +1941,37 @@ exit $rc
                     self.assertEqual(seen, 'gone')  # and the withdrawer learns that it started
                 self.assertFalse([n for n in os.listdir(tmp) if n.startswith('lock') and n != 'lock.queue'])  # no slot
                 self.assertEqual(os.listdir(lock + '.queue'), [])  # no ticket, no claimed one
+
+    def test_a_call_with_the_same_label_in_the_moment_of_the_claim_is_refused(self):
+        # The owner is written before the claim: from the moment the slot is taken, a call with the same label sees the
+        # job (73), never a second one beside it (review of the withdrawal, 2026-10-15).
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        for exclusive in ([], ['--exclusive']):
+            with self.subTest(exclusive=exclusive), tempfile.TemporaryDirectory() as tmp:
+                lock, log = os.path.join(tmp, 'lock'), os.path.join(tmp, 'race.log')
+                env = self.mv_stub_env(tmp, lock, 'label', slots='2')
+                done = subprocess.run([rnd.find_bash(), script, *exclusive, 'racer', 'true'], capture_output=True,
+                                      text=True, timeout=60, env=env)
+                self.assertEqual(done.returncode, 0, done.stderr)
+                with io.open(log, encoding='ascii') as f:
+                    self.assertEqual(f.read().strip(), 'same label: %d' % rnd.LABEL_TAKEN_STATUS)
+                self.assertEqual(sorted(os.listdir(tmp)), ['lock.queue', 'race.log', 'stub'])
+
+    def test_a_rename_that_fails_with_the_ticket_still_there_is_no_withdrawal(self):
+        # On Windows a reader without share-delete can hold the ticket: the claim fails, the ticket is still there.
+        # The slot goes back, the job waits on and starts at the next look.
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        python = sys.executable.replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            lock, ran = os.path.join(tmp, 'lock'), os.path.join(tmp, 'ran')
+            env = self.mv_stub_env(tmp, lock, 'held')
+            done = subprocess.run([rnd.find_bash(), script, 'racer', python, '-c', self.touch(ran)], capture_output=True,
+                                  text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertIn("'racer' could not claim its ticket", done.stderr)
+            self.assertNotIn('withdrawn', done.stderr)
+            self.assertTrue(os.path.exists(ran))
+            self.assertEqual(os.listdir(lock + '.queue'), [])
 
     # No nesting (2026-10-14, HauptSession): a call on the lock from inside a job that holds it would wait for the
     # slots that job holds (under --exclusive: forever; the content lane's mutant driver). It is refused at once, 74.
