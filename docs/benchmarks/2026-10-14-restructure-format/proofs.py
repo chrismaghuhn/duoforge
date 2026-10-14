@@ -46,6 +46,13 @@ for mode in ('ipo', 'noipo'):
     for p in sorted(build.rglob('*.o')) + sorted(build.glob('*.a')) + [build / 'libduoforge_shared.so']:
         objs[str(p.relative_to(build))] = sha(p)
     (dest / f'objects-{mode}.json').write_text(json.dumps(objs, indent=1, sort_keys=True) + '\n')
+    # Keep the objects, the library and the bench binary for the native-code comparison (outside the repo).
+    keep = dest / f'bins-{mode}'
+    keep.mkdir(exist_ok=True)
+    for name in ('libduoforge_shared.so', 'bench/duoforge_bench'):
+        (keep / Path(name).name).write_bytes((build / name).read_bytes())
+    subprocess.run(['tar', 'cf', str(keep / 'objs.tar'),
+                    *[k for k in objs if k.endswith('.o') and '_CMakeLTOTest' not in k]], cwd=build, check=True)
     symbols = subprocess.check_output(['nm', '-D', '--defined-only', str(build / 'libduoforge_shared.so')], text=True)
     (dest / f'exports-{mode}.txt').write_text(
         '\n'.join(sorted(' '.join(l.split()[1:]) for l in symbols.splitlines())) + '\n')
