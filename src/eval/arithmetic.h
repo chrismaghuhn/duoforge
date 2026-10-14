@@ -12,6 +12,7 @@ DFI_PRIVATE duoforge_status dfi_eval_mul(int64_t a, int64_t b, int64_t *out);
 DFI_PRIVATE duoforge_status dfi_eval_round_div(int64_t value, uint64_t divisor, int64_t *out);
 DFI_PRIVATE duoforge_status dfi_eval_requant(int64_t value, dfi_eval_scale scale, int64_t *out);
 DFI_PRIVATE duoforge_status dfi_eval_requant16(int64_t value, dfi_eval_scale scale, int16_t *out);
+DFI_PRIVATE duoforge_status dfi_eval_requant32(int64_t value, dfi_eval_scale scale, int32_t *out);
 /* Conservative absolute bounds. These cold proofs use actual max weight magnitude. */
 DFI_PRIVATE duoforge_status dfi_eval_dot_bound(uint32_t count, uint32_t input_abs, uint32_t weight_abs,
                                   uint64_t bias_abs, dfi_eval_scale scale, uint64_t *out);

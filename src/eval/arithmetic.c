@@ -52,6 +52,14 @@ duoforge_status dfi_eval_requant16(int64_t v, dfi_eval_scale scale, int16_t *out
     *out = q > INT16_MAX ? INT16_MAX : q < INT16_MIN ? INT16_MIN : (int16_t)q;
     return DUOFORGE_OK;
 }
+duoforge_status dfi_eval_requant32(int64_t v, dfi_eval_scale scale, int32_t *out)
+{
+    if (!out) return DUOFORGE_E_NULL_ARGUMENT;
+    int64_t q; duoforge_status st = dfi_eval_requant(v, scale, &q);
+    if (st != DUOFORGE_OK) return st;
+    if (q > INT32_MAX || q < INT32_MIN) return DUOFORGE_E_EXHAUSTED;
+    *out = (int32_t)q; return DUOFORGE_OK;
+}
 duoforge_status dfi_eval_dot_bound(uint32_t count, uint32_t input_abs, uint32_t weight_abs,
                                   uint64_t bias_abs, dfi_eval_scale scale, uint64_t *out)
 {

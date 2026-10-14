@@ -15,6 +15,12 @@ or an int64 result beyond its range is `E_EXHAUSTED`. Models prove the stricter
 bound below before use. `requant16` explicitly saturates only a valid rounded
 int64 result to [-32768,32767]; saturation is a graph operation, never overflow.
 
+`requant32` uses the same rounding and checked multiplication, with an explicit
+int32 range refusal instead of saturation. `dense32` shares validation and
+ascending accumulation with `dense`, preserving BC6 pre-normalization int32
+tensors and an unclamped Q12.20 value head. Values above 32767 and outside [-1,1]
+remain valid within int32; results beyond int32 refuse as `E_EXHAUSTED`.
+
 Dense weights are row-major int8, inputs int16 and biases int64. A channel
 accumulates its bias and products in ascending input index. For fan-in N,
 actual maximum input magnitude A, actual maximum weight magnitude W and bias B,
