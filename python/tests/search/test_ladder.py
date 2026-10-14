@@ -274,6 +274,29 @@ class RefusedLeavesTest(unittest.TestCase):
         self.assertEqual(got["refused_share"], 0.0)
 
 
+class TreeLimitTest(unittest.TestCase):
+    # The HauptSession (D2, 2026-10-15): the depth-2 decisions at the iteration bound are counted per arm, with the
+    # position that reached it, so that a new one is told apart from the known calibration decision.
+    @staticmethod
+    def tree(env, key, step, iterations, bound=490):
+        return {"kind": "searched", "env": env, "key": key, "step": step, "depth": {"max_iterations": bound},
+                "tree": {"iterations": iterations}}
+
+    def test_decisions_at_the_bound_and_unconverged_are_counted_with_their_position(self):
+        records = [self.tree(1, 11, 3, 120), self.tree(56, 179, 9, 490), self.tree(2, 22, 4, 489),
+                   {"kind": "unreconstructible", "reason": "solver_unconverged", "env": 7, "key": 77, "step": 5,
+                    "depth": {"max_iterations": 490}},
+                   {"kind": "unreconstructible", "reason": "solver_unconverged", "env": 8, "key": 88, "step": 6},
+                   {"kind": "team"}]
+        self.assertEqual(ladder.tree_limit(records), {
+            "bound": 490, "tree_decisions": 4, "at_bound": 1, "unconverged": 1,
+            "positions": [{"env": 56, "key": 179, "step": 9, "iterations": 490},
+                          {"env": 7, "key": 77, "step": 5, "iterations": None}]})
+
+    def test_no_depth_two_decision_is_none(self):
+        self.assertIsNone(ladder.tree_limit([{"kind": "searched", "env": 1, "key": 1, "step": 1}, {"kind": "team"}]))
+
+
 class DecisionsDigestTest(unittest.TestCase):
     def records(self):
         return [decision(1, 0, 1, choice=3), decision(0, 2, 0, kind="raw", choice=1),

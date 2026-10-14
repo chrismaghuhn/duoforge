@@ -425,6 +425,31 @@ def paired_with_condition(recorded, path):
             "file": os.path.basename(path)}
 
 
+def tree_limit(decisions):
+    """The depth-2 decisions (records with "depth") at the tree's iteration bound: those that converged only at the
+    bound (tree iterations >= depth.max_iterations) and the unconverged ones (solver_unconverged), each position with
+    its env, key and step, so that a new position at the bound is told apart from a known one (the HauptSession, D2,
+    2026-10-15: reported, the bound is never changed by the run). None without a depth-2 decision."""
+    tree = [r for r in decisions if "depth" in r and (r["kind"] == "searched" or
+                                                     (r["kind"] == "unreconstructible"
+                                                      and r.get("reason") == "solver_unconverged"))]
+    if not tree:
+        return None
+    positions, at_bound, unconverged = [], 0, 0
+    for r in tree:
+        if r["kind"] == "searched":
+            if int(r["tree"]["iterations"]) >= int(r["depth"]["max_iterations"]):
+                at_bound += 1
+                positions.append({"env": r["env"], "key": r["key"], "step": r.get("step"),
+                                  "iterations": int(r["tree"]["iterations"])})
+        else:
+            unconverged += 1
+            positions.append({"env": r["env"], "key": r["key"], "step": r.get("step"), "iterations": None})
+    bounds = sorted({int(r["depth"]["max_iterations"]) for r in tree})
+    return {"bound": bounds[0] if len(bounds) == 1 else bounds, "tree_decisions": len(tree), "at_bound": at_bound,
+            "unconverged": unconverged, "positions": positions}
+
+
 def wall_seconds(decisions):
     """The p50, p95, p99 and max wall seconds of the searched decisions; None without any."""
     wall = np.array([r["wall"] for r in decisions if r["kind"] == "searched"], np.float64)
@@ -447,6 +472,7 @@ def _summary(records, games, decisions=None, seconds=None):
                     "fallback_decisions": sum(r["kind"] in foe_arena.FALLBACK_KINDS for r in non_team),
                     "non_team_decisions": len(non_team), "decisions_sha256": decisions_digest(decisions),
                     "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions),
+                    "tree_limit": tree_limit(decisions),
                     "duplicate_rows": duplicate_rows(decisions)})
         if decisions:
             out["diagnostics"] = arena.diagnostics(decisions, games)
