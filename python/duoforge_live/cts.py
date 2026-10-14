@@ -74,10 +74,13 @@ class LogReplay:
     bot wrote none or answered with /choose default.
 
     log_format is the log's (client.LOG_FORMAT: its first record, 1 for a log without one); a later format than this
-    code reads is refused by name. From format 2 on, the record of the last decision point carries "pending_at_end"
-    when the battle ended without a fallback (the log's {"pending_at_end"} before its {"end"}): the choice the battle
-    ended on, sent and never accepted (accepted None), or None when no choice was open. A format-1 log, a battle that
-    fell back and a log without an end (a reconnect, a log still being written) give no such key.
+    code reads, or a format record that is not the first, is refused by name. From format 2 on, the record of the last
+    decision point the bot sent a choice for carries "pending_at_end" when the battle ended without a fallback (the
+    log's {"pending_at_end"} before its {"end"}): the choice whose acceptance the log never shows (accepted None),
+    because the end came in the batch that would have shown it: a foe's forfeit or timer before it played, or the last
+    turn after it played, which the log cannot tell apart. None: the bot had no choice open at the end (one waiting for
+    its timer line is no sent choice). A format-1 log, a battle that fell back and a log without an end (a reconnect, a
+    log still being written) give no such key.
 
     After an iteration that ran out (complete): stopped is None (the log ran to its end), "stop:<name>" or
     "error:<type>" (the replay's own tracker stopped or failed), or "fallback:<reason>" (the bot fell back there, the
@@ -95,6 +98,9 @@ class LogReplay:
         if isinstance(self.log_format, bool) or not isinstance(self.log_format, int) \
                 or not 1 <= self.log_format <= LOG_FORMAT:
             raise ValueError(f"log format {self.log_format!r}: this replay reads formats 1 to {LOG_FORMAT}")
+        late = next((k for k, r in enumerate(self.records) if "log_format" in r and k > 0), None)
+        if late is not None:
+            raise ValueError(f"log record {late} names a log format: only the first record does")
         self.data, self.policy, self.own_text, self.prior = data, policy, own_text, prior
         self.key, self.search, self.seed, self.n = key, search, seed, n
         self.game = None
@@ -104,8 +110,8 @@ class LogReplay:
         self.fallback = next((r["fallback"] for r in self.records if "fallback" in r and "sent" not in r), None)
         # the choice the battle ended on (format 2): the bot's record right before its {"end"}
         end = next((k for k, r in enumerate(self.records) if "end" in r), None)
-        self._pending = (self.records[end - 1] if end and "pending_at_end" in self.records[end - 1]
-                         and self.fallback is None else None)
+        self._pending = (self.records[end - 1] if self.log_format >= 2 and end and self.fallback is None
+                         and "pending_at_end" in self.records[end - 1] else None)
         # the last decision the bot sent a choice for (its rqid; a refused choice's retry has the same): its point's
         # record carries pending_at_end
         self._last = next((r.get("decision") for r in reversed(self.records)

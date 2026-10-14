@@ -330,6 +330,7 @@ class ArenaTest(unittest.TestCase):
         self.feed(room(["|win|Opponent"]))
         self.assertEqual(self.run_log()["code"], code)
         self.assertEqual(self.run_log()["log_format"], client.LOG_FORMAT)  # the battle logs' format (#385)
+        self.assertEqual(self.battle()[0], {"log_format": client.LOG_FORMAT, "code": code})  # every battle names it
         import hashlib
         self.assertEqual(self.run_log()["team_sha256"], hashlib.sha256(FIXTURE["team"].encode("utf-8")).hexdigest())
         summary = next(r["summary"] for r in self.battle() if "summary" in r)
@@ -520,9 +521,11 @@ class ArenaTest(unittest.TestCase):
         def old_write(b, record):
             if "log_format" not in record and "pending_at_end" not in record:
                 real(b, record)
+        self.tmp = tempfile.TemporaryDirectory()  # the same room again (its particles are seeded by it), a new log
+        self.addCleanup(self.tmp.cleanup)
         with mock.patch.object(pkmn_arena._Battle, "write", old_write):
-            old = self.forfeit_log_text(room_id=f"battle-{CTS}-13b")
-        self.assertEqual([s.replace("-13b|", "-13|") for s in self.sent], sent_new)
+            old = self.forfeit_log_text(room_id=f"battle-{CTS}-13")
+        self.assertEqual(self.sent, sent_new)
         new = [json.loads(line) for line in new.splitlines()]
         self.assertEqual([r for r in new if "log_format" not in r and "pending_at_end" not in r],
                          [json.loads(line) for line in old.splitlines()])

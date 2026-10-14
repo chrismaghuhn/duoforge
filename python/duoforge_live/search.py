@@ -301,8 +301,10 @@ def warm_up(live, policy=None, worlds=None):
     duoforge_search.live_latency plays them) through live: LiveSearch.decide over the batch's own parts, worlds
     (closed team sheets, decision 0081) copies of them, one per world, and policy's raw ranking of each, so the first
     battle's decisions compile nothing. Seat 0 plays the search's choice or the first legal one, seat 1 its first
-    legal one. Returns {"team": seconds, "turn": seconds}; a class (b) outcome is a RuntimeError, the bot does not
-    start with a search that fails."""
+    legal one. Returns {"team": seconds, "turn": seconds}. The team preview must come back "team" and the turn
+    "searched" (a turn that did not search compiled neither its leaves nor its worlds' policies), with no search left
+    running: anything else is a RuntimeError naming the outcome, and the bot does not start. Afterwards the roots and
+    the search's history hold nothing of the warm-up."""
     import duoforge
     from duoforge import _layout
     from duoforge_learn.selfplay import choices_of
@@ -347,13 +349,20 @@ def warm_up(live, policy=None, worlds=None):
                 outcome = live.decide(parts, obs_part, slot_part, None if team[0] else pair_mask,
                                       key=decision_key("warm-up", step), episode=-1, budget=WARM_UP_BUDGET,  # no game's
                                       **({} if copies is None else {"worlds": copies}))
-                if outcome.fallback == "b":
-                    raise RuntimeError(f"the search's warm-up failed: {outcome.reason}")
-                seconds.setdefault("team" if team[0] else "turn", outcome.seconds)
+                kind = "team" if team[0] else "turn"
+                if outcome.fallback is not None or outcome.cause != {"team": "team", "turn": "searched"}[kind]:
+                    raise RuntimeError(f"the search's warm-up {kind} came back {outcome.cause!r} "
+                                       f"(fallback {outcome.fallback!r}): {outcome.reason}")
+                seconds.setdefault(kind, outcome.seconds)
                 if outcome.action is not None:
                     actions[0, 0] = outcome.action
             choices_of(b, actions, choices)
             b.step_factored(choices)
     if len(seconds) != 2:
         raise RuntimeError(f"the search's warm-up reached {sorted(seconds)} only, not a team preview and a turn")
+    if live._running is not None:
+        raise RuntimeError("the search's warm-up left a search running")
+    for seat in (0, 1):  # the first battle starts as it would without the warm-up
+        live.roots.clear(0, seat)
+    live.searcher.clear()
     return seconds

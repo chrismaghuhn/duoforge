@@ -282,22 +282,29 @@ root. Under closed sheets each particle has its own record, so world `w` is buil
 - **Determinism from the log.** The battle log keeps every batch as it was fed (`feed`) and every choice the game accepted
   (`accepted`). A test draws the particles again from the log alone and gets the same sets and records.
 - **The log format** (`client.LOG_FORMAT`, HauptSession 2026-10-14). Each battle log starts with `{"log_format": 2}`, and the
-  run log's head names it too. A log without that record is format 1.
+  run log's head names it too. The arena bot's first record also names its code (`"code"`: commit and dirty state), so every
+  battle of a series names it, including the ones that write no summary. A log without that record is format 1.
   - From format 2 on, a battle that ends without a fallback writes `{"pending_at_end": choice}` before its `{"end"}`. That is
-    the choice the battle ended on: sent, and never accepted, because nothing followed it. A foe's forfeit or timer ends a
-    battle this way, and so does the last turn. The value is `null` when no choice was open.
+    the choice sent last whose acceptance the log never shows: the battle's end came in the batch that would have shown it.
+    There are two ways this happens, and the log cannot tell them apart:
+    - a foe's forfeit or timer before the choice played;
+    - the last turn, after it played.
+  - The value is `null` when the bot had no choice open. A decision still waiting for its timer line has no choice sent.
   - A battle that fell back writes none.
-  - `cts.LogReplay` reads both formats and refuses a later one by name. On a format-2 log it puts `pending_at_end` on the last
-    decision point's record. A format-1 log, or a log without an end (a reconnect, a log still being written), gets no such key.
+  - `cts.LogReplay` reads both formats. It refuses a later format, and a format record that is not the first, by name.
+    - On a format-2 log it puts `pending_at_end` on the record of the last decision point the bot sent a choice for.
+    - A format-1 log, or a log without an end (a reconnect, a log still being written), gets no such key.
   - Both formats have a fixture (`python/tests/support/data/cts_log_format{1,2}.jsonl`): the bot's own log of a battle the foe
-    forfeits.
+    forfeits. Format 1 is that log without its two new records, not a log of the earlier code.
   - The new records change the log only: the same decisions, the same choices sent (a test).
 - **The warm-up.** The first team preview of the 2e deploy took 2.007 s, a deadline miss: JAX compiled the search's functions
   (live series 3).
   - The bot now decides a warm-up through its search before it accepts a battle (`search.warm_up`): the team preview and a
     turn of an engine battle of the first reference setup, one world per particle, and the network's raw ranking of each.
   - Its seconds go to the run log's head (`warm_up`).
-  - If the warm-up's search fails, the bot does not start.
+  - The preview must come back `team` and the turn `searched`, with no search left running. Anything else stops the bot
+    before it starts, naming the outcome: a turn that did not search compiled neither its leaves nor the worlds' policies.
+  - Afterwards the roots and the search's history hold nothing of the warm-up.
   - A test with JAX: after the warm-up, a closed-sheet battle compiles nothing.
 - The particle trackers' counters (redraws by reason, levels, stops, Choice exclusions) are added to the run log at each battle's
   end (`cts`), aggregates only: a redraw by a stop keeps the stop's kind, never its text (`cts.counter_kind`; a stop's text can

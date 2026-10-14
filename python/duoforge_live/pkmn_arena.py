@@ -213,8 +213,8 @@ class RunLog:
 class _Battle(client._Battle):
     """One arena battle room: the client's battle state plus the fallback and the raw requests."""
 
-    def __init__(self, room, log_path, fmt):
-        super().__init__(room, None, log_path)
+    def __init__(self, room, log_path, fmt, head=None):
+        super().__init__(room, None, log_path, head)
         self.format = fmt
         self.fallback = None  # the reason: the rest of the battle is answered with /choose default
         self.raw = None  # the last request (JSON) of the room: its rqid, wait and teamPreview (protocol only)
@@ -405,7 +405,8 @@ class ArenaBot(client.Bot):
         fmt = parts[1] if len(parts) >= 3 else ""
         log_dir = Path(self.config.log_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
-        b = _Battle(room, log_dir / f"{room}-{toid(self.config.name)}.jsonl", fmt)
+        b = _Battle(room, log_dir / f"{room}-{toid(self.config.name)}.jsonl", fmt,
+                    None if self.code is None else {"code": self.code})  # every battle names the code it ran
         self.battles[room] = b
         self.run_log.counts["battles"] += 1
         self.run_log.formats[fmt] += 1

@@ -165,7 +165,8 @@ class MainTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as logs, tempfile.TemporaryDirectory() as private:
             names = {"battle-gen9x-501": ("Some Foe", played()), "battle-gen9x-502": ("Other Foe", stopped())}
             for room_id, (foe, records) in names.items():
-                head = [{"in": "|player|p1|Ling-Ce||"}, {"in": f"|player|p2|{foe}|2|"}]
+                head = [{"in": "|player|p1|Ling-Ce||"}, {"in": f"|player|p2|{foe}|2|"},
+                        {"in": "|poke|p2|Garchomp, L50, M|"}]  # its team: the preview (none: "?")
                 Path(logs, f"{room_id}-lingce.jsonl").write_text(
                     "\n".join(json.dumps(r) for r in head + records) + "\n", encoding="utf-8")
             out = io.StringIO()
@@ -210,6 +211,43 @@ class CodeTest(unittest.TestCase):
         self.assertEqual((result["logs"], result["kept"], result["code_filter"]), (3, 1, "a7dd956b"))
         self.assertEqual(result["by_code"], {"1ffa6a03": 1, "a7dd956b": 1, "none": 1})
         self.assertEqual(result["runs"]["files"], 1)
+
+
+class CodeReviewTest(unittest.TestCase):
+    """The review of the format 2: every battle names its code in its first record, so a series keeps its failure
+    battles too (a raw game after a class (b) error writes no summary); a dirty run is another series."""
+
+    def test_a_battle_names_its_code_in_its_first_record(self):
+        code = {"commit": "a7dd956b" + "0" * 32, "dirty": False}
+        self.assertEqual(ev.battle([{"log_format": 2, "code": code}] + played(), "lingce")["code"], code)
+
+    def test_a_dirty_run_is_not_in_its_commits_series(self):
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as logs:
+            for n, dirty in ((1, False), (2, True)):
+                head = {"log_format": 2, "code": {"commit": "a7dd956b" + "0" * 32, "dirty": dirty}}
+                Path(logs, f"battle-gen9x-{n}-lingce.jsonl").write_text(
+                    "\n".join(json.dumps(r) for r in [head] + played()) + "\n", encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                ev.main(["--logs", logs, "--code", "a7dd956b"])
+        result = json.loads(out.getvalue())
+        self.assertEqual(result["by_code"], {"a7dd956b": 1, "a7dd956b+dirty": 1})
+        self.assertEqual(result["kept"], 1)
+
+    def test_an_opponents_team_without_a_preview_is_unknown_and_a_resync_changes_nothing(self):
+        records = [{"in": "|player|p1|Ling-Ce||"}, {"in": "|player|p2|Some Foe|2|"},
+                   {"in": "|poke|p2|Garchomp, L50, M|"}, {"in": "|poke|p2|Charizard, L50, M|"}]
+        again = records + [{"in": "|poke|p2|Garchomp, L50, M|"}]  # a resync logs the preview again
+        self.assertEqual(ev.foe_team(records, "lingce"), ev.foe_team(again, "lingce"))
+        self.assertIsNone(ev.foe_team(records[:2], "lingce"))
+        labels = ev.assign_teams([("x", None)], ev.assign_labels(["x"], {}))
+        self.assertEqual(ev.team_label(labels, "x", None), "?")
+
+    def test_details_need_the_replay(self):
+        with tempfile.TemporaryDirectory() as logs, self.assertRaisesRegex(SystemExit, "--replay"):
+            ev.main(["--logs", logs, "--details", str(Path(logs, "details.json"))])
 
 
 class ReplayTest(unittest.TestCase):
