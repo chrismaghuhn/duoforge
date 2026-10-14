@@ -166,8 +166,8 @@ def main():
     names = sorted(p.stem for p in (root / 'tests/reference/traces').glob('*.json'))
     targets = {}
     for name in names:
-        spec, _ = trace_to_c.load_battle(str(root), name)
-        kind = trace_to_c.spec_data(name, spec)
+        # The kind is the spec's: the trace (71 MB in all, 2026-10-14) is read only where a battle is observed.
+        kind = trace_to_c.spec_data(name, trace_to_c.load_json(str(root), 'specs', name))
         targets[name] = (kind, root / 'tests/reference/battles/reg-mc' / kind / (name + '.json'))
     if not args.check and not args.update_existing:
         names = [name for name in names if not targets[name][1].exists()]

@@ -25,3 +25,17 @@ add_test(NAME duoforge.data.pool_rows
 duoforge_label_test(duoforge.data.pool_rows quick tools)
 set_tests_properties(duoforge.data.pool_rows PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+# The classes of the unsupported pool entries (hand-work, data-only with its witness, modelled-unmarked) on small
+# snippets of the pinned layout (no checkout needed; the checkout counts run only with DUOFORGE_PS_REFERENCE_DIR).
+add_test(NAME duoforge.data.classify_unsupported
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_classify_unsupported.py")
+duoforge_label_test(duoforge.data.classify_unsupported quick tools)
+set_tests_properties(duoforge.data.classify_unsupported PROPERTIES TIMEOUT 60
+    ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+# The format definition data/formats/reg-mc.json (restructure step 10): the generated format header, the pool
+# tables reproduced exactly from it and the named format constants in code (no checkout needed).
+add_test(NAME duoforge.data.format_regmc
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_format.py")
+duoforge_label_test(duoforge.data.format_regmc quick tools)
+set_tests_properties(duoforge.data.format_regmc PROPERTIES TIMEOUT 60
+    ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
