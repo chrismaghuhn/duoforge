@@ -84,14 +84,14 @@ def probe(search, p, key, own, foe_columns, samples=SAMPLES_PER_WORLD):
     root = fainted(search.worlds.observations[:, p]["sides"], seen)  # (W, 2): public, the same in every world
     if not (root == root[0]).all():
         raise SearchError("the worlds' public faint counts differ")
-    pp, _, _, masks, _, _, _ = search._world_policy()  # leaves the worlds' domains as the search's leaves need them
+    pp, masks = search.world_policies(foe)  # the foe model on the root worlds, read only (Honest.world_policies)
     asked = bool(search.worlds.requests[0, foe]["requested"])
     foe_sets, q = [], []
     for w in range(s):
         if asked:
-            wide, _ = lookahead.select_slots(pp[w, foe], masks[w, foe], 1)
+            wide, _ = lookahead.select_slots(pp[w], masks[w], 1)
             columns = np.union1d(wide, np.asarray(foe_columns[w], np.int64))
-            probabilities = np.exp(pp[w, foe][columns].astype(np.float64))
+            probabilities = np.exp(pp[w][columns].astype(np.float64))
             q.append(probabilities / probabilities.sum())
         else:
             columns, q = np.array([lookahead.NO_FOE], np.int64), q + [np.ones(1)]

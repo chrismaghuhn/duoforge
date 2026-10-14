@@ -456,6 +456,42 @@ class HonestSearch(unittest.TestCase):
     def timeless(records):
         return [{k: v for k, v in r.items() if k not in ("cost", "time")} for r in records]
 
+    def test_world_policies_read_the_root_worlds_and_change_no_decision(self):
+        # Honest.world_policies (#440, HauptSession: read only, for the KO check and the live evaluation's foe-model
+        # metric): the foe model on the worlds of the turn decision just searched. Calling it between two decisions
+        # changes no choice and no record: the second decision is the same with and without the call.
+        from duoforge_search.errors import SearchError
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            pool = duoforge.teams.load(ctx, ["A", "B", "C"])
+            table = belief.SpreadTable.from_sides(pool.sides)
+            runs = []
+            for call in (False, True):
+                with duoforge.Batch(ctx, pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0])), 2, 42) as roots, \
+                        self.make(ctx, table=table, excluded=[1, 2, 0]) as search:
+                    self.preview(search, roots)
+                    with self.assertRaisesRegex(SearchError, "no turn decision"):
+                        search.world_policies(1)  # a preview is no turn decision
+                    self.start_turn(roots)
+                    first = search.decide(roots, [0], [0], [456], [False])
+                    if call:
+                        logp, masks = search.world_policies(1)
+                        own, _ = search.world_policies(0)
+                        pp, _, _, legal, _, _, _ = search._world_policy()
+                        self.assertEqual((logp.shape, masks.shape, masks.dtype), ((2, 1024), (2, 1024), np.bool_))
+                        np.testing.assert_array_equal(logp, pp[:, 1])
+                        np.testing.assert_array_equal(masks, np.asarray(legal[:, 1], bool).reshape(2, -1))
+                        self.assertFalse(np.array_equal(own, logp))  # the seat asked for, not the other
+                        logp[:] = 0.0  # a copy: the caller may write it
+                        again, _ = search.world_policies(1)
+                        np.testing.assert_array_equal(again, pp[:, 1])
+                        with self.assertRaises(ValueError):
+                            search.world_policies(2)
+                    second = search.decide(roots, [1, 2], [0, 0], [457, 458], [False] * 2)
+                    runs.append((first[0].tolist(), self.timeless(first[1]), second[0].tolist(),
+                                 self.timeless(second[1])))
+        self.assertEqual(runs[0], runs[1])
+        self.assertEqual(runs[0][0] + runs[0][2], [103, 289, 352])  # main's pinned A/B/C choices
+
     def test_the_default_root_solver_decides_as_on_main(self):
         # D1 (#481) adds root_solver. Without it, and with "lp" named, the A/B/C turn decisions are main's: the pinned
         # choices and tables (test_pinned_abc_decisions), one record for both, and no field of the rm solver.
