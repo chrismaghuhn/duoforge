@@ -14,7 +14,7 @@
    "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
-   "|poke|p1|Indeedee-F, L50, F|",
+   "|poke|p1|Metagross, L50|",
    "|poke|p1|Excadrill, L50, M|",
    "|poke|p1|Annihilape, L50, M|",
    "|poke|p1|Gholdengo, L50|",
@@ -58,13 +58,13 @@
      ],
      "pokemon": [
       {
-       "species": "Indeedee-F",
-       "set_species": "Indeedee-F",
+       "species": "Metagross",
+       "set_species": "Metagross",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 177,
-       "maxhp": 177,
-       "item": "",
+       "hp": 187,
+       "maxhp": 187,
+       "item": "mentalherb",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -90,8 +90,8 @@
        "set_species": "Excadrill",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 189,
-       "maxhp": 189,
+       "hp": 187,
+       "maxhp": 187,
        "item": "excadrite",
        "status": "",
        "status_time": 0,
@@ -448,10 +448,10 @@
     "|uhtmlchange|otsrequest|",
     "",
     "|split|p1",
-    "|switch|p1a: Indeedee|Indeedee-F, L50, F|177/177",
-    "|switch|p1a: Indeedee|Indeedee-F, L50, F|100/100",
+    "|switch|p1a: Metagross|Metagross, L50|187/187",
+    "|switch|p1a: Metagross|Metagross, L50|100/100",
     "|split|p1",
-    "|switch|p1b: Excadrill|Excadrill, L50, M|189/189",
+    "|switch|p1b: Excadrill|Excadrill, L50, M|187/187",
     "|switch|p1b: Excadrill|Excadrill, L50, M|100/100",
     "|split|p2",
     "|switch|p2a: Milotic|Milotic, L50, F|202/202",
@@ -494,13 +494,13 @@
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Metagross",
+        "set_species": "Metagross",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "",
+        "hp": 187,
+        "maxhp": 187,
+        "item": "mentalherb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -526,8 +526,8 @@
         "set_species": "Excadrill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 189,
-        "maxhp": 189,
+        "hp": 187,
+        "maxhp": 187,
         "item": "excadrite",
         "status": "",
         "status_time": 0,
@@ -755,8 +755,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "H:protect:p1b:end",
-      "H:stall:p1b:end"
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
      ],
      "start": 1
     },
@@ -767,8 +767,8 @@
      "hi": 5,
      "value": 4,
      "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
      ],
      "start": 3
     },
@@ -786,13 +786,13 @@
     }
    ],
    "log": [
-    "|move|p1b: Excadrill|Protect|p1b: Excadrill",
-    "|-singleturn|p1b: Excadrill|Protect",
     "|move|p2b: Staraptor|Protect|p2b: Staraptor",
     "|-singleturn|p2b: Staraptor|Protect",
+    "|move|p1b: Excadrill|Protect|p1b: Excadrill",
+    "|-singleturn|p1b: Excadrill|Protect",
     "|move|p2a: Milotic|Protect|p2a: Milotic",
     "|-singleturn|p2a: Milotic|Protect",
-    "|move|p1a: Indeedee|Gravity|p1a: Indeedee",
+    "|move|p1a: Metagross|Gravity|p1a: Metagross",
     "|-fieldstart|move: Gravity",
     "|upkeep",
     "|turn|2"
@@ -830,13 +830,13 @@
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Metagross",
+        "set_species": "Metagross",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "",
+        "hp": 187,
+        "maxhp": 187,
+        "item": "mentalherb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -862,8 +862,8 @@
         "set_species": "Excadrill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 189,
-        "maxhp": 189,
+        "hp": 187,
+        "maxhp": 187,
         "item": "excadrite",
         "status": "",
         "status_time": 0,
@@ -1174,30 +1174,33 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "H:stall:p1b:end",
-      "H:protect:p1b:end"
+      "H:stall:p2b:end",
+      "H:protect:p2b:end"
      ],
      "start": 1
     }
    ],
    "log": [
-    "|move|p1b: Excadrill|Protect|p1b: Excadrill",
-    "|-singleturn|p1b: Excadrill|Protect",
-    "|move|p2b: Staraptor|Protect||[still]",
-    "|-fail|p2b: Staraptor",
-    "|move|p2a: Milotic|Triple Axel|p1a: Indeedee",
+    "|move|p2b: Staraptor|Protect|p2b: Staraptor",
+    "|-singleturn|p2b: Staraptor|Protect",
+    "|move|p1b: Excadrill|Protect||[still]",
+    "|-fail|p1b: Excadrill",
+    "|move|p2a: Milotic|Triple Axel|p1a: Metagross",
+    "|-resisted|p1a: Metagross|1",
     "|split|p1",
-    "|-damage|p1a: Indeedee|172/177",
-    "|-damage|p1a: Indeedee|97/100",
+    "|-damage|p1a: Metagross|185/187",
+    "|-damage|p1a: Metagross|98/100",
+    "|-resisted|p1a: Metagross|1",
     "|split|p1",
-    "|-damage|p1a: Indeedee|162/177",
-    "|-damage|p1a: Indeedee|91/100",
+    "|-damage|p1a: Metagross|181/187",
+    "|-damage|p1a: Metagross|96/100",
+    "|-resisted|p1a: Metagross|1",
     "|split|p1",
-    "|-damage|p1a: Indeedee|148/177",
-    "|-damage|p1a: Indeedee|83/100",
-    "|-hitcount|p1a: Indeedee|3",
-    "|move|p1a: Indeedee|Gravity||[still]",
-    "|-fail|p1a: Indeedee",
+    "|-damage|p1a: Metagross|175/187",
+    "|-damage|p1a: Metagross|93/100",
+    "|-hitcount|p1a: Metagross|3",
+    "|move|p1a: Metagross|Gravity||[still]",
+    "|-fail|p1a: Metagross",
     "|upkeep",
     "|turn|3"
    ],
@@ -1234,13 +1237,13 @@
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Metagross",
+        "set_species": "Metagross",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 148,
-        "maxhp": 177,
-        "item": "",
+        "hp": 175,
+        "maxhp": 187,
+        "item": "mentalherb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1266,8 +1269,8 @@
         "set_species": "Excadrill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 189,
-        "maxhp": 189,
+        "hp": 187,
+        "maxhp": 187,
         "item": "excadrite",
         "status": "",
         "status_time": 0,
@@ -1286,9 +1289,7 @@
          12,
          6
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -1422,7 +1423,9 @@
         "pp": [
          6
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -1504,8 +1507,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
      ],
      "start": 1
     },
@@ -1523,14 +1526,14 @@
     }
    ],
    "log": [
-    "|move|p1b: Excadrill|Protect||[still]",
-    "|-fail|p1b: Excadrill",
-    "|move|p2b: Staraptor|Protect|p2b: Staraptor",
-    "|-singleturn|p2b: Staraptor|Protect",
+    "|move|p2b: Staraptor|Protect||[still]",
+    "|-fail|p2b: Staraptor",
+    "|move|p1b: Excadrill|Protect|p1b: Excadrill",
+    "|-singleturn|p1b: Excadrill|Protect",
     "|move|p2a: Milotic|Protect|p2a: Milotic",
     "|-singleturn|p2a: Milotic|Protect",
-    "|move|p1a: Indeedee|Protect||[still]",
-    "|-fail|p1a: Indeedee",
+    "|move|p1a: Metagross|Protect||[still]",
+    "|-fail|p1a: Metagross",
     "|upkeep",
     "|turn|4"
    ],
@@ -1567,13 +1570,13 @@
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Metagross",
+        "set_species": "Metagross",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 148,
-        "maxhp": 177,
-        "item": "",
+        "hp": 175,
+        "maxhp": 187,
+        "item": "mentalherb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1599,8 +1602,8 @@
         "set_species": "Excadrill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 189,
-        "maxhp": 189,
+        "hp": 187,
+        "maxhp": 187,
         "item": "excadrite",
         "status": "",
         "status_time": 0,
@@ -1619,7 +1622,9 @@
          12,
          5
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -1755,9 +1760,7 @@
         "pp": [
          5
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {

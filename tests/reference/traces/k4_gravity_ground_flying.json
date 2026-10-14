@@ -14,7 +14,7 @@
    "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
-   "|poke|p1|Indeedee-F, L50, F|",
+   "|poke|p1|Metagross, L50|",
    "|poke|p1|Excadrill, L50, M|",
    "|poke|p1|Annihilape, L50, M|",
    "|poke|p1|Gholdengo, L50|",
@@ -58,13 +58,13 @@
      ],
      "pokemon": [
       {
-       "species": "Indeedee-F",
-       "set_species": "Indeedee-F",
+       "species": "Metagross",
+       "set_species": "Metagross",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 177,
-       "maxhp": 177,
-       "item": "",
+       "hp": 187,
+       "maxhp": 187,
+       "item": "mentalherb",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -90,8 +90,8 @@
        "set_species": "Excadrill",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 189,
-       "maxhp": 189,
+       "hp": 187,
+       "maxhp": 187,
        "item": "excadrite",
        "status": "",
        "status_time": 0,
@@ -448,10 +448,10 @@
     "|uhtmlchange|otsrequest|",
     "",
     "|split|p1",
-    "|switch|p1a: Indeedee|Indeedee-F, L50, F|177/177",
-    "|switch|p1a: Indeedee|Indeedee-F, L50, F|100/100",
+    "|switch|p1a: Metagross|Metagross, L50|187/187",
+    "|switch|p1a: Metagross|Metagross, L50|100/100",
     "|split|p1",
-    "|switch|p1b: Excadrill|Excadrill, L50, M|189/189",
+    "|switch|p1b: Excadrill|Excadrill, L50, M|187/187",
     "|switch|p1b: Excadrill|Excadrill, L50, M|100/100",
     "|split|p2",
     "|switch|p2a: Milotic|Milotic, L50, F|202/202",
@@ -494,13 +494,13 @@
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Metagross",
+        "set_species": "Metagross",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "",
+        "hp": 187,
+        "maxhp": 187,
+        "item": "mentalherb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -526,8 +526,8 @@
         "set_species": "Excadrill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 189,
-        "maxhp": 189,
+        "hp": 187,
+        "maxhp": 187,
         "item": "excadrite",
         "status": "",
         "status_time": 0,
@@ -755,8 +755,8 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "H:protect:p1b:end",
-      "H:stall:p1b:end"
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
      ],
      "start": 1
     },
@@ -767,8 +767,8 @@
      "hi": 5,
      "value": 4,
      "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
      ],
      "start": 3
     },
@@ -786,13 +786,13 @@
     }
    ],
    "log": [
-    "|move|p1b: Excadrill|Protect|p1b: Excadrill",
-    "|-singleturn|p1b: Excadrill|Protect",
     "|move|p2b: Staraptor|Protect|p2b: Staraptor",
     "|-singleturn|p2b: Staraptor|Protect",
+    "|move|p1b: Excadrill|Protect|p1b: Excadrill",
+    "|-singleturn|p1b: Excadrill|Protect",
     "|move|p2a: Milotic|Protect|p2a: Milotic",
     "|-singleturn|p2a: Milotic|Protect",
-    "|move|p1a: Indeedee|Gravity|p1a: Indeedee",
+    "|move|p1a: Metagross|Gravity|p1a: Metagross",
     "|-fieldstart|move: Gravity",
     "|upkeep",
     "|turn|2"
@@ -830,13 +830,13 @@
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Metagross",
+        "set_species": "Metagross",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "",
+        "hp": 187,
+        "maxhp": 187,
+        "item": "mentalherb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -862,8 +862,8 @@
         "set_species": "Excadrill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 189,
-        "maxhp": 189,
+        "hp": 187,
+        "maxhp": 187,
         "item": "excadrite",
         "status": "",
         "status_time": 0,
@@ -1213,25 +1213,21 @@
     "|-fail|p2b: Staraptor",
     "|move|p2a: Milotic|Protect||[still]",
     "|-fail|p2a: Milotic",
-    "|move|p1a: Indeedee|Protect|p1a: Indeedee",
-    "|-singleturn|p1a: Indeedee|Protect",
+    "|move|p1a: Metagross|Protect|p1a: Metagross",
+    "|-singleturn|p1a: Metagross|Protect",
     "|move|p1b: Excadrill|Earthquake|p2a: Milotic|[spread] p2a,p2b",
-    "|-activate|p1a: Indeedee|move: Protect",
+    "|-activate|p1a: Metagross|move: Protect",
     "|split|p2",
-    "|-damage|p2a: Milotic|43/202",
-    "|-damage|p2a: Milotic|21/100",
+    "|-damage|p2a: Milotic|129/202",
+    "|-damage|p2a: Milotic|63/100",
     "|split|p2",
-    "|-damage|p2b: Staraptor|0 fnt",
-    "|-damage|p2b: Staraptor|0 fnt",
-    "|-enditem|p2a: Milotic|Sitrus Berry|[eat]",
-    "|split|p2",
-    "|-heal|p2a: Milotic|93/202|[from] item: Sitrus Berry",
-    "|-heal|p2a: Milotic|46/100|[from] item: Sitrus Berry",
-    "|faint|p2b: Staraptor",
-    "|upkeep"
+    "|-damage|p2b: Staraptor|95/192",
+    "|-damage|p2b: Staraptor|49/100",
+    "|upkeep",
+    "|turn|3"
    ],
    "state": {
-    "turn": 2,
+    "turn": 3,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -1241,26 +1237,35 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Metagross",
+        "set_species": "Metagross",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "",
+        "hp": 187,
+        "maxhp": 187,
+        "item": "mentalherb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1288,8 +1293,8 @@
         "set_species": "Excadrill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 189,
-        "maxhp": 189,
+        "hp": 187,
+        "maxhp": 187,
         "item": "excadrite",
         "status": "",
         "status_time": 0,
@@ -1368,13 +1373,22 @@
       ]
      },
      {
-      "request": "switch",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -1385,9 +1399,9 @@
         "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 93,
+        "hp": 129,
         "maxhp": 202,
-        "item": "",
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1413,14 +1427,14 @@
         "species": "Staraptor",
         "set_species": "Staraptor",
         "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
+        "switch_flag": 0,
+        "hp": 95,
         "maxhp": 192,
         "item": "rockyhelmet",
-        "status": "fnt",
+        "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -1497,17 +1511,61 @@
   },
   {
    "input": {
-    "p2": "pass, switch 3"
+    "p1": "move 2, move 2",
+    "p2": "move 3, move 1"
    },
-   "draws": [],
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 4,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 3
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 5,
+     "hi": 7,
+     "value": 6,
+     "group": [
+      "H:stall:p2a:end",
+      "H:protect:p2a:end"
+     ],
+     "start": 5
+    }
+   ],
    "log": [
-    "|split|p2",
-    "|switch|p2b: Annihilape|Annihilape, L50, M|187/187",
-    "|switch|p2b: Annihilape|Annihilape, L50, M|100/100",
-    "|turn|3"
+    "|move|p2b: Staraptor|Protect|p2b: Staraptor",
+    "|-singleturn|p2b: Staraptor|Protect",
+    "|move|p1b: Excadrill|Protect|p1b: Excadrill",
+    "|-singleturn|p1b: Excadrill|Protect",
+    "|move|p2a: Milotic|Protect|p2a: Milotic",
+    "|-singleturn|p2a: Milotic|Protect",
+    "|move|p1a: Metagross|Protect||[still]",
+    "|-fail|p1a: Metagross",
+    "|upkeep",
+    "|turn|4"
    ],
    "state": {
-    "turn": 3,
+    "turn": 4,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -1539,13 +1597,13 @@
       ],
       "pokemon": [
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Metagross",
+        "set_species": "Metagross",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "",
+        "hp": 187,
+        "maxhp": 187,
+        "item": "mentalherb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1561,11 +1619,9 @@
         ],
         "pp": [
          7,
-         7
+         6
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -1573,8 +1629,8 @@
         "set_species": "Excadrill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 189,
-        "maxhp": 189,
+        "hp": 187,
+        "maxhp": 187,
         "item": "excadrite",
         "status": "",
         "status_time": 0,
@@ -1591,9 +1647,11 @@
         ],
         "pp": [
          11,
-         7
+         6
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -1679,9 +1737,9 @@
         "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 93,
+        "hp": 129,
         "maxhp": 202,
-        "item": "",
+        "item": "sitrusberry",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1698,9 +1756,40 @@
         "pp": [
          20,
          12,
-         6
+         5
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 192,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5
+        ],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -1726,33 +1815,6 @@
         ],
         "pp": [
          8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 192,
-        "item": "rockyhelmet",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         6
         ],
         "volatiles": [],
         "locked": null
