@@ -1,0 +1,5 @@
+{
+  "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+  "dirty": false,
+  "reason": "initial snapshots preceded full build and CTest omitted commands for unbuilt executables; preserved original snapshots and recollected registrations on original clean source commit with executables present; no tests or comparison fields removed"
+}

@@ -1,0 +1,19 @@
+{
+  "hostname": "8c91664c82d0",
+  "system": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "architecture": "x86_64",
+  "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+  "allowed_cpus": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "benchmark_cpu": 4,
+  "cgroup_cpu_max": "400000 100000",
+  "gcc": "cc (Debian 14.2.0-19) 14.2.0",
+  "python": "3.12.14",
+  "node": "22.23.3",
+  "showdown_pin": "b2cb775b0616115b775534eaeff50300e1fc81fc"
+}
