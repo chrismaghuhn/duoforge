@@ -358,6 +358,7 @@ tests (against a stub `aws`).
 | `ladder_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` checked read-only; the networks by sha256; the pins; the arms side by side, each on CPUs of its own; the aggregates up |
 | `ladder_requirements.txt` | the Python packages, pinned to the local machine's versions (CPU only) |
 | `ladder_equal.py` | the equality proof: two `ladder.json` compared field by field, timing fields aside |
+| `numpy_dispatch.py` | checks NumPy's SIMD dispatch on the box: every disabled name known, no AVX-512 target enabled; writes the record `numpy_simd` |
 
 **What the box pins** (HauptSession condition), for each arm: XLA's instruction set (`XLA_FLAGS=--xla_cpu_max_isa=AVX2`,
 the local Ryzen 7 5800X's), OpenBLAS's kernel (`OPENBLAS_CORETYPE=Haswell`, `OPENBLAS_NUM_THREADS=1`), 16 CPUs of its own
@@ -370,7 +371,8 @@ The Python version is not pinned: the box takes the AMI's (Ubuntu 24.04: 3.12.3,
 records it, with the pins, the library's sha256, the instance type, the CPU, whether it has AVX-512, NumPy's SIMD
 targets (`numpy_simd`: baseline, found, not found, as `numpy.show_runtime()` lists them) and `pip freeze`. Each arm's
 `ladder.json` has a digest per game (`games_sha256`, game g's decisions), so `ladder_equal.py` names the first game
-whose decisions differ. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
+whose decisions differ. `ladder.json` also records `numpy_simd` in its conditions, so the equality proof compares NumPy's
+dispatch too. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
 AWS results count only as their own series, every arm of a comparison runs on the same instance type, and the report
 states openly which parts of `ladder.json` are bit-identical (`ladder_equal.py` names every field that differs).
 
@@ -383,7 +385,7 @@ and no network ever leaves it.
 `nets/` succeeded: a plain write, a write with server-side encryption or a delete; the role is wrong),
 `nets_probe_unclear` (a probe failed with something other than AccessDenied, e.g. no credentials: no proof of
 read-only), `nets_unreadable`, `net_sha_mismatch`, `wrong_commit`, `wrong_run` (the run id is not of the commit),
-`no_campaign`, `bad_conf`, `build`, `python_env`, `numpy_dispatch` (NumPy still enables an AVX-512 target), `cpus`
+`no_campaign`, `bad_conf`, `build`, `python_env`, `numpy_dispatch` (`numpy_dispatch.py`, with the pinned NumPy: a name in `NPY_DISABLE_CPU_FEATURES` that is not one of NumPy's dispatch targets, or an AVX-512 target still enabled; nothing runs), `cpus`
 (fewer than 16 per arm plus 16) and `ladder_failed` (naming
 the arms that failed; the others' results are still uploaded). A failure without a refusal is named by the step it
 happened in, `failed_in_<step>` (`packages`, `checkout`, `build`, `python`, `nets`, `arms`, `upload`), and a TERM or

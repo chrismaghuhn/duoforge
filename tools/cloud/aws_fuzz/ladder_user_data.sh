@@ -139,12 +139,10 @@ log "${#SHAS[@]} networks read and checked"
 STEP=arms
 export JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
 export NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"
-on=$("$WORK/venv/bin/python" -c "from numpy._core import _multiarray_umath as m
-print(' '.join(f for f in m.__cpu_dispatch__ if m.__cpu_features__.get(f)))") || refuse numpy_dispatch 'numpy did not load'
-case " $on " in
-    *" X86_V4 "* | *" AVX512"*) refuse numpy_dispatch "numpy still enables $on with NPY_DISABLE_CPU_FEATURES set" ;;
-esac
-log "numpy dispatch targets enabled: ${on:-none}"
+# Checked, not only logged (HauptSession): every name known to NumPy, no AVX-512 target enabled (numpy_dispatch.py).
+"$WORK/venv/bin/python" "$TOOLS/numpy_dispatch.py" "$WORK/numpy_simd.json" >> "$LOG" 2> "$WORK/numpy_dispatch.err" ||
+    refuse numpy_dispatch "$(cat "$WORK/numpy_dispatch.err")"
+log 'numpy dispatch checked: every name known, no AVX-512 target enabled (the record above, numpy_simd.json)'
 export DUOFORGE_LIBRARY="$LIB" PYTHONPATH="$REPO/python"
 list=$(python3 "$TOOLS/ladder_conf.py" arms "$CONF") || refuse bad_conf 'ladder_conf.py arms'
 [ -n "$list" ] || refuse bad_conf 'the conf names no arm'
@@ -160,9 +158,7 @@ arms = sys.argv[6:]
 flags = next((l.split(":", 1)[1].split() for l in open("/proc/cpuinfo") if l.startswith("flags")), [])
 model = next((l.split(":", 1)[1].strip() for l in open("/proc/cpuinfo") if l.startswith("model name")), "")
 freeze = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True).stdout.split()
-from numpy._core import _multiarray_umath as m  # what NumPy's dispatch picks here (numpy.show_runtime's simd part)
-numpy_simd = {"baseline": list(m.__cpu_baseline__), "found": [f for f in m.__cpu_dispatch__ if m.__cpu_features__.get(f)],
-              "not_found": [f for f in m.__cpu_dispatch__ if not m.__cpu_features__.get(f)]}
+numpy_simd = json.load(open(os.path.join(os.path.dirname(out), "numpy_simd.json")))  # numpy_dispatch.py's record
 json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu": model, "cpus_per_arm": int(cpus),
            "arms": {a: f"{i * int(cpus)}-{(i + 1) * int(cpus) - 1}" for i, a in enumerate(arms)},
            "nproc": os.cpu_count(), "avx512": any(f.startswith("avx512") for f in flags), "python": platform.python_version(),

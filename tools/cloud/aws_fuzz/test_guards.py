@@ -1272,7 +1272,7 @@ class LadderLaunch(unittest.TestCase):
         self.assertNotRegex(text, r'@[A-Z_]+@')
         for needle in ('XLA_FLAGS=--xla_cpu_max_isa=AVX2', 'OPENBLAS_CORETYPE=Haswell', 'OPENBLAS_NUM_THREADS=1',
                        'NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"', '"numpy_simd": numpy_simd',
-                       '"NPY_DISABLE_CPU_FEATURES")', 'JAX_PLATFORMS=cpu', 'taskset -c "$cpus"', 'DF_CPUS=16', 'DF_SPARE=16', 'ladder_conf.py" arms',
+                       '"NPY_DISABLE_CPU_FEATURES")', 'numpy_dispatch.py" "$WORK/numpy_simd.json"', 'JAX_PLATFORMS=cpu', 'taskset -c "$cpus"', 'DF_CPUS=16', 'DF_SPARE=16', 'ladder_conf.py" arms',
                        '"$S3_BASE/$arm/ladder.json"', 'ladder_requirements.txt', '--no-deps', 'pip" check',
                        '. "$TOOLS/ladder_box_lib.sh"', 'ladder_nets_probe "$DF_BUCKET" "$NETS_KEY_PREFIX/.write-probe-',
                        'trap finish EXIT', "trap 'REASON=terminated; exit 143' TERM INT", 'REASON="failed_in_$STEP"',
@@ -1418,6 +1418,46 @@ class LadderLaunch(unittest.TestCase):
                 self.assertEqual(status, 4, out)
                 self.assertIn('not with AccessDenied', out)
                 self.assertIn(needle, out)
+
+class NumpyDispatch(unittest.TestCase):
+    """numpy_dispatch.py's check (#484, HauptSession 2026-10-15): the box runs NumPy on the local machine's targets.
+    Pure: the targets are given, no NumPy and nothing of AWS."""
+
+    KNOWN = ['X86_V3', 'X86_V4', 'AVX512_ICL', 'AVX512_SPR']  # numpy 2.5.3's dispatch targets on x86-64
+    OFF = 'X86_V4 AVX512_ICL AVX512_SPR'
+
+    def run_check(self, disabled, on):
+        import numpy_dispatch
+        return numpy_dispatch.check(disabled, ['X86_V2'], self.KNOWN, self.KNOWN, {t: t in on for t in self.KNOWN})
+
+    def test_every_avx512_target_off_passes_and_is_recorded(self):
+        problem, record = self.run_check(self.OFF, ['X86_V3'])
+        self.assertIsNone(problem)
+        self.assertEqual(record, {'disabled': self.OFF.split(), 'baseline': ['X86_V2'], 'found': ['X86_V3'],
+                                  'not_found': ['X86_V4', 'AVX512_ICL', 'AVX512_SPR']})
+
+    def test_an_unknown_name_is_refused(self):
+        # A misspelt (or baseline) name would disable nothing: the box must not run on it.
+        for disabled in ('X86_V4 AVX512_ICL AVX512SPR', 'AVX512F', 'X86_V2 X86_V4'):
+            with self.subTest(disabled=disabled):
+                problem, record = self.run_check(disabled, ['X86_V3'])
+                self.assertIn('not among NumPy's dispatch targets', problem)
+                self.assertEqual(record['disabled'], disabled.split())
+
+    def test_an_avx512_target_still_enabled_is_refused(self):
+        for on in (['X86_V3', 'X86_V4'], ['X86_V3', 'AVX512_ICL']):
+            with self.subTest(on=on):
+                problem, _ = self.run_check('AVX512_SPR', on)
+                self.assertIn('still enables the AVX-512 target', problem)
+
+    def test_no_variable_is_refused(self):
+        problem, _ = self.run_check('', ['X86_V3'])
+        self.assertIn('is not set', problem)
+
+    def test_the_command_line_refuses_a_bad_call(self):
+        r = subprocess.run([sys.executable, os.path.join(HERE, 'numpy_dispatch.py')], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 2)
+
 
 class LadderEqual(unittest.TestCase):
     """ladder_equal.py, the equality proof of an AWS ladder campaign (#484): every field but the timing ones."""

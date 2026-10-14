@@ -341,6 +341,20 @@ def same_games(scores_a, scores_b):
     return a.shape == b.shape and bool(np.array_equal(a, b))
 
 
+def numpy_simd():
+    """NumPy's SIMD dispatch in this process (#484): the targets NPY_DISABLE_CPU_FEATURES disables, NumPy's baseline and
+    the dispatch targets found and not found. NumPy picks its exp, log and sum routines at run time (AVX-512 on the AWS
+    box's EPYC, AVX2 on the local Ryzen), so two runs whose decisions are to be bit-identical record the same here, and
+    ladder_equal.py compares it. None where NumPy does not expose it."""
+    try:
+        from numpy._core import _multiarray_umath as m
+    except ImportError:
+        return None
+    return {"disabled": os.environ.get("NPY_DISABLE_CPU_FEATURES", "").split(), "baseline": list(m.__cpu_baseline__),
+            "found": [t for t in m.__cpu_dispatch__ if m.__cpu_features__.get(t)],
+            "not_found": [t for t in m.__cpu_dispatch__ if not m.__cpu_features__.get(t)]}
+
+
 def decisions_digest(decisions):
     """The sha256 hex of every decision as a JSON line [env, step, seat, kind, choice], in (env, step, seat) order: two
     runs that decide alike give the same digest, whatever the order of their records."""
@@ -839,6 +853,7 @@ def main(argv=None):
         "previous": None if args.previous is None else {"name": args.previous, "settings": previous_cfg},
         "arms": [arm for arm, _ in arm_steps] + (["R"] if args.raw else []), "h2h": args.h2h,
         "gates": GATES, "commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": arena.cpu_model(),
+        "numpy_simd": numpy_simd(),
         "encoders": {"main": main_net["encoder"], "foe": foe_net["encoder"],
                      **{f"opponent {name}": net["encoder"] for name, net in opponent_nets.items()}},
         "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},
