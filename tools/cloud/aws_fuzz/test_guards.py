@@ -1139,8 +1139,15 @@ esac
                       statements['ReadAmiParameter']['Resource'])
         self.assertEqual(statements['ListResultsBucket']['Condition']['StringLike']['s3:prefix'], ['fuzz/', 'fuzz/*'])
         for s in role['Statement']:
+            resources = [s['Resource']] if isinstance(s['Resource'], str) else s['Resource']
+            if s.get('Sid') == 'ReadNets':  # the ladder campaigns' networks (#484): read-only, nets/ only
+                self.assertEqual((s['Action'], resources), ('s3:GetObject', ['arn:aws:s3:::<BUCKET>/nets/*']))
+                continue
             self.assertTrue(all(r.endswith('/fuzz/*') or 'prefix' in json.dumps(s.get('Condition', {})) for r in
-                                ([s['Resource']] if isinstance(s['Resource'], str) else s['Resource'])), s)
+                                resources), s)
+        on_nets = [s for s in role['Statement'] if any('/nets/' in r for r in
+                                                       ([s['Resource']] if isinstance(s['Resource'], str) else s['Resource']))]
+        self.assertEqual([s['Sid'] for s in on_nets], ['ReadNets'])  # no write, no delete on nets/
 
     # ------------------------------------------------------------------ shellcheck
     @unittest.skipIf(shutil.which('shellcheck') is None, 'shellcheck is not installed')
