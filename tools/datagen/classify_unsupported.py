@@ -4,34 +4,58 @@ checkout with gen_closure.py's parsers and the committed pool tables.
 
 usage: python3 tools/datagen/classify_unsupported.py <pinned checkout> [--out PATH] [--check PATH]
 
-  --out PATH    write the JSON (sorted, stable) and print nothing else but the summary line.
+  --out PATH    write the JSON (sorted, stable) and print the per-kind counts.
   --check PATH  compare a fresh computation with the JSON at PATH; exit 1 on any difference.
   (no option)   print a compact table.
 
 The entries: every move that the pool tables leave UNMODELLED (the special dfi_pool_move_unmodeled) and every
 modelled move that the support manifest does not mark; every pool item and every pool ability that the manifest
-does not mark. Each entry gets exactly one class:
+does not mark. Each entry gets exactly one class, in this order:
 
   modelled-unmarked  the tables model it (no unmodelled feature); reason: the manifest or generator comment that
-                     names it, else "unmarked: no recorded reason".
-  hand-work          the pinned object has a callback (a function-valued property at any depth) or a condition;
-                     reasons name them ("callback onHit", "condition").
-  data-only          the pinned object has no callback and no condition. Its family is the modelled and marked
-                     entry (the witness, lowest id, plain handler preferred) that has every non-column data field
-                     with the same shape; "none" when no single witness does, with the fields no witness has.
+                     says it is not marked and names it, else "unmarked: no recorded reason".
+  hand-work          the pinned object has a callback (a property named on* or *Callback, or a function value, at any
+                     depth), a condition, or its id is referenced in the pinned code (see below). Reasons name the
+                     callbacks and every reference: "callback onHit", "condition", "referenced by id at file:line".
+  data-only          none of the above. The family is then:
+                     - "no effect fields" when the object has no effect field (only columns and inert keys);
+                     - a witness {id, handler}: a modelled and marked entry of the same kind that has every effect
+                       field of the object, the generic columns by shape and the dedicated fields by exact text;
+                     - "none" otherwise, with "uncovered" fields that no witness has, or "nearest": a dedicated
+                       witness whose fields have the same shape but differ in text (special, differs).
 
-Data fields are the top-level properties that are not functions and not cosmetic. Column fields (num, name, type,
-category, basePower, accuracy, pp, priority, critRatio, ...) are carried by every move's column and need no
-witness. Flags count one by one ("flags.bullet"). A shape is the normalised value text: numbers become N, an
-array keeps its length ([N,N]), a string keeps its literal value, and whitespace and trailing commas are dropped.
+Pinned facts used:
+- A move's generic columns are the record keys of gen_closure.py parse_move (lines 507-623): type, category,
+  basePower, accuracy, pp, priority, target, critRatio, flags, recoil, drain, a single secondary, boosts (through
+  boost_role), status, sideCondition, pseudoWeather. Their values are data, so a witness with the special NONE
+  matches them by shape: the parameters (status, volatile, boosts) are abstracted (see normalize).
+- A move's dedicated specials are the templates of gen_closure.py SPECIAL_P (2876-2915). Each pins the exact text
+  of its fields: ICE_FANG pins `status: 'frz'` (2899), MULTI_HIT_2_5 `multihit: [2, 5]` (2900), CONFUSE
+  `volatileStatus: 'confusion'` (2910), PARTIAL_TRAP `volatileStatus: 'partiallytrapped'` (2914), LOCKED_MOVE
+  `self: { volatileStatus: 'lockedmove' }` (2884), MULTI_HIT_2 `multihit: 2` (2888). So a witness with a dedicated
+  special matches a field only by exact text. Items and abilities: every family other than NONE is dedicated.
+- Non-column fields of a move: multihit, secondaries (plural), volatileStatus, self (its volatile part), selfdestruct,
+  ohko and the rest of the special templates. They are matched by exact text in every case.
 
-Offline tooling. Reads the pinned data files with gen_closure.Source (their sha256 is checked against the pin)
-and the committed src/data tables; it changes no file. CTest does not run it.
+Id references (the scan of the pinned code, data/conditions.ts and sim/*.ts and the Champions mod, minus its definition
+tables moves/abilities/items/learnsets/formats-data/text, plus data/rulesets.ts and data/scripts.ts when present).
+A quoted lowercase id counts as a reference when it is:
+  hasAbility('x'), hasItem('x'), hasMove('x') and every has*('x') call;
+  .id === 'x' or .name !== 'x' (any == or != comparison of .id or .name);
+  case 'x': in a switch;
+  .includes('x');
+  a quoted id inside one [...] on the same line (an array, a list or a key lookup such as volatiles['x']).
+Lines are compared after their // comments are removed. A reference on a line that spans several lines is not seen.
+
+Offline tooling. Reads the pinned checkout (its HEAD must be the pin; the hash-checked files of gen_closure.py are
+checked again) and the committed src/data tables; it changes no file. CTest does not run it.
 """
 import argparse
+import glob
 import json
 import os
 import re
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -48,15 +72,18 @@ KIND_FILES = {
     'ability': ('data/abilities.ts', 'data/mods/champions/abilities.ts'),
 }
 EXPECTED_COUNTS = {'move': 511, 'item': 166, 'ability': 215}
-POOL_COUNT_NAME = {'move': 'DFI_POOL_MOVE_COUNT', 'item': 'DFI_POOL_ITEM_COUNT', 'ability': 'DFI_POOL_ABILITY_COUNT'}
 SPECIAL_FIELD_INDEX = 28  # the flat move row of src/data/pool_tables.c: the special is the 29th number
 MOVE_ROW_LENGTH = 29
 CLASSES = ('data-only', 'hand-work', 'modelled-unmarked')
+EXCLUDED_CHAMPION_FILES = {'moves.ts', 'abilities.ts', 'items.ts', 'learnsets.ts', 'formats-data.ts', 'text.ts'}
 
 COMMON_COSMETIC = {'shortDesc', 'desc', 'tags', 'contestType', 'zMove', 'maxMove', 'hasSheerForceBoost', 'inherit',
                    'isNonstandard', 'gen', 'num', 'name', 'rating'}
 COLUMN_KEYS = {'num', 'name', 'gen', 'rating', 'isNonstandard', 'spritenum', 'fling', 'type', 'category', 'basePower',
                'accuracy', 'pp', 'priority', 'critRatio'}
+# The move fields that a generic column carries (gen_closure.py parse_move): their values are data, not a dedicated text.
+GENERIC_MOVE_KEYS = {'target', 'flags', 'recoil', 'drain', 'secondary', 'boosts', 'status', 'sideCondition',
+                     'pseudoWeather'}
 INERT = {'move': COMMON_COSMETIC,
          'item': COMMON_COSMETIC | gc.INERT_ITEM_KEYS,
          'ability': COMMON_COSMETIC | gc.INERT_ABILITY_KEYS}
@@ -64,28 +91,45 @@ CALL_KEYWORDS = {'if', 'for', 'while', 'switch', 'return', 'catch', 'function'}
 METHOD = re.compile(r'^\s*([A-Za-z_]\w*)\s*\([^)]*\)\s*(\{|=>)', re.M)
 PROP_FUNCTION = re.compile(r'^\s*([A-Za-z_]\w*)\s*:\s*(function\b|\([^)]*\)\s*=>|[A-Za-z_]\w*\s*=>)', re.M)
 CONDITION = re.compile(r'^\s*condition\s*:', re.M)
-# A property named on* or *Callback is a callback property whatever its value (Stall: onFractionalPriority: -0.1).
 CALLBACK_NAME = re.compile(r'^\s*((?:on[A-Z]\w*)|\w*Callback)\s*:', re.M)
 # The string values of these properties are parameters of their family (a status, a volatile), not the shape.
 PARAMETER_KEYS = ('secondary', 'secondaries', 'self')
+ID = r'([a-z0-9]+)'
+REFERENCE_PATTERNS = [
+    re.compile(r"\bhas\w*\(\s*['\"]" + ID + r"['\"]"),
+    re.compile(r"\.(?:id|name)\s*[!=]==?\s*['\"]" + ID + r"['\"]"),
+    re.compile(r"\bcase\s+['\"]" + ID + r"['\"]\s*:"),
+    re.compile(r"\.includes\(\s*['\"]" + ID + r"['\"]"),
+]
+BRACKETS = re.compile(r"\[([^\]\n]*)\]")
+QUOTED_ID = re.compile(r"['\"]" + ID + r"['\"]")
 
 
 def _strip_comments(lines):
     return [line if line.find('//') < 0 else line[:line.find('//')] for line in lines]
 
 
-def normalize(value):
-    """The shape of a field value: whitespace, trailing commas and the quote style dropped, numbers as N, an array
-    as [N,...] with its length."""
+def exact_text(value):
+    """The text of a field value with its layout removed: whitespace, trailing commas and the quote style dropped.
+    Numbers and strings are kept as written."""
     v = re.sub(r'\s+', '', value).replace('"', "'").rstrip(',')
-    v = re.sub(r',(?=[}\]])', '', v)
+    return re.sub(r',(?=[}\]])', '', v)
+
+
+def normalize(value, name=None):
+    """The shape of a field value: exact_text with the parameters abstracted: a string of a PARAMETER key is S, an
+    array keeps its length ([N,N]) and every other number is N."""
+    v = value
+    if name in PARAMETER_KEYS:
+        v = re.sub(r"'[^']*'|\"[^\"]*\"", "'S'", v)
+    v = exact_text(v)
     v = re.sub(r'\[(-?\d+(?:,-?\d+)*)\]', lambda m: '[' + ','.join('N' for _ in m.group(1).split(',')) + ']', v)
     return re.sub(r'-?\d+', 'N', v)
 
 
 def callbacks_of(lines):
-    """The names of the function-valued properties (method shorthand or a function/arrow value) at any depth, and
-    'condition' for a condition property, sorted."""
+    """The names of the function-valued or on*/*Callback properties at any depth, and 'condition' for a condition
+    property, sorted."""
     text = '\n'.join(_strip_comments(lines))
     names = {m.group(1) for m in METHOD.finditer(text) if m.group(1) not in CALL_KEYWORDS}
     names |= {m.group(1) for m in PROP_FUNCTION.finditer(text)}
@@ -96,10 +140,11 @@ def callbacks_of(lines):
     return out
 
 
-def parts(kind, bodies):
-    """(callbacks, fields, columns) of one pinned object, the bodies being its base entry and its Champions override
-    (in that order; the override wins per field). fields: shape key -> shape; flags are one key each."""
-    callbacks, fields, columns = set(), {}, set()
+def analyse(kind, bodies):
+    """The pinned object of one entry: its base body and its Champions override (in that order; the override wins per
+    field). Returns callbacks (sorted), fields (key -> shape), exact (key -> exact text), columns (the column keys
+    present). Flags are one key each (flags.bullet = 1)."""
+    callbacks, fields, exact, columns = set(), {}, {}, set()
     inert = INERT[kind]
     for body in bodies:
         if body is None:
@@ -107,54 +152,130 @@ def parts(kind, bodies):
         lines = _strip_comments(body)
         callbacks |= set(callbacks_of(lines))
         for name, (is_fn, text) in gc.fields(lines).items():
-            if is_fn or name == 'condition':
-                continue
-            if name in inert:
+            if is_fn or name == 'condition' or name in inert:
                 continue
             if name in COLUMN_KEYS:
                 columns.add(name)
                 continue
             value = text.split(':', 1)[1] if ':' in text else text
-            if name in PARAMETER_KEYS:
-                value = re.sub(r"'[^']*'|\"[^\"]*\"", "'S'", value)
             if name == 'flags':
                 for flag in re.findall(r'(\w+)\s*:\s*1', value):
                     fields['flags.' + flag] = '1'
+                    exact['flags.' + flag] = '1'
                 continue
-            fields[name] = normalize(value)
-    return sorted(callbacks), fields, columns
+            fields[name] = normalize(value, name)
+            exact[name] = exact_text(value)
+    return {'callbacks': sorted(callbacks), 'fields': fields, 'exact': exact, 'columns': columns}
 
 
-def covers(witness_fields, need):
-    return all(witness_fields.get(key) == shape for key, shape in need.items())
+def make_witness(eid, handler, bodies, kind='move'):
+    a = analyse(kind, bodies)
+    return {'id': eid, 'handler': handler, 'fields': a['fields'], 'exact': a['exact']}
 
 
-def classify_entry(kind, eid, name, modelled, callbacks, fields, witnesses, pin_lines, recorded=None):
-    """One entry's record. witnesses: the modelled and marked entries of the same kind, dicts with id, handler and
-    fields. recorded: the comment that names the entry (modelled-unmarked only), or None."""
+def _generic(kind, key, handler):
+    """Whether a field of a witness with this handler is matched by shape (a generic column) or by exact text."""
+    if handler != 'NONE':
+        return False
+    if kind == 'move':
+        return key.split('.')[0] in GENERIC_MOVE_KEYS
+    return True
+
+
+def field_matches(kind, witness, key, cand):
+    if key not in witness['fields']:
+        return False
+    if _generic(kind, key, witness['handler']):
+        return witness['fields'][key] == cand['fields'][key]
+    return witness['exact'][key] == cand['exact'][key]
+
+
+def covers(kind, witness, cand):
+    return all(field_matches(kind, witness, key, cand) for key in cand['fields'])
+
+
+def _ordered(witnesses):
+    return sorted(witnesses, key=lambda w: (w['handler'] != 'NONE', w['id']))
+
+
+def _token_diff(cand, wit):
+    pattern = r"'[^']*'|-?\d+|[A-Za-z_]+"
+    a, b = re.findall(pattern, cand), re.findall(pattern, wit)
+    if len(a) == len(b):
+        pairs = [(x, y) for x, y in zip(a, b) if x != y]
+        if pairs:
+            return ', '.join('%s vs %s' % p for p in pairs)
+    return '%s vs %s' % (cand, wit)
+
+
+def nearest_of(kind, cand, witnesses):
+    """The first dedicated witness whose fields have the same shapes as the candidate's but differ in exact text."""
+    for w in _ordered(witnesses):
+        if w['handler'] == 'NONE' or not cand['fields']:
+            continue
+        if not all(key in w['fields'] and w['fields'][key] == shape for key, shape in cand['fields'].items()):
+            continue
+        differing = [k for k in cand['fields'] if w['exact'][k] != cand['exact'][k]]
+        if differing:
+            return {'id': w['id'], 'special': w['handler'],
+                    'differs': '; '.join('%s %s' % (k, _token_diff(cand['exact'][k], w['exact'][k])) for k in differing)}
+    return None
+
+
+def classify_entry(kind, eid, name, modelled, analysis, witnesses, pin_lines, recorded=None, references=()):
+    """One entry's record. analysis: analyse() of its pinned object. witnesses: the modelled and marked entries of the
+    same kind (make_witness). recorded: the comment that names the entry (modelled-unmarked only). references: the
+    'file:line' sites that reference its id."""
     if modelled:
         reason = 'unmarked: ' + (recorded if recorded else 'no recorded reason')
-        return _record(kind, eid, name, 'modelled-unmarked', [reason], None, pin_lines)
-    if callbacks:
+        return _record(kind, eid, name, 'modelled-unmarked', [reason], None, None, pin_lines)
+    callbacks = analysis['callbacks']
+    if callbacks or references:
         reasons = ['condition' if c == 'condition' else 'callback ' + c for c in callbacks]
-        return _record(kind, eid, name, 'hand-work', reasons, None, pin_lines)
-    ordered = sorted(witnesses, key=lambda w: (w['handler'] != 'NONE', w['id']))
-    best = next((w for w in ordered if covers(w['fields'], fields)), None)
+        reasons += ['referenced by id at ' + site for site in references]
+        return _record(kind, eid, name, 'hand-work', reasons, None, None, pin_lines)
+    fields = analysis['fields']
+    if not fields:
+        return _record(kind, eid, name, 'data-only', ['no callback', 'no id reference', 'no effect fields'],
+                       'no effect fields', None, pin_lines)
+    best = next((w for w in _ordered(witnesses) if covers(kind, w, analysis)), None)
     if best is not None:
         family = {'id': best['id'], 'handler': best['handler']}
-        reasons = ['no callback', 'fields expressed by %s (%s)' % (best['id'], best['handler'])]
-        return _record(kind, eid, name, 'data-only', reasons, family, pin_lines)
-    uncovered = sorted(k for k, v in fields.items() if not any(w['fields'].get(k) == v for w in witnesses))
+        reasons = ['no callback', 'no id reference', 'fields expressed by %s (%s)' % (best['id'], best['handler'])]
+        return _record(kind, eid, name, 'data-only', reasons, family, None, pin_lines)
+    uncovered = sorted(k for k in fields if not any(field_matches(kind, w, k, analysis) for w in witnesses))
+    nearest = nearest_of(kind, analysis, witnesses)
     if uncovered:
-        reasons = ['no callback', 'uncovered: ' + ', '.join(uncovered)]
+        reasons = ['no callback', 'no id reference', 'uncovered: ' + ', '.join(uncovered)]
     else:
-        reasons = ['no callback', 'no single witness has all fields: ' + ', '.join(sorted(fields))]
-    return _record(kind, eid, name, 'data-only', reasons, 'none', pin_lines)
+        reasons = ['no callback', 'no id reference', 'no single witness has all fields: ' + ', '.join(sorted(fields))]
+    return _record(kind, eid, name, 'data-only', reasons, 'none', nearest, pin_lines)
 
 
-def _record(kind, eid, name, cls, reasons, family, pin_lines):
+def _record(kind, eid, name, cls, reasons, family, nearest, pin_lines):
     return {'kind': kind, 'id': eid, 'name': name, 'class': cls, 'reasons': reasons, 'family': family,
-            'pin_lines': pin_lines}
+            'nearest': nearest, 'pin_lines': pin_lines}
+
+
+# ---- id references in the pinned code ----
+
+def index_references(sources):
+    """id -> ['file:line', ...] for every quoted lowercase id that a reference pattern names, over (rel, lines)."""
+    index = {}
+    for rel, lines in sources:
+        for number, line in enumerate(_strip_comments(lines), 1):
+            found = set()
+            for pattern in REFERENCE_PATTERNS:
+                found.update(pattern.findall(line))
+            for m in BRACKETS.finditer(line):
+                found.update(QUOTED_ID.findall(m.group(1)))
+            for eid in found:
+                index.setdefault(eid, []).append('%s:%d' % (rel, number))
+    return index
+
+
+def find_references(eid, sources):
+    return index_references(sources).get(eid, [])
 
 
 # ---- the committed tables and the manifest (C text) ----
@@ -193,7 +314,7 @@ def pool_names(pool_text):
 
 
 def define_values(header_texts):
-    """enum suffix -> value, for the DFI_MOVE_/DFI_ITEM_/DFI_ABILITY_ defines of the data headers."""
+    """(token, enum suffix) -> value, for the DFI_MOVE_/DFI_ITEM_/DFI_ABILITY_ defines of the data headers."""
     out = {}
     for text in header_texts:
         for m in re.finditer(r'^#define DFI_(MOVE|ITEM|ABILITY)_(\w+) (\d+)u\b', text, re.M):
@@ -232,7 +353,8 @@ def family_names(pool_text, kind):
     out = {}
     if kind == 'move':
         return out
-    header = 'const dfi_item_family dfi_pool_item_family[' if kind == 'item' else 'const dfi_ability_family dfi_pool_ability_family['
+    header = ('const dfi_item_family dfi_pool_item_family[' if kind == 'item'
+              else 'const dfi_ability_family dfi_pool_ability_family[')
     for line in c_block(pool_text, header):
         m = re.match(r'^\s*\[DFI_%s_(\w+)\] = \{DFI_%s_FAMILY_(\w+),' % (tok, tok), line)
         if m:
@@ -280,6 +402,29 @@ def recorded_reason(name, comments):
     return None
 
 
+def checkout_sources(checkout):
+    """The pinned files that hold the references: (rel, lines). The checkout's HEAD must be the pin."""
+    head = subprocess.check_output(['git', '-C', checkout, 'rev-parse', 'HEAD'], text=True).strip()
+    if head != gc.PIN:
+        sys.exit('classify_unsupported: the checkout is at %s, the pin is %s' % (head, gc.PIN))
+    rels = ['data/conditions.ts', 'data/rulesets.ts', 'data/scripts.ts']
+    rels += [os.path.relpath(p, checkout).replace(os.sep, '/') for p in sorted(glob.glob(os.path.join(checkout, 'sim', '*.ts')))]
+    rels += [os.path.relpath(p, checkout).replace(os.sep, '/')
+             for p in sorted(glob.glob(os.path.join(checkout, 'data', 'mods', 'champions', '*.ts')))
+             if os.path.basename(p) not in EXCLUDED_CHAMPION_FILES]
+    out = []
+    for rel in dict.fromkeys(rels):
+        full = os.path.join(checkout, rel)
+        if not os.path.exists(full):
+            continue
+        if rel in gc.READER_INPUTS:
+            out.append((rel, gc.Source(checkout, rel, gc.READER_INPUTS).lines))
+        else:
+            with open(full, 'rb') as f:
+                out.append((rel, f.read().replace(b'\r\n', b'\n').decode('utf-8').split('\n')))
+    return out
+
+
 def build(checkout):
     pool_text = read_text('src/data/pool_tables.c')
     headers = [read_text('src/data/' + f) for f in sorted(os.listdir(os.path.join(REPO, 'src', 'data')))
@@ -290,28 +435,25 @@ def build(checkout):
     values = define_values(headers)
     marks = manifest_marks(manifest_text)
     specials = move_specials(pool_text)
-    records, summary_rows = [], {}
+    references = index_references(checkout_sources(checkout))
     for kind in KINDS:
-        ids = names[kind]
-        if len(ids) != EXPECTED_COUNTS[kind]:
-            sys.exit('classify_unsupported: %s names: %d entries, expected %d' % (kind, len(ids), EXPECTED_COUNTS[kind]))
-        unmodeled = unmodeled_text(pool_text, kind)
-        for enum in unmodeled:
-            if enum not in ids:
-                sys.exit('classify_unsupported: unmodelled %s %s has no name' % (kind, enum))
+        if len(names[kind]) != EXPECTED_COUNTS[kind]:
+            sys.exit('classify_unsupported: %s names: %d entries, expected %d' % (kind, len(names[kind]),
+                                                                                    EXPECTED_COUNTS[kind]))
+    records = []
     for kind in KINDS:
         base_rel, champ_rel = KIND_FILES[kind]
         base, champ = gc.Source(checkout, base_rel), gc.Source(checkout, champ_rel)
         unmodeled = unmodeled_text(pool_text, kind)
         families = family_names(pool_text, kind)
-        pending, witnesses = [], []
+        analysed, witnesses, pending = {}, [], []
         for enum, eid in sorted(names[kind].items(), key=lambda kv: kv[1]):
             entries = [src.entry(eid) for src in (base, champ)]
             if entries[0] is None and entries[1] is None:
                 sys.exit('classify_unsupported: %s %s not found in the pinned %s' % (kind, eid, base_rel))
             bodies = [e[2] if e else None for e in entries]
             refs = [src.ref(eid) for src, e in zip((base, champ), entries) if e]
-            callbacks, fields, _columns = parts(kind, bodies)
+            analysis = analyse(kind, bodies)
             name = eid
             if entries[0] is not None:
                 fm = gc.fields(_strip_comments(entries[0][2])).get('name')
@@ -319,18 +461,17 @@ def build(checkout):
                     name = gc.scalar(fm[1])
             is_marked = enum in marks[kind]
             modelled = enum not in unmodeled
-            if kind == 'move':
-                handler = specials[values[('MOVE', enum)]]
-            else:
-                handler = families.get(enum, 'NONE')
+            handler = specials[values[(KIND_TOKEN[kind], enum)]] if kind == 'move' else families.get(enum, 'NONE')
             if modelled and is_marked:
-                witnesses.append({'id': eid, 'handler': handler, 'fields': fields})
-            elif not modelled or not is_marked:
-                pending.append((eid, name, modelled, callbacks, fields, refs, comments))
-        for eid, name, modelled, callbacks, fields, refs, _c in pending:
+                witnesses.append({'id': eid, 'handler': handler, 'fields': analysis['fields'],
+                                  'exact': analysis['exact']})
+            else:
+                pending.append((eid, name, modelled, analysis, refs))
+        for eid, name, modelled, analysis, refs in pending:
             recorded = recorded_reason(name, comments) if modelled else None
-            records.append(classify_entry(kind, eid, name, modelled, callbacks, fields, witnesses, '; '.join(refs),
-                                          recorded))
+            sites = [] if modelled else references.get(eid, [])
+            records.append(classify_entry(kind, eid, name, modelled, analysis, witnesses,
+                                          '; '.join(refs), recorded, sites))
     records.sort(key=lambda r: (KINDS.index(r['kind']), r['id']))
     return records
 
@@ -342,6 +483,7 @@ def summarize(records):
         counts[kind] = {cls: sum(1 for r in rows if r['class'] == cls) for cls in CLASSES}
         counts[kind]['total'] = len(rows)
         counts[kind]['family_none'] = sum(1 for r in rows if r['family'] == 'none')
+        counts[kind]['no_effect_fields'] = sum(1 for r in rows if r['family'] == 'no effect fields')
     return {'counts': counts, 'entries': len(records)}
 
 
@@ -352,8 +494,8 @@ def to_json(records):
 def table(records):
     lines = ['kind\tname\tclass\treason\twitness']
     for r in records:
-        w = r['family']
-        wit = '-' if w is None else (w if w == 'none' else '%s (%s)' % (w['id'], w['handler']))
+        f = r['family']
+        wit = '-' if f is None else (f if isinstance(f, str) else '%s (%s)' % (f['id'], f['handler']))
         lines.append('%s\t%s\t%s\t%s\t%s' % (r['kind'], r['name'], r['class'], '; '.join(r['reasons']), wit))
     return '\n'.join(lines)
 

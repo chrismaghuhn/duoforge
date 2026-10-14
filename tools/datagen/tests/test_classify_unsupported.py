@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
-"""Checks for classify_unsupported.py: the class of a pool entry follows its pinned object. A callback (or a
-condition) makes it hand-work and names it; without one it is data-only, with the modelled and marked witness
-that expresses all its data fields, or family "none" naming the fields that no witness has. The texts copy the
-pinned data layout, so no checkout is needed. The last test reads the pinned checkout and is skipped without
-DUOFORGE_PS_REFERENCE_DIR.
+"""Checks for classify_unsupported.py. The class of a pool entry follows its pinned object:
+
+- a callback or a condition makes it hand-work and names it;
+- a reference to its id in the pinned code (hasAbility('x'), case 'x':, an includes list ...) makes it hand-work and
+  names every site;
+- without either it is data-only: its family is a modelled and marked witness that expresses all its effect fields
+  (a generic witness, special NONE, by shape; a dedicated witness, a named special, by exact text), "none" with the
+  fields that no witness has and a nearest dedicated witness when one differs, or "no effect fields" when it has no
+  effect field at all.
+
+The texts copy the pinned layout, so no checkout is needed. The last test reads the pinned checkout and is skipped
+without DUOFORGE_PS_REFERENCE_DIR.
 
 usage: python3 tools/datagen/tests/test_classify_unsupported.py
 """
@@ -22,52 +29,88 @@ def body(name, *lines):
 
 
 def witness(eid, handler, *lines):
-    return {'id': eid, 'handler': handler, 'fields': cu.parts('move', [body(eid, *lines)])[1]}
+    return cu.make_witness(eid, handler, [body(eid, *lines)])
 
 
-PLAIN = witness('plainmove', 'NONE', 'target: "adjacentAllyOrSelf",', 'accuracy: 100,', 'basePower: 40,')
+GENERIC = witness('plainmove', 'NONE', 'target: "adjacentAllyOrSelf",', 'accuracy: 100,', 'basePower: 40,')
 MULTI = witness('multiwitness', 'MULTI_HIT_2_5', 'multihit: [2, 5],', 'basePower: 25,')
+ICE_FANG = witness('icefang', 'ICE_FANG',
+                   'secondaries: [ { chance: 10, status: "frz", }, { chance: 10, volatileStatus: "flinch", }, ],')
+GENERIC_SECONDARY = witness('generic2', 'NONE', 'secondary: { chance: 10, status: "frz", },')
 
 
-def classify_move(name, *lines, modelled=False, witnesses=(), recorded=None):
-    cbs, fields, _columns = cu.parts('move', [body(name, *lines)])
-    return cu.classify_entry('move', name, name.title(), modelled, cbs, fields, list(witnesses), 'data/moves.ts:1-2',
-                             recorded)
+def analyse_move(name, *lines):
+    return cu.analyse('move', [body(name, *lines)])
+
+
+def classify_move(name, *lines, modelled=False, witnesses=(), recorded=None, references=()):
+    return cu.classify_entry('move', name, name.title(), modelled, analyse_move(name, *lines), list(witnesses),
+                             'data/moves.ts:1-2', recorded, list(references))
 
 
 class MoveClasses(unittest.TestCase):
     def test_on_hit_is_hand_work_naming_it(self):
         rec = classify_move('acupressure', 'accuracy: true,', 'onHit(target) {', '    return 1;', '},',
-                            witnesses=[PLAIN])
+                            witnesses=[GENERIC])
         self.assertEqual(rec['class'], 'hand-work')
         self.assertEqual(rec['reasons'], ['callback onHit'])
         self.assertIsNone(rec['family'])
 
     def test_condition_is_hand_work(self):
-        rec = classify_move('aquaring', 'condition: {', '\tduration: 1,', '},', witnesses=[PLAIN])
+        rec = classify_move('aquaring', 'condition: {', '\tduration: 1,', '},', witnesses=[GENERIC])
         self.assertEqual(rec['class'], 'hand-work')
         self.assertEqual(rec['reasons'], ['condition'])
 
     def test_callback_named_property_counts_even_with_a_value(self):
-        rec = classify_move('odd', 'onTryHitPriority: -1,', 'basePower: 40,', witnesses=[PLAIN])
+        rec = classify_move('odd', 'onTryHitPriority: -1,', 'basePower: 40,', witnesses=[GENERIC])
         self.assertEqual(rec['class'], 'hand-work')
         self.assertEqual(rec['reasons'], ['callback onTryHitPriority'])
 
-    def test_only_field_with_a_modelled_witness_is_data_only_with_that_witness(self):
-        rec = classify_move('plainish', 'target: "adjacentAllyOrSelf",', 'basePower: 60,', witnesses=[PLAIN])
+    def test_generic_witness_matches_by_shape(self):
+        rec = classify_move('plainish', 'target: "adjacentAllyOrSelf",', 'basePower: 60,', witnesses=[GENERIC])
         self.assertEqual(rec['class'], 'data-only')
         self.assertEqual(rec['family'], {'id': 'plainmove', 'handler': 'NONE'})
-        self.assertEqual(rec['reasons'][0], 'no callback')
 
     def test_field_shape_no_witness_has_is_family_none_naming_the_field(self):
-        rec = classify_move('bonerush', 'multihit: [3, 3],', 'basePower: 25,', witnesses=[PLAIN])
-        self.assertEqual(rec['class'], 'data-only')
+        rec = classify_move('bonerush', 'multihit: [3, 3],', 'basePower: 25,', witnesses=[GENERIC])
         self.assertEqual(rec['family'], 'none')
         self.assertIn('uncovered: multihit', rec['reasons'])
+        self.assertIsNone(rec['nearest'])
 
-    def test_multihit_range_witness_matches_by_shape(self):
-        rec = classify_move('pinmissile', 'multihit: [2, 5],', 'basePower: 25,', witnesses=[PLAIN, MULTI])
+    def test_multihit_range_witness_matches_exactly(self):
+        rec = classify_move('pinmissile', 'multihit: [2, 5],', 'basePower: 25,', witnesses=[GENERIC, MULTI])
         self.assertEqual(rec['family'], {'id': 'multiwitness', 'handler': 'MULTI_HIT_2_5'})
+
+    def test_dedicated_special_mismatch_is_none_with_nearest(self):
+        rec = classify_move('firefang', 'secondaries: [ { chance: 10, status: "brn", }, '
+                                        '{ chance: 10, volatileStatus: "flinch", }, ],', witnesses=[ICE_FANG])
+        self.assertEqual(rec['class'], 'data-only')
+        self.assertEqual(rec['family'], 'none')
+        self.assertEqual(rec['nearest']['id'], 'icefang')
+        self.assertEqual(rec['nearest']['special'], 'ICE_FANG')
+        self.assertIn("'brn' vs 'frz'", rec['nearest']['differs'])
+
+    def test_dedicated_special_exact_text_matches(self):
+        rec = classify_move('thunderfist', 'secondaries: [ { chance: 10, status: "frz", }, '
+                                           '{ chance: 10, volatileStatus: "flinch", }, ],', witnesses=[ICE_FANG])
+        self.assertEqual(rec['family'], {'id': 'icefang', 'handler': 'ICE_FANG'})
+
+    def test_generic_special_none_matches_parameters_by_shape(self):
+        rec = classify_move('firefang', 'secondary: { chance: 10, status: "brn", },', witnesses=[GENERIC_SECONDARY])
+        self.assertEqual(rec['family'], {'id': 'generic2', 'handler': 'NONE'})
+
+    def test_id_reference_is_hand_work_naming_every_site(self):
+        rec = classify_move('bite', 'basePower: 60,', witnesses=[GENERIC],
+                            references=['sim/pokemon.ts:1710', 'data/conditions.ts:68'])
+        self.assertEqual(rec['class'], 'hand-work')
+        self.assertEqual(rec['reasons'], ['referenced by id at sim/pokemon.ts:1710',
+                                          'referenced by id at data/conditions.ts:68'])
+        self.assertIsNone(rec['family'])
+
+    def test_no_effect_fields_is_not_a_witness(self):
+        rec = classify_move('plainnothing', 'accuracy: true,', 'basePower: 0,', witnesses=[GENERIC])
+        self.assertEqual(rec['class'], 'data-only')
+        self.assertEqual(rec['family'], 'no effect fields')
 
     def test_modelled_entry_is_modelled_unmarked_with_the_recorded_reason(self):
         rec = classify_move('jetpunch', 'basePower: 60,', modelled=True,
@@ -83,10 +126,10 @@ class MoveClasses(unittest.TestCase):
     def test_champions_override_wins_per_field_and_callbacks_union(self):
         base = body('fakeout', 'priority: 3,', 'onTry() { return 1; },')
         champ = body('fakeout', 'priority: 2,')
-        cbs, fields, columns = cu.parts('move', [base, champ])
-        self.assertEqual(cbs, ['onTry'])
-        self.assertIn('priority', columns)
-        self.assertEqual(fields, {})
+        a = cu.analyse('move', [base, champ])
+        self.assertEqual(a['callbacks'], ['onTry'])
+        self.assertIn('priority', a['columns'])
+        self.assertEqual(a['fields'], {})
 
     def test_flags_are_one_field_each(self):
         flag_witness = witness('flagged', 'NONE', 'flags: {contact: 1, protect: 1},', 'basePower: 10,')
@@ -95,42 +138,62 @@ class MoveClasses(unittest.TestCase):
         self.assertIn('uncovered: flags.bullet', rec['reasons'])
 
 
+class FindReferences(unittest.TestCase):
+    def test_patterns_in_code_and_not_in_comments(self):
+        lines = [
+            "const x = source?.hasAbility('corrosion');",
+            "    case 'corrosion':",
+            "if (ids.includes('corrosion')) {",
+            "const list = ['x', 'corrosion', 'y'];",
+            "// hasAbility('corrosion') in a comment",
+            "this.add('-activate', 'corrosion');",
+        ]
+        hits = cu.find_references('corrosion', [('sim/pokemon.ts', lines)])
+        self.assertEqual(hits, ['sim/pokemon.ts:1', 'sim/pokemon.ts:2', 'sim/pokemon.ts:3', 'sim/pokemon.ts:4'])
+
+    def test_other_ids_are_not_hits(self):
+        hits = cu.find_references('earlybird', [('data/conditions.ts', ["hasAbility('corrosion')"])])
+        self.assertEqual(hits, [])
+
+
 class ItemAndAbilityClasses(unittest.TestCase):
     def test_item_with_on_eat_is_hand_work(self):
-        cbs, fields, _ = cu.parts('item', [body('aspearberry', 'name: "Aspear Berry",', 'onEat(pokemon) {', '},')])
-        self.assertEqual(cbs, ['onEat'])
-        rec = cu.classify_entry('item', 'aspearberry', 'Aspear Berry', False, cbs, fields, [], 'data/items.ts:1-2')
-        self.assertEqual(rec['class'], 'hand-work')
+        a = cu.analyse('item', [body('aspearberry', 'name: "Aspear Berry",', 'onEat(pokemon) {', '},')])
+        self.assertEqual(a['callbacks'], ['onEat'])
+        rec = cu.classify_entry('item', 'aspearberry', 'Aspear Berry', False, a, [], 'data/items.ts:1-2')
         self.assertEqual(rec['reasons'], ['callback onEat'])
 
-    def test_item_without_callback_and_fields_is_data_only_with_a_witness(self):
-        item_w = {'id': 'sitrusberry', 'handler': 'NONE', 'fields': {}}
-        cbs, fields, _ = cu.parts('item', [body('starapitite', 'name: "Starapitite",', 'fling: {basePower: 80},')])
-        rec = cu.classify_entry('item', 'starapitite', 'Starapitite', False, cbs, fields, [item_w], 'data/items.ts:1-2')
+    def test_item_with_an_effect_field_and_a_witness(self):
+        item_w = cu.make_witness('sitrusberry', 'NONE', [body('sitrusberry', 'boosts: {atk: 1},')])
+        a = cu.analyse('item', [body('starapitite', 'boosts: {atk: 2},')])
+        rec = cu.classify_entry('item', 'starapitite', 'Starapitite', False, a, [item_w], 'data/items.ts:1-2')
         self.assertEqual(rec['class'], 'data-only')
         self.assertEqual(rec['family'], {'id': 'sitrusberry', 'handler': 'NONE'})
 
     def test_ability_with_on_start_is_hand_work(self):
-        cbs, _f, _ = cu.parts('ability', [body('anticipation', 'name: "Anticipation",', 'onStart(pokemon) {', '},')])
-        self.assertEqual(cbs, ['onStart'])
+        a = cu.analyse('ability', [body('anticipation', 'name: "Anticipation",', 'onStart(pokemon) {', '},')])
+        self.assertEqual(a['callbacks'], ['onStart'])
 
     def test_ability_with_callback_named_value_is_hand_work(self):
-        cbs, _f, _ = cu.parts('ability', [body('stall', 'name: "Stall",', 'onFractionalPriority: -0.1,')])
-        self.assertEqual(cbs, ['onFractionalPriority'])
+        a = cu.analyse('ability', [body('stall', 'name: "Stall",', 'onFractionalPriority: -0.1,')])
+        self.assertEqual(a['callbacks'], ['onFractionalPriority'])
 
-    def test_ability_without_callback_and_with_no_fields_matches_a_plain_witness(self):
-        abil_w = {'id': 'adaptability', 'handler': 'NONE', 'fields': {}}
-        cbs, fields, _ = cu.parts('ability', [body('corrosion', 'name: "Corrosion",', 'rating: 2,', 'num: 212,')])
-        rec = cu.classify_entry('ability', 'corrosion', 'Corrosion', False, cbs, fields, [abil_w], 'data/abilities.ts:1-2')
+    def test_ability_with_only_inert_fields_has_no_effect_fields(self):
+        a = cu.analyse('ability', [body('corrosion', 'name: "Corrosion",', 'rating: 2.5,', 'num: 212,', 'flags: {},')])
+        rec = cu.classify_entry('ability', 'corrosion', 'Corrosion', False, a, [], 'data/abilities.ts:1-2')
         self.assertEqual(rec['class'], 'data-only')
-        self.assertEqual(rec['family'], {'id': 'adaptability', 'handler': 'NONE'})
+        self.assertEqual(rec['family'], 'no effect fields')
 
 
 class Normalisation(unittest.TestCase):
-    def test_numbers_arrays_and_quotes(self):
+    def test_shape_numbers_arrays_and_quotes(self):
         self.assertEqual(cu.normalize(' [2, 5], '), '[N,N]')
         self.assertEqual(cu.normalize(' "always" '), "'always'")
         self.assertEqual(cu.normalize(' {atk: -1, def: 2} '), '{atk:N,def:N}')
+
+    def test_exact_keeps_numbers(self):
+        self.assertEqual(cu.exact_text(' [2, 5], '), '[2,5]')
+        self.assertEqual(cu.exact_text(' { status: "frz", } '), "{status:'frz'}")
 
 
 @unittest.skipUnless(os.environ.get('DUOFORGE_PS_REFERENCE_DIR'), 'needs the pinned Showdown checkout')
