@@ -646,7 +646,7 @@ def main_summary(argv):
 
 MATRIX_KEYS = ("tool", "seed", "pairs", "games", "max_steps", "step", "side", "foe_preview", "ours_sha256_prefix",
                "foe_sha256_prefix", "registry", "left_out", "species", "commit", "dirty", "library", "encoders",
-               "sha256_prefix", "table_sha256")
+               "sha256_prefix", "table_sha256", "workers")  # workers: HauptSession 2026-10-15, part of the pairing
 
 
 def build_matrix(dirs):
