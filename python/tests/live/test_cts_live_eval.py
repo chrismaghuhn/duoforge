@@ -175,8 +175,11 @@ class MainTest(unittest.TestCase):
                 ev.main(["--logs", logs, "--labels", str(labels), "--since", "2026-10-13T00:00:00Z"])
             text = out.getvalue()
         result = json.loads(text)
+        # the tool's own commit hash is no log text: a room number's digits may occur in it by chance (Content lane,
+        # 2026-10-14: "14502344" in a commit failed this test), so the check reads the output without it
+        checked = text.replace(result["code"]["commit"], "<tool commit>")
         for private_text in ("Some Foe", "somefoe", "Other Foe", "otherfoe", "501", "502", "Bobby"):
-            self.assertNotIn(private_text, text)
+            self.assertNotIn(private_text, checked)
         self.assertEqual(sorted(result["by_opponent"]), ["A"])  # the stopped battle has no timestamp: before --since
         self.assertEqual(sorted(result["by_team"]), ["A1"])
         self.assertEqual((result["logs"], result["kept"]), (2, 1))
