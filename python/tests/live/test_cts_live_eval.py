@@ -274,14 +274,14 @@ class ReplayTest(unittest.TestCase):
         out = ev.replay(records, tables, cts.SetPrior.from_table(tables), fixture["team"], "battle-test-1", names)
         self.assertEqual(out["points"], 3)  # turns 1 to 3 (the team preview is not a searched decision)
         self.assertEqual(out["refused"], [])
-        # a prior whose Farigiraf holds Gravity (unmodelled): every particle's record is refused, and named by it
+        # a prior whose Farigiraf holds Wish (unmodelled and in its legal learnset; Gravity itself is modelled by #475): every particle's record is refused, and named by it
         from duoforge_live import teams
         foe = teams._paste(fixture["foe_team"])
-        gravity = [dict(s, moves=["Psychic", "Gravity", "Trick Room", "Protect"]) for s in foe if s["species"] == "Farigiraf"]
+        gravity = [dict(s, moves=["Psychic", "Wish", "Trick Room", "Protect"]) for s in foe if s["species"] == "Farigiraf"]
         prior = cts.SetPrior(tables, [s for s in foe if s["species"] != "Farigiraf"] + gravity)
         out = ev.replay(records, tables, prior, fixture["team"], "battle-test-1", names)
         self.assertEqual(out["points"], 3)
-        self.assertEqual(out["refused"], [[["move:gravity"]] * cts.PARTICLES] * 3)
+        self.assertEqual(out["refused"], [[["move:wish"]] * cts.PARTICLES] * 3)
 
     def test_a_stopped_replay_is_counted_under_its_named_reason(self):
         # A content fix may stop the tracker at a line (Speed Swap option B: a real swap stops it, by name): under
@@ -317,7 +317,8 @@ class ReplayTest(unittest.TestCase):
 
     def test_the_real_tables_name_the_known_unmodelled_content(self):
         names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-        self.assertIn("gravity", names, sorted(names)[:10])
+        self.assertIn("wish", names, sorted(names)[:10])  # an unmodelled move
+        self.assertNotIn("gravity", names)  # modelled by #475 (entry 5df: the field, five turns, the 27.2 residual)
         self.assertNotIn("speedswap", names)  # modelled by #473 (the stored-Speed swap)
         self.assertNotIn("temperflare", names)  # modelled by #476 (the Stomping Tantrum handler)
         self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
