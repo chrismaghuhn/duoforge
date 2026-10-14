@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "abe9013d376fd5bc8e1d6a7c39c1987ea33951889758b3bf93d9c741955118ce" /* the model fingerprint of the pool tables; changed by step K1 (#476, entry 5dc: Temper Flare marked, its UNMODELED row becomes the Stomping Tantrum handler) */
-#define FP_KPD_HEX "eeb375f7b544193142c285f65140cdad40325550a482d3b0b3b1df417ed1ce07" /* POOL_DEV: changed by step K1 (#476, entry 5dc), the same table hash */
+#define FP_KP_HEX "cdc68cfbd8cba3e554b28992a039497d3ec4aba2f4aab83d9c96de77101e0c99" /* the model fingerprint of the pool tables; changed by steps K1 (#476, entry 5dc: Temper Flare) and K2 (#474, entry 5dd: Piercing Drill, Excadrite) */
+#define FP_KPD_HEX "0840776af052f3c76e12098ec4299cb5e4cd27e8d2bdd599aa9df6ca0b75dd4d" /* POOL_DEV: the same table hash, changed by steps K1 and K2 */
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
