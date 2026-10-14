@@ -1,0 +1,1925 @@
+{
+  "method": "objdump -d conservative static reachable graphs, direct call instructions including calls to external functions; tail jumps/cold branches traversed; same-library PLT targets resolved; indirect calls reported separately; public entry points and their compiler clones are roots; IPO may fold plain/events wrappers into their common internal implementation; predicate implementation aliases grounded_test\u2192grounded and weather_suppression_scan\u2192weather_suppressed retain their old body identities; actual artifact names are retained in definition lists; these are not dynamic invocation counts",
+  "provenance": {
+    "before": {
+      "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+      "dirty": false,
+      "phase": "before"
+    },
+    "after": {
+      "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+      "dirty": false,
+      "phase": "after"
+    }
+  },
+  "profiles": {
+    "ipo-bench": {
+      "artifacts": {
+        "before": {
+          "sha256": "94389b70e09ca5614c8f7d4a99bf5e6afb6a6448b69b399f1ddfae167c27bad2",
+          "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+          "dirty": false
+        },
+        "after": {
+          "sha256": "2412c12cc4099cf1c07070c95ab4d022eff56b18e834cc0f1de3be2e4c542c2c",
+          "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+          "dirty": false
+        }
+      },
+      "workloads": {
+        "common_step": {
+          "roots": [
+            "duoforge_battle_step",
+            "duoforge_battle_step_events",
+            "dfi_battle_step_tape",
+            "dfi_battle_step_events_tape"
+          ],
+          "direct_call_instructions": {
+            "before": 695,
+            "after": 700
+          },
+          "indirect_call_instructions": {
+            "before": 1,
+            "after": 1
+          },
+          "reachable_functions": {
+            "before": 123,
+            "after": 121
+          },
+          "changed_callee_counts": [
+            {
+              "callee": "dfi_boost",
+              "before": 39,
+              "after": 40
+            },
+            {
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_symbiosis",
+              "before": 19,
+              "after": 23
+            },
+            {
+              "callee": "dfi_terrain_seed",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_use_item_core",
+              "before": 20,
+              "after": 24
+            }
+          ],
+          "changed_edges": [
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 2
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_symbiosis",
+              "before": 1,
+              "after": 5
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_use_item_core",
+              "before": 1,
+              "after": 5
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_boost",
+              "before": 0,
+              "after": 1
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_symbiosis",
+              "before": 4,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_use_item_core",
+              "before": 4,
+              "after": 0
+            }
+          ]
+        },
+        "events": {
+          "roots": [
+            "duoforge_battle_step_events",
+            "dfi_battle_step_events_tape"
+          ],
+          "direct_call_instructions": {
+            "before": 695,
+            "after": 700
+          },
+          "indirect_call_instructions": {
+            "before": 1,
+            "after": 1
+          },
+          "reachable_functions": {
+            "before": 123,
+            "after": 121
+          },
+          "changed_callee_counts": [
+            {
+              "callee": "dfi_boost",
+              "before": 39,
+              "after": 40
+            },
+            {
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_symbiosis",
+              "before": 19,
+              "after": 23
+            },
+            {
+              "callee": "dfi_terrain_seed",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_use_item_core",
+              "before": 20,
+              "after": 24
+            }
+          ],
+          "changed_edges": [
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 2
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_symbiosis",
+              "before": 1,
+              "after": 5
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_use_item_core",
+              "before": 1,
+              "after": 5
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_boost",
+              "before": 0,
+              "after": 1
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_symbiosis",
+              "before": 4,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_use_item_core",
+              "before": 4,
+              "after": 0
+            }
+          ]
+        }
+      },
+      "helpers": [
+        {
+          "name": "dfi_grounded",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_grounded.lto_priv.0"
+            ],
+            "direct_calls": 22,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_grounded_test.lto_priv.0"
+            ],
+            "direct_calls": 22,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_field_detail",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_rock",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_suppressed",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_weather_suppressed.lto_priv.0"
+            ],
+            "direct_calls": 26,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_weather_suppression_scan.lto_priv.0"
+            ],
+            "direct_calls": 26,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_field_weather",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_move_weather",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_move_weather.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_move_weather.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_speed_ability",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_field_start_turns",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_entrant_speed_key",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_break_screens",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_side_turns",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_clear_terrain",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_clear_terrain.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_clear_terrain.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_seed_terrain",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_seed_terrain.lto_priv.0"
+            ],
+            "direct_calls": 2,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_seed",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_terrain_seed"
+            ],
+            "direct_calls": 2,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_change",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_terrain_change.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 3
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_terrain_change.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 3
+          }
+        }
+      ]
+    },
+    "ipo-shared": {
+      "artifacts": {
+        "before": {
+          "sha256": "116235480072188c7c12af9a4e8bbdf939f95b57a025e022d3b72e7c64a18e92",
+          "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+          "dirty": false
+        },
+        "after": {
+          "sha256": "1cd9494180e2d0700f99947bb3ac6529201d282be57afed8ac2dfc5c15c72936",
+          "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+          "dirty": false
+        }
+      },
+      "workloads": {
+        "common_step": {
+          "roots": [
+            "duoforge_battle_step",
+            "duoforge_battle_step_events",
+            "dfi_battle_step_tape",
+            "dfi_battle_step_events_tape"
+          ],
+          "direct_call_instructions": {
+            "before": 1359,
+            "after": 1364
+          },
+          "indirect_call_instructions": {
+            "before": 1,
+            "after": 1
+          },
+          "reachable_functions": {
+            "before": 184,
+            "after": 182
+          },
+          "changed_callee_counts": [
+            {
+              "callee": "dfi_boost",
+              "before": 39,
+              "after": 40
+            },
+            {
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_symbiosis",
+              "before": 19,
+              "after": 23
+            },
+            {
+              "callee": "dfi_terrain_seed",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_use_item_core",
+              "before": 20,
+              "after": 24
+            }
+          ],
+          "changed_edges": [
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 2
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_symbiosis",
+              "before": 1,
+              "after": 5
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_use_item_core",
+              "before": 1,
+              "after": 5
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_boost",
+              "before": 0,
+              "after": 1
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_symbiosis",
+              "before": 4,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_use_item_core",
+              "before": 4,
+              "after": 0
+            }
+          ]
+        },
+        "events": {
+          "roots": [
+            "duoforge_battle_step_events",
+            "dfi_battle_step_events_tape"
+          ],
+          "direct_call_instructions": {
+            "before": 1357,
+            "after": 1362
+          },
+          "indirect_call_instructions": {
+            "before": 1,
+            "after": 1
+          },
+          "reachable_functions": {
+            "before": 182,
+            "after": 180
+          },
+          "changed_callee_counts": [
+            {
+              "callee": "dfi_boost",
+              "before": 39,
+              "after": 40
+            },
+            {
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_symbiosis",
+              "before": 19,
+              "after": 23
+            },
+            {
+              "callee": "dfi_terrain_seed",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_use_item_core",
+              "before": 20,
+              "after": 24
+            }
+          ],
+          "changed_edges": [
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 2
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_symbiosis",
+              "before": 1,
+              "after": 5
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_use_item_core",
+              "before": 1,
+              "after": 5
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_boost",
+              "before": 0,
+              "after": 1
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_symbiosis",
+              "before": 4,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_use_item_core",
+              "before": 4,
+              "after": 0
+            }
+          ]
+        }
+      },
+      "helpers": [
+        {
+          "name": "dfi_grounded",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_grounded.lto_priv.0"
+            ],
+            "direct_calls": 22,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_grounded_test.lto_priv.0"
+            ],
+            "direct_calls": 22,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_field_detail",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_rock",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_suppressed",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_weather_suppressed.lto_priv.0"
+            ],
+            "direct_calls": 26,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_weather_suppression_scan.lto_priv.0"
+            ],
+            "direct_calls": 26,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_field_weather",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_move_weather",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_move_weather.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_move_weather.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_speed_ability",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_field_start_turns",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_entrant_speed_key",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_break_screens",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_side_turns",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_clear_terrain",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_clear_terrain.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_clear_terrain.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_seed_terrain",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_seed_terrain.lto_priv.0"
+            ],
+            "direct_calls": 2,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_seed",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_terrain_seed.lto_priv.0"
+            ],
+            "direct_calls": 2,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_change",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_terrain_change.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 3
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_terrain_change.lto_priv.0"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 3
+          }
+        }
+      ]
+    },
+    "noipo-bench": {
+      "artifacts": {
+        "before": {
+          "sha256": "b0674c63575f2352fb178032b639eb022571e37fca820260794643f699fa16ba",
+          "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+          "dirty": false
+        },
+        "after": {
+          "sha256": "35a12887fd4684c51fce56e257a86c085e070abcd71b7a36c181e6c5a0061c9b",
+          "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+          "dirty": false
+        }
+      },
+      "workloads": {
+        "common_step": {
+          "roots": [
+            "duoforge_battle_step",
+            "duoforge_battle_step_events",
+            "dfi_battle_step_tape",
+            "dfi_battle_step_events_tape"
+          ],
+          "direct_call_instructions": {
+            "before": 1308,
+            "after": 1313
+          },
+          "indirect_call_instructions": {
+            "before": 3,
+            "after": 3
+          },
+          "reachable_functions": {
+            "before": 176,
+            "after": 174
+          },
+          "changed_callee_counts": [
+            {
+              "callee": "dfi_boost",
+              "before": 38,
+              "after": 39
+            },
+            {
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_symbiosis",
+              "before": 15,
+              "after": 19
+            },
+            {
+              "callee": "dfi_terrain_seed",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_use_item_core",
+              "before": 16,
+              "after": 20
+            }
+          ],
+          "changed_edges": [
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 2
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_boost",
+              "before": 0,
+              "after": 1
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_symbiosis",
+              "before": 4,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_use_item_core",
+              "before": 4,
+              "after": 0
+            }
+          ]
+        },
+        "events": {
+          "roots": [
+            "duoforge_battle_step_events",
+            "dfi_battle_step_events_tape"
+          ],
+          "direct_call_instructions": {
+            "before": 1306,
+            "after": 1311
+          },
+          "indirect_call_instructions": {
+            "before": 3,
+            "after": 3
+          },
+          "reachable_functions": {
+            "before": 174,
+            "after": 172
+          },
+          "changed_callee_counts": [
+            {
+              "callee": "dfi_boost",
+              "before": 38,
+              "after": 39
+            },
+            {
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_symbiosis",
+              "before": 15,
+              "after": 19
+            },
+            {
+              "callee": "dfi_terrain_seed",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_use_item_core",
+              "before": 16,
+              "after": 20
+            }
+          ],
+          "changed_edges": [
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 2
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_boost",
+              "before": 0,
+              "after": 1
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_symbiosis",
+              "before": 4,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_use_item_core",
+              "before": 4,
+              "after": 0
+            }
+          ]
+        }
+      },
+      "helpers": [
+        {
+          "name": "dfi_grounded",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_grounded"
+            ],
+            "direct_calls": 22,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_grounded_test"
+            ],
+            "direct_calls": 22,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_field_detail",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_rock",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_suppressed",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_weather_suppressed"
+            ],
+            "direct_calls": 27,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_weather_suppression_scan"
+            ],
+            "direct_calls": 27,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_field_weather",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_move_weather",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_move_weather"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_move_weather"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_speed_ability",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_field_start_turns",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_entrant_speed_key",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_break_screens",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_side_turns",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_clear_terrain",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_clear_terrain"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_clear_terrain"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_seed_terrain",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_seed_terrain"
+            ],
+            "direct_calls": 2,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_seed",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_terrain_seed"
+            ],
+            "direct_calls": 2,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_change",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_terrain_change"
+            ],
+            "direct_calls": 4,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_terrain_change"
+            ],
+            "direct_calls": 4,
+            "tail_jumps": 0
+          }
+        }
+      ]
+    },
+    "noipo-shared": {
+      "artifacts": {
+        "before": {
+          "sha256": "5c3c2eebc027a9743787d79267c1fb49ac3cc5d62d7244ceee832f2b42040233",
+          "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+          "dirty": false
+        },
+        "after": {
+          "sha256": "7e29f11556ec4875969e1b7a910a88a693a6247b47e4d51fb9e43830316a045d",
+          "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+          "dirty": false
+        }
+      },
+      "workloads": {
+        "common_step": {
+          "roots": [
+            "duoforge_battle_step",
+            "duoforge_battle_step_events",
+            "dfi_battle_step_tape",
+            "dfi_battle_step_events_tape"
+          ],
+          "direct_call_instructions": {
+            "before": 1341,
+            "after": 1346
+          },
+          "indirect_call_instructions": {
+            "before": 3,
+            "after": 3
+          },
+          "reachable_functions": {
+            "before": 189,
+            "after": 187
+          },
+          "changed_callee_counts": [
+            {
+              "callee": "dfi_boost",
+              "before": 38,
+              "after": 39
+            },
+            {
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_symbiosis",
+              "before": 15,
+              "after": 19
+            },
+            {
+              "callee": "dfi_terrain_seed",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_use_item_core",
+              "before": 16,
+              "after": 20
+            }
+          ],
+          "changed_edges": [
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 2
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_boost",
+              "before": 0,
+              "after": 1
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_symbiosis",
+              "before": 4,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_use_item_core",
+              "before": 4,
+              "after": 0
+            }
+          ]
+        },
+        "events": {
+          "roots": [
+            "duoforge_battle_step_events",
+            "dfi_battle_step_events_tape"
+          ],
+          "direct_call_instructions": {
+            "before": 1339,
+            "after": 1344
+          },
+          "indirect_call_instructions": {
+            "before": 3,
+            "after": 3
+          },
+          "reachable_functions": {
+            "before": 187,
+            "after": 185
+          },
+          "changed_callee_counts": [
+            {
+              "callee": "dfi_boost",
+              "before": 38,
+              "after": 39
+            },
+            {
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_symbiosis",
+              "before": 15,
+              "after": 19
+            },
+            {
+              "callee": "dfi_terrain_seed",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "callee": "dfi_use_item_core",
+              "before": 16,
+              "after": 20
+            }
+          ],
+          "changed_edges": [
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 2
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_seed_terrain",
+              "before": 2,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_run_entries",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_boost",
+              "before": 0,
+              "after": 1
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_symbiosis",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_terrain_seed",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_change",
+              "callee": "dfi_use_item_core",
+              "before": 0,
+              "after": 4
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_boost",
+              "before": 1,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_symbiosis",
+              "before": 4,
+              "after": 0
+            },
+            {
+              "caller": "dfi_terrain_seed",
+              "callee": "dfi_use_item_core",
+              "before": 4,
+              "after": 0
+            }
+          ]
+        }
+      },
+      "helpers": [
+        {
+          "name": "dfi_grounded",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_grounded"
+            ],
+            "direct_calls": 22,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_grounded_test"
+            ],
+            "direct_calls": 22,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_field_detail",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_rock",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_suppressed",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_weather_suppressed"
+            ],
+            "direct_calls": 27,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_weather_suppression_scan"
+            ],
+            "direct_calls": 27,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_field_weather",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_move_weather",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_move_weather"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_move_weather"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_weather_speed_ability",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_field_start_turns",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_entrant_speed_key",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_break_screens",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_side_turns",
+          "before": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_clear_terrain",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_clear_terrain"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_clear_terrain"
+            ],
+            "direct_calls": 1,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_seed_terrain",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_seed_terrain"
+            ],
+            "direct_calls": 2,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_seed",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_terrain_seed"
+            ],
+            "direct_calls": 2,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [],
+            "direct_calls": 0,
+            "tail_jumps": 0
+          }
+        },
+        {
+          "name": "dfi_terrain_change",
+          "before": {
+            "out_of_line_definitions": [
+              "dfi_terrain_change"
+            ],
+            "direct_calls": 4,
+            "tail_jumps": 0
+          },
+          "after": {
+            "out_of_line_definitions": [
+              "dfi_terrain_change"
+            ],
+            "direct_calls": 4,
+            "tail_jumps": 0
+          }
+        }
+      ]
+    }
+  }
+}

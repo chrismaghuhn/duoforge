@@ -1,0 +1,15 @@
+{
+  "provenance": {
+    "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+    "dirty": false,
+    "phase": "after"
+  },
+  "registered_test": "duoforge.python.live",
+  "methods_passed": 53,
+  "skipped": 0,
+  "pool_equal": 11680,
+  "pool_refused": 563,
+  "unburden_refused": 4,
+  "tracker_stops": 162,
+  "source": "CTest LastTest.log, aggregate unittest summary and public-fixture assembler counts only"
+}
