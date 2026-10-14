@@ -53,21 +53,18 @@ The aggregates come from `tools/research/cts_live_eval.py --logs DIR --code COMM
 
 ### Opponents the search mostly cannot reach, and a deploy during the test (fixed after the technical check, before any look at results)
 
-Fixed on 2026-10-14 after the technical check of the first 30 battles: the allocation recomputed, the logging, no deadline. The check looked at no result, no win and no outcome.
+Fixed on 2026-10-14 (HauptSession, final) after the technical check of the first 30 battles: the allocation recomputed, the logging, no deadline. The check looked at no result, no win and no outcome.
 
-Against an opponent whose decision points the engine mostly refuses (#464: a particle holding unmodelled content), both arms play the raw policy at those points. The root rule cannot act there, so such battles dilute the comparison without measuring it. The HauptSession's final reading:
-
-- **An opponent's no-search share** is its battles' non-team decisions answered without the search, out of all its non-team decisions. A decision without the search is one that is not `searched`: unreconstructible, forced, raw or deadline.
-  - It is computed **per opponent and bot commit, over both arms together**, never per arm, so the rule cannot change which battles count.
-  - It is computed at each look from all of that opponent's battles on that commit so far.
-- **The primary reading** counts only the battles against opponents with a no-search share of **at most 50%** on their bot commit.
-  - The looks of 30, 60 and 100 count the decided battles per arm in that set, with the 99%, 99% and 95% intervals above.
-  - A preference rests only on this reading.
-- **All battles (intention to treat)** are reported beside it, as a description only, never as a ground for a preference. The battles against opponents above 50% are listed apart, with their counts per arm.
-- **Pooled across bot commits.** A deploy during the test (first main with #500, Speed Swap) does not start a separate series: the primary reading pools the commits, and the results are also reported per commit, as a description.
+- **The primary reading is intention to treat over all battles.** The looks of 30, 60 and 100 count every decided battle per arm, whatever its opponent, with the 99%, 99% and 95% intervals above.
+- **Opponents the search mostly cannot reach are a descriptive stratum.**
+  - An opponent's no-search share is its battles' non-team decisions answered without the search, out of all its non-team decisions. A decision without the search is one that is not `searched`: unreconstructible, forced, raw or deadline.
+  - The share is computed **per opponent and bot commit, over both arms together**, never per arm, so the rule cannot change the classification. It is computed at each look.
+  - Against an opponent above 50%, both arms play the raw policy at most of its points (#464: a particle holding unmodelled content), so the root rule can hardly act there.
+  - These opponents are reported apart, with their counts per arm, as a description only. They stay in the primary reading and are never a ground for a preference.
+- **Pooled across bot commits.** A deploy during the test (first main with #500, Speed Swap) does not start a separate series. The primary reading pools the commits, and the results are also reported per commit, as a description.
   - At a restart the bot draws a **new seed**, named in its new run log, and its blocks start anew from battle number 0.
   - A last block left incomplete before the restart, with one battle of one arm, is counted by name (`incomplete_blocks`). Its battle stays in its arm.
-- **A replay of earlier battles on newer code** is descriptive only: for example, the share of decisions that would have been searchable with Speed Swap modelled. It never enters the rule's reading.
+- **A replay of earlier battles on newer code is descriptive only**, for example the share of decisions that would have been searchable with Speed Swap modelled. It never enters the rule's reading.
 
 ## Replays of the test's battles
 
