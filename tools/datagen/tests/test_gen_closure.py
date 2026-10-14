@@ -14,6 +14,7 @@ usage: python3 tools/datagen/tests/test_gen_closure.py
 import sys
 import io
 import os
+import re
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -2433,25 +2434,47 @@ class StompingTantrumCallbacks(unittest.TestCase):
                      'basePowerCallback is not the pinned text')
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class BulletFlag(unittest.TestCase):
     """Step G83 (approved by HauptSession): the bullet bit of the third flags byte (DFI_MOVE_FLAG3_BULLET, 0x10) marks exactly
-    the moves that carry flags.bullet in the pin (data/moves.ts: 26 of them). Bulletproof reads that bit, so the count is pinned."""
-    PIN_BULLET_MOVES = 26
+    the pool moves that carry flags.bullet in the pin. The pin (data/moves.ts) has 26 bullet moves; 8 of them are not pool
+    moves, so the pool table marks the other 18. Bulletproof reads that bit, so the set is pinned by name."""
+    PIN_BULLET_POOL_MOVES = {'acidspray', 'aurasphere', 'beakblast', 'bulletseed', 'electroball', 'energyball', 'focusblast',
+                             'gyroball', 'pollenpuff', 'pyroball', 'rockblast', 'rockwrecker', 'seedbomb', 'shadowball',
+                             'sludgebomb', 'syrupbomb', 'weatherball', 'zapcannon'}
+    PIN_BULLET_OTHER_MOVES = {'barrage', 'eggbomb', 'iceball', 'magnetbomb', 'mistball', 'mudbomb', 'octazooka', 'searingshot'}
+
+    @staticmethod
+    def committed_table(name):
+        # the body of a pool table in pool_tables.c, or with name None the move count of pool_tables.h
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        with open(os.path.join(root, 'src', 'data', 'pool_tables.%s' % ('h' if name is None else 'c')), encoding='utf-8') as f:
+            text = f.read()
+        if name is None:
+            return int(re.search(r'#define DFI_POOL_MOVE_COUNT (\d+)u', text).group(1))
+        m = re.search(r'const %s\[DFI_POOL_MOVE_COUNT\] = \{(.*?)\n\};' % re.escape(name), text, re.S)
+        return None if m is None else m.group(1)
 
     def test_the_bit_is_assigned_to_the_bullet_flag(self):
         self.assertEqual(gen_closure.FLAGS3_BITS['bullet'], 16)
         self.assertEqual(gen_closure.FLAGS3_BITS['pulse'], 8)
 
-    def test_the_committed_table_marks_the_pins_26_bullet_moves(self):
-        import re
-        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        with open(os.path.join(root, 'src', 'data', 'pool_tables.c'), encoding='utf-8') as f:
-            text = f.read()
-        m = re.search(r'const uint8_t dfi_pool_move_flags3\[DFI_POOL_MOVE_COUNT\] = \{(.*?)\n\};', text, re.S)
-        self.assertIsNotNone(m)
-        values = [int(v) for v in re.findall(r'=\s*(\d+)u,', m.group(1))]
-        self.assertEqual(sum(1 for v in values if v & 16), self.PIN_BULLET_MOVES)
+    def test_the_pin_has_26_bullet_moves(self):
+        self.assertEqual(len(self.PIN_BULLET_POOL_MOVES | self.PIN_BULLET_OTHER_MOVES), 26)
+        self.assertFalse(self.PIN_BULLET_POOL_MOVES & self.PIN_BULLET_OTHER_MOVES)
+
+    def test_the_committed_table_marks_the_pins_18_bullet_pool_moves(self):
+        names_body = self.committed_table('char *const dfi_pool_move_names')
+        flags_body = self.committed_table('uint8_t dfi_pool_move_flags3')
+        self.assertIsNotNone(names_body)
+        self.assertIsNotNone(flags_body)
+        names = dict(re.findall(r'\[DFI_MOVE_(\w+)\] = "(\w+)",', names_body))
+        self.assertEqual(len(names), self.committed_table(None))  # every pool move has its name
+        pool = set(names.values())
+        self.assertLessEqual(self.PIN_BULLET_POOL_MOVES, pool)
+        self.assertFalse(self.PIN_BULLET_OTHER_MOVES & pool)
+        marked = {names[k] for k, v in re.findall(r'\[DFI_MOVE_(\w+)\] = (\d+)u,', flags_body) if int(v) & 16}
+        self.assertEqual(marked, self.PIN_BULLET_POOL_MOVES)
+
+
+if __name__ == '__main__':
+    unittest.main()
