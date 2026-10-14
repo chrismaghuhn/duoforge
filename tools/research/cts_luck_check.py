@@ -44,13 +44,30 @@ class Skip(Exception):
     """A turn or battle the comparison leaves out, named."""
 
 
-def pool_battles(root):
+def pool_battles(root, at=None):
+    """Every fifth pool battle by sorted id: of the checked-out traces, or of those commit `at` held (a trace added
+    later shifts every fifth; the gate of 2026-10-15 is `--traces-at 8c9e8933`). A trace of `at` that is gone or
+    changed in the checked-out tree is refused by name."""
     from duoforge_live.data import trace_to_c
+    traces = Path(root) / "tests" / "reference" / "traces"
+    stems = sorted(p.stem for p in traces.glob("*.json"))
+    if at is not None:
+        import subprocess
+
+        def git(*a):
+            return subprocess.run(["git", "-C", str(root), *a], check=True, capture_output=True, text=True).stdout
+        held = [Path(line).stem for line in git("ls-tree", "--name-only", at, "tests/reference/traces/").split()
+                if line.endswith(".json")]
+        changed = {Path(c).stem for c in git("diff", "--name-only", at, "--", "tests/reference/traces/").split()}
+        bad = sorted(set(held) - set(stems)) + sorted(changed & set(held))
+        if bad:
+            raise SystemExit(f"traces of {at} gone or changed since: {bad[:5]}")
+        stems = sorted(held)
     names = []
-    for p in sorted((Path(root) / "tests" / "reference" / "traces").glob("*.json")):
-        spec, _ = trace_to_c.load_battle(str(root), p.stem)
-        if trace_to_c.spec_data(p.stem, spec) == "pool":
-            names.append(p.stem)
+    for stem in stems:
+        spec, _ = trace_to_c.load_battle(str(root), stem)
+        if trace_to_c.spec_data(stem, spec) == "pool":
+            names.append(stem)
     return names[::5]
 
 
@@ -61,6 +78,23 @@ def read_streams(path):
             m = json.loads(line)
             out[m["battle"]][int(m["to"][1]) - 1].append(m["lines"])
     return out
+
+
+def by_battle(pairs):
+    """The 95% half width of the mean difference with the turns of a battle (both players) as one cluster: the
+    cluster-robust variance sum over battles of (sum of d - mean)^2 / n^2, times G / (G - 1). Descriptive: the
+    criterion fixed in advance uses the per-turn interval."""
+    if len(pairs) < 2:
+        return None
+    d = np.array([x["meter"] - x["luck_py"] for x in pairs])
+    sums = collections.defaultdict(float)
+    for x, r in zip(pairs, d - d.mean()):
+        sums[x["battle"]] += r
+    g = len(sums)
+    if g < 2:
+        return None
+    var = sum(v * v for v in sums.values()) / len(d) ** 2 * g / (g - 1)
+    return float(1.96 * math.sqrt(var))
 
 
 def state_before(trace, k):
@@ -83,6 +117,8 @@ def true_points(messages, own_text, data, trace, player):
             continue
         done = t.epoch
         k = done - 1
+        if t.request.get("update"):  # the same decision point again: it would shift k against the trace's steps
+            raise Skip("updated-request")
         parts = t.public_parts()
         points[t.request.get("rqid")] = {
             "k": k, "record": np.asarray(parts["record"]).copy(), "status": int(parts["status"]),
@@ -170,6 +206,7 @@ def world(context, point, h):
 def oracle(name, player, messages, spec, trace, data, search, decisions):
     """luck.py's luck on the true worlds at the meter's valued decisions: {rqid: luck}, Counter of skips."""
     from duoforge_learn.luck import Luck
+    from duoforge_live.record import E_UNSUPPORTED as UNSUPPORTED
     from duoforge_live.data import trace_to_c
     skips = collections.Counter()
     own_text = spec["teams"][player]
@@ -184,6 +221,14 @@ def oracle(name, player, messages, spec, trace, data, search, decisions):
     out = {}
     with Luck(search.worlds.context, search.model, search.params, search.encoder, search.ext_supported) as luck:
         luck.start(1, np.array([player]))
+        refused = []  # per leaf chunk: the leaves whose step the engine refused, which luck.leaf_values values -1
+        expand = luck.leaves.expand
+
+        def counted(*a, **kw):
+            out = expand(*a, **kw)
+            refused.append(int((np.asarray(out[1]) == UNSUPPORTED).sum()))
+            return out
+        luck.leaves.expand = counted
         for rqid in decisions:
             if rqid not in points:
                 skips["no-true-point"] += 1
@@ -208,7 +253,10 @@ def oracle(name, player, messages, spec, trace, data, search, decisions):
                     domain = batch.domains[0, side]
                     a, b = (option_of(domain, s, cmds[s], roster_map) for s in (0, 1))
                     indices[0, side] = joint_rank(domain, a, b)
+                refused.clear()
                 luck.before(batch, indices, np.array([True]), p["k"], False)
+                if sum(refused):  # the meter excludes such a turn as leaf-refused: so does this side, by name
+                    raise Skip("luck-leaf-refused")
                 if nxt is None:  # the battle ended in the turn: its result
                     winner = trace.get("winner") or next((s["state"].get("winner") for s in trace["steps"][::-1]
                                                           if s.get("state", {}).get("winner")), None)
@@ -242,11 +290,15 @@ def main(argv=None):
     p.add_argument("checkpoint_sha256")
     p.add_argument("out")
     p.add_argument("--limit", type=int, default=None)
+    p.add_argument("--traces-at", default=None, help="select from the traces this commit held")
+    p.add_argument("--battles", default=None, help="a file of battle ids, one per line: the selection itself "
+                   "(the gate's: docs/benchmarks/2026-10-14-cts-luck/gate-battles.txt)")
     args = p.parse_args(argv)
     from duoforge_live import cts, cts_luck, data, pkmn_arena, policy as live_policy, search as live_search, teams
     from duoforge_live.arena import provenance
     from duoforge_live.data import trace_to_c
     from duoforge_replay.dataset import refuse_repository
+    from duoforge_search.errors import SearchError
     import cts_luck_fixture
     refuse_repository(Path(args.out).parent)
     if pkmn_arena.sha256_of(args.checkpoint) != args.checkpoint_sha256:
@@ -258,7 +310,10 @@ def main(argv=None):
     search = live.searcher.searcher
     streams = read_streams(args.streams)
     pairs, skipped, meter_excluded, oracle_skips = [], collections.Counter(), collections.Counter(), collections.Counter()
-    names = pool_battles(ROOT)[:args.limit]
+    if args.battles is not None and args.traces_at is not None:
+        raise SystemExit("--battles is the selection itself: not with --traces-at")
+    names = (Path(args.battles).read_text(encoding="utf-8").split() if args.battles is not None
+             else pool_battles(ROOT, args.traces_at))[:args.limit]
     try:
         with cts_luck.Meter(search) as meter, tempfile.TemporaryDirectory() as tmp:
             for n, name in enumerate(names):
@@ -278,19 +333,23 @@ def main(argv=None):
                     try:
                         got = cts_luck.battle(log, tables, net, live, spec["teams"][player], f"p{player + 1}", prior,
                                               meter)
-                    except (cts.Refused, Exception) as err:  # a battle the meter cannot replay: named, counted
-                        skipped[f"meter:{type(err).__name__}:{str(err).split(' ')[0][:40]}"] += 1
+                    except (cts.Refused, SearchError, ValueError) as err:
+                        # a battle the meter cannot replay (a stop, the tracker's explicit refusal): counted by its
+                        # message without the log's name; any other error is the tool's own and raises
+                        msg = str(err).removeprefix(f"{log.name}: ")
+                        skipped[f"meter:{type(err).__name__}:{msg}"] += 1
                         continue
                     meter_excluded.update(got["excluded"])
                     try:
                         truth, sk = oracle(name, player, messages, spec, trace, tables, search, got["decisions"])
-                    except Exception as err:
-                        skipped[f"oracle:{type(err).__name__}"] += 1
+                    except Skip as s:  # a battle the true side cannot follow (an updated request), by name
+                        skipped[f"oracle:{s}"] += 1
                         continue
                     oracle_skips.update(sk)
                     for rqid, luck, mixed in zip(got["decisions"], got["turns"], got["mixed"]):
                         if rqid in truth:
-                            pairs.append({"meter": luck, "luck_py": truth[rqid], "mixed": mixed})
+                            pairs.append({"meter": luck, "luck_py": truth[rqid], "mixed": mixed,
+                                          "battle": name})
     finally:
         live.close()
     diffs = np.array([x["meter"] - x["luck_py"] for x in pairs])
@@ -299,12 +358,15 @@ def main(argv=None):
     half = float(1.96 * diffs.std(ddof=1) / math.sqrt(n)) if n > 1 else None
     corr = float(np.corrcoef([x["meter"] for x in pairs], [x["luck_py"] for x in pairs])[0, 1]) if n > 2 else None
     unmixed = np.array([x["meter"] - x["luck_py"] for x in pairs if not x["mixed"]])
+    clustered = by_battle(pairs)
+    clustered_unmixed = by_battle([x for x in pairs if not x["mixed"]])
     result = {"battles": len(names), "player_battles_skipped": dict(skipped), "turns_compared": n,
-              "mean_difference": mean, "half_width": half, "correlation": corr,
+              "mean_difference": mean, "half_width": half, "half_width_by_battle": clustered,
+              "correlation": corr,
               "passed": None if mean is None or half is None else bool(abs(mean) < 0.01 or abs(mean) <= half),
               "unmixed": {"turns": int(unmixed.size), "mean_difference": float(unmixed.mean()) if unmixed.size else None,
                           "half_width": float(1.96 * unmixed.std(ddof=1) / math.sqrt(unmixed.size))
-                          if unmixed.size > 1 else None},
+                          if unmixed.size > 1 else None, "half_width_by_battle": clustered_unmixed},
               "meter_excluded": dict(meter_excluded), "luck_py_skipped": dict(oracle_skips),
               "checkpoint_sha256": args.checkpoint_sha256, "code": provenance(ROOT)}
     Path(args.out).write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
