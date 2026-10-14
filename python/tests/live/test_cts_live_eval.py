@@ -322,5 +322,47 @@ class ReplayTest(unittest.TestCase):
         self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
 
 
+class ABTest(unittest.TestCase):
+    """The A/B test of the root rule (docs/benchmarks/2026-10-14-ab-root-rule): a battle names its arm in its first
+    record; the tool counts the arms' win rates with intervals, per opponent and per the foe's leads."""
+
+    @staticmethod
+    def log(arm, result, leads=("Garchomp", "Grimmsnarl")):
+        return [{"log_format": 2, "code": {"commit": "abc", "dirty": False},
+                 "search_rule": {"arm": arm, "index": 0, "rule": "mix" if arm == "0" else "ev", "settings": {}}},
+                {"in": "|player|p1|Ling-Ce|"}, {"in": "|player|p2|Opponent|"},
+                {"in": "|switch|p1a: Froslass|Froslass, L50, F|100/100"},
+                {"in": f"|switch|p2a: One|{leads[0]}, L50, M|100/100"},
+                {"in": f"|switch|p2b: Two|{leads[1]}, L50, M|100/100"}, {"in": "|turn|1"},
+                {"in": "|switch|p2a: Three|Pelipper, L50, M|100/100"}, {"feed": ["|turn|1"]},
+                {"end": "|win|" + ("Ling-Ce" if result == "win" else "Opponent")}]
+
+    def test_a_battle_names_its_arm_and_the_foes_leads_by_species(self):
+        b = ev.battle(self.log("2e", "win", ("Charizard", "Grimmsnarl")), "lingce")
+        self.assertEqual((b["arm"], b["foe_lead"], b["result"]), ("2e", "Charizard + Grimmsnarl", "win"))
+        self.assertIsNone(ev.battle(played(), "lingce")["arm"])
+
+    def test_the_arms_win_rates_with_intervals_per_opponent_and_lead(self):
+        rows = []
+        for arm, results, leads in (("0", ["win"] * 6 + ["loss"] * 4, ("Garchomp", "Grimmsnarl")),
+                                    ("2e", ["win"] * 3 + ["loss"] * 7, ("Charizard", "Grimmsnarl"))):
+            for r in results:
+                b = ev.battle(self.log(arm, r, leads), "lingce")
+                rows.append((b, "A", b["foe_lead"]))
+        got = ev.ab_arms(rows)
+        self.assertEqual((got["all"]["0"]["wins"], got["all"]["0"]["decided"]), (6, 10))
+        self.assertEqual((got["all"]["2e"]["wins"], got["all"]["2e"]["decided"]), (3, 10))
+        p, low, high = got["all"]["2e"]["win_rate"]
+        self.assertAlmostEqual(p, 0.3)
+        self.assertTrue(low < 0.3 < high)
+        d = got["all"]["difference"]
+        self.assertAlmostEqual(d["value"], -0.3)
+        self.assertTrue(d["low"] < -0.3 < d["high"] and d["high"] > 0)  # ten battles each: no preference yet
+        self.assertEqual(set(got["by_opponent"]), {"A"})
+        self.assertEqual(got["by_lead"]["Garchomp + Grimmsnarl"]["2e"]["decided"], 0)
+        self.assertIsNone(got["by_lead"]["Garchomp + Grimmsnarl"]["difference"])
+        self.assertIsNone(ev.wilson(0, 0))
+
+
 if __name__ == "__main__":
     unittest.main()

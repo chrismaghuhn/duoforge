@@ -71,10 +71,19 @@ def battle(records, bot):
     class (b) error) as "no_search", a team choice as "team"; the seconds are the search's, but a dirty game's."""
     out = {"kind": "other", "result": "unfinished", "causes": collections.Counter(), "fallbacks": collections.Counter(),
            "engine_refuses_record": 0, "defaults": 0, "timer_missing": 0, "rejected": 0, "unavailable": 0,
-           "dirty": False, "fallback": None, "stop": None, "seconds": [], "start": None, "code": None}
+           "dirty": False, "fallback": None, "stop": None, "seconds": [], "start": None, "code": None, "arm": None,
+           "foe_lead": None}
     fed = False
+    sides, foe_lead, started = {}, [], False  # the foe's two leads: its switch lines before the first turn
     for r in records:
         line = r.get("in", "")
+        parts = line.split("|") if isinstance(line, str) else []
+        if len(parts) > 3 and parts[1] == "player" and parts[3]:
+            sides[parts[2]] = _toid(parts[3]) == bot
+        elif len(parts) > 1 and parts[1] == "turn":
+            started = True
+        elif len(parts) > 3 and parts[1] == "switch" and not started and sides.get(parts[2][:2]) is False:
+            foe_lead.append(parts[3].split(",")[0].strip())
         if out["start"] is None and line.startswith("|t:|"):
             out["start"] = int(line[len("|t:|"):])  # the battle's first timestamp (unix seconds)
         if "feed" in r:
@@ -103,8 +112,11 @@ def battle(records, bot):
             out["unavailable"] += 1
         elif "dirty" in r:
             out["dirty"] = True
-        elif "log_format" in r and r.get("code"):
-            out["code"] = r["code"]  # the bot's commit and dirty state, in every battle's first record (format 2)
+        elif "log_format" in r and (r.get("code") or r.get("search_rule")):
+            if r.get("code"):
+                out["code"] = r["code"]  # the bot's commit and dirty state, in every battle's first record (format 2)
+            if r.get("search_rule"):
+                out["arm"] = r["search_rule"]["arm"]  # the A/B test of the root rule (duoforge_live.ab)
         elif "summary" in r and out["code"] is None:
             out["code"] = (r["summary"] or {}).get("code")  # the bot's commit and dirty state (pkmn_arena, since #480)
         elif "end" in r:
@@ -118,6 +130,7 @@ def battle(records, bot):
     elif fed:
         out["kind"] = "particles"
     out["causes"], out["fallbacks"] = dict(out["causes"]), dict(out["fallbacks"])
+    out["foe_lead"] = " + ".join(sorted(foe_lead)) if len(foe_lead) == 2 else None  # species only: no name
     return out
 
 
@@ -155,6 +168,48 @@ def summarize(battles):
     out["engine_refuses_record_share"] = out["engine_refuses_record"] / max(1, decisions)
     return out
 
+
+def wilson(k, n):
+    """[k / n, low, high]: the Wilson 95% interval of a share, None for n = 0."""
+    import math
+    if n == 0:
+        return None
+    z, p = 1.96, k / n
+    centre, half = p + z * z / (2 * n), z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return [p, (centre - half) / (1 + z * z / n), (centre + half) / (1 + z * z / n)]
+
+
+def ab_arms(rows):
+    """The A/B test of the root rule (docs/benchmarks/2026-10-14-ab-root-rule): rows (battle(), opponent letter, foe
+    lead) of the battles that name an arm. Per arm the decided battles (a win, a loss or a tie), the wins and the win
+    rate with its Wilson interval, and the difference of the arms' win rates with Newcombe's interval (its method 10, from
+    the two Wilson intervals); the same per opponent letter and per foe lead (the foe's two lead species), the
+    strata the README pairs the arms in. A battle that ended unfinished is counted apart."""
+    import math
+    from duoforge_live import ab
+
+    def arms(subset):
+        out = {}
+        for a in ab.ARMS:
+            played = [b for b in subset if b["arm"] == a and b["kind"] == "particles"]
+            decided = [b for b in played if b["result"] in ("win", "loss", "tie")]
+            wins = sum(b["result"] == "win" for b in decided)
+            out[a] = {"battles": len(played), "decided": len(decided), "wins": wins,
+                      "unfinished": len(played) - len(decided), "win_rate": wilson(wins, len(decided))}
+        x, y = (out[a]["win_rate"] for a in ab.ARMS)
+        if x is None or y is None:
+            out["difference"] = None
+        else:  # arm 2e minus arm 0, Newcombe's hybrid score interval
+            d = y[0] - x[0]
+            low = d - math.sqrt((y[0] - y[1]) ** 2 + (x[2] - x[0]) ** 2)
+            high = d + math.sqrt((y[2] - y[0]) ** 2 + (x[0] - x[1]) ** 2)
+            out["difference"] = {"of": f"{ab.ARMS[1]} - {ab.ARMS[0]}", "value": d, "low": low, "high": high}
+        return out
+    battles = [b for b, _, _ in rows]
+    return {"all": arms(battles),
+            "by_opponent": {o: arms([b for b, oo, _ in rows if oo == o]) for o in sorted({o for _, o, _ in rows})},
+            "by_lead": {lead: arms([b for b, _, ll in rows if ll == lead])
+                        for lead in sorted({ll for _, _, ll in rows if ll})}}
 
 def run_logs(directory, since=None, code=None):
     """The run logs (arena-run-*.json) started at or after `since` (ISO, UTC), with code: of a bot commit that starts
@@ -491,6 +546,10 @@ def main(argv=None):
                 teams[team_label(labels, o, foe_team(records, bot))].append(battles[-1])
         result = {"code": code, "since": args.since, "code_filter": args.code, "logs": len(logs), "kept": len(kept),
                   "by_code": by_code, **summarize(battles), "runs": run_logs(args.logs, args.since, args.code)}
+        tested = [(b, labels.get(opponent(records, bot), "?") if labels is not None else "?", b["foe_lead"])
+                  for records, b in zip(kept, battles) if b["arm"] is not None]
+        if tested:  # the A/B test of the root rule: its battles by arm
+            result["ab_root_rule"] = ab_arms(tested)
         if labels is not None:
             result["by_opponent"] = {k: summarize(v) for k, v in sorted(groups.items())}
             result["by_team"] = {k: summarize(v) for k, v in sorted(teams.items())}

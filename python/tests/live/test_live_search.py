@@ -28,6 +28,7 @@ class Searcher:
 
     def decide(self, roots, envs, seats, keys, last_step):
         self.calls.append((int(seats[0]), int(keys[0])))
+        self.rules = getattr(self, "rules", []) + [getattr(self, "rule", None)]  # the root rule each decide ran under
         if self.gate is not None:
             self.gate.wait(5)
         if self.error is not None:
@@ -48,11 +49,11 @@ class Roots:
         self.set_calls.append((env, seat, parts))
 
 
-def _decide(live, budget=1.0, **parts):
+def _decide(live, budget=1.0, rule=None, **parts):
     observation = {"player": 1}
     with mock.patch.object(search, "_encoded", return_value=("obs", "slots", "pairs")):
         return live.decide({**PARTS, "observation": observation, **parts}, None, None, None, key=99, episode=3,
-                           budget=budget)
+                           budget=budget, **({} if rule is None else {"rule": rule}))
 
 
 class WarmUpLive:
@@ -120,6 +121,20 @@ class LiveSearchTest(unittest.TestCase):
         self.assertEqual(live.searcher.calls, [(1, 99)])
         env, seat, parts = live.roots.set_calls[0]
         self.assertEqual((env, seat, parts["episode"], parts["obs"], parts["pairs"]), (0, 1, 3, "obs", "pairs"))
+
+    def test_a_decision_plays_the_root_rule_it_is_given_and_none_keeps_the_searchers(self):
+        # The A/B test of the root rule (duoforge_live.ab): the rule is set on the searcher before its decide, and a
+        # decision without one leaves the searcher's own; an unknown rule is refused before anything runs.
+        searcher = Searcher()
+        searcher.rule = "ev"
+        live = self.make(searcher)
+        _decide(live, rule="mix")
+        _decide(live)
+        _decide(live, rule="ev")
+        self.assertEqual(searcher.rules, ["mix", "mix", "ev"])
+        with self.assertRaisesRegex(ValueError, "unknown root rule"):
+            _decide(live, rule="nash")
+        self.assertEqual(len(searcher.calls), 3)
 
     def test_a_counted_spread_fallback_reaches_the_log_and_the_summary(self):
         # species_prior "count" (owner 2026-10-12): a searched decision that drew a foe species from the belief's

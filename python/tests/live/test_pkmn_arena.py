@@ -313,6 +313,79 @@ class ArenaTest(unittest.TestCase):
             self.assertNotIn(private, text)
         self.assertEqual(self.run_log()["counts"]["losses"], 1)
 
+    def test_the_run_log_names_the_search_settings_it_plays(self):
+        # HauptSession, 2026-10-14 (#494): a replay of the series plays the search the bot played; the run log's head
+        # names its settings (search.load keeps them on the LiveSearch), and a bot without a search names none.
+        from duoforge_live import search as live_search
+
+        class Search:
+            settings = dict(live_search.HONEST_SETTINGS)
+
+            def decide(self, *args, **kwargs):
+                return live_search.Outcome(None, "raw", None, None, 0.0)
+
+            def close(self):
+                pass
+        self.make(search=Search())
+        self.assertEqual(self.run_log()["search_settings"], live_search.HONEST_SETTINGS)
+        self.bot.close()
+        self.make()
+        self.assertNotIn("search_settings", self.run_log())
+
+    def test_the_ab_test_plays_each_battle_with_its_arms_root_rule(self):
+        # The A/B test of the root rule (owner, 2026-10-14): each team battle draws its arm from the seed and its
+        # number, names it in its first record and plays its root rule at every decision; the run log names the seed
+        # and the arms; a battle of another format draws nothing.
+        from duoforge_live import ab, search as live_search
+        rules = []
+
+        class Search:
+            settings = dict(live_search.HONEST_SETTINGS)
+
+            def decide(self, *args, **kwargs):
+                rules.append(kwargs.get("rule"))
+                return live_search.Outcome(None, "raw", None, None, 0.0)
+
+            def close(self):
+                pass
+        self.make(search=Search(), ab_seed=11)
+        head = self.run_log()["ab_root_rule"]
+        self.assertEqual(head, {"seed": 11, "block": 2, "arms": ab.settings()})
+        played = []
+        for number, room_id in enumerate((f"battle-{OTS}-21", f"battle-{OTS}-22", f"battle-{OTS}-23")):
+            rules.clear()
+            self.feed(*battle_messages(room_id))
+            self.feed(room(["|win|Opponent"], room_id))
+            first = self.battle(room_id)[0]  # the first record: the log format, and the arm
+            want = ab.arm(11, number)
+            self.assertEqual(first["search_rule"], {"arm": want, "index": number, "rule": ab.rule(want),
+                                                    "settings": ab.settings()[want]})
+            self.assertTrue(rules)
+            self.assertEqual(set(rules), {ab.rule(want)})  # every decision of the battle plays its arm's rule
+            played.append(want)
+        self.assertEqual(sorted(played[:2]), sorted(ab.ARMS))  # the first block: one battle of each arm
+        self.assertEqual(self.run_log()["counts"]["ab_arm_" + played[0]], played.count(played[0]))
+        self.feed(*battle_messages(f"battle-{CTS}-31"))  # another format: no arm, no number used
+        self.assertNotIn("search_rule", self.battle(f"battle-{CTS}-31")[0])
+        self.assertEqual(self.bot._ab_next, 3)
+
+    def test_the_ab_test_needs_the_honest_search_and_the_team(self):
+        from duoforge_live import search as live_search
+
+        class Search:
+            settings = dict(live_search.HONEST_SETTINGS)
+
+            def decide(self, *args, **kwargs):
+                return live_search.Outcome(None, "raw", None, None, 0.0)
+
+            def close(self):
+                pass
+        for kw, message in (({}, "honest search"), ({"search": Search(), "team": False}, "--team"),
+                            ({"search": type("S", (Search,), {"settings": {**live_search.HONEST_SETTINGS, "k": 4}})()},
+                             "not the arms'")):
+            with self.subTest(kw=list(kw)), self.assertRaisesRegex(ValueError, message):
+                self.make(ab_seed=1, **kw)
+
     def test_the_run_log_and_each_summary_name_the_bots_commit_and_dirty_state(self):
         # HauptSession, 2026-10-13: every result names the code that ran, its commit and whether the tree was dirty
         # (a summary's own "dirty" is the game's class (b) reason, not the code's state).
