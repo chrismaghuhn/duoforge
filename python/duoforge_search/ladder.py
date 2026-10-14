@@ -81,10 +81,10 @@ STEPS = {"0": {"base": None, "settings": {}},
          # share), passed every gate (phase B, the README) and is the live search since 2026-10-14 (owner). Its
          # siblings 2d and 2l were screened on search/2-width and did not qualify.
          "2e": {"base": "0", "settings": {"rule": "ev"}},
-         # D2 of the depth search (README docs/benchmarks/2026-10-14-depth-d2; names agreed with the AWS campaign
-         # #484): the two-turn tree below 2e's root (its root rule, spec section 5), K2 = M2 per name, the value call
-         # padded to 16,384 rows (spec section 7.2). info_key "digest" refuses the search by name until the engine has
-         # the observation digest. d2-model-* adds foe_below "model" (Q4); one of them runs, at the best width.
+         # D2 of the depth search (README docs/benchmarks/2026-10-14-depth-d2; the names the AWS campaign #484 starts
+         # them by): the two-turn tree below 2e's root (its root rule, spec section 5), K2 = M2 per name, the value call
+         # padded to 16,384 rows (spec section 7.2), keyed by the engine's observation digest (decision 0082).
+         # d2-model-* adds foe_below "model" (Q4); one of them runs, at the best width.
          **{f"d2-{w}{w}": {"base": "2e", "settings": {"depth": 2, "k2": w, "m2": w, "root_solver": "rm",
                                                       "info_key": "digest", "capacity": 16384}} for w in (2, 3, 4)},
          **{f"d2-model-{w}{w}": {"base": f"d2-{w}{w}", "settings": {"foe_below": "model"}} for w in (2, 3, 4)},
@@ -426,13 +426,17 @@ def paired_with_condition(recorded, path):
 
 
 def tree_limit(decisions):
-    """The depth-2 decisions (records with "depth") at the tree's iteration bound: those that converged only at the
-    bound (tree iterations >= depth.max_iterations) and the unconverged ones (solver_unconverged), each position with
-    its env, key and step, so that a new position at the bound is told apart from a known one (the HauptSession, D2,
-    2026-10-15: reported, the bound is never changed by the run). None without a depth-2 decision."""
-    tree = [r for r in decisions if "depth" in r and (r["kind"] == "searched" or
-                                                     (r["kind"] == "unreconstructible"
-                                                      and r.get("reason") == "solver_unconverged"))]
+    """The depth-2 tree decisions at the tree's iteration bound: those that converged only at the bound (tree
+    iterations >= depth.max_iterations) and those whose tree solve did not converge (solver_unconverged with
+    solver_failed "tree"), each position with its env, key and step, so that a new position at the bound is told
+    apart from a known one; reported only, a run never changes the bound. A tree decision is a searched record with a
+    tree (a searched team preview has none) or a tree failure; root_unconverged counts the depth-2 decisions whose
+    root solve (rm_iterations) failed instead. None without a depth-2 tree decision."""
+    def failed(r, solver):
+        return r["kind"] == "unreconstructible" and r.get("reason") == "solver_unconverged" \
+            and r.get("solver_failed") == solver
+    depth_two = [r for r in decisions if "depth" in r]
+    tree = [r for r in depth_two if (r["kind"] == "searched" and "tree" in r) or failed(r, "tree")]
     if not tree:
         return None
     positions, at_bound, unconverged = [], 0, 0
@@ -447,7 +451,8 @@ def tree_limit(decisions):
             positions.append({"env": r["env"], "key": r["key"], "step": r.get("step"), "iterations": None})
     bounds = sorted({int(r["depth"]["max_iterations"]) for r in tree})
     return {"bound": bounds[0] if len(bounds) == 1 else bounds, "tree_decisions": len(tree), "at_bound": at_bound,
-            "unconverged": unconverged, "positions": positions}
+            "unconverged": unconverged, "root_unconverged": sum(failed(r, "root") for r in depth_two),
+            "positions": positions}
 
 
 def wall_seconds(decisions):

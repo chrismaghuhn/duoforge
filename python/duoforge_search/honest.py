@@ -96,7 +96,11 @@ class LeafRequest:
 
 class Unreconstructible(Exception):
     """An explicitly counted absence of a supported public reconstruction, or of a solve: the rm root solver's
-    solver_unconverged (D1, #481)."""
+    solver_unconverged (D1, #481). solver: at depth 2, which solve failed ("tree" or "root"); None otherwise."""
+
+    def __init__(self, reason, solver=None):
+        super().__init__(reason)
+        self.solver = solver
 
 
 # How a refused leaf (its engine step is E_UNSUPPORTED) enters a decision's table (#436): "score" counts it as the
@@ -901,6 +905,8 @@ class Honest(lookahead.Lookahead):
                         result.setdefault("causes", [str(err)])
                         if isinstance(err.__cause__, matrix.RMUnconverged):  # its gap, recorded with the fallback
                             result["gap"], result["iterations"] = err.__cause__.gap, err.__cause__.iterations
+                        if err.solver is not None:  # depth 2 only: the tree's or the root's solve
+                            result["solver_failed"] = err.solver
                     except (SearchError, duoforge.DuoforgeError, ValueError) as err:
                         stop = SearchError(str(err))
                         stop.reproduction = {**getattr(err, "reproduction", {}), **base,
@@ -1124,7 +1130,8 @@ class Honest(lookahead.Lookahead):
                                        budget=budget, **solver)
         except matrix.RMUnconverged as err:  # the named fallback solver_unconverged (Q1), counted, never silent
             costs["solve"] += time.perf_counter() - t  # its time is the decision's, counted like a solve
-            raise Unreconstructible("solver_unconverged") from err
+            # at depth 2 the record names which solve failed (the root's here, the tree's in _tree_decision)
+            raise Unreconstructible("solver_unconverged", solver="root" if self.depth == 2 else None) from err
         except SearchError as err:
             err.reproduction = {"tables": tables.tolist(), "weights": weights.tolist(), "foe_probs": qs.tolist()}
             raise
@@ -1164,6 +1171,8 @@ class Honest(lookahead.Lookahead):
             raise
         dropped_rows = set(np.unique(i[request.step == lookahead._UNSUPPORTED]).tolist())
         envs = np.flatnonzero(request.open)  # the decision nodes; a node's index in the node batch is its leaf's
+        # a row a refused root leaf drops leaves the solve: its nodes are neither keyed nor expanded, as at depth 1
+        envs = envs[~np.isin(i[envs], np.array(sorted(dropped_rows), np.int64))]
         phase = self._depth_one(p, key, envs, i, j, w, request, steps_left, costs, groups, dropped_rows) \
             if envs.size else None
         keep = np.array(sorted(set(range(own.size)) - dropped_rows), np.int64)
@@ -1206,7 +1215,7 @@ class Honest(lookahead.Lookahead):
         except matrix.RMUnconverged as err:  # the named fallback solver_unconverged (Q1), counted, never silent
             costs["tree_solve"] += time.perf_counter() - started
             costs["solve"] += time.perf_counter() - t
-            raise Unreconstructible("solver_unconverged") from err
+            raise Unreconstructible("solver_unconverged", solver="tree") from err
         except SearchError as err:
             err.reproduction = {"tree": {name: np.asarray(value).tolist() for name, value in shape._asdict().items()},
                                 "prior": own_pk.tolist(), "foe_probs": request.qs.tolist()}

@@ -79,7 +79,8 @@ class Shadow:
 def row_of(width, shadow, played):
     """The row of one shadow decision: its width, kind and reason, the played and the shadow's choice, the phases'
     seconds and, for a searched tree, its iterations, gap, nodes, information sets, merge share and leaf kinds; for
-    solver_unconverged its iterations and gap (converged False); otherwise converged None."""
+    a tree solve that did not converge (solver_unconverged, solver_failed "tree") its iterations and gap (converged
+    False); otherwise converged None (a failed root solve keeps its solver_failed "root")."""
     cost = shadow["cost"]
     row = {"width": width, "env": shadow["env"], "key": shadow["key"], "boundary": shadow["boundary"],
            "kind": shadow["kind"], "reason": shadow.get("reason"), "played_choice": played["choice"],
@@ -91,8 +92,10 @@ def row_of(width, shadow, played):
         row.update(converged=True, iterations=t["iterations"], gap=t["gap"], nodes=t["nodes"],
                    information_sets=t["information_sets"], merge_share=t["merge_share"], leaves=t["leaves"],
                    k=shadow["k"], m=shadow["m"])
-    elif shadow.get("reason") == "solver_unconverged":
+    elif shadow.get("reason") == "solver_unconverged" and shadow.get("solver_failed") == "tree":
         row.update(converged=False, iterations=shadow["iterations"], gap=shadow["gap"])
+    elif shadow.get("reason") == "solver_unconverged":
+        row.update(converged=None, iterations=None, solver_failed=shadow.get("solver_failed"))
     else:
         row.update(converged=None, iterations=None)
     return row
@@ -119,19 +122,22 @@ def bounds(rows, budget=BUDGET_SECONDS, timing_width=None, bound=None):
       decision missed the gap (solver_unconverged) or none converged;
     - t_time: the count at which the tree solve costs `budget` seconds, from the p99 of the solve seconds per
       iteration at timing_width (the widest width by default), down to a multiple of 10;
-    - default: t_acc when it is at most t_time, else None (the HauptSession and the owner decide).
-    Also the counts (decisions, unconverged, observation_key_refused and its share), the iterations' quantiles per
+    - default: t_acc when it is at most t_time, else None (no default is set).
+    Also the counts (decisions, unconverged, root_unconverged: a failed root solve, which says nothing about the tree's
+    bound, observation_key_refused and its share), the iterations' quantiles per
     width, the share of converged decisions each bound of SHARES solves, and over_bound: per width, the share of keyed
     decisions (converged or not) that the set bound (tree.TREE_MAX_ITERATIONS unless bound is given) would cut off,
     more iterations than it or unconverged at all (the gate of the re-check on digest-keyed trees)."""
     bound = tree.TREE_MAX_ITERATIONS if bound is None else bound
-    count, unconverged, refused = 0, 0, 0
+    count, unconverged, refused, root_unconverged = 0, 0, 0, 0
     iterations, per_iteration, widths, keyed, over = {}, {}, set(), {}, {}
     for r in rows:
         count += 1
         widths.add(r["width"])
         if r.get("reason") == "observation_key_refused":
             refused += 1
+        if r.get("reason") == "solver_unconverged" and r.get("converged") is None:
+            root_unconverged += 1
         if r.get("converged") is not None:
             keyed[r["width"]] = keyed.get(r["width"], 0) + 1
             cut = r["converged"] is False or int(r["iterations"]) > bound
@@ -150,7 +156,8 @@ def bounds(rows, budget=BUDGET_SECONDS, timing_width=None, bound=None):
     if timing:
         p99 = float(np.percentile(np.asarray(timing, dtype=np.float64), 99))
         t_time = int(math.floor(budget / p99 / 10)) * 10 if p99 > 0 else None
-    return {"decisions": count, "unconverged": unconverged, "observation_key_refused": refused,
+    return {"decisions": count, "unconverged": unconverged, "root_unconverged": root_unconverged,
+            "observation_key_refused": refused,
             "observation_key_refused_share": refused / count if count else None,
             "iterations": {str(w): _quantiles(v) for w, v in sorted(iterations.items())},
             "seconds_per_iteration": {str(w): _quantiles(v) for w, v in sorted(per_iteration.items())},

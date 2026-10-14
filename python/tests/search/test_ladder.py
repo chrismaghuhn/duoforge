@@ -115,8 +115,8 @@ class StepSettingsTest(unittest.TestCase):
 
 
 class DepthTwoStepsTest(unittest.TestCase):
-    """D2's arms (README docs/benchmarks/2026-10-14-depth-d2, agreed with the AWS campaign #484): fixed names whose
-    settings live here, so a campaign starts them by name alone."""
+    """D2's arms (README docs/benchmarks/2026-10-14-depth-d2; the AWS campaign #484 starts them by these names): fixed
+    names whose settings live here, so a campaign starts them by name alone."""
 
     def test_the_depth_two_arms_are_2e_with_the_tree(self):
         tree = {"depth": 2, "root_solver": "rm", "info_key": "digest", "capacity": 16384}
@@ -275,23 +275,33 @@ class RefusedLeavesTest(unittest.TestCase):
 
 
 class TreeLimitTest(unittest.TestCase):
-    # The HauptSession (D2, 2026-10-15): the depth-2 decisions at the iteration bound are counted per arm, with the
-    # position that reached it, so that a new one is told apart from the known calibration decision.
+    # The depth-2 decisions at the tree's iteration bound, counted per arm with the position that reached it, so that
+    # a new one is told apart from the known calibration decision of D2's offline pass.
     @staticmethod
     def tree(env, key, step, iterations, bound=490):
         return {"kind": "searched", "env": env, "key": key, "step": step, "depth": {"max_iterations": bound},
                 "tree": {"iterations": iterations}}
 
+    @staticmethod
+    def unconverged(env, key, step, solver):
+        return {"kind": "unreconstructible", "reason": "solver_unconverged", "env": env, "key": key, "step": step,
+                "depth": {"max_iterations": 490}, "solver_failed": solver}
+
     def test_decisions_at_the_bound_and_unconverged_are_counted_with_their_position(self):
         records = [self.tree(1, 11, 3, 120), self.tree(56, 179, 9, 490), self.tree(2, 22, 4, 489),
-                   {"kind": "unreconstructible", "reason": "solver_unconverged", "env": 7, "key": 77, "step": 5,
-                    "depth": {"max_iterations": 490}},
+                   self.unconverged(7, 77, 5, "tree"), self.unconverged(9, 99, 7, "root"),
                    {"kind": "unreconstructible", "reason": "solver_unconverged", "env": 8, "key": 88, "step": 6},
                    {"kind": "team"}]
         self.assertEqual(ladder.tree_limit(records), {
-            "bound": 490, "tree_decisions": 4, "at_bound": 1, "unconverged": 1,
+            "bound": 490, "tree_decisions": 4, "at_bound": 1, "unconverged": 1, "root_unconverged": 1,
             "positions": [{"env": 56, "key": 179, "step": 9, "iterations": 490},
                           {"env": 7, "key": 77, "step": 5, "iterations": None}]})
+
+    def test_a_searched_preview_has_no_tree_and_is_left_out(self):
+        # a depth-2 arm with a searched team preview: that record has "depth" but no tree
+        preview = {"kind": "searched", "env": 3, "key": 33, "step": 0, "depth": {"max_iterations": 490}}
+        got = ladder.tree_limit([preview, self.tree(1, 11, 3, 490)])
+        self.assertEqual((got["tree_decisions"], got["at_bound"]), (1, 1))
 
     def test_no_depth_two_decision_is_none(self):
         self.assertIsNone(ladder.tree_limit([{"kind": "searched", "env": 1, "key": 1, "step": 1}, {"kind": "team"}]))

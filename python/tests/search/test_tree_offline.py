@@ -54,6 +54,23 @@ class Bounds(unittest.TestCase):
         self.assertEqual((b["observation_key_refused"], b["observation_key_refused_share"]), (1, 0.5))
         self.assertEqual(b["t_acc"], 200)
 
+    def test_an_unconverged_root_is_counted_apart_from_the_tree(self):
+        # the root rule's own solve (rm_iterations) failing says nothing about the tree's bound
+        root = dict(_row(2, None, kind="unreconstructible", reason="solver_unconverged", converged=None),
+                    solver_failed="root")
+        b = tree_offline.bounds([_row(2, 100), root], budget=0.4, timing_width=2)
+        self.assertEqual((b["unconverged"], b["root_unconverged"], b["t_acc"]), (0, 1, 200))
+        self.assertEqual(b["over_bound"]["keyed"], {"2": 1})
+
+    def test_the_row_of_a_shadow_decision_names_the_failed_solver(self):
+        cost = {"tree_policy": 0.1, "tree_evaluate": 0.2, "tree_solve": 0.3}
+        base = {"env": 1, "key": 2, "boundary": "TURN", "kind": "unreconstructible", "reason": "solver_unconverged",
+                "choice": 5, "cost": cost, "iterations": 490, "gap": 0.01}
+        tree_row = tree_offline.row_of(2, dict(base, solver_failed="tree"), {"choice": 5})
+        root_row = tree_offline.row_of(2, dict(base, solver_failed="root"), {"choice": 5})
+        self.assertEqual((tree_row["converged"], tree_row["iterations"]), (False, 490))
+        self.assertEqual((root_row["converged"], root_row["solver_failed"]), (None, "root"))
+
     def test_the_share_over_the_set_bound_per_width(self):
         # The gate of the re-check on digest-keyed trees: per width, the share of keyed decisions the set bound
         # (tree.TREE_MAX_ITERATIONS by default) would cut off: more iterations than the bound, or unconverged at all.

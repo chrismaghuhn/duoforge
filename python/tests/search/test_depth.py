@@ -310,7 +310,8 @@ class DigestKeyed(Depth):
     expanded by Batch.expand_digest and keyed from its sidecar."""
 
     def test_depth_two_defaults_to_the_digest_key(self):
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 self.make(ctx, depth=2, root_solver="rm") as search:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                self.make(ctx, depth=2, root_solver="rm") as search:
             self.assertEqual(search.info_key, "digest")
             self.assertIsInstance(search.nodes, infokey.DigestNodes)
             self.assertEqual(search.nodes.batch.envs, search.s * search.k * search.m)
@@ -336,17 +337,99 @@ class DigestKeyed(Depth):
     def test_a_library_without_the_call_refuses_depth_two_by_name(self):
         class Older:  # a library without duoforge_batch_expand_digest
             pass
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 mock.patch.object(infokey, "load_library", return_value=Older()):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                mock.patch.object(infokey, "load_library", return_value=Older()):
             with self.assertRaisesRegex(SearchError, "^observation_digest_unavailable"):
                 self.make(ctx, depth=2, root_solver="rm").close()
 
     def test_a_refused_digest_is_the_named_fallback(self):
         refusing = Recorded(refuse=range(1 << 16))  # every stepped node's digest reported refused
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 mock.patch.object(infokey, "_library_digest_call", return_value=refusing):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                mock.patch.object(infokey, "_library_digest_call", return_value=refusing):
             _, records = self.abc_turn(ctx, steps_left=UNLIMITED, root_solver="rm", depth=2)
         self.assertGreater(len(refusing.calls), 0)
         for r in records:
             self.assertEqual((r["kind"], r["reason"]), ("unreconstructible", "observation_key_refused"))
+
+
+class NamedFallbacks(Depth):
+    """The named fallbacks of a depth-2 decision through Honest.decide (the branch review of 2026-10-15)."""
+
+    def solved(self, records):
+        return [r for r in records if r.get("reason") != "observation_key_refused"]  # the record key's gap (position 2)
+
+    def test_an_unconverged_tree_names_the_tree_solver(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            _, records = self.abc_turn(ctx, steps_left=UNLIMITED, tree_iterations=1, **DEPTH2)
+        self.assertTrue(self.solved(records))
+        for r in self.solved(records):
+            self.assertEqual((r["kind"], r["reason"], r["solver_failed"]),
+                             ("unreconstructible", "solver_unconverged", "tree"))
+            self.assertIn("gap", r)
+            self.assertIn("iterations", r)
+
+    def test_an_unconverged_root_names_the_root_solver(self):
+        # the root rule's own solve of the root tables (rm_iterations), apart from the tree's (tree_iterations)
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            _, records = self.abc_turn(ctx, steps_left=UNLIMITED, rm_iterations=1, **DEPTH2)
+        self.assertTrue(self.solved(records))
+        for r in self.solved(records):
+            self.assertEqual((r["kind"], r["reason"], r["solver_failed"]),
+                             ("unreconstructible", "solver_unconverged", "root"))
+
+    def test_depth_one_records_name_no_solver(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            _, records = self.abc_turn(ctx, root_solver="rm", rm_iterations=1)
+        for r in records:
+            self.assertEqual(r["reason"], "solver_unconverged")
+            self.assertNotIn("solver_failed", r)  # depth 1's records stay as on main
+
+    def test_the_foe_model_below_the_root_decides_through_honest(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            actions, records = self.abc_turn(ctx, steps_left=UNLIMITED, foe_below="model", **DEPTH2)
+        for x in searched(self, records):
+            r = records[x]
+            self.assertEqual(r["depth"]["foe_below"], "model")
+            self.assertEqual(int(actions[x]), r["choice"])
+            self.assertLessEqual(r["tree"]["gap"], matrix.RM_EPSILON)
+
+    def test_a_row_dropped_at_the_root_needs_no_keys_below_it(self):
+        # Root row 0's edge in world 0 is refused (#436 drops the row); its other depth-1 nodes are never keyed, so a
+        # key provider that refuses them cannot make the decision observation_key_refused.
+        refused = C["DUOFORGE_E_UNSUPPORTED"]
+
+        class RowZeroRefused(StubObservationKey):
+            def keys(self, nodes, envs, viewer, closed):
+                out, _ = super().keys(nodes, envs, viewer, closed)
+                return out, np.asarray(envs) // (2 * self.s) == 0  # node env = (i * m + j) * s + w, m = 2
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            pool = duoforge.teams.load(ctx, ["A", "B", "C"])
+            table = belief.SpreadTable.from_sides(pool.sides)
+            with duoforge.Batch(ctx, pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0])), 2, 42) as roots, \
+                    self.make(ctx, table=table, excluded=[1, 2, 0], **DEPTH2) as search:
+                search.decide(roots, [0, 1, 2], [0, 0, 0], [123] * 3, [False] * 3, steps_left=[UNLIMITED] * 3)
+                roots.query_factored()
+                choices = np.zeros((3, 2), _layout.FACTORED_CHOICE)
+                choices["picks"][:, :, :4] = np.arange(4, dtype=np.uint8)
+                roots.step_factored(choices)
+                roots.query_factored()
+                _, base = search.decide(roots, [0], [0], [456], [False], steps_left=[UNLIMITED])
+                search._keys = RowZeroRefused(search.s)
+                real = search.nodes.expand
+
+                def expand(*args, **kwargs):
+                    obs, step, encode, results, leaf = real(*args, **kwargs)
+                    step = step.copy()
+                    step[0] = refused  # root row 0, foe pair 0, world 0
+                    return obs, step, encode, results, leaf
+
+                with mock.patch.object(search.nodes, "expand", expand):
+                    _, records = search.decide(roots, [0], [0], [456], [False], steps_left=[UNLIMITED])
+        self.assertEqual(base[0]["kind"], "searched")
+        r = records[0]
+        self.assertEqual(r["kind"], "searched")
+        self.assertEqual(r["refused_pairs"], [base[0]["own_pairs"][0]])
 
 
 class WorldPolicies(Depth):
