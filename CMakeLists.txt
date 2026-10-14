@@ -195,7 +195,7 @@ if(WIN32)
     target_include_directories(duoforge_private PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
     set_target_properties(duoforge_private PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    if(MSVC)
+    if(MSVC OR MINGW)
         set_target_properties(duoforge_private PROPERTIES
             INTERPROCEDURAL_OPTIMIZATION OFF INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
     endif()
@@ -222,10 +222,12 @@ target_link_libraries(duoforge_shared PRIVATE Threads::Threads)
 set_target_properties(duoforge_shared PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON)
-if(MSVC)
+if(MSVC OR MINGW)
     # WINDOWS_EXPORT_ALL_SYMBOLS reads the objects' symbol tables, which
-    # /GL objects do not have: link-time code generation stays off here (the
-    # per-configuration property overrides the general one).
+    # MSVC /GL objects do not have. MinGW LTO also loses archive provenance,
+    # bypassing --exclude-libs and exporting private/generated symbols.
+    # Keep IPO off for this DLL and its private archive, not the static core
+    # or benchmarks (the per-configuration property overrides the general one).
     set_target_properties(duoforge_shared PROPERTIES
         INTERPROCEDURAL_OPTIMIZATION OFF
         INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
