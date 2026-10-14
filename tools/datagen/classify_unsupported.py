@@ -17,18 +17,23 @@ does not mark. Each entry gets exactly one class, in this order:
   hand-work          the pinned object has a callback (a property named on* or *Callback, or a function value, at any
                      depth), a condition, or its id is referenced in the pinned code (see below). Reasons name the
                      callbacks and every reference: "callback onHit", "condition", "referenced by id at file:line".
-  data-only          none of the above. The family is then:
-                     - "no effect fields" when the object has no effect field (only columns and inert keys);
-                     - a witness {id, handler}: a modelled and marked entry of the same kind that has every effect
-                       field of the object, the generic columns by shape and the dedicated fields by exact text;
-                     - "none" otherwise, with "uncovered" fields that no witness has, or "nearest": a dedicated
-                       witness whose fields have the same shape but differ in text (special, differs).
+  data-only          none of the above. Every effect field is covered on its own (the family, per field):
+                     - a generic column (flags.X, target, boosts, secondary, status, sideCondition, pseudoWeather,
+                       flags as a set of names): covered by any modelled and marked entry that has the same key with
+                       the same value ("flags.bullet": {"id", "column": "flags"});
+                     - a dedicated field (multihit, secondaries, self, volatileStatus, ...): covered by the exact text
+                       of a dedicated witness ("multihit": {"id", "special": "MULTI_HIT_2_5"});
+                     - an item or an ability field: covered by an entry of the same kind with the same key and text
+                       ("boosts": {"id", "family": "NONE"}).
+                     An entry with no effect field gets family "no effect fields". Otherwise family is the
+                     per-field map when every field is covered; else family "none" with "uncovered" fields, and
+                     "nearest" when a dedicated witness has the field with other text ({id, special, differs}).
 
 Pinned facts used:
 - A move's generic columns are the record keys of gen_closure.py parse_move (lines 507-623): type, category,
   basePower, accuracy, pp, priority, target, critRatio, flags, recoil, drain, a single secondary, boosts (through
-  boost_role), status, sideCondition, pseudoWeather. Their values are data, so a witness with the special NONE
-  matches them by shape: the parameters (status, volatile, boosts) are abstracted (see normalize).
+  boost_role), status, sideCondition, pseudoWeather. Their values are data: any modelled and marked entry with the
+  same key and the same value covers the field, not necessarily the same entry.
 - A move's dedicated specials are the templates of gen_closure.py SPECIAL_P (2876-2915). Each pins the exact text
   of its fields: ICE_FANG pins `status: 'frz'` (2899), MULTI_HIT_2_5 `multihit: [2, 5]` (2900), CONFUSE
   `volatileStatus: 'confusion'` (2910), PARTIAL_TRAP `volatileStatus: 'partiallytrapped'` (2914), LOCKED_MOVE
@@ -36,6 +41,16 @@ Pinned facts used:
   special matches a field only by exact text. Items and abilities: every family other than NONE is dedicated.
 - Non-column fields of a move: multihit, secondaries (plural), volatileStatus, self (its volatile part), selfdestruct,
   ohko and the rest of the special templates. They are matched by exact text in every case.
+
+A data-only batch (a pool move with fields that no existing special owns) needs, in gen_closure.py:
+- only columns when every field is a generic column with a value that some entry already has (no change needed);
+- otherwise an entry in the special map for its id: SPECIAL_P (2354-2483), `'<id>': ('<HANDLER>', set())`, and the
+  handler's owned text in G2_OWNED_FIELDS (2858-2915), because parse_move (316-350) looks the special up by move id
+  and fails on a dedicated field (multihit, secondaries, self volatile) that the id does not own. Other column fields
+  combine freely with it, as the owned-field check only pins the owned fields' exact text.
+Two caveats: a flag in IGNORED_FLAGS (gen_closure.py 113-116: bullet, metronome, mirror, ...) has no engine effect, so
+covering it by a witness only shows that the generator accepts the name; and multihit is parsed for every move by
+its values (gen_closure.py 499-503), the special is what gives it an engine effect.
 
 Id references (the scan of the pinned code, data/conditions.ts and sim/*.ts and the Champions mod, minus its definition
 tables moves/abilities/items/learnsets/formats-data/text, plus data/rulesets.ts and data/scripts.ts when present).
@@ -173,25 +188,32 @@ def make_witness(eid, handler, bodies, kind='move'):
     return {'id': eid, 'handler': handler, 'fields': a['fields'], 'exact': a['exact']}
 
 
-def _generic(kind, key, handler):
-    """Whether a field of a witness with this handler is matched by shape (a generic column) or by exact text."""
-    if handler != 'NONE':
+def is_generic(kind, key):
+    """A generic column of a move (a flag, a target, a boosts dict, a secondary ...): covered by any entry that has the
+    same key with the same value. Every other move field, and every item and ability field, is dedicated: covered by
+    the exact text of a dedicated witness."""
+    if kind != 'move':
         return False
-    if kind == 'move':
-        return key.split('.')[0] in GENERIC_MOVE_KEYS
-    return True
+    return key.startswith('flags.') or key in GENERIC_MOVE_KEYS
 
 
-def field_matches(kind, witness, key, cand):
-    if key not in witness['fields']:
-        return False
-    if _generic(kind, key, witness['handler']):
-        return witness['fields'][key] == cand['fields'][key]
-    return witness['exact'][key] == cand['exact'][key]
+def field_witness(kind, key, cand, witnesses):
+    """The witness of one field of the candidate, or None (the first in order that covers it)."""
+    for w in _ordered(witnesses):
+        if key not in w['exact'] or w['exact'][key] != cand['exact'][key]:
+            continue
+        if is_generic(kind, key) or kind != 'move' or w['handler'] != 'NONE':
+            return w
+    return None
 
 
-def covers(kind, witness, cand):
-    return all(field_matches(kind, witness, key, cand) for key in cand['fields'])
+def _entry_for(kind, key, w):
+    """The family entry of one covered field: the special of a dedicated field, the column of a generic one."""
+    if kind != 'move':
+        return {'id': w['id'], 'family': w['handler']}
+    if is_generic(kind, key):
+        return {'id': w['id'], 'column': key.split('.')[0]}
+    return {'id': w['id'], 'special': w['handler']}
 
 
 def _ordered(witnesses):
@@ -208,17 +230,14 @@ def _token_diff(cand, wit):
     return '%s vs %s' % (cand, wit)
 
 
-def nearest_of(kind, cand, witnesses):
-    """The first dedicated witness whose fields have the same shapes as the candidate's but differ in exact text."""
+def nearest_of(kind, key, cand, witnesses):
+    """A dedicated witness of an uncovered dedicated field whose text differs from the candidate's."""
+    if kind != 'move' or is_generic(kind, key):
+        return None
     for w in _ordered(witnesses):
-        if w['handler'] == 'NONE' or not cand['fields']:
-            continue
-        if not all(key in w['fields'] and w['fields'][key] == shape for key, shape in cand['fields'].items()):
-            continue
-        differing = [k for k in cand['fields'] if w['exact'][k] != cand['exact'][k]]
-        if differing:
+        if w['handler'] != 'NONE' and key in w['exact']:
             return {'id': w['id'], 'special': w['handler'],
-                    'differs': '; '.join('%s %s' % (k, _token_diff(cand['exact'][k], w['exact'][k])) for k in differing)}
+                    'differs': '%s %s' % (key, _token_diff(cand['exact'][key], w['exact'][key]))}
     return None
 
 
@@ -238,17 +257,18 @@ def classify_entry(kind, eid, name, modelled, analysis, witnesses, pin_lines, re
     if not fields:
         return _record(kind, eid, name, 'data-only', ['no callback', 'no id reference', 'no effect fields'],
                        'no effect fields', None, pin_lines)
-    best = next((w for w in _ordered(witnesses) if covers(kind, w, analysis)), None)
-    if best is not None:
-        family = {'id': best['id'], 'handler': best['handler']}
-        reasons = ['no callback', 'no id reference', 'fields expressed by %s (%s)' % (best['id'], best['handler'])]
-        return _record(kind, eid, name, 'data-only', reasons, family, None, pin_lines)
-    uncovered = sorted(k for k in fields if not any(field_matches(kind, w, k, analysis) for w in witnesses))
-    nearest = nearest_of(kind, analysis, witnesses)
-    if uncovered:
-        reasons = ['no callback', 'no id reference', 'uncovered: ' + ', '.join(uncovered)]
-    else:
-        reasons = ['no callback', 'no id reference', 'no single witness has all fields: ' + ', '.join(sorted(fields))]
+    family, uncovered, nearest = {}, [], None
+    for key in sorted(fields):
+        w = field_witness(kind, key, analysis, witnesses)
+        if w is None:
+            uncovered.append(key)
+            nearest = nearest or nearest_of(kind, key, analysis, witnesses)
+        else:
+            family[key] = _entry_for(kind, key, w)
+    base = ['no callback', 'no id reference']
+    if not uncovered:
+        return _record(kind, eid, name, 'data-only', base + ['every field covered'], family, None, pin_lines)
+    reasons = base + ['uncovered: ' + ', '.join(uncovered)]
     return _record(kind, eid, name, 'data-only', reasons, 'none', nearest, pin_lines)
 
 

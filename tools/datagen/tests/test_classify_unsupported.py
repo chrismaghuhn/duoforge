@@ -37,6 +37,7 @@ MULTI = witness('multiwitness', 'MULTI_HIT_2_5', 'multihit: [2, 5],', 'basePower
 ICE_FANG = witness('icefang', 'ICE_FANG',
                    'secondaries: [ { chance: 10, status: "frz", }, { chance: 10, volatileStatus: "flinch", }, ],')
 GENERIC_SECONDARY = witness('generic2', 'NONE', 'secondary: { chance: 10, status: "frz", },')
+BULLET = witness('bulletwitness', 'NONE', 'flags: {bullet: 1},', 'basePower: 10,')
 
 
 def analyse_move(name, *lines):
@@ -69,7 +70,7 @@ class MoveClasses(unittest.TestCase):
     def test_generic_witness_matches_by_shape(self):
         rec = classify_move('plainish', 'target: "adjacentAllyOrSelf",', 'basePower: 60,', witnesses=[GENERIC])
         self.assertEqual(rec['class'], 'data-only')
-        self.assertEqual(rec['family'], {'id': 'plainmove', 'handler': 'NONE'})
+        self.assertEqual(rec['family'], {'target': {'id': 'plainmove', 'column': 'target'}})
 
     def test_field_shape_no_witness_has_is_family_none_naming_the_field(self):
         rec = classify_move('bonerush', 'multihit: [3, 3],', 'basePower: 25,', witnesses=[GENERIC])
@@ -79,7 +80,7 @@ class MoveClasses(unittest.TestCase):
 
     def test_multihit_range_witness_matches_exactly(self):
         rec = classify_move('pinmissile', 'multihit: [2, 5],', 'basePower: 25,', witnesses=[GENERIC, MULTI])
-        self.assertEqual(rec['family'], {'id': 'multiwitness', 'handler': 'MULTI_HIT_2_5'})
+        self.assertEqual(rec['family'], {'multihit': {'id': 'multiwitness', 'special': 'MULTI_HIT_2_5'}})
 
     def test_dedicated_special_mismatch_is_none_with_nearest(self):
         rec = classify_move('firefang', 'secondaries: [ { chance: 10, status: "brn", }, '
@@ -93,11 +94,29 @@ class MoveClasses(unittest.TestCase):
     def test_dedicated_special_exact_text_matches(self):
         rec = classify_move('thunderfist', 'secondaries: [ { chance: 10, status: "frz", }, '
                                            '{ chance: 10, volatileStatus: "flinch", }, ],', witnesses=[ICE_FANG])
-        self.assertEqual(rec['family'], {'id': 'icefang', 'handler': 'ICE_FANG'})
+        self.assertEqual(rec['family'], {'secondaries': {'id': 'icefang', 'special': 'ICE_FANG'}})
 
-    def test_generic_special_none_matches_parameters_by_shape(self):
+    def test_generic_column_needs_the_same_value(self):
         rec = classify_move('firefang', 'secondary: { chance: 10, status: "brn", },', witnesses=[GENERIC_SECONDARY])
-        self.assertEqual(rec['family'], {'id': 'generic2', 'handler': 'NONE'})
+        self.assertEqual(rec['family'], 'none')
+        self.assertIn('uncovered: secondary', rec['reasons'])
+
+    def test_generic_column_with_the_same_value_is_covered(self):
+        rec = classify_move('firefang', 'secondary: { chance: 10, status: "frz", },', witnesses=[GENERIC_SECONDARY])
+        self.assertEqual(rec['family'], {'secondary': {'id': 'generic2', 'column': 'secondary'}})
+
+    def test_each_field_may_have_its_own_witness(self):
+        rec = classify_move('bulletseed', 'multihit: [2, 5],', 'flags: {bullet: 1},', 'basePower: 25,',
+                            witnesses=[MULTI, BULLET])
+        self.assertEqual(rec['class'], 'data-only')
+        self.assertEqual(rec['family'], {
+            'multihit': {'id': 'multiwitness', 'special': 'MULTI_HIT_2_5'},
+            'flags.bullet': {'id': 'bulletwitness', 'column': 'flags'}})
+
+    def test_a_field_value_no_entry_has_is_none(self):
+        rec = classify_move('odd', 'multihit: [2, 5],', 'target: "foo",', witnesses=[MULTI, BULLET])
+        self.assertEqual(rec['family'], 'none')
+        self.assertIn('uncovered: target', rec['reasons'])
 
     def test_id_reference_is_hand_work_naming_every_site(self):
         rec = classify_move('bite', 'basePower: 60,', witnesses=[GENERIC],
@@ -165,10 +184,10 @@ class ItemAndAbilityClasses(unittest.TestCase):
 
     def test_item_with_an_effect_field_and_a_witness(self):
         item_w = cu.make_witness('sitrusberry', 'NONE', [body('sitrusberry', 'boosts: {atk: 1},')])
-        a = cu.analyse('item', [body('starapitite', 'boosts: {atk: 2},')])
+        a = cu.analyse('item', [body('starapitite', 'boosts: {atk: 1},')])
         rec = cu.classify_entry('item', 'starapitite', 'Starapitite', False, a, [item_w], 'data/items.ts:1-2')
         self.assertEqual(rec['class'], 'data-only')
-        self.assertEqual(rec['family'], {'id': 'sitrusberry', 'handler': 'NONE'})
+        self.assertEqual(rec['family'], {'boosts': {'id': 'sitrusberry', 'family': 'NONE'}})
 
     def test_ability_with_on_start_is_hand_work(self):
         a = cu.analyse('ability', [body('anticipation', 'name: "Anticipation",', 'onStart(pokemon) {', '},')])
