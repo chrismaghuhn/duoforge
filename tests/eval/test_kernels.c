@@ -160,6 +160,39 @@ static void kernels(df_test *t)
     DF_CHECK_EQ_U64(t,bound,UINT64_C(2684355584));
     DF_CHECK(t,dfi_eval_dot_bound(UINT32_MAX,32768,128,INT64_MAX,(dfi_eval_scale){1,0},&bound)==DUOFORGE_E_EXHAUSTED);
 }
+static void extents(df_test *t)
+{
+    /* Same pure helper used by every typed preflight; a supplied limit tests
+       32-bit boundaries on all CI hosts without overriding production SIZE_MAX. */
+    const size_t bound32 = UINT32_MAX;
+    DF_CHECK(t,dfi_eval_extent(1,UINT32_MAX,1,bound32));
+    DF_CHECK(t,!dfi_eval_extent(1,UINT32_MAX,2,bound32));
+    DF_CHECK(t,!dfi_eval_extent(1,UINT32_MAX,4,bound32));
+    DF_CHECK(t,!dfi_eval_extent(1,UINT32_MAX,8,bound32));
+    DF_CHECK(t,dfi_eval_extent(0,UINT32_MAX,2,bound32));
+    DF_CHECK(t,!dfi_eval_extent(1,1,0,bound32));
+    DF_CHECK(t,dfi_eval_extent(2,10,2,40));
+    DF_CHECK(t,!dfi_eval_extent(2,10,2,39));
+    DF_CHECK(t,dfi_eval_extent(1,0,8,0));
+    DF_CHECK(t,!dfi_eval_extent(UINT32_MAX,UINT32_MAX,2,SIZE_MAX));
+#if SIZE_MAX == UINT32_MAX
+    /* One-cell backing buffers: an attempted loop is an immediate out-of-bounds
+       read/write under ASan. Every impossible extent must refuse untouched. */
+    const int16_t in = 1;const int8_t weight = 1;const int64_t bias = 0;
+    const dfi_eval_scale scale = {1,0};const uint8_t mask = 1;
+    int16_t out16 = -23131;int32_t out32 = INT32_C(-1515870811);
+    DF_CHECK(t,dfi_eval_dense(&in,UINT32_MAX,&weight,&bias,&scale,1,false,&out16)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,dfi_eval_dense(&in,1,&weight,&bias,&scale,UINT32_MAX,false,&out16)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,dfi_eval_dense32(&in,1,&weight,&bias,&scale,UINT32_MAX,false,&out32)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,dfi_eval_embedding(&weight,1,UINT32_MAX,0,scale,&out16)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,dfi_eval_pool(&in,&mask,1,UINT32_MAX,false,scale,&out16)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,dfi_eval_pool(NULL,NULL,0,UINT32_MAX,true,scale,&out16)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,dfi_eval_gather(&in,0,UINT32_MAX,UINT32_MAX,false,&out16)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,dfi_eval_concat(&in,UINT32_MAX,scale,&in,0,scale,UINT32_MAX,&out16)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,dfi_eval_concat(&in,0,scale,&in,0,scale,UINT32_MAX,&out16)==DUOFORGE_E_CAPACITY);
+    DF_CHECK(t,out16==-23131&&out32==INT32_C(-1515870811));
+#endif
+}
 static void inputs(df_test *t)
 {
     const dfi_eval_column *cols=dfi_eval_input_columns();
@@ -208,7 +241,7 @@ int main(int argc,char **argv)
 #ifdef DF_EVAL_ALLOC_HOOKS
     allocation_watch=true;
 #endif
-    kernels(&t);inputs(&t);
+    kernels(&t);extents(&t);inputs(&t);
 #ifdef DF_EVAL_ALLOC_HOOKS
     allocation_watch=false;DF_CHECK_EQ_U64(&t,allocations,0);
 #endif

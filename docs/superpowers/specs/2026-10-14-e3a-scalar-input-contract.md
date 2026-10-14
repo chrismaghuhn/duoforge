@@ -40,7 +40,12 @@ requantization. An absent occupant gathers a zero vector without dereferencing
 its index. Concatenation has explicit branch scales to the common destination
 scale and refuses insufficient capacity before writing. Caller buffers must
 be disjoint and have their declared extents. Any refusal invalidates the whole
-output; partial results must never be consumed.
+output; partial results must never be consumed. Each typed input/output extent
+is checked against SIZE_MAX by division before any loop, including bias/scale
+vectors, dense32 outputs, empty-pool outputs and concatenation capacity. An
+unaddressable byte extent returns `E_CAPACITY` before reading or writing cells.
+The same pure predicate is tested with a smaller byte limit on every platform;
+32-bit builds additionally execute one-cell-backed impossible-size preflights.
 
 Canonical inputs begin with the existing encoder-6 row. The private inline
 bridge in `encode_internal.h` copies its binary32 representation with `memcpy`,

@@ -1,6 +1,14 @@
 #ifndef DFI_EVAL_KERNELS_H
 #define DFI_EVAL_KERNELS_H
 #include "eval/arithmetic.h"
+#include <stddef.h>
+/* Pure byte-extent predicate. The explicit limit permits platform-independent
+   tests of narrower address spaces without a runtime override. No multiplication
+   occurs until divisibility bounds prove the byte extent representable. */
+static inline bool dfi_eval_extent(uint32_t rows, uint32_t width, size_t element_size, size_t byte_limit)
+{
+    return element_size != 0u && (rows == 0u || (size_t)width <= byte_limit / element_size / rows);
+}
 /* Row-major weights [output][input], ascending reductions; caller-owned buffers
    must be disjoint. Registered masks are bytes exactly 0 or 1. Empty pools zero.
    Failure invalidates output (no partial output may be consumed). */
