@@ -763,5 +763,32 @@ class WordTest(unittest.TestCase):
         self.assertIsInstance(np.uint64(cts.word(1, "k", 0, 0, 0, 0)), np.uint64)
 
 
+class ReplayHelpersTest(unittest.TestCase):
+    """The replay helpers' pure parts (moved with them from the Search lane's ko_check, search/ko-check-cts b148e309)."""
+
+    def test_room_of_a_log_file(self):
+        room = "battle-gen9championsvgc2026regmcots-7"
+        self.assertEqual(cts.room_of(f"x/{room}-tiansuan.jsonl"), room)
+        with self.assertRaises(cts.Refused):
+            cts.room_of("x/arena-run-1.json")
+
+    def test_a_battle_ended_on_its_last_choice_plays_it_as_sent(self):
+        ended = [{"feed": ["|turn|7"]}, {"decision": 22, "sent": "move 3 2, pass"}, {"in": "|win|x"}, {"end": "|win|x"},
+                 {"summary": {}}]
+        self.assertTrue(cts.ended_on(ended, 22))
+        for later in ({"feed": ["|turn|8"]}, {"accepted": "move 3 2, pass"}, {"in": "|error|[Invalid choice] no"}):
+            with self.subTest(later=later):
+                self.assertFalse(cts.ended_on(ended[:2] + [later] + ended[2:], 22))
+        self.assertFalse(cts.ended_on(ended[:3], 22))  # no end: the log stops, the battle did not end
+        self.assertFalse(cts.ended_on(ended, 23))
+
+    def test_the_logged_choice_is_the_accepted_one(self):
+        self.assertEqual(cts.logged_choice({"sent": "move 1, move 2"}), "move 1, move 2")
+        self.assertEqual(cts.logged_choice({"sent": "move 1, move 2", "accepted": "move 3, move 2"}),
+                         "move 3, move 2")
+        with self.assertRaisesRegex(cts.Refused, "not_accepted"):
+            cts.logged_choice({"sent": "move 1, move 2", "accepted": None})
+
+
 if __name__ == "__main__":
     unittest.main()
