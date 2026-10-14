@@ -39,9 +39,12 @@ class Arena(unittest.TestCase):
             for environ in ({}, {"DUOFORGE_COMMIT": "8c4fe662"}, {"DUOFORGE_COMMIT": "", "DUOFORGE_DIRTY": "0"}):
                 with self.subTest(environ=environ), self.assertRaisesRegex(SystemExit, "DUOFORGE_COMMIT"):
                     arena.provenance(tmp, environ)
-        here = arena.provenance(Path(arena.__file__).parent, {})  # a git checkout names itself
-        self.assertRegex(here["commit"], "^[0-9a-f]{40}$")
-        self.assertIn(here["dirty"], (True, False))
+        import subprocess
+        inside = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(arena.__file__).parent, capture_output=True)
+        if inside.returncode == 0:  # a git checkout names itself (a copy without git, e.g. a WSL run, has none)
+            here = arena.provenance(Path(arena.__file__).parent, {})
+            self.assertEqual(here["commit"], inside.stdout.decode().strip())
+            self.assertIn(here["dirty"], (True, False))
 
     def test_the_pool_is_a_pool_networks_and_a_network_without_one_is_refused(self):
         # BC6 (the live network) names no team pool: the pool comes from a pool network's config (--teams-from), as in

@@ -1,0 +1,182 @@
+[
+  {
+    "epoch": "baseline",
+    "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "dirty": false,
+    "phase": "before",
+    "profile": "ipo",
+    "artifact": "duoforge_bench",
+    "sha256": "94389b70e09ca5614c8f7d4a99bf5e6afb6a6448b69b399f1ddfae167c27bad2",
+    "text_bytes": 449253,
+    "data_bytes": 1000,
+    "bss_bytes": 113888,
+    "get_damage_definitions": {
+      "dfi_get_damage.lto_priv.0": 25740
+    }
+  },
+  {
+    "epoch": "baseline",
+    "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "dirty": false,
+    "phase": "before",
+    "profile": "ipo",
+    "artifact": "libduoforge_shared",
+    "sha256": "116235480072188c7c12af9a4e8bbdf939f95b57a025e022d3b72e7c64a18e92",
+    "text_bytes": 595639,
+    "data_bytes": 19856,
+    "bss_bytes": 8,
+    "get_damage_definitions": {
+      "dfi_get_damage.lto_priv.0": 25695
+    }
+  },
+  {
+    "epoch": "baseline",
+    "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "dirty": false,
+    "phase": "before",
+    "profile": "noipo",
+    "artifact": "duoforge_bench",
+    "sha256": "b0674c63575f2352fb178032b639eb022571e37fca820260794643f699fa16ba",
+    "text_bytes": 575511,
+    "data_bytes": 19000,
+    "bss_bytes": 113920,
+    "get_damage_definitions": {
+      "dfi_get_damage": 22903
+    }
+  },
+  {
+    "epoch": "baseline",
+    "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "dirty": false,
+    "phase": "before",
+    "profile": "noipo",
+    "artifact": "libduoforge_shared",
+    "sha256": "5c3c2eebc027a9743787d79267c1fb49ac3cc5d62d7244ceee832f2b42040233",
+    "text_bytes": 585585,
+    "data_bytes": 19848,
+    "bss_bytes": 8,
+    "get_damage_definitions": {
+      "dfi_get_damage": 22904
+    }
+  },
+  {
+    "epoch": "initial",
+    "commit": "abb0ade98ad5573a708521310416d9d6e7b81589",
+    "dirty": false,
+    "phase": "after",
+    "profile": "ipo",
+    "artifact": "duoforge_bench",
+    "sha256": "9b5f747f0d4cdf94a4ba2f73663539fca44b9acbcc76739915c06b1ba65f9fd6",
+    "text_bytes": 489248,
+    "data_bytes": 1000,
+    "bss_bytes": 113888,
+    "get_damage_definitions": {
+      "dfi_get_damage.lto_priv.0": 37002
+    }
+  },
+  {
+    "epoch": "initial",
+    "commit": "abb0ade98ad5573a708521310416d9d6e7b81589",
+    "dirty": false,
+    "phase": "after",
+    "profile": "ipo",
+    "artifact": "libduoforge_shared",
+    "sha256": "1cd936207e2d3e8dab8d40f189df5ea74caf9308028143fa8bc1c01fb0a0f24f",
+    "text_bytes": 631815,
+    "data_bytes": 19856,
+    "bss_bytes": 8,
+    "get_damage_definitions": {
+      "dfi_get_damage.lto_priv.0": 37658
+    }
+  },
+  {
+    "epoch": "initial",
+    "commit": "abb0ade98ad5573a708521310416d9d6e7b81589",
+    "dirty": false,
+    "phase": "after",
+    "profile": "noipo",
+    "artifact": "duoforge_bench",
+    "sha256": "fcaf327949f7e1bbdf7100ceeaf86ece522374229477208b0e08948c8f357796",
+    "text_bytes": 615871,
+    "data_bytes": 19000,
+    "bss_bytes": 113920,
+    "get_damage_definitions": {
+      "dfi_get_damage": 38002
+    }
+  },
+  {
+    "epoch": "initial",
+    "commit": "abb0ade98ad5573a708521310416d9d6e7b81589",
+    "dirty": false,
+    "phase": "after",
+    "profile": "noipo",
+    "artifact": "libduoforge_shared",
+    "sha256": "a759c4cc455c36432eaf59ddf5610f24f200e31f8e472348d2f322638e267d6d",
+    "text_bytes": 626137,
+    "data_bytes": 19848,
+    "bss_bytes": 8,
+    "get_damage_definitions": {
+      "dfi_get_damage": 38008
+    }
+  },
+  {
+    "epoch": "repaired",
+    "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+    "dirty": false,
+    "phase": "after",
+    "profile": "ipo",
+    "artifact": "duoforge_bench",
+    "sha256": "2412c12cc4099cf1c07070c95ab4d022eff56b18e834cc0f1de3be2e4c542c2c",
+    "text_bytes": 451508,
+    "data_bytes": 1000,
+    "bss_bytes": 113888,
+    "get_damage_definitions": {
+      "dfi_get_damage.lto_priv.0": 25740
+    }
+  },
+  {
+    "epoch": "repaired",
+    "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+    "dirty": false,
+    "phase": "after",
+    "profile": "ipo",
+    "artifact": "libduoforge_shared",
+    "sha256": "1cd9494180e2d0700f99947bb3ac6529201d282be57afed8ac2dfc5c15c72936",
+    "text_bytes": 597711,
+    "data_bytes": 19856,
+    "bss_bytes": 8,
+    "get_damage_definitions": {
+      "dfi_get_damage.lto_priv.0": 25695
+    }
+  },
+  {
+    "epoch": "repaired",
+    "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+    "dirty": false,
+    "phase": "after",
+    "profile": "noipo",
+    "artifact": "duoforge_bench",
+    "sha256": "35a12887fd4684c51fce56e257a86c085e070abcd71b7a36c181e6c5a0061c9b",
+    "text_bytes": 577655,
+    "data_bytes": 19000,
+    "bss_bytes": 113920,
+    "get_damage_definitions": {
+      "dfi_get_damage": 22903
+    }
+  },
+  {
+    "epoch": "repaired",
+    "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+    "dirty": false,
+    "phase": "after",
+    "profile": "noipo",
+    "artifact": "libduoforge_shared",
+    "sha256": "7e29f11556ec4875969e1b7a910a88a693a6247b47e4d51fb9e43830316a045d",
+    "text_bytes": 587633,
+    "data_bytes": 19848,
+    "bss_bytes": 8,
+    "get_damage_definitions": {
+      "dfi_get_damage": 22904
+    }
+  }
+]
