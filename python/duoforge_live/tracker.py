@@ -290,7 +290,7 @@ class _Position:
 #     guard_undo, unburden_unseen, fainted), which the engine keeps in the queue records and the run (they follow the Pokemon).
 _SWAP_MOVES = (
     "occupant", "activation", "stages", "protecting", "flash_fire", "flags", "choice_slot", "newly_switched", "chain", "stall",
-    "confused", "charge", "locked_slot", "move_actions", "flag",
+    "confused", "charge", "locked_slot", "move_actions", "flag", "speed_swapped",
     "throat_chop", "must_recharge", "taunt", "yawn", "imprison", "glaive_rush", "rage_powder", "heal_block", "attract",
     "attract_from", "trap", "trap_source", "trap_move", "trap_band", "trap_elapsed", "type_now", "type2", "disable_slot",
     "disable_turns", "encore_slot", "encore_turns", "cursed", "perish", "hits_taken", "last_slot", "last_move", "result_now",
@@ -334,6 +334,12 @@ class _Member:
         self.hp = 0
         self.hp_max = 0
         self.stats = [0] * 5
+        # Speed Swap (step K3, decision 0015 5de): the stored Speed a live swap gave this member (None: its own, stats[4]); the
+        # engine's storedStats.spe. The view shows it to the owner; a switch-out or a Mega or forme change clears it.
+        self.spe_swap = None
+
+    def spe_stored(self):
+        return self.stats[4] if self.spe_swap is None else self.spe_swap
 
 
 class SheetContradiction(Exception):
@@ -1049,6 +1055,9 @@ class Tracker:
                 # extension what dfi_pass_give copies (_PASSED). The other copied volatiles are decision 0018 features,
                 # which stopped the tracker at their start lines.
                 passed = (list(p.stages), p.confused, {name: getattr(p, name) for name in _PASSED})
+            leaver = self._occupant(pos)
+            if leaver is not None:
+                leaver.spe_swap = None  # a switch-out rebuilds the leaver's stored Speed (dfi_tail_clear_occupant)
             p.occupant, p.flag, p.fainted = ident, 0, False
             p.reset()
             if passed is not None:
@@ -1159,7 +1168,9 @@ class Tracker:
         elif kind == EV["FAINT"]:
             p = self._at(pos)
             self._trap_source_left(pos)
+            swapped = p.speed_swapped
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
+            p.speed_swapped = swapped  # ... and its Speed Swap bit stays with it until the replacement (step K3)
             p.fainted = True
             # a faint takes a pivot flag (faint(): switchFlag = false); after the residual (Perish Song's) checkFainted asks
             # for the position at once
@@ -1502,16 +1513,25 @@ class Tracker:
                 # turn shows (the residual ends it); the base view's Follow Me flag stays off for it
                 self._at(pos).rage_powder = 1
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_SPEED_SWAP:
-            # Speed Swap (step K3): both positions carry the presence bit; the swapped values are not public
+            # Speed Swap (step K3): both positions carry the presence bit; the owner's view shows its own stored Speed (the two
+            # stored values exchanged, storedStats.spe), the foe's is not public
+            user, target = self._occupant(pos), self._occupant(e[2])
+            if user is not None and target is not None:
+                user_now, target_now = user.spe_stored(), target.spe_stored()
+                user.spe_swap, target.spe_swap = target_now, user_now
             self._at(pos).speed_swapped = 1
             self._at(e[2]).speed_swapped = 1
         elif kind == EV["FORME"]:
             # the view keeps the set's species; MEGA sets is_mega and the ability. A forme change rebuilds the stored stats
             # (setSpecies), so a live Speed Swap of the position ends (step K3)
             self._at(pos).speed_swapped = 0
+            if self._occupant(pos) is not None:
+                self._occupant(pos).spe_swap = None
         elif kind == EV["MEGA"]:
             self._mega_used[pos // 2] = 1
             self._at(pos).speed_swapped = 0  # formeChange -> setSpecies rebuilds the stored stats (step K3)
+            if self._occupant(pos) is not None:
+                self._occupant(pos).spe_swap = None
             self._at(pos).ability_now = 0  # the Mega forme's ability replaces a copied one (formeChange -> setAbility)
             self._at(pos).type_now = (0, 0)  # and setType(species.types) ends a type that Soak set
             self._occupant(pos).revealed |= REVEALED_MEGA
@@ -1808,7 +1828,7 @@ class Tracker:
         if own:
             v["hp"], v["hp_max"], v["hp_kind"], v["pp_kind"] = member.hp, member.hp_max, HP_EXACT, PP_EXACT
             v["pp"][:count] = [mx - u for mx, u in zip(member.pp_max, member.uses)]
-            v["stats"] = member.stats
+            v["stats"] = member.stats if member.spe_swap is None else member.stats[:4] + [member.spe_swap]
             v["stat_points"] = sheet["sp"]
             v["status"] = member.status if member.hp != 0 else 0
             if boundary == TEAM_SELECTION:

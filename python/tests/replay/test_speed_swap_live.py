@@ -1,19 +1,17 @@
 """Step K3 (#473, decision 0015 5de): the live record of a Speed Swap.
 
-The tracker folds the swap's -activate line into the presence bit of both positions, and the record it assembles carries
-the bit (single_turn, DFI_SINGLE_TURN_SPEED_SWAP). The engine's public-record check (duoforge_public_record_check) then
-refuses the record with DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP exactly while a swapped Speed is live, and takes it back once
-both swapped occupants have left (a switch-out rebuilds the leaver's Speed). The check runs on a record built WITHOUT the
-assembler's own shortcut (record._record), so the engine's verdict is what is tested.
+The tracker folds the swap's -activate line into the presence bit of both positions, and the public record it assembles
+(Tracker.public_parts, record.assemble) refuses with DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP (128) exactly while a swapped Speed is
+live on an active position, and accepts again once both swapped occupants have left. The pool records of these battles are
+also compared with the engine's records in duoforge.python.live (test_pool_records_equal_engine); this test checks the cause.
 
-Needs Node and the pinned checkout (DUOFORGE_NODE, DUOFORGE_PS_REFERENCE_DIR), like test_replay.py.
+It uses the same feed as the pool record test (test_live.py TestPool...): the battle's streams per player, the record kind of
+the battle, the team of the spec; no spectator walk.
 """
-import os
 import unittest
 
-from duoforge import view as _view
 from duoforge_live import record
-from python.tests.replay.test_replay import Reference, battle_sheets, true_picks, true_stats_of
+from python.tests.live.test_live import Reference, record_kind
 
 SPEED_SWAP_BATTLES = ("k3_speed_swap_basic", "k3_speed_swap_switch", "k3_speed_swap_mega")
 
@@ -25,43 +23,59 @@ def _swapped(tracker):
 class SpeedSwapLiveRecord(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        from duoforge_replay.stats import StatSource
-        cls.ref = Reference.get()
-        cls.source = StatSource(os.environ["DUOFORGE_NODE"], os.environ["DUOFORGE_PS_REFERENCE_DIR"])
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.source.close()
-
-    def check_battle(self, name, side):
-        from duoforge_replay import points, spectator
-        battle = next(b for b in self.ref.battles if b.name == name)
-        log = battle.lines
-        tracker = spectator.SpectatorTracker(self.ref.data, battle_sheets(battle), side, true_picks(battle, side),
-                                             true_stats_of(battle, side, self.source), log)
-        checked = refused = 0
-        for point in spectator.walk(tracker, log, points.find(log)):
-            if not spectator.own_requested(tracker):
+        from duoforge_live.tracker import Tracker
+        cls.pool = Reference.get().pool()
+        cls.points = {}  # (battle, player) -> [(k, swapped, parts)]
+        for battle in cls.pool.battles:
+            if battle.name not in SPEED_SWAP_BATTLES:
                 continue
-            observation = tracker.observation().copy()
-            ctx = tracker.data.context_of(tracker.record_kind)
-            want_refused = _swapped(tracker)
-            try:
-                assembled = record._record(tracker, observation)
-            except record.Refusal:
-                continue  # a field the library cannot reproduce here refuses on its own (not this step's business)
-            status = _view.public_record_check(ctx, assembled)
-            self.assertEqual(status == record.E_UNSUPPORTED, want_refused, (name, side, point))
-            checked += 1
-            refused += want_refused
-        self.assertGreater(checked, 0, name)
-        return checked, refused
+            kind = record_kind(battle.name)
+            for player in (0, 1):
+                tracker, done, pid = Tracker(cls.pool.data, battle.spec["teams"][player]), 0, f"p{player + 1}"
+                tracker.record_kind = kind
+                out = cls.points[(battle.name, player)] = []
+                for lines in battle.streams[player]:
+                    tracker.feed(lines)
+                    if not (tracker.ready and tracker.epoch > done):
+                        continue
+                    done = tracker.epoch
+                    k = done - 1
+                    out.append((k, _swapped(tracker), tracker.public_parts()))
+                    step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
+                    if step is not None and pid in step["input"]:
+                        tracker.accepted(step["input"][pid])
 
-    def test_engine_refuses_exactly_while_the_swap_is_live(self):
+    def test_refused_with_cause_128_exactly_while_a_swap_is_live(self):
         for name in SPEED_SWAP_BATTLES:
-            for side in (0, 1):
-                with self.subTest(battle=name, side=side):
-                    checked, refused = self.check_battle(name, side)
-                    print(f"\n{name} side {side}: {checked} points checked, {refused} refused with the swap live")
-                    if name == "k3_speed_swap_basic":
-                        self.assertGreater(refused, 0)  # the swap stands from turn 1 to the end of the record
+            for player in (0, 1):
+                with self.subTest(battle=name, side=player):
+                    points = self.points[(name, player)]
+                    self.assertTrue(points, (name, player))
+                    live = [p for p in points if p[1]]
+                    self.assertTrue(live, (name, player))  # the swap is on the record at some point
+                    for k, swapped, parts in points:
+                        causes = int(parts["causes"])
+                        if swapped:
+                            self.assertEqual(parts["status"], record.E_UNSUPPORTED, (name, player, k))
+                            self.assertEqual(causes & record.CAUSE_SPEED_SWAP, record.CAUSE_SPEED_SWAP, (name, player, k))
+                        else:
+                            self.assertEqual(causes & record.CAUSE_SPEED_SWAP, 0, (name, player, k))
+                    print(f"\n{name} side {player}: {len(points)} points, {len(live)} with the swap live")
+
+    def test_accepted_again_once_both_swapped_occupants_left(self):
+        # k3_speed_swap_switch: Milotic (the target) switches out on turn 2 and Alakazam on turn 3, so the last live point
+        # is followed by points without the swap, and those are accepted (status 0) unless another reason refuses them.
+        name = "k3_speed_swap_switch"
+        for player in (0, 1):
+            with self.subTest(battle=name, side=player):
+                points = self.points[(name, player)]
+                last_live = max(k for k, swapped, _ in points if swapped)
+                after = [(k, parts) for k, swapped, parts in points if not swapped and k > last_live]
+                self.assertTrue(after, (name, player))
+                for k, parts in after:
+                    self.assertEqual(int(parts["causes"]) & record.CAUSE_SPEED_SWAP, 0, (name, player, k))
+                self.assertTrue(any(parts["status"] == 0 for _, parts in after), (name, player))
+
+
+if __name__ == "__main__":
+    unittest.main()

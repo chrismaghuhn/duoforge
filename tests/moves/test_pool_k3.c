@@ -13,7 +13,7 @@
  * and the converter; the live tracker's fold is pinned by python/tests/replay.
  *
  * Expected Speeds (derived from the pinned formula, L50, the Speed Stat Points and Natures of the teams):
- *   Alakazam (Timid, 32 Spe)        158;  Milotic (Calm, 0 Spe)     101;  Aegislash (Impish, 0 Spe)  80;
+ *   Alakazam (Timid, 32 Spe)        189;  Milotic (Calm, 0 Spe)     101;  Baxcalibur (Adamant, 2 Spe) 109;  Aegislash (Impish, 0 Spe)  80;
  *   Gholdengo, Kingambit, ... are checked against their own derived value (dfi_closure_member_derive).
  */
 #include <stdio.h>
@@ -32,8 +32,9 @@
 #include "support/fixtures.h"
 #include "support/pool.h"
 
-#define K3_ALAKAZAM_SPE 158u
+#define K3_ALAKAZAM_SPE 189u
 #define K3_MILOTIC_SPE 101u
+#define K3_BAXCALIBUR_SPE 109u
 #define K3_AEGISLASH_SPE 80u
 
 static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
@@ -290,6 +291,109 @@ static void check_mega_reset(df_test *t, const duoforge_context *ctx)
     }
 }
 
+/* Speed Swap with the ally (k3_speed_swap_ally, flat 0 Alakazam, 1 Baxcalibur, 2 Milotic, 3 Staraptor). Turn 1: Alakazam
+ * (158) swaps with Baxcalibur (107): Alakazam 107, Baxcalibur 158, both bits set, both sides refused with 128. Turn 2:
+ * Baxcalibur (158) moves first, then Alakazam (107) swaps with Milotic (101): Alakazam 101, Milotic 107; three bits set. */
+static void check_ally(df_test *t, const duoforge_context *ctx)
+{
+    const char *name = "k3_speed_swap_ally";
+    duoforge_battle *one = replay(t, ctx, name, 2u);
+    if (DF_CHECK(t, one != NULL)) {
+        DF_CHECK_EQ_U64(t, stored_spe(one, 0u), K3_BAXCALIBUR_SPE);
+        DF_CHECK_EQ_U64(t, stored_spe(one, 1u), K3_ALAKAZAM_SPE);
+        DF_CHECK(t, swapped(one, 0u) && swapped(one, 1u));
+        DF_CHECK(t, !swapped(one, 2u) && !swapped(one, 3u));
+        DF_CHECK(t, (public_mask(t, ctx, one, 0u) & DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP) != 0u);
+        DF_CHECK(t, (public_mask(t, ctx, one, 1u) & DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP) != 0u);
+        DF_CHECK(t, duoforge_battle_check(ctx, one) == DUOFORGE_OK);
+        duoforge_battle_destroy(one);
+    }
+    duoforge_battle *two = replay(t, ctx, name, 3u);
+    if (DF_CHECK(t, two != NULL)) {
+        DF_CHECK_EQ_U64(t, stored_spe(two, 0u), K3_MILOTIC_SPE);
+        DF_CHECK_EQ_U64(t, stored_spe(two, 1u), K3_ALAKAZAM_SPE);
+        DF_CHECK_EQ_U64(t, stored_spe(two, 2u), K3_BAXCALIBUR_SPE);
+        DF_CHECK(t, swapped(two, 0u) && swapped(two, 1u) && swapped(two, 2u));
+        DF_CHECK(t, !swapped(two, 3u));
+        DF_CHECK(t, duoforge_battle_check(ctx, two) == DUOFORGE_OK);
+        duoforge_battle_destroy(two);
+    }
+}
+
+/* Speed Swap changes the order of a later action of the same turn (k3_speed_swap_same_turn): Alakazam (158) swaps with
+ * Milotic (101); Milotic (158 now) then moves before Baxcalibur (107), which it would not have done without the swap (the
+ * queue re-sorts after a move, sim/battle.ts:2921). The order itself is pinned by the replay equality of the trace; here the
+ * Speeds and the bits after turn 1 and turn 2 (the second swap restores them). */
+static void check_same_turn(df_test *t, const duoforge_context *ctx)
+{
+    const char *name = "k3_speed_swap_same_turn";
+    duoforge_battle *one = replay(t, ctx, name, 2u);
+    if (DF_CHECK(t, one != NULL)) {
+        DF_CHECK_EQ_U64(t, stored_spe(one, 0u), K3_MILOTIC_SPE);
+        DF_CHECK_EQ_U64(t, stored_spe(one, 2u), K3_ALAKAZAM_SPE);
+        DF_CHECK(t, swapped(one, 0u) && swapped(one, 2u));
+        DF_CHECK(t, !swapped(one, 1u) && !swapped(one, 3u));
+        duoforge_battle_destroy(one);
+    }
+    duoforge_battle *two = replay(t, ctx, name, 3u);
+    if (DF_CHECK(t, two != NULL)) {
+        DF_CHECK_EQ_U64(t, stored_spe(two, 0u), K3_ALAKAZAM_SPE);
+        DF_CHECK_EQ_U64(t, stored_spe(two, 2u), K3_MILOTIC_SPE);
+        DF_CHECK(t, swapped(two, 0u) && swapped(two, 2u));
+        DF_CHECK(t, duoforge_battle_check(ctx, two) == DUOFORGE_OK);
+        duoforge_battle_destroy(two);
+    }
+}
+
+/* A swapped Pokemon faints (k3_speed_swap_faint): Milotic (swapped to 158) is KO'd by Alakazam's Psyshock on turn 4. Alakazam
+ * keeps its swapped Speed (101) and its bit, so the public record stays refused with 128. Milotic's own bit and Speed end
+ * with its occupant when the replacement comes in (switch 3 = Kingambit): its Speed is its own derived one again. */
+static void check_faint(df_test *t, const duoforge_context *ctx)
+{
+    const char *name = "k3_speed_swap_faint";
+    duoforge_battle *fainted = replay(t, ctx, name, 5u);
+    if (DF_CHECK(t, fainted != NULL)) {
+        DF_CHECK(t, fainted->sides[1].members[0].hp == 0u);
+        DF_CHECK(t, swapped(fainted, 0u));
+        DF_CHECK_EQ_U64(t, stored_spe(fainted, 0u), K3_MILOTIC_SPE);
+        DF_CHECK(t, (public_mask(t, ctx, fainted, 0u) & DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP) != 0u);
+        duoforge_battle_destroy(fainted);
+    }
+    duoforge_battle *replaced = replay(t, ctx, name, 6u);
+    if (DF_CHECK(t, replaced != NULL)) {
+        DF_CHECK(t, !swapped(replaced, 2u));                  /* the fainted Milotic's position: Kingambit, bit clear */
+        DF_CHECK(t, swapped(replaced, 0u));                   /* Alakazam keeps the swap */
+        DF_CHECK_EQ_U64(t, stored_spe(replaced, 0u), K3_MILOTIC_SPE);
+        {
+            dfi_member milotic = replaced->sides[1].members[0];
+            DF_CHECK(t, dfi_closure_member_derive(&milotic));
+            DF_CHECK_EQ_U64(t, milotic.stats[DFI_STAT_SPE - 1u], K3_MILOTIC_SPE);
+        }
+        DF_CHECK(t, duoforge_battle_check(ctx, replaced) == DUOFORGE_OK);
+        duoforge_battle_destroy(replaced);
+    }
+}
+
+/* The presence bit (DUOFORGE_POSITION_EXT_SPEED_SWAPPED, bit 23 under feature 46) of both swapped positions is public: each
+ * viewer, the foe too, sees it on the swapped position of both sides and on no other (k3_speed_swap_basic after turn 1). */
+static void check_view_bit(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *after = replay(t, ctx, "k3_speed_swap_basic", 2u);
+    if (DF_CHECK(t, after != NULL)) {
+        for (uint32_t viewer = 0u; viewer < DUOFORGE_SIDE_COUNT; ++viewer) {
+            duoforge_observation_ext ext;
+            if (DF_CHECK(t, duoforge_battle_observe_ext(ctx, after, viewer, &ext) == DUOFORGE_OK)) {
+                DF_CHECK(t, (ext.sides[0].positions[0].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) != 0u);
+                DF_CHECK(t, (ext.sides[1].positions[0].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) != 0u);
+                DF_CHECK(t, (ext.sides[0].positions[1].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) == 0u);
+                DF_CHECK(t, (ext.sides[1].positions[1].volatiles & DUOFORGE_POSITION_EXT_SPEED_SWAPPED) == 0u);
+                DF_CHECK(t, (ext.supported & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPEED_SWAPPED)) != 0u);
+            }
+        }
+        duoforge_battle_destroy(after);
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -303,6 +407,10 @@ int main(void)
         check_stance_change_reset(&t, ctx);
         check_blade_swap(&t, ctx);
         check_mega_reset(&t, ctx);
+        check_ally(&t, ctx);
+        check_same_turn(&t, ctx);
+        check_faint(&t, ctx);
+        check_view_bit(&t, ctx);
         duoforge_context_destroy(ctx);
     }
     return df_test_end(&t);
