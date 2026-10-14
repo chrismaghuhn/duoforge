@@ -20,7 +20,7 @@
       },
       "own_pp_stops": [],
       "stops": {
-        "line:-item": 2
+        "feature:SUBSTITUTE": 2
       }
     }
   },
