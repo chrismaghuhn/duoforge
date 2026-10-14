@@ -149,6 +149,18 @@ class SpectatorTracker(Tracker):
         return illusion is not None and any(m.sheet["ability"] == illusion + 1 for m in self._member(self.side))
 
     # ------------------------------------------------------------------ view
+    def _base_speed(self, member):
+        """Speed Swap (step K3): the own member's Speed from its true stats (the stats callback), the foe's hidden one unknown
+        here (the callback covers the own side only): 0, which the record never shows (the record is refused while it stands)."""
+        own = self._own_members
+        for m, candidate in enumerate(own):
+            if candidate is member:
+                forme = member.sheet["species"]
+                if member.is_mega:
+                    forme = self.data.mega_of(forme, member.sheet["item"])
+                return self._stats_of(m, forme)[0][5]
+        return member.stats[4]
+
     def _view_member(self, v, member, m, side, own, boundary):
         super()._view_member(v, member, m, side, False, boundary)  # the public view of the member
         if not own:
@@ -169,7 +181,10 @@ class SpectatorTracker(Tracker):
         if member.is_mega:
             forme = self.data.mega_of(forme, member.sheet["item"])
         stats, stat_points = self._stats_of(m, forme)
-        v["stats"] = stats[1:6]
+        stored = list(stats[1:6])
+        if member.spe_swap is not None:  # Speed Swap (step K3): the stored Speed the swap gave this member (index 4 = spe)
+            stored[4] = member.spe_swap
+        v["stats"] = stored
         v["stat_points"] = stat_points
 
 

@@ -926,6 +926,10 @@ class Tracker:
                 raise ValueError("a Mega member whose sheet has no Mega Stone of its forme")
         return self.data.forme_types(forme)
 
+    def _base_speed(self, member):
+        """The member's own (unswapped) Speed as the tracker knows it: its request's stat, 0 for a foe (hidden)."""
+        return member.stats[4]
+
     def _occupant(self, pos):
         p = self._at(pos)
         return None if p.occupant == ROSTER_NONE else self._member(pos // 2)[p.occupant]
@@ -1168,9 +1172,9 @@ class Tracker:
         elif kind == EV["FAINT"]:
             p = self._at(pos)
             self._trap_source_left(pos)
-            swapped = p.speed_swapped
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
-            p.speed_swapped = swapped  # ... and its Speed Swap bit stays with it until the replacement (step K3)
+            if self._occupant(pos) is not None:
+                self._occupant(pos).spe_swap = None  # the fainted occupant's Speed is its own again (the engine's view, step K3)
             p.fainted = True
             # a faint takes a pivot flag (faint(): switchFlag = false); after the residual (Perish Song's) checkFainted asks
             # for the position at once
@@ -1517,7 +1521,8 @@ class Tracker:
             # stored values exchanged, storedStats.spe), the foe's is not public
             user, target = self._occupant(pos), self._occupant(e[2])
             if user is not None and target is not None:
-                user_now, target_now = user.spe_stored(), target.spe_stored()
+                user_now = user.spe_swap if user.spe_swap is not None else self._base_speed(user)
+                target_now = target.spe_swap if target.spe_swap is not None else self._base_speed(target)
                 user.spe_swap, target.spe_swap = target_now, user_now
             self._at(pos).speed_swapped = 1
             self._at(e[2]).speed_swapped = 1
