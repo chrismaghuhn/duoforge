@@ -6,8 +6,8 @@
     python -m duoforge_search.preview_oracle summary DIR
 
 Our team OURS (a registry paste or a packed team) meets the foe team FOE_TEAM in --pairs game pairs (ladder.matchup_rows:
-pair k is game k with ours on seat 0, then on seat 1). Both seats are piloted by the live search (ladder step 0: MAIN
-searches, FOE is the foe model of the searched worlds), each with the other team's registry rows left out of its
+pair k is game k with ours on seat 0, then on seat 1). Both seats are piloted by ladder step 0 (the live search
+until 2026-10-14, mix with lambda 0.5; MAIN searches, FOE is the foe model of the searched worlds), each with the other team's registry rows left out of its
 spread table. An arm fixes our team preview:
 
 - "today": our search's own choice, the main network's raw top-1 (live play);
@@ -47,7 +47,8 @@ from . import foe_arena, ladder
 
 SEED = 0x2026101300000458
 DRAW_TAG = 0x5052455649455700  # "PREVIEW": the foe preview's draw word, apart from the search's own words
-STEP = "0"  # the live search on both seats; its team preview is the raw top-1, so forcing it replaces nothing searched
+STEP = "0"  # ladder step 0 on both seats (ladder.STEP0); its team preview is the raw top-1, so forcing it replaces
+# nothing searched
 ROSTER, BROUGHT = 6, 4
 TODAY = "today"
 DRAWN = "drawn"  # the foe side's reference arm: the foe's preview drawn from its team head, as on the ours side
