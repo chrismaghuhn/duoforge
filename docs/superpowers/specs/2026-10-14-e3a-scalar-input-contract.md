@@ -71,7 +71,7 @@ its source bits occupy 4,376 bytes and cold per-column scales 8,752 bytes.
 The existing binary32 row is reused, not cloned per leaf. A future workspace
 accounts for these explicitly; it supplies activations and tile storage too.
 GCC14 Release without IPO reports at most 176 bytes for any kernel frame;
-including the arithmetic callee the largest kernel-only chain is 184 bytes,
+including the arithmetic callee the largest kernel-only chain is 216 bytes,
 below the additional 16 KiB limit. This excludes caller-owned buffers and
 platform library frames; it is not a measurement of future graph peak memory.
 GNU allocation hooks test that the warm synthetic kernel/input calls allocate
