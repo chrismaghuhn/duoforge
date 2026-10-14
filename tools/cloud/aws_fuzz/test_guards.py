@@ -120,6 +120,18 @@ def posix(path):
     return path.replace('\\', '/')
 
 
+def aws_safe_env(env, missing):
+    """An environment in which even the real AWS CLI reaches nothing (HauptSession, after #484's probe tests reached the
+    real CLI on 2026-10-14; it stopped at parameter parsing): no AWS_* variable of the caller (profile, keys, session
+    token, role, container credentials), the config and credentials files at `missing`, a path that does not exist, no
+    instance metadata, and every endpoint at a closed local port. Every test that runs a script uses it."""
+    assert not os.path.exists(missing), missing
+    env = {k: v for k, v in env.items() if not k.upper().startswith('AWS_')}
+    env.update(AWS_CONFIG_FILE=posix(missing), AWS_SHARED_CREDENTIALS_FILE=posix(missing), AWS_EC2_METADATA_DISABLED='true',
+               AWS_ENDPOINT_URL='http://127.0.0.1:9')
+    return env
+
+
 @unittest.skipIf(BASH is None, 'bash is not on the PATH')
 class Guards(unittest.TestCase):
     def setUp(self):
@@ -133,15 +145,21 @@ class Guards(unittest.TestCase):
         os.chmod(stub, os.stat(stub).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         self.log = os.path.join(self.tmp, 'calls.log')
         open(self.log, 'w').close()
-        self.env = dict(os.environ, PATH=self.stubdir + os.pathsep + os.environ['PATH'], STUB_LOG=posix(self.log),
-                        STUB_ARN='arn:aws:iam::%s:user/pokeengine' % ACCOUNT, STUB_ACCOUNT=ACCOUNT,
-                        DUOFORGE_FUZZ_NO_GIT_CHECK='1', AWS_CONFIG_FILE=posix(os.path.join(self.tmp, 'none')),
-                        AWS_SHARED_CREDENTIALS_FILE=posix(os.path.join(self.tmp, 'none')))
-        for var in ('AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN', 'DUOFORGE_FUZZ_BUCKET'):
-            self.env.pop(var, None)
-        # the stub must be what `aws` is, or a test would reach the real thing
-        found = subprocess.run([BASH, '-c', 'command -v aws'], env=self.env, capture_output=True, text=True).stdout.strip()
-        self.assertTrue(found.replace('\\', '/').lower().endswith('/bin/aws') and 'aws_fuzz_test_' in found.lower(), found)
+        self.env = aws_safe_env(dict(os.environ, PATH=self.stubdir + os.pathsep + os.environ['PATH'],
+                                     STUB_LOG=posix(self.log), STUB_ARN='arn:aws:iam::%s:user/pokeengine' % ACCOUNT,
+                                     STUB_ACCOUNT=ACCOUNT, DUOFORGE_FUZZ_NO_GIT_CHECK='1'),
+                                os.path.join(self.tmp, 'none'))
+        self.env.pop('DUOFORGE_FUZZ_BUCKET', None)
+        self.assert_aws_is_stub(self.env, self.stubdir)
+
+    def assert_aws_is_stub(self, env, stubdir):
+        """The stub in `stubdir` must be what `aws` is under `env`, or a test would reach the real thing: checked before
+        anything runs (every test, in setUp, and every test that puts another stub first)."""
+        found = subprocess.run([BASH, '-c', 'type -t aws; command -v aws'], env=env, capture_output=True,
+                               text=True).stdout.split('\n')
+        kind, path = found[0].strip(), found[1].strip().replace('\\', '/').lower() if len(found) > 1 else ''
+        self.assertEqual(kind, 'file', found)
+        self.assertTrue(path.endswith('/%s/aws' % os.path.basename(stubdir).lower()) and 'aws_fuzz_test_' in path, found)
 
     def run_script(self, script, *args, **env):
         e = dict(self.env, **env)
@@ -297,6 +315,7 @@ class Guards(unittest.TestCase):
         os.chmod(probe, 0o755)
         env = dict(self.env, PATH=probe_dir + os.pathsep + self.env['PATH'])
         env = {k: v for k, v in env.items() if k not in SWITCHES}
+        self.assert_aws_is_stub(env, probe_dir)
         script = '. "%s/lib.sh"; df_init; df_aws x; echo "after: ${MSYS_NO_PATHCONV:-unset}"' % posix(HERE)
         r = subprocess.run([BASH, '-c', script], env=env, capture_output=True, text=True)
         self.assertEqual(r.stdout.splitlines()[:2], ['PATHCONV=1 EXCL=*', 'after: unset'], r.stdout + r.stderr)
@@ -1153,7 +1172,7 @@ esac
     @unittest.skipIf(shutil.which('shellcheck') is None, 'shellcheck is not installed')
     def test_shellcheck_is_clean(self):
         scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh', 'chunks.sh',
-                                                   'launch_ladder.sh', 'ladder_user_data.sh')]
+                                                   'launch_ladder.sh', 'ladder_user_data.sh', 'ladder_box_lib.sh')]
         r = subprocess.run(['shellcheck', '-x', '-S', 'warning', *[posix(s) for s in scripts]], capture_output=True, text=True,
                            cwd=HERE)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
@@ -1169,9 +1188,27 @@ class LadderLaunch(unittest.TestCase):
     the HauptSession launches, from its chat)."""
 
     setUp = Guards.setUp
+    assert_aws_is_stub = Guards.assert_aws_is_stub
     run_script = Guards.run_script
     calls = Guards.calls
     real_launches = Guards.real_launches
+
+    def test_no_test_has_a_way_to_the_real_aws(self):
+        # The environment every test runs scripts in: nothing of the caller's AWS setup, files that do not exist, no
+        # metadata, a closed local endpoint; and `aws` is the stub (setUp checked it before this test began).
+        self.assertEqual(sorted(k for k in self.env if k.upper().startswith('AWS_')),
+                         ['AWS_CONFIG_FILE', 'AWS_EC2_METADATA_DISABLED', 'AWS_ENDPOINT_URL', 'AWS_SHARED_CREDENTIALS_FILE'])
+        self.assertFalse(os.path.exists(self.env['AWS_CONFIG_FILE']))
+        self.assertEqual(self.env['AWS_ENDPOINT_URL'], 'http://127.0.0.1:9')
+        self.assertEqual(self.env['AWS_EC2_METADATA_DISABLED'], 'true')
+        polluted = dict(os.environ, AWS_PROFILE='owner', AWS_ACCESS_KEY_ID='x', AWS_SECRET_ACCESS_KEY='y',
+                        AWS_SESSION_TOKEN='z', AWS_ROLE_ARN='r', aws_default_profile='p')
+        safe = aws_safe_env(polluted, os.path.join(self.tmp, 'none'))
+        for var in ('AWS_PROFILE', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN', 'AWS_ROLE_ARN',
+                    'aws_default_profile'):
+            self.assertNotIn(var, safe)
+        with self.assertRaises(AssertionError):  # a stub that is not first on the PATH is caught before a run
+            self.assert_aws_is_stub(self.env, os.path.join(self.tmp, 'elsewhere'))
 
     def test_without_the_approval_flag_one_c7a_request_tagged_ladder_is_printed_and_nothing_launched(self):
         r = self.run_script('launch_ladder.sh', *LADDER)
@@ -1223,7 +1260,7 @@ class LadderLaunch(unittest.TestCase):
     def render(self, minutes=120):
         script = '. %s; df_render_ladder_user_data ladder-equal-2e %s my-fuzz-bucket %d %s' % (
             shlex.quote(posix(os.path.join(HERE, 'lib.sh'))), SHA, minutes, SHA[:12] + '-ladder-20261014T030000Z')
-        r = subprocess.run([BASH, '-c', script], capture_output=True, text=True)
+        r = subprocess.run([BASH, '-c', script], env=self.env, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         return r.stdout
 
@@ -1236,10 +1273,18 @@ class LadderLaunch(unittest.TestCase):
         for needle in ('XLA_FLAGS=--xla_cpu_max_isa=AVX2', 'OPENBLAS_CORETYPE=Haswell', 'OPENBLAS_NUM_THREADS=1',
                        'JAX_PLATFORMS=cpu', 'taskset -c "$cpus"', 'DF_CPUS=16', 'DF_SPARE=16', 'ladder_conf.py" arms',
                        '"$S3_BASE/$arm/ladder.json"', 'ladder_requirements.txt', '--no-deps', 'pip" check',
-                       'refuse nets_writable', 'refuse nets_unreadable', 'refuse net_sha_mismatch', 'refuse nets_probe_unclear',
-                       '*AccessDenied*', 'trap finish EXIT', 'shutdown -h now', 'status.json',
-                       's3://$DF_BUCKET/fuzz/ladder/$DF_CAMPAIGN/$DF_RUN_ID'):
+                       '. "$TOOLS/ladder_box_lib.sh"', 'ladder_nets_probe "$DF_BUCKET" "$NETS_KEY_PREFIX/.write-probe-',
+                       'trap finish EXIT', "trap 'REASON=terminated; exit 143' TERM INT", 'REASON="failed_in_$STEP"',
+                       'shutdown -h now', 'status.json', 's3://$DF_BUCKET/fuzz/ladder/$DF_CAMPAIGN/$DF_RUN_ID'):
             self.assertIn(needle, text)
+        # Every refusal the README names is one the box makes (a refusal is a named exit, never a silent one).
+        for name in ('nets_writable', 'nets_probe_unclear', 'nets_unreadable', 'net_sha_mismatch', 'wrong_commit',
+                     'wrong_run', 'no_campaign', 'bad_conf', 'build', 'python_env', 'cpus', 'ladder_failed'):
+            self.assertRegex(text, r'\brefuse %s\b' % name, name)
+        self.assertEqual(text.count('refuse bad_conf'), 6)  # check, shas (failed, empty), arms (failed, empty), argv
+        # A failed arm's ladder.json would pass for a result: only an arm that succeeded uploads one.
+        upload = text.index('"$S3_BASE/$arm/ladder.json"')
+        self.assertIn('if [ -n "${GOOD[$arm]:-}" ]; then', text[upload - 200:upload])
         uploads = [l for l in lines if re.search(r'\baws s3 cp\b', l) and 's3://$DF_BUCKET/$NETS_KEY_PREFIX' not in l]
         for line in uploads:  # what goes up: ladder.json, env.json, status.json and logs; never a decision file or a net
             self.assertRegex(line, r'(ladder\.json|env\.json|status\.json|\$LOG|ladder-tail\.log)', line)
@@ -1278,6 +1323,8 @@ class LadderLaunch(unittest.TestCase):
             text = '\n'.join(l for l in good.splitlines() if key == 'arm' or not l.startswith(key + '=')) + '\n' + line + '\n'
             with self.subTest(line=line), self.assertRaisesRegex(ladder_conf.ConfError, message):
                 ladder_conf.parse(text)
+        with self.assertRaisesRegex(ladder_conf.ConfError, 'arm= without a name'):
+            ladder_conf.parse(good + 'arm=\n')  # a ConfError (exit 2), not a traceback
         with self.assertRaisesRegex(ladder_conf.ConfError, '0 arms'):
             ladder_conf.parse('\n'.join(l for l in good.splitlines() if not l.startswith('arm=')))
         with self.assertRaisesRegex(ladder_conf.ConfError, 'missing key'):
@@ -1287,6 +1334,88 @@ class LadderLaunch(unittest.TestCase):
                 conf = ladder_conf.parse(f.read())
             self.assertEqual([a['name'] for a in conf['arms']], arms)
             self.assertEqual(conf['arms'][0]['step'], '2e')  # the arm compared, alone and beside others
+
+    def test_the_conf_tool_prints_each_answer_and_refuses_a_bad_call(self):
+        conf = posix(os.path.join(HERE, 'campaigns', 'ladder-equal-2e-beside', 'campaign.conf'))
+        tool = os.path.join(HERE, 'ladder_conf.py')
+        run = lambda *a: subprocess.run([sys.executable, tool, *a], env=self.env, capture_output=True, text=True)
+        self.assertEqual(run('workers', conf).stdout.split(), ['8'])
+        self.assertEqual(run('arms', conf).stdout.split(), ['main', 'beside0', 'beside1'])
+        self.assertEqual(run('check', conf).returncode, 0)
+        for bad in (('workers',), ('arms', conf, 'x'), ('nope', conf)):
+            self.assertEqual(run(*bad).returncode, 2, bad)
+
+    # The probe that keeps nets/ read-only (ladder_box_lib.sh), against a stub aws: each of its three probes (a plain
+    # write, an encrypted write, a delete) must be denied; one that succeeds is a refusal, and so is one that fails
+    # otherwise (no credentials, no answer): that is no proof of read-only.
+    PROBE_STUB = textwrap.dedent('''\
+        #!/usr/bin/env bash
+        echo "$*" >> "$STUB_LOG"
+        if [[ "$*" == *put-object* ]]; then  # as the real CLI: the body must be a regular file (not /dev/null)
+            body=$(printf '%s\\n' "$@" | sed -n '/^--body$/{n;p;}')
+            [ -f "$body" ] || { echo "Error parsing parameter '--body': Blob values must be a path to a file." >&2; exit 252; }
+        fi
+        case "$*" in
+            *delete-object*) answer=$STUB_DELETE ;;
+            *--server-side-encryption*) answer=$STUB_SSE ;;
+            *put-object*) answer=$STUB_PLAIN ;;
+            *) echo "unexpected call: $*" >&2; exit 9 ;;
+        esac
+        case $answer in
+            ok) echo '{}' ;;
+            denied) echo 'An error occurred (AccessDenied) when calling the operation: Access Denied' >&2; exit 254 ;;
+            nocreds) echo 'Unable to locate credentials. You can configure credentials by running "aws configure".' >&2
+                     exit 253 ;;
+            silent) exit 255 ;;
+        esac
+        ''')
+
+    def probe(self, plain='denied', sse='denied', delete='denied'):
+        # As in Guards.setUp: the stub first on the PATH (set from here, as a Windows PATH where this is Windows), no
+        # credentials anywhere, and `aws` checked to be the stub before the probe runs: never the real CLI.
+        probe_bin = os.path.join(self.tmp, 'probe_bin')
+        os.makedirs(probe_bin, exist_ok=True)
+        stub = os.path.join(probe_bin, 'aws')
+        with open(stub, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(self.PROBE_STUB)
+        os.chmod(stub, os.stat(stub).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        open(self.log, 'w').close()
+        env = dict(self.env, PATH=probe_bin + os.pathsep + self.env['PATH'], STUB_PLAIN=plain, STUB_SSE=sse,
+                   STUB_DELETE=delete)
+        self.assert_aws_is_stub(env, probe_bin)
+        script = '. %s; ladder_nets_probe my-fuzz-bucket nets/.write-probe-run1' % shlex.quote(
+            posix(os.path.join(HERE, 'ladder_box_lib.sh')))
+        r = subprocess.run([BASH, '-c', script], capture_output=True, text=True, env=env, timeout=60)
+        calls = self.calls()
+        self.assertTrue(calls, 'the stub saw no call')
+        for call in calls:  # the probe touches the run's own key under nets/ and nothing else
+            self.assertIn('--bucket my-fuzz-bucket --key nets/.write-probe-run1', call)
+        return r.returncode, r.stdout.strip(), calls
+
+    def test_nets_is_read_only_only_when_every_probe_is_denied(self):
+        status, out, calls = self.probe()
+        self.assertEqual(status, 0, out)
+        self.assertIn('every probe', out)
+        self.assertEqual([c.split()[1] for c in calls], ['put-object', 'put-object', 'delete-object'])
+        self.assertIn('--server-side-encryption AES256', calls[1])
+
+    def test_a_probe_that_succeeds_is_writable_and_its_key_is_deleted_again(self):
+        for answers, which in (({'plain': 'ok'}, 'plain'), ({'sse': 'ok'}, 'sse'), ({'delete': 'ok'}, 'delete')):
+            with self.subTest(which=which):
+                status, out, calls = self.probe(**answers)
+                self.assertEqual(status, 3, out)
+                self.assertIn('the %s probe' % which, out)
+                self.assertIn('succeeded', out)
+                self.assertEqual(calls[-1].split()[1], 'delete-object')  # a written probe key does not stay
+
+    def test_a_probe_that_fails_otherwise_is_unclear_and_no_proof(self):
+        for answers, needle in (({'plain': 'nocreds'}, 'Unable to locate credentials'), ({'plain': 'silent'}, 'no output'),
+                                ({'sse': 'nocreds'}, 'the sse probe'), ({'delete': 'silent'}, 'the delete probe')):
+            with self.subTest(answers=answers):
+                status, out, _ = self.probe(**answers)
+                self.assertEqual(status, 4, out)
+                self.assertIn('not with AccessDenied', out)
+                self.assertIn(needle, out)
 
 class LadderEqual(unittest.TestCase):
     """ladder_equal.py, the equality proof of an AWS ladder campaign (#484): every field but the timing ones."""
@@ -1330,6 +1459,23 @@ class LadderEqual(unittest.TestCase):
         result = ladder_equal.compare(self.report(), self.report(**{'opponents.bot.arms.step.decisions_sha256': 'e' * 64}))
         self.assertFalse(result['digests']['bot.step']['equal'])
 
+    def test_a_field_on_one_side_a_list_of_another_length_another_commit_or_type_is_named(self):
+        import ladder_equal
+        extra = self.report()
+        extra['opponents']['bot']['arms']['step']['diagnostics'] = {'fallbacks': 0}
+        cases = ((self.report(), extra, 'opponents.bot.arms.step.diagnostics (AWS only)'),
+                 (extra, self.report(), 'opponents.bot.arms.step.diagnostics (local only)'),
+                 (self.report(), self.report(**{'opponents.bot.arms.step.scores': [1.0, 0.0]}),
+                  'opponents.bot.arms.step.scores (length 3 vs 2)'),
+                 (self.report(), self.report(**{'conditions.commit': 'e' * 40}), 'conditions.commit'),
+                 (self.report(), self.report(**{'opponents.bot.arms.step.scores': [1, 0.0, 0.5]}),
+                  'opponents.bot.arms.step.scores[0]'))  # 1 and 1.0: equal numbers, another type
+        for local, aws, path in cases:
+            with self.subTest(path=path):
+                result = ladder_equal.compare(local, aws)
+                self.assertFalse(result['equal'])
+                self.assertIn(path, result['differs'])
+
     def test_a_dirty_run_or_one_without_conditions_proves_nothing(self):
         import ladder_equal
         for bad in (self.report(**{'conditions.dirty': True}), self.report(**{'conditions.dirty': None}), {'opponents': {}}):
@@ -1345,7 +1491,8 @@ class LadderEqual(unittest.TestCase):
                 with open(paths[-1], 'w', encoding='utf-8') as f:
                     json.dump(r, f)
             script = os.path.join(HERE, 'ladder_equal.py')
-            run = lambda *a: subprocess.run([sys.executable, script, *a], capture_output=True, text=True)
+            env = aws_safe_env(os.environ, os.path.join(tmp, 'none'))
+            run = lambda *a: subprocess.run([sys.executable, script, *a], env=env, capture_output=True, text=True)
             self.assertEqual(run(paths[0], paths[1], '--out', os.path.join(tmp, 'eq.json')).returncode, 0)
             with open(os.path.join(tmp, 'eq.json'), encoding='utf-8') as f:
                 self.assertTrue(json.load(f)['equal'])

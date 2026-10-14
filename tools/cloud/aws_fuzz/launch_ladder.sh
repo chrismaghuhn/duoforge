@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
         --max-hours) [ $# -ge 2 ] || df_die '--max-hours needs a value'; max_hours=$2; shift 2 ;;
         --sg-name) [ $# -ge 2 ] || df_die '--sg-name needs a value'; sg_name=$2; shift 2 ;;
         --i-have-owner-approval) approved=yes; shift ;;
-        -h | --help) sed -n '2,19p' "${BASH_SOURCE[0]}"; exit 0 ;;
+        -h | --help) sed -n '2,16p' "${BASH_SOURCE[0]}"; exit 0 ;;
         *) df_die "unknown argument '$1' (see --help)" ;;
     esac
 done
@@ -66,6 +66,8 @@ python3 "$DF_DIR/ladder_conf.py" check "$conf" || df_die "campaign '$campaign' i
 # tr: a Windows Python ends its lines with CRLF
 mapfile -t shas < <(python3 "$DF_DIR/ladder_conf.py" shas "$conf" | tr -d '\r')
 mapfile -t arms < <(python3 "$DF_DIR/ladder_conf.py" arms "$conf" | tr -d '\r')
+workers=$(python3 "$DF_DIR/ladder_conf.py" workers "$conf" | tr -d '\r')
+[[ $workers =~ ^[0-9]+$ ]] || df_die "campaign '$campaign': no worker count"
 
 run_id="${commit:0:12}-ladder-$(date -u +%Y%m%dT%H%M%SZ)"
 df_valid_ladder_run_id "$run_id" || df_die "internal error: the run id '$run_id' is malformed"
@@ -92,7 +94,7 @@ echo "commit        $commit"
 echo "run id        $run_id"
 echo "networks      s3://$bucket/nets/<sha256>.npz, read-only for the box:"
 for s in "${shas[@]}"; do echo "                $s"; done
-echo "arms          ${arms[*]} (side by side, 16 CPUs and 8 workers each, 16 CPUs left to the box)"
+echo "arms          ${arms[*]} (side by side, 16 CPUs and $workers workers each, 16 CPUs left to the box)"
 echo "results       s3://$bucket/fuzz/ladder/$campaign/$run_id/ (<arm>/ladder.json, env.json, status.json, log/)"
 echo "type          $DF_LADDER_TYPE (the only type of a series, no fallback)"
 echo "max hours     $max_hours (watchdog: shutdown -h +$max_minutes, behaviour terminate)"

@@ -19,8 +19,10 @@ shutdown -h +@MAX_MINUTES@ "duoforge ladder watchdog: at most @MAX_MINUTES@ minu
 #
 # nets/ must be read-only for the box (HauptSession): a probe write there that succeeds is a refusal by name
 # (nets_writable), and so is a network that cannot be read (nets_unreadable) or has another sha256 (net_sha_mismatch).
-# Every refusal and failure is named in status.json, uploaded with the log; then the box powers itself off. There is no
-# secret on the box: S3 is reached with the instance profile.
+# Every refusal is named in status.json, uploaded with the log; a failure without a refusal is named by its step
+# (failed_in_<step>), a TERM or INT (the watchdog's shutdown) is "terminated". Then the box powers itself off. A failure
+# before the AWS CLI is installed (failed_in_packages) uploads nothing: the console output is all that is left of it.
+# There is no secret on the box: S3 is reached with the instance profile.
 set -euo pipefail
 
 DF_CAMPAIGN='@CAMPAIGN@'
@@ -41,6 +43,7 @@ S3_BASE="s3://$DF_BUCKET/fuzz/ladder/$DF_CAMPAIGN/$DF_RUN_ID"
 NETS_KEY_PREFIX=nets
 STATUS=failed
 REASON=unknown
+STEP=packages
 mkdir -p "$WORK"
 : > "$LOG"
 
@@ -49,6 +52,7 @@ log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
 finish() {
     local rc=$?
     [ "$rc" -eq 0 ] && STATUS=done && REASON=none
+    [ "$REASON" = unknown ] && REASON="failed_in_$STEP"
     log "leaving with status $rc ($STATUS: $REASON)"
     printf '{"run_id": "%s", "commit": "%s", "status": "%s", "reason": "%s"}\n' "$DF_RUN_ID" "$DF_COMMIT" "$STATUS" \
         "$REASON" > "$WORK/status.json"
@@ -59,7 +63,7 @@ finish() {
     shutdown -h now
 }
 trap finish EXIT
-trap 'exit 143' TERM INT
+trap 'REASON=terminated; exit 143' TERM INT
 
 refuse() { # name message
     REASON=$1
@@ -77,6 +81,7 @@ unzip -q /tmp/awscli.zip -d /tmp
 aws --version >> "$LOG"
 
 # --- the source at the exact commit, its conf and its library
+STEP=checkout
 REPO="$WORK/duoforge"
 mkdir -p "$REPO"
 git -C "$REPO" init -q
@@ -86,10 +91,12 @@ git -C "$REPO" checkout -q --detach FETCH_HEAD
 [ "$(git -C "$REPO" rev-parse HEAD)" = "$DF_COMMIT" ] || refuse wrong_commit "the checkout is not at $DF_COMMIT"
 case $DF_RUN_ID in "${DF_COMMIT:0:12}-ladder-"*) ;; *) refuse wrong_run "run $DF_RUN_ID is not of $DF_COMMIT" ;; esac
 TOOLS="$REPO/tools/cloud/aws_fuzz"
+. "$TOOLS/ladder_box_lib.sh"
 CONF="$TOOLS/campaigns/$DF_CAMPAIGN/campaign.conf"
 [ -f "$CONF" ] || refuse no_campaign "no campaign.conf for $DF_CAMPAIGN at $DF_COMMIT"
 python3 "$TOOLS/ladder_conf.py" check "$CONF" 2>> "$LOG" || refuse bad_conf "the campaign.conf is not a valid ladder conf"
 
+STEP=build
 log 'building the library (Release, duoforge_shared)'
 cmake -S "$REPO" -B "$WORK/build" -DCMAKE_BUILD_TYPE=Release > "$WORK/cmake.log" 2>&1 || refuse build "cmake configure"
 cmake --build "$WORK/build" --target duoforge_shared -j"$(nproc)" >> "$WORK/cmake.log" 2>&1 || refuse build "cmake build"
@@ -100,23 +107,24 @@ LIB_SHA=$(sha256sum "$LIB" | cut -d' ' -f1)
 log "library $LIB_SHA"
 
 # --- Python: exactly the pinned versions, and a consistent set
+STEP=python
 python3 -m venv "$WORK/venv"
 "$WORK/venv/bin/pip" install -q --no-deps -r "$TOOLS/ladder_requirements.txt" >> "$LOG" 2>&1 || refuse python_env 'pip install'
 "$WORK/venv/bin/pip" check >> "$LOG" 2>&1 || refuse python_env 'pip check: the pinned set is not consistent'
 
 # --- nets/: read-only for the box, every network by its sha256
+STEP=nets
 NETS="$WORK/nets"
 mkdir -p "$NETS"
-probe="$NETS_KEY_PREFIX/.write-probe-$DF_RUN_ID"
-if out=$(aws s3api put-object --bucket "$DF_BUCKET" --key "$probe" --body /dev/null 2>&1); then
-    aws s3api delete-object --bucket "$DF_BUCKET" --key "$probe" > /dev/null 2>&1 || true
-    refuse nets_writable "the box could write to s3://$DF_BUCKET/$NETS_KEY_PREFIX/ (it must be read-only)"
-fi
-case $out in
-    *AccessDenied*) log "nets/ is read-only for the box (the probe write was denied)" ;;
-    *) refuse nets_probe_unclear "the probe write failed, but not with AccessDenied: $out" ;;
+verdict=$(ladder_nets_probe "$DF_BUCKET" "$NETS_KEY_PREFIX/.write-probe-$DF_RUN_ID") && probe_rc=0 || probe_rc=$?
+case $probe_rc in
+    0) log "nets/ is read-only for the box: $verdict" ;;
+    3) refuse nets_writable "s3://$DF_BUCKET/$NETS_KEY_PREFIX/ must be read-only for the box: $verdict" ;;
+    *) refuse nets_probe_unclear "$verdict" ;;
 esac
-mapfile -t SHAS < <(python3 "$TOOLS/ladder_conf.py" shas "$CONF")
+list=$(python3 "$TOOLS/ladder_conf.py" shas "$CONF") || refuse bad_conf 'ladder_conf.py shas'
+mapfile -t SHAS <<< "$list"
+[ -n "$list" ] || refuse bad_conf 'the conf names no network'
 for sha in "${SHAS[@]}"; do
     aws s3 cp "s3://$DF_BUCKET/$NETS_KEY_PREFIX/$sha.npz" "$NETS/$sha.npz" --only-show-errors >> "$LOG" 2>&1 ||
         refuse nets_unreadable "nets/$sha.npz could not be read"
@@ -125,9 +133,12 @@ done
 log "${#SHAS[@]} networks read and checked"
 
 # --- the pins: the local machine's instruction set, BLAS kernel and CPU count
+STEP=arms
 export JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
 export DUOFORGE_LIBRARY="$LIB" PYTHONPATH="$REPO/python"
-mapfile -t ARMS < <(python3 "$TOOLS/ladder_conf.py" arms "$CONF")
+list=$(python3 "$TOOLS/ladder_conf.py" arms "$CONF") || refuse bad_conf 'ladder_conf.py arms'
+[ -n "$list" ] || refuse bad_conf 'the conf names no arm'
+mapfile -t ARMS <<< "$list"
 NEED=$((${#ARMS[@]} * DF_CPUS + DF_SPARE))
 [ "$(nproc)" -ge "$NEED" ] || refuse cpus "the box has $(nproc) CPUs, fewer than ${#ARMS[@]} arms x $DF_CPUS + $DF_SPARE"
 TOKEN=$(curl -fsS -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 300' || true)
@@ -153,7 +164,9 @@ declare -A PIDS
 for i in "${!ARMS[@]}"; do
     arm=${ARMS[$i]}
     mkdir -p "$WORK/arms/$arm"
-    mapfile -t ARGS < <(python3 "$TOOLS/ladder_conf.py" argv "$CONF" "$arm" "$NETS" "$WORK/arms/$arm/out")
+    list=$(python3 "$TOOLS/ladder_conf.py" argv "$CONF" "$arm" "$NETS" "$WORK/arms/$arm/out") ||
+        refuse bad_conf "ladder_conf.py argv $arm"
+    mapfile -t ARGS <<< "$list"
     log "arm $arm on CPUs $((i * DF_CPUS))-$(((i + 1) * DF_CPUS - 1)): ladder ${ARGS[*]}"
     cpus="$((i * DF_CPUS))-$(((i + 1) * DF_CPUS - 1))"
     (cd "$REPO" && exec taskset -c "$cpus" "$WORK/venv/bin/python" -u -m duoforge_search.ladder "${ARGS[@]}") \
@@ -161,19 +174,24 @@ for i in "${!ARMS[@]}"; do
     PIDS[$arm]=$!
 done
 failed=''
+declare -A GOOD
 for arm in "${ARMS[@]}"; do
     if wait "${PIDS[$arm]}" && [ -f "$WORK/arms/$arm/out/ladder.json" ]; then
         log "arm $arm done"
+        GOOD[$arm]=1
     else
         tail -n 40 "$WORK/arms/$arm/ladder.log" >> "$LOG"
         failed="$failed $arm"
     fi
 done
 
-# --- the aggregates only: each arm's ladder.json and log tail; the decision files and the networks stay on the box
+# --- the aggregates only: the ladder.json of each arm that succeeded (a failed arm's would pass for a result) and every
+# arm's log tail; the decision files and the networks stay on the box
+STEP=upload
 for arm in "${ARMS[@]}"; do
-    [ -f "$WORK/arms/$arm/out/ladder.json" ] &&
+    if [ -n "${GOOD[$arm]:-}" ]; then
         aws s3 cp "$WORK/arms/$arm/out/ladder.json" "$S3_BASE/$arm/ladder.json" --only-show-errors
+    fi
     tail -n 200 "$WORK/arms/$arm/ladder.log" > "$WORK/arms/$arm/ladder-tail.log"
     aws s3 cp "$WORK/arms/$arm/ladder-tail.log" "$S3_BASE/$arm/ladder-tail.log" --only-show-errors
 done

@@ -4,6 +4,7 @@ networks named by sha256 only.
     python3 ladder_conf.py check CONF                 validate (exit 2 and the reason on a bad conf)
     python3 ladder_conf.py shas CONF                  the networks' sha256, one per line (the box fetches nets/<sha>.npz)
     python3 ladder_conf.py arms CONF                  the arms' names, one per line, in the conf's order
+    python3 ladder_conf.py workers CONF               the workers of each arm
     python3 ladder_conf.py argv CONF ARM NETS OUT     arm ARM's ladder arguments, one per line (NETS: where the box put
                                                       the networks)
 
@@ -56,6 +57,8 @@ def _int(text, key, low, high):
 
 def _arm(value, number):
     """One arm line's value: NAME step=S [previous=P] [h2h=0|1]."""
+    if not value.split():
+        raise ConfError(f"arm= without a name (line {number})")
     name, *fields = value.split()
     if not ARM.match(name):
         raise ConfError(f"arm {name!r} (line {number}): lowercase letters, digits and dashes")
@@ -154,7 +157,7 @@ def argv(conf, arm_name, nets, out):
 
 def main(argv_=None):
     args = sys.argv[1:] if argv_ is None else argv_
-    counts = {"check": 2, "shas": 2, "arms": 2, "argv": 5}
+    counts = {"check": 2, "shas": 2, "arms": 2, "workers": 2, "argv": 5}
     if not args or args[0] not in counts or len(args) != counts[args[0]]:
         print(__doc__.split("\n\n")[1], file=sys.stderr)
         return 2
@@ -165,6 +168,8 @@ def main(argv_=None):
             print("\n".join(shas(conf)))
         elif args[0] == "arms":
             print("\n".join(a["name"] for a in conf["arms"]))
+        elif args[0] == "workers":
+            print(conf["workers"])
         elif args[0] == "argv":
             print("\n".join(argv(conf, args[2], args[3], args[4])))
     except (OSError, ConfError) as err:

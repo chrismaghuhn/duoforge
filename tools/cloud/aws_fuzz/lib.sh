@@ -179,7 +179,8 @@ df_run_id_prefix() { # commit campaign
 
 # $DF_DIR/ladder_user_data.sh with its placeholders filled; every value is validated before it gets here.
 df_render_ladder_user_data() { # campaign commit bucket max-minutes run-id
-    sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g"         -e "s|@RUN_ID@|$5|g" "$DF_DIR/ladder_user_data.sh"
+    sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" \
+        -e "s|@RUN_ID@|$5|g" "$DF_DIR/ladder_user_data.sh"
 }
 
 # $DF_DIR/user_data.sh with its placeholders filled; every value is validated before it gets here.
