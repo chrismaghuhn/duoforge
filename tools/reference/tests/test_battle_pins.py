@@ -9,7 +9,9 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -183,9 +185,13 @@ class ConfigureGuards(unittest.TestCase):
             (root / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.23)\nproject(pin_guard C)\n'
                 'function(duoforge_configure_target target)\nendfunction()\ninclude(reference/data.cmake)\n')
             command = [os.environ.get('DUOFORGE_CMAKE', 'cmake'), '-S', str(root), '-B', str(root / 'build')]
-            def run():
-                return subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            self.assertEqual(run().returncode, 0)
+            def run(variant):
+                # Each configure's wall time on stderr: the Windows/MSYS2 job's time is spent here and there (#505).
+                start = time.perf_counter()
+                result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                print(f'configure {variant}: {time.perf_counter() - start:.2f} s', file=sys.stderr, flush=True)
+                return result
+            self.assertEqual(run('baseline').returncode, 0)
             for file, macro in [(tb_header, 'DF_REFERENCE_TIEBREAK_COUNT'),
                                 (reference / 'conformance.h', 'DF_REFERENCE_TAPE_COUNT'),
                                 (reference / 'conformance.h', 'DF_REFERENCE_EVENT_COUNT')]:
@@ -193,7 +199,7 @@ class ConfigureGuards(unittest.TestCase):
                 lines = [line if not line.startswith('#define '+macro+' ') else '#define '+macro+' 999999u'
                          for line in good.splitlines()]
                 file.write_text('\n'.join(lines)+'\n')
-                result = run()
+                result = run('stale ' + macro)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn('stale '+macro, ' '.join(result.stdout.split()))
                 file.write_text(good)
@@ -203,15 +209,16 @@ class ConfigureGuards(unittest.TestCase):
                 value = json.loads(good)
                 value[section][field] += 1
                 file.write_text(json.dumps(value))
-                result = run()
+                result = run(f'{section}.{field} + 1')
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn('row count', ' '.join(result.stdout.split()))
             file.write_text(good)
             file.unlink()
-            result = run()
+            result = run('deleted battle')
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('independent pin', ' '.join(result.stdout.split()))
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    # The slowest tests by name in the CI log (Python 3.12's durations), as format_pins hit its timeout on the MSYS2 job.
+    unittest.main(verbosity=2, **({'durations': 0} if sys.version_info >= (3, 12) else {}))
