@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "cdc68cfbd8cba3e554b28992a039497d3ec4aba2f4aab83d9c96de77101e0c99" /* the model fingerprint of the pool tables; changed by steps K1 (#476, entry 5dc: Temper Flare) and K2 (#474, entry 5dd: Piercing Drill, Excadrite) */
-#define FP_KPD_HEX "0840776af052f3c76e12098ec4299cb5e4cd27e8d2bdd599aa9df6ca0b75dd4d" /* POOL_DEV: the same table hash, changed by steps K1 and K2 */
+#define FP_KP_HEX "cf05755d0f92c2d17d1aed0b3b721a6353364efdebd8736390729fa53ec0d8a4" /* the model fingerprint of the pool tables; changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite) and K4 (#475, entry 5df: Gravity, the pseudo weather row) */
+#define FP_KPD_HEX "5afd2139f9241afd62b8fa5ea552208d82cc4c7cf56c37ac6445a14fe74084a5" /* POOL_DEV: the same table hash, changed by steps K1, K2 and K4 */
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */

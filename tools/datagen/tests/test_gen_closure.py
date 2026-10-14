@@ -1110,8 +1110,9 @@ class PoolMoves(unittest.TestCase):
                              'primary status tox is not modelled', pool=False, ext=ext)
                 self.refused('plain', PLAIN.replace('target: "normal",', "sideCondition: 'toxicspikes',\n\t\ttarget: \"normal\","),
                              'side condition toxicspikes is not modelled', pool=False, ext=ext)
-                self.refused('plain', PLAIN.replace('target: "normal",', "pseudoWeather: 'gravity',\n\t\ttarget: \"normal\","),
-                             'pseudo weather gravity is not modelled', pool=False, ext=ext)
+                # K4 (#475): Gravity is modelled; Magic Room (K5) is the unmodelled pseudo weather here
+                self.refused('plain', PLAIN.replace('target: "normal",', "pseudoWeather: 'magicroom',\n\t\ttarget: \"normal\","),
+                             'pseudo weather magicroom is not modelled', pool=False, ext=ext)
 
     def test_the_rows_of_the_step(self):
         every = gen_closure.G2_MOVES + gen_closure.G2_ITEMS + gen_closure.G2_ABILITIES
@@ -1286,7 +1287,7 @@ class LenientMoves(unittest.TestCase):
             ('primary status frostbite', with_line(PLAIN, "status: 'frostbite',")),
             ('primary volatile confusion', with_line(PLAIN, "volatileStatus: 'confusion',")),
             ('side condition mist', with_line(PLAIN, "sideCondition: 'mist',")),
-            ('pseudo weather gravity', with_line(PLAIN, "pseudoWeather: 'gravity',")),
+            ('pseudo weather magicroom', with_line(PLAIN, "pseudoWeather: 'magicroom',")),
             ('secondary', with_line(PLAIN, 'secondary: { chance: 10, onHit() { }, },')),
             ('secondary self effect', with_line(PLAIN, "secondary: { chance: 100, self: { volatileStatus: 'lockedmove', }, },")),
             ('self effect', with_line(PLAIN, "self: { volatileStatus: 'lockedmove', },")),

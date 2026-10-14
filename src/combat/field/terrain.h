@@ -13,6 +13,10 @@
  * not read it (moves.ts:17814-17838). */
 static bool dfi_grounded_test(const struct duoforge_battle *b, const dfi_member *m)
 {
+    /* Step K4 (#475, sim/pokemon.ts:2149): Gravity grounds every Pokemon first, before Iron Ball, Flying and Levitate. */
+    if (b->tail.gravity_turns != 0u) {
+        return true;
+    }
     if (dfi_holds(b, m, DFI_ITEM_IRONBALL)) {
         return true;
     }

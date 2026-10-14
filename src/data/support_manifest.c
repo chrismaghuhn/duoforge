@@ -1016,6 +1016,8 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS) |
+                         /* Step K4 (#475, decision 0015 5df): Gravity, gravity_turns of the field view (encoder 5 column, encode.c). */
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_GRAVITY) |
                          /* Step G87 (decision 0080): Attract's source position (volatiles2 bits 12-13), public, verified against the
                           * recorded pool battles and the from_view worlds of tests/test_pool_g87.c. */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE)

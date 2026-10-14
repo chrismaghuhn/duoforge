@@ -211,7 +211,8 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 60u) | /* VOLATILES2 */
                      ((uint64_t)1u << 61u) | /* RESERVE_GUARDS */
                      ((uint64_t)1u << 62u) | /* SIDE_CONDITIONS */
-                     ((uint64_t)1u << 63u))); /* FIELD_FLAGS */
+                     ((uint64_t)1u << 63u) | /* FIELD_FLAGS */
+                     ((uint64_t)1u << 27u))); /* step K4 (#475, decision 0015 5df): Gravity, field.gravity_turns */
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */
