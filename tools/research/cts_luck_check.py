@@ -26,6 +26,7 @@ import math
 import os
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import numpy as np
@@ -252,6 +253,8 @@ def main(argv=None):
     try:
         with cts_luck.Meter(search) as meter, tempfile.TemporaryDirectory() as tmp:
             for n, name in enumerate(names):
+                print(f"battle {n + 1}/{len(names)} {time.strftime('%H:%M:%S')} turns so far {len(pairs)}",
+                      file=sys.stderr, flush=True)
                 if name not in streams:
                     skipped["no-stream"] += 1
                     continue
