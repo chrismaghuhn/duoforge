@@ -34,14 +34,21 @@
 # Claude Code reports as "stopped" may still run: check its processes before
 # a restart.
 #
+# No nesting: the holder is told DUOFORGE_MACHINE_LOCK_HELD (its label) and
+# DUOFORGE_MACHINE_LOCK_HELD_DIR (its lock). A call on the same lock from inside it is refused at once with status 74
+# ($MACHINE_LOCK_NESTED): it would wait for slots the outer job holds (under --exclusive: forever). Run the inner work
+# without the lock, or as a job of its own. A call on another lock (a test's temporary one) is not nested.
+#
 # usage (Git Bash):
-#   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases; status 73: the label runs
+#   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases; status 73: the label runs;
+#                                                                 status 74: nested inside a job of this lock
 #   source tools/ci/machine_lock.sh; machine_lock_acquire [--exclusive] <label> || exit; ...; machine_lock_release
 # environment:
 #   DUOFORGE_MACHINE_LOCK        slot 0, the lock directory (default: $TEMP/duoforge-machine.lock)
 #   DUOFORGE_MACHINE_LOCK_SLOTS  jobs at once (default 2); the same in every session
 # exported to the holder:
 #   DUOFORGE_JOBS                processors / slots (at least 1); every processor with --exclusive
+#   DUOFORGE_MACHINE_LOCK_HELD   the holder's label; DUOFORGE_MACHINE_LOCK_HELD_DIR its lock (status 74 inside it)
 set -u
 
 MACHINE_LOCK=${DUOFORGE_MACHINE_LOCK:-"${TEMP:-/tmp}/duoforge-machine.lock"}
@@ -50,6 +57,8 @@ MACHINE_LOCK=${DUOFORGE_MACHINE_LOCK:-"${TEMP:-/tmp}/duoforge-machine.lock"}
 MACHINE_LOCK_ORPHAN=300
 # The status of a call refused because a live job with its label holds a slot or waits.
 MACHINE_LOCK_TAKEN=73
+# The status of a call refused because it is nested inside a job that holds this lock.
+MACHINE_LOCK_NESTED=74
 
 # The Windows process id of this shell (Git Bash), or its own pid elsewhere.
 machine_lock_pid() {
@@ -173,6 +182,12 @@ machine_lock_acquire() { # [--exclusive] label
         shift
     fi
     local label=$1 waited=0 holder line me ticket t k dir ahead blocked legacy free slots cpus mark recorded
+    if [ -n "${DUOFORGE_MACHINE_LOCK_HELD:-}" ] && [ "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" = "$MACHINE_LOCK" ]; then
+        echo "machine lock: refused: '$label' is nested inside the job '$DUOFORGE_MACHINE_LOCK_HELD', which holds this" \
+            "lock ($MACHINE_LOCK); it would wait for slots the outer job holds. Run the inner work without the lock," \
+            "or as a job of its own." >&2
+        return "$MACHINE_LOCK_NESTED"
+    fi
     local queue="$MACHINE_LOCK.queue"
     slots=${DUOFORGE_MACHINE_LOCK_SLOTS-2}
     case "$slots" in
@@ -269,7 +284,7 @@ machine_lock_acquire() { # [--exclusive] label
                     for dir in "${got[@]}"; do
                         printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
                     done
-                    export DUOFORGE_JOBS=$cpus
+                    export DUOFORGE_JOBS=$cpus DUOFORGE_MACHINE_LOCK_HELD=$label DUOFORGE_MACHINE_LOCK_HELD_DIR=$MACHINE_LOCK
                     break
                 fi
                 for dir in "${got[@]}"; do rmdir "$dir" 2> /dev/null; done # somebody was faster: all or nothing
@@ -290,7 +305,8 @@ machine_lock_acquire() { # [--exclusive] label
             done
             if [ -n "$dir" ]; then
                 printf '%s\nslots\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$dir/owner"
-                export DUOFORGE_JOBS=$((cpus / slots > 0 ? cpus / slots : 1))
+                export DUOFORGE_JOBS=$((cpus / slots > 0 ? cpus / slots : 1)) DUOFORGE_MACHINE_LOCK_HELD=$label \
+                    DUOFORGE_MACHINE_LOCK_HELD_DIR=$MACHINE_LOCK
                 break
             fi
         fi
@@ -320,6 +336,9 @@ machine_lock_release() {
     done
     if [ -d "$queue" ] && machine_lock_idle "$queue"; then
         rm -f "$queue/.slots"
+    fi
+    if [ "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" = "$MACHINE_LOCK" ]; then
+        unset DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_HELD_DIR
     fi
 }
 

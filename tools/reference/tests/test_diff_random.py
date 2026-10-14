@@ -22,6 +22,7 @@ import itertools
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -1816,6 +1817,66 @@ class Lock(unittest.TestCase):
                     f.write('go')
                 self.assertEqual(first.wait(timeout=60), 0)
             self.assertEqual(sorted(os.listdir(tmp)), ['go', 'lock.queue'])  # everything released
+
+
+    # No nesting (2026-10-14, HauptSession): a call on the lock from inside a job that holds it would wait for the
+    # slots that job holds (under --exclusive: forever; the content lane's mutant driver). It is refused at once, 74.
+
+    def nest_env(self, lock):
+        env = dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/'), NUMBER_OF_PROCESSORS='16')
+        for var in ('DUOFORGE_MACHINE_LOCK_SLOTS', 'DUOFORGE_MACHINE_LOCK_HELD', 'DUOFORGE_MACHINE_LOCK_HELD_DIR'):
+            env.pop(var, None)  # this test may itself run under the real lock
+        return env
+
+    def test_a_call_nested_inside_an_exclusive_job_is_refused_at_once_with_status_74(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            env = self.nest_env(lock)
+            start = time.time()
+            done = subprocess.run([rnd.find_bash(), script, '--exclusive', 'outer', rnd.find_bash(), script, 'inner',
+                                   sys.executable.replace('\\', '/'), '-c', 'print("inner ran")'],
+                                  capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, rnd.LOCK_NESTED_STATUS, done.stderr)
+            self.assertLess(time.time() - start, 30)  # no wait for the slots the outer job holds
+            self.assertNotIn('inner ran', done.stdout)
+            self.assertIn("machine lock: refused: 'inner' is nested inside the job 'outer'", done.stderr)
+            self.assertEqual(sorted(os.listdir(tmp)), ['lock.queue'])  # the outer job released, no ticket left
+
+    def test_the_holder_is_told_its_label_and_lock_and_a_plain_or_other_lock_call_runs_as_before(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        show = 'import os; print(os.environ["DUOFORGE_MACHINE_LOCK_HELD"], os.environ["DUOFORGE_MACHINE_LOCK_HELD_DIR"])'
+        with tempfile.TemporaryDirectory() as tmp:
+            lock, other = os.path.join(tmp, 'lock'), os.path.join(tmp, 'other')
+            env = self.nest_env(lock)
+            done = subprocess.run([rnd.find_bash(), script, 'plain', sys.executable.replace('\\', '/'), '-c', show],
+                                  capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stdout.split(), ['plain', lock.replace('\\', '/')])
+            # Inside a job of one lock, a call on another lock (a test's temporary one) is not nested.
+            inner = 'DUOFORGE_MACHINE_LOCK=%s %s' % (shlex.quote(other.replace('\\', '/')), ' '.join(shlex.quote(a) for a in (
+                rnd.find_bash().replace('\\', '/'), script, 'inner', sys.executable.replace('\\', '/'), '-c', show)))
+            done = subprocess.run([rnd.find_bash(), script, '--exclusive', 'outer', rnd.find_bash(), '-c', inner],
+                                  capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stdout.split(), ['inner', other.replace('\\', '/')])
+
+    def test_release_forgets_the_held_lock_so_one_shell_may_acquire_again(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, done = self.lock_shell(tmp, 'unset DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_HELD_DIR; '
+                                           'machine_lock_acquire a && echo "[$DUOFORGE_MACHINE_LOCK_HELD]" && '
+                                           'machine_lock_release && echo "[${DUOFORGE_MACHINE_LOCK_HELD:-}]" && '
+                                           'machine_lock_acquire b && echo "[$DUOFORGE_MACHINE_LOCK_HELD]" && machine_lock_release')
+            self.assertEqual(done.stdout.split(), ['[a]', '[]', '[b]'], done.stderr)
+
+    def test_a_fuzz_run_nested_in_a_held_lock_stops_by_name(self):
+        params = PARAMS._replace(battles=8)
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(driver.ToolError) as cm:
+                rnd.orchestrate(params, tmp, [], 5, run=lambda command: rnd.LOCK_NESTED_STATUS, sleep=lambda s: None,
+                                bash='bash', lock_script='l', python='p', driver_script='d', out=io.StringIO())
+            self.assertIn('nested inside a job that holds the lock', str(cm.exception))
+            self.assertIn('--no-lock', str(cm.exception))
 
 
 # ------------------------------------------------------------ the command line
