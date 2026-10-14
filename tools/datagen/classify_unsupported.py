@@ -203,6 +203,41 @@ def field_witness(kind, key, cand, witnesses):
     return None
 
 
+def owned_values(handler):
+    """The fields that a dedicated special owns (gen_closure.py G2_OWNED_FIELDS), as exact value text."""
+    out = {}
+    for name, text in gc.G2_OWNED_FIELDS.get(handler, {}).items():
+        out[name] = exact_text(text.split(':', 1)[1] if ':' in text else text)
+    return out
+
+
+def dedicated_choice(key, cand, witnesses):
+    """The dedicated witness for one move field: among the matching ones (special not NONE, the same exact text on the
+    field), the one whose owned fields the candidate has with the same text, the fewest missing first (ties by id).
+    Returns (witness, partial, matches): partial lists the owned fields of the chosen special that the candidate lacks
+    or has with other text, matches every matching witness; None when no witness matches."""
+    matches = [w for w in _ordered(witnesses) if w['handler'] != 'NONE' and key in w['exact']
+               and key in cand['exact'] and w['exact'][key] == cand['exact'][key]]
+    if not matches:
+        return None
+
+    def partial_of(w):
+        return [k for k, v in owned_values(w['handler']).items() if cand['exact'].get(k) != v]
+
+    best = min(matches, key=lambda w: (len(partial_of(w)), w['id']))
+    return best, partial_of(best), matches
+
+
+def _dedicated_entry(choice):
+    best, partial, matches = choice
+    entry = {'id': best['id'], 'special': best['handler']}
+    if partial:
+        entry['partial'] = partial
+    if len(matches) > 1:
+        entry['alternatives'] = [{'id': w['id'], 'special': w['handler']} for w in matches]
+    return entry
+
+
 def _entry_for(kind, key, w):
     """The family entry of one covered field: the special of a dedicated field, the column of a generic one."""
     if kind != 'move':
@@ -291,17 +326,22 @@ def classify_entry(kind, eid, name, modelled, analysis, witnesses, pin_lines, re
     family, uncovered, nearest = {}, [], None
     for feature in features:
         key = reason_key(feature, analysis)
-        w = None
-        if key is not None and key in analysis['exact']:
-            w = next((x for x in _ordered(witnesses) if x['handler'] != 'NONE' and key in x['exact']
-                      and x['exact'][key] == analysis['exact'][key]), None)
-        if w is None:
+        choice = dedicated_choice(key, analysis, witnesses) if key is not None else None
+        if choice is None:
             uncovered.append(feature)
             if key is not None:
                 nearest = nearest or nearest_of(kind, key, analysis, witnesses)
         else:
-            family['reason ' + feature] = {'id': w['id'], 'special': w['handler']}
+            family['reason ' + feature] = _dedicated_entry(choice)
     for key in sorted(fields):
+        if kind == 'move' and not is_generic(kind, key):
+            choice = dedicated_choice(key, analysis, witnesses)
+            if choice is None:
+                uncovered.append(key)
+                nearest = nearest or nearest_of(kind, key, analysis, witnesses)
+            else:
+                family[key] = _dedicated_entry(choice)
+            continue
         w = field_witness(kind, key, analysis, witnesses)
         if w is None:
             uncovered.append(key)

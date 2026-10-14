@@ -142,6 +142,24 @@ class MoveClasses(unittest.TestCase):
         rec = classify_move('jetpunch', 'basePower: 60,', modelled=True)
         self.assertIsNone(rec['generator_reason'])
 
+    def test_dedicated_witness_whose_owned_fields_fit_is_preferred(self):
+        # Dragon Darts owns smartTarget, which Double Hit lacks; Dual Wing Beat owns only multihit: it fits.
+        dragon = witness('dragondarts', 'DRAGON_DARTS', 'multihit: 2,', 'smartTarget: true,')
+        dual = witness('dualwingbeat', 'MULTI_HIT_2', 'multihit: 2,')
+        rec = classify_move('doublehit', 'multihit: 2,', 'basePower: 25,', witnesses=[dragon, dual],
+                            reason='field multihit')
+        self.assertEqual(rec['family']['multihit']['id'], 'dualwingbeat')
+        self.assertNotIn('partial', rec['family']['multihit'])
+        self.assertEqual(rec['family']['reason field multihit']['id'], 'dualwingbeat')
+        self.assertEqual(sorted(a['id'] for a in rec['family']['multihit']['alternatives']),
+                         ['dragondarts', 'dualwingbeat'])
+
+    def test_no_fitting_witness_takes_the_best_and_names_the_partial_fields(self):
+        dragon = witness('dragondarts', 'DRAGON_DARTS', 'multihit: 2,', 'smartTarget: true,')
+        rec = classify_move('doublehit', 'multihit: 2,', 'basePower: 25,', witnesses=[dragon])
+        self.assertEqual(rec['family']['multihit']['id'], 'dragondarts')
+        self.assertEqual(rec['family']['multihit']['partial'], ['smartTarget'])
+
     def test_a_field_value_no_entry_has_is_none(self):
         rec = classify_move('odd', 'multihit: [2, 5],', 'target: "foo",', witnesses=[MULTI, BULLET])
         self.assertEqual(rec['family'], 'none')
