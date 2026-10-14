@@ -293,13 +293,20 @@ These are derived from section 1.2, not measured here:
 ### 6.3 The in-engine evaluation (#450 piece 2) and what it changes
 
 - **Interface:** an evaluator setting, `jax` or `engine`. The tree code does not change. The engine evaluator values
-  each leaf inside `expand`. That removes the encode step and the JAX call, so leaves no longer travel to Python.
+  each leaf inside a new sibling of `expand`, preserving the old ABI. Feature construction remains in C; host row
+  transfer and the per-leaf JAX value call disappear. The same call can return the observation digest.
+- **Network comparison (HS, 2026-10-14):** at least full BC6 in C, a small distilled network and a medium network,
+  each bundled over the 16 worlds. No size is selected upfront. Selection is by **strength at equal time** in the
+  ladder, with a separate equal-work-budget control; throughput alone is insufficient. All recompute the leaf,
+  without an incremental NNUE goal. The [evaluation spec](2026-10-14-in-engine-evaluation-design.md) defines the plan.
 - **Realistic gain:** the engine step bounds it at ~150k leaves/s locally, **about 5–8× over JAX**, not 100×. The
   "hundreds of thousands of inferences per second" quoted for the Gen 1 singles engine on #450 is for a much simpler
   game and is not transferable. The number comes from #450 piece 2's measurement.
 - **What it opens:** the sampled tree (D5), whose per-iteration cost is then one engine call without a network
   round-trip. The order on #450 already places piece 2 before selective depth.
-- **Its gate:** the decisions agree with the full network within a pinned tolerance. That gate belongs to #450 piece 2.
+- **Its gate:** the decisions agree with the full network within a pinned tolerance, followed by the predeclared
+  strength/time comparison and existing ladder gates. D4 stays on JAX until explicit adoption. Those evaluator gates
+  belong to #485 / #450 piece 2; D5 keeps its own gates.
 
 ## 7. Decision 5: budget, determinism, memory
 

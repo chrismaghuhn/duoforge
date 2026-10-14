@@ -7,7 +7,7 @@ The owner has paused restructuring after field PR #487. This is a documentation 
 benchmark, export, training, checkpoint conversion or private-data run is performed here.
 
 The goal is to reach D5, the sampled three-turn tree, quickly while keeping its gates. The digest ships first,
-so D2 need not wait for a trained evaluator. The value kernel and private distillation can then proceed in parallel
+so D2 need not wait for a trained evaluator. The value kernels and private distillation can then proceed in parallel
 after their respective approvals. **D4 remains `evaluator="jax"` until the engine evaluator passes its gates.**
 Merging this document does not by itself authorize a training run or live adoption. HS merges every PR.
 
@@ -17,19 +17,20 @@ Merging this document does not by itself authorize a training run or live adopti
 |---|---|---|
 | API | `duoforge_batch_expand_digest` and `duoforge_batch_expand_evaluated`, sharing one private core; preserve `duoforge_batch_expand` | Early D2 delivery and one digest/value call for D5, with no ABI break |
 | Early delivery | The sibling works without a model, producing digests and optionally encoder rows | Unblocks D2 before the network exists |
-| Network | A compact, value-only student distilled from frozen BC6-M; categorical embeddings, pooling and two small ReLU layers | Avoids porting the full teacher's large torso and LayerNorm; retains meaningful categorical inputs |
-| Arithmetic | int8 weights, int16 activations, checked int64 accumulation; fixed-point value | Byte-identical inference across MSVC, GCC and Clang; no floating reductions or platform `sqrt` |
+| Network | Compare at least full BC6 in C, a small distilled network and a medium network; all batch the 16 worlds | Do not choose the size before measuring strength at equal time, with an equal-budget control |
+| Arithmetic | Quantized integer inference, including deterministic fixed-point LayerNorm for full BC6; fixed-point value | Byte-identical inference across MSVC, GCC and Clang; numeric deviation from JAX has its own gate |
 | Inputs | The existing viewer-specific encoder-6 observation of each world, 16-world tiles | Same information as the JAX teacher, no second battle-rule implementation |
 | Memory | Immutable loaded model and one preallocated workspace per worker | No allocation or resizing while expanding/evaluating leaves |
 | Weights | Private, versioned binary artifact; mandatory expected full-file SHA-256 | No embedded trained weights, checkpoint or public CI artifact |
-| Adoption | Numeric, decision, throughput and search gates, fixed below | A smaller network is an approximation, not automatically an equivalent evaluator |
+| Adoption | Fidelity and arithmetic gates, then a strength-at-equal-time ladder and existing search/latency gates | Throughput alone cannot select a network; an approximation is not automatically an equivalent evaluator |
 
 Root and intermediate candidate policies, the foe model, world sampling, the root rule (including adopted
-lambda), CFR+ arithmetic and budgets remain those of the search lane. This proposal replaces **leaf value inference**.
+lambda) and CFR+ arithmetic remain those of the search lane. Fixed-budget comparisons keep its budgets identical;
+equal-time arms use predeclared work budgets, not a changed solver. This proposal replaces **leaf value inference**.
 It does not port policy or team heads, implement the D5 sampler, change timers, or start selfplay.
 
-The initial student is a full recomputation from each leaf's observation, not an incremental NNUE accumulator.
-Safe delta updates are a later optimization with an exact full-recompute oracle; they do not block D2/D4.
+All variants recompute from each leaf's observation. **Incremental NNUE-style updates are not a goal**:
+too much changes in a doubles turn. There is no planned accumulator or delta-update stage.
 Value inference removes the per-leaf JAX value call and host row transfer. It still constructs features in C;
 it does not promise to make feature construction free. D5's policy-prior acquisition has its own cost: cached/batched
 BC6 policy work is reported separately, and this spec does not claim to remove all JAX calls from an entire decision.
@@ -311,19 +312,25 @@ Request projection failure is a refused digest with a named phase/status. Failed
 successful steps may not use zero bytes as a valid-key marker. All three answers and the refinements to the draft
 are subject to HS's approval of 0082/#485 before implementation.
 
-## 5. The student and its per-world inputs
+## 5. Three network variants and their per-world inputs
 
-**Initial architecture `value-q-v1` (proposal to freeze on approval):** value-only, with the existing column groups
-and member/position semantics, but no teacher LayerNorm or residual torso:
+**No network size is selected by this spec.** The comparison includes at least these three value-only candidates,
+plus the frozen full BC6/JAX control. Every C candidate evaluates the same 16 worlds in tiles of at most 16 rows.
 
-| Stage | Shape/operation |
-|---|---|
-| Categorical lookups | species/move/item/ability embeddings 16; nature 8; same validated id capacities as model v2 |
-| Move tokens | `[move embedding, remaining PP fraction]` -> 16, ReLU; masked sum/max of up to four valid moves |
-| Member | species, move sum/max, item, ability, nature, all member scalar columns, side flag and registered mask -> 32 -> 32, ReLU |
-| Positions | all position scalar columns, occupied flag, gathered member -> 32, ReLU |
-| Torso | global columns, both side blocks, four positions, side member sums/maxima -> 128 -> 128, ReLU |
-| Value | 128 -> 1, linear, viewer-relative; no tanh or clipping |
+| Candidate | Required content | What the comparison tests |
+|---|---|---|
+| Full BC6 in C | The frozen teacher's entire value computation: categorical embeddings, masked move/member pools, member/position layers, all torso layers, LayerNorm and residual additions, linear value head; original dimensions and learned parameters | Cost and fidelity of moving the full network into C, without distillation or dropping an operator |
+| Small distilled | A smaller value-only categorical/pooling network trained against that same frozen BC6 value | Whether reduced inference cost buys enough search to compensate for approximation |
+| Medium, tile-16 | An intermediate-size value-only network distilled from the same teacher and bundled over all 16 worlds | The strength/time trade-off between the small and full candidates |
+
+Omitting unused policy/team heads from the full candidate is value-only dead-code elimination, not a smaller value
+network. Its dimensions are those of the pinned teacher artifact. Small and medium dimensions, depth, normalization
+and residual choices remain open here. Before training/export or comparison results, an owner/HS-reviewed experiment
+README freezes all three graph descriptors, dimensions, parameter counts, arithmetic versions, calibration/training
+budgets and resource bounds. The medium must have an intermediate value-path parameter count, not be a renamed
+small graph with a different scheduler. All three use tile-16 scheduling; scalar/tile comparisons isolate batching
+from network size. Report a failed candidate explicitly; silently comparing only the two survivors is not this plan.
+Changing a graph after seeing the held-out results requires a new declared experiment and untouched hold-out.
 
 Present means move count above zero, not species id above zero (id zero is valid). Empty pools give zeros;
 unregistered members and absent occupants retain the existing masks. IDs are categorical: never treated as
@@ -345,21 +352,28 @@ arithmetic dependency. Partial tiles are masked, not treated as extra zero-value
 candidate/chance means remain fixed-order search operations outside the network. No mean-world feature vector,
 hidden-state oracle row, cross-world normalization or batch-dependent layer is permitted.
 
-Train by supervised distillation of the frozen BC6 **value**, not game outcomes, search labels or selfplay rewards
-in this step. Sources are the existing engine-accepted registry and pinned random-team/moveset generator; include
+The full candidate converts the frozen BC6 value-path parameters, without retraining or distillation. Its quantization
+error is measured against the original JAX teacher, not relabeled as exact floating equivalence. Train the small and
+medium candidates by supervised distillation of that same BC6 **value**, not game outcomes, search labels or selfplay
+rewards in this step. Sources are the existing engine-accepted registry and pinned random-team/moveset generator; include
 the observations used by accepted closed-sheet worlds. Unsupported generation/reconstruction is named and counted.
 Split by game/team generation group before extracting rows; training, calibration and held-out gates are disjoint.
 Quantization-aware training/calibration, seeds, optimizer/budget and teacher/file hashes are fixed in a private
 run manifest after the owner's separate training go. No such run is authorized or executed by this spec PR.
 
-Full BC6 in C remains an alternative if the student misses fidelity. That is a separate approved design revision,
-not an automatic fallback or a reason to lower tolerances. Porting LayerNorm/floating reductions is deliberately
-off the initial critical path. Likewise, increasing student dimensions changes the architecture/schema and requires
-its own predeclared validation; do not tune architecture against the held-out gate set.
+Full BC6 in C is a mandatory comparison arm, not a fallback considered only if a small student fails. Candidate
+selection follows section 10.1's strength-at-equal-time ladder, with equal-budget controls. Neither leaf throughput
+nor parameter count alone chooses the winner. The BC6 policy/foe networks remain unchanged in all arms.
 
 ## 6. Deterministic integer inference
 
-Use signed int8 weights/embeddings, signed int16 feature/activation storage, int64 biases and accumulation.
+Choose **quantized arithmetic**, rather than platform floating reductions, for every comparison arm. This avoids
+compiler/FMA/sqrt differences while keeping a scalar C17 oracle; quantization is still an approximation to BC6/JAX
+and must pass section 9. Do not claim cross-platform agreement merely from similar final moves.
+
+Use signed int8 dense weights/embeddings, signed int16 feature/activation storage, int64 biases and accumulation.
+Full BC6's normalization parameters and pre-normalization tensors may need int32 fixed-point storage; their exact
+scales/storage widths are part of its predeclared graph descriptor, not an implementation-dependent precision choice.
 For each output channel, compute bias plus dot product in ascending input index; pool in roster/move order.
 ReLU, registered masks, sums/maxima and integer requantization have one canonical order. Quantization scales are
 positive integer multipliers plus power-of-two shifts, with a signed round-to-nearest/ties-to-even definition.
@@ -370,8 +384,24 @@ Per-output-channel weight scales are requantized back to that common activation 
 Pool sums accumulate wide before their specified requantization. Tensor scales and those rounding points are
 part of the immutable graph, not inferred differently by each kernel.
 
+**Full BC6 operator coverage:** retain each LayerNorm's learned gamma/beta, its epsilon and the teacher's
+`dense -> LayerNorm -> ReLU` order; the first torso layer replaces the input, later layers add their residual.
+For a normalization vector, compute its sum in ascending channel order and round the division by channel count
+once, ties-to-even. Compute squared deviations from that fixed-point mean in wide checked integers, sum in the
+same order, and round the variance division once. Quantize the teacher's binary32 epsilon (`1e-5`) to a declared
+positive variance-scale integer; a scale that rounds it to zero is invalid. Use a portable integer square root
+with a specified output scale and correctly rounded result (adjacent-square comparison), then explicit ties-to-even
+division for normalization, multiplication by gamma and addition of beta. All rescaling/rounding points, residual
+addition bounds and saturation sites are recorded in the graph and export oracle. No platform `sqrt`, epsilon
+omission or replacement of LayerNorm by a different layer. Preserve the teacher's masks, gathers and pools too.
+The E3n normalization PR freezes byte-level synthetic vectors, including constant inputs, extreme bounds and ties,
+before optimized kernels or real-artifact comparison. Portable checked multiword operations are allowed where
+proved bounds need more than 64 bits; a GCC-only integer type is not the Windows oracle. Bound-proof failure is
+a named refusal, not permission to approximate with an unreviewed lookup or silently select floating arithmetic.
+
 Intentional activation saturation to the documented int16 range is part of the trained graph, counted in calibration
-reports. It is not overflow. Value output is int32 **Q12.20** (units 2^-20), with no clamp to [-1,1]: the current
+reports (or the converted full graph's calibration report). It is not overflow. Any int32 normalization storage has
+its own declared range. Value output is int32 **Q12.20** (units 2^-20), with no clamp to [-1,1]: the current
 teacher's value head is linear. An out-of-range result refuses as `E_EXHAUSTED` / `eval_output_range`.
 The adapter produces the same correctly rounded binary32 value on all supported platforms.
 
@@ -398,10 +428,14 @@ Model loading, file I/O, validation, tensor unpacking, pool/thread construction 
 The model is immutable and may be shared; each active worker has its own scratch. A workspace is bound to model
 hash/schema, context, leaf capacity and worker count. Concurrent calls sharing one workspace/batch refuse.
 
-Initial limits: at most **256 KiB scratch per worker**, excluding the existing batch environments and caller output
-arrays; at most **16 KiB additional peak stack** over the legacy leaf/step path. The implementation reports actual
-sizes, alignment, worst nested stack and scratch formula before approval. The student tile stores quantized rows,
-categorical ids, tokens and activations; use one existing float encoder row as temporary input, not a whole
+The experiment README fixes a maximum scratch size and file-size bound **for each of the three declared graphs**,
+before loading weights or timing; do not cap all candidates to a small student's dimensions. The loader computes
+and checks the workspace formula from that approved descriptor and tile/worker capacities. Existing batch
+environments and caller output arrays are accounted for separately. Proposed common stack limit:
+**16 KiB additional peak stack** over the legacy leaf/step path. The implementation reports actual sizes, alignment,
+worst nested stack and scratch formula before approval. Large activations belong in the workspace, not the stack.
+Each candidate's tile stores quantized rows, categorical ids, tokens and activations; use one existing float encoder
+row as temporary input, not a whole
 `count * 1094` private row slab. The visible-identity sidecar is bounded by `DUOFORGE_MAX_EVENTS` and included in
 scratch; digest-only mode uses the same bounded identity records on the stack without an evaluator workspace.
 No per-world/transcript collection grows during a step.
@@ -433,9 +467,11 @@ Metadata is canonical UTF-8 and includes:
 - exact dimensions, tensor names/shapes/dtypes, offsets/lengths, per-channel integer scales and rounding convention;
 - training/export code commits and dirty flags, seeds and dataset split manifests (private, without player names).
 
-The loader accepts only the compiled `value-q-v1` graph and tensor inventory. Check endianness, lengths, duplicate
-or missing tensors, offsets/overlap, bounded metadata and shape arithmetic before allocation/access. Initial file
-cap **8 MiB**, metadata cap **64 KiB**; exceeding either is a named refusal. Unknown version/schema/feature mask
+The loader accepts only explicitly registered, compiled graph descriptors for the full, small and medium candidates,
+with their exact tensor inventories and arithmetic versions. It does not execute an arbitrary serialized graph.
+Check endianness, lengths, duplicate or missing tensors, offsets/overlap, bounded metadata and shape arithmetic
+before allocation/access. Each descriptor has the predeclared file-size cap from section 7; proposed common metadata
+cap **64 KiB**. Exceeding either is a named refusal. Unknown version/schema/feature mask
 and incompatible context refuse, rather than zeroing new inputs or using an older interpretation. A content/table
 change requires explicit re-export/revalidation and a new expected hash, even if trained values are reused.
 
@@ -451,7 +487,8 @@ Examples and diagnostics use neutral seats/roles; no foreign bot/player, match o
 
 ## 9. Fidelity and decision gates, fixed before the runs
 
-These are proposed thresholds; owner/HS approval freezes them before training or measuring. A failure keeps JAX.
+These are proposed thresholds, applied to **each** C candidate including the quantized full BC6 conversion;
+owner/HS approval freezes them before training or measuring. A failure makes that artifact ineligible for adoption.
 Do not widen a tolerance after seeing a result. Changing a threshold requires a new explicit decision and new
 untouched hold-out, not a rerun reported as if it passed the original gate.
 
@@ -469,7 +506,7 @@ diagnostics are reported separately. Pin all manifests/hashes before running eit
 | Decision agreement | >= 98% identical played choices under the same play uniforms; evaluate EV, Nash and the inherited live rule with identical candidates/budgets |
 | Stable EV decisions | >= 99% identical choices where the teacher's top-two expected-value margin is >= 0.02; report the count and near-tie cases |
 | Distribution agreement | Mean total variation between final action distributions <= 0.02, p99 <= 0.10 |
-| Teacher-valued regret | Mean positive `(pi_teacher - pi_student) dot EV_teacher` <= 0.002; p99 <= 0.02 |
+| Teacher-valued regret | Mean positive `(pi_teacher - pi_candidate) dot EV_teacher` <= 0.002; p99 <= 0.02 |
 | Reproduction | Engine outputs bit-equal across arithmetic matrix; repeat decisions byte-equal under fixed full-system backend/settings; JAX/default path unchanged |
 
 Report every rule/stratum, counts, confidence intervals and denominators, including exact terminals, cut-offs,
@@ -480,16 +517,18 @@ not a reason to remove them. A model/encoding failure is a failed gate, not a di
 use the same recorded policy for both backends. Never substitute game outcomes for BC6 in this fidelity gate.
 
 The numeric gate alone is insufficient: small errors near indifferent games can change policies. Conversely,
-decision agreement is not a strength result. E6 uses the unchanged search ladder's no-harm, reproduction, fallback,
+decision agreement is not a strength result. Section 10.1 compares the three networks for **strength at equal time**,
+with a separate equal-budget control. E6 uses the unchanged search ladder's no-harm, reproduction, fallback,
 error and latency gates with the last adopted root rule. No-harm needs both gated neutral opponent roles, and
 strength/claim-of-improvement needs the ladder's separate paired head-to-head gate. Existing unresolved-game and
 fallback rules are not relaxed. Failure does not trigger a silent backend switch; `engine` stays unadopted.
 
-## 10. Throughput experiment, predeclared
+## 10. Timing and strength comparison, predeclared
 
 Depth spec 6.3's **5-8x over JAX is an estimate**, based on earlier workloads/hardware, not a result in this document.
-Measure it against the full frozen **BC6-M** on the same machine and leaf plans. An inference-only student number
-cannot establish the end-to-end gain. Historical non-BC6 timings are not the baseline.
+Measure **all three C variants** against the full frozen **BC6-M/JAX** on the same machine and leaf plans, and report
+their pairwise costs. An inference-only candidate number cannot establish the end-to-end gain.
+Historical non-BC6 timings are not the baseline.
 
 Before measurement commit a README and private workload manifest. Fix compiler/build/IPO, CPU affinity and worker/
 thread settings, JAX backend/version, value-call capacity (the D2 adapter pads to its fixed capacity), all model and
@@ -504,30 +543,74 @@ Report actual rows, successful leaves, terminal/cut-off mix and refusals, rather
 
 Timing includes clone/reseed/step, visible-row digest, feature construction, inference, output transfer and binding
 overhead. The JAX control computes the **same digest** via the sibling without a model, then current row transfer
-and full teacher inference. Synchronize JAX (`block_until_ready`/materialize values) before stopping its timer.
+and full teacher inference. Each C arm uses its own pinned artifact in the evaluated sibling. Synchronize JAX
+(`block_until_ready`/materialize values) before stopping its timer.
 Report the existing legacy JAX path separately to expose the new digest's cost. Exclude cold file loading, first
 compilation/warm-up and root policy/candidate preparation from this leaf number; report those separately and include
 them in the full decision latency. Both arms use identical leaves and refusal classifications.
 
-Use **32 alternating AB/BA pairs** (16 each) after five warm-ups per configuration; three timed repetitions per side.
+For each C/JAX comparison use **32 alternating AB/BA pairs** (16 each) after five warm-ups per configuration;
+three timed repetitions per side.
 Run an interleaved **32-pair same-backend/same-artifact control** with the same workload. Retain every sample;
-predeclare interruptions/restarts, never remove slow samples to pass. Gate on the primary case's median paired
+predeclare interruptions/restarts, never remove slow samples to pass. Report the primary case's median paired
 end-to-end speedup with a 95% paired-bootstrap interval (20,000 resamples, seed 20261014), reported alongside the
 self-control and its spread. No concurrent training/build/test on the measurement machine. On the owner's PC use
 `machine_lock.sh --exclusive`; in a dedicated cloud machine establish the same exclusivity locally.
 
-**Performance gate (E5):** lower 95% bound of speedup **> 1.0x** on the primary release case, zero added errors/
-refusals and no hidden allocation. Report the **5-8x target** explicitly as achieved or missed; the depth design
-states an estimate, not a mandatory 5x minimum. A target miss remains visible to owner/HS at adoption and can lead
-them to request optimization before D5. Secondary configurations
-are diagnostic, including capacity-1 D5 overhead; a serial regression must be reviewed before D5 uses that path.
-Full decision p99 must also meet the unchanged live cap (currently 2 seconds on the VPS), without changed budgets.
-If fidelity passes but the measured gain or latency gate fails, engine adoption waits for an approved optimization.
-Do not change the deadline or evaluator behavior to make the speed comparison pass.
+**Timing/memory gate (E5):** zero added errors/refusals, no hidden allocation, and the unchanged full-decision live
+latency gate at each declared budget. Report the **5-8x target** explicitly as achieved or missed, with intervals;
+it is an estimate, not a mandatory 5x minimum. Throughput and a lower speedup bound above 1x are useful evidence,
+**not the network-selection criterion or a substitute for strength at equal time**. A faster small model can lose;
+a full or medium model can win. Secondary configurations include capacity-1 D5 overhead; a serial regression is
+reviewed before D5 uses that path. Keep the current VPS cap `min(2 seconds, 10% of remaining turn time)` and the
+depth design's local live gate (p99 <= 0.67 seconds under its stated VPS/local calibration). Recalibrating that
+machine ratio requires measurements and approval, not an implicit deadline increase. No clock-stopped search,
+changed evaluator behavior or latency-only claim of strength is allowed.
+
+### 10.1 Strength at equal time, with equal-budget controls
+
+Use the existing search ladder, inherited adopted root rule and unchanged solver/foe policies. Freeze a comparison
+README before the first run: the three graph/artifact hashes, JAX control, seeds, team/world manifests, neutral
+opponent roles, strata, pairing, budget grid, time target, selection rule and every gate. Calibration workloads,
+candidate-selection games and independent confirmation games are disjoint from each other and section 9's hold-out.
+All three candidates must be implemented and reported; any failed fidelity/arithmetic/resource gate is visible and
+cannot be silently removed to declare a two-way winner. Such a candidate is not eligible for adoption. An incomplete
+three-way comparison requires an explicit owner/HS revision; it is not an automatic choice of the smaller network.
+
+| Arm/control | Held identical | Purpose |
+|---|---|---|
+| Equal work budget, all three C candidates and full BC6/JAX | Same depth, work-count tuple, 16 worlds, root rule, candidate/foe policies, world weights, seeds and play uniforms | Isolate network approximation from extra search work; report paired strength and the section 9 agreement metrics |
+| Equal time, all three C candidates and full BC6/JAX | Same machine, time target, 16 worlds, depth and all non-budget settings; each arm has its own frozen work-count tuple | Compare strength after spending the same time, including any additional search the faster network affords |
+| Last adopted search and the ladder's equal-time control | Existing paired setup and inherited rules, with controls calibrated to the same time target | Preserve the ladder's adoption gates rather than comparing only to a weak or under-budgeted baseline |
+
+First exclusively measure **full decision** latency, including common policy preparation, digest, feature work,
+inference and solving, for the predeclared work-count grid. Select each equal-time arm's tuple by a fixed rule using
+these timings alone, then lock it **before seeing game outcomes**. Keep S=16; additional width/samples/iterations
+come only from the declared grid. Proposed matching tolerance is within 5% of the same full-decision p99 target,
+all below the existing live cap. If discrete levels cannot match, report both bracketing controls and require the
+strength result against the more generously budgeted control; do not label an under-budgeted control equal time.
+Report p50/p99 and realized work for every arm. A decision still runs a deterministic count budget; its timer is
+only the existing counted outer guard. No early stopping by time and no budget tuning against ladder wins.
+
+Run paired candidate comparisons with at least **1,024 team/seed pairs per comparison**, swapped seats and the
+ladder's existing route pairing, both open/closed strata and common neutral opponent roles. Use paired intervals
+over independent team/seed groups, not individual correlated decisions. The README pins the ladder's interval
+method and family-wise multiple-comparison treatment before results. Selection is by equal-time paired strength
+under that fixed rule, not leaves/second; ties or inconclusive differences are reported to owner/HS, not broken by
+an unreported throughput preference. Report equal-budget outcomes alongside equal-time outcomes for every candidate,
+including declines that additional work compensates for.
+
+The selected candidate then needs **fresh, disjoint confirmation** against the last adopted arm (at least 1,024
+pairs, lower paired interval bound > 0.50, zero unresolved) and against its equal-time control (at least 512 pairs,
+lower bound > 0.50), as in the depth ladder. Preserve its no-harm tests against both neutral reference roles, mirror
+touchstone, reproduction, fallback, error and exclusive latency gates. Do not weaken or replace these with numeric
+fidelity. Pair counts, interval procedure and stopping rule are fixed before runs; selection games cannot also serve
+as confirmation. If no candidate passes, D4 stays JAX. Owner/HS adopt only an eligible, confirmed artifact/code/context
+tuple. D5 still has its own three-turn strength gates; a D2 ladder win or tile-16 microbenchmark does not pass them.
 
 ## 11. PR-sized build order and dependencies
 
-No implementation PR starts until owner and HS approve this document. Digest delivery is independent of student
+No implementation PR starts until owner and HS approve this document. Digest delivery is independent of network
 training. Each PR runs applicable existing suites, records its exact default/legacy parity and goes through review
 and CI. HS merges. Training and measurement have separately named approvals; this table is a plan, not permission
 to launch them now.
@@ -537,11 +620,13 @@ to launch them now.
 | **E1a** | Private streaming SHA primitives and final-row/visible-identity observation plumbing | SHA golden vectors; no changed old state/request/event/RNG results; no heap; explicit canonical schema and line oracle reviewed |
 | **E1b** | Sibling expansion in model-NULL mode; digest output/statuses; binding/key sidecar | Section 4 digest tests including CTS identity/Illusion/prefix cases; additive ABI only; old expansion/default identical. D2 can consume real digests immediately |
 | **E2** | Cold model file loader, schema/feature validation and preallocated workspace | Wrong hash/schema/context, malformed/bounded files and capacities refuse; no trained artifact in repo/CI; no hot allocation |
-| **E3a** | Scalar integer value kernel and canonical inputs, synthetic parameters only | Section 6 exact arithmetic/rounding/bounds; section 7 memory gate; all compiler/platform scalar results equal |
+| **E3a** | Scalar dense/embedding/pooling operations and canonical inputs, synthetic parameters only | Section 6 exact arithmetic/rounding/bounds; section 7 memory gate; all compiler/platform scalar results equal |
+| **E3n** | Fixed-point LayerNorm and residual operations for full BC6 | Independent normalization/boundary vectors; same-bit portable scalar oracle; all teacher operators retained, no hidden float path |
+| **E3g** | Wire each predeclared full/small/medium value graph, split into separate PRs as needed | Synthetic graph/intermediate-tensor parity; registered inventories and per-graph resource bounds; every graph full-recomputes |
 | **E3b** | Tile-16 worker scheduling and optional integer SIMD kernels | Bit equality with scalar under workers/chunks; measured workspace/stack; no scheduler allocation. No network/adoption gate inferred from toy speed |
-| **E4** | Deterministic private exporter/checker and approved BC6 distillation artifact | Separate owner training go; freeze split/manifests first; all section 9 fidelity/decision gates on held-out data, exact artifact SHA |
-| **E5** | EngineEvaluator factory wiring through the existing D2 interface; full measurement report | Section 10 demonstrated gain/current live latency and explicit 5-8x target outcome; legacy/JAX default unchanged; sibling returns digest+value in the same call |
-| **E6** | Reviewed opt-in D4 adoption record for that artifact/code/context | E1-E5 passed, search ladder no-harm/reproduction/fallback/error/latency gates passed, owner/HS adopt. Default remains JAX until this explicit decision |
+| **E4** | Deterministic private exporter/checker; full BC6 conversion and approved small/medium distillation, separate bounded PRs | Separate owner go for private conversion/training; freeze graphs/splits/manifests first; all section 9 fidelity/decision gates per candidate on held-out data, exact artifact SHAs |
+| **E5** | EngineEvaluator factory wiring through the existing D2 interface; timing and budget-calibration report | Section 10 timing/memory/live latency gate for all three, explicit 5-8x target outcome and frozen equal-time/equal-budget controls; legacy/JAX default unchanged; one call returns digest+value |
+| **E6** | Three-way ladder report and reviewed opt-in D4 adoption record for the selected artifact/code/context | E1-E5 passed; section 10.1 strength-at-equal-time selection and fresh confirmation; existing no-harm/reproduction/fallback/error/latency gates passed, owner/HS adopt. Default stays JAX until then |
 
 E2/E3 and the **approved** E4 private training run may proceed in parallel once E1's API/input contract is fixed;
 the scalar/synthetic gates need no real checkpoint. E1b need not wait for E2-E6. PR boundaries may be made smaller
@@ -554,9 +639,11 @@ or another public identifier number becomes necessary, **ask HS before assigning
 
 ## 12. Approval checklist and limits of this document
 
-Owner/HS approval selects the student architecture, fixed-point convention, API/output contract, fidelity thresholds,
-throughput/latency gates and digest canonicalization approach. Actual golden payload bytes belong to the reviewed E1a
-contract, not an unreviewed serializer in Python. Full teacher/artifact hashes and training budgets are pinned in
+Owner/HS approval fixes the comparison of at least three variants, integer arithmetic direction, API/output contract,
+fidelity thresholds, strength-at-equal-time/latency gates and digest canonicalization approach. **It does not select
+a network size now.** Concrete graphs/dimensions, scales, per-graph resource bounds, work budgets and the ladder's
+selection/interval procedure are predeclared and reviewed before the corresponding runs. Actual golden payload bytes
+belong to the reviewed E1a contract, not an unreviewed serializer in Python. Full teacher/artifact hashes and training budgets are pinned in
 private manifests before their runs; they cannot be derived from public checkpoint nicknames.
 
 No measured inference speed, agreement rate or trained-model quality is claimed here. Source inspection used the
