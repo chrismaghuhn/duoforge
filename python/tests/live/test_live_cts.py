@@ -790,5 +790,36 @@ class ReplayHelpersTest(unittest.TestCase):
             cts.logged_choice({"sent": "move 1, move 2", "accepted": None})
 
 
+class LogReplayWaitsTest(unittest.TestCase):
+    """LogReplay(waits=True) (#494): the committed pool battle g45_moxie_win as player 1's closed-sheet log (its turn 1
+    knocks out both foes, who replace while player 1 waits; turn 3 wins). The default yields the asked points only, as
+    before; waits=True also yields the wait point, with no record, and the asked points as the default does."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live.data import ROOT, trace_to_c
+        cls.data = data.load(kind="pool")
+        spec, cls.trace = trace_to_c.load_battle(str(ROOT), "g45_moxie_win")
+        cls.own, cls.foe = spec["teams"][0], teams._paste(spec["teams"][1])
+        path = ROOT / "python" / "tests" / "support" / "data" / "cts_luck_g45.jsonl"
+        cls.records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    def points(self, **kwargs):
+        replay = cts.LogReplay(self.records, self.data, None, self.own, cts.SetPrior(self.data, self.foe), "g45",
+                               n=2, **kwargs)
+        out = [(g.epoch, g.request.get("rqid"), bool(g.request.get("wait")), r if r is None else r["decision"])
+               for g, r in replay]
+        self.assertIsNone(replay.stopped)
+        return out
+
+    def test_the_default_yields_the_asked_points_only(self):
+        self.assertEqual([(rqid, decision) for _, rqid, _, decision in self.points()], [(1, 1), (3, 3), (7, 7), (9, 9)])
+
+    def test_waits_also_yields_the_wait_point_without_a_record(self):
+        default, waits = self.points(), self.points(waits=True)
+        self.assertEqual([p for p in waits if not p[2]], default)
+        self.assertEqual([p[1:] for p in waits if p[2]], [(5, True, None)])
+
+
 if __name__ == "__main__":
     unittest.main()
