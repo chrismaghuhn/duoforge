@@ -1823,6 +1823,103 @@ class Lock(unittest.TestCase):
             self.assertEqual(sorted(os.listdir(tmp)), ['go', 'lock.queue'])  # everything released
 
 
+    # Withdrawing a waiting job (2026-10-14, HauptSession): delete its ticket. Killing the waiting wrapper was the only
+    # way, and could hit a job in the moment it started. The wrapper ends without starting, status 78.
+
+    MV_STUB = """#!/usr/bin/env bash
+# The race: the waiter's ticket is deleted exactly when it claims it, before the rename (RACE=before) or right after
+# it (RACE=after, where the withdrawer's rm finds nothing). Logs what the withdrawer's rm saw.
+src=${@: -2:1}
+if [ "$RACE" = before ]; then
+    rm -f -- "$src" && echo deleted > "$RACE_LOG"
+    exec "$REAL_MV" "$@"
+fi
+"$REAL_MV" "$@"
+rc=$?
+if rm -- "$src" 2> /dev/null; then echo deleted > "$RACE_LOG"; else echo gone > "$RACE_LOG"; fi
+exit $rc
+"""
+
+    def withdraw_env(self, lock, **extra):
+        env = self.nest_env(lock)
+        env.update(DUOFORGE_MACHINE_LOCK_SLOTS='1', DUOFORGE_MACHINE_LOCK_POLL='1', **extra)
+        return env
+
+    @staticmethod
+    def touch(path):
+        return "open(%r, 'w').close()" % path.replace('\\', '/')
+
+    def test_a_waiting_job_whose_ticket_is_deleted_ends_without_starting_with_status_78(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        hold = 'import os, sys, time\nwhile not os.path.exists(sys.argv[1]): time.sleep(0.1)'
+        python = sys.executable.replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            lock, go, ran = (os.path.join(tmp, n) for n in ('lock', 'go', 'ran'))
+            env = self.withdraw_env(lock)
+            holder = subprocess.Popen([rnd.find_bash(), script, 'holder', python, '-c', hold, go.replace('\\', '/')],
+                                      env=env)
+            try:
+                end = time.time() + 30
+                while not os.path.exists(os.path.join(lock, 'owner')) and time.time() < end:
+                    time.sleep(0.1)
+                waiter = subprocess.Popen([rnd.find_bash(), script, 'waiter', python, '-c', self.touch(ran)], env=env,
+                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                ticket = None
+                while ticket is None and time.time() < end:
+                    for name in os.listdir(lock + '.queue'):
+                        path = os.path.join(lock + '.queue', name)
+                        with contextlib.suppress(OSError), io.open(path, encoding='ascii') as f:
+                            if ' waiter since ' in f.readline():
+                                ticket = path
+                    time.sleep(0.1)
+                self.assertIsNotNone(ticket)
+                os.remove(ticket)  # the withdrawal: no kill
+                out, err = waiter.communicate(timeout=60)
+                self.assertEqual(waiter.returncode, rnd.LOCK_WITHDRAWN_STATUS, err)
+                self.assertIn("machine lock: withdrawn: 'waiter' did not start", err)
+                self.assertFalse(os.path.exists(ran))
+            finally:
+                with io.open(go, 'w', encoding='ascii') as f:
+                    f.write('go')
+                self.assertEqual(holder.wait(timeout=60), 0)
+            self.assertEqual(sorted(os.listdir(tmp)), ['go', 'lock.queue'])  # no slot left behind
+            self.assertEqual(os.listdir(lock + '.queue'), [])
+
+    def test_a_ticket_deleted_as_the_job_takes_its_slot_never_starts_it_and_leaves_no_slot(self):
+        # The ticket is deleted exactly when the waiter takes the slot: before its claim (the rename) the job does not
+        # start and the slot is given back; right after it the job runs and the withdrawer's rm finds no ticket. Never a
+        # start without a ticket, never an orphaned slot; with one slot and with --exclusive.
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        python = sys.executable.replace('\\', '/')
+        real_mv = subprocess.run([rnd.find_bash(), '-c', 'command -v mv'], capture_output=True, text=True).stdout.strip()
+        for race, exclusive in itertools.product(('before', 'after'), ([], ['--exclusive'])):
+            with self.subTest(race=race, exclusive=exclusive), tempfile.TemporaryDirectory() as tmp:
+                stub_dir = os.path.join(tmp, 'stub')
+                os.mkdir(stub_dir)
+                with io.open(os.path.join(stub_dir, 'mv'), 'w', encoding='ascii', newline='\n') as f:
+                    f.write(self.MV_STUB)
+                lock, ran, log = (os.path.join(tmp, n) for n in ('lock', 'ran', 'race.log'))
+                env = self.withdraw_env(lock, RACE=race, RACE_LOG=log.replace('\\', '/'), REAL_MV=real_mv,
+                                        PATH=stub_dir + os.pathsep + os.environ['PATH'])
+                found = subprocess.run([rnd.find_bash(), '-c', 'command -v mv'], capture_output=True, text=True,
+                                       env=env).stdout.strip().replace('\\', '/')
+                self.assertTrue(found.endswith('/stub/mv'), found)  # the race is the stub's
+                done = subprocess.run([rnd.find_bash(), script, *exclusive, 'racer', python, '-c', self.touch(ran)],
+                                      capture_output=True, text=True, timeout=60, env=env)
+                with io.open(log, encoding='ascii') as f:
+                    seen = f.read().strip()
+                if race == 'before':
+                    self.assertEqual(done.returncode, rnd.LOCK_WITHDRAWN_STATUS, done.stderr)
+                    self.assertIn("withdrawn: 'racer' did not start", done.stderr)
+                    self.assertFalse(os.path.exists(ran))  # no start without a ticket
+                    self.assertEqual(seen, 'deleted')
+                else:
+                    self.assertEqual(done.returncode, 0, done.stderr)
+                    self.assertTrue(os.path.exists(ran))  # claimed first: it runs
+                    self.assertEqual(seen, 'gone')  # and the withdrawer learns that it started
+                self.assertFalse([n for n in os.listdir(tmp) if n.startswith('lock') and n != 'lock.queue'])  # no slot
+                self.assertEqual(os.listdir(lock + '.queue'), [])  # no ticket, no claimed one
+
     # No nesting (2026-10-14, HauptSession): a call on the lock from inside a job that holds it would wait for the
     # slots that job holds (under --exclusive: forever; the content lane's mutant driver). It is refused at once, 74.
 
@@ -1899,6 +1996,14 @@ class Lock(unittest.TestCase):
                                            'machine_lock_release && echo "[${DUOFORGE_MACHINE_LOCK_HELD:-}]" && '
                                            'machine_lock_acquire b && echo "[$DUOFORGE_MACHINE_LOCK_HELD]" && machine_lock_release')
             self.assertEqual(done.stdout.split(), ['[a]', '[]', '[b]'], done.stderr)
+
+    def test_a_withdrawn_fuzz_chunk_stops_the_run_by_name(self):
+        params = PARAMS._replace(battles=8)
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(driver.ToolError) as cm:
+                rnd.orchestrate(params, tmp, [], 5, run=lambda command: rnd.LOCK_WITHDRAWN_STATUS, sleep=lambda s: None,
+                                bash='bash', lock_script='l', python='p', driver_script='d', out=io.StringIO())
+            self.assertIn('was withdrawn from the machine lock', str(cm.exception))
 
     def test_a_fuzz_run_nested_in_a_held_lock_stops_by_name(self):
         params = PARAMS._replace(battles=8)

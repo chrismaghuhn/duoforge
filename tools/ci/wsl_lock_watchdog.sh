@@ -29,6 +29,7 @@
 #   74  machine_lock.sh refused: nested inside a job that holds this lock
 #   76  the watchdog stopped the job: its holder's Windows process is gone, or its slot was taken over
 #   77  the watchdog refused to start: not on Linux (uname -s), e.g. under Git Bash on Windows
+#   78  machine_lock.sh: withdrawn, nothing started (its ticket was deleted while it waited)
 #   2   the watchdog refused to start: no holder to watch, or bash older than 5.1
 # A command that exits with one of these itself cannot be told from them.
 set -u

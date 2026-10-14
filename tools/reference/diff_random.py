@@ -175,6 +175,7 @@ PAUSE_POLL = 15  # seconds between two looks at the pause file
 PAUSED_STATUS = 75  # a chunk that found the pause file once it held the lock leaves with this (EX_TEMPFAIL)
 LABEL_TAKEN_STATUS = 73  # tools/ci/machine_lock.sh refused the chunk: a live job holds or waits with its label
 LOCK_NESTED_STATUS = 74  # tools/ci/machine_lock.sh refused the chunk: it runs inside a job that holds this lock
+LOCK_WITHDRAWN_STATUS = 78  # tools/ci/machine_lock.sh: the chunk was withdrawn (its ticket deleted), nothing started
 LOCK_HELD_ENV = 'DUOFORGE_FUZZ_LOCK_HELD'  # set in the environment of the chunks the loop starts: they hold the lock
 WORKER_TIMEOUT = 300  # seconds for one answer of the worker (a play of 300 steps is a few seconds)
 RUNNER_TIMEOUT = 60  # seconds for one battle in the engine
@@ -1035,6 +1036,9 @@ def orchestrate(params, outdir, args_forward, minutes, start=0, run=run_process,
             raise base.ToolError('a chunk (from battle %d) was refused by the machine lock: this run is nested inside a job '
                                  'that holds the lock (DUOFORGE_MACHINE_LOCK_HELD); give --no-lock to run under that '
                                  'job, or start the run as a job of its own' % done)
+        if status == LOCK_WITHDRAWN_STATUS:
+            raise base.ToolError('a chunk (from battle %d) was withdrawn from the machine lock (its ticket was deleted '
+                                 'while it waited) and did not start: the run stops here' % done)
         if status == LABEL_TAKEN_STATUS:
             raise base.ToolError('a chunk (from battle %d) was refused by the machine lock: a live job labelled %r '
                                  'already holds a slot or waits (another run into the same directory?)' % (done, label))
