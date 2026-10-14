@@ -50,11 +50,11 @@ static inline bool df_test_old_special_guard(uint32_t special)
         special != DFI_SPECIAL_MEMENTO && special != DFI_SPECIAL_LEVEL_DAMAGE &&
         special != DFI_SPECIAL_PARTIAL_TRAP &&
         special != DFI_SPECIAL_PSYCH_UP && special != DFI_SPECIAL_ALLY_SWITCH &&
-        special != DFI_SPECIAL_PSYCHIC_TERRAIN);
+        special != DFI_SPECIAL_PSYCHIC_TERRAIN && special != DFI_SPECIAL_SPEED_SWAP); /* K3 (decision 0015 5de) */
 }
 static inline bool df_test_old_status_hit(uint32_t special)
 {
-    return special == DFI_SPECIAL_PARTING_SHOT ||
+    return special == DFI_SPECIAL_PARTING_SHOT || special == DFI_SPECIAL_SPEED_SWAP || /* K3 (decision 0015 5de): a status move */
            special == DFI_SPECIAL_STRENGTH_SAP ||
            special == DFI_SPECIAL_HEAL_PULSE ||
            special == DFI_SPECIAL_SOAK ||

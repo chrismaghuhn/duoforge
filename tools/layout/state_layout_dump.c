@@ -223,6 +223,7 @@ int main(void)
     ENTRY(DFI_TAIL_FLAG_MAX);
     ENTRY(DFI_TAIL_WIDE_GUARD_MAX);
     ENTRY(DFI_TAIL_TYPE2_TYPELESS);
+    ENTRY(DFI_SINGLE_TURN_SPEED_SWAP); /* step K3 (decision 0015 5de): the spare bit 2 of single_turn, read by the live record */
     ENTRY(DFI_HAZARD_STEALTH_ROCK);
     ENTRY(DFI_HAZARD_SPIKES);
     ENTRY(DFI_HAZARD_TOXIC_SPIKES);
