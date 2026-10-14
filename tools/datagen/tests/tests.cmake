@@ -25,3 +25,10 @@ add_test(NAME duoforge.data.pool_rows
 duoforge_label_test(duoforge.data.pool_rows quick tools)
 set_tests_properties(duoforge.data.pool_rows PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+# The classes of the unsupported pool entries (hand-work, data-only with its witness, modelled-unmarked) on small
+# snippets of the pinned layout (no checkout needed; the checkout counts run only with DUOFORGE_PS_REFERENCE_DIR).
+add_test(NAME duoforge.data.classify_unsupported
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_classify_unsupported.py")
+duoforge_label_test(duoforge.data.classify_unsupported quick tools)
+set_tests_properties(duoforge.data.classify_unsupported PROPERTIES TIMEOUT 60
+    ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
