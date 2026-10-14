@@ -63,7 +63,7 @@ class MeterTest(unittest.TestCase):
         out, played = self.battle()
         # turn 3 ends the battle, and the foe's Ampharos faints before it moves: its action never shows, the turn is
         # excluded by name (the trace knows it, the log does not)
-        self.assertEqual(dict(out["excluded"]), {"foe-action-ambiguous": 1})
+        self.assertEqual(dict(out["excluded"]), {"foe-action-ambiguous:move-hidden": 1})
         self.assertEqual(out["result"], 1.0)
         # turn 1 (its state: the foe's replacement, a wait point) and turn 2
         self.assertEqual(len(out["turns"]), 2)
@@ -101,7 +101,7 @@ class MeterTest(unittest.TestCase):
         with mock.patch.object(ev, "selected", lambda *args: iter([(Path(self.log), records, self.own)])),                 mock.patch.object(cts.SetPrior, "from_table", lambda tables: cts.SetPrior(tables, self.foe)),                 mock.patch.dict(os.environ, ENV):
             got = ev.luck_all(self.tmp.name, BOT, ROOT, self.path, sha, self.path, sha)
         self.assertEqual((got["battles"], got["finished"], got["turns_valued"]), (1, 1, 2))
-        self.assertEqual(got["turns_excluded"], {"foe-action-ambiguous": 1})
+        self.assertEqual(got["turns_excluded"], {"foe-action-ambiguous:move-hidden": 1})
         self.assertEqual((got["samples"], got["checkpoint_sha256"]), (cts_luck.SAMPLES, sha))
         self.assertEqual(got["result"]["mean"], 1.0)
         text = json.dumps(got)

@@ -72,10 +72,17 @@ def foe_choice(segment, side, lists, ctx):
         found = [i for i in range(len(lists[k])) if label.slots[k] >> i & 1]
         if not found:
             raise Excluded("foe-action-unmatched")
-        if len(found) > 1:
-            raise Excluded("foe-action-ambiguous")
+        if len(found) > 1:  # named by the label's reason (labels: target-unknown, move-hidden, unknown, ...)
+            raise Excluded("foe-action-ambiguous:" + _reason_name(label.reasons[k]))
         picks.append(found[0])
     return tuple(picks)
+
+
+
+def _reason_name(reason):
+    from duoforge_replay import labels
+    return {labels.NOT_REQUESTED: "not-requested", labels.EXACT: "exact", labels.TARGET_UNKNOWN: "target-unknown",
+            labels.MOVE_HIDDEN: "move-hidden", labels.FORCED: "forced", labels.UNKNOWN: "unknown"}[reason]
 
 
 def turn_key(search_key):
