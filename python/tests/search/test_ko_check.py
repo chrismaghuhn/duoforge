@@ -16,7 +16,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features
 
-from duoforge_live import data, pkmn_arena, policy as live_policy, search as live_search
+from duoforge_live import cts, data, pkmn_arena, policy as live_policy, search as live_search
 from duoforge_search import ko_check, lookahead
 from python.tests.live.test_live_client import FIXTURE
 from python.tests.live.test_pkmn_arena import CTS, ENV, NAME, OTS, ROOM, battle_messages, room
@@ -91,9 +91,9 @@ class PureTest(unittest.TestCase):
         self.assertEqual(got["0.5"]["foe_known_mean"], 1.0)
 
     def test_room_of_a_log_file(self):
-        self.assertEqual(ko_check.room_of(f"x/{ROOM}-tiansuan.jsonl"), ROOM)
-        with self.assertRaises(ko_check.Refused):
-            ko_check.room_of("x/arena-run-1.json")
+        self.assertEqual(cts.room_of(f"x/{ROOM}-tiansuan.jsonl"), ROOM)
+        with self.assertRaises(cts.Refused):
+            cts.room_of("x/arena-run-1.json")
 
 
 class ReplayTest(unittest.TestCase):
@@ -148,7 +148,7 @@ class ReplayTest(unittest.TestCase):
     def load(self):
         live = live_search.load(self.path, foe_net=self.path, foe_net_sha256=pkmn_arena.sha256_of(self.path))
         self.addCleanup(live.close)
-        live.searcher = ko_check._Capture(live.searcher)
+        live.searcher = cts.Capture(live.searcher)
         return live, live_policy.load(self.path), data.for_checkpoint(self.path)
 
     def test_the_replay_decides_each_searched_decision_as_the_bot_did(self):
@@ -156,15 +156,15 @@ class ReplayTest(unittest.TestCase):
         searched = [r for r in logged if r.get("search", {}).get("cause") == "searched"]
         self.assertTrue(searched, "the fixture has no searched decision")
         live, net, tables = self.load()
-        replayed = list(ko_check.replay(self.log, tables, net, live, FIXTURE["team"], 0))
+        replayed = list(cts.replay(self.log, tables, net, live, FIXTURE["team"], 0))
         self.assertEqual([r["decision"] for _, r, _ in replayed], [r["decision"] for r in searched])
         for game, record, search_record in replayed:
-            texts = ko_check.pair_texts(game, net)
+            texts = cts.pair_texts(game, net)
             self.assertEqual(texts[record["sent"]], search_record["choice"])  # the logged choice, reproduced
 
     def test_a_decision_row_probes_with_the_engine(self):
         live, net, tables = self.load()
-        game, record, search_record = next(ko_check.replay(self.log, tables, net, live, FIXTURE["team"], 0))
+        game, record, search_record = next(cts.replay(self.log, tables, net, live, FIXTURE["team"], 0))
         row = ko_check.decision_row(game, net, live, record, search_record, 2)
         self.assertEqual(json.loads(json.dumps(row)), row)  # a private row is plain JSON
         self.assertTrue(row["played_is_search"])
@@ -179,7 +179,7 @@ class ReplayTest(unittest.TestCase):
 
     def test_an_arm_counts_its_own_choice_as_played(self):
         live, net, tables = self.load()
-        game, record, search_record = next(ko_check.replay(self.log, tables, net, live, FIXTURE["team"], 0))
+        game, record, search_record = next(cts.replay(self.log, tables, net, live, FIXTURE["team"], 0))
         row = ko_check.decision_row(game, net, live, record, search_record, 1, played_from="search")
         self.assertEqual(row["played"], "search")
         with self.assertRaisesRegex(ValueError, "played_from"):
@@ -188,7 +188,7 @@ class ReplayTest(unittest.TestCase):
     def test_probe_answers_from_the_leaves_engine_state(self):
         # The probe of a pair against a column is the engine's: the same leaf expanded again gives the same KO facts.
         live, net, tables = self.load()
-        game, record, search_record = next(ko_check.replay(self.log, tables, net, live, FIXTURE["team"], 0))
+        game, record, search_record = next(cts.replay(self.log, tables, net, live, FIXTURE["team"], 0))
         search, p = live.searcher.searcher, int(search_record["seat"])
         own = search_record["own_pairs"][:2]
         first = ko_check.probe(search, p, search_record["key"], own, search_record["foe_pairs"], 1)
@@ -227,12 +227,12 @@ class ReplayTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp, f"battle-{OTS}-8-tiansuan.jsonl")
             path.write_text(json.dumps({"feed": ["|init|battle"]}) + "\n", encoding="utf-8")
-            with self.assertRaisesRegex(ko_check.Refused, "closed_sheets_log"):
-                list(ko_check.replay(path, tables, net, live, FIXTURE["team"], 0))
-            with self.assertRaisesRegex(ko_check.Refused, "open_sheets_log"):
-                list(ko_check.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, None, Counter()))
-            with self.assertRaisesRegex(ko_check.Refused, "other_bot"):
-                list(ko_check.replay_closed(path, tables, net, live, FIXTURE["team"], "Ling-Ce", None, Counter()))
+            with self.assertRaisesRegex(cts.Refused, "closed_sheets_log"):
+                list(cts.replay(path, tables, net, live, FIXTURE["team"], 0))
+            with self.assertRaisesRegex(cts.Refused, "open_sheets_log"):
+                list(cts.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, None, Counter()))
+            with self.assertRaisesRegex(cts.Refused, "other_bot"):
+                list(cts.replay_closed(path, tables, net, live, FIXTURE["team"], "Ling-Ce", None, Counter()))
 
     def test_the_cli_refuses_an_output_inside_the_repository(self):
         from duoforge_live.data import ROOT
@@ -300,7 +300,7 @@ class ClosedReplayTest(unittest.TestCase):
     def load(self):
         live = live_search.load(self.path, foe_net=self.path, foe_net_sha256=pkmn_arena.sha256_of(self.path))
         self.addCleanup(live.close)
-        live.searcher = ko_check._Capture(live.searcher)
+        live.searcher = cts.Capture(live.searcher)
         return live, live_policy.load(self.path), data.for_checkpoint(self.path)
 
     def records(self):
@@ -309,7 +309,7 @@ class ClosedReplayTest(unittest.TestCase):
     def test_ko_check_and_the_live_evaluation_draw_the_bots_particles_at_every_decision(self):
         # The acceptance test (HS): on the same log, seed and set prior, ko_check and cts_live_eval (cts.LogReplay
         # with no policy, as its --replay runs it) draw the bot's particles and records at every decision point.
-        from duoforge_live import cts, game as game_module
+        from duoforge_live import game as game_module
         self.assertGreaterEqual(len(self.seen), 3)
         live, net, tables = self.load()
         evaluation = cts.LogReplay(self.records(), tables, None, FIXTURE["team"], self.prior,
@@ -323,7 +323,7 @@ class ClosedReplayTest(unittest.TestCase):
             return real(g, *args, **kwargs)
         counts = Counter()
         with mock.patch.object(game_module.Game, "candidates", candidates):
-            rows = list(ko_check.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, self.prior, counts))
+            rows = list(cts.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, self.prior, counts))
         self.assertEqual(replayed, self.seen)
         self.assertTrue(rows)
         self.assertEqual(counts, Counter())  # every point has the bot's decision record
@@ -332,17 +332,17 @@ class ClosedReplayTest(unittest.TestCase):
         logged = [r for r in self.records() if r.get("search", {}).get("cause") == "searched"]
         self.assertTrue(logged, "the closed fixture has no searched decision")
         live, net, tables = self.load()
-        replayed = list(ko_check.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, self.prior,
+        replayed = list(cts.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, self.prior,
                                                Counter()))
         self.assertEqual([r["decision"] for _, r, _ in replayed], [r["decision"] for r in logged])
         for game, record, search_record in replayed:
             self.assertTrue(game.closed)
-            texts = ko_check.pair_texts(game, net)
-            self.assertEqual(texts[ko_check.logged_choice(record)], search_record["choice"])
+            texts = cts.pair_texts(game, net)
+            self.assertEqual(texts[cts.logged_choice(record)], search_record["choice"])
 
     def test_a_closed_decision_row_probes_the_particles_worlds(self):
         live, net, tables = self.load()
-        game, record, search_record = next(ko_check.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME,
+        game, record, search_record = next(cts.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME,
                                                                   self.prior, Counter()))
         row = ko_check.decision_row(game, net, live, record, search_record, 1)
         self.assertEqual(json.loads(json.dumps(row)), row)
@@ -354,19 +354,19 @@ class ClosedReplayTest(unittest.TestCase):
     def test_a_battle_ended_on_its_last_choice_plays_it_as_sent(self):
         ended = [{"feed": ["|turn|7"]}, {"decision": 22, "sent": "move 3 2, pass"}, {"in": "|win|x"}, {"end": "|win|x"},
                  {"summary": {}}]
-        self.assertTrue(ko_check.ended_on(ended, 22))
+        self.assertTrue(cts.ended_on(ended, 22))
         for later in ({"feed": ["|turn|8"]}, {"accepted": "move 3 2, pass"}, {"in": "|error|[Invalid choice] no"}):
             with self.subTest(later=later):
-                self.assertFalse(ko_check.ended_on(ended[:2] + [later] + ended[2:], 22))
-        self.assertFalse(ko_check.ended_on(ended[:3], 22))  # no end: the log stops, the battle did not end
-        self.assertFalse(ko_check.ended_on(ended, 23))
+                self.assertFalse(cts.ended_on(ended[:2] + [later] + ended[2:], 22))
+        self.assertFalse(cts.ended_on(ended[:3], 22))  # no end: the log stops, the battle did not end
+        self.assertFalse(cts.ended_on(ended, 23))
 
     def test_the_logged_choice_is_the_accepted_one(self):
-        self.assertEqual(ko_check.logged_choice({"sent": "move 1, move 2"}), "move 1, move 2")
-        self.assertEqual(ko_check.logged_choice({"sent": "move 1, move 2", "accepted": "move 3, move 2"}),
+        self.assertEqual(cts.logged_choice({"sent": "move 1, move 2"}), "move 1, move 2")
+        self.assertEqual(cts.logged_choice({"sent": "move 1, move 2", "accepted": "move 3, move 2"}),
                          "move 3, move 2")
-        with self.assertRaisesRegex(ko_check.Refused, "not_accepted"):
-            ko_check.logged_choice({"sent": "move 1, move 2", "accepted": None})
+        with self.assertRaisesRegex(cts.Refused, "not_accepted"):
+            cts.logged_choice({"sent": "move 1, move 2", "accepted": None})
 
     def test_the_cli_replays_closed_logs_with_the_bot_named(self):
         team = os.path.join(self.tmp.name, "team.txt")
@@ -383,6 +383,27 @@ class ClosedReplayTest(unittest.TestCase):
         self.assertGreater(report["decisions"], 0)
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             ko_check.main([*base, "--closed", "--out", os.path.join(self.tmp.name, "never")])
+
+    def test_a_refusal_of_cts_is_caught_and_counted_by_ko_check(self):
+        # The log helpers live in cts.py alone (#496, HauptSession): ko_check keeps no copy and no Refused of its own,
+        # or its `except Refused` would miss cts's refusals and a refused game would end the run.
+        self.assertIs(ko_check.Refused, cts.Refused)
+        for name in ("Capture", "logged_choice", "pair_texts", "replay", "replay_closed", "root_view"):
+            self.assertEqual(getattr(ko_check, name).__module__, "duoforge_live.cts", name)
+        for name in ("_Capture", "room_of", "ended_on"):
+            self.assertFalse(hasattr(ko_check, name), name)
+        team = os.path.join(self.tmp.name, "team.txt")
+        with open(team, "w", encoding="utf-8") as f:
+            f.write(FIXTURE["team"])
+        args = ["--logs", self.logs, "--team", team, "--checkpoint", self.path, "--played", "log",
+                "--samples-per-world", "1", "--closed", "--bot", "Ling-Ce"]  # the log is another bot's: cts refuses
+        with tempfile.TemporaryDirectory() as out, mock.patch.dict(os.environ, ENV), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(ko_check.main([*args, "--out", os.path.join(out, "r")]), 0)
+            with open(os.path.join(out, "r", "report.json"), encoding="utf-8") as f:
+                report = json.load(f)
+        self.assertEqual(report["games"]["refused"], {"other_bot": 1})
+        self.assertNotIn("followed", report["games"])
 
 
 if __name__ == "__main__":
