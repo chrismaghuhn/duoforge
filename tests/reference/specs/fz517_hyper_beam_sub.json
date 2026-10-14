@@ -1,0 +1,25 @@
+{
+  "name": "fz517_hyper_beam_sub",
+  "purpose": "Hyper Beam into a Substitute (issue 517): Conkeldurr, p2b, breaks Ninetales' Substitute with Hyper Beam (step 1); the pin sets mustrecharge (the Substitute's target is null, not false, data/mods/champions/scripts.ts:349-352, so selfDrops runs, sim/battle-actions.ts:1317-1335) and the next request is the recharge (step 2). A battle of the differential fuzzing of issue 396 (free random sets, fz_2_72), cut after its step 2: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,61cbd9bbf407470dbd8d0ea04ea261acf0ffba097a255d9bcf56522419f317e2",
+  "teams": [
+    "baxcalibur (F) @ baxcalibrite\nAbility: thermalexchange\nLevel: 50\nEVs: 2 HP / 4 Atk / 4 Def / 2 SpA / 2 Spe\nHasty Nature\n- scaleshot\n- glaiverush\n- aerialace\n- earthquake\n\npawmot (F) @ meowsticite\nAbility: voltabsorb\nLevel: 50\nEVs: 9 HP / 9 Atk / 5 Def / 5 SpA / 5 SpD / 3 Spe\nSassy Nature\n- coaching\n- electroweb\n- thunder\n- doubleshock\n\npersian (M)\nAbility: unnerve\nLevel: 50\nEVs: 4 HP / 9 Atk / 2 Def / 4 SpA / 3 SpD / 7 Spe\nJolly Nature\n- lashout\n- snarl\n- charm\n- playrough\n\ncrabominable (M) @ crabominite\nAbility: hypercutter\nLevel: 50\nEVs: 13 HP / 11 Atk / 11 Def / 11 SpA / 12 SpD / 8 Spe\nNaive Nature\n- zenheadbutt\n- snowscape\n- rocktomb\n- upperhand\n\nfloetteeternal (F) @ softsand\nAbility: symbiosis\nLevel: 50\nEVs: 2 HP / 3 Atk / 3 SpA / 2 Spe\nCareful Nature\n- energyball\n- endeavor\n- petalblizzard\n- alluringvoice\n\nninetalesalola (F) @ terrainextender\nAbility: snowwarning\nLevel: 50\nEVs: 3 HP / 2 Atk / 1 Def / 5 SpA / 5 SpD / 1 Spe\nModest Nature\n- dazzlinggleam\n- snowscape\n- substitute\n- psyshock",
+    "indeedeef (F) @ absolite\nAbility: synchronize\nLevel: 50\nEVs: 12 HP / 14 Atk / 9 Def / 7 SpA / 12 SpD / 12 Spe\nBashful Nature\n- helpinghand\n- mysticalfire\n- terrainpulse\n- protect\n\npawmot (M) @ softsand\nAbility: voltabsorb\nLevel: 50\nEVs: 2 HP / 4 Atk / 5 Def / 3 SpA / 4 SpD / 5 Spe\nImpish Nature\n- icepunch\n- thief\n- revivalblessing\n- thunderbolt\n\nconkeldurr (M) @ mentalherb\nAbility: sheerforce\nLevel: 50\nEVs: 10 HP / 12 Atk / 7 Def / 10 SpA / 16 SpD / 11 Spe\nQuirky Nature\n- dynamicpunch\n- thunderpunch\n- detect\n- hyperbeam\n\nmeganium (M) @ raichunitey\nAbility: overgrow\nLevel: 50\nEVs: 8 HP / 14 Atk / 14 Def / 14 SpA / 12 SpD / 4 Spe\nNaive Nature\n- bodypress\n- petalblizzard\n- zenheadbutt\n- bodyslam\n\nflareon (F) @ twistedspoon\nAbility: flashfire\nLevel: 50\nEVs: 9 HP / 12 Atk / 14 Def / 10 SpA / 12 SpD / 9 Spe\nBashful Nature\n- quickattack\n- scorchingsands\n- raindance\n- charm\n\ntalonflame (F) @ delphoxite\nAbility: flamebody\nLevel: 50\nEVs: 9 HP / 12 Atk / 9 Def / 11 SpA / 13 SpD / 12 Spe\nHardy Nature\n- gigaimpact\n- upperhand\n- airslash\n- solarbeam"
+  ],
+  "choices": [
+    {
+      "p1": "team 6532",
+      "p2": "team 1352"
+    },
+    {
+      "p1": "move 3, switch 4",
+      "p2": "move 4, move 4 1"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 4, move 1"
+    }
+  ]
+}

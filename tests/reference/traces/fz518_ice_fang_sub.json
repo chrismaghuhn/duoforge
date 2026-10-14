@@ -1,0 +1,1969 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "fz518_ice_fang_sub.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,e9ea8eeec2ef70264a22199a035d77640a3e305be0e46743ed47834f654dfeb9",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Spiritomb, L50, M|",
+   "|poke|p1|Ninetales, L50, M|",
+   "|poke|p1|Goodra-Hisui, L50, F|",
+   "|poke|p1|Gourgeist-Super, L50, F|",
+   "|poke|p1|Baxcalibur, L50, M|",
+   "|poke|p1|Umbreon, L50, F|",
+   "|poke|p2|Lycanroc-Midnight, L50, M|",
+   "|poke|p2|Passimian, L50, M|",
+   "|poke|p2|Garbodor, L50, M|",
+   "|poke|p2|Scizor, L50, M|",
+   "|poke|p2|Armarouge, L50, M|",
+   "|poke|p2|Greninja, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Spiritomb",
+       "set_species": "Spiritomb",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 126,
+       "maxhp": 126,
+       "item": "froslassite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        20,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ninetales",
+       "set_species": "Ninetales",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 163,
+       "maxhp": 163,
+       "item": "silverpowder",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Goodra-Hisui",
+       "set_species": "Goodra-Hisui",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 165,
+       "maxhp": 165,
+       "item": "passhoberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gourgeist-Super",
+       "set_species": "Gourgeist-Super",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 170,
+       "maxhp": 170,
+       "item": "widelens",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        20,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Baxcalibur",
+       "set_species": "Baxcalibur",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 197,
+       "maxhp": 197,
+       "item": "barbaracite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        20,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Umbreon",
+       "set_species": "Umbreon",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 180,
+       "maxhp": 180,
+       "item": "alakazite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        20,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Lycanroc-Midnight",
+       "set_species": "Lycanroc-Midnight",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "medichamite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Passimian",
+       "set_species": "Passimian",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 185,
+       "maxhp": 185,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        12,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Garbodor",
+       "set_species": "Garbodor",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 165,
+       "maxhp": 165,
+       "item": "",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Scizor",
+       "set_species": "Scizor",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 149,
+       "maxhp": 149,
+       "item": "scizorite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        20,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Armarouge",
+       "set_species": "Armarouge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 171,
+       "maxhp": 171,
+       "item": "glalitite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Greninja",
+       "set_species": "Greninja",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 153,
+       "maxhp": 153,
+       "item": "floettite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        20,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 6543",
+    "p2": "team 2145"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Umbreon|Umbreon, L50, F|180/180",
+    "|switch|p1a: Umbreon|Umbreon, L50, F|100/100",
+    "|split|p1",
+    "|switch|p1b: Baxcalibur|Baxcalibur, L50, M|197/197",
+    "|switch|p1b: Baxcalibur|Baxcalibur, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2a: Passimian|Passimian, L50, M|185/185",
+    "|switch|p2a: Passimian|Passimian, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Lycanroc|Lycanroc-Midnight, L50, M|172/172",
+    "|switch|p2b: Lycanroc|Lycanroc-Midnight, L50, M|100/100",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Umbreon",
+        "set_species": "Umbreon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 180,
+        "maxhp": 180,
+        "item": "alakazite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Baxcalibur",
+        "set_species": "Baxcalibur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "barbaracite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gourgeist-Super",
+        "set_species": "Gourgeist-Super",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 170,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Goodra-Hisui",
+        "set_species": "Goodra-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "passhoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Passimian",
+        "set_species": "Passimian",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "medichamite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scizor",
+        "set_species": "Scizor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 149,
+        "maxhp": 149,
+        "item": "scizorite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Armarouge",
+        "set_species": "Armarouge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2, move 2 2",
+    "p2": "move 1, move 4"
+   },
+   "draws": [
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    }
+   ],
+   "log": [
+    "|move|p1b: Baxcalibur|Aerial Ace|p2b: Lycanroc",
+    "|-resisted|p2b: Lycanroc|1",
+    "|split|p2",
+    "|-damage|p2b: Lycanroc|152/172",
+    "|-damage|p2b: Lycanroc|88/100",
+    "|move|p2a: Passimian|Substitute|p2a: Passimian",
+    "|-start|p2a: Passimian|Substitute",
+    "|split|p2",
+    "|-damage|p2a: Passimian|139/185",
+    "|-damage|p2a: Passimian|75/100",
+    "|move|p2b: Lycanroc|Substitute|p2b: Lycanroc",
+    "|-start|p2b: Lycanroc|Substitute",
+    "|split|p2",
+    "|-damage|p2b: Lycanroc|109/172",
+    "|-damage|p2b: Lycanroc|63/100",
+    "|move|p1a: Umbreon|Light Screen|p1a: Umbreon",
+    "|-sidestart|p1: p1|move: Light Screen",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       4
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Umbreon",
+        "set_species": "Umbreon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 180,
+        "maxhp": 180,
+        "item": "alakazite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         19,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Baxcalibur",
+        "set_species": "Baxcalibur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "barbaracite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         19,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gourgeist-Super",
+        "set_species": "Gourgeist-Super",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 170,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Goodra-Hisui",
+        "set_species": "Goodra-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "passhoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Passimian",
+        "set_species": "Passimian",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 185,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         12,
+         12
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 109,
+        "maxhp": 172,
+        "item": "medichamite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Scizor",
+        "set_species": "Scizor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 149,
+        "maxhp": 149,
+        "item": "scizorite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Armarouge",
+        "set_species": "Armarouge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 1",
+    "p2": "move 4 1, move 3 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 9
+    },
+    {
+     "site": "CRIT",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 24,
+     "value": 12
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 39
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 65
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 76
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p1a: Umbreon|Detect|p1a: Umbreon",
+    "|-singleturn|p1a: Umbreon|Protect",
+    "|move|p1b: Baxcalibur|Ice Fang|p2a: Passimian",
+    "|-end|p2a: Passimian|Substitute",
+    "|move|p2a: Passimian|Drain Punch|p1a: Umbreon",
+    "|-activate|p1a: Umbreon|move: Protect",
+    "|move|p2b: Lycanroc|Low Sweep|p2a: Passimian",
+    "|split|p2",
+    "|-damage|p2a: Passimian|105/185",
+    "|-damage|p2a: Passimian|56/100",
+    "|-unboost|p2a: Passimian|spe|1",
+    "|split|p2",
+    "|-damage|p2b: Lycanroc|81/172|[from] item: Rocky Helmet|[of] p2a: Passimian",
+    "|-damage|p2b: Lycanroc|47/100|[from] item: Rocky Helmet|[of] p2a: Passimian",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       3
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Umbreon",
+        "set_species": "Umbreon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 180,
+        "maxhp": 180,
+        "item": "alakazite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         20,
+         8
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Baxcalibur",
+        "set_species": "Baxcalibur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "barbaracite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         19,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gourgeist-Super",
+        "set_species": "Gourgeist-Super",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 170,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Goodra-Hisui",
+        "set_species": "Goodra-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "passhoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Passimian",
+        "set_species": "Passimian",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 105,
+        "maxhp": 185,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 81,
+        "maxhp": 172,
+        "item": "medichamite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         19,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Scizor",
+        "set_species": "Scizor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 149,
+        "maxhp": 149,
+        "item": "scizorite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Armarouge",
+        "set_species": "Armarouge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 4, move 4 -1",
+    "p2": "move 2 -2, move 3 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 30
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 26
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 95
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 76
+    },
+    {
+     "site": "CRIT",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 60
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Goodra|Goodra-Hisui, L50, F|165/165",
+    "|switch|p1a: Goodra|Goodra-Hisui, L50, F|100/100",
+    "|move|p1b: Baxcalibur|Glaive Rush|p1a: Goodra",
+    "|split|p1",
+    "|-damage|p1a: Goodra|72/165",
+    "|-damage|p1a: Goodra|43/100",
+    "|-singlemove|p1b: Baxcalibur|Glaive Rush|[silent]",
+    "|move|p2b: Lycanroc|Low Sweep|p2a: Passimian",
+    "|split|p2",
+    "|-damage|p2a: Passimian|74/185",
+    "|-damage|p2a: Passimian|40/100",
+    "|-unboost|p2a: Passimian|spe|1",
+    "|split|p2",
+    "|-damage|p2b: Lycanroc|53/172|[from] item: Rocky Helmet|[of] p2a: Passimian",
+    "|-damage|p2b: Lycanroc|30/100|[from] item: Rocky Helmet|[of] p2a: Passimian",
+    "|move|p2a: Passimian|Close Combat|p2b: Lycanroc",
+    "|-supereffective|p2b: Lycanroc|1",
+    "|-end|p2b: Lycanroc|Substitute",
+    "|-unboost|p2a: Passimian|def|1",
+    "|-unboost|p2a: Passimian|spd|1",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       2
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Goodra-Hisui",
+        "set_species": "Goodra-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 72,
+        "maxhp": 165,
+        "item": "passhoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Baxcalibur",
+        "set_species": "Baxcalibur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "barbaracite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         19,
+         16,
+         7
+        ],
+        "volatiles": [
+         "glaiverush"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gourgeist-Super",
+        "set_species": "Gourgeist-Super",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 170,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Umbreon",
+        "set_species": "Umbreon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 180,
+        "maxhp": 180,
+        "item": "alakazite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Passimian",
+        "set_species": "Passimian",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 74,
+        "maxhp": 185,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         -1,
+         -2,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 172,
+        "item": "medichamite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         18,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Scizor",
+        "set_species": "Scizor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 149,
+        "maxhp": 149,
+        "item": "scizorite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Armarouge",
+        "set_species": "Armarouge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "glalitite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}
