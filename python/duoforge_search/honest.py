@@ -439,6 +439,7 @@ class Honest(lookahead.Lookahead):
         self.exclude_teams = exclude_teams
         self.history = weakref.WeakKeyDictionary()
         self.worlds = None
+        self._searched = False  # _prepare built a turn decision's worlds (world_policies reads them)
         super().__init__(context, model, params, encoder, ext_supported, k, m, s, "nash", seed, capacity, workers, lam=lam)
         self.rule = rule
         try:
@@ -501,6 +502,24 @@ class Honest(lookahead.Lookahead):
                                        pairs.reshape((2 * self.s,) + pairs.shape[2:]), self.foe_net)
         return (pp.reshape(self.s, 2, -1), pt.reshape(self.s, 2, -1), seconds,
                 pairs.copy(), obs.copy(), slots.copy(), query_seconds)
+
+    def world_policies(self, seat):
+        """The foe model's view of the turn decision just searched, read only (#440: the KO check's probes, the live
+        evaluation's foe-model metric): (logp, masks), seat's pair log-probabilities under the worlds' policy (the foe
+        network's when one is given, as _world_policy) and its pair masks, one row of lookahead.OPTIONS ** 2 per world,
+        as the policy gives them and as bool, both copies.
+
+        It decides nothing and changes no state a decision reads: it queries the worlds' encoding as they stand and
+        runs the network on them, as the search's own query does. The worlds are the root's, those of the last turn
+        decision decide() searched, until the next one; before any, SearchError. A deeper search keeps them as its root
+        (the depth-2 tree's nodes live apart)."""
+        if seat not in (0, 1):
+            raise ValueError(f"seat must be 0 or 1 (got {seat!r})")
+        if self.worlds is None or not self._searched:
+            raise SearchError("world_policies: no turn decision has been searched yet")
+        pp, _, _, masks, _, _, _ = self._world_policy()
+        return (np.array(pp[:, seat], copy=True),
+                np.asarray(masks[:, seat], dtype=bool).reshape(self.s, -1).copy())
 
     def _hypotheses(self, record, observation, history, key, excluded, costs):
         """The worlds' hypotheses of a record and the player's observation: one of each for every world, or one per
@@ -934,6 +953,7 @@ class Honest(lookahead.Lookahead):
             costs["leaves"] += time.perf_counter() - t
         # The table reads a value only where the step ran, the leaf is not terminal and not cut off.
         open_ = (step == 0) & (results == 0) & (not last_step)
+        self._searched = True  # the worlds are this decision's (world_policies; every depth calls _prepare)
         return LeafRequest(p, key, own.copy(), bool(last_step), np.array(weights, copy=True), foe_pairs, qs, choices,
                            (i, j, w), rows, step, encode, results, tiebreaks, open_)
 

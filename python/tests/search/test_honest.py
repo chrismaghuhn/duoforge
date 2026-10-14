@@ -456,6 +456,79 @@ class HonestSearch(unittest.TestCase):
     def timeless(records):
         return [{k: v for k, v in r.items() if k not in ("cost", "time")} for r in records]
 
+    # The A/B/C decisions in two decide() calls (root 0, then roots 1 and 2), as main decides them: the sha256 of their
+    # choices and records (time and cost aside), computed on main e31928b7 before world_policies existed.
+    WORLD_POLICIES_MAIN_SHA256 = "1f6661645261d99c2f17554f2d08ac175318ea3a32c4fe4535a33320ddf0ef72"
+
+    @classmethod
+    def decisions_sha256(cls, first, second):
+        text = json.dumps([first[0].tolist(), cls.timeless(first[1]), second[0].tolist(), cls.timeless(second[1])],
+                          sort_keys=True, default=lambda o: o.tolist() if hasattr(o, "tolist") else repr(o))
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    def test_world_policies_read_the_root_worlds_and_change_no_decision(self):
+        # Honest.world_policies (#440, HauptSession: read only, for the KO check, the live evaluation's foe-model
+        # metric and D2): the foe model on the worlds of the turn decision just searched. Calling it between two
+        # decisions changes no choice and no record: the decisions' sha256 is main's with and without the call.
+        from duoforge_search.errors import SearchError
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            pool = duoforge.teams.load(ctx, ["A", "B", "C"])
+            table = belief.SpreadTable.from_sides(pool.sides)
+            digests = []
+            for call in (False, True):
+                with duoforge.Batch(ctx, pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0])), 2, 42) as roots, \
+                        self.make(ctx, table=table, excluded=[1, 2, 0]) as search:
+                    self.preview(search, roots)
+                    with self.assertRaisesRegex(SearchError, "no turn decision"):
+                        search.world_policies(1)  # a preview is no turn decision
+                    self.start_turn(roots)
+                    first = search.decide(roots, [0], [0], [456], [False])
+                    if call:
+                        logp, masks = search.world_policies(1)
+                        own, _ = search.world_policies(0)
+                        pp, _, _, legal, _, _, _ = search._world_policy()
+                        self.assertEqual((logp.shape, masks.shape, masks.dtype), ((2, 1024), (2, 1024), np.bool_))
+                        np.testing.assert_array_equal(logp, pp[:, 1])
+                        np.testing.assert_array_equal(masks, np.asarray(legal[:, 1], bool).reshape(2, -1))
+                        self.assertFalse(np.array_equal(own, logp))  # the seat asked for, not the other
+                        logp[:] = 0.0  # a copy: the caller may write it
+                        again, _ = search.world_policies(1)
+                        np.testing.assert_array_equal(again, pp[:, 1])
+                        with self.assertRaises(ValueError):
+                            search.world_policies(2)
+                    second = search.decide(roots, [1, 2], [0, 0], [457, 458], [False] * 2)
+                    self.assertEqual(first[0].tolist() + second[0].tolist(), [103, 289, 352])  # main's A/B/C choices
+                    digests.append(self.decisions_sha256(first, second))
+        self.assertEqual(digests, [self.WORLD_POLICIES_MAIN_SHA256] * 2)
+
+    def test_world_policies_are_the_root_worlds_policy_after_the_whole_decision(self):
+        # The worlds world_policies reads are the root's: the policy that the decision's root _prepare read (its first
+        # query of the worlds), whatever the decision computes afterwards. Here the leaves are expanded in a batch of
+        # their own and the worlds are not stepped; a deeper search (D2's depth-2 tree, its nodes in a batch of their
+        # own) must keep this: world_policies after a depth-2 decision is still its root worlds' policy.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            pool = duoforge.teams.load(ctx, ["A", "B", "C"])
+            table = belief.SpreadTable.from_sides(pool.sides)
+            with duoforge.Batch(ctx, pool.setups(np.array([0, 1, 2]), np.array([1, 2, 0])), 2, 42) as roots, \
+                    self.make(ctx, table=table, excluded=[1, 2, 0]) as search:
+                self.preview(search, roots)
+                self.start_turn(roots)
+                seen, real = [], search._world_policy
+
+                def recording():
+                    out = real()
+                    seen.append((np.array(out[0], copy=True), np.array(out[3], copy=True)))
+                    return out
+
+                with mock.patch.object(search, "_world_policy", recording):
+                    search.decide(roots, [2], [0], [458], [False])
+                self.assertGreaterEqual(len(seen), 1)
+                root_pp, root_masks = seen[0]
+                for seat in (0, 1):
+                    logp, masks = search.world_policies(seat)
+                    np.testing.assert_array_equal(logp, root_pp[:, seat])
+                    np.testing.assert_array_equal(masks, np.asarray(root_masks[:, seat], bool).reshape(2, -1))
+
     def test_the_default_root_solver_decides_as_on_main(self):
         # D1 (#481) adds root_solver. Without it, and with "lp" named, the A/B/C turn decisions are main's: the pinned
         # choices and tables (test_pinned_abc_decisions), one record for both, and no field of the rm solver.
