@@ -492,6 +492,7 @@ class Honest(lookahead.Lookahead):
         self.exclude_teams = exclude_teams
         self.history = weakref.WeakKeyDictionary()
         self.worlds = None
+        self._searched = False  # the worlds are a searched turn decision's root worlds (world_policies reads them)
         super().__init__(context, model, params, encoder, ext_supported, k, m, s, "nash", seed, capacity, workers, lam=lam)
         self.rule = rule
         try:
@@ -550,6 +551,7 @@ class Honest(lookahead.Lookahead):
         return record
 
     def _build(self, record, hypotheses):
+        self._searched = False  # rebuilt: no searched decision's worlds until _prepare runs on them
         statuses = self.worlds.from_view(self._per_world(record), hypotheses).copy()
         if (statuses == C["DUOFORGE_E_UNSUPPORTED"]).any():
             raise Unreconstructible("DUOFORGE_E_UNSUPPORTED: world build")
@@ -568,6 +570,26 @@ class Honest(lookahead.Lookahead):
                                        pairs.reshape((2 * self.s,) + pairs.shape[2:]), self.foe_net)
         return (pp.reshape(self.s, 2, -1), pt.reshape(self.s, 2, -1), seconds,
                 pairs.copy(), obs.copy(), slots.copy(), query_seconds)
+
+    def world_policies(self, seat):
+        """The foe model's view of the turn decision just searched, read only (#440: the KO check's probes, the live
+        evaluation's foe-model metric): (logp, masks), seat's pair log-probabilities under the worlds' policy (the foe
+        network's when one is given, as _world_policy) and its pair masks, one row of lookahead.OPTIONS ** 2 per world,
+        as the policy gives them and as bool, both copies.
+
+        It decides nothing and changes no state a decision reads: it queries the worlds' encoding as they stand and
+        runs the network on them, as the search's own query does. The worlds are the root worlds of the last root of the
+        last decide() call whose turn decision was searched (reached _prepare; roots in decide()'s order), as _prepare
+        read them; a deeper search keeps them as its root (the depth-2 tree's nodes live apart). SearchError when that
+        call searched no turn decision (a preview, a forced or raw choice, a refusal before the search) or the worlds
+        were rebuilt since (any _build: a later root's hypotheses, a preview), and before any decision."""
+        if isinstance(seat, (bool, np.bool_)) or not isinstance(seat, (int, np.integer)) or seat not in (0, 1):
+            raise ValueError(f"seat must be 0 or 1 (got {seat!r})")
+        if self.worlds is None or not self._searched:
+            raise SearchError("world_policies: no searched turn decision's worlds (none in the last decide() call, or rebuilt since)")
+        pp, _, _, masks, _, _, _ = self._world_policy()
+        return (np.array(pp[:, seat], copy=True),
+                np.asarray(masks[:, seat], dtype=bool).reshape(self.s, -1).copy())
 
     def _hypotheses(self, record, observation, history, key, excluded, costs):
         """The worlds' hypotheses of a record and the player's observation: one of each for every world, or one per
@@ -755,6 +777,7 @@ class Honest(lookahead.Lookahead):
         """steps_left (D2, the plan's decision 2): each decision's steps left in the arena with this one (1 at its last
         step, so exactly where last_step), or NO_STEP_LIMIT (live play). A depth-2 search needs it to know where its
         depth-2 leaves are cut off (2 steps left), and refuses None; depth 1 checks it and decides without it."""
+        self._searched = False  # world_policies reads a turn decision of this call only
         envs, seats = np.asarray(envs, np.int64), np.asarray(seats, np.int64)
         keys, last_step = np.asarray(keys, np.uint64), np.asarray(last_step, bool)
         n = envs.size
@@ -1029,6 +1052,7 @@ class Honest(lookahead.Lookahead):
             costs["leaves"] += time.perf_counter() - t
         # The table reads a value only where the step ran, the leaf is not terminal and not cut off.
         open_ = (step == 0) & (results == 0) & (not last_step)
+        self._searched = True  # the worlds are this decision's (world_policies; every depth calls _prepare)
         return LeafRequest(p, key, own.copy(), bool(last_step), np.array(weights, copy=True), foe_pairs, qs, choices,
                            (i, j, w), rows, step, encode, results, tiebreaks, open_)
 
