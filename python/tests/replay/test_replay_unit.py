@@ -1000,10 +1000,18 @@ class LabelsTest(unittest.TestCase):
         return [self.lists[slot][i] for i in range(len(self.lists[slot])) if label.slots[slot] >> i & 1]
 
     def test_plain_move_exact(self):
-        got = self.label(["|move|p1a: Staraptor|Close Combat|p2a: Foe", "|move|p1b: Gholdengo|Make It Rain|p2a: Foe|[spread] p2a,p2b"])
+        got = self.label(["|move|p1a: Staraptor|Protect|p1a: Staraptor", "|move|p1b: Gholdengo|Make It Rain|p2a: Foe|[spread] p2a,p2b"])
         self.assertEqual(got.reasons, (self.L.EXACT, self.L.EXACT))
         [o] = self.options_of(got, 0)
-        self.assertEqual((o.kind, o.move_slot, o.target, o.mega), (self.O.MOVE, 1, 2, 0))
+        self.assertEqual((o.kind, o.move_slot, o.target, o.mega), (self.O.MOVE, 3, self.O.TARGET_NONE, 0))
+
+    def test_an_aimed_move_keeps_every_target(self):
+        # #512 S3: the line names the position the move hit; redirection or retargeting may lie between and the engine
+        # confirms neither, so a plain line with nothing in front of it still gives every target of the move
+        got = self.label(["|move|p1a: Staraptor|Close Combat|p2a: Foe"])
+        self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
+        self.assertEqual({o.target for o in self.options_of(got, 0)}, {1, 2, 3})
+        self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
 
     def test_mega_shown(self):
         got = self.label(["|detailschange|p1a: Staraptor|Staraptor-Mega, L50, F", "|-mega|p1a: Staraptor|Staraptor|Staraptite",
@@ -1107,7 +1115,7 @@ class LabelsTest(unittest.TestCase):
 
     def test_encore_after_the_own_move_changes_nothing(self):
         # only the lines before the position's own move line can replace its choice
-        got = self.label(["|move|p1a: Staraptor|Close Combat|p2a: Foe", "|move|p2a: Foe|Encore|p1a: Staraptor",
+        got = self.label(["|move|p1a: Staraptor|Protect|p1a: Staraptor", "|move|p2a: Foe|Encore|p1a: Staraptor",
                           "|-start|p1a: Staraptor|Encore"])
         self.assertEqual(got.reasons[0], self.L.EXACT)
 
@@ -1602,14 +1610,15 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.counters["perspectives.stopped.feature:FORME_CHANGE"], 2)
         self.assertGreater(len(result.rows), 4)
 
-    def test_charge_target_hidden_when_its_side_has_a_vacancy(self):
+    def test_an_own_charge_target_stays_hidden(self):
+        # #512 S3: the release line names the position the move hit, which redirection or retargeting may have changed;
+        # the engine confirms no target, so the stored one stays hidden even beside a plain release line
         from duoforge_live import teams
         from duoforge_replay.spectator import HIDDEN_TARGET, SpectatorTracker
-        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in self.log if line.startswith("|showteam|"))
-        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), self.log)
-        faint = self.log.index("|faint|p2b: Charizard")
-        tracker.feed(self.log[:faint + 1])  # p2b fainted, not replaced yet
-        tracker._log = self.log[:tracker._fed + 1] + ["|move|p1a: Salamence|Draco Meteor|p2a: Politoed|[from]lockedmove"]
+        log = self.log + ["|move|p1a: Salamence|Draco Meteor|p2a: Politoed|[from]lockedmove"]
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), log)
+        tracker.feed(self.log[:self.log.index("|turn|9")])
         self.assertEqual(tracker._own_target(0), HIDDEN_TARGET)
 
     def with_moves(self, old, new):

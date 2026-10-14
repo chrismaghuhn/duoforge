@@ -9,8 +9,9 @@ given side with three changes:
   never entered shows 100/100;
 - what only the player knew comes from hindsight or the prior: the picks
   (the members seen during the game), the stat points and stats
-  (stats_of, from the prior and the pinned Showdown), the target of an own
-  charging move (the charge turn's raw |move| line);
+  (stats_of, from the prior and the pinned Showdown); the stored target of
+  an own charging move stays hidden (no line confirms it, #512 S3), and a
+  point that would show it stops;
 - the decision points come from points.find, not from requests: at_point()
   sets the boundary and who is asked, by the tracker's switch flag rule.
 
@@ -21,12 +22,9 @@ above compared with their documented sources.
 import contextlib
 
 from duoforge_live import lines, teams
-from duoforge_live.lines import flat_position
 from duoforge_live.data import trace_to_c
-from duoforge_live.tracker import (ACTIVE, BENCH, HP_PERCENT, NOT_BROUGHT, ROSTER_NONE, TARGET_NONE, UNDETERMINED,
-                                   Tracker)
+from duoforge_live.tracker import ACTIVE, BENCH, HP_PERCENT, NOT_BROUGHT, TARGET_NONE, UNDETERMINED, Tracker
 
-from .labels import REDIRECT_TURN
 from .hindsight import BROUGHT, hindsight, hindsight_picks
 from .points import TEAM_SELECTION, TURN
 
@@ -48,7 +46,6 @@ class SpectatorTracker(Tracker):
     def __init__(self, data, sheets, side, picks, stats_of, log):
         super().__init__(data, teams.to_text(sheets[side]))
         self.side = side
-        self._log = list(log)  # the whole log, for the hindsight of an own charging move's target
         self._fed = 0  # lines fed so far: the index of the line being folded
         self._spectator = True
         self._hindsight_picks = picks
@@ -66,39 +63,11 @@ class SpectatorTracker(Tracker):
             self._fed += 1
 
     def _own_target(self, slot):
-        """The stored target of an own charging move, which the game shows its player only. The charge turn's
-        |move| line shows none ("|move|POS|Electro Shot||[still]"); the release turn's |move| line, [from]
-        lockedmove, names the target the move hits, which is the stored one unless the move was drawn (an
-        -activate of Lightning Rod or Storm Drain next to it) or retargeted (a faint on the target's side in
-        between). Otherwise, or without a release line, Stop("charge-target-hidden")."""
-        position = self.side * 2 + slot
-        log = self._log
-        for i in range(self._fed + 1, len(log)):
-            parts = log[i].split("|")
-            kind = parts[1] if len(parts) > 1 else ""
-            if kind in ("switch", "faint") and len(parts) > 2 and flat_position(parts[2]) == position:
-                break  # it left before the release
-            if kind == "move" and flat_position(parts[2]) == position:
-                if "[from]lockedmove" not in parts and "[from] lockedmove" not in parts:
-                    break
-                target = flat_position(parts[4]) if len(parts) > 4 else None
-                if target is None:
-                    break
-                near = log[max(i - 1, 0):i + 3]
-                if any("ability: Lightning Rod" in line or "ability: Storm Drain" in line for line in near):
-                    break
-                if any(line.startswith("|faint|") and flat_position(line.split("|")[2]) is not None
-                       and flat_position(line.split("|")[2]) // 2 == target // 2 for line in log[self._fed:i]):
-                    break
-                if any(p.occupant == ROSTER_NONE or p.fainted for p in self._positions[target // 2]):
-                    break  # a position of the target's side is empty now: Showdown may retarget the move
-                turn = max(j for j in range(i) if log[j].startswith("|turn|"))
-                if any(line.startswith("|-singleturn|") and line.split("|")[3] in REDIRECT_TURN
-                       and flat_position(line.split("|")[2]) is not None
-                       and flat_position(line.split("|")[2]) // 2 == target // 2 for line in log[turn:i]):
-                    break  # a redirector of the target's side was up: the line shows the drawn target
-                return target
-        return HIDDEN_TARGET  # at_point stops if an observation would show it
+        """The stored target of an own charging move, which the game shows its player only. The charge turn's |move|
+        line shows none ("|move|POS|Electro Shot||[still]"), and the release turn's names the position the move hit:
+        redirection or retargeting may lie between, and the engine confirms neither (#512 S3). So the target stays
+        hidden, and at_point stops (charge-target-hidden) if an observation would show it."""
+        return HIDDEN_TARGET
 
     def _check_charge_targets(self):
         for p in self._positions[self.side]:
