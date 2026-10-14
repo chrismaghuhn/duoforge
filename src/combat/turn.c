@@ -38,7 +38,7 @@
 #define DFI_ORDER_RESIDUAL 300u
 #define DFI_SPEED_BIAS 10000u   /* speed key: 10000 + speed, or 10000 - speed under Trick Room */
 #define DFI_SPEED_CAP 10000u    /* getStat caps Speed at 10000 (sim/pokemon.ts:636) */
-#define DFI_LEVEL 50u
+#define DFI_LEVEL DFI_FORMAT_LEVEL
 #define DFI_STALL_DURATION 2u /* data/conditions.ts: stall */
 
 

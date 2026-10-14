@@ -104,7 +104,7 @@ class FormatDefinition(unittest.TestCase):
         self.assertIn('\n#define DFI_STAT_POINTS_MAX DFI_FORMAT_STAT_POINTS_MAX ', formulas)
         self.assertIn('\n#define DFI_STAT_POINTS_TOTAL_MAX DFI_FORMAT_STAT_POINTS_TOTAL_MAX ', formulas)
         for rel in ('src/state/context_internal.h', 'src/data/formulas.h'):
-            self.assertIn('\n#include "data/format_tables.h"\n', read(rel), rel)
+            self.assertIn('\n#include "data/format_tables.h" /* the format facts (restructure step 10) */\n', read(rel), rel)
         tree = ast.parse(read('python/duoforge/context.py'))
         consts = {t.id: n.value.value for n in tree.body if isinstance(n, ast.Assign) for t in n.targets
                   if isinstance(t, ast.Name) and isinstance(n.value, ast.Constant)}
