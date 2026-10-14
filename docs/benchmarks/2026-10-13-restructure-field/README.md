@@ -1,5 +1,13 @@
 # Restructure 4: field-family helpers
 
+**Archived functional proof (source/report `d15b13af` / `fcb4650e`).** The current
+main-merge proof is in [2026-10-14-restructure-field](../2026-10-14-restructure-field/README.md).
+The complete performance gate below carries forward with HS approval because
+all measured C/build/data inputs are unchanged; the current report proves that
+equality and retains the original timing commits, dirty status and machine.
+The 1,410-test functional inventory here is a preliminary run, not the current
+1,415-test proof. Initial failed measurements remain preserved below.
+
 **Result:** 15 existing functions extracted into seven private headers; behavior,
 RNG consumption and early-return order preserved. Performance gate: **PASS**.
 No PR is opened until HS explicitly releases the slot after the Content collection

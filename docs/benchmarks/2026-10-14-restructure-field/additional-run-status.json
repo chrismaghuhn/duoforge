@@ -1,0 +1,10 @@
+{
+  "status": "interrupted; not used as performance proof",
+  "reason": "HS explicitly authorized carrying forward the last complete performance gate. Additional measurement was unnecessary; stopped after owner asked why. All partial samples retained outside checkout.",
+  "completed_pairs": {
+    "matched-noipo-change.json": 15,
+    "matched-ipo-change.json": 15,
+    "matched-ipo-control.json": 14,
+    "matched-noipo-control.json": 15
+  }
+}
