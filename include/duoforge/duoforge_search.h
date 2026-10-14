@@ -107,8 +107,9 @@ typedef struct duoforge_eval_error {
    status and zero bytes, preserving the successful leaf. A failed step has
    zero digest bytes and digest/encode statuses OK (phases not run).
    Successful terminal leaves retain a digest and exact result, with zero
-   encoder row. A TURN root with sealed re-prompt commands refuses the step
-   with E_UNSUPPORTED / observation_reprompt_unsupported.
+   encoder row. A TURN root with sealed re-prompt commands runs the ordinary
+   step; on success only its digest refuses with E_UNSUPPORTED /
+   observation_reprompt_unsupported. Its result and encoding are preserved.
    Return the lowest failed step, else lowest failed digest, else lowest
    failed encoding. out_error optionally names that same leaf/phase/reason.
    All inputs/outputs are disjoint; preflight changes no leaf/output array.

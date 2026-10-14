@@ -180,6 +180,7 @@ The RNG reference runs weekly and when its files change in a pull request or on 
 
 `ctest --test-dir build -R 'duoforge\.(search\.digest|python\.search_digest)' --output-on-failure`
 checks the public model-NULL sibling, real reconstructed worlds, worker/chunk invariance, preflight, named
-re-prompt refusal and Python key validity. The independent SHA/projection vectors and observed-reference
-runs remain `duoforge.observation.*`. These are functional/determinism gates; no weights or training are needed.
+re-prompt digest refusal with successful-step parity, and Python key validity. The independent SHA/projection
+vectors and observed-reference runs remain `duoforge.observation.*`. These are functional/determinism gates;
+no weights or training are needed.
 The D2 lane's offline/bound gates are required again before enabling real digest keys in a ladder arm.

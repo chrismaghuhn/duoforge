@@ -284,10 +284,12 @@ from running. All global preflight failures name their reason and leave leaf/out
 `UINT32_MAX`. Refused steps have zero digests and digest/encode status OK for phases not run. A successful terminal
 leaf still has its digest and exact result, while its encoder row is zero.
 
-E1b refuses a TURN root with either side's sealed re-prompt commands as `E_UNSUPPORTED`, phase `step`, reason
-`observation_reprompt_unsupported`. Its leaf keeps the copied/reseeded root; the observer never publishes a key.
-This applies to the digest sibling only. Legacy expansion keeps its existing re-prompt behavior. No unobserved
-re-prompt is given a plausible key. Supporting one later requires routing it through the same observation contract.
+For a TURN root with either side's sealed re-prompt commands, E1b executes the ordinary step. On success only the
+digest refuses as `E_UNSUPPORTED`, phase `digest`, reason `observation_reprompt_unsupported`, with zero key bytes.
+The successful state, result and optional encoder row equal legacy expansion; an unavailable key never removes
+that edge or becomes `engine_refused_leaves`. A genuinely failed step retains its own step status and no digest
+phase runs. Legacy expansion keeps its existing re-prompt behavior. Observing retained commands later requires
+routing them through the same observation contract.
 
 Worker errors reduce by phase (step, digest, encode) then logical leaf index, matching the return status. Only
 failures with requested diagnostics lock a bounded stack record using the platform's literal-initialized lock;
@@ -330,7 +332,8 @@ Python node-batch digest sidecar. Before D2 uses the digest, E1b must also pass:
 - Two actual determinizations with the same public history and action, different hidden facts, and equal digests
   through the real engine step. The primitive projection controls above do not replace this E1 gate.
 - Invalid-viewer preflight before any leaf step executes, preserving outputs on refusal.
-- Reprompts in expand either refused with a named reason or processed through the observer; no unobserved path.
+- Re-prompts run the normal step, with their digest either refused by name or processed through the observer;
+  an unavailable digest never removes a successful edge or publishes a plausible key.
 
 Shown gender is public and fixed by the switch details. CTS owns the test that every particle preserves that
 recorded gender; only never-shown members may have sampled gender.

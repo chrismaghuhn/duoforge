@@ -386,7 +386,8 @@ class Batch:
         None as the first output. A failed step has zero digest and digest
         status OK (not run); a projection refusal preserves the successful
         step and has its own status. Diagnostics are in last_expand_error.
-        Arrays are borrowed until the next call. Re-prompts refuse by name.
+        Arrays are borrowed until the next call. Re-prompts run the normal
+        step; only their digest refuses by name.
         observation_keys() reads the validated viewer-specific sidecar;
         no Python hash or battle-rule reconstruction supplies these keys.
         """

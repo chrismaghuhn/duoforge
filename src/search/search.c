@@ -93,8 +93,15 @@ static duoforge_status dfi_expand_observed(dfi_expand_job *j, uint32_t i,
 {
     if (leaf->boundary_kind == DUOFORGE_BOUNDARY_TURN &&
         (leaf->sides[0].sealed != 0u || leaf->sides[1].sealed != 0u)) {
-        dfi_expand_report(j, i, 1u, "step", "observation_reprompt_unsupported");
-        return DUOFORGE_E_UNSUPPORTED;
+        /* A missing observation key never removes an otherwise valid edge.
+         * Retained commands are not observed yet; execute the ordinary step
+         * and refuse only its digest, leaving step/result/encoding intact. */
+        const duoforge_status st = duoforge_battle_step(ctx, leaf, bundle, result);
+        if (st == DUOFORGE_OK) {
+            j->digest_statuses[i] = DUOFORGE_E_UNSUPPORTED;
+            dfi_expand_report(j, i, 2u, "digest", "observation_reprompt_unsupported");
+        }
+        return st;
     }
     dfi_observation_digest observation;
     observation.viewer = j->viewers[j->root_envs[i]];

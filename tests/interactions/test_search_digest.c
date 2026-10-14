@@ -203,16 +203,40 @@ static void determinization(df_test *t, const duoforge_context *ctx, duoforge_ba
     /* Turn reprompt: no observer ran for its retained/sealed command. */
     dfi_batch_leaves(worlds, 1u, reprompt, t);
     query(t, worlds); duoforge_eval_error error; memset(&a, 0xA5, sizeof a);
-    DF_CHECK(t, expand(leaves, worlds, 2u, &a, false, &error) == DUOFORGE_E_UNSUPPORTED);
-    DF_CHECK(t, error.leaf == 0u && strcmp(error.phase, "step") == 0 && strcmp(error.reason, "observation_reprompt_unsupported") == 0);
+    DF_CHECK(t, expand(leaves, worlds, 2u, &a, true, &error) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, error.leaf == 0u && strcmp(error.phase, "digest") == 0 && strcmp(error.reason, "observation_reprompt_unsupported") == 0);
     uint8_t zero[32] = {0}; CHECK_BYTES(t, a.digest, zero, 32u, "reprompt publishes no key");
-    DF_CHECK(t, a.digest_status[0] == DUOFORGE_OK && a.encode[0] == DUOFORGE_OK && a.step[1] == DUOFORGE_OK);
+    DF_CHECK(t, a.step[0] == DUOFORGE_OK && a.digest_status[0] == DUOFORGE_E_UNSUPPORTED && a.encode[0] == DUOFORGE_OK);
+    DF_CHECK(t, a.step[1] == DUOFORGE_OK && a.digest_status[1] == DUOFORGE_OK);
+    duoforge_batch *legacy = make(t, ctx, N, 1u);
+    old = sentinel;
+    DF_CHECK(t, duoforge_batch_expand(legacy, worlds, 4u, mask, SEED, requests, domains, keys,
+        viewers, 2u, roots_of, samples, choices, old.step, old.encode, old.result, old.outcome, old.rows) == DUOFORGE_OK);
+    CHECK_BYTES(t, a.step, old.step, 2u * sizeof a.step[0], "reprompt steps equal legacy success");
+    CHECK_BYTES(t, a.encode, old.encode, 2u * sizeof a.encode[0], "reprompt encoder statuses equal legacy");
+    CHECK_BYTES(t, a.result, old.result, 2u * sizeof a.result[0], "reprompt results equal legacy");
+    CHECK_BYTES(t, a.outcome, old.outcome, 2u * sizeof a.outcome[0], "reprompt outcomes equal legacy");
+    CHECK_BYTES(t, a.rows, old.rows, 2u * WIDTH * sizeof a.rows[0], "reprompt rows equal legacy");
+    compare(t, ctx, leaves, legacy, 2u);
     for (uint32_t workers = 1u; workers <= 3u; ++workers) {
         duoforge_batch *other = make(t, ctx, N, workers);
-        b = sentinel; DF_CHECK(t, expand(other, worlds, 2u, &b, false, &error) == DUOFORGE_E_UNSUPPORTED);
-        DF_CHECK(t, error.leaf == 0u && strcmp(error.reason, "observation_reprompt_unsupported") == 0);
+        b = sentinel; DF_CHECK(t, expand(other, worlds, 2u, &b, true, &error) == DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK(t, error.leaf == 0u && strcmp(error.phase, "digest") == 0 && strcmp(error.reason, "observation_reprompt_unsupported") == 0);
+        CHECK_BYTES(t, a.step, b.step, 2u * sizeof a.step[0], "reprompt step statuses independent of workers");
+        CHECK_BYTES(t, a.digest_status, b.digest_status, 2u * sizeof a.digest_status[0], "reprompt digest statuses independent of workers");
+        CHECK_BYTES(t, a.rows, b.rows, 2u * WIDTH * sizeof a.rows[0], "reprompt rows independent of workers");
+        compare(t, ctx, other, legacy, 2u);
         duoforge_batch_destroy(other);
     }
+    duoforge_batch_destroy(legacy);
+    const duoforge_factored_choice valid = choices[2];
+    choices[2].slot[0] = UINT8_MAX;
+    DF_CHECK(t, expand(leaves, worlds, 2u, &a, false, &error) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, a.step[0] == DUOFORGE_OK && a.digest_status[0] == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, a.step[1] == DUOFORGE_E_INVALID_ARGUMENT && a.digest_status[1] == DUOFORGE_OK);
+    DF_CHECK(t, error.leaf == 1u && strcmp(error.phase, "step") == 0);
+    CHECK_BYTES(t, a.digest + 32u, zero, 32u, "genuine step failure still publishes no key");
+    choices[2] = valid;
 }
 int main(void)
 {
