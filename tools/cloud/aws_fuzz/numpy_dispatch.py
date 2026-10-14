@@ -62,8 +62,10 @@ def main(argv=None):
     try:
         from numpy._core import _multiarray_umath as m  # with the variable set
     except Exception as err:  # NumPy refuses some names itself (a baseline target): a refusal, named
-        print(f"numpy_dispatch: NumPy did not load with NPY_DISABLE_CPU_FEATURES="
-              f"{os.environ.get('NPY_DISABLE_CPU_FEATURES', '')!r}: {err}", file=sys.stderr)
+        disabled = os.environ.get("NPY_DISABLE_CPU_FEATURES", "")
+        with open(args[0], "w", encoding="utf-8") as f:  # the record of this run, never an older one
+            json.dump({"disabled": disabled.split(), "ok": False, "error": str(err)}, f, indent=1)
+        print(f"numpy_dispatch: NumPy did not load with NPY_DISABLE_CPU_FEATURES={disabled!r}: {err}", file=sys.stderr)
         return 3
     problem, record = check(os.environ.get("NPY_DISABLE_CPU_FEATURES", ""), m.__cpu_baseline__, m.__cpu_dispatch__,
                             known, dict(m.__cpu_features__))

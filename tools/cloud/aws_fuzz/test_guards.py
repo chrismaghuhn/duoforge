@@ -1441,7 +1441,7 @@ class NumpyDispatch(unittest.TestCase):
         for disabled in ('X86_V4 AVX512_ICL AVX512SPR', 'AVX512F', 'X86_V2 X86_V4'):
             with self.subTest(disabled=disabled):
                 problem, record = self.run_check(disabled, ['X86_V3'])
-                self.assertIn('not among NumPy's dispatch targets', problem)
+                self.assertIn("not among NumPy's dispatch targets", problem)
                 self.assertEqual(record['disabled'], disabled.split())
 
     def test_an_avx512_target_still_enabled_is_refused(self):
