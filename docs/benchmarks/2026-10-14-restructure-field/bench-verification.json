@@ -1,0 +1,83 @@
+{
+  "provenance": {
+    "before": {
+      "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+      "dirty": false,
+      "phase": "before"
+    },
+    "after": {
+      "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+      "dirty": false,
+      "phase": "after"
+    }
+  },
+  "completed_series": 4,
+  "pairs_per_series": 32,
+  "total_pairs": 128,
+  "all_samples_retained": true,
+  "same_binary_control_sha_matches": true,
+  "records_and_choices_identical": true,
+  "gates": [
+    {
+      "profile": "ipo",
+      "workload": "events",
+      "change_percent": 0.2709913648208051,
+      "change_95ci": [
+        0.9868496247750097,
+        1.0109712895022147
+      ],
+      "control_95ci": [
+        0.9910705865640568,
+        1.0371266576446472
+      ],
+      "numeric_pass": true,
+      "own_scatter_pass": true
+    },
+    {
+      "profile": "ipo",
+      "workload": "plain",
+      "change_percent": 1.3359450510861848,
+      "change_95ci": [
+        1.0018273057870888,
+        1.0511374163406286
+      ],
+      "control_95ci": [
+        0.975409676149192,
+        1.0188271555803583
+      ],
+      "numeric_pass": true,
+      "own_scatter_pass": true
+    },
+    {
+      "profile": "noipo",
+      "workload": "events",
+      "change_percent": 0.2436050157595071,
+      "change_95ci": [
+        0.9921510009586272,
+        1.0190250230571523
+      ],
+      "control_95ci": [
+        0.9757873909018613,
+        1.0090188564687372
+      ],
+      "numeric_pass": true,
+      "own_scatter_pass": true
+    },
+    {
+      "profile": "noipo",
+      "workload": "plain",
+      "change_percent": 0.3797015031903772,
+      "change_95ci": [
+        0.9890079169308263,
+        1.039638920865848
+      ],
+      "control_95ci": [
+        0.9678791676447283,
+        1.0095605485181878
+      ],
+      "numeric_pass": true,
+      "own_scatter_pass": true
+    }
+  ],
+  "gate_pass": true
+}

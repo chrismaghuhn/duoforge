@@ -175,8 +175,11 @@ class MainTest(unittest.TestCase):
                 ev.main(["--logs", logs, "--labels", str(labels), "--since", "2026-10-13T00:00:00Z"])
             text = out.getvalue()
         result = json.loads(text)
+        # the tool's own commit hash is no log text: a room number's digits may occur in it by chance (Content lane,
+        # 2026-10-14: "14502344" in a commit failed this test), so the check reads the output without it
+        checked = text.replace(result["code"]["commit"], "<tool commit>")
         for private_text in ("Some Foe", "somefoe", "Other Foe", "otherfoe", "501", "502", "Bobby"):
-            self.assertNotIn(private_text, text)
+            self.assertNotIn(private_text, checked)
         self.assertEqual(sorted(result["by_opponent"]), ["A"])  # the stopped battle has no timestamp: before --since
         self.assertEqual(sorted(result["by_team"]), ["A1"])
         self.assertEqual((result["logs"], result["kept"]), (2, 1))
@@ -372,7 +375,9 @@ class ReplayTest(unittest.TestCase):
 
     def test_the_real_tables_name_the_known_unmodelled_content(self):
         names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-        self.assertTrue({"speedswap", "piercingdrill", "gravity", "temperflare"} <= names, sorted(names)[:10])
+        self.assertTrue({"speedswap", "gravity"} <= names, sorted(names)[:10])
+        self.assertNotIn("temperflare", names)  # modelled by #476 (the Stomping Tantrum handler)
+        self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
 
 
 if __name__ == "__main__":

@@ -405,7 +405,9 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     if pool and handled[0] == 'ROOST' and ('condition' not in f or norm(f['condition'][1]) != ROOST_CONDITION):
         fail('move %s: the condition is not the pinned text' % mid)
     if pool and handled[0] == 'STOMPING_TANTRUM':
-        for name, text in STOMPING_TANTRUM_CALLBACKS.items():
+        if mid not in STOMPING_TANTRUM_CALLBACKS:
+            fail('move %s: no pinned text for the STOMPING_TANTRUM handler' % mid)
+        for name, text in STOMPING_TANTRUM_CALLBACKS[mid].items():
             if name not in f or norm(f[name][1]) != norm(text):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
@@ -2234,10 +2236,19 @@ ROOST_CONDITION = (
     "if (target.hasType('Flying')) { this.add('-hint', \"If a Terastallized Pokemon uses Roost, it remains Flying-type.\"); } "
     "return false; } this.add('-singleturn', target, 'move: Roost'); }, onTypePriority: -1, "
     "onType(types, pokemon) { this.effectState.typeWas = types; return types.filter(type => type !== 'Flying'); }, },")
+# Step K1 (#476, entry 5dc): Temper Flare (data/moves.ts:19185-19203) has the same callback as Stomping Tantrum, with its own debug text, so the
+# handler serves both moves and the pinned text is checked per move (the debug line is the one difference).
 STOMPING_TANTRUM_CALLBACKS = {
-    'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
-                         "this.debug('doubling Stomping Tantrum BP due to previous move failure'); "
-                         "return move.basePower * 2; } return move.basePower; },",
+    'stompingtantrum': {
+        'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+                             "this.debug('doubling Stomping Tantrum BP due to previous move failure'); "
+                             "return move.basePower * 2; } return move.basePower; },",
+    },
+    'temperflare': {
+        'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+                             "this.debug('doubling Temper Flare BP due to previous move failure'); "
+                             "return move.basePower * 2; } return move.basePower; },",
+    },
 }
 
 # Step G25 (Electric Terrain, Misty Terrain): the two terrain moves keep their `terrain` field and their condition as handlers of
@@ -2365,6 +2376,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'healingwish': ('HEALING_WISH', {'onTryHit'}),                        # G82 (decision 0045): the user's slot condition; the user faints
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
     'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
+    'temperflare': ('STOMPING_TANTRUM', {'basePowerCallback'}),            # K1 (#476): the same callback, its own debug text
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
     'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines
@@ -3090,7 +3102,7 @@ ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', '
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                              'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
                              'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor',
-                             'magmaarmor', 'angerpoint', 'sniper']}
+                             'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3666,6 +3678,75 @@ def check_g90_facts(conditions_ts, moves_ts):
         for fact in G90_MOVE_FACTS:
             if norm(fact) not in text:
                 fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
+# Step K2, Piercing Drill (decision 0015 5dd; data/abilities.ts:3282-3294; the Champions mod inherits it,
+# data/mods/champions/abilities.ts:59-62). Its onHitProtect marks a contact move of the holder, and checkMoveBypassesProtect
+# (sim/battle.ts:1300-1309) then lets the move through every protection whose check calls it (Protect, Detect, King's Shield,
+# Spiky Shield, Baneful Bunker, Wide Guard, Quick Guard). The Champions modifyDamage (data/mods/champions/scripts.ts) then
+# multiplies the hit by 0.25 after its ModifyDamage chain, and prints -ability and -zbroken. Piercing Drill is an engine row
+# (ENGINE_ROWS) that the turn code reads by id; the texts below are the ones it hard-codes.
+K2_ABILITY_FACTS = (
+    ('piercingdrill', ('onHitProtect(source, target, move) {',
+                       "if (move.flags['contact']) {",
+                       "target.getMoveHitData(move).bypassProtect = this.effect;",
+                       'return false;',
+                       '}',
+                       '},',
+                       '// breaking protect handled in Battle#checkMoveBypassesProtect()',
+                       'flags: {},')),
+)
+K2_INHERIT_ONLY = ('piercingdrill',)
+K2_BATTLE_FACTS = (
+    'checkMoveBypassesProtect(move: ActiveMove, attacker: Pokemon, defender: Pokemon, blockStatus = true) {',
+    "if ((move.category !== 'Status' || blockStatus) && move.flags['protect'] &&",
+    "this.runEvent('HitProtect', attacker, defender, move)) {",
+    'return false;',
+    'return true;',
+)
+# The Champions modifyDamage, in this order: the ModifyDamage chain, the bypass (x0.25, -ability, -zbroken), the final 16-bit step.
+K2_DAMAGE_ORDER = (
+    "baseDamage = this.battle.runEvent('ModifyDamage', pokemon, target, move, baseDamage);",
+    "const bypassProtect = target.getMoveHitData(move).bypassProtect;",
+    "baseDamage = this.battle.modify(baseDamage, 0.25);",
+    "if (bypassProtect !== true && bypassProtect.effectType === 'Ability') {",
+    "this.battle.add('-ability', pokemon, bypassProtect.name);",
+    "this.battle.add('-zbroken', target);",
+    'return tr(baseDamage, 16);',
+)
+# The protection checks that the engine's bypass rests on: the default call (blockStatus true) of Protect, Spiky Shield, Baneful
+# Bunker, Wide Guard and Quick Guard, and King's Shield's call with blockStatus false (its Status moves pass, G66).
+K2_MOVE_FACTS = (
+    ('protect', 'if (this.checkMoveBypassesProtect(move, source, target)) return;'),
+    ('spikyshield', 'if (this.checkMoveBypassesProtect(move, source, target)) return;'),
+    ('banefulbunker', 'if (this.checkMoveBypassesProtect(move, source, target)) return;'),
+    ('wideguard', 'if (this.checkMoveBypassesProtect(move, source, target)) return;'),
+    ('quickguard', 'if (this.checkMoveBypassesProtect(move, source, target)) return;'),
+    ('kingsshield', 'if (this.checkMoveBypassesProtect(move, source, target, false)) return;'),
+)
+
+
+def check_k2_facts(battle_ts, champ_scripts, moves_ts):
+    """Step K2: the checkMoveBypassesProtect text (K2_BATTLE_FACTS), the Champions damage lines in their order
+    (K2_DAMAGE_ORDER), and the protection calls the bypass reaches (K2_MOVE_FACTS), whitespace collapsed."""
+    text = norm(chr(10).join(battle_ts.lines))
+    pos = -1
+    for fact in K2_BATTLE_FACTS:
+        if norm(fact) not in text:
+            fail('%s: the pin no longer has "%s"' % (battle_ts.rel, fact))
+    text = norm(chr(10).join(champ_scripts.lines))
+    pos = -1
+    for fact in K2_DAMAGE_ORDER:
+        at = text.find(norm(fact), pos + 1)
+        if at < 0:
+            fail('%s: the pin no longer has "%s" after the previous line' % (champ_scripts.rel, fact))
+        pos = at
+    for mid, fact in K2_MOVE_FACTS:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        if norm(fact) not in norm(chr(10).join(e[2])):
+            fail('move %s: the entry no longer has "%s"' % (mid, fact))
 
 
 def check_g96_facts(moves_ts):
@@ -4263,7 +4344,7 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G83_ABILITY_FACTS + G81_ABILITY_FACTS + G79_ABILITY_FACTS + G75_ABILITY_FACTS + G71_ABILITY_FACTS + G77_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G83_ABILITY_FACTS + G81_ABILITY_FACTS + G79_ABILITY_FACTS + G75_ABILITY_FACTS + G71_ABILITY_FACTS + G77_ABILITY_FACTS + K2_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS + G83_ITEM_FACTS + G75_ITEM_FACTS + G77_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
@@ -4273,7 +4354,7 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
             if override is not None:
                 lines = [' '.join(line.split()) for line in override[2]]
                 inner = [line for line in lines[1:] if line not in ('', '},', '}')]
-                inherit_only = (rid in G59_INHERIT_ONLY + G77_INHERIT_ONLY and lines[0].endswith('{') and
+                inherit_only = (rid in G59_INHERIT_ONLY + G77_INHERIT_ONLY + K2_INHERIT_ONLY and lines[0].endswith('{') and
                                 inner == ['inherit: true,', 'isNonstandard: null,'])
                 if not inherit_only:
                     fail('%s %s: the champions mod overrides the entry' % (kind, rid))
@@ -4757,6 +4838,7 @@ def build_pool(root, repo, dx):
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
     check_g96_facts(moves_ts)
+    check_k2_facts(Source(root, 'sim/battle.ts', READER_INPUTS), Source(root, 'data/mods/champions/scripts.ts'), moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
     check_g86_facts(moves_ts)

@@ -22,6 +22,7 @@ import itertools
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -48,6 +49,10 @@ VERSION = {'node': 'v0.0.0', 'pin': '0' * 40, 'harness': 14}
 KINDS = conformance_records.data_kinds(ROOT)
 PARAMS = rnd.Params(1, 24, rnd.DEFAULT_PAIRINGS, 300, 0.1, 0.5)
 REAL = 'm5_real_aa_1'  # real teams of team A, ends: a PASS under CLOSURE
+LINUX = sys.platform.startswith('linux')
+WATCHDOG_NOT_HERE = 77  # tools/ci/wsl_lock_watchdog.sh anywhere but on Linux
+WATCHDOG_LINUX_ONLY = ('tools/ci/wsl_lock_watchdog.sh runs on Linux (inside WSL) only: anywhere else it refuses to '
+                       'start (status 77, test_off_linux_the_watchdog_refuses_to_start_by_name)')
 REAL_TEAM_C = 'c01_team_c_profile'  # six real members, ends: a PASS under TEAM_C
 REAL_POOL = 'g5_uturn_e'  # a pool battle that ends (a Rocky Helmet faints the U-turn user): a PASS under POOL
 DEV = 's3_struggle_end'  # sets without an ability, ends: needs CLOSURE_DEV
@@ -1817,6 +1822,249 @@ class Lock(unittest.TestCase):
                 self.assertEqual(first.wait(timeout=60), 0)
             self.assertEqual(sorted(os.listdir(tmp)), ['go', 'lock.queue'])  # everything released
 
+
+    # No nesting (2026-10-14, HauptSession): a call on the lock from inside a job that holds it would wait for the
+    # slots that job holds (under --exclusive: forever; the content lane's mutant driver). It is refused at once, 74.
+
+    def nest_env(self, lock):
+        env = dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/'), NUMBER_OF_PROCESSORS='16')
+        for var in ('DUOFORGE_MACHINE_LOCK_SLOTS', 'DUOFORGE_MACHINE_LOCK_HELD', 'DUOFORGE_MACHINE_LOCK_HELD_DIR'):
+            env.pop(var, None)  # this test may itself run under the real lock
+        return env
+
+    def test_a_call_nested_inside_an_exclusive_job_is_refused_at_once_with_status_74(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            env = self.nest_env(lock)
+            start = time.time()
+            done = subprocess.run([rnd.find_bash(), script, '--exclusive', 'outer', rnd.find_bash(), script, 'inner',
+                                   sys.executable.replace('\\', '/'), '-c', 'print("inner ran")'],
+                                  capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, rnd.LOCK_NESTED_STATUS, done.stderr)
+            self.assertLess(time.time() - start, 30)  # no wait for the slots the outer job holds
+            self.assertNotIn('inner ran', done.stdout)
+            self.assertIn("machine lock: refused: 'inner' is nested inside the job 'outer'", done.stderr)
+            self.assertEqual(sorted(os.listdir(tmp)), ['lock.queue'])  # the outer job released, no ticket left
+
+    def test_the_holder_is_told_its_label_and_lock_and_a_plain_or_other_lock_call_runs_as_before(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        show = 'import os; print(os.environ["DUOFORGE_MACHINE_LOCK_HELD"], os.environ["DUOFORGE_MACHINE_LOCK_HELD_DIR"])'
+        with tempfile.TemporaryDirectory() as tmp:
+            lock, other = os.path.join(tmp, 'lock'), os.path.join(tmp, 'other')
+            env = self.nest_env(lock)
+            done = subprocess.run([rnd.find_bash(), script, 'plain', sys.executable.replace('\\', '/'), '-c', show],
+                                  capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stdout.split(), ['plain', lock])  # on Windows a Windows path
+            # Inside a job of one lock, a call on another lock (a test's temporary one) is not nested.
+            inner = 'DUOFORGE_MACHINE_LOCK=%s %s' % (shlex.quote(other.replace('\\', '/')), ' '.join(shlex.quote(a) for a in (
+                rnd.find_bash().replace('\\', '/'), script, 'inner', sys.executable.replace('\\', '/'), '-c', show)))
+            done = subprocess.run([rnd.find_bash(), script, '--exclusive', 'outer', rnd.find_bash(), '-c', inner],
+                                  capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stdout.split(), ['inner', other])
+
+    @unittest.skipUnless(os.name == 'nt', 'the spellings of one directory differ on Windows only')
+    def test_a_call_nested_through_a_windows_program_is_refused_however_the_lock_is_spelt(self):
+        # The main case (review, 2026-10-14): `machine_lock.sh --exclusive X python diff_driver.py random`, the
+        # chunk's machine_lock.sh started by python. Git Bash rewrites a POSIX path in python's environment, and a login
+        # shell's TEMP is /tmp where another's is C:\...: the outer job spells the lock /c/..., the nested call C:\... in
+        # other case. Compared as strings they differ, and the nested call waited for the slots the outer job held.
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            env = self.nest_env(lock)
+            posix = subprocess.run([rnd.find_bash(), '-c', 'cygpath -u "$1"', 'bash', lock], capture_output=True,
+                                   text=True, timeout=60, check=True).stdout.strip()
+            self.assertTrue(posix.startswith('/'), posix)
+            env['DUOFORGE_MACHINE_LOCK'] = posix
+            # The paths go as arguments: Git Bash takes a doubled backslash in a command line for one.
+            nested = ('import os, subprocess, sys; lock, bash, script = sys.argv[1:]; '
+                      'env = dict(os.environ, DUOFORGE_MACHINE_LOCK=lock); '
+                      'sys.exit(subprocess.run([bash, script, "inner", sys.executable, "-c", "print(1)"], env=env).returncode)')
+            start = time.time()
+            done = subprocess.run([rnd.find_bash(), script, '--exclusive', 'outer', sys.executable.replace('\\', '/'),
+                                   '-c', nested, lock.upper(), rnd.find_bash(), script],
+                                  capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, rnd.LOCK_NESTED_STATUS, done.stderr)
+            self.assertLess(time.time() - start, 30)
+            self.assertEqual(done.stdout.split(), [])  # the inner command did not run
+            self.assertIn("machine lock: refused: 'inner' is nested inside the job 'outer'", done.stderr)
+
+    def test_release_forgets_the_held_lock_so_one_shell_may_acquire_again(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, done = self.lock_shell(tmp, 'unset DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_HELD_DIR; '
+                                           'machine_lock_acquire a && echo "[$DUOFORGE_MACHINE_LOCK_HELD]" && '
+                                           'machine_lock_release && echo "[${DUOFORGE_MACHINE_LOCK_HELD:-}]" && '
+                                           'machine_lock_acquire b && echo "[$DUOFORGE_MACHINE_LOCK_HELD]" && machine_lock_release')
+            self.assertEqual(done.stdout.split(), ['[a]', '[]', '[b]'], done.stderr)
+
+    def test_a_fuzz_run_nested_in_a_held_lock_stops_by_name(self):
+        params = PARAMS._replace(battles=8)
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(driver.ToolError) as cm:
+                rnd.orchestrate(params, tmp, [], 5, run=lambda command: rnd.LOCK_NESTED_STATUS, sleep=lambda s: None,
+                                bash='bash', lock_script='l', python='p', driver_script='d', out=io.StringIO())
+            self.assertIn('nested inside a job that holds the lock', str(cm.exception))
+            self.assertIn('--no-lock', str(cm.exception))
+
+
+    # The WSL watchdog (2026-10-14, HauptSession): a job in the WSL VM is no Windows child of the lock's Git Bash holder;
+    # killed, the holder releases the lock while the job ran on. tools/ci/wsl_lock_watchdog.sh ends such a job.
+
+    def watchdog(self, tmp, command, line='4242 job since 2026-10-14 03:00:00', alive='true', interval=None, **extra):
+        owner = os.path.join(tmp, 'owner')
+        with io.open(owner, 'w', encoding='ascii', newline='\n') as f:
+            f.write(line + '\nslots\n')
+        env = self.nest_env(os.path.join(tmp, 'lock'))
+        env.update(DUOFORGE_MACHINE_LOCK_OWNER_FILE=owner.replace('\\', '/'), DUOFORGE_MACHINE_LOCK_OWNER_LINE=line,
+                   DUOFORGE_WATCHDOG_ALIVE=alive, **extra)
+        if interval is not None:
+            env['DUOFORGE_WATCHDOG_INTERVAL'] = str(interval)
+        script = os.path.join(ROOT, 'tools', 'ci', 'wsl_lock_watchdog.sh').replace('\\', '/')
+        return owner, subprocess.Popen([rnd.find_bash(), script, rnd.find_bash(), '-c', command], env=env,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    @unittest.skipIf(LINUX, 'off Linux only: on Linux the watchdog runs (the tests below)')
+    def test_off_linux_the_watchdog_refuses_to_start_by_name(self):
+        # #492's CI: under Git Bash, process groups and signals are emulated and do not reach a native Windows program
+        # (Git's bin/bash.exe launcher) or its children. The watchdog stopped neither the job nor its child there. It
+        # is for WSL: anywhere but on Linux it refuses before it runs anything, holder or not.
+        with tempfile.TemporaryDirectory() as tmp:
+            child = os.path.join(tmp, 'child').replace('\\', '/')
+            for alive in ('true', 'false'):
+                _, job = self.watchdog(tmp, 'echo ran > %s' % child, alive=alive, interval=1)
+                out, err = job.communicate(timeout=60)
+                with self.subTest(alive=alive):
+                    self.assertEqual(job.returncode, WATCHDOG_NOT_HERE, err)
+                    self.assertEqual(out, '')
+                    self.assertFalse(os.path.exists(child))
+                    self.assertIn('machine lock watchdog: refused: it runs inside WSL (Linux) only, and this is', err)
+
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
+    def test_the_watchdog_refuses_without_a_holder_to_watch(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'wsl_lock_watchdog.sh').replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            env = self.nest_env(os.path.join(tmp, 'lock'))
+            for var in ('DUOFORGE_MACHINE_LOCK_OWNER_FILE', 'DUOFORGE_MACHINE_LOCK_OWNER_LINE'):
+                env.pop(var, None)
+            done = subprocess.run([rnd.find_bash(), script, 'echo', 'ran'], capture_output=True, text=True, timeout=60,
+                                  env=env)
+        self.assertEqual(done.returncode, 2)
+        self.assertNotIn('ran', done.stdout)
+        self.assertIn('no lock holder to watch', done.stderr)
+
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
+    def test_the_watchdog_gives_the_commands_status_while_its_holder_holds(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, job = self.watchdog(tmp, 'sleep 2; echo done; exit 7', interval=1)
+            out, err = job.communicate(timeout=60)
+        self.assertEqual(job.returncode, 7, err)
+        self.assertEqual(out.split(), ['done'])
+
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
+    def test_a_job_whose_holder_is_gone_stops_within_15_seconds_with_its_children(self):
+        # The default interval (10 s): the holder's process is gone from the start; the job and its child are stopped.
+        with tempfile.TemporaryDirectory() as tmp:
+            child = os.path.join(tmp, 'child').replace('\\', '/')
+            start = time.time()
+            _, job = self.watchdog(tmp, 'sleep 300 & echo $! > %s; wait' % child, alive='false')
+            out, err = job.communicate(timeout=60)
+            self.assertEqual(job.returncode, 76, err)
+            self.assertLess(time.time() - start, 15)
+            self.assertIn("machine lock watchdog: stopped the job: the holder's Windows process 4242", err)
+            with io.open(os.path.join(tmp, 'child'), encoding='ascii') as f:
+                pid = f.read().strip()
+            alive = subprocess.run([rnd.find_bash(), '-c', 'kill -0 %s' % pid], capture_output=True, timeout=60)
+            self.assertNotEqual(alive.returncode, 0)  # the child went with the job
+
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
+    def test_a_job_whose_owner_line_changes_stops(self):
+        # The holder's slot taken over by another job (its process gone, the slot stale): the line is no longer its.
+        with tempfile.TemporaryDirectory() as tmp:
+            owner, job = self.watchdog(tmp, 'sleep 300', interval=1)
+            time.sleep(1.5)
+            with io.open(owner, 'w', encoding='ascii', newline='\n') as f:
+                f.write('5151 other since 2026-10-14 03:05:00\nslots\n')
+            out, err = job.communicate(timeout=60)
+        self.assertEqual(job.returncode, 76, err)
+        self.assertIn("no longer names the holder '4242 job since 2026-10-14 03:00:00'", err)
+
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
+    def test_a_term_to_the_watchdog_stops_the_job_and_its_children(self):
+        # In a process group of its own, the job would not get a signal aimed at the watchdog (a hangup, a kill): the
+        # watchdog passes it on. The signal comes from a bash, as one between processes of WSL does.
+        with tempfile.TemporaryDirectory() as tmp:
+            child = os.path.join(tmp, 'child').replace('\\', '/')
+            script = os.path.join(ROOT, 'tools', 'ci', 'wsl_lock_watchdog.sh').replace('\\', '/')
+            bash = rnd.find_bash().replace('\\', '/')
+            command = 'sleep 300 & echo $! > %s; wait' % child
+            run = ('%s %s %s -c %s & w=$!; while [ ! -s %s ]; do sleep 0.2; done; kill -TERM $w; wait $w; echo "status $?"'
+                   % tuple(shlex.quote(a) for a in (bash, script, bash, command, child)))
+            line = '4242 job since 2026-10-14 03:00:00'
+            owner = os.path.join(tmp, 'owner')
+            with io.open(owner, 'w', encoding='ascii', newline='\n') as f:
+                f.write(line + '\nslots\n')
+            env = self.nest_env(os.path.join(tmp, 'lock'))
+            env.update(DUOFORGE_MACHINE_LOCK_OWNER_FILE=owner.replace('\\', '/'), DUOFORGE_MACHINE_LOCK_OWNER_LINE=line,
+                       DUOFORGE_WATCHDOG_ALIVE='true', DUOFORGE_WATCHDOG_INTERVAL='60')
+            done = subprocess.run([rnd.find_bash(), '-c', run], capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.stdout.split(), ['status', '76'], done.stderr)
+            self.assertIn("machine lock watchdog: stopped the job: the watchdog got SIGTERM", done.stderr)
+            with io.open(os.path.join(tmp, 'child'), encoding='ascii') as f:
+                pid = f.read().strip()
+            alive = subprocess.run([rnd.find_bash(), '-c', 'kill -0 %s' % pid], capture_output=True, timeout=60)
+            self.assertNotEqual(alive.returncode, 0)  # the child went with the job
+
+    def test_the_holder_exports_its_owner_file_and_line_for_wsl(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        show = ('import os; print(os.environ["DUOFORGE_MACHINE_LOCK_OWNER_FILE"]); '
+                'print(os.environ["DUOFORGE_MACHINE_LOCK_OWNER_LINE"]); print(os.environ["WSLENV"])')
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            for exclusive in ([], ['--exclusive']):
+                env = self.nest_env(lock)
+                env['WSLENV'] = 'WT_SESSION:DUOFORGE_MACHINE_LOCK_HELD'  # an entry already there is not added twice
+                done = subprocess.run([rnd.find_bash(), script, *exclusive, 'wsl job', sys.executable.replace('\\', '/'),
+                                       '-c', show + '; print(open(os.environ["DUOFORGE_MACHINE_LOCK_OWNER_FILE"]).readline().strip())'],
+                                      capture_output=True, text=True, timeout=60, env=env)
+                with self.subTest(exclusive=exclusive):
+                    self.assertEqual(done.returncode, 0, done.stderr)
+                    owner_file, line, wslenv, first = done.stdout.splitlines()
+                    self.assertRegex(line, r'^\d+ wsl job since \d{4}-\d\d-\d\d \d\d:\d\d:\d\d$')
+                    self.assertEqual(first, line)  # the file names the holder with that very line
+                    self.assertEqual(wslenv.split(':'), ['WT_SESSION', 'DUOFORGE_MACHINE_LOCK_HELD',
+                                                         'DUOFORGE_MACHINE_LOCK_OWNER_LINE',
+                                                         'DUOFORGE_MACHINE_LOCK_OWNER_FILE/p'])
+
+
+class WatchdogTestsRun(unittest.TestCase):
+    """No silent skip of the watchdog's tests on the system it is built for (HauptSession, #492): on Linux the class
+    Lock and every test that runs tools/ci/wsl_lock_watchdog.sh end to end must run. Not skipped itself."""
+
+    END_TO_END = ('test_the_watchdog_refuses_without_a_holder_to_watch',
+                  'test_the_watchdog_gives_the_commands_status_while_its_holder_holds',
+                  'test_a_job_whose_holder_is_gone_stops_within_15_seconds_with_its_children',
+                  'test_a_job_whose_owner_line_changes_stops',
+                  'test_a_term_to_the_watchdog_stops_the_job_and_its_children')
+    REFUSAL = 'test_off_linux_the_watchdog_refuses_to_start_by_name'
+
+    @staticmethod
+    def skipped(name):
+        return bool(getattr(Lock, '__unittest_skip__', False) or getattr(getattr(Lock, name), '__unittest_skip__', False))
+
+    def test_the_watchdog_tests_run_where_the_watchdog_runs(self):
+        for name in self.END_TO_END + (self.REFUSAL,):
+            self.assertTrue(callable(getattr(Lock, name, None)), name)  # a renamed test would drop out unseen
+        if LINUX:
+            self.assertFalse(getattr(Lock, '__unittest_skip__', False),
+                             'Lock is skipped on Linux: %s' % getattr(Lock, '__unittest_skip_why__', ''))
+            for name in self.END_TO_END:
+                self.assertFalse(self.skipped(name), '%s is skipped on Linux' % name)
+            self.assertTrue(self.skipped(self.REFUSAL))
+        elif not getattr(Lock, '__unittest_skip__', False):
+            self.assertFalse(self.skipped(self.REFUSAL), '%s is skipped off Linux' % self.REFUSAL)
 
 # ------------------------------------------------------------ the command line
 
