@@ -131,11 +131,11 @@ The comparison with `duoforge_learn.luck` on battles whose state is known is a *
 
 ### The result of the comparison (2026-10-15)
 
-`tools/research/cts_luck_check.py` on `8c9e8933` (clean); the library is the WSL build of that commit (sha256 `fe8506d0…cec9df7`); BC6 sha256 `bda5de8e…`. A second run on the same commit gave the same result byte for byte.
+`tools/research/cts_luck_check.py` on `8c9e8933` (clean); the library is the WSL build of that commit (sha256 `fe8506d0…cec9df7`); BC6 sha256 `bda5de8e…`. A second run on the same commit gave the same result byte for byte. The selection is that of `8c9e8933`'s 1,142 traces. Main has held 11 more pool battles (`k3_*`) since `16b9abf9`; they sort in among the others and shift every fifth, so a later commit selects other battles.
 
 - **By the criterion fixed in advance:** 196 battles, 1,448 turns compared. The mean difference (meter − luck.py) is **+0.0060**, 95% interval **[0.0017, 0.0102]**, correlation 0.773.
 - **Narrow:** it passes only through |mean difference| < 0.01. The interval does not include 0, and its upper end lies just above 0.01.
-- **Gate status (HauptSession): provisionally passed.** The final verdict follows the HauptSession's decision on the luck.py-side skips below.
+- **Gate status (HauptSession, 2026-10-15): passed,** with the renaming below and its test (`test_cts_luck_check`) in the same PR. Before that it was provisionally passed.
 
 **Dropped out, by name:**
 - **Player battles, 30 of 392** (`player_battles_skipped`):
@@ -143,11 +143,11 @@ The comparison with `duoforge_learn.luck` on battles whose state is known is a *
   - 1 is the tracker's explicit refusal "slot 1 is locked into outrage without a known target" (`ValueError` from `tracker.domain()`).
   - Live, each of these is a named stop of the bot, and it is counted.
 - **The meter's turns** (`meter_excluded`): `no-decision-record` 302, `not-turn:REPLACEMENT` 119, `not-searched:unreconstructible` 81, `not-searched:forced` 15, `not-turn:PIVOT` 1, `foe-action-unknown` 1, `leaf-refused` 1.
-- **luck.py's turns** (`luck_py_skipped`): `hidden-counter` 77, and 34 named `true-world-refused:DUOFORGE_E_SCHEMA_MISMATCH`. The second name was **not in the list fixed in advance**. Its investigation:
+- **luck.py's turns** (`luck_py_skipped`): `hidden-counter` 77, and 34 that the measured run named `true-world-refused:DUOFORGE_E_SCHEMA_MISMATCH`. That name was **not in the list fixed in advance**. Since the renaming they are `true-record-unsupported:engine-refuses-record` (32) and `true-record-unsupported:pivot-switch-reason-unknown` (2). Their investigation:
   - **The name is misleading.** No field of the record mismatches its schema.
     - At these 34 points the open-sheet tracker gives no public record: `record.assemble` returns the zero record with `E_UNSUPPORTED` and a named reason.
-    - The comparison tool does not check that status and hands the zero record to `Batch.from_view`, whose first check refuses revision 0 as `SCHEMA_MISMATCH`.
-    - Fixing the name changes no number: the same turns drop out.
+    - The measured tool did not check that status and handed the zero record to `Batch.from_view`, whose first check refuses revision 0 as `SCHEMA_MISMATCH`.
+    - The tool now checks that status first and names the turn `true-record-unsupported:<reason>` (HauptSession, 2026-10-15). The test `test_cts_luck_check` hands in a zero record with that status and expects the named reason, not a schema error. The renaming changes no number: the same turns drop out.
   - **The reasons:**
     - 32 are `engine-refuses-record`: the engine's own public refusal (`duoforge_public_record_check`; decisions 0023 and 0026: a PIVOT, sealed commands, a locked move, the Revival Blessing proxy).
     - 2 are the tracker's `pivot-switch-reason-unknown`.
@@ -166,6 +166,7 @@ The HauptSession set this on 2026-10-15, after the result above was known; it is
 
 ### The known limits
 
+- **No pivot turn is compared.** The comparison holds no turn that ends at a pivot inside the turn (U-turn, Parting Shot, Emergency Exit, Eject Button, a drag), nor Revival Blessing or Outrage at a replacement. The rule `rest-after-foe-pivot` is therefore **not checked**. It is the same engine gap as in the replays, #524: the engine cannot build a world in the middle of a turn while moves are still queued. Once #524 is solved, the comparison is repeated for the pivots.
 - **BC6 as the weight of a hidden foe action.** The mixing by BC6 estimates about +0.046 too much luck per mixed turn (238 turns). This fits #509, where BC6 was found not to be monotone. BC6 is only of limited use as the weight of hidden foe actions; the unmixed number does not depend on it.
 - **Worlds drawn anew.** The worlds after the turn are drawn anew and hold what the turn revealed. The actual successor and the alternatives therefore come from nearly the same distribution, not exactly the same one, as they do engine against engine (luck.py). A turn's luck has mean zero only approximately. This is one more reason why only the series means say something.
 

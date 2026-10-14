@@ -2,7 +2,8 @@
 "Before the first live report").
 
 Every fifth committed pool battle by its id (sorted; indices 0, 5, 10, ...), both players. Each is a real Showdown
-battle that the engine reproduces; ps_client.js gives each player's stream (STREAMS).
+battle that the engine reproduces; ps_client.js gives each player's stream (STREAMS). The selection is that of the
+checked-out commit's traces: a trace added later shifts it.
 
 - The meter: the player's stream as a closed-sheet log (tools/research/cts_luck_fixture.log_records), the true foe team as
   the set prior, cts_luck.battle with the checkpoint's search: the luck of every valued turn, keyed by its decision.
@@ -12,7 +13,8 @@ battle that the engine reproduces; ps_client.js gives each player's stream (STRE
   values its alternatives (before(), the trace's joint choice as joint ranks in the true world's domains) and the true
   world of the next decision point (after()); at the battle's end the result. A turn whose state holds a hidden counter
   the hypothesis would have to draw (sleep, confusion, a partial trap, a two-turn charge) gets no silent default: it
-  is excluded by name, as is a true world the engine refuses or a choice that matches no option.
+  is excluded by name, as is a point whose public record the open-sheet tracker refuses
+  (true-record-unsupported:<its reason>), a true world the engine refuses or a choice that matches no option.
 
 Passed when the 95% interval of the mean per-turn difference (meter - luck.py) includes 0, or |mean| < 0.01; the
 correlation is reported only. Aggregates only (the battles are the project's own committed ones).
@@ -84,6 +86,7 @@ def true_points(messages, own_text, data, trace, player):
         parts = t.public_parts()
         points[t.request.get("rqid")] = {
             "k": k, "record": np.asarray(parts["record"]).copy(), "status": int(parts["status"]),
+            "reason": parts["reason"],
             "foe": [data.base_forme(m.sheet["species"]) for m in t._member(1 - player)],
             "own": [data.base_forme(m.sheet["species"]) for m in t._member(player)], "order": len(points)}
         step = trace["steps"][k] if k < len(trace["steps"]) else None
@@ -147,6 +150,12 @@ def option_of(domain, slot, cmd, roster_map):
 
 
 def world(context, point, h):
+    """The true world of a point: Batch.from_view of its public record and the true hypothesis h. A point whose
+    public record the open-sheet tracker refused (record.assemble: the zero record, E_UNSUPPORTED, a named reason)
+    has no world: it is skipped by that reason, before the engine would refuse the zero record as a schema
+    mismatch."""
+    if point["status"] != 0:
+        raise Skip(f"true-record-unsupported:{point['reason']}")
     import duoforge
     from duoforge import _layout
     b = duoforge.Batch(context, np.resize(duoforge.reference_setups([0]), 1), 1, 7)
