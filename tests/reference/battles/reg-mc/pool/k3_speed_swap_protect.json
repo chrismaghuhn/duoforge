@@ -16,8 +16,7 @@
     "fixture_matches": 0,
     "live": {
       "outcomes": {
-        "equal": 4,
-        "tracker refuses: move-result-not-determined": 2
+        "equal": 6
       },
       "own_pp_stops": [],
       "stops": {}
