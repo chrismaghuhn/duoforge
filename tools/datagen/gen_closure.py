@@ -30,6 +30,8 @@ import os
 import re
 import sys
 
+import gen_format
+
 PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc'
 
 # More files of the pin, read only by the whole-pool rows of --pool (decision 0015 section 4.2) to find where an item or
@@ -1392,8 +1394,13 @@ size_t dfi_ext_canonical_bytes(uint8_t *out, size_t capacity)
 
 # ---- the POOL data kind (decision 0015): the extended tables plus the rows of the expansion ----
 # The closure and --team-c modes never read anything below, so their output stays byte-identical.
-FORMAT_ID = 'gen9championsvgc2026regmc'
-LEGAL_POOL = os.path.join('docs', 'research', 'expansion', 'data', 'legal_pool.json')
+# The format and its pool source come from the format definition data/formats/reg-mc.json (restructure step 10):
+# load_format checks its pool source's sha256, Showdown commit and format id.
+FORMAT = gen_format.load_format()
+if FORMAT['showdown_commit'] != PIN:
+    fail('%s is not at the pin %s' % (gen_format.FORMAT_FILE, PIN))
+FORMAT_ID = FORMAT['showdown_format_id']
+LEGAL_POOL = os.path.join(*FORMAT['pool']['source'].split('/'))
 
 # The new items in their fixed order: the families in the order of decision 0015 section 3 (type boosters, then
 # resist berries), each by Showdown id (which is also by name). Mystic Water and Miracle Seed (type boosters) and
