@@ -177,7 +177,8 @@ _CAUSES = ((C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], "visible_sleep"),
            (C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"),  # decision 0032 (step G60)
            (C["DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"], "temp_forme"),  # decision 0040 (step G66): Aegislash-Blade
            (C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"], "raised_this_turn"),  # step G72: Alluring Voice at a PIVOT
-           (C["DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY"], "turn_history"))  # step G88: Lash Out, Assurance at a PIVOT
+           (C["DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY"], "turn_history"),  # step G88: Lash Out, Assurance at a PIVOT
+           (C["DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP"], "speed_swap"))  # step K3 (decision 0015 5de): a swapped speed is live
 
 
 def visible_causes(roots, env, player):

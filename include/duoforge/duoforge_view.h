@@ -131,6 +131,11 @@ typedef struct duoforge_hypothesis {
  * 5 and 6) are not carried by the view, and they are live mid-turn, so duoforge_battle_from_view and the public record refuse
  * with this cause. A turn boundary is not affected (the bits are zero there). */
 #define DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY 64u
+/* SPEED_SWAP (step K3, decision 0015 5de): either side, any active position whose speed was swapped and is still live (the
+ * presence bit DUOFORGE_POSITION_EXT_SPEED_SWAPPED). The swapped values are not public, so duoforge_battle_public,
+ * duoforge_battle_from_view and duoforge_public_record_check refuse with this cause while it stands. Like SUBSTITUTE, it is
+ * decided by the battle path and the public record, not by duoforge_observation_causes (no volatile field there). */
+#define DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP 128u /* the observation call does not report it (see duoforge_observation_causes) */
 
 /* Argument errors touch no output. Otherwise statuses are per environment,
  * the return is the first failure, and each failing environment is atomic.
@@ -165,8 +170,11 @@ duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const
 /* The part of the causes of a public refusal (DUOFORGE_PUBLIC_CAUSE_*) that the player's observation alone decides: visible
    sleep, visible confusion, a possible Illusion of the foe's sheet, raised-this-turn at a PIVOT. It is the predicate that
    duoforge_battle_public refuses on, read from the observation (the battle path adds the bits the observation does not carry:
-   the foe's disguise state, a Substitute, a temporary forme), so a player who rebuilds its observation (the live tracker) gets
-   the engine's causes without a copy of the rule. A pure call. Checks: NULL -> E_NULL_ARGUMENT; the player above 1 ->
+   the foe's disguise state, a Substitute, a temporary forme, a live Speed Swap (DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP)), so a player
+   who rebuilds its observation (the live tracker) gets
+   the engine's causes without a copy of the rule. The signature and duoforge_observation carry no volatile field, so this
+   call never reports DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP: the battle path (duoforge_battle_public_causes) and the public record
+   (duoforge_public_record_check, which reads the record's position volatiles) do, the same as SUBSTITUTE and TEMP_FORME. A pure call. Checks: NULL -> E_NULL_ARGUMENT; the player above 1 ->
    E_INVALID_ARGUMENT. *out_mask is written only on success. */
 duoforge_status duoforge_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation,
                                             uint32_t *out_mask);

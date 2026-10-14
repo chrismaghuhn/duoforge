@@ -31,7 +31,7 @@ _LATE_GUARD = {
     "ASSURANCE", "HEAVY_SLAM", "HARD_PRESS", "ICE_SPINNER", "BELLY_DRUM",
     "WILL_CRIT", "LEECH_SEED", "CONFUSE", "OHKO", "MEMENTO",
     "LEVEL_DAMAGE", "PARTIAL_TRAP", "ENDEAVOR", "PSYCH_UP", "ALLY_SWITCH",
-    "PSYCHIC_TERRAIN",
+    "PSYCHIC_TERRAIN", "SPEED_SWAP",
 }
 # turn.c@657dae45: these move effects return before the late handler guard.
 _BEFORE_GUARD = {
@@ -46,7 +46,7 @@ _DATA_ONLY = {"SCALD", "RECOVER"}
 # turn.c@657dae45: status moves with their own target-hit handling.
 _STATUS_HIT = {
     "PARTING_SHOT", "STRENGTH_SAP", "HEAL_PULSE", "SOAK", "ENCORE", "DISABLE",
-    "AFTER_YOU", "QUASH", "TRICK", "SWITCHEROO", "SKILL_SWAP", "TAUNT", "YAWN",
+    "AFTER_YOU", "QUASH", "TRICK", "SWITCHEROO", "SKILL_SWAP", "SPEED_SWAP", "TAUNT", "YAWN",
     "DRAGON_CHEER", "PSYCH_UP", "ALLY_SWITCH", "LEECH_SEED", "CONFUSE",
 }
 
