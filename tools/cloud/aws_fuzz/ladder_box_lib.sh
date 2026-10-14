@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Functions of the ladder box (#484), sourced by ladder_user_data.sh from the checkout at the exact commit. Kept apart
 # so that tests run them against a stub aws: nothing here is ever run against AWS by a test.
 

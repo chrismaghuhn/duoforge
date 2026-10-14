@@ -51,7 +51,7 @@ log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
 
 finish() {
     local rc=$?
-    [ "$rc" -eq 0 ] && STATUS=done && REASON=none
+    [ "$rc" -eq 0 ] && STATUS='done' && REASON='none'
     [ "$REASON" = unknown ] && REASON="failed_in_$STEP"
     log "leaving with status $rc ($STATUS: $REASON)"
     printf '{"run_id": "%s", "commit": "%s", "status": "%s", "reason": "%s"}\n' "$DF_RUN_ID" "$DF_COMMIT" "$STATUS" \
