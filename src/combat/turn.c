@@ -26,16 +26,6 @@
 #include "state/identity.h"
 #include "state/knowledge.h"
 
-/* Action orders (sim/battle-queue.ts:174-195). */
-#define DFI_ORDER_SWITCH_IN 3u    /* instaswitch: a replacement */
-#define DFI_ORDER_REVIVE 6u /* revivalblessing (decision 0025 item 6): after an instaswitch, before runSwitch */
-#define DFI_ORDER_RUN_SWITCH 101u /* the entry of a Pokemon that came in */
-#define DFI_ORDER_SWITCH 103u     /* a voluntary switch */
-#define DFI_ORDER_MEGA 104u       /* megaEvo */
-#define DFI_ORDER_MOVE 200u
-#define DFI_ORDER_PRIORITIZED 3u /* After You: queue.prioritizeAction sets order 3 (sim/battle-queue.ts:282-292) */
-#define DFI_ORDER_QUASHED 201u   /* Quash: action.order = 201 (data/moves.ts:14454-14475) */
-#define DFI_ORDER_RESIDUAL 300u
 #define DFI_SPEED_BIAS 10000u   /* speed key: 10000 + speed, or 10000 - speed under Trick Room */
 #define DFI_SPEED_CAP 10000u    /* getStat caps Speed at 10000 (sim/pokemon.ts:636) */
 #define DFI_LEVEL 50u

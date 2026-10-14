@@ -23,7 +23,7 @@ from duoforge_live.lines import flat_position, line_kind
 from duoforge_live.data import trace_to_c
 from duoforge_live.game import TEAM_TABLE
 
-from .points import TEAM_SELECTION, TURN, Skip
+from .points import TEAM_SELECTION, TURN, Skip, after_switches
 
 NOT_REQUESTED, EXACT, TARGET_UNKNOWN, MOVE_HIDDEN, FORCED, UNKNOWN = range(6)
 TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
@@ -77,8 +77,7 @@ def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vac
     # A slot whose action never showed chose a move only if the switch phase of the turn is over (Showdown runs
     # switches first): some move, cant, Mega Evolution or confusion line came. A game that ends while the players
     # choose (a forfeit, the timer) shows none, and then a switch is as possible as a move.
-    acted = any(line_kind(line) in ("move", "cant", "-mega") or
-                (line_kind(line) == "-activate" and line.split("|")[3:4] == ["confusion"]) for line in segment)
+    acted = any(after_switches(line) for line in segment)
     slots, reasons = [], []
     for k in (0, 1):
         mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, vacant, barred[k])
@@ -113,7 +112,7 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
         return _all(options_list), FORCED
     position = side * 2 + k
     mega = _mega_shown(segment, position)
-    acted = False  # a move-phase line of anyone came before
+    acted = False  # a line of an action the engine runs after the switches came before
     encored = False  # an Encore started on this position since the choice
     for index, line in enumerate(segment):
         kind = line_kind(line)
@@ -124,7 +123,7 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
             member = member_of(parts[3])
             found = [i for i, o in enumerate(options_list) if o.kind == options.SWITCH and o.reserve == member]
             return (_mask(found), EXACT) if len(found) == 1 else (_all(options_list), UNKNOWN)
-        if kind in ("move", "cant", "-mega"):
+        if after_switches(line):
             acted = True
         if kind == "faint" and flat_position(parts[2]) == position:
             return None, None
