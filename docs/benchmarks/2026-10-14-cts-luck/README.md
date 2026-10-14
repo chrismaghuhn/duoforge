@@ -116,6 +116,11 @@ A battle that the replay does not follow is counted under the replay's named rea
 The comparison with `duoforge_learn.luck` on battles whose state is known is a **mandatory gate before every live report** (HauptSession, 2026-10-14):
 
 - **Battles:** every fifth committed pool battle by its id, in sorted order (indices 0, 5, 10, …), both players. They are real Showdown battles (`tools/reference/ps_client.js` gives each player's stream) that the engine reproduces.
+- **The count, derived** (note of 2026-10-15, added before the full run at the HauptSession's request; the selection and the criterion are unchanged; only a three-battle trial run on `0fed9c23` came before it):
+  - `tests/reference/traces` holds 1,142 battles. A pool battle is one whose data set is `pool` (`trace_to_c.spec_data`): 979 of them. The other 163 are not pool battles: 90 `closure` battles (a spec without data) and 73 `team_c` battles (decision 0009). Neither is read under the pool data (decision 0015) that the bot and BC6 play.
+  - Every fifth of the 979, sorted by id: indices 0, 5, …, 975, which is ⌈979 / 5⌉ = **196 battles**, 392 player streams. No battle is dropped from the selection; the streams of the pinned Showdown hold both players of all 196.
+  - At run time a player's battle can still drop out, and each is counted by name in `player_battles_skipped`: `no-stream`, `meter:<error>` (the meter cannot replay the log) and `oracle:<error>` (luck.py's side cannot be built).
+  - A turn drops out of the comparison by name: the meter's exclusions (`meter_excluded`, the table above) and luck.py's (`luck_py_skipped`): `hidden-counter` (a sleep or confusion counter, `partiallytrapped` or `twoturnmove` on the field, which the public record does not carry), `roster-unmatched`, `choice-not-allowed`, `choice-unmatched`, `no-input` and `no-end`.
 - **Two arms on the same turns:**
   - The meter values each player's stream as a closed-sheet log, with the true foe team as the set prior.
   - luck.py (`Luck`, unchanged) values the true world of the same decision point. That world is built with `Batch.from_view` from the public record and the true hidden parts, taken from the trace's state.
