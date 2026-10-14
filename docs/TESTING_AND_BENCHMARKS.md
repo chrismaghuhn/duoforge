@@ -175,3 +175,11 @@ The RNG reference runs weekly and when its files change in a pull request or on 
 **Quick profile for intermediate states (2026-10-10).** The free plan's concurrency is the bottleneck (jobs queue 5 to 15 minutes), so a sub-branch of a batch does not need the 12-job matrix for every intermediate state: `gh workflow run ci.yml --ref <branch> -f profile=quick` runs only Linux GCC Debug, Linux GCC ASan+UBSan and Windows GCC Debug with the Python and reference tests; the other jobs show as skipped (a skipped matrix job shows its name template, e.g. `Linux / ${{ matrix.cc }} / ...`), never as passed. `-f profile=full`, or no `-f`, runs the whole matrix. Pull requests, pushes to main and the nightly run always run the full matrix: the batch pull request runs it automatically, and the merge gate stays the full matrix on the pull request's head. **The quick profile is only for a branch without an open pull request**: a dispatch's checks land on the branch's head commit, which is the pull request's head, so its skipped jobs would sit beside the pull request's real ones. The job `Quick profile / no open pull request` asks GitHub for open pull requests from the branch and fails such a run in red; that red check stays on the commit until the next push. A dispatch has its own concurrency group (ref, event, profile): it never cancels a push or nightly run.
 
 **The hosted CI is the merge gate since 2026-10-02 (owner).** A pull request is merged when every check on its head is green. The main session reads them with `gh pr checks`. The local CI (`tools/ci/local_ci.sh`) stays for quick runs before a push (`--quick`), for offline work and for measurements. A session no longer needs the machine lock to get a pull request merged.
+
+### Observation-digest expansion (decision 0082)
+
+`ctest --test-dir build -R 'duoforge\.(search\.digest|python\.search_digest)' --output-on-failure`
+checks the public model-NULL sibling, real reconstructed worlds, worker/chunk invariance, preflight, named
+re-prompt refusal and Python key validity. The independent SHA/projection vectors and observed-reference
+runs remain `duoforge.observation.*`. These are functional/determinism gates; no weights or training are needed.
+The D2 lane's offline/bound gates are required again before enabling real digest keys in a ladder arm.

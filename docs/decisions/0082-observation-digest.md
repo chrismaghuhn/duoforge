@@ -269,6 +269,40 @@ scratch. There is no heap, saved hash state in a battle/codec, mutable global ha
 Windows keeps new private entry points outside automatic DLL exports; its nine pre-existing request entry points
 retain explicit exports and signatures. E1b adds only its intended public entry points.
 
+## E1b delivery: model-NULL expansion
+
+`duoforge_batch_expand_digest` is installed as the first public sibling. The evaluated sibling above remains a
+later delivery; E1b has no model, inference or weights. Both legacy and digest expansion use one private core.
+The legacy signature, required row output, status order, seed formula and rules remain unchanged. Digest expansion
+allows `obs == NULL`; version/mask preflight still runs, but no row is queried/encoded and encode statuses stay OK.
+Digest/status outputs are required for positive count. The new diagnostic record has leaf at byte 0, phase at byte
+4 (16 bytes), reason at byte 20 (128 bytes), size 148; existing public records keep their layouts.
+
+Every selected root index and viewer is checked before dispatch; even a later invalid viewer prevents every leaf
+from running. All global preflight failures name their reason and leave leaf/output arrays untouched. Optional
+`out_error` is diagnostic output and may be written on preflight; success clears its strings and sets leaf to
+`UINT32_MAX`. Refused steps have zero digests and digest/encode status OK for phases not run. A successful terminal
+leaf still has its digest and exact result, while its encoder row is zero.
+
+E1b refuses a TURN root with either side's sealed re-prompt commands as `E_UNSUPPORTED`, phase `step`, reason
+`observation_reprompt_unsupported`. Its leaf keeps the copied/reseeded root; the observer never publishes a key.
+This applies to the digest sibling only. Legacy expansion keeps its existing re-prompt behavior. No unobserved
+re-prompt is given a plausible key. Supporting one later requires routing it through the same observation contract.
+
+Worker errors reduce by phase (step, digest, encode) then logical leaf index, matching the return status. Only
+failures with requested diagnostics lock a bounded stack record using the platform's literal-initialized lock;
+there is no growable error list, per-call heap, or synchronization on successful leaf work. Scratch for SHA lives
+only inside the observed-step helper; legacy expansion does not instantiate that collector.
+
+The Python adapter's `Batch.expand_digest(...)` returns legacy expansion's five arrays followed by the `(n,32)`
+uint8 digests and `(n,)` uint32 digest statuses; `encode=False` returns `None` for the first output. Buffers are
+borrowed and reused. `last_expand_error` exposes the bounded diagnostic record. `observation_keys(envs, viewer)`
+returns copied keys plus refused booleans from this sidecar, never a Python hash of a particle-filled record.
+It rejects missing keys, failed steps/digests and viewer mismatches. Adapter mutations invalidate affected keys
+(conservatively all keys for non-expand mutations); legacy expand invalidates its written prefix. Read-only
+queries do not invalidate keys. Direct privileged C mutation is outside the Python sidecar contract. The D2 lane
+owns adoption in its unchanged tree/key interfaces and reruns its offline/bound gates before a ladder arm.
+
 ## Independent vectors and gates
 
 `tools/reference/observation_digest_vectors.py` writes

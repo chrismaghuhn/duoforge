@@ -90,6 +90,42 @@ duoforge_status duoforge_batch_expand(duoforge_batch *leaves, const duoforge_bat
                                       duoforge_status *step_statuses, duoforge_status *encode_statuses,
                                       duoforge_step_result *results, uint32_t *leaf_results, void *obs);
 
+/* Decision 0082: bounded diagnostics, not an event/cause/feature number.
+   leaf is UINT32_MAX for preflight or success; phase/reason are bounded ASCII.
+   On success both strings are empty. */
+typedef struct duoforge_eval_error {
+    uint32_t leaf;
+    char phase[16];
+    char reason[128];
+} duoforge_eval_error;
+
+/* Digest-only (model-NULL) sibling. Same root mapping, seeds, step outcomes
+   and preflight order as expand; obs may be NULL to omit encoding. Digests
+   holds count * DUOFORGE_DIGEST_SIZE bytes, one step transcript per leaf;
+   digest_statuses has count entries. Both are required for positive count.
+   An unsupported projection after a successful step has its own digest
+   status and zero bytes, preserving the successful leaf. A failed step has
+   zero digest bytes and digest/encode statuses OK (phases not run).
+   Successful terminal leaves retain a digest and exact result, with zero
+   encoder row. A TURN root with sealed re-prompt commands refuses the step
+   with E_UNSUPPORTED / observation_reprompt_unsupported.
+   Return the lowest failed step, else lowest failed digest, else lowest
+   failed encoding. out_error optionally names that same leaf/phase/reason.
+   All inputs/outputs are disjoint; preflight changes no leaf/output array.
+   Output/environment tails are untouched. Scratch is bounded on the stack;
+   no heap or network evaluation. Legacy expand remains unchanged. */
+duoforge_status duoforge_batch_expand_digest(
+    duoforge_batch *leaves, const duoforge_batch *roots,
+    uint32_t version, uint64_t ext_supported, uint64_t seed,
+    const duoforge_request *root_requests, const duoforge_factored_domain *root_domains,
+    const uint64_t *keys, const uint8_t *viewers,
+    uint32_t count, const uint32_t *root_envs, const uint32_t *samples,
+    const duoforge_factored_choice *choices,
+    duoforge_status *step_statuses, duoforge_status *encode_statuses,
+    duoforge_step_result *results, uint32_t *leaf_results, void *obs,
+    uint8_t *digests, duoforge_status *digest_statuses,
+    duoforge_eval_error *out_error);
+
 #ifdef __cplusplus
 }
 #endif

@@ -150,6 +150,7 @@ class Batch:
             self._buffers["from_view"] = np.zeros(self.envs, np.uint32)
         statuses = self._buffers["from_view"][:count]
         statuses.fill(0xFFFFFFFF)
+        self._invalidate_digest()
         st = self._lib.duoforge_batch_from_view(self._live(), ptr(views), ptr(hypotheses), count, ptr(statuses))
         if st and (statuses == 0xFFFFFFFF).all():
             self._check(st)
@@ -172,6 +173,7 @@ class Batch:
             _require(active, np.bool_, (self.envs,), "active")
             if (indices[~active] != _layout.NO_CHOICE).any():
                 raise ValueError("an environment outside active has a choice")
+        self._invalidate_digest()
         status = self._lib.duoforge_batch_step_indices(
             self._live(), ptr(self.requests), ptr(self.candidates), ptr(self.counts), ptr(indices),
             ptr(self.statuses), ptr(self.results))
@@ -196,6 +198,7 @@ class Batch:
         With observations=False the observation buffer keeps its contents. A
         failure raises DuoforgeError with the per-environment statuses."""
         _require(indices, np.uint16, (self.envs, 2), "indices")
+        self._invalidate_digest()
         self._check(self._lib.duoforge_batch_step_query(
             self._live(), _AUTORESET if autoreset else 0, ptr(indices), ptr(self.requests),
             ptr(self.observations) if observations else None, ptr(self.candidates), ptr(self.counts),
@@ -210,12 +213,14 @@ class Batch:
         """Steps every non-TERMINAL environment by factored choice
         (FACTORED_CHOICE, shape (E,2)), as step()."""
         _require(choices, _layout.FACTORED_CHOICE, (self.envs, 2), "choices")
+        self._invalidate_digest()
         self._check(self._lib.duoforge_batch_step_factored(
             self._live(), ptr(self.requests), ptr(self.domains), ptr(choices), ptr(self.statuses),
             ptr(self.results)), per_env=True)
 
     def reset(self, env, episode):
         """Resets one environment to `episode` (the seed derivation's battle)."""
+        self._invalidate_digest()
         self._check(self._lib.duoforge_batch_reset(self._live(), self._env(env), uint(episode, 32, "episode")))
 
     def reset_setups(self, envs, episodes, setups):
@@ -230,6 +235,7 @@ class Batch:
         _require(episodes, np.dtype(np.uint32), (k,), "episodes")
         _require(setups, _layout.SETUP, (k,), "setups")
         statuses = np.zeros(k, dtype=np.uint32)
+        self._invalidate_digest()
         st = self._lib.duoforge_batch_reset_setups(self._live(), k, ptr(envs), ptr(episodes), ptr(setups),
                                                    ptr(statuses))
         if st != 0 and not statuses.any():
@@ -241,6 +247,7 @@ class Batch:
 
     def reset_terminal(self):
         """Resets every TERMINAL environment to its next episode."""
+        self._invalidate_digest()
         self._check(self._lib.duoforge_batch_reset_terminal(self._live()))
 
     # -------------------------------------------------------- native mode
@@ -250,6 +257,7 @@ class Batch:
         with the uniform random policy; the records, shape (E, episodes)."""
         episodes = uint(episodes, 32, "episodes")
         records = np.zeros(self.envs * episodes, dtype=_layout.EPISODE)
+        self._invalidate_digest()
         self._check(self._lib.duoforge_batch_play_random(self._live(), episodes, uint(max_steps, 32, "max_steps"),
                                                          ptr(records)))
         return records.reshape(self.envs, episodes)
@@ -366,6 +374,67 @@ class Batch:
         or shape raise TypeError or ValueError. The rows' width is checked
         against the library's (duoforge_encoder_size) before its first write:
         another width raises DuoforgeLibraryError."""
+        return self._expand(roots, version, ext_supported, seed, keys, viewers, root_envs, samples, choices,
+                            observed=False, encode=True)
+
+    def expand_digest(self, roots, version, ext_supported, seed, keys, viewers, root_envs, samples, choices,
+                      *, encode=True):
+        """Decision 0082's model-NULL sibling; one engine step per leaf.
+
+        Returns expand's five outputs followed by digests (n,32) uint8 and
+        digest_statuses (n,) uint32. encode=False omits row work and returns
+        None as the first output. A failed step has zero digest and digest
+        status OK (not run); a projection refusal preserves the successful
+        step and has its own status. Diagnostics are in last_expand_error.
+        Arrays are borrowed until the next call. Re-prompts refuse by name.
+        observation_keys() reads the validated viewer-specific sidecar;
+        no Python hash or battle-rule reconstruction supplies these keys.
+        """
+        if not hasattr(self._lib, "duoforge_batch_expand_digest"):
+            raise DuoforgeError("observation_digest_unavailable")
+        if not isinstance(encode, bool):
+            raise TypeError("encode must be bool")
+        return self._expand(roots, version, ext_supported, seed, keys, viewers, root_envs, samples, choices,
+                            observed=True, encode=encode)
+
+    def _invalidate_digest(self, count=None):
+        for key, buffers in self._buffers.items():
+            if isinstance(key, tuple) and key[0] == "expand_digest":
+                buffers[8][:count] = False
+
+    def observation_keys(self, envs, viewer):
+        """Copies (keys uint8[n,32], refused bool[n]) from the last expansion.
+
+        Keys refuse after an adapter mutation, an unsuccessful step/digest,
+        or a viewer mismatch. Direct privileged C mutation is outside this
+        sidecar contract. No key is derived from a public particle record.
+        """
+        self._live()
+        envs = np.asarray(envs)
+        if envs.ndim != 1:
+            raise ValueError("envs must be one-dimensional")
+        if envs.dtype.kind not in "iu":
+            raise TypeError("envs must contain integer indices")
+        viewer = uint(viewer, 32, "viewer")
+        if viewer > 1 or (envs < 0).any() or (envs >= self.envs).any():
+            raise ValueError("invalid viewer or environment")
+        sidecar = getattr(self, "_observation_sidecar", None)
+        if sidecar is None:
+            raise DuoforgeError("observation_digest_unavailable")
+        digests, viewers, valid = sidecar
+        refused = ~valid[envs] | (viewers[envs] != viewer)
+        keys = digests[envs]  # advanced indexing owns a copy
+        keys[refused] = 0
+        return keys, refused
+
+    @property
+    def last_expand_error(self):
+        """Bounded diagnostic record of the last digest sibling call (borrowed)."""
+        record = getattr(self, "_last_expand_error", None)
+        return None if record is None else record[()]
+
+    def _expand(self, roots, version, ext_supported, seed, keys, viewers, root_envs, samples, choices,
+                *, observed, encode):
         from . import features
         if not isinstance(roots, Batch):
             raise TypeError(f"roots must be a Batch, not {type(roots).__name__}")
@@ -382,27 +451,48 @@ class Batch:
         _require(root_envs, np.uint32, (n,), "root_envs")
         _require(samples, np.uint32, (n,), "samples")
         _require(choices, _layout.FACTORED_CHOICE, (n, 2), "choices")
-        key = ("expand", int(version))
+        key = ("expand_digest", int(version), encode) if observed else ("expand", int(version))
         if key not in self._buffers:
             width = ctypes.c_uint32()  # the library writes rows of its own width: the buffer's must equal it
             self._check(self._lib.duoforge_encoder_size(uint(version, 32, "version"), ctypes.byref(width)))
             if width.value != size:
                 raise DuoforgeLibraryError(f"encoder version {version}: the library writes rows of {width.value} "
                                            f"values, the package's are {size}")
-            self._buffers[key] = (np.zeros((self.envs, size), dtype=np.float32),
+            self._buffers[key] = (np.zeros((self.envs, size), dtype=np.float32) if encode else None,
                                   np.zeros(self.envs, dtype=np.uint32), np.zeros(self.envs, dtype=np.uint32),
                                   np.zeros(self.envs, dtype=_layout.STEP_RESULT), np.zeros(self.envs, dtype=np.uint32))
-        obs, step_statuses, encode_statuses, results, leaf_results = self._buffers[key]
+            if observed:
+                self._buffers[key] += (np.zeros((self.envs, 32), np.uint8), np.zeros(self.envs, np.uint32),
+                                       np.zeros(self.envs, np.uint8), np.zeros(self.envs, bool),
+                                       np.zeros((), _layout.EVAL_ERROR))
+        obs, step_statuses, encode_statuses, results, leaf_results = self._buffers[key][:5]
         untouched = np.uint32(0xFFFFFFFF)  # no status of the library; the argument checks write nothing
         step_statuses[:n] = untouched  # every leaf writes its step status
-        st = self._lib.duoforge_batch_expand(
+        call = self._lib.duoforge_batch_expand_digest if observed else self._lib.duoforge_batch_expand
+        suffix = ()
+        if observed:
+            digests, digest_statuses, digest_viewers, valid, error = self._buffers[key][5:]
+            self._last_expand_error = error
+            suffix = (ptr(digests), ptr(digest_statuses), ptr(error))
+        st = call(
             self._live(), roots._live(), uint(version, 32, "version"), uint(ext_supported, 64, "ext_supported"),
             uint(seed, 64, "seed"), ptr(roots.requests), ptr(roots.domains), ptr(keys), ptr(viewers), n,
             ptr(root_envs), ptr(samples), ptr(choices), ptr(step_statuses), ptr(encode_statuses), ptr(results),
-            ptr(leaf_results), ptr(obs))
+            ptr(leaf_results), None if obs is None else ptr(obs), *suffix)
         if st != 0 and (step_statuses[:n] == untouched).all():  # refused before any leaf (n may be 0)
-            raise DuoforgeError(status_name(st))
-        return obs[:n], step_statuses[:n], encode_statuses[:n], results[:n], leaf_results[:n]
+            detail = ""
+            if observed:
+                detail = ": " + error["phase"].item().decode("ascii") + "/" + error["reason"].item().decode("ascii")
+            raise DuoforgeError(status_name(st) + detail)
+        self._invalidate_digest(n)
+        prefix = (None if obs is None else obs[:n], step_statuses[:n], encode_statuses[:n], results[:n], leaf_results[:n])
+        if observed:
+            digest_viewers[:n] = viewers[root_envs]
+            valid[:n] = (step_statuses[:n] == 0) & (digest_statuses[:n] == 0) & digests[:n].any(axis=1)
+            if n:
+                self._observation_sidecar = (digests, digest_viewers, valid)
+            return prefix + (digests[:n], digest_statuses[:n])
+        return prefix
 
     def _refused(self, version, ext_supported, status, statuses):
         """Raises for a failed query_encoded: the reference's ValueError for
