@@ -73,6 +73,12 @@ class LogReplay:
     "accepted": the choice the game accepted there (after a refused one, the next) or None; record is None where the
     bot wrote none or answered with /choose default.
 
+    log_format is the log's (client.LOG_FORMAT: its first record, 1 for a log without one); a later format than this
+    code reads is refused by name. From format 2 on, the record of the last decision point carries "pending_at_end"
+    when the battle ended without a fallback (the log's {"pending_at_end"} before its {"end"}): the choice the battle
+    ended on, sent and never accepted (accepted None), or None when no choice was open. A format-1 log, a battle that
+    fell back and a log without an end (a reconnect, a log still being written) give no such key.
+
     After an iteration that ran out (complete): stopped is None (the log ran to its end), "stop:<name>" or
     "error:<type>" (the replay's own tracker stopped or failed), or "fallback:<reason>" (the bot fell back there, the
     log's {"fallback"} record, and its feeds end); diverged names a mismatch between the two (the bot stopped its
@@ -84,6 +90,11 @@ class LogReplay:
         bad = next((k for k, r in enumerate(self.records) if not isinstance(r, dict)), None)
         if bad is not None:  # a malformed log, never counted as a failure of the bot
             raise ValueError(f"log record {bad} is no object")
+        from .client import LOG_FORMAT
+        self.log_format = self.records[0].get("log_format", 1) if self.records else 1
+        if isinstance(self.log_format, bool) or not isinstance(self.log_format, int) \
+                or not 1 <= self.log_format <= LOG_FORMAT:
+            raise ValueError(f"log format {self.log_format!r}: this replay reads formats 1 to {LOG_FORMAT}")
         self.data, self.policy, self.own_text, self.prior = data, policy, own_text, prior
         self.key, self.search, self.seed, self.n = key, search, seed, n
         self.game = None
@@ -91,6 +102,14 @@ class LogReplay:
         self.complete = False
         # the bot's own fallback: the first {"fallback": reason} record (not a defaulted decision's)
         self.fallback = next((r["fallback"] for r in self.records if "fallback" in r and "sent" not in r), None)
+        # the choice the battle ended on (format 2): the bot's record right before its {"end"}
+        end = next((k for k, r in enumerate(self.records) if "end" in r), None)
+        self._pending = (self.records[end - 1] if end and "pending_at_end" in self.records[end - 1]
+                         and self.fallback is None else None)
+        # the last decision the bot sent a choice for (its rqid; a refused choice's retry has the same): its point's
+        # record carries pending_at_end
+        self._last = next((r.get("decision") for r in reversed(self.records)
+                           if "sent" in r and r.get("sent") != "default"), None)
 
     def __iter__(self):
         from .data import trace_to_c
@@ -101,7 +120,7 @@ class LogReplay:
                                               room=self.key, seed=self.seed, n=self.n)
         done, stopped = 0, None
         try:
-            for i, r in enumerate(self.records):
+            for i, r in enumerate(self.records):  # {"log_format"}, {"pending_at_end"}: neither fed nor accepted
                 if "accepted" in r:
                     game.accepted(r["accepted"])
                     continue
@@ -125,6 +144,8 @@ class LogReplay:
                             accepted = x["accepted"]
                             break
                     record = dict(record, accepted=accepted)
+                    if self._pending is not None and rqid == self._last:
+                        record["pending_at_end"] = self._pending["pending_at_end"]
                 yield game, record
         except lines.Stop as stop:
             stopped = "stop:" + stop.reason.split(" ")[0].rstrip(":")

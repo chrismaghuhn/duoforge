@@ -329,6 +329,7 @@ class ArenaTest(unittest.TestCase):
         self.feed(*battle_messages())
         self.feed(room(["|win|Opponent"]))
         self.assertEqual(self.run_log()["code"], code)
+        self.assertEqual(self.run_log()["log_format"], client.LOG_FORMAT)  # the battle logs' format (#385)
         import hashlib
         self.assertEqual(self.run_log()["team_sha256"], hashlib.sha256(FIXTURE["team"].encode("utf-8")).hexdigest())
         summary = next(r["summary"] for r in self.battle() if "summary" in r)
@@ -468,6 +469,85 @@ class ArenaTest(unittest.TestCase):
         self.assertNotEqual(record["sent"], played)
         self.assertEqual(record["accepted"], played)
 
+    # ------------------------------------------------------------------ the log format 2: pending_at_end (#385)
+    FORFEIT_ROOM = f"battle-{CTS}-11"
+
+    def forfeit_log_text(self, end=("|-message|Opponent forfeited.", "|win|" + NAME), room_id=FORFEIT_ROOM):
+        """A closed-sheet battle the foe forfeits (or loses on its timer) with the bot's turn-1 choice sent: the text of
+        its log (python/tests/support/data/cts_log_format2.jsonl is this log)."""
+        self.make(fmt=CTS)
+        self.feed(*self.closed_messages(room_id, upto=6))
+        self.feed(room(list(end), room_id))
+        return Path(self.tmp.name, f"{room_id}-{client.toid(NAME)}.jsonl").read_text(encoding="utf-8")
+
+    def test_a_battle_that_ends_on_a_sent_choice_logs_it_as_pending_at_end(self):
+        # HauptSession, 2026-10-14: the foe's forfeit or timer ends the battle on the bot's choice, sent and never
+        # accepted: it goes to {"pending_at_end"} before {"end"}, no {"accepted"}; the log's first record names its
+        # format
+        ends = {"forfeit": ("|-message|Opponent forfeited.", "|win|" + NAME),
+                "timer": ("|-message|Opponent lost due to inactivity.", "|win|" + NAME)}
+        for n, (why, end) in enumerate(ends.items()):
+            with self.subTest(why):
+                room_id = f"battle-{CTS}-{20 + n}"
+                records = [json.loads(line) for line in self.forfeit_log_text(end, room_id).splitlines()]
+                played = self.chosen()[-1].split("|/choose ", 1)[1].rsplit("|", 1)[0]
+                self.assertEqual(records[0], {"log_format": client.LOG_FORMAT})
+                self.assertEqual(client.LOG_FORMAT, 2)
+                end_at = records.index({"end": "|win|" + NAME})
+                self.assertEqual(records[end_at - 1], {"pending_at_end": played})
+                last_sent = max(k for k, r in enumerate(records) if "sent" in r)
+                self.assertFalse([r for r in records[last_sent:] if "accepted" in r])
+                self.assertEqual(sum("pending_at_end" in r for r in records), 1)
+
+    def test_a_battle_that_ends_with_no_choice_open_logs_pending_at_end_null(self):
+        self.make(fmt=CTS)
+        closed = f"battle-{CTS}-12"
+        self.feed(*self.closed_messages(closed, upto=6))
+        self.feed(room(FIXTURE["messages"][6], closed))  # turn 1 is played: its choice accepted, no request yet
+        self.feed(room(["|win|" + NAME], closed))
+        records = self.battle(closed)
+        end_at = records.index({"end": "|win|" + NAME})
+        self.assertEqual(records[end_at - 1], {"pending_at_end": None})
+        last_sent = max(k for k, r in enumerate(records) if "sent" in r)
+        self.assertTrue([r for r in records[last_sent:] if "accepted" in r])
+
+    def test_pending_at_end_changes_the_log_only(self):
+        # HauptSession's condition: the same decisions, the same choices sent; the log has the new records only
+        new = self.forfeit_log_text(room_id=f"battle-{CTS}-13")
+        sent_new = list(self.sent)
+        real = pkmn_arena._Battle.write
+
+        def old_write(b, record):
+            if "log_format" not in record and "pending_at_end" not in record:
+                real(b, record)
+        with mock.patch.object(pkmn_arena._Battle, "write", old_write):
+            old = self.forfeit_log_text(room_id=f"battle-{CTS}-13b")
+        self.assertEqual([s.replace("-13b|", "-13|") for s in self.sent], sent_new)
+        new = [json.loads(line) for line in new.splitlines()]
+        self.assertEqual([r for r in new if "log_format" not in r and "pending_at_end" not in r],
+                         [json.loads(line) for line in old.splitlines()])
+        self.assertEqual(len(new) - len(old.splitlines()), 2)
+
+    def test_a_battle_that_fell_back_writes_no_pending_at_end(self):
+        tables = data.load(kind="pool")
+        prior = cts.SetPrior(tables, [s for s in teams._paste(FIXTURE["foe_team"]) if s["species"] != "Farigiraf"])
+        self.make(fmt=CTS, prior=prior)
+        closed = f"battle-{CTS}-14"
+        self.feed(*self.closed_messages(closed), room(["|win|" + NAME], closed))
+        records = self.battle(closed)
+        self.assertIn("fallback", " ".join(map(json.dumps, records)))
+        self.assertFalse([r for r in records if "pending_at_end" in r])
+
+    def test_the_format_2_fixture_is_the_bots_own_log(self):
+        # The fixtures of LogReplay's two formats (test_live_cts, Search's ko_check): format 2 is this log, format 1
+        # the same without its {"log_format"} and {"pending_at_end"} records
+        fixtures = data.ROOT / "python" / "tests" / "support" / "data"
+        text = self.forfeit_log_text()
+        self.assertEqual(text, (fixtures / "cts_log_format2.jsonl").read_text(encoding="utf-8"))
+        old = [line for line in text.splitlines()
+               if not (line.startswith('{"log_format"') or line.startswith('{"pending_at_end"'))]
+        self.assertEqual("\n".join(old) + "\n", (fixtures / "cts_log_format1.jsonl").read_text(encoding="utf-8"))
+
     def test_a_random_closed_sheet_battle_plays_its_pool_team_over_the_particles(self):
         self.make(team=False, pool=[teams.text("B"), FIXTURE["team"]], fmt=CTS)
         rnd = f"battle-{CTS}random-9"
@@ -476,6 +556,43 @@ class ArenaTest(unittest.TestCase):
         self.assertEqual(len(sent), 2)
         self.assertNotIn("default", " ".join(sent))
         self.assertTrue(self.bot.battles[rnd].game.closed)
+
+    def test_the_search_warms_up_before_the_first_battle(self):
+        # HauptSession, 2026-10-14: the first team preview of the 2e deploy missed its deadline (2.007 s, JAX compiling);
+        # the bot decides a warm-up through its search before it accepts a battle (test_pkmn_arena_net: with JAX)
+        from duoforge_live import search as live_search
+        search = SimpleNamespace(searcher=SimpleNamespace(s=cts.PARTICLES), close=lambda: None)
+        for fmt, worlds in ((CTS, cts.PARTICLES), (OTS, None)):
+            with self.subTest(fmt), mock.patch.object(live_search, "warm_up",
+                                                      return_value={"team": 1.5, "turn": 0.5}) as warm:
+                self.make(fmt=fmt, search=search)
+                self.assertEqual(self.bot.warm_up(), {"team": 1.5, "turn": 0.5})
+                warm.assert_called_once_with(search, self.bot.policy, worlds)
+                self.assertEqual(self.run_log()["warm_up"], {"team": 1.5, "turn": 0.5})
+        with mock.patch.object(live_search, "warm_up", side_effect=RuntimeError("the search's warm-up failed: x")):
+            self.make(fmt=CTS, search=search)
+            with self.assertRaisesRegex(RuntimeError, "warm-up failed"):
+                self.bot.warm_up()
+        self.make(fmt=CTS)
+        self.assertIsNone(self.bot.warm_up())  # raw play: nothing to compile ahead
+        self.assertNotIn("warm_up", self.run_log())
+
+    def test_the_command_line_warms_up_before_it_connects(self):
+        from duoforge_live import arena
+        order = []
+        team = Path(self.tmp.name, "team.txt")
+        team.write_text(FIXTURE["team"], encoding="utf-8")
+        logs = Path(self.tmp.name, "logs")
+        argv = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--team", str(team), "--log-dir",
+                str(logs)]
+        with mock.patch.object(arena, "provenance", return_value={"commit": "8c4fe662", "dirty": False}), \
+                mock.patch.object(cli.policy, "load", return_value=FakePolicy()), \
+                mock.patch.object(cli.data, "for_checkpoint", return_value=data.load(kind="closure")), \
+                mock.patch.object(pkmn_arena, "check_teams"), \
+                mock.patch.object(pkmn_arena.ArenaBot, "warm_up", lambda bot: order.append("warm_up")), \
+                mock.patch.object(pkmn_arena.ArenaBot, "run", lambda bot: order.append("run") or asyncio.sleep(0)):
+            cli.main(argv)
+        self.assertEqual(order, ["warm_up", "run"])
 
     def test_closed_sheets_need_tables_the_set_table_reads_and_one_particle_per_world(self):
         with self.assertRaisesRegex(ValueError, "set table"):

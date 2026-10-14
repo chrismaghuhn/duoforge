@@ -47,6 +47,10 @@ MAX_REJECTIONS = 64
 # Showdown can refuse a switch of a trapped last active, or a move disabled by Imprison. Each
 # "[Unavailable choice]" reveals one in an updated request; after two at one decision point, the bot forfeits.
 MAX_UNAVAILABLE = 2
+# The battle log's format, its first record ({"log_format": 2}; a log without one is format 1). 2 (#385): a battle that
+# ended writes {"pending_at_end": choice} before its {"end"}, the choice sent last and never accepted (the battle ended
+# on it), null when none was open; a battle that fell back or forfeited writes none.
+LOG_FORMAT = 2
 TIMER_WAIT = 1.0  # seconds a new decision point waits for its timer line when the timer is on
 
 GREETING = "Hi! DuoForge bot here, good luck!"
@@ -123,6 +127,8 @@ class _Battle:
         self.room = room
         self.game = game
         self.log = open(log_path, "a", encoding="utf-8")
+        if self.log.tell() == 0:  # a new log (the room's log is reopened only by a new battle object)
+            self.write({"log_format": LOG_FORMAT})
         self.deadline = None  # the end of the sheet wait
         self.checked_sheets = False
         self.decided = 0  # the epoch of the last decision point answered
@@ -437,6 +443,8 @@ class Bot:
         await self.send(f"{b.room}|/forfeit")
 
     async def _end(self, b, line):
+        if not b.stopped:  # not forfeited: the choice the battle ended on (LOG_FORMAT 2)
+            b.write({"pending_at_end": b.pending})
         b.ended = b.stopped = True
         await self.send(f"{b.room}|{GG}")
         b.write({"end": line})
