@@ -85,6 +85,8 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
 
 int main(int argc, char **argv)
 {
+    const bool observe = argc > 1 && strcmp(argv[1], "--observation-digest") == 0;
+    if (observe) { --argc; ++argv; }
     df_reference_digest digest;
     if (!df_reference_digest_open(&digest, argc, argv)) {
         return 2;
@@ -133,6 +135,10 @@ int main(int argc, char **argv)
             fprintf(stderr, "  %s: the setup is rejected: %s\n", cb->name, duoforge_status_name(created));
             continue;
         }
+        duoforge_battle *shadow[2] = {NULL, NULL};
+        if (observe) {
+            for (uint32_t p = 0u; p < 2u; ++p) { DF_CHECK(&t, duoforge_battle_clone(ctx, b, &shadow[p]) == DUOFORGE_OK); }
+        }
         df_reference_digest_begin(&digest, cb->name, ctx, b);
         unsigned bad = 0;
         for (uint32_t si = 0; si < cb->step_count && bad == 0u; ++si) {
@@ -168,6 +174,21 @@ int main(int argc, char **argv)
             static duoforge_event ev_buf[2][DUOFORGE_MAX_EVENTS];
             duoforge_event_buffer buffers[2] = {{ev_buf[0], DUOFORGE_MAX_EVENTS, 0u},
                                                 {ev_buf[1], DUOFORGE_MAX_EVENTS, 0u}};
+            dfi_observation_digest observed[2] = {0};
+            duoforge_status shadow_status[2] = {DUOFORGE_OK, DUOFORGE_OK};
+            duoforge_step_result shadow_result[2] = {0};
+            if (observe) {
+                for (uint32_t p = 0u; p < 2u; ++p) {
+                    if (!DF_CHECK(&t, shadow[p] != NULL)) { continue; }
+                    DF_CHECK(&t, duoforge_battle_copy(ctx, shadow[p], b) == DUOFORGE_OK);
+                    observed[p].viewer = p;
+                    uint32_t shadow_used = 0u;
+                    shadow_status[p] = dfi_battle_step_observed(ctx, shadow[p], &bd,
+                        &conf_tape[st->tape_off], st->tape_len, &shadow_used, &shadow_result[p], NULL, &observed[p]);
+                    /* The original assertion below remains the oracle for tape consumption. */
+                    if (shadow_status[p] == DUOFORGE_OK) { DF_CHECK_EQ_U64(&t, shadow_used, st->tape_len); }
+                }
+            }
             const duoforge_status status = dfi_battle_step_events_tape(
                 ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res, buffers);
             const bool consumed = used == st->tape_len;
@@ -176,6 +197,18 @@ int main(int argc, char **argv)
                         used, st->tape_len);
                 ++bad;
                 break;
+            }
+            if (observe) {
+                for (uint32_t p = 0u; p < 2u; ++p) {
+                    DF_CHECK_EQ_U64(&t, shadow_status[p], status);
+                    bool equal = false;
+                    DF_CHECK(&t, duoforge_battle_equal(ctx, shadow[p], b, &equal) == DUOFORGE_OK && equal);
+                    DF_CHECK_BYTES(&t, (const uint8_t *)&shadow_result[p], (const uint8_t *)&res, sizeof res, "observed result equals legacy result");
+                    if (!DF_CHECK(&t, observed[p].status == DUOFORGE_OK && observed[p].complete)) {
+                        fprintf(stderr, "  %s step %u viewer %u: %s\n", cb->name, si, p, observed[p].reason);
+                    }
+                    DF_CHECK_EQ_U64(&t, observed[p].rows, buffers[p].count);
+                }
             }
             df_reference_digest_step(&digest, ctx, b, used, &res);
             df_reference_digest_events(&digest, buffers);
@@ -186,6 +219,7 @@ int main(int argc, char **argv)
         }
         DF_CHECK_EQ_U64(&t, bad, 0u);
         df_reference_digest_end(&digest);
+        for (uint32_t p = 0u; p < 2u; ++p) { if (shadow[p] != NULL) { duoforge_battle_destroy(shadow[p]); } }
         duoforge_battle_destroy(b);
     }
 #if defined(DF_CONFORMANCE_POOL_DATA)
