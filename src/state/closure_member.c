@@ -535,22 +535,3 @@ bool dfi_closure_member_valid(const dfi_kind_limits *lim, const dfi_member *m)
     return true;
 }
 
-bool dfi_member_base_speed(const dfi_member *m, bool blade, uint16_t *out)
-{
-    uint16_t stats[DFI_MEMBER_STAT_COUNT];
-    if (blade) {
-        if (!dfi_closure_member_forme_stats(m, DFI_FORME_AEGISLASHBLADE, stats)) {
-            return false;
-        }
-    } else {
-        dfi_member copy = *m;
-        if (!dfi_closure_member_derive(&copy)) {
-            return false;
-        }
-        for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
-            stats[i] = copy.stats[i];
-        }
-    }
-    *out = stats[DFI_STAT_SPE - 1u];
-    return true;
-}

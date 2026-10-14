@@ -131,6 +131,29 @@ static uint8_t dfi_derived_pp(uint32_t pp_max, uint32_t used)
     return (uint8_t)left; /* <= pp_max < 256 */
 }
 
+/* Step K3 (decision 0015 5de): the Speed the owner sees while a Speed Swap stands: the member's own (unswapped) stored Speed of its
+ * current forme, the Blade's while blade is set, else the derived one (sim/pokemon.ts:1159-1165: the request shows baseStoredStats,
+ * which only setSpecies rebuilds; Speed Swap writes storedStats). False if the forme data refuses it. Only observation uses it. */
+static bool dfi_member_base_speed(const dfi_member *m, bool blade, uint16_t *out)
+{
+    uint16_t stats[DFI_MEMBER_STAT_COUNT];
+    if (blade) {
+        if (!dfi_closure_member_forme_stats(m, DFI_FORME_AEGISLASHBLADE, stats)) {
+            return false;
+        }
+    } else {
+        dfi_member copy = *m;
+        if (!dfi_closure_member_derive(&copy)) {
+            return false;
+        }
+        for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
+            stats[i] = copy.stats[i];
+        }
+    }
+    *out = stats[DFI_STAT_SPE - 1u];
+    return true;
+}
+
 /* Step K3 (decision 0015 5de): the member holds a live Speed Swap (the presence bit of its position). */
 static bool dfi_member_speed_swapped_here(const struct duoforge_battle *b, uint32_t s, uint32_t m)
 {
@@ -176,7 +199,7 @@ static duoforge_status dfi_view_member(const struct duoforge_battle *b, uint32_t
          * the owner sees its own unswapped Speed of the current forme, never the swapped value (the foe's hidden Speed). */
         if (dfi_member_speed_swapped_here(b, s, m)) {
             uint16_t base_spe = 0u;
-            if (!dfi_member_base_speed(mem, b->tail.sides[s].forme_now[m] != 0u, &base_spe)) {
+            if (!dfi_member_base_speed(mem, b->tail.sides[s].forme_now[m] == DFI_FORME_AEGISLASHBLADE + 1u, &base_spe)) {
                 return DUOFORGE_E_INVARIANT;
             }
             v->stats[DFI_STAT_SPE - 1u] = base_spe;

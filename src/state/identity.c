@@ -56,6 +56,9 @@ void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat)
      * rebuilds the stored stats from the forme, so the member's Speed is its derived one again; the other stats are derived already. */
     if ((tp->single_turn & DFI_SINGLE_TURN_SPEED_SWAP) != 0u && occupant < DUOFORGE_MAX_ROSTER) {
         dfi_member *swapped = &b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].members[occupant];
+        /* The derive does not fail for a member of a battle that passed the invariant: the state holds pool rows only, whose
+         * nature and Stat Points are the member check that dfi_closure_member_derive needs. If it did fail, the swapped Speed
+         * would stay and the stats check of the invariant would report the mismatch. */
         dfi_member fresh = *swapped;
         if (dfi_closure_member_derive(&fresh)) {
             swapped->stats[DFI_STAT_SPE - 1u] = fresh.stats[DFI_STAT_SPE - 1u];
