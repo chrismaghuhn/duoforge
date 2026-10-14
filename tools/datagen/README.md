@@ -35,6 +35,16 @@ After regenerating, update the two file hashes in `tests/CMakeLists.txt` and the
 
 `tests/test_gen_closure.py` checks the refusals on small move, item and ability texts without a checkout; CTest runs it as `duoforge.data.gen_closure_refusals` whenever Python is found.
 
+## The format definition
+
+`data/formats/reg-mc.json` (restructure step 10, `docs/architecture/formats.md`) names the Showdown format id and the pool source (`legal_pool.json` with its SHA-256); `--pool` reads both from it. `gen_format.py` writes the engine's format constants:
+
+```sh
+python3 tools/datagen/gen_format.py                    # write src/data/format_tables.h
+python3 tools/datagen/gen_format.py --check            # compare only (duoforge.data.format_regmc)
+python3 tools/datagen/gen_format.py --pin <checkout>   # every fact against its pinned line (duoforge.data.format_pin)
+```
+
 ## Extended and pool tables
 
 Two more modes write tables that start with the closure:
