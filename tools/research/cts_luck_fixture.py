@@ -5,7 +5,9 @@ inputs), and the last batch received but not fed, with pending_at_end and the en
 ended on its last choice. The streams come from the pinned Showdown: node tools/reference/ps_client.js <checkout>
 <repo root> --every > STREAMS.jsonl.
 
-    python tools/research/cts_luck_fixture.py STREAMS.jsonl OUT.jsonl BATTLE
+    python tools/research/cts_luck_fixture.py STREAMS.jsonl OUT.jsonl BATTLE [PLAYER]
+
+PLAYER is p1 (the default) or p2: whose stream, decisions and log.
 """
 import json
 import sys
@@ -15,9 +17,12 @@ sys.path.insert(0, "python")
 from duoforge_live.data import ROOT, trace_to_c  # noqa: E402
 
 NAME = sys.argv[3]
+PLAYER = sys.argv[4] if len(sys.argv) > 4 else "p1"
+if PLAYER not in ("p1", "p2"):
+    raise SystemExit(f"PLAYER is p1 or p2, not {PLAYER!r}")
 _, trace = trace_to_c.load_battle(str(ROOT), NAME)
 messages = [json.loads(l)["lines"] for l in open(streams, encoding="utf-8")
-            if json.loads(l)["battle"] == NAME and json.loads(l)["to"] == "p1"]
+            if json.loads(l)["battle"] == NAME and json.loads(l)["to"] == PLAYER]
 records = [{"log_format": 2}]
 k, seen, pending = -1, set(), None
 for i, m in enumerate(messages):
@@ -42,7 +47,7 @@ for i, m in enumerate(messages):
                 continue
             seen.add(request["rqid"])
             k += 1
-            text = trace["steps"][k]["input"].get("p1")
+            text = trace["steps"][k]["input"].get(PLAYER)
             if text is not None and not request.get("wait"):
                 records.append({"decision": request["rqid"], "sent": text,
                                 "search": {"action": None, "cause": "fixture", "fallback": None, "reason": None,
