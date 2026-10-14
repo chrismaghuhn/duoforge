@@ -130,6 +130,24 @@ class OpponentTest(unittest.TestCase):
         later = ev.assign_labels(["w", "x", "w", "v"], labels)
         self.assertEqual(later, {"y": "A", "z": "B", "x": "C", "w": "D", "v": "E"})  # kept, then continued
 
+    def test_an_opponents_team_is_its_preview_species(self):
+        records = [{"in": "|player|p1|Ling-Ce||"}, {"in": "|player|p2|Some Foe|2|"},
+                   {"in": "|poke|p1|Froslass, L50, F|"}, {"in": "|poke|p2|Garchomp, L50, M|"},
+                   {"in": "|poke|p2|Charizard, L50, M|"}]
+        self.assertEqual(ev.foe_team(records, "lingce"), ev.foe_team(list(reversed(records)), "lingce"))
+        other = records[:-1] + [{"in": "|poke|p2|Venusaur, L50, F|"}]
+        self.assertNotEqual(ev.foe_team(records, "lingce"), ev.foe_team(other, "lingce"))
+
+    def test_each_opponents_teams_are_numbered_by_first_appearance_and_kept(self):
+        # An opponent may change its team between series (HauptSession, 2026-10-14): each team of an opponent is a
+        # label of its own, letter and number, kept in the same private file.
+        labels = ev.assign_labels(["x", "y"], {})
+        labels = ev.assign_teams([("x", "t1"), ("y", "s1"), ("x", "t2"), ("x", "t1")], labels)
+        self.assertEqual([ev.team_label(labels, o, t) for o, t in (("x", "t1"), ("x", "t2"), ("y", "s1"))],
+                         ["A1", "A2", "B1"])
+        later = ev.assign_teams([("x", "t3"), ("x", "t2")], labels)
+        self.assertEqual([ev.team_label(later, "x", t) for t in ("t1", "t2", "t3")], ["A1", "A2", "A3"])
+
     def test_the_label_file_never_lies_in_the_repository(self):
         with self.assertRaises(ValueError):
             ev.load_labels(data.ROOT / "python" / "tests" / "labels.json")
@@ -159,7 +177,39 @@ class MainTest(unittest.TestCase):
         for private_text in ("Some Foe", "somefoe", "Other Foe", "otherfoe", "501", "502", "Bobby"):
             self.assertNotIn(private_text, text)
         self.assertEqual(sorted(result["by_opponent"]), ["A"])  # the stopped battle has no timestamp: before --since
-        self.assertEqual((result["logs"], result["since_kept"]), (2, 1))
+        self.assertEqual(sorted(result["by_team"]), ["A1"])
+        self.assertEqual((result["logs"], result["kept"]), (2, 1))
+
+
+class CodeTest(unittest.TestCase):
+    """A measurement series per bot commit (HauptSession, 2026-10-14: from a7dd956b on, Ling-Ce plays the 2e rule): the
+    battles and run logs of one commit, never mixed with another's."""
+
+    def test_a_battle_names_its_bots_code_from_its_summary(self):
+        code = {"commit": "a7dd956b" + "0" * 32, "dirty": False}
+        b = ev.battle(played() + [{"summary": {"causes": {}, "code": code}}], "lingce")
+        self.assertEqual(b["code"], code)
+        self.assertIsNone(ev.battle(played(), "lingce")["code"])
+
+    def test_main_keeps_the_battles_and_run_logs_of_one_commit(self):
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as logs:
+            for n, commit in ((1, "1ffa6a03"), (2, "a7dd956b"), (3, None)):
+                summary = [] if commit is None else [{"summary": {"code": {"commit": commit + "0" * 32, "dirty": False}}}]
+                Path(logs, f"battle-gen9x-{n}-lingce.jsonl").write_text(
+                    "\n".join(json.dumps(r) for r in played() + summary) + "\n", encoding="utf-8")
+                Path(logs, f"arena-run-{n}.json").write_text(json.dumps({
+                    "started": "2026-10-14T00:00:00Z", "counts": {"battles": 1},
+                    **({} if commit is None else {"code": {"commit": commit + "0" * 32, "dirty": False}})}),
+                    encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                ev.main(["--logs", logs, "--code", "a7dd956b"])
+        result = json.loads(out.getvalue())
+        self.assertEqual((result["logs"], result["kept"], result["code_filter"]), (3, 1, "a7dd956b"))
+        self.assertEqual(result["by_code"], {"1ffa6a03": 1, "a7dd956b": 1, "none": 1})
+        self.assertEqual(result["runs"]["files"], 1)
 
 
 class ReplayTest(unittest.TestCase):
