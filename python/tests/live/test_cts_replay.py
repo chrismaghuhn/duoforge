@@ -80,7 +80,7 @@ class ReplayTest(unittest.TestCase):
     def test_the_loaded_search_names_the_settings_it_plays(self):
         # the run log's head names them (pkmn_arena.ArenaBot): the live HONEST_SETTINGS, the foe network left out
         live, _, _ = self.load()
-        self.assertEqual(live.searcher.settings, live_search.HONEST_SETTINGS)
+        self.assertEqual(live.settings, live_search.HONEST_SETTINGS)
 
     def test_the_replay_decides_each_searched_decision_as_the_bot_did(self):
         logged = [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
