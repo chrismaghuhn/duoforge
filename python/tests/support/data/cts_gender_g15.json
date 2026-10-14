@@ -1,0 +1,81 @@
+{
+"source": "tests/reference/traces/g15_ef_retarget_plain.json, player 1's stream from the pinned Showdown (tools/reference/ps_client.js), without its |showteam| lines (closed team sheets)",
+"battle": "g15_ef_retarget_plain",
+"team": "Delphox (F)\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Expanding Force\n- Flamethrower\n- Protect\n- Helping Hand\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n\nArcanine-Hisui (M) @ Life Orb\nAbility: Rock Head\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Extreme Speed\n- Flare Blitz\n- Protect\n- Head Smash\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect",
+"foe_team": "Gholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nMeowstic-F (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 2 SpA\nQuiet Nature\n- Psychic\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Protect\n\nGrimmsnarl (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Protect\n\nBasculegion (M)\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect",
+"messages": [
+[
+"|gametype|doubles",
+"|player|p1|p1||"
+],
+[
+"|player|p2|p2||",
+"|gen|9",
+"|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+"|rule|Species Clause: Limit one of each Pok\u00e9mon",
+"|rule|Item Clause: Limit 1 of each item",
+"|clearpoke",
+"|poke|p1|Delphox, L50, F|",
+"|poke|p1|Kingambit, L50, M|",
+"|poke|p1|Arcanine-Hisui, L50, M|",
+"|poke|p1|Gholdengo, L50|",
+"|poke|p1|Incineroar, L50, M|",
+"|poke|p1|Grimmsnarl, L50, M|",
+"|poke|p2|Gholdengo, L50|",
+"|poke|p2|Meowstic-F, L50, F|",
+"|poke|p2|Kingambit, L50, M|",
+"|poke|p2|Incineroar, L50, M|",
+"|poke|p2|Grimmsnarl, L50, M|",
+"|poke|p2|Basculegion, L50, M|",
+"|teampreview|4",
+"|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>"
+],
+[
+"|request|{\"teamPreview\":true,\"maxChosenTeamSize\":4,\"side\":{\"name\":\"p1\",\"id\":\"p1\",\"pokemon\":[{\"ident\":\"p1: Delphox\",\"details\":\"Delphox, L50, F\",\"condition\":\"152/152\",\"active\":true,\"stats\":{\"atk\":80,\"def\":92,\"spa\":166,\"spd\":120,\"spe\":171},\"moves\":[\"expandingforce\",\"flamethrower\",\"protect\",\"helpinghand\"],\"baseAbility\":\"blaze\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"blaze\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Kingambit\",\"details\":\"Kingambit, L50, M\",\"condition\":\"207/207\",\"active\":true,\"stats\":{\"atk\":205,\"def\":140,\"spa\":72,\"spd\":107,\"spe\":70},\"moves\":[\"suckerpunch\",\"protect\"],\"baseAbility\":\"defiant\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"defiant\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Arcanine\",\"details\":\"Arcanine-Hisui, L50, M\",\"condition\":\"172/172\",\"active\":false,\"stats\":{\"atk\":183,\"def\":100,\"spa\":103,\"spd\":100,\"spe\":142},\"moves\":[\"extremespeed\",\"flareblitz\",\"protect\",\"headsmash\"],\"baseAbility\":\"rockhead\",\"item\":\"lifeorb\",\"pokeball\":\"pokeball\",\"ability\":\"rockhead\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Gholdengo\",\"details\":\"Gholdengo, L50\",\"condition\":\"194/194\",\"active\":false,\"stats\":{\"atk\":72,\"def\":115,\"spa\":203,\"spd\":111,\"spe\":106},\"moves\":[\"makeitrain\",\"shadowball\",\"protect\"],\"baseAbility\":\"goodasgold\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"goodasgold\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Incineroar\",\"details\":\"Incineroar, L50, M\",\"condition\":\"202/202\",\"active\":false,\"stats\":{\"atk\":135,\"def\":124,\"spa\":90,\"spd\":143,\"spe\":80},\"moves\":[\"protect\"],\"baseAbility\":\"intimidate\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"intimidate\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Grimmsnarl\",\"details\":\"Grimmsnarl, L50, M\",\"condition\":\"202/202\",\"active\":false,\"stats\":{\"atk\":140,\"def\":99,\"spa\":115,\"spd\":126,\"spe\":72},\"moves\":[\"protect\"],\"baseAbility\":\"prankster\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"prankster\",\"commanding\":false,\"reviving\":false}]},\"rqid\":1}"
+],
+[
+"|",
+"|teamsize|p1|4",
+"|teamsize|p2|4",
+"|start",
+"|uhtmlchange|otsrequest|",
+"|switch|p1a: Delphox|Delphox, L50, F|152/152",
+"|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
+"|switch|p2a: Gholdengo|Gholdengo, L50|100/100",
+"|switch|p2b: Meowstic|Meowstic-F, L50, F|100/100",
+"|turn|1"
+],
+[
+"|request|{\"active\":[{\"moves\":[{\"move\":\"Expanding Force\",\"id\":\"expandingforce\",\"pp\":12,\"maxpp\":12,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Flamethrower\",\"id\":\"flamethrower\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false},{\"move\":\"Helping Hand\",\"id\":\"helpinghand\",\"pp\":20,\"maxpp\":20,\"target\":\"adjacentAlly\",\"disabled\":false}]},{\"moves\":[{\"move\":\"Sucker Punch\",\"id\":\"suckerpunch\",\"pp\":8,\"maxpp\":8,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false}]}],\"side\":{\"name\":\"p1\",\"id\":\"p1\",\"pokemon\":[{\"ident\":\"p1: Delphox\",\"details\":\"Delphox, L50, F\",\"condition\":\"152/152\",\"active\":true,\"stats\":{\"atk\":80,\"def\":92,\"spa\":166,\"spd\":120,\"spe\":171},\"moves\":[\"expandingforce\",\"flamethrower\",\"protect\",\"helpinghand\"],\"baseAbility\":\"blaze\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"blaze\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Kingambit\",\"details\":\"Kingambit, L50, M\",\"condition\":\"207/207\",\"active\":true,\"stats\":{\"atk\":205,\"def\":140,\"spa\":72,\"spd\":107,\"spe\":70},\"moves\":[\"suckerpunch\",\"protect\"],\"baseAbility\":\"defiant\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"defiant\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Arcanine\",\"details\":\"Arcanine-Hisui, L50, M\",\"condition\":\"172/172\",\"active\":false,\"stats\":{\"atk\":183,\"def\":100,\"spa\":103,\"spd\":100,\"spe\":142},\"moves\":[\"extremespeed\",\"flareblitz\",\"protect\",\"headsmash\"],\"baseAbility\":\"rockhead\",\"item\":\"lifeorb\",\"pokeball\":\"pokeball\",\"ability\":\"rockhead\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Gholdengo\",\"details\":\"Gholdengo, L50\",\"condition\":\"194/194\",\"active\":false,\"stats\":{\"atk\":72,\"def\":115,\"spa\":203,\"spd\":111,\"spe\":106},\"moves\":[\"makeitrain\",\"shadowball\",\"protect\"],\"baseAbility\":\"goodasgold\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"goodasgold\",\"commanding\":false,\"reviving\":false}]},\"rqid\":3}"
+],
+[
+"|",
+"|move|p1b: Kingambit|Sucker Punch|p2b: Meowstic",
+"|-supereffective|p2b: Meowstic|1",
+"|-crit|p2b: Meowstic",
+"|-damage|p2b: Meowstic|0 fnt",
+"|faint|p2b: Meowstic",
+"|move|p1a: Delphox|Expanding Force|p2a: Gholdengo",
+"|-resisted|p2a: Gholdengo|1",
+"|-damage|p2a: Gholdengo|80/100",
+"|move|p2a: Gholdengo|Shadow Ball|p1a: Delphox",
+"|-supereffective|p1a: Delphox|1",
+"|-damage|p1a: Delphox|0 fnt",
+"|faint|p1a: Delphox",
+"|",
+"|upkeep"
+],
+[
+"|request|{\"forceSwitch\":[true,false],\"side\":{\"name\":\"p1\",\"id\":\"p1\",\"pokemon\":[{\"ident\":\"p1: Delphox\",\"details\":\"Delphox, L50, F\",\"condition\":\"0 fnt\",\"active\":true,\"stats\":{\"atk\":80,\"def\":92,\"spa\":166,\"spd\":120,\"spe\":171},\"moves\":[\"expandingforce\",\"flamethrower\",\"protect\",\"helpinghand\"],\"baseAbility\":\"blaze\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"blaze\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Kingambit\",\"details\":\"Kingambit, L50, M\",\"condition\":\"207/207\",\"active\":true,\"stats\":{\"atk\":205,\"def\":140,\"spa\":72,\"spd\":107,\"spe\":70},\"moves\":[\"suckerpunch\",\"protect\"],\"baseAbility\":\"defiant\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"defiant\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Arcanine\",\"details\":\"Arcanine-Hisui, L50, M\",\"condition\":\"172/172\",\"active\":false,\"stats\":{\"atk\":183,\"def\":100,\"spa\":103,\"spd\":100,\"spe\":142},\"moves\":[\"extremespeed\",\"flareblitz\",\"protect\",\"headsmash\"],\"baseAbility\":\"rockhead\",\"item\":\"lifeorb\",\"pokeball\":\"pokeball\",\"ability\":\"rockhead\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Gholdengo\",\"details\":\"Gholdengo, L50\",\"condition\":\"194/194\",\"active\":false,\"stats\":{\"atk\":72,\"def\":115,\"spa\":203,\"spd\":111,\"spe\":106},\"moves\":[\"makeitrain\",\"shadowball\",\"protect\"],\"baseAbility\":\"goodasgold\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"goodasgold\",\"commanding\":false,\"reviving\":false}]},\"rqid\":5}"
+],
+[
+"|",
+"|switch|p1a: Arcanine|Arcanine-Hisui, L50, M|172/172",
+"|switch|p2b: Kingambit|Kingambit, L50, M|100/100",
+"|turn|2"
+],
+[
+"|request|{\"active\":[{\"moves\":[{\"move\":\"Extreme Speed\",\"id\":\"extremespeed\",\"pp\":8,\"maxpp\":8,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Flare Blitz\",\"id\":\"flareblitz\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false},{\"move\":\"Head Smash\",\"id\":\"headsmash\",\"pp\":8,\"maxpp\":8,\"target\":\"normal\",\"disabled\":false}]},{\"moves\":[{\"move\":\"Sucker Punch\",\"id\":\"suckerpunch\",\"pp\":7,\"maxpp\":8,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Protect\",\"id\":\"protect\",\"pp\":8,\"maxpp\":8,\"target\":\"self\",\"disabled\":false}]}],\"side\":{\"name\":\"p1\",\"id\":\"p1\",\"pokemon\":[{\"ident\":\"p1: Arcanine\",\"details\":\"Arcanine-Hisui, L50, M\",\"condition\":\"172/172\",\"active\":true,\"stats\":{\"atk\":183,\"def\":100,\"spa\":103,\"spd\":100,\"spe\":142},\"moves\":[\"extremespeed\",\"flareblitz\",\"protect\",\"headsmash\"],\"baseAbility\":\"rockhead\",\"item\":\"lifeorb\",\"pokeball\":\"pokeball\",\"ability\":\"rockhead\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Kingambit\",\"details\":\"Kingambit, L50, M\",\"condition\":\"207/207\",\"active\":true,\"stats\":{\"atk\":205,\"def\":140,\"spa\":72,\"spd\":107,\"spe\":70},\"moves\":[\"suckerpunch\",\"protect\"],\"baseAbility\":\"defiant\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"defiant\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Delphox\",\"details\":\"Delphox, L50, F\",\"condition\":\"0 fnt\",\"active\":false,\"stats\":{\"atk\":80,\"def\":92,\"spa\":166,\"spd\":120,\"spe\":171},\"moves\":[\"expandingforce\",\"flamethrower\",\"protect\",\"helpinghand\"],\"baseAbility\":\"blaze\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"blaze\",\"commanding\":false,\"reviving\":false},{\"ident\":\"p1: Gholdengo\",\"details\":\"Gholdengo, L50\",\"condition\":\"194/194\",\"active\":false,\"stats\":{\"atk\":72,\"def\":115,\"spa\":203,\"spd\":111,\"spe\":106},\"moves\":[\"makeitrain\",\"shadowball\",\"protect\"],\"baseAbility\":\"goodasgold\",\"item\":\"\",\"pokeball\":\"pokeball\",\"ability\":\"goodasgold\",\"commanding\":false,\"reviving\":false}]},\"rqid\":7}"
+]
+]
+}
