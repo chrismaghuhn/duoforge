@@ -129,9 +129,45 @@ The comparison with `duoforge_learn.luck` on battles whose state is known is a *
 - **Passed** when the 95% interval of the mean per-turn difference (meter − luck.py) includes 0, **or** |mean difference| < 0.01. The correlation is reported only.
 - **Failed** means no live report: the cause is searched first and reported to the HauptSession.
 
-### The known limit
+### The result of the comparison (2026-10-15)
 
-The worlds after the turn are drawn anew and hold what the turn revealed. The actual successor and the alternatives therefore come from nearly the same distribution, not exactly the same one, as they do engine against engine (luck.py). A turn's luck has mean zero only approximately. This is one more reason why only the series means say something.
+`tools/research/cts_luck_check.py` on `8c9e8933` (clean); the library is the WSL build of that commit (sha256 `fe8506d0…cec9df7`); BC6 sha256 `bda5de8e…`. A second run on the same commit gave the same result byte for byte.
+
+- **By the criterion fixed in advance:** 196 battles, 1,448 turns compared. The mean difference (meter − luck.py) is **+0.0060**, 95% interval **[0.0017, 0.0102]**, correlation 0.773.
+- **Narrow:** it passes only through |mean difference| < 0.01. The interval does not include 0, and its upper end lies just above 0.01.
+- **Gate status (HauptSession): provisionally passed.** The final verdict follows the HauptSession's decision on the luck.py-side skips below.
+
+**Dropped out, by name:**
+- **Player battles, 30 of 392** (`player_battles_skipped`):
+  - 29 stop at the particle filter's redraw cap (`stop:cts:redraw-cap`): both players of 14 battles and player 1 of `g78_fainted_target`, all hand-built test battles: `c5_endeavor_ghost`, `g60_sub_dragontail`, `g60_sub_scale_shot`, `g67_magic_guard_substitute`, `g72b_dc_second`, `g76_db_ally_ko`, `g80_allyswitch_selftarget`, `g84b_ghost_substitute_faint`, `h18_magic_bounce_substitute_sitrus_mirror`, `h18_yawn_substitute_stomping_sitrus_mirror`, `sub2_ancientpower_substitute_tyrantrum`, `sub3_lava_plume_spread_unaware_appletun_168`, `xr3_beatup_sub` and `xr3_sheercold_ice_sub`. The fixture log has no fallback record of the bot, so the meter names them "the replay and the bot disagree on a stop".
+  - 1 is the tracker's explicit refusal "slot 1 is locked into outrage without a known target" (`ValueError` from `tracker.domain()`).
+  - Live, each of these is a named stop of the bot, and it is counted.
+- **The meter's turns** (`meter_excluded`): `no-decision-record` 302, `not-turn:REPLACEMENT` 119, `not-searched:unreconstructible` 81, `not-searched:forced` 15, `not-turn:PIVOT` 1, `foe-action-unknown` 1, `leaf-refused` 1.
+- **luck.py's turns** (`luck_py_skipped`): `hidden-counter` 77, and 34 named `true-world-refused:DUOFORGE_E_SCHEMA_MISMATCH`. The second name was **not in the list fixed in advance**. Its investigation:
+  - **The name is misleading.** No field of the record mismatches its schema.
+    - At these 34 points the open-sheet tracker gives no public record: `record.assemble` returns the zero record with `E_UNSUPPORTED` and a named reason.
+    - The comparison tool does not check that status and hands the zero record to `Batch.from_view`, whose first check refuses revision 0 as `SCHEMA_MISMATCH`.
+    - Fixing the name changes no number: the same turns drop out.
+  - **The reasons:**
+    - 32 are `engine-refuses-record`: the engine's own public refusal (`duoforge_public_record_check`; decisions 0023 and 0026: a PIVOT, sealed commands, a locked move, the Revival Blessing proxy).
+    - 2 are the tracker's `pivot-switch-reason-unknown`.
+  - **They hang on three mechanics,** in 15 battles. In each case the point is where the true world of the turn or of its successor would be built.
+    - **A pivot inside the turn, 29:** U-turn, Parting Shot (including into Mirror Armor, the 2 tracker refusals), Emergency Exit, an Eject Button through Symbiosis, and a drag. The battles are `g5_uturn_d` (6), `g71_faint_source_herb` (4), `g26_perish_recast`, `g30_rage_powder_pivot`, `g33_mirror_armor`, `g43_lopunnite`, `g46_fainted_reserve_drag`, `g62_quash_pivot`, `g69_symbiosis_eject`, `g7_wide_guard_pivot_own` and `g86_belly_faint_setboost` (2 each), and `g78_protect_p` (1).
+    - **Revival Blessing, 4:** `g52_revive_win_milotic` (3) and `g52_fail_no_fainted_pawmot` (1).
+    - **A move locked by Outrage at a replacement, 1:** `g56_outrage_cut`.
+  - **The meter** values such a turn at the pivot from its particles, which the engine encodes itself (`search._encoded`, no public record), and counts the rest as a partial turn. luck.py has no true world there. These turns are therefore missing from the comparison, not wrongly valued.
+
+### After the fact (after seeing the result)
+
+The HauptSession set this on 2026-10-15, after the result above was known; it is not part of the definition fixed in advance.
+
+- **The unmixed number is the main number of every live report:** −0.0019 ± 0.0029 on 1,210 turns, an interval that includes 0. The mixed number is shown beside it as a description only.
+- **Why:** the whole difference sits in the mixed turns, those whose hidden foe action the meter weights by BC6. Derived from the two means, the 238 mixed turns run about **+0.046 per turn** above luck.py, which knows the true action. No interval was computed for them. Without them, the meter agrees with luck.py.
+
+### The known limits
+
+- **BC6 as the weight of a hidden foe action.** The mixing by BC6 estimates about +0.046 too much luck per mixed turn (238 turns). This fits #509, where BC6 was found not to be monotone. BC6 is only of limited use as the weight of hidden foe actions; the unmixed number does not depend on it.
+- **Worlds drawn anew.** The worlds after the turn are drawn anew and hold what the turn revealed. The actual successor and the alternatives therefore come from nearly the same distribution, not exactly the same one, as they do engine against engine (luck.py). A turn's luck has mean zero only approximately. This is one more reason why only the series means say something.
 
 ## Running it
 
