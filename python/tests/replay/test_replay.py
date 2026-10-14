@@ -25,6 +25,15 @@ PUBLIC_OWN = ("hp", "hp_max", "hp_kind", "hp_flag", "pp", "pp_kind")
 FROM_PRIOR = ("stats", "stat_points")
 HP_UNKNOWN = 3  # DUOFORGE_HP_UNKNOWN (include/duoforge/duoforge.h)
 NEWLINE = chr(10)
+_NAME_TABLES = {}
+
+
+def _name_tables(team_c):
+    """trace_to_c.load_tables of the data kind with the `team_c` flag, read once."""
+    from duoforge_live.data import trace_to_c
+    if team_c not in _NAME_TABLES:
+        _NAME_TABLES[team_c] = trace_to_c.load_tables(str(data.ROOT), team_c)
+    return _NAME_TABLES[team_c]
 
 
 def node_stats(*args, stdin=None):
@@ -364,7 +373,8 @@ class SpectatorTest(unittest.TestCase):
                         continue  # the trace ends at this point: no choice was made
                     text = trace["steps"][k]["input"][f"p{side + 1}"]
                     state = state0 if k == 0 else trace["steps"][k - 1]["state"]
-                    kind, choice = trace_to_c.convert_choice(text, side, state, roster_names)
+                    locked = trace_to_c.locked_slots(trace, k, battle.spec, _name_tables(trace_to_c.spec_is_team_c(battle.name, battle.spec)))
+                    kind, choice = trace_to_c.convert_choice(text, side, state, roster_names, locked=locked)
                     if kind == "team":
                         index = TEAM_TABLE.index(tuple(choice[:4]))
                         self.assertTrue(label.team[index // 8] >> (index % 8) & 1, (where, text))
