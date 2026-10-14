@@ -44,3 +44,27 @@ duoforge_add_test(NAME duoforge.combat.turn SOURCES flow/test_turn.c WHITEBOX TI
 duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES flow/test_pool_g46_party.c WHITEBOX TIMEOUT 120 TIER quick AREA flow)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES flow/test_pool_fainted_holder.c WHITEBOX TIMEOUT 60 TIER quick AREA flow)
+
+# Additional opt-in runs keep every existing reference assertion and replay
+# each step with the private observer for both seats. No Node dependency.
+foreach(_kind IN ITEMS closure closure_pool team_c team_c_pool pool)
+    if(_kind STREQUAL "closure")
+        set(_suffix "")
+    elseif(_kind STREQUAL "closure_pool")
+        set(_suffix "_pool")
+    elseif(_kind STREQUAL "pool")
+        set(_suffix "_pool_data")
+    else()
+        set(_suffix "_${_kind}")
+    endif()
+    add_test(NAME duoforge.observation.reference.${_kind}
+        COMMAND $<TARGET_FILE:duoforge_reference_conformance${_suffix}> --observation-digest)
+    duoforge_label_test(duoforge.observation.reference.${_kind} quick flow)
+    set_tests_properties(duoforge.observation.reference.${_kind} PROPERTIES TIMEOUT 120)
+    if(DUOFORGE_ENABLE_SANITIZERS)
+        set_tests_properties(duoforge.observation.reference.${_kind} PROPERTIES ENVIRONMENT
+            "ASAN_OPTIONS=detect_leaks=1;UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1")
+    endif()
+endforeach()
+
+duoforge_add_test(NAME duoforge.observation.digest SOURCES flow/test_observation_digest.c WHITEBOX TIER quick AREA flow)
