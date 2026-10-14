@@ -78,7 +78,12 @@ case "$svc $op" in
                     echo "An error occurred (UnauthorizedOperation) when calling the RunInstances operation: You are not authorized to perform this operation. User: arn:aws:iam::$STUB_ACCOUNT:user/pokeengine is not authorized to perform: ec2:RunInstances on resource: arn:aws:ec2:eu-central-1:$STUB_ACCOUNT:instance/* Encoded authorization failure message: AbC123-xyz_9" >&2
                 fi
                 exit 254 ;;
-            *) echo i-0abc123 ;;
+            *)
+                if [ "${STUB_RUN:-ok}" = nocap ]; then
+                    echo "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation" >&2
+                    exit 254
+                fi
+                echo i-0abc123 ;;
         esac ;;
 esac
 exit 0
@@ -98,6 +103,17 @@ entry = {'family': 'BATCH_NATIVE', 'workers': threads, 'median_wall_ns': 1000000
                         'side_decisions': 30000 * threads, 'calls': 0}}
 json.dump({'results': [entry], 'errors': 0}, open(out, 'w'))
 """
+
+
+def fuzz_campaigns():
+    """The fuzz campaigns of campaigns/: every directory but a ladder campaign's (kind=ladder, #484, tested apart)."""
+    base = os.path.join(HERE, 'campaigns')
+    names = []
+    for name in sorted(os.listdir(base)):
+        with open(os.path.join(base, name, 'campaign.conf'), encoding='utf-8') as f:
+            if 'kind=ladder' not in [line.strip() for line in f]:
+                names.append(name)
+    return names
 
 
 def posix(path):
@@ -564,7 +580,7 @@ esac
                 self.assertIn(text, r.stderr)
 
     def test_the_campaigns_of_the_repository_load_and_plan(self):
-        for name in sorted(os.listdir(os.path.join(HERE, 'campaigns'))):
+        for name in fuzz_campaigns():
             with self.subTest(campaign=name):
                 r = self.chunks_eval('campaign_conf_load "%s/campaigns/%s/campaign.conf"; campaign_plan 64; echo ${PHASES[*]}'
                                      % (posix(HERE), name))
@@ -986,7 +1002,7 @@ esac
 
     def test_the_campaigns_are_well_formed(self):
         base = os.path.join(HERE, 'campaigns')
-        found = sorted(os.listdir(base))
+        found = fuzz_campaigns()
         self.assertTrue({'closure-mirror', 'team-c-mirror', 'weather-sand-snow'} <= set(found))
         for name in found:
             with self.subTest(campaign=name):
@@ -1047,7 +1063,7 @@ esac
     def test_every_team_of_a_campaign_exists_and_every_pairing_uses_known_teams(self):
         with open(os.path.join(HERE, '..', '..', '..', 'data', 'teams', 'index.json'), encoding='utf-8') as f:
             registry = {team['id'] for team in json.load(f)['teams']}
-        for name in sorted(os.listdir(os.path.join(HERE, 'campaigns'))):
+        for name in fuzz_campaigns():
             with self.subTest(campaign=name):
                 keys, _comments = self.read_conf(name)
                 known = {'A', 'B', 'C'}
@@ -1129,10 +1145,125 @@ esac
     # ------------------------------------------------------------------ shellcheck
     @unittest.skipIf(shutil.which('shellcheck') is None, 'shellcheck is not installed')
     def test_shellcheck_is_clean(self):
-        scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh', 'chunks.sh')]
+        scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh', 'chunks.sh',
+                                                   'launch_ladder.sh', 'ladder_user_data.sh')]
         r = subprocess.run(['shellcheck', '-x', '-S', 'warning', *[posix(s) for s in scripts]], capture_output=True, text=True,
                            cwd=HERE)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+
+LADDER = ('--campaign', 'ladder-equal-2e', '--commit', SHA, '--bucket', 'my-fuzz-bucket')
+NET = 'b' * 64
+
+
+@unittest.skipIf(BASH is None, 'bash is not on the PATH')
+class LadderLaunch(unittest.TestCase):
+    """launch_ladder.sh and the ladder box (#484), against the stub aws only: nothing here reaches AWS (owner rule: only
+    the HauptSession launches, from its chat)."""
+
+    setUp = Guards.setUp
+    run_script = Guards.run_script
+    calls = Guards.calls
+    real_launches = Guards.real_launches
+
+    def test_without_the_approval_flag_one_c7a_request_tagged_ladder_is_printed_and_nothing_launched(self):
+        r = self.run_script('launch_ladder.sh', *LADDER)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('nothing was launched', r.stdout)
+        self.assertIn('--instance-type c7a.16xlarge', r.stdout)
+        self.assertEqual(len(re.findall(r'Key=purpose\\?,Value=ladder', r.stdout)), 3)  # printf %q escapes the commas
+        self.assertIn('s3://my-fuzz-bucket/fuzz/ladder/ladder-equal-2e/' + SHA[:12] + '-ladder-', r.stdout)
+        for sha in ('bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39',
+                    '213b773b3448521ff251668133b6a1ebe7d5144f707e2f316974ddbad21e1b99',
+                    'ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb'):
+            self.assertIn(sha, r.stdout)
+        self.assertEqual(self.real_launches(), [])
+        self.assertFalse([c for c in self.calls() if ' create-' in c or ' put-' in c or ' s3 ' in ' ' + c])
+        self.assertNotIn(ACCOUNT, r.stdout + r.stderr)
+
+    def test_with_the_flag_exactly_one_c7a_request_and_no_fallback_without_capacity(self):
+        r = self.run_script('launch_ladder.sh', *LADDER, '--i-have-owner-approval')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        (call,) = self.real_launches()
+        for needle in ('--instance-type c7a.16xlarge', 'MarketType=spot', 'Name=duoforge-fuzz', 'HttpTokens=required',
+                       '--instance-initiated-shutdown-behavior terminate'):
+            self.assertIn(needle, call)
+        self.assertEqual(call.count('Key=purpose,Value=ladder'), 3)
+        open(self.log, 'w').close()
+        r = self.run_script('launch_ladder.sh', *LADDER, '--i-have-owner-approval', STUB_RUN='nocap')
+        self.assertEqual(r.returncode, 2)
+        self.assertIn('no spot capacity for c7a.16xlarge', r.stderr)
+        self.assertIn('never mix', r.stderr)
+        self.assertEqual(len(self.real_launches()), 1)  # one type, no fallback to another
+
+    def test_the_guards_hold_for_ladder_launches(self):
+        cases = (({'STUB_ARN': 'arn:aws:iam::%s:user/someone' % ACCOUNT}, LADDER, "not a ':user/pokeengine'"),
+                 ({}, LADDER + ('--sg-name', 'open'), 'only duoforge-fuzz'),
+                 ({}, LADDER + ('--max-hours', '3'), 'between 1 and 2'),
+                 ({}, LADDER + ('--types', 'c6a.16xlarge'), 'unknown argument'),
+                 ({}, ('--campaign', 'weather-sand-snow', '--commit', SHA, '--bucket', 'my-fuzz-bucket'),
+                  'not a valid ladder campaign'),
+                 ({'STUB_SG_INBOUND': '1'}, LADDER, 'not as required'))
+        for env, args, message in cases:
+            with self.subTest(args=args[-2:], env=env):
+                open(self.log, 'w').close()
+                r = self.run_script('launch_ladder.sh', *args, **env)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn(message, r.stderr)
+                self.assertEqual(self.real_launches(), [])
+
+    def render(self, minutes=120):
+        script = '. %s; df_render_ladder_user_data ladder-equal-2e %s my-fuzz-bucket %d %s' % (
+            shlex.quote(posix(os.path.join(HERE, 'lib.sh'))), SHA, minutes, SHA[:12] + '-ladder-20261014T030000Z')
+        r = subprocess.run([BASH, '-c', script], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return r.stdout
+
+    def test_the_ladder_box_starts_with_the_watchdog_pins_the_machine_and_refuses_by_name(self):
+        text = self.render(60)
+        lines = text.splitlines()
+        self.assertEqual(lines[0], '#!/bin/bash')
+        self.assertTrue(lines[1].startswith('shutdown -h +60 '), lines[1])
+        self.assertNotRegex(text, r'@[A-Z_]+@')
+        for needle in ('XLA_FLAGS=--xla_cpu_max_isa=AVX2', 'OPENBLAS_CORETYPE=Haswell', 'OPENBLAS_NUM_THREADS=1',
+                       'JAX_PLATFORMS=cpu', 'taskset -c', 'DF_CPUS=16', 'ladder_requirements.txt', '--no-deps', 'pip" check',
+                       'refuse nets_writable', 'refuse nets_unreadable', 'refuse net_sha_mismatch', 'refuse nets_probe_unclear',
+                       '*AccessDenied*', 'trap finish EXIT', 'shutdown -h now', 'status.json',
+                       's3://$DF_BUCKET/fuzz/ladder/$DF_CAMPAIGN/$DF_RUN_ID'):
+            self.assertIn(needle, text)
+        uploads = [l for l in lines if re.search(r'\baws s3 cp\b', l) and 's3://$DF_BUCKET/$NETS_KEY_PREFIX' not in l]
+        for line in uploads:  # what goes up: ladder.json, env.json, status.json and logs; never a decision file or a net
+            self.assertRegex(line, r'(ladder\.json|env\.json|status\.json|\$LOG|ladder-tail\.log)', line)
+            self.assertNotIn('decisions', line)
+            self.assertNotIn('.npz', line)
+        self.assertNotRegex(text, r'AKIA[0-9A-Z]{16}|aws_secret_access_key|BEGIN [A-Z ]*PRIVATE KEY')
+
+    def test_the_ladder_conf_is_checked_and_builds_the_ladders_command_line(self):
+        import ladder_conf
+        good = ('kind=ladder\nstep=2e\nprevious=0\nh2h=1\npairs=8\nseed=0x10\nworkers=8\ncheckpoint=%s\nfoe_net=%s\n'
+                'teams_from=%s\nopponents=bot=%s ppo=%s\n') % (NET, NET, 'c' * 64, 'd' * 64, 'c' * 64)
+        conf = ladder_conf.parse(good)
+        self.assertEqual(ladder_conf.shas(conf), [NET, 'c' * 64, 'd' * 64])
+        argv = ladder_conf.argv(conf, '/n', '/o')
+        self.assertEqual(argv[:8], ['--checkpoint', '/n/%s.npz' % NET, '--foe-net', '/n/%s.npz' % NET,
+                                    '--teams-from', '/n/%s.npz' % ('c' * 64), '--step', '2e'])
+        self.assertIn('--h2h', argv)
+        self.assertEqual(argv[argv.index('--seed') + 1], '0x10')
+        self.assertEqual(argv[-2:], ['--out', '/o'])
+        bad = {'kind=fuzz': 'not a ladder campaign', 'pairs=0': 'pairs=0', 'workers=65': 'workers=65',
+               'checkpoint=xyz': 'sha256', 'opponents=bot': 'NAME=SHA256', 'step=../x': 'step name',
+               'extra=1': 'unknown key', 'opponents=bot=%s bot=%s' % (NET, NET): 'twice'}
+        for line, message in bad.items():
+            key = line.partition('=')[0]
+            text = '\n'.join(l for l in good.splitlines() if not l.startswith(key + '=')) + '\n' + line + '\n'
+            with self.subTest(line=line), self.assertRaisesRegex(ladder_conf.ConfError, message):
+                ladder_conf.parse(text)
+        with self.assertRaisesRegex(ladder_conf.ConfError, 'h2h=1 needs previous'):
+            ladder_conf.parse(good.replace('previous=0\n', ''))
+        with self.assertRaisesRegex(ladder_conf.ConfError, 'missing key'):
+            ladder_conf.parse(good.replace('pairs=8\n', ''))
+        with open(os.path.join(HERE, 'campaigns', 'ladder-equal-2e', 'campaign.conf'), encoding='utf-8') as f:
+            self.assertEqual(ladder_conf.parse(f.read())['step'], '2e')
 
 
 class LadderEqual(unittest.TestCase):
