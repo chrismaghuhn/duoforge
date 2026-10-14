@@ -8864,10 +8864,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* Ice Fang (step G44, data/moves.ts:9347-9368): two secondaries in order, and for each hit target the loop of
          * secondaries() draws random(100) before each one (sim/battle-actions.ts:1336-1354): a freeze at 10 (a status of the
          * move, dfi_try_status as a status secondary does), then a flinch at 10 (a volatile of the target). Both rolls are
-         * drawn for a target that fainted, as for any secondary. */
+         * drawn for a target that fainted, as for any secondary, and for a target whose hit a Substitute took (a null target,
+         * not false; issue 518): it takes no effect (moveHit of a null target does nothing), as for the other secondaries. */
         if (md->special == DFI_SPECIAL_ICE_FANG && !dfi_sf_strips(r->b, m, md)) {
             for (uint32_t i = 0u; i < count; ++i) {
-                if (!hit[i]) {
+                if (!hit[i] && !sub_off[i]) {
                     continue;
                 }
                 uint32_t roll = 0u;
@@ -8875,7 +8876,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll < 10u) {
+                if (hit[i] && roll < 10u) {
                     st = dfi_try_status(r, targets[i], DFI_STATUS_FRZ, user, move_id, DFI_ORIGIN_OTHER, 0u);
                     if (st != DUOFORGE_OK) {
                         return st;
@@ -8885,7 +8886,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll < 10u) {
+                if (hit[i] && roll < 10u) {
                     st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_FLINCH);
                     if (st != DUOFORGE_OK) {
                         return st;
