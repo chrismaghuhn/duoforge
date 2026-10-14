@@ -1879,6 +1879,88 @@ class Lock(unittest.TestCase):
             self.assertIn('--no-lock', str(cm.exception))
 
 
+    # The WSL watchdog (2026-10-14, HauptSession): a job in the WSL VM is no Windows child of the lock's Git Bash holder;
+    # killed, the holder releases the lock while the job ran on. tools/ci/wsl_lock_watchdog.sh ends such a job.
+
+    def watchdog(self, tmp, command, line='4242 job since 2026-10-14 03:00:00', alive='true', interval=None, **extra):
+        owner = os.path.join(tmp, 'owner')
+        with io.open(owner, 'w', encoding='ascii', newline='\n') as f:
+            f.write(line + '\nslots\n')
+        env = self.nest_env(os.path.join(tmp, 'lock'))
+        env.update(DUOFORGE_MACHINE_LOCK_OWNER_FILE=owner.replace('\\', '/'), DUOFORGE_MACHINE_LOCK_OWNER_LINE=line,
+                   DUOFORGE_WATCHDOG_ALIVE=alive, **extra)
+        if interval is not None:
+            env['DUOFORGE_WATCHDOG_INTERVAL'] = str(interval)
+        script = os.path.join(ROOT, 'tools', 'ci', 'wsl_lock_watchdog.sh').replace('\\', '/')
+        return owner, subprocess.Popen([rnd.find_bash(), script, rnd.find_bash(), '-c', command], env=env,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    def test_the_watchdog_refuses_without_a_holder_to_watch(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'wsl_lock_watchdog.sh').replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            env = self.nest_env(os.path.join(tmp, 'lock'))
+            for var in ('DUOFORGE_MACHINE_LOCK_OWNER_FILE', 'DUOFORGE_MACHINE_LOCK_OWNER_LINE'):
+                env.pop(var, None)
+            done = subprocess.run([rnd.find_bash(), script, 'echo', 'ran'], capture_output=True, text=True, timeout=60,
+                                  env=env)
+        self.assertEqual(done.returncode, 2)
+        self.assertNotIn('ran', done.stdout)
+        self.assertIn('no lock holder to watch', done.stderr)
+
+    def test_the_watchdog_gives_the_commands_status_while_its_holder_holds(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, job = self.watchdog(tmp, 'sleep 2; echo done; exit 7', interval=1)
+            out, err = job.communicate(timeout=60)
+        self.assertEqual(job.returncode, 7, err)
+        self.assertEqual(out.split(), ['done'])
+
+    def test_a_job_whose_holder_is_gone_stops_within_15_seconds_with_its_children(self):
+        # The default interval (10 s): the holder's process is gone from the start; the job and its child are stopped.
+        with tempfile.TemporaryDirectory() as tmp:
+            child = os.path.join(tmp, 'child').replace('\\', '/')
+            start = time.time()
+            _, job = self.watchdog(tmp, 'sleep 300 & echo $! > %s; wait' % child, alive='false')
+            out, err = job.communicate(timeout=60)
+            self.assertEqual(job.returncode, 76, err)
+            self.assertLess(time.time() - start, 15)
+            self.assertIn("machine lock watchdog: stopping the job: the holder's Windows process 4242", err)
+            with io.open(os.path.join(tmp, 'child'), encoding='ascii') as f:
+                pid = f.read().strip()
+            alive = subprocess.run([rnd.find_bash(), '-c', 'kill -0 %s' % pid], capture_output=True, timeout=60)
+            self.assertNotEqual(alive.returncode, 0)  # the child went with the job
+
+    def test_a_job_whose_owner_line_changes_stops(self):
+        # The holder's slot taken over by another job (its process gone, the slot stale): the line is no longer its.
+        with tempfile.TemporaryDirectory() as tmp:
+            owner, job = self.watchdog(tmp, 'sleep 300', interval=1)
+            time.sleep(1.5)
+            with io.open(owner, 'w', encoding='ascii', newline='\n') as f:
+                f.write('5151 other since 2026-10-14 03:05:00\nslots\n')
+            out, err = job.communicate(timeout=60)
+        self.assertEqual(job.returncode, 76, err)
+        self.assertIn("no longer names the holder '4242 job since 2026-10-14 03:00:00'", err)
+
+    def test_the_holder_exports_its_owner_file_and_line_for_wsl(self):
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        show = ('import os; print(os.environ["DUOFORGE_MACHINE_LOCK_OWNER_FILE"]); '
+                'print(os.environ["DUOFORGE_MACHINE_LOCK_OWNER_LINE"]); print(os.environ["WSLENV"])')
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            for exclusive in ([], ['--exclusive']):
+                env = self.nest_env(lock)
+                env['WSLENV'] = 'WT_SESSION:DUOFORGE_MACHINE_LOCK_HELD'  # an entry already there is not added twice
+                done = subprocess.run([rnd.find_bash(), script, *exclusive, 'wsl job', sys.executable.replace('\\', '/'),
+                                       '-c', show + '; print(open(os.environ["DUOFORGE_MACHINE_LOCK_OWNER_FILE"]).readline().strip())'],
+                                      capture_output=True, text=True, timeout=60, env=env)
+                with self.subTest(exclusive=exclusive):
+                    self.assertEqual(done.returncode, 0, done.stderr)
+                    owner_file, line, wslenv, first = done.stdout.splitlines()
+                    self.assertRegex(line, r'^\d+ wsl job since \d{4}-\d\d-\d\d \d\d:\d\d:\d\d$')
+                    self.assertEqual(first, line)  # the file names the holder with that very line
+                    self.assertEqual(wslenv.split(':'), ['WT_SESSION', 'DUOFORGE_MACHINE_LOCK_HELD',
+                                                         'DUOFORGE_MACHINE_LOCK_OWNER_LINE',
+                                                         'DUOFORGE_MACHINE_LOCK_OWNER_FILE/p'])
+
 # ------------------------------------------------------------ the command line
 
 class CommandLine(unittest.TestCase):

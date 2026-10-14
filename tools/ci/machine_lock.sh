@@ -49,6 +49,9 @@
 # exported to the holder:
 #   DUOFORGE_JOBS                processors / slots (at least 1); every processor with --exclusive
 #   DUOFORGE_MACHINE_LOCK_HELD   the holder's label; DUOFORGE_MACHINE_LOCK_HELD_DIR its lock (status 74 inside it)
+#   DUOFORGE_MACHINE_LOCK_OWNER_FILE, _OWNER_LINE  an owner file the holder writes and its line; WSLENV lists them, so
+#                                a job started with wsl.exe gets them too: run it under tools/ci/wsl_lock_watchdog.sh,
+#                                which ends it when its Windows holder is gone (a killed wrapper releases the lock)
 set -u
 
 MACHINE_LOCK=${DUOFORGE_MACHINE_LOCK:-"${TEMP:-/tmp}/duoforge-machine.lock"}
@@ -170,6 +173,25 @@ machine_lock_idle() { # queue
     return 0
 }
 
+# What the holder's command is told of its lock: its label and lock (DUOFORGE_MACHINE_LOCK_HELD, _HELD_DIR: a call nested
+# in it is refused), the owner file of one slot it holds and that file's line (DUOFORGE_MACHINE_LOCK_OWNER_FILE, _LINE:
+# tools/ci/wsl_lock_watchdog.sh ends a WSL job whose holder is gone). WSLENV lists them, the paths translated (/p), so
+# that they reach a command wsl.exe starts. On Windows the paths are given as Windows paths (cygpath -w).
+machine_lock_export_holder() { # label dir line
+    local file=$2/owner lock=$MACHINE_LOCK name entry
+    if command -v cygpath > /dev/null 2>&1; then
+        file=$(cygpath -w "$file")
+        lock=$(cygpath -w "$lock")
+    fi
+    export DUOFORGE_MACHINE_LOCK_HELD=$1 DUOFORGE_MACHINE_LOCK_HELD_DIR=$MACHINE_LOCK
+    export DUOFORGE_MACHINE_LOCK_OWNER_FILE=$file DUOFORGE_MACHINE_LOCK_OWNER_LINE=$3
+    for entry in DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_OWNER_LINE DUOFORGE_MACHINE_LOCK_OWNER_FILE/p; do
+        name=${entry%/p}
+        case ":${WSLENV:-}:" in *":$name:"* | *":$name/"*) ;; *) WSLENV=${WSLENV:+$WSLENV:}$entry ;; esac
+    done
+    export WSLENV
+}
+
 machine_lock_acquire() { # [--exclusive] label
     # First come, first served: a waiter takes a ticket in $MACHINE_LOCK.queue (its name sorts by the time it was
     # taken). A waiter with w older live tickets ahead may take a slot when more than w slots are free and none of
@@ -284,7 +306,8 @@ machine_lock_acquire() { # [--exclusive] label
                     for dir in "${got[@]}"; do
                         printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
                     done
-                    export DUOFORGE_JOBS=$cpus DUOFORGE_MACHINE_LOCK_HELD=$label DUOFORGE_MACHINE_LOCK_HELD_DIR=$MACHINE_LOCK
+                    export DUOFORGE_JOBS=$cpus
+                    machine_lock_export_holder "$label" "${got[0]}" "$me $label since $since"
                     break
                 fi
                 for dir in "${got[@]}"; do rmdir "$dir" 2> /dev/null; done # somebody was faster: all or nothing
@@ -304,9 +327,10 @@ machine_lock_acquire() { # [--exclusive] label
                 fi
             done
             if [ -n "$dir" ]; then
-                printf '%s\nslots\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$dir/owner"
-                export DUOFORGE_JOBS=$((cpus / slots > 0 ? cpus / slots : 1)) DUOFORGE_MACHINE_LOCK_HELD=$label \
-                    DUOFORGE_MACHINE_LOCK_HELD_DIR=$MACHINE_LOCK
+                since=$(date '+%Y-%m-%d %H:%M:%S')
+                printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
+                export DUOFORGE_JOBS=$((cpus / slots > 0 ? cpus / slots : 1))
+                machine_lock_export_holder "$label" "$dir" "$me $label since $since"
                 break
             fi
         fi
@@ -338,7 +362,8 @@ machine_lock_release() {
         rm -f "$queue/.slots"
     fi
     if [ "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" = "$MACHINE_LOCK" ]; then
-        unset DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_HELD_DIR
+        unset DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_HELD_DIR DUOFORGE_MACHINE_LOCK_OWNER_FILE \
+            DUOFORGE_MACHINE_LOCK_OWNER_LINE
     fi
 }
 
