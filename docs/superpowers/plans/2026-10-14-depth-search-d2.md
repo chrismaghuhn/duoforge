@@ -203,6 +203,19 @@ or on AWS (#484) with the equality proof.
 A review agent checks the whole branch. Its findings and their outcomes go into the PR body. The PR opens only after
 Astra's field-step PR is merged and no Astra PR is open, then a green CI. The HS merges.
 
+## Test positions for D2 to D5 (private logs, neutral descriptions)
+
+Live positions the HS collected; the logs stay private, outside the repository. They are replayed reproducibly with
+the search lane's `ko_check --closed` on `cts.LogReplay`. They are diagnostics beside the gates, never gates themselves.
+For each, the step it most likely addresses:
+
+| # | position | what went wrong | step |
+|---|---|---|---|
+| A | mid-game, a foe KO threat over the next turn (engine probes: our own KO about 0.30 because the foe model expects a protect; the foe's threat about 0.95) | a protect instead of the move that answers the threat, while another candidate answered it; on the next turn a switch into a KO that one turn of depth cannot avoid | D2 (the switch: the true two-turn case); the unanswered threats also D4 |
+| B | 1 v 1 endgame, our side at very low HP | three protects in a row (the network itself preferred them), the only way out an attack: a horizon effect | D5 (the endgame solved to the end, owner); D2 need not solve it |
+| C | a low-HP attacker | a screen instead of the attack | D2 (the payoff a turn later), D4 |
+| D | two decisions where the search chose moves the network plays at 3 % and 5 % | rule or tables? recorded beside step 0's choice (mix, λ = 0.5): if step 0 chooses otherwise, the rule (λ = 0) makes it; if the same, the tables (evaluation, depth) | D4 if the tables, the root rule otherwise |
+
 ## Decisions (owner and HS, 2026-10-14)
 
 1. **`info_key = "record"`** (the node's public record bytes for the viewer) is for tests only, refused by name under
