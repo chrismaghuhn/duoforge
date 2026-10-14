@@ -83,7 +83,7 @@ static void *other_caller(void *p)
     return (void *)(uintptr_t)status;
 #endif
 }
-static void workspace_checks(df_test *t, duoforge_evaluator *model, allocations *a)
+static void workspace_checks(df_test *t, duoforge_evaluator *model, const duoforge_evaluator *other, allocations *a)
 {
     df_sentinel sentinel;
     duoforge_eval_workspace *w = (duoforge_eval_workspace *)&sentinel;
@@ -102,6 +102,8 @@ static void workspace_checks(df_test *t, duoforge_evaluator *model, allocations 
     a->fail = SIZE_MAX;
     if (!DF_CHECK_EQ_U64(t, duoforge_eval_workspace_create(model, 32u, 8u, &w, &error), DUOFORGE_OK)) { return; }
     DF_CHECK_EQ_U64(t, w->scratch_bytes, 768u);
+    DF_CHECK_EQ_U64(t, dfi_eval_workspace_acquire(w, other, other->context, 32u, 8u, &error), DUOFORGE_E_CONTEXT_MISMATCH);
+    DF_CHECK_BYTES(t, other->sha256, model->sha256, 32u, "even same-hash different handles refuse");
     const size_t count = a->count, frees = a->frees;
     memset(w->scratch, 0xA5, w->scratch_bytes);
     uint8_t wrong[32]; memcpy(wrong, model->context, sizeof wrong); wrong[0] ^= 1u;
@@ -220,9 +222,16 @@ int main(int argc, char **argv)
                 if (DF_CHECK_EQ_U64(&t, status, DUOFORGE_OK)) {
                     DF_CHECK_BYTES(&t, model->sha256, hash, 32u, "expected opened-file hash");
                     DF_CHECK_BYTES(&t, model->context, context_hash, 32u, "context snapshot");
+                    duoforge_evaluator *other = NULL;
+                    if (!DF_CHECK_EQ_U64(&t, dfi_eval_load_descriptor(argv[2], hash, context, 6u, 0u,
+                            &selected, &allocator, &other, &error), DUOFORGE_OK)) {
+                        duoforge_evaluator_destroy(model);
+                        duoforge_context_destroy(context); return df_test_end(&t);
+                    }
                     /* No later file I/O: unlink before every workspace operation. */
                     DF_CHECK_EQ_U64(&t, remove(argv[2]), 0u);
-                    workspace_checks(&t, model, &a);
+                    workspace_checks(&t, model, other, &a);
+                    duoforge_evaluator_destroy(other);
                 }
             } else {
                 DF_CHECK(&t, status != DUOFORGE_OK);
