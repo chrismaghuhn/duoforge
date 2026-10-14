@@ -18,11 +18,19 @@
 # usage, under the lock (machine_lock.sh exports the variables and lists them in WSLENV, so they reach WSL):
 #   tools/ci/machine_lock.sh <label> wsl.exe -d <distro> -- bash <checkout>/tools/ci/wsl_lock_watchdog.sh <command...>
 # Without the variables it refuses (status 2): it has no holder to watch, so it runs nothing.
-# It runs inside WSL (Linux) only. Under Git Bash on Windows (MSYS, Cygwin) it refuses to start (status 77): there
-# process groups and signals are emulated and do not reach a native Windows program (Git's bin/bash.exe launcher, a
-# python.exe) or what it starts, so it could not stop the job (#492's CI, 2026-10-14). A job on Windows needs none:
-# it is a Windows child of the lock's holder.
+# It runs inside WSL (Linux) only: anywhere uname -s is not Linux it refuses to start (status 77). Under Git Bash on
+# Windows (MSYS, Cygwin) process groups and signals are emulated and do not reach a native Windows program (Git's
+# bin/bash.exe launcher, a python.exe) or what it starts, so it could not stop the job (#492's CI, 2026-10-14); a job
+# on Windows needs none, it is a Windows child of the lock's holder. Elsewhere (macOS, ...) it is untried.
 # For tests: DUOFORGE_WATCHDOG_ALIVE (a command given the pid: status 0 alive, 1 dead; default the tasklist check).
+# exit status of a job under the lock (machine_lock.sh, with tools/ci/wsl_lock_watchdog.sh for a WSL job): the
+# command's own, or
+#   73  machine_lock.sh refused: a live job holds a slot or waits with this label
+#   74  machine_lock.sh refused: nested inside a job that holds this lock
+#   76  the watchdog stopped the job: its holder's Windows process is gone, or its slot was taken over
+#   77  the watchdog refused to start: not on Linux (uname -s), e.g. under Git Bash on Windows
+#   2   the watchdog refused to start: no holder to watch, or bash older than 5.1
+# A command that exits with one of these itself cannot be told from them.
 set -u
 
 WATCHDOG_STOPPED=76
@@ -35,13 +43,13 @@ if [ $# -lt 1 ]; then
     echo "usage: $0 <command...>" >&2
     exit 2
 fi
-case "${OSTYPE:-}" in
-    msys* | cygwin*)
-        echo "machine lock watchdog: refused: it runs inside WSL (Linux) only; under Git Bash on Windows ($OSTYPE) it" \
-            "cannot stop a native Windows process. Start it as wsl.exe -d <distro> -- bash .../wsl_lock_watchdog.sh" >&2
-        exit "$WATCHDOG_NOT_HERE"
-        ;;
-esac
+kernel=$(uname -s 2> /dev/null)
+if [ "$kernel" != Linux ]; then
+    echo "machine lock watchdog: refused: it runs inside WSL (Linux) only, and this is '${kernel:-an unknown system}';" \
+        "under Git Bash on Windows it cannot stop a native Windows process. Start it as" \
+        "wsl.exe -d <distro> -- bash .../wsl_lock_watchdog.sh" >&2
+    exit "$WATCHDOG_NOT_HERE"
+fi
 if [ "${BASH_VERSINFO[0]}" -lt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -lt 1 ]; }; then
     echo "machine lock watchdog: refused: bash $BASH_VERSION has no 'wait -n -p'; it needs bash 5.1 or later" >&2
     exit 2

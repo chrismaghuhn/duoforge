@@ -53,6 +53,14 @@
 #   DUOFORGE_MACHINE_LOCK_OWNER_FILE, _OWNER_LINE  an owner file the holder writes and its line; WSLENV lists them, so
 #                                a job started with wsl.exe gets them too: run it under tools/ci/wsl_lock_watchdog.sh,
 #                                which ends it when its Windows holder is gone (a killed wrapper releases the lock)
+# exit status of a job under the lock (machine_lock.sh, with tools/ci/wsl_lock_watchdog.sh for a WSL job): the
+# command's own, or
+#   73  machine_lock.sh refused: a live job holds a slot or waits with this label
+#   74  machine_lock.sh refused: nested inside a job that holds this lock
+#   76  the watchdog stopped the job: its holder's Windows process is gone, or its slot was taken over
+#   77  the watchdog refused to start: not on Linux (uname -s), e.g. under Git Bash on Windows
+#   2   the watchdog refused to start: no holder to watch, or bash older than 5.1
+# A command that exits with one of these itself cannot be told from them.
 set -u
 
 MACHINE_LOCK=${DUOFORGE_MACHINE_LOCK:-"${TEMP:-/tmp}/duoforge-machine.lock"}

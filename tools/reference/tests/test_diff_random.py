@@ -49,9 +49,10 @@ VERSION = {'node': 'v0.0.0', 'pin': '0' * 40, 'harness': 14}
 KINDS = conformance_records.data_kinds(ROOT)
 PARAMS = rnd.Params(1, 24, rnd.DEFAULT_PAIRINGS, 300, 0.1, 0.5)
 REAL = 'm5_real_aa_1'  # real teams of team A, ends: a PASS under CLOSURE
-WATCHDOG_NOT_HERE = 77  # tools/ci/wsl_lock_watchdog.sh under Git Bash on Windows
-WATCHDOG_LINUX_ONLY = ('tools/ci/wsl_lock_watchdog.sh runs inside WSL (Linux) only: under Git Bash on Windows it '
-                       'refuses to start (status 77, test_under_git_bash_the_watchdog_refuses_to_start_by_name)')
+LINUX = sys.platform.startswith('linux')
+WATCHDOG_NOT_HERE = 77  # tools/ci/wsl_lock_watchdog.sh anywhere but on Linux
+WATCHDOG_LINUX_ONLY = ('tools/ci/wsl_lock_watchdog.sh runs on Linux (inside WSL) only: anywhere else it refuses to '
+                       'start (status 77, test_off_linux_the_watchdog_refuses_to_start_by_name)')
 REAL_TEAM_C = 'c01_team_c_profile'  # six real members, ends: a PASS under TEAM_C
 REAL_POOL = 'g5_uturn_e'  # a pool battle that ends (a Rocky Helmet faints the U-turn user): a PASS under POOL
 DEV = 's3_struggle_end'  # sets without an ability, ends: needs CLOSURE_DEV
@@ -1925,11 +1926,11 @@ class Lock(unittest.TestCase):
         return owner, subprocess.Popen([rnd.find_bash(), script, rnd.find_bash(), '-c', command], env=env,
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    @unittest.skipUnless(os.name == 'nt', 'Git Bash on Windows only: elsewhere the watchdog runs (the tests below)')
-    def test_under_git_bash_the_watchdog_refuses_to_start_by_name(self):
+    @unittest.skipIf(LINUX, 'off Linux only: on Linux the watchdog runs (the tests below)')
+    def test_off_linux_the_watchdog_refuses_to_start_by_name(self):
         # #492's CI: under Git Bash, process groups and signals are emulated and do not reach a native Windows program
         # (Git's bin/bash.exe launcher) or its children. The watchdog stopped neither the job nor its child there. It
-        # is for WSL; on Windows it refuses before it runs anything, holder or not.
+        # is for WSL: anywhere but on Linux it refuses before it runs anything, holder or not.
         with tempfile.TemporaryDirectory() as tmp:
             child = os.path.join(tmp, 'child').replace('\\', '/')
             for alive in ('true', 'false'):
@@ -1939,9 +1940,9 @@ class Lock(unittest.TestCase):
                     self.assertEqual(job.returncode, WATCHDOG_NOT_HERE, err)
                     self.assertEqual(out, '')
                     self.assertFalse(os.path.exists(child))
-                    self.assertIn('machine lock watchdog: refused: it runs inside WSL (Linux) only', err)
+                    self.assertIn('machine lock watchdog: refused: it runs inside WSL (Linux) only, and this is', err)
 
-    @unittest.skipIf(os.name == 'nt', WATCHDOG_LINUX_ONLY)
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
     def test_the_watchdog_refuses_without_a_holder_to_watch(self):
         script = os.path.join(ROOT, 'tools', 'ci', 'wsl_lock_watchdog.sh').replace('\\', '/')
         with tempfile.TemporaryDirectory() as tmp:
@@ -1954,7 +1955,7 @@ class Lock(unittest.TestCase):
         self.assertNotIn('ran', done.stdout)
         self.assertIn('no lock holder to watch', done.stderr)
 
-    @unittest.skipIf(os.name == 'nt', WATCHDOG_LINUX_ONLY)
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
     def test_the_watchdog_gives_the_commands_status_while_its_holder_holds(self):
         with tempfile.TemporaryDirectory() as tmp:
             _, job = self.watchdog(tmp, 'sleep 2; echo done; exit 7', interval=1)
@@ -1962,7 +1963,7 @@ class Lock(unittest.TestCase):
         self.assertEqual(job.returncode, 7, err)
         self.assertEqual(out.split(), ['done'])
 
-    @unittest.skipIf(os.name == 'nt', WATCHDOG_LINUX_ONLY)
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
     def test_a_job_whose_holder_is_gone_stops_within_15_seconds_with_its_children(self):
         # The default interval (10 s): the holder's process is gone from the start; the job and its child are stopped.
         with tempfile.TemporaryDirectory() as tmp:
@@ -1978,7 +1979,7 @@ class Lock(unittest.TestCase):
             alive = subprocess.run([rnd.find_bash(), '-c', 'kill -0 %s' % pid], capture_output=True, timeout=60)
             self.assertNotEqual(alive.returncode, 0)  # the child went with the job
 
-    @unittest.skipIf(os.name == 'nt', WATCHDOG_LINUX_ONLY)
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
     def test_a_job_whose_owner_line_changes_stops(self):
         # The holder's slot taken over by another job (its process gone, the slot stale): the line is no longer its.
         with tempfile.TemporaryDirectory() as tmp:
@@ -1990,7 +1991,7 @@ class Lock(unittest.TestCase):
         self.assertEqual(job.returncode, 76, err)
         self.assertIn("no longer names the holder '4242 job since 2026-10-14 03:00:00'", err)
 
-    @unittest.skipIf(os.name == 'nt', WATCHDOG_LINUX_ONLY)
+    @unittest.skipUnless(LINUX, WATCHDOG_LINUX_ONLY)
     def test_a_term_to_the_watchdog_stops_the_job_and_its_children(self):
         # In a process group of its own, the job would not get a signal aimed at the watchdog (a hangup, a kill): the
         # watchdog passes it on. The signal comes from a bash, as one between processes of WSL does.
@@ -2036,6 +2037,34 @@ class Lock(unittest.TestCase):
                     self.assertEqual(wslenv.split(':'), ['WT_SESSION', 'DUOFORGE_MACHINE_LOCK_HELD',
                                                          'DUOFORGE_MACHINE_LOCK_OWNER_LINE',
                                                          'DUOFORGE_MACHINE_LOCK_OWNER_FILE/p'])
+
+
+class WatchdogTestsRun(unittest.TestCase):
+    """No silent skip of the watchdog's tests on the system it is built for (HauptSession, #492): on Linux the class
+    Lock and every test that runs tools/ci/wsl_lock_watchdog.sh end to end must run. Not skipped itself."""
+
+    END_TO_END = ('test_the_watchdog_refuses_without_a_holder_to_watch',
+                  'test_the_watchdog_gives_the_commands_status_while_its_holder_holds',
+                  'test_a_job_whose_holder_is_gone_stops_within_15_seconds_with_its_children',
+                  'test_a_job_whose_owner_line_changes_stops',
+                  'test_a_term_to_the_watchdog_stops_the_job_and_its_children')
+    REFUSAL = 'test_off_linux_the_watchdog_refuses_to_start_by_name'
+
+    @staticmethod
+    def skipped(name):
+        return bool(getattr(Lock, '__unittest_skip__', False) or getattr(getattr(Lock, name), '__unittest_skip__', False))
+
+    def test_the_watchdog_tests_run_where_the_watchdog_runs(self):
+        for name in self.END_TO_END + (self.REFUSAL,):
+            self.assertTrue(callable(getattr(Lock, name, None)), name)  # a renamed test would drop out unseen
+        if LINUX:
+            self.assertFalse(getattr(Lock, '__unittest_skip__', False),
+                             'Lock is skipped on Linux: %s' % getattr(Lock, '__unittest_skip_why__', ''))
+            for name in self.END_TO_END:
+                self.assertFalse(self.skipped(name), '%s is skipped on Linux' % name)
+            self.assertTrue(self.skipped(self.REFUSAL))
+        elif not getattr(Lock, '__unittest_skip__', False):
+            self.assertFalse(self.skipped(self.REFUSAL), '%s is skipped off Linux' % self.REFUSAL)
 
 # ------------------------------------------------------------ the command line
 
