@@ -82,16 +82,20 @@ Each run reports its commit, its `dirty` flag and the library's sha256.
 All with step 2e's root rule (`rule = "ev"`, spec section 5), `root_solver = "rm"`, `info_key = "digest"` (unless the
 HauptSession decides otherwise), `foe_below = "nash"`, the value call padded to 16,384 rows (spec section 7.2):
 
+The arms are fixed entries of `ladder.STEPS` (names agreed with the AWS campaign #484, which starts an arm by its
+name alone):
+
 | arm | depth-2 widths | other |
 |---|---|---|
 | `d2-22` | K2 = M2 = 2 | |
 | `d2-33` | K2 = M2 = 3 | |
 | `d2-44` | K2 = M2 = 4 | |
-| `d2-model` | the best of the three by its head-to-head point estimate | `foe_below = "model"` (Q4) |
+| `d2-model-22`, `d2-model-33`, `d2-model-44` | as the arm of the same width | `foe_below = "model"` (Q4); only the one at the best width by its head-to-head point estimate runs |
 
-The equal-time control of each arm: the one-turn arm (`root_solver = "rm"`, rule ev) from the list k12/m12, k16/m16,
-s32, s48, s64 whose exclusive latency p99 is closest to the D2 arm's, ties to the one with more leaves; both
-latencies are measured, exclusive, before the control's strength run.
+The equal-time control of each arm: the one-turn arm (`root_solver = "rm"`, rule ev) from `d2c-k12m12`, `d2c-k16m16`,
+`d2c-s32`, `d2c-s48`, `d2c-s64` whose exclusive latency p99 is closest to the D2 arm's, ties to the one with more
+leaves. Both latencies are measured locally, exclusive, before the control's strength run; on AWS only the chosen
+arms run.
 
 ### Gates (spec 9.2, as #440)
 
@@ -120,8 +124,14 @@ evaluation (#451, #450 piece 2 / D4) comes before D3 and D5.
 
 ### Where and when
 
-- Local, every paired comparison on one machine class. AWS (#484) only with the equality proof, and only the
-  HauptSession starts it.
+- **Strength runs on AWS** (#484, HauptSession and owner 2026-10-14): one instance type per series (c7a.16xlarge),
+  8 workers per arm (16 CPUs fixed), 3 arms in parallel on one instance (whether 4 may run in parallel, the
+  HauptSession decides after the first run), the ISA pinned as fixed locally (XLA `--xla_cpu_max_isa`,
+  `OPENBLAS_CORETYPE`, one thread) and the versions pinned. Each arm writes its own digests; the equality proof checks
+  an arm alone and beside the others. A D2 arm and its opponent arm (2e, or its control) run in the same AWS run on
+  the same instance type. AWS and local results are never mixed or paired. Only the HauptSession starts AWS, from its
+  own chat.
+- **Locally:** the latency (exclusive p99) and the mirror touchstone (the private sun team stays off the bucket).
 - Only after this file's final commit, the offline pass's default, the engine digest (if the arms use it) and the
   HauptSession's go. Latency always with `--exclusive`; strength runs alone, not beside the Book slot, while memory is
   short.

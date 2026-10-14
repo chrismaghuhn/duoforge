@@ -114,6 +114,31 @@ class StepSettingsTest(unittest.TestCase):
                 ladder.step_settings("a")
 
 
+class DepthTwoStepsTest(unittest.TestCase):
+    """D2's arms (README docs/benchmarks/2026-10-14-depth-d2, agreed with the AWS campaign #484): fixed names whose
+    settings live here, so a campaign starts them by name alone."""
+
+    def test_the_depth_two_arms_are_2e_with_the_tree(self):
+        tree = {"depth": 2, "root_solver": "rm", "info_key": "digest", "capacity": 16384}
+        for width in (2, 3, 4):
+            for name, extra in ((f"d2-{width}{width}", {}), (f"d2-model-{width}{width}", {"foe_below": "model"})):
+                with self.subTest(arm=name):
+                    self.assertEqual(ladder.step_settings(name),
+                                     {**ladder.step_settings("2e"), **tree, "k2": width, "m2": width, **extra})
+                    self.assertIsNone(ladder.size_refusal(name))
+
+    def test_the_equal_time_controls_are_one_turn_2e_on_the_rm_solver(self):
+        controls = {"d2c-k12m12": {"k": 12, "m": 12, "capacity": 2304},
+                    "d2c-k16m16": {"k": 16, "m": 16, "capacity": 4096}, "d2c-s32": {"s": 32, "capacity": 2048},
+                    "d2c-s48": {"s": 48, "capacity": 3072}, "d2c-s64": {"s": 64, "capacity": 4096}}
+        for name, delta in controls.items():
+            with self.subTest(arm=name):
+                settings = ladder.step_settings(name)
+                self.assertEqual(settings, {**ladder.step_settings("2e"), "root_solver": "rm", **delta})
+                self.assertEqual(settings["capacity"], settings["k"] * settings["m"] * settings["s"])
+                self.assertIsNone(ladder.size_refusal(name))
+
+
 class StepOneTest(unittest.TestCase):
     """Step 1 (issue #363 in the ladder, #440): team preview as a Nash matrix game, with its two controls."""
 

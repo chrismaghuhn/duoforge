@@ -80,7 +80,20 @@ STEPS = {"0": {"base": None, "settings": {}},
          # Step 2 (#433, predeclared 2026-10-13): 2e, the best answer to the foe model and the worlds (lambda 0, no Nash
          # share), passed every gate (phase B, the README) and is the live search since 2026-10-14 (owner). Its
          # siblings 2d and 2l were screened on search/2-width and did not qualify.
-         "2e": {"base": "0", "settings": {"rule": "ev"}}}
+         "2e": {"base": "0", "settings": {"rule": "ev"}},
+         # D2 of the depth search (README docs/benchmarks/2026-10-14-depth-d2; names agreed with the AWS campaign
+         # #484): the two-turn tree below 2e's root (its root rule, spec section 5), K2 = M2 per name, the value call
+         # padded to 16,384 rows (spec section 7.2). info_key "digest" refuses the search by name until the engine has
+         # the observation digest. d2-model-* adds foe_below "model" (Q4); one of them runs, at the best width.
+         **{f"d2-{w}{w}": {"base": "2e", "settings": {"depth": 2, "k2": w, "m2": w, "root_solver": "rm",
+                                                      "info_key": "digest", "capacity": 16384}} for w in (2, 3, 4)},
+         **{f"d2-model-{w}{w}": {"base": f"d2-{w}{w}", "settings": {"foe_below": "model"}} for w in (2, 3, 4)},
+         # D2's equal-time controls: one turn, 2e's rule on the rm root solver (no LP size limit), K and M or S
+         # widened; each D2 arm's control is the one whose exclusive local p99 is closest (the README).
+         "d2c-k12m12": {"base": "2e", "settings": {"root_solver": "rm", "k": 12, "m": 12, "capacity": 2304}},
+         "d2c-k16m16": {"base": "2e", "settings": {"root_solver": "rm", "k": 16, "m": 16, "capacity": 4096}},
+         **{f"d2c-s{s}": {"base": "2e", "settings": {"root_solver": "rm", "s": s, "capacity": 64 * s}}
+            for s in (32, 48, 64)}}
 
 
 def size_refusal(name):
