@@ -8693,11 +8693,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* A recharge move (flags.recharge, self: {volatileStatus: 'mustrecharge'}; step G17): selfDrops (sim/battle-actions.ts:
          * 1096, 1317-1335) puts the volatile on the user for every target that was not ruled out (a miss, a Protect or an
          * immunity make it `false`; a knocked-out target is still a hit), once: a second addVolatile changes nothing.
-         * -mustrecharge|user (data/conditions.ts:374-376, onStart). */
+         * -mustrecharge|user (data/conditions.ts:374-376, onStart). A target whose hit a Substitute took is null, not false
+         * (data/mods/champions/scripts.ts:349-352), so it counts too (issue 517). */
         if ((dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_RECHARGE) != 0u && move_id != DFI_MOVE_STRUGGLE) {
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             dfi_tail_pos *tail = &b->tail.sides[side].positions[q->slot];
             if (hit_any && tail->must_recharge == 0u) {
