@@ -162,7 +162,7 @@ numpy_simd = json.load(open(os.path.join(os.path.dirname(out), "numpy_simd.json"
 json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu": model, "cpus_per_arm": int(cpus),
            "arms": {a: f"{i * int(cpus)}-{(i + 1) * int(cpus) - 1}" for i, a in enumerate(arms)},
            "nproc": os.cpu_count(), "avx512": any(f.startswith("avx512") for f in flags), "python": platform.python_version(),
-           "pip_freeze": freeze, "numpy_simd": numpy_simd,
+           "pip_freeze": freeze, "numpy_simd": numpy_simd, "libc": list(platform.libc_ver()),
            "pins": {k: os.environ.get(k) for k in ("JAX_PLATFORMS", "XLA_FLAGS", "OPENBLAS_CORETYPE", "OPENBLAS_NUM_THREADS",
                                                    "NPY_DISABLE_CPU_FEATURES")}},
           open(out, "w"), indent=1)

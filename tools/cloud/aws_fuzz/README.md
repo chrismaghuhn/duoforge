@@ -364,13 +364,14 @@ tests (against a stub `aws`).
 the local Ryzen 7 5800X's), OpenBLAS's kernel (`OPENBLAS_CORETYPE=Haswell`, `OPENBLAS_NUM_THREADS=1`), 16 CPUs of its own
 (`taskset`: arm *i* on CPUs 16*i* to 16*i*+15, as the local machine has 16), the conf's workers (8),
 `JAX_PLATFORMS=cpu`, NumPy's SIMD routines (`NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"`: NumPy picks
-its exp, log and sum routines at run time, AVX-512 on the c7a's EPYC, AVX2 (`X86_V3`) on the Ryzen; the first equality
+its routines at run time, AVX-512 on the c7a's EPYC, `X86_V3` on the Ryzen; its float64 exp and log have SIMD loops for
+AVX-512 only, so with those off both machines run glibc's scalar ones, and `env.json` and `ladder.json` name the libc; the first equality
 proof, 2026-10-14, differed in its decisions with every result equal; the box refuses, `numpy_dispatch`, if NumPy still
 enables an AVX-512 target) and the packages of `ladder_requirements.txt` (`pip install --no-deps`, then `pip check`).
 The Python version is not pinned: the box takes the AMI's (Ubuntu 24.04: 3.12.3, the local machine's) and `env.json`
 records it, with the pins, the library's sha256, the instance type, the CPU, whether it has AVX-512, NumPy's SIMD
 targets (`numpy_simd`: baseline, found, not found, as `numpy.show_runtime()` lists them) and `pip freeze`. Each arm's
-`ladder.json` has a digest per game (`games_sha256`, game g's decisions), so `ladder_equal.py` names the first game
+`ladder.json` has a digest per game (`games_sha256`, game g's decisions), so `ladder_equal.py` names every game
 whose decisions differ. `ladder.json` also records `numpy_simd` in its conditions, so the equality proof compares NumPy's
 dispatch too. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
 AWS results count only as their own series, every arm of a comparison runs on the same instance type, and the report

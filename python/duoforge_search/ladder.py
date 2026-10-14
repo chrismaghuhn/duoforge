@@ -35,6 +35,7 @@ import copy
 import hashlib
 import json
 import os
+import platform
 import subprocess
 import sys
 import time
@@ -345,7 +346,9 @@ def numpy_simd():
     """NumPy's SIMD dispatch in this process (#484): the targets NPY_DISABLE_CPU_FEATURES disables, NumPy's baseline and
     the dispatch targets found and not found. NumPy picks its exp, log and sum routines at run time (AVX-512 on the AWS
     box's EPYC, AVX2 on the local Ryzen), so two runs whose decisions are to be bit-identical record the same here, and
-    ladder_equal.py compares it. None where NumPy does not expose it."""
+    ladder_equal.py compares it. NumPy's float64 exp and log have SIMD loops for AVX-512 only: with those off, both run
+    the C library's (glibc's) scalar ones, which is why the conditions name the libc as well. None where NumPy does not
+    expose it."""
     try:
         from numpy._core import _multiarray_umath as m
     except ImportError:
@@ -853,7 +856,7 @@ def main(argv=None):
         "previous": None if args.previous is None else {"name": args.previous, "settings": previous_cfg},
         "arms": [arm for arm, _ in arm_steps] + (["R"] if args.raw else []), "h2h": args.h2h,
         "gates": GATES, "commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": arena.cpu_model(),
-        "numpy_simd": numpy_simd(),
+        "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()),
         "encoders": {"main": main_net["encoder"], "foe": foe_net["encoder"],
                      **{f"opponent {name}": net["encoder"] for name, net in opponent_nets.items()}},
         "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},
