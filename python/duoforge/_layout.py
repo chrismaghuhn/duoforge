@@ -409,6 +409,10 @@ EVENT = _struct([
     ("reserved", (_U1, (2,)), 18),
 ], 20)
 
+EVAL_ERROR = _struct([
+    ("leaf", _U4, 0), ("phase", "S16", 4), ("reason", "S128", 20),
+], 148)
+
 STEP_RESULT = _struct([
     ("epoch", _U4, 0),
     ("kind", _U1, 4),
@@ -667,6 +671,7 @@ BY_C_NAME = {
     "duoforge_request": REQUEST,
     "duoforge_event": EVENT,
     "duoforge_step_result": STEP_RESULT,
+    "duoforge_eval_error": EVAL_ERROR,
     "duoforge_member_view": MEMBER_VIEW,
     "duoforge_position_view": POSITION_VIEW,
     "duoforge_side_view": SIDE_VIEW,
