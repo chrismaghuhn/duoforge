@@ -5913,9 +5913,8 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
          * (126.00000000000001 for stages -2 and -4, 490.00000000000006 for 4 and -4; tools/datagen/pool_families.js checkK4).
          * Then the value is trunc((trunc(acc x 6840) + 2047) / 4096) and the draw is v < that integer; otherwise nothing changes. */
         if (b->tail.gravity_turns != 0u && denominator != 0u && numerator % denominator == 0u) {
-            const int32_t stage_a = (int32_t)acc - (int32_t)DFI_BIAS6;
-            const int32_t stage_e = (int32_t)eva - (int32_t)DFI_BIAS6;
-            const bool float_off_integer = (stage_a == -2 && stage_e == -4) || (stage_a == 4 && stage_e == -4);
+            /* stage a is -2 or 4 and stage e is -4, compared on the biased values (acc and eva are at least 0) */
+            const bool float_off_integer = (acc + 2u == DFI_BIAS6 || acc == DFI_BIAS6 + 4u) && eva + 4u == DFI_BIAS6;
             if (!float_off_integer) {
                 const uint32_t exact_floor = (numerator * 6840u) / denominator;
                 numerator = (exact_floor + 2047u) / 4096u;

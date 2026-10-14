@@ -2431,7 +2431,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 293)  # K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
+        self.assertEqual(len(marked), 294)  # K4 (#475, entry 5df): Gravity is marked, makes 294; K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293;G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
