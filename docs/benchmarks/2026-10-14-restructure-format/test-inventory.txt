@@ -99,6 +99,7 @@ duoforge.python.learner_contract
 duoforge.python.ledger
 duoforge.python.lib
 duoforge.python.live
+duoforge.python.live_ab
 duoforge.python.live_arena
 duoforge.python.live_client
 duoforge.python.live_cts
@@ -126,10 +127,12 @@ duoforge.python.replay_unit
 duoforge.python.repo_hygiene
 duoforge.python.root_solver
 duoforge.python.search
+duoforge.python.search_digest
 duoforge.python.search_expand
 duoforge.python.search_numpy
 duoforge.python.smogon_dex
 duoforge.python.smogon_sets
+duoforge.python.speed_swap_live
 duoforge.python.state_layout
 duoforge.python.step_events
 duoforge.python.teams
@@ -137,6 +140,7 @@ duoforge.python.ticks
 duoforge.python.value_rows
 duoforge.python.vgcpastes_engine
 duoforge.python.view
+duoforge.python.zero_sum
 duoforge.reference.arith
 duoforge.reference.battle_pins
 duoforge.reference.client_streams
@@ -1192,6 +1196,17 @@ duoforge.reference.trace.k2_drill_protect_contact
 duoforge.reference.trace.k2_drill_spiky_shield
 duoforge.reference.trace.k2_drill_then_phantom_force
 duoforge.reference.trace.k2_earthquake_protect_blocked
+duoforge.reference.trace.k3_aegislash_blade_swap
+duoforge.reference.trace.k3_aegislash_shield_reset
+duoforge.reference.trace.k3_aegislash_swap_end
+duoforge.reference.trace.k3_speed_swap_ally
+duoforge.reference.trace.k3_speed_swap_basic
+duoforge.reference.trace.k3_speed_swap_faint
+duoforge.reference.trace.k3_speed_swap_mega
+duoforge.reference.trace.k3_speed_swap_mega_end
+duoforge.reference.trace.k3_speed_swap_protect
+duoforge.reference.trace.k3_speed_swap_same_turn
+duoforge.reference.trace.k3_speed_swap_switch
 duoforge.reference.trace.m5_real_aa_1
 duoforge.reference.trace.m5_real_aa_2
 duoforge.reference.trace.m5_real_aa_3
@@ -1335,6 +1350,7 @@ duoforge.request.query_checks
 duoforge.request.step
 duoforge.rng.contract
 duoforge.rng.kat
+duoforge.search.digest
 duoforge.search.expand
 duoforge.search.seeds
 duoforge.state.ability_now
@@ -1422,6 +1438,7 @@ duoforge.state.pool_g92
 duoforge.state.pool_i2
 duoforge.state.pool_k1
 duoforge.state.pool_k2
+duoforge.state.pool_k3
 duoforge.state.pool_mega2
 duoforge.state.pool_setup
 duoforge.state.pool_tail
