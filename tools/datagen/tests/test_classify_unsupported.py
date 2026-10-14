@@ -44,9 +44,13 @@ def analyse_move(name, *lines):
     return cu.analyse('move', [body(name, *lines)])
 
 
-def classify_move(name, *lines, modelled=False, witnesses=(), recorded=None, references=()):
+SCAREY = witness('scaryface', 'NONE', 'boosts: {spe: -1},')
+BREAKING = witness('breakingswipe', 'NONE', 'target: "normal",')
+
+
+def classify_move(name, *lines, modelled=False, witnesses=(), recorded=None, references=(), reason=None):
     return cu.classify_entry('move', name, name.title(), modelled, analyse_move(name, *lines), list(witnesses),
-                             'data/moves.ts:1-2', recorded, list(references))
+                             'data/moves.ts:1-2', recorded, list(references), generator_reason=reason)
 
 
 class MoveClasses(unittest.TestCase):
@@ -112,6 +116,31 @@ class MoveClasses(unittest.TestCase):
         self.assertEqual(rec['family'], {
             'multihit': {'id': 'multiwitness', 'special': 'MULTI_HIT_2_5'},
             'flags.bullet': {'id': 'bulletwitness', 'column': 'flags'}})
+
+    def test_combination_reason_with_only_generic_witnesses_is_none(self):
+        rec = classify_move('cottonspore', 'boosts: {spe: -1},', 'target: "normal",', witnesses=[SCAREY, BREAKING],
+                            reason='primary boosts on a non-self target')
+        self.assertEqual(rec['family'], 'none')
+        self.assertIn('uncovered: primary boosts on a non-self target', rec['reasons'])
+        self.assertEqual(rec['generator_reason'], 'primary boosts on a non-self target')
+
+    def test_reason_covered_by_a_dedicated_witness(self):
+        rec = classify_move('reasonmulti', 'multihit: [2, 5],', 'basePower: 25,', witnesses=[MULTI],
+                            reason='field multihit')
+        self.assertEqual(rec['class'], 'data-only')
+        self.assertEqual(rec['family'], {
+            'multihit': {'id': 'multiwitness', 'special': 'MULTI_HIT_2_5'},
+            'reason field multihit': {'id': 'multiwitness', 'special': 'MULTI_HIT_2_5'}})
+
+    def test_reason_with_a_dedicated_witness_of_other_text_is_none(self):
+        rec = classify_move('reasonother', 'multihit: [3, 3],', 'basePower: 25,', witnesses=[MULTI],
+                            reason='field multihit')
+        self.assertEqual(rec['family'], 'none')
+        self.assertIn('uncovered: field multihit, multihit', rec['reasons'])
+
+    def test_generator_reason_is_none_for_a_modelled_entry(self):
+        rec = classify_move('jetpunch', 'basePower: 60,', modelled=True)
+        self.assertIsNone(rec['generator_reason'])
 
     def test_a_field_value_no_entry_has_is_none(self):
         rec = classify_move('odd', 'multihit: [2, 5],', 'target: "foo",', witnesses=[MULTI, BULLET])

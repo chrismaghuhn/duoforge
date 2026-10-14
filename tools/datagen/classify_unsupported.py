@@ -48,19 +48,15 @@ A data-only batch (a pool move with fields that no existing special owns) needs,
   handler's owned text in G2_OWNED_FIELDS (2858-2915), because parse_move (316-350) looks the special up by move id
   and fails on a dedicated field (multihit, secondaries, self volatile) that the id does not own. Other column fields
   combine freely with it, as the owned-field check only pins the owned fields' exact text.
-Two caveats: a flag in IGNORED_FLAGS (gen_closure.py 113-116: bullet, metronome, mirror, ...) has no engine effect, so
-covering it by a witness only shows that the generator accepts the name; and multihit is parsed for every move by
-its values (gen_closure.py 499-503), the special is what gives it an engine effect.
-
-Id references (the scan of the pinned code, data/conditions.ts and sim/*.ts and the Champions mod, minus its definition
-tables moves/abilities/items/learnsets/formats-data/text, plus data/rulesets.ts and data/scripts.ts when present).
-A quoted lowercase id counts as a reference when it is:
-  hasAbility('x'), hasItem('x'), hasMove('x') and every has*('x') call;
-  .id === 'x' or .name !== 'x' (any == or != comparison of .id or .name);
-  case 'x': in a switch;
-  .includes('x');
-  a quoted id inside one [...] on the same line (an array, a list or a key lookup such as volatiles['x']).
-Lines are compared after their // comments are removed. A reference on a line that spans several lines is not seen.
+Caveats on flags: gen_closure.py IGNORED_FLAGS (113-116) is {bullet, bypasssub, dance, distance, failcopycat,
+failencore, failinstruct, failmefirst, failmimic, heal, metronome, mirror, noassist, nonsky, nosketch,
+nosleeptalk, pulse, reflectable, slicing, snatch, sound, wind}; its comment says "without a consumer in the
+closure". bullet is in that list and is still an engine flag in the pool: FLAGS3_BITS (2937) gives bullet 16 (G83,
+Bulletproof), with reflectable 1, bypasssub 4 and pulse 8. The other names of IGNORED_FLAGS have a public static
+bit only (STATIC_FLAG_BITS, 2941), which has no engine reader (2939-2940). So covering flags.X by a witness shows
+the pool accepts the name; the engine acts on it only for the FLAGS3_BITS names.
+multihit is parsed for every move from its values (gen_closure.py 499-503); the special (MULTI_HIT_*) gives it the
+engine effect.
 
 Offline tooling. Reads the pinned checkout (its HEAD must be the pin; the hash-checked files of gen_closure.py are
 checked again) and the committed src/data tables; it changes no file. CTest does not run it.
@@ -241,23 +237,70 @@ def nearest_of(kind, key, cand, witnesses):
     return None
 
 
-def classify_entry(kind, eid, name, modelled, analysis, witnesses, pin_lines, recorded=None, references=()):
+REASON_PATTERNS = [
+    (re.compile(r'field (\w+)$'), lambda m, a: m.group(1)),
+    (re.compile(r'primary volatile \w+$'), lambda m, a: 'volatileStatus'),
+    (re.compile(r'secondary(?: volatile \w+)?$'),
+     lambda m, a: next((k for k in ('secondary', 'secondaries') if k in a['exact']), 'secondary')),
+    (re.compile(r'pseudo weather \w+$'), lambda m, a: 'pseudoWeather'),
+    (re.compile(r'side condition \w+$'), lambda m, a: 'sideCondition'),
+    (re.compile(r'primary boosts on a non-self target$'), lambda m, a: 'boosts'),
+    (re.compile(r'self effect$'), lambda m, a: 'self'),
+    (re.compile(r'target \w+$'), lambda m, a: 'target'),
+    (re.compile(r'flag (\w+)$'), lambda m, a: 'flags.' + m.group(1)),
+]
+
+
+def reason_key(feature, analysis):
+    """The pinned field that one generator reason feature names (gen_closure.py parse_move's unmodelled features,
+    as dfi_pool_move_unmodeled lists them), or None when it names no field."""
+    for pattern, key_of in REASON_PATTERNS:
+        m = pattern.match(feature)
+        if m:
+            return key_of(m, analysis)
+    return None
+
+
+def reason_features(generator_reason):
+    """The generator's features of a move, without its callbacks and conditions (those are hand-work already)."""
+    if not generator_reason:
+        return []
+    return [f for f in generator_reason.split('; ') if not re.match(r'(callback|condition)\b', f)]
+
+
+def classify_entry(kind, eid, name, modelled, analysis, witnesses, pin_lines, recorded=None, references=(),
+                   generator_reason=None):
     """One entry's record. analysis: analyse() of its pinned object. witnesses: the modelled and marked entries of the
     same kind (make_witness). recorded: the comment that names the entry (modelled-unmarked only). references: the
-    'file:line' sites that reference its id."""
+    'file:line' sites that reference its id. generator_reason: the generator's unmodelled reason of a move, verbatim.
+    A data-only move is covered only if each of its reason features is covered by a DEDICATED witness (special not
+    NONE) with the same exact text on the feature's field, and each of its fields is covered per field."""
     if modelled:
         reason = 'unmarked: ' + (recorded if recorded else 'no recorded reason')
-        return _record(kind, eid, name, 'modelled-unmarked', [reason], None, None, pin_lines)
+        return _record(kind, eid, name, 'modelled-unmarked', [reason], None, None, pin_lines, generator_reason)
     callbacks = analysis['callbacks']
     if callbacks or references:
         reasons = ['condition' if c == 'condition' else 'callback ' + c for c in callbacks]
         reasons += ['referenced by id at ' + site for site in references]
-        return _record(kind, eid, name, 'hand-work', reasons, None, None, pin_lines)
+        return _record(kind, eid, name, 'hand-work', reasons, None, None, pin_lines, generator_reason)
     fields = analysis['fields']
-    if not fields:
+    features = reason_features(generator_reason) if kind == 'move' else []
+    if not fields and not features:
         return _record(kind, eid, name, 'data-only', ['no callback', 'no id reference', 'no effect fields'],
-                       'no effect fields', None, pin_lines)
+                       'no effect fields', None, pin_lines, generator_reason)
     family, uncovered, nearest = {}, [], None
+    for feature in features:
+        key = reason_key(feature, analysis)
+        w = None
+        if key is not None and key in analysis['exact']:
+            w = next((x for x in _ordered(witnesses) if x['handler'] != 'NONE' and key in x['exact']
+                      and x['exact'][key] == analysis['exact'][key]), None)
+        if w is None:
+            uncovered.append(feature)
+            if key is not None:
+                nearest = nearest or nearest_of(kind, key, analysis, witnesses)
+        else:
+            family['reason ' + feature] = {'id': w['id'], 'special': w['handler']}
     for key in sorted(fields):
         w = field_witness(kind, key, analysis, witnesses)
         if w is None:
@@ -267,14 +310,18 @@ def classify_entry(kind, eid, name, modelled, analysis, witnesses, pin_lines, re
             family[key] = _entry_for(kind, key, w)
     base = ['no callback', 'no id reference']
     if not uncovered:
-        return _record(kind, eid, name, 'data-only', base + ['every field covered'], family, None, pin_lines)
+        return _record(kind, eid, name, 'data-only', base + ['every field and reason covered'], family, None,
+                       pin_lines, generator_reason)
     reasons = base + ['uncovered: ' + ', '.join(uncovered)]
-    return _record(kind, eid, name, 'data-only', reasons, 'none', nearest, pin_lines)
+    return _record(kind, eid, name, 'data-only', reasons, 'none', nearest, pin_lines, generator_reason)
 
 
-def _record(kind, eid, name, cls, reasons, family, nearest, pin_lines):
-    return {'kind': kind, 'id': eid, 'name': name, 'class': cls, 'reasons': reasons, 'family': family,
-            'nearest': nearest, 'pin_lines': pin_lines}
+def _record(kind, eid, name, cls, reasons, family, nearest, pin_lines, generator_reason=None):
+    record = {'kind': kind, 'id': eid, 'name': name, 'class': cls, 'reasons': reasons, 'family': family,
+              'nearest': nearest, 'pin_lines': pin_lines}
+    if kind == 'move':
+        record['generator_reason'] = generator_reason
+    return record
 
 
 # ---- id references in the pinned code ----
@@ -486,12 +533,12 @@ def build(checkout):
                 witnesses.append({'id': eid, 'handler': handler, 'fields': analysis['fields'],
                                   'exact': analysis['exact']})
             else:
-                pending.append((eid, name, modelled, analysis, refs))
-        for eid, name, modelled, analysis, refs in pending:
+                pending.append((enum, eid, name, modelled, analysis, refs))
+        for enum, eid, name, modelled, analysis, refs in pending:
             recorded = recorded_reason(name, comments) if modelled else None
             sites = [] if modelled else references.get(eid, [])
             records.append(classify_entry(kind, eid, name, modelled, analysis, witnesses,
-                                          '; '.join(refs), recorded, sites))
+                                          '; '.join(refs), recorded, sites, unmodeled.get(enum)))
     records.sort(key=lambda r: (KINDS.index(r['kind']), r['id']))
     return records
 
