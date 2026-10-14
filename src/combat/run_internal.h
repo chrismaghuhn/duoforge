@@ -77,6 +77,10 @@ typedef struct dfi_run {
     /* The pin's activeTarget for the Substitute hit that sub_hit marks (sim/battle-actions.ts:693, :1154). Last in the struct
      * (positional initializers, which take 0u here). */
     uint32_t sub_active;
+    /* step K2 (Piercing Drill, decision 0015 5dd): the flat positions (bit t) whose protection the current hit's move passed through
+     * by the holder's HitProtect bypass. Transient: cleared before each hit's protection checks, read by that hit's damage. Last in
+     * the struct (positional initializers, which take 0u here). */
+    uint32_t protect_bypass;
 } dfi_run;
 
 static inline dfi_active_slot *dfi_pos(struct duoforge_battle *b, uint32_t flat)

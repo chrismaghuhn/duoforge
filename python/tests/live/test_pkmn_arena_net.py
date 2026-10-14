@@ -54,11 +54,13 @@ class ArenaNetworkTest(unittest.TestCase):
         self.addCleanup(self.logs.cleanup)
         self.sent = []
 
-    def play(self, search=None, fmt=OTS, messages=None):
+    def play(self, search=None, fmt=OTS, messages=None, before=None):
         net, tables = live_policy.load(self.path), data.for_checkpoint(self.path)
         bot = pkmn_arena.ArenaBot(NAME, tables, net, self.logs.name, fmt, team_text=FIXTURE["team"], search=search,
                                   mode="raw" if search is None else "honest")
         self.addCleanup(bot.close)
+        if before is not None:
+            before(bot)
 
         async def send(text):
             self.sent.append(text)
@@ -149,6 +151,35 @@ class ArenaNetworkTest(unittest.TestCase):
         self.assertEqual(dict(bot.run_log.fallback_battles), {})
         self.assertEqual(bot.run_log.cts["battles"], 1)
         self.assertNotIn("default", " ".join(self.chosen()))
+
+
+    def test_after_the_warm_up_a_closed_sheet_battle_compiles_nothing(self):
+        # HauptSession, 2026-10-14: the first team preview of the 2e deploy took 2.007 s, a deadline miss (JAX compiling
+        # the search's and the network's functions). The bot warms up before it accepts a battle (search.warm_up: a
+        # team preview and a turn of an engine battle, one world per particle); the battle after it compiles nothing.
+        import jax.monitoring
+        compiles = []
+        jax.monitoring.register_event_duration_secs_listener(
+            lambda event, seconds, **kw: compiles.append(event) if "backend_compile" in event else None)
+        foe, _ = pkmn_arena.load_foe_net(self.path, pkmn_arena.sha256_of(self.path))
+        live = live_search.load(self.path, dict(live_search.HONEST_SETTINGS, foe_net=foe))
+        room_id = f"battle-{CTS}-9"
+        messages = [m.replace(ROOM, room_id) for m in battle_messages()]
+        messages = ["\n".join(line for line in m.split("\n") if not line.startswith("|showteam|")) for m in messages]
+        warmed = []
+
+        def warm(bot):
+            warmed.append(bot.warm_up())  # compiles what the tests before it in this process did not
+            warmed.append(len(compiles))
+        with mock.patch.object(live_search, "DEADLINE_CAP", 120.0):  # a deadline does not decide what is compiled
+            bot = self.play(search=live, fmt=CTS, messages=messages, before=warm)
+        self.assertEqual(sorted(warmed[0]), ["team", "turn"])
+        self.assertEqual(bot.run_log.as_dict()["warm_up"], warmed[0])
+        self.assertEqual(compiles[warmed[1]:], [])
+        text = Path(self.logs.name, f"{room_id}-tiansuan.jsonl").read_text(encoding="utf-8")
+        outcomes = [json.loads(line)["search"] for line in text.splitlines() if '"search"' in line]
+        self.assertIn("searched", [o["cause"] for o in outcomes], outcomes)
+        self.assertFalse([o for o in outcomes if o["fallback"] is not None], outcomes)
 
 
 BC6 = os.environ.get("DUOFORGE_BC6", "/mnt/c/Dev/datasets/m11-bc-runs/bc6-M/bc.npz" if os.name != "nt"

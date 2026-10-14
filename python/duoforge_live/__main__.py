@@ -104,6 +104,7 @@ def arena_main(argv):
     bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
                               search=live, mode=mode, foe_check=foe_check, code=code)
     try:
+        bot.warm_up()  # before the first battle: its decisions compile nothing (2.0 s at a cold team preview)
         asyncio.run(bot.run())
     finally:
         bot.close()
