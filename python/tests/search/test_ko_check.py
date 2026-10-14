@@ -351,6 +351,16 @@ class ClosedReplayTest(unittest.TestCase):
         self.assertEqual(row["turn"], int(game.tracker.observations()[0]["turn"]))
         self.assertTrue(all(int(o["turn"]) == row["turn"] for o in game.tracker.observations()))
 
+    def test_a_battle_ended_on_its_last_choice_plays_it_as_sent(self):
+        ended = [{"feed": ["|turn|7"]}, {"decision": 22, "sent": "move 3 2, pass"}, {"in": "|win|x"}, {"end": "|win|x"},
+                 {"summary": {}}]
+        self.assertTrue(ko_check.ended_on(ended, 22))
+        for later in ({"feed": ["|turn|8"]}, {"accepted": "move 3 2, pass"}, {"in": "|error|[Invalid choice] no"}):
+            with self.subTest(later=later):
+                self.assertFalse(ko_check.ended_on(ended[:2] + [later] + ended[2:], 22))
+        self.assertFalse(ko_check.ended_on(ended[:3], 22))  # no end: the log stops, the battle did not end
+        self.assertFalse(ko_check.ended_on(ended, 23))
+
     def test_the_logged_choice_is_the_accepted_one(self):
         self.assertEqual(ko_check.logged_choice({"sent": "move 1, move 2"}), "move 1, move 2")
         self.assertEqual(ko_check.logged_choice({"sent": "move 1, move 2", "accepted": "move 3, move 2"}),

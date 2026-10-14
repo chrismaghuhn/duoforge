@@ -296,11 +296,25 @@ def replay(path, data, policy, live, team_text, episode, budget=1e9):
             yield game, record, live.searcher.records[0]
 
 
+def ended_on(records, decision):
+    """Whether the battle ended on the choice of the decision record `decision`: after it the log holds the battle's
+    end ({"end"}), and no batch fed, no choice accepted and no error line. The server took that choice without an error
+    and the battle ended in that turn, so it was played as sent; the bot writes no "accepted" record after the last
+    batch (pkmn_arena ends the battle before feeding it)."""
+    at = max((i for i, r in enumerate(records) if r.get("decision") == decision and "sent" in r), default=None)
+    if at is None:
+        return False
+    after = records[at + 1:]
+    return (any("end" in r for r in after) and not any("feed" in r or "accepted" in r for r in after)
+            and not any(str(r.get("in", "")).startswith("|error|") for r in after))
+
+
 def replay_closed(path, data, policy, live, team_text, bot, prior, counts, budget=1e9):
     """The searched turn decisions of one closed-sheet battle log, replayed by cts.LogReplay (the bot's seed, the room
     of the log's name as the key, prior): yields (game, log record, search record) after the search (live, a LiveSearch
     whose searcher is a _Capture) has decided each decision point the bot was asked at, before its choice is accepted.
-    counts (a Counter) gets "no_decision_record" for a point the bot wrote no decision record at. Refused for an
+    counts (a Counter) gets "no_decision_record" for a point the bot wrote no decision record at, and "ended_on_sent"
+    for a last decision the battle ended on (ended_on: played as sent). Refused for an
     open-sheet log, a log of another bot, or a stop or fallback of the bot (by name, after the decisions before it);
     SearchError when the replay and the bot disagree on a stop (a determinism break)."""
     from duoforge_live import cts
@@ -317,6 +331,9 @@ def replay_closed(path, data, policy, live, team_text, bot, prior, counts, budge
         if record is None:
             counts["no_decision_record"] += 1
             continue
+        if record["accepted"] is None and ended_on(records, record["decision"]):
+            record = dict(record, accepted=record["sent"])  # the battle ended on it: played as sent, counted
+            counts["ended_on_sent"] += 1
         live.searcher.records = None
         game.candidates(budget)
         outcome = game.outcomes[-1] if game.outcomes else None
