@@ -190,7 +190,8 @@ aws s3 cp "$WORK/env.json" "$S3_BASE/env.json" --only-show-errors
 
 # --- the series: one command; preview_series pins its processes itself (taskset, process i on CPUs 16i to 16i+15).
 # Its deadline lies 30 minutes before the watchdog, so that it stops itself (refused: deadline) and its aggregates
-# still go up; while it runs, series.json and matrix/ go up every 10 minutes (a spot interruption keeps the record).
+# still go up; while it runs, series.json and matrix/ go up to progress/ every 10 minutes (a spot interruption keeps
+# the record; a copy still in flight at the end can never overwrite the final keys).
 OUT="$WORK/out"
 list=$(python3 "$TOOLS/oracle_conf.py" argv "$CONF" "$NETS" "$TEAMS" "$OUT") || refuse bad_conf 'oracle_conf.py argv'
 mapfile -t ARGS <<< "$list"
@@ -200,10 +201,10 @@ log "series: preview_series ${ARGS[*]} --parallel 3 --cpus-per-process 16 --dead
 progress() { # the record so far, every 10 minutes; a failed copy is tried again next time
     while sleep 600; do
         if [ -f "$OUT/series.json" ]; then
-            aws s3 cp "$OUT/series.json" "$S3_BASE/series.json" --only-show-errors >> "$LOG" 2>&1 || true
+            aws s3 cp "$OUT/series.json" "$S3_BASE/progress/series.json" --only-show-errors >> "$LOG" 2>&1 || true
         fi
         if [ -d "$OUT/matrix" ]; then
-            aws s3 cp "$OUT/matrix" "$S3_BASE/matrix" --recursive --only-show-errors >> "$LOG" 2>&1 || true
+            aws s3 cp "$OUT/matrix" "$S3_BASE/progress/matrix" --recursive --only-show-errors --exclude '*.tmp'                 >> "$LOG" 2>&1 || true
         fi
     done
 }

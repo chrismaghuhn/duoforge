@@ -1782,7 +1782,9 @@ class OracleLaunch(unittest.TestCase):
                                 '--exclude \'logs/*\' >> "$LOG" 2>&1')
         progress = text[text.index('progress() {'):text.index('progress &')]
         self.assertEqual(re.findall(r'aws s3 cp ("[^"]+") ("[^"]+")', progress),
-                         [('"$OUT/series.json"', '"$S3_BASE/series.json"'), ('"$OUT/matrix"', '"$S3_BASE/matrix"')])
+                         [('"$OUT/series.json"', '"$S3_BASE/progress/series.json"'),
+                          ('"$OUT/matrix"', '"$S3_BASE/progress/matrix"')])
+        self.assertIn("--exclude '*.tmp'", progress)
         for word in ('series.log', 'series-tail', '/logs/', 'tail -n'):
             self.assertFalse([l for l in uploads if word in l], word)
         self.assertNotIn('tail -n 200 "$WORK/series.log"', text)

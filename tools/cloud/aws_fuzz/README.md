@@ -469,8 +469,9 @@ instance type, the CPU, whether it has AVX-512, the Python version, `pip freeze`
 
 **Time.** The series gets a deadline 30 minutes before the watchdog (`--deadline-seconds`): a block that would start
 after it is refused (`deadline` in `series.json`), so the aggregates still go up. `series.json` records every block's
-and every round's seconds. While the series runs, `series.json` and `matrix/` go up every 10 minutes, so a spot
-interruption keeps the record so far.
+and every round's seconds; a batch of processes starts only if one as long as the longest so far would end before
+the deadline. While the series runs, `series.json` and `matrix/` go up to `progress/` every 10 minutes (own keys: a
+copy still in flight at the end can never overwrite the final ones), so a spot interruption keeps the record so far.
 
 **What leaves the box**, under `fuzz/oracle/<campaign>/<commit12>-oracle-<launch time>/`, whatever the exit of the series,
 in one recursive copy: `series.json`, `equality.json`, `matrix/*.json`, `runs/*/conditions.json`, `runs/*/oracle.json`,

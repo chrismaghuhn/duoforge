@@ -21,8 +21,8 @@ mixes on the filled matrix), the stop rule (gap below 3 points, nothing new, or 
 measurement (a screen of the final mix, the confirmation of drawn and its 5 best answers, the controls today and
 23|04) with the predeclared comparisons, paired, and the book reading. DIR/series.json records every block, its
 seconds and each round's seconds, the mixes, gaps and the stop reason, and the final numbers; DIR/matrix/ holds the
-matrix files. --deadline-seconds stops the series before a block that would start after it (refused: deadline), so
-that a box's watchdog never cuts it off unrecorded. Exit 0 when the series is done, 3 when the check failed, 4 when a
+matrix files. --deadline-seconds stops the series before a batch of processes that could end after it, judged by the
+longest batch so far (refused: deadline), so that a box's watchdog never cuts it off unrecorded. Exit 0 when the series is done, 3 when the check failed, 4 when a
 run failed, the series or one of the oracle's own checks refused, or anything else went wrong (series.json names the
 reason; an error of another kind is named by its type only, since its text could name a member of a team).
 """
@@ -103,6 +103,7 @@ class Series:
                        "cpus_per_process": args.cpus_per_process, "status": "running", "blocks": [], "rounds": []}
         self.counter = 0
         self.started = time.monotonic()
+        self.longest = 0.0  # the longest batch so far: a batch starts only if one as long would end before the deadline
 
     # ----------------------------------------------------------------------------------------------- the runs
     def base(self):
@@ -122,8 +123,9 @@ class Series:
         if len(jobs) > self.args.parallel:
             raise SeriesError("internal", f"block {name}: {len(jobs)} jobs for {self.args.parallel} processes")
         deadline = self.args.deadline_seconds
-        if deadline and time.monotonic() - self.started > deadline:
-            raise SeriesError("deadline", f"block {name} would start after the deadline ({deadline} s)")
+        if deadline and time.monotonic() - self.started + self.longest > deadline:
+            raise SeriesError("deadline", f"block {name} could end after the deadline ({deadline} s; the longest batch so far "
+                                          f"took {self.longest:.0f} s)")
         started = time.perf_counter()
         procs = []
         for slot, (out, args) in enumerate(jobs):
@@ -132,6 +134,7 @@ class Series:
             procs.append((out, _start(self.command(out, args, slot), log, os.environ.copy())))
         codes = [p.wait() for _, p in procs]
         seconds = time.perf_counter() - started
+        self.longest = max(self.longest, seconds)
         self.record["blocks"].append({"block": name, "processes": len(jobs), "seconds": seconds,
                                       "exit": codes})
         self.save()

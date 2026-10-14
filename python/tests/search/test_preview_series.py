@@ -324,6 +324,18 @@ class SeriesTest(unittest.TestCase):
         self.assertEqual((code, record["reason"]), (series.FAILED_EXIT, "deadline"))
         self.assertEqual(record["blocks"], [])  # no block started after the deadline
 
+    def test_a_batch_starts_only_if_one_as_long_as_the_longest_ends_before_the_deadline(self):
+        args = series.parser().parse_args(["--plan", "preview-mixed-2026-10-14", "--checkpoint", "c", "--foe-net", "c",
+                                           "--ours", "o", "--foe", "f", "--out", "unused", "--deadline-seconds", "60"])
+        run = series.Series(args, series.PLANS[args.plan])
+        run.save = lambda: None
+        run.started, run.longest = 0.0, 20.0
+        with mock.patch.object(series.time, "monotonic", return_value=30.0):
+            run.run_jobs("ok", [])  # 30 s gone + 20 s at most: ends by 50 s
+            run.longest = 40.0
+            with self.assertRaisesRegex(series.SeriesError, "could end after the deadline"):
+                run.run_jobs("late", [])  # 30 + 40 > 60: refused before it starts
+
     def test_the_plan_fixes_workers_and_steps(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = ["--plan", "preview-mixed-2026-10-14", "--checkpoint", "c", "--foe-net", "c", "--ours", "o",
