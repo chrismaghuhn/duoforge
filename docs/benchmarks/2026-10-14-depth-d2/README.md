@@ -110,12 +110,25 @@ Each run reports its commit, its `dirty` flag and the library's sha256.
 | T_acc: iterations to ε = 1e-3 of the range (A, all 956 keyed decisions per width) | max 340 (width 2), 450 (width 3), **490** (width 4); 0 unconverged at 50,000 | **2 × 490 = 980** |
 | T_time: tree-solve seconds per iteration (B, exclusive, width 4) | median 0.851 ms, **p99 1.404 ms**, max 1.620 ms | **0.4 s / 1.404 ms → 280** |
 
-**T_acc (980) > T_time (280).** By the rule fixed above, **no default is set**: the HauptSession and the owner decide.
-At 280 iterations, 0.31 % (width 2), 0.84 % (width 3) and 0.84 % (width 4) of A's keyed decisions would end as
+**T_acc (980) > T_time (280).** By the rule fixed above, **no default is set**: the HauptSession and the owner decide
+(the bound they set is below). At 280 iterations, 0.31 % (width 2), 0.84 % (width 3) and 0.84 % (width 4) of A's keyed decisions would end as
 `solver_unconverged`, above the 0.1 % at which an arm's bound is re-assessed. At 490 none would.
 
 - **Share solved by a bound T** (A, width 4): 40: 29.7 %; 80: 65.2 %; 160: 93.3 %; 320: 99.58 %; 640 and above: 100 %.
 - **Iterations to ε** (A): median 60 / 60 / 70, p99 240 / 264.5 / 270 for widths 2 / 3 / 4.
+
+#### The bound set (HauptSession and owner, 2026-10-14)
+
+`tree.TREE_MAX_ITERATIONS = 490`: the largest count any of A's keyed decisions needed, so no recorded decision is cut
+off. **This departs from the rule fixed above**: the default would have been T_acc = 2 × 490 = 980, and only if
+T_acc ≤ T_time = 280. The bound drops the factor 2 and exceeds T_time. At 490 the tree solve costs up to about
+490 × 1.404 ms ≈ 0.69 s (B's p99 per iteration), above the 0.4 s the rule assumed.
+
+- **Gate before any arm:** the bound is checked again on trees keyed by the engine digest (decision 0082). If an arm's
+  `solver_unconverged` share exceeds 0.1 %, the bound is assessed again before that arm counts.
+- **Not live:** the live gate asks for an exclusive local p99 ≤ 0.67 s; the three tree phases alone take median
+  0.83 s, p99 1.04 s (below), 0.55 s of it the depth-2 evaluation. D2 runs the ladder first; then the owner and the
+  HauptSession decide whether live waits for D4's evaluation or the live budget is raised.
 
 #### `observation_key_refused` (the record key's gap)
 

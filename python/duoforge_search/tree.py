@@ -39,9 +39,11 @@ from . import matrix
 from .errors import SearchError
 
 FOE_BELOW = ("nash", "model")
-# Provisional: D2's own offline pass (plan step 10) fixes it by accuracy and time before any measurement; D1's
-# matrix.RM_MAX_ITERATIONS holds for D1's root only (its tables and cost per iteration are not the tree's).
-TREE_MAX_ITERATIONS = 10_000
+# From D2's offline pass (plan step 10, docs/benchmarks/2026-10-14-depth-d2): the largest iteration count any recorded
+# decision needed to reach epsilon (width 4). The pass's rule (twice that, 980) exceeds its time bound (280), so the
+# bound is the measured maximum, apart from the rule; it is checked again on digest-keyed trees before any ladder arm.
+# D1's matrix.RM_MAX_ITERATIONS holds for D1's root only (its tables and cost per iteration are not the tree's).
+TREE_MAX_ITERATIONS = 490
 
 
 class Tree(NamedTuple):
