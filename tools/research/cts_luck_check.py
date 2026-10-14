@@ -91,7 +91,7 @@ def true_points(messages, own_text, data, trace, player):
     return points
 
 
-def hypothesis(point, state, spec_rows, picks, player, data):
+def hypothesis(point, state, spec_rows, picks, player, data, start):
     """The true HYPOTHESIS of the point's record: the foe's stat points, exact HP and picks; Skip for a hidden counter."""
     from duoforge import view
     for side in state["sides"]:
@@ -109,6 +109,8 @@ def hypothesis(point, state, spec_rows, picks, player, data):
             raise Skip("roster-unmatched")
         h["stat_points"][0][i] = spec_rows[foe][rows[0]][3]
         mons = [m for m in state["sides"][foe]["pokemon"] if base_of(data, m["set_species"]) == base]
+        if not mons:  # not brought: the state after the team preview lists the brought only; its HP is the start's
+            mons = [m for m in start["sides"][foe]["pokemon"] if base_of(data, m["set_species"]) == base]
         if len(mons) != 1:
             raise Skip("roster-unmatched")
         h["hp"][0][i] = int(mons[0]["hp"])
@@ -181,7 +183,7 @@ def oracle(name, player, messages, spec, trace, data, search, decisions):
             batch = batch_next = None
             try:
                 state = state_before(trace, p["k"])
-                h = hypothesis(p, state, spec_rows, picks, player, data)
+                h = hypothesis(p, state, spec_rows, picks, player, data, trace["start"]["state"])
                 batch = world(search.worlds.context, p, h)
                 indices = np.zeros((1, 2), np.int64)
                 for side in (0, 1):
@@ -208,7 +210,7 @@ def oracle(name, player, messages, spec, trace, data, search, decisions):
                     out[rqid] = result - float(means[0])
                     continue
                 state_next = state_before(trace, nxt["k"])
-                h_next = hypothesis(nxt, state_next, spec_rows, picks, player, data)
+                h_next = hypothesis(nxt, state_next, spec_rows, picks, player, data, trace["start"]["state"])
                 batch_next = world(search.worlds.context, nxt, h_next)
                 before = len(luck.step_terms)
                 luck.after(batch_next, np.array([False]))
