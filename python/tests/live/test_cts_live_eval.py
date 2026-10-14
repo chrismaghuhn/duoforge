@@ -130,6 +130,24 @@ class OpponentTest(unittest.TestCase):
         later = ev.assign_labels(["w", "x", "w", "v"], labels)
         self.assertEqual(later, {"y": "A", "z": "B", "x": "C", "w": "D", "v": "E"})  # kept, then continued
 
+    def test_an_opponents_team_is_its_preview_species(self):
+        records = [{"in": "|player|p1|Ling-Ce||"}, {"in": "|player|p2|Some Foe|2|"},
+                   {"in": "|poke|p1|Froslass, L50, F|"}, {"in": "|poke|p2|Garchomp, L50, M|"},
+                   {"in": "|poke|p2|Charizard, L50, M|"}]
+        self.assertEqual(ev.foe_team(records, "lingce"), ev.foe_team(list(reversed(records)), "lingce"))
+        other = records[:-1] + [{"in": "|poke|p2|Venusaur, L50, F|"}]
+        self.assertNotEqual(ev.foe_team(records, "lingce"), ev.foe_team(other, "lingce"))
+
+    def test_each_opponents_teams_are_numbered_by_first_appearance_and_kept(self):
+        # An opponent may change its team between series (HauptSession, 2026-10-14): each team of an opponent is a
+        # label of its own, letter and number, kept in the same private file.
+        labels = ev.assign_labels(["x", "y"], {})
+        labels = ev.assign_teams([("x", "t1"), ("y", "s1"), ("x", "t2"), ("x", "t1")], labels)
+        self.assertEqual([ev.team_label(labels, o, t) for o, t in (("x", "t1"), ("x", "t2"), ("y", "s1"))],
+                         ["A1", "A2", "B1"])
+        later = ev.assign_teams([("x", "t3"), ("x", "t2")], labels)
+        self.assertEqual([ev.team_label(later, "x", t) for t in ("t1", "t2", "t3")], ["A1", "A2", "A3"])
+
     def test_the_label_file_never_lies_in_the_repository(self):
         with self.assertRaises(ValueError):
             ev.load_labels(data.ROOT / "python" / "tests" / "labels.json")
@@ -159,6 +177,7 @@ class MainTest(unittest.TestCase):
         for private_text in ("Some Foe", "somefoe", "Other Foe", "otherfoe", "501", "502", "Bobby"):
             self.assertNotIn(private_text, text)
         self.assertEqual(sorted(result["by_opponent"]), ["A"])  # the stopped battle has no timestamp: before --since
+        self.assertEqual(sorted(result["by_team"]), ["A1"])
         self.assertEqual((result["logs"], result["kept"]), (2, 1))
 
 

@@ -183,6 +183,40 @@ def opponent(records, bot):
     return None
 
 
+def foe_team(records, bot):
+    """A short digest of the opponent's team: its team-preview species (|poke| lines of its side), sorted. Species are
+    public game facts; the digest only tells one team of an opponent from another."""
+    import hashlib
+    side, species = None, []
+    for r in records:
+        line = r.get("in", "")
+        parts = line.split("|")
+        if line.startswith("|player|") and len(parts) > 3 and parts[3] and _toid(parts[3]) != bot:
+            side = parts[2]
+    for r in records:
+        line = r.get("in", "")
+        if side and line.startswith(f"|poke|{side}|"):
+            species.append(line.split("|")[3].split(",")[0])
+    return hashlib.sha256(",".join(sorted(species)).encode("utf-8")).hexdigest()[:12]
+
+
+def assign_teams(pairs, labels):
+    """labels extended by the (opponent, team) pairs (one per battle, in order) it lacks: each opponent's teams are
+    numbered by first appearance ("team:<opponent>|<team>" -> number), kept across series."""
+    out = dict(labels)
+    for o, t in pairs:
+        key = f"team:{o}|{t}"
+        if key not in out:
+            out[key] = 1 + sum(1 for k in out if k.startswith(f"team:{o}|"))
+    return out
+
+
+def team_label(labels, o, t):
+    """An opponent's team as its letter and number (A1, B2, ...), "?" for an unknown one."""
+    letter, number = labels.get(o), labels.get(f"team:{o}|{t}")
+    return f"{letter}{number}" if letter and number else "?"
+
+
 def _letters(k):
     """A, B, ..., Z, AA, AB, ..."""
     out = ""
@@ -200,8 +234,8 @@ def assign_labels(opponents, labels):
     counts, first = collections.Counter(opponents), {}
     for i, o in enumerate(opponents):
         first.setdefault(o, i)
-    for o in sorted((o for o in counts if o not in out), key=lambda o: (-counts[o], first[o])):
-        out[o] = _letters(len(out))
+    for o in sorted((o for o in counts if o not in out), key=lambda o: (-counts[o], first[o])):  # opponents only
+        out[o] = _letters(sum(1 for k in out if not k.startswith("team:")))
     return out
 
 
@@ -285,7 +319,7 @@ def _sha256(path):
     return h.hexdigest()
 
 
-def replay_all(directory, bot, root, labels=None, since=None, code=None):
+def replay_all(directory, bot, root, labels=None, since=None, code=None, details=None):
     """--replay over a log directory: the aggregates of replay() (module docstring); with labels (opponent id ->
     letter) also per opponent; with since (unix seconds) only the battles that started then or later."""
     import os
@@ -306,6 +340,7 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None):
               for t in json.loads((teams_dir / "index.json").read_text(encoding="utf-8"))["teams"]]
     points, refused, unexplained, skipped, stopped = 0, 0, 0, collections.Counter(), collections.Counter()
     per = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
+    per_team = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
     occurs, alone = collections.Counter(), collections.Counter()
     for path in sorted(Path(directory).glob(f"battle-*-{bot}.jsonl")):
         records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -333,10 +368,18 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None):
         out = replay(records, tables, prior, team[0], cts.room_of_log(path, bot), names)
         points += out["points"]
         if labels is not None:
-            group = per[labels.get(opponent(records, bot), "?")]
-            group["battles"] += 1
-            group["points"] += out["points"]
-            group["refused"] += len(out["refused"])
+            o = opponent(records, bot)
+            for group in (per[labels.get(o, "?")], per_team[team_label(labels, o, foe_team(records, bot))]):
+                group["battles"] += 1
+                group["points"] += out["points"]
+                group["refused"] += len(out["refused"])
+        if details is not None:  # private: the battle's room is in it (written outside the repository only)
+            held_by = collections.Counter(c for point in out["refused"] for c in set().union(*map(set, point)))
+            details.append({"room": cts.room_of_log(path, bot),
+                            "team": None if labels is None else team_label(labels, opponent(records, bot),
+                                                                           foe_team(records, bot)),
+                            "points": out["points"], "refused": len(out["refused"]), "content": dict(held_by),
+                            "stopped": out["stopped"], "diverged": out["diverged"]})
         if out["stopped"]:
             stopped[out["stopped"]] += 1
         if out["diverged"]:
@@ -355,8 +398,11 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None):
             "unexplained": unexplained, "skipped": dict(skipped), "stopped_battles": dict(stopped),
             "content": {c: {"occurs": n, "alone": alone[c]} for c, n in occurs.most_common()},
             "engine_code": engine, "tool_code": provenance(root),
-            **({} if labels is None else {"by_opponent": {
-                k: {**v, "searchable_share": 1.0 - v["refused"] / max(1, v["points"])} for k, v in sorted(per.items())}})}
+            **({} if labels is None else {
+                "by_opponent": {k: {**v, "searchable_share": 1.0 - v["refused"] / max(1, v["points"])}
+                                for k, v in sorted(per.items())},
+                "by_team": {k: {**v, "searchable_share": 1.0 - v["refused"] / max(1, v["points"])}
+                            for k, v in sorted(per_team.items())}})}
 
 
 def _code_of(b):
@@ -379,6 +425,9 @@ def main(argv=None):
     p.add_argument("--out", default=None, help="a JSON file for the result (outside the repository)")
     p.add_argument("--labels", default=None,
                    help="a private JSON file (outside the repository) of the opponents' letters, kept across series")
+    p.add_argument("--details", default=None,
+                   help="--replay: a private JSON file (outside the repository) of each battle's refused points, its room "
+                        "named: for a look at single battles, never for a report")
     p.add_argument("--code", default=None,
                    help="only the battles and run logs of a bot commit that starts with this (a measurement series)")
     p.add_argument("--replay", action="store_true",
@@ -401,20 +450,30 @@ def main(argv=None):
     labels = None
     if args.labels:
         labels = assign_labels([o for o in (opponent(r, bot) for r in kept) if o], load_labels(args.labels))
+        labels = assign_teams([(opponent(r, bot), foe_team(r, bot)) for r in kept if opponent(r, bot)], labels)
         save_labels(args.labels, labels)
+    details = None
+    if args.details:
+        refuse_repository(Path(args.details).parent)
+        details = []
     if args.replay:
         result = {"since": args.since, "code_filter": args.code, "by_code": by_code,
-                  **replay_all(args.logs, bot, ROOT, labels, since, args.code)}
+                  **replay_all(args.logs, bot, ROOT, labels, since, args.code, details)}
+        if details is not None:
+            Path(args.details).write_text(json.dumps(details, indent=1) + "\n", encoding="utf-8")
     else:
-        battles, groups = [], collections.defaultdict(list)
+        battles, groups, teams = [], collections.defaultdict(list), collections.defaultdict(list)
         for records in kept:
             battles.append(battle(records, bot))
             if labels is not None:
-                groups[labels.get(opponent(records, bot), "?")].append(battles[-1])
+                o = opponent(records, bot)
+                groups[labels.get(o, "?")].append(battles[-1])
+                teams[team_label(labels, o, foe_team(records, bot))].append(battles[-1])
         result = {"code": code, "since": args.since, "code_filter": args.code, "logs": len(logs), "kept": len(kept),
                   "by_code": by_code, **summarize(battles), "runs": run_logs(args.logs, args.since, args.code)}
         if labels is not None:
             result["by_opponent"] = {k: summarize(v) for k, v in sorted(groups.items())}
+            result["by_team"] = {k: summarize(v) for k, v in sorted(teams.items())}
     text = json.dumps(result, indent=1, sort_keys=True)
     if args.out:
         Path(args.out).write_text(text + "\n", encoding="utf-8")
