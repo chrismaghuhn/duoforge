@@ -37,7 +37,9 @@ pass no observer. Public step functions, `duoforge_batch_expand`, battle state, 
    replays them only for the existing knowledge timeline. Other steps hash their single complete event window.
 4. After all checks and buffer-capacity checks pass and the working battle commits, query the selected viewer's
    request, observation, extension and factored domain through the existing authoritative queries. Append only the
-   whitelist below and finalize. A post-commit projection failure has its own status; it cannot rewrite the step
+   whitelist below and finalize only if the folded row count equals the independently staged engine event count.
+   A mismatch refuses with `E_INVARIANT` / `observation_rows_mismatch`, leaving no valid key.
+   A post-commit projection failure has its own status; it cannot rewrite the step
    status or roll back a successful battle. An uncommitted/failed step never publishes a key.
 
 E1a exposes only private primitives and test plumbing. E1b makes the public sibling and Python sidecar available.
@@ -62,8 +64,10 @@ nor reference-event comparison. No seed, RNG use, particle identity, worker/chun
 appended. Root information and own prior actions are separate inputs to the tree's information-set key.
 
 Equal canonical streams/requests for a viewer yield equal hashes. Distinct streams are distinguished subject to
-SHA-256's collision assumption, not a mathematical promise of collision freedom. All-zero bytes are reserved for refusal and are never a valid key; status/validity is also checked.
-An actual all-zero SHA result is explicitly refused as `E_INVARIANT` / `observation_digest_zero`. Version/schema identity belongs in search provenance. A schema change
+SHA-256's collision assumption, not a mathematical promise of collision freedom. All-zero bytes are reserved
+for refusal and are never a valid key; status/validity is also checked.
+An actual all-zero SHA result is explicitly refused as `E_INVARIANT` / `observation_digest_zero`.
+Version/schema identity belongs in search provenance. A schema change
 requires a reviewed new domain version; do not silently change v1 bytes.
 
 ### Event payload whitelist
@@ -243,7 +247,7 @@ an unsupported projection. It must not be mislabeled a failed step or dropped pa
 | `E_INVALID_ARGUMENT = 2` | invalid viewer/configuration/output mode; terminal-root step keeps the legacy refusal |
 | `E_CONTEXT_MISMATCH = 3` | incompatible batches or evaluator/context |
 | `E_CAPACITY = 4` | declared output/workspace capacity insufficient; no arena growth |
-| `E_INVARIANT = 8` | staged event overflow, bad captured identity, missing HP projection or inconsistent engine query |
+| `E_INVARIANT = 8` | staged event overflow, folded/event count mismatch (`observation_rows_mismatch`), bad captured identity, missing HP projection or inconsistent engine query |
 | `E_EXHAUSTED = 9` | monotonic count/hash length or, later, fixed-point output cannot be represented |
 | `E_UNSUPPORTED = 11` | named unclassified event/variant/request schema or existing unsupported battle operation |
 | `E_STALE_EPOCH = 12` | submitted request epoch is stale, as in the existing step |
@@ -276,14 +280,27 @@ snapshot finalization and cumulative-length failure atomicity.
 
 E1a also checks hidden-HP/maxima/RNG exclusion, displayed-damage changes, arbitrary foe roster-index exclusion,
 row-time switch identity, Illusion's displayed versus owned identity, unknown kinds/variants and capacity failures.
-The team-selection test proves four leads are counted once, then TURN. Failed steps clear earlier private keys.
+The team-selection test proves four leads are counted once, then TURN. Artificial missed/duplicate folds refuse
+with `E_INVARIANT` / `observation_rows_mismatch` against an independent staged count and publish no key.
+Failed steps clear earlier private keys.
 A white-box trapping control checks two engine-valid boundaries with different current-ability sources: identical
 projected step events and boundary masks, different own switch options and digests. It is a request-projection
-control, not a claim of identical CTS parent histories. Additional opt-in runs of every public reference battle replay both viewers through the observed step and the
+control, not a claim of identical CTS parent histories. Additional opt-in runs of every public reference battle
+replay both viewers through the observed step and the
 legacy step: exact canonical state/RNG, step result, tape use and event count agree; all existing reference state,
 observation and event assertions still execute. The ordinary reference mode retains all its original assertions.
 
 E1b then adds per-logical-leaf placement, worker/chunk reproducibility, public ABI/output/preflight tests and the
-Python node-batch digest sidecar. D2's offline pass and bound gate run again with real digest keys before a ladder arm.
+Python node-batch digest sidecar. Before D2 uses the digest, E1b must also pass:
+
+- Two actual determinizations with the same public history and action, different hidden facts, and equal digests
+  through the real engine step. The primitive projection controls above do not replace this E1 gate.
+- Invalid-viewer preflight before any leaf step executes, preserving outputs on refusal.
+- Reprompts in expand either refused with a named reason or processed through the observer; no unobserved path.
+
+Shown gender is public and fixed by the switch details. CTS owns the test that every particle preserves that
+recorded gender; only never-shown members may have sampled gender.
+
+D2's offline pass and bound gate run again with real digest keys before a ladder arm.
 No policy, network, D5 sampler or private weights are part of E1a. E2/E3 may proceed once this contract stands; each
 individual E4 training run still needs its own explicit Owner go. Owner and HS decide adoption; HS merges PRs.

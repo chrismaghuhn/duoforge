@@ -908,7 +908,7 @@ duoforge_status dfi_battle_step_observed(const duoforge_context *ctx, duoforge_b
         turn_res.boundary_kind = battle->boundary_kind;
         turn_res.request_mask = battle->request_mask;
         *out_result = turn_res;
-        if (observation != NULL) { dfi_observation_finish(observation, ctx, battle, out_result); }
+        if (observation != NULL) { dfi_observation_finish(observation, ctx, battle, out_result, staged.count); }
         return DUOFORGE_OK;
     }
     if (battle->boundary_kind != DUOFORGE_BOUNDARY_TEAM_SELECTION) {
@@ -985,7 +985,7 @@ duoforge_status dfi_battle_step_observed(const duoforge_context *ctx, duoforge_b
     res.boundary_kind = battle->boundary_kind;
     res.request_mask = battle->request_mask;
     *out_result = res;
-    if (observation != NULL) { dfi_observation_finish(observation, ctx, battle, out_result); }
+    if (observation != NULL) { dfi_observation_finish(observation, ctx, battle, out_result, staged.count); }
     return DUOFORGE_OK;
 }
 

@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-/* HS's 0082 contract reserves all-zero bytes for a refused key. Status is
+/* Decision 0082 reserves all-zero bytes for a refused key. Status is
  * still checked independently; a nonzero byte alone does not imply success. */
 static inline bool dfi_observation_key_nonzero(const uint8_t *key)
 {

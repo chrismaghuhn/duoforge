@@ -169,7 +169,7 @@ static void stream_vector(df_test *t)
     DF_CHECK(t, dfi_observation_digest_init(&digest, 0u) == DUOFORGE_OK);
     digest.identity[1] = (dfi_visible_identity){0x0102u, 1u, 1u};
     for (uint32_t i = 0u; i < 3u; ++i) { dfi_observation_fold(&digest, &df_observation_lines[i].event, i); }
-    dfi_observation_finish_view(&digest, &f.result, &f.request, &f.view, &f.ext, &f.domain);
+    dfi_observation_finish_view(&digest, &f.result, &f.request, &f.view, &f.ext, &f.domain, 3u);
     uint8_t expected[32]; DF_CHECK(t, df_hex_to_bytes(DF_OBSERVATION_STREAM_SHA256, expected, sizeof expected));
     DF_CHECK(t, digest.status == DUOFORGE_OK && digest.complete); DF_CHECK_EQ_U64(t, digest.rows, 3u);
     DF_CHECK_BYTES(t, digest.digest, expected, sizeof expected, "independent framed SHA-256 vector");
@@ -180,12 +180,32 @@ static void stream_vector(df_test *t)
     duoforge_event unknown = dfi_event_make(44u, 0u);
     dfi_observation_fold(&digest, &unknown, 0u);
     DF_CHECK(t, digest.status == DUOFORGE_E_UNSUPPORTED && strstr(digest.reason, "UNKNOWN") != NULL);
-    dfi_observation_finish_view(&digest, &f.result, &f.request, &f.view, &f.ext, &f.domain);
+    dfi_observation_finish_view(&digest, &f.result, &f.request, &f.view, &f.ext, &f.domain, 1u);
     DF_CHECK(t, !digest.complete); uint8_t zero[32] = {0};
     DF_CHECK_BYTES(t, digest.digest, zero, sizeof zero, "refused projection cannot publish a key");
     DF_CHECK(t, dfi_observation_digest_init(&digest, 0u) == DUOFORGE_OK);
     dfi_observation_fold(&digest, &df_observation_lines[0].event, DUOFORGE_MAX_EVENTS);
     DF_CHECK(t, digest.status == DUOFORGE_E_CAPACITY);
+}
+
+static void rows_mismatch(df_test *t)
+{
+    request_fixture f; make_request(&f);
+    uint8_t zero[32] = {0};
+    /* Simulate a missed fold and a duplicate fold for two staged engine events. */
+    for (uint32_t rows = 1u; rows <= 3u; rows += 2u) {
+        dfi_observation_digest digest;
+        DF_CHECK(t, dfi_observation_digest_init(&digest, 0u) == DUOFORGE_OK);
+        for (uint32_t i = 0u; i < rows; ++i) {
+            dfi_observation_fold(&digest, &df_observation_lines[0].event, i);
+        }
+        DF_CHECK(t, digest.status == DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, digest.rows, rows);
+        dfi_observation_finish_view(&digest, &f.result, &f.request, &f.view, &f.ext, &f.domain, 2u);
+        DF_CHECK(t, digest.status == DUOFORGE_E_INVARIANT && !digest.complete);
+        DF_CHECK(t, strcmp(digest.reason, "observation_rows_mismatch:2") == 0);
+        DF_CHECK_BYTES(t, digest.digest, zero, sizeof zero, "row mismatch cannot publish a key");
+    }
 }
 
 static void hidden_worlds_and_identity(df_test *t)
@@ -213,7 +233,7 @@ static void hidden_worlds_and_identity(df_test *t)
     dfi_observation_fold(&right, &projected, 0u);
     duoforge_step_result result = {0}; result.kind = DUOFORGE_STEP_BOUNDARY;
     result.boundary_kind = a->boundary_kind; result.request_mask = a->request_mask;
-    dfi_observation_finish(&left, ctx, a, &result); dfi_observation_finish(&right, ctx, b, &result);
+    dfi_observation_finish(&left, ctx, a, &result, 1u); dfi_observation_finish(&right, ctx, b, &result, 1u);
     DF_CHECK(t, left.complete && right.complete && left.status == DUOFORGE_OK && right.status == DUOFORGE_OK);
     DF_CHECK_BYTES(t, left.digest, right.digest, sizeof left.digest, "hidden exact HP/maxima and RNG do not split the foe view");
     b->sides[1].members[roster].hp = 82u;
@@ -221,7 +241,7 @@ static void hidden_worlds_and_identity(df_test *t)
     DF_CHECK(t, dfi_events_fold_knowledge(b, b, &known, 0u));
     DF_CHECK(t, dfi_observation_digest_init(&right, 0u) == DUOFORGE_OK);
     dfi_event_set_hp(&raw, &b->sides[1].members[roster]); dfi_event_project(&raw, 0u, &projected);
-    dfi_observation_fold(&right, &projected, 0u); dfi_observation_finish(&right, ctx, b, &result);
+    dfi_observation_fold(&right, &projected, 0u); dfi_observation_finish(&right, ctx, b, &result, 1u);
     DF_CHECK(t, right.complete && memcmp(left.digest, right.digest, sizeof left.digest) != 0);
     DF_CHECK(t, dfi_observation_digest_init(&left, 0u) == DUOFORGE_OK);
     raw = dfi_event_switch(a, 2u);
@@ -345,9 +365,18 @@ static void step_plumbing(df_test *t)
     DF_CHECK_BYTES(t, (const uint8_t *)&result, (const uint8_t *)&other, sizeof result, "legacy step result preserved");
     DF_CHECK(t, digest.complete && digest.status == DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, digest.rows, 5u); /* four leads consumed once, then TURN */
+    /* Inject a lost row after the real step; refusal must not alter the battle. */
+    dfi_observation_digest missing_row = digest;
+    missing_row.rows -= 1u;
+    dfi_observation_finish(&missing_row, ctx, observed, &result, 5u);
+    DF_CHECK(t, missing_row.status == DUOFORGE_E_INVARIANT && !missing_row.complete);
+    DF_CHECK(t, strcmp(missing_row.reason, "observation_rows_mismatch:5") == 0);
+    uint8_t zero[32] = {0};
+    DF_CHECK_BYTES(t, missing_row.digest, zero, sizeof zero, "row mismatch clears a previously published key");
+    DF_CHECK(t, duoforge_battle_equal(ctx, observed, legacy, &equal) == DUOFORGE_OK && equal);
     first_bundle(t, ctx, observed, &bundle);
     DF_CHECK(t, dfi_battle_step_observed(ctx, observed, &bundle, NULL, 0u, NULL, &result, NULL, &digest) == DUOFORGE_E_UNSUPPORTED);
-    DF_CHECK(t, !digest.complete); uint8_t zero[32] = {0};
+    DF_CHECK(t, !digest.complete);
     DF_CHECK_BYTES(t, digest.digest, zero, sizeof zero, "unsupported step clears the previous key");
     DF_CHECK(t, duoforge_battle_equal(ctx, observed, legacy, &equal) == DUOFORGE_OK && equal);
     digest.complete = true; memset(digest.digest, 0xA5, sizeof digest.digest);
@@ -359,7 +388,7 @@ static void step_plumbing(df_test *t)
 int main(void)
 {
     df_test t; df_test_begin(&t, "duoforge.observation.digest");
-    line_vectors(&t); request_vectors(&t); stream_vector(&t);
+    line_vectors(&t); request_vectors(&t); stream_vector(&t); rows_mismatch(&t);
     hidden_worlds_and_identity(&t); trapping_changes_request(&t); step_plumbing(&t);
     return df_test_end(&t);
 }

@@ -445,9 +445,12 @@ void dfi_observation_fold(dfi_observation_digest *digest, const duoforge_event *
 }
 
 void dfi_observation_finish(dfi_observation_digest *digest, const duoforge_context *ctx,
-    const duoforge_battle *battle, const duoforge_step_result *result)
+    const duoforge_battle *battle, const duoforge_step_result *result, uint32_t event_count)
 {
     if (digest->status != DUOFORGE_OK) { return; }
+    if (digest->rows != event_count) {
+        dfi_observation_error(digest, DUOFORGE_E_INVARIANT, "observation_rows_mismatch", event_count); return;
+    }
     duoforge_request request;
     duoforge_observation view;
     duoforge_observation_ext ext;
@@ -459,15 +462,18 @@ void dfi_observation_finish(dfi_observation_digest *digest, const duoforge_conte
     if (s != DUOFORGE_OK) {
         dfi_observation_error(digest, s, "observation_request_query", result->boundary_kind); return;
     }
-    dfi_observation_finish_view(digest, result, &request, &view, &ext, &domain);
+    dfi_observation_finish_view(digest, result, &request, &view, &ext, &domain, event_count);
 }
 
 void dfi_observation_finish_view(dfi_observation_digest *digest,
     const duoforge_step_result *result, const duoforge_request *request,
     const duoforge_observation *view, const duoforge_observation_ext *ext,
-    const duoforge_factored_domain *domain)
+    const duoforge_factored_domain *domain, uint32_t event_count)
 {
     if (digest->status != DUOFORGE_OK) { return; }
+    if (digest->rows != event_count) {
+        dfi_observation_error(digest, DUOFORGE_E_INVARIANT, "observation_rows_mismatch", event_count); return;
+    }
     uint8_t bytes[DFI_OBSERVATION_REQUEST_MAX];
     uint32_t n = 0u;
     const duoforge_status s = dfi_observation_request_encode(result, request, view, ext, domain, bytes, sizeof bytes, &n);

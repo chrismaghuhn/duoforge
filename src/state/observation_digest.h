@@ -39,12 +39,13 @@ DFI_PRIVATE void dfi_observation_capture(dfi_observation_digest *digest,
 DFI_PRIVATE void dfi_observation_fold(dfi_observation_digest *digest,
     const duoforge_event *projected, uint32_t index);
 /* Called only after successful commit. Projection failure has its own
- * sticky status and zero digest; it never changes the step's outcome. */
+ * sticky status and zero digest; it never changes the step's outcome.
+ * event_count is the independently staged engine count, not digest->rows. */
 DFI_PRIVATE void dfi_observation_finish_view(dfi_observation_digest *digest,
     const duoforge_step_result *result, const duoforge_request *request,
     const duoforge_observation *view, const duoforge_observation_ext *ext,
-    const duoforge_factored_domain *domain);
+    const duoforge_factored_domain *domain, uint32_t event_count);
 DFI_PRIVATE void dfi_observation_finish(dfi_observation_digest *digest,
     const duoforge_context *ctx, const duoforge_battle *battle,
-    const duoforge_step_result *result);
+    const duoforge_step_result *result, uint32_t event_count);
 #endif
