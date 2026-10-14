@@ -2,7 +2,7 @@
 
 python tools/perf/honest_breakdown.py --checkpoint P --out DIR [--games 8] [--capacities 16384,1024]
 
-Part 1 plays the live search's decisions (X, K = M = 8, 16 worlds, mix 0.5) on engine batches of the reference setups,
+Part 1 plays the search of #355 (X, K = M = 8, 16 worlds, mix 0.5; the live search until 2026-10-14) on engine batches of the reference setups,
 as duoforge_search.live_latency does, and sums the search's own cost fields per searched decision: public records,
 world builds (from_view and the worlds' policy queries), the team head, the leaves (Batch.expand: clone, reseed,
 step and encode of every leaf, in C), the network (the root and world policy calls and the value calls) and the solve.
@@ -229,7 +229,9 @@ def main(argv=None):
     import duoforge
     from duoforge import _layout
     from duoforge_live import search as live_search
-    report = {"games": args.games, "seed": args.seed, "settings": live_search.HONEST_SETTINGS, "runs": {}, "parts": {}}
+    # The settings play() and parts() use (mix 0.5, #355's search), not today's live ones.
+    settings = {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5}
+    report = {"games": args.games, "seed": args.seed, "settings": settings, "runs": {}, "parts": {}}
     with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
         for capacity in (int(c) for c in args.capacities.split(",")):
             costs, walls = play(ctx, live_search, args.checkpoint, capacity, args.games, args.seed)

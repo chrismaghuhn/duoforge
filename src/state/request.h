@@ -18,6 +18,7 @@
 
 #include "rng/draw.h"
 #include "state/battle_internal.h"
+#include "state/observation_digest.h"
 
 /* Caller-visible records have no implicit padding (decision 0002 section 8). */
 _Static_assert(sizeof(duoforge_slot_command) == 8u, "slot command is 8 bytes");
@@ -44,9 +45,17 @@ duoforge_status dfi_battle_step_tape(const duoforge_context *ctx, duoforge_battl
 /* The same with the events of decision 0007: with buffers != NULL each
  * player's events of the step, as duoforge_battle_step_events. */
 duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforge_battle *battle,
-                                            const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
-                                            uint32_t tape_len, uint32_t *out_tape_used,
-                                            duoforge_step_result *out_result, duoforge_event_buffer *buffers);
+    const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
+    uint32_t tape_len, uint32_t *out_tape_used, duoforge_step_result *out_result,
+    duoforge_event_buffer *buffers);
+
+/* Private sibling: reset scratch for its viewer, fold final visible rows,
+ * and publish a digest after commit. Digest errors have a separate scratch
+ * status; they never rewrite the step's status or roll back a good step. */
+DFI_PRIVATE duoforge_status dfi_battle_step_observed(const duoforge_context *ctx, duoforge_battle *battle,
+    const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
+    uint32_t tape_len, uint32_t *out_tape_used, duoforge_step_result *out_result,
+    duoforge_event_buffer *buffers, dfi_observation_digest *observation);
 
 /* Rule-authorized re-prompt of one side at TURN (DECISION_CONTRACT section
  * 6): the other side's accepted choice is sealed, the request mask shrinks

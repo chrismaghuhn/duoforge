@@ -40,6 +40,8 @@ files plus regenerated output; with the pin per entry (section 6) no shared hand
 | Classification (`docs/research/expansion/data/classification.json`, an older head) | moves: 140 pure data, 146 data plus a generic extension, 142 family members, 87 bespoke; abilities: 186 family, 128 bespoke; items: 81 Mega Stones, 68 family, 17 bespoke |
 | Retro (the spec's basis) | median step: 13 artifact kinds, 41 files; 82 merges renumbered shared ids; one collision reached `main` |
 
+Step-4 field update: existing helpers are grouped under `src/combat/field/` in private headers named by family: weather, terrain, terrain effects, terrain seeds, duration, side conditions and Trick Room. `turn.c` keeps the field-setting and countdown phases and their order. The measured starting-point numbers above remain the historical `ca17e507` snapshot.
+
 ## 1. Granularity: what gets a file, what gets code
 
 **Decision.** Three handler classes, stated in the entry file (`[model].handler`):

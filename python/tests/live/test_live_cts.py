@@ -646,6 +646,98 @@ class ClosedGameTest(unittest.TestCase):
                          "DUOFORGE_E_UNSUPPORTED: x; tracker: engine-refuses-record,visible-confusion")
 
 
+class LogReplayTest(unittest.TestCase):
+    def test_a_stop_ends_the_replay_under_its_name(self):
+        tables = data.load(kind="pool")
+        prior = cts.SetPrior(tables, [s for s in foe_sets() if s["species"] != "Farigiraf"])
+        records = [{"feed": m} for m in closed(FIXTURE["messages"])]
+        replay = cts.LogReplay(records, tables, None, FIXTURE["team"], prior, KEY)
+        self.assertEqual(list(replay), [])
+        self.assertEqual(replay.stopped, "stop:cts:no-consistent-set")
+
+    def test_a_fallback_of_the_bot_is_named_and_a_divergence_found(self):
+        # Review of the replay core: the bot's own fallback ends its feeds; the replay names it, and a log whose bot
+        # stopped the tracker where the replay does not (or the reverse) is a divergence, never silent.
+        tables = data.load(kind="pool")
+        prior = cts.SetPrior(tables, foe_sets())
+        feeds = [{"feed": m} for m in closed(FIXTURE["messages"])[:4]]
+        replay = cts.LogReplay(feeds + [{"fallback": "deadline", "detail": "no decision within 20 s"}], tables, None,
+                               FIXTURE["team"], prior, KEY)
+        self.assertEqual(len(list(replay)), 1)  # the team preview
+        self.assertEqual((replay.stopped, replay.diverged, replay.complete), ("fallback:deadline", None, True))
+        replay = cts.LogReplay(feeds + [{"fallback": "stop:cts:redraw-cap", "detail": "stop:cts:redraw-cap x"}], tables,
+                               None, FIXTURE["team"], prior, KEY)
+        list(replay)
+        self.assertEqual(replay.stopped, "fallback:stop:cts:redraw-cap")
+        self.assertIn("the bot stopped", replay.diverged)
+        partial = cts.LogReplay(feeds, tables, None, FIXTURE["team"], prior, KEY)
+        next(iter(partial))
+        self.assertFalse(partial.complete)  # a consumer that stops early: no verdict
+
+    # The two log formats (client.LOG_FORMAT): the fixtures are the arena bot's own log of a battle the foe forfeits
+    # with its turn-1 choice sent (test_pkmn_arena: test_the_format_2_fixture_is_the_bots_own_log), format 1 without
+    # its {"log_format"} and {"pending_at_end"} records.
+    FORFEIT_KEY = "battle-gen9championsvgc2026regmc-11"
+    FORFEIT_CHOICE = "move 1 -2, move 1"
+
+    def replay_fixture(self, n, cut=None):
+        path = data.ROOT / "python" / "tests" / "support" / "data" / f"cts_log_format{n}.jsonl"
+        records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()][:cut]
+        tables = data.load(kind="pool")
+        replay = cts.LogReplay(records, tables, None, FIXTURE["team"], cts.SetPrior.from_table(tables),
+                               self.FORFEIT_KEY)
+        return replay, [record for _, record in replay]
+
+    def test_a_format_2_log_names_the_choice_the_battle_ended_on(self):
+        replay, records = self.replay_fixture(2)
+        self.assertEqual((replay.log_format, replay.stopped, replay.diverged), (2, None, None))
+        self.assertEqual(len(records), 2)  # the team preview and turn 1
+        self.assertNotIn("pending_at_end", records[0])
+        self.assertEqual((records[-1]["sent"], records[-1]["accepted"], records[-1]["pending_at_end"]),
+                         (self.FORFEIT_CHOICE, None, self.FORFEIT_CHOICE))
+
+    def test_a_format_1_log_replays_as_before_without_pending_at_end(self):
+        old, old_records = self.replay_fixture(1)
+        new, new_records = self.replay_fixture(2)
+        self.assertEqual((old.log_format, old.stopped, old.diverged), (1, None, None))
+        self.assertFalse([r for r in old_records if "pending_at_end" in r])
+        self.assertEqual(old_records, [{k: v for k, v in r.items() if k != "pending_at_end"} for r in new_records])
+
+    def test_a_log_without_its_end_gives_no_pending_at_end(self):
+        # a log still being written, or cut at a reconnect: no end, no claim about the end
+        _, records = self.replay_fixture(2, cut=-2)
+        self.assertFalse([r for r in records if "pending_at_end" in r])
+
+    def test_a_later_log_format_is_refused_by_name(self):
+        tables = data.load(kind="pool")
+        for bad in (3, 0, True, "2", 2.0, None):
+            with self.subTest(bad), self.assertRaisesRegex(ValueError, "log format"):
+                cts.LogReplay([{"log_format": bad}], tables, None, FIXTURE["team"], None, KEY)
+        with self.assertRaisesRegex(ValueError, "record 1 names a log format"):
+            cts.LogReplay([{"feed": []}, {"log_format": 2}], tables, None, FIXTURE["team"], None, KEY)
+
+    def test_a_format_1_log_never_gives_pending_at_end(self):
+        # a format-1 log is read as format 1 whatever records it holds (review of the format 2)
+        path = data.ROOT / "python" / "tests" / "support" / "data" / "cts_log_format2.jsonl"
+        records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()][1:]
+        tables = data.load(kind="pool")
+        replay = cts.LogReplay(records, tables, None, FIXTURE["team"], cts.SetPrior.from_table(tables),
+                               self.FORFEIT_KEY)
+        self.assertEqual(replay.log_format, 1)
+        self.assertFalse([r for _, r in replay if "pending_at_end" in (r or {})])
+
+    def test_a_record_that_is_no_object_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "record 1"):
+            cts.LogReplay([{"feed": []}, "x"], data.load(kind="pool"), None, FIXTURE["team"], None, KEY)
+
+    def test_the_key_is_the_room_the_log_is_named_by(self):
+        from pathlib import Path
+        self.assertEqual(cts.room_of_log(Path("x/battle-gen9championsvgc2026regmc-75-lingce.jsonl"), "Ling-Ce"),
+                         "battle-gen9championsvgc2026regmc-75")
+        with self.assertRaises(ValueError):
+            cts.room_of_log(Path("battle-x-1-other.jsonl"), "Ling-Ce")
+
+
 class TrueSheetTest(unittest.TestCase):
     def test_the_true_sheet_is_what_the_pinned_server_shows(self):
         # Review of #385 step 5: the oracle arm's foe sheet must be the open sheet Showdown sends (no stat points,
@@ -669,6 +761,33 @@ class WordTest(unittest.TestCase):
         from duoforge_replay import setbelief
         self.assertEqual(cts.word(SEED, KEY, 1, 2, 3, 4), setbelief.word(SEED, KEY, 1, 2, 3, 4))
         self.assertIsInstance(np.uint64(cts.word(1, "k", 0, 0, 0, 0)), np.uint64)
+
+
+class ReplayHelpersTest(unittest.TestCase):
+    """The replay helpers' pure parts (moved with them from the Search lane's ko_check, search/ko-check-cts b148e309)."""
+
+    def test_room_of_a_log_file(self):
+        room = "battle-gen9championsvgc2026regmcots-7"
+        self.assertEqual(cts.room_of(f"x/{room}-tiansuan.jsonl"), room)
+        with self.assertRaises(cts.Refused):
+            cts.room_of("x/arena-run-1.json")
+
+    def test_a_battle_ended_on_its_last_choice_plays_it_as_sent(self):
+        ended = [{"feed": ["|turn|7"]}, {"decision": 22, "sent": "move 3 2, pass"}, {"in": "|win|x"}, {"end": "|win|x"},
+                 {"summary": {}}]
+        self.assertTrue(cts.ended_on(ended, 22))
+        for later in ({"feed": ["|turn|8"]}, {"accepted": "move 3 2, pass"}, {"in": "|error|[Invalid choice] no"}):
+            with self.subTest(later=later):
+                self.assertFalse(cts.ended_on(ended[:2] + [later] + ended[2:], 22))
+        self.assertFalse(cts.ended_on(ended[:3], 22))  # no end: the log stops, the battle did not end
+        self.assertFalse(cts.ended_on(ended, 23))
+
+    def test_the_logged_choice_is_the_accepted_one(self):
+        self.assertEqual(cts.logged_choice({"sent": "move 1, move 2"}), "move 1, move 2")
+        self.assertEqual(cts.logged_choice({"sent": "move 1, move 2", "accepted": "move 3, move 2"}),
+                         "move 3, move 2")
+        with self.assertRaisesRegex(cts.Refused, "not_accepted"):
+            cts.logged_choice({"sent": "move 1, move 2", "accepted": None})
 
 
 if __name__ == "__main__":

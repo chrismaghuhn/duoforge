@@ -4,6 +4,7 @@
 /* Private scratch for one turn action. Extracted without changing its layout
  * or lifetime; positional initializers remain in turn.c. No public API. */
 #include "combat/events.h"
+#include "state/observation_digest.h"
 #include "rng/draw.h"
 #include "state/battle_internal.h"
 
@@ -77,6 +78,10 @@ typedef struct dfi_run {
     /* The pin's activeTarget for the Substitute hit that sub_hit marks (sim/battle-actions.ts:693, :1154). Last in the struct
      * (positional initializers, which take 0u here). */
     uint32_t sub_active;
+    /* step K2 (Piercing Drill, decision 0015 5dd): the flat positions (bit t) whose protection the current hit's move passed through
+     * by the holder's HitProtect bypass. Transient: cleared before each hit's protection checks, read by that hit's damage. Last in
+     * the struct (positional initializers, which take 0u here). */
+    uint32_t protect_bypass;
 } dfi_run;
 
 static inline dfi_active_slot *dfi_pos(struct duoforge_battle *b, uint32_t flat)
@@ -97,6 +102,9 @@ static inline dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
 static inline void dfi_emit(dfi_run *r, const duoforge_event *e)
 {
     if (r->events != NULL) {
+        if (r->events->observation != NULL) {
+            dfi_observation_capture(r->events->observation, r->b, e, r->events->count);
+        }
         dfi_events_push(r->events, e);
     }
 }

@@ -1,0 +1,66 @@
+{
+  "approval": "HS: previous performance gate remains valid; only Python/docs added. Additional measurement stopped as unnecessary after owner question.",
+  "performance_provenance": {
+    "before": {
+      "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+      "dirty": false,
+      "phase": "before"
+    },
+    "after": {
+      "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+      "dirty": false,
+      "phase": "after"
+    }
+  },
+  "final_main": "a7dd956bee87c0643cf0e4cf7c83772066f0e7a3",
+  "final_proof_head": "081efc0a9b4b0e3dc962d23ca332af36a78974de",
+  "dirty": false,
+  "machine": {
+    "hostname": "8c91664c82d0",
+    "system": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "architecture": "x86_64",
+    "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "allowed_cpus": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "benchmark_cpu": 4,
+    "cgroup_cpu_max": "400000 100000",
+    "gcc": "cc (Debian 14.2.0-19) 14.2.0",
+    "python": "3.12.14",
+    "node": "22.23.3",
+    "showdown_pin": "b2cb775b0616115b775534eaeff50300e1fc81fc"
+  },
+  "protected_input_paths": [
+    "src",
+    "include",
+    "bench",
+    "certify",
+    "cmake",
+    "CMakeLists.txt",
+    ".github",
+    "tests/reference",
+    "tests/perft",
+    "tools/restructure",
+    "tools/datagen",
+    "tools/reference"
+  ],
+  "baseline_inputs_equal_final_main": true,
+  "field_inputs_equal_final_proof_head": true,
+  "verified_complete_pairs": 128,
+  "all_numeric_gates_pass": true,
+  "archived_report": "docs/benchmarks/2026-10-13-restructure-field",
+  "additional_run_status": {
+    "status": "interrupted; not used as performance proof",
+    "reason": "HS explicitly authorized carrying forward the last complete performance gate. Additional measurement was unnecessary; stopped after owner asked why. All partial samples retained outside checkout.",
+    "completed_pairs": {
+      "matched-noipo-change.json": 15,
+      "matched-ipo-change.json": 15,
+      "matched-ipo-control.json": 14,
+      "matched-noipo-control.json": 15
+    }
+  }
+}
