@@ -1009,6 +1009,24 @@ class CommandLineTest(unittest.TestCase):
                 self.assertEqual(stop.code, 2)
                 self.assertIn("--search honest", err)
 
+    def test_the_ab_test_is_refused_without_its_conditions(self):
+        # --ab-root-rule (owner, 2026-10-14): the honest search on the --team's battles, the pinned foe model, and
+        # --ab-seed only with it; every refusal before anything loads.
+        base = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz"]
+        cases = [(["--ab-seed", "3"], "--ab-seed"),
+                 (["--ab-root-rule", "--team", __file__], "--search honest"),
+                 (["--ab-root-rule", "--search", "honest"], "--team"),
+                 (["--ab-root-rule", "--search", "honest", "--team", __file__, "--team-pool", __file__], "--team-pool"),
+                 (["--ab-root-rule", "--search", "honest", "--team", __file__, "--no-foe-net"], "pinned foe model"),
+                 (["--ab-root-rule", "--search", "honest", "--team", __file__, "--foe-net", "y.npz",
+                   "--foe-net-sha256", "0" * 64], "pinned foe model")]
+        for extra, message in cases:
+            with self.subTest(extra=extra), mock.patch.object(cli.policy, "load") as loaded:
+                stop, err = self.run_main(base + extra, ENV)
+                loaded.assert_not_called()
+                self.assertEqual(stop.code, 2)
+                self.assertIn(message, err)
+
     def test_a_pin_needs_a_foe_net_to_pin(self):
         # Owner 2026-10-12: the pinned BC6 is the honest search's foe model by default (its path from --foe-net or
         # $DUOFORGE_FOE_NET); a pin with --no-foe-net pins nothing and is refused.

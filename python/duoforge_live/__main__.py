@@ -84,6 +84,9 @@ def arena_main(argv):
     if args.ab_root_rule and (args.search != "honest" or not args.team or args.team_pool):
         pkmn_arena._refuse("--ab-root-rule tests the honest search's root rule on the --team's battles: it needs "
                            "--search honest and --team, and no --team-pool")
+    if args.ab_root_rule and (args.no_foe_net or search.foe_net_sha256_of(args) != search.FOE_NET_SHA256):
+        pkmn_arena._refuse("--ab-root-rule plays both arms with the pinned foe model (BC6): no --no-foe-net, no other "
+                           "--foe-net-sha256")
     name = pkmn_arena.credentials()  # the token's value is never shown
     from .arena import provenance
     code = provenance()  # every result names the code that runs (HauptSession, 2026-10-13): none, no start
@@ -115,8 +118,13 @@ def arena_main(argv):
     if args.ab_root_rule:
         from . import ab
         ab_seed = ab.new_seed() if args.ab_seed is None else args.ab_seed
-    bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
-                              search=live, mode=mode, foe_check=foe_check, code=code, ab_seed=ab_seed)
+    try:
+        bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
+                                  search=live, mode=mode, foe_check=foe_check, code=code, ab_seed=ab_seed)
+    except ValueError as err:  # a refusal of the bot's own checks (the A/B arms, the worlds): named, no traceback
+        if live is not None:
+            live.close()
+        pkmn_arena._refuse(str(err))
     try:
         bot.warm_up()  # before the first battle: its decisions compile nothing (2.0 s at a cold team preview)
         asyncio.run(bot.run())

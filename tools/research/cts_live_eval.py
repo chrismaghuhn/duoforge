@@ -169,46 +169,72 @@ def summarize(battles):
     return out
 
 
-def wilson(k, n):
-    """[k / n, low, high]: the Wilson 95% interval of a share, None for n = 0."""
+def wilson(k, n, z=1.96):
+    """[k / n, low, high]: the Wilson interval of a share (z: 1.96 for 95%), None for n = 0."""
     import math
     if n == 0:
         return None
-    z, p = 1.96, k / n
+    p = k / n
     centre, half = p + z * z / (2 * n), z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
     return [p, (centre - half) / (1 + z * z / n), (centre + half) / (1 + z * z / n)]
 
 
+# The A/B test's analysis (docs/benchmarks/2026-10-14-ab-root-rule/README.md, HauptSession, fixed before the deploy):
+# read only at three looks, 30, 60 and 100 decided battles per arm; at 30 and 60 the difference's 99% interval, at 100
+# its 95% one. The strata (per opponent, per foe lead) are described only, from 10 decided battles per arm on.
+AB_LOOKS = {30: 2.576, 60: 2.576, 100: 1.96}  # the look -> its z (99%, 99%, 95%)
+AB_STRATUM_MIN = 10
+
+
+def _newcombe(x, y):
+    """Newcombe's interval (his method 10) of the difference y - x of two shares from their Wilson intervals."""
+    import math
+    d = y[0] - x[0]
+    return {"value": d, "low": d - math.sqrt((y[0] - y[1]) ** 2 + (x[2] - x[0]) ** 2),
+            "high": d + math.sqrt((y[2] - y[0]) ** 2 + (x[0] - x[1]) ** 2)}
+
+
 def ab_arms(rows):
     """The A/B test of the root rule (docs/benchmarks/2026-10-14-ab-root-rule): rows (battle(), opponent letter, foe
-    lead) of the battles that name an arm. Per arm the decided battles (a win, a loss or a tie), the wins and the win
-    rate with its Wilson interval, and the difference of the arms' win rates with Newcombe's interval (its method 10, from
-    the two Wilson intervals); the same per opponent letter and per foe lead (the foe's two lead species), the
-    strata the README pairs the arms in. A battle that ended unfinished is counted apart."""
-    import math
+    lead) of the battles that name an arm, every one counted in its arm (intention to treat): the decided battles (a
+    win, a loss or a tie), the wins, the unfinished ones, those played without the search after a class (b) error
+    (dirty or a decision without a search), and the win rate with its Wilson interval. The difference 2e - 0 has
+    Newcombe's interval at 95%; "look" names the last of AB_LOOKS both arms reached, and "at_look" the difference's
+    interval at that look's level (None before the first look): the only reading a preference may rest on. The same
+    per opponent letter and per foe lead (the foe's two lead species), descriptive only: a stratum with fewer than
+    AB_STRATUM_MIN decided battles in an arm gives its counts only, and no stratum has a look."""
     from duoforge_live import ab
 
-    def arms(subset):
+    def arms(subset, minimum=0, looks=True):
         out = {}
         for a in ab.ARMS:
-            played = [b for b in subset if b["arm"] == a and b["kind"] == "particles"]
+            played = [b for b in subset if b["arm"] == a]
             decided = [b for b in played if b["result"] in ("win", "loss", "tie")]
             wins = sum(b["result"] == "win" for b in decided)
             out[a] = {"battles": len(played), "decided": len(decided), "wins": wins,
-                      "unfinished": len(played) - len(decided), "win_rate": wilson(wins, len(decided))}
-        x, y = (out[a]["win_rate"] for a in ab.ARMS)
-        if x is None or y is None:
+                      "unfinished": len(played) - len(decided),
+                      "without_search": sum(1 for b in played if b["dirty"] or b["causes"].get("no_search")),
+                      "kinds": dict(collections.Counter(b["kind"] for b in played)),
+                      "win_rate": wilson(wins, len(decided)) if len(decided) >= max(1, minimum) else None}
+        rates = [out[a]["win_rate"] for a in ab.ARMS]
+        reached = [n for n in AB_LOOKS if all(out[a]["decided"] >= n for a in ab.ARMS)] if looks else []
+        out["look"] = reached[-1] if reached else None
+        if None in rates:
             out["difference"] = None
-        else:  # arm 2e minus arm 0, Newcombe's hybrid score interval
-            d = y[0] - x[0]
-            low = d - math.sqrt((y[0] - y[1]) ** 2 + (x[2] - x[0]) ** 2)
-            high = d + math.sqrt((y[2] - y[0]) ** 2 + (x[0] - x[1]) ** 2)
-            out["difference"] = {"of": f"{ab.ARMS[1]} - {ab.ARMS[0]}", "value": d, "low": low, "high": high}
+        else:
+            at = None
+            if out["look"] is not None:  # the look's level, from the wins and decided battles of each arm
+                z = AB_LOOKS[out["look"]]
+                x, y = (wilson(out[a]["wins"], out[a]["decided"], z) for a in ab.ARMS)
+                at = {"level": {2.576: 0.99, 1.96: 0.95}[z], **{k: v for k, v in _newcombe(x, y).items() if k != "value"}}
+            out["difference"] = {"of": f"{ab.ARMS[1]} - {ab.ARMS[0]}", **_newcombe(*rates), "at_look": at}
         return out
     battles = [b for b, _, _ in rows]
-    return {"all": arms(battles),
-            "by_opponent": {o: arms([b for b, oo, _ in rows if oo == o]) for o in sorted({o for _, o, _ in rows})},
-            "by_lead": {lead: arms([b for b, _, ll in rows if ll == lead])
+    return {"looks": {str(n): {2.576: 0.99, 1.96: 0.95}[z] for n, z in AB_LOOKS.items()},
+            "stratum_min": AB_STRATUM_MIN, "all": arms(battles),
+            "by_opponent": {o: arms([b for b, oo, _ in rows if oo == o], AB_STRATUM_MIN, looks=False)
+                            for o in sorted({o for _, o, _ in rows})},
+            "by_lead": {lead: arms([b for b, _, ll in rows if ll == lead], AB_STRATUM_MIN, looks=False)
                         for lead in sorted({ll for _, _, ll in rows if ll})}}
 
 def run_logs(directory, since=None, code=None):

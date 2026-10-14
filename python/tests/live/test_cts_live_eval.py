@@ -361,7 +361,43 @@ class ABTest(unittest.TestCase):
         self.assertEqual(set(got["by_opponent"]), {"A"})
         self.assertEqual(got["by_lead"]["Garchomp + Grimmsnarl"]["2e"]["decided"], 0)
         self.assertIsNone(got["by_lead"]["Garchomp + Grimmsnarl"]["difference"])
+        self.assertIsNone(got["by_lead"]["Garchomp + Grimmsnarl"]["2e"]["win_rate"])  # an arm below the minimum: counts
+        self.assertIsNotNone(got["by_opponent"]["A"]["difference"])  # ten each: the stratum is read
+        self.assertIsNone(got["all"]["look"])  # no look before 30 decided battles per arm: nothing to read
+        self.assertIsNone(d["at_look"])
+        self.assertIsNone(got["by_opponent"]["A"]["look"])  # a stratum is described, never read at a look
+
+    def test_the_looks_read_99_percent_at_30_and_60_and_95_at_100(self):
+        for n, level in ((30, 0.99), (60, 0.99), (100, 0.95)):
+            rows = []
+            for arm, wins in (("0", n // 2), ("2e", n // 2 + n // 5)):
+                rows += [(ev.battle(self.log(arm, "win" if i < wins else "loss"), "lingce"), "A", None)
+                         for i in range(n)]
+            got = ev.ab_arms(rows)["all"]
+            d = got["difference"]
+            self.assertEqual((got["look"], d["at_look"]["level"]), (n, level))
+            if level == 0.99:
+                self.assertTrue(d["at_look"]["low"] < d["low"] and d["high"] < d["at_look"]["high"])
+            else:
+                self.assertAlmostEqual(d["at_look"]["low"], d["low"])
         self.assertIsNone(ev.wilson(0, 0))
+
+    def test_every_battle_of_an_arm_counts_unfinished_and_unsearched_ones_too(self):
+        unfinished = self.log("0", "win")[:-1]  # no end
+        no_feed = [r for r in self.log("0", "loss") if "feed" not in r]  # never fed: counted, not decided away
+        dirty = self.log("2e", "loss") + [{"dirty": "b"}]
+        rows = [(ev.battle(r, "lingce"), "A", None) for r in (unfinished, no_feed, dirty)]
+        got = ev.ab_arms(rows)["all"]
+        self.assertEqual((got["0"]["battles"], got["0"]["decided"], got["0"]["unfinished"]), (2, 1, 1))
+        self.assertEqual(got["0"]["kinds"], {"particles": 1, "other": 1})
+        self.assertEqual(got["2e"]["without_search"], 1)
+
+    def test_newcombes_interval_matches_a_reference(self):
+        # Newcombe (1998), method 10, his example (a): 56/70 against 48/80 gives 0.2000, [0.0524, 0.3339]
+        d = ev._newcombe(ev.wilson(48, 80), ev.wilson(56, 70))
+        self.assertAlmostEqual(d["value"], 0.2, places=4)
+        self.assertAlmostEqual(d["low"], 0.0524, places=3)
+        self.assertAlmostEqual(d["high"], 0.3339, places=3)
 
 
 if __name__ == "__main__":

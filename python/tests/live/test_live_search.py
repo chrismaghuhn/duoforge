@@ -124,14 +124,15 @@ class LiveSearchTest(unittest.TestCase):
 
     def test_a_decision_plays_the_root_rule_it_is_given_and_none_keeps_the_searchers(self):
         # The A/B test of the root rule (duoforge_live.ab): the rule is set on the searcher before its decide, and a
-        # decision without one leaves the searcher's own; an unknown rule is refused before anything runs.
+        # decision without one plays the searcher's own (never a rule an earlier battle set); an unknown rule is
+        # refused before the search runs.
         searcher = Searcher()
         searcher.rule = "ev"
         live = self.make(searcher)
         _decide(live, rule="mix")
         _decide(live)
         _decide(live, rule="ev")
-        self.assertEqual(searcher.rules, ["mix", "mix", "ev"])
+        self.assertEqual(searcher.rules, ["mix", "ev", "ev"])
         with self.assertRaisesRegex(ValueError, "unknown root rule"):
             _decide(live, rule="nash")
         self.assertEqual(len(searcher.calls), 3)
