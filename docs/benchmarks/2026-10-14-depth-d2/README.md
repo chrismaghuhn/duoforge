@@ -150,6 +150,47 @@ The engine digest keys every node; the bound is checked again on digest-keyed tr
 - **The root choice differs from 2e's** in 54 of 97 (width 2) and 56 of 97 (width 4) decisions of B's subsample.
 - A's seconds are diagnostic only (non-exclusive) and not reported here.
 
+## Part 1b: the bound re-checked on digest-keyed trees (predeclared 2026-10-14)
+
+The bound `tree.TREE_MAX_ITERATIONS = 490` was set on record-keyed trees (above). Before any arm it is checked on
+trees keyed by the engine's observation digest (decision 0082, `duoforge_batch_expand_digest`; the gate set above).
+**This section is a predeclaration, committed and pushed before its runs**, which start on the HauptSession's go
+(given 2026-10-14 for once the key reads the real call), under the machine lock and the WSL watchdog.
+
+### Data and code
+
+- **Games:** as part 1: step 2e, seed `0x2026101200000440`, the ladder's pool, 64 pairs against `bot`; at every
+  searched turn decision a depth-2 shadow builds and solves its tree beside it; the move played is 2e's.
+- **The shadows' settings:** as part 1, except `info_key = "digest"`: `depth = 2`, `root_solver = "rm"`,
+  `rm_iterations` and `tree_iterations` = `--max-iterations 50000` (so the iterations to ε are seen beyond the bound),
+  the value call padded to 16,384 rows, `foe_below = "nash"`, ε = 1e-3 of the range.
+- **Tool:** `python -m duoforge_search.tree_offline --info-key digest`, rows streamed to a JSONL file outside the
+  repository; the report's `over_bound` gives, per width, the share of keyed decisions (converged or not) that 490
+  would cut off: more iterations than 490, or unconverged at 50,000.
+- **The games are checked again:** the engine's C changed since part 1 (#489, E1a, E1b), so the width-2 run plays
+  the games once without shadows first (`--plain-check`); both decisions digests are reported. Part 1's games digest
+  is not compared.
+- **Commit, library:** the commit that switches the key to the real call (E1b on main merged), its hash and
+  `dirty: false`, and the sha256 of `libduoforge_shared.so` built from it, in the results.
+
+### The runs
+
+Widths (K2, M2) = (2, 2), (3, 3) and (4, 4), one run each, one at a time: labels `d2-digest-a2`, `d2-digest-a3`,
+`d2-digest-a4`, 8 workers, not exclusive (no seconds are used), through `tools/ci/wsl_lock_watchdog.sh` inside
+`tools/ci/machine_lock.sh`. A run starts only with at least 8 GB free on Windows (the job refuses otherwise). One
+ticket per label; owner files and queue are read before each start.
+
+### Fixed now
+
+- **The gate:** if `over_bound` exceeds **0.1 %** at any width, the bound is re-assessed by the HauptSession and the
+  owner before any arm; otherwise 490 holds for the arms.
+- **Reported, not gated:** the iterations to ε per width (median, p99, max) and part 1's rule on them (twice the
+  maximum), for comparison only; `observation_key_refused` and its share (counted by name; the digest refuses only a
+  projection it cannot classify or a re-prompt root); the information sets and the merge share beside part 1's; the
+  leaf kinds; how often the shadow's root choice differs from 2e's.
+- **Disclosed:** before the first run, a smoke of the switched key (1 pair against `bot`, width 2) may run to check
+  that the call works; its numbers fix nothing and are not reported as a result.
+
 ## Part 2: the ladder arms (plan step 11, spec section 9.2)
 
 ### Arms
