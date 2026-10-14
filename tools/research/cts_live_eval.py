@@ -32,6 +32,16 @@ particle holds (src/data/pool_tables.c: a move, item or ability marked [unmodell
 is). The result: the points, the refused ones, the share without a refusal (where the search can run), and per content
 the points it occurs in and those it alone explains; with the commit and dirty state of the tool and of the engine code
 that ran (the checkout duoforge_live is imported from).
+
+--replay also counts the risky choices (owner, via the HauptSession, 2026-10-14): a searched decision (the bot's log
+record: search cause "searched") whose played pair the network gave less than RISKY. The bot logs each decision's
+candidates with the network's raw probability (the mean over the particles); a searched decision's first candidate is
+the search's pair, so its probability is read from the log, never recomputed. What follows a searched decision, risky or
+not: the material balance (material(): the own side's alive members and HP fractions minus the foe's, from the
+tracker's observation) at the first decision point 1 and 2 turns later, its change against the decision point; a
+battle that ended before is counted as ended, one without a point at that turn as missing. And the results of the
+battles with a risky choice and of those with searched decisions but none. Per opponent and team with --labels, per
+bot commit always.
 """
 import argparse
 import collections
@@ -44,6 +54,9 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT / "python"))  # after PYTHONPATH: a measurement may run another checkout's code
 
 from duoforge_live.arena import ENGINE_REFUSES  # noqa: E402  (#464: a record the engine refuses)
+
+RISKY = 0.05  # a searched pair the network gave less than this is a risky choice (owner, 2026-10-14)
+AFTER = (1, 2)  # the turns after a searched decision whose material balance is compared
 
 
 
@@ -281,6 +294,83 @@ def held(s, names, tables):
     return out
 
 
+def material(observation):
+    """(alive, hp): the viewer's side minus the foe's, from a tracker observation (layout OBSERVATION). A side's brought
+    members (location active or bench) count: alive those above 0 HP, hp the sum of their HP fractions (the foe's in
+    percent, as shown). A foe member not seen yet counts whole: the foe brings as many as the viewer (VGC, 4 of 6)."""
+    from duoforge import _layout
+    C = _layout.CONSTANTS
+    seen = (C["DUOFORGE_LOCATION_BENCH"], C["DUOFORGE_LOCATION_ACTIVE"])
+    out, brought = [], None
+    for side in (int(observation["player"]), 1 - int(observation["player"])):
+        alive, hp, n = 0, 0.0, 0
+        for m in observation["sides"][side]["members"]:
+            if int(m["location"]) not in seen:
+                continue
+            n += 1
+            alive += int(m["hp"]) > 0
+            hp += int(m["hp"]) / int(m["hp_max"]) if int(m["hp_max"]) else 0.0
+        if brought is None:
+            brought = n
+        else:
+            unseen = max(0, brought - n)
+            alive, hp = alive + unseen, hp + unseen
+        out.append((alive, hp))
+    return out[0][0] - out[1][0], out[0][1] - out[1][1]
+
+
+def searched_choice(record):
+    """(the network's probability of the searched pair, its text) of a decision's log record, None for a decision the
+    search did not decide (another cause, no record, no candidates)."""
+    if not record or (record.get("search") or {}).get("cause") != "searched" or not record.get("top"):
+        return None
+    text, p = record["top"][0]
+    if text != record.get("sent"):  # the first candidate is the one sent first: anything else is no search's pair
+        raise ValueError(f"a searched decision sent {record.get('sent')!r}, not its first candidate {text!r}")
+    return float(p), text
+
+
+def follow(points):
+    """The searched points of a battle with what followed: [{"risky", "p", "after": {k: (d alive, d hp) or "ended" or
+    "missing"}}], k in AFTER; points: [{"turn", "material", "choice"}] in order."""
+    out = []
+    for i, point in enumerate(points):
+        if point["choice"] is None:
+            continue
+        after = {}
+        for k in AFTER:
+            later = next((q for q in points[i + 1:] if q["turn"] >= point["turn"] + k), None)
+            if later is None:
+                after[k] = "ended"
+            elif later["turn"] != point["turn"] + k:
+                after[k] = "missing"
+            else:
+                after[k] = tuple(b - a for a, b in zip(point["material"], later["material"]))
+        out.append({"risky": point["choice"][0] < RISKY, "p": point["choice"][0], "after": after})
+    return out
+
+
+def risk_summary(battles):
+    """The risky-choice aggregates over [(result, follow())] of battles."""
+    def group(choices):
+        g = {"n": len(choices)}
+        for k in AFTER:
+            known = [c["after"][k] for c in choices if isinstance(c["after"][k], tuple)]
+            g[f"after_{k}"] = {"n": len(known), "ended": sum(c["after"][k] == "ended" for c in choices),
+                               "missing": sum(c["after"][k] == "missing" for c in choices),
+                               "alive_mean": sum(a for a, _ in known) / len(known) if known else None,
+                               "hp_mean": sum(h for _, h in known) / len(known) if known else None}
+        return g
+    choices = [c for _, cs in battles for c in cs]
+    risky = [c for c in choices if c["risky"]]
+    with_risky = collections.Counter(r for r, cs in battles if any(c["risky"] for c in cs))
+    without = collections.Counter(r for r, cs in battles if cs and not any(c["risky"] for c in cs))
+    return {"threshold": RISKY, "searched": len(choices), "risky": len(risky),
+            "risky_share": len(risky) / len(choices) if choices else None,
+            "risky_after": group(risky), "other_after": group([c for c in choices if not c["risky"]]),
+            "battles_with_risky": dict(with_risky), "battles_searched_without_risky": dict(without)}
+
+
 def replay(records, tables, prior, team, room, names):
     """One battle log replayed through the particles: {"points", "refused": [the content per refused particle, per
     refused point], "stopped": None or the named reason the replay ended with}. What the bot's own fold catches ends
@@ -289,11 +379,15 @@ def replay(records, tables, prior, team, room, names):
     own = set().union(*(held(s, names, tables) for s in teams_sets(team)))
     out = {"points": 0, "refused": [], "stopped": None}
     replayed = cts.LogReplay(records, tables, None, team, prior, room)  # the one replay core (Search's ko_check too)
-    for game, _ in replayed:
+    points = []
+    for game, record in replayed:
         t = game.tracker
         if t.request.get("teamPreview"):
             continue
         out["points"] += 1
+        observation = t.observations()[0]  # the public HP and locations are every particle's
+        points.append({"turn": int(observation["turn"]), "material": material(observation),
+                       "choice": searched_choice(record)})
         bad = [i for i, p in enumerate(t.public_parts()) if p["reason"] == ENGINE_REFUSES]
         if bad:  # a refused particle holding no foe content is put on the own team's, when that has any
             out["refused"].append([sorted(set().union(*(held(s, names, tables) for s in t.particles[i].sets))
@@ -302,6 +396,7 @@ def replay(records, tables, prior, team, room, names):
     # propagates and ends --replay: it is no fallback of the bot
     out["stopped"] = replayed.stopped
     out["diverged"] = replayed.diverged
+    out["choices"] = follow(points)
     return out
 
 
@@ -342,6 +437,7 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
     per = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
     per_team = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
     occurs, alone = collections.Counter(), collections.Counter()
+    risks = collections.defaultdict(list)  # group -> [(result, follow())] of its battles
     for path in sorted(Path(directory).glob(f"battle-*-{bot}.jsonl")):
         records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
         if not any("feed" in r for r in records):
@@ -367,6 +463,12 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
             continue
         out = replay(records, tables, prior, team[0], cts.room_of_log(path, bot), names)
         points += out["points"]
+        groups = ["all", "code:" + (_code_of(battle(records, bot))[:8] or "none")]
+        if labels is not None:
+            o = opponent(records, bot)
+            groups += ["opponent:" + labels.get(o, "?"), "team:" + team_label(labels, o, foe_team(records, bot))]
+        for g in groups:
+            risks[g].append((battle(records, bot)["result"], out["choices"]))
         if labels is not None:
             o = opponent(records, bot)
             for group in (per[labels.get(o, "?")], per_team[team_label(labels, o, foe_team(records, bot))]):
@@ -398,6 +500,7 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
             "unexplained": unexplained, "skipped": dict(skipped), "stopped_battles": dict(stopped),
             "content": {c: {"occurs": n, "alone": alone[c]} for c, n in occurs.most_common()},
             "engine_code": engine, "tool_code": provenance(root),
+            "risky": {g: risk_summary(b) for g, b in sorted(risks.items())},
             **({} if labels is None else {
                 "by_opponent": {k: {**v, "searchable_share": 1.0 - v["refused"] / max(1, v["points"])}
                                 for k, v in sorted(per.items())},

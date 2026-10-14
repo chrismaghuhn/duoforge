@@ -242,6 +242,64 @@ class ReplayTest(unittest.TestCase):
         self.assertEqual(out["points"], 3)
         self.assertEqual(out["refused"], [[["move:gravity"]] * cts.PARTICLES] * 3)
 
+    def fixture_log(self, searched):
+        """The fixture battle as the bot's log keeps it, each turn decision with its log record: searched[k] the
+        network's probability of turn k's searched pair, or None (a raw decision)."""
+        fixture = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "live_stream_ab.json")
+                             .read_text(encoding="utf-8"))
+        records, done = [], 0
+        for m in fixture["messages"]:
+            records.append({"feed": [line for line in m if not line.startswith("|showteam|")]})
+            request = next((json.loads(line[len("|request|"):]) for line in m if line.startswith("|request|")), None)
+            if request is not None and not request.get("wait"):
+                choice = fixture["inputs"][done]
+                if not request.get("teamPreview"):
+                    p = searched[done - 1]
+                    records.append({"decision": request["rqid"], "top": [[choice, 0.3 if p is None else p]],
+                                    "sent": choice, "search": {"cause": "raw" if p is None else "searched"}})
+                done += 1
+                records.append({"accepted": choice})
+        return fixture, records
+
+    def test_a_searched_pair_the_network_gave_under_five_percent_is_a_risky_choice(self):
+        # Owner, via the HauptSession, 2026-10-14: the risky choices and what follows them, from the log's raw
+        # probability of the searched pair and the tracker's observation at the decision points 1 and 2 turns later
+        from duoforge_live import cts
+        fixture, records = self.fixture_log([0.01, None, 0.5])
+        tables = data.load(kind="pool")
+        out = ev.replay(records, tables, cts.SetPrior.from_table(tables), fixture["team"], "battle-test-1", set())
+        self.assertEqual(out["points"], 3)
+        self.assertEqual([(c["risky"], c["p"]) for c in out["choices"]], [(True, 0.01), (False, 0.5)])
+        risky, other = out["choices"]
+        self.assertIsInstance(risky["after"][1], tuple)  # turn 2's point: a material change
+        self.assertIsInstance(risky["after"][2], tuple)
+        self.assertEqual(other["after"], {1: "ended", 2: "ended"})  # turn 3 is the log's last point
+        summary = ev.risk_summary([("win", out["choices"])])
+        self.assertEqual((summary["searched"], summary["risky"], summary["risky_share"]), (2, 1, 0.5))
+        self.assertEqual(summary["risky_after"]["after_1"]["n"], 1)
+        self.assertEqual(summary["other_after"]["after_1"], {"n": 0, "ended": 1, "missing": 0, "alive_mean": None,
+                                                             "hp_mean": None})
+        self.assertEqual((summary["battles_with_risky"], summary["battles_searched_without_risky"]), ({"win": 1}, {}))
+
+    def test_material_is_the_viewers_side_minus_the_foes_with_unseen_foe_members_whole(self):
+        from duoforge_live import cts
+        fixture, records = self.fixture_log([None, None, None])
+        tables = data.load(kind="pool")
+        replay = cts.LogReplay(records, tables, None, fixture["team"], cts.SetPrior.from_table(tables), "battle-test-1")
+        first_turn = next(g.tracker.observations()[0] for g, _ in replay if not g.tracker.request.get("teamPreview"))
+        self.assertEqual(ev.material(first_turn), (0, 0.0))  # turn 1: four whole members a side, two foes unseen
+
+    def test_what_follows_a_searched_point_is_named_when_no_point_shows_it(self):
+        point = lambda turn, m, p=None: {"turn": turn, "material": m, "choice": None if p is None else (p, "x")}
+        out = ev.follow([point(1, (0, 0.0), 0.01), point(1, (0, -0.5)), point(3, (1, 0.25), 0.2)])
+        self.assertEqual(out[0]["after"], {1: "missing", 2: (1, 0.25)})  # no point of turn 2: a replacement in turn 1
+        self.assertEqual(out[1]["after"], {1: "ended", 2: "ended"})
+        with self.assertRaisesRegex(ValueError, "first candidate"):
+            ev.searched_choice({"top": [["move 1, move 1", 0.5]], "sent": "move 2, move 1",
+                                "search": {"cause": "searched"}})
+        self.assertIsNone(ev.searched_choice({"top": [["x", 0.5]], "sent": "x", "search": {"cause": "deadline"}}))
+        self.assertIsNone(ev.searched_choice(None))
+
     def test_a_stopped_replay_is_counted_under_its_named_reason(self):
         # A content fix may stop the tracker at a line (Speed Swap option B: a real swap stops it, by name): under
         # closed sheets every particle's fold stops there, the battle falls back. The replay counts it, never crashes.
