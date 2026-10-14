@@ -31,7 +31,7 @@ The parts:
 2. **The same actions.**
    - Our side: the bot's accepted choice (`cts.logged_choice`, `cts.pair_texts`).
    - The foe's side, per world: the action that the turn's lines show. `duoforge_replay.labels.turn_label` reads it on that world's own foe options (the engine's domain) with that particle's sheets.
-   - A switched-in member is found by its base species (a Mega's, Aegislash's) in the **world's** engine roster, from the world's observation. An option's reserve is a roster index of the world, whose order is not the particle's. A base species on two members of a world is refused by name (`roster-ambiguous`).
+   - A switched-in member is found by its base species (a Mega's, Aegislash's) in the **world's** engine roster, from the world's observation. An option's reserve is a roster index of the world. In the committed test battles the world's roster order is the particle's; the meter reads the world's own all the same, so nothing rests on that. A base species on two members of a world is refused by name (`roster-ambiguous`).
    - **A world that cannot play what the lines show is left out**, like a refuted one. In that case the world's options hold no option the lines show, the label tells nothing where another world's label does, or the world's own domain bars the pair: a Choice lock, Taunt, Disable, Encore or Imprison in that world. A world also draws the foe's hidden bring (its pick order), so a world whose bench lacks the member the lines show switching in cannot play the turn either. In a committed test battle with the true team as the prior, 11 of 16 worlds drew another bring for such a turn.
      - This is read from the labels on the world's engine domain, never from a rule in Python.
      - It is counted in the share of worlds left out.
@@ -64,7 +64,7 @@ The definition was fixed in the issue first. Before any report, one private diag
 
 All three changes below remove a bias of the method, not of a result. The HauptSession approved each of them (2026-10-14).
 
-A review of the implementation (2026-10-14) found three more places of the same kind before any report. The HauptSession approved the changes: worlds that cannot play the turn are left out, a foe's pivot is valued at the pivot with the rest counted, and each series' own search is replayed and compared. The review also found a bug: a switched-in member was looked up in the particle's roster, not the world's. That is fixed.
+A review of the implementation (2026-10-14) found three more places of the same kind before any report. The HauptSession approved the changes: worlds that cannot play the turn are left out, a foe's pivot is valued at the pivot with the rest counted, and each series' own search is replayed and compared. A suspected bug, a switched-in member looked up in the particle's roster rather than the world's, was ruled out on closer look. The rosters agree; the worlds differed in the foe's hidden bring, which they draw themselves (below). The meter reads the world's own roster anyway.
 
 - **Wait points are valued** (HauptSession, 2026-10-14). The issue's definition values the next decision point. After a turn in which the bot knocks out a foe, the next point is often a wait request: only the foe replaces.
   - Excluding those turns would systematically cut off the luck of the bot's own KOs.
@@ -73,7 +73,7 @@ A review of the implementation (2026-10-14) found three more places of the same 
   - In the diagnostic run, 84 turns came out "unknown". The foe acted visibly, but no option of the world held that action, for one of three reasons:
     - the world's sets lacked a newly shown move;
     - its domain barred the move;
-    - or, the bug above, a switched-in member was looked up in the particle's roster.
+    - or a switched-in member that the world's own drawn bring left on the bench (the foe's hidden pick order).
   - Those worlds are now left out (point 1 above), and every report gives the share of worlds left out (`worlds_dropped_share`).
   - A turn that refutes every world is excluded by name (`foe-action-not-in-worlds`).
 - **Hidden foe actions are mixed** (HauptSession, 2026-10-14). A foe that faints or leaves before it acts never shows its action. Excluding those turns would cut off the luck of the bot's own KOs in the same way.

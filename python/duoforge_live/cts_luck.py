@@ -83,7 +83,8 @@ def foe_shown(segment, side, lists, ctx):
 
 def world_context(ctx, foe_side):
     """The label context of a world: the particle's, with the foe's roster as the world's own engine roster (its
-    observation's members, in the world's order: an option's reserve is a roster index of the world), by base species
+    observation's members, in the world's order: an option's reserve is a roster index of the world; in the committed
+    test battles the order is the particle's, and nothing rests on that), by base species
     (a Mega's, Aegislash's); a base species on two members is refused by name (roster-ambiguous), and a switch line's
     species on none gives no option (the world cannot play it)."""
     import dataclasses
