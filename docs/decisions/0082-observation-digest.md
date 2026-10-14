@@ -331,6 +331,11 @@ Python node-batch digest sidecar. Before D2 uses the digest, E1b must also pass:
 
 - Two actual determinizations with the same public history and action, different hidden facts, and equal digests
   through the real engine step. The primitive projection controls above do not replace this E1 gate.
+  The active-opponent control reconstructs two worlds from one engine-valid public HP boundary: hidden maxima
+  202 and 170, different exact HP and attack Stat Points, both showing 50%. A real Recover emits a projected
+  HEAL at 100% in both worlds, with equal digests. The negative control starts at 25%, emits 75%, and changes
+  the digest. The public event API independently checks these HP-bearing rows. Distinct root RNG and distinct
+  expansion samples also preserve keys when the actual visible transcripts stay equal.
 - Invalid-viewer preflight before any leaf step executes, preserving outputs on refusal.
 - Re-prompts run the normal step, with their digest either refused by name or processed through the observer;
   an unavailable digest never removes a successful edge or publishes a plausible key.

@@ -1,4 +1,5 @@
 """0082/E1b binding gates; wire keys come only from the engine."""
+import ctypes
 import unittest
 from unittest import mock
 import numpy as np
@@ -127,6 +128,35 @@ class SearchDigest(unittest.TestCase):
         self.assertFalse(keys[1].any())
         self.assertEqual(int(self.leaves.last_expand_error['leaf']), 2)
         self.assertEqual(bytes(self.leaves.last_expand_error['phase']), b'step')
+
+    def test_digest_refusal_keeps_the_successful_edge_and_row(self):
+        # The C gate constructs a genuine re-prompt. This adapter control
+        # isolates its phase contract: non-OK digest return with OK steps
+        # must return the leaves, not raise or invent engine-refused edges.
+        legacy = [x.copy() for x in self.leaves.expand(self.roots, **self.args)]
+        native = self.leaves._lib.duoforge_batch_expand_digest
+        def refuse_key(*args):
+            self.assertEqual(native(*args), 0)
+            digests = ctypes.cast(args[18], ctypes.POINTER(ctypes.c_uint8))
+            for j in range(32):
+                digests[j] = 0
+            statuses = ctypes.cast(args[19], ctypes.POINTER(ctypes.c_uint32))
+            statuses[0] = C['DUOFORGE_E_UNSUPPORTED']
+            storage = (ctypes.c_uint8 * _layout.EVAL_ERROR.itemsize).from_address(args[20].value)
+            error = np.frombuffer(storage, dtype=_layout.EVAL_ERROR)[0]
+            error['leaf'] = 0; error['phase'] = b'digest'
+            error['reason'] = b'observation_reprompt_unsupported'
+            return C['DUOFORGE_E_UNSUPPORTED']
+        with mock.patch.object(self.leaves._lib, 'duoforge_batch_expand_digest', side_effect=refuse_key):
+            out = self.expand()
+        for expected, actual in zip(legacy, out[:5]):
+            np.testing.assert_array_equal(expected, actual)
+        self.assertFalse(out[1].any())
+        self.assertEqual(int(out[6][0]), C['DUOFORGE_E_UNSUPPORTED'])
+        keys, refused = self.leaves.observation_keys(np.array([0, 2], np.uint32), 0)
+        np.testing.assert_array_equal(refused, [True, False])
+        self.assertFalse(keys[0].any()); self.assertTrue(keys[1].any())
+        self.assertEqual(bytes(self.leaves.last_expand_error['phase']), b'digest')
 
     def test_error_phase_priority_is_independent_of_worker_schedule(self):
         missing = features.version_features(4) & ~self.mask

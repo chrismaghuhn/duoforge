@@ -6,6 +6,7 @@
 #include "batch/batch_each.h"
 #include "state/request.h"
 #include "state/observation_digest.h"
+#include "data/pool_tables.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
@@ -238,6 +239,153 @@ static void determinization(df_test *t, const duoforge_context *ctx, duoforge_ba
     CHECK_BYTES(t, a.digest + 32u, zero, 32u, "genuine step failure still publishes no key");
     choices[2] = valid;
 }
+
+/* Seed a legal HP boundary with the existing fixture knowledge helper.
+ * The public record of this one boundary is shared by both actual worlds;
+ * the subsequent Recover is an ordinary, complete engine step. */
+typedef struct hp_fixture { df_test *test; uint32_t divisor; } hp_fixture;
+static void active_hp_fixture(void *arg, uint32_t i, const duoforge_context *ctx,
+                               duoforge_battle *root, bool *terminal)
+{
+    hp_fixture *f = arg;
+    (void)i; (void)terminal;
+    const uint32_t roster = root->sides[1].positions[0].occupant;
+    dfi_member *member = &root->sides[1].members[roster];
+    member->hp = (uint16_t)(((uint32_t)member->hp_max + f->divisor - 1u) / f->divisor);
+    df_knowledge_see_hp(root, 1u, roster);
+    DF_CHECK(f->test, duoforge_battle_check(ctx, root) == DUOFORGE_OK);
+}
+static void distinct_rng(void *arg, uint32_t i, const duoforge_context *ctx,
+                           duoforge_battle *root, bool *terminal)
+{
+    (void)terminal;
+    DF_CHECK((df_test *)arg, duoforge_battle_reseed(ctx, root, SEED + i, 71u + i) == DUOFORGE_OK);
+}
+static duoforge_factored_choice self_moves(df_test *t, const duoforge_factored_domain *domain)
+{
+    duoforge_factored_choice c = {0};
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        bool found = false;
+        for (uint32_t j = 0u; j < domain->slot_count[p]; ++j) {
+            const duoforge_slot_command *option = &domain->slots[p][j];
+            if (option->kind == DUOFORGE_SLOT_MOVE && option->move_slot == 3u && option->mega == 0u) {
+                c.slot[p] = (uint8_t)j; found = true; break;
+            }
+        }
+        DF_CHECK(t, found);
+    }
+    DF_CHECK(t, ((domain->allowed[c.slot[0]] >> c.slot[1]) & 1u) != 0u);
+    return c;
+}
+static void heal_transcript(df_test *t, const duoforge_context *ctx, duoforge_batch *worlds,
+                              duoforge_batch *leaves, uint32_t percent)
+{
+    /* Independently read the public event API: the equal-key check must
+     * exercise a real HP-bearing line, not an empty/no-op transcript. */
+    static duoforge_event rows[2][2][DUOFORGE_MAX_EVENTS];
+    uint32_t counts[2] = {0u, 0u};
+    for (uint32_t i = 0u; i < 2u; ++i) {
+        duoforge_battle *trace = NULL;
+        DF_CHECK(t, duoforge_battle_clone(ctx, duoforge_batch_env(worlds, i), &trace) == DUOFORGE_OK);
+        uint64_t state, seq;
+        duoforge_search_seeds(SEED, keys[i], samples[i], &state, &seq);
+        DF_CHECK(t, duoforge_battle_reseed(ctx, trace, state, seq) == DUOFORGE_OK);
+        duoforge_decision_bundle bundle;
+        DF_CHECK(t, dfi_factored_bundle(&requests[2u * i], &domains[2u * i], &choices[2u * i], &bundle) == DUOFORGE_OK);
+        duoforge_event_buffer buffers[2] = {{rows[i][0], DUOFORGE_MAX_EVENTS, 0u}, {rows[i][1], DUOFORGE_MAX_EVENTS, 0u}};
+        duoforge_step_result result;
+        DF_CHECK(t, duoforge_battle_step_events(ctx, trace, &bundle, &result, buffers) == DUOFORGE_OK);
+        bool equal = false;
+        DF_CHECK(t, duoforge_battle_equal(ctx, trace, duoforge_batch_env(leaves, i), &equal) == DUOFORGE_OK && equal);
+        counts[i] = buffers[0].count;
+        uint32_t heals = 0u;
+        for (uint32_t j = 0u; j < counts[i]; ++j) {
+            const duoforge_event *row = &rows[i][0][j];
+            if (row->kind == DUOFORGE_EVENT_HEAL && row->position == 2u) {
+                ++heals;
+                DF_CHECK(t, row->hp_kind == DUOFORGE_HP_PERCENT && row->hp_max == 100u);
+                DF_CHECK_EQ_U64(t, row->hp, percent);
+            }
+        }
+        DF_CHECK_EQ_U64(t, heals, 1u);
+        duoforge_battle_destroy(trace);
+    }
+    DF_CHECK_EQ_U64(t, counts[0], counts[1]);
+    CHECK_BYTES(t, rows[0][0], rows[1][0], counts[0] * sizeof rows[0][0][0], "active worlds have identical projected event rows");
+}
+static void active_determinization(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle_setup setups[2];
+    for (uint32_t i = 0u; i < 2u; ++i) {
+        DF_CHECK(t, duoforge_reference_setup(2u, &setups[i]) == DUOFORGE_OK);
+        setups[i].sides[1].members[2].moves[3].move_id = DFI_MOVE_RECOVER;
+        setups[i].sides[1].members[2].item = 0u; /* no Berry changes the seeded HP boundary */
+    }
+    const duoforge_batch_config config = {2u, 1u, SEED, setups};
+    duoforge_batch *truth = NULL;
+    DF_CHECK(t, duoforge_batch_create(ctx, &config, &truth) == DUOFORGE_OK);
+    duoforge_batch *worlds = make(t, ctx, 2u, 1u), *leaves = make(t, ctx, N, 3u);
+    query(t, truth);
+    duoforge_factored_choice teams[4] = {0};
+    const uint8_t own[4] = {4u, 3u, 0u, 1u}, foe[4] = {2u, 1u, 0u, 3u};
+    for (uint32_t i = 0u; i < 2u; ++i) {
+        memcpy(teams[2u * i].picks, own, 4u); memcpy(teams[2u * i + 1u].picks, foe, 4u);
+    }
+    duoforge_status status[2]; duoforge_step_result result[2];
+    DF_CHECK(t, duoforge_batch_step_factored(truth, requests, domains, teams, status, result) == DUOFORGE_OK);
+    uint8_t full_key[32] = {0};
+    for (uint32_t divisor = 2u; divisor <= 4u; divisor += 2u) {
+        hp_fixture f = {t, divisor};
+        dfi_batch_leaves(truth, 1u, active_hp_fixture, &f);
+        duoforge_public_state views[2]; duoforge_hypothesis hypotheses[2];
+        DF_CHECK(t, duoforge_battle_public(ctx, duoforge_batch_env(truth, 0u), 0u, &views[0]) == DUOFORGE_OK);
+        views[1] = views[0];
+        DF_CHECK(t, duoforge_battle_hypothesis(ctx, duoforge_batch_env(truth, 0u), 0u, &hypotheses[0]) == DUOFORGE_OK);
+        hypotheses[1] = hypotheses[0];
+        const uint32_t active = views[0].foe_leads[0];
+        DF_CHECK_EQ_U64(t, active, 2u);
+        hypotheses[1].stat_points[active][0] = 0u; /* max HP 202 -> 170 */
+        hypotheses[1].stat_points[active][1] = 7u; /* a hidden non-HP stat also differs */
+        hypotheses[0].hp[active] = 0u; hypotheses[1].hp[active] = 0u;
+        DF_CHECK(t, duoforge_batch_from_view(worlds, views, hypotheses, 2u, status) == DUOFORGE_OK);
+        dfi_batch_leaves(worlds, 2u, distinct_rng, t);
+        const duoforge_battle *x = duoforge_batch_env(worlds, 0u), *y = duoforge_batch_env(worlds, 1u);
+        DF_CHECK(t, x->sides[1].positions[0].occupant == active && y->sides[1].positions[0].occupant == active);
+        DF_CHECK_EQ_U64(t, x->sides[1].members[active].hp_max, 202u);
+        DF_CHECK_EQ_U64(t, y->sides[1].members[active].hp_max, 170u);
+        DF_CHECK(t, x->sides[1].members[active].hp != y->sides[1].members[active].hp);
+        DF_CHECK(t, x->sides[1].members[active].stats[0] != y->sides[1].members[active].stats[0]);
+        DF_CHECK(t, x->rng.state != y->rng.state && x->rng.inc != y->rng.inc);
+        for (uint32_t i = 0u; i < 2u; ++i) {
+            duoforge_public_state same; duoforge_observation view;
+            DF_CHECK(t, duoforge_battle_public(ctx, duoforge_batch_env(worlds, i), 0u, &same) == DUOFORGE_OK);
+            CHECK_BYTES(t, &same, &views[0], sizeof same, "active HP/stat/RNG hypotheses rebuild the identical parent view");
+            DF_CHECK(t, duoforge_battle_observe(ctx, duoforge_batch_env(worlds, i), 0u, &view) == DUOFORGE_OK);
+            DF_CHECK(t, view.sides[1].members[active].hp_kind == DUOFORGE_HP_PERCENT);
+            DF_CHECK_EQ_U64(t, view.sides[1].members[active].hp, divisor == 2u ? 50u : 25u);
+        }
+        query(t, worlds);
+        for (uint32_t i = 0u; i < 2u; ++i) {
+            for (uint32_t p = 0u; p < 2u; ++p) { choices[2u * i + p] = self_moves(t, &domains[2u * i + p]); }
+        }
+        CHECK_BYTES(t, choices, choices + 2u, 2u * sizeof choices[0], "active worlds use the same joint action");
+        DF_CHECK(t, expand(leaves, worlds, 2u, &a, true, NULL) == DUOFORGE_OK);
+        CHECK_BYTES(t, a.digest, a.digest + 32u, 32u, "active hidden HP/maxima/stats do not split equal observations");
+        heal_transcript(t, ctx, worlds, leaves, divisor == 2u ? 100u : 75u);
+        if (divisor == 2u) {
+            memcpy(full_key, a.digest, 32u);
+        } else {
+            DF_CHECK(t, memcmp(full_key, a.digest, 32u) != 0); /* visible HEAL 75%, not 100% */
+        }
+        samples[1] = 1u; /* different seeds in the actual steps too, not only in the roots */
+        DF_CHECK(t, expand(leaves, worlds, 2u, &b, true, NULL) == DUOFORGE_OK);
+        CHECK_BYTES(t, a.digest, b.digest, 64u, "different step RNG with the same visible transcript keeps the keys");
+        const duoforge_battle *lx = duoforge_batch_env(leaves, 0u), *ly = duoforge_batch_env(leaves, 1u);
+        DF_CHECK(t, lx->rng.state != ly->rng.state || lx->rng.inc != ly->rng.inc);
+        heal_transcript(t, ctx, worlds, leaves, divisor == 2u ? 100u : 75u);
+    }
+    duoforge_batch_destroy(leaves); duoforge_batch_destroy(worlds); duoforge_batch_destroy(truth);
+}
 int main(void)
 {
     df_test t; df_test_begin(&t, "duoforge.search.digest");
@@ -254,6 +402,7 @@ int main(void)
     preflight(&t, ctx, roots, many);
     duoforge_batch *worlds = make(&t, ctx, 2u, 1u);
     determinization(&t, ctx, roots, worlds, one);
+    active_determinization(&t, ctx);
     duoforge_batch_destroy(worlds);
     duoforge_batch_destroy(many); duoforge_batch_destroy(one); duoforge_batch_destroy(roots); duoforge_context_destroy(ctx);
     return df_test_end(&t);
