@@ -1630,8 +1630,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Teeter Dance -- data/moves.ts:19099-19113 */
     {12u, 2u, 0u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 111u},
-    /* Temper Flare -- data/moves.ts:19185-19203  [unmodelled: callback basePowerCallback] */
-    {6u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Temper Flare -- data/moves.ts:19185-19203 */
+    {6u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 73u},
     /* Terrain Pulse -- data/moves.ts:19265-19301 */
     {12u, 1u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Thief -- data/moves.ts:19302-19330 */
@@ -2171,7 +2171,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   parentalbond -- data/abilities.ts:3170-3188  [unmodelled: callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
  *   pickpocket -- data/abilities.ts:3239-3261  [unmodelled: callback onAfterMoveSecondary]
  *   pickup -- data/abilities.ts:3262-3281  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts]
- *   piercingdrill -- data/abilities.ts:3282-3295, data/mods/champions/abilities.ts:59-62  [unmodelled: callback onHitProtect]
+ *   piercingdrill -- data/abilities.ts:3282-3295, data/mods/champions/abilities.ts:59-62
  *   plus -- data/abilities.ts:3317-3330  [unmodelled: callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts]
  *   poisonheal -- data/abilities.ts:3331-3343  [unmodelled: callback onDamage; callback onDamagePriority]
  *   poisonpoint -- data/abilities.ts:3344-3356  [unmodelled: callback onDamagingHit]
@@ -2950,7 +2950,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_PARENTALBOND] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PICKPOCKET] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PICKUP] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_PIERCINGDRILL] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_PIERCINGDRILL] = DFI_HANDLER_NONE,
     [DFI_ABILITY_PLUS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_POISONHEAL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_POISONPOINT] = DFI_HANDLER_UNMODELED,
@@ -6947,7 +6947,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SYRUPBOMB] = "condition block; secondary volatile syrupbomb",
     [DFI_MOVE_TAILSLAP] = "field multihit",
     [DFI_MOVE_TEATIME] = "callback onHitField",
-    [DFI_MOVE_TEMPERFLARE] = "callback basePowerCallback",
     [DFI_MOVE_THUNDERFANG] = "field secondaries",
     [DFI_MOVE_TIDYUP] = "callback onHit",
     [DFI_MOVE_TOPSYTURVY] = "callback onHit",
@@ -7041,7 +7040,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_PARENTALBOND] = "callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
     [DFI_ABILITY_PICKPOCKET] = "callback onAfterMoveSecondary",
     [DFI_ABILITY_PICKUP] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts",
-    [DFI_ABILITY_PIERCINGDRILL] = "callback onHitProtect",
     [DFI_ABILITY_PLUS] = "callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts",
     [DFI_ABILITY_POISONHEAL] = "callback onDamage; callback onDamagePriority",
     [DFI_ABILITY_POISONPOINT] = "callback onDamagingHit",
@@ -7079,10 +7077,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xeeu, 0xbdu, 0xbeu, 0xcbu, 0xb1u, 0x3au, 0xccu, 0xa2u,
-    0xddu, 0xe1u, 0x1eu, 0xebu, 0x24u, 0xccu, 0x7du, 0xfcu,
-    0xe3u, 0x85u, 0xabu, 0x70u, 0x78u, 0x76u, 0xe0u, 0x60u,
-    0x49u, 0x3fu, 0xb7u, 0x7eu, 0x32u, 0xb4u, 0x28u, 0xc1u,
+    0x1eu, 0xb3u, 0xbdu, 0xdau, 0x06u, 0x03u, 0x5cu, 0x7du,
+    0xf9u, 0x87u, 0x22u, 0xceu, 0x95u, 0x0fu, 0xb8u, 0xfcu,
+    0x3cu, 0x07u, 0xbdu, 0x47u, 0x9fu, 0x5bu, 0x46u, 0xeau,
+    0xd8u, 0xb4u, 0x77u, 0xd4u, 0xadu, 0xe2u, 0xd1u, 0x21u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

@@ -1,0 +1,22 @@
+{
+  "baseline_commit": "c8ca7cee2c8586cc135ddecc55ff850fa0f23b9a",
+  "moved_functions": 15,
+  "unchanged_remaining_function_bodies": 266,
+  "unchanged_whole_turn_tokens_except_declared_extractions_and_includes": true,
+  "byte_equal_big_functions": [
+    "dfi_get_damage",
+    "dfi_run_move_body",
+    "dfi_residual_sort",
+    "dfi_residual_faints",
+    "dfi_residual_holder_stands",
+    "dfi_residual",
+    "dfi_residual_lock",
+    "dfi_curse_residual",
+    "dfi_residual_events_run",
+    "dfi_residual_pair_draws",
+    "dfi_residual_events"
+  ],
+  "old_turn_lines": 12385,
+  "new_turn_lines": 12185,
+  "file_renames": 0
+}

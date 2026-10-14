@@ -1135,7 +1135,7 @@ class PoolMoves(unittest.TestCase):
                                                                 'trick', 'switcheroo', 'thief', 'covet', 'sacredsword', 'superfang', 'taunt', 'yawn',
                                                                 'ragefist', 'stoneaxe', 'ceaselessedge', 'populationbomb',
                                                                 'stormthrow', 'flowertrick', 'frostbreath', 'endeavor',
-                                                                'powertrip', 'thunder', 'icefang', 'triattack', 'doubleshock', 'roost', 'stompingtantrum', 'revivalblessing',
+                                                                'powertrip', 'thunder', 'icefang', 'triattack', 'doubleshock', 'roost', 'stompingtantrum', 'temperflare', 'revivalblessing',
                                                                 'iciclespear', 'scaleshot', 'quickguard', 'upperhand', 'healpulse', 'strengthsap', 'beatup', 'bugbite', 'poltergeist', 'sheercold',
                                                                 'haze', 'afteryou', 'quash', 'phantomforce',
                                                                 'steelbeam', 'thunderwave', 'skillswap', 'destinybond', 'finalgambit',
@@ -1470,7 +1470,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
                                                                  'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                                                                  'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
-                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor', 'magmaarmor', 'angerpoint', 'sniper']})
+                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill']})
 
 
 class Bounds(unittest.TestCase):
@@ -1837,7 +1837,7 @@ class SmallRulesG35(unittest.TestCase):
 
     def sources(self, skip=(None, None)):
         abilities = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS + gen_closure.K2_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             abilities.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS + gen_closure.G77_ITEM_FACTS]
@@ -1921,7 +1921,7 @@ class SmallRulesG39(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS + gen_closure.K2_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS + gen_closure.G77_ITEM_FACTS]
@@ -1994,7 +1994,7 @@ class SmallRulesG59(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS + gen_closure.K2_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
         return out
@@ -2066,7 +2066,7 @@ class SmallRulesG53(unittest.TestCase):
         for aid, facts in (gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS +
                            gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G81_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G77_ABILITY_FACTS +
                            gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS +
-                           gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS):
+                           gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS + gen_closure.G71_ABILITY_FACTS + gen_closure.G75_ABILITY_FACTS + gen_closure.G79_ABILITY_FACTS + gen_closure.K2_ABILITY_FACTS):
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS + gen_closure.G75_ITEM_FACTS + gen_closure.G77_ITEM_FACTS]
@@ -2387,6 +2387,50 @@ class MoveHandlerTables(unittest.TestCase):
             with patch.object(gen_move_handlers, '__file__', str(script)), \
                     patch.object(sys, 'argv', [str(script), '--check']), redirect_stdout(io.StringIO()):
                 gen_move_handlers.main()
+
+
+
+class StompingTantrumCallbacks(unittest.TestCase):
+    """Step K1 (#476, entry 5dc): Temper Flare has Stomping Tantrum's basePowerCallback with its own debug text
+    (data/moves.ts:19189-19195 and :18053-18059). The handler STOMPING_TANTRUM serves both moves, and the generator checks
+    the whole text of each callback against its own move, so a change of either text, or the other move's text, is refused."""
+    TEMPER = move_entry('temperflare', 'Temper Flare', *[
+        "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+        "this.debug('doubling Temper Flare BP due to previous move failure'); return move.basePower * 2; } "
+        "return move.basePower; },"], category='Physical', base_power=75, type_='Fire', pp=10,
+        flags='contact: 1, protect: 1, mirror: 1, metronome: 1', target='normal')
+    STOMPING = move_entry('stompingtantrum', 'Stomping Tantrum', *[
+        "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+        "this.debug('doubling Stomping Tantrum BP due to previous move failure'); return move.basePower * 2; } "
+        "return move.basePower; },"], category='Physical', base_power=75, type_='Ground', pp=10,
+        flags='contact: 1, protect: 1, mirror: 1, metronome: 1', target='normal')
+
+    def refused(self, mid, text, message, **kwargs):
+        with self.assertRaises(SystemExit) as cm:
+            parse_pool(mid, text, **kwargs)
+        self.assertEqual(cm.exception.code, 'gen_closure: move %s: %s' % (mid, message))
+
+    def test_temper_flare_and_stomping_tantrum_map_to_the_one_handler(self):
+        for mid, text in (('temperflare', self.TEMPER), ('stompingtantrum', self.STOMPING)):
+            with self.subTest(mid):
+                rec = parse_pool(mid, text)
+                self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('STOMPING_TANTRUM'))
+                self.assertEqual(rec['special'], 73)
+
+    def test_a_changed_debug_text_or_comparison_is_refused(self):
+        self.refused('temperflare', self.TEMPER.replace('doubling Temper Flare BP', 'doubling Temper Flares BP'),
+                     'basePowerCallback is not the pinned text')
+        self.refused('temperflare', self.TEMPER.replace('=== false', '!== false'),
+                     'basePowerCallback is not the pinned text')
+        self.refused('stompingtantrum', self.STOMPING.replace('doubling Stomping Tantrum BP', 'doubling Tantrum BP'),
+                     'basePowerCallback is not the pinned text')
+
+    def test_the_callback_of_the_other_move_is_refused(self):
+        # Each move is checked against its own text: Temper Flare's debug line is not Stomping Tantrum's, and the reverse.
+        self.refused('temperflare', self.TEMPER.replace('doubling Temper Flare BP', 'doubling Stomping Tantrum BP'),
+                     'basePowerCallback is not the pinned text')
+        self.refused('stompingtantrum', self.STOMPING.replace('doubling Stomping Tantrum BP', 'doubling Temper Flare BP'),
+                     'basePowerCallback is not the pinned text')
 
 
 if __name__ == '__main__':

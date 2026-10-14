@@ -1,9 +1,9 @@
 {
-    "maintenance": "Independent owner-reviewed pins. Hand-maintained; no generator updates this file. Names hash: sorted ASCII names, each followed by LF.",
-    "format": "reg-mc",
-    "sets": {
-        "closure": {"battles": 90, "certified": 26, "fixture_matches": 0, "live_stop_total": 0, "live_stops": {}, "names_sha256": "e329f515401db0c81d230dab60ebbd38c4d78d4507357e40d6f566059811fe18", "outcomes": {"equal": 2594, "refused": 310}, "own_pp_stops": 0, "tiebreak_stops": 833},
-        "team_c": {"battles": 73, "certified": 23, "fixture_matches": 144, "live_stop_total": 0, "live_stops": {}, "names_sha256": "9d129e36d93cadd1cc5a063f72b686705006813c88df07c43cb30ca23dffcb9e", "outcomes": {}, "own_pp_stops": 0, "tiebreak_stops": 734},
-        "pool": {"battles": 975, "names_sha256": "078cf5b108420b61b7e3ab562bb8e3a382091d6f9efb97c22614eefc4f5efdd2", "certified": 975, "fixture_matches": 0, "tiebreak_stops": 5363, "outcomes": {"equal": 11718, "refused": 599, "tracker refuses: unburden-without-item-line": 4, "tracker refuses: move-result-not-determined": 2}, "live_stops": {"feature:ROOST": 8, "feature:SUBSTITUTE": 110, "feature:FORME_CHANGE": 14, "line:-end": 2, "feature:DRAGON_CHEER": 20, "feature:DESTINY_BOND": 10, "feature:ILLUSION": 2}, "live_stop_total": 166, "own_pp_stops": 12}
-    }
+  "maintenance": "Independent owner-reviewed pins. Hand-maintained; no generator updates this file. Names hash: sorted ASCII names, each followed by LF.",
+  "format": "reg-mc",
+  "sets": {
+    "closure": {"battles": 90, "certified": 26, "fixture_matches": 0, "live_stop_total": 0, "live_stops": {}, "names_sha256": "e329f515401db0c81d230dab60ebbd38c4d78d4507357e40d6f566059811fe18", "outcomes": {"equal": 2594, "refused": 310}, "own_pp_stops": 0, "tiebreak_stops": 833},
+    "team_c": {"battles": 73, "certified": 23, "fixture_matches": 144, "live_stop_total": 0, "live_stops": {}, "names_sha256": "9d129e36d93cadd1cc5a063f72b686705006813c88df07c43cb30ca23dffcb9e", "outcomes": {}, "own_pp_stops": 0, "tiebreak_stops": 734},
+    "pool": {"battles": 988, "certified": 988, "fixture_matches": 0, "live_stop_total": 166, "live_stops": {"feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 20, "feature:FORME_CHANGE": 14, "feature:ILLUSION": 2, "feature:ROOST": 8, "feature:SUBSTITUTE": 110, "line:-end": 2}, "names_sha256": "5ab701e87171c19f6b1cf61ad6ffc45ea880226baaee2066831f56bf9f3c3800", "outcomes": {"equal": 11812, "refused": 599, "tracker refuses: move-result-not-determined": 2, "tracker refuses: unburden-without-item-line": 4}, "own_pp_stops": 12, "tiebreak_stops": 5410}
+  }
 }

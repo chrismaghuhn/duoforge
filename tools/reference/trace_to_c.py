@@ -1063,6 +1063,8 @@ EV['ITEM_SHOWN'] = 48
 EV['SWAP'] = 49
 # DUOFORGE_EVENT_COPY_BOOST = 50 (Psych Up, decision 0044, step G80): by value, as SWAP.
 EV['COPY_BOOST'] = 50
+# DUOFORGE_EVENT_PROTECT_BROKEN = 51 (Piercing Drill's -zbroken, decision 0015 5dd, step K2, #474): by value.
+EV['PROTECT_BROKEN'] = 51
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21,
@@ -1890,6 +1892,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # The Champions -supereffective and -resisted carry min(|typeMod|, 2).
             e = ev_tuple(EV[{'-crit': 'CRIT', '-supereffective': 'SUPER_EFFECTIVE', '-resisted': 'RESISTED'}[kind]],
                          ev_pos(args[0]), amount=int(args[1]) if len(args) > 1 else 0)
+        elif kind == '-zbroken':
+            # Piercing Drill (step K2, data/mods/champions/scripts.ts modifyDamage): `-zbroken|TARGET`, no attribute.
+            if len(args) != 1 or attrs:
+                raise ConversionError('protocol-line', 'trace_to_c: unsupported -zbroken %r' % line, detail='zbroken')
+            e = ev_tuple(EV['PROTECT_BROKEN'], ev_pos(args[0]))
         elif kind == '-immune':
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)

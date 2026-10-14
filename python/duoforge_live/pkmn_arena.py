@@ -33,6 +33,7 @@ an open battle's log and its open request again: when the log starts with every 
 new lines are folded and an open request already answered is answered again; any other replay falls back.
 """
 import asyncio
+import hashlib
 import json
 import os
 import re
@@ -178,10 +179,14 @@ def close_code(err):
 class RunLog:
     """The run's aggregates (arena-run-<UTC start>.json in the log directory): counts only, no room or user ids."""
 
-    def __init__(self, log_dir, mode, fmt, now=None, tables=None):
+    def __init__(self, log_dir, mode, fmt, now=None, tables=None, code=None, team_sha256=None):
         start = now or datetime.now(timezone.utc)
         self.path = Path(log_dir) / f"arena-run-{start.strftime('%Y%m%dT%H%M%SZ')}.json"
         self.head = {"started": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "mode": mode, "format": fmt}
+        if code is not None:  # the bot's commit and dirty state (arena.provenance, named by the command line)
+            self.head["code"] = code
+        if team_sha256 is not None:  # the --team paste's SHA-256: a replay checks it played this team
+            self.head["team_sha256"] = team_sha256
         if tables:  # how each checkpoint reads the library's tables: both fingerprints, the check_ids result
             self.head["tables"] = tables
         self.counts = Counter()  # logins, reconnects, battles, wins, losses, ties, decisions, rejected choices, ...
@@ -244,7 +249,7 @@ class ArenaBot(client.Bot):
     def __init__(self, name, data, policy, log_dir, fmt, team_text=None, pool=(), search=None, mode="raw",
                  connect=None, connection_errors=None, sleep=asyncio.sleep, clock=time.monotonic, environ=None,
                  deadline=DECISION_DEADLINE, max_retries=MAX_RETRIES, sheet_wait=SHEET_WAIT, foe_check=None,
-                 prior=None):
+                 prior=None, code=None):
         # closed team sheets: the set prior (the pinned table unless given), one particle per world of the search
         self.prior = None
         if not fmt.startswith(FORMATS[1]):
@@ -269,7 +274,10 @@ class ArenaBot(client.Bot):
         self.environ = environ  # None: os.environ, read at each login (the token is never kept on the bot)
         self.deadline, self.max_retries, self.sheet_wait = deadline, max_retries, sheet_wait
         checks = {"network": getattr(data, "checkpoint_check", None), "foe_net": foe_check}
-        self.run_log = RunLog(log_dir, mode, fmt, tables={k: v for k, v in checks.items() if v is not None})
+        self.code = code  # the code that runs: python -m duoforge_live --server arena names it or refuses to start
+        team_sha = None if team_text is None else hashlib.sha256(team_text.encode("utf-8")).hexdigest()
+        self.run_log = RunLog(log_dir, mode, fmt, tables={k: v for k, v in checks.items() if v is not None},
+                              code=code, team_sha256=team_sha)
         self._executor = ThreadPoolExecutor(1, thread_name_prefix="duoforge-arena-policy")
         self._worker = None  # the future of the last decision; a late one blocks the next (no two at once)
         self._dropped = ()  # the connection's errors: never a battle's fallback, the run loop reconnects
@@ -648,7 +656,7 @@ class ArenaBot(client.Bot):
         self.run_log.counts[result] += 1
         b.write({"end": line})
         if b.game is not None and b.game.search is not None:
-            b.write({"summary": b.game.summary()})
+            b.write({"summary": {**b.game.summary(), **({} if self.code is None else {"code": self.code})}})
         if b.game is not None and b.game.closed:
             for key, n in b.game.tracker.counters.items():  # aggregates only: a stop's kind, never its text
                 self.run_log.cts[cts.counter_kind(key)] += n

@@ -5,5 +5,6 @@ duoforge_add_python_test(live_search python.tests.live.test_live_search quick li
 duoforge_add_python_test(live_cts python.tests.live.test_live_cts quick live)
 duoforge_add_python_test(live_arena python.tests.live.test_live_arena quick live)
 duoforge_add_python_test(pkmn_arena python.tests.live.test_pkmn_arena quick live)
+duoforge_add_python_test(cts_live_eval python.tests.live.test_cts_live_eval quick live)
 duoforge_add_learner_test(pkmn_arena_net python.tests.live.test_pkmn_arena_net slow live)
 duoforge_add_reference_python_test(live python.tests.live.test_live reference live)

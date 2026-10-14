@@ -1,0 +1,342 @@
+{
+  "P1": {
+    "ipo": {
+      "inventory": 1410,
+      "inventory_sha256": "03f079e72fe9f4f3f24cc2f3319f27c2176c8a3731a260a2d0de1c4c9bcf36dc",
+      "runtime_properties_equal": true,
+      "tests": {
+        "after": {
+          "disabled": "0",
+          "failures": "0",
+          "hostname": "8c91664c82d0",
+          "name": "Linux-c++",
+          "skipped": "0",
+          "tests": "218",
+          "time": "489",
+          "timestamp": "2026-10-13T19:20:29"
+        },
+        "before": {
+          "disabled": "0",
+          "failures": "0",
+          "hostname": "8c91664c82d0",
+          "name": "Linux-c++",
+          "skipped": "0",
+          "tests": "218",
+          "time": "468",
+          "timestamp": "2026-10-13T18:52:16"
+        }
+      },
+      "tiers": {
+        "full": 31,
+        "quick": 210,
+        "reference": 1151,
+        "slow": 18
+      }
+    },
+    "noipo": {
+      "inventory": 1410,
+      "inventory_sha256": "03f079e72fe9f4f3f24cc2f3319f27c2176c8a3731a260a2d0de1c4c9bcf36dc",
+      "runtime_properties_equal": true,
+      "tests": {
+        "after": {
+          "disabled": "0",
+          "failures": "0",
+          "hostname": "8c91664c82d0",
+          "name": "Linux-c++",
+          "skipped": "0",
+          "tests": "213",
+          "time": "48",
+          "timestamp": "2026-10-13T19:34:23"
+        },
+        "before": {
+          "disabled": "0",
+          "failures": "0",
+          "hostname": "8c91664c82d0",
+          "name": "Linux-c++",
+          "skipped": "0",
+          "tests": "213",
+          "time": "49",
+          "timestamp": "2026-10-13T19:00:55"
+        }
+      },
+      "tiers": {
+        "full": 31,
+        "quick": 210,
+        "reference": 1151,
+        "slow": 18
+      }
+    }
+  },
+  "P2": {
+    "ipo": {
+      "datasets": {
+        "duoforge_reference_conformance": {
+          "battles": 90,
+          "checks": "duoforge.reference.conformance: 3042 checks, 0 failures",
+          "sha256": "620dd6f94faa5fc2751158f062c58edf75f48394aba7a9a49e6bc96bf8f9f271",
+          "steps": 1430,
+          "stops": 0
+        },
+        "duoforge_reference_conformance_pool": {
+          "battles": 90,
+          "checks": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+          "sha256": "8be6753e961e86e6a8dbcb77e053f308ea71c31c12a6c11b5212a954fccf79a6",
+          "steps": 1430,
+          "stops": 0
+        },
+        "duoforge_reference_conformance_pool_data": {
+          "battles": 966,
+          "checks": "duoforge.reference.conformance_pool_data: 13338 checks, 0 failures",
+          "sha256": "8fbc168fb2199930340a1fabf4923bce5d2553ede17253bd215b7f1ad5b4d200",
+          "steps": 5702,
+          "stops": 0
+        },
+        "duoforge_reference_conformance_team_c": {
+          "battles": 73,
+          "checks": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+          "sha256": "1acfad0da5393e2095176d094ab2748800b305cfbfee048e04f127a1720c39c5",
+          "steps": 1337,
+          "stops": 0
+        },
+        "duoforge_reference_conformance_team_c_pool": {
+          "battles": 73,
+          "checks": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+          "sha256": "4459b937648f3e470ffee6da4761ce0f3d54b2c19f59906774888844bb515792",
+          "steps": 1337,
+          "stops": 0
+        },
+        "duoforge_reference_tiebreak": {
+          "battles": 90,
+          "checks": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+          "sha256": "b374c2d908d5bd00776a571f7bc6842722f0fb6e6401c9770b3f27001c07e4ea",
+          "steps": 1430,
+          "stops": 833
+        },
+        "duoforge_reference_tiebreak_pool": {
+          "battles": 90,
+          "checks": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+          "sha256": "f0d14608caf783a1f99c79dfb78265e18878aaa139865c7ce3500f10635d41cb",
+          "steps": 1430,
+          "stops": 833
+        },
+        "duoforge_reference_tiebreak_pool_data": {
+          "battles": 966,
+          "checks": "duoforge.reference.tiebreak_pool_data: 25541 checks, 0 failures",
+          "sha256": "9bc7b21e8cfc6994147dcc7843581d2a1a08f63aaf1d9db2417511615cd1049f",
+          "steps": 5702,
+          "stops": 5324
+        },
+        "duoforge_reference_tiebreak_team_c": {
+          "battles": 73,
+          "checks": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+          "sha256": "78e1cb58a1fd273b438d99fb9d5db2bdc876b174da5bc73339bc002b2de7fb34",
+          "steps": 1337,
+          "stops": 734
+        },
+        "duoforge_reference_tiebreak_team_c_pool": {
+          "battles": 73,
+          "checks": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures",
+          "sha256": "c63fe2df60c180eff91e1c81d297036b2873a342cc32016dab93ae8165ad913b",
+          "steps": 1337,
+          "stops": 734
+        }
+      },
+      "executions": 2584,
+      "sha256": "9753fed420cbcddceaa7e4de1e77a73fda9195b093e4cf9e98a06140dd6c7dfd",
+      "steps": 22472,
+      "stops": 8458,
+      "unique_battles": 1129,
+      "variants": 10
+    },
+    "noipo": {
+      "datasets": {
+        "duoforge_reference_conformance": {
+          "battles": 90,
+          "checks": "duoforge.reference.conformance: 3042 checks, 0 failures",
+          "sha256": "620dd6f94faa5fc2751158f062c58edf75f48394aba7a9a49e6bc96bf8f9f271",
+          "steps": 1430,
+          "stops": 0
+        },
+        "duoforge_reference_conformance_pool": {
+          "battles": 90,
+          "checks": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+          "sha256": "8be6753e961e86e6a8dbcb77e053f308ea71c31c12a6c11b5212a954fccf79a6",
+          "steps": 1430,
+          "stops": 0
+        },
+        "duoforge_reference_conformance_pool_data": {
+          "battles": 966,
+          "checks": "duoforge.reference.conformance_pool_data: 13338 checks, 0 failures",
+          "sha256": "8fbc168fb2199930340a1fabf4923bce5d2553ede17253bd215b7f1ad5b4d200",
+          "steps": 5702,
+          "stops": 0
+        },
+        "duoforge_reference_conformance_team_c": {
+          "battles": 73,
+          "checks": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+          "sha256": "1acfad0da5393e2095176d094ab2748800b305cfbfee048e04f127a1720c39c5",
+          "steps": 1337,
+          "stops": 0
+        },
+        "duoforge_reference_conformance_team_c_pool": {
+          "battles": 73,
+          "checks": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+          "sha256": "4459b937648f3e470ffee6da4761ce0f3d54b2c19f59906774888844bb515792",
+          "steps": 1337,
+          "stops": 0
+        },
+        "duoforge_reference_tiebreak": {
+          "battles": 90,
+          "checks": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+          "sha256": "b374c2d908d5bd00776a571f7bc6842722f0fb6e6401c9770b3f27001c07e4ea",
+          "steps": 1430,
+          "stops": 833
+        },
+        "duoforge_reference_tiebreak_pool": {
+          "battles": 90,
+          "checks": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+          "sha256": "f0d14608caf783a1f99c79dfb78265e18878aaa139865c7ce3500f10635d41cb",
+          "steps": 1430,
+          "stops": 833
+        },
+        "duoforge_reference_tiebreak_pool_data": {
+          "battles": 966,
+          "checks": "duoforge.reference.tiebreak_pool_data: 25541 checks, 0 failures",
+          "sha256": "9bc7b21e8cfc6994147dcc7843581d2a1a08f63aaf1d9db2417511615cd1049f",
+          "steps": 5702,
+          "stops": 5324
+        },
+        "duoforge_reference_tiebreak_team_c": {
+          "battles": 73,
+          "checks": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+          "sha256": "78e1cb58a1fd273b438d99fb9d5db2bdc876b174da5bc73339bc002b2de7fb34",
+          "steps": 1337,
+          "stops": 734
+        },
+        "duoforge_reference_tiebreak_team_c_pool": {
+          "battles": 73,
+          "checks": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures",
+          "sha256": "c63fe2df60c180eff91e1c81d297036b2873a342cc32016dab93ae8165ad913b",
+          "steps": 1337,
+          "stops": 734
+        }
+      },
+      "executions": 2584,
+      "sha256": "9753fed420cbcddceaa7e4de1e77a73fda9195b093e4cf9e98a06140dd6c7dfd",
+      "steps": 22472,
+      "stops": 8458,
+      "unique_battles": 1129,
+      "variants": 10
+    }
+  },
+  "P3": {
+    "pinned_depths": 24,
+    "pins_sha256": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+    "positions": 10,
+    "tests_passed_in_both_profiles": true
+  },
+  "P4": {
+    "BENCH_SHA256": [
+      "8283eb8d5263073ab59fc27ca703fa08dac87d196d03557daf272560baeab798"
+    ],
+    "tests_passed_in_both_profiles": true
+  },
+  "P5": {
+    "checks": [
+      "closure_regen",
+      "extended_regen",
+      "pool_regen",
+      "tiebreak_ref",
+      "format_pins",
+      "gen_move_handlers --check"
+    ],
+    "sha256": {
+      "include/duoforge/duoforge.h": "54b8191bb264d362068c4098f91f335585ac6df60d7418f21a40733016618cfb",
+      "include/duoforge/duoforge_batch.h": "cbe40a96e2492e7351b6ce5a6e773bd8a14adaa9fa1ca555c0003d2d653551ee",
+      "include/duoforge/duoforge_encode.h": "98aef8c244295bc7859aa0a764fa80555f04a6777f2d5004ebf2a6c45b4594a8",
+      "include/duoforge/duoforge_search.h": "e84c2eb7be460db46a1f5580ee19a8d1cffb2b225e1f01fae7c5bcc3fe878ec2",
+      "include/duoforge/duoforge_view.h": "506062ff1592c700f5b615d8d11ef880993cba5734a97a9c6a8e4a617a4c9829",
+      "python/duoforge/_layout.py": "e0aea4b8bb1ac5b47956d0a20b4781a7d00b436b06a3eaeb9d182488be52d128",
+      "python/duoforge/_state_layout.py": "304b146954da93db01e206746d4d7d715b0bdab4f3f241448537d22df6911c85",
+      "python/duoforge/_view_layout.py": "e20e63ab86b94ace6abb2b942b16c1ab14a97cc5e46fa32d812ed373ad65bb01",
+      "python/tests/search/test_bench.py": "5c09de4085a30cb8c0d9e874ddbc74549c1a7783cea016522192f48ac5ab01df",
+      "src/combat/generated/move_handlers.h": "beb77f26a35314b1ef87e1dd1975f325ad95d8c66a4845b77c43ce1b550e9d16",
+      "src/data/closure_tables.c": "490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a",
+      "src/data/closure_tables.h": "f6ef34b31d74a60f9c28e0bce8d3cc39a68a2ee03c7d17532090c9fca42fb25b",
+      "src/data/extended_tables.c": "9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17",
+      "src/data/extended_tables.h": "b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d",
+      "src/data/formulas.c": "a13d5d95cd6932e6b988760d5b64f1e542c5f369c95b4d53990f495e99595b5e",
+      "src/data/formulas.h": "c7cd329dc3a6eda5fba84d5a7acd0ef1f7579a58d5e8b19d7e5fc4ac5ac40af0",
+      "src/data/pool_tables.c": "815f6228e5bff388a12c6bffb0ec73ea19203919acfe9b10f2a3f21f0dadfb7e",
+      "src/data/pool_tables.h": "30e779174bb73baa328ba66a363858820d2fcaf2ea6e356b9b3e26a2a2cd8847",
+      "src/data/support_manifest.c": "d0edb5c4082b2ab126fe75d597fba5292bc27f242bd03add9e75a4bb44d8de45",
+      "src/data/support_manifest.h": "826216009f5ea50f492f49b7139368cac9445fc72be1d3228ea7cfb8ea876d66",
+      "tests/perft/pins.json": "90cb0e55b5aed6d2285953338a736b76b7d46e586993b0c5fccceda2230c7c56",
+      "tests/reference/pins/reg-mc.json": "0ade4a200c25a5f1ce71e411a6a17c3bbc0767d52bd95780b3f7a3be96848654",
+      "tools/datagen/gen_closure.py": "95e8497cd50f53fd7fabdcb407799f12c04bc823eef05a7f18a648138be85b90"
+    },
+    "unchanged_source_hashes": 23,
+    "unmodeled_data_rows": {
+      "abilities": 90,
+      "items": 18,
+      "moves": 146
+    }
+  },
+  "P6": {
+    "constants": 250,
+    "ipo": {
+      "exports": 238,
+      "exports_sha256": "1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5",
+      "layout_raw_sha256": "0bad5754bb4c85b07bbd99aa54a5700a8f2c82135b4eb75734b9fe86c8a3530e",
+      "private_helper_negative_lookups": {
+        "after": 15,
+        "before": 15
+      }
+    },
+    "noipo": {
+      "exports": 238,
+      "exports_sha256": "1b8b33f598fc80e114d3df20fc4632f64d987849fb9101ecd8aebf2f6debd8d5",
+      "layout_raw_sha256": "0bad5754bb4c85b07bbd99aa54a5700a8f2c82135b4eb75734b9fe86c8a3530e",
+      "private_helper_negative_lookups": {
+        "after": 15,
+        "before": 15
+      }
+    },
+    "public_include_diff_empty": true,
+    "structs": 33
+  },
+  "provenance": {
+    "after": {
+      "commit": "abb0ade98ad5573a708521310416d9d6e7b81589",
+      "dirty": false,
+      "phase": "after"
+    },
+    "before": {
+      "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+      "dirty": false,
+      "phase": "before"
+    }
+  },
+  "source": {
+    "baseline_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "byte_equal_big_functions": [
+      "dfi_get_damage",
+      "dfi_run_move_body",
+      "dfi_residual_sort",
+      "dfi_residual_faints",
+      "dfi_residual_holder_stands",
+      "dfi_residual",
+      "dfi_residual_lock",
+      "dfi_curse_residual",
+      "dfi_residual_events_run",
+      "dfi_residual_pair_draws",
+      "dfi_residual_events"
+    ],
+    "file_renames": 0,
+    "moved_functions": 15,
+    "new_turn_lines": 12185,
+    "old_turn_lines": 12385,
+    "unchanged_remaining_function_bodies": 266,
+    "unchanged_whole_turn_tokens_except_declared_extractions_and_includes": true
+  }
+}
