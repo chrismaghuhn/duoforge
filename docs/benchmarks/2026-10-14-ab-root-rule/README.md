@@ -51,6 +51,22 @@ The aggregates come from `tools/research/cts_live_eval.py --logs DIR --code COMM
 - **Power.** With 100 decided battles per arm and win rates near 50%, the 95% interval of the difference is about ±14 percentage points wide. A true difference of 13 to 15 points is therefore detected only about half the time; detecting one with 80% power needs about 20 points. A smaller difference stays "no measured difference".
 - **Reports** hold aggregates only, opponents by letter, with the bot commit and dirty state, the run logs (seed) and the tool's commit.
 
+### Opponents the search mostly cannot reach, and series (fixed after the technical check, before any look at results)
+
+Fixed on 2026-10-14 after the technical check of the first 30 battles (allocation, logging, no deadline). The check looked at no result, no win and no outcome.
+
+- **Why.** Against an opponent whose decision points the engine mostly refuses (#464: a particle holding unmodelled content), both arms play the raw policy at those points. The root rule cannot act there, so such battles dilute the comparison without measuring it.
+- **An opponent's no-search share** is its battles' non-team decisions answered without the search, out of all its non-team decisions. A decision without the search is one that is not `searched` (unreconstructible, forced, raw, deadline). The share is pooled over both arms and computed within the series at each look.
+  - It does not depend on the arm: what the engine refuses depends on the foe's content, not on the root rule. The tool shows the share per arm too, as a check.
+- **The primary reading** at the looks of 30, 60 and 100 counts only the battles against opponents with a no-search share of **at most 50%** at that look (the searchable opponents).
+  - The looks count decided battles per arm within that set: 30, 60 and 100 per arm, with the same 99%, 99% and 95% intervals.
+  - An opponent's class is recomputed at each look from all of the series' battles so far.
+- **Opponents above 50%** are described only: their counts per arm, never a ground for a preference.
+- **Intention to treat over all battles** is reported beside the primary reading at each look and is never decisive.
+- **Series.** The test is read per bot commit. A deploy with other code, for example main with #500 (Speed Swap), starts a new series. The test goes on in it with a fresh allocation from its own seed, and the looks count within one series.
+  - Pooling series is allowed only if the HauptSession decides it before the first look at either series. The opponent classes are then still computed per series.
+- Until `cts_live_eval` reports the searchable set itself, the counts are taken from its per-opponent and per-arm decision counts, which are aggregates only.
+
 ## Replays of the test's battles
 
 `cts.LogReplay` and `cts.replay` read the rule a battle's first record names (`cts.logged_rule`), so the KO check and the luck meter replay each battle under its own arm's rule. A decision without a rule plays the search's own (`LiveSearch.base_rule`), never a rule an earlier battle set.
