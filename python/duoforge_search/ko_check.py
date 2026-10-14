@@ -15,8 +15,18 @@ candidates, the played and the raw pair, and every legal option of each slot wit
 (lookahead.select_slots); on the foe side the search's foe columns and every foe slot option with its likeliest partner
 under the foe model, per world.
 
-    python -m duoforge_search.ko_check --logs DIR --team PASTE --checkpoint MAIN --out DIR [--step 0]
-        [--samples-per-world 4] [--limit N]
+    python -m duoforge_search.ko_check --logs DIR --team PASTE --checkpoint MAIN --out DIR --played log|search
+        [--step 0] [--closed --bot NAME] [--samples-per-world 4] [--limit N]
+
+Open team sheets (the default): the log's lines are fed between two decision records as the bot did. Closed team sheets
+(--closed, decision 0081): the log is replayed by the one replay core, cts.LogReplay (#483), under the bot's seed, the
+battle room as the key (cts.room_of_log) and the pinned set prior: the same particles as the bot and the live
+evaluation drew, world w of the search built from particle w. A replay that disagrees with the bot on a stop is a
+determinism break and stops the run (SearchError); a bot that stopped or fell back is counted by name.
+
+--played is required: "log", the choice the bot played (the log's accepted choice, else the one sent), or "search", the
+replayed step's own choice. Logs record the live search of their day (step 0 until 2026-10-14, 2e since), so the
+logged choice is no step's by default.
 
 The battle logs (match ids) and the per-decision rows stay private, outside the repository; the report holds counts.
 """
@@ -206,14 +216,32 @@ def room_of(path):
     return "-".join(parts[:3])
 
 
+def root_view(game):
+    """(observation, observation_ext) of the decision's root as the search decides on it. Open sheets: the tracker's.
+    Closed sheets: particle 0's, the root game._search passes (world w is particle w); the own side, and so the own pair
+    mask, is the same in every particle (game.candidates refuses otherwise)."""
+    if game.closed:
+        return game.tracker.observations()[0], game.tracker.observation_exts()[0]
+    return game.tracker.observation(), game.tracker.observation_ext()
+
+
+def logged_choice(record):
+    """The choice text the bot played at a decision record: the accepted one where the log names it (cts.LogReplay's
+    records, after a refused try the next), else the one sent. Refused when the replay found none accepted."""
+    if "accepted" in record:
+        if record["accepted"] is None:
+            raise Refused("not_accepted")
+        return record["accepted"]
+    return record["sent"]
+
+
 def pair_texts(game, policy):
     """{choice text: flat pair index} of the allowed pairs of the game's current request (the texts the bot sends)."""
     from duoforge import features
     from duoforge_live import options
-    observation = game.tracker.observation()
+    observation, ext = root_view(game)
     domain, lists = game.tracker.domain()
-    _, _, pair_mask = features.encode(observation, domain, game.tracker.observation_ext(),
-                                      getattr(policy, "ext_supported", 0))
+    _, _, pair_mask = features.encode(observation, domain, ext, getattr(policy, "ext_supported", 0))
     n = pair_mask.shape[1]
     if n != lookahead.OPTIONS:
         raise SearchError(f"a pair mask of {n} options, the search's flat pairs have {lookahead.OPTIONS}")
@@ -232,6 +260,8 @@ def replay(path, data, policy, live, team_text, episode, budget=1e9):
     room = room_of(path)
     with open(path, encoding="utf-8") as f:
         records = [json.loads(line) for line in f if line.strip()]
+    if any("feed" in r for r in records):  # the bot fed particles: a closed-sheet battle (--closed)
+        raise Refused("closed_sheets_log")
     game = Game(data, policy, team_text, search=live, room=room, episode=episode)
     batch, pending, inits = [], None, 0
     for record in records:
@@ -266,6 +296,38 @@ def replay(path, data, policy, live, team_text, episode, budget=1e9):
             yield game, record, live.searcher.records[0]
 
 
+def replay_closed(path, data, policy, live, team_text, bot, prior, counts, budget=1e9):
+    """The searched turn decisions of one closed-sheet battle log, replayed by cts.LogReplay (the bot's seed, the room
+    of the log's name as the key, prior): yields (game, log record, search record) after the search (live, a LiveSearch
+    whose searcher is a _Capture) has decided each decision point the bot was asked at, before its choice is accepted.
+    counts (a Counter) gets "no_decision_record" for a point the bot wrote no decision record at. Refused for an
+    open-sheet log, a log of another bot, or a stop or fallback of the bot (by name, after the decisions before it);
+    SearchError when the replay and the bot disagree on a stop (a determinism break)."""
+    from duoforge_live import cts
+    try:
+        key = cts.room_of_log(path, bot)
+    except ValueError:
+        raise Refused("other_bot") from None
+    with open(path, encoding="utf-8") as f:
+        records = [json.loads(line) for line in f if line.strip()]
+    if not any("feed" in r for r in records):
+        raise Refused("open_sheets_log")
+    replay = cts.LogReplay(records, data, policy, team_text, prior, key, search=live)
+    for game, record in replay:
+        if record is None:
+            counts["no_decision_record"] += 1
+            continue
+        live.searcher.records = None
+        game.candidates(budget)
+        outcome = game.outcomes[-1] if game.outcomes else None
+        if outcome is not None and outcome.cause == "searched" and not game.request.get("teamPreview"):
+            yield game, record, live.searcher.records[0]
+    if replay.diverged is not None:
+        raise SearchError(f"{Path(path).name}: the replay and the bot disagree on a stop ({replay.diverged})")
+    if replay.stopped is not None:
+        raise Refused(replay.stopped)
+
+
 def decision_row(game, policy, live, record, searched, samples, thresholds=(LIKELY, SURE), played_from="log"):
     """The KO facts of one replayed searched decision (private row: no ids). played_from: "log", the pair the bot sent
     (the baseline), or "search", the replayed search's own choice (an arm on the logged games)."""
@@ -274,9 +336,10 @@ def decision_row(game, policy, live, record, searched, samples, thresholds=(LIKE
     search = live.searcher.searcher
     p = int(searched["seat"])
     texts = pair_texts(game, policy)
-    if record["sent"] not in texts:
+    logged = logged_choice(record)
+    if logged not in texts:
         raise Refused("sent_not_allowed")
-    sent, candidates = texts[record["sent"]], [int(x) for x in searched["own_pairs"]]
+    sent, candidates = texts[logged], [int(x) for x in searched["own_pairs"]]
     raw, chosen = int(searched["raw"]), int(searched["choice"])
     played = sent if played_from == "log" else chosen
     roots = live.roots
@@ -287,7 +350,7 @@ def decision_row(game, policy, live, record, searched, samples, thresholds=(LIKE
     own = sorted(set(wide.tolist()) | set(candidates) | {sent, raw, chosen})
     probes = probe(search, p, int(searched["key"]), own, searched["foe_pairs"], samples)
     facts = summarize(probes, searched["weights"])
-    row = {"turn": int(game.tracker.observation()["turn"]), "played_is_search": sent == chosen, "played": played_from,
+    row = {"turn": int(root_view(game)[0]["turn"]), "played_is_search": sent == chosen, "played": played_from,
            "k": len(candidates), "probed": len(own), "leaves": probes["leaves"], "refused": probes["refused"],
            "ko_played": float(facts["ko"][own.index(played)]), "ko_best": float(facts["ko"].max()),
            "threat_raw": float(facts["threat"][own.index(raw)]),
@@ -328,9 +391,12 @@ def main(argv=None):
     p.add_argument("--checkpoint", required=True, help="the live network (BC6)")
     p.add_argument("--foe-net", default=None, help="the foe model (default: the checkpoint itself)")
     p.add_argument("--step", default="0", help="the ladder step whose search is replayed (ladder.STEPS)")
-    p.add_argument("--played", choices=("log", "search"), default=None,
-                   help="what counts as played: the pair the bot sent (log, the default of step 0) or the replayed "
-                        "step's own choice (search, the default of every other step)")
+    p.add_argument("--played", choices=("log", "search"), required=True,
+                   help="what counts as played: the choice the bot played (log) or the replayed step's own choice "
+                        "(search). Required: a log holds the live search of its day, no step's by default")
+    p.add_argument("--closed", action="store_true",
+                   help="closed team sheets: replay through cts.LogReplay over the bot's particles (needs --bot)")
+    p.add_argument("--bot", default=None, help="the bot's name, as in its log files' names (with --closed)")
     p.add_argument("--samples-per-world", type=int, default=SAMPLES_PER_WORLD)
     p.add_argument("--limit", type=int, default=None, help="at most this many log files (a smoke run)")
     p.add_argument("--out", required=True, help="the report directory, outside the repository")
@@ -342,7 +408,9 @@ def main(argv=None):
         raise SystemExit(str(err)) from None
     if args.samples_per_world < 1:
         raise SystemExit("--samples-per-world must be at least 1")
-    played = args.played or ("log" if args.step == "0" else "search")
+    played = args.played
+    if args.closed and not args.bot:
+        raise SystemExit("--closed needs --bot: the logs' names give the particles' key")
     from . import ladder
     try:
         settings = ladder.step_settings(args.step)
@@ -358,8 +426,16 @@ def main(argv=None):
     live = live_search.load(args.checkpoint, settings=settings, foe_net=foe_path,
                             foe_net_sha256=pkmn_arena.sha256_of(foe_path))
     live.searcher = _Capture(live.searcher)
+    prior = None
+    if args.closed:
+        from duoforge_live import cts
+        if live.searcher.s != cts.PARTICLES:  # world w is particle w, as the bot requires (pkmn_arena.ArenaBot)
+            live.close()
+            raise SystemExit(f"--closed: the step's search has {live.searcher.s} worlds, the tracker "
+                             f"{cts.PARTICLES} particles")
+        prior = cts.SetPrior.from_table(tables)
     os.makedirs(args.out, exist_ok=True)
-    rows, games, refused = [], Counter(), Counter()
+    rows, games, refused, points = [], Counter(), Counter(), Counter()
     try:
         with open(os.path.join(args.out, "decisions.jsonl"), "w", encoding="utf-8") as f:
             for episode, path in enumerate(files):
@@ -369,7 +445,9 @@ def main(argv=None):
                     refused["other_team"] += 1
                     continue
                 try:
-                    for game, record, searched in replay(path, tables, net, live, team_text, episode):
+                    decisions = (replay_closed(path, tables, net, live, team_text, args.bot, prior, points)
+                                 if args.closed else replay(path, tables, net, live, team_text, episode))
+                    for game, record, searched in decisions:
                         row = decision_row(game, net, live, record, searched, args.samples_per_world,
                                            played_from=played)
                         rows.append(row)
@@ -382,7 +460,9 @@ def main(argv=None):
         live.close()
     report = {"step": args.step, "played": played, "settings": {k: v for k, v in settings.items() if k != "foe_net"},
               "samples_per_world": args.samples_per_world, "thresholds": {"likely": LIKELY, "sure": SURE},
-              "games": {"files": len(files), **games, "refused": dict(refused)}, **aggregate(rows)}
+              "sheets": "closed" if args.closed else "open",
+              "games": {"files": len(files), **games, "refused": dict(refused)},
+              "decision_points": dict(points), **aggregate(rows)}
     with open(os.path.join(args.out, "report.json"), "w", encoding="utf-8") as f:
         json.dump(report, f, indent=1)
     print(json.dumps(report, indent=1))

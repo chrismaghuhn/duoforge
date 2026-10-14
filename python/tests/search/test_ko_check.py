@@ -7,6 +7,7 @@ import json
 import os
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 from unittest import mock
 
@@ -18,7 +19,7 @@ from duoforge import _layout, features
 from duoforge_live import data, pkmn_arena, policy as live_policy, search as live_search
 from duoforge_search import ko_check, lookahead
 from python.tests.live.test_live_client import FIXTURE
-from python.tests.live.test_pkmn_arena import ENV, NAME, OTS, ROOM, battle_messages
+from python.tests.live.test_pkmn_arena import CTS, ENV, NAME, OTS, ROOM, battle_messages, room
 
 C = _layout.CONSTANTS
 EXACT, PERCENT = C["DUOFORGE_HP_EXACT"], C["DUOFORGE_HP_PERCENT"]
@@ -99,12 +100,12 @@ class ReplayTest(unittest.TestCase):
     """The arena bot plays the fixture with the honest search and writes its log; the replay follows the log and its
     search decides every searched decision as the bot did."""
 
-    @classmethod
-    def setUpClass(cls):
+    @staticmethod
+    def checkpoint(directory):
+        """A tiny synthetic checkpoint (no weights of ours) in directory: its path."""
         import jax
         from duoforge_learn import bc_data, checkpoint, policy
-        cls.tmp = tempfile.TemporaryDirectory()
-        cls.path = os.path.join(cls.tmp.name, "bc.npz")
+        path = os.path.join(directory, "bc.npz")
         model_config = policy.v2_config("S")
         params = policy.make(model_config).init(jax.random.PRNGKey(6))
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
@@ -113,7 +114,13 @@ class ReplayTest(unittest.TestCase):
                       "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
                       "data": {"kind": "pool", "fingerprint": ctx.fingerprint().hex()}, "teams": [], "update": 0,
                       "decisions": 0, "ids": checkpoint.ids_of(ctx)}
-        checkpoint.save(cls.path, params, config)
+        checkpoint.save(path, params, config)
+        return path
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.path = cls.checkpoint(cls.tmp.name)
         cls.logs = os.path.join(cls.tmp.name, "logs")
         with mock.patch.dict(os.environ, ENV):
             live = live_search.load(cls.path, foe_net=cls.path, foe_net_sha256=pkmn_arena.sha256_of(cls.path))
@@ -192,28 +199,40 @@ class ReplayTest(unittest.TestCase):
         for world, columns in enumerate(first["foe_sets"]):
             self.assertTrue(set(search_record["foe_pairs"][world]) <= set(columns) or columns == [lookahead.NO_FOE])
 
-    def test_the_cli_counts_step_zeros_own_choice_with_played_search(self):
-        # Step 2's KO comparison (HS, 2026-10-13): step 0 counted by its own choice, as the arms are, not by the logged
-        # move. The default of step 0 stays the log.
+    def test_the_cli_counts_what_played_names(self):
+        # Step 2's KO comparison (HS, 2026-10-13): step 0 counted by its own choice, as the arms are, or by the logged
+        # move. --played is required (review of #486): a log holds the live search of its day, no step's.
         team = os.path.join(self.tmp.name, "team.txt")
         with open(team, "w", encoding="utf-8") as f:
             f.write(FIXTURE["team"])
-        for played in ("search", None):
+        for played in ("search", "log"):
             with self.subTest(played=played), tempfile.TemporaryDirectory() as out, \
                     mock.patch.dict(os.environ, ENV), contextlib.redirect_stdout(io.StringIO()):
-                extra = [] if played is None else ["--played", played]
                 ko_check.main(["--logs", self.logs, "--team", team, "--checkpoint", self.path, "--step", "0",
-                               "--samples-per-world", "1", "--out", os.path.join(out, "r"), *extra])
+                               "--samples-per-world", "1", "--out", os.path.join(out, "r"), "--played", played])
                 with open(os.path.join(out, "r", "report.json"), encoding="utf-8") as f:
                     report = json.load(f)
                 with open(os.path.join(out, "r", "decisions.jsonl"), encoding="utf-8") as f:
                     rows = [json.loads(line) for line in f]
-                self.assertEqual(report["played"], played or "log")
+                self.assertEqual((report["played"], report["sheets"]), (played, "open"))
                 self.assertTrue(rows)
-                self.assertEqual({r["played"] for r in rows}, {played or "log"})
-        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
-            ko_check.main(["--logs", self.logs, "--team", team, "--checkpoint", self.path, "--played", "raw",
-                           "--out", os.path.join(self.tmp.name, "never")])
+                self.assertEqual({r["played"] for r in rows}, {played})
+        for bad in (["--played", "raw"], []):
+            with self.subTest(bad=bad), self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+                ko_check.main(["--logs", self.logs, "--team", team, "--checkpoint", self.path, *bad,
+                               "--out", os.path.join(self.tmp.name, "never")])
+
+    def test_each_replay_refuses_the_other_sheets_log_by_name(self):
+        live, net, tables = self.load()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, f"battle-{OTS}-8-tiansuan.jsonl")
+            path.write_text(json.dumps({"feed": ["|init|battle"]}) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ko_check.Refused, "closed_sheets_log"):
+                list(ko_check.replay(path, tables, net, live, FIXTURE["team"], 0))
+            with self.assertRaisesRegex(ko_check.Refused, "open_sheets_log"):
+                list(ko_check.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, None, Counter()))
+            with self.assertRaisesRegex(ko_check.Refused, "other_bot"):
+                list(ko_check.replay_closed(path, tables, net, live, FIXTURE["team"], "Ling-Ce", None, Counter()))
 
     def test_the_cli_refuses_an_output_inside_the_repository(self):
         from duoforge_live.data import ROOT
@@ -221,6 +240,139 @@ class ReplayTest(unittest.TestCase):
             ko_check.main(["--logs", self.logs, "--team", "x", "--checkpoint", self.path,
                            "--out", str(Path(ROOT, "ko-out"))])
         self.assertFalse(Path(ROOT, "ko-out").exists())
+
+
+def closed_messages(room_id, upto):
+    """The open-sheet fixture's messages as a closed-sheet battle (test_pkmn_arena's closed_messages): no |showteam|."""
+    return [room(["|init|battle"], room_id)] + \
+        [room([l for l in m if not l.startswith("|showteam|")], room_id) for m in FIXTURE["messages"][:upto]]
+
+
+def point(game):
+    """A decision point as the bot and a replay see it: epoch, rqid, every particle's sets and record bytes."""
+    return (game.epoch, game.request["rqid"], [p.sets for p in game.tracker.particles],
+            [p["record"].tobytes() for p in game.tracker.public_parts()])
+
+
+class ClosedReplayTest(unittest.TestCase):
+    """Closed team sheets (#483; HS, 2026-10-14): the arena bot plays the fixture as a closed-sheet battle with the
+    honest search over its particles; ko_check replays its log through cts.LogReplay, the one replay core of the live
+    evaluation, and draws the bot's particles at every decision point."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import game as game_module
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.path = ReplayTest.checkpoint(cls.tmp.name)
+        cls.logs = os.path.join(cls.tmp.name, "logs")
+        cls.room = f"battle-{CTS}-12"
+        cls.seen, real = [], game_module.Game.candidates
+
+        def candidates(g, *args, **kwargs):  # what the bot decided on, at every decision point
+            cls.seen.append(point(g))
+            return real(g, *args, **kwargs)
+        with mock.patch.dict(os.environ, ENV):
+            live = live_search.load(cls.path, foe_net=cls.path, foe_net_sha256=pkmn_arena.sha256_of(cls.path))
+            net, tables = live_policy.load(cls.path), data.for_checkpoint(cls.path)
+            bot = pkmn_arena.ArenaBot(NAME, tables, net, cls.logs, CTS, team_text=FIXTURE["team"], search=live,
+                                      mode="honest+foe_net")
+            cls.prior = bot.prior
+            try:
+                async def send(text):
+                    pass
+
+                async def go():
+                    bot.connection = type("Socket", (), {"send": staticmethod(send)})()
+                    for m in closed_messages(cls.room, 9):
+                        await bot.handle(m)
+                with mock.patch.object(live_search, "DEADLINE_CAP", 120.0), \
+                        mock.patch.object(game_module.Game, "candidates", candidates), \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    asyncio.run(go())
+            finally:
+                bot.close()
+        cls.log = Path(cls.logs, f"{cls.room}-tiansuan.jsonl")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def load(self):
+        live = live_search.load(self.path, foe_net=self.path, foe_net_sha256=pkmn_arena.sha256_of(self.path))
+        self.addCleanup(live.close)
+        live.searcher = ko_check._Capture(live.searcher)
+        return live, live_policy.load(self.path), data.for_checkpoint(self.path)
+
+    def records(self):
+        return [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    def test_ko_check_and_the_live_evaluation_draw_the_bots_particles_at_every_decision(self):
+        # The acceptance test (HS): on the same log, seed and set prior, ko_check and cts_live_eval (cts.LogReplay
+        # with no policy, as its --replay runs it) draw the bot's particles and records at every decision point.
+        from duoforge_live import cts, game as game_module
+        self.assertGreaterEqual(len(self.seen), 3)
+        live, net, tables = self.load()
+        evaluation = cts.LogReplay(self.records(), tables, None, FIXTURE["team"], self.prior,
+                                   cts.room_of_log(self.log, NAME))
+        self.assertEqual([point(g) for g, _ in evaluation], self.seen)
+        self.assertIsNone(evaluation.stopped)
+        replayed, real = [], game_module.Game.candidates
+
+        def candidates(g, *args, **kwargs):
+            replayed.append(point(g))
+            return real(g, *args, **kwargs)
+        counts = Counter()
+        with mock.patch.object(game_module.Game, "candidates", candidates):
+            rows = list(ko_check.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, self.prior, counts))
+        self.assertEqual(replayed, self.seen)
+        self.assertTrue(rows)
+        self.assertEqual(counts, Counter())  # every point has the bot's decision record
+
+    def test_the_closed_replay_reproduces_every_searched_choice(self):
+        logged = [r for r in self.records() if r.get("search", {}).get("cause") == "searched"]
+        self.assertTrue(logged, "the closed fixture has no searched decision")
+        live, net, tables = self.load()
+        replayed = list(ko_check.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME, self.prior,
+                                               Counter()))
+        self.assertEqual([r["decision"] for _, r, _ in replayed], [r["decision"] for r in logged])
+        for game, record, search_record in replayed:
+            self.assertTrue(game.closed)
+            texts = ko_check.pair_texts(game, net)
+            self.assertEqual(texts[ko_check.logged_choice(record)], search_record["choice"])
+
+    def test_a_closed_decision_row_probes_the_particles_worlds(self):
+        live, net, tables = self.load()
+        game, record, search_record = next(ko_check.replay_closed(self.log, tables, net, live, FIXTURE["team"], NAME,
+                                                                  self.prior, Counter()))
+        row = ko_check.decision_row(game, net, live, record, search_record, 1)
+        self.assertEqual(json.loads(json.dumps(row)), row)
+        self.assertTrue(row["played_is_search"])
+        self.assertEqual(row["refused"], 0)
+        self.assertEqual(row["turn"], int(game.tracker.observations()[0]["turn"]))
+        self.assertTrue(all(int(o["turn"]) == row["turn"] for o in game.tracker.observations()))
+
+    def test_the_logged_choice_is_the_accepted_one(self):
+        self.assertEqual(ko_check.logged_choice({"sent": "move 1, move 2"}), "move 1, move 2")
+        self.assertEqual(ko_check.logged_choice({"sent": "move 1, move 2", "accepted": "move 3, move 2"}),
+                         "move 3, move 2")
+        with self.assertRaisesRegex(ko_check.Refused, "not_accepted"):
+            ko_check.logged_choice({"sent": "move 1, move 2", "accepted": None})
+
+    def test_the_cli_replays_closed_logs_with_the_bot_named(self):
+        team = os.path.join(self.tmp.name, "team.txt")
+        with open(team, "w", encoding="utf-8") as f:
+            f.write(FIXTURE["team"])
+        base = ["--logs", self.logs, "--team", team, "--checkpoint", self.path, "--played", "log",
+                "--samples-per-world", "1"]
+        with tempfile.TemporaryDirectory() as out, mock.patch.dict(os.environ, ENV), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            ko_check.main([*base, "--closed", "--bot", NAME, "--out", os.path.join(out, "r")])
+            with open(os.path.join(out, "r", "report.json"), encoding="utf-8") as f:
+                report = json.load(f)
+        self.assertEqual((report["sheets"], report["games"]["followed"]), ("closed", 1))
+        self.assertGreater(report["decisions"], 0)
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            ko_check.main([*base, "--closed", "--out", os.path.join(self.tmp.name, "never")])
 
 
 if __name__ == "__main__":
