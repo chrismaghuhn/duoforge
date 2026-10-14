@@ -250,7 +250,7 @@ class ArenaBot(client.Bot):
     def __init__(self, name, data, policy, log_dir, fmt, team_text=None, pool=(), search=None, mode="raw",
                  connect=None, connection_errors=None, sleep=asyncio.sleep, clock=time.monotonic, environ=None,
                  deadline=DECISION_DEADLINE, max_retries=MAX_RETRIES, sheet_wait=SHEET_WAIT, foe_check=None,
-                 prior=None, code=None):
+                 prior=None, code=None, ab_seed=None):
         # closed team sheets: the set prior (the pinned table unless given), one particle per world of the search
         self.prior = None
         if not fmt.startswith(FORMATS[1]):
@@ -282,6 +282,18 @@ class ArenaBot(client.Bot):
         settings = getattr(search, "settings", None)
         if settings is not None:  # the live search's settings (search.load): a replay of the series plays them again
             self.run_log.head["search_settings"] = dict(settings)
+        # The A/B test of the root rule (duoforge_live.ab; owner, 2026-10-14): every team battle plays one arm, drawn
+        # from the seed and the battle's number alone; the head names the seed and the arms' settings.
+        self.ab, self._ab_next = None, 0
+        if ab_seed is not None:
+            from . import ab
+            if search is None or settings is None:
+                raise ValueError("the A/B test of the root rule needs the honest search (search.load)")
+            if team_text is None or pool:
+                raise ValueError("the A/B test of the root rule plays the --team's battles only: no --team-pool")
+            ab.check_arms(settings)
+            self.ab = {"seed": int(ab_seed), "block": ab.BLOCK, "arms": ab.settings()}
+            self.run_log.head["ab_root_rule"] = self.ab
         self._executor = ThreadPoolExecutor(1, thread_name_prefix="duoforge-arena-policy")
         self._worker = None  # the future of the last decision; a late one blocks the next (no two at once)
         self._dropped = ()  # the connection's errors: never a battle's fallback, the run loop reconnects
@@ -408,8 +420,18 @@ class ArenaBot(client.Bot):
         fmt = parts[1] if len(parts) >= 3 else ""
         log_dir = Path(self.config.log_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
-        b = _Battle(room, log_dir / f"{room}-{toid(self.config.name)}.jsonl", fmt,
-                    None if self.code is None else {"code": self.code})  # every battle names the code it ran
+        head = {} if self.code is None else {"code": self.code}  # every battle names the code it ran
+        plays = fmt == self.format and self.team_text is not None  # a battle of the --team (it gets a game below)
+        rule = None
+        if self.ab is not None and plays:  # its arm, named in its first record (the A/B test of the root rule)
+            from . import ab
+            arm = ab.arm(self.ab["seed"], self._ab_next)
+            settings = self.ab["arms"][arm]
+            head["search_rule"] = {"arm": arm, "index": self._ab_next, "rule": settings["rule"], "settings": settings}
+            rule = settings["rule"]
+            self._ab_next += 1
+            self.run_log.counts[f"ab_arm_{arm}"] += 1
+        b = _Battle(room, log_dir / f"{room}-{toid(self.config.name)}.jsonl", fmt, head or None)
         self.battles[room] = b
         self.run_log.counts["battles"] += 1
         self.run_log.formats[fmt] += 1
@@ -420,6 +442,7 @@ class ArenaBot(client.Bot):
             self._mark(b, "no_team", "a team battle without --team")
         elif not random_teams:
             b.game = self._game(room, self.team_text)
+            b.game.rule = rule
         return b
 
     def _game(self, room, text):

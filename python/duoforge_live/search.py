@@ -42,6 +42,7 @@ _NO_FALLBACK = ("searched", "forced", "raw", "team")
 # value call was 93% of a decision (#355, docs/benchmarks/2026-10-11-honest-search-breakdown).
 HONEST_SETTINGS = {"k": 8, "m": 8, "s": 16, "rule": "ev", "lam": 0.5, "species_prior": "count",
                    "capacity": 1024}
+ROOT_RULES = ("mix", "ev")  # the root rules a decision may set (the A/B test's arms: ladder steps 0 and 2e)
 
 
 @dataclass(frozen=True)
@@ -112,6 +113,7 @@ class LiveSearch:
             from duoforge_search.record_roots import RecordRoots
             roots = RecordRoots(1)
         self.searcher, self.roots, self.clock = searcher, roots, clock
+        self.base_rule = getattr(searcher, "rule", None)  # the root rule of a decision that names none
         self._executor = ThreadPoolExecutor(1, thread_name_prefix="duoforge-live-search")
         self._running = None  # the future of a search that missed its deadline
         self._running_episode = None
@@ -143,11 +145,13 @@ class LiveSearch:
             return Outcome(None, kind, "a", reason, seconds)
         return Outcome(None, "error", "b", f"unknown decision kind {kind!r}", seconds)
 
-    def decide(self, parts, obs_part, slot_part, pair_mask, *, key, episode, budget, worlds=None):
+    def decide(self, parts, obs_part, slot_part, pair_mask, *, key, episode, budget, worlds=None, rule=None):
         """The Outcome of a decision point: parts (Tracker.public_parts) and the live features of the player's
         observation; worlds (closed team sheets, decision 0081): [(parts, obs_part, slot_part, history)] of each
         particle (history: its (record, status) at every decision point so far), world w of the search built from
-        particle w's records, the root's request and pair mask those of parts."""
+        particle w's records, the root's request and pair mask those of parts. rule (the A/B test of the root rule,
+        duoforge_live.ab): the root rule this decision plays, set on the searcher before it starts; None plays the
+        searcher's own (base_rule, its rule when the LiveSearch was made), never a rule an earlier battle set."""
         start = self.clock()
         if self._running is not None:
             try:  # the late search gets this decision's budget to finish; the new one gets what is left
@@ -176,6 +180,11 @@ class LiveSearch:
                                   histories=[h for *_, h in worlds])
             reasons = sorted({w["reason"] for w, *_ in worlds if w.get("reason")})  # every particle's, named once
             parts = dict(parts, reason=",".join(reasons) if reasons else None)
+        rule = self.base_rule if rule is None else rule
+        if rule is not None:  # no search runs now (a late one was waited for above): the rule is this decision's
+            if rule not in ROOT_RULES:
+                raise ValueError(f"unknown root rule {rule!r}: the live search plays {ROOT_RULES}")
+            self.searcher.rule = rule
         future = self._executor.submit(self.searcher.decide, self.roots, [0], [seat], [key], [False])
         try:
             future.result(timeout=max(0.0, budget))

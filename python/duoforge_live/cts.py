@@ -130,6 +130,7 @@ class LogReplay:
         self.complete = False
         game = self.game = Game.closed_sheets(self.data, self.policy, self.own_text, self.prior, search=self.search,
                                               room=self.key, seed=self.seed, n=self.n)
+        game.rule = logged_rule(self.records)  # an A/B battle replays the root rule it played
         done, stopped = 0, None
         try:
             for i, r in enumerate(self.records):  # {"log_format"}, {"pending_at_end"}: neither fed nor accepted
@@ -189,6 +190,12 @@ class Capture:
     def __getattr__(self, name):
         return getattr(self.searcher, name)
 
+    def __setattr__(self, name, value):  # the root rule a decision sets (LiveSearch.decide) is the searcher's
+        if name in ("searcher", "records"):
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self.searcher, name, value)
+
     def decide(self, *args, **kwargs):
         actions, records = self.searcher.decide(*args, **kwargs)
         self.records = records
@@ -197,6 +204,14 @@ class Capture:
 
 class Refused(Exception):
     """A game the replay does not follow, named (its reason is counted)."""
+
+
+def logged_rule(records):
+    """The root rule a battle log's first record names (the A/B test of the root rule, duoforge_live.ab: its arm's
+    "search_rule"), None for a battle outside the test: its search plays its own."""
+    first = records[0] if records else {}
+    named = first.get("search_rule") if isinstance(first, dict) else None
+    return None if named is None else named["rule"]
 
 
 def room_of(path):
@@ -258,6 +273,7 @@ def replay(path, data, policy, live, team_text, episode, budget=1e9):
     if any("feed" in r for r in records):  # the bot fed particles: a closed-sheet battle (replay_closed)
         raise Refused("closed_sheets_log")
     game = Game(data, policy, team_text, search=live, room=room, episode=episode)
+    game.rule = logged_rule(records)  # an A/B battle replays the root rule it played
     batch, pending, inits = [], None, 0
     for record in records:
         if "in" in record:

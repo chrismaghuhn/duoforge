@@ -766,6 +766,23 @@ class WordTest(unittest.TestCase):
 class ReplayHelpersTest(unittest.TestCase):
     """The replay helpers' pure parts (moved with them from the Search lane's ko_check, search/ko-check-cts b148e309)."""
 
+    def test_an_ab_battle_replays_the_root_rule_it_played(self):
+        # the A/B test of the root rule (duoforge_live.ab): the first record's search_rule is the replayed game's rule,
+        # and a battle outside the test leaves the search its own
+        self.assertEqual(cts.logged_rule([{"log_format": 2, "search_rule": {"arm": "0", "rule": "mix"}}]), "mix")
+        self.assertIsNone(cts.logged_rule([{"log_format": 2, "code": {"commit": "x", "dirty": False}}]))
+        self.assertIsNone(cts.logged_rule([]))
+        path = data.ROOT / "python" / "tests" / "support" / "data" / "cts_log_format2.jsonl"
+        records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        records[0] = {**records[0], "search_rule": {"arm": "0", "index": 0, "rule": "mix", "settings": {}}}
+        tables = data.load(kind="pool")
+        replay = cts.LogReplay(records, tables, None, FIXTURE["team"], cts.SetPrior(tables, foe_sets()), KEY, n=2)
+        points = 0
+        for game, _ in replay:
+            self.assertEqual(game.rule, "mix")
+            points += 1
+        self.assertGreater(points, 0)
+
     def test_room_of_a_log_file(self):
         room = "battle-gen9championsvgc2026regmcots-7"
         self.assertEqual(cts.room_of(f"x/{room}-tiansuan.jsonl"), room)

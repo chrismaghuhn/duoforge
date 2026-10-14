@@ -58,6 +58,11 @@ def _arena_arguments(argv):
                    help="honest: the honest search (HONEST_SETTINGS: ladder step 2e, the best answer) plays the turn "
                         "decisions (a trained format-2 checkpoint)")
     search.add_foe_net_arguments(p)  # with --search honest: the pinned foe model BC6 (owner 2026-10-12)
+    p.add_argument("--ab-root-rule", action="store_true",
+                   help="with --search honest and --team: the A/B test of the root rule (duoforge_live.ab), every team "
+                        "battle one arm, ladder step 0 or 2e in blocks of two; the run log names the seed")
+    p.add_argument("--ab-seed", type=int, default=None,
+                   help="with --ab-root-rule: the draw's seed (default: a new random one, named in the run log)")
     p.add_argument("--log-dir", default=_log_dir(), help="private logs, outside the repository")
     return p.parse_args(argv)
 
@@ -74,6 +79,14 @@ def arena_main(argv):
         search.check_foe_net_arguments(args, args.search == "honest")
     except ValueError as err:
         pkmn_arena._refuse(str(err))
+    if args.ab_seed is not None and not args.ab_root_rule:
+        pkmn_arena._refuse("--ab-seed is the seed of --ab-root-rule: give both or neither")
+    if args.ab_root_rule and (args.search != "honest" or not args.team or args.team_pool):
+        pkmn_arena._refuse("--ab-root-rule tests the honest search's root rule on the --team's battles: it needs "
+                           "--search honest and --team, and no --team-pool")
+    if args.ab_root_rule and (args.no_foe_net or search.foe_net_sha256_of(args) != search.FOE_NET_SHA256):
+        pkmn_arena._refuse("--ab-root-rule plays both arms with the pinned foe model (BC6): no --no-foe-net, no other "
+                           "--foe-net-sha256")
     name = pkmn_arena.credentials()  # the token's value is never shown
     from .arena import provenance
     code = provenance()  # every result names the code that runs (HauptSession, 2026-10-13): none, no start
@@ -101,8 +114,17 @@ def arena_main(argv):
         live = search.load(args.checkpoint, foe_net=foe_path, foe_net_sha256=search.foe_net_sha256_of(args))
         foe_check = live.foe_check
     mode = args.search + ("+foe_net" if foe_path is not None else "")
-    bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
-                              search=live, mode=mode, foe_check=foe_check, code=code)
+    ab_seed = None
+    if args.ab_root_rule:
+        from . import ab
+        ab_seed = ab.new_seed() if args.ab_seed is None else args.ab_seed
+    try:
+        bot = pkmn_arena.ArenaBot(name, tables, net, args.log_dir, args.format, team_text=team_text, pool=pool,
+                                  search=live, mode=mode, foe_check=foe_check, code=code, ab_seed=ab_seed)
+    except ValueError as err:  # a refusal of the bot's own checks (the A/B arms, the worlds): named, no traceback
+        if live is not None:
+            live.close()
+        pkmn_arena._refuse(str(err))
     try:
         bot.warm_up()  # before the first battle: its decisions compile nothing (2.0 s at a cold team preview)
         asyncio.run(bot.run())
