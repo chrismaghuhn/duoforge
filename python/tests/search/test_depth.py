@@ -12,7 +12,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features
 from duoforge_search import SearchError, belief, honest, infokey, matrix
-from python.tests.search.digest_stub import StubDigest
+from python.tests.search.test_infokey import Recorded
 from python.tests.search.test_search import _v2s
 
 C = _layout.CONSTANTS
@@ -78,7 +78,6 @@ class Settings(Depth):
                ({"depth": 2, **rm, "chance": 2}, ValueError, "chance"),
                ({"depth": 2, **rm, "foe_below": "greedy"}, ValueError, "foe_below"),
                ({"depth": 2, **rm, "tree_iterations": 0}, ValueError, "tree_iterations"),
-               ({"depth": 2, "root_solver": "rm"}, SearchError, "^observation_digest_unavailable"),
                ({"depth": 2, **rm, "evaluator": "engine"}, SearchError, "^evaluator_engine_unavailable")]
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             for settings, error, pattern in bad:
@@ -306,40 +305,46 @@ class TwoTurns(Depth):
             self.assertEqual(action, b["raw"])  # played raw and counted, as at depth 1
 
 
-class StubDigestKeyed(Depth):
-    """info_key "digest" wired through the honest search against the PROVISIONAL STUB of the engine call (digest_stub,
-    decision 0082): the node batch is expanded by the digest call and keyed from its sidecar. The stub's digest folds
-    the viewer's public record, so it must decide exactly as the record key; it tests the wiring, never the engine's
-    digest."""
-
-    def stubbed(self, stub):
-        return mock.patch.object(infokey, "_library_digest_call", return_value=stub)
+class DigestKeyed(Depth):
+    """info_key "digest" (the default at depth 2) on the library's digest call (decision 0082): the node batch is
+    expanded by Batch.expand_digest and keyed from its sidecar."""
 
     def test_depth_two_defaults_to_the_digest_key(self):
-        stub = StubDigest()
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.stubbed(stub), \
-                self.make(ctx, depth=2, root_solver="rm") as search:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 self.make(ctx, depth=2, root_solver="rm") as search:
             self.assertEqual(search.info_key, "digest")
             self.assertIsInstance(search.nodes, infokey.DigestNodes)
             self.assertEqual(search.nodes.batch.envs, search.s * search.k * search.m)
 
-    def test_the_stub_digest_decides_as_the_record_key(self):
-        stub = StubDigest()
+    def test_the_digest_keys_every_abc_node_and_decides_twice_the_same(self):
+        # The record key has no key where the engine refuses a node's public record (A/B/C position 2); the digest
+        # keys every node there.
+        digest = {"root_solver": "rm", "depth": 2}
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
-            record = self.abc_turn(ctx, steps_left=UNLIMITED, **DEPTH2)
-            with self.stubbed(stub):
-                digest = self.abc_turn(ctx, steps_left=UNLIMITED, **{**DEPTH2, "info_key": "digest"})
-        self.assertGreater(len(stub.calls), 0)
-        self.assertEqual(digest[0].tolist(), record[0].tolist())
-        searched(self, record[1])
-        for d, r in zip(digest[1], record[1]):
-            if "depth" in r:
-                self.assertEqual(d["depth"], {**r["depth"], "info_key": "digest"})
-        self.assertEqual(timeless(digest[1], ("depth",)), timeless(record[1], ("depth",)))
+            first = self.abc_turn(ctx, steps_left=UNLIMITED, **digest)
+            second = self.abc_turn(ctx, steps_left=UNLIMITED, **digest)
+        for action, r in zip(first[0], first[1]):
+            self.assertEqual(r["kind"], "searched")
+            self.assertEqual(int(action), r["choice"])
+            self.assertEqual(r["depth"]["info_key"], "digest")
+            t = r["tree"]
+            self.assertGreater(t["nodes"], 0)
+            self.assertTrue(0 < t["information_sets"] <= t["nodes"])
+            self.assertLessEqual(t["gap"], matrix.RM_EPSILON)
+        self.assertEqual(first[0].tolist(), second[0].tolist())
+        self.assertEqual(timeless(first[1]), timeless(second[1]))
+
+    def test_a_library_without_the_call_refuses_depth_two_by_name(self):
+        class Older:  # a library without duoforge_batch_expand_digest
+            pass
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 mock.patch.object(infokey, "load_library", return_value=Older()):
+            with self.assertRaisesRegex(SearchError, "^observation_digest_unavailable"):
+                self.make(ctx, depth=2, root_solver="rm").close()
 
     def test_a_refused_digest_is_the_named_fallback(self):
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.stubbed(StubDigest(refuse=range(1 << 16))):
-            _, records = self.abc_turn(ctx, steps_left=UNLIMITED, **{**DEPTH2, "info_key": "digest"})
+        refusing = Recorded(refuse=range(1 << 16))  # every stepped node's digest reported refused
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 mock.patch.object(infokey, "_library_digest_call", return_value=refusing):
+            _, records = self.abc_turn(ctx, steps_left=UNLIMITED, root_solver="rm", depth=2)
+        self.assertGreater(len(refusing.calls), 0)
         for r in records:
             self.assertEqual((r["kind"], r["reason"]), ("unreconstructible", "observation_key_refused"))
 

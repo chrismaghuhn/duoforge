@@ -447,7 +447,7 @@ class Honest(lookahead.Lookahead):
             if foe_below not in tree.FOE_BELOW:
                 raise ValueError(f"foe_below must be one of {tree.FOE_BELOW} (got {foe_below!r})")
             info_key = "digest" if info_key is None else info_key
-            self._keys = infokey.make(info_key)  # "digest" is refused by name until the library has it
+            self._keys = infokey.make(info_key)  # "digest": refused by name in a library without the call
             evaluator = "jax" if evaluator is None else evaluator
             if evaluator not in evaluators.EVALUATORS:
                 raise ValueError(f"evaluator must be one of {evaluators.EVALUATORS} (got {evaluator!r})")

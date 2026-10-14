@@ -6,9 +6,8 @@ during the step is the same. Python must not decide what we saw, so the key come
 
 - "digest": the engine's 32-byte observation digest of the step for the viewer (decision 0082), written by the digest
   sibling of duoforge_batch_expand in the same call that expands the node. DigestNodes routes the node batch's expand
-  to that call and keeps its digests in a sidecar by logical node index; DigestKey reads it. Until the library has the
-  call, this key is refused by name. The statuses are 0082's; the call's Python shape is PROVISIONAL until E1b of
-  #485 brings the call and its binding (_library_digest_call).
+  to that call (Batch.expand_digest, E1b of #485) and keeps its digests in a sidecar by logical node index; DigestKey
+  reads it. A library without the call refuses this key by name.
 - "record": the SHA-256 of the viewer's public record of the node, for tests only (decision of 2026-10-14). Under open
   team sheets every world gives the root record back, so it never splits nodes by a hidden fact; it may merge nodes
   whose lines differ but fold to the same record. Under closed team sheets a world's record holds its particle's facts,
@@ -21,6 +20,7 @@ refuses; the search counts it by name.
 import hashlib
 
 import numpy as np
+from duoforge._lib import load_library
 
 from .errors import SearchError
 
@@ -135,16 +135,22 @@ class DigestKey:
         return out, refused
 
 
+def _expand_digest(batch, roots, version, ext_supported, seed, keys, viewers, root_envs, samples, choices):
+    return batch.expand_digest(roots, version, ext_supported, seed, keys, viewers, root_envs, samples, choices)
+
+
 def _library_digest_call():
-    """The library's digest sibling of duoforge_batch_expand (decision 0082). E1b of #485 brings it; until then the
-    key is refused by name."""
-    raise SearchError("observation_digest_unavailable: info_key 'digest' needs the engine's observation digest "
-                      "(decision 0082, the digest sibling of duoforge_batch_expand; E1b of #485), not in this library")
+    """The library's digest sibling of duoforge_batch_expand (decision 0082, Batch.expand_digest); a library without
+    it refuses the key by name, never a fallback."""
+    if not hasattr(load_library(), "duoforge_batch_expand_digest"):
+        raise SearchError("observation_digest_unavailable: info_key 'digest' needs the engine's observation digest "
+                          "(decision 0082, duoforge_batch_expand_digest), not in this library")
+    return _expand_digest
 
 
 def make(name):
-    """The key provider of an info_key setting. "digest" is refused by name until the library has the digest call; an
-    unknown name is a ValueError."""
+    """The key provider of an info_key setting. "digest" is refused by name in a library without the digest call;
+    an unknown name is a ValueError."""
     if name not in INFO_KEYS:
         raise ValueError(f"info_key must be one of {INFO_KEYS} (got {name!r})")
     if name == "digest":

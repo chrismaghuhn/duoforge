@@ -182,7 +182,7 @@ public call and its worker/chunk tests). D2's side:
   index, with the viewer (`viewers[root_envs[i]]`) and the expansion's generation.
 - `infokey.DigestKey`: a key is refused (`observation_key_refused`) where the step or the digest status is not OK, or it
   comes from an earlier expansion or another viewer; an all-zero digest of a successful step and digest raises.
-- Tested against a provisional stub with 0082's statuses until E1b brings the call; the stub then goes.
+- The key runs on `Batch.expand_digest` (E1b, merged); before it, a provisional stub with 0082's statuses stood in.
 
 ### Step 10. D2's own offline pass (before any measurement)
 
