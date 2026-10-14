@@ -21,8 +21,10 @@ mixes on the filled matrix), the stop rule (gap below 3 points, nothing new, or 
 measurement (a screen of the final mix, the confirmation of drawn and its 5 best answers, the controls today and
 23|04) with the predeclared comparisons, paired, and the book reading. DIR/series.json records every block, its
 seconds and each round's seconds, the mixes, gaps and the stop reason, and the final numbers; DIR/matrix/ holds the
-matrix files. Exit 0 when the series is done, 3 when the check failed, 4 when a run failed or a check of the series
-refused (series.json names it).
+matrix files. --deadline-seconds stops the series before a block that would start after it (refused: deadline), so
+that a box's watchdog never cuts it off unrecorded. Exit 0 when the series is done, 3 when the check failed, 4 when a
+run failed, the series or one of the oracle's own checks refused, or anything else went wrong (series.json names the
+reason; an error of another kind is named by its type only, since its text could name a member of a team).
 """
 import argparse
 import json
@@ -47,6 +49,7 @@ PLANS = {
         "start_rows": [TODAY, "23|04"], "start_columns": [DRAWN, "15|23", "12|35"],
         "final_screen_seed": 0x202610130000046D, "final_seed": 0x202610130000046E, "final_pairs": 256,
         "answers": 5,
+        "workers": 8, "max_steps": 1000, "ours": "A",  # 8 workers per process; Team A (registry id); 1000 steps
         "controls": [(TODAY, [DRAWN, "15|23"]), ("23|04", [DRAWN, "12|35"])],
         "thresholds": {"worst": -5.0, "gain": 0.0, "exploitable": 5.0, "little": 3.0},
     },
@@ -99,6 +102,7 @@ class Series:
         self.record = {"plan": args.plan, "workers": args.workers, "parallel": args.parallel,
                        "cpus_per_process": args.cpus_per_process, "status": "running", "blocks": [], "rounds": []}
         self.counter = 0
+        self.started = time.monotonic()
 
     # ----------------------------------------------------------------------------------------------- the runs
     def base(self):
@@ -117,6 +121,9 @@ class Series:
         """jobs: [(out, args)], at most --parallel at once, each on a slot of its own; a failing one stops the series."""
         if len(jobs) > self.args.parallel:
             raise SeriesError("internal", f"block {name}: {len(jobs)} jobs for {self.args.parallel} processes")
+        deadline = self.args.deadline_seconds
+        if deadline and time.monotonic() - self.started > deadline:
+            raise SeriesError("deadline", f"block {name} would start after the deadline ({deadline} s)")
         started = time.perf_counter()
         procs = []
         for slot, (out, args) in enumerate(jobs):
@@ -134,11 +141,13 @@ class Series:
         return seconds
 
     def check_conditions(self, run_dir, conditions):
-        """SystemExit-free check that a part's or run's conditions are this series': the plan's workers."""
+        """That a part's or run's conditions are this series': the plan's workers, a clean checkout, the plan's team."""
         if conditions.get("workers") != self.args.workers:
             raise SeriesError("workers", f"{run_dir}: workers {conditions.get('workers')}, not {self.args.workers}")
         if conditions.get("dirty") is not False:
             raise SeriesError("dirty", f"{run_dir}: dirty {conditions.get('dirty')}")
+        if (conditions.get("registry") or {}).get("ours") != self.plan["ours"]:
+            raise SeriesError("ours", f"{run_dir}: our team is not the plan's registry team {self.plan['ours']}")
 
     def merge(self, run_dir, part):
         """The part's arms into the run's directory; its conditions must be the run's (worker count included)."""
@@ -222,12 +231,14 @@ class Series:
 
     def merge_copy(self, source, run_dir, arm):
         new = oracle.ladder._load_json(os.path.join(source, "conditions.json"))
+        self.check_conditions(source, new)
         path = os.path.join(run_dir, "conditions.json")
         os.makedirs(os.path.join(run_dir, "arms"), exist_ok=True)
         if os.path.exists(path):
             old = oracle.ladder._load_json(path)
-            if oracle.resume_changes(old, new) or old.get("workers") != new.get("workers"):
-                raise SeriesError("parts_differ", f"{source}: conditions differ from {run_dir}")
+            changed = oracle.resume_changes(old, new) + [k for k in ("workers", "commit", "dirty") if old.get(k) != new.get(k)]
+            if changed:
+                raise SeriesError("parts_differ", f"{source}: conditions differ from {run_dir} in {changed}")
         else:
             shutil.copyfile(os.path.join(source, "conditions.json"), path)
         shutil.copyfile(arm_file(source, arm), arm_file(run_dir, arm))
@@ -261,8 +272,10 @@ class Series:
                                               "--pairs", str(p["screen_pairs"])], arms)])
         o = oracle.ladder._load_json(os.path.join(run_dir, "oracle.json"))
         key = "our_mix" if flag == "--our-mix" else "foe_mix"
-        if o["conditions"]["side"] != side or o["conditions"].get(key) != oracle.mix_text(oracle.parse_mix(
-                mix, "ours" if flag == "--our-mix" else "foe")) or len(o["ranking"]) != 90:
+        c = o["conditions"]
+        if c["side"] != side or c.get(key) != oracle.mix_text(oracle.parse_mix(mix, "ours" if flag == "--our-mix"
+                                                                             else "foe")) \
+                or c["seed"] != hex(seed) or c["pairs"] != p["screen_pairs"] or len(o["ranking"]) != 90:
             raise SeriesError("screen", f"screen {name} is not the screen asked for")
         return o, seconds
 
@@ -375,12 +388,25 @@ class Series:
         lo, hi = exploit["95"]
         confirmed = {a: pd(mix_drawn, score(dirs["mix"], a)) for a in top}
         worst, gain = pd(mix_best, t_answer), pd(mix_drawn, t_drawn)
+        best_confirmed = max(confirmed, key=lambda a: (confirmed[a]["points"], a))
+        flags = {}  # README: an arm whose raw-fallback share is more than 2 points above its seat's median, by run
+        for name, d in dirs.items():
+            o = oracle.ladder._load_json(os.path.join(d, "oracle.json"))
+            for seat in ("ours", "foe"):
+                shares = {a: 100.0 * e["fallback_share"][seat] for a, e in o["arms"].items()}
+                median = float(np.median(list(shares.values())))
+                named = {a: {"share_points": v, "causes": (o["arms"][a].get("fallback_causes") or {}).get(seat)}
+                         for a, v in shares.items() if v > median + 2}
+                flags[f"{name}.{seat}"] = {"median_points": median, "max_points": max(shares.values()), "named": named}
         return {
             "pairing": "passed",
             "exploitability": {"answer": top[0], **exploit,
                                "reading": "exploitable" if lo > th["exploitable"] else "little to gain"
                                if hi < th["little"] else "no conclusion"},
             "confirmed_answers": confirmed,
+            "best_confirmed": {"answer": best_confirmed, **confirmed[best_confirmed],
+                               "note": "selected on stage-2 games, biased upward"},
+            "fallbacks": flags,
             "scores": {"mix_drawn": float(mix_drawn.mean()), "mix_best": float(mix_best.mean()),
                        "today_drawn": float(t_drawn.mean()), "today_answer": float(t_answer.mean()),
                        "candidate_drawn": float(c_drawn.mean()), "candidate_answer": float(c_answer.mean())},
@@ -400,7 +426,7 @@ class Series:
         os.replace(path + ".tmp", path)
 
 
-def main(argv=None):
+def parser():
     p = argparse.ArgumentParser(prog="python -m duoforge_search.preview_series", description=__doc__.split("\n")[0])
     p.add_argument("--plan", required=True, choices=sorted(PLANS))
     p.add_argument("--checkpoint", required=True)
@@ -412,7 +438,13 @@ def main(argv=None):
     p.add_argument("--max-steps", type=int, default=1000)
     p.add_argument("--parallel", type=int, default=1, help="processes side by side (the AWS box: 3)")
     p.add_argument("--cpus-per-process", type=int, default=0, help="pin process i to CPUs i*N.. with taskset (0: none)")
-    args = p.parse_args(argv)
+    p.add_argument("--deadline-seconds", type=int, default=0,
+                   help="refuse a block that would start this long after the series began (0: none)")
+    return p
+
+
+def main(argv=None):
+    args = parser().parse_args(argv)
     from duoforge_replay.dataset import refuse_repository
     try:
         refuse_repository(args.out)
@@ -422,8 +454,11 @@ def main(argv=None):
         raise SystemExit(f"--out {args.out} exists: a series is never resumed")
     if not 1 <= args.parallel <= 3:
         raise SystemExit("--parallel is 1 to 3 (HauptSession: three processes on the AWS box)")
-    if args.cpus_per_process < 0 or args.workers < 1:
-        raise SystemExit("--cpus-per-process >= 0 and --workers >= 1")
+    plan = PLANS[args.plan]
+    if args.workers != plan["workers"] or args.max_steps != plan["max_steps"]:
+        raise SystemExit(f"plan {args.plan} fixes --workers {plan['workers']} and --max-steps {plan['max_steps']}")
+    if args.cpus_per_process < 0 or args.deadline_seconds < 0:
+        raise SystemExit("--cpus-per-process and --deadline-seconds are not negative")
     os.makedirs(os.path.join(args.out, "logs"))
     series = Series(args, PLANS[args.plan])
     series.save()
@@ -434,6 +469,16 @@ def main(argv=None):
         series.save()
         print(f"preview_series: refused ({err.reason}): {err}", file=sys.stderr)
         return EQUALITY_EXIT if err.reason == "beside_differs" else FAILED_EXIT
+    except SystemExit as err:  # a refusal of the oracle's own checks (summary, matrix): its text is the oracle's
+        series.record.update(status="refused", reason="oracle_refused", message=str(err.code))
+        series.save()
+        print(f"preview_series: refused (oracle_refused): {err.code}", file=sys.stderr)
+        return FAILED_EXIT
+    except Exception as err:  # noqa: BLE001 -- recorded by type only: its text could name a member of a team
+        series.record.update(status="failed", reason="error", message=type(err).__name__)
+        series.save()
+        print(f"preview_series: failed ({type(err).__name__})", file=sys.stderr)
+        return FAILED_EXIT
     print(json.dumps({k: series.record.get(k) for k in ("status", "stop", "final_mix")}, indent=1))
     return 0
 

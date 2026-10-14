@@ -39,6 +39,7 @@ TEAMS_KEY_PREFIX=teams
 STATUS=failed
 REASON=unknown
 STEP=packages
+BOX_START=$(date +%s)
 mkdir -p "$WORK"
 : > "$LOG"
 
@@ -46,6 +47,7 @@ log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
 
 finish() {
     local rc=$?
+    set +e # whatever fails below (a full disk), the box still powers itself off
     [ "$rc" -eq 0 ] && STATUS='done' && REASON='none'
     [ "$REASON" = unknown ] && REASON="failed_in_$STEP"
     log "leaving with status $rc ($STATUS: $REASON)"
@@ -186,37 +188,47 @@ json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu"
 PY
 aws s3 cp "$WORK/env.json" "$S3_BASE/env.json" --only-show-errors
 
-# --- the series: one command; preview_series pins its processes itself (taskset, process i on CPUs 16i to 16i+15)
+# --- the series: one command; preview_series pins its processes itself (taskset, process i on CPUs 16i to 16i+15).
+# Its deadline lies 30 minutes before the watchdog, so that it stops itself (refused: deadline) and its aggregates
+# still go up; while it runs, series.json and matrix/ go up every 10 minutes (a spot interruption keeps the record).
 OUT="$WORK/out"
 list=$(python3 "$TOOLS/oracle_conf.py" argv "$CONF" "$NETS" "$TEAMS" "$OUT") || refuse bad_conf 'oracle_conf.py argv'
 mapfile -t ARGS <<< "$list"
-log "series: preview_series ${ARGS[*]} --parallel 3 --cpus-per-process 16"
-cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series "${ARGS[@]}" --parallel 3 --cpus-per-process 16 > "$WORK/series.log" 2>&1 && rc=0 || rc=$?
+DEADLINE=$((DF_MAX_MINUTES * 60 - ($(date +%s) - BOX_START) - 1800))
+[ "$DEADLINE" -gt 0 ] || refuse deadline "no time is left for the series before the watchdog ($DEADLINE s)"
+log "series: preview_series ${ARGS[*]} --parallel 3 --cpus-per-process 16 --deadline-seconds $DEADLINE"
+progress() { # the record so far, every 10 minutes; a failed copy is tried again next time
+    while sleep 600; do
+        if [ -f "$OUT/series.json" ]; then
+            aws s3 cp "$OUT/series.json" "$S3_BASE/series.json" --only-show-errors >> "$LOG" 2>&1 || true
+        fi
+        if [ -d "$OUT/matrix" ]; then
+            aws s3 cp "$OUT/matrix" "$S3_BASE/matrix" --recursive --only-show-errors >> "$LOG" 2>&1 || true
+        fi
+    done
+}
+progress &
+PROGRESS=$!
+cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series "${ARGS[@]}" --parallel 3 --cpus-per-process 16 --deadline-seconds "$DEADLINE" > "$WORK/series.log" 2>&1 && rc=0 || rc=$?
+kill "$PROGRESS" 2> /dev/null || true
 log "preview_series exited with $rc"
 rm -f "$TEAM_FILE"
 
-# --- the aggregates only, whatever the exit; never a network, the team file or a decision file. A failed upload does
-# not hide the series' own refusal: it is named after it (upload_failed).
+# --- the aggregates only, whatever the exit, in one recursive copy (the later filter wins): never a network, the team
+# file, a decision file, a part directory or a log of the series or the oracle (a refusal there can name a member of
+# the foe team; series.json names every refusal). A failed upload does not hide the series' own refusal: it is named
+# after it (upload_failed).
 STEP=upload
 UPLOAD_FAILED=''
-up() { aws s3 cp "$1" "$S3_BASE/$2" --only-show-errors >> "$LOG" 2>&1 || UPLOAD_FAILED="$UPLOAD_FAILED $2"; }
-shopt -s nullglob
-for f in "$OUT"/series.json "$OUT"/equality.json "$OUT"/matrix/*.json "$OUT"/runs/*/conditions.json "$OUT"/runs/*/oracle.json "$OUT"/runs/*/arms/*.json; do
-    rel=${f#"$OUT"/}
-    case $rel in *decision* | runs/*.parts/*) continue ;; esac
-    if [ -f "$f" ]; then up "$f" "$rel"; fi
-done
-tail -n 200 "$WORK/series.log" > "$WORK/series-tail.log" || true
-up "$WORK/series-tail.log" log/series-tail.log
-mkdir -p "$WORK/tails"
-for f in "$OUT"/logs/*.log; do
-    name=$(basename "$f" .log)
-    tail -n 200 "$f" > "$WORK/tails/$name-tail.log" || true
-    up "$WORK/tails/$name-tail.log" "log/logs/$name-tail.log"
-done
-shopt -u nullglob
+if [ -d "$OUT" ]; then
+    aws s3 cp "$OUT" "$S3_BASE/" --recursive --only-show-errors --exclude '*' --include series.json \
+        --include equality.json --include 'matrix/*.json' --include 'runs/*/conditions.json' \
+        --include 'runs/*/oracle.json' --include 'runs/*/arms/*.json' --exclude 'runs/*.parts/*' --exclude '*decision*' \
+        --exclude 'logs/*' >> "$LOG" 2>&1 || UPLOAD_FAILED=' the aggregates'
+fi
 case $rc in
-    0) [ -f "$OUT/series.json" ] || refuse oracle_failed 'preview_series exited 0 without series.json' ;;
+    0) "$WORK/venv/bin/python" -c 'import json, sys; sys.exit(json.load(open(sys.argv[1])).get("status") != "done")' \
+        "$OUT/series.json" 2>> "$LOG" || refuse oracle_failed 'preview_series exited 0, but series.json does not say done' ;;
     3) refuse oracle_beside_differs 'the alone-vs-beside equality check failed (equality.json)' ;;
     *) refuse oracle_failed "preview_series exited with $rc" ;;
 esac

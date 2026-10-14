@@ -19,18 +19,20 @@ commit and builds the command line here, so the two cannot differ. Keys (key=val
     checkpoint=SHA256               required: the main network (both seats search with it)
     foe_net=SHA256                  required: the foe model of the searched worlds
     ours=ID                         required: our team, a registry id of data/teams/index.json (its file
-                                    data/teams/<ID>.txt at the commit must have the index's sha256)
+                                    data/teams/<ID>.txt at the commit must have the index's sha256); the plan fixes it
     foe_team=SHA256                 required: the foe team's sheet, a private file of the bucket's teams/ (read-only
                                     for the box, checked against this sha256)
-    workers=N                       optional (default 8): engine workers per process, fixed for the series
-    max_steps=N                     optional (default 1000)
+    workers=N                       optional (default 8): engine workers per process; the plan fixes it
+    max_steps=N                     optional (default 1000); the plan fixes it
 
 No path, no URL, no seed, no pair count and no flag of the oracle reaches the box from the conf: the plan fixes them.
 """
 import re
 import sys
 
-PLANS = ("preview-mixed-2026-10-14",)  # docs/benchmarks/2026-10-14-preview-mixed/README.md (f6b924a4)
+# The predeclared plans and what each fixes of the conf's keys (preview_series.PLANS runs them; a test checks that
+# the two agree): docs/benchmarks/2026-10-14-preview-mixed/README.md (f6b924a4), 8 workers, Team A, 1000 steps.
+PLANS = {"preview-mixed-2026-10-14": {"workers": 8, "max_steps": 1000, "ours": "A"}}
 REQUIRED = ("kind", "plan", "checkpoint", "foe_net", "ours", "foe_team")
 OPTIONAL = {"workers": "8", "max_steps": "1000"}
 SHA = re.compile(r"^[0-9a-f]{64}$")
@@ -73,7 +75,7 @@ def parse(text):
     if raw["kind"] != "oracle":
         raise ConfError(f"kind={raw['kind']!r}: not a preview-oracle campaign")
     if raw["plan"] not in PLANS:
-        raise ConfError(f"plan={raw['plan']!r} is not a predeclared plan ({', '.join(PLANS)})")
+        raise ConfError(f"plan={raw['plan']!r} is not a predeclared plan ({', '.join(sorted(PLANS))})")
     conf = {"kind": "oracle", "plan": raw["plan"]}
     for key in ("checkpoint", "foe_net", "foe_team"):
         if not SHA.match(raw[key]):
@@ -84,6 +86,9 @@ def parse(text):
     conf["ours"] = raw["ours"]
     conf["workers"] = _int(raw.get("workers", OPTIONAL["workers"]), "workers", 1, 16)
     conf["max_steps"] = _int(raw.get("max_steps", OPTIONAL["max_steps"]), "max_steps", 1, 100000)
+    for key, fixed in PLANS[conf["plan"]].items():  # the plan fixes these: the conf can only repeat them
+        if conf[key] != fixed:
+            raise ConfError(f"{key}={conf[key]}: plan {conf['plan']} fixes {key}={fixed}")
     return conf
 
 

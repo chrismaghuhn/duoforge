@@ -39,11 +39,17 @@ df_valid_bucket "$bucket" || df_die 'bad or missing --bucket: lowercase letters,
 [ -n "$file" ] || df_die 'missing --file: the team file'
 [ -f "$file" ] || df_die 'the team file does not exist or is not a regular file'
 [ -r "$file" ] || df_die 'the team file cannot be read'
+# The file is read once, into a private copy, inside a silenced group: if it vanishes or loses its permission after
+# the checks above, no shell or tool message can name it. Everything below reads the copy (its name is mktemp's).
+copy=$(mktemp) || df_die 'no temporary file for the team'
+trap 'rm -f "$copy"' EXIT
+chmod 600 "$copy"
+{ cp -- "$file" "$copy"; } 2> /dev/null || df_die 'the team file cannot be read'
 # sha256sum reads stdin: its output names no file
-got=$(sha256sum < "$file" 2> /dev/null | cut -d' ' -f1) || got=''
+got=$(sha256sum < "$copy" 2> /dev/null | cut -d' ' -f1) || got=''
 [[ $got =~ ^[0-9a-f]{64}$ ]] || df_die 'the team file cannot be read'
 [ "$got" = "$sha" ] || df_die "the team file has the sha256 $got, not $sha: refusing"
-size=$(wc -c < "$file" | tr -d ' ')
+size=$(wc -c < "$copy" | tr -d ' ')
 
 profile=${AWS_PROFILE:-}
 [ -n "$profile" ] || df_die "AWS_PROFILE is not set: the owner's profile uploads the team (pokeengine cannot write)"
@@ -64,7 +70,7 @@ if [ "$approved" != yes ]; then
 fi
 
 # --- only past the owner's approval: one upload, the file on stdin; its messages masked, the file never named
-if ! err=$(df_aws s3 cp - "s3://$bucket/$key" --sse AES256 --only-show-errors < "$file" 2>&1 > /dev/null); then
+if ! err=$(df_aws s3 cp - "s3://$bucket/$key" --sse AES256 --only-show-errors < "$copy" 2>&1 > /dev/null); then
     df_die "the upload of the team file to s3://$bucket/$key failed: $(printf '%s' "$err" | df_mask | tr '\n' ' ')"
 fi
 # The object is there, encrypted, and as long as the file (a stream cut short would be shorter).

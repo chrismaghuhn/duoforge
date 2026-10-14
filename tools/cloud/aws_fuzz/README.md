@@ -428,7 +428,7 @@ uploads nothing: then only the instance's console output is left.
 
 The first use after the proof is the D1 ladder arm (#481), then D2's arms. Their names are in `ladder.STEPS` (agreed
 with the D2 lane), so a campaign names them in its `arm=` lines without a change here. The mirror touchstone of the
-ladder stays local: for ladder campaigns the private sun team does not go into the bucket (HauptSession). For #458's
+ladder stays local: for ladder campaigns the tournament sun team (a private file) does not go into the bucket (HauptSession). For #458's
 preview-oracle series only, the owner decided on 2026-10-15 that the tournament sun team goes into the private bucket
 as `teams/<sha256>.txt`, read-only for the box and checked by its sha256 (Owner-Entscheidung 2026-10-15, nur #458; next
 section).
@@ -440,7 +440,8 @@ A preview-oracle campaign runs one predeclared series of `python -m duoforge_sea
 commit of main: 3 processes side by side, each on 16 CPUs of its own with 8 workers, 16 CPUs left to the box
 (HauptSession, 2026-10-15). Its results are **a series of their own, on one machine: never paired or mixed with local
 runs.** `preview_series` checks in its first block that a process gives the same result alone as beside the others
-(`equality.json`; exit 3 when it does not).
+(`equality.json`; exit 3 when it does not). The plan fixes 8 workers, Team A and 1000 steps: a conf can only repeat
+them, and `preview_series` refuses any other.
 
 **Only the HauptSession runs any of this, from its chat, with the owner present** (owner rule), the upload of the team
 included. The lanes deliver the code, this guide and the tests (against a stub `aws`).
@@ -466,11 +467,17 @@ and `preview_series --parallel 3 --cpus-per-process 16`, which pins process *i* 
 instance type, the CPU, whether it has AVX-512, the Python version, `pip freeze`, the pins, `processes` (3) and
 `cpus_per_process` (16).
 
-**What leaves the box**, under `fuzz/oracle/<campaign>/<commit12>-oracle-<launch time>/`, whatever the exit of the series:
-`series.json`, `equality.json`, `matrix/*.json`, `runs/*/conditions.json`, `runs/*/oracle.json`, `runs/*/arms/*.json`,
-the last 200 lines of the series' log and of each `logs/*.log` (under `log/`), `env.json`, `status.json` and the box's
-log. **Never a network, never the team file, never a decision file.** The foe team is never printed, logged or
-uploaded by the box; it is deleted from the box once the series has run.
+**Time.** The series gets a deadline 30 minutes before the watchdog (`--deadline-seconds`): a block that would start
+after it is refused (`deadline` in `series.json`), so the aggregates still go up. `series.json` records every block's
+and every round's seconds. While the series runs, `series.json` and `matrix/` go up every 10 minutes, so a spot
+interruption keeps the record so far.
+
+**What leaves the box**, under `fuzz/oracle/<campaign>/<commit12>-oracle-<launch time>/`, whatever the exit of the series,
+in one recursive copy: `series.json`, `equality.json`, `matrix/*.json`, `runs/*/conditions.json`, `runs/*/oracle.json`,
+`runs/*/arms/*.json`, then `env.json`, `status.json` and the box's log. **Never a network, never the team file, never a
+decision file, and no log of the series or the oracle** (a refusal there can name a member of the foe team; `series.json`
+names every refusal, an error of another kind by its type only). The foe team is never printed, logged or uploaded by
+the box; it is deleted from the box once the series has run.
 
 **The box refuses by name** (in `status.json`): `wrong_commit`, `wrong_run` (the run id is not of the commit),
 `no_campaign`, `bad_conf`, `build`, `python_env`, `nets_writable` and `teams_writable` (one of the three probes of
@@ -478,8 +485,8 @@ uploaded by the box; it is deleted from the box once the series has run.
 `nets_probe_unclear` and `teams_probe_unclear` (a probe failed otherwise: no proof of read-only), `nets_unreadable`,
 `net_sha_mismatch`, `team_unreadable`, `team_sha_mismatch`, `ours_mismatch` (`data/teams/<ours>.txt` at the commit does
 not have the sha256 that `data/teams/index.json` gives for that id), `cpus` (fewer than 3 x 16 + 16),
-`oracle_beside_differs` (the series exited 3: the alone-vs-beside check of the first block failed), `oracle_failed`
-(any other non-zero exit, or no `series.json`) and `upload_failed` (an aggregate could not be uploaded; named after the
+`deadline` (no time is left for the series before the watchdog), `oracle_beside_differs` (the series exited 3: the alone-vs-beside check of the first block failed), `oracle_failed`
+(any other non-zero exit, or a `series.json` that does not say `done`) and `upload_failed` (an aggregate could not be uploaded; named after the
 series' own refusal). A failure without a refusal is `failed_in_<step>` (`packages`, `checkout`, `build`, `python`,
 `nets`, `teams`, `series`, `upload`), a TERM or INT (the watchdog's shutdown) is `terminated`.
 

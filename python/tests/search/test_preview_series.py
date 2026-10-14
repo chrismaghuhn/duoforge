@@ -13,18 +13,18 @@ from duoforge_search import preview_series as series
 
 SPECIES = {"ours": ["O0", "O1", "O2", "O3", "O4", "O5"], "foe": ["F0", "F1", "F2", "F3", "F4", "F5"]}
 CONDITIONS = {"tool": "preview_oracle", "max_steps": 1000, "step": {"name": "0"}, "foe_preview": "x",
-              "ours_sha256_prefix": "a", "foe_sha256_prefix": "b", "registry": {}, "left_out": {}, "species": SPECIES,
+              "ours_sha256_prefix": "a", "foe_sha256_prefix": "b", "left_out": {}, "species": SPECIES,
               "commit": "c0ffee", "dirty": False, "library": "0.45.0", "encoders": {}, "sha256_prefix": {},
-              "table_sha256": "t", "foe_lead": None, "cpu": "x"}
+              "table_sha256": "t", "foe_lead": None, "cpu": "x", "registry": {"ours": "A", "foe": None}}
 
 
 class Fake:
     """A stand-in for `python -m duoforge_search.preview_oracle`: from its arguments it writes conditions.json and an
     arm file per arm, our per-game scores from value(our, foe) (a mix's value is its weighted mean)."""
 
-    def __init__(self, value, beside_differs=False, fail=None, workers=None):
+    def __init__(self, value, beside_differs=False, fail=None, workers=None, dirty=False):
         self.value, self.beside_differs, self.fail, self.workers = value, beside_differs, fail, workers
-        self.calls, self.running, self.most = [], 0, 0
+        self.calls, self.events, self.dirty = [], [], dirty  # events: ("start"|"wait", process number)
 
     def __call__(self, cmd, log_path, env):
         with open(log_path, "w", encoding="utf-8") as f:
@@ -34,12 +34,12 @@ class Fake:
         out, side, arms = opt("--out"), opt("--side"), opt("--arms").split(",")
         pairs, seed = int(opt("--pairs")), opt("--seed")
         if self.fail and self.fail in arms:
-            return Done(1)
+            return Done(1, self)
         games = 2 * pairs
         our_arm, our_mix, foe_mix = opt("--our-arm"), opt("--our-mix"), opt("--foe-mix")
         workers = self.workers if self.workers is not None else int(opt("--workers"))
         c = dict(CONDITIONS, seed=seed, pairs=pairs, games=games, side=side, our_arm=our_arm, our_mix=our_mix,
-                 foe_mix=foe_mix, workers=workers)
+                 foe_mix=foe_mix, workers=workers, dirty=self.dirty)
         os.makedirs(os.path.join(out, "arms"), exist_ok=True)
         with open(os.path.join(out, "conditions.json"), "w", encoding="utf-8") as f:
             json.dump(c, f)
@@ -71,7 +71,7 @@ class Fake:
                 entry["foe_picked"] = ["drawn"] * games
             with open(oracle_arm(out, arm), "w", encoding="utf-8") as f:
                 json.dump(entry, f)
-        return Done(0)
+        return Done(0, self)
 
 
 def oracle_arm(out, arm):
@@ -79,10 +79,16 @@ def oracle_arm(out, arm):
 
 
 class Done:
-    def __init__(self, code):
-        self.code = code
+    """A finished fake process; its start and its wait are recorded in order (a block's processes all start before the
+    first is waited for: they run side by side)."""
+
+    def __init__(self, code, fake):
+        self.code, self.fake = code, fake
+        self.number = len(fake.calls)
+        fake.events.append(("start", self.number))
 
     def wait(self):
+        self.fake.events.append(("wait", self.number))
         return self.code
 
 
@@ -99,13 +105,13 @@ def table(default_today=0.9, default_cand=0.9, default_other=0.1, extra=None):
 
 
 class SeriesTest(unittest.TestCase):
-    def run_series(self, fake, parallel=3, cpus=16):
+    def run_series(self, fake, parallel=3, cpus=16, deadline=0):
         tmp = tempfile.mkdtemp()
         self.addCleanup(__import__("shutil").rmtree, tmp, True)
         out = os.path.join(tmp, "series")
         argv = ["--plan", "preview-mixed-2026-10-14", "--checkpoint", "n/c.npz", "--foe-net", "n/c.npz", "--ours",
                 "data/teams/A.txt", "--foe", "t/f.txt", "--out", out, "--parallel", str(parallel),
-                "--cpus-per-process", str(cpus)]
+                "--cpus-per-process", str(cpus), "--deadline-seconds", str(deadline)]
         with mock.patch.object(series, "_start", fake), mock.patch("sys.stdout"):
             code = series.main(argv)
         with open(os.path.join(out, "series.json"), encoding="utf-8") as f:
@@ -160,8 +166,12 @@ class SeriesTest(unittest.TestCase):
             if "gap_points" in r:
                 self.assertGreaterEqual(r["gap_points"], 0.0)
         last = record["rounds"][-1]
-        self.assertTrue("below 3" in record["stop"] and last["gap_points"] < 3 or "nothing" in record["stop"]
-                        or "last round" in record["stop"], record["stop"])
+        if "below 3" in record["stop"]:
+            self.assertLess(last["gap_points"], 3)
+        elif "nothing" in record["stop"]:
+            self.assertEqual(last["new"], [])
+        else:
+            self.assertEqual((record["stop"], last["round"]), ("round 4: the last round", 4))
         # a new row plays every column, a new column every row: each cell once
         for row in last.get("rows", record["rounds"][-2].get("rows", [])):
             done = series.done_arms(os.path.join(out, "runs", "row-" + row.replace("|", "-")))
@@ -202,6 +212,144 @@ class SeriesTest(unittest.TestCase):
             from duoforge_live.data import ROOT
             with self.assertRaisesRegex(SystemExit, "inside the repository"):
                 series.main(base + ["--out", os.path.join(str(ROOT), "series-guard-test")])
+
+    def test_the_beside_block_starts_its_three_processes_before_waiting_for_any(self):
+        fake = Fake(table())
+        code, record, _ = self.run_series(fake)
+        self.assertEqual(code, 0, record)
+        beside = [i for i, cmd in enumerate(fake.calls, 1) if "equality-beside" in cmd[cmd.index("--out") + 1]]
+        (b,) = beside
+        block = [b, b + 1, b + 2]  # the beside run, then the first row's two other cells: one batch
+        starts = [fake.events.index(("start", n)) for n in block]
+        waits = [fake.events.index(("wait", n)) for n in block]
+        self.assertLess(max(starts), min(waits))  # all three run at once
+        alone = [i for i, cmd in enumerate(fake.calls, 1) if "equality-alone" in cmd[cmd.index("--out") + 1]]
+        (a,) = alone
+        self.assertLess(fake.events.index(("wait", a)), fake.events.index(("start", a + 1)))  # alone: nothing beside
+
+    def test_the_final_numbers_are_the_readmes_differences(self):
+        import numpy as np
+        fake = Fake(table())
+        code, record, out = self.run_series(fake)
+        self.assertEqual(code, 0, record)
+        final = record["final"]
+        mean = lambda run, arm: float(np.mean(oracle.ladder._load_json(  # noqa: E731
+            oracle_arm(os.path.join(out, "runs", run), arm))["scores"]))
+        best = final["answers"][0]
+        self.assertAlmostEqual(final["worst_case"]["points"],
+                               100 * (mean("final-confirm", best) - mean("final-today", "15|23")))
+        self.assertAlmostEqual(final["gain"]["points"],
+                               100 * (mean("final-confirm", "drawn") - mean("final-today", "drawn")))
+        self.assertAlmostEqual(final["exploitability"]["points"],
+                               100 * (mean("final-confirm", "drawn") - mean("final-confirm", best)))
+        self.assertAlmostEqual(final["beside_without_reading"]["worst_case_vs_candidate"]["points"],
+                               100 * (mean("final-confirm", best) - mean("final-23-04", "12|35")))
+        self.assertEqual(final["book_candidate"], final["worst_case"]["95"][0] > -5 and final["gain"]["95"][0] > 0)
+        self.assertEqual(final["best_confirmed"]["note"], "selected on stage-2 games, biased upward")
+        self.assertIn("mix.foe", final["fallbacks"])
+
+    def test_the_rounds_stop_exactly_by_the_rule(self):
+        # The loop alone, with scripted screens and gaps: a gap of exactly 3 points does not stop it, one below does,
+        # and without a stop the fourth round is the last.
+        class Scripted(series.Series):
+            def __init__(self, gaps, answers):
+                self.gaps, self.answers, self.record, self.finals = list(gaps), list(answers), {"rounds": []}, []
+                self.plan = series.PLANS["preview-mixed-2026-10-14"]
+
+            def equality(self):
+                pass
+
+            def fill(self, name, rows, columns):
+                pass
+
+            def save(self):
+                pass
+
+            def matrix(self, rows, name, previous=None):
+                out = {"value_points": 50.0, "our_mix_text": "today:1", "foe_mix_text": "drawn:1"}
+                if previous:
+                    gap = self.gaps.pop(0)
+                    out["previous"] = {"gap_exact": str(gap), "gap_points": float(gap) * 100}
+                return out
+
+            def screen(self, name, side, flag, mix, seed):
+                foe, ours = self.answers[int(name.split("-")[0][1:]) - 1]
+                return {"ranking": [foe if side == "foe" else ours]}, 0.0
+
+            def final(self, mix):
+                self.finals.append(mix)
+
+        new = [("0%d|12" % k, "0%d|34" % k) for k in range(1, 6)]
+        run = Scripted([Fraction(3, 100), Fraction(299, 10000)], new)
+        run.run()
+        self.assertEqual(run.record["stop"], "round 2: gap 2.99 points, below 3")
+        run = Scripted([Fraction(3, 100)] * 4, new)
+        run.run()
+        self.assertEqual(run.record["stop"], "round 4: the last round")
+        self.assertEqual([r["round"] for r in run.record["rounds"]], [0, 1, 2, 3, 4])
+        self.assertEqual(run.record["final_matrix"], "m4")
+        run = Scripted([], [("15|23", "23|04")])
+        run.run()
+        self.assertEqual(run.record["stop"], "round 1: the screens found nothing beyond the matrix")
+        self.assertEqual(run.record["final_matrix"], "m0")
+
+    def test_a_refusal_of_the_oracle_or_another_error_is_recorded(self):
+        real = oracle.summarize
+        calls = []
+
+        def refusing(run_dir):
+            calls.append(run_dir)
+            if "row-23-04" in run_dir:
+                raise SystemExit("the arms' foe previews differ: the arms are not paired")
+            return real(run_dir)
+        with mock.patch.object(series.oracle, "summarize", refusing):
+            code, record, _ = self.run_series(Fake(table()))
+        self.assertEqual((code, record["status"], record["reason"]), (series.FAILED_EXIT, "refused", "oracle_refused"))
+        self.assertIn("not paired", record["message"])
+
+        def failing(run_dir):
+            raise KeyError("member 3: move 'Some Move' is not in the tables")
+        with mock.patch.object(series.oracle, "summarize", failing):
+            code, record, out = self.run_series(Fake(table()))
+        self.assertEqual((code, record["status"], record["reason"], record["message"]),
+                         (series.FAILED_EXIT, "failed", "error", "KeyError"))
+        with open(os.path.join(out, "series.json"), encoding="utf-8") as f:
+            self.assertNotIn("Some Move", f.read())  # an error's text could name a member of a team
+
+    def test_a_dirty_checkout_or_the_deadline_is_refused(self):
+        code, record, _ = self.run_series(Fake(table(), dirty=True))
+        self.assertEqual((code, record["reason"]), (series.FAILED_EXIT, "dirty"))
+        with mock.patch.object(series.time, "monotonic", side_effect=[0.0] + [10_000.0] * 1000):
+            code, record, _ = self.run_series(Fake(table()), deadline=60)
+        self.assertEqual((code, record["reason"]), (series.FAILED_EXIT, "deadline"))
+        self.assertEqual(record["blocks"], [])  # no block started after the deadline
+
+    def test_the_plan_fixes_workers_and_steps(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = ["--plan", "preview-mixed-2026-10-14", "--checkpoint", "c", "--foe-net", "c", "--ours", "o",
+                    "--foe", "f"]
+            for extra in (["--workers", "16"], ["--max-steps", "500"]):
+                with self.assertRaisesRegex(SystemExit, "fixes --workers 8 and --max-steps 1000"):
+                    series.main(base + ["--out", os.path.join(tmp, "x")] + extra)
+
+    def test_the_aws_conf_builds_a_command_line_the_series_takes(self):
+        import importlib.util
+        from duoforge_live.data import ROOT
+        spec = importlib.util.spec_from_file_location("oracle_conf", ROOT / "tools" / "cloud" / "aws_fuzz" / "oracle_conf.py")
+        conf_tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(conf_tool)
+        self.assertEqual(sorted(conf_tool.PLANS), sorted(series.PLANS))
+        for name, fixed in conf_tool.PLANS.items():
+            for key, value in fixed.items():
+                self.assertEqual(series.PLANS[name][key], value, (name, key))
+        with open(ROOT / "tools" / "cloud" / "aws_fuzz" / "campaigns" / "preview-mixed" / "campaign.conf",
+                  encoding="utf-8") as f:
+            conf = conf_tool.parse(f.read())
+        argv = conf_tool.argv(conf, "/n", "/t", "/o") + ["--parallel", "3", "--cpus-per-process", "16",
+                                                         "--deadline-seconds", "41400"]
+        args = series.parser().parse_args(argv)
+        self.assertEqual((args.plan, args.workers, args.max_steps, args.ours, args.parallel),
+                         ("preview-mixed-2026-10-14", 8, 1000, "data/teams/A.txt", 3))
 
     def test_split_is_round_robin_and_keeps_order(self):
         self.assertEqual(series.split(list("abcdefg"), 3), [list("adg"), list("be"), list("cf")])

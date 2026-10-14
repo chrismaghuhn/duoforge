@@ -1542,6 +1542,7 @@ class OracleConf(unittest.TestCase):
                'checkpoint=/x/bc.npz': 'sha256', 'foe_net=https://x/y.npz': 'sha256', 'foe_team=../sun.txt': 'sha256',
                'foe_team=%s' % ('E' * 64): 'sha256', 'ours=../A': 'registry id', 'ours=A/../../x': 'registry id',
                'workers=17': 'workers=17', 'workers=0': 'workers=0', 'max_steps=x': 'not a number',
+               'workers=4': 'fixes workers=8', 'max_steps=500': 'fixes max_steps=1000', 'ours=B': 'fixes ours=A',
                'seed=0x1': 'unknown key', 'pairs=64': 'unknown key', 'arms=all': 'unknown key',
                'flags=--side ours': 'unknown key', 'out=/tmp/x': 'unknown key'}
         for line, message in bad.items():
@@ -1578,8 +1579,8 @@ FOE_TEAM = 'e1060cf46a8f30bc3e56ad6fb1e038a9ed3dafd47a9ec9913b8399542320c281'  #
 # Every refusal the README's preview-oracle section names; the box makes each one (a refusal is a named exit).
 ORACLE_REFUSALS = ('nets_writable', 'nets_probe_unclear', 'teams_writable', 'teams_probe_unclear', 'nets_unreadable',
                    'net_sha_mismatch', 'team_unreadable', 'team_sha_mismatch', 'ours_mismatch', 'wrong_commit', 'wrong_run',
-                   'no_campaign', 'bad_conf', 'build', 'python_env', 'cpus', 'oracle_beside_differs', 'oracle_failed',
-                   'upload_failed')
+                   'no_campaign', 'bad_conf', 'build', 'python_env', 'cpus', 'deadline', 'oracle_beside_differs',
+                   'oracle_failed', 'upload_failed')
 
 
 @unittest.skipIf(BASH is None, 'bash is not on the PATH')
@@ -1735,13 +1736,26 @@ class OracleLaunch(unittest.TestCase):
         order = [text.index(n) for n in ('refuse wrong_commit', 'refuse bad_conf', 'refuse build', 'refuse python_env',
                                          'refuse nets_writable', 'refuse teams_writable', 'refuse net_sha_mismatch',
                                          'refuse team_sha_mismatch', 'refuse ours_mismatch', 'refuse cpus',
-                                         'cd "$REPO" && "$WORK/venv/bin/python"', 'STEP=upload',
+                                         'refuse deadline', 'cd "$REPO" && "$WORK/venv/bin/python"', 'STEP=upload',
                                          'refuse oracle_beside_differs')]
         self.assertEqual(order, sorted(order))
         # ONE command runs the series; preview_series pins its processes itself (no taskset around it).
         series = [l for l in code if '-m duoforge_search.preview_series' in l]
         self.assertEqual(series, ['cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series "${ARGS[@]}" '
-                                  '--parallel 3 --cpus-per-process 16 > "$WORK/series.log" 2>&1 && rc=0 || rc=$?'])
+                                  '--parallel 3 --cpus-per-process 16 --deadline-seconds "$DEADLINE" > "$WORK/series.log" '
+                                  '2>&1 && rc=0 || rc=$?'])
+        # The deadline lies 30 minutes before the watchdog, counted from the box's start.
+        self.assertIn('DEADLINE=$((DF_MAX_MINUTES * 60 - ($(date +%s) - BOX_START) - 1800))', text)
+        self.assertLess(text.index('BOX_START=$(date +%s)'), text.index('apt-get update'))
+        # The record so far goes up every 10 minutes while the series runs, and the loop is stopped after it.
+        self.assertIn('progress &', text)
+        self.assertIn('kill "$PROGRESS" 2> /dev/null || true', text)
+        run = text.index('cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series')
+        self.assertLess(text.index('progress &'), run)
+        self.assertLess(run, text.index('kill "$PROGRESS"'))
+        # finish() can fail at nothing that skips the shutdown
+        finish = text[text.index('finish() {'):text.index('trap finish EXIT')]
+        self.assertIn('set +e', finish.splitlines()[2])
         self.assertFalse([l for l in code if 'taskset' in l])
         self.assertIn('list=$(python3 "$TOOLS/oracle_conf.py" argv "$CONF" "$NETS" "$TEAMS" "$OUT")', text)
         self.assertIn('    3) refuse oracle_beside_differs', text)
@@ -1757,19 +1771,26 @@ class OracleLaunch(unittest.TestCase):
         self.assertTrue(uploads)
         for line in uploads:
             self.assertRegex(line, r'aws s3 cp "[^"]+" "\$S3_BASE/', line)
-        globs = [l for l in code if l.startswith('for f in "$OUT"/series.json')]
-        self.assertEqual(globs, ['for f in "$OUT"/series.json "$OUT"/equality.json "$OUT"/matrix/*.json '
-                                 '"$OUT"/runs/*/conditions.json "$OUT"/runs/*/oracle.json "$OUT"/runs/*/arms/*.json; do'])
-        self.assertIn('case $rel in *decision* | runs/*.parts/*) continue ;; esac', text)
-        up_calls = [l.strip() for l in code if re.match(r'\s*(if \[ -f "\$f" \]; then )?up ', l)]
-        self.assertEqual(up_calls, ['if [ -f "$f" ]; then up "$f" "$rel"; fi',
-                                    'up "$WORK/series-tail.log" log/series-tail.log',
-                                    'up "$WORK/tails/$name-tail.log" "log/logs/$name-tail.log"'])
-        self.assertIn('tail -n 200 "$WORK/series.log" > "$WORK/series-tail.log"', text)
-        self.assertIn('for f in "$OUT"/logs/*.log; do', text)
-        for line in uploads + up_calls + globs:
-            for word in ('.npz', 'teams', 'TEAM', 'decision', '$NETS'):
+        # The aggregates: one recursive copy whose filters keep only them (the later filter wins), and no log of the
+        # series or the oracle (a refusal there can name a member of the foe team).
+        start = text.index('aws s3 cp "$OUT" "$S3_BASE/" --recursive')
+        final = ' '.join(text[start:text.index('|| UPLOAD_FAILED', start)].replace('\\\n', ' ').split())
+        self.assertEqual(final, 'aws s3 cp "$OUT" "$S3_BASE/" --recursive --only-show-errors --exclude \'*\' '
+                                '--include series.json --include equality.json --include \'matrix/*.json\' '
+                                '--include \'runs/*/conditions.json\' --include \'runs/*/oracle.json\' '
+                                '--include \'runs/*/arms/*.json\' --exclude \'runs/*.parts/*\' --exclude \'*decision*\' '
+                                '--exclude \'logs/*\' >> "$LOG" 2>&1')
+        progress = text[text.index('progress() {'):text.index('progress &')]
+        self.assertEqual(re.findall(r'aws s3 cp ("[^"]+") ("[^"]+")', progress),
+                         [('"$OUT/series.json"', '"$S3_BASE/series.json"'), ('"$OUT/matrix"', '"$S3_BASE/matrix"')])
+        for word in ('series.log', 'series-tail', '/logs/', 'tail -n'):
+            self.assertFalse([l for l in uploads if word in l], word)
+        self.assertNotIn('tail -n 200 "$WORK/series.log"', text)
+        for line in uploads + [final]:
+            for word in ('.npz', 'teams', 'TEAM', '$NETS'):
                 self.assertNotIn(word, line, line)
+        # exit 0 counts only when series.json says done
+        self.assertIn('.get("status") != "done"', text)
         # The team file is fetched, hashed, given to the series and removed: never shown, logged or uploaded.
         team_lines = [l for l in code if 'TEAM_FILE' in l or '"$TEAMS' in l]
         self.assertTrue(team_lines)
@@ -1920,13 +1941,14 @@ class TeamUpload(unittest.TestCase):
         self.assertNotIn('set -x', text)
         self.assertNotIn('df_identity_guard', text)  # the owner's credentials, not pokeengine's
         uses = [l.strip() for l in code if '"$file"' in l]
+        # The file is read once, into a private copy, inside a silenced group; everything after reads the copy.
         self.assertEqual(uses, ['[ -n "$file" ] || df_die \'missing --file: the team file\'',
                                 '[ -f "$file" ] || df_die \'the team file does not exist or is not a regular file\'',
                                 '[ -r "$file" ] || df_die \'the team file cannot be read\'',
-                                'got=$(sha256sum < "$file" 2> /dev/null | cut -d\' \' -f1) || got=\'\'',
-                                'size=$(wc -c < "$file" | tr -d \' \')',
-                                'if ! err=$(df_aws s3 cp - "s3://$bucket/$key" --sse AES256 --only-show-errors < "$file" '
-                                '2>&1 > /dev/null); then'])
+                                '{ cp -- "$file" "$copy"; } 2> /dev/null || df_die \'the team file cannot be read\''])
+        self.assertIn('got=$(sha256sum < "$copy" 2> /dev/null | cut -d\' \' -f1) || got=\'\'', text)
+        self.assertIn('< "$copy" 2>&1 > /dev/null); then', text)
+        self.assertIn("trap 'rm -f \"$copy\"' EXIT", text)
         self.assertFalse([l for l in code if '$file' in l and re.search(r'\b(cat|echo|printf|df_log|df_die "[^"]*\$file)', l)])
 
 
