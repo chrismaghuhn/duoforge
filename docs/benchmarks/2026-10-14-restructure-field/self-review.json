@@ -1,0 +1,22 @@
+{
+  "head": "081efc0a9b4b0e3dc962d23ca332af36a78974de",
+  "dirty": false,
+  "scope_non_doc_paths": [
+    "src/combat/field/duration.h",
+    "src/combat/field/side_conditions.h",
+    "src/combat/field/terrain.h",
+    "src/combat/field/terrain_effects.h",
+    "src/combat/field/terrain_seeds.h",
+    "src/combat/field/trick_room.h",
+    "src/combat/field/weather.h",
+    "src/combat/turn.c",
+    "tools/datagen/tests/test_pool_rows.py"
+  ],
+  "test_executable_ast_identical": true,
+  "active_documentation_numeric_turn_citations_remaining": 0,
+  "body_and_token_witness": "source-audit.json",
+  "security": "No new allocation, I/O, public API, generator logic, private data, or behavior; only copied private field helpers and inline delegates; no blocking findings",
+  "large_phases_unchanged": true,
+  "central_predicates_or_tables_replaced": false,
+  "historical_references": "Frozen historical benchmarks and cfe18c0 research citations preserved"
+}

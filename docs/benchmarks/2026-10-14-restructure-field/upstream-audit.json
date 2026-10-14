@@ -1,0 +1,59 @@
+{
+  "performance_baseline": "c8ca7cee2c8586cc135ddecc55ff850fa0f23b9a",
+  "final_main": "a7dd956bee87c0643cf0e4cf7c83772066f0e7a3",
+  "merged_head": "081efc0a9b4b0e3dc962d23ca332af36a78974de",
+  "dirty": false,
+  "machine": {
+    "hostname": "8c91664c82d0",
+    "system": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "architecture": "x86_64",
+    "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "allowed_cpus": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "benchmark_cpu": 4,
+    "cgroup_cpu_max": "400000 100000",
+    "gcc": "cc (Debian 14.2.0-19) 14.2.0",
+    "python": "3.12.14",
+    "node": "22.23.3",
+    "showdown_pin": "b2cb775b0616115b775534eaeff50300e1fc81fc"
+  },
+  "upstream_changed_paths": [
+    "docs/ROADMAP.md",
+    "docs/benchmarks/2026-10-12-search-ladder/README.md",
+    "python/duoforge_live/__main__.py",
+    "python/duoforge_live/cts.py",
+    "python/duoforge_live/search.py",
+    "python/duoforge_search/foe_arena.py",
+    "python/duoforge_search/ladder.py",
+    "python/duoforge_search/network_diagnosis.py",
+    "python/duoforge_search/preview_oracle.py",
+    "python/tests/live/test_live_cts.py",
+    "python/tests/live/test_live_search.py",
+    "python/tests/live/test_pkmn_arena.py",
+    "python/tests/search/test_ladder.py",
+    "tools/perf/honest_breakdown.py",
+    "tools/research/cts_live_eval.py"
+  ],
+  "registration_files_identical": true,
+  "registration_blob_inventory_sha256": "3e78814a716ca69eea2a25128ef10106d3cffb4782885f8f4339bed83affc9e8",
+  "unchanged_performance_inputs": [
+    "src",
+    "include",
+    "cmake",
+    "CMakeLists.txt",
+    ".github",
+    "tests",
+    "bench",
+    "certify",
+    "data",
+    "tools/datagen",
+    "tools/restructure",
+    "tools/reference"
+  ],
+  "carry_forward_reason": "Only Python and documentation changed upstream; C/public headers, generated reference/data and pins, build flags, benchmark workloads and reference tooling are unchanged. Fresh paired benchmark also uses the merged field head."
+}
