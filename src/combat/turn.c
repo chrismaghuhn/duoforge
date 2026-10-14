@@ -7302,7 +7302,7 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
     }
     *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
     /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats, so a live Speed Swap ends here. */
-    b->tail.sides[user / 2u].positions[user % 2u].single_turn &= (uint8_t)~DFI_SINGLE_TURN_SPEED_SWAP; /* wide-operands-reviewed: a byte mask */
+    b->tail.sides[user / 2u].positions[user % 2u].single_turn = (uint8_t)((uint32_t)b->tail.sides[user / 2u].positions[user % 2u].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
     e.id = (uint16_t)forme;
     e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
@@ -10388,7 +10388,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
     }
     sd->mega_used = 1u;
     /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats (the swapped Speed is gone). */
-    b->tail.sides[q->side].positions[q->slot].single_turn &= (uint8_t)~DFI_SINGLE_TURN_SPEED_SWAP; /* wide-operands-reviewed: a byte mask */
+    b->tail.sides[q->side].positions[q->slot].single_turn = (uint8_t)((uint32_t)b->tail.sides[q->side].positions[q->slot].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
     /* formeChange -> setSpecies -> setType(species.types, true): a type that Soak set ends (sim/pokemon.ts:1392,
      * 1427-1434), without a line. */
     b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;
