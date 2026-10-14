@@ -80,6 +80,18 @@ def foe_shown(segment, side, lists, ctx):
         out.append(found)
     return out, tuple(_reason_name(r) for r in label.reasons)
 
+def world_context(ctx, foe_side):
+    """The label context of a world: the particle's, with the foe's roster as the world's own engine roster (its
+    observation's members, in the world's order: an option's reserve is a roster index of the world), by base species
+    (a Mega's, Aegislash's); a base species on two members is refused by name (roster-ambiguous), and a switch line's
+    species on none gives no option (the world cannot play it)."""
+    import dataclasses
+    data = ctx.data
+    roster = tuple(data.base_forme(int(m["species_id"])) for m in foe_side["members"][:int(foe_side["member_count"])])
+    if len(set(roster)) != len(roster):  # a base species on two members: the switch line's member is not one (named)
+        raise Excluded("roster-ambiguous")
+    return dataclasses.replace(ctx, roster=roster)
+
 def _reason_name(reason):
     from duoforge_replay import labels
     return {labels.NOT_REQUESTED: "not-requested", labels.EXACT: "exact", labels.TARGET_UNKNOWN: "target-unknown",
@@ -139,11 +151,13 @@ class Meter:
         if search_record.get("boundary") != "TURN":
             raise Excluded(f"not-turn:{search_record.get('boundary')}")
         try:
-            own = cts.pair_texts(game, policy)[cts.logged_choice(record)]
+            choice = cts.logged_choice(record)
         except cts.Refused as refused:
             raise Excluded(str(refused)) from None
-        except KeyError:
-            raise Excluded("own-choice-not-allowed") from None
+        texts = cts.pair_texts(game, policy)
+        if choice not in texts:
+            raise Excluded("own-choice-not-allowed")
+        own = texts[choice]
         seat = int(search_record["seat"])
         contexts = [labels.context(p.tracker, 1 - seat) for p in game.tracker.particles]
         weights = np.asarray(search_record["weights"], np.float64)
@@ -180,17 +194,24 @@ class Meter:
             raise Excluded("foe-action-not-in-worlds")
         plan = []  # (world, foe pair or None, its weight in the world)
         mixed = False
-        self.last = {"foe": [], "reasons": [], "kept": kept}  # per kept world the foe's options (diagnostics, tests)
+        self.last = {"foe": [], "reasons": [], "kept": kept}  # per world played the foe's options (diagnostics, tests)
+        unknown, cannot = [], []  # worlds whose label tells nothing of a foe slot; worlds whose options cannot play it
         for w in kept:
             if not asked:
                 plan.append((w, None, 1.0))
                 continue
             domain = worlds.domains[w, foe]
             lists = foe_options(domain)
-            (first, second), reasons = foe_shown(segment, foe, lists, turn.contexts[w])
+            ctx = world_context(turn.contexts[w], worlds.observations[w, p]["sides"][foe])  # roster-ambiguous: the turn
+            try:
+                (first, second), reasons = foe_shown(segment, foe, lists, ctx)
+            except Excluded as e:
+                (unknown if str(e) == "foe-action-unknown" else cannot).append(w)
+                continue
             pairs = [(a, b) for a in first for b in second if int(domain["allowed"][a]) >> b & 1]
-            if not pairs:
-                raise Excluded("foe-action-not-allowed")
+            if not pairs:  # the world's own domain bars the pair the lines show (a Choice lock, Taunt, Disable, ...)
+                cannot.append(w)
+                continue
             self.last["foe"].append([(lists[0][a], lists[1][b]) for a, b in pairs])
             self.last["reasons"].append(reasons)
             if len(pairs) == 1:
@@ -204,6 +225,13 @@ class Meter:
             if not np.isfinite(q).all() or q.sum() <= 0:
                 raise Excluded("foe-model-zero")
             plan += [(w, pair, float(x)) for pair, x in zip(pairs, q / q.sum())]
+        if unknown and len(unknown) == len(kept):  # the lines tell nothing of a foe slot, in every world
+            raise Excluded("foe-action-unknown")
+        # a world whose label tells nothing where another world's does could not play what the lines show: left out
+        played = sorted({w for w, _, _ in plan})
+        if not played:
+            raise Excluded("foe-action-not-in-worlds")
+        kept = played
         k = self.samples
         rows = len(plan) * k
         choices = np.zeros((len(plan), 2), _layout.FACTORED_CHOICE)
@@ -285,6 +313,7 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
         raise cts.Refused("open_sheets_log")
     result = result_of(records, bot)
     excluded, luck, mixed, dropped = collections.Counter(), [], [], []
+    searches = differs = 0
     pending = None
 
     def value(turn, lines, actual):
@@ -305,15 +334,27 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
     replayed = cts.LogReplay(records, data, policy, team_text, prior, key, search=live, waits=True)
     for game, record in replayed:
         if pending is not None:  # the state that happened after the pending turn: this point's particles
-            value(pending, game.tracker._lines(), lambda: meter.actual(game, pending.seat, policy))
+            lines = game.tracker._lines()
+            value(pending, lines, lambda: meter.actual(game, pending.seat, policy))
+            if game.request.get("wait") and not any(line.startswith("|upkeep") for line in lines[pending.lines_at:]):
+                excluded["rest-after-foe-pivot"] += 1  # a foe's pivot inside the turn: the rest of it is valued nowhere
             pending = None
-        if record is None or game.request.get("teamPreview"):
+        if game.request.get("teamPreview"):
+            continue
+        if record is None:  # a wait point, or an asked point the bot wrote no decision record for (counted)
+            if game.asked():
+                excluded["no-decision-record"] += 1
             continue
         if record["accepted"] is None and cts.ended_on(records, record["decision"]):
             record = dict(record, accepted=record["sent"])  # the battle ended on it: played as sent
         live.searcher.records = None
         game.candidates(budget)
         outcome = game.outcomes[-1] if game.outcomes else None
+        logged = record.get("search")
+        if isinstance(logged, dict) and outcome is not None:  # the replayed search against the bot's (a diagnosis)
+            searches += 1
+            if logged.get("cause") != outcome.cause or outcome.cause == "searched" and logged.get("action") != outcome.action:
+                differs += 1
         if outcome is None or outcome.cause != "searched":
             excluded[f"not-searched:{None if outcome is None else outcome.cause}"] += 1
             continue
@@ -321,6 +362,10 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
             pending = meter.turn(game, record, live.searcher.records[0], policy)
         except Excluded as e:
             excluded[str(e)] += 1
+    if replayed.diverged is not None:
+        raise SearchError(f"{Path(path).name}: the replay and the bot disagree on a stop ({replayed.diverged})")
+    if replayed.stopped is not None:
+        raise cts.Refused(replayed.stopped)
     if pending is not None:  # the battle ended in the pending turn
         if result is None:
             excluded["no-end"] += 1
@@ -328,9 +373,5 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
             last_feed = max(i for i, r in enumerate(records) if "feed" in r)
             value(pending, replayed.game.tracker._lines() + [r["in"] for r in records[last_feed + 1:]
                                                                if isinstance(r.get("in"), str)], lambda: result)
-    if replayed.diverged is not None:
-        raise SearchError(f"{Path(path).name}: the replay and the bot disagree on a stop ({replayed.diverged})")
-    if replayed.stopped is not None:
-        raise cts.Refused(replayed.stopped)
     return {"turns": luck, "mixed": mixed, "dropped": dropped, "worlds": meter.search.s, "result": result,
-            "excluded": excluded}
+            "excluded": excluded, "searches": searches, "search_differs": differs}

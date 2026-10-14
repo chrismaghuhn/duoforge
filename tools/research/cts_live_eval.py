@@ -435,8 +435,11 @@ def luck_series(battles):
     cts_luck.battle; the share of the valued turns' worlds the turn refuted): per battle its
     summed luck and its largest turn, per series the mean summed luck and the result with the luck taken off, with
     intervals, each also without the turns whose foe action was mixed over a set (only the series' means say
-    something; a single battle is an anecdote)."""
-    finished = [b for b in battles if b["result"] is not None]
+    something; a single battle is an anecdote). Every mean is over the battles with a result; the unfinished ones (a log
+    without its end) are counted apart, with their valued turns."""
+    unfinished = [b for b in battles if b["result"] is None]
+    battles = [b for b in battles if b["result"] is not None]  # every mean over the same battles: those with a result
+    finished = battles
     excluded = collections.Counter()
     for b in battles:
         excluded.update(b["excluded"])
@@ -445,7 +448,10 @@ def luck_series(battles):
 
     def unmixed(b):  # the battle's luck without its mixed turns (HauptSession: the series mean with and without them)
         return sum(t for t, m in zip(b["turns"], b["mixed"]) if not m)
-    return {"battles": len(battles), "finished": len(finished), "turns_valued": valued,
+    return {"battles": len(battles) + len(unfinished), "finished": len(finished), "unfinished": len(unfinished),
+            "turns_valued": valued, "turns_unfinished": sum(len(b["turns"]) for b in unfinished),
+            "unfinished_excluded": dict(sorted(sum((collections.Counter(b["excluded"]) for b in unfinished),
+                                                   collections.Counter()).items())),
             "turns_excluded": dict(sorted(excluded.items())),
             "valued_share": valued / max(1, valued + sum(excluded.values())),
             "turns_mixed": mixed, "mixed_share": mixed / max(1, valued),
@@ -459,27 +465,73 @@ def luck_series(battles):
             "result_minus_luck_unmixed": interval([b["result"] - unmixed(b) for b in finished])}
 
 
+# The live search of each bot commit (HauptSession, 2026-10-14): a series is replayed with the settings its bot played,
+# the ladder step whose settings equal that commit's live HONEST_SETTINGS (checked against each commit's
+# python/duoforge_live/search.py). An unknown commit is refused by name, never guessed. From the bot that writes its
+# search settings in the run log's head on, the head names them.
+SEARCH_STEPS = {"1ffa6a03": "0", "a7dd956b": "2e", "5c503d8a": "2e"}
+SEARCH_DIFFERS_LIMIT = 0.05  # a larger share of replayed decisions the bot decided otherwise: no report (HauptSession)
+# The bot processes of the series whose logs name no code (the HauptSession, from the VPS, 2026-10-14): a process's start
+# is its run log's name and "started". Of the processes before a7dd956b only 1ffa6a03 played over the particles
+# (a75c380a has no cts.py and answered closed sheets with /choose default), so a battle log with fed batches whose
+# directory's run logs all started with 1ffa6a03 is that process's. Anything else is refused by name.
+PROCESS_STARTS = {"1ffa6a03": "2026-10-13T19:23:34Z"}
+
+
+def check_bot_commit(directory, commit):
+    """SystemExit unless every run log of directory started as commit's process (PROCESS_STARTS): --bot-commit is the
+    content's assignment of logs that name no code, never a declaration."""
+    start = PROCESS_STARTS.get(str(commit or "")[:8])
+    if start is None:
+        raise SystemExit(f"--bot-commit {commit!r}: no process start is known for it (PROCESS_STARTS names "
+                         f"{sorted(PROCESS_STARTS)})")
+    starts = sorted({json.loads(p.read_text(encoding="utf-8")).get("started")
+                     for p in Path(directory).glob("arena-run-*.json")})
+    if starts != [start]:
+        raise SystemExit(f"--bot-commit {commit!r}: the run logs started {starts}, not as its process ({start})")
+
+
+def search_step(commit):
+    """The ladder step of a bot commit (SEARCH_STEPS, by its first 8 characters); SystemExit for an unknown one."""
+    step = SEARCH_STEPS.get(str(commit or "")[:8])
+    if step is None:
+        raise SystemExit(f"the live search of bot commit {commit!r} is unknown: SEARCH_STEPS names "
+                         f"{sorted(SEARCH_STEPS)}")
+    return step
+
+
 def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_net_sha256, labels=None, since=None,
-             code=None, samples=None):
+             code=None, samples=None, bot_commit=None):
     """--luck over a log directory (#494, docs/benchmarks/2026-10-14-cts-luck/README.md): every battle log a replay
     follows (selected) valued by cts_luck.battle with the checkpoint's honest search (the bot's: its file pinned by
     checkpoint_sha256, the foe network by foe_net_sha256); the aggregates of luck_series, per opponent and team with
-    labels, the battles the replay refuses by name."""
+    labels, the battles the replay refuses by name. The search plays the settings of the series' bot commit (code, or
+    bot_commit for logs that name none: then no battle may name one); the share of replayed decisions the bot decided
+    otherwise is reported, and above SEARCH_DIFFERS_LIMIT the result says report_blocked."""
     from duoforge_live import cts, cts_luck, data, pkmn_arena, policy as live_policy, search as live_search
     from duoforge_live.arena import provenance
     if pkmn_arena.sha256_of(checkpoint) != checkpoint_sha256:
         raise SystemExit(f"{checkpoint}: not the pinned checkpoint {checkpoint_sha256}")
     samples = cts_luck.SAMPLES if samples is None else samples
+    if (code is None) == (bot_commit is None):
+        raise SystemExit("--luck replays one bot commit's series: give --code, or --bot-commit for logs without a code")
+    from duoforge_search import ladder
+    if bot_commit is not None:
+        check_bot_commit(directory, bot_commit)
+    step = search_step(code if code is not None else bot_commit)
+    settings = ladder.step_settings(step)
     tables = data.for_checkpoint(checkpoint)
     prior = cts.SetPrior.from_table(tables)
     net = live_policy.load(checkpoint)
-    live = live_search.load(checkpoint, foe_net=foe_net, foe_net_sha256=foe_net_sha256)
+    live = live_search.load(checkpoint, settings=settings, foe_net=foe_net, foe_net_sha256=foe_net_sha256)
     skipped, refused = collections.Counter(), collections.Counter()
     battles, per, per_team = [], collections.defaultdict(list), collections.defaultdict(list)
     try:
         live.searcher = cts.Capture(live.searcher)
         with cts_luck.Meter(live.searcher.searcher, samples) as meter:
             for path, records, team in selected(directory, bot, since, code, skipped):
+                if bot_commit is not None and battle(records, bot)["code"]:
+                    raise SystemExit("--bot-commit is for logs without a code: this series names its own")
                 try:
                     out = cts_luck.battle(path, tables, net, live, team, bot, prior, meter)
                 except cts.Refused as r:
@@ -493,7 +545,13 @@ def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_n
     finally:
         live.close()
     engine_root = Path(cts.__file__).resolve().parents[2]
+    searches = sum(b["searches"] for b in battles)
+    differs = sum(b["search_differs"] for b in battles)
+    share = differs / max(1, searches)
     return {**luck_series(battles), "skipped": dict(skipped), "refused_battles": dict(refused), "samples": samples,
+            "search_step": step, "bot_commit": code if code is not None else bot_commit,
+            "searches": searches, "search_differs": differs, "search_differs_share": share,
+            "report_blocked": share > SEARCH_DIFFERS_LIMIT,
             "checkpoint_sha256": checkpoint_sha256, "foe_net_sha256": foe_net_sha256,
             "engine_code": provenance(engine_root), "tool_code": provenance(root),
             **({} if labels is None else {"by_opponent": {k: luck_series(v) for k, v in sorted(per.items())},
@@ -544,6 +602,8 @@ def main(argv=None):
     p.add_argument("--checkpoint", default=None, help="--luck: the bot's checkpoint (private, outside the repository)")
     p.add_argument("--checkpoint-sha256", default=None, help="--luck: the checkpoint's pin, checked before loading")
     p.add_argument("--samples", type=int, default=None, help="--luck: chance seeds per world (default: cts_luck.SAMPLES)")
+    p.add_argument("--bot-commit", default=None,
+                   help="--luck: the bot commit of a series whose logs name none (its search settings, SEARCH_STEPS)")
     from duoforge_live import search as live_search
     live_search.add_foe_net_arguments(p)
     args = p.parse_args(argv)
@@ -551,8 +611,8 @@ def main(argv=None):
         raise SystemExit("--luck is its own replay: not with --replay or --details")
     if args.luck and not (args.checkpoint and args.checkpoint_sha256):
         raise SystemExit("--luck values with the bot's network: it needs --checkpoint and --checkpoint-sha256")
-    if not args.luck and (args.checkpoint or args.checkpoint_sha256 or args.samples is not None):
-        raise SystemExit("--checkpoint, --checkpoint-sha256 and --samples belong to --luck")
+    if not args.luck and (args.checkpoint or args.checkpoint_sha256 or args.samples is not None or args.bot_commit):
+        raise SystemExit("--checkpoint, --checkpoint-sha256, --samples and --bot-commit belong to --luck")
     live_search.check_foe_net_arguments(args, args.luck)
     from duoforge_live.arena import provenance
     from duoforge_replay.dataset import refuse_repository
@@ -583,7 +643,7 @@ def main(argv=None):
         result = {"since": args.since, "code_filter": args.code, "by_code": by_code,
                   **luck_all(args.logs, bot, ROOT, args.checkpoint, args.checkpoint_sha256,
                              live_search.foe_net_of(args), live_search.foe_net_sha256_of(args), labels, since,
-                             args.code, args.samples)}
+                             args.code, args.samples, args.bot_commit)}
     elif args.replay:
         result = {"since": args.since, "code_filter": args.code, "by_code": by_code,
                   **replay_all(args.logs, bot, ROOT, labels, since, args.code, details)}
