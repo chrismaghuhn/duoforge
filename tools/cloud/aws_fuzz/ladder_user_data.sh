@@ -4,16 +4,18 @@ shutdown -h +@MAX_MINUTES@ "duoforge ladder watchdog: at most @MAX_MINUTES@ minu
 # which fills the @...@ placeholders with values it has validated. The first command above is the watchdog: whatever
 # happens below, the box is gone after @MAX_MINUTES@ minutes (the instance-initiated shutdown behaviour is terminate).
 #
-# One ladder arm, as campaigns/<id>/campaign.conf at the exact commit names it (ladder_conf.py builds the command
-# line):
+# Up to three ladder arms side by side, as campaigns/<id>/campaign.conf at the exact commit names them (ladder_conf.py
+# builds each arm's command line):
 # - the public repository at the commit and its library (Release, the target duoforge_shared, as the search lane's
 #   local builds do);
 # - Python from ladder_requirements.txt, exactly those versions;
 # - the networks from the private bucket's nets/<sha256>.npz, each checked against its sha256;
-# - the run pinned to the local machine: XLA's instruction set (AVX2), OpenBLAS's kernel (Haswell, one thread), 16
-#   CPUs (taskset);
-# - the aggregates up to fuzz/ladder/<campaign>/<run id>/: ladder.json (decision digests, scores, counts), env.json (the
-#   pins, the versions, the library's sha256, the machine) and the logs. No decision file and no network leaves the box.
+# - each arm pinned as the local machine runs one: XLA's instruction set (AVX2), OpenBLAS's kernel (Haswell, one
+#   thread), 16 CPUs of its own (taskset: arm i on CPUs 16i to 16i+15), 8 workers; 16 CPUs stay free for the box
+#   (HauptSession: three arms on a c7a.16xlarge);
+# - the aggregates up to fuzz/ladder/<campaign>/<run id>/: each arm's ladder.json under <arm>/ (decision digests,
+#   scores, counts), env.json (the pins, the versions, the library's sha256, the machine, the arms' CPUs) and the logs.
+#   No decision file and no network leaves the box.
 #
 # nets/ must be read-only for the box (HauptSession): a probe write there that succeeds is a refusal by name
 # (nets_writable), and so is a network that cannot be read (nets_unreadable) or has another sha256 (net_sha_mismatch).
@@ -28,7 +30,8 @@ DF_RUN_ID='@RUN_ID@'
 DF_MAX_MINUTES=@MAX_MINUTES@
 DF_REGION=eu-central-1
 DF_REPO_URL=https://github.com/chrismaghuhn/duoforge.git
-DF_CPUS=16 # the local machine's logical CPUs: XLA's thread pool follows the affinity (taskset)
+DF_CPUS=16 # CPUs per arm, the local machine's logical CPUs: XLA's thread pool follows the affinity (taskset)
+DF_SPARE=16 # CPUs left to the box beside the arms
 
 export AWS_DEFAULT_REGION=$DF_REGION AWS_REGION=$DF_REGION
 export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a HOME=/root
@@ -124,16 +127,20 @@ log "${#SHAS[@]} networks read and checked"
 # --- the pins: the local machine's instruction set, BLAS kernel and CPU count
 export JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
 export DUOFORGE_LIBRARY="$LIB" PYTHONPATH="$REPO/python"
-[ "$(nproc)" -ge "$DF_CPUS" ] || refuse cpus "the box has $(nproc) CPUs, fewer than $DF_CPUS"
+mapfile -t ARMS < <(python3 "$TOOLS/ladder_conf.py" arms "$CONF")
+NEED=$((${#ARMS[@]} * DF_CPUS + DF_SPARE))
+[ "$(nproc)" -ge "$NEED" ] || refuse cpus "the box has $(nproc) CPUs, fewer than ${#ARMS[@]} arms x $DF_CPUS + $DF_SPARE"
 TOKEN=$(curl -fsS -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 300' || true)
 TYPE=$(curl -fsS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type || echo unknown)
-"$WORK/venv/bin/python" - "$WORK/env.json" "$LIB_SHA" "$TYPE" "$DF_CPUS" "$DF_COMMIT" << 'PY'
+"$WORK/venv/bin/python" - "$WORK/env.json" "$LIB_SHA" "$TYPE" "$DF_CPUS" "$DF_COMMIT" "${ARMS[@]}" << 'PY'
 import json, os, platform, subprocess, sys
 out, lib, kind, cpus, commit = sys.argv[1:6]
+arms = sys.argv[6:]
 flags = next((l.split(":", 1)[1].split() for l in open("/proc/cpuinfo") if l.startswith("flags")), [])
 model = next((l.split(":", 1)[1].strip() for l in open("/proc/cpuinfo") if l.startswith("model name")), "")
 freeze = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True).stdout.split()
-json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu": model, "cpus_pinned": int(cpus),
+json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu": model, "cpus_per_arm": int(cpus),
+           "arms": {a: f"{i * int(cpus)}-{(i + 1) * int(cpus) - 1}" for i, a in enumerate(arms)},
            "nproc": os.cpu_count(), "avx512": any(f.startswith("avx512") for f in flags), "python": platform.python_version(),
            "pip_freeze": freeze, "pins": {k: os.environ.get(k) for k in ("JAX_PLATFORMS", "XLA_FLAGS", "OPENBLAS_CORETYPE",
                                                                          "OPENBLAS_NUM_THREADS")}},
@@ -141,16 +148,34 @@ json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu"
 PY
 aws s3 cp "$WORK/env.json" "$S3_BASE/env.json" --only-show-errors
 
-# --- the arm
-OUT="$WORK/out"
-mapfile -t ARGS < <(python3 "$TOOLS/ladder_conf.py" argv "$CONF" "$NETS" "$OUT")
-log "ladder ${ARGS[*]}"
-(cd "$REPO" && taskset -c "0-$((DF_CPUS - 1))" "$WORK/venv/bin/python" -u -m duoforge_search.ladder "${ARGS[@]}") \
-    > "$WORK/ladder.log" 2>&1 || { tail -n 40 "$WORK/ladder.log" >> "$LOG"; refuse ladder_failed 'the ladder run failed'; }
-[ -f "$OUT/ladder.json" ] || refuse ladder_failed 'no ladder.json'
+# --- the arms, side by side, each on CPUs of its own; each writes its own ladder.json
+declare -A PIDS
+for i in "${!ARMS[@]}"; do
+    arm=${ARMS[$i]}
+    mkdir -p "$WORK/arms/$arm"
+    mapfile -t ARGS < <(python3 "$TOOLS/ladder_conf.py" argv "$CONF" "$arm" "$NETS" "$WORK/arms/$arm/out")
+    log "arm $arm on CPUs $((i * DF_CPUS))-$(((i + 1) * DF_CPUS - 1)): ladder ${ARGS[*]}"
+    cpus="$((i * DF_CPUS))-$(((i + 1) * DF_CPUS - 1))"
+    (cd "$REPO" && exec taskset -c "$cpus" "$WORK/venv/bin/python" -u -m duoforge_search.ladder "${ARGS[@]}") \
+        > "$WORK/arms/$arm/ladder.log" 2>&1 &
+    PIDS[$arm]=$!
+done
+failed=''
+for arm in "${ARMS[@]}"; do
+    if wait "${PIDS[$arm]}" && [ -f "$WORK/arms/$arm/out/ladder.json" ]; then
+        log "arm $arm done"
+    else
+        tail -n 40 "$WORK/arms/$arm/ladder.log" >> "$LOG"
+        failed="$failed $arm"
+    fi
+done
 
-# --- the aggregates only: ladder.json and its log; the decision files and the networks stay on the box
-aws s3 cp "$OUT/ladder.json" "$S3_BASE/ladder.json" --only-show-errors
-tail -n 200 "$WORK/ladder.log" > "$WORK/ladder-tail.log"
-aws s3 cp "$WORK/ladder-tail.log" "$S3_BASE/log/ladder-tail.log" --only-show-errors
+# --- the aggregates only: each arm's ladder.json and log tail; the decision files and the networks stay on the box
+for arm in "${ARMS[@]}"; do
+    [ -f "$WORK/arms/$arm/out/ladder.json" ] &&
+        aws s3 cp "$WORK/arms/$arm/out/ladder.json" "$S3_BASE/$arm/ladder.json" --only-show-errors
+    tail -n 200 "$WORK/arms/$arm/ladder.log" > "$WORK/arms/$arm/ladder-tail.log"
+    aws s3 cp "$WORK/arms/$arm/ladder-tail.log" "$S3_BASE/$arm/ladder-tail.log" --only-show-errors
+done
+[ -z "$failed" ] || refuse ladder_failed "the arm(s)$failed failed"
 log 'done'

@@ -339,7 +339,9 @@ range that no other campaign uses: the names of the battles are `fz_<seed>_<inde
 
 ## Ladder campaigns (#484)
 
-A ladder campaign runs one arm of `python -m duoforge_search.ladder` on one spot instance at an exact commit of main.
+A ladder campaign runs up to three arms of `python -m duoforge_search.ladder` side by side on one spot instance at an
+exact commit of main (HauptSession: each arm on 16 CPUs of its own with 8 workers, 16 CPUs left to the box; whether
+four arms may run is decided after the first run, by its memory and throughput).
 Strength runs may move to AWS (owner, 2026-10-14). **Latency gates stay local (`--exclusive`) or on the VPS: AWS times
 are never used for a latency gate.** AWS ladder results count only after the equality proof (below), and only as their
 own series. A paired comparison always runs on one machine class: AWS and local runs are never mixed or paired.
@@ -350,28 +352,30 @@ tests (against a stub `aws`).
 
 | File | Purpose |
 | --- | --- |
-| `campaigns/<id>/campaign.conf` | `kind=ladder` and one arm: `step`, `previous`, `h2h`, `pairs`, `seed`, `workers`, `max_steps`, every network by its sha256 (`ladder_conf.py`'s docstring has the keys) |
-| `ladder_conf.py` | checks a ladder conf, lists its networks' sha256 and builds the ladder's command line (the launcher and the box use the same file) |
+| `campaigns/<id>/campaign.conf` | `kind=ladder`, one to three `arm=NAME step=S [previous=P] [h2h=0\|1]` lines, and for every arm `pairs`, `seed`, `workers` (8), `max_steps` and every network by its sha256 (`ladder_conf.py`'s docstring has the keys) |
+| `ladder_conf.py` | checks a ladder conf, lists its networks' sha256 and its arms, and builds each arm's command line (the launcher and the box use the same file) |
 | `launch_ladder.sh` | the guards of `launch.sh`; one instance type, `c7a.16xlarge`, for a whole series, no fallback; prints the request unless `--i-have-owner-approval` |
-| `ladder_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` checked read-only; the networks by sha256; the pins; one arm; the aggregates up |
+| `ladder_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` checked read-only; the networks by sha256; the pins; the arms side by side, each on CPUs of its own; the aggregates up |
 | `ladder_requirements.txt` | the Python packages, pinned to the local machine's versions (CPU only) |
 | `ladder_equal.py` | the equality proof: two `ladder.json` compared field by field, timing fields aside |
 
-**What the box pins** (HauptSession condition): XLA's instruction set (`XLA_FLAGS=--xla_cpu_max_isa=AVX2`, the local
-Ryzen 7 5800X's), OpenBLAS's kernel (`OPENBLAS_CORETYPE=Haswell`, `OPENBLAS_NUM_THREADS=1`), 16 CPUs (`taskset`, as the
-local machine has), `JAX_PLATFORMS=cpu`, Python 3.12.3 and the packages of `ladder_requirements.txt` (`pip install
+**What the box pins** (HauptSession condition), for each arm: XLA's instruction set (`XLA_FLAGS=--xla_cpu_max_isa=AVX2`,
+the local Ryzen 7 5800X's), OpenBLAS's kernel (`OPENBLAS_CORETYPE=Haswell`, `OPENBLAS_NUM_THREADS=1`), 16 CPUs of its own
+(`taskset`: arm *i* on CPUs 16*i* to 16*i*+15, as the local machine has 16), 8 workers, `JAX_PLATFORMS=cpu`, Python 3.12.3 and the packages of `ladder_requirements.txt` (`pip install
 --no-deps`, then `pip check`). `env.json` records them with the library's sha256, the instance type, the CPU, whether it
 has AVX-512 and `pip freeze`. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
 AWS results count only as their own series, every arm of a comparison runs on the same instance type, and the report
 states openly which parts of `ladder.json` are bit-identical (`ladder_equal.py` names every field that differs).
 
-**What leaves the box:** `ladder.json` (aggregates, per-game scores, decision digests), `env.json`, `status.json` (done,
-or the named refusal) and the logs, under `fuzz/ladder/<campaign>/<commit12>-ladder-<launch time>/`. No decision file
+**What leaves the box:** each arm's `ladder.json` (aggregates, per-game scores, decision digests) and its log tail under
+`<arm>/`, `env.json` (with the arms' CPUs), `status.json` (done, or the named refusal) and the box's log, under
+`fuzz/ladder/<campaign>/<commit12>-ladder-<launch time>/`. No decision file
 and no network ever leaves it.
 
 **The box refuses by name** (in `status.json`): `nets_writable` (a probe write to `nets/` succeeded: the role is wrong),
 `nets_probe_unclear` (the probe failed with something other than AccessDenied), `nets_unreadable`, `net_sha_mismatch`,
-`bad_conf`, `wrong_commit`, `build`, `python_env`, `cpus` (fewer than 16) and `ladder_failed`.
+`bad_conf`, `wrong_commit`, `build`, `python_env`, `cpus` (fewer than 16 per arm plus 16) and `ladder_failed` (naming
+the arms that failed; the others' results are still uploaded).
 
 ### The HauptSession's steps, in this order
 
@@ -392,16 +396,20 @@ and no network ever leaves it.
 4. **Download the results**, after `status.json` says `done` (the box has then powered itself off):
    `aws s3 cp s3://<BUCKET>/fuzz/ladder/<id>/<run id>/ <a directory outside the repository> --recursive`.
    `status.json` names any refusal; `env.json` names the pins, the versions and the library's sha256.
-5. **Compare** (the equality proof, once per instance type before its results count): the same arm on this machine,
-   at the same commit, under the machine lock, with the conf's command line:
-   `python3 tools/cloud/aws_fuzz/ladder_conf.py argv <conf> <the local networks' directory, files named
-   <sha256>.npz> <out>` gives the arguments of `python -m duoforge_search.ladder`. Then
-   `python3 tools/cloud/aws_fuzz/ladder_equal.py <local>/ladder.json <aws>/ladder.json --out equal.json`:
-   exit 0 and `"equal": true` when every field but the timing ones is bit-identical. Otherwise `differs` names the
-   fields: AWS results then count only as their own series.
+5. **Compare** (the equality proof, once per instance type before its results count). It has two campaigns:
+   `ladder-equal-2e` runs the arm `main` (step 2e, 8 pairs against `bot`, `bc6` and `ppo`) alone, and
+   `ladder-equal-2e-beside` runs the same arm beside two others (steps 0 and 1b). A digest must not depend on what runs
+   beside it (HauptSession). Run the same arm on this machine too, at the same commit, under the machine lock:
+   `python3 tools/cloud/aws_fuzz/ladder_conf.py argv <conf> main <the local networks' directory, files named
+   <sha256>.npz> <out>` gives the arguments of `python -m duoforge_search.ladder`. Then compare each pair:
+   `python3 tools/cloud/aws_fuzz/ladder_equal.py <local>/ladder.json <aws alone>/main/ladder.json --out equal-alone.json`
+   and the same for `<aws alone>/main/ladder.json` against `<aws beside>/main/ladder.json`. Each gives exit 0 and
+   `"equal": true` when every field but the timing ones is bit-identical. Otherwise `differs` names the fields: AWS
+   results then count only as their own series, and if alone and beside differ, the arms run one per box.
 
-The first campaign is `ladder-equal-2e` (step 2e, 8 pairs against `bot`, `bc6` and `ppo`), the proof itself. The
-first use after it is the D1 ladder arm (#481), then D2.
+The first use after the proof is the D1 ladder arm (#481), then D2's arms. Their names are in `ladder.STEPS` (agreed
+with the D2 lane), so a campaign names them in its `arm=` lines without a change here. The mirror touchstone stays local:
+the private sun team does not go into the bucket (HauptSession).
 
 ## Tests
 

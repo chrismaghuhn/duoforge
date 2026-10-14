@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launches one ladder arm (an AWS ladder campaign, #484) on one spot instance (tools/cloud/aws_fuzz/README.md,
+# Launches the arms of one AWS ladder campaign (#484), side by side on one spot instance (tools/cloud/aws_fuzz/README.md,
 # "Ladder campaigns"). Only the HauptSession runs this, from its chat, with the owner present (owner rule): no lane and
 # no script of a lane starts, stops or changes anything on AWS.
 #
@@ -63,7 +63,9 @@ else
         df_die "cannot read campaign.conf of '$campaign' at $commit"
 fi
 python3 "$DF_DIR/ladder_conf.py" check "$conf" || df_die "campaign '$campaign' is not a valid ladder campaign"
-mapfile -t shas < <(python3 "$DF_DIR/ladder_conf.py" shas "$conf")
+# tr: a Windows Python ends its lines with CRLF
+mapfile -t shas < <(python3 "$DF_DIR/ladder_conf.py" shas "$conf" | tr -d '\r')
+mapfile -t arms < <(python3 "$DF_DIR/ladder_conf.py" arms "$conf" | tr -d '\r')
 
 run_id="${commit:0:12}-ladder-$(date -u +%Y%m%dT%H%M%SZ)"
 df_valid_ladder_run_id "$run_id" || df_die "internal error: the run id '$run_id' is malformed"
@@ -90,7 +92,8 @@ echo "commit        $commit"
 echo "run id        $run_id"
 echo "networks      s3://$bucket/nets/<sha256>.npz, read-only for the box:"
 for s in "${shas[@]}"; do echo "                $s"; done
-echo "results       s3://$bucket/fuzz/ladder/$campaign/$run_id/ (ladder.json, env.json, status.json, log/)"
+echo "arms          ${arms[*]} (side by side, 16 CPUs and 8 workers each, 16 CPUs left to the box)"
+echo "results       s3://$bucket/fuzz/ladder/$campaign/$run_id/ (<arm>/ladder.json, env.json, status.json, log/)"
 echo "type          $DF_LADDER_TYPE (the only type of a series, no fallback)"
 echo "max hours     $max_hours (watchdog: shutdown -h +$max_minutes, behaviour terminate)"
 echo "price ceiling \$$price per instance hour ($DF_COST_CAP_USD / $max_hours: at most \$$DF_COST_CAP_USD for the run)"

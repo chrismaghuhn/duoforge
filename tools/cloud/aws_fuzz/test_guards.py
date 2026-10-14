@@ -1180,6 +1180,7 @@ class LadderLaunch(unittest.TestCase):
         self.assertIn('--instance-type c7a.16xlarge', r.stdout)
         self.assertEqual(len(re.findall(r'Key=purpose\\?,Value=ladder', r.stdout)), 3)  # printf %q escapes the commas
         self.assertIn('s3://my-fuzz-bucket/fuzz/ladder/ladder-equal-2e/' + SHA[:12] + '-ladder-', r.stdout)
+        self.assertIn('arms          main (side by side', r.stdout)
         for sha in ('bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39',
                     '213b773b3448521ff251668133b6a1ebe7d5144f707e2f316974ddbad21e1b99',
                     'ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb'):
@@ -1233,7 +1234,8 @@ class LadderLaunch(unittest.TestCase):
         self.assertTrue(lines[1].startswith('shutdown -h +60 '), lines[1])
         self.assertNotRegex(text, r'@[A-Z_]+@')
         for needle in ('XLA_FLAGS=--xla_cpu_max_isa=AVX2', 'OPENBLAS_CORETYPE=Haswell', 'OPENBLAS_NUM_THREADS=1',
-                       'JAX_PLATFORMS=cpu', 'taskset -c', 'DF_CPUS=16', 'ladder_requirements.txt', '--no-deps', 'pip" check',
+                       'JAX_PLATFORMS=cpu', 'taskset -c "$cpus"', 'DF_CPUS=16', 'DF_SPARE=16', 'ladder_conf.py" arms',
+                       '"$S3_BASE/$arm/ladder.json"', 'ladder_requirements.txt', '--no-deps', 'pip" check',
                        'refuse nets_writable', 'refuse nets_unreadable', 'refuse net_sha_mismatch', 'refuse nets_probe_unclear',
                        '*AccessDenied*', 'trap finish EXIT', 'shutdown -h now', 'status.json',
                        's3://$DF_BUCKET/fuzz/ladder/$DF_CAMPAIGN/$DF_RUN_ID'):
@@ -1241,37 +1243,50 @@ class LadderLaunch(unittest.TestCase):
         uploads = [l for l in lines if re.search(r'\baws s3 cp\b', l) and 's3://$DF_BUCKET/$NETS_KEY_PREFIX' not in l]
         for line in uploads:  # what goes up: ladder.json, env.json, status.json and logs; never a decision file or a net
             self.assertRegex(line, r'(ladder\.json|env\.json|status\.json|\$LOG|ladder-tail\.log)', line)
+            self.assertNotIn('/out/step-', line)
             self.assertNotIn('decisions', line)
             self.assertNotIn('.npz', line)
         self.assertNotRegex(text, r'AKIA[0-9A-Z]{16}|aws_secret_access_key|BEGIN [A-Z ]*PRIVATE KEY')
 
-    def test_the_ladder_conf_is_checked_and_builds_the_ladders_command_line(self):
+    def test_the_ladder_conf_is_checked_and_builds_each_arms_command_line(self):
         import ladder_conf
-        good = ('kind=ladder\nstep=2e\nprevious=0\nh2h=1\npairs=8\nseed=0x10\nworkers=8\ncheckpoint=%s\nfoe_net=%s\n'
-                'teams_from=%s\nopponents=bot=%s ppo=%s\n') % (NET, NET, 'c' * 64, 'd' * 64, 'c' * 64)
+        good = ('kind=ladder\narm=a step=2e previous=0 h2h=1\narm=b step=d2-33 previous=2e\npairs=8\nseed=0x10\n'
+                'checkpoint=%s\nfoe_net=%s\nteams_from=%s\nopponents=bot=%s ppo=%s\n') % (NET, NET, 'c' * 64, 'd' * 64, 'c' * 64)
         conf = ladder_conf.parse(good)
+        self.assertEqual([a['name'] for a in conf['arms']], ['a', 'b'])
+        self.assertEqual((conf['workers'], conf['max_steps']), (8, 1000))  # the HauptSession's 8 workers per arm
         self.assertEqual(ladder_conf.shas(conf), [NET, 'c' * 64, 'd' * 64])
-        argv = ladder_conf.argv(conf, '/n', '/o')
+        argv = ladder_conf.argv(conf, 'a', '/n', '/o')
         self.assertEqual(argv[:8], ['--checkpoint', '/n/%s.npz' % NET, '--foe-net', '/n/%s.npz' % NET,
                                     '--teams-from', '/n/%s.npz' % ('c' * 64), '--step', '2e'])
-        self.assertIn('--h2h', argv)
+        self.assertEqual(argv[8:11], ['--previous', '0', '--h2h'])
         self.assertEqual(argv[argv.index('--seed') + 1], '0x10')
         self.assertEqual(argv[-2:], ['--out', '/o'])
-        bad = {'kind=fuzz': 'not a ladder campaign', 'pairs=0': 'pairs=0', 'workers=65': 'workers=65',
-               'checkpoint=xyz': 'sha256', 'opponents=bot': 'NAME=SHA256', 'step=../x': 'step name',
-               'extra=1': 'unknown key', 'opponents=bot=%s bot=%s' % (NET, NET): 'twice'}
+        b = ladder_conf.argv(conf, 'b', '/n', '/o')
+        self.assertEqual(b[b.index('--step') + 1:b.index('--step') + 4], ['d2-33', '--previous', '2e'])
+        self.assertNotIn('--h2h', b)
+        with self.assertRaisesRegex(ladder_conf.ConfError, "no arm 'c'"):
+            ladder_conf.argv(conf, 'c', '/n', '/o')
+        bad = {'kind=fuzz': 'not a ladder campaign', 'pairs=0': 'pairs=0', 'workers=17': 'workers=17',
+               'checkpoint=xyz': 'sha256', 'opponents=bot': 'NAME=SHA256', 'extra=1': 'unknown key',
+               'opponents=bot=%s bot=%s' % (NET, NET): 'twice', 'arm=c step=../x': 'step name',
+               'arm=C step=0': 'lowercase', 'arm=c step=0 h2h=1': 'needs previous', 'arm=c previous=0': 'no step',
+               'arm=c step=0 path=/x': 'is not step=', 'arm=a step=0': 'arm name twice',
+               'arm=x step=0\narm=y step=0': '4 arms: 1 to 3'}
         for line, message in bad.items():
             key = line.partition('=')[0]
-            text = '\n'.join(l for l in good.splitlines() if not l.startswith(key + '=')) + '\n' + line + '\n'
+            text = '\n'.join(l for l in good.splitlines() if key == 'arm' or not l.startswith(key + '=')) + '\n' + line + '\n'
             with self.subTest(line=line), self.assertRaisesRegex(ladder_conf.ConfError, message):
                 ladder_conf.parse(text)
-        with self.assertRaisesRegex(ladder_conf.ConfError, 'h2h=1 needs previous'):
-            ladder_conf.parse(good.replace('previous=0\n', ''))
+        with self.assertRaisesRegex(ladder_conf.ConfError, '0 arms'):
+            ladder_conf.parse('\n'.join(l for l in good.splitlines() if not l.startswith('arm=')))
         with self.assertRaisesRegex(ladder_conf.ConfError, 'missing key'):
             ladder_conf.parse(good.replace('pairs=8\n', ''))
-        with open(os.path.join(HERE, 'campaigns', 'ladder-equal-2e', 'campaign.conf'), encoding='utf-8') as f:
-            self.assertEqual(ladder_conf.parse(f.read())['step'], '2e')
-
+        for name, arms in (('ladder-equal-2e', ['main']), ('ladder-equal-2e-beside', ['main', 'beside0', 'beside1'])):
+            with open(os.path.join(HERE, 'campaigns', name, 'campaign.conf'), encoding='utf-8') as f:
+                conf = ladder_conf.parse(f.read())
+            self.assertEqual([a['name'] for a in conf['arms']], arms)
+            self.assertEqual(conf['arms'][0]['step'], '2e')  # the arm compared, alone and beside others
 
 class LadderEqual(unittest.TestCase):
     """ladder_equal.py, the equality proof of an AWS ladder campaign (#484): every field but the timing ones."""
