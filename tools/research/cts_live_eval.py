@@ -103,7 +103,9 @@ def battle(records, bot):
             out["unavailable"] += 1
         elif "dirty" in r:
             out["dirty"] = True
-        elif "summary" in r:
+        elif "log_format" in r and r.get("code"):
+            out["code"] = r["code"]  # the bot's commit and dirty state, in every battle's first record (format 2)
+        elif "summary" in r and out["code"] is None:
             out["code"] = (r["summary"] or {}).get("code")  # the bot's commit and dirty state (pkmn_arena, since #480)
         elif "end" in r:
             end = r["end"]
@@ -164,7 +166,7 @@ def run_logs(directory, since=None, code=None):
         r = json.loads(path.read_text(encoding="utf-8"))
         if since is not None and r.get("started", "") < since:
             continue
-        if code is not None and not str((r.get("code") or {}).get("commit") or "").startswith(code):
+        if code is not None and not _in_series(r.get("code"), code):
             continue
         out["files"] += 1
         for key in ("counts", "fallback_battles", "fallback_decisions", "closes", "search_causes", "cts"):
@@ -187,7 +189,7 @@ def foe_team(records, bot):
     """A short digest of the opponent's team: its team-preview species (|poke| lines of its side), sorted. Species are
     public game facts; the digest only tells one team of an opponent from another."""
     import hashlib
-    side, species = None, []
+    side, species = None, set()  # a set: a resync logs the |poke| lines again
     for r in records:
         line = r.get("in", "")
         parts = line.split("|")
@@ -196,7 +198,9 @@ def foe_team(records, bot):
     for r in records:
         line = r.get("in", "")
         if side and line.startswith(f"|poke|{side}|"):
-            species.append(line.split("|")[3].split(",")[0])
+            species.add(line.split("|")[3].split(",")[0])
+    if not species:
+        return None  # no foe side or no preview: the team is unknown ("?"), never one digest for all
     return hashlib.sha256(",".join(sorted(species)).encode("utf-8")).hexdigest()[:12]
 
 
@@ -205,6 +209,8 @@ def assign_teams(pairs, labels):
     numbered by first appearance ("team:<opponent>|<team>" -> number), kept across series."""
     out = dict(labels)
     for o, t in pairs:
+        if t is None:
+            continue
         key = f"team:{o}|{t}"
         if key not in out:
             out[key] = 1 + sum(1 for k in out if k.startswith(f"team:{o}|"))
@@ -350,7 +356,7 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
         if since is not None and (battle(records, bot)["start"] or 0) < since:
             skipped["before_since"] += 1
             continue
-        if code is not None and not _code_of(battle(records, bot)).startswith(code):
+        if code is not None and not _in_series(battle(records, bot)["code"], code):
             skipped["other_code"] += 1
             continue
         first = next((json.loads(r["in"][len("|request|"):]) for r in records
@@ -406,8 +412,20 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
 
 
 def _code_of(b):
-    """A battle's bot commit (its summary's code), "" when the log names none."""
+    """A battle's bot commit (its log's code), "" when the log names none."""
     return str((b.get("code") or {}).get("commit") or "")
+
+
+def _code_key(code):
+    """A code as by_code counts it: the commit's first 8 characters, "+dirty" for a dirty checkout, "none"."""
+    commit = str((code or {}).get("commit") or "")
+    return (commit[:8] + ("+dirty" if (code or {}).get("dirty") else "")) if commit else "none"
+
+
+def _in_series(code, prefix):
+    """Whether a code belongs to the measurement series of a commit prefix: that commit, clean (a dirty run of the same
+    commit ran other code)."""
+    return bool(code) and str(code.get("commit") or "").startswith(prefix) and code.get("dirty") is False
 
 
 def _unix(iso):
@@ -444,9 +462,9 @@ def main(argv=None):
     logs = [[json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
             for path in paths]
     kept = [records for records in logs if since is None or (battle(records, bot)["start"] or 0) >= since]
-    by_code = dict(collections.Counter(_code_of(battle(records, bot))[:8] or "none" for records in kept))
+    by_code = dict(collections.Counter(_code_key(battle(records, bot)["code"]) for records in kept))
     if args.code is not None:
-        kept = [records for records in kept if _code_of(battle(records, bot)).startswith(args.code)]
+        kept = [records for records in kept if _in_series(battle(records, bot)["code"], args.code)]
     labels = None
     if args.labels:
         labels = assign_labels([o for o in (opponent(r, bot) for r in kept) if o], load_labels(args.labels))
@@ -454,6 +472,8 @@ def main(argv=None):
         save_labels(args.labels, labels)
     details = None
     if args.details:
+        if not args.replay:
+            raise SystemExit("--details is the replay's per-battle file: it needs --replay")
         refuse_repository(Path(args.details).parent)
         details = []
     if args.replay:

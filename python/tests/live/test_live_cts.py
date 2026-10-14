@@ -709,8 +709,22 @@ class LogReplayTest(unittest.TestCase):
         self.assertFalse([r for r in records if "pending_at_end" in r])
 
     def test_a_later_log_format_is_refused_by_name(self):
-        with self.assertRaisesRegex(ValueError, "log format 3"):
-            cts.LogReplay([{"log_format": 3}], data.load(kind="pool"), None, FIXTURE["team"], None, KEY)
+        tables = data.load(kind="pool")
+        for bad in (3, 0, True, "2", 2.0, None):
+            with self.subTest(bad), self.assertRaisesRegex(ValueError, "log format"):
+                cts.LogReplay([{"log_format": bad}], tables, None, FIXTURE["team"], None, KEY)
+        with self.assertRaisesRegex(ValueError, "record 1 names a log format"):
+            cts.LogReplay([{"feed": []}, {"log_format": 2}], tables, None, FIXTURE["team"], None, KEY)
+
+    def test_a_format_1_log_never_gives_pending_at_end(self):
+        # a format-1 log is read as format 1 whatever records it holds (review of the format 2)
+        path = data.ROOT / "python" / "tests" / "support" / "data" / "cts_log_format2.jsonl"
+        records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()][1:]
+        tables = data.load(kind="pool")
+        replay = cts.LogReplay(records, tables, None, FIXTURE["team"], cts.SetPrior.from_table(tables),
+                               self.FORFEIT_KEY)
+        self.assertEqual(replay.log_format, 1)
+        self.assertFalse([r for _, r in replay if "pending_at_end" in (r or {})])
 
     def test_a_record_that_is_no_object_is_refused(self):
         with self.assertRaisesRegex(ValueError, "record 1"):
