@@ -18,6 +18,8 @@ The test duoforge.python.replay proves the observation equal to DuoForge's
 at every own point of every committed battle, field by field, the fields
 above compared with their documented sources.
 """
+import contextlib
+
 from duoforge_live import lines, teams
 from duoforge_live.lines import flat_position
 from duoforge_live.data import trace_to_c
@@ -29,6 +31,15 @@ from .hindsight import BROUGHT, hindsight, hindsight_picks
 from .points import TEAM_SELECTION, TURN
 
 HIDDEN_TARGET = -1  # an own charging move's stored target that no line shows
+
+
+class Refused(Exception):
+    """A decision point without options: the engine refuses its world, or the record of the point is not determined
+    (reason: the counter's name). The point gets no row; the perspective goes on (game._fold counts it)."""
+
+    def __init__(self, reason):
+        super().__init__(reason)
+        self.reason = reason
 
 
 class SpectatorTracker(Tracker):
@@ -122,6 +133,10 @@ class SpectatorTracker(Tracker):
             if self._hindsight_picks is None:
                 raise lines.Stop("picks-incomplete")
             self._picks = list(self._hindsight_picks)
+            if self._party is None:
+                # the own side.pokemon order (the POOL record's party_order, Tracker.feed keeps it): the picks as the
+                # spectator knows them, leads first; every switch from here swaps it like the player's own
+                self._party = list(self._picks)
         if point.boundary == TEAM_SELECTION:
             self._asked = [(1, 0), (1, 0)]
         elif point.boundary == TURN:
@@ -148,6 +163,33 @@ class SpectatorTracker(Tracker):
         illusion = self.data.tables["ABILITY"].get("ILLUSION")
         return illusion is not None and any(m.sheet["ability"] == illusion + 1 for m in self._member(self.side))
 
+    # ------------------------------------------------------------------ record
+    @contextlib.contextmanager
+    def own_values(self):
+        """The own members' values the player knew and the log does not show, for the public record of the point (the
+        superset's world, #512 D7), restored on exit: the stats and stat points from stats_of (as the view shows them),
+        and an HP the engine displays as the shown percentage and flag (duoforge.view.hp_display: the smallest such HP;
+        the full HP of a member that never entered, 0 of a fainted one). Refused("own-hp-display") when no HP under
+        the member's maximum shows its display."""
+        saved = [(m.hp, m.hp_max, m.stats, m.sheet["sp"]) for m in self._own_members]
+        try:
+            for m, member in enumerate(self._own_members):
+                forme = member.sheet["species"]
+                if member.is_mega:
+                    forme = self.data.mega_of(forme, member.sheet["item"])
+                stats, stat_points = self._stats_of(m, forme)
+                member.hp_max, member.stats, member.sheet["sp"] = stats[0], list(stats[1:6]), list(stat_points)
+                if not member.seen:
+                    member.hp = member.hp_max
+                elif member.hp_percent == 0:
+                    member.hp = 0
+                else:
+                    member.hp = _hp_shown(member.hp_percent, member.hp_flag, member.hp_max)
+            yield self
+        finally:
+            for member, (hp, hp_max, stats, stat_points) in zip(self._own_members, saved):
+                member.hp, member.hp_max, member.stats, member.sheet["sp"] = hp, hp_max, stats, stat_points
+
     # ------------------------------------------------------------------ view
     def _view_member(self, v, member, m, side, own, boundary):
         super()._view_member(v, member, m, side, False, boundary)  # the public view of the member
@@ -171,6 +213,23 @@ class SpectatorTracker(Tracker):
         stats, stat_points = self._stats_of(m, forme)
         v["stats"] = stats[1:6]
         v["stat_points"] = stat_points
+
+
+_DISPLAYS = {}  # hp_max -> {(percent, flag): the smallest HP the engine displays so}
+
+
+def _hp_shown(percent, flag, hp_max):
+    """The smallest HP of hp_max HP that the engine displays as (percent, flag) (duoforge_hp_display)."""
+    from duoforge import view
+    if hp_max not in _DISPLAYS:
+        table = {}
+        for hp in range(hp_max, 0, -1):
+            table[tuple(int(x) for x in view.hp_display(hp, hp_max))] = hp
+        _DISPLAYS[hp_max] = table
+    hp = _DISPLAYS[hp_max].get((int(percent), int(flag)))
+    if hp is None:
+        raise Refused("own-hp-display")
+    return hp
 
 
 def own_requested(tracker):

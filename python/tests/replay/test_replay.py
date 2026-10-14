@@ -61,6 +61,21 @@ class ShowdownFactsTest(unittest.TestCase):
             source.close()
 
 
+    def test_unit_stats_are_showdowns(self):
+        # the unit tests' stand-in stat source (test_replay_unit._Stats) serves the committed answers of the pinned Showdown
+        from duoforge_replay.stats import StatSource
+        table = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "replay" / "unit_stats.json")
+                           .read_text(encoding="utf-8"))
+        self.assertTrue(table)
+        source = StatSource(os.environ["DUOFORGE_NODE"], os.environ["DUOFORGE_PS_REFERENCE_DIR"])
+        try:
+            for key, stats in table.items():
+                species, nature, sp = key.split("|")
+                self.assertEqual(source.stats(species, nature, [int(v) for v in sp.split(",")]), stats, key)
+        finally:
+            source.close()
+
+
 def differences(a, b, path=""):
     """The field paths where two records of one structured dtype differ, with both values."""
     out = []
@@ -86,6 +101,11 @@ def spectate(battle, side, source):
         raise AssertionError(f"{battle.name} side {side}: hindsight picks {seen}, true {picks}")
     tracker = spectator.SpectatorTracker(Reference.get().data, battle_sheets(battle), side, picks,
                                          true_stats_of(battle, side, source), log)
+    if battle.spec.get("data") != "pool":
+        # a closure or Team C battle, read with the pool tables as every replay: its teams may be development
+        # fixtures (No Ability, every member brought), which the POOL kind refuses and POOL_DEV takes, so the engine
+        # builds its worlds under the DEV kind of the same tables (the live test's record_kind)
+        tracker.record_kind = C["DUOFORGE_DATA_KIND_POOL_DEV"]
     leads, back = spectator.hindsight(log, side, Reference.get().data, battle_sheets(battle))
     out = []
     exts = EXTS[(battle.name, side)] = []  # the tracker's OBSERVATION_EXT at each point of `out`
@@ -94,9 +114,13 @@ def spectate(battle, side, source):
         for point in spectator.walk(tracker, log, pts):
             reached += 1
             if spectator.own_requested(tracker):
-                domain, lists = superset_of(tracker)
-                out.append((point, tracker.observation().copy(), (domain, lists), label_of(tracker, log, point, lists,
-                                                                                           leads, back)))
+                try:
+                    options = superset_of(tracker)
+                    label = label_of(tracker, log, point, options[1], leads, back)
+                except spectator.Refused as refused:  # no options, no row: the tracker's view is still compared
+                    REFUSED.setdefault((battle.name, side), []).append((tracker.epoch - 1, refused.reason))
+                    options = label = None
+                out.append((point, tracker.observation().copy(), options, label))
                 exts.append(tracker.observation_ext().copy())
     except lines.Stop as stop:
         if not allowed_stop(stop.reason):
@@ -108,6 +132,7 @@ def spectate(battle, side, source):
 # Stops for information only the player had (spec section 6), allowed in reference logs; every other stop fails.
 HIDDEN = {"charge-target-hidden"}
 STOPS = {}
+REFUSED = {}  # (battle, side) -> [(decision index, reason)] of the own points the engine gives no options for
 EXTS = {}  # (battle, side) -> the tracker's view extension at each point spectate() returned
 
 
@@ -170,13 +195,18 @@ def battle_sheets(battle):
     return packed[0], packed[1]
 
 
-def behaviour(battle, run, stop):
+def behaviour(battle, side, run, stop):
     """The values the pin compares for one battle and side: its points, and at every own point the superset's slot lists
     and the label as sets of commands (an order change of a list alone is no label change)."""
     from duoforge_replay import points
     pts = [[p.index, p.line, p.boundary, list(p.run), p.end, p.revive] for p in points.find(battle.lines)]
     supersets, labels_ = [], []
-    for point, obs, (domain, lists), label in run:
+    for point, obs, options, label in run:
+        if options is None:
+            supersets.append([point.index, "refused", dict(REFUSED[(battle.name, side)])[int(obs["epoch"]) - 1]])
+            labels_.append([point.index, "refused"])
+            continue
+        domain, lists = options
         command_lists = [[[o.kind, o.move_slot, o.target, o.mega, o.reserve] for o in lists[s]] if lists else []
                          for s in (0, 1)]
         supersets.append([point.index, int(domain["kind"]), command_lists])
@@ -330,9 +360,13 @@ class SpectatorTest(unittest.TestCase):
     def test_superset_contains_duoforge(self):
         from duoforge_replay import superset  # noqa: F401  (the module under test)
         team = C["DUOFORGE_CHOICE_TEAM_SELECTION"]
+        equal = compared = 0
         for battle in self.ref.battles:
             for side in (0, 1):
-                for _, obs, (domain, _), _ in self.runs[(battle.name, side)]:
+                for _, obs, options, _ in self.runs[(battle.name, side)]:
+                    if options is None:
+                        continue  # the engine gives no options (REFUSED)
+                    domain = options[0]
                     k = int(obs["epoch"]) - 1
                     theirs = battle.views[(k, side)][1]
                     where = (battle.name, k, side)
@@ -344,6 +378,12 @@ class SpectatorTest(unittest.TestCase):
                     for s in (0, 1):
                         missing = commands(theirs, s) - commands(domain, s)
                         self.assertFalse(missing, (where, s, sorted(missing)))
+                    same = domain.copy()
+                    same["epoch"] = theirs["epoch"]
+                    equal += same.tobytes() == theirs.tobytes()
+                    compared += 1
+        refused = collections.Counter(reason for points in REFUSED.values() for _, reason in points)
+        print(f"\nengine domains equal to DuoForge's: {equal} of {compared}; points without options: {dict(refused)}")
 
     def test_behaviour_equals_the_pin(self):
         # #512: the points, the superset and the labels of every committed battle stay as pinned while the replay rules
@@ -353,7 +393,7 @@ class SpectatorTest(unittest.TestCase):
         for battle in self.ref.battles:
             for side in (0, 1):
                 key = f"{battle.name}|{side}"
-                value = behaviour(battle, self.runs[(battle.name, side)], STOPS.get((battle.name, side)))
+                value = behaviour(battle, side, self.runs[(battle.name, side)], STOPS.get((battle.name, side)))
                 dump[key] = value
                 current[key] = " ".join(f"{part}:{digest(value[part])}" for part in PARTS)
         if os.environ.get("DUOFORGE_REPLAY_PIN_DUMP"):
@@ -411,7 +451,10 @@ class SpectatorTest(unittest.TestCase):
                         names[protocol] = names[species]
                 roster_names.append(names)
             for side in (0, 1):
-                for point, obs, (domain, lists), label in self.runs[(battle.name, side)]:
+                for point, obs, options, label in self.runs[(battle.name, side)]:
+                    if options is None:
+                        continue  # no options, no row (REFUSED)
+                    lists = options[1]
                     k = int(obs["epoch"]) - 1
                     where = (battle.name, k, side)
                     if k >= len(trace["steps"]):
