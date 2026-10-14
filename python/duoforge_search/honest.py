@@ -431,7 +431,7 @@ class Honest(lookahead.Lookahead):
             raise ValueError(f"depth must be one of {DEPTHS} (got {depth!r})")
         if depth == 1 and any(v is not None for v in settings.values()):
             raise ValueError(f"{[n for n, v in settings.items() if v is not None]} require depth 2")
-        self.depth, self._keys, self.nodes, self.evaluator = depth, None, None, None
+        self.depth, self._keys, self.nodes, self._node_batch, self.evaluator = depth, None, None, None, None
         self.k2 = self.m2 = self.chance = self.info_key = self.foe_below = self.tree_iterations = None
         if depth == 2:
             if root_solver != "rm":
@@ -497,13 +497,16 @@ class Honest(lookahead.Lookahead):
         try:
             self.worlds = duoforge.Batch(context, np.resize(duoforge.reference_setups([0]), self.s), workers, seed)
             if self.depth == 2:  # the depth-1 nodes: one environment per root edge (spec section 7.3)
-                self.nodes = duoforge.Batch(context, np.resize(duoforge.reference_setups([0]),
-                                                               self.s * self.k * self.m * self.chance), workers, seed)
+                self._node_batch = duoforge.Batch(context, np.resize(duoforge.reference_setups([0]),
+                                                                     self.s * self.k * self.m * self.chance),
+                                                  workers, seed)
+                # the key's view of it: the batch itself (record), or the digest call's adapter with its sidecar
+                self.nodes = self._keys.nodes(self._node_batch)
                 self.evaluator = evaluators.make(evaluator, leaves=self.leaves, model=self.model, params=self.params,
                                                  encoder=self.encoder, ext_supported=self.ext_supported,
                                                  rows=self._rows)
         except BaseException:
-            for batch in (self.worlds, self.nodes):
+            for batch in (self.worlds, self._node_batch):
                 if batch is not None:
                     batch.close()
             super().close()
@@ -512,8 +515,8 @@ class Honest(lookahead.Lookahead):
     def close(self):
         if self.worlds is not None:
             self.worlds.close()
-        if self.nodes is not None:
-            self.nodes.close()
+        if self._node_batch is not None:
+            self._node_batch.close()
         super().close()
 
     def clear(self):
@@ -1284,7 +1287,7 @@ class Honest(lookahead.Lookahead):
         node_keys = splitmix64(head + np.arange(n, dtype=np.uint64))
         cut = steps_left == 2  # the depth-2 leaves are the arena's cut-off
         t = time.perf_counter()
-        leaves = self.evaluator.leaves(self.nodes, self.seed, node_keys, np.full(n, p, np.uint8),
+        leaves = self.evaluator.leaves(self._node_batch, self.seed, node_keys, np.full(n, p, np.uint8),
                                        envs[node_of].astype(np.uint32), np.zeros(total, np.uint32), choices,
                                        np.full(total, cut), costs)
         costs["tree_evaluate"] += time.perf_counter() - t
