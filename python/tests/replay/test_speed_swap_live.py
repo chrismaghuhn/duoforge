@@ -15,7 +15,9 @@ from duoforge import view
 from duoforge_live import record
 from python.tests.live.test_live import Reference, record_kind
 
-SPEED_SWAP_BATTLES = ("k3_speed_swap_basic", "k3_speed_swap_switch", "k3_speed_swap_mega")
+# k3_aegislash_swap_end is not here: its Stance Change is a FORME_CHANGE line, which the tracker stops at (a named stop, as
+# for the Aegislash battles of the pool); its refusal and its end are checked by the engine in duoforge.state.pool_k3.
+SPEED_SWAP_BATTLES = ("k3_speed_swap_basic", "k3_speed_swap_switch", "k3_speed_swap_mega", "k3_speed_swap_mega_end")
 
 
 def _swapped(tracker):
@@ -87,6 +89,20 @@ class SpeedSwapLiveRecord(unittest.TestCase):
                         if swapped:
                             self.assertIn(record.E_UNSUPPORTED, verdicts, (name, player, k))
                             self.assertEqual(parts["reason"], "speed-swap", (name, player, k))
+
+    def test_accepted_again_after_the_last_swap_ends(self):
+        # k3_speed_swap_mega_end: Alakazam's own swap ends at its Mega and Milotic's at its switch-out (turn 3); the record
+        # is refused before the last of them and accepted after it.
+        for name in ("k3_speed_swap_mega_end",):
+            for player in (0, 1):
+                with self.subTest(battle=name, side=player):
+                    points = self.points[(name, player)]
+                    last_live = max(k for k, swapped, _, _v in points if swapped)
+                    after = [(k, parts) for k, swapped, parts, _v in points if not swapped and k > last_live]
+                    self.assertTrue(after, (name, player))
+                    for k, parts in after:
+                        self.assertEqual(int(parts["causes"]) & record.CAUSE_SPEED_SWAP, 0, (name, player, k))
+                    self.assertTrue(any(parts["status"] == 0 for _, parts in after), (name, player))
 
     def test_accepted_again_once_both_swapped_occupants_left(self):
         # k3_speed_swap_switch: Milotic (the target) switches out on turn 2 and Alakazam on turn 3, so the last live point

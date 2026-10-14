@@ -517,6 +517,35 @@ static void check_record_gate(df_test *t, const duoforge_context *ctx, const cha
     duoforge_battle_destroy(b);
 }
 
+/* The refusal ends with the last live bit (HS brief, proof 3). Each battle is replayed to the point with a live bit (refused for
+ * both players with cause 128) and to the point after the last bit has ended (no cause, the record check OK). The steps are the
+ * replay counts: step 0 is the lead, so k3_speed_swap_mega_end has its Mega after 3 steps and the switch-out after 4. */
+static void check_end_of_refusal(df_test *t, const duoforge_context *ctx, const char *name, uint32_t live_steps, uint32_t end_steps)
+{
+    duoforge_battle *live = replay(t, ctx, name, live_steps);
+    if (DF_CHECK(t, live != NULL)) {
+        for (uint32_t player = 0u; player < DUOFORGE_SIDE_COUNT; ++player) {
+            duoforge_public_state rec;
+            DF_CHECK(t, duoforge_battle_public(ctx, live, player, &rec) == DUOFORGE_E_UNSUPPORTED);
+            DF_CHECK(t, (public_mask(t, ctx, live, player) & DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP) != 0u);
+        }
+        duoforge_battle_destroy(live);
+    }
+    duoforge_battle *end = replay(t, ctx, name, end_steps);
+    if (DF_CHECK(t, end != NULL)) {
+        for (uint32_t flat = 0u; flat < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++flat) {
+            DF_CHECK(t, !swapped(end, flat));
+        }
+        for (uint32_t player = 0u; player < DUOFORGE_SIDE_COUNT; ++player) {
+            duoforge_public_state rec;
+            DF_CHECK(t, duoforge_battle_public(ctx, end, player, &rec) == DUOFORGE_OK);
+            DF_CHECK(t, duoforge_public_record_check(ctx, &rec) == DUOFORGE_OK);
+            DF_CHECK_EQ_U64(t, public_mask(t, ctx, end, player) & DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP, 0u);
+        }
+        duoforge_battle_destroy(end);
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -538,6 +567,8 @@ int main(void)
         check_record_gate(&t, ctx, "k3_speed_swap_basic", 2u);
         check_record_gate(&t, ctx, "k3_speed_swap_mega", 3u);
         check_record_gate(&t, ctx, "k3_aegislash_blade_swap", 3u);
+        check_end_of_refusal(&t, ctx, "k3_speed_swap_mega_end", 3u, 4u);
+        check_end_of_refusal(&t, ctx, "k3_aegislash_swap_end", 2u, 3u);
         duoforge_context_destroy(ctx);
     }
     return df_test_end(&t);
