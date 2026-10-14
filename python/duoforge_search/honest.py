@@ -37,6 +37,9 @@ NO_STEP_LIMIT = -1
 # The node keys' tag (spec section 4.3): node n's depth-2 leaves are seeded with splitmix64(splitmix64(decision key +
 # DEPTH_TAG) + n), n its index in the node batch (its root cell (i, j, w) in the leaf plan's order), sample 0.
 DEPTH_TAG = 0x4445505448000002
+# A depth-2 decision's own seconds, beside its parts: the depth-1 policy call(s), the depth-2 leaves' evaluation and the
+# tree solve.
+TREE_PHASES = ("tree_policy", "tree_evaluate", "tree_solve")
 _MASK = (1 << 64) - 1
 MAX_RESPREADS = 256
 # The byte of each position's trap_turns in a public record's state (state_layout field names, tail rev 5 position blocks)
@@ -780,6 +783,8 @@ class Honest(lookahead.Lookahead):
         for d, (e, p) in enumerate(zip(envs, seats)):
             e, p = int(e), int(p)
             costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
+            if self.depth == 2:  # the tree's phases, each also counted in the parts above (D2's offline pass reads them)
+                costs.update(dict.fromkeys(TREE_PHASES, 0.0))
             costs["public_records"], costs["network"] = public_time, network_time / n
             worlds = self._worlds_of(roots, e, p)
             if worlds is None:  # one record for every world
@@ -1166,16 +1171,19 @@ class Honest(lookahead.Lookahead):
         own_k, own_pk = own[keep], np.asarray(own_p)[keep]
         shape = tree.Tree(weights=request.weights, leaf=leaf, node=node, info=info, z=z, own_valid=own_valid,
                           foe_valid=foe_valid, own_prior=own_prior, foe_prior=foe_prior)
+        started = time.perf_counter()
         try:
             solved = tree.solve_tree(shape, own_pk, request.qs, iterations=self.tree_iterations,
                                      epsilon=self.rm_epsilon, foe_below=self.foe_below)
         except matrix.RMUnconverged as err:  # the named fallback solver_unconverged (Q1), counted, never silent
+            costs["tree_solve"] += time.perf_counter() - started
             costs["solve"] += time.perf_counter() - t
             raise Unreconstructible("solver_unconverged") from err
         except SearchError as err:
             err.reproduction = {"tree": {name: np.asarray(value).tolist() for name, value in shape._asdict().items()},
                                 "prior": own_pk.tolist(), "foe_probs": request.qs.tolist()}
             raise
+        costs["tree_solve"] += time.perf_counter() - started
         tables = solved.tables
         cube = tables.transpose(1, 2, 0)
         tab = lookahead.Table(*lookahead.cell_stats(cube), root.counts, cube)
@@ -1210,6 +1218,7 @@ class Honest(lookahead.Lookahead):
                                           pairs.reshape((2 * n,) + pairs.shape[2:]))
             pp = pp.reshape(n, 2, -1)
             own_logp, foe_logp = pp[:, p], pp[:, foe]
+            costs["tree_policy"] += seconds
         else:  # our seat with the main network, the foe's with the foe network on its own encoding
             own_logp, _, seconds = self._policy(obs[:, p], slots[:, p], pairs[:, p])
             t = time.perf_counter()
@@ -1219,6 +1228,7 @@ class Honest(lookahead.Lookahead):
                 raise SearchError("the foe network's encoder gives the depth-1 nodes another pair mask")
             foe_logp, _, more = self._policy(fobs[:, foe], fslots[:, foe], fpairs[:, foe], self.foe_net)
             seconds += more
+            costs["tree_policy"] += seconds
         costs["network"] += seconds
         ours, theirs = asked[envs, p], asked[envs, foe]
         if not (ours | theirs).all():
@@ -1273,9 +1283,11 @@ class Honest(lookahead.Lookahead):
         head = splitmix64(np.array([(int(key) + DEPTH_TAG) & _MASK], np.uint64))
         node_keys = splitmix64(head + np.arange(n, dtype=np.uint64))
         cut = steps_left == 2  # the depth-2 leaves are the arena's cut-off
+        t = time.perf_counter()
         leaves = self.evaluator.leaves(self.nodes, self.seed, node_keys, np.full(n, p, np.uint8),
                                        envs[node_of].astype(np.uint32), np.zeros(total, np.uint32), choices,
                                        np.full(total, cut), costs)
+        costs["tree_evaluate"] += time.perf_counter() - t
         breaks = leaves.tiebreaks.astype(np.int64)
         breaks[breaks == 0xFFFFFFFF] = lookahead.UNRESOLVED
         index, zero = np.arange(total), np.zeros(total, np.int64)
