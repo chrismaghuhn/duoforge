@@ -7,8 +7,8 @@ during the step is the same. Python must not decide what we saw, so the key come
 - "digest": the engine's 32-byte observation digest of the step for the viewer (decision 0082), written by the digest
   sibling of duoforge_batch_expand in the same call that expands the node. DigestNodes routes the node batch's expand
   to that call and keeps its digests in a sidecar by logical node index; DigestKey reads it. Until the library has the
-  call, this key is refused by name. PROVISIONAL: the call's signature and status values here are placeholders that
-  E1a of #485 fixes; E1b brings the call (_library_digest_call).
+  call, this key is refused by name. The statuses are 0082's; the call's Python shape is PROVISIONAL until E1b of
+  #485 brings the call and its binding (_library_digest_call).
 - "record": the SHA-256 of the viewer's public record of the node, for tests only (decision of 2026-10-14). Under open
   team sheets every world gives the root record back, so it never splits nodes by a hidden fact; it may merge nodes
   whose lines differ but fold to the same record. Under closed team sheets a world's record holds its particle's facts,
@@ -26,7 +26,7 @@ from .errors import SearchError
 
 KEY_BYTES = 32
 INFO_KEYS = ("digest", "record")
-DIGEST_OK = 0  # PROVISIONAL until E1a: the digest status of a valid key; any other status refuses it
+DIGEST_OK = 0  # DUOFORGE_OK (decision 0082): a phase that succeeded; any other step or digest status refuses a key
 
 # The node batch's reads the digest adapter forwards: none changes an environment, so none can leave a key stale.
 _FORWARDED = frozenset(("envs", "requests", "domains", "counts", "statuses", "query_factored", "query_encoded",
@@ -58,7 +58,8 @@ class DigestNodes:
     """A node batch whose expand goes to the digest call (call(batch, *Batch.expand's arguments) -> Batch.expand's
     five arrays, digests (n, KEY_BYTES) uint8, digest statuses (n,)) and returns Batch.expand's five arrays. The
     digests land in a sidecar of capacity logical nodes (default: the batch's environments), allocated here: the
-    chunk's leaf x at logical node offset + x, with its viewer and the expansion's generation. An expand at offset 0
+    chunk's leaf x at logical node offset + x, with its step status, its viewer and the expansion's generation (0082:
+    a failed step keeps digest status OK with zero bytes, its key invalid because of the step). An expand at offset 0
     starts a new generation, so the keys of an earlier expansion are refused, never reused. Only reads of the batch
     are forwarded (an operation that changes an environment would leave its key stale); batch is the batch itself,
     for the calls that take it as their source."""
@@ -70,6 +71,7 @@ class DigestNodes:
         self.batch, self.capacity, self._call = batch, capacity, call
         self.digests = np.zeros((capacity, KEY_BYTES), np.uint8)
         self.digest_statuses = np.zeros(capacity, np.uint32)
+        self.step_statuses = np.zeros(capacity, np.uint32)
         self.viewers = np.zeros(capacity, np.uint8)
         self.generations = np.zeros(capacity, np.uint64)
         self.generation = 0  # no expansion yet: no entry is valid
@@ -96,6 +98,7 @@ class DigestNodes:
         span = slice(offset, offset + n)
         self.digests[span] = digests
         self.digest_statuses[span] = statuses
+        self.step_statuses[span] = legacy[1]
         self.viewers[span] = np.asarray(viewers)[np.asarray(root_envs, dtype=np.int64)]
         self.generations[span] = self.generation
         return tuple(legacy)
@@ -103,8 +106,9 @@ class DigestNodes:
 
 class DigestKey:
     """The engine's observation digest of each node (decision 0082), read from the DigestNodes sidecar its call filled.
-    A node's key is refused where its digest status is not DIGEST_OK, where it comes from an earlier expansion or
-    another viewer; an accepted digest of 32 zero bytes breaks the call's contract and raises. It holds under closed
+    A node's key is refused where its step or digest status is not DIGEST_OK, where it comes from an earlier
+    expansion or another viewer; 32 zero bytes after a successful step and digest break the call's contract and
+    raise. It holds under closed
     team sheets: the engine folds only what the viewer saw."""
     name = "digest"
 
@@ -120,13 +124,14 @@ class DigestKey:
         envs = np.asarray(envs, dtype=np.int64)
         if envs.size and (envs.min() < 0 or envs.max() >= nodes.capacity):
             raise ValueError(f"a node index outside the digest sidecar's capacity {nodes.capacity}")
-        refused = ((nodes.digest_statuses[envs] != DIGEST_OK) | (nodes.generations[envs] != nodes.generation)
+        refused = ((nodes.step_statuses[envs] != DIGEST_OK) | (nodes.digest_statuses[envs] != DIGEST_OK)
+                   | (nodes.generations[envs] != nodes.generation)
                    | (nodes.viewers[envs] != int(viewer)) | (nodes.generation == 0))
         out = np.where(refused[:, None], 0, nodes.digests[envs]).astype(np.uint8)
         zero = np.flatnonzero(~refused & ~out.any(axis=1))
         if zero.size:
-            raise SearchError(f"observation_digest_zero: the digest call accepted node {int(envs[zero[0]])} with 32 "
-                              f"zero bytes, never a valid key (decision 0082)")
+            raise SearchError(f"observation_digest_zero: node {int(envs[zero[0]])} stepped and its digest status is "
+                              f"OK, yet its digest is 32 zero bytes, never a valid key (decision 0082)")
         return out, refused
 
 

@@ -4,8 +4,8 @@ the SHA-256 of the viewer's public record, equal for equal records, different fo
 closed team sheets.
 
 The digest's Python side (DigestNodes, DigestKey) is tested against a PROVISIONAL STUB of the engine call (digest_stub,
-decision 0082; E1a fixes the contract, E1b brings the call): those tests check the sidecar by logical node index, its
-generation and refusals, never the engine's digest."""
+with decision 0082's statuses; E1b of #485 brings the call): those tests check the sidecar by logical node index, its
+generation, viewer and refusals by step and digest status, never the engine's digest."""
 import hashlib
 import unittest
 from unittest import mock
@@ -96,11 +96,12 @@ class StubDigestKeys(unittest.TestCase):
         self.addCleanup(batch.close)
         return batch
 
-    def expand(self, target, lo=0, hi=None, viewer=0, **kw):
+    def expand(self, target, lo=0, hi=None, viewer=0, choices=None, **kw):
         hi = self.n if hi is None else hi
+        choices = self.choices if choices is None else choices
         return target.expand(self.roots, 4, self.mask, 7, np.arange(1, self.roots.envs + 1, dtype=np.uint64),
                              np.full(self.roots.envs, viewer, np.uint8), self.root_envs[lo:hi],
-                             np.zeros(hi - lo, np.uint32), self.choices[lo:hi], **kw)
+                             np.zeros(hi - lo, np.uint32), choices[lo:hi], **kw)
 
     def test_the_adapter_expands_as_batch_expand(self):
         raw, stub = self.batch(), StubDigest()
@@ -129,9 +130,25 @@ class StubDigestKeys(unittest.TestCase):
         stub = StubDigest(refuse={1, 6})
         nodes = infokey.DigestNodes(self.batch(), stub)
         self.expand(nodes)
+        self.assertEqual(stub.last[1][[1, 6]].tolist(), [C["DUOFORGE_E_UNSUPPORTED"]] * 2)  # 0082's refusal status
         keys, refused = infokey.DigestKey(stub).keys(nodes, np.arange(self.n), 0, closed=False)
         self.assertTrue(refused[1] and refused[6])
         self.assertFalse(keys[[1, 6]].any())
+
+    def test_a_failed_step_refuses_its_key_without_raising(self):
+        # 0082: a failed step keeps digest status OK with zero bytes; its key is invalid because of the step status.
+        stub = StubDigest()
+        nodes = infokey.DigestNodes(self.batch(), stub)
+        choices = self.choices.copy()
+        choices["slot"][2, 0] = 255  # an option outside every domain: leaf 2's step is refused
+        step = self.expand(nodes, choices=choices)[1].copy()
+        self.assertNotEqual(int(step[2]), 0)
+        digests, statuses = stub.last
+        self.assertEqual((int(statuses[2]), bool(digests[2].any())), (0, False))
+        keys, refused = infokey.DigestKey(stub).keys(nodes, np.arange(self.n), 0, closed=False)
+        self.assertTrue(refused[2])
+        self.assertFalse(keys[2].any())
+        self.assertEqual(refused[step == 0].tolist(), (statuses[step == 0] != 0).tolist())
 
     def test_a_zero_digest_is_never_a_valid_key(self):
         stub = StubDigest(zero={2})
