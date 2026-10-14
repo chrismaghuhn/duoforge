@@ -10,6 +10,9 @@ import sys
 def summaries(root, format_name='reg-mc'):
     directory = root / 'tests/reference/battles' / format_name
     result, all_names, all_files = {}, set(), set()
+    # Each spec's data set, parsed once for the three sets (was once per set: 3 x 1,142 files, 2026-10-14).
+    spec_sets = {p.stem: json.loads(p.read_text(encoding='utf-8')).get('data') or 'closure'
+                 for p in (root / 'tests/reference/specs').glob('*.json')}
     for dataset in ('closure', 'team_c', 'pool'):
         names, certified, fixture_matches, stops, own_pp = [], 0, 0, 0, 0
         outcomes, live_stops = collections.Counter(), collections.Counter()
@@ -49,8 +52,7 @@ def summaries(root, format_name='reg-mc'):
                 if any(type(p) is not int or p not in (0, 1) for p in players) or len(set(players)) != len(players):
                     raise ValueError(f'{file}: invalid own-PP stops')
                 own_pp += len(players)
-        specs = {p.stem for p in (root / 'tests/reference/specs').glob('*.json')
-                 if (json.loads(p.read_text(encoding="utf-8")).get('data') or 'closure') == dataset}
+        specs = {name for name, data in spec_sets.items() if data == dataset}
         if set(names) != specs:
             raise ValueError(f'{dataset}: battle files and specs differ')
         result[dataset] = dict(battles=len(names),
