@@ -285,6 +285,8 @@ def load(checkpoint_path, settings=None, foe_net=ENVIRONMENT, foe_net_sha256=FOE
         raise
     live.closers = [searcher.close, context.close]
     live.foe_check = foe_check
+    # the search's settings as played, for the run log's head (HauptSession, 2026-10-14: a replay plays them again)
+    live.settings = {k: v for k, v in settings.items() if k != "foe_net"}
     return live
 
 

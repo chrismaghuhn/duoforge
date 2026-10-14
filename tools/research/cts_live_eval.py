@@ -468,7 +468,7 @@ def luck_series(battles):
 # The live search of each bot commit (HauptSession, 2026-10-14): a series is replayed with the settings its bot played,
 # the ladder step whose settings equal that commit's live HONEST_SETTINGS (checked against each commit's
 # python/duoforge_live/search.py). An unknown commit is refused by name, never guessed. From the bot that writes its
-# search settings in the run log's head on, the head names them.
+# search settings in the run log's head on (search_settings), the head names them, and a known commit's step must agree.
 SEARCH_STEPS = {"1ffa6a03": "0", "a7dd956b": "2e", "5c503d8a": "2e"}
 SEARCH_DIFFERS_LIMIT = 0.05  # a larger share of replayed decisions the bot decided otherwise: no report (HauptSession)
 # The bot processes of the series whose logs name no code (the HauptSession, from the VPS, 2026-10-14): a process's start
@@ -518,8 +518,18 @@ def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_n
     from duoforge_search import ladder
     if bot_commit is not None:
         check_bot_commit(directory, bot_commit)
-    step = search_step(code if code is not None else bot_commit)
-    settings = ladder.step_settings(step)
+    named = [json.loads(p.read_text(encoding="utf-8")).get("search_settings")
+             for p in sorted(Path(directory).glob("arena-run-*.json"))]
+    if any(x is not None for x in named):  # the bot names its search in its run logs' head: that one, the same in all
+        if any(x != named[0] for x in named):
+            raise SystemExit(f"the run logs of {directory} name different search settings: not one series")
+        settings, step = dict(named[0]), "run-log"
+        known = SEARCH_STEPS.get(str(code if code is not None else bot_commit)[:8])
+        if known is not None and ladder.step_settings(known) != settings:
+            raise SystemExit(f"the run logs' search settings are not step {known}'s, which SEARCH_STEPS gives the commit")
+    else:
+        step = search_step(code if code is not None else bot_commit)
+        settings = ladder.step_settings(step)
     tables = data.for_checkpoint(checkpoint)
     prior = cts.SetPrior.from_table(tables)
     net = live_policy.load(checkpoint)

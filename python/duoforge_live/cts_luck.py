@@ -6,8 +6,9 @@ chance seeds of the same actions. Everything about the battle is the engine's an
 - the worlds: the search's own worlds of the decision point (cts.LogReplay with the bot's seed, key and set prior, the
   replayed honest search; world w is particle w), weighed as the search weighs them;
 - the same actions: the bot's accepted choice (cts.pair_texts of cts.logged_choice) and, in each world, the foe's action
-  the turn's lines show (duoforge_replay.labels.turn_label on that world's foe options, the particle's sheets): one
-  option per foe slot, else the turn is excluded by name (foe-action-ambiguous, foe-action-unmatched);
+  the turn's lines show (duoforge_replay.labels.turn_label on that world's foe options, the particle's sheets, the
+  world's own roster); a set the lines narrow it to is mixed by the foe model; a world the turn refutes or that cannot
+  play what the lines show is left out; a turn the lines tell nothing of, or with no world left, is excluded by name;
 - the alternatives: Batch.expand of every world with both choices under C seeds, search_seeds(LUCK_SEED, key, sample),
   the key drawn from the decision's search key (common random numbers: the seeds never depend on the choices);
 - V: the bot's value network from its seat (duoforge_learn.luck.leaf_values: a terminal leaf is its result);

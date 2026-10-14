@@ -313,6 +313,25 @@ class ArenaTest(unittest.TestCase):
             self.assertNotIn(private, text)
         self.assertEqual(self.run_log()["counts"]["losses"], 1)
 
+    def test_the_run_log_names_the_search_settings_it_plays(self):
+        # HauptSession, 2026-10-14 (#494): a replay of the series plays the search the bot played; the run log's head
+        # names its settings (search.load keeps them on the LiveSearch), and a bot without a search names none.
+        from duoforge_live import search as live_search
+
+        class Search:
+            settings = dict(live_search.HONEST_SETTINGS)
+
+            def decide(self, *args, **kwargs):
+                return live_search.Outcome(None, "raw", None, None, 0.0)
+
+            def close(self):
+                pass
+        self.make(search=Search())
+        self.assertEqual(self.run_log()["search_settings"], live_search.HONEST_SETTINGS)
+        self.bot.close()
+        self.make()
+        self.assertNotIn("search_settings", self.run_log())
+
     def test_the_run_log_and_each_summary_name_the_bots_commit_and_dirty_state(self):
         # HauptSession, 2026-10-13: every result names the code that ran, its commit and whether the tree was dirty
         # (a summary's own "dirty" is the game's class (b) reason, not the code's state).

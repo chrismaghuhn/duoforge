@@ -19,10 +19,21 @@ The parts:
 1. **The worlds.**
    - They are the search's own worlds of the decision point. `cts.LogReplay` replays the bot's log with the bot's seed, the room as the key and the pinned set prior, and the honest search decides it again.
    - World w is particle w. It is weighted as the search weights it (the decision record's `weights`).
+   - **The search is the series' own.** A series is replayed with the settings its bot played.
+     - From the bot that names them, they come from its run logs' head (`search_settings`).
+     - Before that, they come from the bot commit through the ladder step whose settings equal that commit's live `HONEST_SETTINGS` (`SEARCH_STEPS`): 1ffa6a03 → step 0, a7dd956b and 5c503d8a → 2e. An unknown commit is refused by name.
+     - The logs of series 1 and 2 name no code. Their commit comes from the content (`--bot-commit`, HauptSession, 2026-10-14). Every run log in the directory must have started as that process (`PROCESS_STARTS`: 1ffa6a03 at 2026-10-13T19:23:34Z), and only battle logs with fed particle batches are replayed.
+     - Of the processes before a7dd956b, only 1ffa6a03 played over the particles: a75c380a has no `cts.py` and answered closed sheets with `/choose default`. `|t:|` lines and file times are no source.
+     - Battle logs without particle batches are counted by name (`skipped.no_particles`).
+   - **Each replayed decision is compared with the bot's:** the logged search's cause, and for a searched one its pair. The share that differs is reported (`search_differs_share`). Above 5% the result is `report_blocked`: no report until the cause is known.
    - No second particle or world implementation exists: the luck meter, the KO check and the live evaluation replay through `duoforge_live.cts`.
 2. **The same actions.**
    - Our side: the bot's accepted choice (`cts.logged_choice`, `cts.pair_texts`).
    - The foe's side, per world: the action that the turn's lines show. `duoforge_replay.labels.turn_label` reads it on that world's own foe options (the engine's domain) with that particle's sheets.
+   - A switched-in member is found by its base species (a Mega's, Aegislash's) in the **world's** engine roster, from the world's observation. An option's reserve is a roster index of the world, whose order is not the particle's. A base species on two members of a world is refused by name (`roster-ambiguous`).
+   - **A world that cannot play what the lines show is left out**, like a refuted one. In that case the world's options hold no option the lines show, the label tells nothing where another world's label does, or the world's own domain bars the pair: a Choice lock, Taunt, Disable, Encore or Imprison in that world.
+     - This is read from the labels on the world's engine domain, never from a rule in Python.
+     - It is counted in the share of worlds left out.
    - The labels read the log, which is not a battle rule. This is the same reading as the BC labels, from the foe's side.
    - **A world the turn refutes is left out.** The facts of the foe's lines through the turn (`duoforge_replay.facts.side_facts`, as the particle filter takes them) are tested against each world's sets with the particle filter's own test (`cts.agrees`: a used move, a revealed item or ability its set lacks). A world that fails could not have played the turn. The particle filter draws such a particle anew after the turn, and the meter leaves its world out of this turn. The remaining worlds are renormalized with the search's weights.
    - Where the lines narrow a foe slot to more than one option (a move that never showed because the member fainted or left first, or an unknown target), the alternatives are **mixed** over every allowed pair of that set. Each pair is weighted by the search's foe model in that world (the pinned BC6 foe network, read through Honest's world policy), renormalized on the set. Python only averages.
@@ -36,6 +47,10 @@ The parts:
 5. **The state that happened.**
    - It is the next decision point's particles, each view encoded as the search encodes its root, with the particles weighted alike.
    - If the battle ended in the turn, it is the battle's result. The turn's lines then come from the last batch, which the bot received (`{"in"}`) but no longer fed.
+   - **A foe's pivot inside the turn** (U-turn, Volt Switch, Eject Button: the bot waits while the foe chooses its switch) is a wait point.
+     - The turn is valued there, where the engine's leaves stop too.
+     - The rest of the turn is valued nowhere and is counted by name (`rest-after-foe-pivot`): a wait point with no `|upkeep|` in the turn's lines before it.
+     - A foe slot that had not acted by then is mixed (point 2), and counts as mixed.
 
 The engine does every step. Python averages and classifies nothing about the battle: it never reads a crit, a miss or a damage roll from a line.
 
@@ -47,11 +62,16 @@ The definition was fixed in the issue first. Before any report, one private diag
 
 All three changes below remove a bias of the method, not of a result. The HauptSession approved each of them (2026-10-14).
 
+A review of the implementation (2026-10-14) found three more places of the same kind before any report. The HauptSession approved the changes: worlds that cannot play the turn are left out, a foe's pivot is valued at the pivot with the rest counted, and each series' own search is replayed and compared. The review also found a bug: a switched-in member was looked up in the particle's roster, not the world's. That is fixed.
+
 - **Wait points are valued** (HauptSession, 2026-10-14). The issue's definition values the next decision point. After a turn in which the bot knocks out a foe, the next point is often a wait request: only the foe replaces.
   - Excluding those turns would systematically cut off the luck of the bot's own KOs.
   - So the state that happened is valued at a wait point too (`LogReplay(waits=True)`; the default is unchanged).
 - **Refuted worlds are left out** (HauptSession, 2026-10-14). The worlds of the decision point are the particles before the turn. When the foe uses a move for the first time, many worlds do not hold it.
-  - In the diagnostic run, 84 turns came out "unknown" for this reason: the foe acted visibly, but its move was in no option of the world.
+  - In the diagnostic run, 84 turns came out "unknown". The foe acted visibly, but no option of the world held that action, for one of three reasons:
+    - the world's sets lacked a newly shown move;
+    - its domain barred the move;
+    - or, the bug above, a switched-in member was looked up in the particle's roster.
   - Those worlds are now left out (point 1 above), and every report gives the share of worlds left out (`worlds_dropped_share`).
   - A turn that refutes every world is excluded by name (`foe-action-not-in-worlds`).
 - **Hidden foe actions are mixed** (HauptSession, 2026-10-14). A foe that faints or leaves before it acts never shows its action. Excluding those turns would cut off the luck of the bot's own KOs in the same way.
@@ -66,12 +86,13 @@ Every excluded turn is counted by its reason and reported with its share. None i
 |---|---|
 | `not-searched:<cause>` | the decision was not searched (forced, raw, unreconstructible, …): no worlds |
 | `not-turn:<boundary>` | a replacement or pivot point |
-| `foe-action-unknown` | the log tells nothing of a foe slot (no line: the game ended before anyone acted) |
-| `foe-action-unmatched` | a foe slot's label holds no option |
+| `foe-action-unknown` | the log tells nothing of a foe slot in every world (no line: the game ended before anyone acted) |
 | `foe-model-zero` | the foe model gives every pair of a mixed set probability 0 |
-| `foe-action-not-in-worlds` | the turn refutes every world (no world's sets agree with the foe's facts through the turn) |
+| `foe-action-not-in-worlds` | no world remains: the turn refutes every world, or none can play what the lines show |
+| `roster-ambiguous` | a base species on two members of a world's roster |
+| `rest-after-foe-pivot` | the rest of a turn after a foe's pivot inside it (the turn itself is valued at the pivot) |
+| `no-decision-record` | a point the bot was asked at but wrote no decision record for (or answered `/choose default`) |
 | `facts:<skip>` | the foe's facts through the turn cannot be read (the particle filter's named skips, e.g. Transform) |
-| `foe-action-not-allowed` | the foe pair is not in the world's pair mask |
 | `own-choice-not-allowed`, `not_accepted` | the bot's played choice is not one of the point's pairs, or the log shows none accepted |
 | `leaf-refused` | the engine refuses a leaf (#464, unsupported content) |
 | `no-end` | the log stops in the turn without an end |
@@ -110,7 +131,7 @@ The worlds after the turn are drawn anew and hold what the turn revealed. The ac
 
 ```
 python tools/research/cts_live_eval.py --logs DIR --luck --checkpoint BC6 --checkpoint-sha256 bda5de8e… \
-    --foe-net BC6 --code COMMIT [--labels PRIVATE.json] [--samples 8] --out PRIVATE.json
+    --foe-net BC6 (--code COMMIT | --bot-commit COMMIT) [--labels PRIVATE.json] [--samples 8] --out PRIVATE.json
 ```
 
 - It runs locally, under the machine lock, never on the VPS.

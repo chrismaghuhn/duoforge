@@ -279,6 +279,9 @@ class ArenaBot(client.Bot):
         team_sha = None if team_text is None else hashlib.sha256(team_text.encode("utf-8")).hexdigest()
         self.run_log = RunLog(log_dir, mode, fmt, tables={k: v for k, v in checks.items() if v is not None},
                               code=code, team_sha256=team_sha)
+        settings = getattr(search, "settings", None)
+        if settings is not None:  # the live search's settings (search.load): a replay of the series plays them again
+            self.run_log.head["search_settings"] = dict(settings)
         self._executor = ThreadPoolExecutor(1, thread_name_prefix="duoforge-arena-policy")
         self._worker = None  # the future of the last decision; a late one blocks the next (no two at once)
         self._dropped = ()  # the connection's errors: never a battle's fallback, the run loop reconnects

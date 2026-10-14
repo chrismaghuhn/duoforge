@@ -153,10 +153,14 @@ class MeterTest(unittest.TestCase):
         spec.loader.exec_module(ev)
         records = [json.loads(line) for line in Path(self.log).read_text(encoding="utf-8").splitlines() if line.strip()]
         sha = pkmn_arena.sha256_of(self.path)
+        logs = os.path.join(self.tmp.name, "series")  # a series of 1ffa6a03's process: its run log, no code in the logs
+        os.makedirs(logs, exist_ok=True)
+        Path(logs, "arena-run-20261013T192334Z.json").write_text(json.dumps({"started": "2026-10-13T19:23:34Z"}),
+                                                                 encoding="utf-8")
         with mock.patch.object(ev, "selected", lambda *args: iter([(Path(self.log), records, self.own)])), \
                 mock.patch.object(cts.SetPrior, "from_table", lambda tables: cts.SetPrior(tables, self.foe)), \
                 mock.patch.dict(os.environ, ENV):
-            got = ev.luck_all(self.tmp.name, BOT, ROOT, self.path, sha, self.path, sha, bot_commit="a7dd956b")
+            got = ev.luck_all(logs, BOT, ROOT, self.path, sha, self.path, sha, bot_commit="1ffa6a03")
         self.assertEqual((got["battles"], got["finished"]), (1, 1))
         self.assertEqual(got["turns_excluded"], {})
         self.assertEqual((got["turns_valued"], got["turns_mixed"]), (3, 1))
@@ -164,16 +168,16 @@ class MeterTest(unittest.TestCase):
         self.assertEqual(got["result"]["mean"], 1.0)
         text = json.dumps(got)
         self.assertNotIn("battle-", text)
-        self.assertEqual((got["search_step"], got["bot_commit"]), ("2e", "a7dd956b"))
+        self.assertEqual((got["search_step"], got["bot_commit"]), ("0", "1ffa6a03"))
         # the fixture's decision records name no real search ({"cause": "fixture"}): every replayed one differs
         self.assertEqual(got["search_differs"], got["searches"])
         self.assertTrue(got["report_blocked"])
         with self.assertRaisesRegex(SystemExit, "pinned"):
-            ev.luck_all(self.tmp.name, BOT, ROOT, self.path, "0" * 64, self.path, sha, bot_commit="a7dd956b")
-        with self.assertRaisesRegex(SystemExit, "unknown"):
-            ev.luck_all(self.tmp.name, BOT, ROOT, self.path, sha, self.path, sha, bot_commit="deadbeef")
+            ev.luck_all(logs, BOT, ROOT, self.path, "0" * 64, self.path, sha, bot_commit="1ffa6a03")
+        with self.assertRaisesRegex(SystemExit, "no process start"):
+            ev.luck_all(logs, BOT, ROOT, self.path, sha, self.path, sha, bot_commit="deadbeef")
         with self.assertRaisesRegex(SystemExit, "--bot-commit"):
-            ev.luck_all(self.tmp.name, BOT, ROOT, self.path, sha, self.path, sha)
+            ev.luck_all(logs, BOT, ROOT, self.path, sha, self.path, sha)
 
 if __name__ == "__main__":
     unittest.main()
