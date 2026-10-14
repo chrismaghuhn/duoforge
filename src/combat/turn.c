@@ -8653,9 +8653,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             if (pivot == NULL) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
+            /* A target whose hit a Substitute took is null, not false (data/mods/champions/scripts.ts:349-352), and
+             * runMoveEffects' selfSwitch block runs for it too (sim/battle-actions.ts:1290-1296, 1311-1312; issue 519). */
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             if (hit_any && m->hp != 0u && dfi_can_switch(b, side)) {
                 pos->switch_flag = pivot->flag;
