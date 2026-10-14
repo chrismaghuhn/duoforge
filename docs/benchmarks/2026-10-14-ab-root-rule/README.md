@@ -53,18 +53,21 @@ The aggregates come from `tools/research/cts_live_eval.py --logs DIR --code COMM
 
 ### Opponents the search mostly cannot reach, and a deploy during the test (fixed after the technical check, before any look at results)
 
-Fixed on 2026-10-14 (HauptSession) after the technical check of the first 30 battles: the allocation recomputed, the logging, no deadline. The check looked at no result, no win and no outcome.
+Fixed on 2026-10-14 after the technical check of the first 30 battles: the allocation recomputed, the logging, no deadline. The check looked at no result, no win and no outcome.
 
-- **The primary reading stays intention to treat over all battles.** The looks of 30, 60 and 100 count every decided battle per arm, whatever its opponent, with the 99%, 99% and 95% intervals above.
-- **Opponents the search mostly cannot reach are a descriptive stratum.**
-  - An opponent's no-search share is its battles' non-team decisions answered without the search, out of all its non-team decisions. A decision without the search is one that is not `searched`: unreconstructible, forced, raw or deadline.
-  - The share is pooled over both arms and computed at each look. It does not depend on the arm, because what the engine refuses (#464) depends on the foe's content, not on the root rule; the tool shows it per arm as a check.
-  - Opponents above 50% are reported apart, with their counts per arm, as a description only. Both arms play the raw policy at most of their points, so the root rule can hardly act there.
-  - They stay in the primary reading, and they are never a ground for a preference.
-- **A deploy during the test.** The HauptSession deploys new code during the test when a battle is not running (first main with #500, Speed Swap).
-  - The primary reading stays over all battles, across the bot commits. The results are also reported split by bot commit (`--code`), as a description.
+Against an opponent whose decision points the engine mostly refuses (#464: a particle holding unmodelled content), both arms play the raw policy at those points. The root rule cannot act there, so such battles dilute the comparison without measuring it. The HauptSession's final reading:
+
+- **An opponent's no-search share** is its battles' non-team decisions answered without the search, out of all its non-team decisions. A decision without the search is one that is not `searched`: unreconstructible, forced, raw or deadline.
+  - It is computed **per opponent and bot commit, over both arms together**, never per arm, so the rule cannot change which battles count.
+  - It is computed at each look from all of that opponent's battles on that commit so far.
+- **The primary reading** counts only the battles against opponents with a no-search share of **at most 50%** on their bot commit.
+  - The looks of 30, 60 and 100 count the decided battles per arm in that set, with the 99%, 99% and 95% intervals above.
+  - A preference rests only on this reading.
+- **All battles (intention to treat)** are reported beside it, as a description only, never as a ground for a preference. The battles against opponents above 50% are listed apart, with their counts per arm.
+- **Pooled across bot commits.** A deploy during the test (first main with #500, Speed Swap) does not start a separate series: the primary reading pools the commits, and the results are also reported per commit, as a description.
   - At a restart the bot draws a **new seed**, named in its new run log, and its blocks start anew from battle number 0.
   - A last block left incomplete before the restart, with one battle of one arm, is counted by name (`incomplete_blocks`). Its battle stays in its arm.
+- **A replay of earlier battles on newer code** is descriptive only: for example, the share of decisions that would have been searchable with Speed Swap modelled. It never enters the rule's reading.
 
 ## Replays of the test's battles
 
