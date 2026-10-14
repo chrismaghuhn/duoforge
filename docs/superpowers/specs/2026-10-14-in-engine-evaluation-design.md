@@ -9,7 +9,8 @@ benchmark, export, training, checkpoint conversion or private-data run is perfor
 The goal is to reach D5, the sampled three-turn tree, quickly while keeping its gates. The digest ships first,
 so D2 need not wait for a trained evaluator. The value kernels and private distillation can then proceed in parallel
 after their respective approvals. **D4 remains `evaluator="jax"` until the engine evaluator passes its gates.**
-Merging this document does not by itself authorize a training run or live adoption. HS merges every PR.
+Merging this document does not by itself authorize a training run or live adoption. **Every E4 training run needs
+its own explicit owner go**, including retries and further runs of an already approved architecture. HS merges every PR.
 
 ## 1. Decisions and scope
 
@@ -18,11 +19,11 @@ Merging this document does not by itself authorize a training run or live adopti
 | API | `duoforge_batch_expand_digest` and `duoforge_batch_expand_evaluated`, sharing one private core; preserve `duoforge_batch_expand` | Early D2 delivery and one digest/value call for D5, with no ABI break |
 | Early delivery | The sibling works without a model, producing digests and optionally encoder rows | Unblocks D2 before the network exists |
 | Network | Compare at least full BC6 in C, a small distilled network and a medium network; all batch the 16 worlds | Do not choose the size before measuring strength at equal time, with an equal-budget control |
-| Arithmetic | Quantized integer inference, including deterministic fixed-point LayerNorm for full BC6; fixed-point value | Byte-identical inference across MSVC, GCC and Clang; numeric deviation from JAX has its own gate |
+| Arithmetic | Quantized integer inference, including deterministic fixed-point LayerNorm for full BC6; fixed-point value | Byte-identical inference across MSVC, GCC and Clang; numeric fidelity is gated for the BC6 conversion and reported for distilled networks |
 | Inputs | The existing viewer-specific encoder-6 observation of each world, 16-world tiles | Same information as the JAX teacher, no second battle-rule implementation |
 | Memory | Immutable loaded model and one preallocated workspace per worker | No allocation or resizing while expanding/evaluating leaves |
 | Weights | Private, versioned binary artifact; mandatory expected full-file SHA-256 | No embedded trained weights, checkpoint or public CI artifact |
-| Adoption | Fidelity and arithmetic gates, then a strength-at-equal-time ladder and existing search/latency gates | Throughput alone cannot select a network; an approximation is not automatically an equivalent evaluator |
+| Adoption | Candidate-specific section 9 gates and common arithmetic gates, then a strength-at-equal-time ladder and existing search/latency gates | Distilled networks may trade accuracy for depth; throughput alone cannot select a network |
 
 Root and intermediate candidate policies, the foe model, world sampling, the root rule (including adopted
 lambda) and CFR+ arithmetic remain those of the search lane. Fixed-budget comparisons keep its budgets identical;
@@ -359,7 +360,9 @@ rewards in this step. Sources are the existing engine-accepted registry and pinn
 the observations used by accepted closed-sheet worlds. Unsupported generation/reconstruction is named and counted.
 Split by game/team generation group before extracting rows; training, calibration and held-out gates are disjoint.
 Quantization-aware training/calibration, seeds, optimizer/budget and teacher/file hashes are fixed in a private
-run manifest after the owner's separate training go. No such run is authorized or executed by this spec PR.
+run manifest before the run. **Each individual E4 training run requires a separate explicit owner go** for that
+candidate and run manifest; a spec/architecture approval or an earlier training go does not cover later runs or
+retries. No such run is authorized or executed by this spec PR.
 
 Full BC6 in C is a mandatory comparison arm, not a fallback considered only if a small student fails. Candidate
 selection follows section 10.1's strength-at-equal-time ladder, with equal-budget controls. Neither leaf throughput
@@ -369,7 +372,8 @@ nor parameter count alone chooses the winner. The BC6 policy/foe networks remain
 
 Choose **quantized arithmetic**, rather than platform floating reductions, for every comparison arm. This avoids
 compiler/FMA/sqrt differences while keeping a scalar C17 oracle; quantization is still an approximation to BC6/JAX
-and must pass section 9. Do not claim cross-platform agreement merely from similar final moves.
+and is assessed under section 9's candidate-specific rules. Do not claim cross-platform agreement merely from
+similar final moves.
 
 Use signed int8 dense weights/embeddings, signed int16 feature/activation storage, int64 biases and accumulation.
 Full BC6's normalization parameters and pre-normalization tensors may need int32 fixed-point storage; their exact
@@ -485,12 +489,20 @@ CI artifacts.** Training/export/evaluation outputs live outside it. Public CI us
 parameters created at runtime, not private weights. Public reports contain aggregate metrics and provenance only.
 Examples and diagnostics use neutral seats/roles; no foreign bot/player, match or user names are introduced.
 
-## 9. Fidelity and decision gates, fixed before the runs
+## 9. Candidate-specific fidelity gates and deviation reports
 
-These are proposed thresholds, applied to **each** C candidate including the quantized full BC6 conversion;
-owner/HS approval freezes them before training or measuring. A failure makes that artifact ineligible for adoption.
-Do not widen a tolerance after seeing a result. Changing a threshold requires a new explicit decision and new
-untouched hold-out, not a rerun reported as if it passed the original gate.
+**The full set of fidelity thresholds applies only to the 1:1 BC6 conversion**: the full value architecture and
+learned parameters moved into C, including the numeric deviations introduced by its quantization. For the small
+and medium distilled networks, section 9's mandatory gates are **mechanics/classification, reproduction and finite
+values only**. Value error, decision agreement, distribution differences and teacher-valued regret are measured
+and reported for both, not admission thresholds. They may trade accuracy for additional depth; section 10.1's
+strength-at-equal-time comparison, with an equal-budget control, decides their selection.
+
+Owner/HS approval freezes the BC6 thresholds and the common reporting protocol before runs. A failure of an
+applicable mandatory gate makes that artifact ineligible; a distilled network missing a BC6-only fidelity threshold
+does not fail a gate. Do not widen a BC6 tolerance after seeing a result. Changing a threshold requires a new explicit
+decision and new untouched hold-out, not a rerun reported as if it passed the original gate. Arithmetic, memory,
+loading and the later strength/latency gates remain applicable to every candidate.
 
 Freeze manifests for **at least 131,072 nonterminal held-out value rows** from at least 256 independent game/team
 groups and **4,096 held-out decision roots**, split equally between open and closed sheets. Closed roots use
@@ -499,15 +511,16 @@ contexts, root/candidate policies, weights, chance seeds, selected root rule, so
 No private live-log input is required for the first gate: generate accepted closed-world cases; optional private
 diagnostics are reported separately. Pin all manifests/hashes before running either evaluator.
 
-| Gate (E4) | Required result, separately for open and closed strata |
-|---|---|
-| Mechanics/classification | Exact step/observation/digest statuses, terminal results, cut-off tiebreaks and valid-key masks; zero unexplained errors or missing cases |
-| Value error, in the teacher's original units | MAE <= 0.01; p99 absolute error <= 0.05; maximum <= 0.15; all values finite |
-| Decision agreement | >= 98% identical played choices under the same play uniforms; evaluate EV, Nash and the inherited live rule with identical candidates/budgets |
-| Stable EV decisions | >= 99% identical choices where the teacher's top-two expected-value margin is >= 0.02; report the count and near-tie cases |
-| Distribution agreement | Mean total variation between final action distributions <= 0.02, p99 <= 0.10 |
-| Teacher-valued regret | Mean positive `(pi_teacher - pi_candidate) dot EV_teacher` <= 0.002; p99 <= 0.02 |
-| Reproduction | Engine outputs bit-equal across arithmetic matrix; repeat decisions byte-equal under fixed full-system backend/settings; JAX/default path unchanged |
+| Check/metric (E4), separately for open and closed strata | Full BC6 conversion | Small and medium distilled networks |
+|---|---|---|
+| Mechanics/classification: exact step/observation/digest statuses, terminal results, cut-off tiebreaks and valid-key masks; zero unexplained errors or missing cases | Mandatory gate | Mandatory gate |
+| Finite values on every successfully evaluated neural row, without hidden inference failures | Mandatory gate | Mandatory gate |
+| Value error in the teacher's original units: MAE, p99 and maximum absolute error | Gate: MAE <= 0.01; p99 <= 0.05; maximum <= 0.15 | Report all three; no error threshold |
+| Decision agreement: identical played choices under the same play uniforms; EV, Nash and inherited live rule with identical candidates/budgets | Gate: >= 98% | Report rate, counts and near ties; no agreement threshold |
+| Stable EV decisions: identical choices where the teacher's top-two expected-value margin is >= 0.02 | Gate: >= 99%; report denominator and near-tie cases | Report rate and denominator; no agreement threshold |
+| Distribution agreement: total variation between final action distributions | Gate: mean <= 0.02; p99 <= 0.10 | Report mean and p99; no distribution threshold |
+| Teacher-valued regret: positive `(pi_teacher - pi_candidate) dot EV_teacher` | Gate: mean <= 0.002; p99 <= 0.02 | Report mean and p99; no regret threshold |
+| Reproduction: engine outputs bit-equal across arithmetic matrix; repeat decisions byte-equal under fixed full-system backend/settings; JAX/default path unchanged | Mandatory gate | Mandatory gate |
 
 Report every rule/stratum, counts, confidence intervals and denominators, including exact terminals, cut-offs,
 refused battle steps and inference failures. Terminal/cut-off utilities are tested exactly, not included as easy
@@ -516,8 +529,9 @@ ability interactions. Gate corpus generation must meet its declared coverage cou
 not a reason to remove them. A model/encoding failure is a failed gate, not a discarded row. Named battle refusals
 use the same recorded policy for both backends. Never substitute game outcomes for BC6 in this fidelity gate.
 
-The numeric gate alone is insufficient: small errors near indifferent games can change policies. Conversely,
-decision agreement is not a strength result. Section 10.1 compares the three networks for **strength at equal time**,
+BC6's numeric gate alone is insufficient: small errors near indifferent games can change policies. Conversely,
+decision agreement is not a strength result, and distilled networks need not match the teacher's choices at >= 98%.
+Section 10.1 compares the three networks for **strength at equal time**,
 with a separate equal-budget control. E6 uses the unchanged search ladder's no-harm, reproduction, fallback,
 error and latency gates with the last adopted root rule. No-harm needs both gated neutral opponent roles, and
 strength/claim-of-improvement needs the ladder's separate paired head-to-head gate. Existing unresolved-game and
@@ -573,9 +587,10 @@ Use the existing search ladder, inherited adopted root rule and unchanged solver
 README before the first run: the three graph/artifact hashes, JAX control, seeds, team/world manifests, neutral
 opponent roles, strata, pairing, budget grid, time target, selection rule and every gate. Calibration workloads,
 candidate-selection games and independent confirmation games are disjoint from each other and section 9's hold-out.
-All three candidates must be implemented and reported; any failed fidelity/arithmetic/resource gate is visible and
-cannot be silently removed to declare a two-way winner. Such a candidate is not eligible for adoption. An incomplete
+All three candidates must be implemented and reported; any failed **applicable** section 9/arithmetic/resource gate
+is visible and cannot be silently removed to declare a two-way winner. Such a candidate is not eligible for adoption. An incomplete
 three-way comparison requires an explicit owner/HS revision; it is not an automatic choice of the smaller network.
+Distilled value/decision/distribution/regret deviations are report metrics, not exclusions from this comparison.
 
 | Arm/control | Held identical | Purpose |
 |---|---|---|
@@ -624,12 +639,12 @@ to launch them now.
 | **E3n** | Fixed-point LayerNorm and residual operations for full BC6 | Independent normalization/boundary vectors; same-bit portable scalar oracle; all teacher operators retained, no hidden float path |
 | **E3g** | Wire each predeclared full/small/medium value graph, split into separate PRs as needed | Synthetic graph/intermediate-tensor parity; registered inventories and per-graph resource bounds; every graph full-recomputes |
 | **E3b** | Tile-16 worker scheduling and optional integer SIMD kernels | Bit equality with scalar under workers/chunks; measured workspace/stack; no scheduler allocation. No network/adoption gate inferred from toy speed |
-| **E4** | Deterministic private exporter/checker; full BC6 conversion and approved small/medium distillation, separate bounded PRs | Separate owner go for private conversion/training; freeze graphs/splits/manifests first; all section 9 fidelity/decision gates per candidate on held-out data, exact artifact SHAs |
+| **E4** | Deterministic private exporter/checker; full BC6 conversion and approved small/medium distillation, separate bounded PRs | Separate owner go for private conversion and **before every individual training run**; freeze graphs/splits/manifests first; BC6: all section 9 gates; distilled: mechanics/classification, reproduction and finite values, other deviations reported; exact artifact SHAs |
 | **E5** | EngineEvaluator factory wiring through the existing D2 interface; timing and budget-calibration report | Section 10 timing/memory/live latency gate for all three, explicit 5-8x target outcome and frozen equal-time/equal-budget controls; legacy/JAX default unchanged; one call returns digest+value |
 | **E6** | Three-way ladder report and reviewed opt-in D4 adoption record for the selected artifact/code/context | E1-E5 passed; section 10.1 strength-at-equal-time selection and fresh confirmation; existing no-harm/reproduction/fallback/error/latency gates passed, owner/HS adopt. Default stays JAX until then |
 
-E2/E3 and the **approved** E4 private training run may proceed in parallel once E1's API/input contract is fixed;
-the scalar/synthetic gates need no real checkpoint. E1b need not wait for E2-E6. PR boundaries may be made smaller
+E2/E3 and an E4 private training run with **its own explicit owner go** may proceed in parallel once E1's API/input
+contract is fixed; the scalar/synthetic gates need no real checkpoint. E1b need not wait for E2-E6. PR boundaries may be made smaller
 without removing any gate. The D2 lane supplies its existing evaluator/key contracts and its node wiring; D5 adds
 its own arena/solver/strength gates after this hand-off. Do not make D5's tree implementation part of this subsystem.
 
@@ -640,8 +655,9 @@ or another public identifier number becomes necessary, **ask HS before assigning
 ## 12. Approval checklist and limits of this document
 
 Owner/HS approval fixes the comparison of at least three variants, integer arithmetic direction, API/output contract,
-fidelity thresholds, strength-at-equal-time/latency gates and digest canonicalization approach. **It does not select
-a network size now.** Concrete graphs/dimensions, scales, per-graph resource bounds, work budgets and the ladder's
+BC6-only fidelity thresholds, common mechanics/reproduction/finite-value gates, strength-at-equal-time/latency gates
+and digest canonicalization approach. **It does not select a network size now.** Concrete graphs/dimensions, scales,
+per-graph resource bounds, work budgets and the ladder's
 selection/interval procedure are predeclared and reviewed before the corresponding runs. Actual golden payload bytes
 belong to the reviewed E1a contract, not an unreviewed serializer in Python. Full teacher/artifact hashes and training budgets are pinned in
 private manifests before their runs; they cannot be derived from public checkpoint nicknames.

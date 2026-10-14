@@ -304,9 +304,11 @@ These are derived from section 1.2, not measured here:
   game and is not transferable. The number comes from #450 piece 2's measurement.
 - **What it opens:** the sampled tree (D5), whose per-iteration cost is then one engine call without a network
   round-trip. The order on #450 already places piece 2 before selective depth.
-- **Its gate:** the decisions agree with the full network within a pinned tolerance, followed by the predeclared
-  strength/time comparison and existing ladder gates. D4 stays on JAX until explicit adoption. Those evaluator gates
-  belong to #485 / #450 piece 2; D5 keeps its own gates.
+- **Its gate:** full fidelity thresholds apply to the 1:1 BC6 conversion. Small/medium distilled networks must pass
+  mechanics/classification, reproduction and finite-value checks; their other deviations are reported, not gated.
+  Selection follows the predeclared strength-at-equal-time comparison with an equal-budget control and existing
+  ladder gates. D4 stays on JAX until owner/HS adoption; each E4 training run needs its own owner go. These evaluator
+  gates belong to #485 / #450 piece 2; D5 keeps its own gates.
 
 ## 7. Decision 5: budget, determinism, memory
 
