@@ -85,6 +85,23 @@ class Settings(Depth):
                     self.make(ctx, **settings).close()
 
 
+class TheDefault(Depth):
+    def test_the_default_and_depth_one_decide_as_on_main(self):
+        # D2 adds depth (and steps_left). Without them, with depth 1 named and with steps_left given, the A/B/C turn
+        # decisions are main's: the pinned choices and tables (test_honest), one record for all, no field of D2.
+        from python.tests.search.test_honest import PINNED_TABLES
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            runs = [self.abc_turn(ctx), self.abc_turn(ctx, depth=1), self.abc_turn(ctx, steps_left=UNLIMITED)]
+        for actions, records in runs:
+            self.assertEqual(actions.tolist(), [103, 289, 352])
+            for i, r in enumerate(records):
+                for name in DEPTH_FIELDS:
+                    self.assertNotIn(name, r)
+                np.testing.assert_allclose(r["tables"], PINNED_TABLES[i], rtol=0, atol=1e-6)
+        self.assertEqual(timeless(runs[0][1]), timeless(runs[1][1]))
+        self.assertEqual(timeless(runs[0][1]), timeless(runs[2][1]))
+
+
 class DegenerateTreeIsD1(Depth):
     def test_at_the_cut_off_depth_two_decides_as_d1(self):
         # The root's step is the arena's last: every depth-1 node is cut off, a leaf of the tree, so the tree is D1's
