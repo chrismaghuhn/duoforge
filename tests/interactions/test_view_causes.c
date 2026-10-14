@@ -469,7 +469,8 @@ static void test_foe_revive_proxy(df_test *t, const duoforge_context *kp)
 static bool corpus_paths_agree(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, uint32_t *states)
 {
     const uint32_t battle_only =
-        DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE | DUOFORGE_PUBLIC_CAUSE_TEMP_FORME | DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
+        DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE | DUOFORGE_PUBLIC_CAUSE_TEMP_FORME | DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE |
+        DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP; /* step K3: the observation call never reports it (duoforge_view.h) */
     bool history = false;
     for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
         duoforge_observation seen;

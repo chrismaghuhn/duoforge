@@ -5,7 +5,7 @@
  * Phase eligibility, not the support manifest or an overall handler registry. */
 #include "data/pool_tables.h"
 
-#define DFI_SPECIAL_COUNT 122u
+#define DFI_SPECIAL_COUNT 123u
 
 _Static_assert(DFI_SPECIAL_NONE == 0u, "frozen special NONE");
 _Static_assert(DFI_SPECIAL_GRASS_KNOT == 1u, "frozen special GRASS_KNOT");
@@ -128,7 +128,8 @@ _Static_assert(DFI_SPECIAL_ENDEAVOR == 117u, "frozen special ENDEAVOR");
 _Static_assert(DFI_SPECIAL_PSYCH_UP == 118u, "frozen special PSYCH_UP");
 _Static_assert(DFI_SPECIAL_ALLY_SWITCH == 119u, "frozen special ALLY_SWITCH");
 _Static_assert(DFI_SPECIAL_PSYCHIC_TERRAIN == 120u, "frozen special PSYCHIC_TERRAIN");
-_Static_assert(DFI_SPECIAL_UNMODELED == 121u, "frozen special UNMODELED");
+_Static_assert(DFI_SPECIAL_SPEED_SWAP == 121u, "frozen special SPEED_SWAP");
+_Static_assert(DFI_SPECIAL_UNMODELED == 122u, "frozen special UNMODELED");
 
 static const uint8_t dfi_special_has_handler[DFI_SPECIAL_COUNT] = {
     1u, /* 0: NONE */
@@ -252,7 +253,8 @@ static const uint8_t dfi_special_has_handler[DFI_SPECIAL_COUNT] = {
     1u, /* 118: PSYCH_UP */
     1u, /* 119: ALLY_SWITCH */
     1u, /* 120: PSYCHIC_TERRAIN */
-    0u, /* 121: UNMODELED */
+    1u, /* 121: SPEED_SWAP */
+    0u, /* 122: UNMODELED */
 };
 
 static const uint8_t dfi_special_status_hit[DFI_SPECIAL_COUNT] = {
@@ -377,7 +379,8 @@ static const uint8_t dfi_special_status_hit[DFI_SPECIAL_COUNT] = {
     1u, /* 118: PSYCH_UP */
     1u, /* 119: ALLY_SWITCH */
     0u, /* 120: PSYCHIC_TERRAIN */
-    0u, /* 121: UNMODELED */
+    1u, /* 121: SPEED_SWAP */
+    0u, /* 122: UNMODELED */
 };
 
 #endif

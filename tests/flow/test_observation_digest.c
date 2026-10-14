@@ -93,6 +93,12 @@ static void line_vectors(df_test *t)
     DF_CHECK(t, dfi_observation_line_encode(&bad, &identity, bytes, sizeof bytes, &size) == DUOFORGE_E_UNSUPPORTED);
     bad = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, 0u); bad.detail = 255u;
     DF_CHECK(t, dfi_observation_line_encode(&bad, &identity, bytes, sizeof bytes, &size) == DUOFORGE_E_UNSUPPORTED);
+    /* Speed Swap (step K3, #473; decision 0015 5de): VOLATILE_START detail 16 with cause NONE and the other target is a line;
+     * 15 (Focus Energy, not modelled) is refused. */
+    bad = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, 0u); bad.detail = DUOFORGE_VOLATILE_SPEED_SWAP; bad.other = 2u;
+    DF_CHECK(t, dfi_observation_line_encode(&bad, &identity, bytes, sizeof bytes, &size) == DUOFORGE_OK);
+    bad.detail = 15u;
+    DF_CHECK(t, dfi_observation_line_encode(&bad, &identity, bytes, sizeof bytes, &size) == DUOFORGE_E_UNSUPPORTED);
     bad = df_observation_lines[1].event;
     DF_CHECK(t, dfi_observation_line_encode(&bad, NULL, bytes, sizeof bytes, &size) == DUOFORGE_E_INVARIANT);
     bad = df_observation_lines[3].event; bad.hp_kind = DUOFORGE_HP_UNKNOWN;

@@ -44,6 +44,7 @@ TEAM_SELECTION, TURN, REPLACEMENT, PIVOT = (C[f"DUOFORGE_BOUNDARY_{n}"] for n in
 CAUSE_SLEEP, CAUSE_CONFUSION = C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION"]
 CAUSE_ILLUSION = C["DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE"]
 CAUSE_RAISED = C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"]
+CAUSE_SPEED_SWAP = C["DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP"]  # step K3 (decision 0015 5de): a live Speed Swap, a presence bit only
 Q_RESIDUAL, Q_MOVE = VALUES["DFI_Q_RESIDUAL"], VALUES["DFI_Q_MOVE"]
 PICK_NONE = C["DUOFORGE_VIEW_PICK_NONE"]
 OCCUPANT_NONE = VALUES["DFI_OCCUPANT_NONE"]
@@ -53,6 +54,7 @@ VOL_FOLLOW_ME, VOL_HELPING_HAND, VOL_UNBURDEN = (VALUES[f"DFI_VOL_{n}"] for n in
 VOL_CHOICE_LOCK, VOL_NEWLY_SWITCHED = VALUES["DFI_VOL_CHOICE_LOCK"], VALUES["DFI_VOL_NEWLY_SWITCHED"]
 PARTY_HIDDEN = VALUES["DFI_PARTY_HIDDEN"]
 POSFLAG_STATS_RAISED = VALUES["DFI_POSFLAG_STATS_RAISED"]
+SINGLE_TURN_SPEED_SWAP = VALUES["DFI_SINGLE_TURN_SPEED_SWAP"]  # step K3 (decision 0015 5de): the spare bit 2 of single_turn
 POSFLAG_HEALING_WISH = VALUES["DFI_POSFLAG_HEALING_WISH"]  # G82: the slot's pending Healing Wish (decision 0045)
 POSFLAG_LOWERED, POSFLAG_HURT = VALUES["DFI_POSFLAG_LOWERED"], VALUES["DFI_POSFLAG_HURT"]  # step G88 (decision 0046)
 POSFLAG_CURSED = VALUES["DFI_POSFLAG_CURSED"]  # step G84b (decision 0063): the Ghost Curse's volatile, bit 7
@@ -97,7 +99,7 @@ class _State:
 
 
 CAUSE_NAMES = ((CAUSE_SLEEP, "visible-sleep"), (CAUSE_CONFUSION, "visible-confusion"),
-               (CAUSE_ILLUSION, "illusion-possible"), (CAUSE_RAISED, "raised-this-turn"))
+               (CAUSE_ILLUSION, "illusion-possible"), (CAUSE_RAISED, "raised-this-turn"), (CAUSE_SPEED_SWAP, "speed-swap"))
 
 
 def tracker_refusal(tracker):
@@ -127,6 +129,18 @@ def move_result_byte(now, last):
             | (MR_UNCLASSIFIED_LAST if last & MR_UNCLASSIFIED_NOW else 0))
 
 
+def _record_speed_swap_bit(record):
+    """True when the record's canonical state carries the Speed Swap presence bit (DFI_SINGLE_TURN_SPEED_SWAP) of some
+    active position: the single_turn byte of each position of the tail, at the offsets the record writer uses (_FIELDS)."""
+    state = record["state"]
+    for side in range(2):
+        for pos in range(2):
+            start, _size = _FIELDS[f"tail.side{side}.position{pos}.single_turn"]
+            if int(state[start]) & SINGLE_TURN_SPEED_SWAP:
+                return True
+    return False
+
+
 def assemble(tracker, observation):
     """(record, status, causes, reason) at the tracker's current decision point: the PUBLIC_STATE record and status 0,
     or a zero record with E_UNSUPPORTED, the cause mask and the named reason of the refusal. The engine decides every
@@ -145,8 +159,15 @@ def assemble(tracker, observation):
     except Refusal as r:
         return zero, E_UNSUPPORTED, r.causes, r.reason
     status = view.public_record_check(ctx, record)
+    swapped = _record_speed_swap_bit(record)
     if status == E_UNSUPPORTED:
+        # a live Speed Swap (the presence bit of the record): the swapped Speeds are not public, so the engine refuses the record
+        # with cause 128; the observation call never reports it (the documented limit), so the name comes from the record's bit
+        if swapped:
+            return zero, E_UNSUPPORTED, CAUSE_SPEED_SWAP, "speed-swap"
         return zero, E_UNSUPPORTED, 0, "engine-refuses-record"
+    if swapped:
+        raise ValueError("the engine takes back a record with a live Speed Swap (cause 128)")
     if status != 0:
         raise ValueError(f"the engine does not take the assembled record back: {_lib.status_name(status)}")
     reason = tracker_refusal(tracker)
@@ -399,6 +420,8 @@ def _tail(t, s, boundary):
             s.put(ppre + "throat_chop_turns", p.throat_chop)
             s.put(ppre + "perish", p.perish)
             s.put(ppre + "hits_taken", p.hits_taken)
+            # Speed Swap (step K3, decision 0015 5de): the presence bit of the single_turn byte (DFI_SINGLE_TURN_SPEED_SWAP, 4)
+            s.put(ppre + "single_turn", SINGLE_TURN_SPEED_SWAP if p.speed_swapped else 0)
             s.put(ppre + "taunt_turns", p.taunt)
             s.put(ppre + "heal_block_turns", p.heal_block)
             s.put(ppre + "yawn_turns", p.yawn)

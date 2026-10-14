@@ -317,9 +317,88 @@ class ReplayTest(unittest.TestCase):
 
     def test_the_real_tables_name_the_known_unmodelled_content(self):
         names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-        self.assertTrue({"speedswap", "gravity"} <= names, sorted(names)[:10])
+        self.assertIn("gravity", names, sorted(names)[:10])
+        self.assertNotIn("speedswap", names)  # modelled by #473 (the stored-Speed swap)
         self.assertNotIn("temperflare", names)  # modelled by #476 (the Stomping Tantrum handler)
         self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
+
+
+class ABTest(unittest.TestCase):
+    """The A/B test of the root rule (docs/benchmarks/2026-10-14-ab-root-rule): a battle names its arm in its first
+    record; the tool counts the arms' win rates with intervals, per opponent and per the foe's leads."""
+
+    @staticmethod
+    def log(arm, result, leads=("Garchomp", "Grimmsnarl")):
+        return [{"log_format": 2, "code": {"commit": "abc", "dirty": False},
+                 "search_rule": {"arm": arm, "index": 0, "rule": "mix" if arm == "0" else "ev", "settings": {}}},
+                {"in": "|player|p1|Ling-Ce|"}, {"in": "|player|p2|Opponent|"},
+                {"in": "|switch|p1a: Froslass|Froslass, L50, F|100/100"},
+                {"in": f"|switch|p2a: One|{leads[0]}, L50, M|100/100"},
+                {"in": f"|switch|p2b: Two|{leads[1]}, L50, M|100/100"}, {"in": "|turn|1"},
+                {"in": "|switch|p2a: Three|Pelipper, L50, M|100/100"}, {"feed": ["|turn|1"]},
+                {"end": "|win|" + ("Ling-Ce" if result == "win" else "Opponent")}]
+
+    def test_a_battle_names_its_arm_and_the_foes_leads_by_species(self):
+        b = ev.battle(self.log("2e", "win", ("Charizard", "Grimmsnarl")), "lingce")
+        self.assertEqual((b["arm"], b["foe_lead"], b["result"]), ("2e", "Charizard + Grimmsnarl", "win"))
+        self.assertIsNone(ev.battle(played(), "lingce")["arm"])
+
+    def test_the_arms_win_rates_with_intervals_per_opponent_and_lead(self):
+        rows = []
+        for arm, results, leads in (("0", ["win"] * 6 + ["loss"] * 4, ("Garchomp", "Grimmsnarl")),
+                                    ("2e", ["win"] * 3 + ["loss"] * 7, ("Charizard", "Grimmsnarl"))):
+            for r in results:
+                b = ev.battle(self.log(arm, r, leads), "lingce")
+                rows.append((b, "A", b["foe_lead"]))
+        got = ev.ab_arms(rows)
+        self.assertEqual((got["all"]["0"]["wins"], got["all"]["0"]["decided"]), (6, 10))
+        self.assertEqual((got["all"]["2e"]["wins"], got["all"]["2e"]["decided"]), (3, 10))
+        p, low, high = got["all"]["2e"]["win_rate"]
+        self.assertAlmostEqual(p, 0.3)
+        self.assertTrue(low < 0.3 < high)
+        d = got["all"]["difference"]
+        self.assertAlmostEqual(d["value"], -0.3)
+        self.assertTrue(d["low"] < -0.3 < d["high"] and d["high"] > 0)  # ten battles each: no preference yet
+        self.assertEqual(set(got["by_opponent"]), {"A"})
+        self.assertEqual(got["by_lead"]["Garchomp + Grimmsnarl"]["2e"]["decided"], 0)
+        self.assertIsNone(got["by_lead"]["Garchomp + Grimmsnarl"]["difference"])
+        self.assertIsNone(got["by_lead"]["Garchomp + Grimmsnarl"]["2e"]["win_rate"])  # an arm below the minimum: counts
+        self.assertIsNotNone(got["by_opponent"]["A"]["difference"])  # ten each: the stratum is read
+        self.assertIsNone(got["all"]["look"])  # no look before 30 decided battles per arm: nothing to read
+        self.assertIsNone(d["at_look"])
+        self.assertIsNone(got["by_opponent"]["A"]["look"])  # a stratum is described, never read at a look
+
+    def test_the_looks_read_99_percent_at_30_and_60_and_95_at_100(self):
+        for n, level in ((30, 0.99), (60, 0.99), (100, 0.95)):
+            rows = []
+            for arm, wins in (("0", n // 2), ("2e", n // 2 + n // 5)):
+                rows += [(ev.battle(self.log(arm, "win" if i < wins else "loss"), "lingce"), "A", None)
+                         for i in range(n)]
+            got = ev.ab_arms(rows)["all"]
+            d = got["difference"]
+            self.assertEqual((got["look"], d["at_look"]["level"]), (n, level))
+            if level == 0.99:
+                self.assertTrue(d["at_look"]["low"] < d["low"] and d["high"] < d["at_look"]["high"])
+            else:
+                self.assertAlmostEqual(d["at_look"]["low"], d["low"])
+        self.assertIsNone(ev.wilson(0, 0))
+
+    def test_every_battle_of_an_arm_counts_unfinished_and_unsearched_ones_too(self):
+        unfinished = self.log("0", "win")[:-1]  # no end
+        no_feed = [r for r in self.log("0", "loss") if "feed" not in r]  # never fed: counted, not decided away
+        dirty = self.log("2e", "loss") + [{"dirty": "b"}]
+        rows = [(ev.battle(r, "lingce"), "A", None) for r in (unfinished, no_feed, dirty)]
+        got = ev.ab_arms(rows)["all"]
+        self.assertEqual((got["0"]["battles"], got["0"]["decided"], got["0"]["unfinished"]), (2, 1, 1))
+        self.assertEqual(got["0"]["kinds"], {"particles": 1, "other": 1})
+        self.assertEqual(got["2e"]["without_search"], 1)
+
+    def test_newcombes_interval_matches_a_reference(self):
+        # Newcombe (1998), method 10, his example (a): 56/70 against 48/80 gives 0.2000, [0.0524, 0.3339]
+        d = ev._newcombe(ev.wilson(48, 80), ev.wilson(56, 70))
+        self.assertAlmostEqual(d["value"], 0.2, places=4)
+        self.assertAlmostEqual(d["low"], 0.0524, places=3)
+        self.assertAlmostEqual(d["high"], 0.3339, places=3)
 
 
 if __name__ == "__main__":
