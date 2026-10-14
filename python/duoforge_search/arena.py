@@ -64,11 +64,19 @@ class SearchPlayer:
     a refused leaf -1 as the refused game is the learner's loss: the
     searcher plays as the learner (spec section 8.2). As the opponent its
     refused leaves still count -1 for itself, while play_suite counts a
-    refused game as the learner's loss."""
+    refused game as the learner's loss.
 
-    def __init__(self, lookahead, name, arena_seed):
+    max_steps (D2 of the depth search, its plan's step 6): play_suite's
+    max_steps. Given, each decide also gets steps_left = max_steps - step
+    (1 exactly at the last step), which a depth-2 search needs to cut its
+    depth-2 leaves off; None calls decide as before."""
+
+    def __init__(self, lookahead, name, arena_seed, max_steps=None):
+        if max_steps is not None and (type(max_steps) is not int or max_steps < 1):
+            raise ValueError(f"max_steps must be a positive int or None (got {max_steps!r})")
         self.lookahead, self.name = lookahead, name
         self.arena_seed = int(arena_seed)
+        self.max_steps = max_steps
         self.records = {}
 
     def clear(self):
@@ -95,7 +103,13 @@ class SearchPlayer:
         e, p = asked, seats[asked]
         keys = seeds.decision_keys(self.arena_seed, e, [batch.episode(int(x)) for x in e],
                                    batch.requests["epoch"][e, p], p)
-        actions, records = self.lookahead.decide(batch, e, p, keys, np.full(e.size, bool(last_step)))
+        extra = {}
+        if self.max_steps is not None:
+            left = self.max_steps - int(step)
+            if left < 1 or (left == 1) != bool(last_step):
+                raise ValueError(f"step {step} of max_steps {self.max_steps} disagrees with last_step {last_step}")
+            extra["steps_left"] = np.full(e.size, left, np.int64)
+        actions, records = self.lookahead.decide(batch, e, p, keys, np.full(e.size, bool(last_step)), **extra)
         for r in records:
             r["step"] = int(step)
             self.records.setdefault(r["env"], []).append(r)

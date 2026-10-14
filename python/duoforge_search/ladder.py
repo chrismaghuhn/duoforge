@@ -746,7 +746,7 @@ def main(argv=None):
 
         def play_search(arm, step_name, opponent_player):
             with searcher(step_name, excluded(opponent_team)) as search:
-                player = arena.SearchPlayer(foe_arena.Timed(search), arm, args.seed)
+                player = arena.SearchPlayer(foe_arena.Timed(search), arm, args.seed, max_steps=args.max_steps)
                 records = evaluate.play_suite(ctx, pool, rows, player, opponent_player, args.workers, args.seed,
                                               max_steps=args.max_steps)
             return records, [r for row in sorted(player.records) for r in player.records[row]]
@@ -790,7 +790,8 @@ def main(argv=None):
         if args.h2h:
             with searcher(args.step, excluded(opponent_team)) as learner_search, \
                     searcher(args.previous, excluded(learner_team)) as opponent_search:
-                learner = arena.SearchPlayer(foe_arena.Timed(learner_search), "step", args.seed)
+                learner = arena.SearchPlayer(foe_arena.Timed(learner_search), "step", args.seed,
+                                             max_steps=args.max_steps)
 
                 class SearchingOpponent(evaluate.Player):
                     """play_suite takes an evaluate.Player as its opponent and calls its indices; the searching
@@ -804,7 +805,7 @@ def main(argv=None):
                         return self.player.indices(batch, choices, step=step, seats=seats, last_step=last_step)
 
                 opponent = SearchingOpponent(arena.SearchPlayer(foe_arena.Timed(opponent_search), "previous",
-                                                                args.seed))
+                                                                args.seed, max_steps=args.max_steps))
                 records = evaluate.play_suite(ctx, pool, rows, learner, opponent, args.workers, args.seed,
                                               max_steps=args.max_steps)
             h2h = {**pair_interval(arena.scores(records)), "unfinished": int(records["unfinished"].sum()),

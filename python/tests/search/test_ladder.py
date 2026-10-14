@@ -1084,5 +1084,57 @@ class SummaryDuplicateRowsTest(unittest.TestCase):
         self.assertNotIn("duplicate_rows", raw)
 
 
+class StepsLeftTest(unittest.TestCase):
+    """D2's steps_left through the harness (plan docs/superpowers/plans/2026-10-14-depth-search-d2.md step 6): a
+    SearchPlayer that knows play_suite's max_steps passes each decision's steps left; one that does not calls decide
+    as before."""
+
+    class Recorder:
+        def __init__(self):
+            self.calls = []
+
+        def decide(self, roots, envs, seats, keys, last_step, **extra):
+            self.calls.append((np.asarray(last_step).tolist(), extra))
+            return np.zeros(len(envs), np.int64), [{"env": int(e)} for e in envs]
+
+    def indices(self, player, step, last_step):
+        import duoforge
+        from duoforge import _layout
+        with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as batch:
+            batch.query_factored()
+            choices = np.zeros((1, 2), _layout.FACTORED_CHOICE)
+            player.indices(batch, choices, step=step, seats=np.array([0]), last_step=last_step)
+
+    def test_max_steps_gives_each_decision_its_steps_left(self):
+        recorder = self.Recorder()
+        player = arena.SearchPlayer(recorder, "d2", 1, max_steps=10)
+        self.indices(player, 3, False)
+        self.indices(player, 9, True)
+        self.assertEqual([extra["steps_left"].tolist() for _, extra in recorder.calls], [[7], [1]])
+
+    def test_without_max_steps_decide_is_called_as_before(self):
+        recorder = self.Recorder()
+        self.indices(arena.SearchPlayer(recorder, "d1", 1), 3, False)
+        self.assertEqual(recorder.calls, [([False], {})])
+
+    def test_steps_left_must_agree_with_the_last_step_flag(self):
+        player = arena.SearchPlayer(self.Recorder(), "d2", 1, max_steps=10)
+        for step, last_step in ((9, False), (3, True)):
+            with self.subTest(step=step), self.assertRaisesRegex(ValueError, "max_steps"):
+                self.indices(player, step, last_step)
+        with self.assertRaisesRegex(ValueError, "max_steps"):
+            arena.SearchPlayer(self.Recorder(), "d2", 1, max_steps=0)
+
+    def test_the_timed_wrapper_passes_steps_left_through(self):
+        recorder = self.Recorder()
+        timed = foe_arena.Timed(recorder)
+        timed.decide(None, np.array([0, 1]), np.array([0, 0]), np.array([5, 6], np.uint64), np.array([False, False]),
+                     steps_left=np.array([4, 3]))
+        timed.decide(None, np.array([0]), np.array([0]), np.array([5], np.uint64), np.array([False]))
+        self.assertEqual([extra["steps_left"].tolist() if "steps_left" in extra else None
+                          for _, extra in recorder.calls], [[4], [3], None])
+
+
 if __name__ == "__main__":
     unittest.main()
