@@ -123,7 +123,9 @@ Every payload starts with `kind:u8`. The following letters give its remaining fi
 This is an explicit class per current event kind. Causes/flag combinations and detail variants must also belong to
 that kind's implemented class in `dfi_line_schema_of`/`dfi_line_variant`. An unknown kind or variant refuses with
 `E_UNSUPPORTED`, naming `observation_line_unclassified`, its numeric entry and kind name. In particular, reserved
-kind 44 is not accepted by a range check. Missing captured identity or a missing HP projection is `E_INVARIANT`.
+kind 44 is not accepted by a range check. New public values (event kinds, volatile details, causes, features) are
+entered in the digest classifier one by one, in the PR that introduces them, with a test; a range is not widened past a
+reserved value. The first such entry is Speed Swap (volatile detail 16, #473); detail 15 stays refused. Missing captured identity or a missing HP projection is `E_INVARIANT`.
 Reserved event bytes and non-whitelisted fields are absent. Nothing uses raw `sizeof(duoforge_event)` bytes.
 
 B carries the actually shown current species/forme and gender, not the hidden Illusion holder or arbitrary particle
