@@ -4,6 +4,12 @@ add_test(NAME duoforge.data.gen_closure_refusals
 duoforge_label_test(duoforge.data.gen_closure_refusals quick tools)
 set_tests_properties(duoforge.data.gen_closure_refusals PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+# Every Python test script CTest runs keeps unittest.main() last, so no TestCase is left unrun (issue #457).
+add_test(NAME duoforge.data.test_main_last
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_main_last.py")
+duoforge_label_test(duoforge.data.test_main_last quick tools)
+set_tests_properties(duoforge.data.test_main_last PROPERTIES TIMEOUT 60
+    ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 # The generated names of the data query API against the macros of the headers and the
 # key() mapping of the trace converter (no checkout needed).
 add_test(NAME duoforge.data.pool_names
