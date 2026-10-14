@@ -1,0 +1,207 @@
+{
+ "P1_inventory": {
+  "ipo": {
+   "added": [
+    "duoforge.data.format_pin",
+    "duoforge.data.format_regmc"
+   ],
+   "after": 1457,
+   "after_sha256": "80d17ac151dc6ad79b0e1d7f2eabefc7379e760ed4554322b1110aaf0a044fae",
+   "before": 1455,
+   "before_sha256": "e17491af070f33e3ebc948a3c9e89bec63a3907751845bd917bf76a0123ec37f",
+   "removed": []
+  },
+  "noipo": {
+   "added": [
+    "duoforge.data.format_pin",
+    "duoforge.data.format_regmc"
+   ],
+   "after": 1457,
+   "after_sha256": "80d17ac151dc6ad79b0e1d7f2eabefc7379e760ed4554322b1110aaf0a044fae",
+   "before": 1455,
+   "before_sha256": "e17491af070f33e3ebc948a3c9e89bec63a3907751845bd917bf76a0123ec37f",
+   "removed": []
+  }
+ },
+ "P1_selected_tests": {
+  "after-ipo": 240,
+  "after-noipo": 233,
+  "before-ipo": 238,
+  "before-noipo": 232
+ },
+ "P2_reference": {
+  "executions": 2632,
+  "ipo": {
+   "canonical_sha256": "2ac3c2985c7d513cfa28e366086185a5ff8624e824eca3bbbccb0edd8e400bb7",
+   "equal": true
+  },
+  "noipo": {
+   "canonical_sha256": "2ac3c2985c7d513cfa28e366086185a5ff8624e824eca3bbbccb0edd8e400bb7",
+   "equal": true
+  },
+  "steps": 22618,
+  "stops": 8553,
+  "unique_battles": 1153,
+  "variants": {
+   "duoforge_reference_conformance": {
+    "battles": 90,
+    "sha256": "620dd6f94faa5fc2751158f062c58edf75f48394aba7a9a49e6bc96bf8f9f271",
+    "steps": 1430,
+    "stops": 0
+   },
+   "duoforge_reference_conformance_pool": {
+    "battles": 90,
+    "sha256": "80e1d85185bfa59498b4fe756f12dc30e41ca2ffdbbb5159118d91a8a374d0c6",
+    "steps": 1430,
+    "stops": 0
+   },
+   "duoforge_reference_conformance_pool_data": {
+    "battles": 990,
+    "sha256": "3890133535a5993a84e4ca8765c2de6a25f0db108acfa6c2e9c31eeede56a4e1",
+    "steps": 5775,
+    "stops": 0
+   },
+   "duoforge_reference_conformance_team_c": {
+    "battles": 73,
+    "sha256": "1acfad0da5393e2095176d094ab2748800b305cfbfee048e04f127a1720c39c5",
+    "steps": 1337,
+    "stops": 0
+   },
+   "duoforge_reference_conformance_team_c_pool": {
+    "battles": 73,
+    "sha256": "a375e1b3e1196b3463c68a76898176a29c8b506a47deb07d4c971a7b747c6fc0",
+    "steps": 1337,
+    "stops": 0
+   },
+   "duoforge_reference_tiebreak": {
+    "battles": 90,
+    "sha256": "b374c2d908d5bd00776a571f7bc6842722f0fb6e6401c9770b3f27001c07e4ea",
+    "steps": 1430,
+    "stops": 833
+   },
+   "duoforge_reference_tiebreak_pool": {
+    "battles": 90,
+    "sha256": "8dd38f6a3c45107d8747544e8ea90f46b457a6e66c660a12a81631ff97984cfd",
+    "steps": 1430,
+    "stops": 833
+   },
+   "duoforge_reference_tiebreak_pool_data": {
+    "battles": 990,
+    "sha256": "20a41032ebeafe41c2d4f53fb8e54cbf78ed66b9ae0e6a2194a50e39d40ff43a",
+    "steps": 5775,
+    "stops": 5419
+   },
+   "duoforge_reference_tiebreak_team_c": {
+    "battles": 73,
+    "sha256": "78e1cb58a1fd273b438d99fb9d5db2bdc876b174da5bc73339bc002b2de7fb34",
+    "steps": 1337,
+    "stops": 734
+   },
+   "duoforge_reference_tiebreak_team_c_pool": {
+    "battles": 73,
+    "sha256": "2b52952ebe93f0dde23ef15ebe240d2cad353ea022416e776cdc03d48d8723e8",
+    "steps": 1337,
+    "stops": 734
+   }
+  }
+ },
+ "P6_public_surface": {
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 239,
+   "exports_sha256": "06fe17a5188110dd885ffbac3b4dd785e49bea1133ccec40da4f5c231823601d",
+   "layout_sha256": "4eb40481e70a70fd1b3fe4de3230b50e2dd627abeb8758807787f54438df1a04"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 239,
+   "exports_sha256": "06fe17a5188110dd885ffbac3b4dd785e49bea1133ccec40da4f5c231823601d",
+   "layout_sha256": "4eb40481e70a70fd1b3fe4de3230b50e2dd627abeb8758807787f54438df1a04"
+  }
+ },
+ "after": {
+  "commit": "866b99f3ccffc0d9a1e9fb9cda430e16766f738f",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "5a417fe2c0ec8a325edb31a50bea149c36bba1d4",
+  "dirty": false,
+  "phase": "before"
+ },
+ "object_identity": {
+  "bench_binaries": {
+   "ipo": {
+    "after_sha256": "34f84a8e90e04725dd2951c6e136dbe5f301f3f000cb989dd32086105da20bdd",
+    "before_sha256": "2304e5efa50de0ee66259a9ef526b9bd21f9492dc546fca4de697dc40ae39bcf",
+    "disassembly_equal": true
+   },
+   "noipo": {
+    "after_sha256": "cdb6154303210400a0b4aa6d75844b34e559403ad77afa4867d565ab9436061a",
+    "before_sha256": "f08819fb365b99941eb5e9b69b0182b7556fc33957a8691f8df36c7abce2b318",
+    "disassembly_equal": true
+   }
+  },
+  "gate": "not all objects byte-equal: the paired bench applies (paired-bench-*.json)",
+  "ipo": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/codec/state_codec.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge.dir/src/data/formulas.c.o",
+    "CMakeFiles/duoforge.dir/src/state/battle.c.o",
+    "CMakeFiles/duoforge.dir/src/state/closure_member.c.o",
+    "CMakeFiles/duoforge.dir/src/state/context.c.o",
+    "CMakeFiles/duoforge.dir/src/state/data_query.c.o",
+    "CMakeFiles/duoforge.dir/src/state/invariants.c.o",
+    "CMakeFiles/duoforge.dir/src/state/observation.c.o",
+    "CMakeFiles/duoforge.dir/src/state/request.c.o",
+    "CMakeFiles/duoforge.dir/src/state/tiebreak.c.o",
+    "CMakeFiles/duoforge.dir/src/state/transition.c.o",
+    "CMakeFiles/duoforge_batch.dir/src/state/view.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/codec/state_codec.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/data/formulas.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/battle.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/closure_member.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/context.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/data_query.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/invariants.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/observation.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/request.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/tiebreak.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/transition.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/view.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_batch.a",
+    "tests/CMakeFiles/duoforge_codec_golden.dir/flow/test_codec_golden.c.o",
+    "tests/CMakeFiles/duoforge_data_api.dir/data/test_data_api.c.o",
+    "tests/CMakeFiles/duoforge_data_closure_tables.dir/data/test_closure_tables.c.o",
+    "tests/CMakeFiles/duoforge_data_extended_tables.dir/data/test_extended_tables.c.o",
+    "tests/CMakeFiles/duoforge_state_closure_setup.dir/data/test_closure_setup.c.o",
+    "tests/CMakeFiles/duoforge_state_mega_by_stone.dir/forms/test_mega_by_stone.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g43.dir/forms/test_pool_g43.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g51.dir/forms/test_pool_g51.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g56.dir/moves/test_pool_g56.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g75.dir/interactions/test_pool_g75.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_setup.dir/data/test_pool_setup.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_tail.dir/data/test_pool_tail.c.o",
+    "tests/CMakeFiles/duoforge_state_team_c_setup.dir/data/test_team_c_setup.c.o",
+    "tests/CMakeFiles/duoforge_view_causes.dir/interactions/test_view_causes.c.o"
+   ],
+   "files": 257,
+   "shared_library_equal": true,
+   "shared_library_sha256": "e8b088cd75ad4730e32f721494ffe77b219aa308c43ff3fc3dbbaf044b270556"
+  },
+  "ipo_note": "every differing IPO object except bench main.c.o is byte-equal after objcopy -R .gnu.lto_* -R .gnu.debuglto_* (native code equal; only the LTO IR, which carries source locations, differs); bench main.c.o embeds the commit (cmake/bench_revision.cmake)",
+  "noipo": {
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "files": 257,
+   "shared_library_equal": true,
+   "shared_library_sha256": "4bb8d6c789fbf0c41d7c9d0d05acb95067f5f2948c001cbb30976c0367be85d4"
+  }
+ }
+}
