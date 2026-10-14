@@ -29,9 +29,10 @@ def log_records(messages, trace, player):
             continue
         for line in closed:
             records.append({"in": line})
-        if last:  # the battle ended in this batch: the bot ends it before feeding it
+        end = next((line for line in closed if line.startswith("|win|") or line == "|tie"), None)
+        if last and end is not None:  # the battle ended in this batch: the bot ends it before feeding it
             records.append({"pending_at_end": pending})
-            records.append({"end": next(line for line in closed if line.startswith("|win|") or line == "|tie")})
+            records.append({"end": end})
             break
         if pending is not None and any(not line.startswith("|request|") for line in closed):
             records.append({"accepted": pending})
