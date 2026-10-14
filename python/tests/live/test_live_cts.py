@@ -821,5 +821,79 @@ class LogReplayWaitsTest(unittest.TestCase):
         self.assertEqual([p[1:] for p in waits if p[2]], [(5, True, None)])
 
 
+class ParticleGenderTest(unittest.TestCase):
+    """A foe member's gender is public from the team preview on (its |poke| line's details; HauptSession, from the
+    review of #497): every particle carries it for all six members, after a redraw and after each rebuild level as
+    after the first draw, "" for a genderless one; it is never drawn. Two streams: the fixture (genders M and F) and the
+    committed pool battle g15_ef_retarget_plain (cts_gender_g15.json), whose foe Gholdengo is genderless and uses Shadow
+    Ball."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live.data import ROOT, trace_to_c
+        cls.data = data.load(kind="pool")
+        cls.g15 = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "cts_gender_g15.json")
+                             .read_text(encoding="utf-8"))
+        _, trace = trace_to_c.load_battle(str(ROOT), cls.g15["battle"])
+        cls.g15_inputs = [step["input"].get("p1") for step in trace["steps"]]
+
+    @staticmethod
+    def preview(stream):
+        """The foe's genders in |poke| order, as the preview's details give them ("" for none)."""
+        out = []
+        for line in (line for m in stream for line in m if line.startswith("|poke|p2|")):
+            fields = [f.strip() for f in line.split("|")[3].split(",")]
+            out.append(next((f for f in fields[1:] if f in ("M", "F")), ""))
+        return out
+
+    def genders(self, stream, own, prior, inputs, n=8):
+        """The tracker and, at every decision point, each particle's six foe genders."""
+        t = cts.ParticleTracker(self.data, own, cts.SetPrior(self.data, prior), seed=SEED, key=KEY, n=n)
+        points, done = [], 0
+        for m in stream:
+            t.feed(m)
+            if t.ready and t.epoch > done:
+                done = t.epoch
+                points.append([[s["gender"] for s in p.sets] for p in t.particles])
+                if done - 1 < len(inputs) and inputs[done - 1] is not None:
+                    t.accepted(inputs[done - 1])
+        return t, points
+
+    def check(self, stream, own, prior, inputs, counter, n=8):
+        want = self.preview(stream)
+        self.assertEqual(len(want), 6)
+        t, points = self.genders(stream, own, prior, inputs, n)
+        self.assertTrue(points)
+        for k, particles in enumerate(points):
+            for i, got in enumerate(particles):
+                self.assertEqual(got, want, (counter, k, i))
+        self.assertGreater(t.counters[counter], 0, dict(t.counters))
+        return want
+
+    def test_the_fixtures_genders_hold_after_a_redraw_and_each_rebuild_level(self):
+        stream = closed(FIXTURE["messages"])
+        cases = (("redraw.facts", with_species(foe_sets(), "Farigiraf", farigiraf(),
+                                               farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))),
+                 ("level1", with_species(foe_sets(), "Farigiraf",
+                                         farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))),
+                 ("level2", with_species(foe_sets(), "Farigiraf", farigiraf(ability="Cud Chew"))))
+        for counter, prior in cases:
+            with self.subTest(counter=counter):
+                self.assertEqual(self.check(stream, FIXTURE["team"], prior, FIXTURE["inputs"], counter),
+                                 ["M", "F", "M", "F", "M", "M"])
+
+    def test_a_genderless_foe_member_stays_genderless_after_a_redraw_and_a_rebuild(self):
+        stream, own = self.g15["messages"], self.g15["team"]
+        sets = teams._paste(self.g15["foe_team"])
+        gholdengo = next(s for s in sets if s["species"] == "Gholdengo")
+        other = teams.to_text([{**gholdengo, "moves": ["Make It Rain", "Protect", "Thunderbolt"]}])  # no Shadow Ball
+        rest = [s for s in sets if s["species"] != "Gholdengo"]
+        cases = (("redraw.facts", rest + [gholdengo] + teams._paste(other)), ("level1", rest + teams._paste(other)))
+        for counter, prior in cases:
+            with self.subTest(counter=counter):
+                want = self.check(stream, own, prior, self.g15_inputs, counter, n=16)
+                self.assertEqual(want, ["", "F", "M", "M", "M", "M"])
+
+
 if __name__ == "__main__":
     unittest.main()

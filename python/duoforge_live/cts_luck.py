@@ -46,6 +46,7 @@ class Turn:
     own: int  # the bot's flat pair
     weights: np.ndarray  # the search's world weights
     contexts: list  # per world: the label context of the foe side at the point (labels.context)
+    sets: list  # per world: the particle's foe sets at the point (the world's)
     lines_at: int  # the particle tracker's line count at the point
     turn: int
 
@@ -60,24 +61,24 @@ def foe_options(domain):
     return out
 
 
-def foe_choice(segment, side, lists, ctx):
-    """The flat pair of the foe's two slots that the turn's lines show in one world: (slot 0 option, slot 1 option).
-    Excluded("foe-action-ambiguous") when a slot's label holds more than one option (a hidden move, an unknown
-    target, no line), Excluded("foe-action-unmatched") when it holds none."""
+def foe_shown(segment, side, lists, ctx):
+    """The foe's options that the turn's lines show in one world: per slot the indices of its label
+    (labels.turn_label on the world's options, the particle's sheets). One option per slot is the action; more is a
+    set the log narrows (a hidden move, an unknown target), mixed by the foe model. Excluded("foe-action-unknown") for
+    a slot the log tells nothing of (every option: no line, the game ended first), Excluded("foe-action-unmatched")
+    for a slot no option agrees with."""
     from duoforge_replay import labels
     label = labels.turn_label(segment, _Point(0, len(segment)), side, lists, ctx.moves, ctx.member_of, ctx.data.tables,
                               len(segment), ctx.vacant, ctx.barred)
-    picks = []
+    out = []
     for k in (0, 1):
         found = [i for i in range(len(lists[k])) if label.slots[k] >> i & 1]
         if not found:
             raise Excluded("foe-action-unmatched")
-        if len(found) > 1:  # named by the label's reason (labels: target-unknown, move-hidden, unknown, ...)
-            raise Excluded("foe-action-ambiguous:" + _reason_name(label.reasons[k]))
-        picks.append(found[0])
-    return tuple(picks)
-
-
+        if len(found) > 1 and label.reasons[k] == labels.UNKNOWN:
+            raise Excluded("foe-action-unknown")
+        out.append(found)
+    return out, tuple(_reason_name(r) for r in label.reasons)
 
 def _reason_name(reason):
     from duoforge_replay import labels
@@ -148,47 +149,89 @@ class Meter:
         weights = np.asarray(search_record["weights"], np.float64)
         if weights.shape != (self.search.s,) or len(contexts) != self.search.s:
             raise ValueError(f"{len(contexts)} particles and {weights.shape} weights for {self.search.s} worlds")
-        return Turn(seat, int(search_record["key"]), int(own), weights, contexts, len(game.tracker._lines()),
+        return Turn(seat, int(search_record["key"]), int(own), weights, contexts,
+                    [list(p.sets) for p in game.tracker.particles], len(game.tracker._lines()),
                     int(game.tracker.observations()[0]["turn"]))
 
-    def expected(self, turn, segment):
-        """The mean value of the turn's alternatives on the search's worlds as they still stand (no search ran since
-        the turn's point): per world the foe's shown action, `samples` seeds each, the worlds weighed by the search."""
+    def expected(self, turn, segment, facts):
+        """(mean value of the turn's alternatives, mixed) on the search's worlds as they still stand (no search ran
+        since the turn's point), the worlds weighed by the search, `samples` seeds each. Per world the foe's action the
+        lines show; where they narrow it to a set (mixed True), every pair of the set, weighed by the search's foe model
+        in that world (Honest's world policy, the pinned foe network) renormalized on the set (HauptSession,
+        2026-10-14). A world the turn refutes is left out, the others renormalized: facts are the foe's facts through
+        the turn (duoforge_replay.facts.side_facts, as the particle filter takes them), and a world whose sets do not
+        agree with them (cts.agrees, the particle filter's own test: a move used, an item or ability revealed that
+        its set lacks) could not play the turn. Returns (expected, mixed, worlds left out); Excluded
+        ("foe-action-not-in-worlds") when the turn refutes every world."""
         import duoforge
         from duoforge import _layout
         from duoforge_learn.luck import leaf_values
         from duoforge_search import lookahead
         worlds, s, p, foe = self.search.worlds, self.search.s, turn.seat, 1 - turn.seat
+        policy = None
         worlds.query_factored()
         n = lookahead.OPTIONS
-        choices = np.zeros((s, 2), _layout.FACTORED_CHOICE)
-        choices["slot"][:, p, 0], choices["slot"][:, p, 1] = divmod(turn.own, n)
         asked = bool(worlds.requests[0, foe]["requested"])
         if any(bool(worlds.requests[w, foe]["requested"]) != asked for w in range(s)):
             raise ValueError("the worlds disagree on whether the foe is asked")
-        self.last = {"foe": []}  # per world the foe's two options played (diagnostics and tests)
-        if asked:
-            for w in range(s):
-                domain = worlds.domains[w, foe]
-                lists = foe_options(domain)
-                a, b = foe_choice(segment, foe, lists, turn.contexts[w])
-                if not int(domain["allowed"][a]) >> b & 1:
-                    raise Excluded("foe-action-not-allowed")
-                choices["slot"][w, foe, 0], choices["slot"][w, foe, 1] = a, b
-                self.last["foe"].append((lists[0][a], lists[1][b]))
+        from . import cts
+        kept = [w for w in range(s) if all(cts.agrees(x, f) for x, f in zip(turn.sets[w], facts))]
+        if not kept:
+            raise Excluded("foe-action-not-in-worlds")
+        plan = []  # (world, foe pair or None, its weight in the world)
+        mixed = False
+        self.last = {"foe": [], "reasons": [], "kept": kept}  # per kept world the foe's options (diagnostics, tests)
+        for w in kept:
+            if not asked:
+                plan.append((w, None, 1.0))
+                continue
+            domain = worlds.domains[w, foe]
+            lists = foe_options(domain)
+            (first, second), reasons = foe_shown(segment, foe, lists, turn.contexts[w])
+            pairs = [(a, b) for a in first for b in second if int(domain["allowed"][a]) >> b & 1]
+            if not pairs:
+                raise Excluded("foe-action-not-allowed")
+            self.last["foe"].append([(lists[0][a], lists[1][b]) for a, b in pairs])
+            self.last["reasons"].append(reasons)
+            if len(pairs) == 1:
+                plan.append((w, pairs[0], 1.0))
+                continue
+            mixed = True
+            if policy is None:  # the foe model on the worlds as they stand, read only
+                policy = self.search._world_policy()[0]
+                worlds.query_factored()  # the domains of the expansion, as the search leaves them
+            q = np.exp(np.array([policy[w, foe][a * n + b] for a, b in pairs], np.float64))
+            if not np.isfinite(q).all() or q.sum() <= 0:
+                raise Excluded("foe-model-zero")
+            plan += [(w, pair, float(x)) for pair, x in zip(pairs, q / q.sum())]
         k = self.samples
-        root_envs = np.repeat(np.arange(s, dtype=np.uint32), k)
-        samples = np.tile(np.arange(k, dtype=np.uint32), s)
+        rows = len(plan) * k
+        choices = np.zeros((len(plan), 2), _layout.FACTORED_CHOICE)
+        choices["slot"][:, p, 0], choices["slot"][:, p, 1] = divmod(turn.own, n)
+        for i, (_, pair, _) in enumerate(plan):
+            if pair is not None:
+                choices["slot"][i, foe, 0], choices["slot"][i, foe, 1] = pair
+        root_envs = np.repeat(np.array([w for w, _, _ in plan], np.uint32), k)
+        samples = np.tile(np.arange(k, dtype=np.uint32), len(plan))
+        leaf_choices = np.repeat(choices, k, axis=0)
         keys = np.full(worlds.envs, turn_key(turn.key), np.uint64)
         viewers = np.full(worlds.envs, p, np.uint8)
-        obs, step, encode, _, results = self.leaves.expand(worlds, self.search.encoder, self.search.ext_supported,
-                                                           LUCK_SEED, keys, viewers, root_envs, samples,
-                                                           np.repeat(choices, k, axis=0))
-        step, encode, results = (np.array(x, copy=True) for x in (step, encode, results))
-        if (step == duoforge._layout.CONSTANTS["DUOFORGE_E_UNSUPPORTED"]).any():
-            raise Excluded("leaf-refused")
-        values = leaf_values(self._value(np.array(obs, copy=True)), step, encode, results, p)
-        return float(np.sum(turn.weights * values.reshape(s, k).mean(axis=1)) / np.sum(turn.weights))
+        values = np.empty(rows, np.float64)
+        for start in range(0, rows, self.capacity):
+            end = min(rows, start + self.capacity)
+            obs, step, encode, _, results = self.leaves.expand(
+                worlds, self.search.encoder, self.search.ext_supported, LUCK_SEED, keys, viewers,
+                root_envs[start:end], samples[start:end], leaf_choices[start:end])
+            step, encode, results = (np.array(x, copy=True) for x in (step, encode, results))
+            if (step == duoforge._layout.CONSTANTS["DUOFORGE_E_UNSUPPORTED"]).any():
+                raise Excluded("leaf-refused")
+            values[start:end] = leaf_values(self._value(np.array(obs, copy=True)), step, encode, results, p)
+        per_pair = values.reshape(len(plan), k).mean(axis=1)
+        per_world = np.zeros(s)
+        for (w, _, q), v in zip(plan, per_pair):
+            per_world[w] += q * v
+        weights = turn.weights[kept]
+        return float(np.sum(weights * per_world[kept]) / np.sum(weights)), mixed, s - len(kept)
 
     def actual(self, game, seat, policy):
         """The value of the state that happened, from seat: the particles' views at the game's decision point (asked
@@ -221,11 +264,15 @@ def result_of(records, bot):
 
 
 def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
-    """The luck of one closed-sheet battle log: {"turns": [luck per valued turn], "result", "excluded": Counter}.
+    """The luck of one closed-sheet battle log: {"turns": [luck per valued turn], "mixed": [whether the turn's foe
+    action was mixed over a set the lines narrow it to], "dropped": [the worlds the turn refuted], "worlds", "result",
+    "excluded": Counter}.
     live is a LiveSearch whose searcher is a cts.Capture; meter a Meter on its search. cts.Refused for a log the
     replay does not follow (as cts.replay_closed), by name."""
     import json
     from pathlib import Path
+    from duoforge_replay import facts as _facts
+    from duoforge_replay.points import Skip
     from duoforge_search.errors import SearchError
     from . import cts
     try:
@@ -237,17 +284,28 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
     if not any("feed" in r for r in records):
         raise cts.Refused("open_sheets_log")
     result = result_of(records, bot)
-    excluded, luck = collections.Counter(), []
+    excluded, luck, mixed, dropped = collections.Counter(), [], [], []
     pending = None
+
+    def value(turn, lines, actual):
+        """The pending turn's luck (lines: the stream through the turn, its segment from the turn's point on)."""
+        try:
+            facts = _facts.side_facts(lines, 1 - turn.seat, data)
+        except Skip as skip:
+            excluded[f"facts:{skip.reason}"] += 1
+            return
+        try:
+            expected, was_mixed, left_out = meter.expected(turn, lines[turn.lines_at:], facts)
+        except Excluded as e:
+            excluded[str(e)] += 1
+            return
+        luck.append(actual() - expected)
+        mixed.append(was_mixed)
+        dropped.append(left_out)
     replayed = cts.LogReplay(records, data, policy, team_text, prior, key, search=live, waits=True)
     for game, record in replayed:
         if pending is not None:  # the state that happened after the pending turn: this point's particles
-            segment = game.tracker._lines()[pending.lines_at:]
-            try:
-                expected = meter.expected(pending, segment)
-                luck.append(meter.actual(game, pending.seat, policy) - expected)
-            except Excluded as e:
-                excluded[str(e)] += 1
+            value(pending, game.tracker._lines(), lambda: meter.actual(game, pending.seat, policy))
             pending = None
         if record is None or game.request.get("teamPreview"):
             continue
@@ -268,13 +326,11 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
             excluded["no-end"] += 1
         else:  # the turn's lines: what was fed since its point, then the last batch, received ({"in"}) but not fed
             last_feed = max(i for i, r in enumerate(records) if "feed" in r)
-            segment = replayed.game.tracker._lines()[pending.lines_at:] +                 [r["in"] for r in records[last_feed + 1:] if isinstance(r.get("in"), str)]
-            try:
-                luck.append(result - meter.expected(pending, segment))
-            except Excluded as e:
-                excluded[str(e)] += 1
+            value(pending, replayed.game.tracker._lines() + [r["in"] for r in records[last_feed + 1:]
+                                                               if isinstance(r.get("in"), str)], lambda: result)
     if replayed.diverged is not None:
         raise SearchError(f"{Path(path).name}: the replay and the bot disagree on a stop ({replayed.diverged})")
     if replayed.stopped is not None:
         raise cts.Refused(replayed.stopped)
-    return {"turns": luck, "result": result, "excluded": excluded}
+    return {"turns": luck, "mixed": mixed, "dropped": dropped, "worlds": meter.search.s, "result": result,
+            "excluded": excluded}

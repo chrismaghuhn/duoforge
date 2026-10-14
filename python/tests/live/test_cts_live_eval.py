@@ -327,12 +327,19 @@ class LuckTest(unittest.TestCase):
 
     def test_the_series_holds_means_with_intervals_and_the_exclusions_by_name(self):
         from collections import Counter
-        battles = [{"turns": [0.25, -0.5], "result": 1.0, "excluded": Counter({"foe-action-ambiguous": 1})},
-                   {"turns": [0.5], "result": -1.0, "excluded": Counter()},
-                   {"turns": [], "result": None, "excluded": Counter({"no-end": 1})}]
+        battles = [{"turns": [0.25, -0.5], "mixed": [False, True], "dropped": [0, 4], "worlds": 16, "result": 1.0,
+                    "excluded": Counter({"foe-action-unknown": 1})},
+                   {"turns": [0.5], "mixed": [False], "dropped": [2], "worlds": 16, "result": -1.0,
+                    "excluded": Counter()},
+                   {"turns": [], "mixed": [], "dropped": [], "worlds": 16, "result": None,
+                    "excluded": Counter({"no-end": 1})}]
         got = ev.luck_series(battles)
         self.assertEqual((got["battles"], got["finished"], got["turns_valued"]), (3, 2, 3))
-        self.assertEqual(got["turns_excluded"], {"foe-action-ambiguous": 1, "no-end": 1})
+        self.assertEqual((got["turns_mixed"], got["mixed_share"]), (1, 1 / 3))
+        self.assertAlmostEqual(got["worlds_dropped_share"], 6 / 48)
+        self.assertAlmostEqual(got["luck_per_battle_unmixed"]["mean"], (0.25 + 0.5 + 0.0) / 3)
+        self.assertAlmostEqual(got["result_minus_luck_unmixed"]["mean"], ((1.0 - 0.25) + (-1.0 - 0.5)) / 2)
+        self.assertEqual(got["turns_excluded"], {"foe-action-unknown": 1, "no-end": 1})
         self.assertAlmostEqual(got["valued_share"], 3 / 5)
         self.assertAlmostEqual(got["luck_per_battle"]["mean"], (-0.25 + 0.5 + 0.0) / 3)
         self.assertAlmostEqual(got["largest_turn"]["mean"], (-0.5 + 0.5) / 2)

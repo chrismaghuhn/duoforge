@@ -1,6 +1,6 @@
 # The luck meter of the live evaluation (#494)
 
-Fixed before the first report (HauptSession, 2026-10-14). This file is the definition. Results come later, as aggregates, per series of a bot commit (`--code`) and per opponent letter.
+Fixed before the first report (HauptSession, 2026-10-14). This file is the definition. **From the commit of this file on, the definition is frozen.** Results come later, as aggregates, per series of a bot commit (`--code`) and per opponent letter.
 
 **Purpose:** to separate bad luck from bad play in Ling-Ce's live series, so that small series say more.
 - It describes; it is no gate, and it does not replace paired ladder measurements.
@@ -24,6 +24,8 @@ The parts:
    - Our side: the bot's accepted choice (`cts.logged_choice`, `cts.pair_texts`).
    - The foe's side, per world: the action that the turn's lines show. `duoforge_replay.labels.turn_label` reads it on that world's own foe options (the engine's domain) with that particle's sheets.
    - The labels read the log, which is not a battle rule. This is the same reading as the BC labels, from the foe's side.
+   - **A world the turn refutes is left out.** The facts of the foe's lines through the turn (`duoforge_replay.facts.side_facts`, as the particle filter takes them) are tested against each world's sets with the particle filter's own test (`cts.agrees`: a used move, a revealed item or ability its set lacks). A world that fails could not have played the turn. The particle filter draws such a particle anew after the turn, and the meter leaves its world out of this turn. The remaining worlds are renormalized with the search's weights.
+   - Where the lines narrow a foe slot to more than one option (a move that never showed because the member fainted or left first, or an unknown target), the alternatives are **mixed** over every allowed pair of that set. Each pair is weighted by the search's foe model in that world (the pinned BC6 foe network, read through Honest's world policy), renormalized on the set. Python only averages.
 3. **The alternatives.**
    - `Batch.expand` of every world, with both choices, under **C = 8** chance seeds.
    - The seeds are `search_seeds(LUCK_SEED, key, sample)`, sample 0..C−1. The key is drawn from the decision's search key, which is a pure function of the room and the epoch.
@@ -37,15 +39,24 @@ The parts:
 
 The engine does every step. Python averages and classifies nothing about the battle: it never reads a crit, a miss or a damage roll from a line.
 
-### Changes to the decided definition
+### Changes to the decided definition, and the diagnostic run that showed them
+
+The definition was fixed in the issue first. Before any report, one private diagnostic run of the first implementation on **series 3** (`2026-10-14-2e`, bot commit `a7dd956b`, C = 8) showed three biases of the method. That run was never a report and gave no number for one; its luck figures are not used.
+- With the issue's rules, only 105 of the 362 decision points were valued.
+- The exclusions fell exactly where the bot's own KOs and the foe's new information happen.
+
+All three changes below remove a bias of the method, not of a result. The HauptSession approved each of them (2026-10-14).
 
 - **Wait points are valued** (HauptSession, 2026-10-14). The issue's definition values the next decision point. After a turn in which the bot knocks out a foe, the next point is often a wait request: only the foe replaces.
   - Excluding those turns would systematically cut off the luck of the bot's own KOs.
   - So the state that happened is valued at a wait point too (`LogReplay(waits=True)`; the default is unchanged).
-- **Hidden foe actions:** OPEN, awaiting the HauptSession's decision.
-  - A foe that faints before it acts never shows its action.
-  - Excluding those turns would cut off luck of the same kind.
-  - The proposal is to mix over the label set, weighted by the search's foe model in that world.
+- **Refuted worlds are left out** (HauptSession, 2026-10-14). The worlds of the decision point are the particles before the turn. When the foe uses a move for the first time, many worlds do not hold it.
+  - In the diagnostic run, 84 turns came out "unknown" for this reason: the foe acted visibly, but its move was in no option of the world.
+  - Those worlds are now left out (point 1 above), and every report gives the share of worlds left out (`worlds_dropped_share`).
+  - A turn that refutes every world is excluded by name (`foe-action-not-in-worlds`).
+- **Hidden foe actions are mixed** (HauptSession, 2026-10-14). A foe that faints or leaves before it acts never shows its action. Excluding those turns would cut off the luck of the bot's own KOs in the same way.
+  - Such a turn is therefore mixed over the options the log allows, weighted by BC6 as the foe model (point 2 above).
+  - The weighting can itself be biased against foes that play unlike BC6. So every report gives the share of mixed turns, and the series means **with and without** them (`luck_per_battle_unmixed`, `result_minus_luck_unmixed`).
 
 ### Excluded turns, by name
 
@@ -55,8 +66,11 @@ Every excluded turn is counted by its reason and reported with its share. None i
 |---|---|
 | `not-searched:<cause>` | the decision was not searched (forced, raw, unreconstructible, …): no worlds |
 | `not-turn:<boundary>` | a replacement or pivot point |
-| `foe-action-ambiguous` | a foe slot's label holds more than one option (see the open point above) |
+| `foe-action-unknown` | the log tells nothing of a foe slot (no line: the game ended before anyone acted) |
 | `foe-action-unmatched` | a foe slot's label holds no option |
+| `foe-model-zero` | the foe model gives every pair of a mixed set probability 0 |
+| `foe-action-not-in-worlds` | the turn refutes every world (no world's sets agree with the foe's facts through the turn) |
+| `facts:<skip>` | the foe's facts through the turn cannot be read (the particle filter's named skips, e.g. Transform) |
 | `foe-action-not-allowed` | the foe pair is not in the world's pair mask |
 | `own-choice-not-allowed`, `not_accepted` | the bot's played choice is not one of the point's pairs, or the log shows none accepted |
 | `leaf-refused` | the engine refuses a leaf (#464, unsupported content) |
@@ -69,9 +83,23 @@ A battle that the replay does not follow is counted under the replay's named rea
 - **C = 8.** The check uses **C = 32 on series 3** (`2026-10-14-2e`, the battles of bot commit `a7dd956b`), fixed in advance.
 - If the series means at C = 8 and C = 32 differ by more than the C = 8 interval, C is raised before anything is reported.
 
+### The first report
+
+- It holds series the diagnostic run never saw: series 1 (`2026-10-13`) and series 2 (`2026-10-13b`), and the new series from `5c503d8a` once it has battles. Series 3 comes beside them.
+- Each series is reported apart (`--code`), with its exclusions, its mixed share and its share of worlds left out.
+
 ### Before the first live report
 
-The comparison with `duoforge_learn.luck` on battles whose state is known is **mandatory** (HauptSession, 2026-10-14). Its method is OPEN, awaiting the HauptSession's decision. The proposal: the committed pool battles with the true team as the prior, where luck.py values the true world and the meter values its particles.
+The comparison with `duoforge_learn.luck` on battles whose state is known is a **mandatory gate before every live report** (HauptSession, 2026-10-14):
+
+- **Battles:** every fifth committed pool battle by its id, in sorted order (indices 0, 5, 10, …), both players. They are real Showdown battles (`tools/reference/ps_client.js` gives each player's stream) that the engine reproduces.
+- **Two arms on the same turns:**
+  - The meter values each player's stream as a closed-sheet log, with the true foe team as the set prior.
+  - luck.py (`Luck`, unchanged) values the true world of the same decision point. That world is built with `Batch.from_view` from the public record and the true hidden parts, taken from the trace's state.
+  - Both use the same value network (BC6) and the trace's joint choice.
+  - A hidden part that does not map unambiguously gets no silent default: the turn is excluded from the comparison by name.
+- **Passed** when the 95% interval of the mean per-turn difference (meter − luck.py) includes 0, **or** |mean difference| < 0.01. The correlation is reported only.
+- **Failed** means no live report: the cause is searched first and reported to the HauptSession.
 
 ### The known limit
 

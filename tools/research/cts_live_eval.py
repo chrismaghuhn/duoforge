@@ -431,21 +431,32 @@ def interval(values):
 
 
 def luck_series(battles):
-    """The luck aggregates of battles ({"turns", "result", "excluded"} each, cts_luck.battle): per battle its summed
-    luck and its largest turn, per series the mean summed luck and the result with the luck taken off, with intervals
-    (only the series' means say something; a single battle is an anecdote)."""
+    """The luck aggregates of battles ({"turns", "mixed", "dropped", "worlds", "result", "excluded"} each,
+    cts_luck.battle; the share of the valued turns' worlds the turn refuted): per battle its
+    summed luck and its largest turn, per series the mean summed luck and the result with the luck taken off, with
+    intervals, each also without the turns whose foe action was mixed over a set (only the series' means say
+    something; a single battle is an anecdote)."""
     finished = [b for b in battles if b["result"] is not None]
     excluded = collections.Counter()
     for b in battles:
         excluded.update(b["excluded"])
     valued = sum(len(b["turns"]) for b in battles)
+    mixed = sum(sum(b["mixed"]) for b in battles)
+
+    def unmixed(b):  # the battle's luck without its mixed turns (HauptSession: the series mean with and without them)
+        return sum(t for t, m in zip(b["turns"], b["mixed"]) if not m)
     return {"battles": len(battles), "finished": len(finished), "turns_valued": valued,
             "turns_excluded": dict(sorted(excluded.items())),
             "valued_share": valued / max(1, valued + sum(excluded.values())),
+            "turns_mixed": mixed, "mixed_share": mixed / max(1, valued),
+            "worlds_dropped_share": sum(sum(b["dropped"]) for b in battles)
+            / max(1, sum(len(b["dropped"]) * b["worlds"] for b in battles)),
             "luck_per_battle": interval([sum(b["turns"]) for b in battles]),
+            "luck_per_battle_unmixed": interval([unmixed(b) for b in battles]),
             "largest_turn": interval([max(b["turns"], key=abs) for b in battles if b["turns"]]),
             "result": interval([b["result"] for b in finished]),
-            "result_minus_luck": interval([b["result"] - sum(b["turns"]) for b in finished])}
+            "result_minus_luck": interval([b["result"] - sum(b["turns"]) for b in finished]),
+            "result_minus_luck_unmixed": interval([b["result"] - unmixed(b) for b in finished])}
 
 
 def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_net_sha256, labels=None, since=None,
