@@ -167,6 +167,172 @@ class LogReplay:
         self.complete = True
 
 
+# The replay helpers of the tools that replay the bot's logs (the KO check, the live evaluation's luck meter #494): moved
+# here from the Search lane's ko_check (search/ko-check-cts b148e309, python/duoforge_search/ko_check.py, lines
+# 192-346; HS, 2026-10-14), so that every tool replays through this module and none keeps a copy.
+
+
+class Capture:
+    """The searcher of a LiveSearch, keeping the records of its last decide() (the live Outcome keeps only the choice)."""
+
+    def __init__(self, searcher):
+        self.searcher, self.records = searcher, None
+
+    def __getattr__(self, name):
+        return getattr(self.searcher, name)
+
+    def decide(self, *args, **kwargs):
+        actions, records = self.searcher.decide(*args, **kwargs)
+        self.records = records
+        return actions, records
+
+
+class Refused(Exception):
+    """A game the replay does not follow, named (its reason is counted)."""
+
+
+def room_of(path):
+    """The battle room of a log file battle-<format>-<number>-<bot>.jsonl."""
+    from pathlib import Path
+    parts = Path(path).stem.split("-")
+    if len(parts) < 4 or parts[0] != "battle":
+        raise Refused("file_name")
+    return "-".join(parts[:3])
+
+
+def root_view(game):
+    """(observation, observation_ext) of the decision's root as the search decides on it. Open sheets: the tracker's.
+    Closed sheets: particle 0's, the root game._search passes (world w is particle w); the own side, and so the own pair
+    mask, is the same in every particle (game.candidates refuses otherwise)."""
+    if game.closed:
+        return game.tracker.observations()[0], game.tracker.observation_exts()[0]
+    return game.tracker.observation(), game.tracker.observation_ext()
+
+
+def logged_choice(record):
+    """The choice text the bot played at a decision record: the accepted one where the log names it (LogReplay's
+    records, after a refused try the next), else the one sent. Refused when the replay found none accepted."""
+    if "accepted" in record:
+        if record["accepted"] is None:
+            raise Refused("not_accepted")
+        return record["accepted"]
+    return record["sent"]
+
+
+def pair_texts(game, policy):
+    """{choice text: flat pair index} of the allowed pairs of the game's current request (the texts the bot sends)."""
+    import numpy as np
+    from duoforge import features
+    from duoforge_search import lookahead
+    from duoforge_search.errors import SearchError
+    from . import options
+    observation, ext = root_view(game)
+    domain, lists = game.tracker.domain()
+    _, _, pair_mask = features.encode(observation, domain, ext, getattr(policy, "ext_supported", 0))
+    n = pair_mask.shape[1]
+    if n != lookahead.OPTIONS:
+        raise SearchError(f"a pair mask of {n} options, the search's flat pairs have {lookahead.OPTIONS}")
+    return {options.pair_text(lists[0][a], lists[1][b]): int(a * n + b)
+            for a, b in zip(*np.nonzero(np.asarray(pair_mask, bool)))}
+
+
+def replay(path, data, policy, live, team_text, episode, budget=1e9):
+    """The searched turn decisions of one battle log, replayed: yields (game, log record, search record) after each
+    decision point's lines are fed and the search (live, a LiveSearch whose searcher is a Capture) has decided it.
+    The lines between two decision records are fed as one batch, the previous choice accepted first, as the bot does.
+    Refused (named) for a log the replay cannot follow: a fallback, a rejected choice, a reconnect's replayed log."""
+    from .client import _room_line
+    from .game import Game
+    from .lines import line_kind
+    room = room_of(path)
+    with open(path, encoding="utf-8") as f:
+        records = [json.loads(line) for line in f if line.strip()]
+    if any("feed" in r for r in records):  # the bot fed particles: a closed-sheet battle (replay_closed)
+        raise Refused("closed_sheets_log")
+    game = Game(data, policy, team_text, search=live, room=room, episode=episode)
+    batch, pending, inits = [], None, 0
+    for record in records:
+        if "in" in record:
+            line = record["in"]
+            if line_kind(line) == "sentchoice":
+                continue
+            if line.startswith("|init|battle"):
+                inits += 1
+                if inits > 1:
+                    raise Refused("resync")
+            batch.append(line)
+            continue
+        if "fallback" in record:
+            raise Refused("fallback")
+        if "rejected" in record or "unavailable" in record:
+            raise Refused("rejected")
+        if "decision" not in record:
+            continue
+        lines = [line for line in batch if not line.startswith("|error|")]
+        batch = []
+        if pending is not None and not all(_room_line(line) for line in lines):
+            game.accepted(pending)
+        game.feed(lines)
+        if not game.asked():
+            raise Refused("not_asked")
+        live.searcher.records = None
+        game.candidates(budget)
+        pending = record["sent"]
+        outcome = game.outcomes[-1] if game.outcomes else None
+        if outcome is not None and outcome.cause == "searched" and not game.request.get("teamPreview"):
+            yield game, record, live.searcher.records[0]
+
+
+def ended_on(records, decision):
+    """Whether the battle ended on the choice of the decision record `decision`: after it the log holds the battle's
+    end ({"end"}), and no batch fed, no choice accepted and no error line. The server took that choice without an error
+    and the battle ended in that turn, so it was played as sent; the bot writes no "accepted" record after the last
+    batch (pkmn_arena ends the battle before feeding it)."""
+    at = max((i for i, r in enumerate(records) if r.get("decision") == decision and "sent" in r), default=None)
+    if at is None:
+        return False
+    after = records[at + 1:]
+    return (any("end" in r for r in after) and not any("feed" in r or "accepted" in r for r in after)
+            and not any(str(r.get("in", "")).startswith("|error|") for r in after))
+
+
+def replay_closed(path, data, policy, live, team_text, bot, prior, counts, budget=1e9):
+    """The searched turn decisions of one closed-sheet battle log, replayed by LogReplay (the bot's seed, the room
+    of the log's name as the key, prior): yields (game, log record, search record) after the search (live, a LiveSearch
+    whose searcher is a Capture) has decided each decision point the bot was asked at, before its choice is accepted.
+    counts (a Counter) gets "no_decision_record" for a point the bot wrote no decision record at, and "ended_on_sent"
+    for a last decision the battle ended on (ended_on: played as sent). Refused for an
+    open-sheet log, a log of another bot, or a stop or fallback of the bot (by name, after the decisions before it);
+    SearchError when the replay and the bot disagree on a stop (a determinism break)."""
+    from pathlib import Path
+    from duoforge_search.errors import SearchError
+    try:
+        key = room_of_log(path, bot)
+    except ValueError:
+        raise Refused("other_bot") from None
+    with open(path, encoding="utf-8") as f:
+        records = [json.loads(line) for line in f if line.strip()]
+    if not any("feed" in r for r in records):
+        raise Refused("open_sheets_log")
+    replayed = LogReplay(records, data, policy, team_text, prior, key, search=live)
+    for game, record in replayed:
+        if record is None:
+            counts["no_decision_record"] += 1
+            continue
+        if record["accepted"] is None and ended_on(records, record["decision"]):
+            record = dict(record, accepted=record["sent"])  # the battle ended on it: played as sent, counted
+            counts["ended_on_sent"] += 1
+        live.searcher.records = None
+        game.candidates(budget)
+        outcome = game.outcomes[-1] if game.outcomes else None
+        if outcome is not None and outcome.cause == "searched" and not game.request.get("teamPreview"):
+            yield game, record, live.searcher.records[0]
+    if replayed.diverged is not None:
+        raise SearchError(f"{Path(path).name}: the replay and the bot disagree on a stop ({replayed.diverged})")
+    if replayed.stopped is not None:
+        raise Refused(replayed.stopped)
+
+
 def counter_kind(key):
     """A counter's key as an aggregate (the arena's run log): a redraw by a stop keeps the stop's kind only
     (redraw.stop:structure, redraw.stop:cts:...), never the stop's text, which can name a nickname or a line."""
