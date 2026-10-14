@@ -59,12 +59,17 @@ case "$svc $op" in
         done
         exit 1 ;;
     "s3 cp")
+        if [ "${STUB_CP:-ok}" = fail ]; then  # as the real CLI: the message names the source and the target
+            echo "upload failed: $1 to $2 An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:iam::$STUB_ACCOUNT:user/owner is not authorized to perform: s3:PutObject" >&2
+            exit 1
+        fi
         case "$1" in
             s3://*run.json) printf '%s\n' "${STUB_REMOTE_RUN:-}" > "$2" ;;
             s3://*done.txt) printf '%s' "${STUB_REMOTE_DONE:-}" > "$2" ;;
             *done.txt) echo "MANIFEST $(tr '\n' ',' < "$1")" >> "$STUB_LOG" ;;
         esac ;;
     "ec2 describe-subnets") echo subnet-0abc123 ;;
+    "s3api head-object") echo "${STUB_HEAD:-}" ;;
     "ssm get-parameter") echo "${STUB_AMI:-ami-0abc123}" ;;
     "s3api list-objects-v2")
         if [ "${STUB_S3:-ok}" = deny ]; then echo "An error occurred (AccessDenied) when calling the ListObjectsV2 operation" >&2; exit 254; fi
@@ -1163,17 +1168,24 @@ esac
             if s.get('Sid') == 'ReadNets':  # the ladder campaigns' networks (#484): read-only, nets/ only
                 self.assertEqual((s['Action'], resources), ('s3:GetObject', ['arn:aws:s3:::<BUCKET>/nets/*']))
                 continue
+            if s.get('Sid') == 'ReadTeams':  # the preview-oracle campaigns' foe team (#458): read-only, teams/ only
+                self.assertEqual((s['Action'], resources), ('s3:GetObject', ['arn:aws:s3:::<BUCKET>/teams/*']))
+                continue
             self.assertTrue(all(r.endswith('/fuzz/*') or 'prefix' in json.dumps(s.get('Condition', {})) for r in
                                 resources), s)
         on_nets = [s for s in role['Statement'] if any('/nets/' in r for r in
                                                        ([s['Resource']] if isinstance(s['Resource'], str) else s['Resource']))]
         self.assertEqual([s['Sid'] for s in on_nets], ['ReadNets'])  # no write, no delete on nets/
+        on_teams = [s for s in role['Statement'] if any('/teams/' in r for r in
+                                                        ([s['Resource']] if isinstance(s['Resource'], str) else s['Resource']))]
+        self.assertEqual([s['Sid'] for s in on_teams], ['ReadTeams'])  # no write, no delete on teams/
 
     # ------------------------------------------------------------------ shellcheck
     @unittest.skipIf(shutil.which('shellcheck') is None, 'shellcheck is not installed')
     def test_shellcheck_is_clean(self):
         scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh', 'chunks.sh',
-                                                   'launch_ladder.sh', 'ladder_user_data.sh', 'ladder_box_lib.sh')]
+                                                   'launch_ladder.sh', 'ladder_user_data.sh', 'ladder_box_lib.sh',
+                                                   'launch_oracle.sh', 'oracle_user_data.sh', 'upload_team.sh')]
         r = subprocess.run(['shellcheck', '-x', '-S', 'warning', *[posix(s) for s in scripts]], capture_output=True, text=True,
                            cwd=HERE)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
@@ -1558,6 +1570,364 @@ class OracleConf(unittest.TestCase):
         self.assertEqual(run('argv', path, '/n', '/t', '/o').stdout.split()[-2:], ['--out', '/o'])
         for bad in (('workers',), ('team', path, 'x'), ('nope', path), ('check', os.path.join(self.tmp, 'missing'))):
             self.assertEqual(run(*bad).returncode, 2, bad)
+
+
+ORACLE = ('--campaign', 'preview-mixed', '--commit', SHA, '--bucket', 'my-fuzz-bucket')
+BC6 = 'bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39'
+FOE_TEAM = 'e1060cf46a8f30bc3e56ad6fb1e038a9ed3dafd47a9ec9913b8399542320c281'  # the tournament sun team's sha256 (private)
+# Every refusal the README's preview-oracle section names; the box makes each one (a refusal is a named exit).
+ORACLE_REFUSALS = ('nets_writable', 'nets_probe_unclear', 'teams_writable', 'teams_probe_unclear', 'nets_unreadable',
+                   'net_sha_mismatch', 'team_unreadable', 'team_sha_mismatch', 'ours_mismatch', 'wrong_commit', 'wrong_run',
+                   'no_campaign', 'bad_conf', 'build', 'python_env', 'cpus', 'oracle_beside_differs', 'oracle_failed',
+                   'upload_failed')
+
+
+@unittest.skipIf(BASH is None, 'bash is not on the PATH')
+class OracleLaunch(unittest.TestCase):
+    """launch_oracle.sh, the preview-oracle box (#458) and the campaign preview-mixed, against the stub aws only: nothing
+    here reaches AWS (owner rule: only the HauptSession launches, from its chat)."""
+
+    setUp = Guards.setUp
+    assert_aws_is_stub = Guards.assert_aws_is_stub
+    run_script = Guards.run_script
+    calls = Guards.calls
+    real_launches = Guards.real_launches
+    test_no_test_has_a_way_to_the_real_aws = LadderLaunch.test_no_test_has_a_way_to_the_real_aws
+
+    def test_without_the_approval_flag_one_c7a_request_tagged_oracle_is_printed_and_nothing_launched(self):
+        r = self.run_script('launch_oracle.sh', *ORACLE)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('nothing was launched', r.stdout)
+        self.assertEqual(r.stdout.count('--instance-type c7a.16xlarge'), 1)
+        self.assertEqual(len(re.findall(r'Key=purpose\\?,Value=oracle', r.stdout)), 3)  # printf %q escapes the commas
+        self.assertIn('s3://my-fuzz-bucket/fuzz/oracle/preview-mixed/' + SHA[:12] + '-oracle-', r.stdout)
+        run_id = re.search(r'^run id +(\S+)$', r.stdout, re.M).group(1)
+        self.assertRegex(run_id, r'^[0-9a-f]{12}-oracle-[0-9]{8}T[0-9]{6}Z$')
+        self.assertIn('                ' + BC6, r.stdout)  # the network, by its sha256
+        self.assertIn('s3://my-fuzz-bucket/teams/%s.txt' % FOE_TEAM, r.stdout)  # the foe team, by its key only
+        self.assertIn('MaxPrice=1.67', r.stdout)  # 20 / 12
+        self.assertIn('shutdown -h +720', r.stdout)  # the default: 12 hours
+        self.assertEqual(self.real_launches(), [])
+        self.assertFalse([c for c in self.calls() if ' create-' in c or ' put-' in c or ' s3 ' in ' ' + c
+                          or ' s3api ' in ' ' + c])
+        self.assertNotIn(ACCOUNT, r.stdout + r.stderr)
+
+    def test_with_the_flag_exactly_one_c7a_request_and_no_fallback_without_capacity(self):
+        r = self.run_script('launch_oracle.sh', *ORACLE, '--i-have-owner-approval')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('launched i-0abc123', r.stdout)
+        (call,) = self.real_launches()
+        for needle in ('--instance-type c7a.16xlarge', 'MarketType=spot', 'MaxPrice=1.67', 'Name=duoforge-fuzz',
+                       'HttpTokens=required', '--instance-initiated-shutdown-behavior terminate',
+                       'InstanceInterruptionBehavior=terminate', '--security-group-ids sg-0abc123'):
+            self.assertIn(needle, call)
+        self.assertEqual(call.count('Key=purpose,Value=oracle'), 3)
+        self.assertEqual(call.count('Key=project,Value=duoforge'), 3)
+        self.assertEqual(call.count('Key=campaign,Value=preview-mixed'), 3)
+        self.assertNotIn('--key-name', call)
+        open(self.log, 'w').close()
+        r = self.run_script('launch_oracle.sh', *ORACLE, '--i-have-owner-approval', STUB_RUN='nocap')
+        self.assertEqual(r.returncode, 2)
+        self.assertIn('no spot capacity for c7a.16xlarge', r.stderr)
+        self.assertIn('never mix', r.stderr)
+        self.assertEqual(len(self.real_launches()), 1)  # one type, no fallback to another
+
+    def test_the_guards_hold_for_oracle_launches(self):
+        cases = (({'STUB_ARN': 'arn:aws:iam::%s:user/someone' % ACCOUNT}, ORACLE, "not a ':user/pokeengine'"),
+                 ({'STUB_ARN': ''}, ORACLE, "not a ':user/pokeengine'"),
+                 ({}, ORACLE + ('--sg-name', 'open'), 'only duoforge-fuzz'),
+                 ({}, ORACLE + ('--max-hours', '13'), 'between 1 and 12'),
+                 ({}, ORACLE + ('--max-hours', '0'), 'between 1 and 12'),
+                 ({}, ORACLE + ('--max-hours', '1.5'), 'not a whole number'),
+                 ({}, ORACLE + ('--types', 'c6a.16xlarge'), 'unknown argument'),
+                 ({}, ORACLE + ('--resume', 'x'), 'unknown argument'),
+                 ({}, ('--campaign', 'ladder-equal-2e', '--commit', SHA, '--bucket', 'my-fuzz-bucket'),
+                  'not a valid preview-oracle campaign'),
+                 ({}, ('--campaign', 'weather-sand-snow', '--commit', SHA, '--bucket', 'my-fuzz-bucket'),
+                  'not a valid preview-oracle campaign'),
+                 ({}, ('--campaign', 'no-such-campaign', '--commit', SHA, '--bucket', 'my-fuzz-bucket'),
+                  'has no campaign.conf'),
+                 ({}, ('--campaign', 'preview-mixed', '--commit', 'main', '--bucket', 'my-fuzz-bucket'), '--commit'),
+                 ({}, ('--campaign', 'preview-mixed', '--commit', SHA, '--bucket', 'UPPER'), '--bucket'),
+                 ({'STUB_SG_INBOUND': '1'}, ORACLE, 'not as required'),
+                 ({'STUB_SG_TAG': 'None'}, ORACLE, 'not as required'))
+        for env, args, message in cases:
+            with self.subTest(args=args[-2:], env=env):
+                open(self.log, 'w').close()
+                r = self.run_script('launch_oracle.sh', *args, '--i-have-owner-approval', **env)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn(message, r.stderr)
+                self.assertEqual(self.real_launches(), [])
+                self.assertNotIn(ACCOUNT, r.stdout + r.stderr)
+        for hours, minutes, price in (('12', 720, '1.67'), ('1', 60, '20.00'), ('4', 240, '5.00')):
+            with self.subTest(hours=hours):
+                r = self.run_script('launch_oracle.sh', *ORACLE, '--max-hours', hours)
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+                self.assertIn('shutdown -h +%d' % minutes, r.stdout)
+                self.assertIn('MaxPrice=%s' % price, r.stdout)
+
+    def test_the_oracle_cap_is_its_own_and_the_ladder_and_fuzz_caps_are_unchanged(self):
+        script = ('. %s; echo "$DF_ORACLE_MAX_HOURS_LIMIT $DF_ORACLE_DEFAULT_MAX_HOURS $DF_ORACLE_COST_CAP_USD '
+                  '$DF_MAX_HOURS_LIMIT $DF_COST_CAP_USD $DF_LADDER_TYPE"; df_max_price 2; echo; df_max_price 12 20; echo; '
+                  'df_cost_cap ladder; df_cost_cap fuzz; df_cost_cap oracle; echo; '
+                  'df_valid_oracle_run_id %s-oracle-20261015T030000Z && echo good; '
+                  'df_valid_oracle_run_id %s-ladder-20261015T030000Z || echo bad; '
+                  'df_valid_ladder_run_id %s-oracle-20261015T030000Z || echo bad') % (
+            shlex.quote(posix(os.path.join(HERE, 'lib.sh'))), SHA[:12], SHA[:12], SHA[:12])
+        r = subprocess.run([BASH, '-c', script], env=self.env, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.split('\n'), ['12 12 20 2 10 c7a.16xlarge', '5.00', '1.67', '101020', 'good', 'bad', 'bad',
+                                                ''])
+        r = self.run_script('launch_ladder.sh', *LADDER)  # the ladder's request keeps its own price ceiling
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('MaxPrice=5.00', r.stdout)
+
+    def test_the_campaign_preview_mixed_is_an_oracle_conf_and_no_fuzz_campaign(self):
+        import oracle_conf
+        with open(os.path.join(HERE, 'campaigns', 'preview-mixed', 'campaign.conf'), encoding='utf-8') as f:
+            text = f.read()
+        conf = oracle_conf.parse(text)
+        self.assertEqual(conf, {'kind': 'oracle', 'plan': 'preview-mixed-2026-10-14', 'checkpoint': BC6, 'foe_net': BC6,
+                                'ours': 'A', 'foe_team': FOE_TEAM, 'workers': 8, 'max_steps': 1000})
+        self.assertNotIn('preview-mixed', fuzz_campaigns())
+        self.assertIn('the tournament sun team', text)
+        self.assertIn('teams/<sha256>.txt', text)
+
+    def test_the_oracle_files_name_the_foe_by_its_description_only(self):
+        for name in ('launch_oracle.sh', 'oracle_user_data.sh', 'upload_team.sh', 'README.md', 'lib.sh',
+                     os.path.join('campaigns', 'preview-mixed', 'campaign.conf')):
+            with open(os.path.join(HERE, name), encoding='utf-8') as f:
+                text = f.read()
+            with self.subTest(file=name):
+                self.assertNotRegex(text.lower(), r'national')
+
+    def render(self, minutes=720):
+        script = '. %s; df_render_oracle_user_data preview-mixed %s my-fuzz-bucket %d %s' % (
+            shlex.quote(posix(os.path.join(HERE, 'lib.sh'))), SHA, minutes, SHA[:12] + '-oracle-20261015T030000Z')
+        r = subprocess.run([BASH, '-c', script], env=self.env, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return r.stdout
+
+    def test_the_oracle_box_starts_with_the_watchdog_pins_the_machine_and_refuses_by_name(self):
+        text = self.render(600)
+        lines = text.splitlines()
+        self.assertEqual(lines[0], '#!/bin/bash')
+        self.assertTrue(lines[1].startswith('shutdown -h +600 '), lines[1])
+        self.assertNotRegex(text, r'@[A-Z_]+@')
+        self.assertLessEqual(len(self.render().encode()), 16384)  # EC2's limit for user data
+        for needle in ('export JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell '
+                       'OPENBLAS_NUM_THREADS=1', 'export DUOFORGE_LIBRARY="$LIB" PYTHONPATH="$REPO/python"',
+                       'DF_PROCESSES=3', 'DF_CPUS=16', 'DF_SPARE=16', 'NEED=$((DF_PROCESSES * DF_CPUS + DF_SPARE))',
+                       '-DCMAKE_BUILD_TYPE=Release', '--target duoforge_shared', 'ladder_requirements.txt', '--no-deps',
+                       'pip" check', '. "$TOOLS/ladder_box_lib.sh"', 'oracle_conf.py" check "$CONF"',
+                       'ladder_nets_probe "$DF_BUCKET" "$NETS_KEY_PREFIX/.write-probe-$DF_RUN_ID"',
+                       'ladder_nets_probe "$DF_BUCKET" "$TEAMS_KEY_PREFIX/.write-probe-$DF_RUN_ID"',
+                       '"${DF_COMMIT:0:12}-oracle-"', 'data/teams/index.json', 'sha256sum "$REPO/data/teams/$OURS.txt"',
+                       '"processes": int(procs)', '"cpus_per_process": int(cpus)', '"library_sha256": lib',
+                       '"pip_freeze": freeze', 'aws s3 cp "$WORK/env.json" "$S3_BASE/env.json"',
+                       'trap finish EXIT', "trap 'REASON=terminated; exit 143' TERM INT", 'REASON="failed_in_$STEP"',
+                       'shutdown -h now', 'status.json', 'S3_BASE="s3://$DF_BUCKET/fuzz/oracle/$DF_CAMPAIGN/$DF_RUN_ID"'):
+            self.assertIn(needle, text)
+        for name in ORACLE_REFUSALS:
+            self.assertRegex(text, r'\brefuse %s\b' % name, name)
+        code = [l for l in lines if not l.lstrip().startswith('#')]
+        # The checks come in this order, all before the series runs.
+        order = [text.index(n) for n in ('refuse wrong_commit', 'refuse bad_conf', 'refuse build', 'refuse python_env',
+                                         'refuse nets_writable', 'refuse teams_writable', 'refuse net_sha_mismatch',
+                                         'refuse team_sha_mismatch', 'refuse ours_mismatch', 'refuse cpus',
+                                         'cd "$REPO" && "$WORK/venv/bin/python"', 'STEP=upload',
+                                         'refuse oracle_beside_differs')]
+        self.assertEqual(order, sorted(order))
+        # ONE command runs the series; preview_series pins its processes itself (no taskset around it).
+        series = [l for l in code if '-m duoforge_search.preview_series' in l]
+        self.assertEqual(series, ['cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series "${ARGS[@]}" '
+                                  '--parallel 3 --cpus-per-process 16 > "$WORK/series.log" 2>&1 && rc=0 || rc=$?'])
+        self.assertFalse([l for l in code if 'taskset' in l])
+        self.assertIn('list=$(python3 "$TOOLS/oracle_conf.py" argv "$CONF" "$NETS" "$TEAMS" "$OUT")', text)
+        self.assertIn('    3) refuse oracle_beside_differs', text)
+        self.assertIn('    *) refuse oracle_failed', text)
+        # What goes up: the aggregates the README lists, the log tails, env.json, status.json, the box log. Never a
+        # network, the team file or a decision file. The two downloads (nets/, teams/) are the only other s3 cp.
+        cps = [l for l in code if re.search(r'\baws s3 cp\b', l)]
+        downloads = [l for l in cps if re.search(r'aws s3 cp "s3://\$DF_BUCKET/', l)]
+        self.assertEqual(len(downloads), 2, downloads)
+        self.assertIn('aws s3 cp "s3://$DF_BUCKET/$NETS_KEY_PREFIX/$sha.npz" "$NETS/$sha.npz"', downloads[0])
+        self.assertIn('aws s3 cp "s3://$DF_BUCKET/$TEAMS_KEY_PREFIX/$TEAM_SHA.txt" "$TEAM_FILE"', downloads[1])
+        uploads = [l for l in cps if l not in downloads]
+        self.assertTrue(uploads)
+        for line in uploads:
+            self.assertRegex(line, r'aws s3 cp "[^"]+" "\$S3_BASE/', line)
+        globs = [l for l in code if l.startswith('for f in "$OUT"/series.json')]
+        self.assertEqual(globs, ['for f in "$OUT"/series.json "$OUT"/equality.json "$OUT"/matrix/*.json '
+                                 '"$OUT"/runs/*/conditions.json "$OUT"/runs/*/oracle.json "$OUT"/runs/*/arms/*.json; do'])
+        self.assertIn('case $rel in *decision* | runs/*.parts/*) continue ;; esac', text)
+        up_calls = [l.strip() for l in code if re.match(r'\s*(if \[ -f "\$f" \]; then )?up ', l)]
+        self.assertEqual(up_calls, ['if [ -f "$f" ]; then up "$f" "$rel"; fi',
+                                    'up "$WORK/series-tail.log" log/series-tail.log',
+                                    'up "$WORK/tails/$name-tail.log" "log/logs/$name-tail.log"'])
+        self.assertIn('tail -n 200 "$WORK/series.log" > "$WORK/series-tail.log"', text)
+        self.assertIn('for f in "$OUT"/logs/*.log; do', text)
+        for line in uploads + up_calls + globs:
+            for word in ('.npz', 'teams', 'TEAM', 'decision', '$NETS'):
+                self.assertNotIn(word, line, line)
+        # The team file is fetched, hashed, given to the series and removed: never shown, logged or uploaded.
+        team_lines = [l for l in code if 'TEAM_FILE' in l or '"$TEAMS' in l]
+        self.assertTrue(team_lines)
+        for line in team_lines:
+            self.assertNotRegex(line, r'\b(cat|echo|printf|tee|head|tail|less|more|base64|xxd|od|grep|sed|awk|log)\b', line)
+            self.assertNotRegex(line, r'aws s3 cp "\$TEAM_FILE"|aws s3 cp "\$TEAMS', line)
+        self.assertIn('[ "$(sha256sum < "$TEAM_FILE" | cut -d\' \' -f1)" = "$TEAM_SHA" ]', text)
+        self.assertIn('rm -f "$TEAM_FILE"', text)
+        self.assertNotIn('set -x', text)
+        self.assertNotRegex(text, r'AKIA[0-9A-Z]{16}|aws_secret_access_key|BEGIN [A-Z ]*PRIVATE KEY')
+
+    def test_every_refusal_of_the_box_is_named_in_the_readme(self):
+        with open(os.path.join(HERE, 'README.md'), encoding='utf-8') as f:
+            readme = f.read()
+        section = readme[readme.index('## Preview-oracle campaigns (#458)'):readme.index('## Tests')]
+        for name in ORACLE_REFUSALS:
+            self.assertIn('`%s`' % name, section, name)
+        found = set(re.findall(r'\brefuse ([a-z_]+)\b', self.render()))
+        self.assertEqual(found, set(ORACLE_REFUSALS))
+        self.assertIn('Owner-Entscheidung 2026-10-15, nur #458', readme)
+
+
+TEAM_MARKER = 'MARKER-TEAM-CONTENT-7f3a'  # a line of the test's team file: it must never appear anywhere
+NAME_MARKER = 'secret-name-91c2'  # the test's team file name: it must never be printed
+
+
+@unittest.skipIf(BASH is None, 'bash is not on the PATH')
+class TeamUpload(unittest.TestCase):
+    """upload_team.sh, the only way the private foe team reaches the bucket (#458), against the stub aws only. Neither the
+    content nor the name of the team file ever appears in its output, in any case; the file is streamed on stdin, so
+    its path does not even reach the CLI's arguments (the stub's log)."""
+
+    run_script = Guards.run_script
+    calls = Guards.calls
+    assert_aws_is_stub = Guards.assert_aws_is_stub
+    test_no_test_has_a_way_to_the_real_aws = LadderLaunch.test_no_test_has_a_way_to_the_real_aws
+
+    def setUp(self):
+        Guards.setUp(self)
+        self.team = os.path.join(self.tmp, NAME_MARKER + '.txt')
+        body = ('Some Pokemon @ Some Item\nAbility: Something\n%s\n- A Move\n' % TEAM_MARKER).encode()
+        with open(self.team, 'wb') as f:
+            f.write(body)
+        import hashlib
+        self.sha = hashlib.sha256(body).hexdigest()
+        self.size = len(body)
+        self.target = 's3://my-fuzz-bucket/teams/%s.txt' % self.sha
+
+    def upload(self, *extra, sha=None, file=None, **env):
+        open(self.log, 'w').close()
+        env.setdefault('AWS_PROFILE', 'owner')
+        env.setdefault('STUB_HEAD', '%d\tAES256' % self.size)
+        if env['AWS_PROFILE'] is None:
+            del env['AWS_PROFILE']
+        args = ('--file', posix(file or self.team), '--sha256', sha or self.sha, '--bucket', 'my-fuzz-bucket') + extra
+        e = dict(self.env, **env)
+        r = subprocess.run([BASH, posix(os.path.join(HERE, 'upload_team.sh')), *args], env=e, capture_output=True,
+                           text=True, timeout=120)
+        self.assert_private(r)
+        return r
+
+    def assert_private(self, r):
+        with open(self.log, encoding='utf-8') as f:
+            log = f.read()
+        for where, text in (('stdout', r.stdout), ('stderr', r.stderr), ('the stub log', log)):
+            self.assertNotIn(TEAM_MARKER, text, where)
+            self.assertNotIn(NAME_MARKER, text, where)  # streamed on stdin: not even the CLI sees the path
+            self.assertNotIn(os.path.basename(self.tmp), text, where)
+            self.assertNotIn(ACCOUNT, text, where)
+
+    def cps(self):
+        return [c for c in self.calls() if ' s3 cp ' in ' ' + c + ' ']
+
+    def test_a_sha_mismatch_is_refused_and_nothing_is_uploaded(self):
+        for extra in ((), ('--i-have-owner-approval',)):
+            with self.subTest(extra=extra):
+                r = self.upload(*extra, sha='f' * 64)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn('the team file has the sha256 %s, not %s' % (self.sha, 'f' * 64), r.stderr)
+                self.assertEqual(self.calls(), [])
+
+    def test_a_matching_sha_without_the_flag_uploads_nothing(self):
+        r = self.upload()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('nothing was uploaded', r.stdout)
+        self.assertIn('--i-have-owner-approval', r.stdout)
+        self.assertIn(self.target, r.stdout)
+        self.assertIn(self.sha, r.stdout)
+        self.assertEqual(self.calls(), [])
+
+    def test_with_the_flag_exactly_one_encrypted_upload_to_the_teams_key_and_a_check(self):
+        r = self.upload('--i-have-owner-approval')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('uploaded      ' + self.target, r.stdout)
+        self.assertEqual(self.cps(), ['--region eu-central-1 s3 cp - %s --sse AES256 --only-show-errors' % self.target])
+        calls = self.calls()
+        self.assertEqual(len(calls), 2, calls)
+        self.assertTrue(calls[1].startswith('--region eu-central-1 s3api head-object --bucket my-fuzz-bucket --key teams/%s.txt'
+                                            % self.sha), calls[1])
+        self.assertFalse([c for c in calls if 'sts ' in c])  # the owner's credentials: no pokeengine guard here
+
+    def test_a_failing_upload_is_refused_masked_and_without_the_file(self):
+        r = self.upload('--i-have-owner-approval', STUB_CP='fail')
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn('the upload of the team file to %s failed' % self.target, r.stderr)
+        self.assertIn('AccessDenied', r.stderr)
+        self.assertIn(':************:', r.stderr)  # the account id is masked
+        self.assertEqual(len(self.cps()), 1)
+        self.assertFalse([c for c in self.calls() if 'head-object' in c])
+        self.assertNotIn('uploaded  ', r.stdout)
+
+    def test_an_object_that_is_not_as_uploaded_is_reported(self):
+        for head in ('1\tAES256', '%d\tNone' % self.size, ''):
+            with self.subTest(head=head):
+                r = self.upload('--i-have-owner-approval', STUB_HEAD=head)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn('is not as uploaded', r.stderr)
+
+    def test_the_guards_refuse_without_naming_the_file(self):
+        missing = os.path.join(self.tmp, NAME_MARKER + '-missing.txt')
+        folder = os.path.join(self.tmp, NAME_MARKER + '-dir')
+        os.mkdir(folder)
+        cases = ((dict(file=missing), (), 'does not exist'),
+                 (dict(file=folder), (), 'does not exist or is not a regular file'),
+                 (dict(sha='E' * 64), (), 'bad or missing --sha256'),
+                 (dict(sha='abc'), (), 'bad or missing --sha256'),
+                 (dict(sha=posix(self.team)), (), 'bad or missing --sha256'),  # a path in the wrong place is not echoed
+                 (dict(), ('--bucket', 'UPPER'), 'bad or missing --bucket'),
+                 (dict(), ('--bucket', posix(self.team)), 'bad or missing --bucket'),
+                 (dict(), (posix(self.team),), 'unknown argument'),
+                 (dict(), ('--' + NAME_MARKER,), 'unknown argument'),
+                 (dict(AWS_PROFILE=None), ('--i-have-owner-approval',), 'AWS_PROFILE is not set'),
+                 (dict(AWS_PROFILE='pokeengine'), ('--i-have-owner-approval',), 'no S3 write permission'))
+        for kwargs, extra, message in cases:
+            with self.subTest(kwargs=kwargs, extra=extra):
+                r = self.upload(*extra, **kwargs)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn(message, r.stderr)
+                self.assertEqual(self.calls(), [])
+        r = self.upload('--file')
+        self.assertEqual(r.returncode, 2)
+        self.assertIn('--file needs a value', r.stderr)
+
+    def test_the_script_never_shows_the_file(self):
+        with open(os.path.join(HERE, 'upload_team.sh'), encoding='utf-8') as f:
+            text = f.read()
+        code = [l for l in text.splitlines() if not l.lstrip().startswith('#')]
+        self.assertNotIn('set -x', text)
+        self.assertNotIn('df_identity_guard', text)  # the owner's credentials, not pokeengine's
+        uses = [l.strip() for l in code if '"$file"' in l]
+        self.assertEqual(uses, ['[ -n "$file" ] || df_die \'missing --file: the team file\'',
+                                '[ -f "$file" ] || df_die \'the team file does not exist or is not a regular file\'',
+                                '[ -r "$file" ] || df_die \'the team file cannot be read\'',
+                                'got=$(sha256sum < "$file" 2> /dev/null | cut -d\' \' -f1) || got=\'\'',
+                                'size=$(wc -c < "$file" | tr -d \' \')',
+                                'if ! err=$(df_aws s3 cp - "s3://$bucket/$key" --sse AES256 --only-show-errors < "$file" '
+                                '2>&1 > /dev/null); then'])
+        self.assertFalse([l for l in code if '$file' in l and re.search(r'\b(cat|echo|printf|df_log|df_die "[^"]*\$file)', l)])
 
 
 if __name__ == '__main__':
