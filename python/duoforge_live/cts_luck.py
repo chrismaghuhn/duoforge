@@ -195,8 +195,8 @@ class Meter:
             raise Excluded("foe-action-not-in-worlds")
         plan = []  # (world, foe pair or None, its weight in the world)
         mixed = False
-        self.last = {"foe": [], "reasons": [], "kept": kept}  # per world played the foe's options (diagnostics, tests)
-        unknown, cannot = [], []  # worlds whose label tells nothing of a foe slot; worlds whose options cannot play it
+        self.last = {"foe": [], "reasons": [], "rosters": [], "kept": kept}  # per world played (diagnostics, tests)
+        unknown = []  # worlds whose label tells nothing of a foe slot (a world that cannot play the lines is left out)
         for w in kept:
             if not asked:
                 plan.append((w, None, 1.0))
@@ -207,14 +207,15 @@ class Meter:
             try:
                 (first, second), reasons = foe_shown(segment, foe, lists, ctx)
             except Excluded as e:
-                (unknown if str(e) == "foe-action-unknown" else cannot).append(w)
+                if str(e) == "foe-action-unknown":
+                    unknown.append(w)
                 continue
             pairs = [(a, b) for a in first for b in second if int(domain["allowed"][a]) >> b & 1]
             if not pairs:  # the world's own domain bars the pair the lines show (a Choice lock, Taunt, Disable, ...)
-                cannot.append(w)
                 continue
             self.last["foe"].append([(lists[0][a], lists[1][b]) for a, b in pairs])
             self.last["reasons"].append(reasons)
+            self.last["rosters"].append(ctx.roster)  # the world's foe roster (base formes), its reserves' order
             if len(pairs) == 1:
                 plan.append((w, pairs[0], 1.0))
                 continue
@@ -295,7 +296,7 @@ def result_of(records, bot):
 def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
     """The luck of one closed-sheet battle log: {"turns": [luck per valued turn], "mixed": [whether the turn's foe
     action was mixed over a set the lines narrow it to], "dropped": [the worlds the turn refuted], "worlds", "result",
-    "excluded": Counter}.
+    "excluded": Counter, "partial": Counter of valued turns whose rest after a pivot inside them is valued nowhere}.
     live is a LiveSearch whose searcher is a cts.Capture; meter a Meter on its search. cts.Refused for a log the
     replay does not follow (as cts.replay_closed), by name."""
     import json
@@ -314,6 +315,7 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
         raise cts.Refused("open_sheets_log")
     result = result_of(records, bot)
     excluded, luck, mixed, dropped = collections.Counter(), [], [], []
+    partial = collections.Counter()  # valued turns whose rest after a pivot inside them is valued nowhere
     searches = differs = 0
     pending = None
 
@@ -337,8 +339,11 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
         if pending is not None:  # the state that happened after the pending turn: this point's particles
             lines = game.tracker._lines()
             value(pending, lines, lambda: meter.actual(game, pending.seat, policy))
-            if game.request.get("wait") and not any(line.startswith("|upkeep") for line in lines[pending.lines_at:]):
-                excluded["rest-after-foe-pivot"] += 1  # a foe's pivot inside the turn: the rest of it is valued nowhere
+            if not any(line.startswith("|upkeep") for line in lines[pending.lines_at:]):  # a pivot inside the turn
+                if game.request.get("wait"):  # the foe's: the turn is valued at it, the rest of it nowhere
+                    partial["rest-after-foe-pivot"] += 1
+                elif game.request.get("forceSwitch"):  # the bot's own (a not-turn point follows): the same
+                    partial["rest-after-own-pivot"] += 1
             pending = None
         if game.request.get("teamPreview"):
             continue
@@ -375,4 +380,4 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
             value(pending, replayed.game.tracker._lines() + [r["in"] for r in records[last_feed + 1:]
                                                                if isinstance(r.get("in"), str)], lambda: result)
     return {"turns": luck, "mixed": mixed, "dropped": dropped, "worlds": meter.search.s, "result": result,
-            "excluded": excluded, "searches": searches, "search_differs": differs}
+            "excluded": excluded, "partial": partial, "searches": searches, "search_differs": differs}

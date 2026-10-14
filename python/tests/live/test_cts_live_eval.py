@@ -328,6 +328,7 @@ class LuckTest(unittest.TestCase):
     def test_the_series_holds_means_with_intervals_and_the_exclusions_by_name(self):
         from collections import Counter
         battles = [{"turns": [0.25, -0.5], "mixed": [False, True], "dropped": [0, 4], "worlds": 16, "result": 1.0,
+                    "partial": Counter({"rest-after-foe-pivot": 1}),
                     "excluded": Counter({"foe-action-unknown": 1})},
                    {"turns": [0.5], "mixed": [False], "dropped": [2], "worlds": 16, "result": -1.0,
                     "excluded": Counter()},
@@ -336,6 +337,7 @@ class LuckTest(unittest.TestCase):
         got = ev.luck_series(battles)
         self.assertEqual((got["battles"], got["finished"], got["unfinished"], got["turns_valued"]), (3, 2, 1, 3))
         self.assertEqual(got["unfinished_excluded"], {"no-end": 1})
+        self.assertEqual(got["turns_partial"], {"rest-after-foe-pivot": 1})  # valued turns, apart from the exclusions
         self.assertEqual((got["turns_mixed"], got["mixed_share"]), (1, 1 / 3))
         self.assertAlmostEqual(got["worlds_dropped_share"], 6 / 48)
         self.assertAlmostEqual(got["luck_per_battle_unmixed"]["mean"], (0.25 + 0.5) / 2)
@@ -363,6 +365,12 @@ class LuckTest(unittest.TestCase):
             Path(logs, "arena-run-20261013T192334Z.json").write_text(json.dumps({"started": "2026-10-13T19:23:34Z"}),
                                                                      encoding="utf-8")
             ev.check_bot_commit(logs, "1ffa6a03")
+            Path(logs, "arena-run-20261014T000433Z.json").write_text(
+                json.dumps({"started": "2026-10-14T00:04:33Z", "code": {"commit": "a7dd956b", "dirty": False},
+                            "search_settings": {"rule": "ev"}}), encoding="utf-8")
+            ev.check_bot_commit(logs, "1ffa6a03")  # a later bot's run log (with its code) is not this series'
+            self.assertEqual([h["started"] for h in ev.series_run_logs(logs, "a7dd956b")], ["2026-10-14T00:04:33Z"])
+            self.assertEqual([h["started"] for h in ev.series_run_logs(logs)], ["2026-10-13T19:23:34Z"])
             with self.assertRaisesRegex(SystemExit, "no process start"):
                 ev.check_bot_commit(logs, "a75c380a")
             Path(logs, "arena-run-20261012T005607Z.json").write_text(json.dumps({"started": "2026-10-12T00:56:07Z"}),

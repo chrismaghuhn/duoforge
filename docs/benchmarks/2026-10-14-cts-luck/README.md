@@ -25,13 +25,14 @@ The parts:
      - The logs of series 1 and 2 name no code. Their commit comes from the content (`--bot-commit`, HauptSession, 2026-10-14). Every run log in the directory must have started as that process (`PROCESS_STARTS`: 1ffa6a03 at 2026-10-13T19:23:34Z), and only battle logs with fed particle batches are replayed.
      - Of the processes before a7dd956b, only 1ffa6a03 played over the particles: a75c380a has no `cts.py` and answered closed sheets with `/choose default`. `|t:|` lines and file times are no source.
      - Battle logs without particle batches are counted by name (`skipped.no_particles`).
-   - **Each replayed decision is compared with the bot's:** the logged search's cause, and for a searched one its pair. The share that differs is reported (`search_differs_share`). Above 5% the result is `report_blocked`: no report until the cause is known.
+   - **Each replayed decision is compared with the bot's:** the logged search's cause, and for a searched one its pair. The share that differs is reported (`search_differs_share`). Above 5%, or with no decision compared at all, the result is `report_blocked`: no report until the cause is known.
+   - Run logs count only for their own series: those of the series' bot commit, or those that name no code for `--bot-commit`. Other bots' run logs in a shared directory are ignored.
    - No second particle or world implementation exists: the luck meter, the KO check and the live evaluation replay through `duoforge_live.cts`.
 2. **The same actions.**
    - Our side: the bot's accepted choice (`cts.logged_choice`, `cts.pair_texts`).
    - The foe's side, per world: the action that the turn's lines show. `duoforge_replay.labels.turn_label` reads it on that world's own foe options (the engine's domain) with that particle's sheets.
    - A switched-in member is found by its base species (a Mega's, Aegislash's) in the **world's** engine roster, from the world's observation. An option's reserve is a roster index of the world, whose order is not the particle's. A base species on two members of a world is refused by name (`roster-ambiguous`).
-   - **A world that cannot play what the lines show is left out**, like a refuted one. In that case the world's options hold no option the lines show, the label tells nothing where another world's label does, or the world's own domain bars the pair: a Choice lock, Taunt, Disable, Encore or Imprison in that world.
+   - **A world that cannot play what the lines show is left out**, like a refuted one. In that case the world's options hold no option the lines show, the label tells nothing where another world's label does, or the world's own domain bars the pair: a Choice lock, Taunt, Disable, Encore or Imprison in that world. A world also draws the foe's hidden bring (its pick order), so a world whose bench lacks the member the lines show switching in cannot play the turn either. In a committed test battle with the true team as the prior, 11 of 16 worlds drew another bring for such a turn.
      - This is read from the labels on the world's engine domain, never from a rule in Python.
      - It is counted in the share of worlds left out.
    - The labels read the log, which is not a battle rule. This is the same reading as the BC labels, from the foe's side.
@@ -49,7 +50,8 @@ The parts:
    - If the battle ended in the turn, it is the battle's result. The turn's lines then come from the last batch, which the bot received (`{"in"}`) but no longer fed.
    - **A foe's pivot inside the turn** (U-turn, Volt Switch, Eject Button: the bot waits while the foe chooses its switch) is a wait point.
      - The turn is valued there, where the engine's leaves stop too.
-     - The rest of the turn is valued nowhere and is counted by name (`rest-after-foe-pivot`): a wait point with no `|upkeep|` in the turn's lines before it.
+     - The rest of the turn is valued nowhere. It is counted apart from the exclusions, as a partial turn (`turns_partial.rest-after-foe-pivot`), because the turn itself is valued: a wait point with no `|upkeep|` in the turn's lines before it.
+     - The bot's own pivot inside a turn is the same: the turn is valued at the bot's switch request there, and the rest is counted as `rest-after-own-pivot`.
      - A foe slot that had not acted by then is mixed (point 2), and counts as mixed.
 
 The engine does every step. Python averages and classifies nothing about the battle: it never reads a crit, a miss or a damage roll from a line.
@@ -90,12 +92,11 @@ Every excluded turn is counted by its reason and reported with its share. None i
 | `foe-model-zero` | the foe model gives every pair of a mixed set probability 0 |
 | `foe-action-not-in-worlds` | no world remains: the turn refutes every world, or none can play what the lines show |
 | `roster-ambiguous` | a base species on two members of a world's roster |
-| `rest-after-foe-pivot` | the rest of a turn after a foe's pivot inside it (the turn itself is valued at the pivot) |
 | `no-decision-record` | a point the bot was asked at but wrote no decision record for (or answered `/choose default`) |
 | `facts:<skip>` | the foe's facts through the turn cannot be read (the particle filter's named skips, e.g. Transform) |
 | `own-choice-not-allowed`, `not_accepted` | the bot's played choice is not one of the point's pairs, or the log shows none accepted |
 | `leaf-refused` | the engine refuses a leaf (#464, unsupported content) |
-| `no-end` | the log stops in the turn without an end |
+| `no-end` | the log stops in the turn without an end (an unfinished battle: counted under `unfinished_excluded`) |
 
 A battle that the replay does not follow is counted under the replay's named reason (`refused_battles`).
 

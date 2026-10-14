@@ -1,10 +1,12 @@
 """The luck meter (#494) on the committed pool battle g45_moxie_win as player 1's closed-sheet log
 (python/tests/support/data/cts_luck_g45.jsonl), valued by a tiny synthetic checkpoint (no weights of ours): the
 replayed honest search's own worlds, the foe's action each world reads from the turn's lines, the engine's leaves."""
+import json
 import os
 import shutil
 import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from duoforge_live import cts, cts_luck, data, options, pkmn_arena, policy as live_policy, search as live_search, teams
@@ -56,15 +58,17 @@ class MeterTest(unittest.TestCase):
         net, tables = live_policy.load(self.path), data.for_checkpoint(self.path)
         meter = cts_luck.Meter(live.searcher.searcher, samples)
         self.addCleanup(meter.close)
-        played, real = [], meter.expected
+        played, rosters, real = [], [], meter.expected
 
         def expected(*args):
             value = real(*args)
             played.append(list(meter.last["foe"]))
+            rosters.append(list(meter.last["rosters"]))
             return value
         meter.expected = expected
         prior = cts.SetPrior(tables, true_foe if foe is None else foe)
         out = cts_luck.battle(log, tables, net, live, own, BOT, prior, meter)
+        self.rosters = rosters
         return out, played
 
     @staticmethod
@@ -115,15 +119,27 @@ class MeterTest(unittest.TestCase):
         switches = [worlds for worlds in played if any(o.kind == options.SWITCH for pairs in worlds
                                                        for pair in pairs for o in pair)]
         self.assertTrue(switches)
-        for worlds in switches:  # every world played it, its switching slot exactly the one switch the lines show
-            for pairs in worlds:
+        log = self.battles[SWITCH][0]
+        tables = data.load(kind="pool")
+        shown = {tables.base_forme(tables.forme(line.split("|")[3].split(",")[0])) for line in
+                 (json.loads(x).get("in", "") for x in Path(log).read_text(encoding="utf-8").splitlines())
+                 if line.startswith("|switch|p2")}
+        for worlds in switches:  # the worlds that played it, each with the shown member's switch
+            # A world draws the foe's hidden bring (its pick order) itself: the worlds whose bench lacks the member the
+            # log shows switching in cannot play the turn and are left out, the others play it.
+            turn = played.index(worlds)
+            self.assertTrue(0 < len(worlds) == out["worlds"] - out["dropped"][turn])
+            for pairs, roster in zip(worlds, self.rosters[turn]):
                 for k in (0, 1):
                     if pairs[0][k].kind == options.SWITCH:
                         self.assertEqual(len({(pair[k].kind, pair[k].reserve) for pair in pairs}), 1)
+                        # the reserve, a roster index of the world, is a member the log shows switching in
+                        self.assertIn(roster[pairs[0][k].reserve], shown)
 
     def test_the_rest_of_a_turn_after_a_foes_pivot_is_counted(self):
         out, _ = self.battle(name=PIVOT)
-        self.assertGreater(out["excluded"]["rest-after-foe-pivot"], 0)
+        self.assertGreater(out["partial"]["rest-after-foe-pivot"], 0)
+        self.assertNotIn("rest-after-foe-pivot", out["excluded"])  # a valued turn, not an excluded one
         self.assertTrue(out["turns"])
 
     def test_the_meter_is_deterministic_and_takes_its_samples(self):

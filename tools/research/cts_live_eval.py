@@ -450,6 +450,8 @@ def luck_series(battles):
         return sum(t for t, m in zip(b["turns"], b["mixed"]) if not m)
     return {"battles": len(battles) + len(unfinished), "finished": len(finished), "unfinished": len(unfinished),
             "turns_valued": valued, "turns_unfinished": sum(len(b["turns"]) for b in unfinished),
+            "turns_partial": dict(sum((collections.Counter(b.get("partial", {})) for b in battles),
+                                      collections.Counter())),
             "unfinished_excluded": dict(sorted(sum((collections.Counter(b["excluded"]) for b in unfinished),
                                                    collections.Counter()).items())),
             "turns_excluded": dict(sorted(excluded.items())),
@@ -478,17 +480,25 @@ SEARCH_DIFFERS_LIMIT = 0.05  # a larger share of replayed decisions the bot deci
 PROCESS_STARTS = {"1ffa6a03": "2026-10-13T19:23:34Z"}
 
 
+def series_run_logs(directory, code=None):
+    """The heads of the run logs of a series: with code, those of that bot commit (clean); without, those that name no
+    code (the bots before the run logs named it). Other bots' run logs in a shared directory are not the series'."""
+    heads = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(Path(directory).glob("arena-run-*.json"))]
+    return [h for h in heads if (_in_series(h.get("code"), code) if code is not None else not h.get("code"))]
+
+
 def check_bot_commit(directory, commit):
-    """SystemExit unless every run log of directory started as commit's process (PROCESS_STARTS): --bot-commit is the
-    content's assignment of logs that name no code, never a declaration."""
+    """SystemExit unless the run logs that name no code (series_run_logs) all started as commit's process
+    (PROCESS_STARTS), and there is one: --bot-commit is the content's assignment of logs that name no code, never a
+    declaration."""
     start = PROCESS_STARTS.get(str(commit or "")[:8])
     if start is None:
         raise SystemExit(f"--bot-commit {commit!r}: no process start is known for it (PROCESS_STARTS names "
                          f"{sorted(PROCESS_STARTS)})")
-    starts = sorted({json.loads(p.read_text(encoding="utf-8")).get("started")
-                     for p in Path(directory).glob("arena-run-*.json")})
+    starts = sorted({h.get("started") for h in series_run_logs(directory)})
     if starts != [start]:
-        raise SystemExit(f"--bot-commit {commit!r}: the run logs started {starts}, not as its process ({start})")
+        raise SystemExit(f"--bot-commit {commit!r}: the run logs without a code started {starts}, not as its "
+                         f"process ({start})")
 
 
 def search_step(commit):
@@ -507,7 +517,7 @@ def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_n
     checkpoint_sha256, the foe network by foe_net_sha256); the aggregates of luck_series, per opponent and team with
     labels, the battles the replay refuses by name. The search plays the settings of the series' bot commit (code, or
     bot_commit for logs that name none: then no battle may name one); the share of replayed decisions the bot decided
-    otherwise is reported, and above SEARCH_DIFFERS_LIMIT the result says report_blocked."""
+    otherwise is reported, and above SEARCH_DIFFERS_LIMIT (or with nothing compared) the result says report_blocked."""
     from duoforge_live import cts, cts_luck, data, pkmn_arena, policy as live_policy, search as live_search
     from duoforge_live.arena import provenance
     if pkmn_arena.sha256_of(checkpoint) != checkpoint_sha256:
@@ -518,8 +528,7 @@ def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_n
     from duoforge_search import ladder
     if bot_commit is not None:
         check_bot_commit(directory, bot_commit)
-    named = [json.loads(p.read_text(encoding="utf-8")).get("search_settings")
-             for p in sorted(Path(directory).glob("arena-run-*.json"))]
+    named = [h.get("search_settings") for h in series_run_logs(directory, code)]  # this series' run logs only
     if any(x is not None for x in named):  # the bot names its search in its run logs' head: that one, the same in all
         if any(x != named[0] for x in named):
             raise SystemExit(f"the run logs of {directory} name different search settings: not one series")
@@ -561,7 +570,7 @@ def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_n
     return {**luck_series(battles), "skipped": dict(skipped), "refused_battles": dict(refused), "samples": samples,
             "search_step": step, "bot_commit": code if code is not None else bot_commit,
             "searches": searches, "search_differs": differs, "search_differs_share": share,
-            "report_blocked": share > SEARCH_DIFFERS_LIMIT,
+            "report_blocked": searches == 0 or share > SEARCH_DIFFERS_LIMIT,  # nothing compared blocks it too
             "checkpoint_sha256": checkpoint_sha256, "foe_net_sha256": foe_net_sha256,
             "engine_code": provenance(engine_root), "tool_code": provenance(root),
             **({} if labels is None else {"by_opponent": {k: luck_series(v) for k, v in sorted(per.items())},
