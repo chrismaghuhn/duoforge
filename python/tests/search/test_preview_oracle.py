@@ -292,6 +292,12 @@ class GuardTest(unittest.TestCase):
         self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "ours"}), [])
         self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe"}), ["side"])
 
+    def test_a_run_from_before_our_arm_resumes_without_it(self):
+        old = {"seed": "0x1", "pairs": 32, "side": "foe"}
+        self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe", "our_arm": None}), [])
+        self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe", "our_arm": "23|04"}),
+                         ["our_arm"])
+
     def test_our_own_preview_must_be_one_per_seat(self):
         a, b = oracle.team_index("24|01"), oracle.team_index("01|23")
         swapped = int(np.flatnonzero((TEAM_TABLE == np.array([4, 2, 1, 0], TEAM_TABLE.dtype)).all(axis=1))[0])
@@ -420,6 +426,17 @@ class SummaryTest(unittest.TestCase):
             self.assertEqual(out["exploitability"]["our_arm"], "23|04")
             self.assertEqual(out["arms"]["drawn"]["our_played"], {"0": "23|04", "1": "23|04"})
 
+    def test_the_foe_side_refuses_arms_that_did_not_play_our_arm(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.write(tmp, {"drawn": [1, 1], "45|23": [0, 1]}, side="foe",
+                       played={name: {"0": "24|01", "1": "24|01"} for name in ("drawn", "45|23")})
+            with open(os.path.join(tmp, "conditions.json"), encoding="utf-8") as f:
+                conditions = json.load(f)
+            with open(os.path.join(tmp, "conditions.json"), "w", encoding="utf-8") as f:
+                json.dump(dict(conditions, our_arm="23|04"), f)
+            with self.assertRaisesRegex(SystemExit, r"arms \['45\|23', 'drawn'\]: our preview did not play --our-arm"):
+                oracle.summarize(tmp)
+
     def test_the_foe_side_refuses_arms_where_our_played_preview_differs(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.write(tmp, {"drawn": [1, 1], "45|23": [0, 1]}, side="foe",
@@ -468,8 +485,9 @@ class CliGuardTest(unittest.TestCase):
             self.assertRefused("--our-arm fixes our preview on the foe side", self.argv(out, ("--our-arm", "23|04")),
                                out)
             self.assertRefused("--our-arm: .*ascending", self.argv(out, ("--side", "foe", "--our-arm", "32|04")), out)
-            self.assertRefused(r"--our-arm: .*LEADS\|BENCH", self.argv(out, ("--side", "foe", "--our-arm", "today")),
-                               out)
+            for name in ("today", "drawn"):
+                self.assertRefused(rf"--our-arm takes a combination LEADS\|BENCH like '23\|04', not '{name}'",
+                                   self.argv(out, ("--side", "foe", "--our-arm", name)), out)
 
     def test_pairs_must_be_positive(self):
         with tempfile.TemporaryDirectory() as tmp:

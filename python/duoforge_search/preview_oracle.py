@@ -316,9 +316,9 @@ def summarize(out_dir):
 
     The ours side (the arms fix our preview; the foe's is drawn alike in every arm): the reference is today, the
     ranking is ours (best first), the loss is today against the best combination, and the scores are split by the
-    foe's lead. The foe side (the arms fix the foe's preview; ours is today's in every arm): the reference is drawn,
-    the ranking is the foe's best answers first (our lowest scores), and the exploitability is our score against drawn
-    minus our score against the best answer. Scores are always ours."""
+    foe's lead. The foe side (the arms fix the foe's preview; ours is today's, or --our-arm's, in every arm): the
+    reference is drawn, the ranking is the foe's best answers first (our lowest scores), and the exploitability is our
+    score against drawn minus our score against the best answer. Scores are always ours."""
     conditions = ladder._load_json(os.path.join(out_dir, "conditions.json"))
     arm_dir = os.path.join(out_dir, "arms")
     arms = {}
@@ -334,6 +334,10 @@ def summarize(out_dir):
             raise SystemExit("the arms' foe previews differ: the arms are not paired")
     elif len({json.dumps(our_played(e), sort_keys=True) for e in arms.values()}) != 1:
         raise SystemExit("the arms' our previews differ: the arms are not paired")
+    elif conditions.get("our_arm") is not None:
+        wrong = sorted(n for n, e in arms.items() if set(our_played(e).values()) != {conditions["our_arm"]})
+        if wrong:
+            raise SystemExit(f"arms {wrong}: our preview did not play --our-arm {conditions['our_arm']}")
     ours, foe = conditions["species"]["ours"], conditions["species"]["foe"]
     fixed = ours if side == "ours" else foe  # the team whose preview the arms fix
     reference_name = TODAY if side == "ours" else DRAWN
@@ -491,6 +495,8 @@ def main(argv=None):
     if args.our_arm is not None:
         if args.side != "foe":
             raise SystemExit("--our-arm fixes our preview on the foe side; on the ours side the arms fix it")
+        if args.our_arm in (TODAY, DRAWN):
+            raise SystemExit(f"--our-arm takes a combination LEADS|BENCH like '23|04', not {args.our_arm!r}")
         try:
             parse_arm(args.our_arm)
         except ValueError as err:
@@ -609,9 +615,8 @@ def main(argv=None):
                     check_played(arm, ours_decisions)
                 else:
                     check_played(arm, foe_decisions, "the foe's")
-                    if args.our_arm is None:
-                        check_constant_own(arm, ours_decisions)
-                    else:
+                    check_constant_own(arm, ours_decisions)
+                    if args.our_arm is not None:
                         check_played(arm, ours_decisions, combination=args.our_arm)
                 with open(target + ".tmp", "w", encoding="utf-8") as f:
                     json.dump(_finite(entry), f, indent=1, allow_nan=False)
