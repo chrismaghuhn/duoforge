@@ -114,7 +114,7 @@ set(DUOFORGE_ITEM_SOURCES
     src/combat/items/families.c
     src/combat/items/white_herb.c
 )
-set(DUOFORGE_EVAL_KERNEL_SOURCES src/eval/arithmetic.c src/eval/kernels.c src/eval/inputs.c)
+set(DUOFORGE_EVAL_KERNEL_SOURCES src/eval/arithmetic.c src/eval/kernels.c src/eval/inputs.c src/eval/normalization.c)
 set(DUOFORGE_OBSERVATION_SOURCES src/core/sha256_stream.c src/state/observation_digest.c src/state/request.c)
 
 set(DUOFORGE_SOURCES

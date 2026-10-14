@@ -30,3 +30,21 @@ else()
         set_tests_properties(duoforge.eval.${_name} PROPERTIES TIMEOUT 60 SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
     endforeach()
 endif()
+
+# E3n fixed-point normalization and residual operators; runtime synthetic vectors.
+duoforge_add_test(NAME duoforge.eval.normalization SOURCES eval/test_normalization.c WHITEBOX TIER quick AREA engine)
+if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND NOT MSVC)
+    target_compile_definitions(duoforge_eval_normalization PRIVATE DF_EVAL_ALLOC_HOOKS)
+    target_link_options(duoforge_eval_normalization PRIVATE
+        "LINKER:--wrap=malloc" "LINKER:--wrap=calloc" "LINKER:--wrap=realloc" "LINKER:--wrap=free")
+endif()
+if(DUOFORGE_PYTHON)
+    add_test(NAME duoforge.eval.normalization_oracle COMMAND "${DUOFORGE_PYTHON}"
+        "${PROJECT_SOURCE_DIR}/tools/eval/tests/normalization_oracle.py" "$<TARGET_FILE:duoforge_eval_normalization>")
+    duoforge_label_test(duoforge.eval.normalization_oracle quick engine python ci-no-skip)
+    set_tests_properties(duoforge.eval.normalization_oracle PROPERTIES TIMEOUT 60)
+else()
+    add_test(NAME duoforge.eval.normalization_oracle COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
+    duoforge_label_test(duoforge.eval.normalization_oracle quick engine python ci-no-skip)
+    set_tests_properties(duoforge.eval.normalization_oracle PROPERTIES TIMEOUT 60 SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+endif()
