@@ -834,7 +834,7 @@ typedef enum mr_family {
     MR_PSYCH_UP,     /* G80: the copy (-copyboost) is true even when it copies nothing; else the effect rule (nothing changed: false) */
     MR_ALLY_SWITCH,  /* G80: the swap true; the partner-missing fail (-fail with the move as cause) null; the roll's fail false */
     MR_SPEED_SWAP,   /* K3 (decision 0015 5de): the exchange of the stored Speeds (dfi_speed_swap's VOLATILE_START at the user) true;
-                        a Protect that blocks it null; the roll's fail false; any other shape is refused */
+                        otherwise the hit steps' classes (a Protect null; Psychic Terrain and IMMUNE false); no class: refused */
     MR_REFUSED       /* a handler this classifier does not map: refused */
 } mr_family;
 
@@ -1316,22 +1316,21 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
         break;
     }
     case MR_SPEED_SWAP: {
-        /* Step K3 (dfi_speed_swap, data/moves.ts:17430-17449 onHit): the exchange returns nothing, so the swap is a success (true).
-         * Its line is the VOLATILE_START of the user with detail SPEED_SWAP. A Protect that blocks it prints the BLOCKED event
-         * (NOT_FAIL: null); the roll's fail is false. Any other shape is not a case of the engine and is refused. */
+        /* Step K3 (dfi_speed_swap, data/moves.ts:17430-17449 onHit): the exchange returns nothing, so a swap that happened is true.
+         * Its line is the VOLATILE_START of the user with detail SPEED_SWAP. Without it the hit steps' classes decide, as for the
+         * other status moves: a Psychic Terrain block and an IMMUNE (Good as Gold) are false, a Protect's BLOCKED is null
+         * (classes above); a body with no class is not a case of the engine and is refused. */
         bool swapped = false;
-        bool blocked = false;
         for (uint32_t j = 0u; j < n; ++j) {
             swapped = swapped || (body[j].kind == DUOFORGE_EVENT_VOLATILE_START && body[j].position == user &&
                                   body[j].detail == DUOFORGE_VOLATILE_SPEED_SWAP);
-            blocked = blocked || body[j].kind == DUOFORGE_EVENT_BLOCKED;
         }
         if (swapped) {
             value = (uint8_t)DFI_MOVE_RESULT_TRUE;
-        } else if (blocked) {
-            value = (uint8_t)DFI_MOVE_RESULT_NULL;
-        } else if (user_fail) {
+        } else if (user_fail || (classes & MR_FALSE) != 0u) {
             value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else if ((classes & MR_NULL) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
         } else {
             return DUOFORGE_E_UNSUPPORTED;
         }
