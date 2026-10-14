@@ -439,7 +439,7 @@ class Honest(lookahead.Lookahead):
         self.exclude_teams = exclude_teams
         self.history = weakref.WeakKeyDictionary()
         self.worlds = None
-        self._searched = False  # a turn decision has built the worlds (world_policies reads them)
+        self._searched = False  # _prepare built a turn decision's worlds (world_policies reads them)
         super().__init__(context, model, params, encoder, ext_supported, k, m, s, "nash", seed, capacity, workers, lam=lam)
         self.rule = rule
         try:
@@ -885,7 +885,6 @@ class Honest(lookahead.Lookahead):
     def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None, *, refused="score", groups=None):
         _check_refused(refused)
         request = self._prepare(p, key, own, weights, last_step, costs, groups)
-        self._searched = True
         return self._finish(request, self._values(request, costs), own_p, costs, budget, refused=refused)
 
     def _prepare(self, p, key, own, weights, last_step, costs, groups=None):
@@ -954,6 +953,7 @@ class Honest(lookahead.Lookahead):
             costs["leaves"] += time.perf_counter() - t
         # The table reads a value only where the step ran, the leaf is not terminal and not cut off.
         open_ = (step == 0) & (results == 0) & (not last_step)
+        self._searched = True  # the worlds are this decision's (world_policies; every depth calls _prepare)
         return LeafRequest(p, key, own.copy(), bool(last_step), np.array(weights, copy=True), foe_pairs, qs, choices,
                            (i, j, w), rows, step, encode, results, tiebreaks, open_)
 
