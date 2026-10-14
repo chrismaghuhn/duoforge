@@ -23,8 +23,10 @@ The design takes five PR-sized steps, D1 to D5, and every step stays switched of
 | 7 | measurement | Ladder arms with gates fixed in the README before any run, the mirror touchstone, the KO check as a metric, exclusive latency. **Equal-time controls** against a wider one-turn search, which D1 makes runnable | – |
 
 The one engine extension this needs (D2): an **observation digest per leaf** for the viewer. It is computed inside
-`duoforge_batch_expand` from the lines the viewer sees. It contains no rule logic and allocates nothing. The owner
-approved it for after Astra's restructure, agreed with Astra (section 10, Q3).
+a new sibling of `duoforge_batch_expand` from the lines the viewer sees. The legacy call keeps its ABI. It contains
+no rule logic and allocates nothing. The owner approved it for after Astra's restructure, agreed with Astra
+(section 10, Q3); the proposed [in-engine evaluation spec](2026-10-14-in-engine-evaluation-design.md) defines the
+shared digest/value call and the digest-first delivery.
 
 Status: the owner and HS answered Q1–Q6 on 2026-10-13 (section 10). Building starts only after the owner approves this
 specification. D1 comes after stage 2 of #440, and the search lane builds it.
@@ -188,8 +190,10 @@ comes from the engine:
   facts. Then the bytes differ across particles although we observed the same thing, and the key would split
   information sets that are really one. That is strategy fusion again.
 - **Therefore the decision: an observation digest per leaf.** `duoforge_batch_expand` (or a sibling call) writes a
-  32-byte digest of the event lines the viewer sees in this step. Those lines are already produced: the engine folds
-  each player's knowledge from them (`duoforge_battle_step`). The key is (i, digest).
+  32-byte digest of the event lines the viewer sees in this step and its authorized request at the new boundary.
+  Those lines are already produced: the engine folds each player's knowledge from them (`duoforge_battle_step`).
+  The proposed [in-engine evaluation spec](2026-10-14-in-engine-evaluation-design.md) section 4 answers D2's
+  coordination questions and defines the request projection; the key is (i, digest).
   - It splits exactly where a human would see a difference: a different damage percentage, a different switch-in, a
     different move order.
   - It merges where nothing visible differs.
@@ -494,7 +498,9 @@ The text above follows these answers.
   - If D2 brings measurable strength, the live budget may be raised later on purpose, for example to 5 s. That is a
     separate owner decision and not part of this specification.
 - **Q3, the engine extension: yes, under conditions.**
-  - The viewer's observation digest goes into `duoforge_batch_expand`.
+  - The viewer's observation digest comes from leaf expansion. HS clarified on 2026-10-14: use a new sibling call,
+    with no ABI break to `duoforge_batch_expand`; the same call later returns D4 evaluation for D5. See the proposed
+    [in-engine evaluation spec](2026-10-14-in-engine-evaluation-design.md).
   - It comes only after Astra's restructure and is agreed with Astra.
   - No rule logic, and no allocation in the hot path.
 - **Q4, the foe below the root:** `foe_below = "nash"` is the default; `"model"` is an arm of its own.
