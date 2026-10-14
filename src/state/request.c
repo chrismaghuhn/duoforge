@@ -800,6 +800,18 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
                                             uint32_t tape_len, uint32_t *out_tape_used,
                                             duoforge_step_result *out_result, duoforge_event_buffer *buffers)
 {
+    return dfi_battle_step_observed(ctx, battle, bundle, tape, tape_len, out_tape_used, out_result, buffers, NULL);
+}
+
+duoforge_status dfi_battle_step_observed(const duoforge_context *ctx, duoforge_battle *battle,
+    const duoforge_decision_bundle *bundle, const dfi_tape_entry *tape,
+    uint32_t tape_len, uint32_t *out_tape_used, duoforge_step_result *out_result,
+    duoforge_event_buffer *buffers, dfi_observation_digest *observation)
+{
+    duoforge_status observation_status = DUOFORGE_OK;
+    if (observation != NULL) {
+        observation_status = dfi_observation_digest_init(observation, observation->viewer);
+    }
     if (ctx == NULL || battle == NULL || bundle == NULL || out_result == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
@@ -808,6 +820,8 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     dfi_events staged;
     staged.count = 0u;
     staged.overflow = false;
+    staged.observation = observation;
+    if (observation_status != DUOFORGE_OK) { return observation_status; }
     dfi_events *events = &staged;
     if (!dfi_context_fingerprint_matches(ctx, battle->context_fingerprint)) {
         return DUOFORGE_E_CONTEXT_MISMATCH;
@@ -894,6 +908,7 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
         turn_res.boundary_kind = battle->boundary_kind;
         turn_res.request_mask = battle->request_mask;
         *out_result = turn_res;
+        if (observation != NULL) { dfi_observation_finish(observation, ctx, battle, out_result, staged.count); }
         return DUOFORGE_OK;
     }
     if (battle->boundary_kind != DUOFORGE_BOUNDARY_TEAM_SELECTION) {
@@ -924,6 +939,9 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
             if (dfi_illusion_lead_disguise(&tmp, flat / 2u, flat % 2u, &disguise)) {
                 tmp.tail.sides[flat / 2u].positions[flat % 2u].ability_state = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
                 e.reserved[0] = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
+            }
+            if (observation != NULL) {
+                dfi_observation_capture(observation, &tmp, &e, events->count);
             }
             dfi_events_push(events, &e);
         }
@@ -967,6 +985,7 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
     res.boundary_kind = battle->boundary_kind;
     res.request_mask = battle->request_mask;
     *out_result = res;
+    if (observation != NULL) { dfi_observation_finish(observation, ctx, battle, out_result, staged.count); }
     return DUOFORGE_OK;
 }
 
