@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "71facd474dd08f21c833422cdd1449d55a82019969862c77b69a07827b262752" /* the model fingerprint of the lane A batch tables (G88 rows) */
-#define FP_KPD_HEX "45efbd4ffa05ae78e5e1f354892b9489f09be9e9da0a6f2d4f11955896cd9276"
+#define FP_KP_HEX "abe9013d376fd5bc8e1d6a7c39c1987ea33951889758b3bf93d9c741955118ce" /* the model fingerprint of the pool tables; changed by step K1 (#476, entry 5dc: Temper Flare marked, its UNMODELED row becomes the Stomping Tantrum handler) */
+#define FP_KPD_HEX "eeb375f7b544193142c285f65140cdad40325550a482d3b0b3b1df417ed1ce07" /* POOL_DEV: changed by step K1 (#476, entry 5dc), the same table hash */
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */

@@ -405,7 +405,9 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     if pool and handled[0] == 'ROOST' and ('condition' not in f or norm(f['condition'][1]) != ROOST_CONDITION):
         fail('move %s: the condition is not the pinned text' % mid)
     if pool and handled[0] == 'STOMPING_TANTRUM':
-        for name, text in STOMPING_TANTRUM_CALLBACKS.items():
+        if mid not in STOMPING_TANTRUM_CALLBACKS:
+            fail('move %s: no pinned text for the STOMPING_TANTRUM handler' % mid)
+        for name, text in STOMPING_TANTRUM_CALLBACKS[mid].items():
             if name not in f or norm(f[name][1]) != norm(text):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
@@ -2234,10 +2236,19 @@ ROOST_CONDITION = (
     "if (target.hasType('Flying')) { this.add('-hint', \"If a Terastallized Pokemon uses Roost, it remains Flying-type.\"); } "
     "return false; } this.add('-singleturn', target, 'move: Roost'); }, onTypePriority: -1, "
     "onType(types, pokemon) { this.effectState.typeWas = types; return types.filter(type => type !== 'Flying'); }, },")
+# Step K1 (#476, entry 5dc): Temper Flare (data/moves.ts:19185-19203) has the same callback as Stomping Tantrum, with its own debug text, so the
+# handler serves both moves and the pinned text is checked per move (the debug line is the one difference).
 STOMPING_TANTRUM_CALLBACKS = {
-    'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
-                         "this.debug('doubling Stomping Tantrum BP due to previous move failure'); "
-                         "return move.basePower * 2; } return move.basePower; },",
+    'stompingtantrum': {
+        'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+                             "this.debug('doubling Stomping Tantrum BP due to previous move failure'); "
+                             "return move.basePower * 2; } return move.basePower; },",
+    },
+    'temperflare': {
+        'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+                             "this.debug('doubling Temper Flare BP due to previous move failure'); "
+                             "return move.basePower * 2; } return move.basePower; },",
+    },
 }
 
 # Step G25 (Electric Terrain, Misty Terrain): the two terrain moves keep their `terrain` field and their condition as handlers of
@@ -2365,6 +2376,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'healingwish': ('HEALING_WISH', {'onTryHit'}),                        # G82 (decision 0045): the user's slot condition; the user faints
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
     'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
+    'temperflare': ('STOMPING_TANTRUM', {'basePowerCallback'}),            # K1 (#476): the same callback, its own debug text
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
     'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines

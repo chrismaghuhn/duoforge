@@ -407,9 +407,11 @@ const dfi_support_manifest dfi_support = {
              * entrant of that slot is healed (dfi_run_entries). The Champions hit loop Updates run after it (scripts.ts:537, :574). */
             [DFI_MOVE_HEALINGWISH] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
-             * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
+             * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). Step K1 (#476, entry 5dc): Temper Flare, the same
+             * callback and the same special (DFI_SPECIAL_STOMPING_TANTRUM), decision 0015 entry 5dc. */
             [DFI_MOVE_ROOST] = 1u,
             [DFI_MOVE_STOMPINGTANTRUM] = 1u,
+            [DFI_MOVE_TEMPERFLARE] = 1u,
             /* Step G50: Double Shock (Pawmot only: the Electric and Fighting types become ??? and Fighting; decision 0025). */
             [DFI_MOVE_DOUBLESHOCK] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play

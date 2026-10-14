@@ -1651,8 +1651,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
             power *= 2u;
         }
     } else if (md->special == DFI_SPECIAL_STOMPING_TANTRUM) {
-        /* basePowerCallback (data/moves.ts:18054-18058): x2 when the user's last move result is FALSE (strictly; null is
-         * not a failure). An unclassified last result is refused, never guessed (step G42). */
+        /* basePowerCallback of Stomping Tantrum (data/moves.ts:18054-18058) and of Temper Flare (data/moves.ts:19189-19195,
+         * the same code, step K1, #476): x2 when the user's last move result is FALSE (strictly; null is not a failure). An
+         * unclassified last result is refused, never guessed (step G42). */
         const uint32_t last_res = r->b->tail.sides[user / 2u].positions[user % 2u].move_result;
         if ((last_res & DFI_MOVE_RESULT_UNCLASSIFIED_LAST) != 0u) {
             return DUOFORGE_E_UNSUPPORTED;
