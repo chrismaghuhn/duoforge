@@ -1135,5 +1135,70 @@ esac
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
+class LadderEqual(unittest.TestCase):
+    """ladder_equal.py, the equality proof of an AWS ladder campaign (#484): every field but the timing ones."""
+
+    @staticmethod
+    def report(**changes):
+        r = {'conditions': {'commit': SHA, 'dirty': False, 'seed': '0x1', 'cpu': 'here', 'library': '0.45.0'},
+             'opponents': {'bot': {'arms': {'step': {'decisions_sha256': 'd' * 64, 'scores': [1.0, 0.0, 0.5],
+                                                     'pair_interval': {'pairs': 2, 'score': 0.5, '95': [0.0, 1.0]},
+                                                     'wall_seconds': {'p99': 0.1}, 'seconds': 3.0}},
+                                   'paired': {}}},
+             'h2h': None, 'p99_seconds': 0.1}
+        for path, value in changes.items():
+            node = r
+            *head, last = path.split('.')
+            for key in head:
+                node = node[key]
+            node[last] = value
+        return r
+
+    def test_equal_reports_differ_only_in_timing(self):
+        import ladder_equal
+        aws = self.report(**{'conditions.cpu': 'AMD EPYC', 'p99_seconds': 0.3,
+                             'opponents.bot.arms.step.seconds': 9.0})
+        result = ladder_equal.compare(self.report(), aws)
+        self.assertTrue(result['equal'])
+        self.assertEqual(result['differs'], [])
+        self.assertEqual(result['digests'], {'bot.step': {'local': 'd' * 64, 'aws': 'd' * 64, 'equal': True}})
+        self.assertIn('wall_seconds', result['skipped'])
+
+    def test_a_digest_a_score_or_a_condition_that_differs_is_named(self):
+        import ladder_equal
+        cases = {'opponents.bot.arms.step.decisions_sha256': 'e' * 64,
+                 'opponents.bot.arms.step.scores': [1.0, 0.0, 0.5000000000000001],
+                 'conditions.seed': '0x2', 'conditions.library': '0.46.0'}
+        for path, value in cases.items():
+            with self.subTest(path=path):
+                result = ladder_equal.compare(self.report(), self.report(**{path: value}))
+                self.assertFalse(result['equal'])
+                self.assertTrue(any(d.startswith(path) for d in result['differs']), result['differs'])
+        result = ladder_equal.compare(self.report(), self.report(**{'opponents.bot.arms.step.decisions_sha256': 'e' * 64}))
+        self.assertFalse(result['digests']['bot.step']['equal'])
+
+    def test_a_dirty_run_or_one_without_conditions_proves_nothing(self):
+        import ladder_equal
+        for bad in (self.report(**{'conditions.dirty': True}), self.report(**{'conditions.dirty': None}), {'opponents': {}}):
+            with self.subTest(bad=bad.get('conditions')), self.assertRaises(ValueError):
+                ladder_equal.compare(self.report(), bad)
+
+    def test_the_command_line_exits_by_the_result(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for name, r in (('local', self.report()), ('aws', self.report()),
+                            ('other', self.report(**{'opponents.bot.arms.step.scores': [0.0, 0.0, 0.5]}))):
+                paths.append(os.path.join(tmp, name + '.json'))
+                with open(paths[-1], 'w', encoding='utf-8') as f:
+                    json.dump(r, f)
+            script = os.path.join(HERE, 'ladder_equal.py')
+            run = lambda *a: subprocess.run([sys.executable, script, *a], capture_output=True, text=True)
+            self.assertEqual(run(paths[0], paths[1], '--out', os.path.join(tmp, 'eq.json')).returncode, 0)
+            with open(os.path.join(tmp, 'eq.json'), encoding='utf-8') as f:
+                self.assertTrue(json.load(f)['equal'])
+            self.assertEqual(run(paths[0], paths[2]).returncode, 1)
+            self.assertEqual(run(paths[0], os.path.join(tmp, 'missing.json')).returncode, 2)
+
+
 if __name__ == '__main__':
     unittest.main()
