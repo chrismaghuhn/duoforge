@@ -118,10 +118,10 @@ Each run reports its commit and its `dirty` flag.
 
 - **Shapes:** 47,162 of the 57,191 tables are 16 × 8 × 8. The rest are smaller after refused or masked pairs.
 
-### Decision (HauptSession, 2026-10-14): `RM_MAX_ITERATIONS = 1,770`, the time bound
+### Decision (the HauptSession and the owner, the owner afterwards on 2026-10-14, #481): `RM_MAX_ITERATIONS = 1,770`, the time bound
 
 - **The predeclared rule gave no value:** T_acc, twice the maximum (3,420), exceeds T_time (1,770).
-- **Why the time bound:** the HauptSession chose it because it cuts none of the 57,191 recorded decisions (max 1,710). What it gives up is the factor-2 margin for unseen tables.
+- **Why the time bound:** the HauptSession chose it, and the owner agreed afterwards (a comment on #481), because it cuts none of the 57,191 recorded decisions (max 1,710). What it gives up is the factor-2 margin for unseen tables.
 - **`solver_unconverged` stays a named class-(a) decision:** counted, and played without search. There is no LP fallback; that would be a rule of its own, measured in an arm of its own.
 - **The D1 ladder arm and any live run count `solver_unconverged` apart.** If its share in an arm exceeds 0.1 %, the bound is re-evaluated.
 - **The bound holds for D1's root only.** D2's tree gets an offline pass of its own.
