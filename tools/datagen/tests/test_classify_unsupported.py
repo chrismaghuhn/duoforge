@@ -15,6 +15,7 @@ without DUOFORGE_PS_REFERENCE_DIR.
 usage: python3 tools/datagen/tests/test_classify_unsupported.py
 """
 import os
+import re
 import sys
 import unittest
 
@@ -269,11 +270,14 @@ class CheckoutCounts(unittest.TestCase):
         keys = [(r['kind'], r['id']) for r in records]
         self.assertEqual(len(keys), len(set(keys)))
         self.assertTrue(all(r['class'] in cu.CLASSES for r in records))
-        by = lambda kind, cls=None: sum(1 for r in records if r['kind'] == kind and (cls is None or r['class'] == cls))
-        self.assertEqual(by('move'), 145 + 25)
-        self.assertEqual(by('move', 'modelled-unmarked'), 25)
-        self.assertEqual(by('item'), 33)
-        self.assertEqual(by('ability'), 89)
+        # The unmodelled rows of each kind equal the counts that tests/data/test_pool_tables.c pins (one pin, read here, so a
+        # content step that models a row updates only that file); the rest of each kind is modelled but unmarked.
+        with open(os.path.join(cu.REPO, 'tests', 'data', 'test_pool_tables.c'), encoding='utf-8') as f:
+            pinned = dict(re.findall(r'#define UNMODELED_(MOVES|ITEMS|ABILITIES) (\d+)u', f.read()))
+        unmodelled = lambda kind: sum(1 for r in records if r['kind'] == kind and r['class'] != 'modelled-unmarked')
+        self.assertEqual(unmodelled('move'), int(pinned['MOVES']))
+        self.assertEqual(unmodelled('item'), int(pinned['ITEMS']))
+        self.assertEqual(unmodelled('ability'), int(pinned['ABILITIES']))
 
 
 if __name__ == '__main__':
