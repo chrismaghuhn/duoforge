@@ -48,7 +48,8 @@
 #   DUOFORGE_MACHINE_LOCK_SLOTS  jobs at once (default 2); the same in every session
 # exported to the holder:
 #   DUOFORGE_JOBS                processors / slots (at least 1); every processor with --exclusive
-#   DUOFORGE_MACHINE_LOCK_HELD   the holder's label; DUOFORGE_MACHINE_LOCK_HELD_DIR its lock (status 74 inside it)
+#   DUOFORGE_MACHINE_LOCK_HELD   the holder's label; DUOFORGE_MACHINE_LOCK_HELD_DIR its lock (status 74 inside it; on
+#                                Windows as a Windows path, however the lock was spelt)
 #   DUOFORGE_MACHINE_LOCK_OWNER_FILE, _OWNER_LINE  an owner file the holder writes and its line; WSLENV lists them, so
 #                                a job started with wsl.exe gets them too: run it under tools/ci/wsl_lock_watchdog.sh,
 #                                which ends it when its Windows holder is gone (a killed wrapper releases the lock)
@@ -173,17 +174,40 @@ machine_lock_idle() { # queue
     return 0
 }
 
+# One spelling of a lock directory, to tell whether a call is nested in a holder of the same lock. On Windows the same
+# directory reaches a nested call spelt otherwise: Git Bash rewrites a POSIX path in the environment of a Windows
+# program (/tmp/x reaches python as C:/Users/.../Temp/x), and a login shell's TEMP is /tmp where another's is C:\...
+# There it is the Windows path (cygpath -w), compared without case; elsewhere the path as given.
+machine_lock_canonical() { # dir
+    if command -v cygpath > /dev/null 2>&1; then
+        cygpath -w -- "$1"
+    else
+        printf '%s\n' "$1"
+    fi
+}
+
+machine_lock_same_dir() { # a b: 0 when both name one lock directory
+    local a b
+    a=$(machine_lock_canonical "$1")
+    b=$(machine_lock_canonical "$2")
+    if command -v cygpath > /dev/null 2>&1; then
+        a=${a,,}
+        b=${b,,}
+    fi
+    [ "$a" = "$b" ]
+}
+
 # What the holder's command is told of its lock: its label and lock (DUOFORGE_MACHINE_LOCK_HELD, _HELD_DIR: a call nested
 # in it is refused), the owner file of one slot it holds and that file's line (DUOFORGE_MACHINE_LOCK_OWNER_FILE, _LINE:
 # tools/ci/wsl_lock_watchdog.sh ends a WSL job whose holder is gone). WSLENV lists them, the paths translated (/p), so
 # that they reach a command wsl.exe starts. On Windows the paths are given as Windows paths (cygpath -w).
 machine_lock_export_holder() { # label dir line
-    local file=$2/owner lock=$MACHINE_LOCK name entry
+    local file=$2/owner name entry
     if command -v cygpath > /dev/null 2>&1; then
         file=$(cygpath -w "$file")
-        lock=$(cygpath -w "$lock")
     fi
-    export DUOFORGE_MACHINE_LOCK_HELD=$1 DUOFORGE_MACHINE_LOCK_HELD_DIR=$MACHINE_LOCK
+    export DUOFORGE_MACHINE_LOCK_HELD=$1 DUOFORGE_MACHINE_LOCK_HELD_DIR
+    DUOFORGE_MACHINE_LOCK_HELD_DIR=$(machine_lock_canonical "$MACHINE_LOCK")
     export DUOFORGE_MACHINE_LOCK_OWNER_FILE=$file DUOFORGE_MACHINE_LOCK_OWNER_LINE=$3
     for entry in DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_OWNER_LINE DUOFORGE_MACHINE_LOCK_OWNER_FILE/p; do
         name=${entry%/p}
@@ -204,7 +228,8 @@ machine_lock_acquire() { # [--exclusive] label
         shift
     fi
     local label=$1 waited=0 holder line me ticket t k dir ahead blocked legacy free slots cpus mark recorded
-    if [ -n "${DUOFORGE_MACHINE_LOCK_HELD:-}" ] && [ "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" = "$MACHINE_LOCK" ]; then
+    if [ -n "${DUOFORGE_MACHINE_LOCK_HELD:-}" ] && [ -n "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" ] &&
+        machine_lock_same_dir "$DUOFORGE_MACHINE_LOCK_HELD_DIR" "$MACHINE_LOCK"; then
         echo "machine lock: refused: '$label' is nested inside the job '$DUOFORGE_MACHINE_LOCK_HELD', which holds this" \
             "lock ($MACHINE_LOCK); it would wait for slots the outer job holds. Run the inner work without the lock," \
             "or as a job of its own." >&2
@@ -361,7 +386,7 @@ machine_lock_release() {
     if [ -d "$queue" ] && machine_lock_idle "$queue"; then
         rm -f "$queue/.slots"
     fi
-    if [ "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" = "$MACHINE_LOCK" ]; then
+    if [ -n "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" ] && machine_lock_same_dir "$DUOFORGE_MACHINE_LOCK_HELD_DIR" "$MACHINE_LOCK"; then
         unset DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_HELD_DIR DUOFORGE_MACHINE_LOCK_OWNER_FILE \
             DUOFORGE_MACHINE_LOCK_OWNER_LINE
     fi

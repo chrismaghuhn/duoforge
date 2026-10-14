@@ -9,8 +9,11 @@
 #     (DUOFORGE_MACHINE_LOCK_OWNER_LINE: "<windows pid> <label> since <time>"), and
 #   - the holder's Windows process (the pid of that line) is alive (tasklist.exe through WSL's interop; a tasklist that
 #     cannot answer counts as alive, as machine_lock_alive does).
-# If not, it stops the command and every process of its group (TERM, then KILL after 5 seconds), names the reason on
-# stderr and exits with status 76. Otherwise it exits with the command's status.
+# If not, it stops the command and every process of its group (TERM, then KILL to whatever of the group still runs
+# 5 seconds later), then names the reason on stderr and exits with status 76. It stops the job first: the stderr of a
+# killed wsl.exe may be gone, and a write there must not end the watchdog (SIGPIPE is ignored). A TERM, HUP or INT to
+# the watchdog itself stops the job the same way (status 76): in its own process group, the job would not get it.
+# Otherwise it exits with the command's status. It needs bash 5.1 or later (wait -n -p) and refuses an older one.
 #
 # usage, under the lock (machine_lock.sh exports the variables and lists them in WSLENV, so they reach WSL):
 #   tools/ci/machine_lock.sh <label> wsl.exe -d <distro> -- bash <checkout>/tools/ci/wsl_lock_watchdog.sh <command...>
@@ -25,6 +28,10 @@ line=${DUOFORGE_MACHINE_LOCK_OWNER_LINE:-}
 
 if [ $# -lt 1 ]; then
     echo "usage: $0 <command...>" >&2
+    exit 2
+fi
+if [ "${BASH_VERSINFO[0]}" -lt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -lt 1 ]; }; then
+    echo "machine lock watchdog: refused: bash $BASH_VERSION has no 'wait -n -p'; it needs bash 5.1 or later" >&2
     exit 2
 fi
 if [ -z "$file" ] || [ -z "$line" ]; then
@@ -53,12 +60,31 @@ holds() { # the owner file still begins with the holder's line
     [ "$first" = "$line" ]
 }
 
+trap '' PIPE
+
+stop() { # reason: stops the job's whole group, then names the reason, exits 76
+    trap '' TERM HUP INT
+    kill "$sleeper" 2> /dev/null
+    kill -TERM -- "-$job" 2> /dev/null
+    for _ in 1 2 3 4 5; do
+        kill -0 -- "-$job" 2> /dev/null || break # anything of the group left
+        sleep 1
+    done
+    kill -KILL -- "-$job" 2> /dev/null
+    wait "$job" 2> /dev/null
+    echo "machine lock watchdog: stopped the job: $1" >&2
+    exit "$WATCHDOG_STOPPED"
+}
+
+sleeper=''
 set -m # the command runs in a process group of its own: stopping it stops its children too
 "$@" &
 job=$!
 set +m
+for signal in TERM HUP INT; do
+    trap "stop 'the watchdog got SIG$signal'" "$signal"
+done
 
-reason=''
 while :; do
     sleep "$interval" &
     sleeper=$!
@@ -70,19 +96,8 @@ while :; do
         exit "$status"
     fi
     if ! holds; then
-        reason="the lock's owner file $file no longer names the holder '$line'"
+        stop "the lock's owner file $file no longer names the holder '$line'"
     elif ! holder_alive "$pid"; then
-        reason="the holder's Windows process $pid ('$line') is gone"
-    fi
-    if [ -n "$reason" ]; then
-        echo "machine lock watchdog: stopping the job: $reason" >&2
-        kill -TERM -- "-$job" 2> /dev/null
-        for _ in 1 2 3 4 5; do
-            kill -0 "$job" 2> /dev/null || break
-            sleep 1
-        done
-        kill -KILL -- "-$job" 2> /dev/null
-        wait "$job" 2> /dev/null
-        exit "$WATCHDOG_STOPPED"
+        stop "the holder's Windows process $pid ('$line') is gone"
     fi
 done
