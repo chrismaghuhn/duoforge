@@ -9,7 +9,9 @@ It uses the same feed as the pool record test (test_live.py TestPool...): the ba
 the battle, the team of the spec; no spectator walk.
 """
 import unittest
+from unittest import mock
 
+from duoforge import view
 from duoforge_live import record
 from python.tests.live.test_live import Reference, record_kind
 
@@ -25,7 +27,18 @@ class SpeedSwapLiveRecord(unittest.TestCase):
     def setUpClass(cls):
         from duoforge_live.tracker import Tracker
         cls.pool = Reference.get().pool()
-        cls.points = {}  # (battle, player) -> [(k, swapped, parts)]
+        cls.points = {}  # (battle, player) -> [(k, swapped, parts, engine verdicts of the point)]
+        cls.engine_calls = []  # every status the engine's record check gave while the points are assembled
+        real_check = view.public_record_check
+
+        def spy(ctx, rec):
+            status = real_check(ctx, rec)
+            cls.engine_calls.append(status)
+            return status
+
+        patcher = mock.patch.object(view, "public_record_check", spy)
+        patcher.start()
+        cls.addClassCleanup(patcher.stop)
         for battle in cls.pool.battles:
             if battle.name not in SPEED_SWAP_BATTLES:
                 continue
@@ -40,7 +53,9 @@ class SpeedSwapLiveRecord(unittest.TestCase):
                         continue
                     done = tracker.epoch
                     k = done - 1
-                    out.append((k, _swapped(tracker), tracker.public_parts()))
+                    before = len(cls.engine_calls)
+                    parts = tracker.public_parts()
+                    out.append((k, _swapped(tracker), parts, cls.engine_calls[before:]))
                     step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
                     if step is not None and pid in step["input"]:
                         tracker.accepted(step["input"][pid])
@@ -53,7 +68,7 @@ class SpeedSwapLiveRecord(unittest.TestCase):
                     self.assertTrue(points, (name, player))
                     live = [p for p in points if p[1]]
                     self.assertTrue(live, (name, player))  # the swap is on the record at some point
-                    for k, swapped, parts in points:
+                    for k, swapped, parts, _ in points:
                         causes = int(parts["causes"])
                         if swapped:
                             self.assertEqual(parts["status"], record.E_UNSUPPORTED, (name, player, k))
@@ -62,6 +77,17 @@ class SpeedSwapLiveRecord(unittest.TestCase):
                             self.assertEqual(causes & record.CAUSE_SPEED_SWAP, 0, (name, player, k))
                     print(f"\n{name} side {player}: {len(points)} points, {len(live)} with the swap live")
 
+    def test_the_engine_refuses_every_swapped_point(self):
+        # the engine's record check (duoforge.view.public_record_check) decides the refusal: at every point with a live swap
+        # the assembled record is put to the engine, and the engine answers E_UNSUPPORTED
+        for name in SPEED_SWAP_BATTLES:
+            for player in (0, 1):
+                with self.subTest(battle=name, side=player):
+                    for k, swapped, parts, verdicts in self.points[(name, player)]:
+                        if swapped:
+                            self.assertIn(record.E_UNSUPPORTED, verdicts, (name, player, k))
+                            self.assertEqual(parts["reason"], "speed-swap", (name, player, k))
+
     def test_accepted_again_once_both_swapped_occupants_left(self):
         # k3_speed_swap_switch: Milotic (the target) switches out on turn 2 and Alakazam on turn 3, so the last live point
         # is followed by points without the swap, and those are accepted (status 0) unless another reason refuses them.
@@ -69,8 +95,8 @@ class SpeedSwapLiveRecord(unittest.TestCase):
         for player in (0, 1):
             with self.subTest(battle=name, side=player):
                 points = self.points[(name, player)]
-                last_live = max(k for k, swapped, _ in points if swapped)
-                after = [(k, parts) for k, swapped, parts in points if not swapped and k > last_live]
+                last_live = max(k for k, swapped, _, _v in points if swapped)
+                after = [(k, parts) for k, swapped, parts, _v in points if not swapped and k > last_live]
                 self.assertTrue(after, (name, player))
                 for k, parts in after:
                     self.assertEqual(int(parts["causes"]) & record.CAUSE_SPEED_SWAP, 0, (name, player, k))
