@@ -8,6 +8,7 @@ them and reports it skipped otherwise. Every input is our own: the committed
 reference battles, replayed by the pinned Showdown as spectator logs.
 """
 import collections
+import hashlib
 import json
 import os
 import subprocess
@@ -25,6 +26,10 @@ PUBLIC_OWN = ("hp", "hp_max", "hp_kind", "hp_flag", "pp", "pp_kind")
 FROM_PRIOR = ("stats", "stat_points")
 HP_UNKNOWN = 3  # DUOFORGE_HP_UNKNOWN (include/duoforge/duoforge.h)
 NEWLINE = chr(10)
+# The replay pipeline's behaviour on the committed battles as it stood before #512 (D7, S3, S4): per battle and side the
+# digests of its points, its superset slot lists and its labels. DUOFORGE_REPLAY_PIN_WRITE=PATH writes the current digests,
+# DUOFORGE_REPLAY_PIN_DUMP=PATH every compared value (to list what changed, never to update the pin silently).
+PIN = data.ROOT / "python" / "tests" / "support" / "data" / "replay" / "behaviour_pin.json"
 
 
 def node_stats(*args, stdin=None):
@@ -163,6 +168,29 @@ def battle_sheets(battle):
             _, _, who, payload = line.split("|", 3)
             packed[int(who[1]) - 1] = teams.unpack(payload)
     return packed[0], packed[1]
+
+
+def behaviour(battle, run, stop):
+    """The values the pin compares for one battle and side: its points, and at every own point the superset's slot lists
+    and the label as sets of commands (an order change of a list alone is no label change)."""
+    from duoforge_replay import points
+    pts = [[p.index, p.line, p.boundary, list(p.run), p.end, p.revive] for p in points.find(battle.lines)]
+    supersets, labels_ = [], []
+    for point, obs, (domain, lists), label in run:
+        command_lists = [[[o.kind, o.move_slot, o.target, o.mega, o.reserve] for o in lists[s]] if lists else []
+                         for s in (0, 1)]
+        supersets.append([point.index, int(domain["kind"]), command_lists])
+        chosen = [sorted(command_lists[s][i] for i in range(len(command_lists[s])) if label.slots[s] >> i & 1)
+                  if lists else [] for s in (0, 1)]
+        labels_.append([point.index, list(label.reasons), chosen, label.team.hex()])
+    return {"points": pts, "superset": supersets, "labels": labels_, "stop": list(stop) if stop else None}
+
+
+PARTS = ("points", "superset", "labels", "stop")
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:12]
 
 
 class SpectatorTest(unittest.TestCase):
@@ -316,6 +344,32 @@ class SpectatorTest(unittest.TestCase):
                     for s in (0, 1):
                         missing = commands(theirs, s) - commands(domain, s)
                         self.assertFalse(missing, (where, s, sorted(missing)))
+
+    def test_behaviour_equals_the_pin(self):
+        # #512: the points, the superset and the labels of every committed battle stay as pinned while the replay rules
+        # move to the engine. A change is a finding to list (DUOFORGE_REPLAY_PIN_DUMP), never a silent update.
+        pinned = json.loads(PIN.read_text(encoding="utf-8"))
+        current, dump = {}, {}
+        for battle in self.ref.battles:
+            for side in (0, 1):
+                key = f"{battle.name}|{side}"
+                value = behaviour(battle, self.runs[(battle.name, side)], STOPS.get((battle.name, side)))
+                dump[key] = value
+                current[key] = " ".join(f"{part}:{digest(value[part])}" for part in PARTS)
+        if os.environ.get("DUOFORGE_REPLAY_PIN_DUMP"):
+            with open(os.environ["DUOFORGE_REPLAY_PIN_DUMP"], "w", encoding="utf-8") as f:
+                json.dump(dump, f, sort_keys=True)
+        if os.environ.get("DUOFORGE_REPLAY_PIN_WRITE"):
+            with open(os.environ["DUOFORGE_REPLAY_PIN_WRITE"], "w", encoding="utf-8", newline=NEWLINE) as f:
+                f.write("{" + NEWLINE + ("," + NEWLINE).join(f"{json.dumps(k)}: {json.dumps(current[k])}"
+                                                             for k in sorted(current)) + NEWLINE + "}" + NEWLINE)
+        new = sorted(set(current) - set(pinned))
+        if new:
+            print(f"\nbattles without a pin (added after it): {len(new)}")
+        changed = {key: sorted(set(want.split()) - set(current[key].split()))
+                   for key, want in pinned.items() if key in current and current[key] != want}
+        self.assertFalse(sorted(set(pinned) - set(current)), "pinned battles missing")
+        self.assertFalse(changed, f"{len(changed)} perspectives changed: {dict(list(sorted(changed.items()))[:20])}")
 
     def test_production_path_keeps_known_charge_targets(self):
         # review I1: game.process (the production path) must know the own charging targets spectate() knows
