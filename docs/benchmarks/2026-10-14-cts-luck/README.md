@@ -131,16 +131,23 @@ The comparison with `duoforge_learn.luck` on battles whose state is known is a *
 
 ### The result of the comparison (2026-10-15)
 
-`tools/research/cts_luck_check.py` on `8c9e8933` (clean); the library is the WSL build of that commit (sha256 `fe8506d0…cec9df7`); BC6 sha256 `bda5de8e…`. A second run on the same commit gave the same result byte for byte. The selection is that of `8c9e8933`'s 1,142 traces. Main has held 11 more pool battles (`k3_*`) since `16b9abf9`; they sort in among the others and shift every fifth, so a later commit selects other battles.
+`tools/research/cts_luck_check.py` on `8c9e8933` (clean); the library is the WSL build of that commit (sha256 `fe8506d0…cec9df7`); BC6 sha256 `bda5de8e…`. A second run on the same commit gave the same result byte for byte. The selection is that of `8c9e8933`'s 1,142 traces. Main has held 11 more pool battles (`k3_*`) since `16b9abf9`; they sort in among the others and shift every fifth. The gate's 196 battles are therefore committed as `gate-battles.txt` (`--battles`; `--traces-at 8c9e8933` gives the same list).
+
+**The rerun at the PR's head** `bc5b7bd6` (clean, main `16b9abf9` merged in; library sha256 `4bb8d6c7…be85d4`) with `--battles gate-battles.txt` gives the same numbers to the last digit. It also has the review's fixes:
+- only named refusals are counted, by their message;
+- a leaf the engine refused would skip the turn on luck.py's side too (`luck-leaf-refused`: none);
+- the new name `true-record-unsupported:<reason>`.
 
 - **By the criterion fixed in advance:** 196 battles, 1,448 turns compared. The mean difference (meter − luck.py) is **+0.0060**, 95% interval **[0.0017, 0.0102]**, correlation 0.773.
+- **Descriptive, with a battle's turns as one cluster** (`half_width_by_battle`; turns of one battle are not independent, and both players of a battle are in the sample): ±0.0050, so [0.0009, 0.0110]. Unmixed: ±0.0025.
 - **Narrow:** it passes only through |mean difference| < 0.01. The interval does not include 0, and its upper end lies just above 0.01.
 - **Gate status (HauptSession, 2026-10-15): passed,** with the renaming below and its test (`test_cts_luck_check`) in the same PR. Before that it was provisionally passed.
 
 **Dropped out, by name:**
 - **Player battles, 30 of 392** (`player_battles_skipped`):
-  - 29 stop at the particle filter's redraw cap (`stop:cts:redraw-cap`): both players of 14 battles and player 1 of `g78_fainted_target`, all hand-built test battles: `c5_endeavor_ghost`, `g60_sub_dragontail`, `g60_sub_scale_shot`, `g67_magic_guard_substitute`, `g72b_dc_second`, `g76_db_ally_ko`, `g80_allyswitch_selftarget`, `g84b_ghost_substitute_faint`, `h18_magic_bounce_substitute_sitrus_mirror`, `h18_yawn_substitute_stomping_sitrus_mirror`, `sub2_ancientpower_substitute_tyrantrum`, `sub3_lava_plume_spread_unaware_appletun_168`, `xr3_beatup_sub` and `xr3_sheercold_ice_sub`. The fixture log has no fallback record of the bot, so the meter names them "the replay and the bot disagree on a stop".
-  - 1 is the tracker's explicit refusal "slot 1 is locked into outrage without a known target" (`ValueError` from `tracker.domain()`).
+  - 29 stop at the particle filter's redraw cap (`meter:SearchError:the replay and the bot disagree on a stop (the replay stop:cts:redraw-cap, the bot did not)`): both players of 14 battles and player 1 of `g78_fainted_target`, all hand-built test battles: `c5_endeavor_ghost`, `g60_sub_dragontail`, `g60_sub_scale_shot`, `g67_magic_guard_substitute`, `g72b_dc_second`, `g76_db_ally_ko`, `g80_allyswitch_selftarget`, `g84b_ghost_substitute_faint`, `h18_magic_bounce_substitute_sitrus_mirror`, `h18_yawn_substitute_stomping_sitrus_mirror`, `sub2_ancientpower_substitute_tyrantrum`, `sub3_lava_plume_spread_unaware_appletun_168`, `xr3_beatup_sub` and `xr3_sheercold_ice_sub`. The fixture log has no fallback record of the bot, so the meter names them "the replay and the bot disagree on a stop".
+  - 1 is the tracker's explicit refusal `meter:ValueError:slot 1 is locked into outrage without a known target` (from `tracker.domain()`).
+  - The measured run keyed them by the message's first word (the log's name). The rerun gives the names above.
   - Live, each of these is a named stop of the bot, and it is counted.
 - **The meter's turns** (`meter_excluded`): `no-decision-record` 302, `not-turn:REPLACEMENT` 119, `not-searched:unreconstructible` 81, `not-searched:forced` 15, `not-turn:PIVOT` 1, `foe-action-unknown` 1, `leaf-refused` 1.
 - **luck.py's turns** (`luck_py_skipped`): `hidden-counter` 77, and 34 that the measured run named `true-world-refused:DUOFORGE_E_SCHEMA_MISMATCH`. That name was **not in the list fixed in advance**. Since the renaming they are `true-record-unsupported:engine-refuses-record` (32) and `true-record-unsupported:pivot-switch-reason-unknown` (2). Their investigation:
@@ -180,3 +187,9 @@ python tools/research/cts_live_eval.py --logs DIR --luck --checkpoint BC6 --chec
 - It runs locally, under the machine lock, never on the VPS.
 - The checkpoint and the logs are private and stay outside the repository.
 - The result names the tool's and the engine's commit and dirty state, the pins and C.
+
+The gate's comparison with luck.py (the streams come from the pinned Showdown: `node tools/reference/ps_client.js <checkout> <repo> --every > STREAMS.jsonl`):
+
+```
+python tools/research/cts_luck_check.py STREAMS.jsonl BC6 bda5de8e… OUT.json     --battles docs/benchmarks/2026-10-14-cts-luck/gate-battles.txt
+```
