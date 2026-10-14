@@ -208,8 +208,10 @@ if(WIN32)
     # its new observer entry stays private, as do the SHA/projection helpers.
     target_sources(duoforge_shared PRIVATE cmake/request_legacy_exports.def)
     if(MINGW)
-        # GNU PE auto-export also scans linked archives; exclude this one.
+        # A .def disables GNU PE's implicit auto-export. Keep the old object
+        # exports explicitly enabled, excluding only the private archive.
         target_link_options(duoforge_shared PRIVATE
+            "LINKER:--export-all-symbols"
             "LINKER:--exclude-libs,$<TARGET_FILE_NAME:duoforge_private>")
     endif()
 endif()
