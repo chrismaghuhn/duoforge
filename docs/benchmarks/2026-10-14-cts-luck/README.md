@@ -85,7 +85,8 @@ A battle that the replay does not follow is counted under the replay's named rea
 
 ### The first report
 
-- It holds series the diagnostic run never saw: series 1 (`2026-10-13`) and series 2 (`2026-10-13b`), and the new series from `5c503d8a` once it has battles. Series 3 comes beside them.
+- It holds the series the diagnostic run never saw: series 1 (`2026-10-13`) and series 2 (`2026-10-13b`), and the new series from `5c503d8a` once it has battles.
+- It also holds series 3 (`2026-10-14-2e`, `a7dd956b`), marked as **the diagnostic series** and kept apart from the other series, because the method's three changes were found on it.
 - Each series is reported apart (`--code`), with its exclusions, its mixed share and its share of worlds left out.
 
 ### Before the first live report
