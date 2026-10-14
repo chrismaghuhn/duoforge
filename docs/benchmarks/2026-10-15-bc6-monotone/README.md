@@ -55,6 +55,13 @@ and compares the engine's event records.
   - mirror edit: Δp < −0.01.
 - The issue's wording ("an increase > 0.01") can also be read on the value scale. That reading (|ΔV| > 0.01) is
   reported beside the main one, for comparison with other authors' 12–18 %; it does not replace it.
+- **Reading (HauptSession, 2026-10-15):** Falsche Richtung ist ein Hinweis, kein Beweis. Die Rate ist eine obere
+  Schranke für Netzfehler, weil der Wert von BC6 den Ausgang unter menschenähnlichem Spiel schätzt.
+- **Selection:** an edit is built only where the replay never used the removed move up to the position, so every
+  built edit lies **before that move's first use** by its member; positions after it cannot be built by a replay and
+  are refused (`removed_move_used`). The rate therefore holds for positions before first use, where using the move
+  has not yet shaped the game. The refused share per category (below) shows which moves this drops most: the often
+  chosen ones.
 
 ## Reported (aggregates only)
 
@@ -69,7 +76,8 @@ and compares the engine's event records.
     Obstruct, Wide Guard, Quick Guard), resolved through the engine's `data.find`; names the pool lacks are listed;
   - by seat;
   - by own or mirror edit.
-- The counts: positions, edits built, and each named refusal.
+- The counts: positions, edits built, and each named refusal; the share refused as `removed_move_used` **per
+  category** (physical, special, status, Protect-like), own and mirror apart, as a sign of the selection above.
 - **Provenance:** the commit, `dirty: false`, the sha256 of `libduoforge_shared.so`, BC6's checkpoint sha256
   (`bda5de8e…`, in full in the results) and the pool config's sha256.
 
