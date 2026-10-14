@@ -1,8 +1,8 @@
 """The preview oracle (issue #458): what the team preview costs in one matchup, before an opening book is built.
 
     python -m duoforge_search.preview_oracle --checkpoint MAIN --foe-net FOE --ours OURS --foe FOE_TEAM --out DIR
-        [--side ours|foe] [--arms all | today,LEADS|BENCH,...] [--foe-lead SPECIES,SPECIES] [--pairs 32] [--seed SEED]
-        [--workers 8] [--max-steps 1000]
+        [--side ours|foe] [--arms all | today,LEADS|BENCH,...] [--foe-lead SPECIES,SPECIES] [--our-arm LEADS|BENCH]
+        [--pairs 32] [--seed SEED] [--workers 8] [--max-steps 1000]
     python -m duoforge_search.preview_oracle summary DIR
 
 Our team OURS (a registry paste or a packed team) meets the foe team FOE_TEAM in --pairs game pairs (ladder.matchup_rows:
@@ -26,6 +26,9 @@ our preview. A SearchError stops the run; the summary refuses arms whose foe dra
 arm fixes the foe's preview instead ("LEADS|BENCH" indexes FOE_TEAM). Its reference arm "drawn" draws the foe's
 preview from its team head as above; the summary ranks the foe's best answers first and reports the exploitability,
 our score against drawn minus our score against the best answer, and refuses arms whose our previews differ.
+--our-arm LEADS|BENCH (foe side only) plays our preview fixed to that combination instead of today's, in every arm
+(drawn included): the exploitability of a candidate preview, e.g. a book entry. Every arm is refused unless our
+preview played it in every game.
 
 Each finished arm is written to DIR/arms/ARM.json (per-game scores, the foe's drawn choice per game, the decision
 digests and fallback shares) and a rerun skips it when its conditions match; `summary` (also run at the end) writes
@@ -269,14 +272,15 @@ def check_drawn(arm, drawn, games):
                          f"game(s)")
 
 
-def check_played(arm, decisions, who="our"):
-    """SystemExit unless every team-preview decision in decisions played the arm's combination (the reference arms
-    today and drawn play their own)."""
-    if arm in (TODAY, DRAWN):
+def check_played(arm, decisions, who="our", combination=None):
+    """SystemExit unless every team-preview decision in decisions played the combination (by default the arm's; the
+    reference arms today and drawn play their own)."""
+    combination = arm if combination is None else combination
+    if combination in (TODAY, DRAWN):
         return
     played = {arm_of(r["choice"]) for r in decisions if r["boundary"] == "TEAM_SELECTION"}
-    if played != {arm}:
-        raise SystemExit(f"arm {arm}: {who} preview played {sorted(played)}")
+    if played != {combination}:
+        raise SystemExit(f"arm {arm}: {who} preview played {sorted(played)}, not {combination}")
 
 
 def check_constant_own(arm, decisions):
@@ -312,9 +316,9 @@ def summarize(out_dir):
 
     The ours side (the arms fix our preview; the foe's is drawn alike in every arm): the reference is today, the
     ranking is ours (best first), the loss is today against the best combination, and the scores are split by the
-    foe's lead. The foe side (the arms fix the foe's preview; ours is today's in every arm): the reference is drawn,
-    the ranking is the foe's best answers first (our lowest scores), and the exploitability is our score against drawn
-    minus our score against the best answer. Scores are always ours."""
+    foe's lead. The foe side (the arms fix the foe's preview; ours is today's, or --our-arm's, in every arm): the
+    reference is drawn, the ranking is the foe's best answers first (our lowest scores), and the exploitability is our
+    score against drawn minus our score against the best answer. Scores are always ours."""
     conditions = ladder._load_json(os.path.join(out_dir, "conditions.json"))
     arm_dir = os.path.join(out_dir, "arms")
     arms = {}
@@ -328,8 +332,12 @@ def summarize(out_dir):
     if side == "ours":
         if len({tuple(e["foe_drawn"]) for e in arms.values()}) != 1:
             raise SystemExit("the arms' foe previews differ: the arms are not paired")
-    elif len({json.dumps(e["own_choice"], sort_keys=True) for e in arms.values()}) != 1:
+    elif len({json.dumps(our_played(e), sort_keys=True) for e in arms.values()}) != 1:
         raise SystemExit("the arms' our previews differ: the arms are not paired")
+    elif conditions.get("our_arm") is not None:
+        wrong = sorted(n for n, e in arms.items() if set(our_played(e).values()) != {conditions["our_arm"]})
+        if wrong:
+            raise SystemExit(f"arms {wrong}: our preview did not play --our-arm {conditions['our_arm']}")
     ours, foe = conditions["species"]["ours"], conditions["species"]["foe"]
     fixed = ours if side == "ours" else foe  # the team whose preview the arms fix
     reference_name = TODAY if side == "ours" else DRAWN
@@ -338,7 +346,7 @@ def summarize(out_dir):
     per_arm = {}
     for name, e in arms.items():
         per_arm[name] = {**({"members": _names(fixed, name)} if name != reference_name
-                            else {"own_choice": e["own_choice"]}),
+                            else {"own_choice": e["own_choice"], "our_played": our_played(e)}),
                          "score": ladder.pair_interval(scores[name]),
                          "unfinished": e["unfinished"], "unresolved": e["unresolved"],
                          "fallback_share": e["fallback_share"], "fallback_causes": e.get("fallback_causes")}
@@ -353,7 +361,7 @@ def summarize(out_dir):
     if side == "foe" and reference is not None and ranking:
         best = ranking[0]
         out["exploitability"] = {
-            "best_answer": best, "our_preview": arms[DRAWN]["own_choice"],
+            "best_answer": best, "our_preview": our_played(arms[DRAWN]), "our_arm": conditions.get("our_arm"),
             "points": paired_difference(reference, combo_scores[best]),
             "note": "the foe's best answer of the combinations played here, selected on these games: biased toward the "
                     "foe by the selection. In a confirmation run, the screen's best answer's vs_drawn is the number "
@@ -402,6 +410,12 @@ def summarize(out_dir):
     return out
 
 
+def our_played(entry):
+    """Our played preview per seat of an arm file: its our_played, else (an arm file from before --our-arm, when ours
+    always played its own) its own_choice."""
+    return entry.get("our_played", entry["own_choice"])
+
+
 def _finite(obj):
     from . import arena
     return arena._finite(obj)
@@ -420,13 +434,14 @@ def registry_id(path):
 
 def _arm_entry(arm, records, ours_decisions, foe_decisions, foe_drawn, seconds):
     from . import arena
-    own = {}
+    own, played = {}, {}
     for r in ours_decisions:
         if r["boundary"] == "TEAM_SELECTION":
             own[str(r["seat"])] = arm_of(r["own_choice"])
+            played[str(r["seat"])] = arm_of(r["choice"])
     return {"arm": arm, "scores": [float(x) for x in arena.scores(records)],
             "unfinished": int(records["unfinished"].sum()), "unresolved": int(records["unresolved"].sum()),
-            "foe_drawn": foe_drawn, "own_choice": own,
+            "foe_drawn": foe_drawn, "own_choice": own, "our_played": played,
             "fallback_share": {"ours": foe_arena.fallback_share(ours_decisions),
                                "foe": foe_arena.fallback_share(foe_decisions)},
             "fallback_causes": {"ours": fallback_causes(ours_decisions), "foe": fallback_causes(foe_decisions)},
@@ -462,6 +477,8 @@ def main(argv=None):
                    help="'all' (the side's reference arm, today or drawn, and the 90 combinations) or a comma list")
     p.add_argument("--foe-lead", metavar="SPECIES,SPECIES",
                    help="fix the foe's two leads; its bench is drawn from its team head given them (ours side only)")
+    p.add_argument("--our-arm", metavar="LEADS|BENCH",
+                   help="play our preview fixed to this combination in every arm instead of today's (foe side only)")
     p.add_argument("--pairs", type=int, default=32)
     p.add_argument("--seed", type=lambda text: int(text, 0), default=SEED)
     p.add_argument("--workers", type=int, default=8)
@@ -475,6 +492,15 @@ def main(argv=None):
         raise SystemExit(f"--out {args.out} is inside the repository (AGENTS.md)") from None
     if args.side == "foe" and args.foe_lead is not None:
         raise SystemExit("--foe-lead fixes the foe's leads on the ours side; on the foe side the arms fix them")
+    if args.our_arm is not None:
+        if args.side != "foe":
+            raise SystemExit("--our-arm fixes our preview on the foe side; on the ours side the arms fix it")
+        if args.our_arm in (TODAY, DRAWN):
+            raise SystemExit(f"--our-arm takes a combination LEADS|BENCH like '23|04', not {args.our_arm!r}")
+        try:
+            parse_arm(args.our_arm)
+        except ValueError as err:
+            raise SystemExit(f"--our-arm: {err}") from None
     try:
         arms = arms_of(args.arms, args.side)
     except ValueError as err:
@@ -523,6 +549,7 @@ def main(argv=None):
             "foe_preview": ("drawn from the foe search's raw team head (draw_choice)" if args.side == "ours" else
                             "fixed per arm; in the arm drawn, drawn from the foe search's raw team head (draw_choice)"),
             "foe_lead": None if args.foe_lead is None else sorted(x.strip() for x in args.foe_lead.split(",")),
+            "our_arm": args.our_arm,
             "ours_sha256_prefix": matchup["ours"]["sha256"][:12], "foe_sha256_prefix": matchup["foe"]["sha256"][:12],
             "registry": {"ours": ours_id, "foe": foe_id},
             "left_out": {"ours_search": source_ids.get(foe_id), "foe_search": source_ids.get(ours_id)},
@@ -564,9 +591,10 @@ def main(argv=None):
                     continue
                 ours_search.clear()
                 foe_search.clear()
-                fixes_ours = args.side == "ours" and arm != TODAY
+                ours_arm = arm if args.side == "ours" else args.our_arm  # None or today: our own preview
+                forced = ours_arm is not None and ours_arm != TODAY
                 learner = arena.SearchPlayer(ForcedPreview(foe_arena.Timed(ours_search),
-                                                           team_index(arm) if fixes_ours else None), "ours", args.seed)
+                                                           team_index(ours_arm) if forced else None), "ours", args.seed)
                 if args.side == "foe" and arm != DRAWN:
                     foe_preview = ForcedPreview(foe_arena.Timed(foe_search), team_index(arm))
                 else:
@@ -588,6 +616,8 @@ def main(argv=None):
                 else:
                     check_played(arm, foe_decisions, "the foe's")
                     check_constant_own(arm, ours_decisions)
+                    if args.our_arm is not None:
+                        check_played(arm, ours_decisions, combination=args.our_arm)
                 with open(target + ".tmp", "w", encoding="utf-8") as f:
                     json.dump(_finite(entry), f, indent=1, allow_nan=False)
                 os.replace(target + ".tmp", target)
