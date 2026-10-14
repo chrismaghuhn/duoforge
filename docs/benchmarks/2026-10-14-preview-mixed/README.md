@@ -14,12 +14,13 @@ This document is committed before the first measurement. Results are added below
 - **Tool:** `python -m duoforge_search.preview_oracle` (this PR).
   - `--our-mix 'ARM:P,...'` (foe side) picks our preview per game from a mix of `today` and combinations.
   - `--foe-mix 'ARM:P,...'` (ours side) picks the foe's preview per game from a mix of `drawn` and combinations.
-  - A pick is a word of the game's decision key under a tag of its own. Every arm of a run plays the same picks, apart from the foe's `drawn` draw, so the arms stay paired.
+  - A pick is a word of the game's decision key under a tag of its own, independent of the foe's `drawn` draw. Every arm of a run plays the same picks, so the arms stay paired.
   - An arm is refused unless every game picked, each pick played, and each arm of the mix was picked within 4 standard deviations (plus one game) of its expected count. The arm file records the picks and their counts.
   - `matrix DIR... --out FILE [--previous FILE]` reads foe-side runs of one measurement (one per preview of ours) into the matrix of our mean scores. It writes the matrix's exact equilibrium to FILE: our mix, the foe's mix and the value.
+    - The rows are sorted (`today` first, then by name) and the columns too (`drawn` first), so the result does not depend on the order of the DIRs; where the equilibrium is not unique, this order picks one.
     - The equilibrium is solved in rational arithmetic (`duoforge_search.zero_sum`: the simplex method with Bland's rule). It is checked exactly before it is written. There is no approximate fallback.
-    - With `--previous`, it also writes the gap of the earlier file's mixes on this matrix.
-  - The runs refuse to pair otherwise: a matrix needs one seed, pairs, commit, library and set of foe arms in every run, with identical foe previews per arm.
+    - With `--previous`, it also writes the gap of the earlier file's mixes on this matrix. The earlier file must be of the same measurement, and this matrix must extend it with the same cells.
+  - The runs refuse to pair otherwise: a matrix needs one seed, pairs, commit, dirty state, library and set of foe arms in every run and arm file, with identical foe previews per arm and one preview of ours per row.
 - **Everything else is the method of the measurement of `23|04`:**
   - the teams (ours Team A; the foe the tournament sun team, whose sheet is a private file);
   - ladder step 0 on both seats;
@@ -39,7 +40,7 @@ All matrix cells are played on one seed `0x2026101300000464` with **64 pairs** (
 
 0. **Start:**
    - rows (our previews): `today`, `23|04`;
-   - columns (the foe's answers): `drawn`, `15|23` (today's best answer, `d8f30c6a`) and `12|35` (the best answer to `23|04` from its screen, seed `…462`).
+   - columns (the foe's answers): `drawn`, `15|23` (today's best answer, `d8f30c6a`) and `12|35` (the best answer to `23|04` from its screen, seed `…462`; that measurement's results are added to its README before this series starts).
    - Fill the 6 cells. `matrix` gives the equilibrium `m0`: our mix x0, the foe's mix y0 and the value.
 1. **Round r = 1 to 4** (double oracle), with the mixes x and y of `m(r−1)`:
    - (a) **The foe's best answer to our mix:** a screen `--side foe --our-mix x --arms all` (`drawn` and the 90 combinations), 32 pairs. The answer is the screen's best combination (our lowest score, ties by name).

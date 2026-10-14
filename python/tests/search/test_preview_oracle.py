@@ -292,6 +292,16 @@ class GuardTest(unittest.TestCase):
         self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "ours"}), [])
         self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe"}), ["side"])
 
+    def test_a_mix_added_dropped_or_changed_is_another_measurement(self):
+        old = {"seed": "0x1", "side": "foe", "our_arm": None, "our_mix": "23|04:1/2,today:1/2", "foe_mix": None}
+        same = dict(old)
+        self.assertEqual(oracle.resume_changes(old, same), [])
+        self.assertEqual(oracle.resume_changes(old, dict(old, our_mix=None)), ["our_mix"])
+        self.assertEqual(oracle.resume_changes(old, dict(old, our_mix="23|04:1/3,today:2/3")), ["our_mix"])
+        before = {"seed": "0x1", "side": "foe", "our_arm": None}  # a run from before the mixes resumes without one
+        self.assertEqual(oracle.resume_changes(before, dict(before, our_mix=None, foe_mix=None)), [])
+        self.assertEqual(oracle.resume_changes(before, dict(before, our_mix="23|04:1", foe_mix=None)), ["our_mix"])
+
     def test_a_run_from_before_our_arm_resumes_without_it(self):
         old = {"seed": "0x1", "pairs": 32, "side": "foe"}
         self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe", "our_arm": None}), [])
@@ -488,19 +498,21 @@ class MixTest(unittest.TestCase):
     def test_the_pick_is_apart_from_the_foes_draw(self):
         mix = oracle.parse_mix("01|23:1/2,45|23:1/2", "foe")
         head = uniform_head()
-        picks = np.array([oracle.mix_pick(mix, k, oracle.SEED, oracle.OUR_MIX_TAG) == "01|23" for k in range(4000)])
         draws = np.array([oracle.draw_choice(head, k, oracle.SEED) < len(TEAM_TABLE) // 2 for k in range(4000)])
-        self.assertLess(abs(float(np.corrcoef(picks, draws)[0, 1])), 0.06)
+        for tag in (oracle.FOE_MIX_TAG, oracle.OUR_MIX_TAG):  # the foe's mix shares the foe's keys with its draw
+            picks = np.array([oracle.mix_pick(mix, k, oracle.SEED, tag) == "01|23" for k in range(4000)])
+            self.assertLess(abs(float(np.corrcoef(picks, draws)[0, 1])), 0.06)
 
 
 class MixedPreviewTest(unittest.TestCase):
     def play(self, mix_text, games=60, side="ours"):
+        tag = oracle.OUR_MIX_TAG if side == "ours" else oracle.FOE_MIX_TAG
         plays = {e: ("TEAM_SELECTION", "team", 11) for e in range(games)}
         plays[games] = ("TURN", "searched", 5)
         head = uniform_head()
         timed = FakeTimed(plays)
         mixed = oracle.MixedPreview(timed, FakeSearch({e: head for e in range(games + 1)}), oracle.SEED,
-                                    oracle.parse_mix(mix_text, side), oracle.OUR_MIX_TAG)
+                                    oracle.parse_mix(mix_text, side), tag)
         keys = np.arange(100, 101 + games, dtype=np.uint64)
         actions, records = mixed.decide(FakeRoots(games + 1), np.arange(games + 1), np.zeros(games + 1, np.int64), keys,
                                         np.zeros(games + 1, bool))
@@ -509,7 +521,7 @@ class MixedPreviewTest(unittest.TestCase):
     def test_each_game_plays_its_pick(self):
         mixed, timed, keys, actions, records, _ = self.play("23|04:1/2,today:1/2")
         for e in range(60):
-            name = oracle.mix_pick(mixed.mix, int(keys[e]), oracle.SEED, oracle.OUR_MIX_TAG)
+            name = oracle.mix_pick(mixed.mix, int(keys[e]), oracle.SEED, mixed.tag)
             self.assertEqual(mixed.picked[e], name)
             self.assertEqual(int(actions[e]), 11 if name == "today" else oracle.team_index("23|04"))
             self.assertEqual(records[e]["own_choice"], 11)
@@ -608,6 +620,17 @@ class MixSummaryTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "our picked previews of --our-mix differ: the arms are not paired"):
                 oracle.summarize(tmp)
 
+    def test_a_mixed_arm_files_lists_of_our_played_previews_summarize(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            varied = {"0": ["23|04", "today"], "1": "23|04"}
+            self.write(tmp, {"drawn": [1, 1], "45|23": [0, 1]}, side="foe",
+                       played={name: varied for name in ("drawn", "45|23")})
+            self.conditions(tmp, our_mix="23|04:1/2,today:1/2")
+            self.picks(tmp, "our_picked", {"drawn": ["23|04", "today"], "45|23": ["23|04", "today"]})
+            out = oracle.summarize(tmp)
+            self.assertEqual(out["exploitability"]["our_preview"], varied)
+            self.assertEqual(oracle.played_set({"our_played": varied, "own_choice": {}}), {"23|04", "today"})
+
     def test_the_ours_side_pairs_the_foe_mix_by_its_picks(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.write(tmp, {"today": [1, 1], "01|23": [0, 1]})
@@ -623,14 +646,18 @@ class MatrixTest(unittest.TestCase):
             "registry": {}, "left_out": {}, "species": SummaryTest.SPECIES, "commit": "c0ffee", "dirty": False,
             "library": "0.45.0", "encoders": {}, "sha256_prefix": {}, "table_sha256": "t", "workers": 8}
 
-    def run_dir(self, root, name, scores, our_arm=None, foe_drawn=None, commit="c0ffee", **extra):
+    def run_dir(self, root, name, scores, our_arm=None, foe_drawn=None, commit="c0ffee", dirty=False, arm_dirty=None,
+                played=None, **extra):
         d = os.path.join(root, name)
         os.makedirs(os.path.join(d, "arms"))
+        games = len(next(iter(scores.values())))
         with open(os.path.join(d, "conditions.json"), "w", encoding="utf-8") as f:
-            json.dump(dict(self.BASE, our_arm=our_arm, **extra), f)
+            json.dump(dict(self.BASE, games=games, our_arm=our_arm, dirty=dirty, **extra), f)
         for arm, s in scores.items():
             row = oracle.team_index("01|23") if arm == "drawn" else oracle.team_index(arm)
-            entry = {"arm": arm, "scores": s, "foe_drawn": (foe_drawn or {}).get(arm, [row] * len(s)), "commit": commit}
+            ours = (played or {}).get(arm, our_arm or "24|01")
+            entry = {"arm": arm, "scores": s, "foe_drawn": (foe_drawn or {}).get(arm, [row] * len(s)), "commit": commit,
+                     "dirty": dirty if arm_dirty is None else arm_dirty, "own_choice": {"0": "24|01", "1": "24|01"}, "our_played": {"0": ours, "1": ours}}
             with open(os.path.join(d, "arms", arm.replace("|", "-") + ".json"), "w", encoding="utf-8") as f:
                 json.dump(entry, f)
         return d
@@ -668,10 +695,11 @@ class MatrixTest(unittest.TestCase):
             first = os.path.join(tmp, "m1.json")
             with mock.patch("sys.stdout"):
                 oracle.main(["matrix", a, b, "--out", first])
-            for d, s in ((a, [0, 0, 0, 0]), (b, [0, 0, 0, 0])):  # a new foe answer that beats both
+            for d, ours in ((a, "24|01"), (b, "23|04")):  # a new foe answer that beats both
                 with open(os.path.join(d, "arms", "12-35.json"), "w", encoding="utf-8") as f:
-                    json.dump({"arm": "12|35", "scores": s, "foe_drawn": [oracle.team_index("12|35")] * 4,
-                               "commit": "c0ffee"}, f)
+                    json.dump({"arm": "12|35", "scores": [0, 0, 0, 0], "foe_drawn": [oracle.team_index("12|35")] * 4,
+                               "commit": "c0ffee", "dirty": False, "our_played": {"0": ours, "1": ours},
+                               "own_choice": {"0": "24|01", "1": "24|01"}}, f)
             with mock.patch("sys.stdout"):
                 oracle.main(["matrix", a, b, "--out", os.path.join(tmp, "m2.json"), "--previous", first])
             with open(os.path.join(tmp, "m2.json"), encoding="utf-8") as f:
@@ -679,6 +707,60 @@ class MatrixTest(unittest.TestCase):
             self.assertEqual(prev["worst_column_exact"], "0")
             self.assertEqual(prev["best_row_exact"], "7/12")
             self.assertEqual(prev["gap_exact"], "7/12")
+
+    def test_the_order_of_the_runs_does_not_matter(self):
+        with tempfile.TemporaryDirectory() as tmp:  # a game whose equilibrium is not unique
+            a = self.run_dir(tmp, "a", {"drawn": [1, 1], "15|23": [0, 0]}, our_arm="01|23")
+            b = self.run_dir(tmp, "b", {"drawn": [0, 0], "15|23": [1, 1]}, our_arm="02|13")
+            c = self.run_dir(tmp, "c", {"drawn": [0.5, 0.5], "15|23": [0.5, 0.5]})
+            outs = []
+            for i, dirs in enumerate(([a, b, c], [c, b, a], [b, a, c])):
+                path = os.path.join(tmp, f"m{i}.json")
+                with mock.patch("sys.stdout"):
+                    oracle.main(["matrix", *dirs, "--out", path])
+                with open(path, encoding="utf-8") as f:
+                    outs.append(json.load(f))
+            self.assertEqual(outs[0]["rows"], ["today", "01|23", "02|13"])
+            self.assertTrue(all(o == outs[0] for o in outs))
+
+    def test_a_dirty_short_or_unplayed_arm_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a = self.run_dir(tmp, "a", {"drawn": [1, 1]})
+            dirty = self.run_dir(tmp, "b", {"drawn": [1, 1]}, our_arm="23|04", arm_dirty=True)
+            with self.assertRaisesRegex(SystemExit, "arm drawn names dirty True, not False"):
+                oracle.build_matrix([a, dirty])
+            short = self.run_dir(tmp, "c", {"drawn": [1, 1]}, our_arm="23|04")
+            with open(os.path.join(short, "arms", "drawn.json"), encoding="utf-8") as f:
+                entry = json.load(f)
+            with open(os.path.join(short, "arms", "drawn.json"), "w", encoding="utf-8") as f:
+                json.dump(dict(entry, scores=[1]), f)
+            with self.assertRaisesRegex(SystemExit, "arm drawn holds 1 scores, not 2"):
+                oracle.build_matrix([a, short])
+            other = self.run_dir(tmp, "d", {"drawn": [1, 1]}, our_arm="23|04", played={"drawn": "12|35"})
+            with self.assertRaisesRegex(SystemExit, r"arms \['drawn'\]: our preview did not play --our-arm 23\|04"):
+                oracle.build_matrix([a, other])
+            varied = self.run_dir(tmp, "e", {"drawn": [1, 1], "15|23": [0, 0]}, our_arm="23|04",
+                                  played={"15|23": "12|35"})
+            with self.assertRaisesRegex(SystemExit, "our previews differ: the arms are not paired"):
+                oracle.build_matrix([varied])
+
+    def test_a_previous_matrix_of_another_measurement_or_other_cells_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a = self.run_dir(tmp, "a", {"drawn": [1, 1], "15|23": [0, 0]})
+            first = os.path.join(tmp, "m1.json")
+            with mock.patch("sys.stdout"):
+                oracle.main(["matrix", a, "--out", first])
+            other = self.run_dir(tmp, "b", {"drawn": [1, 1], "15|23": [0, 0]}, seed="0x465")
+            with self.assertRaisesRegex(SystemExit, r"--previous is of another measurement \(it differs in \['seed'\]"), \
+                    mock.patch("sys.stdout"):
+                oracle.main(["matrix", other, "--out", os.path.join(tmp, "m2.json"), "--previous", first])
+            with open(os.path.join(a, "arms", "15-23.json"), encoding="utf-8") as f:
+                entry = json.load(f)
+            with open(os.path.join(a, "arms", "15-23.json"), "w", encoding="utf-8") as f:
+                json.dump(dict(entry, scores=[1, 0]), f)
+            with self.assertRaisesRegex(SystemExit, r"cell \(today, 15\|23\) is 0 there, 1/2 here"), \
+                    mock.patch("sys.stdout"):
+                oracle.main(["matrix", a, "--out", os.path.join(tmp, "m3.json"), "--previous", first])
 
     def test_runs_of_other_measurements_are_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -718,8 +800,13 @@ class MatrixTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             a = self.run_dir(tmp, "a", {"drawn": [1, 1]})
             prev = os.path.join(tmp, "prev.json")
+            first = os.path.join(tmp, "m1.json")
+            with mock.patch("sys.stdout"):
+                oracle.main(["matrix", a, "--out", first])
+            with open(first, encoding="utf-8") as f:
+                old = json.load(f)
             with open(prev, "w", encoding="utf-8") as f:
-                json.dump({"our_mix": {"23|04": "1"}, "foe_mix": {"drawn": "1"}}, f)
+                json.dump(dict(old, our_mix={"23|04": "1"}, foe_mix={"drawn": "1"}), f)
             with self.assertRaisesRegex(SystemExit, r"our mix holds \['23\|04'\], which this matrix lacks"), \
                     mock.patch("sys.stdout"):
                 oracle.main(["matrix", a, "--out", os.path.join(tmp, "m.json"), "--previous", prev])

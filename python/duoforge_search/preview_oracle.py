@@ -420,7 +420,8 @@ def check_mix(arm, preview, decisions, games, who="our"):
     """{arm of the mix: games picked} of a MixedPreview; SystemExit unless it picked in each of the games, each
     team-preview decision in decisions played its game's pick (a combination its row up to side and bench order, today
     the own choice, drawn the recorded draw), and each arm of the mix was picked within 4 standard deviations (plus one
-    game) of its expected count."""
+    game) of its expected count. A combination's play is checked against its pick independently; today's and drawn's
+    against what MixedPreview recorded (the own choice, its draw)."""
     picked = preview.picked
     if sorted(picked) != list(range(games)):
         raise SystemExit(f"arm {arm}: {who} mix picked no preview in {games - len(set(picked) & set(range(games)))} "
@@ -492,7 +493,7 @@ def summarize(out_dir):
     elif len({json.dumps(our_played(e), sort_keys=True) for e in arms.values()}) != 1:
         raise SystemExit("the arms' our previews differ: the arms are not paired")
     elif conditions.get("our_arm") is not None:
-        wrong = sorted(n for n, e in arms.items() if set(our_played(e).values()) != {conditions["our_arm"]})
+        wrong = sorted(n for n, e in arms.items() if played_set(e) != {conditions["our_arm"]})
         if wrong:
             raise SystemExit(f"arms {wrong}: our preview did not play --our-arm {conditions['our_arm']}")
     for key, flag in (("our_picked", "our_mix"), ("foe_picked", "foe_mix")):
@@ -578,6 +579,14 @@ def our_played(entry):
     return entry.get("our_played", entry["own_choice"])
 
 
+def played_set(entry):
+    """The set of combinations our preview played in an arm file, over its seats (our_played's lists flattened)."""
+    out = set()
+    for v in our_played(entry).values():
+        out.update(v if isinstance(v, list) else [v])
+    return out
+
+
 def _finite(obj):
     from . import arena
     return arena._finite(obj)
@@ -634,10 +643,12 @@ MATRIX_KEYS = ("tool", "seed", "pairs", "games", "max_steps", "step", "side", "f
 
 def build_matrix(dirs):
     """(rows, columns, scores, conditions) of foe-side runs of one measurement: each DIR one of our previews (its
-    --our-arm, or today), rows in the order given, the foe's arms as columns (drawn first, then by name), scores[i][j]
-    our exact mean score (Fraction) of row i against column j. SystemExit unless every DIR is a foe-side run without
-    --our-mix, the rows are distinct, the DIRs agree in MATRIX_KEYS and in their arms, every arm file names the
-    measurement's commit, and each arm's foe previews are the same in every DIR (paired)."""
+    --our-arm, or today), the rows sorted (today first, then by name) and the foe's arms as columns (drawn first, then
+    by name), so the order of the DIRs does not matter; scores[i][j] is our exact mean score (Fraction) of row i
+    against column j. SystemExit unless every DIR is a foe-side run without --our-mix, the rows are distinct, the DIRs
+    agree in MATRIX_KEYS and in their arms, every arm file names the measurement's commit and dirty state and holds
+    one score per game, a row's arms played one preview of ours (its --our-arm, if set), and each arm's foe previews
+    are the same in every DIR (paired)."""
     from fractions import Fraction
     if not dirs:
         raise SystemExit("matrix needs at least one run directory")
@@ -658,6 +669,8 @@ def build_matrix(dirs):
         runs.append((d, conditions, arms))
     if len(set(rows)) != len(rows):
         raise SystemExit(f"matrix rows repeat: {rows}")
+    order = sorted(range(len(rows)), key=lambda i: (rows[i] != TODAY, rows[i]))
+    rows, runs = [rows[i] for i in order], [runs[i] for i in order]
     first_dir, first, first_arms = runs[0]
     for d, conditions, arms in runs:
         changed = [k for k in MATRIX_KEYS if conditions.get(k) != first.get(k)]
@@ -668,8 +681,18 @@ def build_matrix(dirs):
         for name, entry in arms.items():
             if entry.get("commit") != first.get("commit"):
                 raise SystemExit(f"{d}: arm {name} names commit {entry.get('commit')}, not {first.get('commit')}")
+            if entry.get("dirty") != first.get("dirty"):
+                raise SystemExit(f"{d}: arm {name} names dirty {entry.get('dirty')}, not {first.get('dirty')}")
+            if len(entry["scores"]) != first.get("games"):
+                raise SystemExit(f"{d}: arm {name} holds {len(entry['scores'])} scores, not {first.get('games')}")
             if entry["foe_drawn"] != first_arms[name]["foe_drawn"]:
                 raise SystemExit(f"{d} and {first_dir}: arm {name}'s foe previews differ: not paired")
+        if len({json.dumps(our_played(e), sort_keys=True) for e in arms.values()}) > 1:
+            raise SystemExit(f"{d}: the arms' our previews differ: the arms are not paired")
+        if conditions.get("our_arm") is not None:
+            wrong = sorted(n for n, e in arms.items() if played_set(e) != {conditions["our_arm"]})
+            if wrong:
+                raise SystemExit(f"{d}: arms {wrong}: our preview did not play --our-arm {conditions['our_arm']}")
     if not first_arms:
         raise SystemExit(f"{first_dir} holds no finished arm")
     columns = sorted(first_arms, key=lambda n: (n != DRAWN, n))
@@ -681,6 +704,22 @@ def build_matrix(dirs):
 def _mix_of(names, weights):
     """{name: Fraction} of a mix's support (positive weights) in the given order."""
     return {name: w for name, w in zip(names, weights) if w > 0}
+
+
+def _check_previous(old, rows, columns, scores, conditions):
+    """SystemExit unless an earlier matrix file old is of this measurement (its conditions) and this matrix extends
+    it: its rows and columns are among these, with the same exact cells."""
+    if json.loads(json.dumps(_finite(old.get("conditions")))) != json.loads(json.dumps(_finite(conditions))):
+        changed = sorted(k for k in MATRIX_KEYS if (old.get("conditions") or {}).get(k) != conditions.get(k))
+        raise SystemExit(f"--previous is of another measurement (it differs in {changed})")
+    missing = sorted(set(old["rows"]) - set(rows)) + sorted(set(old["columns"]) - set(columns))
+    if missing:
+        raise SystemExit(f"--previous: this matrix lacks its rows or columns {missing}")
+    for i, row in enumerate(old["rows"]):
+        for j, column in enumerate(old["columns"]):
+            if str(scores[rows.index(row)][columns.index(column)]) != old["scores_exact"][i][j]:
+                raise SystemExit(f"--previous: cell ({row}, {column}) is {old['scores_exact'][i][j]} there, "
+                                 f"{scores[rows.index(row)][columns.index(column)]} here")
 
 
 def _extend(mix, names, who):
@@ -715,6 +754,7 @@ def main_matrix(argv):
            "our_mix_text": mix_text(sorted(ours.items())), "foe_mix_text": mix_text(sorted(foes.items()))}
     if args.previous:
         old = ladder._load_json(args.previous)
+        _check_previous(old, rows, columns, scores, conditions)
         g = zero_sum.gap(scores, _extend(old["our_mix"], rows, "our"), _extend(old["foe_mix"], columns, "the foe's"))
         out["previous"] = {"file": os.path.basename(args.previous), "our_mix": old["our_mix"],
                            "foe_mix": old["foe_mix"], **{k + "_points": 100.0 * float(v) for k, v in g.items()},
@@ -841,7 +881,7 @@ def main(argv=None):
                             if foe_mix is None else "mixed by --foe-mix, picked per game (mix_pick)"),
             "foe_lead": None if args.foe_lead is None else sorted(x.strip() for x in args.foe_lead.split(",")),
             "our_arm": args.our_arm,
-            **({"our_mix": mix_text(our_mix)} if our_mix else {}), **({"foe_mix": mix_text(foe_mix)} if foe_mix else {}),
+            "our_mix": mix_text(our_mix) if our_mix else None, "foe_mix": mix_text(foe_mix) if foe_mix else None,
             "ours_sha256_prefix": matchup["ours"]["sha256"][:12], "foe_sha256_prefix": matchup["foe"]["sha256"][:12],
             "registry": {"ours": ours_id, "foe": foe_id},
             "left_out": {"ours_search": source_ids.get(foe_id), "foe_search": source_ids.get(ours_id)},
@@ -923,7 +963,7 @@ def main(argv=None):
                                    seconds,
                                    our_picked=[our_preview.picked[e] for e in range(n)] if our_mix else None,
                                    foe_picked=[foe_preview.picked[e] for e in range(n)] if foe_mix else None)
-                entry["commit"] = commit
+                entry["commit"], entry["dirty"] = commit, dirty
                 if picks:
                     entry["mix_counts"] = picks
                 with open(target + ".tmp", "w", encoding="utf-8") as f:
