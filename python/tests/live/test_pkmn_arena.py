@@ -313,6 +313,35 @@ class ArenaTest(unittest.TestCase):
             self.assertNotIn(private, text)
         self.assertEqual(self.run_log()["counts"]["losses"], 1)
 
+    def test_the_run_log_and_each_summary_name_the_bots_commit_and_dirty_state(self):
+        # HauptSession, 2026-10-13: every result names the code that ran, its commit and whether the tree was dirty
+        # (a summary's own "dirty" is the game's class (b) reason, not the code's state).
+        from duoforge_live import search as live_search
+
+        class RawSearch:
+            def decide(self, *args, **kwargs):
+                return live_search.Outcome(None, "raw", None, None, 0.0)
+
+            def close(self):
+                pass
+        code = {"commit": "8c4fe662", "dirty": False}
+        self.make(search=RawSearch(), code=code)
+        self.feed(*battle_messages())
+        self.feed(room(["|win|Opponent"]))
+        self.assertEqual(self.run_log()["code"], code)
+        import hashlib
+        self.assertEqual(self.run_log()["team_sha256"], hashlib.sha256(FIXTURE["team"].encode("utf-8")).hexdigest())
+        summary = next(r["summary"] for r in self.battle() if "summary" in r)
+        self.assertEqual(summary["code"], code)
+
+    def test_the_arena_mode_names_its_code_or_does_not_start(self):
+        from duoforge_live import arena
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(arena, "provenance", side_effect=SystemExit("no commit to name: DUOFORGE_COMMIT")):
+            argv = ["--server", "arena", "--format", OTS, "--checkpoint", "x.npz", "--log-dir", tmp]
+            with mock.patch.dict(os.environ, ENV), self.assertRaisesRegex(SystemExit, "DUOFORGE_COMMIT"):
+                cli.main(argv)
+
     def test_a_wait_request_gets_no_answer_and_a_tie_ends_the_battle(self):
         self.make()
         self.feed(*battle_messages(upto=6))
@@ -392,6 +421,52 @@ class ArenaTest(unittest.TestCase):
         self.assertEqual([p.sets for p in again.particles], [p.sets for p in game.tracker.particles])
         self.assertEqual([p["record"].tobytes() for p in again.public_parts()],
                          [p["record"].tobytes() for p in game.tracker.public_parts()])
+
+    def test_the_bots_own_log_replays_to_the_same_particles_at_every_decision(self):
+        # cts.LogReplay (#385, the one replay core of cts_live_eval and Search's ko_check): the bot's log, replayed under
+        # the same seed, key and prior, gives at every decision point the particles and records the bot decided on,
+        # before the choice is accepted, with that decision's log record.
+        from duoforge_live import game as game_module
+        self.make(fmt=CTS)
+        closed = f"battle-{CTS}-6"
+        seen, real = [], game_module.Game.candidates
+
+        def candidates(g, *args, **kwargs):
+            seen.append((g.epoch, g.request["rqid"], [p.sets for p in g.tracker.particles],
+                         [p["record"].tobytes() for p in g.tracker.public_parts()]))
+            return real(g, *args, **kwargs)
+        with mock.patch.object(game_module.Game, "candidates", candidates):
+            self.feed(*self.closed_messages(closed, upto=9))
+        self.assertGreaterEqual(len(seen), 3)
+        path = Path(self.tmp.name, f"{closed}-{client.toid(NAME)}.jsonl")
+        self.assertEqual(cts.room_of_log(path, NAME), closed)
+        replay = cts.LogReplay(self.battle(closed), self.bot.data, self.bot.policy, FIXTURE["team"], self.bot.prior,
+                               cts.room_of_log(path, NAME))
+        points = [(g.epoch, g.request["rqid"], [p.sets for p in g.tracker.particles],
+                   [p["record"].tobytes() for p in g.tracker.public_parts()], record) for g, record in replay]
+        self.assertIsNone(replay.stopped)
+        self.assertEqual([p[:4] for p in points], seen)
+        for epoch, rqid, _, _, record in points:
+            self.assertEqual(record["decision"], rqid)  # the decision's own log record, with what was sent
+            self.assertIn("sent", record)
+
+    def test_a_replayed_decision_names_the_choice_played_after_a_refusal(self):
+        # Review of the replay core: "sent" is the first try; after "[Invalid choice]" the bot plays the next one, and
+        # the replay's record names it as "accepted"
+        self.make(fmt=CTS)
+        closed = f"battle-{CTS}-7"
+        self.feed(*self.closed_messages(closed, upto=6))
+        self.take()
+        self.feed(room(["|error|[Invalid choice] Can't move: no."], closed))
+        (again,) = self.take()
+        played = again.split("|/choose ", 1)[1].rsplit("|", 1)[0]
+        self.feed(*[room([l for l in m if not l.startswith("|showteam|")], closed) for m in FIXTURE["messages"][6:9]])
+        replay = cts.LogReplay(self.battle(closed), self.bot.data, self.bot.policy, FIXTURE["team"], self.bot.prior,
+                               closed)
+        records = {g.request["rqid"]: record for g, record in replay}
+        record = records[request_of(5)["rqid"]]
+        self.assertNotEqual(record["sent"], played)
+        self.assertEqual(record["accepted"], played)
 
     def test_a_random_closed_sheet_battle_plays_its_pool_team_over_the_particles(self):
         self.make(team=False, pool=[teams.text("B"), FIXTURE["team"]], fmt=CTS)

@@ -1,0 +1,169 @@
+[
+  {
+    "function": "dfi_grounded",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 197,
+    "old_last_line": 204,
+    "to": "src/combat/field/terrain.h",
+    "body_sha256": "1f079d69f8b60f914a5705c2f2b66eea84cf82d143718d1bc53428fc07421409",
+    "new_first_line": 14,
+    "new_last_line": 21,
+    "implementation_function": "dfi_grounded_test"
+  },
+  {
+    "function": "dfi_terrain_field_detail",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 207,
+    "old_last_line": 213,
+    "to": "src/combat/field/terrain.h",
+    "body_sha256": "8778e786de8ae236883fa611b0886905d7cbf76e23ccb9775367f4fd7f96ccb8",
+    "new_first_line": 31,
+    "new_last_line": 37
+  },
+  {
+    "function": "dfi_weather_rock",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 229,
+    "old_last_line": 241,
+    "to": "src/combat/field/weather.h",
+    "body_sha256": "16398c33d6d0275c15c1f7172cd8a23af54f0e217185ddca2da94cfa99ea6658",
+    "new_first_line": 10,
+    "new_last_line": 22
+  },
+  {
+    "function": "dfi_weather_suppressed",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 283,
+    "old_last_line": 292,
+    "to": "src/combat/field/weather.h",
+    "body_sha256": "ad73d3bfa23259b4a8cc810485235806a4ad321794d97034191e6f66277deecb",
+    "new_first_line": 30,
+    "new_last_line": 39,
+    "implementation_function": "dfi_weather_suppression_scan"
+  },
+  {
+    "function": "dfi_field_weather",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 295,
+    "old_last_line": 298,
+    "to": "src/combat/field/weather.h",
+    "body_sha256": "5e3efbfe42ee9d082466b72c1e0d712905a1163bb6f10df2821cf4c95630d046",
+    "new_first_line": 49,
+    "new_last_line": 52
+  },
+  {
+    "function": "dfi_move_weather",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 303,
+    "old_last_line": 309,
+    "to": "src/combat/field/weather.h",
+    "body_sha256": "048b017f09c5792d85402741909f3d3333e8fab1ed77b62fdcad07522d1b0418",
+    "new_first_line": 57,
+    "new_last_line": 63
+  },
+  {
+    "function": "dfi_weather_speed_ability",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 444,
+    "old_last_line": 453,
+    "to": "src/combat/field/weather.h",
+    "body_sha256": "f31ff1c837f8382058bb3bbabc073e048a6634baa429cfc47b0682a861a713e9",
+    "new_first_line": 69,
+    "new_last_line": 78
+  },
+  {
+    "function": "dfi_field_start_turns",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 247,
+    "old_last_line": 250,
+    "to": "src/combat/field/duration.h",
+    "body_sha256": "5e47c216073f731123698b312c1d4c10a68e1092ea3c4ccb47428c65e8779ccd",
+    "new_first_line": 14,
+    "new_last_line": 17
+  },
+  {
+    "function": "dfi_entrant_speed_key",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 828,
+    "old_last_line": 832,
+    "to": "src/combat/field/trick_room.h",
+    "body_sha256": "fe542eea7fe0577088f800fd375ba5a03c14335f5739d75411ce9a7e8af2a1b9",
+    "new_first_line": 15,
+    "new_last_line": 19
+  },
+  {
+    "function": "dfi_break_screens",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 4529,
+    "old_last_line": 4544,
+    "to": "src/combat/field/side_conditions.h",
+    "body_sha256": "b65254da59171eb33c91605be87a3fe1ff851143648501218a202ec8a1f4972c",
+    "new_first_line": 14,
+    "new_last_line": 29
+  },
+  {
+    "function": "dfi_side_turns",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 10590,
+    "old_last_line": 10597,
+    "to": "src/combat/field/side_conditions.h",
+    "body_sha256": "7af3bd6b66561615f5eeb65ad25d5e35ac946580971ee004474909bed44e3b9d",
+    "new_first_line": 31,
+    "new_last_line": 38
+  },
+  {
+    "function": "dfi_clear_terrain",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 5564,
+    "old_last_line": 5577,
+    "to": "src/combat/field/terrain_effects.h",
+    "body_sha256": "a4381c019922fe5e7ce6a0ccf5148415b0dc2620b88fb422099ca5dd894d4b34",
+    "new_first_line": 12,
+    "new_last_line": 25
+  },
+  {
+    "function": "dfi_seed_terrain",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 9916,
+    "old_last_line": 9931,
+    "to": "src/combat/field/terrain_seeds.h",
+    "body_sha256": "22fc1aacd87ffaf4b497992713f687325472d5d836b08d044eb10db826d147b3",
+    "new_first_line": 13,
+    "new_last_line": 28
+  },
+  {
+    "function": "dfi_terrain_seed",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 9935,
+    "old_last_line": 9955,
+    "to": "src/combat/field/terrain_seeds.h",
+    "body_sha256": "f15f349da5d9f4a1b115ff5b5dafb37584a59ad103cce2fdf5086a2532d3a590",
+    "new_first_line": 32,
+    "new_last_line": 52
+  },
+  {
+    "function": "dfi_terrain_change",
+    "from": "src/combat/turn.c",
+    "from_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+    "old_first_line": 9959,
+    "old_last_line": 9978,
+    "to": "src/combat/field/terrain_seeds.h",
+    "body_sha256": "3fdc7a28ebd13a2cede0d08e407ae36d61dd6ccf2da141ada5e10e039000c0ea",
+    "new_first_line": 56,
+    "new_last_line": 75
+  }
+]

@@ -513,7 +513,9 @@ def arena_main(args):
         live_data.for_checkpoint(net.path)  # every network reads these tables as trained (ValueError otherwise)
     previews = {}
     if not args.no_preview:
-        settings = dict(live_search.HONEST_SETTINGS, preview_mode="value", preview_only=True)
+        # The live search's settings with the value preview under the mix rule, as #451 measured it (the live turns
+        # moved to ev on 2026-10-14; the preview's rule stays named here).
+        settings = dict(live_search.HONEST_SETTINGS, preview_mode="value", preview_only=True, preview_rule="mix")
         previews = {net.name: live_search.load(net.path, settings=settings, foe_net=None) for net in nets}
     counts, games = Counter(), []
     start = time.perf_counter()

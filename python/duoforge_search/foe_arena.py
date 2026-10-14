@@ -3,7 +3,8 @@ own network as the foe model, both against a human-like bot.
 
     python -m duoforge_search.foe_arena --checkpoint MAIN --foe-net BC --bot BOT --out DIR [--pairs 1024]
 
-Arm F: honest.Honest in the live settings (duoforge_live.search.HONEST_SETTINGS, the live spread table) on MAIN, the
+Arm F: honest.Honest in the live settings (duoforge_live.search.HONEST_SETTINGS, the live spread table; mix with
+lambda 0.5 when M7 was measured, ladder step 2e's best answer since 2026-10-14) on MAIN, the
 worlds' policy from the foe network BC (Honest's foe_net). Arm M: the same search with MAIN as its own foe model, the
 live mode today. Arm R (context only): MAIN's raw play. Every arm plays the bot BOT (greedy raw play of a network other
 than BC: the bot and the foe model must not be one network) over the same games: team pairs drawn from MAIN's pool,
