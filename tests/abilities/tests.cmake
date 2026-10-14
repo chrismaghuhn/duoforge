@@ -39,3 +39,6 @@ duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES abilities/test_pool_g79.c
 # Step G81 (decision 0015 entry 5bs, decision 0033): Frisk (the foes' items announced at its holder's switch-in, ITEM_SHOWN in
 # the Frisk form), the switch-in order against Intimidate, two Frisk holders, and the fold that ignores the event.
 duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES abilities/test_pool_g81.c WHITEBOX TIMEOUT 120 TIER quick AREA abilities)
+
+# Step K2 (decision 0015 5dd, #474): Piercing Drill and Excadrite (the marks, the stone link, the -zbroken event kind, the 0.25 rounding).
+duoforge_add_test(NAME duoforge.state.pool_k2 SOURCES abilities/test_pool_k2.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)

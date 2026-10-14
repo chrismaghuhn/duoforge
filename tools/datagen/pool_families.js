@@ -1572,6 +1572,11 @@ const G77_PROBES = {
         expect('sniper flags', ability.flags, {});
         expect('sniper onModifyDamage', typeof ability.onModifyDamage, 'function');
     },
+    piercingdrill(ability) {
+        // Step K2 (decision 0015 5dd): the holder's contact moves are marked by onHitProtect; no flags.
+        expect('piercingdrill flags', ability.flags, {});
+        expect('piercingdrill onHitProtect', typeof ability.onHitProtect, 'function');
+    },
 };
 
 // Step G65 (Reckless's crash clause): a modelled move with hasCrashDamage needs the clause, which the engine does not have.
@@ -1803,7 +1808,7 @@ const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
         'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
-        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm', 'magmaarmor', 'angerpoint', 'sniper']};
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.

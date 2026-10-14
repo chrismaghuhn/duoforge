@@ -130,6 +130,24 @@ class OpponentTest(unittest.TestCase):
         later = ev.assign_labels(["w", "x", "w", "v"], labels)
         self.assertEqual(later, {"y": "A", "z": "B", "x": "C", "w": "D", "v": "E"})  # kept, then continued
 
+    def test_an_opponents_team_is_its_preview_species(self):
+        records = [{"in": "|player|p1|Ling-Ce||"}, {"in": "|player|p2|Some Foe|2|"},
+                   {"in": "|poke|p1|Froslass, L50, F|"}, {"in": "|poke|p2|Garchomp, L50, M|"},
+                   {"in": "|poke|p2|Charizard, L50, M|"}]
+        self.assertEqual(ev.foe_team(records, "lingce"), ev.foe_team(list(reversed(records)), "lingce"))
+        other = records[:-1] + [{"in": "|poke|p2|Venusaur, L50, F|"}]
+        self.assertNotEqual(ev.foe_team(records, "lingce"), ev.foe_team(other, "lingce"))
+
+    def test_each_opponents_teams_are_numbered_by_first_appearance_and_kept(self):
+        # An opponent may change its team between series (HauptSession, 2026-10-14): each team of an opponent is a
+        # label of its own, letter and number, kept in the same private file.
+        labels = ev.assign_labels(["x", "y"], {})
+        labels = ev.assign_teams([("x", "t1"), ("y", "s1"), ("x", "t2"), ("x", "t1")], labels)
+        self.assertEqual([ev.team_label(labels, o, t) for o, t in (("x", "t1"), ("x", "t2"), ("y", "s1"))],
+                         ["A1", "A2", "B1"])
+        later = ev.assign_teams([("x", "t3"), ("x", "t2")], labels)
+        self.assertEqual([ev.team_label(later, "x", t) for t in ("t1", "t2", "t3")], ["A1", "A2", "A3"])
+
     def test_the_label_file_never_lies_in_the_repository(self):
         with self.assertRaises(ValueError):
             ev.load_labels(data.ROOT / "python" / "tests" / "labels.json")
@@ -147,7 +165,8 @@ class MainTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as logs, tempfile.TemporaryDirectory() as private:
             names = {"battle-gen9x-501": ("Some Foe", played()), "battle-gen9x-502": ("Other Foe", stopped())}
             for room_id, (foe, records) in names.items():
-                head = [{"in": "|player|p1|Ling-Ce||"}, {"in": f"|player|p2|{foe}|2|"}]
+                head = [{"in": "|player|p1|Ling-Ce||"}, {"in": f"|player|p2|{foe}|2|"},
+                        {"in": "|poke|p2|Garchomp, L50, M|"}]  # its team: the preview (none: "?")
                 Path(logs, f"{room_id}-lingce.jsonl").write_text(
                     "\n".join(json.dumps(r) for r in head + records) + "\n", encoding="utf-8")
             out = io.StringIO()
@@ -156,10 +175,82 @@ class MainTest(unittest.TestCase):
                 ev.main(["--logs", logs, "--labels", str(labels), "--since", "2026-10-13T00:00:00Z"])
             text = out.getvalue()
         result = json.loads(text)
+        # the tool's own commit hash is no log text: a room number's digits may occur in it by chance (Content lane,
+        # 2026-10-14: "14502344" in a commit failed this test), so the check reads the output without it
+        checked = text.replace(result["code"]["commit"], "<tool commit>")
         for private_text in ("Some Foe", "somefoe", "Other Foe", "otherfoe", "501", "502", "Bobby"):
-            self.assertNotIn(private_text, text)
+            self.assertNotIn(private_text, checked)
         self.assertEqual(sorted(result["by_opponent"]), ["A"])  # the stopped battle has no timestamp: before --since
-        self.assertEqual((result["logs"], result["since_kept"]), (2, 1))
+        self.assertEqual(sorted(result["by_team"]), ["A1"])
+        self.assertEqual((result["logs"], result["kept"]), (2, 1))
+
+
+class CodeTest(unittest.TestCase):
+    """A measurement series per bot commit (HauptSession, 2026-10-14: from a7dd956b on, Ling-Ce plays the 2e rule): the
+    battles and run logs of one commit, never mixed with another's."""
+
+    def test_a_battle_names_its_bots_code_from_its_summary(self):
+        code = {"commit": "a7dd956b" + "0" * 32, "dirty": False}
+        b = ev.battle(played() + [{"summary": {"causes": {}, "code": code}}], "lingce")
+        self.assertEqual(b["code"], code)
+        self.assertIsNone(ev.battle(played(), "lingce")["code"])
+
+    def test_main_keeps_the_battles_and_run_logs_of_one_commit(self):
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as logs:
+            for n, commit in ((1, "1ffa6a03"), (2, "a7dd956b"), (3, None)):
+                summary = [] if commit is None else [{"summary": {"code": {"commit": commit + "0" * 32, "dirty": False}}}]
+                Path(logs, f"battle-gen9x-{n}-lingce.jsonl").write_text(
+                    "\n".join(json.dumps(r) for r in played() + summary) + "\n", encoding="utf-8")
+                Path(logs, f"arena-run-{n}.json").write_text(json.dumps({
+                    "started": "2026-10-14T00:00:00Z", "counts": {"battles": 1},
+                    **({} if commit is None else {"code": {"commit": commit + "0" * 32, "dirty": False}})}),
+                    encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                ev.main(["--logs", logs, "--code", "a7dd956b"])
+        result = json.loads(out.getvalue())
+        self.assertEqual((result["logs"], result["kept"], result["code_filter"]), (3, 1, "a7dd956b"))
+        self.assertEqual(result["by_code"], {"1ffa6a03": 1, "a7dd956b": 1, "none": 1})
+        self.assertEqual(result["runs"]["files"], 1)
+
+
+class CodeReviewTest(unittest.TestCase):
+    """The review of the format 2: every battle names its code in its first record, so a series keeps its failure
+    battles too (a raw game after a class (b) error writes no summary); a dirty run is another series."""
+
+    def test_a_battle_names_its_code_in_its_first_record(self):
+        code = {"commit": "a7dd956b" + "0" * 32, "dirty": False}
+        self.assertEqual(ev.battle([{"log_format": 2, "code": code}] + played(), "lingce")["code"], code)
+
+    def test_a_dirty_run_is_not_in_its_commits_series(self):
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as logs:
+            for n, dirty in ((1, False), (2, True)):
+                head = {"log_format": 2, "code": {"commit": "a7dd956b" + "0" * 32, "dirty": dirty}}
+                Path(logs, f"battle-gen9x-{n}-lingce.jsonl").write_text(
+                    "\n".join(json.dumps(r) for r in [head] + played()) + "\n", encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                ev.main(["--logs", logs, "--code", "a7dd956b"])
+        result = json.loads(out.getvalue())
+        self.assertEqual(result["by_code"], {"a7dd956b": 1, "a7dd956b+dirty": 1})
+        self.assertEqual(result["kept"], 1)
+
+    def test_an_opponents_team_without_a_preview_is_unknown_and_a_resync_changes_nothing(self):
+        records = [{"in": "|player|p1|Ling-Ce||"}, {"in": "|player|p2|Some Foe|2|"},
+                   {"in": "|poke|p2|Garchomp, L50, M|"}, {"in": "|poke|p2|Charizard, L50, M|"}]
+        again = records + [{"in": "|poke|p2|Garchomp, L50, M|"}]  # a resync logs the preview again
+        self.assertEqual(ev.foe_team(records, "lingce"), ev.foe_team(again, "lingce"))
+        self.assertIsNone(ev.foe_team(records[:2], "lingce"))
+        labels = ev.assign_teams([("x", None)], ev.assign_labels(["x"], {}))
+        self.assertEqual(ev.team_label(labels, "x", None), "?")
+
+    def test_details_need_the_replay(self):
+        with tempfile.TemporaryDirectory() as logs, self.assertRaisesRegex(SystemExit, "--replay"):
+            ev.main(["--logs", logs, "--details", str(Path(logs, "details.json"))])
 
 
 class ReplayTest(unittest.TestCase):
@@ -226,7 +317,9 @@ class ReplayTest(unittest.TestCase):
 
     def test_the_real_tables_name_the_known_unmodelled_content(self):
         names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-        self.assertTrue({"speedswap", "piercingdrill", "gravity", "temperflare"} <= names, sorted(names)[:10])
+        self.assertTrue({"speedswap", "gravity"} <= names, sorted(names)[:10])
+        self.assertNotIn("temperflare", names)  # modelled by #476 (the Stomping Tantrum handler)
+        self.assertNotIn("piercingdrill", names)  # modelled by #474 (the protect bypass of Mega Excadrill)
 
 
 if __name__ == "__main__":
