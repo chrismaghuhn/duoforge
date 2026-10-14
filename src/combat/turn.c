@@ -3218,6 +3218,20 @@ static void dfi_emit_item_left(dfi_run *r, uint32_t flat, uint32_t code, uint32_
     dfi_emit(r, &e);
 }
 
+/* The item's Start after setItem (sim/pokemon.ts:1885-1887) where it prints a line: Air Balloon's onStart (data/items.ts:191-195)
+ * shows the balloon, ITEM_SHOWN, before the line of the move or ability that gave it (issue 520). Klutz, Embargo, Magic Room
+ * and Gravity are not marked, so the holder never ignores it here. An item whose Start uses it up is refused before
+ * (dfi_start_uses_item). */
+static void dfi_item_start_shown(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    if (m != NULL && m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_AIRBALLOON)) {
+        const duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_AIRBALLOON,
+                                            DUOFORGE_NO_POSITION);
+        dfi_emit(r, &shown);
+    }
+}
+
 /* Symbiosis (step G69, data/abilities.ts:4837-4856, onAllyAfterUseItem). `flat` is the Pokemon that has just used its item (useItem
  * or eatItem: AfterUseItem, from dfi_use_item_of, dfi_use_item and the berries of dfi_update and dfi_lum_berry; not Bug Bite, which
  * never runs AfterUseItem); its ally, the other position of its side, is the holder (`source` of the pin). In the pin's order:
@@ -3262,11 +3276,12 @@ static void dfi_symbiosis(dfi_run *r, uint32_t flat)
         r->deferred = DUOFORGE_E_UNSUPPORTED; /* the item's Start would use it at once: decided before anything changes */
         return;
     }
+    dfi_set_held(b, holder, 0u);
+    dfi_set_held(b, flat, code);
+    dfi_item_start_shown(r, flat); /* setItem's Start comes before the -activate line (data/abilities.ts symbiosis) */
     duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, holder, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SYMBIOSIS, flat);
     act.id = (uint16_t)code; /* the item + 1 */
     dfi_emit(r, &act); /* -activate|holder|ability: Symbiosis|Item|[of] user */
-    dfi_set_held(b, holder, 0u);
-    dfi_set_held(b, flat, code);
 }
 
 static duoforge_status dfi_skill_swap(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id, bool *did);
@@ -3305,12 +3320,14 @@ static duoforge_status dfi_trick(dfi_run *r, uint32_t user, uint32_t target, uin
     dfi_emit(r, &act); /* -activate|user|move: Trick|[of] target (Switcheroo prints Trick as well) */
     dfi_set_held(b, target, mine);
     if (mine != 0u) {
+        dfi_item_start_shown(r, target); /* target.setItem(myItem) runs the item's Start before the -item line */
         dfi_emit_item_received(r, target, mine, move_id, DUOFORGE_NO_POSITION);
     } else {
         dfi_emit_item_left(r, target, yours, move_id, DUOFORGE_NO_POSITION);
     }
     dfi_set_held(b, user, yours);
     if (yours != 0u) {
+        dfi_item_start_shown(r, user); /* source.setItem(yourItem): the same */
         dfi_emit_item_received(r, user, yours, move_id, DUOFORGE_NO_POSITION);
     } else {
         dfi_emit_item_left(r, user, mine, move_id, DUOFORGE_NO_POSITION);
@@ -3348,6 +3365,7 @@ static duoforge_status dfi_thief(dfi_run *r, uint32_t user, uint32_t target, uin
     }
     dfi_set_held(b, target, 0u);
     dfi_set_held(b, user, yours);
+    dfi_item_start_shown(r, user); /* source.setItem(yourItem) comes before Thief's and Covet's lines */
     if (silent_enditem) {
         dfi_emit_item_left(r, target, yours, move_id, user);
     }
