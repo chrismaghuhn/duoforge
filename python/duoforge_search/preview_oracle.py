@@ -40,9 +40,11 @@ unless every game picked, each pick played, and each arm of the mix was picked a
 (check_mix); the summary refuses arms whose picks differ.
 
 `matrix` reads foe-side runs of one measurement (each DIR one of our previews: --our-arm, or today without it; the same
-seed, pairs, commit, library and foe arms in every DIR) into the matrix of our mean scores, our previews by the foe's
-arms, and writes its exact equilibrium (zero_sum.solve: our mix, the foe's mix and the value) to FILE; with --previous
-(an earlier matrix FILE), also the double-oracle gap of that file's mixes on this matrix (zero_sum.gap).
+conditions (MATRIX_KEYS: seed, pairs, commit, dirty state, library, ...) and foe arms in every DIR, the same commit and
+dirty state in every arm file) into the matrix of our mean scores, our previews (sorted, today first) by the foe's arms
+(drawn first), and writes its exact equilibrium (zero_sum.solve: our mix, the foe's mix and the value) to FILE; with
+--previous (an earlier matrix FILE of the same measurement, whose cells this matrix holds unchanged), also the
+double-oracle gap of that file's mixes on this matrix (zero_sum.gap).
 
 Each finished arm is written to DIR/arms/ARM.json (per-game scores, the foe's drawn choice per game, the decision
 digests and fallback shares) and a rerun skips it when its conditions match; `summary` (also run at the end) writes
@@ -183,6 +185,12 @@ def parse_mix(text, side):
     if sum(out.values()) != 1:
         raise ValueError(f"the mix's probabilities sum to {sum(out.values())}, not 1")
     return sorted(out.items())
+
+
+def mix_conditions(our_mix, foe_mix):
+    """The conditions' mix keys: both always present (None without a mix), so a resume that adds, drops or changes a
+    mix is another measurement (resume_changes)."""
+    return {"our_mix": mix_text(our_mix) if our_mix else None, "foe_mix": mix_text(foe_mix) if foe_mix else None}
 
 
 def mix_text(mix):
@@ -711,7 +719,8 @@ def _check_previous(old, rows, columns, scores, conditions):
     it: its rows and columns are among these, with the same exact cells."""
     if json.loads(json.dumps(_finite(old.get("conditions")))) != json.loads(json.dumps(_finite(conditions))):
         changed = sorted(k for k in MATRIX_KEYS if (old.get("conditions") or {}).get(k) != conditions.get(k))
-        raise SystemExit(f"--previous is of another measurement (it differs in {changed})")
+        raise SystemExit(f"--previous is of another measurement (it differs in "
+                         f"{changed or 'keys outside the matrix keys'})")
     missing = sorted(set(old["rows"]) - set(rows)) + sorted(set(old["columns"]) - set(columns))
     if missing:
         raise SystemExit(f"--previous: this matrix lacks its rows or columns {missing}")
@@ -881,7 +890,7 @@ def main(argv=None):
                             if foe_mix is None else "mixed by --foe-mix, picked per game (mix_pick)"),
             "foe_lead": None if args.foe_lead is None else sorted(x.strip() for x in args.foe_lead.split(",")),
             "our_arm": args.our_arm,
-            "our_mix": mix_text(our_mix) if our_mix else None, "foe_mix": mix_text(foe_mix) if foe_mix else None,
+            **mix_conditions(our_mix, foe_mix),
             "ours_sha256_prefix": matchup["ours"]["sha256"][:12], "foe_sha256_prefix": matchup["foe"]["sha256"][:12],
             "registry": {"ours": ours_id, "foe": foe_id},
             "left_out": {"ours_search": source_ids.get(foe_id), "foe_search": source_ids.get(ours_id)},

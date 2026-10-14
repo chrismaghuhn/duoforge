@@ -298,6 +298,12 @@ class GuardTest(unittest.TestCase):
         self.assertEqual(oracle.resume_changes(old, same), [])
         self.assertEqual(oracle.resume_changes(old, dict(old, our_mix=None)), ["our_mix"])
         self.assertEqual(oracle.resume_changes(old, dict(old, our_mix="23|04:1/3,today:2/3")), ["our_mix"])
+        mixed = oracle.parse_mix("23|04:1/2,today:1/2", "ours")
+        self.assertEqual(oracle.mix_conditions(None, None), {"our_mix": None, "foe_mix": None})
+        self.assertEqual(oracle.mix_conditions(mixed, None), {"our_mix": "23|04:1/2,today:1/2", "foe_mix": None})
+        base = {"seed": "0x1", "side": "foe", "our_arm": None}  # what main writes: the keys even without a mix
+        self.assertEqual(oracle.resume_changes(dict(base, **oracle.mix_conditions(mixed, None)),
+                                               dict(base, **oracle.mix_conditions(None, None))), ["our_mix"])
         before = {"seed": "0x1", "side": "foe", "our_arm": None}  # a run from before the mixes resumes without one
         self.assertEqual(oracle.resume_changes(before, dict(before, our_mix=None, foe_mix=None)), [])
         self.assertEqual(oracle.resume_changes(before, dict(before, our_mix="23|04:1", foe_mix=None)), ["our_mix"])

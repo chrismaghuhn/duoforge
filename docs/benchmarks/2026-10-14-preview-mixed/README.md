@@ -20,7 +20,7 @@ This document is committed before the first measurement. Results are added below
     - The rows are sorted (`today` first, then by name) and the columns too (`drawn` first), so the result does not depend on the order of the DIRs; where the equilibrium is not unique, this order picks one.
     - The equilibrium is solved in rational arithmetic (`duoforge_search.zero_sum`: the simplex method with Bland's rule). It is checked exactly before it is written. There is no approximate fallback.
     - With `--previous`, it also writes the gap of the earlier file's mixes on this matrix. The earlier file must be of the same measurement, and this matrix must extend it with the same cells.
-  - The runs refuse to pair otherwise: a matrix needs one seed, pairs, commit, dirty state, library and set of foe arms in every run and arm file, with identical foe previews per arm and one preview of ours per row.
+  - The runs refuse to pair otherwise. A matrix needs the same conditions (seed, pairs, commit, dirty state, library and the rest) and set of foe arms in every run, and the same commit and dirty state in every arm file. The foe previews must be identical per arm, and each row must play one preview of ours.
 - **Everything else is the method of the measurement of `23|04`:**
   - the teams (ours Team A; the foe the tournament sun team, whose sheet is a private file);
   - ladder step 0 on both seats;
@@ -60,7 +60,7 @@ All matrix cells are played on one seed `0x2026101300000464` with **64 pairs** (
      - today: no `--our-arm`, arms `drawn` and `15|23`;
      - `23|04`: `--our-arm '23|04'`, arms `drawn` and `12|35`.
      - That makes 4 arms and 2,048 games.
-   - **Pairing check:** the comparisons are refused unless the three `drawn` arm files have identical foe draws (`foe_drawn`) and the runs the same seed, pairs, commit and library.
+   - **Pairing check:** the comparisons are refused unless the three `drawn` arm files have identical foe draws (`foe_drawn`) and the runs the same seed, pairs, commit, dirty state and library.
 
 The whole series is about 20 to 25 hours at the local pace (about 47 games a minute with 8 workers): the matrix cells, two screens per round and the final measurement.
 
@@ -104,4 +104,4 @@ The whole series is about 20 to 25 hours at the local pace (about 47 games a min
   - the reference `drawn` is BC6's own preview distribution, not an observed opponent's.
 - The double oracle searches its answers with screens of 32 pairs. A best answer that the screens miss is missing from the matrix, and the gap does not see it. The final screen and confirmation on fresh seeds check the mix against all 90 answers again.
 - The matrix's equilibrium is exact for the matrix, but its cells are estimates (128 games each). The stop rule and the final measurement allow for that; the matrix value itself carries no interval.
-- `15|23` was selected on the screen of `d8f30c6a`, `12|35` on the screen of `23|04` (seed `…462`), on other games than the final measurement's.
+- `15|23` was selected on the screen of `d8f30c6a`, `12|35` on the screen of `23|04` (seed `…462`; its results are added to its README before this series starts), both on other games than the final measurement's.
