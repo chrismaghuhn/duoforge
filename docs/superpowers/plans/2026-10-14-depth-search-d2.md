@@ -171,16 +171,18 @@ prior; nash and model coincide where the foe has one candidate.
 - **Determinism across chunkings:** the same decisions with expand chunks of 16 and 7 (value call fixed) give
   byte-equal records.
 
-### Step 9. The engine's observation digest (after Astra's field step is merged)
+### Step 9. The engine's observation digest
 
-- Only after `restructure/4-field` is on main, agreed with Astra via the owner, with its own decision record.
-- 32 bytes per leaf, folded on the stack over the event lines the viewer sees in the step (the lines the knowledge fold
-  already consumes). No rule logic, no allocation.
-- Either an output array of `duoforge_batch_expand` or a sibling call, as agreed with Astra.
-- New public numbers (event, cause, feature) only from the HS, asked first. None is expected.
-- Tests in C (equal lines → equal digest; a different damage line, switch-in or move order → different digest; the
-  digest independent of worker, chunk and leaf position) and in Python (`info_key = "digest"` replaces the stub; the
-  stub tests stay as tests of the tree).
+The contract is decision 0082 (`docs/decisions/0082-observation-digest.md`, #485): the viewer's projected event
+lines of the step and its authorized own request, folded on the stack in the step, from the digest sibling of
+`duoforge_batch_expand` (no ABI break), with its own digest status. Astra builds the C side (E1a, merged; E1b, the
+public call and its worker/chunk tests). D2's side:
+
+- `infokey.DigestNodes`: the node batch's expand goes to the digest call; its digests land in a sidecar by logical node
+  index, with the viewer (`viewers[root_envs[i]]`) and the expansion's generation.
+- `infokey.DigestKey`: a key is refused (`observation_key_refused`) where the step or the digest status is not OK, or it
+  comes from an earlier expansion or another viewer; an all-zero digest of a successful step and digest raises.
+- Tested against a provisional stub with 0082's statuses until E1b brings the call; the stub then goes.
 
 ### Step 10. D2's own offline pass (before any measurement)
 
@@ -224,6 +226,6 @@ For each, the step it most likely addresses:
    None stays refused at depth 2. Tested.
 3. **Candidate weight per node:** p_w × the foe model's prior of j × the chance weight, renormalized.
 4. **The root rule of spec section 5 stays unchanged**, λ = 0 of #486 included, with a test of λ = 0 at depth 2.
-5. **The digest** is a new sibling call, no ABI break of `duoforge_batch_expand`, shareable with the D4 call. Where the
-   fold lies after the field step, Astra answers in the D4 spec.
+5. **The digest** is a new sibling call, no ABI break of `duoforge_batch_expand`, shareable with the D4 call: decision
+   0082.
 6. **D2's iteration bound** comes from its own offline pass (step 10), not from D1's.
