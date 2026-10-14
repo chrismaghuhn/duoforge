@@ -54,6 +54,19 @@ class Bounds(unittest.TestCase):
         self.assertEqual((b["observation_key_refused"], b["observation_key_refused_share"]), (1, 0.5))
         self.assertEqual(b["t_acc"], 200)
 
+    def test_the_share_over_the_set_bound_per_width(self):
+        # The gate of the re-check on digest-keyed trees: per width, the share of keyed decisions the set bound
+        # (tree.TREE_MAX_ITERATIONS by default) would cut off: more iterations than the bound, or unconverged at all.
+        rows = [_row(2, 100), _row(2, 490), _row(2, 491),
+                _row(2, 50000, kind="unreconstructible", reason="solver_unconverged", converged=False),
+                _row(2, None, kind="unreconstructible", reason="observation_key_refused", converged=None),
+                _row(4, 100)]
+        b = tree_offline.bounds(rows, budget=0.4, timing_width=2)
+        self.assertEqual(b["over_bound"], {"bound": tree_offline.tree.TREE_MAX_ITERATIONS,
+                                           "share": {"2": 0.5, "4": 0.0}, "keyed": {"2": 4, "4": 1}})
+        self.assertEqual(tree_offline.bounds(rows, budget=0.4, timing_width=2, bound=100)["over_bound"]["share"],
+                         {"2": 0.75, "4": 0.0})
+
     def test_rows_are_read_streamed(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "rows.jsonl")

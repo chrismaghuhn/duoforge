@@ -24,6 +24,7 @@ import os
 
 import numpy as np
 
+from . import tree
 from .honest import TREE_PHASES
 
 PHASES = TREE_PHASES
@@ -112,7 +113,7 @@ def _quantiles(values):
     return {name: float(np.percentile(a, q)) for name, q in QUANTILES.items()}
 
 
-def bounds(rows, budget=BUDGET_SECONDS, timing_width=None):
+def bounds(rows, budget=BUDGET_SECONDS, timing_width=None, bound=None):
     """The README's bounds from rows (an iterable, read once):
     - t_acc: twice the largest iteration count a converged decision needed, up to a multiple of 10; None if any
       decision missed the gap (solver_unconverged) or none converged;
@@ -120,14 +121,21 @@ def bounds(rows, budget=BUDGET_SECONDS, timing_width=None):
       iteration at timing_width (the widest width by default), down to a multiple of 10;
     - default: t_acc when it is at most t_time, else None (the HauptSession and the owner decide).
     Also the counts (decisions, unconverged, observation_key_refused and its share), the iterations' quantiles per
-    width and the share of converged decisions each bound of SHARES solves."""
+    width, the share of converged decisions each bound of SHARES solves, and over_bound: per width, the share of keyed
+    decisions (converged or not) that the set bound (tree.TREE_MAX_ITERATIONS unless bound is given) would cut off,
+    more iterations than it or unconverged at all (the gate of the re-check on digest-keyed trees)."""
+    bound = tree.TREE_MAX_ITERATIONS if bound is None else bound
     count, unconverged, refused = 0, 0, 0
-    iterations, per_iteration, widths = {}, {}, set()
+    iterations, per_iteration, widths, keyed, over = {}, {}, set(), {}, {}
     for r in rows:
         count += 1
         widths.add(r["width"])
         if r.get("reason") == "observation_key_refused":
             refused += 1
+        if r.get("converged") is not None:
+            keyed[r["width"]] = keyed.get(r["width"], 0) + 1
+            cut = r["converged"] is False or int(r["iterations"]) > bound
+            over[r["width"]] = over.get(r["width"], 0) + int(cut)
         if r.get("converged") is False:
             unconverged += 1
         elif r.get("converged"):
@@ -147,6 +155,8 @@ def bounds(rows, budget=BUDGET_SECONDS, timing_width=None):
             "iterations": {str(w): _quantiles(v) for w, v in sorted(iterations.items())},
             "seconds_per_iteration": {str(w): _quantiles(v) for w, v in sorted(per_iteration.items())},
             "solved_by": {str(t): sum(n <= t for n in every) / len(every) for t in SHARES} if every else None,
+            "over_bound": {"bound": bound, "share": {str(w): over[w] / keyed[w] for w in sorted(keyed)},
+                           "keyed": {str(w): keyed[w] for w in sorted(keyed)}},
             "t_acc": t_acc, "t_time": t_time, "timing_width": timing_width, "budget_seconds": budget,
             "default": t_acc if t_acc is not None and t_time is not None and t_acc <= t_time else None}
 
