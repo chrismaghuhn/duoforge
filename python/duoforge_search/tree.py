@@ -39,6 +39,9 @@ from . import matrix
 from .errors import SearchError
 
 FOE_BELOW = ("nash", "model")
+# Provisional: D2's own offline pass (plan step 10) fixes it by accuracy and time before any measurement; D1's
+# matrix.RM_MAX_ITERATIONS holds for D1's root only (its tables and cost per iteration are not the tree's).
+TREE_MAX_ITERATIONS = 10_000
 
 
 class Tree(NamedTuple):

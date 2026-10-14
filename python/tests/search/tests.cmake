@@ -22,3 +22,4 @@ duoforge_add_learner_test(honest python.tests.search.test_honest slow search ci-
 duoforge_add_learner_test(value_rows python.tests.search.test_value_rows slow search ci-linux-proof)
 duoforge_add_learner_test(evaluator_quick python.tests.search.test_evaluator_quick quick search ci-linux-proof)
 duoforge_add_learner_test(evaluator python.tests.search.test_evaluator slow search ci-linux-proof)
+duoforge_add_learner_test(depth python.tests.search.test_depth slow search)

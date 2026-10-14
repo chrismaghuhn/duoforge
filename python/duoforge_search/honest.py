@@ -7,6 +7,7 @@ or true-root encoding is used, even for error reproduction.
 from dataclasses import dataclass
 import hashlib
 import json
+import math
 from pathlib import Path
 import time
 import weakref
@@ -15,9 +16,11 @@ import numpy as np
 
 import duoforge
 from duoforge import _layout, data, features, state_layout, teams, view
+from duoforge_learn.pairing import splitmix64
 from duoforge_learn.selfplay import TEAM_TABLE
 
-from . import belief, lookahead, matrix, seeds
+from . import belief, infokey, lookahead, matrix, seeds, tree
+from . import evaluator as evaluators
 from .errors import SearchError
 
 C = _layout.CONSTANTS
@@ -25,6 +28,16 @@ RULES = lookahead.RULES
 # The turn decisions' solver (D1 of the depth search, #481; spec section 8): "lp" the exact Bayes LP (the default, as
 # before), "rm" CFR+ on the same candidates (matrix.solve_bayes_rm). The team preview stays on the LP.
 ROOT_SOLVERS = ("lp", "rm")
+# The search's depth (D2 of the depth search; spec section 8, plan docs/superpowers/plans/2026-10-14-depth-search-d2.md):
+# 1 the one-turn search (the default, as before), 2 the two-turn tree (tree.solve_tree) below the turn decisions' root.
+DEPTHS = (1, 2)
+# A decision's steps_left without the arena's step limit (live play): the plan's decision 2 asks for it explicitly at
+# depth 2, never as a default.
+NO_STEP_LIMIT = -1
+# The node keys' tag (spec section 4.3): node n's depth-2 leaves are seeded with splitmix64(splitmix64(decision key +
+# DEPTH_TAG) + n), n its index in the node batch (its root cell (i, j, w) in the leaf plan's order), sample 0.
+DEPTH_TAG = 0x4445505448000002
+_MASK = (1 << 64) - 1
 MAX_RESPREADS = 256
 # The byte of each position's trap_turns in a public record's state (state_layout field names, tail rev 5 position blocks)
 _TRAP_TURNS = [dict((name, start) for name, start, _ in state_layout.fields(pool=True))
@@ -353,7 +366,8 @@ class Honest(lookahead.Lookahead):
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
                  table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
                  species_prior=False, foe_net=None, preview_rule=None, preview_width="top", root_solver="lp",
-                 rm_iterations=None, rm_epsilon=None):
+                 rm_iterations=None, rm_epsilon=None, depth=1, k2=None, m2=None, chance=None, info_key=None,
+                 evaluator=None, foe_below=None, tree_iterations=None):
         # species_prior (live play, owner 2026-10-10): True refuses a decision whose foe species has no stated spread in
         # the table instead of drawing from the belief's nature-only or table-wide levels (4 and 5); "count" (owner
         # 2026-10-12, live play) draws from those general levels and names the species in the record: spread_fallback
@@ -402,6 +416,42 @@ class Honest(lookahead.Lookahead):
                                  f"(got {rm_iterations!r}, {rm_epsilon!r})")
             rm_epsilon = float(rm_epsilon)
         self.root_solver, self.rm_iterations, self.rm_epsilon = root_solver, rm_iterations, rm_epsilon
+        # depth (D2 of the depth search, plan step 4): 2 solves a two-turn tree below the turn decisions' root with
+        # CFR+ (so it needs root_solver "rm"), k2 / m2 candidates per depth-1 information set / foe node, chance
+        # samples per edge (1; more is a later step), the observation key of our depth-1 nodes (infokey: "digest", or
+        # "record" for tests), the leaf evaluator (evaluator: "jax", or #485's "engine"), the foe below the root
+        # (foe_below, Q4) and the tree solver's iteration bound (tree_iterations, gap target rm_epsilon). Under depth
+        # 1 the tree settings are refused, not ignored. A depth-2 decide needs steps_left (decide).
+        settings = {"k2": k2, "m2": m2, "chance": chance, "info_key": info_key, "evaluator": evaluator,
+                    "foe_below": foe_below, "tree_iterations": tree_iterations}
+        if depth not in DEPTHS or type(depth) is not int:
+            raise ValueError(f"depth must be one of {DEPTHS} (got {depth!r})")
+        if depth == 1 and any(v is not None for v in settings.values()):
+            raise ValueError(f"{[n for n, v in settings.items() if v is not None]} require depth 2")
+        self.depth, self._keys, self.nodes, self.evaluator = depth, None, None, None
+        self.k2 = self.m2 = self.chance = self.info_key = self.foe_below = self.tree_iterations = None
+        if depth == 2:
+            if root_solver != "rm":
+                raise ValueError("depth 2 needs root_solver 'rm' (the tree is solved by CFR+; the LP has no tree)")
+            k2, m2 = 2 if k2 is None else k2, 2 if m2 is None else m2
+            chance, foe_below = 1 if chance is None else chance, "nash" if foe_below is None else foe_below
+            tree_iterations = tree.TREE_MAX_ITERATIONS if tree_iterations is None else tree_iterations
+            for name, value in (("k2", k2), ("m2", m2), ("tree_iterations", tree_iterations)):
+                if type(value) is not int or value < 1:
+                    raise ValueError(f"{name} must be a positive int (got {value!r})")
+            if chance != 1:
+                raise ValueError(f"chance must be 1 (got {chance!r}): more samples per edge are a later step")
+            if foe_below not in tree.FOE_BELOW:
+                raise ValueError(f"foe_below must be one of {tree.FOE_BELOW} (got {foe_below!r})")
+            info_key = "digest" if info_key is None else info_key
+            self._keys = infokey.make(info_key)  # "digest" is refused by name until the library has it
+            evaluator = "jax" if evaluator is None else evaluator
+            if evaluator not in evaluators.EVALUATORS:
+                raise ValueError(f"evaluator must be one of {evaluators.EVALUATORS} (got {evaluator!r})")
+            if evaluator != "jax":
+                evaluators.make(evaluator)  # "engine" is refused by name until #485's call exists
+            self.k2, self.m2, self.chance, self.info_key = k2, m2, chance, info_key
+            self.foe_below, self.tree_iterations = foe_below, tree_iterations
         if k != 1 and (root_solver == "lp" or preview_mode != "raw"):
             # one candidate plays raw and solves nothing; the turns' and the top preview's LPs are k x m x s
             matrix.check_bayes_size(k, m, s, "the honest search" if root_solver == "lp" else "the team preview's LP")
@@ -443,13 +493,24 @@ class Honest(lookahead.Lookahead):
         self.rule = rule
         try:
             self.worlds = duoforge.Batch(context, np.resize(duoforge.reference_setups([0]), self.s), workers, seed)
+            if self.depth == 2:  # the depth-1 nodes: one environment per root edge (spec section 7.3)
+                self.nodes = duoforge.Batch(context, np.resize(duoforge.reference_setups([0]),
+                                                               self.s * self.k * self.m * self.chance), workers, seed)
+                self.evaluator = evaluators.make(evaluator, leaves=self.leaves, model=self.model, params=self.params,
+                                                 encoder=self.encoder, ext_supported=self.ext_supported,
+                                                 rows=self._rows)
         except BaseException:
+            for batch in (self.worlds, self.nodes):
+                if batch is not None:
+                    batch.close()
             super().close()
             raise
 
     def close(self):
         if self.worlds is not None:
             self.worlds.close()
+        if self.nodes is not None:
+            self.nodes.close()
         super().close()
 
     def clear(self):
@@ -684,13 +745,26 @@ class Honest(lookahead.Lookahead):
                                        np.asarray(again[w]["state"])[:size].tobytes(), pool=size > state_layout.V3_SIZE)
             raise SearchError(f"world {w} does not give its record back: header {header}, state fields {fields}")
 
-    def decide(self, roots, envs, seats, keys, last_step):
+    def decide(self, roots, envs, seats, keys, last_step, steps_left=None):
+        """steps_left (D2, the plan's decision 2): each decision's steps left in the arena with this one (1 at its last
+        step, so exactly where last_step), or NO_STEP_LIMIT (live play). A depth-2 search needs it to know where its
+        depth-2 leaves are cut off (2 steps left), and refuses None; depth 1 checks it and decides without it."""
         envs, seats = np.asarray(envs, np.int64), np.asarray(seats, np.int64)
         keys, last_step = np.asarray(keys, np.uint64), np.asarray(last_step, bool)
         n = envs.size
         if any(x.shape != (n,) for x in (envs, seats, keys, last_step)) or len(set(envs.tolist())) != n or \
                 (envs < 0).any() or (envs >= roots.envs).any() or not np.isin(seats, [0, 1]).all():
             raise ValueError("decisions need unique valid environments and one seat/key/last-step flag each")
+        if steps_left is None:
+            if self.depth == 2:
+                raise ValueError("a depth-2 search needs steps_left (NO_STEP_LIMIT without the arena's step limit); "
+                                 "None is never a default")
+        else:
+            steps_left = np.asarray(steps_left)
+            if steps_left.shape != (n,) or not np.issubdtype(steps_left.dtype, np.integer) or \
+                    ((steps_left < 1) & (steps_left != NO_STEP_LIMIT)).any() or (last_step != (steps_left == 1)).any():
+                raise ValueError("steps_left needs one count >= 1 or NO_STEP_LIMIT per decision, 1 exactly where "
+                                 "last_step")
         if not n:
             return np.zeros(0, np.int64), []
         t = time.perf_counter()
@@ -731,6 +805,11 @@ class Honest(lookahead.Lookahead):
                                        "epsilon": self.rm_epsilon}
             if self.foe_net is not None:  # which encoding modelled the foe (a reproduction needs it)
                 base["foe_net"] = {"encoder": self.foe_net[2], "ext_supported": self.foe_net[3]}
+            if self.depth != 1:  # the default's record stays as it was
+                base["depth"] = {"depth": self.depth, "k2": self.k2, "m2": self.m2, "chance": self.chance,
+                                 "info_key": self.info_key, "evaluator": self.evaluator.name,
+                                 "foe_below": self.foe_below, "max_iterations": self.tree_iterations,
+                                 "epsilon": self.rm_epsilon}
             if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
                 actions[d] = int(np.argmax(team_logp))
                 result = {"kind": "team", "choice": int(actions[d])}
@@ -775,7 +854,8 @@ class Honest(lookahead.Lookahead):
                         if (legal != root_mask).any():
                             own, own_p = lookahead.select(own_logp, legal, self.k)
                         result = self._decision(p, int(keys[d]), own, own_p, weights, bool(last_step[d]), costs,
-                                                refused="drop", groups=groups)
+                                                refused="drop", groups=groups,
+                                                steps_left=None if steps_left is None else int(steps_left[d]))
                         result["cut_pairs"] = int((root_mask & ~legal).sum())  # the root's pairs the engine refuses
                         self.last[-1]["hypotheses"] = hypotheses.copy()
                         result.update({"bench_dropped": dropped, "respreads": respreads, "exclude_team": excluded,
@@ -863,18 +943,24 @@ class Honest(lookahead.Lookahead):
             return (np.log(np.exp(pair.astype(np.float64)).mean(axis=0)),
                     np.log(np.exp(team.astype(np.float64)).mean(axis=0)), seconds)
 
-    def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None, *, refused="score", groups=None):
+    def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None, *, refused="score", groups=None,
+                  steps_left=None):
         _check_refused(refused)
+        if self.depth == 2:
+            return self._tree_decision(p, key, own, own_p, weights, last_step, steps_left, costs, refused, groups)
         request = self._prepare(p, key, own, weights, last_step, costs, groups)
         return self._finish(request, self._values(request, costs), own_p, costs, budget, refused=refused)
 
-    def _prepare(self, p, key, own, weights, last_step, costs, groups=None):
+    def _prepare(self, p, key, own, weights, last_step, costs, groups=None, into=None):
         """Phase one of a decision on the current worlds: the worlds' policy,
         the foe's pairs and every expand chunk with its tiebreaks. The rows
         and statuses are copied out, so later roots may reuse the worlds and
         the leaf batch before this request is finished (stage 3 P2).
         groups (a record per world): each world's first world of the same
-        record; the viewer's rows must agree within a group, its pairs in all."""
+        record; the viewer's rows must agree within a group, its pairs in all.
+        into (D2): a batch that keeps every leaf (one expand call into its
+        environments 0 .. leaves - 1, the depth-1 nodes) instead of the leaf
+        batch's chunks."""
         pp, _, elapsed, masks, obs, slots, query_seconds = self._world_policy()
         if self.foe_net is not None:  # the viewer's check below reads the main encoder's rows, as without a foe network
             t = time.perf_counter()
@@ -915,18 +1001,19 @@ class Honest(lookahead.Lookahead):
         rows = np.zeros((total, self._rows.shape[1]), np.float32)
         step, encode, results, tiebreaks = (np.zeros(total, np.uint32) for _ in range(4))
         root_keys, viewers = np.full(self.s, key, np.uint64), np.full(self.s, p, np.uint8)
-        for start in range(0, total, self.capacity):
-            end = min(total, start + self.capacity)
+        target, chunk = (self.leaves, self.capacity) if into is None else (into, max(total, 1))
+        for start in range(0, total, chunk):
+            end = min(total, start + chunk)
             t = time.perf_counter()
-            row, st, enc, _, res = self.leaves.expand(self.worlds, self.encoder, self.ext_supported, self.seed,
-                                                      root_keys, viewers, w[start:end].astype(np.uint32),
-                                                      w[start:end].astype(np.uint32), choices[start:end])
+            row, st, enc, _, res = target.expand(self.worlds, self.encoder, self.ext_supported, self.seed,
+                                                 root_keys, viewers, w[start:end].astype(np.uint32),
+                                                 w[start:end].astype(np.uint32), choices[start:end])
             step[start:end], encode[start:end], results[start:end] = st, enc, res
             rows[start:end] = row
             if last_step:
                 for x in np.flatnonzero((st == 0) & (res == 0)):
                     try:
-                        tiebreaks[start + x] = self.leaves.tiebreak(int(x))
+                        tiebreaks[start + x] = target.tiebreak(int(x))
                     except duoforge.DuoforgeError as err:
                         if err.status_name != "DUOFORGE_E_UNSUPPORTED":
                             raise
@@ -988,6 +1075,12 @@ class Honest(lookahead.Lookahead):
                 own, own_p = own[keep], np.asarray(own_p)[keep]
                 tab = lookahead.Table(tab.a[keep], tab.stderr[keep], tab.counts, tab.values[keep])
                 tables = tab.values.transpose(2, 0, 1)
+        return self._play(request, tab, tables, own, own_p, raw, refused_pairs, costs, budget, t, refused)
+
+    def _play(self, request, tab, tables, own, own_p, raw, refused_pairs, costs, budget, t, refused):
+        """The root rule (spec section 5) on the decision's tables and its record: _finish's tables, or the tree's
+        root tables under the solved continuation (D2). t: the start of the decision's solve time."""
+        key, weights, qs, w = request.key, request.weights, request.qs, request.plan[2]
         rank = np.arange(own.size)
         solver = {} if self.root_solver == "lp" else {
             "solver": self.root_solver, "prior": own_p, "rm_iterations": self.rm_iterations,
@@ -1015,3 +1108,202 @@ class Honest(lookahead.Lookahead):
                 "choice": action, "raw": raw, "changed": action != raw, "outcomes": outcomes,
                 "leaves": tab.counts, "near_duplicates": lookahead.near_duplicates(tab.a), "split": None, **dropped,
                 **reduced}
+
+    def _tree_decision(self, p, key, own, own_p, weights, last_step, steps_left, costs, refused, groups):
+        """A turn decision on the two-turn tree (D2; spec sections 4 and 8 "D2 in detail", plan step 4): the root edges
+        expanded into the node batch; the depth-1 candidates (ours per information set, the foe's per node) from one
+        policy call per network; the depth-2 leaves through the evaluator; one CFR+ solve (tree.solve_tree); the root
+        rule of spec section 5 on the root tables under the solved continuation (_play). A refused leaf (#436) drops
+        its own candidate at its information set; a set left without one, or a refused leaf of a node where only the
+        foe is asked, drops its root row; no row left is engine_refused_leaves, as at depth 1."""
+        if refused != "drop":
+            raise ValueError("the depth-2 tree drops refused candidates (#436): refused must be 'drop'")
+        request = self._prepare(p, key, own, weights, last_step, costs, groups, into=self.nodes)
+        i, j, w = request.plan
+        breaks = request.tiebreaks.astype(np.int64)
+        breaks[breaks == 0xFFFFFFFF] = lookahead.UNRESOLVED
+        try:  # the root edges: exact where refused, TERMINAL or cut off; the decision nodes' values come from the tree
+            root = lookahead.table(np.zeros(i.size, np.float32), request.step, request.encode, request.results, breaks,
+                                   (i, j, w), p, request.last_step)
+        except SearchError as err:
+            err.reproduction = {"step_statuses": request.step.tolist(), "encode_statuses": request.encode.tolist(),
+                                "samples": w.tolist(), "choices": request.choices.tobytes().hex()}
+            raise
+        dropped_rows = set(np.unique(i[request.step == lookahead._UNSUPPORTED]).tolist())
+        envs = np.flatnonzero(request.open)  # the decision nodes; a node's index in the node batch is its leaf's
+        phase = self._depth_one(p, key, envs, i, j, w, request, steps_left, costs, groups, dropped_rows) \
+            if envs.size else None
+        keep = np.array(sorted(set(range(own.size)) - dropped_rows), np.int64)
+        if not keep.size:
+            raise Unreconstructible("engine_refused_leaves")
+        t = time.perf_counter()
+        row_of = {int(r): n for n, r in enumerate(keep)}
+        leaf = root.values[keep].transpose(2, 0, 1)
+        node = np.full(leaf.shape, -1, np.int64)
+        kept = [] if phase is None else [x for x in range(envs.size) if int(i[envs[x]]) in row_of]
+        for n, x in enumerate(kept):
+            e = envs[x]
+            node[w[e], row_of[int(i[e])], j[e]] = n
+        sets = [] if phase is None else sorted({int(phase["set"][x]) for x in kept if phase["set"][x] >= 0})
+        set_of = {s: n for n, s in enumerate(sets)}
+        info = np.array([set_of.get(int(phase["set"][x]), -1) for x in kept], np.int64)
+        z = np.zeros((len(kept), self.k2, self.m2))
+        own_valid, own_prior = np.zeros((len(sets), self.k2), bool), np.zeros((len(sets), self.k2))
+        foe_valid, foe_prior = np.zeros((len(kept), self.m2), bool), np.zeros((len(kept), self.m2))
+        for s, n in set_of.items():
+            valid = phase["valid"][s]
+            own_valid[n, :valid.size] = valid
+            own_prior[n, :valid.size] = np.where(valid, phase["own_probs"][s], 0.0)
+        for n, x in enumerate(kept):
+            probs = phase["foe"][x][1]
+            foe_valid[n, :probs.size] = True
+            foe_prior[n, :probs.size] = probs
+        if phase is not None:
+            position = {x: n for n, x in enumerate(kept)}
+            for y, (x, a, b) in enumerate(zip(phase["node"], phase["a"], phase["b"])):
+                if x in position:
+                    z[position[x], a, b] = phase["z"][y]
+        own_k, own_pk = own[keep], np.asarray(own_p)[keep]
+        shape = tree.Tree(weights=request.weights, leaf=leaf, node=node, info=info, z=z, own_valid=own_valid,
+                          foe_valid=foe_valid, own_prior=own_prior, foe_prior=foe_prior)
+        try:
+            solved = tree.solve_tree(shape, own_pk, request.qs, iterations=self.tree_iterations,
+                                     epsilon=self.rm_epsilon, foe_below=self.foe_below)
+        except matrix.RMUnconverged as err:  # the named fallback solver_unconverged (Q1), counted, never silent
+            costs["solve"] += time.perf_counter() - t
+            raise Unreconstructible("solver_unconverged") from err
+        except SearchError as err:
+            err.reproduction = {"tree": {name: np.asarray(value).tolist() for name, value in shape._asdict().items()},
+                                "prior": own_pk.tolist(), "foe_probs": request.qs.tolist()}
+            raise
+        tables = solved.tables
+        cube = tables.transpose(1, 2, 0)
+        tab = lookahead.Table(*lookahead.cell_stats(cube), root.counts, cube)
+        result = self._play(request, tab, tables, own_k, own_pk, int(own[0]),
+                            [int(own[r]) for r in sorted(dropped_rows)], costs, None, t, refused)
+        ours = info >= 0
+        merged = sum(int((info == s).sum()) for s in range(len(sets)) if int((info == s).sum()) > 1)
+        result["tree"] = {"nodes": len(kept), "information_sets": len(sets),
+                          "merge_share": merged / int(ours.sum()) if ours.any() else 0.0,
+                          "iterations": solved.root.iterations, "gap": solved.root.gap,
+                          "leaves": dict(phase["leaves"]) if phase is not None else
+                          {"refused": 0, "terminal": 0, "cut_off": 0, "unresolved": 0, "open": 0},
+                          "dropped_candidates": 0 if phase is None else phase["dropped"]}
+        self.last[-1]["tree"] = {"cells": [(int(w[envs[x]]), row_of[int(i[envs[x]])], int(j[envs[x]])) for x in kept],
+                                 "sets": info.tolist(), "own": solved.own, "foe": solved.foe, "solution": solved}
+        return result
+
+    def _depth_one(self, p, key, envs, i, j, w, request, steps_left, costs, groups, dropped_rows):
+        """The depth-1 phase of a tree decision on the node batch's decision nodes envs: their candidates, their
+        depth-2 leaves through the evaluator and those leaves' values. Adds to dropped_rows the root rows a refused
+        leaf drops. Returns, per node x (envs order): set[x] our information set (-1 where we are not asked); per set
+        s: own_probs[s] its candidates' prior, valid[s] the candidates no refused leaf dropped; foe[x] (pairs, prior);
+        per depth-2 leaf: node, a, b and its value z; the leaf counts by kind and the dropped candidates."""
+        foe = 1 - p
+        t = time.perf_counter()
+        obs, slots, pairs = (x.copy() for x in self.nodes.query_encoded(self.encoder, self.ext_supported))
+        asked = self.nodes.requests["requested"] != 0
+        costs["leaves"] += time.perf_counter() - t
+        n = self.nodes.envs
+        if self.foe_net is None:  # one call, both seats, the whole node batch's fixed shape (spec section 7.2)
+            pp, _, seconds = self._policy(obs.reshape(2 * n, -1), slots.reshape((2 * n,) + slots.shape[2:]),
+                                          pairs.reshape((2 * n,) + pairs.shape[2:]))
+            pp = pp.reshape(n, 2, -1)
+            own_logp, foe_logp = pp[:, p], pp[:, foe]
+        else:  # our seat with the main network, the foe's with the foe network on its own encoding
+            own_logp, _, seconds = self._policy(obs[:, p], slots[:, p], pairs[:, p])
+            t = time.perf_counter()
+            fobs, fslots, fpairs = self.nodes.query_encoded(self.foe_net[2], self.foe_net[3])
+            costs["leaves"] += time.perf_counter() - t
+            if not np.array_equal(fpairs, pairs):
+                raise SearchError("the foe network's encoder gives the depth-1 nodes another pair mask")
+            foe_logp, _, more = self._policy(fobs[:, foe], fslots[:, foe], fpairs[:, foe], self.foe_net)
+            seconds += more
+        costs["network"] += seconds
+        ours, theirs = asked[envs, p], asked[envs, foe]
+        if not (ours | theirs).all():
+            raise SearchError("a depth-1 node that is neither TERMINAL nor asks for a choice")
+        t = time.perf_counter()
+        keys, refused_keys = self._keys.keys(self.nodes, envs[ours], p, groups is not None)
+        costs["leaves"] += time.perf_counter() - t
+        if refused_keys.any():
+            raise Unreconstructible("observation_key_refused")
+        node_set, first = np.full(envs.size, -1, np.int64), {}
+        for x, k in zip(np.flatnonzero(ours), keys):
+            node_set[x] = first.setdefault((int(i[envs[x]]), k.tobytes()), len(first))
+        members = [[] for _ in first]
+        for x in np.flatnonzero(ours):
+            members[node_set[x]].append(int(x))
+        cands, own_probs, set_rows = [], [], []
+        for s, xs in enumerate(members):
+            mask = pairs[envs[xs[0]], p]
+            if any(not np.array_equal(pairs[envs[x], p], mask) for x in xs[1:]):
+                raise SearchError(f"information set {s}: its nodes' own pairs differ (the observation key merged "
+                                  f"states the searcher tells apart)")
+            # the plan's decision 3: node (w, i, j) weighs p_w x the foe model's prior of j x its chance weight (1)
+            weight = [float(request.weights[w[envs[x]]]) * float(request.qs[w[envs[x]], j[envs[x]]]) for x in xs]
+            total = math.fsum(weight)
+            if not total > 0.0:
+                raise SearchError(f"information set {s} has no weight")
+            # the weighted mean of the nodes' probabilities, in logs (a set of one node keeps its row's logs exactly)
+            logs = np.stack([own_logp[envs[x]].astype(np.float64) for x in xs])
+            top = logs.max(axis=0)
+            mean = np.zeros(lookahead.PAIRS)
+            with np.errstate(invalid="ignore"):  # -inf - -inf outside the mask: never selected
+                for x, row in enumerate(logs):
+                    mean += (weight[x] / total) * np.exp(row - top)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                pair, probs = lookahead.select(top + np.log(mean), mask, self.k2)
+            cands.append(pair)
+            own_probs.append(probs)
+            set_rows.append(int(i[envs[xs[0]]]))
+        foes = [lookahead.select(foe_logp[e], pairs[e, foe], self.m2) if theirs[x] else
+                (np.array([lookahead.NO_FOE], np.int64), np.ones(1)) for x, e in enumerate(envs)]
+        plan = [(x, a, b) for x in range(envs.size) for a in range(cands[node_set[x]].size if ours[x] else 1)
+                for b in range(foes[x][0].size)]
+        node_of, a_of, b_of = (np.array(c, np.int64) for c in zip(*plan))
+        total = node_of.size
+        choices = np.zeros((total, 2), _layout.FACTORED_CHOICE)
+        mine = ours[node_of]
+        own_pair = np.array([cands[node_set[x]][a] if ours[x] else 0 for x, a in zip(node_of, a_of)], np.int64)
+        choices["slot"][mine, p, 0], choices["slot"][mine, p, 1] = np.divmod(own_pair[mine], lookahead.OPTIONS)
+        foe_pair = np.array([foes[x][0][b] for x, b in zip(node_of, b_of)], np.int64)
+        other = foe_pair != lookahead.NO_FOE
+        choices["slot"][other, foe, 0], choices["slot"][other, foe, 1] = np.divmod(foe_pair[other], lookahead.OPTIONS)
+        head = splitmix64(np.array([(int(key) + DEPTH_TAG) & _MASK], np.uint64))
+        node_keys = splitmix64(head + np.arange(n, dtype=np.uint64))
+        cut = steps_left == 2  # the depth-2 leaves are the arena's cut-off
+        leaves = self.evaluator.leaves(self.nodes, self.seed, node_keys, np.full(n, p, np.uint8),
+                                       envs[node_of].astype(np.uint32), np.zeros(total, np.uint32), choices,
+                                       np.full(total, cut), costs)
+        breaks = leaves.tiebreaks.astype(np.int64)
+        breaks[breaks == 0xFFFFFFFF] = lookahead.UNRESOLVED
+        index, zero = np.arange(total), np.zeros(total, np.int64)
+        try:
+            scored = lookahead.table(leaves.values, leaves.step, leaves.encode, leaves.results, breaks,
+                                     (index, zero, zero), p, cut)
+        except SearchError as err:
+            if hasattr(err, "leaf"):
+                y = err.leaf
+                e = int(envs[node_of[y]])
+                err.reproduction = {"node": e, "world": int(w[e]), "root_cell": [int(i[e]), int(j[e])],
+                                    "own_pair": int(own_pair[y]), "foe_pair": int(foe_pair[y]),
+                                    "node_key": int(node_keys[e]), "sample": 0, "search_seed": self.seed,
+                                    "step_status": duoforge.status_name(int(leaves.step[y])),
+                                    "encode_status": duoforge.status_name(int(leaves.encode[y]))}
+            raise
+        counts = dict(scored.counts)
+        counts["open"] = total - counts["refused"] - counts["terminal"] - counts["cut_off"]
+        valid = [np.ones(c.size, bool) for c in cands]
+        for y in np.flatnonzero(leaves.step == lookahead._UNSUPPORTED):
+            x = int(node_of[y])
+            if ours[x]:
+                valid[node_set[x]][a_of[y]] = False
+            else:  # only the foe is asked: our empty response is the candidate the refusal drops
+                dropped_rows.add(int(i[envs[x]]))
+        for s, v in enumerate(valid):
+            if not v.any():
+                dropped_rows.add(set_rows[s])
+        return {"set": node_set, "own_probs": own_probs, "valid": valid, "foe": foes, "node": node_of.tolist(),
+                "a": a_of.tolist(), "b": b_of.tolist(), "z": scored.values[:, 0, 0], "leaves": counts,
+                "dropped": int(sum(int((~v).sum()) for v in valid))}
