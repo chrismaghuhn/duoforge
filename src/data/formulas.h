@@ -11,8 +11,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define DFI_STAT_POINTS_MAX 32u       /* per stat */
-#define DFI_STAT_POINTS_TOTAL_MAX 66u /* per set (validator, EV Limit Auto) */
+#define DFI_STAT_POINTS_MAX DFI_FORMAT_STAT_POINTS_MAX /* per stat */
+#define DFI_STAT_POINTS_TOTAL_MAX DFI_FORMAT_STAT_POINTS_TOTAL_MAX /* per set (validator, EV Limit Auto) */
 #define DFI_PP_CAP 20u
 
 /* stat: DFI_STAT_*; base: 1..255; stat_points: 0..32; nature: < DFI_NATURE_COUNT.
@@ -25,5 +25,7 @@ bool dfi_champions_stat(uint32_t stat, uint32_t base, uint32_t stat_points, uint
  * capped value itself for a move without PP boosts (Struggle). A capped
  * value that is not a multiple of 5 is rejected. */
 bool dfi_champions_pp_max(uint32_t pp_base, bool no_pp_boosts, uint8_t *out);
+
+#include "data/format_tables.h" /* the format facts (restructure step 10) */
 
 #endif

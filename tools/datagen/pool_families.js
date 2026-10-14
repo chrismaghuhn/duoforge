@@ -42,7 +42,12 @@ const fs = require('fs');
 const path = require('path');
 
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const FORMAT_ID = 'gen9championsvgc2026regmc';
+// The format comes from its definition (restructure step 10), which must name the pin.
+const FORMAT = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'formats', 'reg-mc.json'), 'utf8'));
+if (FORMAT.showdown_commit !== PIN) {
+    throw new Error('data/formats/reg-mc.json is not at the pin ' + PIN);
+}
+const FORMAT_ID = FORMAT.showdown_format_id;
 // The 18 battle types in the order of the tables (Stellar is not part of Champions).
 const TYPES = ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground',
     'Ice', 'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'];

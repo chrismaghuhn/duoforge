@@ -807,5 +807,110 @@ class ReplayHelpersTest(unittest.TestCase):
             cts.logged_choice({"sent": "move 1, move 2", "accepted": None})
 
 
+class LogReplayWaitsTest(unittest.TestCase):
+    """LogReplay(waits=True) (#494): the committed pool battle g45_moxie_win as player 1's closed-sheet log (its turn 1
+    knocks out both foes, who replace while player 1 waits; turn 3 wins). The default yields the asked points only, as
+    before; waits=True also yields the wait point, with no record, and the asked points as the default does."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live.data import ROOT, trace_to_c
+        cls.data = data.load(kind="pool")
+        spec, cls.trace = trace_to_c.load_battle(str(ROOT), "g45_moxie_win")
+        cls.own, cls.foe = spec["teams"][0], teams._paste(spec["teams"][1])
+        path = ROOT / "python" / "tests" / "support" / "data" / "cts_luck_g45.jsonl"
+        cls.records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    def points(self, **kwargs):
+        replay = cts.LogReplay(self.records, self.data, None, self.own, cts.SetPrior(self.data, self.foe), "g45",
+                               n=2, **kwargs)
+        out = [(g.epoch, g.request.get("rqid"), bool(g.request.get("wait")), r if r is None else r["decision"])
+               for g, r in replay]
+        self.assertIsNone(replay.stopped)
+        return out
+
+    def test_the_default_yields_the_asked_points_only(self):
+        self.assertEqual([(rqid, decision) for _, rqid, _, decision in self.points()], [(1, 1), (3, 3), (7, 7), (9, 9)])
+
+    def test_waits_also_yields_the_wait_point_without_a_record(self):
+        default, waits = self.points(), self.points(waits=True)
+        self.assertEqual([p for p in waits if not p[2]], default)
+        self.assertEqual([p[1:] for p in waits if p[2]], [(5, True, None)])
+
+
+class ParticleGenderTest(unittest.TestCase):
+    """A foe member's gender is public from the team preview on (its |poke| line's details; HauptSession, from the
+    review of #497): every particle carries it for all six members, after a redraw and after each rebuild level as
+    after the first draw, "" for a genderless one; it is never drawn. Two streams: the fixture (genders M and F) and the
+    committed pool battle g15_ef_retarget_plain (cts_gender_g15.json), whose foe Gholdengo is genderless and uses Shadow
+    Ball."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live.data import ROOT, trace_to_c
+        cls.data = data.load(kind="pool")
+        cls.g15 = json.loads((data.ROOT / "python" / "tests" / "support" / "data" / "cts_gender_g15.json")
+                             .read_text(encoding="utf-8"))
+        _, trace = trace_to_c.load_battle(str(ROOT), cls.g15["battle"])
+        cls.g15_inputs = [step["input"].get("p1") for step in trace["steps"]]
+
+    @staticmethod
+    def preview(stream):
+        """The foe's genders in |poke| order, as the preview's details give them ("" for none)."""
+        out = []
+        for line in (line for m in stream for line in m if line.startswith("|poke|p2|")):
+            fields = [f.strip() for f in line.split("|")[3].split(",")]
+            out.append(next((f for f in fields[1:] if f in ("M", "F")), ""))
+        return out
+
+    def genders(self, stream, own, prior, inputs, n=8):
+        """The tracker and, at every decision point, each particle's six foe genders."""
+        t = cts.ParticleTracker(self.data, own, cts.SetPrior(self.data, prior), seed=SEED, key=KEY, n=n)
+        points, done = [], 0
+        for m in stream:
+            t.feed(m)
+            if t.ready and t.epoch > done:
+                done = t.epoch
+                points.append([[s["gender"] for s in p.sets] for p in t.particles])
+                if done - 1 < len(inputs) and inputs[done - 1] is not None:
+                    t.accepted(inputs[done - 1])
+        return t, points
+
+    def check(self, stream, own, prior, inputs, counter, n=8):
+        want = self.preview(stream)
+        self.assertEqual(len(want), 6)
+        t, points = self.genders(stream, own, prior, inputs, n)
+        self.assertTrue(points)
+        for k, particles in enumerate(points):
+            for i, got in enumerate(particles):
+                self.assertEqual(got, want, (counter, k, i))
+        self.assertGreater(t.counters[counter], 0, dict(t.counters))
+        return want
+
+    def test_the_fixtures_genders_hold_after_a_redraw_and_each_rebuild_level(self):
+        stream = closed(FIXTURE["messages"])
+        cases = (("redraw.facts", with_species(foe_sets(), "Farigiraf", farigiraf(),
+                                               farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))),
+                 ("level1", with_species(foe_sets(), "Farigiraf",
+                                         farigiraf(moves=("Psychic", "Grass Knot", "Helping Hand", "Protect")))),
+                 ("level2", with_species(foe_sets(), "Farigiraf", farigiraf(ability="Cud Chew"))))
+        for counter, prior in cases:
+            with self.subTest(counter=counter):
+                self.assertEqual(self.check(stream, FIXTURE["team"], prior, FIXTURE["inputs"], counter),
+                                 ["M", "F", "M", "F", "M", "M"])
+
+    def test_a_genderless_foe_member_stays_genderless_after_a_redraw_and_a_rebuild(self):
+        stream, own = self.g15["messages"], self.g15["team"]
+        sets = teams._paste(self.g15["foe_team"])
+        gholdengo = next(s for s in sets if s["species"] == "Gholdengo")
+        other = teams.to_text([{**gholdengo, "moves": ["Make It Rain", "Protect", "Thunderbolt"]}])  # no Shadow Ball
+        rest = [s for s in sets if s["species"] != "Gholdengo"]
+        cases = (("redraw.facts", rest + [gholdengo] + teams._paste(other)), ("level1", rest + teams._paste(other)))
+        for counter, prior in cases:
+            with self.subTest(counter=counter):
+                want = self.check(stream, own, prior, self.g15_inputs, counter, n=16)
+                self.assertEqual(want, ["", "F", "M", "M", "M", "M"])
+
+
 if __name__ == "__main__":
     unittest.main()

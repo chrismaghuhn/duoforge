@@ -247,15 +247,17 @@ class Context:
         return self.roster.index(base) if self.roster.count(base) == 1 else -1
 
 
-def context(tracker):
-    """The label context of the tracker's current point."""
-    own = tracker._own_members
-    moves = tuple(list(own[p.occupant].sheet["moves"]) if p.occupant < len(own) else None
-                  for p in tracker._positions[tracker.side])
-    roster = tuple(tracker.data.base_forme(member.sheet["species"]) for member in own)
+def context(tracker, side=None):
+    """The label context of the tracker's current point, for its own side or (side) the other one: an open-sheet
+    tracker knows both sides' sheets (the luck meter labels the foe's action in each particle, #494)."""
+    side = tracker.side if side is None else side
+    members = tracker._member(side)
+    moves = tuple(list(members[p.occupant].sheet["moves"]) if p.occupant < len(members) else None
+                  for p in tracker._positions[side])
+    roster = tuple(tracker.data.base_forme(member.sheet["species"]) for member in members)
     barred = tuple(frozenset(slot for slot in (p.disable_slot - 1, p.choice_slot) if 0 <= slot < 4)
-                   for p in tracker._positions[tracker.side])
-    return Context(tracker.side, moves, roster, tracker.data, barred)
+                   for p in tracker._positions[side])
+    return Context(side, moves, roster, tracker.data, barred)
 
 
 def compute(ctx, log, point, lists, stop_line, leads, seen_back):
