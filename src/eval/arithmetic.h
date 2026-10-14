@@ -3,7 +3,7 @@
 #include <duoforge/duoforge.h>
 #include <stdint.h>
 #include "core/private.h"
-/* Private scalar oracle: multiplier > 0, shift <= 63. No negative negative shifts.
+/* Private scalar oracle: multiplier > 0, shift <= 63. No right shifts of negative values.
    Overflow is a refusal; only the declared int16 output conversion saturates. */
 typedef struct dfi_eval_scale { uint32_t multiplier; uint32_t shift; } dfi_eval_scale;
 DFI_PRIVATE uint64_t dfi_eval_magnitude(int64_t value);
