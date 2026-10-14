@@ -1,13 +1,12 @@
-# D2, the two-turn tree: its offline pass and its ladder arms (predeclaration draft, 2026-10-14)
+# D2, the two-turn tree: its offline pass and its ladder arms (predeclared 2026-10-14)
 
 D2 of the depth search (spec `docs/superpowers/specs/2026-10-13-depth-search-design.md`, sections 8 and 9.2; plan
 `docs/superpowers/plans/2026-10-14-depth-search-d2.md`, steps 10 and 11) adds `depth = 2` to the honest search, off by
 default: a full-width tree over two turns, solved by CFR+ (`tree.solve_tree`), the root played by the root rule of
 spec section 5 unchanged.
 
-**This file is a predeclaration. Nothing below has run.** Its open point (the observation key of the offline pass) is
-the HauptSession's decision; the file is final, and committed again, before the first run. Every run starts only on
-the HauptSession's go, under the machine lock.
+**This file is a predeclaration, committed before any run of the offline pass.** Part 2 (the arms) stays a
+predeclaration until its own go. Every run starts only on the HauptSession's go, under the machine lock.
 
 ## Part 1: the offline pass (plan step 10)
 
@@ -32,23 +31,33 @@ before any D2 arm runs.
 - **Library:** `libduoforge_shared.so` of the commit the pass runs at (its sha256 in the results).
 - **Solver:** ε = 1e-3 of the tree's range (Q1), the gap checked every 10 iterations, priors as the search gives them,
   `foe_below = "nash"`.
-- **Open, the HauptSession's decision — the observation key:**
-  - (a) wait for the engine digest (plan step 9, after Astra's field step): the trees are the ones the arms will
-    solve;
-  - (b) `info_key = "record"` now, open team sheets only: the information sets may merge differently from the
-    digest's (the record never splits by a hidden fact, but may merge nodes whose lines differ), so the bound is
-    re-checked on the digest's trees before any arm runs; nodes whose public record the engine refuses are counted
-    (`observation_key_refused`) and their decisions left out of the bound.
-  - Proposal: (b) now, so the bound and the phase times (which also replace spec section 6.2's estimates) exist early,
-    and a smaller re-check with the digest.
+- **The observation key (HauptSession, 2026-10-14):** `info_key = "record"`, open team sheets only (the ladder's
+  games are open). Its information sets may merge differently from the engine digest's (the record never splits by a
+  hidden fact, but may merge nodes whose lines differ). Therefore:
+  - decisions where the engine refuses a depth-1 node's public record end as `observation_key_refused`; they are
+    counted by name, left out of the bound, and their share is reported here;
+  - **gate before any arm:** the bound is checked again on trees keyed by the engine digest (plan step 9); if it
+    differs, the new one holds;
+  - the seconds are provisional until confirmed with the digest; until then they do not replace spec section 6.2.
+- **Commit, library:** the pass runs at the commit that adds this section (its hash and `dirty: false` in the
+  results), with `libduoforge_shared.so` built from c8ca7cee, sha256
+  `76c9caeb2d8c59c3dff6a1e07b5e305a256b78a12c896efd2edf2312145e3efb` (the C sources are unchanged from c8ca7cee to
+  the branch head, main a7dd956b merged).
+- **The shadows' settings:** step 2e's (the ladder's STEP0 with rule ev) plus `depth = 2`, `root_solver = "rm"`,
+  `rm_iterations` and `tree_iterations` = `--max-iterations`, the value call padded to 16,384 rows (spec section
+  7.2), `info_key = "record"`, `foe_below = "nash"`.
+- **Disclosed:** before this file's final commit, a smoke of the tool ran (1 pair against `bot`, width 2) to check
+  that it works. Its numbers fix nothing here and are not reported as a result.
 
 ### The runs
 
 1. **Accuracy (A):** 64 pairs against `bot`, widths (K2, M2) = (2, 2), (3, 3) and (4, 4), each a shadow of its own,
-   `--max-iterations 50000`, under the lock with the label `d2-offline`, not exclusive (its seconds are not used),
-   alone (not beside the Book measurement's slot, HauptSession 2026-10-14).
-2. **Time (B):** the same games, every 10th searched decision, width (4, 4) and (2, 2), one worker, under the lock
-   with `--exclusive`. Only B's seconds count.
+   `--max-iterations 50000`, `--plain-check` (the games once without shadows first: both decisions digests in the
+   report), 8 workers, under the lock with the label `d2-offline-a`, not exclusive (its seconds are not used), and
+   not beside another heavy job while memory is short.
+2. **Time (B):** the same games, every 10th searched decision, widths (4, 4) and (2, 2), `--workers 1`, under the lock
+   with `--exclusive` and the label `d2-offline-b`. Only B's seconds count.
+3. One ticket per label; the owner files and the queue are checked before each start.
 
 Each run reports its commit, its `dirty` flag and the library's sha256.
 
