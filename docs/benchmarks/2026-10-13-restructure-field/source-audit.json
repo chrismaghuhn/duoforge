@@ -1,0 +1,40 @@
+{
+  "baseline_commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+  "moved_functions": 15,
+  "unchanged_remaining_function_bodies": 266,
+  "unchanged_whole_turn_tokens_except_declared_extractions_and_includes": true,
+  "byte_equal_big_functions": [
+    "dfi_get_damage",
+    "dfi_run_move_body",
+    "dfi_residual_sort",
+    "dfi_residual_faints",
+    "dfi_residual_holder_stands",
+    "dfi_residual",
+    "dfi_residual_lock",
+    "dfi_curse_residual",
+    "dfi_residual_events_run",
+    "dfi_residual_pair_draws",
+    "dfi_residual_events"
+  ],
+  "old_turn_lines": 12385,
+  "new_turn_lines": 12185,
+  "file_renames": 0,
+  "provenance": {
+    "before": {
+      "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+      "dirty": false,
+      "phase": "before"
+    },
+    "after": {
+      "commit": "d15b13afe6b2418487233b0492ec9abdc5b6bc8c",
+      "dirty": false,
+      "phase": "after"
+    }
+  },
+  "unchanged_original_body_implementations": 15,
+  "tiny_inline_wrappers": 2,
+  "private_implementation_aliases": {
+    "dfi_grounded": "dfi_grounded_test",
+    "dfi_weather_suppressed": "dfi_weather_suppression_scan"
+  }
+}

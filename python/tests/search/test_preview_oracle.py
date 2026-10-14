@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -291,6 +292,12 @@ class GuardTest(unittest.TestCase):
         self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "ours"}), [])
         self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe"}), ["side"])
 
+    def test_a_run_from_before_our_arm_resumes_without_it(self):
+        old = {"seed": "0x1", "pairs": 32, "side": "foe"}
+        self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe", "our_arm": None}), [])
+        self.assertEqual(oracle.resume_changes(old, {"seed": "0x1", "pairs": 32, "side": "foe", "our_arm": "23|04"}),
+                         ["our_arm"])
+
     def test_our_own_preview_must_be_one_per_seat(self):
         a, b = oracle.team_index("24|01"), oracle.team_index("01|23")
         swapped = int(np.flatnonzero((TEAM_TABLE == np.array([4, 2, 1, 0], TEAM_TABLE.dtype)).all(axis=1))[0])
@@ -324,11 +331,32 @@ class GuardTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, r"played \['01\|23'\]"):
             oracle.check_played("24|01", [{"boundary": "TEAM_SELECTION", "choice": oracle.team_index("01|23")}])
 
+    def test_our_fixed_preview_must_play_in_every_arm(self):
+        row = oracle.team_index("23|04")
+        team = [{"boundary": "TEAM_SELECTION", "choice": row}, {"boundary": "TURN", "choice": 3}]
+        oracle.check_played("drawn", team, combination="23|04")
+        oracle.check_played("45|13", team, combination="23|04")
+        with self.assertRaisesRegex(SystemExit, r"arm drawn: our preview played \['01\|23'\], not 23\|04"):
+            oracle.check_played("drawn", [{"boundary": "TEAM_SELECTION", "choice": oracle.team_index("01|23")}],
+                                combination="23|04")
+
+    def test_an_arm_file_records_our_played_preview(self):
+        forced, own = oracle.team_index("23|04"), oracle.team_index("24|03")
+        records = {"unfinished": np.zeros(1, int), "unresolved": np.zeros(1, int)}
+        decisions = [{"boundary": "TEAM_SELECTION", "kind": "team", "seat": 0, "choice": forced, "own_choice": own}]
+        with mock.patch("duoforge_search.arena.scores", return_value=np.array([1.0])), \
+                mock.patch.object(oracle.foe_arena, "fallback_share", return_value=0.0), \
+                mock.patch.object(oracle.ladder, "decisions_digest", return_value="d"), \
+                mock.patch.object(oracle.ladder, "wall_seconds", return_value=0.0):
+            entry = oracle._arm_entry("drawn", records, decisions, [], [0], 1.0)
+        self.assertEqual(entry["own_choice"], {"0": "24|03"})
+        self.assertEqual(entry["our_played"], {"0": "23|04"})
+
 
 class SummaryTest(unittest.TestCase):
     SPECIES = {"ours": ["O0", "O1", "O2", "O3", "O4", "O5"], "foe": ["F0", "F1", "F2", "F3", "F4", "F5"]}
 
-    def write(self, out, arms, foe_drawn=None, side=None, own=None):
+    def write(self, out, arms, foe_drawn=None, side=None, own=None, played=None):
         os.makedirs(os.path.join(out, "arms"), exist_ok=True)
         with open(os.path.join(out, "conditions.json"), "w", encoding="utf-8") as f:
             json.dump({"species": self.SPECIES, **({"side": side} if side else {})}, f)
@@ -338,6 +366,8 @@ class SummaryTest(unittest.TestCase):
                      "foe_drawn": foe_drawn.get(name, [lead01] * len(scores)) if foe_drawn else [lead01] * len(scores),
                      "own_choice": (own or {}).get(name, {"0": "24|01", "1": "24|01"}),
                      "fallback_share": {"ours": 0.0, "foe": 0.0}}
+            if played and name in played:
+                entry["our_played"] = played[name]
             with open(os.path.join(out, "arms", name.replace("|", "-") + ".json"), "w", encoding="utf-8") as f:
                 json.dump(entry, f)
 
@@ -382,6 +412,38 @@ class SummaryTest(unittest.TestCase):
             self.assertNotIn("loss", out)
             self.assertNotIn("by_foe_lead", out)
 
+    def test_the_foe_side_pairs_and_reports_our_played_preview(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.write(tmp, {"drawn": [1, 1], "45|23": [0, 1]}, side="foe",
+                       own={"drawn": {"0": "24|01", "1": "24|01"}, "45|23": {"0": "24|01", "1": "02|34"}},
+                       played={name: {"0": "23|04", "1": "23|04"} for name in ("drawn", "45|23")})
+            with open(os.path.join(tmp, "conditions.json"), encoding="utf-8") as f:
+                conditions = json.load(f)
+            with open(os.path.join(tmp, "conditions.json"), "w", encoding="utf-8") as f:
+                json.dump(dict(conditions, our_arm="23|04"), f)
+            out = oracle.summarize(tmp)  # our own choices differ, the played preview is one: paired
+            self.assertEqual(out["exploitability"]["our_preview"], {"0": "23|04", "1": "23|04"})
+            self.assertEqual(out["exploitability"]["our_arm"], "23|04")
+            self.assertEqual(out["arms"]["drawn"]["our_played"], {"0": "23|04", "1": "23|04"})
+
+    def test_the_foe_side_refuses_arms_that_did_not_play_our_arm(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.write(tmp, {"drawn": [1, 1], "45|23": [0, 1]}, side="foe",
+                       played={name: {"0": "24|01", "1": "24|01"} for name in ("drawn", "45|23")})
+            with open(os.path.join(tmp, "conditions.json"), encoding="utf-8") as f:
+                conditions = json.load(f)
+            with open(os.path.join(tmp, "conditions.json"), "w", encoding="utf-8") as f:
+                json.dump(dict(conditions, our_arm="23|04"), f)
+            with self.assertRaisesRegex(SystemExit, r"arms \['45\|23', 'drawn'\]: our preview did not play --our-arm"):
+                oracle.summarize(tmp)
+
+    def test_the_foe_side_refuses_arms_where_our_played_preview_differs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.write(tmp, {"drawn": [1, 1], "45|23": [0, 1]}, side="foe",
+                       played={"drawn": {"0": "23|04", "1": "23|04"}, "45|23": {"0": "24|01", "1": "24|01"}})
+            with self.assertRaisesRegex(SystemExit, "our previews differ: the arms are not paired"):
+                oracle.summarize(tmp)
+
     def test_the_foe_side_refuses_arms_where_our_preview_differs(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.write(tmp, {"drawn": [1, 1], "45|23": [0, 1]}, side="foe",
@@ -416,6 +478,16 @@ class CliGuardTest(unittest.TestCase):
             out = os.path.join(tmp, "out")
             self.assertRefused("--foe-lead", self.argv(out, ("--side", "foe", "--foe-lead", "A,B")), out)
             self.assertRefused("foe side", self.argv(out, ("--side", "foe", "--arms", "today")), out)
+
+    def test_our_arm_is_the_foe_sides_and_a_combination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            self.assertRefused("--our-arm fixes our preview on the foe side", self.argv(out, ("--our-arm", "23|04")),
+                               out)
+            self.assertRefused("--our-arm: .*ascending", self.argv(out, ("--side", "foe", "--our-arm", "32|04")), out)
+            for name in ("today", "drawn"):
+                self.assertRefused(rf"--our-arm takes a combination LEADS\|BENCH like '23\|04', not '{name}'",
+                                   self.argv(out, ("--side", "foe", "--our-arm", name)), out)
 
     def test_pairs_must_be_positive(self):
         with tempfile.TemporaryDirectory() as tmp:

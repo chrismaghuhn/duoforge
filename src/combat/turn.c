@@ -2,6 +2,7 @@
 
 #include "combat/abilities/families.h"
 #include "combat/abilities/fairy_aura.h"
+#include "combat/abilities/protect_bypass.h"
 #include "combat/damage_chain.h"
 #include "combat/moves/multiaccuracy.h"
 #include "combat/residual_order.h"
@@ -188,29 +189,9 @@ static bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, u
 static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id);
 
 
-/* isGrounded with the data (sim/pokemon.ts:2148-2160): an Iron Ball holder is grounded first (step G83: `if (item === 'ironball')
- * return true`, before the Flying and Levitate tests, so it is grounded whatever its types and ability); otherwise not a Flying
- * type, not a Levitate holder and not an Air Balloon holder (step G67: `return item !== 'airballoon'`, read live, so Knock Off
- * and Trick move it at once). Gravity, Ingrain, Smack Down, Magnet Rise and Telekinesis are unmarked rows, so no battle has
- * them; Eelevate is an unmarked ability. The ability is the current one (a Mega's, or one that Trace copied). Stealth Rock does
- * not read it (moves.ts:17814-17838). */
-static bool dfi_grounded(const struct duoforge_battle *b, const dfi_member *m)
-{
-    if (dfi_holds(b, m, DFI_ITEM_IRONBALL)) {
-        return true;
-    }
-    return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE) &&
-           !dfi_holds(b, m, DFI_ITEM_AIRBALLOON);
-}
+#include "combat/field/terrain.h"
 
-/* The FIELD_START / FIELD_END detail of a terrain (DUOFORGE_FIELD_*). */
-static uint32_t dfi_terrain_field_detail(uint32_t terrain)
-{
-    return terrain == DFI_TERRAIN_GRASSY     ? DUOFORGE_FIELD_GRASSY_TERRAIN
-           : terrain == DFI_TERRAIN_PSYCHIC  ? DUOFORGE_FIELD_PSYCHIC_TERRAIN
-           : terrain == DFI_TERRAIN_ELECTRIC ? DUOFORGE_FIELD_ELECTRIC_TERRAIN
-                                             : DUOFORGE_FIELD_MISTY_TERRAIN;
-}
+
 
 /* eachEvent('TerrainChange'), defined with the seeds below: a terrain that starts or ends runs it. */
 static duoforge_status dfi_terrain_change(dfi_run *r);
@@ -224,30 +205,9 @@ static bool dfi_gender_known(uint32_t gender)
     return gender == DUOFORGE_GENDER_MALE || gender == DUOFORGE_GENDER_FEMALE;
 }
 
-/* Step G55: the rock that lengthens the weather w (data/conditions.ts durationCallback: Rain Dance with Damp Rock, Sunny Day
- * with Heat Rock, Sandstorm with Smooth Rock, Snowscape with Icy Rock; Champions changes none). */
-static uint32_t dfi_weather_rock(uint32_t w)
-{
-    switch (w) {
-    case DFI_WEATHER_RAIN:
-        return DFI_ITEM_DAMPROCK;
-    case DFI_WEATHER_SUN:
-        return DFI_ITEM_HEATROCK;
-    case DFI_WEATHER_SAND:
-        return DFI_ITEM_SMOOTHROCK;
-    default:
-        return DFI_ITEM_ICYROCK; /* DFI_WEATHER_SNOW, the last weather of the POOL kinds */
-    }
-}
 
-/* Step G55: the turns that a weather or terrain lasts when its setter starts it. Field.setWeather and Field.setTerrain call the
- * durationCallback with the setter as the source (sim/field.ts:78-81 and :147-149; a setter from an ability has the holder as
- * the event target, :41-42): 8 while the setter holds the lengthening item (the rock of the weather, or Terrain Extender for a
- * terrain: data/moves.ts terrains), else 5. The item is read when the field starts, as the callback reads it. */
-static uint32_t dfi_field_start_turns(const struct duoforge_battle *b, const dfi_member *setter, uint32_t item)
-{
-    return dfi_holds(b, setter, item) ? DFI_FIELD_TURNS_EXTENDED_MAX : DFI_FIELD_TURNS_MAX;
-}
+
+#include "combat/field/duration.h"
 
 
 
@@ -274,39 +234,11 @@ static bool dfi_faint_pending(const dfi_run *r, uint32_t flat)
     return false;
 }
 
-/* Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562; Field.suppressingWeather,
- * sim/field.ts:106-116). A holder stands while it is not fainted (`!pokemon.fainted`, field.ts:109). The flag is set when
- * faintMessages shows the faint (sim/battle.ts:2564), and the holder's End (:2556, the ability ends) comes in the same
- * loop: a position with HP 0 stops suppressing once its faint is shown, and a faint that is still queued keeps suppressing
- * (dfi_faint_pending). A switch-out ends the holder before the replacement (sim/battle-actions.ts:103), which here is the
- * occupant that changes. The ability is read as it is now (Trace, Skill Swap and Mega Evolution change it). */
-static bool dfi_weather_suppressed(const dfi_run *r)
-{
-    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        const dfi_member *m = dfi_at(r->b, flat);
-        if (dfi_ability(r->b, m, DFI_ABILITY_CLOUDNINE) && (m->hp != 0u || dfi_faint_pending(r, flat))) {
-            return true;
-        }
-    }
-    return false;
-}
+#include "combat/field/weather.h"
 
-/* Field.effectiveWeather (sim/field.ts:101-104): the weather the field reads, NONE while it is suppressed. */
-static uint32_t dfi_field_weather(const dfi_run *r)
-{
-    return dfi_weather_suppressed(r) ? (uint32_t)DFI_WEATHER_NONE : (uint32_t)r->b->weather;
-}
 
-/* Pokemon#effectiveWeather (sim/pokemon.ts:2190-2212) as the active user's move reads it: sun while the user holds Mega Sol
- * and the reading effect is a Move, a Weather or Mega Sol itself (step G59; `move_reads` is false for Electro Shot, which
- * the pin excludes by id), whatever the field is. Otherwise the field's weather. */
-static uint32_t dfi_move_weather(const dfi_run *r, const dfi_member *user, bool move_reads)
-{
-    if (move_reads && dfi_ability(r->b, user, DFI_ABILITY_MEGASOL)) {
-        return DFI_WEATHER_SUN;
-    }
-    return dfi_field_weather(r);
-}
+
+
 
 /* ---------------------------------------------------------------- events */
 
@@ -437,20 +369,7 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
     return dfi_stage_stat(m->stats[index], pos->stages[index], out) ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
 }
 
-/* Whether the member has the Speed ability of the weather that is up: Swift Swim in rain, Chlorophyll in sun, Sand Rush
- * in a sandstorm, Slush Rush in snow (step G22; the callbacks are cited at dfi_speed_key). The weather is the
- * battle's: Hail is not in the format, and Primordial Sea and Desolate Land (also named by the Swift Swim and
- * Chlorophyll handlers) are not weathers of the state. */
-static bool dfi_weather_speed_ability(const dfi_run *r, const dfi_member *m)
-{
-    /* The ability reads the field (pokemon.effectiveWeather with its own ability as the source: no Mega Sol, and
-     * Cloud Nine suppresses it, field.ts:101-104). */
-    const uint32_t w = dfi_field_weather(r);
-    return (w == DFI_WEATHER_RAIN && dfi_ability(r->b, m, DFI_ABILITY_SWIFTSWIM)) ||
-           (w == DFI_WEATHER_SUN && dfi_ability(r->b, m, DFI_ABILITY_CHLOROPHYLL)) ||
-           (w == DFI_WEATHER_SAND && dfi_ability(r->b, m, DFI_ABILITY_SANDRUSH)) ||
-           (w == DFI_WEATHER_SNOW && dfi_ability(r->b, m, DFI_ABILITY_SLUSHRUSH));
-}
+
 
 /* getActionSpeed of the Champions mod (data/mods/champions/scripts.ts:46-55):
  * the staged Speed times the chained ModifySpe modifiers (Tailwind
@@ -818,18 +737,7 @@ static uint32_t dfi_raw_speed_key(const dfi_member *m)
     return DFI_SPEED_BIAS + (uint32_t)m->stats[DFI_STAT_SPE - 1u];
 }
 
-/* The speed key of a Pokemon dragged in (step G46): a drag runs its entry at once and queues no insertChoice
- * (sim/battle-actions.ts:153-155, 162-174), so no updateSpeed takes its speed. Its pokemon.speed is the value its
- * setSpecies gave it (sim/pokemon.ts:1418, and again at its clearVolatile): the raw Speed stat, without the boosts,
- * items and status that dfi_speed_key applies to a standing Pokemon. The key keeps the scale of dfi_speed_key: under
- * Trick Room the reference's standing key is 10000 - speed (sim/pokemon.ts:641-649), and the raw value is not reversed,
- * so it is the raw number itself. Without this key the drag-in kept the speed key of the Pokemon that stood in the slot
- * before, so an Update tie of the entrant and an equal-speed holder was missed. */
-static uint32_t dfi_entrant_speed_key(const struct duoforge_battle *b, const dfi_member *m)
-{
-    const uint32_t raw = (uint32_t)m->stats[DFI_STAT_SPE - 1u];
-    return b->trick_room_turns != 0u ? raw : DFI_SPEED_BIAS + raw;
-}
+#include "combat/field/trick_room.h"
 
 /* Battle.updateSpeed: every standing active Pokemon's speed is taken again;
  * a fainted one keeps the value it had (getAllActive skips it). */
@@ -1744,8 +1652,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
             power *= 2u;
         }
     } else if (md->special == DFI_SPECIAL_STOMPING_TANTRUM) {
-        /* basePowerCallback (data/moves.ts:18054-18058): x2 when the user's last move result is FALSE (strictly; null is
-         * not a failure). An unclassified last result is refused, never guessed (step G42). */
+        /* basePowerCallback of Stomping Tantrum (data/moves.ts:18054-18058) and of Temper Flare (data/moves.ts:19189-19195,
+         * the same code, step K1, #476): x2 when the user's last move result is FALSE (strictly; null is not a failure). An
+         * unclassified last result is refused, never guessed (step G42). */
         const uint32_t last_res = r->b->tail.sides[user / 2u].positions[user % 2u].move_result;
         if ((last_res & DFI_MOVE_RESULT_UNCLASSIFIED_LAST) != 0u) {
             return DUOFORGE_E_UNSUPPORTED;
@@ -2200,6 +2109,16 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     if (chain != 4096u) {
         damage = dfi_modify(damage, chain);
+    }
+    /* Step K2 (Piercing Drill, data/mods/champions/scripts.ts, the bypassProtect block after ModifyDamage): x0.25 of the hit that
+     * passed a protection, then the holder's [-ability] (the attacker, Piercing Drill is an Ability effect) and [-zbroken] on the
+     * target. Both lines print in this getDamage, after the critical and effectiveness lines above. */
+    if (((r->protect_bypass >> target) & 1u) != 0u) {
+        damage = dfi_modify(damage, DFI_PIERCING_DRILL_BYPASS_MOD);
+        const duoforge_event ab =
+            dfi_ev(DUOFORGE_EVENT_ABILITY, user, DUOFORGE_CAUSE_NONE, 1u + DFI_ABILITY_PIERCINGDRILL, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &ab); /* [-ability] attacker|Piercing Drill */
+        dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT_BROKEN, target); /* [-zbroken] target (decision 0015 5dd, kind 51 from the HS register, chrismaghuhn/duoforge#478) */
     }
     *out = dfi_final_damage(damage);
     *crit_out = crit; /* the roll's result after the Shell Armor test: the critical hit the holder's Anger Point reads (step G77) */
@@ -4523,25 +4442,7 @@ static duoforge_status dfi_poison_touch(dfi_run *r, uint32_t user, uint32_t targ
     return dfi_try_status(r, target, DFI_STATUS_PSN, user, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 1u + DFI_ABILITY_POISONTOUCH);
 }
 
-/* side.removeSideCondition for the three screens that Psychic Fangs breaks (step G30), in the order of its onTryHit:
- * Reflect, Light Screen, Aurora Veil. A condition that is not up is not removed and shows nothing; one that is shows
- * -sideend|side|its name. */
-static void dfi_break_screens(dfi_run *r, uint32_t side)
-{
-    struct duoforge_battle *b = r->b;
-    static const uint8_t kinds[3] = {DUOFORGE_SIDE_REFLECT, DUOFORGE_SIDE_LIGHT_SCREEN, DUOFORGE_SIDE_AURORA_VEIL};
-    uint8_t *turns[3] = {&b->sides[side].reflect_turns, &b->sides[side].light_screen_turns,
-                         &b->tail.sides[side].aurora_veil_turns};
-    for (uint32_t k = 0u; k < 3u; ++k) {
-        if (*turns[k] != 0u) {
-            *turns[k] = 0u;
-            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_END, DUOFORGE_NO_POSITION);
-            e.detail = (uint8_t)side;
-            e.amount = kinds[k];
-            dfi_emit(r, &e); /* [-sideend] */
-        }
-    }
-}
+#include "combat/field/side_conditions.h"
 
 
 /* Toxic Debris (step G37, data/abilities.ts:5104-5117, onDamagingHit; the Champions mod does not change it): a Physical move
@@ -5557,24 +5458,7 @@ static duoforge_status dfi_run_clangorous_soul(dfi_run *r, uint32_t user, const 
     return dfi_status_hit_end(r);
 }
 
-/* Steel Roller's onHit (step G34, data/moves.ts:17893-17913): Field.clearTerrain after the damage of the hit, once for the
- * move: -fieldend|move: the terrain, then the TerrainChange event of the seeds on the field. Step G25 extends it to Electric
- * and Misty Terrain: the FIELD_END detail is the one of the terrain that ends (dfi_terrain_field_detail, as at the end of its
- * turns), and the converter reads Misty Terrain's line, which has no "move: " (data/moves.ts onFieldEnd). */
-static duoforge_status dfi_clear_terrain(dfi_run *r)
-{
-    struct duoforge_battle *b = r->b;
-    if (b->terrain == DFI_TERRAIN_NONE) {
-        return DUOFORGE_OK;
-    }
-    const uint32_t ended = b->terrain;
-    b->terrain = (uint8_t)DFI_TERRAIN_NONE;
-    b->terrain_turns = 0u;
-    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
-    e.detail = (uint8_t)dfi_terrain_field_detail(ended); /* wide-operands-reviewed: < 6 */
-    dfi_emit(r, &e); /* [-fieldend] */
-    return dfi_terrain_change(r);
-}
+#include "combat/field/terrain_effects.h"
 
 /* Rage Powder (step G30, data/moves.ts:14598-14630) is Follow Me with one more condition: it shares the position's
  * DFI_VOL_FOLLOW_ME bit, and the last move of the position tells them apart (dfi_last_move_id: the volatile is set by the
@@ -6693,7 +6577,15 @@ static duoforge_status dfi_protect_targets(dfi_run *r, uint32_t user, const uint
          * Status move passes it; a move without the protect flag passes every variant (the flag test above). */
         const uint32_t kind = r->b->tail.sides[t / 2u].positions[t % 2u].protect_kind;
         const bool kings_passes = kind == DFI_PROTECT_KINGS_SHIELD && md->category == DFI_CATEGORY_STATUS;
-        hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) && !kings_passes);
+        const bool guard_up = (((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) && !kings_passes;
+        /* Step K2 (Piercing Drill, data/abilities.ts:3282-3294): the holder's HitProtect returns false, so the check passes the
+         * move: no block, no -activate, no punishment, and the hit's damage gets the bypass (dfi_get_damage). */
+        if (guard_up && dfi_piercing_drill_passes(r->b, dfi_at(r->b, user), md)) {
+            r->protect_bypass |= 1u << t;
+            hit[i] = true;
+            continue;
+        }
+        hit[i] = !guard_up;
         if (!hit[i]) {
             r->mres |= DFI_MRES_NULL; /* Protect's TryHit returns NOT_FAIL (data/moves.ts:13998): no failure */
             stops += 1u;
@@ -8208,12 +8100,19 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * has the protect flag (checkMoveBypassesProtect, sim/battle.ts:1300-1309), whatever its category and however many
      * targets are left, one -activate line per guarded target. A guarded target that also protects gets this line
      * only (its Protect handler is skipped). */
+    /* Step K2: the protect bypass of this hit starts empty (Piercing Drill, protect_bypass.h). */
+    r->protect_bypass = 0u;
     bool guarded[DFI_POSITIONS] = {false, false, false, false};
     if ((target_class == DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES || target_class == DFI_TARGET_CLASS_ALL_ADJACENT) &&
         (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
             if (!inv_miss[i] && b->tail.sides[t / 2u].wide_guard != 0u) {
+                /* Step K2: a Piercing Drill holder's move passes Wide Guard's check (HitProtect returns false): no line */
+                if (dfi_piercing_drill_passes(b, dfi_at(b, user), md)) {
+                    r->protect_bypass |= 1u << t;
+                    continue;
+                }
                 guarded[i] = true;
                 duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
                 e.detail = (uint8_t)DUOFORGE_BLOCK_WIDE_GUARD; /* [-activate] move: Wide Guard */
@@ -8229,6 +8128,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
             if (b->tail.sides[t / 2u].quick_guard != 0u && !guarded[i] && !inv_miss[i]) {
+                /* Step K2: a Piercing Drill holder's move passes Quick Guard's check too (see Wide Guard above) */
+                if (dfi_piercing_drill_passes(b, dfi_at(b, user), md)) {
+                    r->protect_bypass |= 1u << t;
+                    continue;
+                }
                 guarded[i] = true;
                 duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
                 e.detail = (uint8_t)DUOFORGE_BLOCK_QUICK_GUARD; /* [-activate] move: Quick Guard */
@@ -9908,74 +9812,11 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
  * SwitchIn handler (Battle.getCallback). */
 static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m);
 
-/* The terrain seeds (data/items.ts:2595-2614 Grassy Seed, :4903-4922 Psychic Seed, :1799-1818 Electric Seed,
- * :4200-4219 Misty Seed; the generator checks that each is Grassy Seed for its terrain and its stat): onSwitchInPriority
- * -1, onStart (not ignoringItem, the terrain is up) and onTerrainChange (the terrain is up) both call useItem, and the
- * item's boosts raise one stage of one stat: Defense for the Grassy and Electric Seeds, Special Defense for the Psychic and
- * Misty Seeds. The terrain a seed waits for, or DFI_TERRAIN_NONE for a member that holds none. */
-static uint32_t dfi_seed_terrain(const struct duoforge_battle *b, const dfi_member *m)
-{
-    if (dfi_holds(b, m, DFI_ITEM_GRASSYSEED)) {
-        return DFI_TERRAIN_GRASSY;
-    }
-    if (dfi_holds(b, m, DFI_ITEM_PSYCHICSEED)) {
-        return DFI_TERRAIN_PSYCHIC;
-    }
-    if (dfi_holds(b, m, DFI_ITEM_ELECTRICSEED)) {
-        return DFI_TERRAIN_ELECTRIC;
-    }
-    if (dfi_holds(b, m, DFI_ITEM_MISTYSEED)) {
-        return DFI_TERRAIN_MISTY;
-    }
-    return DFI_TERRAIN_NONE;
-}
+#include "combat/field/terrain_seeds.h"
 
-/* A terrain seed (useItem): its stat +1 once, when its terrain is up: Grassy Seed's and Electric Seed's Defense, Psychic
- * Seed's and Misty Seed's Special Defense. A holder that fainted does nothing. */
-static void dfi_terrain_seed(dfi_run *r, uint32_t flat)
-{
-    static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
-    static const uint8_t spd_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 7u, 6u, 6u, 6u};
-    const dfi_member *m = dfi_at(r->b, flat);
-    if (m == NULL || m->hp == 0u) {
-        return;
-    }
-    const uint32_t terrain = dfi_seed_terrain(r->b, m);
-    if (terrain == DFI_TERRAIN_NONE || r->b->terrain != terrain) {
-        return;
-    }
-    const bool defense = terrain == DFI_TERRAIN_GRASSY || terrain == DFI_TERRAIN_ELECTRIC;
-    const uint32_t item = terrain == DFI_TERRAIN_GRASSY     ? DFI_ITEM_GRASSYSEED
-                          : terrain == DFI_TERRAIN_PSYCHIC  ? DFI_ITEM_PSYCHICSEED
-                          : terrain == DFI_TERRAIN_ELECTRIC ? DFI_ITEM_ELECTRICSEED
-                                                            : DFI_ITEM_MISTYSEED;
-    dfi_use_item(r, flat);
-    dfi_boost(r, flat, defense ? def_up : spd_up, DFI_POSITIONS,
-              dfi_effect(DUOFORGE_CAUSE_ITEM, 1u + item, DFI_BOOST_PRIMARY));
-}
 
-/* eachEvent('TerrainChange'): every terrain seed on the field in
- * eachEvent's order; a seed acts only while its terrain is up. */
-static duoforge_status dfi_terrain_change(dfi_run *r)
-{
-    uint32_t bearers = 0u;
-    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        bearers |= dfi_seed_terrain(r->b, dfi_at(r->b, flat)) != DFI_TERRAIN_NONE ? 1u << flat : 0u;
-    }
-    if (bearers == 0u) {
-        return DUOFORGE_OK;
-    }
-    uint32_t list[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
-    uint32_t n = 0u;
-    const duoforge_status st = dfi_each_order(r, bearers, list, &n);
-    if (st != DUOFORGE_OK) {
-        return st;
-    }
-    for (uint32_t i = 0u; i < n; ++i) {
-        dfi_terrain_seed(r, list[i]);
-    }
-    return DUOFORGE_OK;
-}
+
+
 
 /* A SwitchIn handler: an entry ability (priority 0), a terrain seed's onStart (onSwitchInPriority -1), Hospitality's onStart
  * (onSwitchInPriority -2, step G30), or the toxic status's onSwitchIn (data/conditions.ts:151, the stage back to 0; a status
@@ -10585,16 +10426,7 @@ static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
  * the duration handlers of orders 26 and 27; White Herb's (order 29, Team
  * C) sorts after them. After each callback faints are processed, and a
  * finished battle stops the residual phase. */
-/* The side conditions that count down in the residual, by sub-order: Reflect, Light Screen, Tailwind, Aurora Veil. */
-#define DFI_SIDE_KINDS 4u
-static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k)
-{
-    dfi_side *sd = &b->sides[s];
-    return k == 0u ? &sd->reflect_turns
-           : k == 1u ? &sd->light_screen_turns
-           : k == 2u ? &sd->tailwind_turns
-                     : &b->tail.sides[s].aurora_veil_turns; /* the tail is zero under every kind but POOL */
-}
+
 /* Trick Room, weather and terrain; four conditions per side (step G20 added Aurora Veil); per position
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
  * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore, Disable (step G27),
@@ -12074,7 +11906,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u, 0u};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -12192,7 +12024,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u, 0u};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */

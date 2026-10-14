@@ -286,3 +286,83 @@ def load(checkpoint_path, settings=None, foe_net=ENVIRONMENT, foe_net_sha256=FOE
     live.closers = [searcher.close, context.close]
     live.foe_check = foe_check
     return live
+
+
+# The bot's first decisions compile the search's and the network's functions (JAX): the first team preview of the
+# 2e deploy took 2.007 s, a deadline miss (live series 3, #385, 2026-10-14). warm_up decides as live before the bot
+# accepts a battle: the team preview and the first turn of an engine battle of the first reference setup.
+WARM_UP_BUDGET = 600.0  # seconds: no deadline, the compilation is the point
+WARM_UP_SEED = 0x2026101400000385
+WARM_UP_STEPS = 8
+
+
+def warm_up(live, policy=None, worlds=None):
+    """Decides a team preview and a turn of an engine battle (duoforge.reference_setups, as
+    duoforge_search.live_latency plays them) through live: LiveSearch.decide over the batch's own parts, worlds
+    (closed team sheets, decision 0081) copies of them, one per world, and policy's raw ranking of each, so the first
+    battle's decisions compile nothing. Seat 0 plays the search's choice or the first legal one, seat 1 its first
+    legal one. Returns {"team": seconds, "turn": seconds}. The team preview must come back "team" and the turn
+    "searched" (a turn that did not search compiled neither its leaves nor its worlds' policies), with no search left
+    running: anything else is a RuntimeError naming the outcome, and the bot does not start. Afterwards the roots and
+    the search's history hold nothing of the warm-up."""
+    import duoforge
+    from duoforge import _layout
+    from duoforge_learn.selfplay import choices_of
+    C = _layout.CONSTANTS
+    searcher = live.searcher
+    ext_supported = searcher.ext_supported
+    seconds, history = {}, []
+    with duoforge.Batch(searcher.worlds.context, duoforge.reference_setups([0]), 1, WARM_UP_SEED) as b:
+        choices = np.zeros((1, 2), _layout.FACTORED_CHOICE)
+        for step in range(WARM_UP_STEPS):
+            if b.result(0) != 0 or len(seconds) == 2:
+                break
+            b.query_factored()
+            team = b.domains["kind"][0] == C["DUOFORGE_CHOICE_TEAM_SELECTION"]
+            actions = np.zeros((1, 2), np.int64)  # team: the first team of the table
+            for p in (0, 1):
+                if b.requests["requested"][0, p] == 0:
+                    continue
+                observation = b.observations[0, p]
+                obs_part, slot_part, pair_mask = features.encode(observation, b.domains[0, p],
+                                                                 b.observe_ext()[0, p], ext_supported)
+                if not team[p]:
+                    actions[0, p] = int(np.flatnonzero(np.asarray(pair_mask).reshape(-1))[0])
+                if p == 1:
+                    continue
+                if policy is not None:
+                    if team[0]:
+                        policy.rank_teams(observation, obs_part)
+                    else:
+                        policy.rank_pairs(observation, obs_part, slot_part, pair_mask)
+                records, statuses = b.public(np.zeros(1, np.uint32))
+                mask, _ = b.public_causes(np.zeros(1, np.uint32))
+                parts = {"request": b.requests[0, 0], "observation": observation, "record": records[0].copy(),
+                         "status": int(statuses[0]), "causes": int(mask[0])}
+                history.append((parts["record"], parts["status"]))
+                # every second world's feature rows zeroed: the root's mean policy over distinct rows, as particles
+                # give it (rows all the root's own take Honest's shortcut and compile nothing); the worlds' own rows,
+                # built from the records, are the root's in every world
+                blank = np.zeros_like(np.asarray(obs_part))
+                copies = None if worlds is None else [(parts, obs_part if w % 2 == 0 else blank, slot_part,
+                                                       list(history)) for w in range(worlds)]
+                outcome = live.decide(parts, obs_part, slot_part, None if team[0] else pair_mask,
+                                      key=decision_key("warm-up", step), episode=-1, budget=WARM_UP_BUDGET,  # no game's
+                                      **({} if copies is None else {"worlds": copies}))
+                kind = "team" if team[0] else "turn"
+                if outcome.fallback is not None or outcome.cause != {"team": "team", "turn": "searched"}[kind]:
+                    raise RuntimeError(f"the search's warm-up {kind} came back {outcome.cause!r} "
+                                       f"(fallback {outcome.fallback!r}): {outcome.reason}")
+                seconds.setdefault(kind, outcome.seconds)
+                if outcome.action is not None:
+                    actions[0, 0] = outcome.action
+            choices_of(b, actions, choices)
+            b.step_factored(choices)
+    if len(seconds) != 2:
+        raise RuntimeError(f"the search's warm-up reached {sorted(seconds)} only, not a team preview and a turn")
+    if live._running is not None:
+        raise RuntimeError("the search's warm-up left a search running")
+    for seat in (0, 1):  # the first battle starts as it would without the warm-up
+        live.roots.clear(0, seat)
+    live.searcher.clear()
+    return seconds

@@ -1178,6 +1178,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               the user, other: the target, cause MOVE + id2 = Psych Up, every other field 0. Public:
                                               both players get it. The user takes the target's seven stages and its Focus Energy and
                                               Dragon Cheer state; those starts are [silent] and write no event of their own. */
+#define DUOFORGE_EVENT_PROTECT_BROKEN 51u /* [-zbroken] position: the target of a Piercing Drill hit that passed its protection
+                                              (decision 0015 5dd, step K2, #474; data/mods/champions/scripts.ts).
+                                              Public: both players get it. Every other field 0; the hit's damage is x0.25 and
+                                              its -ability line is ABILITY (34) on the holder, printed before it. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

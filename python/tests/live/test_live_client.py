@@ -358,6 +358,23 @@ class ClientTest(unittest.TestCase):
         log = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
         self.assertEqual(log[-1], {"end": "|win|DuoForgeBot"})
 
+    def test_the_log_names_its_format_and_the_choice_the_battle_ended_on(self):
+        # client.LOG_FORMAT 2 (#385): the first record names the format; a battle that ends writes the choice sent last
+        # whose acceptance the log never shows ({"pending_at_end"}) before its {"end"}; an own forfeit writes none
+        self.start_battle(upto=6)
+        sent = [s for s in self.server.take() if "/choose " in s][-1]
+        self.feed(room(["|win|chris"]))
+        log = self.log()
+        self.assertEqual(log[0], {"log_format": client.LOG_FORMAT})
+        self.assertEqual(log[-2:], [{"pending_at_end": sent.split("|/choose ", 1)[1].rsplit("|", 1)[0]},
+                                    {"end": "|win|chris"}])
+
+    def test_an_own_forfeit_writes_no_pending_at_end(self):
+        self.start_battle(upto=6)
+        asyncio.run(self.bot._forfeit(self.bot.battles[ROOM], client.INTERNAL, "a test's forfeit"))
+        self.feed(room(["|win|chris"]))
+        self.assertFalse([r for r in self.log() if "pending_at_end" in r])
+
     def test_bo3_series(self):
         series = "game-bestof3-gen9championsvgc2026regmcbo3-7"
         self.challenge("gen9championsvgc2026regmcbo3")

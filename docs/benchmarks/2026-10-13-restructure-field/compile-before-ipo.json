@@ -1,0 +1,17 @@
+{
+  "commit": "aca58173d389613b6b4a89a95d8b1b5e3fe7b2fa",
+  "dirty": false,
+  "method": "isolated compile-only samples; attempt stopped before no-IPO because compile_commands.json was not enabled in that cache",
+  "samples": [
+    {
+      "profile": "ipo",
+      "target": "core",
+      "wall_seconds": 11.483472631982295
+    },
+    {
+      "profile": "ipo",
+      "target": "shared",
+      "wall_seconds": 16.15524783899309
+    }
+  ]
+}
