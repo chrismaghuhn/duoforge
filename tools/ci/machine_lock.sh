@@ -34,14 +34,36 @@
 # Claude Code reports as "stopped" may still run: check its processes before
 # a restart.
 #
+# No timeout around a waiting machine_lock.sh: the wait counts, and the timeout kills the wrapper in the middle of its
+# job (2026-10-14). A time limit belongs inside the locked command: machine_lock.sh <label> timeout 600 <command...>.
+#
+# No nesting: the holder is told DUOFORGE_MACHINE_LOCK_HELD (its label) and
+# DUOFORGE_MACHINE_LOCK_HELD_DIR (its lock). A call on the same lock from inside it is refused at once with status 74
+# ($MACHINE_LOCK_NESTED): it would wait for slots the outer job holds (under --exclusive: forever). Run the inner work
+# without the lock, or as a job of its own. A call on another lock (a test's temporary one) is not nested.
+#
 # usage (Git Bash):
-#   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases; status 73: the label runs
+#   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases; status 73: the label runs;
+#                                                                 status 74: nested inside a job of this lock
 #   source tools/ci/machine_lock.sh; machine_lock_acquire [--exclusive] <label> || exit; ...; machine_lock_release
 # environment:
 #   DUOFORGE_MACHINE_LOCK        slot 0, the lock directory (default: $TEMP/duoforge-machine.lock)
 #   DUOFORGE_MACHINE_LOCK_SLOTS  jobs at once (default 2); the same in every session
 # exported to the holder:
 #   DUOFORGE_JOBS                processors / slots (at least 1); every processor with --exclusive
+#   DUOFORGE_MACHINE_LOCK_HELD   the holder's label; DUOFORGE_MACHINE_LOCK_HELD_DIR its lock (status 74 inside it; on
+#                                Windows as a Windows path, however the lock was spelt)
+#   DUOFORGE_MACHINE_LOCK_OWNER_FILE, _OWNER_LINE  an owner file the holder writes and its line; WSLENV lists them, so
+#                                a job started with wsl.exe gets them too: run it under tools/ci/wsl_lock_watchdog.sh,
+#                                which ends it when its Windows holder is gone (a killed wrapper releases the lock)
+# exit status of a job under the lock (machine_lock.sh, with tools/ci/wsl_lock_watchdog.sh for a WSL job): the
+# command's own, or
+#   73  machine_lock.sh refused: a live job holds a slot or waits with this label
+#   74  machine_lock.sh refused: nested inside a job that holds this lock
+#   76  the watchdog stopped the job: its holder's Windows process is gone, or its slot was taken over
+#   77  the watchdog refused to start: not on Linux (uname -s), e.g. under Git Bash on Windows
+#   2   the watchdog refused to start: no holder to watch, or bash older than 5.1
+# A command that exits with one of these itself cannot be told from them.
 set -u
 
 MACHINE_LOCK=${DUOFORGE_MACHINE_LOCK:-"${TEMP:-/tmp}/duoforge-machine.lock"}
@@ -50,6 +72,8 @@ MACHINE_LOCK=${DUOFORGE_MACHINE_LOCK:-"${TEMP:-/tmp}/duoforge-machine.lock"}
 MACHINE_LOCK_ORPHAN=300
 # The status of a call refused because a live job with its label holds a slot or waits.
 MACHINE_LOCK_TAKEN=73
+# The status of a call refused because it is nested inside a job that holds this lock.
+MACHINE_LOCK_NESTED=74
 
 # The Windows process id of this shell (Git Bash), or its own pid elsewhere.
 machine_lock_pid() {
@@ -161,6 +185,48 @@ machine_lock_idle() { # queue
     return 0
 }
 
+# One spelling of a lock directory, to tell whether a call is nested in a holder of the same lock. On Windows the same
+# directory reaches a nested call spelt otherwise: Git Bash rewrites a POSIX path in the environment of a Windows
+# program (/tmp/x reaches python as C:/Users/.../Temp/x), and a login shell's TEMP is /tmp where another's is C:\...
+# There it is the Windows path (cygpath -w), compared without case; elsewhere the path as given.
+machine_lock_canonical() { # dir
+    if command -v cygpath > /dev/null 2>&1; then
+        cygpath -w -- "$1"
+    else
+        printf '%s\n' "$1"
+    fi
+}
+
+machine_lock_same_dir() { # a b: 0 when both name one lock directory
+    local a b
+    a=$(machine_lock_canonical "$1")
+    b=$(machine_lock_canonical "$2")
+    if command -v cygpath > /dev/null 2>&1; then
+        a=${a,,}
+        b=${b,,}
+    fi
+    [ "$a" = "$b" ]
+}
+
+# What the holder's command is told of its lock: its label and lock (DUOFORGE_MACHINE_LOCK_HELD, _HELD_DIR: a call nested
+# in it is refused), the owner file of one slot it holds and that file's line (DUOFORGE_MACHINE_LOCK_OWNER_FILE, _LINE:
+# tools/ci/wsl_lock_watchdog.sh ends a WSL job whose holder is gone). WSLENV lists them, the paths translated (/p), so
+# that they reach a command wsl.exe starts. On Windows the paths are given as Windows paths (cygpath -w).
+machine_lock_export_holder() { # label dir line
+    local file=$2/owner name entry
+    if command -v cygpath > /dev/null 2>&1; then
+        file=$(cygpath -w "$file")
+    fi
+    export DUOFORGE_MACHINE_LOCK_HELD=$1 DUOFORGE_MACHINE_LOCK_HELD_DIR
+    DUOFORGE_MACHINE_LOCK_HELD_DIR=$(machine_lock_canonical "$MACHINE_LOCK")
+    export DUOFORGE_MACHINE_LOCK_OWNER_FILE=$file DUOFORGE_MACHINE_LOCK_OWNER_LINE=$3
+    for entry in DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_OWNER_LINE DUOFORGE_MACHINE_LOCK_OWNER_FILE/p; do
+        name=${entry%/p}
+        case ":${WSLENV:-}:" in *":$name:"* | *":$name/"*) ;; *) WSLENV=${WSLENV:+$WSLENV:}$entry ;; esac
+    done
+    export WSLENV
+}
+
 machine_lock_acquire() { # [--exclusive] label
     # First come, first served: a waiter takes a ticket in $MACHINE_LOCK.queue (its name sorts by the time it was
     # taken). A waiter with w older live tickets ahead may take a slot when more than w slots are free and none of
@@ -173,6 +239,13 @@ machine_lock_acquire() { # [--exclusive] label
         shift
     fi
     local label=$1 waited=0 holder line me ticket t k dir ahead blocked legacy free slots cpus mark recorded
+    if [ -n "${DUOFORGE_MACHINE_LOCK_HELD:-}" ] && [ -n "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" ] &&
+        machine_lock_same_dir "$DUOFORGE_MACHINE_LOCK_HELD_DIR" "$MACHINE_LOCK"; then
+        echo "machine lock: refused: '$label' is nested inside the job '$DUOFORGE_MACHINE_LOCK_HELD', which holds this" \
+            "lock ($MACHINE_LOCK); it would wait for slots the outer job holds. Run the inner work without the lock," \
+            "or as a job of its own." >&2
+        return "$MACHINE_LOCK_NESTED"
+    fi
     local queue="$MACHINE_LOCK.queue"
     slots=${DUOFORGE_MACHINE_LOCK_SLOTS-2}
     case "$slots" in
@@ -270,6 +343,7 @@ machine_lock_acquire() { # [--exclusive] label
                         printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
                     done
                     export DUOFORGE_JOBS=$cpus
+                    machine_lock_export_holder "$label" "${got[0]}" "$me $label since $since"
                     break
                 fi
                 for dir in "${got[@]}"; do rmdir "$dir" 2> /dev/null; done # somebody was faster: all or nothing
@@ -289,8 +363,10 @@ machine_lock_acquire() { # [--exclusive] label
                 fi
             done
             if [ -n "$dir" ]; then
-                printf '%s\nslots\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$dir/owner"
+                since=$(date '+%Y-%m-%d %H:%M:%S')
+                printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
                 export DUOFORGE_JOBS=$((cpus / slots > 0 ? cpus / slots : 1))
+                machine_lock_export_holder "$label" "$dir" "$me $label since $since"
                 break
             fi
         fi
@@ -320,6 +396,10 @@ machine_lock_release() {
     done
     if [ -d "$queue" ] && machine_lock_idle "$queue"; then
         rm -f "$queue/.slots"
+    fi
+    if [ -n "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" ] && machine_lock_same_dir "$DUOFORGE_MACHINE_LOCK_HELD_DIR" "$MACHINE_LOCK"; then
+        unset DUOFORGE_MACHINE_LOCK_HELD DUOFORGE_MACHINE_LOCK_HELD_DIR DUOFORGE_MACHINE_LOCK_OWNER_FILE \
+            DUOFORGE_MACHINE_LOCK_OWNER_LINE
     fi
 }
 
