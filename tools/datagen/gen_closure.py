@@ -3691,6 +3691,7 @@ K2_ABILITY_FACTS = (
                        "if (move.flags['contact']) {",
                        "target.getMoveHitData(move).bypassProtect = this.effect;",
                        'return false;',
+                       '}',
                        '},',
                        '// breaking protect handled in Battle#checkMoveBypassesProtect()',
                        'flags: {},')),
@@ -3725,7 +3726,7 @@ K2_MOVE_FACTS = (
 )
 
 
-def check_g97_facts(battle_ts, champ_scripts, moves_ts):
+def check_k2_facts(battle_ts, champ_scripts, moves_ts):
     """Step K2: the checkMoveBypassesProtect text (K2_BATTLE_FACTS), the Champions damage lines in their order
     (K2_DAMAGE_ORDER), and the protection calls the bypass reaches (K2_MOVE_FACTS), whitespace collapsed."""
     text = norm(chr(10).join(battle_ts.lines))
@@ -4837,7 +4838,7 @@ def build_pool(root, repo, dx):
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
     check_g96_facts(moves_ts)
-    check_g97_facts(Source(root, 'sim/battle.ts', READER_INPUTS), Source(root, 'data/mods/champions/scripts.ts'), moves_ts)
+    check_k2_facts(Source(root, 'sim/battle.ts', READER_INPUTS), Source(root, 'data/mods/champions/scripts.ts'), moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
     check_g86_facts(moves_ts)
