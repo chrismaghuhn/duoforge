@@ -70,6 +70,12 @@ foreach(_file IN LISTS _files)
         set(_re_token "${_re_banned_token_fp}")
     endif()
 
+    # Quantized evaluation permits only fixed-width integer arithmetic, never
+    # floating computation. This does not extend the encoder FP exception.
+    if(_rel MATCHES "^src/eval/(arithmetic|kernels|inputs)\\.[ch]$")
+        set(_re_token "${_boundary}(float|double|_Thread_local|thread_local|long|short|int|signed|unsigned|intptr_t|intmax_t|ptrdiff_t)([^A-Za-z0-9_]|$)")
+    endif()
+
     set(_is_alloc_file FALSE)
     if(_rel STREQUAL "src/core/alloc.c")
         set(_is_alloc_file TRUE)
@@ -113,7 +119,8 @@ endforeach()
 # file(STRINGS) cannot split a CRLF working copy into lines, so the defines are matched on the whole text (no group).
 if(EXISTS "${ROOT}/src/rng/draw.h")
     file(READ "${ROOT}/src/rng/draw.h" _draw_text)
-    string(REPLACE "" "" _draw_text "${_draw_text}")
+    string(REPLACE "
+" "" _draw_text "${_draw_text}")
     string(REGEX MATCHALL "#define DFI_SITE_[A-Z0-9_]+[ 	]" _site_defs "${_draw_text}")
     foreach(_site_def IN LISTS _site_defs)
         string(REPLACE "#define DFI_SITE_" "" _site "${_site_def}")

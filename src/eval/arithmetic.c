@@ -2,7 +2,8 @@
 #include <limits.h>
 #include <stdbool.h>
 
-uint64_t dfi_eval_magnitude(int64_t v) { return v < 0 ? (uint64_t)(-(v + 1)) + 1u : (uint64_t)v; }
+/* wide-operands-reviewed: v+1 and its negation are representable before conversion. */
+uint64_t dfi_eval_magnitude(int64_t v) { return v < 0 ? (uint64_t)(-(v + 1)) + 1u : (uint64_t)v; /* wide-operands-reviewed */ }
 static duoforge_status signed_value(uint64_t mag, bool negative, int64_t *out)
 {
     const uint64_t lim = (uint64_t)INT64_MAX + (negative ? 1u : 0u);
@@ -71,10 +72,10 @@ static duoforge_status bits_magnitude(uint32_t bits, uint32_t factor, uint32_t s
     uint32_t exponent = (bits >> 23u) & 255u;
     if (exponent == 255u || !factor || shift > 63u) return DUOFORGE_E_INVALID_ARGUMENT;
     uint64_t sig = bits & UINT32_C(0x7fffff);
-    int power = exponent ? (int)exponent - 150 : -149;
+    int32_t power = exponent ? (int32_t)exponent - 150 : -149;
     if (exponent) sig |= UINT64_C(1) << 23u;
     uint64_t mag = sig * factor;
-    power -= (int)shift;
+    power -= (int32_t)shift;
     if (power >= 0) {
         if (power >= 64 || mag > (UINT64_MAX >> (uint32_t)power)) {
             if (!mag) { *out = 0; return DUOFORGE_OK; }
@@ -82,7 +83,7 @@ static duoforge_status bits_magnitude(uint32_t bits, uint32_t factor, uint32_t s
         }
         *out = mag << (uint32_t)power;
     } else {
-        uint32_t right = (uint32_t)(-power);
+        uint32_t right = (uint32_t)(-power); /* wide-operands-reviewed: power is -212..-1. */
         *out = right >= 64u ? 0u : rounded(mag, UINT64_C(1) << right);
     }
     return DUOFORGE_OK;
@@ -95,7 +96,7 @@ duoforge_status dfi_eval_binary32(uint32_t bits, dfi_eval_scale scale, int16_t *
         *out = bits >> 31u ? INT16_MIN : INT16_MAX; return DUOFORGE_OK;
     }
     if (st != DUOFORGE_OK) return st;
-    if (bits >> 31u) *out = mag >= 32768u ? INT16_MIN : -(int16_t)mag;
+    if (bits >> 31u) *out = mag >= 32768u ? INT16_MIN : (int16_t)(-(int32_t)mag);
     else *out = mag >= 32767u ? INT16_MAX : (int16_t)mag;
     return DUOFORGE_OK;
 }
