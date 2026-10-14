@@ -822,9 +822,12 @@ def solve_bayes(tables, weights, *, budget=None):
 # loop works in buffers allocated once per solve; only the exact gap check (every check_every iterations) allocates.
 
 RM_EPSILON = 1e-3  # the gap target, a share of the tables' range (owner and HS, Q1)
-# Provisional: D1's offline pass on step 0's recorded tables (spec section 9.1) fixes the default so that p99 of the
-# gap is at most RM_EPSILON and no recorded table reaches the bound; its README comes before any run.
-RM_MAX_ITERATIONS = 10_000
+# D1's offline pass (docs/benchmarks/2026-10-14-d1-offline; the HauptSession and the owner, 2026-10-14, #481): the
+# time bound, 0.4 s at the exclusive p99 of 0.2256 ms per iteration (1,772.7, rounded down to a multiple of 10). It
+# cuts none of the 57,191 recorded decisions (max 1,710); the predeclared accuracy bound (twice that maximum, 3,420)
+# did not fit the time and gave no value. A solve that misses RM_EPSILON here is the named fallback
+# solver_unconverged, played without search (no LP fallback). The bound holds for D1's root only.
+RM_MAX_ITERATIONS = 1_770
 RM_CHECK_EVERY = 10  # iterations between two exact gap computations
 
 

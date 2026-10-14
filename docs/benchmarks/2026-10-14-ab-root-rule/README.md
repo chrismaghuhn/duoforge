@@ -51,6 +51,21 @@ The aggregates come from `tools/research/cts_live_eval.py --logs DIR --code COMM
 - **Power.** With 100 decided battles per arm and win rates near 50%, the 95% interval of the difference is about ±14 percentage points wide. A true difference of 13 to 15 points is therefore detected only about half the time; detecting one with 80% power needs about 20 points. A smaller difference stays "no measured difference".
 - **Reports** hold aggregates only, opponents by letter, with the bot commit and dirty state, the run logs (seed) and the tool's commit.
 
+### Opponents the search mostly cannot reach, and a deploy during the test (fixed after the technical check, before any look at results)
+
+Fixed on 2026-10-14 (HauptSession, final) after the technical check of the first 30 battles: the allocation recomputed, the logging, no deadline. The check looked at no result, no win and no outcome.
+
+- **The primary reading is intention to treat over all battles.** The looks of 30, 60 and 100 count every decided battle per arm, whatever its opponent, with the 99%, 99% and 95% intervals above.
+- **Opponents the search mostly cannot reach are a descriptive stratum.**
+  - An opponent's no-search share is its battles' non-team decisions answered without the search, out of all its non-team decisions. A decision without the search is one that is not `searched`: unreconstructible, forced, raw or deadline.
+  - The share is computed **per opponent and bot commit, over both arms together**, never per arm, so the rule cannot change the classification. It is computed at each look.
+  - Against an opponent above 50%, both arms play the raw policy at most of its points (#464: a particle holding unmodelled content), so the root rule can hardly act there.
+  - These opponents are reported apart, with their counts per arm, as a description only. They stay in the primary reading and are never a ground for a preference.
+- **Pooled across bot commits.** A deploy during the test (first main with #500, Speed Swap) does not start a separate series. The primary reading pools the commits, and the results are also reported per commit, as a description.
+  - At a restart the bot draws a **new seed**, named in its new run log, and its blocks start anew from battle number 0.
+  - A last block left incomplete before the restart, with one battle of one arm, is counted by name (`incomplete_blocks`). Its battle stays in its arm.
+- **A replay of earlier battles on newer code is descriptive only**, for example the share of decisions that would have been searchable with Speed Swap modelled. It never enters the rule's reading.
+
 ## Replays of the test's battles
 
 `cts.LogReplay` and `cts.replay` read the rule a battle's first record names (`cts.logged_rule`), so the KO check and the luck meter replay each battle under its own arm's rule. A decision without a rule plays the search's own (`LiveSearch.base_rule`), never a rule an earlier battle set.
