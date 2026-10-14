@@ -89,3 +89,58 @@ and compares the engine's event records.
   exclusive (no seconds are used). It starts only with at least 8 GB free on Windows.
 - **Disclosed:** before this file's final commit, a smoke (2 games) may run to check the tool. Its numbers fix nothing
   and are not reported.
+
+## Results (run 2026-10-14)
+
+### Provenance
+
+| | |
+|---|---|
+| Commit | `50ca34ba` (`search/509-monotone`), `dirty: false` |
+| Library | `libduoforge_shared.so` built from it, sha256 `4bb8d6c789fbf0c41d7c9d0d05acb95067f5f2948c001cbb30976c0367be85d4` |
+| BC6 | checkpoint sha256 `bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39`, encoder 6 |
+| Pool | `--teams-from` config sha256 `ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb` |
+| Games | 100 (50 pairs, both seat assignments), seed `0x2026101500000509`; all 100 ended TERMINAL |
+| Run | label `bc6-mono`, under the machine lock and the WSL watchdog, not exclusive, at least 8 GB free at the start |
+
+**Disclosed:** the smoke (2 games) ran after this file's last predeclaration commit (`afbd6e5f`), not before it; the
+file did not change because of it, and its numbers are not reported.
+
+### Counts
+
+11,792 (position, edit) pairs, each read from both seats (23,584 rows). Built: 6,135 edits. Refused: 5,657 edits as
+`removed_move_used`; no `setup_refused`, no `replay_diverged`.
+
+### The wrong-way rate (Δp beyond one point of win probability)
+
+| | built | wrong way | rate | Wilson 95 % | game-cluster 95 % |
+|---|---|---|---|---|---|
+| own edit (Δp > +0.01) | 6,135 | 1,305 | **21.3 %** | 20.3–22.3 % | 19.4–23.1 % |
+| mirror edit (Δp < −0.01) | 6,135 | 1,364 | **22.2 %** | 21.2–23.3 % | 20.3–24.2 % |
+
+The comparison reading on the value scale (|ΔV| > 0.01 the wrong way): own 30.1 % (Wilson 29.0–31.3 %), mirror
+30.3 % (29.1–31.4 %).
+
+Falsche Richtung ist ein Hinweis, kein Beweis. Die Rate ist eine obere Schranke für Netzfehler, weil der Wert von BC6
+den Ausgang unter menschenähnlichem Spiel schätzt.
+
+### Distribution of Δp
+
+| quantile | 1 % | 5 % | 25 % | 50 % | 75 % | 95 % | 99 % |
+|---|---|---|---|---|---|---|---|
+| own | −0.074 | −0.045 | −0.015 | −0.002 | +0.008 | +0.036 | +0.077 |
+| mirror | −0.065 | −0.035 | −0.008 | +0.002 | +0.013 | +0.040 | +0.070 |
+
+### Splits (rate, Wilson 95 %)
+
+| removed move | built | own | mirror | refused as `removed_move_used` |
+|---|---|---|---|---|
+| physical | 2,674 | 19.2 % (17.7–20.7) | 22.6 % (21.0–24.2) | 46.5 % |
+| special | 1,425 | 19.7 % (17.7–21.8) | 17.2 % (15.3–19.2) | 50.8 % |
+| status | 2,036 | 25.2 % (23.3–27.1) | 25.3 % (23.5–27.3) | 47.8 % |
+| Protect-like | 1,211 | 23.9 % (21.6–26.4) | 24.3 % (22.0–26.8) | 44.1 % |
+
+Protect-like is a subset of status here; Silk Trap, Burning Bulwark and Obstruct are not in the pool. The refused share
+is the same for own and mirror, since each edit is read from both seats.
+
+By the viewing seat: own 22.6 % (seat 0) and 20.0 % (seat 1); mirror 21.5 % (seat 0) and 23.0 % (seat 1).
