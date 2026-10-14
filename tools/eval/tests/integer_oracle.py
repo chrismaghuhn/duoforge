@@ -48,8 +48,10 @@ def expect(row):
         return (OK, q) if LO <= q <= HI else (EXHAUSTED, 0)
     if op == 3:
         return (OK, nearest(a, b)) if b else (INVALID, 0)
-    if op in (4, 7):
+    if op in (4, 7, 10):
         st, q = requant(a, b, c)
+        if op == 10 and st == OK and not -(1 << 31) <= q < (1 << 31):
+            return EXHAUSTED, 0
         return st, clip(q) if op == 7 and st == OK else q
     if op in (5, 6):
         frac = finite(a)
@@ -65,7 +67,7 @@ def expect(row):
         if abs(q) > UMAX:
             return EXHAUSTED, 0
         return (OK, q) if q < c else (UNSUPPORTED, 0)
-    if op == 8:
+    if op in (8, 11):
         # Conservative whole-dot proof; not just the accidentally cancelling sum.
         if not f or g > 63:
             return INVALID, 0
@@ -73,6 +75,8 @@ def expect(row):
         if bound > HI or bound * f > HI:
             return EXHAUSTED, 0
         st, q = requant(e + a * c + b * d, f, g)
+        if op == 11:
+            return (st, q) if st == OK and -(1 << 31) <= q < (1 << 31) else (EXHAUSTED, 0)
         return st, clip(q) if st == OK else 0
     if op == 9:
         selected = [v for i, v in enumerate((a, b, c)) if d & (1 << i)]
@@ -92,7 +96,7 @@ def vectors():
         for b in (0, 1, 2, 3, 7, 1 << 63, UMAX): add(3, a, b)
         for m in (0, 1, 2, 3, (1 << 32) - 1):
             for s in (0, 1, 2, 31, 32, 63, 64):
-                add(4, a, m, s); add(7, a, m, s)
+                add(4, a, m, s); add(7, a, m, s); add(10, a, m, s)
     for bits in (0, 0x80000000, 1, 0x80000001, 0x7fffff, 0x800000, 0x3f000000,
                  0x3fc00000, 0x40200000, 0xbf000000, 0xbfc00000, 0xc0200000,
                  0x7f7fffff, 0xff7fffff, 0x7f800000, 0xff800000, 0x7fc00000):
@@ -107,12 +111,15 @@ def vectors():
             bits = struct.unpack("<I", struct.pack("<f", ident / factor))[0]
             add(6, bits, factor, cap)
             assert expect(rows[-1]) == (OK, ident)
+    for bias in ((1 << 31)-1-65534, (1 << 31)-65534, -(1 << 31)-65534, -(1 << 31)-65535, 0, 3145728-65534):
+        add(11, 32767, 32767, 1, 1, bias, 1, 0)
     for _ in range(4000):
         add(4, rng.randint(LO, HI), rng.randrange(1, 1 << 32), rng.randrange(64))
         add(5, rng.getrandbits(32), rng.randrange(1, 1 << 32), rng.randrange(64))
         add(6, rng.getrandbits(32), rng.choice((65535, 255, 24)), rng.choice((25, 256, 65536)))
         add(8, rng.randint(-32768, 32767), rng.randint(-32768, 32767), rng.randint(-128, 127),
             rng.randint(-128, 127), rng.randint(-1000000, 1000000), rng.randrange(1, 65536), rng.randrange(32))
+        add(11, *rows[-1][1:])
         add(9, rng.randint(-32768, 32767), rng.randint(-32768, 32767), rng.randint(-32768, 32767),
             rng.randrange(8), rng.randrange(2), rng.randrange(1, 65536), rng.randrange(32))
     return rows

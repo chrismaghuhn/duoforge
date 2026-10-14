@@ -43,12 +43,15 @@ static int oracle(const char *path)
         case 4:st=dfi_eval_requant(signed64(a[1]),scale,&q);break;
         case 5:st=dfi_eval_binary32((uint32_t)a[1],scale,&q16);q=q16;break;
         case 6:st=dfi_eval_binary32_id((uint32_t)a[1],(uint32_t)a[2],(uint32_t)a[3],&id);q=id;break;
+        case 10: { int32_t q32=0;st=dfi_eval_requant32(signed64(a[1]),scale,&q32);q=q32;break; }
         case 7:st=dfi_eval_requant16(signed64(a[1]),scale,&q16);q=q16;break;
-        case 8: {
+        case 8:
+        case 11: {
             int16_t x[2]={(int16_t)signed64(a[1]),(int16_t)signed64(a[2])};
             int8_t w[2]={(int8_t)signed64(a[3]),(int8_t)signed64(a[4])};
             int64_t b=signed64(a[5]);dfi_eval_scale s={(uint32_t)a[6],(uint32_t)a[7]};
-            st=dfi_eval_dense(x,2,w,&b,&s,1,false,&q16);q=q16;break;
+            if(a[0]==11u){int32_t q32=0;st=dfi_eval_dense32(x,2,w,&b,&s,1,false,&q32);q=q32;}
+            else {st=dfi_eval_dense(x,2,w,&b,&s,1,false,&q16);q=q16;}break;
         }
         case 9: {
             int16_t x[3]={(int16_t)signed64(a[1]),(int16_t)signed64(a[2]),(int16_t)signed64(a[3])};
@@ -131,6 +134,19 @@ static void kernels(df_test *t)
     DF_CHECK(t,out[0]==-16384&&out[1]==62&&out[2]==32767);
     DF_CHECK(t,dfi_eval_concat(x,2,(dfi_eval_scale){1,0},x,1,(dfi_eval_scale){1,0},2,out)==DUOFORGE_E_CAPACITY);
     DF_CHECK(t,dfi_eval_dense(NULL,0,w,b,s,2,false,out)==DUOFORGE_E_NULL_ARGUMENT);
+    int32_t out32[2];
+    DF_CHECK(t,dfi_eval_dense32(x,3,w,b,s,2,false,out32)==DUOFORGE_OK&&out32[0]==32640&&out32[1]==-2);
+    const int16_t headin[2]={32767,32767};const int8_t headw[2]={1,1};
+    int64_t headbias=0;const dfi_eval_scale heads={1,0};
+    DF_CHECK(t,dfi_eval_dense32(headin,2,headw,&headbias,&heads,1,false,out32)==DUOFORGE_OK&&out32[0]==65534);
+    headbias=(int64_t)INT32_MAX-65534;
+    DF_CHECK(t,dfi_eval_dense32(headin,2,headw,&headbias,&heads,1,false,out32)==DUOFORGE_OK&&out32[0]==INT32_MAX);
+    ++headbias;DF_CHECK(t,dfi_eval_dense32(headin,2,headw,&headbias,&heads,1,false,out32)==DUOFORGE_E_EXHAUSTED);
+    headbias=(int64_t)INT32_MIN-65534;
+    DF_CHECK(t,dfi_eval_dense32(headin,2,headw,&headbias,&heads,1,false,out32)==DUOFORGE_OK&&out32[0]==INT32_MIN);
+    --headbias;DF_CHECK(t,dfi_eval_dense32(headin,2,headw,&headbias,&heads,1,false,out32)==DUOFORGE_E_EXHAUSTED);
+    headbias=-65534+INT64_C(3145728);
+    DF_CHECK(t,dfi_eval_dense32(headin,2,headw,&headbias,&heads,1,false,out32)==DUOFORGE_OK&&out32[0]==3145728);
     int64_t q=0;uint64_t bound=0;
     DF_CHECK(t,dfi_eval_add(INT64_MAX,1,&q)==DUOFORGE_E_EXHAUSTED);
     DF_CHECK(t,dfi_eval_add(INT64_MIN,-1,&q)==DUOFORGE_E_EXHAUSTED);

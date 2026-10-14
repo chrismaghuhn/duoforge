@@ -5,11 +5,11 @@
 static bool shape(uint32_t rows, uint32_t width, size_t size)
 { return !rows || (width <= SIZE_MAX / rows && (size_t)width * rows <= SIZE_MAX / size); }
 static bool scale_ok(dfi_eval_scale s) { return s.multiplier && s.shift <= 63u; }
-duoforge_status dfi_eval_dense(const int16_t *in, uint32_t ni, const int8_t *weights,
+static duoforge_status dense_core(const int16_t *in, uint32_t ni, const int8_t *weights,
                               const int64_t *bias, const dfi_eval_scale *scales,
-                              uint32_t no, bool relu, int16_t *out)
+                              uint32_t no, bool relu, int16_t *out16, int32_t *out32)
 {
-    if (!in || !weights || !bias || !scales || !out) return DUOFORGE_E_NULL_ARGUMENT;
+    if (!in || !weights || !bias || !scales || (!out16 && !out32)) return DUOFORGE_E_NULL_ARGUMENT;
     if (!ni || !no || !shape(no, ni, sizeof(*weights))) return DUOFORGE_E_INVALID_ARGUMENT;
     uint32_t input_abs = 0u;
     for (uint32_t i = 0; i < ni; ++i) {
@@ -30,10 +30,23 @@ duoforge_status dfi_eval_dense(const int16_t *in, uint32_t ni, const int8_t *wei
         int64_t sum = bias[o];
         for (uint32_t i = 0; i < ni; ++i) sum += (int64_t)in[i] * weights[(size_t)o * ni + i];
         if (relu && sum < 0) sum = 0;
-        duoforge_status st = dfi_eval_requant16(sum, scales[o], &out[o]);
+        duoforge_status st = out32 ? dfi_eval_requant32(sum, scales[o], &out32[o])
+                                 : dfi_eval_requant16(sum, scales[o], &out16[o]);
         if (st != DUOFORGE_OK) return st;
     }
     return DUOFORGE_OK;
+}
+duoforge_status dfi_eval_dense(const int16_t *in, uint32_t ni, const int8_t *weights,
+                              const int64_t *bias, const dfi_eval_scale *scales,
+                              uint32_t no, bool relu, int16_t *out)
+{
+    return dense_core(in, ni, weights, bias, scales, no, relu, out, NULL);
+}
+duoforge_status dfi_eval_dense32(const int16_t *in, uint32_t ni, const int8_t *weights,
+                                const int64_t *bias, const dfi_eval_scale *scales,
+                                uint32_t no, bool relu, int32_t *out)
+{
+    return dense_core(in, ni, weights, bias, scales, no, relu, NULL, out);
 }
 duoforge_status dfi_eval_embedding(const int8_t *table, uint32_t rows, uint32_t width,
                                   uint32_t id, dfi_eval_scale scale, int16_t *out)

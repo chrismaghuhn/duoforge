@@ -15,6 +15,12 @@ or an int64 result beyond its range is `E_EXHAUSTED`. Models prove the stricter
 bound below before use. `requant16` explicitly saturates only a valid rounded
 int64 result to [-32768,32767]; saturation is a graph operation, never overflow.
 
+`requant32` uses the same rounding and checked multiplication, with an explicit
+int32 range refusal instead of saturation. `dense32` shares validation and
+ascending accumulation with `dense`, preserving BC6 pre-normalization int32
+tensors and an unclamped Q12.20 value head. Values above 32767 and outside [-1,1]
+remain valid within int32; results beyond int32 refuse as `E_EXHAUSTED`.
+
 Dense weights are row-major int8, inputs int16 and biases int64. A channel
 accumulates its bias and products in ascending input index. For fan-in N,
 actual maximum input magnitude A, actual maximum weight magnitude W and bias B,
@@ -65,7 +71,7 @@ its source bits occupy 4,376 bytes and cold per-column scales 8,752 bytes.
 The existing binary32 row is reused, not cloned per leaf. A future workspace
 accounts for these explicitly; it supplies activations and tile storage too.
 GCC14 Release without IPO reports at most 176 bytes for any kernel frame;
-including the arithmetic callee the largest kernel-only chain is 184 bytes,
+including the arithmetic callee the largest kernel-only chain is 216 bytes,
 below the additional 16 KiB limit. This excludes caller-owned buffers and
 platform library frames; it is not a measurement of future graph peak memory.
 GNU allocation hooks test that the warm synthetic kernel/input calls allocate
