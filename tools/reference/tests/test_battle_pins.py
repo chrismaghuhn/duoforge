@@ -9,10 +9,26 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
+
+
+def configure_command(source, build, **extra):
+    """cmake configuring `source` into `build`, with the generator, the C compiler and the make program of the build
+    that runs this test where CTest gives them (DUOFORGE_CMAKE_GENERATOR, _C_COMPILER, _MAKE_PROGRAM). Without them
+    CMake picked its own default: on Windows the Visual Studio generator and MSVC, found through MSBuild on every first
+    configure, the slowest and most variable part of this test on the Windows jobs (#501, #505, #511). Only the
+    compiler choice is shared; every configure still runs on its own with its own inputs. extra: -D values."""
+    command = [os.environ.get('DUOFORGE_CMAKE', 'cmake'), '-S', str(source), '-B', str(build)]
+    if os.environ.get('DUOFORGE_CMAKE_GENERATOR'):
+        command += ['-G', os.environ['DUOFORGE_CMAKE_GENERATOR']]
+    values = {'CMAKE_C_COMPILER': os.environ.get('DUOFORGE_C_COMPILER'),
+              'CMAKE_MAKE_PROGRAM': os.environ.get('DUOFORGE_MAKE_PROGRAM'), **extra}
+    return command + [f'-D{name}={value}' for name, value in values.items() if value]
 
 
 def module(name):
@@ -182,10 +198,14 @@ class ConfigureGuards(unittest.TestCase):
             shutil.copyfile(ROOT / 'tests/reference/data.cmake', reference / 'data.cmake')
             (root / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.23)\nproject(pin_guard C)\n'
                 'function(duoforge_configure_target target)\nendfunction()\ninclude(reference/data.cmake)\n')
-            command = [os.environ.get('DUOFORGE_CMAKE', 'cmake'), '-S', str(root), '-B', str(root / 'build')]
-            def run():
-                return subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            self.assertEqual(run().returncode, 0)
+            command = configure_command(root, root / 'build')
+            def run(variant):
+                # Each configure's wall time on stderr: the Windows/MSYS2 job's time is spent here and there (#505).
+                start = time.perf_counter()
+                result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                print(f'configure {variant}: {time.perf_counter() - start:.2f} s', file=sys.stderr, flush=True)
+                return result
+            self.assertEqual(run('baseline').returncode, 0)
             for file, macro in [(tb_header, 'DF_REFERENCE_TIEBREAK_COUNT'),
                                 (reference / 'conformance.h', 'DF_REFERENCE_TAPE_COUNT'),
                                 (reference / 'conformance.h', 'DF_REFERENCE_EVENT_COUNT')]:
@@ -193,7 +213,7 @@ class ConfigureGuards(unittest.TestCase):
                 lines = [line if not line.startswith('#define '+macro+' ') else '#define '+macro+' 999999u'
                          for line in good.splitlines()]
                 file.write_text('\n'.join(lines)+'\n')
-                result = run()
+                result = run('stale ' + macro)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn('stale '+macro, ' '.join(result.stdout.split()))
                 file.write_text(good)
@@ -203,15 +223,38 @@ class ConfigureGuards(unittest.TestCase):
                 value = json.loads(good)
                 value[section][field] += 1
                 file.write_text(json.dumps(value))
-                result = run()
+                result = run(f'{section}.{field} + 1')
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn('row count', ' '.join(result.stdout.split()))
             file.write_text(good)
             file.unlink()
-            result = run()
+            result = run('deleted battle')
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('independent pin', ' '.join(result.stdout.split()))
 
+    def test_a_configure_with_a_wrong_option_still_fails(self):
+        # What the configures share (the generator and the compiler of this test's build) are inputs of each run,
+        # never a cached result: a fresh configure given a wrong one fails. A wrong generator fails everywhere; a wrong
+        # compiler fails where the generator takes the compiler from CMAKE_C_COMPILER (Ninja, Makefiles; the Visual
+        # Studio generators pick MSVC themselves and ignore it).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.23)\nproject(pin_guard C)\n')
+            command = configure_command(root, root / 'wrong-generator')
+            command = [a for i, a in enumerate(command) if a != '-G' and (i == 0 or command[i - 1] != '-G')]
+            result = subprocess.run(command + ['-G', 'No Such Generator'], text=True, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn('No Such Generator', result.stdout)
+            generator = os.environ.get('DUOFORGE_CMAKE_GENERATOR', '')
+            if generator and not generator.startswith('Visual Studio'):
+                missing = str(root / 'no-such-compiler' / 'cc')
+                command = configure_command(root, root / 'wrong-compiler', CMAKE_C_COMPILER=missing)
+                self.assertIn(f'-DCMAKE_C_COMPILER={missing}', command)
+                result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    # The slowest tests by name in the CI log (Python 3.12's durations), as format_pins hit its timeout on the MSYS2 job.
+    unittest.main(verbosity=2, **({'durations': 0} if sys.version_info >= (3, 12) else {}))
