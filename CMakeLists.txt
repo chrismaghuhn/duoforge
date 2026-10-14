@@ -114,10 +114,13 @@ set(DUOFORGE_ITEM_SOURCES
     src/combat/items/families.c
     src/combat/items/white_herb.c
 )
+set(DUOFORGE_OBSERVATION_SOURCES src/core/sha256_stream.c src/state/observation_digest.c src/state/request.c)
+
 set(DUOFORGE_SOURCES
     src/duoforge.c
     src/core/alloc.c
     src/core/sha256.c
+    ${DUOFORGE_OBSERVATION_SOURCES}
     src/core/modifier.c
     src/rng/pcg32_derived.c
     src/rng/pcg32.c
@@ -130,7 +133,6 @@ set(DUOFORGE_SOURCES
     src/state/invariants.c
     src/state/battle.c
     src/state/transition.c
-    src/state/request.c
     src/state/reference_teams.c
     src/state/observation.c
     src/state/tiebreak.c
@@ -187,25 +189,30 @@ set(_duoforge_shared_sources ${DUOFORGE_SOURCES})
 if(WIN32)
     # MSVC has no per-function hidden visibility. CMake's automatic export
     # scan reads this target's objects, not linked archives: keep the new
-    # private item helpers in an archive so none becomes a DLL export.
-    list(REMOVE_ITEM _duoforge_shared_sources ${DUOFORGE_ITEM_SOURCES})
-    add_library(duoforge_items_private STATIC ${DUOFORGE_ITEM_SOURCES})
-    target_include_directories(duoforge_items_private PRIVATE
+    # private helpers in an archive so none becomes a DLL export.
+    list(REMOVE_ITEM _duoforge_shared_sources ${DUOFORGE_ITEM_SOURCES} ${DUOFORGE_OBSERVATION_SOURCES})
+    add_library(duoforge_private STATIC ${DUOFORGE_ITEM_SOURCES} ${DUOFORGE_OBSERVATION_SOURCES})
+    target_include_directories(duoforge_private PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
-    set_target_properties(duoforge_items_private PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    if(MSVC)
-        set_target_properties(duoforge_items_private PROPERTIES
+    set_target_properties(duoforge_private PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    if(MSVC OR MINGW)
+        set_target_properties(duoforge_private PROPERTIES
             INTERPROCEDURAL_OPTIMIZATION OFF INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
     endif()
-    duoforge_configure_target(duoforge_items_private)
+    duoforge_configure_target(duoforge_private)
 endif()
 add_library(duoforge_shared SHARED ${_duoforge_shared_sources} ${DUOFORGE_BATCH_SOURCES})
 if(WIN32)
-    target_link_libraries(duoforge_shared PRIVATE duoforge_items_private)
+    target_link_libraries(duoforge_shared PRIVATE duoforge_private)
+    # request.c retains all its old entry points through explicit exports;
+    # its new observer entry stays private, as do the SHA/projection helpers.
+    target_sources(duoforge_shared PRIVATE cmake/request_legacy_exports.def)
     if(MINGW)
-        # GNU PE auto-export also scans linked archives; exclude this one.
+        # A .def disables GNU PE's implicit auto-export. Keep the old object
+        # exports explicitly enabled, excluding only the private archive.
         target_link_options(duoforge_shared PRIVATE
-            "LINKER:--exclude-libs,$<TARGET_FILE_NAME:duoforge_items_private>")
+            "LINKER:--export-all-symbols"
+            "LINKER:--exclude-libs,$<TARGET_FILE_NAME:duoforge_private>")
     endif()
 endif()
 target_include_directories(duoforge_shared
@@ -215,10 +222,12 @@ target_link_libraries(duoforge_shared PRIVATE Threads::Threads)
 set_target_properties(duoforge_shared PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON)
-if(MSVC)
+if(MSVC OR MINGW)
     # WINDOWS_EXPORT_ALL_SYMBOLS reads the objects' symbol tables, which
-    # /GL objects do not have: link-time code generation stays off here (the
-    # per-configuration property overrides the general one).
+    # MSVC /GL objects do not have. MinGW LTO also loses archive provenance,
+    # bypassing --exclude-libs and exporting private/generated symbols.
+    # Keep IPO off for this DLL and its private archive, not the static core
+    # or benchmarks (the per-configuration property overrides the general one).
     set_target_properties(duoforge_shared PROPERTIES
         INTERPROCEDURAL_OPTIMIZATION OFF
         INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)

@@ -29,6 +29,16 @@ int main()
         std::fprintf(stderr, "cxx link: unexpected search seeds\n");
         return 1;
     }
+    // The additive 0082 sibling and bounded diagnostic layout link from C++.
+    static_assert(sizeof(duoforge_eval_error) == 148u, "0082 diagnostic layout");
+    duoforge_eval_error error{};
+    if (duoforge_batch_expand_digest(nullptr, nullptr, 4u, 0u, 0u,
+            nullptr, nullptr, nullptr, nullptr, 0u, nullptr, nullptr, nullptr,
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &error) != DUOFORGE_E_NULL_ARGUMENT ||
+        error.leaf != UINT32_MAX || std::strcmp(error.reason, "expand_batch_null") != 0) {
+        std::fprintf(stderr, "cxx link: unexpected digest preflight\n");
+        return 1;
+    }
     std::printf("cxx link: OK %s\n", v);
     return 0;
 }

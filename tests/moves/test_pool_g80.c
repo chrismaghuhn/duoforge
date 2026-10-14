@@ -143,7 +143,7 @@ static void test_rows(df_test *t)
 {
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_PSYCH_UP, 0x76u); /* generator order: after Endeavor (C5, 0x75), before Ally Switch (batch 8 merge order) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ALLY_SWITCH, DFI_SPECIAL_PSYCH_UP + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PSYCHIC_TERRAIN + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SPEED_SWAP + 1u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_PSYCHUP].special, DFI_SPECIAL_PSYCH_UP);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_ALLYSWITCH].special, DFI_SPECIAL_ALLY_SWITCH);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_HOWL].boost_role, DFI_BOOST_ROLE_PRIMARY_TARGET);

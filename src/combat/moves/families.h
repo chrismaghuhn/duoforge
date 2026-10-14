@@ -5,6 +5,7 @@
 #include "combat/moves/first_turn_only.h"
 #include "combat/moves/weight_power.h"
 #include "combat/moves/hp_power.h"
+#include "combat/moves/stat_swap.h"
 
 
 

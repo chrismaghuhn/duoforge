@@ -14,9 +14,12 @@
 
 #include "state/battle_internal.h"
 
+struct dfi_observation_digest;
+
 typedef struct dfi_events {
     duoforge_event rec[DUOFORGE_MAX_EVENTS];
     uint32_t count;
+    struct dfi_observation_digest *observation; /* NULL in every legacy path */
     bool overflow; /* more than DUOFORGE_MAX_EVENTS: the step fails with E_INVARIANT */
 } dfi_events;
 

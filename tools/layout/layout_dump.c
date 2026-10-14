@@ -12,6 +12,7 @@
 #include <duoforge/duoforge.h>
 #include <duoforge/duoforge_batch.h>
 #include <duoforge/duoforge_view.h>
+#include <duoforge/duoforge_search.h>
 
 typedef struct layout_field {
     const char *name;
@@ -79,6 +80,8 @@ int main(void)
            FIELD(duoforge_event, hp_max), FIELD(duoforge_event, hp_kind), FIELD(duoforge_event, hp_flag),
            FIELD(duoforge_event, status), FIELD(duoforge_event, detail), FIELD(duoforge_event, amount),
            FIELD(duoforge_event, flags), FIELD(duoforge_event, reserved));
+    STRUCT(duoforge_eval_error, false, FIELD(duoforge_eval_error, leaf),
+           FIELD(duoforge_eval_error, phase), FIELD(duoforge_eval_error, reason));
     STRUCT(duoforge_step_result, false, FIELD(duoforge_step_result, epoch), FIELD(duoforge_step_result, kind),
            FIELD(duoforge_step_result, boundary_kind), FIELD(duoforge_step_result, request_mask),
            FIELD(duoforge_step_result, reserved));
@@ -183,6 +186,7 @@ int main(void)
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_TEMP_FORME, false);
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN, false);
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY, false);
+    CONSTANT(DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP, false);
     CONSTANT(DUOFORGE_MAX_CANDIDATES, false);
     CONSTANT(DUOFORGE_MAX_SLOT_OPTIONS, false);
     CONSTANT(DUOFORGE_DIGEST_SIZE, false);
@@ -267,6 +271,7 @@ int main(void)
     CONSTANT(DUOFORGE_VOLATILE_DRAGONCHEER, false);
     CONSTANT(DUOFORGE_VOLATILE_LEECH_SEED, false);
     CONSTANT(DUOFORGE_VOLATILE_CURSE, false);
+    CONSTANT(DUOFORGE_VOLATILE_SPEED_SWAP, false);
     CONSTANT(DUOFORGE_CAUSE_LEECH_SEED, false);
     CONSTANT(DUOFORGE_VOLATILE_ATTRACT, false);
     CONSTANT(DUOFORGE_CAUSE_CURSE, false);
@@ -300,6 +305,7 @@ int main(void)
     CONSTANT(DUOFORGE_POSITION_EXT_TYPE_CHANGED, false);
     CONSTANT(DUOFORGE_POSITION_EXT_ILLUSION_UP, false);
     CONSTANT(DUOFORGE_POSITION_EXT_ROOST, false);
+    CONSTANT(DUOFORGE_POSITION_EXT_SPEED_SWAPPED, false);
     CONSTANT(DUOFORGE_POSITION_EXT_TRANSFORMED, false);
     CONSTANT(DUOFORGE_POSITION_EXT_ATTRACT, false);
     CONSTANT(DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_LO, false);
@@ -349,6 +355,7 @@ int main(void)
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_ROOST, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_SPEED_SWAPPED, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_TRANSFORM, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_COUNT, false);

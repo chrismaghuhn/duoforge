@@ -11,6 +11,7 @@
 
 #include "data/pool_tables.h"
 #include "state/knowledge.h"
+#include "state/observation_digest.h"
 
 _Static_assert(sizeof(duoforge_event) == 20u, "event is 20 bytes");
 _Static_assert(offsetof(duoforge_event, id) == 4u, "event layout: id");
@@ -370,6 +371,9 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
         for (uint32_t i = 0u; i < events->count && i < DUOFORGE_MAX_EVENTS; ++i) {
             duoforge_event e;
             dfi_event_project(&events->rec[i], p, &e);
+            if (events->observation != NULL && events->observation->viewer == p && i >= first) {
+                dfi_observation_fold(events->observation, &e, i);
+            }
             if (e.position < 2u * DUOFORGE_ACTIVE_PER_SIDE && (uint32_t)e.position / 2u == p) {
                 dfi_own_event(&own, after, &e); /* the viewer's own side: every event of it, before and after `first` */
             }

@@ -76,8 +76,9 @@ TAIL_MOVE_RESULT_MASK = 0x3F        # rev 4: two bits this turn, two bits last t
                                     # bit 4 unclassified this turn, bit 5 unclassified last turn (step G42); bits 6-7 zero
 UNCLASSIFIED_NOW = 0x10
 UNCLASSIFIED_LAST = 0x20
-TAIL_SINGLE_TURN_MASK = 3           # rev 4: bit 0 RAGE_POWDER (needs the Follow Me flag), bit 1 ROOST
+TAIL_SINGLE_TURN_MASK = 7           # rev 4: bit 0 RAGE_POWDER (needs the Follow Me flag), bit 1 ROOST; step K3 (decision 0015 5de): bit 2 SPEED_SWAP
 SINGLE_TURN_RAGE_POWDER = 1
+SINGLE_TURN_SPEED_SWAP = 4              # step K3 (decision 0015 5de): the occupant's Speed was swapped and is live
 TAIL_HITS_TAKEN_MAX = 6
 TAIL_ABILITY_STATE_MAX = 6
 TAIL_LOCK_TURNS_MAX = 3
@@ -309,7 +310,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('622ec4deb4501c16ab10b3e5862e83fd97d735ccd1788c2214dd1b90a1442d22')
+POOL_TABLE_HASH = bytes.fromhex('1eb3bdda06035c7df98722ce950fb8fc3c07bd479f5b46ead8b477d4ade2d121')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
