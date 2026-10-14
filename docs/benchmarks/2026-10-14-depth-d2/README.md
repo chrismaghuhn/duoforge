@@ -1,0 +1,118 @@
+# D2, the two-turn tree: its offline pass and its ladder arms (predeclaration draft, 2026-10-14)
+
+D2 of the depth search (spec `docs/superpowers/specs/2026-10-13-depth-search-design.md`, sections 8 and 9.2; plan
+`docs/superpowers/plans/2026-10-14-depth-search-d2.md`, steps 10 and 11) adds `depth = 2` to the honest search, off by
+default: a full-width tree over two turns, solved by CFR+ (`tree.solve_tree`), the root played by the root rule of
+spec section 5 unchanged.
+
+**This file is a predeclaration. Nothing below has run.** Its open point (the observation key of the offline pass) is
+the HauptSession's decision; the file is final, and committed again, before the first run. Every run starts only on
+the HauptSession's go, under the machine lock.
+
+## Part 1: the offline pass (plan step 10)
+
+D1's `RM_MAX_ITERATIONS` (1,770, decided on D1's own pass) holds for D1's root only. The tree has other tables and
+another cost per iteration, so `tree.TREE_MAX_ITERATIONS` (provisional 10,000) is fixed here by accuracy and by time,
+before any D2 arm runs.
+
+### Data and code
+
+- **No recorded trees exist.** The pass therefore replays games and builds a tree beside each decision without
+  playing it ("shadow"): the games are step 2e's (the adopted step whose root rule the D2 arms inherit, spec section
+  5), seed `0x2026101200000440`, the ladder's pool, against `bot`; at every searched turn decision a second, depth-2
+  search builds and solves the tree of the same root and records it; the move played is 2e's.
+- **Provenance of the games:** the shadow never changes a move. The decisions digest of the played (2e) records is
+  reported beside the digest of a plain 2e run on the same commit; they must agree, else the pass reports it and fixes
+  nothing.
+- **Tool:** `python -m duoforge_search.tree_offline` (to be built, the next commit on this branch, with tests): per
+  shadow decision the widths, the node, information-set and leaf counts, the iterations CFR+ needs to reach ε, its gap,
+  and the seconds of each phase (depth-1 policy call, leaf evaluation, tree solve). Rows are streamed to a JSONL file
+  as they come (never held in memory), the report holds counts and quantiles; rows stay with the run, outside the
+  repository.
+- **Library:** `libduoforge_shared.so` of the commit the pass runs at (its sha256 in the results).
+- **Solver:** ε = 1e-3 of the tree's range (Q1), the gap checked every 10 iterations, priors as the search gives them,
+  `foe_below = "nash"`.
+- **Open, the HauptSession's decision — the observation key:**
+  - (a) wait for the engine digest (plan step 9, after Astra's field step): the trees are the ones the arms will
+    solve;
+  - (b) `info_key = "record"` now, open team sheets only: the information sets may merge differently from the
+    digest's (the record never splits by a hidden fact, but may merge nodes whose lines differ), so the bound is
+    re-checked on the digest's trees before any arm runs; nodes whose public record the engine refuses are counted
+    (`observation_key_refused`) and their decisions left out of the bound.
+  - Proposal: (b) now, so the bound and the phase times (which also replace spec section 6.2's estimates) exist early,
+    and a smaller re-check with the digest.
+
+### The runs
+
+1. **Accuracy (A):** 64 pairs against `bot`, widths (K2, M2) = (2, 2), (3, 3) and (4, 4), each a shadow of its own,
+   `--max-iterations 50000`, under the lock with the label `d2-offline`, not exclusive (its seconds are not used),
+   alone (not beside the Book measurement's slot, HauptSession 2026-10-14).
+2. **Time (B):** the same games, every 10th searched decision, width (4, 4) and (2, 2), one worker, under the lock
+   with `--exclusive`. Only B's seconds count.
+
+Each run reports its commit, its `dirty` flag and the library's sha256.
+
+### Fixed now
+
+- **T_acc:** twice the largest iteration count any decision of run A needed to reach ε, over all widths, rounded up to
+  a multiple of 10. If any decision misses ε at 50,000 iterations, T_acc is undefined: reported, no default set.
+- **T_time:** the iteration count at which the tree solve costs 0.4 s locally, from run B's p99 of solve seconds per
+  iteration at (4, 4), rounded down to a multiple of 10 (the same solve budget as D1's root: the VPS is about 3x
+  slower, and the rest of the 1.67 s local bound stays for the evaluation around the solve).
+- **The default:** T_acc if T_acc ≤ T_time; otherwise none, and the HauptSession and the owner decide (as for D1).
+- **`solver_unconverged`** stays a named class-(a) decision: counted, played without search, never a silent LP
+  fallback. The arms count it apart; above 0.1 % of an arm's decisions the bound is re-assessed.
+- **Reported, not gated:** the iterations to ε per width (median, p99, max) and the share solved by each T; the tree's
+  gap; the information sets and the merge share; the leaf kinds; the seconds per phase and width (run B), against
+  spec section 6.2's estimates; how often the shadow's root choice differs from 2e's.
+
+## Part 2: the ladder arms (plan step 11, spec section 9.2)
+
+### Arms
+
+All with step 2e's root rule (`rule = "ev"`, spec section 5), `root_solver = "rm"`, `info_key = "digest"` (unless the
+HauptSession decides otherwise), `foe_below = "nash"`, the value call padded to 16,384 rows (spec section 7.2):
+
+| arm | depth-2 widths | other |
+|---|---|---|
+| `d2-22` | K2 = M2 = 2 | |
+| `d2-33` | K2 = M2 = 3 | |
+| `d2-44` | K2 = M2 = 4 | |
+| `d2-model` | the best of the three by its head-to-head point estimate | `foe_below = "model"` (Q4) |
+
+The equal-time control of each arm: the one-turn arm (`root_solver = "rm"`, rule ev) from the list k12/m12, k16/m16,
+s32, s48, s64 whose exclusive latency p99 is closest to the D2 arm's, ties to the one with more leaves; both
+latencies are measured, exclusive, before the control's strength run.
+
+### Gates (spec 9.2, as #440)
+
+- **Strength:** head-to-head against step 2e, the lower bound > 0.50, 0 unresolved, 1024 pairs.
+- **No harm:** against `bot` and `bc6`, the upper bound ≥ 0.50.
+- **Reproduced:** the arm's games again from its seed (scores and decision digests).
+- **Fallbacks:** at most 5 % (or 2e's share + 1 point); `solver_unconverged` and `observation_key_refused` reported
+  apart.
+- **Latency:** exclusive p99 ≤ 1.67 s local; for live adoption additionally ≤ 0.67 s local (Q2: the 2 s VPS cap).
+- **Against the equal-time control:** the lower bound > 0.50, 512 pairs.
+- **The mirror touchstone** (Team A against the private sun team, piloted by the live search): no harm, the upper
+  bound ≥ 0.50, at least 512 pairs; the sim-pilot touchstone is reported only.
+
+### Kill criterion (fixed now)
+
+If no D2 width beats its equal-time control at its point estimate, depth with the BC6 value is parked, and the
+evaluation (#451, #450 piece 2 / D4) comes before D3 and D5.
+
+### Metrics and diagnostics (reported, not gated)
+
+- The KO check per arm, with intervals, split into "not a candidate" and "among the candidates, not chosen". Fixed
+  expectation: depth moves the answered-foe-threat row more than the own-KO row.
+- The merge share, the tree gap, the depth-2 leaf kinds, how often the root choice differs from 2e's and from D1's.
+- The plan's test positions A to D (private live positions, replayed with `ko_check --closed`), each arm's choice
+  beside 2e's and step 0's; never a gate.
+
+### Where and when
+
+- Local, every paired comparison on one machine class. AWS (#484) only with the equality proof, and only the
+  HauptSession starts it.
+- Only after this file's final commit, the offline pass's default, the engine digest (if the arms use it) and the
+  HauptSession's go. Latency always with `--exclusive`; strength runs alone, not beside the Book slot, while memory is
+  short.
