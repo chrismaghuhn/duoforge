@@ -173,15 +173,27 @@ HauptSession's go, under the machine lock and the WSL watchdog, not exclusive, w
 - **The paired set:** the (position, edit, viewing seat) rows for which both the removed and the replaced edit were
   built. Every comparison below is on this set; its size and its share of part 1's built edits are reported.
 - Detect is not a neutral move: it has real value in doubles. It is chosen because it is legal on most members and
-  deals no damage, not because it is worthless. The reading below accounts for that.
+  deals no damage, not because it is worthless.
+- **The reading's subset (HauptSession, 2026-10-15):** the edits of a member that **already carries Protect**, the
+  edited move not being Protect. Only there is Detect nearly redundant, so only there is "|ΔV_rd| small" the right
+  expectation. For a member without Protect, Detect is a real gain, and a large ΔV_rd is correct, not an artifact.
+  Every other edit (no Protect; the edited move is Protect) is reported **descriptively only**, apart, with no
+  influence on the reading.
+- **Size of the subset, estimated from part 1's rows before the run:** of part 1's 6,135 built edits, 3,067 are of a
+  member carrying Protect with another move edited (all 100 games, at most 63 in one game); 1,148 remove Protect itself,
+  1,790 are of members without Protect, 101 of members already carrying Detect (`already_detect`) and 29 remove Detect
+  (`removed_is_detect`). Legality (`detect_not_allowed`) is not known before the run and lowers the 3,067.
+- **Legality refusals** (`detect_not_allowed`) are counted and reported, in the subset and outside it, because they
+  restrict the sample to Pokémon that learn Detect.
 
 ### Metric
 
 - **ΔV_rd** = V_X(replaced) − V_X(removed), on BC6's value scale [−1, 1], from seat X's view; V as in part 1.
-- **Main result:** the distribution of |ΔV_rd|, own and mirror apart: the 1, 5, 25, 50, 75, 95 and 99 % quantiles and
+- **Main result, on the subset's paired rows:** the distribution of |ΔV_rd|, own and mirror apart: the 1, 5, 25, 50, 75, 95 and 99 % quantiles and
   the mean, with a 95 % game-cluster bootstrap interval for the median and the mean (2,000 resamples, seed `0x509`).
-- **The share that tells the readings apart:** the share of paired rows with |ΔV_rd| > 0.02 (one point of win
-  probability), with a 95 % Wilson and a game-cluster interval, own and mirror apart.
+- **The share that tells the readings apart:** the share of the subset's paired rows with |ΔV_rd| > 0.02 (one point
+  of win probability), with a 95 % Wilson and a game-cluster interval, own and mirror apart.
+- The same quantities for the other edits, apart and descriptive only.
 - **Beside it, descriptive only:** the signed ΔV_rd quantiles; and, on the paired set, Δp(replaced − unedited)
   against Δp(removed − unedited): part 1's wrong-way rate computed both ways on the same rows, with the paired
   difference and its game-cluster interval. Since Detect has value of its own, the replaced edit's "wrong way" is not a
@@ -189,6 +201,8 @@ HauptSession's go, under the machine lock and the WSL watchdog, not exclusive, w
 
 ### Reading (fixed before the run)
 
+- All of it on the subset only. If the subset has **fewer than 200 paired edits** (own or mirror), the reading is
+  "no conclusion".
 - If the **median |ΔV_rd| is at most 0.02** and the share above 0.02 is **at most 25 %** (own and mirror each), BC6
   values a removed move about as it values Detect in its place: the missing slot is not what drives part 1's rate, and
   part 1 stands as a measure of how BC6 values weaker move sets.
@@ -206,7 +220,9 @@ commit with `dirty: false`, the library's sha256, BC6's checkpoint sha256 and th
 
 ### Run
 
-- The tool gains `--replace detect` on this branch, with tests (the replaced setup, the three new refusals, the
-  paired set, the games' digest check). One run, label `bc6-detect`.
+- The tool gains `--replace detect` on this branch, test-driven (the replaced setup, the new refusals, the subset,
+  the paired set, the games' digest check). One run, label `bc6-detect`, through `tools/ci/wsl_lock_watchdog.sh`
+  inside `tools/ci/machine_lock.sh`, not exclusive, at least 8 GB free at the start.
+- The result goes to #509 as aggregates, with the commit, `dirty: false`, the library's sha256 and BC6's sha256.
 - **Disclosed:** a smoke of 2 games may run before this section's final commit to check the tool; its numbers fix
   nothing and are not reported.
