@@ -455,8 +455,10 @@ included. The lanes deliver the code, this guide and the tests (against a stub `
 | `upload_team.sh` | the only way the foe team reaches the bucket: checks the file's sha256, prints only the sha256 and the target key, and with `--i-have-owner-approval` makes one encrypted upload with the owner's profile |
 | `campaigns/preview-mixed/` | the campaign of #458: BC6 (`bda5de8e4e96...`) as checkpoint and foe network, our team A, the tournament sun team (`e1060cf46a8f...`, private), 8 workers, 1000 steps |
 
-The caps are the oracle's own (HauptSession, 2026-10-15), caps and not expectations: at most 12 hours (the watchdog
-`shutdown -h +<minutes>`) and $20 a run (`MaxPrice = 20 / hours` per instance hour). The ladder's and the fuzz
+The limits are the oracle's own and apart from each other (owner decision 2026-10-15, the defaults), limits and not
+expectations: at most **12 hours** (`--max-hours`, the watchdog `shutdown -h +<minutes>`) and at most **$2.00 per
+instance hour** (`--max-price`, the spot request's `MaxPrice`), so at most $24 for a run. The HauptSession may set both
+at the launch, with the owner; the launcher prints the run's maximum (hours x price). The ladder's and the fuzz
 campaigns' 2 hours and $10 stay as they are.
 
 **What the box pins**, as the ladder box: `XLA_FLAGS=--xla_cpu_max_isa=AVX2`, `OPENBLAS_CORETYPE=Haswell`,
@@ -470,8 +472,16 @@ instance type, the CPU, whether it has AVX-512, the Python version, `pip freeze`
 **Time.** The series gets a deadline 30 minutes before the watchdog (`--deadline-seconds`): a block that would start
 after it is refused (`deadline` in `series.json`), so the aggregates still go up. `series.json` records every block's
 and every round's seconds; a batch of processes starts only if one as long as the longest so far would end before
-the deadline. While the series runs, `series.json` and `matrix/` go up to `progress/` every 10 minutes (own keys: a
-copy still in flight at the end can never overwrite the final ones), so a spot interruption keeps the record so far.
+the deadline.
+
+**Resume** (HauptSession, 2026-10-15). The box saves the series' state, its aggregates so far (`series.json`,
+`round.txt`, `equality.json`, `matrix/`, the runs' `conditions.json`, `oracle.json` and arm files), to `state/` of the
+run after every round and every 10 minutes, and once more at the end. After a spot interruption (or a deadline), a
+launch with `--resume <run id>` (the run id the first launch printed, of the same commit) reads that state and runs
+`preview_series --resume`: nothing is drawn anew, the seeds are the plan's, every arm already in the state stays and is
+not played again (the parts of an interrupted block are played again, on the same seeds), so the series ends exactly as
+it would have without the interruption (tested). The results go to the same run; each launch's `env.json` and box log
+are kept under `log/` by its launch time.
 
 **What leaves the box**, under `fuzz/oracle/<campaign>/<commit12>-oracle-<launch time>/`, whatever the exit of the series,
 in one recursive copy: `series.json`, `equality.json`, `matrix/*.json`, `runs/*/conditions.json`, `runs/*/oracle.json`,
@@ -486,7 +496,8 @@ the box; it is deleted from the box once the series has run.
 `nets_probe_unclear` and `teams_probe_unclear` (a probe failed otherwise: no proof of read-only), `nets_unreadable`,
 `net_sha_mismatch`, `team_unreadable`, `team_sha_mismatch`, `ours_mismatch` (`data/teams/<ours>.txt` at the commit does
 not have the sha256 that `data/teams/index.json` gives for that id), `cpus` (fewer than 3 x 16 + 16),
-`deadline` (no time is left for the series before the watchdog), `oracle_beside_differs` (the series exited 3: the alone-vs-beside check of the first block failed), `oracle_failed`
+`deadline` (no time is left for the series before the watchdog), `wrong_resume` (the resume flag is not yes or
+no), `no_state` (a resumed launch found no saved state of its run), `oracle_beside_differs` (the series exited 3: the alone-vs-beside check of the first block failed), `oracle_failed`
 (any other non-zero exit, or a `series.json` that does not say `done`) and `upload_failed` (an aggregate could not be uploaded; named after the
 series' own refusal). A failure without a refusal is `failed_in_<step>` (`packages`, `checkout`, `build`, `python`,
 `nets`, `teams`, `series`, `upload`), a TERM or INT (the watchdog's shutdown) is `terminated`.
@@ -506,7 +517,9 @@ series' own refusal). A failure without a refusal is `failed_in_<step>` (`packag
    AES256` from stdin and checks the object's length and encryption.
 4. **Launch.** `tools/cloud/aws_fuzz/launch_oracle.sh --campaign preview-mixed --commit <sha of main> --bucket <BUCKET>`
    prints the request, the networks and the team's key; read it. Then the same command with `--i-have-owner-approval`.
-   Without spot capacity for `c7a.16xlarge` (or below the price ceiling) it stops: wait and launch again.
+   Without spot capacity for `c7a.16xlarge` (or below the price ceiling) it stops: wait and launch again. Give
+   `--max-hours` and `--max-price` when they are not the defaults (12 hours, $2.00 an hour). After a spot
+   interruption, launch again with `--resume <run id>`: the series continues from its `state/`.
 5. **Download the results**, after `status.json` says `done`:
    `aws s3 cp s3://<BUCKET>/fuzz/oracle/preview-mixed/<run id>/ <a directory outside the repository> --recursive`.
    `status.json` names any refusal, `equality.json` the alone-vs-beside check, `env.json` the pins. The series is its

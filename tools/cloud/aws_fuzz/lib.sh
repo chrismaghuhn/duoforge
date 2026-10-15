@@ -26,7 +26,10 @@ DF_LADDER_TYPE=c7a.16xlarge
 # are its own (HauptSession, 2026-10-15): caps, not expectations; the fuzz and ladder caps above stay as they are.
 DF_ORACLE_MAX_HOURS_LIMIT=12
 DF_ORACLE_DEFAULT_MAX_HOURS=12
-DF_ORACLE_COST_CAP_USD=20
+# Its price ceiling is a limit of its own, apart from the hours (owner decision 2026-10-15, the default): at most $2.00
+# per instance hour, so at most $24 for 12 hours. The HauptSession may set both at the launch, with the owner.
+DF_ORACLE_DEFAULT_PRICE_USD=2.00
+DF_ORACLE_PRICE_SANITY_USD=10.00 # a guard against a mistyped price only, not a decision
 
 DF_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -157,7 +160,8 @@ df_valid_run_id() { [[ $1 =~ $DF_RUN_ID_RE ]]; }
 # A ladder run: fuzz/ladder/<campaign>/<commit12>-ladder-<launch time>/ (one arm, never resumed: a new launch is a new run).
 DF_LADDER_RUN_ID_RE='^[0-9a-f]{12}-ladder-[0-9]{8}T[0-9]{6}Z$'
 df_valid_ladder_run_id() { [[ $1 =~ $DF_LADDER_RUN_ID_RE ]]; }
-# A preview-oracle run: fuzz/oracle/<campaign>/<commit12>-oracle-<launch time>/ (one series, never resumed).
+# A preview-oracle run: fuzz/oracle/<campaign>/<commit12>-oracle-<launch time>/ (one series; a launch continues it only
+# when told to, launch_oracle.sh --resume <run id>, from its state/).
 DF_ORACLE_RUN_ID_RE='^[0-9a-f]{12}-oracle-[0-9]{8}T[0-9]{6}Z$'
 df_valid_oracle_run_id() { [[ $1 =~ $DF_ORACLE_RUN_ID_RE ]]; }
 
@@ -192,9 +196,9 @@ df_render_ladder_user_data() { # campaign commit bucket max-minutes run-id
 }
 
 # $DF_DIR/oracle_user_data.sh with its placeholders filled; every value is validated before it gets here.
-df_render_oracle_user_data() { # campaign commit bucket max-minutes run-id
+df_render_oracle_user_data() { # campaign commit bucket max-minutes run-id resume(yes|no)
     sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" \
-        -e "s|@RUN_ID@|$5|g" "$DF_DIR/oracle_user_data.sh"
+        -e "s|@RUN_ID@|$5|g" -e "s|@RESUME@|${6:-no}|g" "$DF_DIR/oracle_user_data.sh"
 }
 
 # $DF_DIR/user_data.sh with its placeholders filled; every value is validated before it gets here.
@@ -204,29 +208,33 @@ df_render_user_data() { # campaign commit bucket max-minutes run-id resume(yes|n
 }
 
 # The price ceiling per instance hour that keeps the campaign under the cost cap: cap / hours (two decimals). The cap is
-# DF_COST_CAP_USD unless given (a preview-oracle campaign: DF_ORACLE_COST_CAP_USD).
+# DF_COST_CAP_USD unless given (a preview-oracle campaign gives its price per hour itself: --max-price).
 df_max_price() { # hours [cap]
     awk -v cap="${2:-$DF_COST_CAP_USD}" -v h="$1" 'BEGIN { printf "%.2f", cap / h }'
 }
 
-# The cost cap of a purpose: oracle has its own, fuzz and ladder share DF_COST_CAP_USD.
+# The cost cap of fuzz and ladder: DF_COST_CAP_USD (a preview-oracle campaign gives its price ceiling itself).
 df_cost_cap() { # purpose
     case $1 in
         fuzz | ladder) printf '%s' "$DF_COST_CAP_USD" ;;
-        oracle) printf '%s' "$DF_ORACLE_COST_CAP_USD" ;;
-        *) df_die "purpose '$1' is not fuzz, ladder or oracle" ;;
+        *) df_die "purpose '$1' has no cost cap here: fuzz or ladder (oracle gives its price per hour)" ;;
     esac
 }
 
 # Fills DF_RUN_ARGS with the arguments of `aws ec2 run-instances` (without --dry-run): spot, the instance profile, the
 # group, the tags project=duoforge, purpose=<fuzz|ladder|oracle> (default fuzz) and campaign=<id> on the instance, its
 # volume and the spot request, shutdown behaviour terminate, IMDSv2 only, a gp3 root volume that goes with the instance.
-# The price ceiling is the purpose's cost cap over the hours (df_cost_cap).
-df_build_run_args() { # ami type subnet sg campaign max-hours user-data [purpose]
+# The price ceiling is the purpose's cost cap over the hours (df_cost_cap); a preview-oracle campaign gives it (price).
+df_build_run_args() { # ami type subnet sg campaign max-hours user-data [purpose] [price]
     local ami=$1 type=$2 subnet=$3 sg=$4 campaign=$5 hours=$6 userdata=$7 purpose=${8:-fuzz} tags price cap
     case $purpose in fuzz | ladder | oracle) ;; *) df_die "purpose '$purpose' is not fuzz, ladder or oracle" ;; esac
-    cap=$(df_cost_cap "$purpose")
-    price=$(df_max_price "$hours" "$cap")
+    if [ "$purpose" = oracle ]; then
+        price=${9:-}
+        [[ $price =~ ^[0-9]+\.[0-9]{2}$ ]] || df_die "internal error: the oracle's price ceiling '$price' is not given"
+    else
+        cap=$(df_cost_cap "$purpose")
+        price=$(df_max_price "$hours" "$cap")
+    fi
     tags="Tags=[{Key=project,Value=duoforge},{Key=purpose,Value=$purpose},{Key=campaign,Value=$campaign}]"
     DF_RUN_ARGS=(
         --image-id "$ami"

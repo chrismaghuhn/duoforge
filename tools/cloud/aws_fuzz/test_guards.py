@@ -1580,7 +1580,7 @@ FOE_TEAM = 'e1060cf46a8f30bc3e56ad6fb1e038a9ed3dafd47a9ec9913b8399542320c281'  #
 ORACLE_REFUSALS = ('nets_writable', 'nets_probe_unclear', 'teams_writable', 'teams_probe_unclear', 'nets_unreadable',
                    'net_sha_mismatch', 'team_unreadable', 'team_sha_mismatch', 'ours_mismatch', 'wrong_commit', 'wrong_run',
                    'no_campaign', 'bad_conf', 'build', 'python_env', 'cpus', 'deadline', 'oracle_beside_differs',
-                   'oracle_failed', 'upload_failed')
+                   'oracle_failed', 'upload_failed', 'wrong_resume', 'no_state')
 
 
 @unittest.skipIf(BASH is None, 'bash is not on the PATH')
@@ -1602,12 +1602,14 @@ class OracleLaunch(unittest.TestCase):
         self.assertEqual(r.stdout.count('--instance-type c7a.16xlarge'), 1)
         self.assertEqual(len(re.findall(r'Key=purpose\\?,Value=oracle', r.stdout)), 3)  # printf %q escapes the commas
         self.assertIn('s3://my-fuzz-bucket/fuzz/oracle/preview-mixed/' + SHA[:12] + '-oracle-', r.stdout)
-        run_id = re.search(r'^run id +(\S+)$', r.stdout, re.M).group(1)
+        run_id = re.search(r'^run id +(\S+) ', r.stdout, re.M).group(1)
         self.assertRegex(run_id, r'^[0-9a-f]{12}-oracle-[0-9]{8}T[0-9]{6}Z$')
         self.assertIn('                ' + BC6, r.stdout)  # the network, by its sha256
         self.assertIn('s3://my-fuzz-bucket/teams/%s.txt' % FOE_TEAM, r.stdout)  # the foe team, by its key only
-        self.assertIn('MaxPrice=1.67', r.stdout)  # 20 / 12
+        self.assertIn('MaxPrice=2.00', r.stdout)  # the owner's default: at most $2.00 an hour
         self.assertIn('shutdown -h +720', r.stdout)  # the default: 12 hours
+        self.assertIn('at most $24.00 for the run (12 x $2.00)', r.stdout)
+        self.assertIn('a new series; to continue it later: --resume ' + run_id, r.stdout)
         self.assertEqual(self.real_launches(), [])
         self.assertFalse([c for c in self.calls() if ' create-' in c or ' put-' in c or ' s3 ' in ' ' + c
                           or ' s3api ' in ' ' + c])
@@ -1618,7 +1620,7 @@ class OracleLaunch(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn('launched i-0abc123', r.stdout)
         (call,) = self.real_launches()
-        for needle in ('--instance-type c7a.16xlarge', 'MarketType=spot', 'MaxPrice=1.67', 'Name=duoforge-fuzz',
+        for needle in ('--instance-type c7a.16xlarge', 'MarketType=spot', 'MaxPrice=2.00', 'Name=duoforge-fuzz',
                        'HttpTokens=required', '--instance-initiated-shutdown-behavior terminate',
                        'InstanceInterruptionBehavior=terminate', '--security-group-ids sg-0abc123'):
             self.assertIn(needle, call)
@@ -1641,7 +1643,14 @@ class OracleLaunch(unittest.TestCase):
                  ({}, ORACLE + ('--max-hours', '0'), 'between 1 and 12'),
                  ({}, ORACLE + ('--max-hours', '1.5'), 'not a whole number'),
                  ({}, ORACLE + ('--types', 'c6a.16xlarge'), 'unknown argument'),
-                 ({}, ORACLE + ('--resume', 'x'), 'unknown argument'),
+                 ({}, ORACLE + ('--resume', 'x'), 'is not a run id'),
+                 ({}, ORACLE + ('--resume', 'b' * 12 + '-oracle-20261015T030000Z'), 'another commit'),
+                 ({}, ORACLE + ('--resume', SHA[:12] + '-ladder-20261015T030000Z'), 'is not a run id'),
+                 ({}, ORACLE + ('--max-price', '2'), 'two decimals'),
+                 ({}, ORACLE + ('--max-price', '2.5'), 'two decimals'),
+                 ({}, ORACLE + ('--max-price', '0.00'), 'above 0'),
+                 ({}, ORACLE + ('--max-price', '10.01'), 'at most 10.00'),
+                 ({}, ORACLE + ('--max-price', '1e3'), 'two decimals'),
                  ({}, ('--campaign', 'ladder-equal-2e', '--commit', SHA, '--bucket', 'my-fuzz-bucket'),
                   'not a valid preview-oracle campaign'),
                  ({}, ('--campaign', 'weather-sand-snow', '--commit', SHA, '--bucket', 'my-fuzz-bucket'),
@@ -1660,25 +1669,44 @@ class OracleLaunch(unittest.TestCase):
                 self.assertIn(message, r.stderr)
                 self.assertEqual(self.real_launches(), [])
                 self.assertNotIn(ACCOUNT, r.stdout + r.stderr)
-        for hours, minutes, price in (('12', 720, '1.67'), ('1', 60, '20.00'), ('4', 240, '5.00')):
-            with self.subTest(hours=hours):
-                r = self.run_script('launch_oracle.sh', *ORACLE, '--max-hours', hours)
+        # The hours and the price per hour are limits of their own (owner decision 2026-10-15): the price does not follow
+        # the hours, and the HauptSession may set both.
+        for hours, minutes, price, total in (('12', 720, None, '24.00'), ('1', 60, None, '2.00'),
+                                             ('8', 480, '2.50', '20.00'), ('12', 720, '1.50', '18.00')):
+            with self.subTest(hours=hours, price=price):
+                extra = ('--max-hours', hours) + (('--max-price', price) if price else ())
+                r = self.run_script('launch_oracle.sh', *ORACLE, *extra)
                 self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
                 self.assertIn('shutdown -h +%d' % minutes, r.stdout)
-                self.assertIn('MaxPrice=%s' % price, r.stdout)
+                self.assertIn('MaxPrice=%s' % (price or '2.00'), r.stdout)
+                self.assertIn('at most $%s for the run' % total, r.stdout)
+
+    def test_a_resumed_launch_keeps_the_run_and_tells_the_box(self):
+        run = SHA[:12] + '-oracle-20261015T030000Z'
+        r = self.run_script('launch_oracle.sh', *ORACLE, '--resume', run)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('run id        %s (resumes that series from its state/' % run, r.stdout)
+        self.assertIn('s3://my-fuzz-bucket/fuzz/oracle/preview-mixed/%s/' % run, r.stdout)
+        self.assertEqual(self.real_launches(), [])
+        script = '. %s; df_render_oracle_user_data preview-mixed %s my-fuzz-bucket 720 %s %s'
+        for flag in ('yes', 'no'):
+            with self.subTest(flag=flag):
+                out = subprocess.run([BASH, '-c', script % (shlex.quote(posix(os.path.join(HERE, 'lib.sh'))), SHA, run,
+                                                            flag)], env=self.env, capture_output=True, text=True).stdout
+                self.assertIn("DF_RESUME='%s'" % flag, out)
 
     def test_the_oracle_cap_is_its_own_and_the_ladder_and_fuzz_caps_are_unchanged(self):
-        script = ('. %s; echo "$DF_ORACLE_MAX_HOURS_LIMIT $DF_ORACLE_DEFAULT_MAX_HOURS $DF_ORACLE_COST_CAP_USD '
+        script = ('. %s; echo "$DF_ORACLE_MAX_HOURS_LIMIT $DF_ORACLE_DEFAULT_MAX_HOURS $DF_ORACLE_DEFAULT_PRICE_USD '
                   '$DF_MAX_HOURS_LIMIT $DF_COST_CAP_USD $DF_LADDER_TYPE"; df_max_price 2; echo; df_max_price 12 20; echo; '
-                  'df_cost_cap ladder; df_cost_cap fuzz; df_cost_cap oracle; echo; '
+                  'df_cost_cap ladder; df_cost_cap fuzz; echo; (df_cost_cap oracle) 2> /dev/null || echo no-oracle-cap; '
                   'df_valid_oracle_run_id %s-oracle-20261015T030000Z && echo good; '
                   'df_valid_oracle_run_id %s-ladder-20261015T030000Z || echo bad; '
                   'df_valid_ladder_run_id %s-oracle-20261015T030000Z || echo bad') % (
             shlex.quote(posix(os.path.join(HERE, 'lib.sh'))), SHA[:12], SHA[:12], SHA[:12])
         r = subprocess.run([BASH, '-c', script], env=self.env, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(r.stdout.split('\n'), ['12 12 20 2 10 c7a.16xlarge', '5.00', '1.67', '101020', 'good', 'bad', 'bad',
-                                                ''])
+        self.assertEqual(r.stdout.split('\n'), ['12 12 2.00 2 10 c7a.16xlarge', '5.00', '1.67', '1010', 'no-oracle-cap',
+                                                'good', 'bad', 'bad', ''])
         r = self.run_script('launch_ladder.sh', *LADDER)  # the ladder's request keeps its own price ceiling
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn('MaxPrice=5.00', r.stdout)
@@ -1742,17 +1770,35 @@ class OracleLaunch(unittest.TestCase):
         # ONE command runs the series; preview_series pins its processes itself (no taskset around it).
         series = [l for l in code if '-m duoforge_search.preview_series' in l]
         self.assertEqual(series, ['cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series "${ARGS[@]}" '
-                                  '--parallel 3 --cpus-per-process 16 --deadline-seconds "$DEADLINE" > "$WORK/series.log" '
-                                  '2>&1 && rc=0 || rc=$?'])
+                                  '"${RESUME_ARGS[@]}" --parallel 3 --cpus-per-process 16 --deadline-seconds "$DEADLINE" '
+                                  '> "$WORK/series.log" 2>&1 && rc=0 || rc=$?'])
         # The deadline lies 30 minutes before the watchdog, counted from the box's start.
         self.assertIn('DEADLINE=$((DF_MAX_MINUTES * 60 - ($(date +%s) - BOX_START) - 1800))', text)
         self.assertLess(text.index('BOX_START=$(date +%s)'), text.index('apt-get update'))
-        # The record so far goes up every 10 minutes while the series runs, and the loop is stopped after it.
-        self.assertIn('progress &', text)
-        self.assertIn('kill "$PROGRESS" 2> /dev/null || true', text)
+        # The state goes to state/ after every round (round.txt) and every 10 minutes while the series runs; the loop is
+        # stopped after it and waited for, so that no copy of it is in flight below; the last state is saved too.
+        loop = text[text.index('state_loop() {'):text.index('state_loop &')]
+        self.assertIn('if [ "$OUT/round.txt" -nt "$stamp" ] || [ "$waited" -ge 600 ]; then', loop)
+        self.assertIn("trap 'exit 0' TERM", loop)
+        self.assertIn('save_state || true', loop)
         run = text.index('cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series')
-        self.assertLess(text.index('progress &'), run)
-        self.assertLess(run, text.index('kill "$PROGRESS"'))
+        self.assertLess(text.index('state_loop &'), run)
+        self.assertLess(run, text.index('kill "$STATE_LOOP" 2> /dev/null || true'))
+        self.assertLess(text.index('kill "$STATE_LOOP"'), text.index('wait "$STATE_LOOP"'))
+        self.assertLess(text.index('wait "$STATE_LOOP"'), text.index("save_state || UPLOAD_FAILED=' the state'"))
+        save = text[text.index('save_state() {'):text.index('state_loop() {')]
+        self.assertIn('aws s3 sync "$OUT" "$S3_BASE/state" --only-show-errors "${STATE_FILTERS[@]}"', save)
+        filters = ' '.join(text[text.index('STATE_FILTERS=('):text.index(')', text.index('STATE_FILTERS=('))].split())
+        self.assertEqual(filters, "STATE_FILTERS=(--exclude '*' --include series.json --include round.txt --include "
+                                  "equality.json --include 'matrix/*.json' --include 'runs/*/conditions.json' --include "
+                                  "'runs/*/oracle.json' --include 'runs/*/arms/*.json' --exclude 'runs/*.parts/*' "
+                                  "--exclude '*decision*' --exclude '*.tmp' --exclude 'logs/*'")
+        # A resumed box reads the state of its own run (and only the aggregates), else it refuses
+        resume = text[text.index('if [ "$DF_RESUME" = yes ]; then'):text.index('DEADLINE=')]
+        self.assertIn('aws s3 cp "$S3_BASE/state/" "$OUT/" --recursive --only-show-errors "${STATE_FILTERS[@]}"', resume)
+        self.assertIn('refuse no_state', resume)
+        self.assertIn('RESUME_ARGS=(--resume)', resume)
+        self.assertIn("case $DF_RESUME in yes | no) ;; *) refuse wrong_resume", text)
         # finish() can fail at nothing that skips the shutdown
         finish = text[text.index('finish() {'):text.index('trap finish EXIT')]
         self.assertIn('set +e', finish.splitlines()[2])
@@ -1765,6 +1811,9 @@ class OracleLaunch(unittest.TestCase):
         cps = [l for l in code if re.search(r'\baws s3 cp\b', l)]
         downloads = [l for l in cps if re.search(r'aws s3 cp "s3://\$DF_BUCKET/', l)]
         self.assertEqual(len(downloads), 2, downloads)
+        state_reads = [l for l in cps if 'aws s3 cp "$S3_BASE/state/"' in l]
+        self.assertEqual(len(state_reads), 1, state_reads)
+        cps = [l for l in cps if l not in state_reads]
         self.assertIn('aws s3 cp "s3://$DF_BUCKET/$NETS_KEY_PREFIX/$sha.npz" "$NETS/$sha.npz"', downloads[0])
         self.assertIn('aws s3 cp "s3://$DF_BUCKET/$TEAMS_KEY_PREFIX/$TEAM_SHA.txt" "$TEAM_FILE"', downloads[1])
         uploads = [l for l in cps if l not in downloads]
@@ -1780,11 +1829,6 @@ class OracleLaunch(unittest.TestCase):
                                 '--include \'runs/*/conditions.json\' --include \'runs/*/oracle.json\' '
                                 '--include \'runs/*/arms/*.json\' --exclude \'runs/*.parts/*\' --exclude \'*decision*\' '
                                 '--exclude \'logs/*\' >> "$LOG" 2>&1')
-        progress = text[text.index('progress() {'):text.index('progress &')]
-        self.assertEqual(re.findall(r'aws s3 cp ("[^"]+") ("[^"]+")', progress),
-                         [('"$OUT/series.json"', '"$S3_BASE/progress/series.json"'),
-                          ('"$OUT/matrix"', '"$S3_BASE/progress/matrix"')])
-        self.assertIn("--exclude '*.tmp'", progress)
         for word in ('series.log', 'series-tail', '/logs/', 'tail -n'):
             self.assertFalse([l for l in uploads if word in l], word)
         self.assertNotIn('tail -n 200 "$WORK/series.log"', text)

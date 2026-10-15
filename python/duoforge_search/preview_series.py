@@ -3,13 +3,21 @@ and its final measurement, exactly as docs/benchmarks/2026-10-14-preview-mixed/R
 
     python -m duoforge_search.preview_series --plan preview-mixed-2026-10-14 --checkpoint MAIN --foe-net FOE
         --ours OURS --foe FOE_TEAM --out DIR [--workers 8] [--max-steps 1000] [--parallel 3] [--cpus-per-process 16]
+        [--deadline-seconds S] [--resume]
 
 Each block of the series is one or more runs of `python -m duoforge_search.preview_oracle` (its own process, its own
 log under DIR/logs/). Up to --parallel processes run side by side, process i pinned with taskset to CPUs
 i * --cpus-per-process and up (the AWS box: 3 processes of 16 CPUs, 8 workers each; locally --parallel 1 and no pin).
 The arms a block still lacks are split over the processes, each into a part directory of its own, and merged into the
 run's directory afterwards (the parts' conditions must be the run's, the worker count included); the run's summary is
-then made from the merged arms. Nothing is resumed: DIR must not exist.
+then made from the merged arms. Without --resume, DIR must not exist.
+
+--resume continues a series in DIR (HauptSession, 2026-10-15: after a spot interruption, from the state the box keeps in
+the private bucket) without drawing anything anew: the seeds are the plan's, and every arm file already in a run's
+directory stays and is not played again (part directories of an interrupted block are dropped and their arms played
+again, on the same seeds). The series is then run from its start; its decisions follow from the same arm files, so a
+resumed series ends exactly as an uninterrupted one. DIR/round.txt names the last round finished (written after each
+round and at the end): the box saves the state when it changes.
 
 The first block is the check "alone against beside" (HauptSession, 2026-10-15): the cell (today, drawn) is played
 alone, then again beside two other cells of the first row; every field of the two arm files but the timing ones must be
@@ -103,6 +111,11 @@ class Series:
                        "cpus_per_process": args.cpus_per_process, "status": "running", "blocks": [], "rounds": []}
         self.counter = 0
         self.started = time.monotonic()
+        if args.resume:  # the earlier launches' record stays, and their logs keep their numbers
+            old = oracle.ladder._load_json(os.path.join(self.out, "series.json"))
+            self.record["launches"] = old.get("launches", []) + [{k: old.get(k) for k in (
+                "status", "reason", "message", "blocks", "rounds", "equality")}]
+            self.counter = len(os.listdir(os.path.join(self.out, "logs")))
         self.longest = 0.0  # the longest batch so far: a batch starts only if one as long would end before the deadline
 
     # ----------------------------------------------------------------------------------------------- the runs
@@ -185,7 +198,9 @@ class Series:
                 part = os.path.join(run_dir + ".parts", f"{self.counter:04d}")
                 jobs.append((part, [*args, "--arms", ",".join(group)]))
                 parts.append((run_dir, part))
-        if not jobs:
+        if not jobs:  # nothing to play (a resumed series): the summaries are made again from the arms
+            for run_dir, _, _ in runs:
+                oracle.summarize(run_dir)
             return 0.0
         seconds = 0.0
         for i in range(0, len(jobs), self.args.parallel):  # at most --parallel processes at once
@@ -250,10 +265,10 @@ class Series:
     def fill(self, name, rows, columns):
         return self.play(name, [(self.row_dir(r), self.row_args(r), columns) for r in rows])
 
-    def matrix(self, rows, name, previous=None):
+    def matrix(self, rows, columns, name, previous=None):
         os.makedirs(os.path.join(self.out, "matrix"), exist_ok=True)
         path = os.path.join(self.out, "matrix", f"{name}.json")
-        argv = ["matrix", *[self.row_dir(r) for r in rows], "--out", path]
+        argv = ["matrix", *[self.row_dir(r) for r in rows], "--out", path, "--columns", ",".join(columns)]
         if previous:
             argv += ["--previous", os.path.join(self.out, "matrix", f"{previous}.json")]
         with open(os.devnull, "w") as quiet:
@@ -288,11 +303,12 @@ class Series:
         rows, columns = list(p["start_rows"]), list(p["start_columns"])
         started = time.perf_counter()
         self.fill("cells-start", rows, columns)
-        m, name, why = self.matrix(rows, "m0"), "m0", None
+        m, name, why = self.matrix(rows, columns, "m0"), "m0", None
         self.record["rounds"].append({"round": 0, "seconds": time.perf_counter() - started, "rows": list(rows),
                                       "columns": list(columns), "value_points": m["value_points"],
                                       "our_mix": m["our_mix_text"], "foe_mix": m["foe_mix_text"]})
         self.save()
+        self.mark("0")
         for r in range(1, p["rounds"] + 1):
             started = time.perf_counter()
             seed_foe, seed_ours = p["screen_seed"] + 2 * (r - 1), p["screen_seed"] + 2 * (r - 1) + 1
@@ -315,13 +331,14 @@ class Series:
                 self.record["rounds"].append(entry)
                 break
             self.fill(f"cells-r{r}", targets, columns)
-            m, name = self.matrix(rows, f"m{r}", previous=name), f"m{r}"
+            m, name = self.matrix(rows, columns, f"m{r}", previous=name), f"m{r}"
             gap = Fraction(m["previous"]["gap_exact"])
             entry.update(seconds=time.perf_counter() - started, new=new,
                          rows=list(rows), columns=list(columns), gap_points=m["previous"]["gap_points"],
                          value_points=m["value_points"], our_mix=m["our_mix_text"], foe_mix=m["foe_mix_text"])
             self.record["rounds"].append(entry)
             self.save()
+            self.mark(str(r))
             if gap < p["gap_stop"]:
                 why = f"round {r}: gap {m['previous']['gap_points']:.2f} points, below {float(p['gap_stop']) * 100:g}"
                 break
@@ -348,6 +365,7 @@ class Series:
         self.record["final"] = {"answers": top, "seconds": time.perf_counter() - started, **self.compare(top)}
         self.record["status"] = "done"
         self.save()
+        self.mark("done")
 
     def compare(self, top):
         """The predeclared numbers (README "What is reported"), paired over the final seed's game pairs, after the
@@ -422,11 +440,38 @@ class Series:
                 "exploitability_minus_candidate": pd(mix_drawn - mix_best, c_drawn - c_answer)},
         }
 
+    def mark(self, text):
+        """DIR/round.txt: the last round finished ("0" the start matrix, "done" the end); the box saves the state when
+        it changes."""
+        path = os.path.join(self.out, "round.txt")
+        with open(path + ".tmp", "w", encoding="utf-8") as f:
+            f.write(text + "\n")
+        os.replace(path + ".tmp", path)
+
     def save(self):
         path = os.path.join(self.out, "series.json")
         with open(path + ".tmp", "w", encoding="utf-8") as f:
             json.dump(oracle._finite(self.record), f, indent=1, allow_nan=False)
         os.replace(path + ".tmp", path)
+
+
+def check_resume(args):
+    """SystemExit unless --out holds a series of this plan, worker count and process count that is not done; then its
+    part directories (of an interrupted block, never merged) are dropped."""
+    path = os.path.join(args.out, "series.json")
+    if not os.path.isfile(path):
+        raise SystemExit(f"--resume: {args.out} holds no series.json")
+    old = oracle.ladder._load_json(path)
+    for key in ("plan", "workers", "parallel", "cpus_per_process"):
+        if old.get(key) != getattr(args, key):
+            raise SystemExit(f"--resume: the series in {args.out} has {key}={old.get(key)!r}, not {getattr(args, key)!r}")
+    if old.get("status") == "done":
+        raise SystemExit(f"--resume: the series in {args.out} is done")
+    os.makedirs(os.path.join(args.out, "logs"), exist_ok=True)
+    runs = os.path.join(args.out, "runs")
+    for name in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
+        if name.endswith(".parts"):
+            shutil.rmtree(os.path.join(runs, name))
 
 
 def parser():
@@ -436,13 +481,15 @@ def parser():
     p.add_argument("--foe-net", required=True)
     p.add_argument("--ours", required=True)
     p.add_argument("--foe", required=True)
-    p.add_argument("--out", required=True, help="the series' directory, outside the repository; must not exist")
+    p.add_argument("--out", required=True, help="the series' directory, outside the repository; must not exist "
+                                                "unless --resume")
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--max-steps", type=int, default=1000)
     p.add_argument("--parallel", type=int, default=1, help="processes side by side (the AWS box: 3)")
     p.add_argument("--cpus-per-process", type=int, default=0, help="pin process i to CPUs i*N.. with taskset (0: none)")
     p.add_argument("--deadline-seconds", type=int, default=0,
-                   help="refuse a block that would start this long after the series began (0: none)")
+                   help="refuse a batch that could end this long after the series began (0: none)")
+    p.add_argument("--resume", action="store_true", help="continue the series in --out (nothing is drawn anew)")
     return p
 
 
@@ -453,8 +500,8 @@ def main(argv=None):
         refuse_repository(args.out)
     except ValueError:
         raise SystemExit(f"--out {args.out} is inside the repository (AGENTS.md)") from None
-    if os.path.exists(args.out):
-        raise SystemExit(f"--out {args.out} exists: a series is never resumed")
+    if not args.resume and os.path.exists(args.out):
+        raise SystemExit(f"--out {args.out} exists: give --resume to continue the series there")
     if not 1 <= args.parallel <= 3:
         raise SystemExit("--parallel is 1 to 3 (HauptSession: three processes on the AWS box)")
     plan = PLANS[args.plan]
@@ -462,7 +509,10 @@ def main(argv=None):
         raise SystemExit(f"plan {args.plan} fixes --workers {plan['workers']} and --max-steps {plan['max_steps']}")
     if args.cpus_per_process < 0 or args.deadline_seconds < 0:
         raise SystemExit("--cpus-per-process and --deadline-seconds are not negative")
-    os.makedirs(os.path.join(args.out, "logs"))
+    if args.resume:
+        check_resume(args)
+    else:
+        os.makedirs(os.path.join(args.out, "logs"))
     series = Series(args, PLANS[args.plan])
     series.save()
     try:

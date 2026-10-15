@@ -22,9 +22,10 @@ class Fake:
     """A stand-in for `python -m duoforge_search.preview_oracle`: from its arguments it writes conditions.json and an
     arm file per arm, our per-game scores from value(our, foe) (a mix's value is its weighted mean)."""
 
-    def __init__(self, value, beside_differs=False, fail=None, workers=None, dirty=False):
+    def __init__(self, value, beside_differs=False, fail=None, workers=None, dirty=False, interrupt=None):
         self.value, self.beside_differs, self.fail, self.workers = value, beside_differs, fail, workers
         self.calls, self.events, self.dirty = [], [], dirty  # events: ("start"|"wait", process number)
+        self.interrupt, self.seen = interrupt, 0  # interrupt: the seed whose second process dies (a spot interruption)
 
     def __call__(self, cmd, log_path, env):
         with open(log_path, "w", encoding="utf-8") as f:
@@ -35,6 +36,10 @@ class Fake:
         pairs, seed = int(opt("--pairs")), opt("--seed")
         if self.fail and self.fail in arms:
             return Done(1, self)
+        if self.interrupt and seed == self.interrupt:
+            self.seen += 1
+            if self.seen == 2:
+                return Done(1, self)
         games = 2 * pairs
         our_arm, our_mix, foe_mix = opt("--our-arm"), opt("--our-mix"), opt("--foe-mix")
         workers = self.workers if self.workers is not None else int(opt("--workers"))
@@ -203,7 +208,7 @@ class SeriesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             base = ["--plan", "preview-mixed-2026-10-14", "--checkpoint", "c", "--foe-net", "c", "--ours", "o",
                     "--foe", "f"]
-            with self.assertRaisesRegex(SystemExit, "never resumed"):
+            with self.assertRaisesRegex(SystemExit, "give --resume"):
                 series.main(base + ["--out", tmp])
             with self.assertRaisesRegex(SystemExit, "1 to 3"):
                 series.main(base + ["--out", os.path.join(tmp, "x"), "--parallel", "4"])
@@ -265,7 +270,10 @@ class SeriesTest(unittest.TestCase):
             def save(self):
                 pass
 
-            def matrix(self, rows, name, previous=None):
+            def mark(self, text):
+                pass
+
+            def matrix(self, rows, columns, name, previous=None):
                 out = {"value_points": 50.0, "our_mix_text": "today:1", "foe_mix_text": "drawn:1"}
                 if previous:
                     gap = self.gaps.pop(0)
@@ -323,6 +331,79 @@ class SeriesTest(unittest.TestCase):
             code, record, _ = self.run_series(Fake(table()), deadline=60)
         self.assertEqual((code, record["reason"]), (series.FAILED_EXIT, "deadline"))
         self.assertEqual(record["blocks"], [])  # no block started after the deadline
+
+    def series_in(self, out, fake, resume=False):
+        argv = ["--plan", "preview-mixed-2026-10-14", "--checkpoint", "n/c.npz", "--foe-net", "n/c.npz", "--ours",
+                "data/teams/A.txt", "--foe", "t/f.txt", "--out", out, "--parallel", "3", "--cpus-per-process", "16"]
+        with mock.patch.object(series, "_start", fake), mock.patch("sys.stdout"):
+            code = series.main(argv + (["--resume"] if resume else []))
+        with open(os.path.join(out, "series.json"), encoding="utf-8") as f:
+            return code, json.load(f)
+
+    def test_a_series_interrupted_after_a_round_and_resumed_ends_as_an_uninterrupted_one(self):
+        # A spot interruption, simulated: the box dies in a block (its processes fail), the state is kept, a new launch
+        # resumes. Same seeds, the finished arms are not played again, and the end is exactly the uninterrupted one's.
+        extra = {("01|23", f): 0.8 for f in ("drawn", "15|23", "12|35")}
+        extra.update({("01|23", "45|23"): 0.05, ("today", "45|23"): 0.9, ("23|04", "45|23"): 0.9})
+        value = table(extra=extra)
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(__import__("shutil").rmtree, tmp, True)
+        whole = os.path.join(tmp, "whole")
+        code, reference = self.series_in(whole, Fake(value))
+        self.assertEqual(code, 0, reference)
+        for seed in ("0x2026101300000466", "0x202610130000046d"):  # in round 1's second screen, in the final screen
+            with self.subTest(seed=seed):
+                out = os.path.join(tmp, "cut-" + seed[-3:])
+                first = Fake(value, interrupt=seed)
+                code, record = self.series_in(out, first)
+                self.assertEqual((code, record["reason"]), (series.FAILED_EXIT, "oracle_failed"))
+                runs = os.path.join(out, "runs")
+                kept = {(d, a) for d in os.listdir(runs) if not d.endswith(".parts")
+                        for a in series.done_arms(os.path.join(runs, d))}
+                second = Fake(value)
+                code, record = self.series_in(out, second, resume=True)
+                self.assertEqual(code, 0, record)
+                self.assertEqual(record["launches"][0]["reason"], "oracle_failed")
+                for key in ("stop", "final_mix", "final_matrix"):
+                    self.assertEqual(record[key], reference[key], key)
+                self.assertEqual({k: v for k, v in record["final"].items() if k != "seconds"},
+                                 {k: v for k, v in reference["final"].items() if k != "seconds"})
+                self.assertEqual([{k: v for k, v in r.items() if k != "seconds"} for r in record["rounds"]],
+                                 [{k: v for k, v in r.items() if k != "seconds"} for r in reference["rounds"]])
+                for sub in ("matrix", "runs"):
+                    for root, _, files in os.walk(os.path.join(whole, sub)):
+                        for name in files:
+                            if not name.endswith(".json"):
+                                continue
+                            rel = os.path.relpath(os.path.join(root, name), whole)
+                            with open(os.path.join(whole, rel), encoding="utf-8") as a, \
+                                    open(os.path.join(out, rel), encoding="utf-8") as b:
+                                self.assertEqual(json.load(a), json.load(b), rel)
+                # no arm kept from before the interruption is played again
+                played = {(os.path.basename(os.path.dirname(c[c.index("--out") + 1]))[:-len(".parts")], arm)
+                          for c in second.calls for arm in c[c.index("--arms") + 1].split(",")}
+                self.assertTrue(kept)
+                self.assertFalse(played & kept)
+                self.assertFalse([d for d in os.listdir(os.path.join(out, "runs")) if d.endswith(".parts")])
+
+    def test_resume_refuses_another_series_or_a_finished_one(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(__import__("shutil").rmtree, tmp, True)
+        out = os.path.join(tmp, "s")
+        code, _ = self.series_in(out, Fake(table()))
+        self.assertEqual(code, 0)
+        with self.assertRaisesRegex(SystemExit, "is done"):
+            self.series_in(out, Fake(table()), resume=True)
+        with self.assertRaisesRegex(SystemExit, "holds no series.json"):
+            self.series_in(os.path.join(tmp, "empty"), Fake(table()), resume=True)
+        with self.assertRaisesRegex(SystemExit, "give --resume"):
+            self.series_in(out, Fake(table()))
+        with open(os.path.join(out, "series.json"), encoding="utf-8") as f:
+            record = json.load(f)
+        with open(os.path.join(out, "series.json"), "w", encoding="utf-8") as f:
+            json.dump(dict(record, status="refused", parallel=1), f)
+        with self.assertRaisesRegex(SystemExit, "parallel=1, not 3"):
+            self.series_in(out, Fake(table()), resume=True)
 
     def test_a_batch_starts_only_if_one_as_long_as_the_longest_ends_before_the_deadline(self):
         args = series.parser().parse_args(["--plan", "preview-mixed-2026-10-14", "--checkpoint", "c", "--foe-net", "c",

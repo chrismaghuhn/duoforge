@@ -23,6 +23,7 @@ DF_COMMIT='@COMMIT@'
 DF_BUCKET='@BUCKET@'
 DF_RUN_ID='@RUN_ID@'
 DF_MAX_MINUTES=@MAX_MINUTES@
+DF_RESUME='@RESUME@' # yes: continue the series of DF_RUN_ID from its saved state (launch_oracle.sh --resume); no: a new one
 DF_REGION=eu-central-1
 DF_REPO_URL=https://github.com/chrismaghuhn/duoforge.git
 DF_PROCESSES=3 # preview_series --parallel
@@ -40,6 +41,7 @@ STATUS=failed
 REASON=unknown
 STEP=packages
 BOX_START=$(date +%s)
+BOX_TIME=$(date -u +%Y%m%dT%H%M%SZ)
 mkdir -p "$WORK"
 : > "$LOG"
 
@@ -56,6 +58,7 @@ finish() {
     if command -v aws > /dev/null 2>&1; then
         aws s3 cp "$WORK/status.json" "$S3_BASE/status.json" --only-show-errors || true
         aws s3 cp "$LOG" "$S3_BASE/log/box.log" --only-show-errors || true
+        aws s3 cp "$LOG" "$S3_BASE/log/box-$BOX_TIME.log" --only-show-errors || true # each launch's
     fi
     shutdown -h now
 }
@@ -87,6 +90,7 @@ git -C "$REPO" fetch -q --depth 1 origin "$DF_COMMIT"
 git -C "$REPO" checkout -q --detach FETCH_HEAD
 [ "$(git -C "$REPO" rev-parse HEAD)" = "$DF_COMMIT" ] || refuse wrong_commit "the checkout is not at $DF_COMMIT"
 case $DF_RUN_ID in "${DF_COMMIT:0:12}-oracle-"*) ;; *) refuse wrong_run "run $DF_RUN_ID is not of $DF_COMMIT" ;; esac
+case $DF_RESUME in yes | no) ;; *) refuse wrong_resume "resume is '$DF_RESUME', not yes or no" ;; esac
 TOOLS="$REPO/tools/cloud/aws_fuzz"
 . "$TOOLS/ladder_box_lib.sh"
 CONF="$TOOLS/campaigns/$DF_CAMPAIGN/campaign.conf"
@@ -187,31 +191,54 @@ json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu"
           open(out, "w"), indent=1)
 PY
 aws s3 cp "$WORK/env.json" "$S3_BASE/env.json" --only-show-errors
+aws s3 cp "$WORK/env.json" "$S3_BASE/log/env-$BOX_TIME.json" --only-show-errors # each launch's, a resumed one too
 
 # --- the series: one command; preview_series pins its processes itself (taskset, process i on CPUs 16i to 16i+15).
 # Its deadline lies 30 minutes before the watchdog, so that it stops itself (refused: deadline) and its aggregates
-# still go up; while it runs, series.json and matrix/ go up to progress/ every 10 minutes (a spot interruption keeps
-# the record; a copy still in flight at the end can never overwrite the final keys).
+# still go up. Its state (the aggregates so far) goes to state/ after every round (round.txt changes) and every 10
+# minutes: a launch with --resume <run id> continues the series from there after a spot interruption, drawing nothing
+# anew (HauptSession, 2026-10-15). The state is the aggregates: never a network, the team file, a decision file, a part
+# directory or a log.
 OUT="$WORK/out"
 list=$(python3 "$TOOLS/oracle_conf.py" argv "$CONF" "$NETS" "$TEAMS" "$OUT") || refuse bad_conf 'oracle_conf.py argv'
 mapfile -t ARGS <<< "$list"
+STATE_FILTERS=(--exclude '*' --include series.json --include round.txt --include equality.json --include 'matrix/*.json'
+    --include 'runs/*/conditions.json' --include 'runs/*/oracle.json' --include 'runs/*/arms/*.json'
+    --exclude 'runs/*.parts/*' --exclude '*decision*' --exclude '*.tmp' --exclude 'logs/*')
+RESUME_ARGS=()
+if [ "$DF_RESUME" = yes ]; then
+    mkdir -p "$OUT"
+    aws s3 cp "$S3_BASE/state/" "$OUT/" --recursive --only-show-errors "${STATE_FILTERS[@]}" >> "$LOG" 2>&1 ||
+        refuse no_state "the saved state of $DF_RUN_ID could not be read"
+    [ -f "$OUT/series.json" ] || refuse no_state "the run $DF_RUN_ID has no saved state (state/series.json)"
+    RESUME_ARGS=(--resume)
+    log "resuming the series of $DF_RUN_ID from its saved state"
+fi
 DEADLINE=$((DF_MAX_MINUTES * 60 - ($(date +%s) - BOX_START) - 1800))
 [ "$DEADLINE" -gt 0 ] || refuse deadline "no time is left for the series before the watchdog ($DEADLINE s)"
-log "series: preview_series ${ARGS[*]} --parallel 3 --cpus-per-process 16 --deadline-seconds $DEADLINE"
-progress() { # the record so far, every 10 minutes; a failed copy is tried again next time
-    while sleep 600; do
-        if [ -f "$OUT/series.json" ]; then
-            aws s3 cp "$OUT/series.json" "$S3_BASE/progress/series.json" --only-show-errors >> "$LOG" 2>&1 || true
-        fi
-        if [ -d "$OUT/matrix" ]; then
-            aws s3 cp "$OUT/matrix" "$S3_BASE/progress/matrix" --recursive --only-show-errors --exclude '*.tmp'                 >> "$LOG" 2>&1 || true
+log "series: preview_series ${ARGS[*]} ${RESUME_ARGS[*]} --parallel 3 --cpus-per-process 16 --deadline-seconds $DEADLINE"
+save_state() {
+    aws s3 sync "$OUT" "$S3_BASE/state" --only-show-errors "${STATE_FILTERS[@]}" >> "$LOG" 2>&1
+}
+state_loop() { # after every round (round.txt is newer than the last save) and every 10 minutes; a failed copy is
+    # tried again next time. A TERM waits for a copy in flight (bash runs the trap after the foreground command).
+    local stamp="$WORK/state.stamp" waited=0
+    trap 'exit 0' TERM
+    : > "$stamp"
+    while sleep 30; do
+        waited=$((waited + 30))
+        if [ "$OUT/round.txt" -nt "$stamp" ] || [ "$waited" -ge 600 ]; then
+            touch "$stamp"
+            waited=0
+            save_state || true
         fi
     done
 }
-progress &
-PROGRESS=$!
-cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series "${ARGS[@]}" --parallel 3 --cpus-per-process 16 --deadline-seconds "$DEADLINE" > "$WORK/series.log" 2>&1 && rc=0 || rc=$?
-kill "$PROGRESS" 2> /dev/null || true
+state_loop &
+STATE_LOOP=$!
+cd "$REPO" && "$WORK/venv/bin/python" -u -m duoforge_search.preview_series "${ARGS[@]}" "${RESUME_ARGS[@]}" --parallel 3 --cpus-per-process 16 --deadline-seconds "$DEADLINE" > "$WORK/series.log" 2>&1 && rc=0 || rc=$?
+kill "$STATE_LOOP" 2> /dev/null || true
+wait "$STATE_LOOP" 2> /dev/null || true # no copy of the loop is still in flight below
 log "preview_series exited with $rc"
 rm -f "$TEAM_FILE"
 
@@ -222,6 +249,7 @@ rm -f "$TEAM_FILE"
 STEP=upload
 UPLOAD_FAILED=''
 if [ -d "$OUT" ]; then
+    save_state || UPLOAD_FAILED=' the state' # the last state, for a --resume after a deadline or a failure
     aws s3 cp "$OUT" "$S3_BASE/" --recursive --only-show-errors --exclude '*' --include series.json \
         --include equality.json --include 'matrix/*.json' --include 'runs/*/conditions.json' \
         --include 'runs/*/oracle.json' --include 'runs/*/arms/*.json' --exclude 'runs/*.parts/*' --exclude '*decision*' \
