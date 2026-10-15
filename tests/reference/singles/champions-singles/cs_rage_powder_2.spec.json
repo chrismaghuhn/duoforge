@@ -1,0 +1,147 @@
+{
+ "name": "cs_rage_powder_2",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 84, its battle 23) kept for what its log shows: rage powder.",
+ "data": "pool",
+ "format": "gen9championscustomgame",
+ "seed": "sodium,47fdb61c512c455118e141d17f530e827f16f8a8f4ef0fe86f3268d5626be270",
+ "teams": [
+  "Kingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nSinistcha\nAbility: Hospitality\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Rage Powder\n- Matcha Gotcha\n- Protect\n- Giga Drain\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n\nRillaboom (M)\nAbility: Overgrow\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Protect",
+  "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 2",
+   "p2": "team 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 4"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 5"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p2": "switch 6"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 3",
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 2 1 mega"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 2"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 6"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 1 1"
+  }
+ ]
+}

@@ -1,0 +1,146 @@
+{
+ "name": "cs_reflect_1",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 84, its battle 142) kept for what its log shows: reflect, light screen.",
+ "data": "pool",
+ "format": "gen9championscustomgame",
+ "seed": "sodium,98e39ff24461ba1dbb142b963522036bea6e35195931d5d43112cdda34cb2fa1",
+ "teams": [
+  "Rillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n\nBasculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Psychic\n- Helping Hand\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect",
+  "Rillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n- Dire Claw\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCareful Nature\n- Reflect\n- Light Screen"
+ ],
+ "choices": [
+  {
+   "p1": "team 1",
+   "p2": "team 1"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "switch 5"
+  },
+  {
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 6"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 4 mega",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p2": "switch 6"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p2": "switch 3"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 1"
+  }
+ ]
+}

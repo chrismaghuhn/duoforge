@@ -164,6 +164,91 @@
         "3": {"count": 58976, "sequence_sha256": "02dc745c2d273a3e3b400c1c066078327a3d900903905e42bb2a6f6c79285b45"},
         "4": {"count": 477194301, "sequence_sha256": "bb270dfee48431cd33f2117bba17d98fc14e9e19f87bd2829d3a3009eed142c7"}
       }
+    },
+    {
+      "name": "singles_ac_team_selection",
+      "data_kind": "POOL_SINGLES_DEV",
+      "registry": ["A", "C"],
+      "seed": 2026,
+      "prefix": [],
+      "boundary": "TEAM_SELECTION",
+      "teams": {"registry": ["A", "C"], "sha256": ["4955f90d9f8650ef5e526fec4a2d5853fa1c98910c0a77c85084d9935977852f", "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b"]},
+      "setup_sha256": "111670c4bcf704b95b3df5bcc666066ae041ad2f783fa1e8651305afb6608718",
+      "context_fingerprint": "8c12d2d39a9a7ee6d42dc7d73eed7c85c06903a79945551935c6cf811586d6be",
+      "library_version": "0.45.0",
+      "depths": {
+        "1": {"count": 36, "sequence_sha256": "823c28e0376378c53624a7f5374c9ac7ebb872bb92832246ec8bc2b6722ae26f"},
+        "2": {"count": 3596, "sequence_sha256": "8da0d06895c3f3251bf442885a4f592e677653bd36f3e6c33c8ac733138f0a0a"},
+        "3": {"count": 315474, "sequence_sha256": "6523ef8cfc008cc38d1bf094383a0962cfd0bcf376b1f12b5fc8f904b539e4eb"}
+      }
+    },
+    {
+      "name": "singles_ac_turn1",
+      "data_kind": "POOL_SINGLES_DEV",
+      "registry": ["A", "C"],
+      "seed": 2026,
+      "prefix": [[0, 0]],
+      "boundary": "TURN",
+      "teams": {"registry": ["A", "C"], "sha256": ["4955f90d9f8650ef5e526fec4a2d5853fa1c98910c0a77c85084d9935977852f", "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b"]},
+      "setup_sha256": "111670c4bcf704b95b3df5bcc666066ae041ad2f783fa1e8651305afb6608718",
+      "context_fingerprint": "8c12d2d39a9a7ee6d42dc7d73eed7c85c06903a79945551935c6cf811586d6be",
+      "library_version": "0.45.0",
+      "depths": {
+        "1": {"count": 81, "sequence_sha256": "8d5bd5ab27ed76bd5cfbc07d8519535472eef8f0a79b66fca6efc295b4bd9c1d"},
+        "2": {"count": 6475, "sequence_sha256": "38d3ff64554e1794a0be41d71c9b0ef6276330a85f3ca477c362fb836c9c8bd3"},
+        "3": {"count": 560686, "sequence_sha256": "7acc83c6f819bd6731fad0aae6c24e0e6f5d9d5deacd0828aac4c472d66f3033"}
+      }
+    },
+    {
+      "name": "singles_cb_turn1",
+      "data_kind": "POOL_SINGLES_DEV",
+      "registry": ["C", "B"],
+      "seed": 2026,
+      "prefix": [[0, 0]],
+      "boundary": "TURN",
+      "teams": {"registry": ["C", "B"], "sha256": ["4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b", "d936ae39ba48a382395e79b795ed8fe024370dcf5d72c4a736127219f0ec5300"]},
+      "setup_sha256": "4ca0ddbb3724bd4349daf6c0b279236ebc79afc323bf52b7c5ca1d1de4a470c7",
+      "context_fingerprint": "8c12d2d39a9a7ee6d42dc7d73eed7c85c06903a79945551935c6cf811586d6be",
+      "library_version": "0.45.0",
+      "depths": {
+        "1": {"count": 81, "sequence_sha256": "8d5bd5ab27ed76bd5cfbc07d8519535472eef8f0a79b66fca6efc295b4bd9c1d"},
+        "2": {"count": 6811, "sequence_sha256": "b07da7200a3ef962183dcdb7e73a98b34637a642da1bb102bb8e952c6a0b4841"},
+        "3": {"count": 588650, "sequence_sha256": "84ffa29cac4e1f381eee0ee1e0eacd594d42455ce8380057392c3652759b9afd"}
+      }
+    },
+    {
+      "name": "singles_ac_replacement",
+      "data_kind": "POOL_SINGLES_DEV",
+      "registry": ["A", "C"],
+      "seed": 2026,
+      "prefix": [[0, 0], [0, 1]],
+      "boundary": "REPLACEMENT",
+      "teams": {"registry": ["A", "C"], "sha256": ["4955f90d9f8650ef5e526fec4a2d5853fa1c98910c0a77c85084d9935977852f", "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b"]},
+      "setup_sha256": "111670c4bcf704b95b3df5bcc666066ae041ad2f783fa1e8651305afb6608718",
+      "context_fingerprint": "8c12d2d39a9a7ee6d42dc7d73eed7c85c06903a79945551935c6cf811586d6be",
+      "library_version": "0.45.0",
+      "depths": {
+        "1": {"count": 5, "sequence_sha256": "5957f6ac477d403f641340963ae77284844ad40cccaf47fe3c222553b671e60d"},
+        "2": {"count": 384, "sequence_sha256": "c2fc76be723c2baf062c7d179e8012a175c8348a2c1b236545b504a4a348e773"},
+        "3": {"count": 29498, "sequence_sha256": "936dea4f45ad1328b9fa7faea957bce75e69d3314e152920509b7f4be5c51989"}
+      }
+    },
+    {
+      "name": "singles_ac_pivot",
+      "data_kind": "POOL_SINGLES_DEV",
+      "registry": ["A", "C"],
+      "seed": 2026,
+      "prefix": [[0, 1], [0, 2]],
+      "boundary": "PIVOT",
+      "teams": {"registry": ["A", "C"], "sha256": ["4955f90d9f8650ef5e526fec4a2d5853fa1c98910c0a77c85084d9935977852f", "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b"]},
+      "setup_sha256": "111670c4bcf704b95b3df5bcc666066ae041ad2f783fa1e8651305afb6608718",
+      "context_fingerprint": "8c12d2d39a9a7ee6d42dc7d73eed7c85c06903a79945551935c6cf811586d6be",
+      "library_version": "0.45.0",
+      "depths": {
+        "1": {"count": 5, "sequence_sha256": "fa4897de3eb5fe87e3b3329d88a95e574e1c4f6d470cb242bb0fdc798e9b8f41"},
+        "2": {"count": 392, "sequence_sha256": "6d7fab349d7990deddd7c6b3915cc6af728d7e42dbdc1dece398447bcf85201a"},
+        "3": {"count": 34064, "sequence_sha256": "cecf3b80d79b3ce69e34fa4f8a1e4a5d1d03b42412a7667e32e8f9626621182d"}
+      }
     }
   ]
 }

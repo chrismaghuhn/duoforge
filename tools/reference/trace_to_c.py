@@ -2538,12 +2538,70 @@ def magma_armor_frozen(spec, trace):
                 raise ConversionError('magmaarmor-frozen', 'trace_to_c: a frozen Magma Armor holder: %s' % line, detail=name)
 
 
-SINGLES_FORMATS = ('gen9championsou',)  # decision 0083: the singles formats of the pin a battle may be recorded in
+# decision 0083: the singles formats of the pin a battle may be recorded in. [Gen 9 Champions] Custom Game is the owner's
+# reference for O2 (singles on proven mechanics, no clause); its `debug: true` (config/formats.ts:316-322) reports the exact HP
+# to everyone (sim/battle.ts:227) and adds |debug| lines, so champions_public_hp rewrites its shared lines to the Champions
+# display before anything reads them.
+SINGLES_FORMATS = ('gen9championscustomgame',)
+EXACT_HP_FORMATS = ('gen9championscustomgame',)
 
 
 def spec_singles(spec):
     """True for a battle recorded in a singles format (decision 0083): it runs under DUOFORGE_DATA_KIND_POOL_SINGLES_DEV."""
     return spec.get('format') in SINGLES_FORMATS
+
+
+def champions_hp(hp, maxhp):
+    """The shared HP text of the Champions mod for a Pokemon at hp of maxhp (sim/pokemon.ts:2066-2074, getHealth): the floored
+    percentage, at least 1, with the y/r flag at 20 and the g/y flag at 50."""
+    percentage = (100 * hp) // maxhp or 1
+    text = '%d/100' % percentage
+    if percentage == 20:
+        text += 'y' if hp * 5 > maxhp else 'r'
+    elif percentage == 50:
+        text += 'g' if hp * 2 > maxhp else 'y'
+    return text
+
+
+def champions_public_hp(trace):
+    """A trace of an exact-HP format (EXACT_HP_FORMATS) as the same battle shows without `debug`: every |debug| line dropped,
+    and the shared copy of every split line (the line after the secret one, sim/battle.ts addSplit) with its exact HP text
+    replaced by champions_hp. The secret copies stay exact, as in every format. A copy; the trace is not changed. Only the
+    display changes: `debug` changes no mechanic of the pin, and the format's other option (`battle: {trunc: Math.trunc}`)
+    differs from the default only for values of 2^16 and more at the 16-bit truncations (sim/battle-actions.ts:1841, 1859;
+    sim/battle.ts:2366-2369), which no level 50 battle reaches."""
+    out = copy.deepcopy(trace)
+
+    def shared(line):
+        parts = line.split('|')
+        field = 4 if len(parts) > 4 and parts[1] in ('switch', 'drag') else 3
+        if len(parts) <= field or parts[1] not in ('switch', 'drag', '-damage', '-heal', '-sethp'):
+            return line
+        words = parts[field].split(' ')
+        m = re.match(r'^(\d+)/(\d+)$', words[0])
+        if m and words[0] != '0':
+            words[0] = champions_hp(int(m.group(1)), int(m.group(2)))
+            parts[field] = ' '.join(words)
+        return '|'.join(parts)
+
+    def rewrite(log):
+        lines = [l for l in log if not l.startswith('|debug|')]
+        res = []
+        i = 0
+        while i < len(lines):
+            res.append(lines[i])
+            if lines[i].startswith('|split|') and i + 2 < len(lines):
+                res.append(lines[i + 1])
+                res.append(shared(lines[i + 2]))
+                i += 3
+                continue
+            i += 1
+        return res
+
+    out['start']['log'] = rewrite(out['start']['log'])
+    for st in out['steps']:
+        st['log'] = rewrite(st['log'])
+    return out
 
 
 def padded_singles(trace):
@@ -2572,6 +2630,8 @@ def convert_battle(name, spec, trace, tables):
     shared arrays; 'dropped' is the number of draws the step dropped.
     Pure: no file IO, and spec and trace are not changed. What the converter
     does not model raises ConversionError."""
+    if spec.get('format') in EXACT_HP_FORMATS:
+        trace = champions_public_hp(trace)
     if spec_singles(spec):
         trace = padded_singles(trace)
     magma_armor_frozen(spec, trace)  # step G77: no frozen Magma Armor holder in the battle (the Update tie is folded on it)

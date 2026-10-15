@@ -1,0 +1,33 @@
+{
+ "about": "The battles of the conformance set champions-singles (decision 0083): tools/reference/tests/test_champions_singles.py",
+ "battles": [
+  "cs_after_you_1",
+  "cs_after_you_2",
+  "cs_ally_switch_1",
+  "cs_ally_switch_2",
+  "cs_aurora_veil_1",
+  "cs_aurora_veil_2",
+  "cs_coaching_1",
+  "cs_coaching_2",
+  "cs_drag_1",
+  "cs_follow_me_1",
+  "cs_heal_pulse_1",
+  "cs_heal_pulse_2",
+  "cs_helping_hand_1",
+  "cs_helping_hand_2",
+  "cs_light_screen_1",
+  "cs_outrage_1",
+  "cs_outrage_2",
+  "cs_pivot_1",
+  "cs_pivot_2",
+  "cs_protect_1",
+  "cs_quash_1",
+  "cs_quash_2",
+  "cs_rage_powder_1",
+  "cs_rage_powder_2",
+  "cs_reflect_1",
+  "cs_reflect_2",
+  "cs_substitute_1",
+  "cs_substitute_2"
+ ]
+}
