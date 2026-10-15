@@ -426,6 +426,18 @@ class CtsTest(unittest.TestCase):
         bad = teams._paste(first.replace("- Spirit Break", "- Snarl"))[0]  # Grimmsnarl does not learn Snarl
         self.assertEqual(cts.setup_issue(self.data, bad), ("engine-setup", None))
 
+    def test_the_setup_check_refuses_zero_stat_points_with_serious(self):
+        """The rule of #406 (#558), verbatim: exactly 0 Stat Points TOGETHER WITH the nature Serious is refused. A drawn
+        set carries no Stat Points (cts._sheet), so a Serious set is refused ("engine-setup") and a set of another
+        nature is accepted; Serious with Stat Points is accepted (data.setup_issue of the parsed member)."""
+        first = teams._paste(FIXTURE["foe_team"].split("\n\n")[0])[0]
+        self.assertEqual(cts.setup_issue(self.data, dict(first, nature="Serious")), ("engine-setup", None))
+        self.assertIsNone(cts.setup_issue(self.data, dict(first, nature="Adamant")))
+        self.assertIsNone(cts.setup_issue(self.data, dict(first, nature="Hardy")))
+        member = self.data.team(teams.to_text([dict(cts._sheet(first, "M"), nature="Serious")]))[0]
+        self.assertEqual(self.data.setup_issue(dict(member, sp=[0] * 6)), ("engine-setup", None))
+        self.assertIsNone(self.data.setup_issue(dict(member, sp=[0, 0, 0, 0, 0, 1])))  # Serious with 1 Stat Point
+
     def test_the_lines_read_the_engines_support(self):
         """#512 S1: the partial-trap moves and the abilities the lines stop on are the engine's (the flag and
         duoforge_data_supported), not hand lists: the five trap moves it plays (Snap Trap is unmarked), Mummy and

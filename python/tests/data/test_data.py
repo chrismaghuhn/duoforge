@@ -133,6 +133,21 @@ class DataTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             data.member_setup_valid(self.pool, np.zeros(2, dtype=_layout.MEMBER_SETUP))
 
+    def test_member_setup_valid_refuses_zero_stat_points_with_serious(self):
+        """The rule of #406 (#558), verbatim: exactly 0 Stat Points TOGETHER WITH the nature Serious is refused. Counter
+        checks: 0 Stat Points with another nature is accepted, and Serious with Stat Points is accepted."""
+        from duoforge import teams
+
+        def member(nature, evs):
+            paste = (f"Garchomp (M) @ Choice Scarf\nAbility: Rough Skin\nLevel: 50\n{evs}{nature} Nature\n"
+                     "- Earthquake\n- Dragon Claw\n- Rock Slide\n- Protect\n")
+            return teams.side_setup(self.pool, teams.parse(paste, "garchomp"), "garchomp")["members"][0]
+        self.assertFalse(data.member_setup_valid(self.pool, member("Serious", "")))  # 0 Stat Points, Serious
+        self.assertTrue(data.member_setup_valid(self.pool, member("Adamant", "")))  # 0 Stat Points, another nature
+        self.assertTrue(data.member_setup_valid(self.pool, member("Hardy", "")))  # 0, another neutral nature
+        self.assertTrue(data.member_setup_valid(self.pool, member("Serious", "EVs: 1 Spe\n")))  # Serious with 1 point
+        self.assertTrue(data.member_setup_valid(self.pool, member("Serious", "EVs: 32 Atk / 2 Def / 32 Spe\n")))
+
     def test_item_ability_nature_and_type_effect(self):
         c = _layout.CONSTANTS
         berry = data.item_static(self.pool, data.find(self.pool, data.TABLE_ITEM, "occaberry"))
