@@ -13,7 +13,8 @@ _Static_assert(DFI_ENC_TAIL5_ATTRACT_SIZE == DFI_ATTRACT_SLOTS, "the Attract byt
 
 bool dfi_context_has_pool_tail(const struct duoforge_context *ctx)
 {
-    return ctx->data_kind == DUOFORGE_DATA_KIND_POOL || ctx->data_kind == DUOFORGE_DATA_KIND_POOL_DEV;
+    return ctx->data_kind == DUOFORGE_DATA_KIND_POOL || ctx->data_kind == DUOFORGE_DATA_KIND_POOL_DEV ||
+           ctx->data_kind == DUOFORGE_DATA_KIND_POOL_SINGLES_DEV;
 }
 
 uint16_t dfi_state_schema_of(const struct duoforge_context *ctx)

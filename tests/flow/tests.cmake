@@ -23,6 +23,7 @@ duoforge_add_test(NAME duoforge.rng.contract SOURCES flow/test_rng_contract.c WH
 duoforge_add_test(NAME duoforge.state.setup SOURCES flow/test_setup.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.state.identity SOURCES flow/test_identity.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.state.invariants SOURCES flow/test_invariants.c WHITEBOX TIER quick AREA flow)
+duoforge_add_test(NAME duoforge.state.singles SOURCES flow/test_singles.c WHITEBOX LIBS duoforge_batch TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.state.setup_sweep SOURCES flow/test_setup_sweep.c TIMEOUT 60 TIER quick AREA flow)
 
 duoforge_add_test(NAME duoforge.state.clone_equal SOURCES flow/test_clone_equal.c WHITEBOX TIER quick AREA flow)

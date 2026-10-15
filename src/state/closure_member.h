@@ -48,7 +48,7 @@ typedef struct dfi_kind_limits {
     bool dev;
 } dfi_kind_limits;
 
-/* Precondition: data_kind is one of the six combat kinds. */
+/* Precondition: data_kind is one of the seven combat kinds. */
 dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind);
 
 /* The damaging self-switch moves: the switch flag that a position gets when the move pivots, and the move. The

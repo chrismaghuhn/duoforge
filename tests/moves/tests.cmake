@@ -34,6 +34,8 @@ duoforge_add_test(NAME duoforge.state.pool_g86 SOURCES moves/test_pool_g86.c WHI
 duoforge_add_test(NAME duoforge.state.pool_g92 SOURCES moves/test_pool_g92.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g90 SOURCES moves/test_pool_g90.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g80 SOURCES moves/test_pool_g80.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA moves)
+# Decision 0083 section 7: Last Respects after Revival Blessing is refused (o2_last_respects_revival continued).
+duoforge_add_test(NAME duoforge.state.last_respects_revival SOURCES moves/test_last_respects_revival.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.

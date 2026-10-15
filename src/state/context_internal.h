@@ -37,7 +37,7 @@ struct duoforge_context {
  * 0009) and _POOL and _POOL_DEV (all of them, decision 0015). Species ids are
  * forme ids and move ids move ids of those tables. */
 bool dfi_context_is_closure(const struct duoforge_context *ctx);
-bool dfi_context_is_pool(const struct duoforge_context *ctx); /* the POOL and POOL_DEV kinds (step G72b) */
+bool dfi_context_is_pool(const struct duoforge_context *ctx); /* the POOL kinds, POOL_SINGLES_DEV too (step G72b) */
 
 /* True for the kinds with the certified profile of decision 0010 (a context
  * of DUOFORGE_MAX_ROSTER and DFI_CLOSURE_BROUGHT_COUNT, exactly
@@ -45,6 +45,15 @@ bool dfi_context_is_pool(const struct duoforge_context *ctx); /* the POOL and PO
  * take it over (decisions 0009 section 3.4 and 0015 section 2). The DEV kinds
  * take brought..max. */
 bool dfi_kind_full_roster(uint32_t data_kind);
+
+/* Singles (decision 0083): DUOFORGE_DATA_KIND_POOL_SINGLES_DEV occupies slot 0 of each side only, brings every
+ * registered member and picks the lead alone at TEAM_SELECTION (the bench follows in roster order, as sim/side.ts
+ * chooseTeam fills a choice of leads only). dfi_context_active is the positions per side the kind occupies (1 or
+ * DUOFORGE_ACTIVE_PER_SIDE), dfi_context_pick_count the picks of a team choice (1 or brought_count). */
+bool dfi_kind_singles(uint32_t data_kind);
+bool dfi_context_singles(const struct duoforge_context *ctx);
+uint32_t dfi_context_active(const struct duoforge_context *ctx);
+uint32_t dfi_context_pick_count(const struct duoforge_context *ctx);
 
 void dfi_context_canonical_bytes(const struct duoforge_context *ctx, uint8_t out[DFI_CONTEXT_BYTES_SIZE]);
 bool dfi_context_fingerprint_matches(const struct duoforge_context *ctx,

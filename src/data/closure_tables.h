@@ -230,6 +230,7 @@
 #define DFI_SIDE_CONDITION_REFLECT 2u
 #define DFI_SIDE_CONDITION_LIGHT_SCREEN 3u
 #define DFI_PSEUDO_WEATHER_TRICK_ROOM 1u
+#define DFI_PSEUDO_WEATHER_GRAVITY 2u
 
 /* Handlers for callbacks that are code in the reference. */
 #define DFI_SPECIAL_NONE 0u
