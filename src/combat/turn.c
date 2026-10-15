@@ -7288,6 +7288,13 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
                 dfi_immune(r, user, 0u);
                 r->mres |= DFI_MRES_FALSE;
             }
+            /* hitStepTryImmunity: Leech Seed's onTryImmunity refuses a Grass source (data/moves.ts:10202-10231), before the
+             * accuracy step, so no accuracy draw (issue 543), as in the move body. */
+            if (md->special == DFI_SPECIAL_LEECH_SEED && hit[0] && dfi_has_type(b, dfi_at(b, user), DFI_TYPE_GRASS)) {
+                hit[0] = false;
+                dfi_immune(r, user, 0u);
+                r->mres |= DFI_MRES_FALSE;
+            }
             if (hit[0]) {
                 st = dfi_accuracy_targets(r, holder, targets, count, hit, md, base_accuracy, acc_compound_eyes, acc_wide_lens, false);
             }
