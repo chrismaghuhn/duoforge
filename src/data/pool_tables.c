@@ -1288,8 +1288,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {5u, 0u, 40u, 100u, 30u, 20u, 9u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Magic Powder -- data/moves.ts:10738-10753  [unmodelled: callback onHit] */
     {14u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* Magic Room -- data/moves.ts:10754-10797  [unmodelled: condition block; pseudo weather magicroom] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Magic Room -- data/moves.ts:10754-10797 */
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 3u, 0u},
     /* Magnetic Flux -- data/moves.ts:10826-10852  [unmodelled: callback onHitSide] */
     {3u, 2u, 0u, 0u, 20u, 20u, 8u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Magnet Rise -- data/moves.ts:10853-10889  [unmodelled: callback onTry; condition block; flag gravity; primary volatile magnetrise] */
@@ -6883,7 +6883,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_LASTRESORT] = "callback onTry",
     [DFI_MOVE_LOCKON] = "callback onHit; callback onTryHit; condition block",
     [DFI_MOVE_MAGICPOWDER] = "callback onHit",
-    [DFI_MOVE_MAGICROOM] = "condition block; pseudo weather magicroom",
     [DFI_MOVE_MAGNETICFLUX] = "callback onHitSide",
     [DFI_MOVE_MAGNETRISE] = "callback onTry; condition block; flag gravity; primary volatile magnetrise",
     [DFI_MOVE_MEANLOOK] = "callback onHit",
@@ -7076,10 +7075,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x08u, 0x60u, 0x30u, 0x7du, 0x87u, 0x27u, 0x3bu, 0x00u,
-    0xadu, 0xf7u, 0x6au, 0xa8u, 0xcbu, 0x35u, 0x20u, 0x9cu,
-    0x55u, 0x7eu, 0xd4u, 0x4du, 0x5au, 0x44u, 0xd1u, 0x77u,
-    0xceu, 0x83u, 0x95u, 0x2cu, 0xdeu, 0x79u, 0xc5u, 0x15u,
+    0xccu, 0xfbu, 0x29u, 0xa8u, 0xc0u, 0x43u, 0x50u, 0xf8u,
+    0x0cu, 0xffu, 0x28u, 0xb2u, 0xd3u, 0x41u, 0x3au, 0xb2u,
+    0x1bu, 0xf0u, 0x3du, 0x89u, 0x85u, 0x1fu, 0xbbu, 0x79u,
+    0x57u, 0x45u, 0x99u, 0x88u, 0xa2u, 0x60u, 0x50u, 0xf0u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

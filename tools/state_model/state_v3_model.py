@@ -312,7 +312,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('0860307d87273b00adf76aa8cb35209c557ed44d5a44d177ce83952cde79c515')
+POOL_TABLE_HASH = bytes.fromhex('ccfb29a8c04350f80cff28b2d3413ab21bf03d89851fbb7957459988a26050f0')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 

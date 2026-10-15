@@ -100,7 +100,7 @@ SIDE_CONDITION = {'tailwind': 1, 'reflect': 2, 'lightscreen': 3}
 # Step G37 (POOL only): the four entry hazards. The values are the DUOFORGE_SIDE_* values of SIDE_START and SIDE_END (Aurora Veil is 4, a
 # handler of its own): Stealth Rock 5, Spikes 6, Toxic Spikes 7, Sticky Web 8. Their moves have the target class foeSide.
 SIDE_CONDITION_P = dict(SIDE_CONDITION, stealthrock=5, spikes=6, toxicspikes=7, stickyweb=8)
-PSEUDO_WEATHER = {'trickroom': 1, 'gravity': 2}  # K4 (#475): Gravity, decision 0015 5dl
+PSEUDO_WEATHER = {'trickroom': 1, 'gravity': 2, 'magicroom': 3}  # K4 (#475): Gravity, decision 0015 5dl; K5: Magic Room, 5dm
 # K4 (#475): the pool moves with the gravity flag (data/moves.ts:1712, 5903, 5942, 8906, 10861). They stay UNMODELLED ('flag
 # gravity') until Gravity's choice disable and onStart removal are built; a new gravity-flagged pool move fails the generator.
 GRAVITY_FLAG_MOVES = frozenset({'bounce', 'fly', 'flyingpress', 'highjumpkick', 'magnetrise'})
@@ -111,6 +111,24 @@ GRAVITY_CONDITION_FACTS = ("duration: 5,", "chainModify([6840, 4096])", "onField
 # K4 (#475): what the condition must NOT contain: no onFieldRestart (sim/field.ts:196-197: the re-use returns false, the timer is
 # not reset) and no `[of]` on its lines (the -fieldstart text is `move: Gravity` alone).
 GRAVITY_CONDITION_ABSENT = ("onFieldRestart", "[of]")
+# K5 (#475, decision 0015 5dm): facts of Magic Room's condition (data/moves.ts:10754-10797, normalized) that the engine implements. The
+# restart removes the room (onFieldRestart), the end line names the setter, the order is 27.6; the Persistent branch (7 turns) is
+# there and no pool ability is Persistent (tests/moves/test_pool_k5.c checks the pool's ability names).
+MAGIC_ROOM_CONDITION_FACTS = ("duration: 5,", "return 5;", "onFieldResidualOrder: 27,", "onFieldResidualSubOrder: 6,",
+                              "this.field.removePseudoWeather('magicroom');",
+                              "this.add('-fieldstart', 'move: Magic Room', `[of] ${source}`);",
+                              "this.add('-fieldend', 'move: Magic Room', '[of] ' + this.effectState.source);",
+                              "this.singleEvent('End', mon.getItem(), mon.itemState, mon);")
+# K5: the pinned lines of the item suppression the engine reproduces (held.h dfi_holds_effect): ignoringItem, hasItem, isGrounded's
+# item, and the two handler gates of the event system (Start, TakeItem and SwitchIn are not gated; the rest of an item's handlers are).
+MAGIC_ROOM_SIM_FACTS = (
+    ('sim/pokemon.ts', "if (this.battle.gen >= 5 && !this.isActive) return true;"),
+    ('sim/pokemon.ts', "if (this.volatiles['embargo'] || this.battle.field.pseudoWeather['magicroom']) return true;"),
+    ('sim/pokemon.ts', "return !this.ignoringItem();"),
+    ('sim/pokemon.ts', "const item = (this.ignoringItem() ? '' : this.item);"),
+    ('sim/battle.ts', "if (eventid !== 'Start' && eventid !== 'TakeItem' && eventid !== 'SetAbility' && effect.effectType === 'Item' &&"),
+    ('sim/battle.ts', "if (eventid !== 'Start' && eventid !== 'SwitchIn' && eventid !== 'TakeItem' &&"),
+)
 STATUS_IMMUNITY = {'brn': 1, 'frz': 2, 'par': 4, 'prankster': 8}
 # Type-chart keys without a consumer in the closure (no poison source, powder
 # move, sandstorm or hail, and no trapping).
@@ -409,6 +427,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for absent in GRAVITY_CONDITION_ABSENT:
             if absent in cond:
                 fail('move gravity: the condition gained %r (data/moves.ts:7754-7842, decision 0015 5dl)' % absent)
+    if pool and mid == 'magicroom':
+        # K5 (#475): the Magic Room condition's facts the engine implements; a change of any of them stops the generator.
+        cond = norm(f['condition'][1]) if 'condition' in f else ''
+        for fact in MAGIC_ROOM_CONDITION_FACTS:
+            if norm(fact) not in cond:
+                fail('move magicroom: the condition lost the pinned fact %r (data/moves.ts:10754-10797, decision 0015 5dm)' % fact)
     if pool and handled[0] == 'SUBSTITUTE':
         for name, text in (('onTryHit', SUBSTITUTE_ONTRYHIT), ('onHit', SUBSTITUTE_ONHIT), ('condition', SUBSTITUTE_CONDITION)):
             if name not in f or norm(f[name][1]) != text:
@@ -966,6 +990,7 @@ def render(d):
 #define DFI_SIDE_CONDITION_LIGHT_SCREEN 3u
 #define DFI_PSEUDO_WEATHER_TRICK_ROOM 1u
 #define DFI_PSEUDO_WEATHER_GRAVITY 2u
+#define DFI_PSEUDO_WEATHER_MAGIC_ROOM 3u
 
 /* Handlers for callbacks that are code in the reference. */
 %s
@@ -4124,6 +4149,12 @@ def check_g61_facts(root, abil_ts, champ_abil):
     start = champ_src.find('afterMoveSecondaryEvent(targets, pokemon, move) {')
     if start < 0 or 'hasSheerForce' in champ_src[start:start + 260]:
         fail('champions afterMoveSecondaryEvent: not the ungated form (Sheer Force must not gate it)')
+def check_k5_facts(root, abil_ts):
+    """Step K5 (#475, decision 0015 5dm): the sim lines of the item suppression (MAGIC_ROOM_SIM_FACTS) are in their files."""
+    for rel, fact in MAGIC_ROOM_SIM_FACTS:
+        src = Source(root, rel, READER_INPUTS if rel in READER_INPUTS else None)
+        if norm(fact) not in norm(chr(10).join(src.lines)):
+            fail('%s: the Magic Room line "%s" is gone' % (rel, fact))
 # Step G57: Magic Bounce is an engine row read by id (src/combat/turn.c, the bounced path of dfi_run_move_body). The turn code
 # hard-codes the pinned callbacks it reproduces: the TryHit priority, the single-target bounce and the side bounce of a
 # foeSide move (data/abilities.ts:2437-2464). Its flags are breakable only: a Mold Breaker attacker would suppress it, and no
@@ -4860,6 +4891,7 @@ def build_pool(root, repo, dx):
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
     check_g61_facts(root, abil_ts, champ_abil)
+    check_k5_facts(root, abil_ts)
     check_g49_facts(items_ts, champ_items)
     check_g59_facts(abil_ts, champ_abil, Source(root, 'sim/pokemon.ts', READER_INPUTS),
                     Source(root, 'data/conditions.ts', READER_INPUTS))
