@@ -1,0 +1,5 @@
+{
+  "full": {"id": 1001, "embed": 64, "member": 128, "position": 128, "hidden": 640, "layers": 3, "parameters": 1802441, "file_max": 4194304, "worker_max": 524288},
+  "small": {"id": 1002, "embed": 32, "member": 64, "position": 64, "hidden": 256, "layers": 2, "parameters": 333769, "file_max": 1048576, "worker_max": 262144},
+  "medium": {"id": 1003, "embed": 48, "member": 96, "position": 96, "hidden": 368, "layers": 3, "parameters": 773193, "file_max": 2097152, "worker_max": 393216}
+}

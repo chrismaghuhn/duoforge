@@ -85,6 +85,7 @@ _SIGNATURES = {
     "duoforge_data_name": (_STATUS, (_P, _U32, _U32, ctypes.POINTER(ctypes.c_char_p))),
     "duoforge_data_find": (_STATUS, (_P, _U32, ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(_U32))),
     "duoforge_data_supported": (_STATUS, (_P, _U32, _U32, ctypes.POINTER(ctypes.c_bool))),
+    "duoforge_data_member_setup_valid": (_STATUS, (_P, _P, ctypes.POINTER(ctypes.c_bool))),
     "duoforge_data_forme_info": (_STATUS, (_P, _U32, _P)),
     "duoforge_data_forme_moves": (_STATUS, (_P, _U32, ctypes.POINTER(_U32), _U32, ctypes.POINTER(_U32))),
     "duoforge_data_mega_count": (_STATUS, (_P, _U32, ctypes.POINTER(_U32))),

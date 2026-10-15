@@ -8,6 +8,7 @@
 #include "codec/state_codec.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
+#include "combat/field/extenders.h"
 
 static int first = 1;
 
@@ -228,6 +229,22 @@ int main(void)
     ENTRY(DFI_HAZARD_SPIKES);
     ENTRY(DFI_HAZARD_TOXIC_SPIKES);
     ENTRY(DFI_HAZARD_STICKY_WEB);
+    /* the durations a field effect starts with and the items that lengthen them (#512 D1: the live tracker folds them) */
+    ENTRY(DFI_FIELD_TURNS_MAX);
+    ENTRY(DFI_FIELD_TURNS_EXTENDED_MAX);
+    ENTRY(DFI_SCREEN_TURNS);
+    ENTRY(DFI_SCREEN_TURNS_MAX);
+    ENTRY(DFI_TAILWIND_TURNS_MAX);
+    ENTRY(DFI_STALL_DURATION);
+    ENTRY(DFI_STALL_LEVEL_MAX);
+    ENTRY(DFI_ALLY_SWITCH_LEVEL_MAX);
+    ENTRY(DFI_ALLY_SWITCH_TURNS_MAX);
+    ENTRY(DFI_WEATHER_ROCK_RAIN);
+    ENTRY(DFI_WEATHER_ROCK_SUN);
+    ENTRY(DFI_WEATHER_ROCK_SAND);
+    ENTRY(DFI_WEATHER_ROCK_SNOW);
+    ENTRY(DFI_TERRAIN_EXTENDER);
+    ENTRY(DFI_SCREEN_EXTENDER);
     /* the position flags each kind's states may carry (dfi_kind_limits_of: the TEAM_C and POOL kinds add their bits) */
     entry("VOL_FLAGS_MASK_CLOSURE", dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).vol_flags_mask);
     entry("VOL_FLAGS_MASK_POOL", dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL).vol_flags_mask);

@@ -4,6 +4,7 @@
 /* Private field-family implementation. Included by turn.c at the
  * existing helper dependency boundary; turn flow owns evaluation order. */
 #include "combat/run_internal.h"
+#include "combat/field/extenders.h"
 
 /* Step G55: the rock that lengthens the weather w (data/conditions.ts durationCallback: Rain Dance with Damp Rock, Sunny Day
  * with Heat Rock, Sandstorm with Smooth Rock, Snowscape with Icy Rock; Champions changes none). */
@@ -11,13 +12,13 @@ static inline uint32_t dfi_weather_rock(uint32_t w)
 {
     switch (w) {
     case DFI_WEATHER_RAIN:
-        return DFI_ITEM_DAMPROCK;
+        return DFI_WEATHER_ROCK_RAIN;
     case DFI_WEATHER_SUN:
-        return DFI_ITEM_HEATROCK;
+        return DFI_WEATHER_ROCK_SUN;
     case DFI_WEATHER_SAND:
-        return DFI_ITEM_SMOOTHROCK;
+        return DFI_WEATHER_ROCK_SAND;
     default:
-        return DFI_ITEM_ICYROCK; /* DFI_WEATHER_SNOW, the last weather of the POOL kinds */
+        return DFI_WEATHER_ROCK_SNOW; /* DFI_WEATHER_SNOW, the last weather of the POOL kinds */
     }
 }
 

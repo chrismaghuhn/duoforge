@@ -2804,7 +2804,9 @@
         "placing": "13 (5-3-0)"
       },
       "notes": "Limitless online tournament results (Limitless, play.limitlesstcg.com) Reg M-C team: tournament 6aad0d0ae905c1db68744103 (Tenki's Cart Weekly #119 - Reg M-C), player tedinho90, placing 13, played 2026-09-24; the team list (open team sheet) is from the Limitless public API, retrieved on 2026-10-03, also listed by munchstats.com/teams. Source link: https://play.limitlesstcg.com/tournament/6aad0d0ae905c1db68744103/standings. The list has no EVs and no genders: the registry has no EVs line for it (every Stat Point is 0) and the importer added the genders below (a species that can be either is male, as in every import). The list gives species ids: the importer writes them as the pokedex spells them and adds \"Level: 50\". 6 changes by import_paste.py: set 1: gender (M) added to Ceruledge: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Milotic: the species can be either (M 50%, F 50%), the owner's standard is male; set 3: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 4: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 5: gender (M) added to Staraptor: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Kingambit: the species can be either (M 50%, F 50%), the owner's standard is male.",
-      "sha256": "d873accf8f2d45907095a457d80c6452e149aeae602fa84a059b2be2ea3ba002"
+      "sha256": "d873accf8f2d45907095a457d80c6452e149aeae602fa84a059b2be2ea3ba002",
+      "status": "pending",
+      "status_reason": "#406: 0 SP with Serious"
     },
     {
       "id": "LL_6A5E04D252C24AC2DA64719F_28",
@@ -5653,7 +5655,9 @@
         "placing": "110 (1-3-0)"
       },
       "notes": "Limitless online tournament results (Limitless, play.limitlesstcg.com) Reg M-B team: tournament 6a5e4489937230b102d4026e (🏆 Champions League VGC August ⚔️), player hobbitandrei, placing 110, played 2026-08-08; the team list (open team sheet) is from the Limitless public API, retrieved on 2026-10-03, also listed by munchstats.com/teams. Source link: https://play.limitlesstcg.com/tournament/6a5e4489937230b102d4026e/standings. The list has no EVs and no genders: the registry has no EVs line for it (every Stat Point is 0) and the importer added the genders below (a species that can be either is male, as in every import). The list gives species ids: the importer writes them as the pokedex spells them and adds \"Level: 50\". A Reg M-B entry that passes Reg M-C setup. 6 changes by import_paste.py: set 1: gender (M) added to Staraptor: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 3: gender (M) added to Kingambit: the species can be either (M 50%, F 50%), the owner's standard is male; set 4: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 5: gender (M) added to Farigiraf: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male.",
-      "sha256": "eedca0a741b0bb02e19b3bf4bea053606567d83d9c4718378fcfed6b45e53b71"
+      "sha256": "eedca0a741b0bb02e19b3bf4bea053606567d83d9c4718378fcfed6b45e53b71",
+      "status": "pending",
+      "status_reason": "#406: 0 SP with Serious"
     },
     {
       "id": "LL_6A9C5234A4272C53BE6480BF_117",
@@ -6841,7 +6845,9 @@
         "placing": "no placing listed (3-3-0)"
       },
       "notes": "Limitless online tournament results (Limitless, play.limitlesstcg.com) Reg M-C team: tournament 6aaa0db038886b36383c1598 (Weekend Qualifier|Prize Shiny Golisopod/Lucario), player saifa, no placing listed, played 2026-09-20; the team list (open team sheet) is from the Limitless public API, retrieved on 2026-10-03, also listed by munchstats.com/teams. Source link: https://play.limitlesstcg.com/tournament/6aaa0db038886b36383c1598/standings. The list has no EVs and no genders: the registry has no EVs line for it (every Stat Point is 0) and the importer added the genders below (a species that can be either is male, as in every import). The list gives species ids: the importer writes them as the pokedex spells them and adds \"Level: 50\". 5 changes by import_paste.py: set 1: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Salamence: the species can be either (M 50%, F 50%), the owner's standard is male; set 3: gender (M) added to Sylveon: the species can be either (M 87.5%, F 12.5%), the owner's standard is male; set 4: gender (M) added to Arcanine-Hisui: the species can be either (M 75%, F 25%), the owner's standard is male; set 6: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male.",
-      "sha256": "65852254ef681708a81ac02a5dd85c56af62019363ad0770c05efa671fc22920"
+      "sha256": "65852254ef681708a81ac02a5dd85c56af62019363ad0770c05efa671fc22920",
+      "status": "pending",
+      "status_reason": "#406: 0 SP with Serious"
     },
     {
       "id": "LL_6AAA0DB038886B36383C1598_34",
@@ -6995,7 +7001,9 @@
         "placing": "no placing listed (1-3-0)"
       },
       "notes": "Limitless online tournament results (Limitless, play.limitlesstcg.com) Reg M-C team: tournament 6a9083127a62de813014077c (‼️ACHO CUP: VGC 🕹️💥 #1 | Premio 10€ 💸), player nearmanr, no placing listed, played 2026-09-26; the team list (open team sheet) is from the Limitless public API, retrieved on 2026-10-03, also listed by munchstats.com/teams. Source link: https://play.limitlesstcg.com/tournament/6a9083127a62de813014077c/standings. The list has no EVs and no genders: the registry has no EVs line for it (every Stat Point is 0) and the importer added the genders below (a species that can be either is male, as in every import). The list gives species ids: the importer writes them as the pokedex spells them and adds \"Level: 50\". The same team (species, items, abilities, natures and moves) was listed 1 more time(s) in the sources; one entry is kept. 5 changes by import_paste.py: set 1: gender (M) added to Milotic: the species can be either (M 50%, F 50%), the owner's standard is male; set 2: gender (M) added to Raichu: the species can be either (M 50%, F 50%), the owner's standard is male; set 3: gender (M) added to Ceruledge: the species can be either (M 50%, F 50%), the owner's standard is male; set 4: gender (M) added to Staraptor: the species can be either (M 50%, F 50%), the owner's standard is male; set 6: gender (M) added to Rillaboom: the species can be either (M 87.5%, F 12.5%), the owner's standard is male.",
-      "sha256": "07bb1e62fbf36aa1195d121cf99b09ef4549c3382c029c91f20e41090daee84b"
+      "sha256": "07bb1e62fbf36aa1195d121cf99b09ef4549c3382c029c91f20e41090daee84b",
+      "status": "pending",
+      "status_reason": "#406: 0 SP with Serious"
     },
     {
       "id": "LL_6A9083127A62DE813014077C_9",

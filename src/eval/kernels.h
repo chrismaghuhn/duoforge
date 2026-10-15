@@ -20,6 +20,10 @@ DFI_PRIVATE duoforge_status dfi_eval_dense(const int16_t *input, uint32_t ni, co
 DFI_PRIVATE duoforge_status dfi_eval_dense32(const int16_t *input, uint32_t ni, const int8_t *weights,
                                 const int64_t *bias, const dfi_eval_scale *scales,
                                 uint32_t no, bool relu, int32_t *output);
+/* Preserve normalized/residual int32 states through subsequent dense layers. */
+DFI_PRIVATE duoforge_status dfi_eval_dense_i32(const int32_t *input, uint32_t ni, const int8_t *weights,
+                                  const int64_t *bias, const dfi_eval_scale *scales,
+                                  uint32_t no, bool relu, int32_t *output);
 DFI_PRIVATE duoforge_status dfi_eval_embedding(const int8_t *table, uint32_t rows, uint32_t width,
                                   uint32_t id, dfi_eval_scale scale, int16_t *output);
 DFI_PRIVATE duoforge_status dfi_eval_pool(const int16_t *input, const uint8_t *mask, uint32_t rows,
