@@ -3220,7 +3220,7 @@ static void dfi_emit_item_left(dfi_run *r, uint32_t flat, uint32_t code, uint32_
 static void dfi_item_start_shown(dfi_run *r, uint32_t flat)
 {
     const dfi_member *m = dfi_at(r->b, flat);
-    if (m != NULL && m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_AIRBALLOON)) {
+    if (m != NULL && m->hp != 0u && dfi_holds_effect(r->b, m, DFI_ITEM_AIRBALLOON)) {
         const duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_AIRBALLOON,
                                             DUOFORGE_NO_POSITION);
         dfi_emit(r, &shown);
@@ -6474,7 +6474,7 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
             return hz;
         }
     }
-    if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u && dfi_holds(r->b, dfi_at(r->b, target), DFI_ITEM_AIRBALLOON)) {
+    if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u && dfi_holds_effect(r->b, dfi_at(r->b, target), DFI_ITEM_AIRBALLOON)) {
         dfi_use_item(r, target);
     }
     return DUOFORGE_OK;
@@ -6796,7 +6796,7 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
         /* Step G83, Iron Ball: runImmunity('Ground') asks isGrounded alone (sim/pokemon.ts:2252-2254), not the type chart, so an
          * Iron Ball holder is hit by a Ground move whatever its types and ability (the Flying component of the effectiveness
          * is still neutral: its chart immunity counts 0 in dfi_type_mod, as the holder's Effectiveness handler returns 0). */
-        const bool iron_ground = move_type == DFI_TYPE_GROUND && tm != NULL && dfi_holds(b, tm, DFI_ITEM_IRONBALL);
+        const bool iron_ground = move_type == DFI_TYPE_GROUND && tm != NULL && dfi_holds_effect(b, tm, DFI_ITEM_IRONBALL);
         /* Step K4 (#475, sim/pokemon.ts:2149, :2252-2254): under Gravity every Pokemon is grounded, so runImmunity('Ground')
          * is isGrounded alone: no Flying chart immunity, no Levitate, no Air Balloon. The Iron Ball rule above is the same test. */
         const bool gravity_ground = move_type == DFI_TYPE_GROUND && tm != NULL && b->tail.gravity_turns != 0u;
@@ -6815,7 +6815,7 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
             if (!smart_step) {
                 dfi_immune(r, targets[i], 1u + DFI_ABILITY_LEVITATE);
             }
-        } else if (move_type == DFI_TYPE_GROUND && !gravity_ground && dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+        } else if (move_type == DFI_TYPE_GROUND && !gravity_ground && dfi_holds_effect(r->b, tm, DFI_ITEM_AIRBALLOON)) {
             /* step G67: isGrounded is false for an Air Balloon holder (sim/pokemon.ts:2159, `return item !== 'airballoon'`), so
              * runImmunity prints the plain -immune (its else branch, sim/pokemon.ts:2265); no [from]. */
             hit[i] = false;
@@ -9105,7 +9105,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
                 /* Air Balloon (step G67): the hit that knocks its holder out still pops it, before the faint (measured in
                  * g67_balloon_ground: -enditem, then |faint|). The holder's ability (above) comes before its item. */
-                if (dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+                if (dfi_holds_effect(r->b, tm, DFI_ITEM_AIRBALLOON)) {
                     dfi_use_item(r, targets[i]);
                 }
                 continue;
@@ -9134,7 +9134,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
             /* Air Balloon (step G67, data/items.ts:197-202, onDamagingHit): a damaging hit uses it up (-enditem with no [from]).
              * Indirect damage does not pop it: every indirect path goes through dfi_deal, which never calls this. */
-            if (dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+            if (dfi_holds_effect(r->b, tm, DFI_ITEM_AIRBALLOON)) {
                 dfi_use_item(r, targets[i]);
             }
             /* Cursed Body (POOL data): the target's own onDamagingHit, after Thermal Exchange's place and before the attacker's
@@ -9315,7 +9315,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* step G67: the Air Balloon of a Substitute's holder that a Struggle hit went to pops after the recoil (see
          * dfi_substitute_takes). */
         for (uint32_t i = 0u; i < count; ++i) {
-            if (sub_struggle[i] && dfi_holds(r->b, dfi_at(r->b, targets[i]), DFI_ITEM_AIRBALLOON)) {
+            if (sub_struggle[i] && dfi_holds_effect(r->b, dfi_at(r->b, targets[i]), DFI_ITEM_AIRBALLOON)) {
                 dfi_use_item(r, targets[i]);
             }
         }
@@ -9929,7 +9929,7 @@ static bool dfi_has_switch_in(const struct duoforge_battle *b, const dfi_member 
     return dfi_has_entry(b, m) || dfi_seed_terrain(b, m) != DFI_TERRAIN_NONE ||
            dfi_ability(b, m, DFI_ABILITY_HOSPITALITY) || dfi_ability(b, m, DFI_ABILITY_CLOUDNINE) ||
            m->status == DFI_STATUS_TOX ||
-           dfi_holds(b, m, DFI_ITEM_AIRBALLOON); /* its onStart is a SwitchIn handler too (step G67) */
+           dfi_holds_effect(b, m, DFI_ITEM_AIRBALLOON); /* its onStart is a SwitchIn handler too (step G67) */
 }
 
 /* Hospitality (step G30, data/abilities.ts:1874-1887, onStart): the holder heals every adjacent ally by a quarter of its
@@ -10432,7 +10432,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                  * 0033). Its place among the handlers is measured against recorded battles (the order of the item's onStart
                  * against the entry abilities is not pinned yet). */
                 /* Step K4 (#475, data/items.ts:191-195): no line under Gravity (`!this.field.getPseudoWeather('gravity')`). */
-                if (m->hp != 0u && dfi_holds(b, m, DFI_ITEM_AIRBALLOON) && b->tail.gravity_turns == 0u) {
+                if (m->hp != 0u && dfi_holds_effect(b, m, DFI_ITEM_AIRBALLOON) && b->tail.gravity_turns == 0u) {
                     duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_AIRBALLOON,
                                                   DUOFORGE_NO_POSITION);
                     dfi_emit(r, &shown);
