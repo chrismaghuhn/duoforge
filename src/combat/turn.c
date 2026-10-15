@@ -665,9 +665,10 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
     uint32_t order = 0u;
     if (q->kind == DFI_Q_MOVE) {
         /* After You and Quash give a queued move its order (DFI_QRES_*, step G62); a plain move is class 200. */
-        order = q->reserve == DFI_QRES_PRIORITIZED   ? DFI_ORDER_PRIORITIZED
-                : q->reserve == DFI_QRES_QUASHED     ? DFI_ORDER_QUASHED
-                                                     : DFI_ORDER_MOVE;
+        const uint32_t cls = (uint32_t)q->reserve & DFI_QRES_ORDER_MASK;
+        order = cls == DFI_QRES_PRIORITIZED   ? DFI_ORDER_PRIORITIZED
+                : cls == DFI_QRES_QUASHED     ? DFI_ORDER_QUASHED
+                                              : DFI_ORDER_MOVE;
     } else if (q->kind == DFI_Q_SWITCH) {
         order = DFI_ORDER_SWITCH;
     } else if (q->kind == DFI_Q_SWITCH_IN) {
@@ -5669,7 +5670,7 @@ static duoforge_status dfi_run_after_you(dfi_run *r, uint32_t user, uint32_t mov
     /* prioritizeAction (sim/battle-queue.ts:282-292) removes the action and unshifts it: the front of the list, the rest in their
      * order. The sort's ties read the list's positions (a selection sort that swaps), so the record moves too. */
     dfi_queue_move_to_front(r->b, idx);
-    r->b->queue[0].reserve = DFI_QRES_PRIORITIZED;
+    r->b->queue[0].reserve = (uint8_t)(((uint32_t)r->b->queue[0].reserve & ~DFI_QRES_ORDER_MASK) | DFI_QRES_PRIORITIZED); /* wide-operands-reviewed: < 256 */
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
     dfi_emit(r, &e);
     return dfi_after_hit_updates(r);
@@ -5691,7 +5692,7 @@ static duoforge_status dfi_run_quash(dfi_run *r, uint32_t user, uint32_t move_id
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
-    r->b->queue[idx].reserve = DFI_QRES_QUASHED;
+    r->b->queue[idx].reserve = (uint8_t)(((uint32_t)r->b->queue[idx].reserve & ~DFI_QRES_ORDER_MASK) | DFI_QRES_QUASHED); /* wide-operands-reviewed: < 256 */
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
     dfi_emit(r, &e);
     return dfi_after_hit_updates(r);
@@ -7484,7 +7485,23 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (md->special == DFI_SPECIAL_CURSE && q->target >= DFI_POSITIONS) {
         run_class = DUOFORGE_TARGET_CLASS_SELF;
     }
-    duoforge_status st = dfi_move_targets(r, user, run_class, q->target, targets, &count, md->special == DFI_SPECIAL_DRAGON_DARTS);
+    /* Stalwart (issue 541): getTarget returns the original target while it is active (tracksTarget, sim/battle.ts:2437-2447),
+     * wherever an Ally Switch put it. Its record names it (DFI_QRES_ORIGINAL_*); a record made in a turn that could not track
+     * has none, and that case is refused rather than guessed. */
+    uint32_t chosen = q->target;
+    if (chosen < DFI_POSITIONS && dfi_ability(b, m, DFI_ABILITY_STALWART)) {
+        const uint32_t orig = ((uint32_t)q->reserve >> DFI_QRES_ORIGINAL_SHIFT) & DFI_QRES_ORIGINAL_MASK;
+        if (orig == 0u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        for (uint32_t slot = 0u; orig != DFI_QRES_ORIGINAL_NONE && slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+            const uint32_t flat = (chosen / 2u) * 2u + slot;
+            if (b->sides[chosen / 2u].positions[slot].occupant == orig - 1u && dfi_alive(b, flat)) {
+                chosen = flat;
+            }
+        }
+    }
+    duoforge_status st = dfi_move_targets(r, user, run_class, chosen, targets, &count, md->special == DFI_SPECIAL_DRAGON_DARTS);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -7585,7 +7602,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * getMoveTargets then collects the foes. runMove's own target (r->move_target, AfterMove's) stays the old one. */
     const uint32_t target_class = dfi_effective_target_class(b, m, md);
     if (target_class != md->target_class) {
-        st = dfi_move_targets(r, user, target_class, q->target, targets, &count,
+        st = dfi_move_targets(r, user, target_class, chosen, targets, &count,
                               md->special == DFI_SPECIAL_DRAGON_DARTS);
         if (st != DUOFORGE_OK) {
             return st;
@@ -7607,7 +7624,6 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (count == 1u) {
         aimed = targets[0];
     } else if (count == 0u) {
-        const uint32_t chosen = q->target;
         aimed = (chosen < DFI_POSITIONS && chosen / 2u == side && dfi_at(b, chosen) != NULL) ? chosen : (1u - side) * 2u;
         aimed = dfi_at(b, aimed) != NULL ? aimed : DUOFORGE_NO_POSITION;
         /* getTarget's null for the user's own location (sim/battle.ts:2459-2462; Ally Switch put the user there, issue 541):
@@ -12010,10 +12026,41 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
 
 /* A TURN or REPLACEMENT bundle as queued actions, sorted like
  * commitChoices and the beforeTurn epilogue. */
+/* Stalwart's tracksTarget (issue 541): a Pokemon on the field that has Stalwart, or holds the stone of a Mega forme with it, can
+ * aim a move of this turn at its original target. Skill Swap can hand the ability on only among these. */
+static bool dfi_tracking_possible(struct duoforge_battle *b)
+{
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_member *m = dfi_at(b, flat);
+        if (m == NULL || m->hp == 0u) {
+            continue;
+        }
+        const uint32_t mega = m->is_mega != 0u ? DFI_FORME_NONE : dfi_mega_of(m->species_id, m->item);
+        if (dfi_ability(b, m, DFI_ABILITY_STALWART) ||
+            (mega != DFI_FORME_NONE && dfi_pool_formes[mega].ability == DFI_ABILITY_STALWART)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* resolveAction's originalTarget (sim/battle-queue.ts:273, getAtLoc of the chosen location) as bits 2-4 of a MOVE record's
+ * reserve (DFI_QRES_ORIGINAL_*): the occupant's roster index + 1, or none. */
+static uint8_t dfi_original_target_code(const struct duoforge_battle *b, uint32_t target)
+{
+    uint32_t code = DFI_QRES_ORIGINAL_NONE;
+    if (target < DFI_POSITIONS) {
+        const uint32_t occ = b->sides[target / 2u].positions[target % 2u].occupant;
+        code = occ < DUOFORGE_MAX_ROSTER ? occ + 1u : DFI_QRES_ORIGINAL_NONE;
+    }
+    return (uint8_t)(code << DFI_QRES_ORIGINAL_SHIFT); /* wide-operands-reviewed: <= 28 */
+}
+
 static duoforge_status dfi_queue_choices(dfi_run *r, const duoforge_side_choice responses[DUOFORGE_SIDE_COUNT],
                                          bool replacement)
 {
     struct duoforge_battle *b = r->b;
+    const bool tracking = dfi_tracking_possible(b);
     /* The actions in the reference's order of addition: side 0 slot a, b,
      * then side 1 (sim/battle.ts:2998-3022); a pass adds none. */
     b->queue_len = 0u;
@@ -12061,7 +12108,8 @@ static duoforge_status dfi_queue_choices(dfi_run *r, const duoforge_side_choice 
             }
             b->queue[b->queue_len] = (dfi_queue_record){
                 kind == DFI_Q_SWITCH_IN ? 0u : b->sides[s].positions[slot].activation_id, (uint8_t)kind, (uint8_t)s,
-                (uint8_t)slot, move ? c.move_slot : 0u, move ? c.target : 0u, move ? 0u : c.reserve};
+                (uint8_t)slot, move ? c.move_slot : 0u, move ? c.target : 0u,
+                move ? (tracking ? dfi_original_target_code(b, c.target) : 0u) : c.reserve};
             b->queue_len = (uint8_t)((uint32_t)b->queue_len + 1u); /* wide-operands-reviewed: <= 6 */
         }
     }
