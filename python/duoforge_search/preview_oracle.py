@@ -646,17 +646,18 @@ def main_summary(argv):
 
 MATRIX_KEYS = ("tool", "seed", "pairs", "games", "max_steps", "step", "side", "foe_preview", "ours_sha256_prefix",
                "foe_sha256_prefix", "registry", "left_out", "species", "commit", "dirty", "library", "encoders",
-               "sha256_prefix", "table_sha256")
+               "sha256_prefix", "table_sha256", "workers")  # workers: HauptSession 2026-10-15, part of the pairing
 
 
-def build_matrix(dirs):
+def build_matrix(dirs, columns=None):
     """(rows, columns, scores, conditions) of foe-side runs of one measurement: each DIR one of our previews (its
     --our-arm, or today), the rows sorted (today first, then by name) and the foe's arms as columns (drawn first, then
     by name), so the order of the DIRs does not matter; scores[i][j] is our exact mean score (Fraction) of row i
     against column j. SystemExit unless every DIR is a foe-side run without --our-mix, the rows are distinct, the DIRs
     agree in MATRIX_KEYS and in their arms, every arm file names the measurement's commit and dirty state and holds
     one score per game, a row's arms played one preview of ours (its --our-arm, if set), and each arm's foe previews
-    are the same in every DIR (paired)."""
+    are the same in every DIR (paired). columns (a list of the foe's arms) restricts the matrix to them: every DIR must
+    hold each, and its other arms are left out (a series whose rows already hold later columns, resumed)."""
     from fractions import Fraction
     if not dirs:
         raise SystemExit("matrix needs at least one run directory")
@@ -673,6 +674,11 @@ def build_matrix(dirs):
             if name.endswith(".json"):
                 entry = ladder._load_json(os.path.join(arm_dir, name))
                 arms[entry["arm"]] = entry
+        if columns is not None:
+            lacking = [c for c in columns if c not in arms]
+            if lacking:
+                raise SystemExit(f"{d} lacks the column(s) {lacking}")
+            arms = {c: arms[c] for c in columns}
         rows.append(conditions.get("our_arm") or TODAY)
         runs.append((d, conditions, arms))
     if len(set(rows)) != len(rows):
@@ -746,13 +752,19 @@ def main_matrix(argv):
     p.add_argument("dirs", nargs="+", help="foe-side runs of one measurement, one per preview of ours")
     p.add_argument("--out", required=True, help="the output file, outside the repository")
     p.add_argument("--previous", help="an earlier matrix file: the gap of its mixes on this matrix")
+    p.add_argument("--columns", help="the foe's arms of the matrix, a comma list (default: every arm of the DIRs)")
     args = p.parse_args(argv)
     from duoforge_replay.dataset import refuse_repository
     try:
         refuse_repository(args.out)
     except ValueError:
         raise SystemExit(f"--out {args.out} is inside the repository (AGENTS.md)") from None
-    rows, columns, scores, conditions = build_matrix(args.dirs)
+    wanted = None
+    if args.columns is not None:
+        wanted = [c.strip() for c in args.columns.split(",") if c.strip()]
+        if not wanted or len(set(wanted)) != len(wanted):
+            raise SystemExit(f"--columns names no arm or one twice ({args.columns!r})")
+    rows, columns, scores, conditions = build_matrix(args.dirs, wanted)
     x, y, value = zero_sum.solve(scores)
     ours, foes = _mix_of(rows, x), _mix_of(columns, y)
     out = {"conditions": conditions, "rows": rows, "columns": columns,

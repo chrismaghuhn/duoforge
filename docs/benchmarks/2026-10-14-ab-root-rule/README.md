@@ -66,6 +66,28 @@ Fixed on 2026-10-14 (HauptSession, final) after the technical check of the first
   - A last block left incomplete before the restart, with one battle of one arm, is counted by name (`incomplete_blocks`). Its battle stays in its arm.
 - **A replay of earlier battles on newer code is descriptive only**, for example the share of decisions that would have been searchable with Speed Swap modelled. It never enters the rule's reading.
 
+### Sections by bot commit (addendum of 2026-10-15, before any look at results)
+
+Fixed on 2026-10-15 (HauptSession), before the deploy of #558 (with the fuzzing fixes #517 to #522) and #512 D1/S1, and before any look at results. At that time the test held **15 decided battles in arm 0 and 15 in arm 2e**, all 30 on `c1f00e87`: the decided battles were counted per arm from the run logs (whether a log has an end line), without their outcomes, and no win rate was looked at. The bot has played no battle on `59d8a540` since its deploy (it plays on challenge only). This **replaces** the pooling across bot commits above:
+
+- **Each bot commit is a section**, with its own seed and its own blocks from battle number 0. A last block left incomplete at a deploy is counted by name (`incomplete_blocks`); its battle stays in its arm and section.
+
+  | Section | Bot commit | Decided battles at this addendum (arm 0 / arm 2e) |
+  |---|---|---|
+  | 1 | `c1f00e87` | 15 / 15 |
+  | 2 | `59d8a540` | 0 / 0 |
+  | 3 | the deploy of #558 and D1/S1: the commit is entered here at the deploy | 0 / 0 |
+
+  A later deploy during the test starts a further section in the same way.
+- **Reports** give each section on its own: per arm the decided battles and the win rate with its Wilson interval, and the difference with Newcombe's interval.
+- **The overall estimate** is the difference **stratified by section** (Mantel-Haenszel):
+  - Σ w_s (p2e_s − p0_s) / Σ w_s, with w_s = n0_s · n2e_s / (n0_s + n2e_s), over the sections with decided battles in both arms (n: decided battles of the arm in section s, p: its win rate, a tie counted as no win);
+  - its interval is the normal one with variance Σ w_s² (p0_s (1 − p0_s) / n0_s + p2e_s (1 − p2e_s) / n2e_s) / (Σ w_s)², at the look's level: 99% at 30 and at 60, 95% at 100;
+  - while only one section has decided battles in both arms, the reading is that section's Newcombe interval, as before.
+- **The looks of 30, 60 and 100** count the decided battles **per arm over all sections**. A rule is preferred only when the look's interval (stratified, or Newcombe's while one section) excludes 0; "no measured difference" otherwise at 100.
+- **Why:** #558 and D1/S1 change the engine's setup, the closed-sheet prior and the lines the tracker reads, and each deploy may change the bot's strength. Pooling the commits would mix such a change with the rule's effect.
+- **The tool** (`cts_live_eval.py`, `ab_arms`) computes the stratified difference before the first look that spans more than one section.
+
 ## Replays of the test's battles
 
 `cts.LogReplay` and `cts.replay` read the rule a battle's first record names (`cts.logged_rule`), so the KO check and the luck meter replay each battle under its own arm's rule. A decision without a rule plays the search's own (`LiveSearch.base_rule`), never a rule an earlier battle set.

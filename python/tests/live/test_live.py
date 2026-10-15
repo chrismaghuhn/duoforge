@@ -28,6 +28,14 @@ from duoforge_live.data import trace_to_c
 C = _layout.CONSTANTS
 SLOTS, TEAM = C["DUOFORGE_CHOICE_SLOTS"], C["DUOFORGE_CHOICE_TEAM_SELECTION"]
 COMMAND = ("kind", "move_slot", "target", "mega", "reserve")
+_NAME_TABLES = {}
+
+
+def _name_tables(team_c):
+    """trace_to_c.load_tables of the data kind with the `team_c` flag, read once."""
+    if team_c not in _NAME_TABLES:
+        _NAME_TABLES[team_c] = trace_to_c.load_tables(str(data.ROOT), team_c)
+    return _NAME_TABLES[team_c]
 
 
 def node_tool(*args):
@@ -47,6 +55,8 @@ class Point:
         self.battle, self.player, self.k, self.request, self.messages = battle, player, k, request, messages
         trace = battle.trace
         self.state = trace["start"]["state"] if k == 0 else trace["steps"][k - 1]["state"]
+        # the slots of the lockedmove locks in that state, for trace_to_c.convert_choice (issue 516)
+        self.locked_moves = trace_to_c.locked_slots(trace, k, battle.spec, _name_tables(trace_to_c.spec_is_team_c(battle.name, battle.spec)))
         self.observation, self.domain = battle.views[(k, player)]
 
     def locked(self):
@@ -621,7 +631,8 @@ class OptionsTest(unittest.TestCase):
                     if r.get("teamPreview"):
                         for picks in TEAM_TABLE[:: 7]:
                             text = options.team_text(tuple(int(p) for p in picks))
-                            got = trace_to_c.convert_choice(text, player, point.state, battle.roster_names)
+                            got = trace_to_c.convert_choice(text, player, point.state, battle.roster_names,
+                                                      locked=point.locked_moves)
                             self.assertEqual(got, ("team", [int(p) for p in picks]), (where, text))
                         continue
                     lists = self.lists(point)
@@ -632,7 +643,8 @@ class OptionsTest(unittest.TestCase):
                                 continue
                             want = [command(dom["slots"][0][i]), command(dom["slots"][1][j])]
                             text = options.pair_text(index[0][want[0]], index[1][want[1]])
-                            got = trace_to_c.convert_choice(text, player, point.state, battle.roster_names)
+                            got = trace_to_c.convert_choice(text, player, point.state, battle.roster_names,
+                                                      locked=point.locked_moves)
                             self.assertEqual((got[0], [tuple(c) for c in got[1]]), ("slots", want), (where, text))
                             pairs += 1
         self.assertGreater(pairs, 10000)

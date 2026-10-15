@@ -347,21 +347,22 @@ restructure window. Each step's gates are fixed in the PR before its runs.
 | **O1** | `data/formats/champions-ou.json` in the step 10 shape, for `[Gen 9 Champions] OU` (facts with pin lines: ruleset, banlist, clauses, level, team size 6 of 6, the timer); its legal pool from the pinned validator; the folder layout per format agreed with the restructure lane (Q9) | Reg M-C tables byte-identical (P5); the pool is a subset of today's tables or every extra row is named; the definition reproduces the validator's legal set |
 | **O2** | singles game type under a Champions-singles development kind over today's pool: positions as in 2.2, singles target resolution, 6-lead team selection, `duoforge_context_active_per_side`; the capacity decision for `DUOFORGE_ACTIVE_PER_SIDE` as its own decision file (Q8); reference battles against `[Gen 9 Champions] Custom Game` | a conformance set `champions-singles` passes; new perft pins for singles; a differential campaign with 0 divergences and 0 unsupported; the layout test unchanged; the measured state and view sizes reported |
 | – | **dependency, content lane (Q5):** Rapid Spin, Mortal Spin, Defog, Court Change, Tidy Up, Supreme Overlord, Mold Breaker, Protean and Libero under Reg M-C | the content lane's own gates |
-| **O3** | **Milestone Champions OU (engine):** a Champions OU kind with the format's rules (6 of 6, the clauses, the Endless Battle Clause); the VGC marks are valid as they are, because the semantics are the same | a conformance set `champions-ou` with top-usage teams passes; the coverage report for `gen9championsou` at 0 and 1760 (per kind and a whole set); a local campaign of top-usage teams with 0 unsupported among the accepted setups |
-| **O4** | singles encoder `<HS: E-S1>` without Tera, C and Python, format-keyed | C = Python byte-equal; width pinned; encoders 1–6 untouched (old fixtures byte-equal) |
-| **O5** | replay pipeline for singles, `gen9championsou` first: format key, closed sheets, singles spectator tracker, rating and account filters (6.2); data private | round-trip: observation equal to the replay for a sample; decisions kept/dropped by reason in the manifest |
-| **O6** | BC trainer path for singles (runs only on the owner's go) | held-out policy accuracy above a usage-prior baseline; the local arena against the heuristic |
-| **O7** | honest search for singles: option candidates, CTS particles with the Champions OU prior, lead search. **Milestone Champions OU bot** | local arena gates against the BC net, fixed before the run |
+| **O3** | ~~**Milestone Champions OU (engine):** a Champions OU kind with the format's rules (6 of 6, the clauses, the Endless Battle Clause); the VGC marks are valid as they are, because the semantics are the same~~ **Dropped 2026-10-15 (Q1 changed); its work goes into O12.** | — |
+| **O4** | ~~singles encoder `<HS: E-S1>` without Tera, C and Python, format-keyed~~ **Dropped 2026-10-15 (Q1 changed); its work goes into O12.** | — |
+| **O5** | ~~replay pipeline for singles, `gen9championsou` first: format key, closed sheets, singles spectator tracker, rating and account filters (6.2); data private~~ **Dropped 2026-10-15 (Q1 changed); its work goes into O12.** | — |
+| **O6** | ~~BC trainer path for singles (runs only on the owner's go)~~ **Dropped 2026-10-15 (Q1 changed); its work goes into O12.** | — |
+| **O7** | ~~honest search for singles: option candidates, CTS particles with the Champions OU prior, lead search. **Milestone Champions OU bot**~~ **Dropped 2026-10-15 (Q1 changed); its work goes into O12.** | — |
 | **O8** | `data/formats/gen9ou.json` and a **separate** OU table set from `gen_closure.py --format gen9ou` (restructure step 5), in the per-format folder (Q9) | Reg M-C tables byte-identical (P5); OU tables reproducible with `--check`; the pool equals the validator's legal set for every forme; id widths pass `check_bounds` or a named widening is proposed |
 | **O9** | Gen 9 mechanics as named flags of the format: stat formula with level/EV/IV, no PP cap, the unmodded `par`/`slp`/`frz`, the unmodded moves, abilities and items; the sibling setup (2.3); **a support manifest per format**; the shared content re-proved under Gen 9 semantics (Q5); under a Gen 9 OU development kind without Tera | a conformance set `gen9-singles-notera` against `[Gen 9] Custom Game` with Terastal Clause; every Champions-overridden marked entry re-proved one by one or left unmarked for OU with a reason |
 | **O10** | Tera: state, command flag, order, STAB rules, Stellar, view revision, event (its kind reserved from 52–63 when this step is due, Q7), digest entry; Ogerpon and Terapagos refused by name | recorded Tera battles; a hidden-information test (two histories with different hidden Tera types give the same view until `-terastallize`); the digest classifier test |
 | **O11** | Heavy-Duty Boots and the OU-only content by usage: data-only species first, then the packages of 5.3 that the content lane does not own, until 99 % at baseline 1825 per kind (1695 reported beside it, Q2) | recorded battles per entry; mutants killed by named tests; the coverage report per package (both baselines, commit, source month) |
-| **O12** | Gen 9 OU on the singles stack: encoder `<HS: E-OU1>` with the Tera columns, the `gen9ou` replays, BC (owner's go), the search with the OU prior | the gates of O4–O7 for `gen9ou`; local arena gates fixed before the run |
+| **O12** | Gen 9 OU on the singles stack: encoder `<HS: E-OU1>` with the Tera columns, the `gen9ou` replays, BC (owner's go), the search with the OU prior; since 2026-10-15 (Q1 changed) it also takes the work of the dropped O4–O7 (the singles encoder, the replay pipeline, the BC path and the honest search, built for `gen9ou` directly) | the gates of O4–O7 for `gen9ou`; local arena gates fixed before the run |
 | **O13** | a play venue, only on the owner's go (Q4) | that venue's own rules |
 
 Order rationale: O2 changes only the game type, with mechanics and pool that are already proven, so a divergence is a
-singles bug. O3–O7 turn that into a playable singles bot on a public format with real teams and replays (Q1), before
-any Gen 9 mechanic changes. O9 then changes only mechanics, with singles already proven. Tera (O10) comes after it,
+singles bug. ~~O3–O7 turn that into a playable singles bot on a public format with real teams and replays (Q1), before
+any Gen 9 mechanic changes.~~ (Dropped 2026-10-15 with Q1: O12 builds the singles bot for Gen 9 OU directly.) O9 then
+changes only mechanics, with singles already proven. Tera (O10) comes after it,
 because its rules sit in the damage and order code that O9 just re-proved. Content (O11) is open-ended and runs after
 the mechanics it needs. **New public numbers are assigned by the HS per step when that step is due** (Q7). No engine
 code before this specification is merged; O1 starts after restructure step 10 is merged.
@@ -393,6 +394,10 @@ The questions as asked, with the answers. The section 9 steps follow them.
   It is the cheapest way to a playable singles bot: O2 (singles) plus hazard removal make it playable, with real teams
   and replays. Gen 9 OU stays the actual goal. The steps put a Champions OU milestone with its own gate after O2 and
   the removal moves (O3, and the bot milestone O7).
+  **Changed 2026-10-15 (owner): directly Gen 9 OU.** Champions OU is no intermediate target any more; O3–O7 are dropped
+  (section 9), the singles encoder, replays, BC and search go into O12, and the other step numbers stay. O2's reference
+  battles stay against `[Gen 9 Champions] Custom Game` (singles on proven mechanics), and O1's `champions-ou.json` stays
+  as development data for the singles tests.
 - **Q2 (owner).** *Top baseline for OU?* **1825**; 1695 is reported beside it.
 - **Q3 (owner).** *BC rating threshold?* **From 1500 with weights** as the default (6.2); 1700 is measured beside it.
 - **Q4 (owner).** *Play venue?* **Only the local arena** until the gates of the OU search step pass (O12 in this

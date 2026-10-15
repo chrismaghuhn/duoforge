@@ -771,7 +771,8 @@ class MatrixTest(unittest.TestCase):
     def test_runs_of_other_measurements_are_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             a = self.run_dir(tmp, "a", {"drawn": [1, 1]})
-            cases = {"seed": dict(seed="0x465"), "library": dict(library="0.46.0"), "dirty": dict(dirty=True)}
+            cases = {"seed": dict(seed="0x465"), "library": dict(library="0.46.0"), "dirty": dict(dirty=True),
+                     "workers": dict(workers=4)}
             for i, (key, extra) in enumerate(cases.items()):
                 b = self.run_dir(tmp, f"b{i}", {"drawn": [1, 1]}, our_arm="23|04", **extra)
                 with self.assertRaisesRegex(SystemExit, rf"not one measurement \(they differ in \['{key}'\]\)"):
