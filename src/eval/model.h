@@ -47,6 +47,8 @@ struct duoforge_evaluator {
     size_t file_bytes;
     dfi_eval_allocator allocator;
     dfi_eval_lifetime *lifetime;
+    void *parameters; /* immutable cold-decoded compiled graph bindings */
+    size_t parameter_bytes;
 };
 struct duoforge_eval_workspace {
     const duoforge_evaluator *model;
