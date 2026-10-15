@@ -893,9 +893,9 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
     case DFI_SPECIAL_PERISH_SONG:
     case DFI_SPECIAL_REVIVAL_BLESSING:
     case DFI_SPECIAL_BATON_PASS:
-    /* G86 Belly Drum (dfi_run_belly_drum) and the non-Ghost Curse (dfi_run_curse, a Ghost user's is refused by the engine): the
-     * handler returns at once, true after its effect (dfi_status_hit_end), false at its -fail with [still]; a self move reads
-     * no target step */
+    /* G86 Belly Drum (dfi_run_belly_drum) and Curse (dfi_run_curse): the handler returns at once, true after its effect
+     * (dfi_status_hit_end), false at its -fail with [still]; a self move reads no target step, a Ghost Curse's stopped target
+     * is false (MR_RUNS below) */
     case DFI_SPECIAL_BELLY_DRUM:
     case DFI_SPECIAL_CURSE:
         return MR_RUNS;
@@ -1252,7 +1252,10 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
         }
         break;
     case MR_RUNS: {
-        const uint32_t runs = user_fail ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_TRUE;
+        /* A Ghost Curse has a foe target, so its hit steps can stop it before the handler: a semi-invulnerable target's -miss
+         * (issue 522) or Good as Gold's -immune, each a false hit step (the MR_FALSE class above), so the move is false. */
+        const bool stopped_curse = md->special == DFI_SPECIAL_CURSE && (classes & MR_FALSE) != 0u;
+        const uint32_t runs = user_fail || stopped_curse ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_TRUE;
         value = (uint8_t)runs;
         break;
     }

@@ -1,0 +1,25 @@
+{
+  "name": "fz522_curse_phantom_force",
+  "purpose": "A Ghost Curse into Phantom Force (issue 522): Golurk, p1a, uses Curse on Polteageist, p2a, after Polteageist has prepared Phantom Force (step 2). The Invulnerability step comes before the TryHit and the onHit (sim/battle-actions.ts:556): the move line carries [miss], a -miss follows, and there is no HP cost and no curse. A battle of the differential fuzzing of issue 396 (free random sets, fz_2_99), cut after its step 2: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,917f7533a9588919369b9a09173f7e0a389b24f9cbf5cccd16077c70cb503b6a",
+  "teams": [
+    "watchog (F)\nAbility: keeneye\nLevel: 50\nEVs: 15 HP / 12 Atk / 5 Def / 11 SpA / 11 SpD / 12 Spe\nBashful Nature\n- mudshot\n- zenheadbutt\n- doubleedge\n- thunderbolt\n\npincurchin (F) @ silverpowder\nAbility: lightningrod\nLevel: 50\nEVs: 3 Def / 3 SpA / 3 SpD / 5 Spe\nJolly Nature\n- liquidation\n- protect\n- raindance\n- zingzap\n\ngarchomp (M) @ focussash\nAbility: sandveil\nLevel: 50\nEVs: 10 HP / 8 Atk / 11 Def / 10 SpA / 8 SpD / 19 Spe\nHasty Nature\n- flamethrower\n- dragonpulse\n- spikes\n- sandstorm\n\ngolurk @ mentalherb\nAbility: ironfist\nLevel: 50\nEVs: 18 HP / 9 Atk / 9 Def / 10 SpA / 10 SpD / 10 Spe\nSassy Nature\n- scorchingsands\n- curse\n- stoneedge\n- flashcannon\n\nsalamence (M) @ salamencite\nAbility: moxie\nLevel: 50\nEVs: 7 HP / 5 Atk / 7 Def / 5 SpA / 11 SpD / 7 Spe\nRelaxed Nature\n- flamethrower\n- earthquake\n- hyperbeam\n- dualwingbeat\n\nsamurott (F) @ blastoisinite\nAbility: shellarmor\nLevel: 50\nEVs: 10 HP / 12 Atk / 13 Def / 7 SpA / 14 SpD / 10 Spe\nGentle Nature\n- aquatail\n- aquacutter\n- sacredsword\n- aquajet",
+    "polteageist @ cameruptite\nAbility: weakarmor\nLevel: 50\nEVs: 11 HP / 15 Atk / 9 Def / 9 SpA / 14 SpD / 8 Spe\nRelaxed Nature\n- strengthsap\n- willowisp\n- phantomforce\n- lightscreen\n\noverqwil (M) @ heatrock\nAbility: swiftswim\nLevel: 50\nEVs: 13 HP / 12 Atk / 12 Def / 10 SpA / 6 SpD / 13 Spe\nNaughty Nature\n- scaleshot\n- sludgewave\n- blizzard\n- haze\n\npincurchin (M) @ scovillainite\nAbility: electricsurge\nLevel: 50\nEVs: 1 HP / 2 Atk / 2 Def / 1 SpA / 2 SpD / 1 Spe\nJolly Nature\n- zingzap\n- poisonjab\n- throatchop\n- electroweb\n\nespeon (M) @ meganiumite\nAbility: synchronize\nLevel: 50\nEVs: 11 HP / 15 Atk / 8 Def / 12 SpA / 10 SpD / 10 Spe\nTimid Nature\n- gigaimpact\n- weatherball\n- expandingforce\n- drainingkiss\n\nsimipour (F) @ mawilite\nAbility: torrent\nLevel: 50\nEVs: 11 HP / 10 Atk / 10 Def / 13 SpA / 9 SpD / 13 Spe\nTimid Nature\n- gigaimpact\n- irontail\n- lowsweep\n- hydropump\n\nheliolisk (F) @ charcoal\nAbility: sandveil\nLevel: 50\nEVs: 5 HP / 11 Atk / 17 Def / 9 SpA / 15 SpD / 9 Spe\nDocile Nature\n- sunnyday\n- hypervoice\n- uturn\n- paraboliccharge"
+  ],
+  "choices": [
+    {
+      "p1": "team 4213",
+      "p2": "team 1435"
+    },
+    {
+      "p1": "move 3 -2, move 4 -1",
+      "p2": "move 2 1, move 4 2"
+    },
+    {
+      "p1": "move 2 -2, move 2",
+      "p2": "move 3 2, move 3 -1"
+    }
+  ]
+}

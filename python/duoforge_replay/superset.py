@@ -1,113 +1,110 @@
-"""Superset options of an own decision point (M11 spec section 8).
+"""The options of an own decision point, from the engine (M11 spec section 8; #512 D7).
 
-A replay has no request. superset.domain() builds the request the player
-would have received as far as the view knows it, and gives it to the live
-adapter's options.slot_options, which lists DuoForge's slot options in its
-documented order:
+A replay has no request, so superset.domain() asks the engine for the one the
+player received: the point's public record as the player held it
+(duoforge_live.record.build over the spectator's folds; the own values the
+log does not show come from hindsight and the prior, SpectatorTracker.own_values)
+is built into a world (duoforge_battle_from_view) with a hypothesis that
+draws nothing in particular: the foe's leads, then its members seen, then the
+others in roster order as its picks, every word zero (where no HP of a seen
+foe member shows its display under zero stat points, the HP stat points 1 to
+32 are tried in turn, the engine deciding which fits). The world's factored
+domain of the own side is the point's domain, pair mask included, and its slot
+lists are those commands in the engine's order. Python decides no option: PP,
+Encore, Disable, Struggle, Mega Evolution, a lock, a recharge, the reserves
+and a Revival Blessing choice are the engine's rules over the record.
 
-- every sheet move whose PP left (maximum minus the uses seen) is above 0,
-  with the target type of the move's request for the user's current types (the library's rule,
-  Data.request_target: the target class in the tables, except a Curse of a user that is not a Ghost, which targets
-  itself); a user whose types the lines do not settle stops the point (Tracker.current_types);
-- Mega Evolution when the member holds its stone and its side has not used
-  Mega Evolution; never trapped;
-- the reserves: the alive brought members on the bench (hindsight picks);
-- a recharging position only the recharge; an Encored one only its forced slot, never a Disabled slot;
-  a charging position only its locked move with its stored target, a
-  choice-locked one only its locked move, Struggle when no usable move has
-  PP left;
-- at a REPLACEMENT or PIVOT, forceSwitch for the asked positions.
+What the hypothesis draws (the foe's stat points, HP and counters) is hidden
+from the player and decides none of the own options. The test
+duoforge.python.replay compares the domain with DuoForge's own at every own
+point of the committed battles.
 
-The pair mask is the provisional full one, as live. The set contains every
-option of the real request (duoforge.python.replay checks it) and may
-contain more: moves an effect disables that the superset does not apply
-(Fake Out after the first turn, Assault Vest; Taunt and Imprison, which the
-view extension shows but the superset does not read), switches of a trapped
-position.
+A point whose record the lines do not determine (record.Refusal), whose
+hypothesis this module does not draw (a foe move still queued at a PIVOT), or
+whose world the engine refuses (a public cause, a display no hypothesis fits)
+raises Refused with the reason: the point has no row and game._fold counts it.
+There is no fallback.
 """
-from duoforge_live import options
-from duoforge_live.tracker import MOVE_SLOT_NONE
+import numpy as np
 
-from .points import TEAM_SELECTION, TURN
-from .spectator import BROUGHT
+import duoforge
+from duoforge import _layout, view
+from duoforge._lib import status_name
+from duoforge_live import options, record
+
+from .points import TEAM_SELECTION
+from .spectator import Refused
+
+__all__ = ["Refused", "domain"]
+
+C = _layout.CONSTANTS
+PIVOT = C["DUOFORGE_BOUNDARY_PIVOT"]
+_WORLDS = {}  # id(context) -> (context, a one-world Batch of it)
+MAX_STAT_POINTS = 32  # the stat points of one stat (duoforge_battle_from_view refuses a spread past 32)
 
 
+def _batch(context):
+    kept = _WORLDS.get(id(context))
+    if kept is None or kept[0] is not context:
+        kept = _WORLDS[id(context)] = (context, duoforge.Batch(context, duoforge.reference_setups([0]), 1, 0))
+    return kept[1]
 
-def _move_name(tracker, move_id):
-    names = tracker.__dict__.setdefault("_move_names", {v: k for k, v in tracker.data.tables["MOVE"].items()
-                                                        if k != "COUNT"})
-    return names[move_id].lower()
+
+def _hypothesis(tracker, rec, brought_count):
+    """The hypothesis that draws nothing in particular: the foe's picks are its leads, its members seen, then the others in
+    roster order (none at team selection); a PIVOT's queue keeps its canonical order; every word is zero."""
+    h = view.hypotheses(1)
+    if int(rec["boundary"]) != TEAM_SELECTION:
+        foe = tracker._member(1 - tracker.side)
+        leads = [int(m) for m in rec["foe_leads"]]
+        seen = [m for m in range(len(foe)) if int(rec["foe_seen_mask"]) >> m & 1 and m not in leads]
+        rest = [m for m in range(len(foe)) if m not in leads and m not in seen]
+        h[0]["pick_order"][:brought_count] = (leads + seen + rest)[:brought_count]
+    if int(rec["boundary"]) == PIVOT:
+        h[0]["queue_order"][:int(rec["queue_count"])] = np.arange(int(rec["queue_count"]), dtype=np.uint8)
+    return h
+
+
+def _causes(context, observation, rec):
+    """The names of the public causes the observation shows (duoforge_observation_causes) and a live Speed Swap, which
+    only the record carries (its presence bit, record.CAUSE_SPEED_SWAP), for a refusal's reason."""
+    causes = view.observation_causes(context, observation)
+    if record._record_speed_swap_bit(rec):
+        causes |= record.CAUSE_SPEED_SWAP
+    return ",".join(name for bit, name in record.CAUSE_NAMES if causes & bit)
 
 
 def domain(tracker):
-    """(FACTORED_DOMAIN record, slot lists) at the tracker's point; at team selection (team domain, None)."""
-    side = tracker.side
-    epoch = tracker.epoch
-    if tracker.boundary() == TEAM_SELECTION:
-        return options.team_domain(epoch, len(tracker.own_sheets), BROUGHT), None
-    members = tracker._own_members
-    positions = tracker._positions[side]
-    actives = [p.occupant for p in positions]
-    order = list(actives) + [m for m in tracker._picks if m not in actives]
-    roster_of, pokemon = {}, []
-    for k, m in enumerate(order):
-        ident = f"p{side + 1}: member{k}"
-        member = members[m] if m < len(members) else None  # an empty position holds DUOFORGE_ROSTER_NONE
-        alive = member is not None and not (member.seen and member.hp_percent == 0)
-        if k < 2 and positions[k].fainted:
-            alive = False
-        roster_of[ident] = m
-        pokemon.append({"ident": ident, "active": k < 2, "condition": "100/100" if alive else "0 fnt",
-                        "moves": [_move_name(tracker, mv) for mv in member.sheet["moves"]] if member else []})
-    request = {"side": {"id": f"p{side + 1}", "pokemon": pokemon}}
-    locked = {}
-    struggle_too = [False, False]
-    if tracker.boundary() == TURN:
-        request["active"] = []
-        for k, p in enumerate(positions):
-            member = members[p.occupant] if p.occupant < len(members) else None
-            if member is None:
-                request["active"].append(None)
-                continue
-            sheet_moves = member.sheet["moves"]
-            pp = [max(mx - u, 0) for mx, u in zip(member.pp_max, member.uses)]
-            if p.charge:
-                request["active"].append({"moves": [{"id": _move_name(tracker, sheet_moves[p.locked_slot])}]})
-                locked[k] = p.locked_target
-                continue
-            if p.must_recharge:  # -mustrecharge (step G17): only the recharge, and no switch (the request is trapped)
-                request["active"].append({"moves": [{"id": "recharge"}], "trapped": True})
-                continue
-            # Encore forces its slot and Disable bars its own (the view extension's encore_slot, disable_slot)
-            usable = [pp[i] > 0 and (p.choice_slot == MOVE_SLOT_NONE or i == p.choice_slot)
-                      and (p.encore_slot == 0 or i == p.encore_slot - 1)  # Encore holds it to that move (#334)
-                      and i != p.disable_slot - 1  # Disable bars its slot
-                      for i in range(len(sheet_moves))]
-            if not any(usable):  # no PP left, or none for the choice-locked move: Struggle
-                request["active"].append({"moves": [{"id": "struggle"}]})
-                continue
-            struggle_too[k] = True  # effects outside the view can disable every move: the request is then Struggle
-            moves = []
-            types = tracker.current_types(member, p)  # a move's request target can depend on them (Curse); Stop if unknown
-            for i, move_id in enumerate(sheet_moves):
-                disabled = not usable[i]
-                moves.append({"id": _move_name(tracker, move_id), "pp": pp[i],
-                              "target": tracker.data.request_target(move_id, types), "disabled": disabled})
-            mega = member.mega_capable and not member.is_mega and not tracker._mega_used[side]
-            request["active"].append({"moves": moves, "canMegaEvo": bool(mega)})
-    else:
-        asked = tracker._asked[side][1]
-        request["forceSwitch"] = [bool(asked >> k & 1) for k in (0, 1)]
-        if getattr(tracker, "_revive", False):
-            for k in (0, 1):
-                if asked >> k & 1:
-                    pokemon[k]["reviving"] = True  # the Revival Blessing user's slot chooses a fainted member
-    lists = options.slot_options(request, side, roster_of, locked)
-    for k, needs in enumerate(struggle_too):
-        has = any(o.kind == options.MOVE and o.move_slot == options.STRUGGLE for o in lists[k])
-        if needs and not has and any(o.kind == options.MOVE for o in lists[k]):
-            # An effect outside the view can disable the usable moves (Fake Out after the first turn under a choice
-            # lock, c07_choice_lock; Assault Vest with status moves; Taunt), and then the request offers Struggle.
-            lists[k] = lists[k] + [options.Option(options.MOVE, options.STRUGGLE, options.TARGET_NONE, 0, 0, "move 1")]
-    return options.domain(lists, epoch), lists
-
+    """(FACTORED_DOMAIN record, slot lists) at the tracker's point, the engine's; at team selection (team domain, None).
+    Refused when the point's record is not determined or the engine refuses its world."""
+    context = tracker.data.context_of(tracker.record_kind)
+    observation = tracker.observation()
+    try:
+        with tracker.own_values():
+            rec = record.build(tracker, observation)
+    except record.Refusal as refusal:
+        raise Refused(f"record:{refusal.reason}") from None
+    if int(rec["foe_pending_mask"]):
+        # a PIVOT with a foe move still queued: its command is a draw from the foe's turn-start domain (the honest
+        # search's queue mask), which this hypothesis does not make
+        raise Refused("hypothesis:foe-command-pending")
+    worlds = _batch(context)
+    h = _hypothesis(tracker, rec, context.config["brought_count"])
+    status = int(worlds.from_view(rec.reshape(1), h)[0])
+    for points in range(1, MAX_STAT_POINTS + 1):
+        if status != C["DUOFORGE_E_INVALID_ARGUMENT"]:
+            break
+        # no HP of a seen foe member shows its display under these stat points (an exact half needs an even maximum):
+        # the engine decides which HP stat points fit, tried in turn for every foe member
+        h[0]["stat_points"][:, 0] = points
+        status = int(worlds.from_view(rec.reshape(1), h)[0])
+    if status:
+        causes = _causes(context, observation, rec) if status == C["DUOFORGE_E_UNSUPPORTED"] else ""
+        raise Refused(f"world:{status_name(status)}" + (f":{causes}" if causes else ""))
+    worlds.query_factored()
+    out = worlds.domains[0, tracker.side].copy()
+    if int(out["kind"]) == C["DUOFORGE_CHOICE_TEAM_SELECTION"]:
+        return out, None
+    lists = [[options.Option(int(c["kind"]), int(c["move_slot"]), int(c["target"]), int(c["mega"]), int(c["reserve"]), "")
+              for c in out["slots"][s][:int(out["slot_count"][s])]] for s in (0, 1)]
+    return out, lists

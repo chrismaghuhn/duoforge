@@ -49,6 +49,8 @@
 # environment:
 #   DUOFORGE_MACHINE_LOCK        slot 0, the lock directory (default: $TEMP/duoforge-machine.lock)
 #   DUOFORGE_MACHINE_LOCK_SLOTS  jobs at once (default 2); the same in every session
+#   DUOFORGE_MACHINE_LOCK_POLL   seconds between two looks while waiting (default 15)
+#   DUOFORGE_MACHINE_LOCK_TEST_MV  tests only: a stand-in for mv in the claim (named on stderr; 79 if not executable)
 # exported to the holder:
 #   DUOFORGE_JOBS                processors / slots (at least 1); every processor with --exclusive
 #   DUOFORGE_MACHINE_LOCK_HELD   the holder's label; DUOFORGE_MACHINE_LOCK_HELD_DIR its lock (status 74 inside it; on
@@ -62,6 +64,8 @@
 #   74  machine_lock.sh refused: nested inside a job that holds this lock
 #   76  the watchdog stopped the job: its holder's Windows process is gone, or its slot was taken over
 #   77  the watchdog refused to start: not on Linux (uname -s), e.g. under Git Bash on Windows
+#   78  machine_lock.sh: withdrawn, nothing started (its ticket was deleted while it waited)
+#   79  machine_lock.sh refused: DUOFORGE_MACHINE_LOCK_TEST_MV (tests only) is no executable file
 #   2   the watchdog refused to start: no holder to watch, or bash older than 5.1
 # A command that exits with one of these itself cannot be told from them.
 set -u
@@ -74,6 +78,8 @@ MACHINE_LOCK_ORPHAN=300
 MACHINE_LOCK_TAKEN=73
 # The status of a call refused because it is nested inside a job that holds this lock.
 MACHINE_LOCK_NESTED=74
+MACHINE_LOCK_WITHDRAWN=78
+MACHINE_LOCK_BAD_TEST_MV=79
 
 # The Windows process id of this shell (Git Bash), or its own pid elsewhere.
 machine_lock_pid() {
@@ -227,6 +233,44 @@ machine_lock_export_holder() { # label dir line
     export WSLENV
 }
 
+# Withdrawing a waiting job (2026-10-14): delete its ticket in $MACHINE_LOCK.queue; never kill the wrapper (its job
+# could be starting). The waiter notices a missing ticket at its next look while it waits, and again at the moment it
+# takes a slot: it claims its ticket by renaming it (atomic) once the slot is its own and its owner written; a ticket
+# deleted before that claim makes the rename fail, the slot is given back at once and nothing starts (status 78). `rm` of the ticket tells the
+# withdrawer which happened: success, the job will not start; "No such file", it has started, ended, or was refused
+# (73). A look comes every DUOFORGE_MACHINE_LOCK_POLL seconds (15).
+machine_lock_withdrawn() { # label ticket: names a withdrawal on stderr; the slot count's record goes if idle
+    local queue="$MACHINE_LOCK.queue"
+    echo "machine lock: withdrawn: '$1' did not start; its ticket ($2) was deleted while it waited" >&2
+    if [ -d "$queue" ] && machine_lock_idle "$queue"; then
+        rm -f "$queue/.slots"
+    fi
+}
+
+machine_lock_claim() { # ticket: 0 claimed (this waiter's to start), 1 withdrawn (deleted first), 2 the rename failed
+    # with the ticket still there (on Windows a reader without share-delete can hold it): no withdrawal, try again
+    local claimed="${1%/*}/.${1##*/}.claimed" # a dot file: no waiter's scan of the queue (*) sees it
+    # DUOFORGE_MACHINE_LOCK_TEST_MV: for tests only, a stand-in for mv that races the claim (a PATH stub is not
+    # reliable: Git's bin/bash.exe launcher puts its own usr/bin first)
+    if ! "${DUOFORGE_MACHINE_LOCK_TEST_MV:-mv}" -- "$1" "$claimed" 2> /dev/null; then
+        [ -e "$1" ] && return 2
+        return 1
+    fi
+    rm -f -- "$claimed"
+}
+
+machine_lock_give_back() { # label ticket claim dir...: the slots just taken go back; 78 (withdrawn) or 0 (wait on)
+    local label=$1 ticket=$2 claim=$3 dir
+    shift 3
+    for dir in "$@"; do rm -rf -- "$dir"; done # owner files written already: the slots are this waiter's own
+    if [ "$claim" -eq 1 ]; then
+        machine_lock_withdrawn "$label" "$ticket"
+        return "$MACHINE_LOCK_WITHDRAWN"
+    fi
+    echo "machine lock: '$label' could not claim its ticket ($ticket is still there): gave the slot back, waits on" >&2
+    return 0
+}
+
 machine_lock_acquire() { # [--exclusive] label
     # First come, first served: a waiter takes a ticket in $MACHINE_LOCK.queue (its name sorts by the time it was
     # taken). A waiter with w older live tickets ahead may take a slot when more than w slots are free and none of
@@ -238,13 +282,27 @@ machine_lock_acquire() { # [--exclusive] label
         exclusive=1
         shift
     fi
-    local label=$1 waited=0 holder line me ticket t k dir ahead blocked legacy free slots cpus mark recorded
+    local label=$1 waited=0 holder line me ticket t k dir ahead blocked legacy free slots cpus mark recorded poll
+    poll=${DUOFORGE_MACHINE_LOCK_POLL:-15} # seconds between two looks while waiting (tests make it short)
+    case "$poll" in
+    '' | *[!0-9]* | 0*)
+        echo "machine lock: DUOFORGE_MACHINE_LOCK_POLL must be a positive number, not '$poll'" >&2
+        return 2
+        ;;
+    esac
     if [ -n "${DUOFORGE_MACHINE_LOCK_HELD:-}" ] && [ -n "${DUOFORGE_MACHINE_LOCK_HELD_DIR:-}" ] &&
         machine_lock_same_dir "$DUOFORGE_MACHINE_LOCK_HELD_DIR" "$MACHINE_LOCK"; then
         echo "machine lock: refused: '$label' is nested inside the job '$DUOFORGE_MACHINE_LOCK_HELD', which holds this" \
             "lock ($MACHINE_LOCK); it would wait for slots the outer job holds. Run the inner work without the lock," \
             "or as a job of its own." >&2
         return "$MACHINE_LOCK_NESTED"
+    fi
+    if [ -n "${DUOFORGE_MACHINE_LOCK_TEST_MV:-}" ]; then # a test's stand-in for mv: named, and never a silent fallback
+        echo "machine lock: test mv override active: $DUOFORGE_MACHINE_LOCK_TEST_MV" >&2
+        if [ ! -f "$DUOFORGE_MACHINE_LOCK_TEST_MV" ] || [ ! -x "$DUOFORGE_MACHINE_LOCK_TEST_MV" ]; then
+            echo "machine lock: refused: DUOFORGE_MACHINE_LOCK_TEST_MV ($DUOFORGE_MACHINE_LOCK_TEST_MV) is no executable"                 "file" >&2
+            return "$MACHINE_LOCK_BAD_TEST_MV"
+        fi
     fi
     local queue="$MACHINE_LOCK.queue"
     slots=${DUOFORGE_MACHINE_LOCK_SLOTS-2}
@@ -287,6 +345,10 @@ machine_lock_acquire() { # [--exclusive] label
     printf '%s\n%s\n' "$me $label since $since" "$mark" > "$ticket"
     machine_lock_refuse "$label" "$ticket" && return "$MACHINE_LOCK_TAKEN"
     while :; do
+        if [ ! -e "$ticket" ]; then # withdrawn while it waited
+            machine_lock_withdrawn "$label" "$ticket"
+            return "$MACHINE_LOCK_WITHDRAWN"
+        fi
         for t in "$queue"/*; do
             [ -e "$t" ] && [ "$t" != "$ticket" ] || continue
             machine_lock_alive "${t##*-}" || rm -f "$t"
@@ -338,13 +400,20 @@ machine_lock_acquire() { # [--exclusive] label
                     if mkdir "$dir" 2> /dev/null; then got+=("$dir"); else break; fi
                 done
                 if [ "${#got[@]}" -eq "$slots" ]; then
+                    # The owners first, then the claim: a call with the same label sees the job from here on (73).
                     since=$(date '+%Y-%m-%d %H:%M:%S') # one owner line for every slot of the job
                     for dir in "${got[@]}"; do
                         printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
                     done
-                    export DUOFORGE_JOBS=$cpus
-                    machine_lock_export_holder "$label" "${got[0]}" "$me $label since $since"
-                    break
+                    local claim=0
+                    machine_lock_claim "$ticket" || claim=$?
+                    if [ "$claim" -eq 0 ]; then
+                        export DUOFORGE_JOBS=$cpus
+                        machine_lock_export_holder "$label" "${got[0]}" "$me $label since $since"
+                        break
+                    fi
+                    machine_lock_give_back "$label" "$ticket" "$claim" "${got[@]}" || return $?
+                    got=()
                 fi
                 for dir in "${got[@]}"; do rmdir "$dir" 2> /dev/null; done # somebody was faster: all or nothing
             fi
@@ -363,21 +432,27 @@ machine_lock_acquire() { # [--exclusive] label
                 fi
             done
             if [ -n "$dir" ]; then
+                # The owner first, then the claim: a call with the same label sees the job from here on (73).
                 since=$(date '+%Y-%m-%d %H:%M:%S')
                 printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
-                export DUOFORGE_JOBS=$((cpus / slots > 0 ? cpus / slots : 1))
-                machine_lock_export_holder "$label" "$dir" "$me $label since $since"
-                break
+                local claim=0
+                machine_lock_claim "$ticket" || claim=$?
+                if [ "$claim" -eq 0 ]; then
+                    export DUOFORGE_JOBS=$((cpus / slots > 0 ? cpus / slots : 1))
+                    machine_lock_export_holder "$label" "$dir" "$me $label since $since"
+                    break
+                fi
+                machine_lock_give_back "$label" "$ticket" "$claim" "$dir" || return $?
             fi
         fi
         if [ "${#free[@]}" -gt 0 ] && [ -n "$blocked" ]; then
             holder=$blocked # a slot is free: an older waiter goes first
         fi
-        if [ $((waited % 300)) -eq 0 ]; then
+        if [ $((waited % 300)) -lt "$poll" ]; then
             echo "machine lock: waiting for ${holder:-another job} ($((waited / 60)) min so far)" >&2
         fi
-        sleep 15
-        waited=$((waited + 15))
+        sleep "$poll"
+        waited=$((waited + poll))
     done
     rm -f "$ticket"
 }
