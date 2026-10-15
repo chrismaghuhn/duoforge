@@ -47,7 +47,6 @@ class Data:
         self.kind = kind
         self.checkpoint_check = None  # for_config: how a format-2 checkpoint reads these tables (checkpoint.check_data)
         self._ctx = None  # the context of the alias lookups and the legality (_context)
-        self._legal = {}  # forme -> (setup_legal, abilities, no_ability, moves): setup_issue
         self.tables = trace_to_c.load_tables(str(Path(root)), kind == "pool")
         with duoforge.Context(data_kind=_layout.CONSTANTS[_KINDS[kind]]) as context:
             self.counts = {"FORME": api.count(context, api.TABLE_SPECIES), "MOVE": api.count(context, api.TABLE_MOVE),
@@ -64,6 +63,9 @@ class Data:
             infos = [api.forme_info(context, f) for f in range(self.counts["FORME"])]
             self._ability = [api.forme_static(context, f)["default_ability"] for f in range(self.counts["FORME"])]
             moves = [api.move_static(context, m) for m in range(self.counts["MOVE"])]
+            # What the engine plays (duoforge_data_supported) of the rows whose lines the tracker reads by it (#512 S1)
+            self._supported = {name: [api.supported(context, table, i) for i in range(api.count(context, table))]
+                               for name, table in (("MOVE", api.TABLE_MOVE), ("ABILITY", api.TABLE_ABILITY))}
             # Every (holder, stone) pair the library knows (duoforge_data_mega_at): one stone may take two holders
             # to two Megas (Meowsticite: Meowstic-M and Meowstic-F), so the stone alone does not name its Mega.
             self._mega_pairs = {}
@@ -80,6 +82,10 @@ class Data:
         self._pp_max = [m["pp"] for m in moves]
         self._target_class = [m["target_class"] for m in moves]
         self._move_flags = [m["flags"] for m in moves]  # DUOFORGE_MOVE_STATIC_FLAG_*
+        # the partial-trap moves the engine plays (step G90; #512 S1): the flag and the support gate, Snap Trap unmarked
+        self.partial_trap_moves = frozenset(
+            m for m, f in enumerate(self._move_flags)
+            if f & _layout.CONSTANTS["DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP"] and self._supported["MOVE"][m])
 
     def team(self, text):
         """A paste as trace_to_c.parse_team reads it: member dicts with species, gender, nature, sp, ability
@@ -108,27 +114,30 @@ class Data:
             return name
         return api.name(self._context(), api.TABLE_SPECIES, forme)
 
+    def supported(self, table, name):
+        """Whether the engine plays the row of a name (a Showdown name, "Knock Off") of table "MOVE" or "ABILITY"
+        (duoforge_data_supported): False for a name the tables do not know."""
+        ident = self.tables[table].get(trace_to_c.key(name))
+        return ident is not None and self._supported[table][ident]
+
+    def partial_trap(self, name):
+        """Whether a move name is a partial trap the engine plays (partial_trap_moves)."""
+        return self.tables["MOVE"].get(trace_to_c.key(name)) in self.partial_trap_moves
+
     def setup_issue(self, member):
-        """None when the library's setup would accept a parsed member (parse_team: species, ability 1-based, moves) on
-        its legality under this kind; else ("species", None), ("ability", None) or ("move", index of the move): the
-        first of duoforge_data_forme_info's and duoforge_data_forme_moves' rules it breaks (the setup validates the
-        same). The support gate is not part of it."""
-        from duoforge import data as api
-        forme = member["species"]
-        if forme not in self._legal:
-            info = api.forme_info(self._context(), forme)
-            abilities = set(info["abilities"][:info["ability_count"]])
-            self._legal[forme] = (bool(info["setup_legal"]), abilities, bool(info["no_ability"]),
-                                  set(api.forme_moves(self._context(), forme)))
-        legal, abilities, no_ability, moves = self._legal[forme]
-        if not legal:
-            return ("species", None)
-        if (member["ability"] == 0 and not no_ability) or (member["ability"] != 0 and member["ability"] - 1 not in abilities):
-            return ("ability", None)
-        for index, move in enumerate(member["moves"]):
-            if move not in moves:
-                return ("move", index)
-        return None
+        """None when the library's setup accepts a parsed member (parse_team: species, gender, nature, sp, ability
+        1-based, item 0 for none, moves) under this kind, else ("engine-setup", None): the engine's own per-member
+        check (duoforge_data_member_setup_valid, exactly what duoforge_battle_create applies to each member; #512),
+        never a copy of its rules here. The support gate and the side's clauses are not part of it."""
+        import numpy as np
+        from duoforge import _layout, data as api
+        record = np.zeros((), dtype=_layout.MEMBER_SETUP)
+        record["species_id"], record["gender"], record["nature"] = member["species"], member["gender"], member["nature"]
+        record["stat_points"] = member["sp"]
+        record["ability"], record["item"] = member["ability"], member["item"]
+        record["move_count"] = len(member["moves"])
+        record["moves"]["move_id"][:len(member["moves"])] = member["moves"]
+        return None if api.member_setup_valid(self._context(), record) else ("engine-setup", None)
 
     def _context(self):
         """A context of this kind, opened on the first alias lookup and kept for the next ones."""

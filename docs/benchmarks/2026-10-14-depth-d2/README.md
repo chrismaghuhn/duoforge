@@ -299,3 +299,7 @@ evaluation (#451, #450 piece 2 / D4) comes before D3 and D5.
 - Only after this file's final commit, the offline pass's default, the engine digest (if the arms use it) and the
   HauptSession's go. Latency always with `--exclusive`; strength runs alone, not beside the Book slot, while memory is
   short.
+
+## From #558 on: the engine's pool filter
+
+**From #558 on, a new series** (HauptSession, 2026-10-15). `duoforge_search.tree_offline` (and the D2 ladder arms) loads the pool through the engine's setup check (`teams.load_accepted`) and leaves out every team the engine refuses, by name: `conditions.pool` in its result holds the teams kept, the sha256 of their ids and every refused team with the engine's status. Since #558 (#406: exactly 0 Stat Points with Serious is refused at setup) four of params-49333's pool teams are refused, so its pool has 648 of 652 teams and the pairings drawn from it change; the engine changed with #558 too. Results from #558 on are never paired or mixed with results from before it.
