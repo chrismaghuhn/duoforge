@@ -1045,7 +1045,8 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0, locked_move=0):
             and tp['trap_band'] <= TAIL_FLAG_MAX and (tp['trap_turns'] != 0 or tp['trap_band'] == 0)
             and ((tp['trap_turns'] + tp['trap_elapsed'] in (5, 6)) if tp['trap_turns'] != 0 else tp['trap_elapsed'] == 0)):
         return False
-    if not (tp['leech_seed'] <= TAIL_SOURCE_MAX and tp['leech_seed'] != flat + 1):
+    # issue 541: a seed's source is a slot, and an Ally Switch can put the seeded Pokemon onto it (it drains into itself)
+    if not tp['leech_seed'] <= TAIL_SOURCE_MAX:
         return False
     if not (tp['protect_kind'] <= TAIL_PROTECT_KIND_MAX and (tp['protect_kind'] == 0 or slot_flags & VOL_PROTECT)):
         return False

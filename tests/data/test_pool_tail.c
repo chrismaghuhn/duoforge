@@ -95,7 +95,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0, 0}, /* issue 541: leech_seed may name the holder's own position */
     {2, 0, 253, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -131,7 +131,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0, 0}, /* issue 541: leech_seed may name the holder's own position */
     {2, 0, 253, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -235,7 +235,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0, 0}, /* issue 541: leech_seed may name the holder's own position */
     {2, 0, 253, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
@@ -271,7 +271,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0, 0}, /* issue 541: leech_seed may name the holder's own position */
     {2, 0, 253, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
