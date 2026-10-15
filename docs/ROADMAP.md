@@ -22,7 +22,7 @@ Implement C17 CMake setup, a tiny core library, a smoke-test executable, CTest r
 
 Exit: actual available-platform Debug and Release builds and smoke tests pass; project structure and task boundaries are documented. Unavailable platforms are NOT_RUN. No combat, RNG, Python package or fake passing battle stubs.
 
-Use `tasks/M0_BOOTSTRAP.md`.
+Use `docs/history/tasks/M0_BOOTSTRAP.md`.
 
 ## M1 — Deterministic primitives and owned state
 
@@ -38,7 +38,7 @@ Exit: exhaustive small-fixture domain tests, information-equivalence tests, stab
 
 Before M3, select the two concrete teams, operational reference commit, rules/information profile and conservative mechanics inventory. This is a small focused selection/review task, not a global census system.
 
-**Owner decision (2026-09-30):** M3 and M4 are executed as one continuous build with no backlog, in the dependency order of `docs/research/mechanics-inventory.md` section 5. The descriptions of M3 and M4 below remain the content; `tasks/M3_M4_COMBAT_CLOSURE.md` is the task statement. M5 and later stay separate authorization boundaries.
+**Owner decision (2026-09-30):** M3 and M4 are executed as one continuous build with no backlog, in the dependency order of `docs/research/mechanics-inventory.md` section 5. The descriptions of M3 and M4 below remain the content; `docs/history/tasks/M3_M4_COMBAT_CLOSURE.md` is the task statement. M5 and later stay separate authorization boundaries.
 
 ## M3 — First combat vertical slice
 
