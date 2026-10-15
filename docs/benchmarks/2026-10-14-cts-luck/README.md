@@ -116,6 +116,11 @@ A battle that the replay does not follow is counted under the replay's named rea
 The comparison with `duoforge_learn.luck` on battles whose state is known is a **mandatory gate before every live report** (HauptSession, 2026-10-14):
 
 - **Battles:** every fifth committed pool battle by its id, in sorted order (indices 0, 5, 10, …), both players. They are real Showdown battles (`tools/reference/ps_client.js` gives each player's stream) that the engine reproduces.
+- **The count, derived** (note of 2026-10-15, added before the full run at the HauptSession's request; the selection and the criterion are unchanged; only a three-battle trial run on `0fed9c23` came before it):
+  - `tests/reference/traces` holds 1,142 battles. A pool battle is one whose data set is `pool` (`trace_to_c.spec_data`): 979 of them. The other 163 are not pool battles: 90 `closure` battles (a spec without data) and 73 `team_c` battles (decision 0009). Neither is read under the pool data (decision 0015) that the bot and BC6 play.
+  - Every fifth of the 979, sorted by id: indices 0, 5, …, 975, which is ⌈979 / 5⌉ = **196 battles**, 392 player streams. No battle is dropped from the selection; the streams of the pinned Showdown hold both players of all 196.
+  - At run time a player's battle can still drop out, and each is counted by name in `player_battles_skipped`: `no-stream`, `meter:<error>` (the meter cannot replay the log) and `oracle:<error>` (luck.py's side cannot be built).
+  - A turn drops out of the comparison by name: the meter's exclusions (`meter_excluded`, the table above) and luck.py's (`luck_py_skipped`): `hidden-counter` (a sleep or confusion counter, `partiallytrapped` or `twoturnmove` on the field, which the public record does not carry), `roster-unmatched`, `choice-not-allowed`, `choice-unmatched`, `no-input` and `no-end`.
 - **Two arms on the same turns:**
   - The meter values each player's stream as a closed-sheet log, with the true foe team as the set prior.
   - luck.py (`Luck`, unchanged) values the true world of the same decision point. That world is built with `Batch.from_view` from the public record and the true hidden parts, taken from the trace's state.
@@ -124,9 +129,76 @@ The comparison with `duoforge_learn.luck` on battles whose state is known is a *
 - **Passed** when the 95% interval of the mean per-turn difference (meter − luck.py) includes 0, **or** |mean difference| < 0.01. The correlation is reported only.
 - **Failed** means no live report: the cause is searched first and reported to the HauptSession.
 
-### The known limit
+### The result of the comparison (2026-10-15)
 
-The worlds after the turn are drawn anew and hold what the turn revealed. The actual successor and the alternatives therefore come from nearly the same distribution, not exactly the same one, as they do engine against engine (luck.py). A turn's luck has mean zero only approximately. This is one more reason why only the series means say something.
+`tools/research/cts_luck_check.py` on `8c9e8933` (clean); the library is the WSL build of that commit (sha256 `fe8506d0…cec9df7`); BC6 sha256 `bda5de8e…`. A second run on the same commit gave the same result byte for byte. The selection is that of `8c9e8933`'s 1,142 traces. Main has held 11 more pool battles (`k3_*`) since `16b9abf9`; they sort in among the others and shift every fifth. The gate's 196 battles are therefore committed as `gate-battles.txt` (`--battles`; `--traces-at 8c9e8933` gives the same list).
+
+**The rerun at the PR's head** `bc5b7bd6` (clean, main `16b9abf9` merged in; library sha256 `4bb8d6c7…be85d4`) with `--battles gate-battles.txt` gives the same numbers to the last digit. It also has the review's fixes:
+- only named refusals are counted, by their message;
+- a leaf the engine refused would skip the turn on luck.py's side too (`luck-leaf-refused`: none);
+- the new name `true-record-unsupported:<reason>`.
+
+- **By the criterion fixed in advance:** 196 battles, 1,448 turns compared. The mean difference (meter − luck.py) is **+0.0060**, 95% interval **[0.0017, 0.0102]**, correlation 0.773.
+- **Descriptive, with a battle's turns as one cluster** (`half_width_by_battle`; turns of one battle are not independent, and both players of a battle are in the sample): ±0.0050, so [0.0009, 0.0110]. Unmixed: ±0.0025.
+- **Narrow:** it passes only through |mean difference| < 0.01. The interval does not include 0, and its upper end lies just above 0.01.
+- **Gate status (HauptSession, 2026-10-15): passed,** with the renaming below and its test (`test_cts_luck_check`) in the same PR. Before that it was provisionally passed.
+
+**Dropped out, by name:**
+- **Player battles, 30 of 392** (`player_battles_skipped`):
+  - 29 stop at the particle filter's redraw cap (`meter:SearchError:the replay and the bot disagree on a stop (the replay stop:cts:redraw-cap, the bot did not)`): both players of 14 battles and player 1 of `g78_fainted_target`, all hand-built test battles: `c5_endeavor_ghost`, `g60_sub_dragontail`, `g60_sub_scale_shot`, `g67_magic_guard_substitute`, `g72b_dc_second`, `g76_db_ally_ko`, `g80_allyswitch_selftarget`, `g84b_ghost_substitute_faint`, `h18_magic_bounce_substitute_sitrus_mirror`, `h18_yawn_substitute_stomping_sitrus_mirror`, `sub2_ancientpower_substitute_tyrantrum`, `sub3_lava_plume_spread_unaware_appletun_168`, `xr3_beatup_sub` and `xr3_sheercold_ice_sub`. The fixture log has no fallback record of the bot, so the meter names them "the replay and the bot disagree on a stop".
+  - 1 is the tracker's explicit refusal `meter:ValueError:slot 1 is locked into outrage without a known target` (from `tracker.domain()`).
+  - The measured run keyed them by the message's first word (the log's name). The rerun gives the names above.
+  - Live, each of these is a named stop of the bot, and it is counted.
+- **The meter's turns** (`meter_excluded`): `no-decision-record` 302, `not-turn:REPLACEMENT` 119, `not-searched:unreconstructible` 81, `not-searched:forced` 15, `not-turn:PIVOT` 1, `foe-action-unknown` 1, `leaf-refused` 1.
+- **luck.py's turns** (`luck_py_skipped`): `hidden-counter` 77, and 34 that the measured run named `true-world-refused:DUOFORGE_E_SCHEMA_MISMATCH`. That name was **not in the list fixed in advance**. Since the renaming they are `true-record-unsupported:engine-refuses-record` (32) and `true-record-unsupported:pivot-switch-reason-unknown` (2). Their investigation:
+  - **The name is misleading.** No field of the record mismatches its schema.
+    - At these 34 points the open-sheet tracker gives no public record: `record.assemble` returns the zero record with `E_UNSUPPORTED` and a named reason.
+    - The measured tool did not check that status and handed the zero record to `Batch.from_view`, whose first check refuses revision 0 as `SCHEMA_MISMATCH`.
+    - The tool now checks that status first and names the turn `true-record-unsupported:<reason>` (HauptSession, 2026-10-15). The test `test_cts_luck_check` hands in a zero record with that status and expects the named reason, not a schema error. The renaming changes no number: the same turns drop out.
+  - **The reasons:**
+    - 32 are `engine-refuses-record`: the engine's own public refusal (`duoforge_public_record_check`; decisions 0023 and 0026: a PIVOT, sealed commands, a locked move, the Revival Blessing proxy).
+    - 2 are the tracker's `pivot-switch-reason-unknown`.
+  - **They hang on three mechanics,** in 15 battles. In each case the point is where the true world of the turn or of its successor would be built.
+    - **A pivot inside the turn, 29:** U-turn, Parting Shot (including into Mirror Armor, the 2 tracker refusals), Emergency Exit, an Eject Button through Symbiosis, and a drag. The battles are `g5_uturn_d` (6), `g71_faint_source_herb` (4), `g26_perish_recast`, `g30_rage_powder_pivot`, `g33_mirror_armor`, `g43_lopunnite`, `g46_fainted_reserve_drag`, `g62_quash_pivot`, `g69_symbiosis_eject`, `g7_wide_guard_pivot_own` and `g86_belly_faint_setboost` (2 each), and `g78_protect_p` (1).
+    - **Revival Blessing, 4:** `g52_revive_win_milotic` (3) and `g52_fail_no_fainted_pawmot` (1).
+    - **A move locked by Outrage at a replacement, 1:** `g56_outrage_cut`.
+  - **The meter** values such a turn at the pivot from its particles, which the engine encodes itself (`search._encoded`, no public record), and counts the rest as a partial turn. luck.py has no true world there. These turns are therefore missing from the comparison, not wrongly valued.
+
+### The second comparison, after S3 (2026-10-15)
+
+Run as the HauptSession asked: after #512 S3 (#540) made a targeted foe move with more than one possible target `TARGET_UNKNOWN`, so that the meter mixes more turns. The tool, the criterion and the battles are the same: `gate-battles.txt`, 196 battles. The first result above stays as it is.
+
+- **Provenance:**
+  - the commit is `ec2e6dc4` (main with #540), clean;
+  - the library is the WSL build of that commit, sha256 `e52c40108d251d77bd00627b2b114766cf70e857eae826006674b2fa78328332`;
+  - BC6 sha256 `bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39`;
+  - under the lock and the watchdog, not exclusive, with 14 GB free at the start.
+
+| Run | Turns | Mixed turns (share) | Mean difference, 95% interval | Battle-clustered | Correlation | Unmixed: turns, mean, 95% | By the criterion fixed in advance |
+|---|---|---|---|---|---|---|---|
+| first, `8c9e8933` / `bc5b7bd6` | 1,448 | 238 (16%) | +0.0060 [0.0017, 0.0102] | ±0.0050 | 0.773 | 1,210, −0.0019 ± 0.0029 | passed, narrowly |
+| **after S3**, `ec2e6dc4` | 1,448 | **917 (63%)** | **+0.0177 [0.0111, 0.0242]** | ±0.0096 | 0.606 | 531, −0.0019 ± 0.0034 | **not passed** |
+
+- **By the criterion fixed in advance, the second comparison fails:** |mean| is above 0.01, and the interval does not include 0.
+- **The mixed turns carry the difference again.** Derived from the two means, the 917 mixed turns run about +0.029 per turn above luck.py (no interval computed). The 531 unmixed turns agree with luck.py, their interval includes 0. S3 moved 679 turns from unmixed to mixed. A mixed turn's bias is smaller than before (+0.029 against +0.046), but there are almost four times as many.
+- **Dropped out, by name:** the same as in the first run.
+  - player battles: redraw cap 29, Outrage lock 1;
+  - the meter's turns: `no-decision-record` 302, `not-turn:REPLACEMENT` 119, `not-searched:unreconstructible` 81, `not-searched:forced` 15, `not-turn:PIVOT` 1, `foe-action-unknown` 1, `leaf-refused` 1;
+  - luck.py's turns: `hidden-counter` 77, `true-record-unsupported:engine-refuses-record` 32, `true-record-unsupported:pivot-switch-reason-unknown` 2.
+- **What follows from it** is the HauptSession's decision. By the README, a failed gate means no live report until the cause is reported. The cause is the known one: the weighting of hidden foe actions by BC6 (#509), now on 63% of the turns.
+
+### After the fact (after seeing the result)
+
+The HauptSession set this on 2026-10-15, after the result above was known; it is not part of the definition fixed in advance.
+
+- **The unmixed number is the main number of every live report:** −0.0019 ± 0.0029 on 1,210 turns, an interval that includes 0. The mixed number is shown beside it as a description only.
+- **Why:** the whole difference sits in the mixed turns, those whose hidden foe action the meter weights by BC6. Derived from the two means, the 238 mixed turns run about **+0.046 per turn** above luck.py, which knows the true action. No interval was computed for them. Without them, the meter agrees with luck.py.
+
+### The known limits
+
+- **No pivot turn is compared.** The comparison holds no turn that ends at a pivot inside the turn (U-turn, Parting Shot, Emergency Exit, Eject Button, a drag), nor Revival Blessing or Outrage at a replacement. The rule `rest-after-foe-pivot` is therefore **not checked**. It is the same engine gap as in the replays, #524: the engine cannot build a world in the middle of a turn while moves are still queued. Once #524 is solved, the comparison is repeated for the pivots.
+- **BC6 as the weight of a hidden foe action.** The mixing by BC6 estimates about +0.046 too much luck per mixed turn (238 turns). This fits #509, where BC6 was found not to be monotone. BC6 is only of limited use as the weight of hidden foe actions; the unmixed number does not depend on it.
+- **Worlds drawn anew.** The worlds after the turn are drawn anew and hold what the turn revealed. The actual successor and the alternatives therefore come from nearly the same distribution, not exactly the same one, as they do engine against engine (luck.py). A turn's luck has mean zero only approximately. This is one more reason why only the series means say something.
 
 ## Running it
 
@@ -138,3 +210,9 @@ python tools/research/cts_live_eval.py --logs DIR --luck --checkpoint BC6 --chec
 - It runs locally, under the machine lock, never on the VPS.
 - The checkpoint and the logs are private and stay outside the repository.
 - The result names the tool's and the engine's commit and dirty state, the pins and C.
+
+The gate's comparison with luck.py (the streams come from the pinned Showdown: `node tools/reference/ps_client.js <checkout> <repo> --every > STREAMS.jsonl`):
+
+```
+python tools/research/cts_luck_check.py STREAMS.jsonl BC6 bda5de8e… OUT.json     --battles docs/benchmarks/2026-10-14-cts-luck/gate-battles.txt
+```

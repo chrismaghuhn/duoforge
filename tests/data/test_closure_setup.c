@@ -325,6 +325,29 @@ int main(void)
         FRESH();
         s.sides[0].members[0].stat_points[3] = 1u; /* 67 in total */
         invalid(&t, k1, &s, "67 Stat Points in total");
+        /* Issue 406: exactly 0 Stat Points with the nature Serious (also the pin's default for a set without one) is
+         * refused by the pinned validator (sim/team-validator.ts:1339-1343, under !format.debug, level > 1 and an EV
+         * limit of 66); 0 with any other nature, neutral or not, and 1 with Serious are legal there. */
+        FRESH();
+        memset(s.sides[0].members[0].stat_points, 0, sizeof s.sides[0].members[0].stat_points);
+        s.sides[0].members[0].nature = DFI_NATURE_SERIOUS;
+        invalid(&t, k1, &s, "0 Stat Points with Serious");
+        invalid(&t, k2, &s, "0 Stat Points with Serious under CLOSURE_DEV");
+        s.sides[0].members[0].stat_points[0] = 1u;
+        legal(&t, k1, &s, "1 Stat Point with Serious");
+        FRESH();
+        memset(s.sides[0].members[0].stat_points, 0, sizeof s.sides[0].members[0].stat_points);
+        s.sides[0].members[0].nature = DFI_NATURE_HARDY;
+        legal(&t, k1, &s, "0 Stat Points with Hardy (another neutral nature)");
+        s.sides[0].members[0].nature = DFI_NATURE_ADAMANT;
+        legal(&t, k1, &s, "0 Stat Points with Adamant");
+        FRESH();
+        memset(s.sides[0].members[0].stat_points, 0, sizeof s.sides[0].members[0].stat_points);
+        s.sides[0].members[0].stat_points[0] = 32u;
+        s.sides[0].members[0].stat_points[1] = 32u;
+        s.sides[0].members[0].stat_points[2] = 2u;
+        s.sides[0].members[0].nature = DFI_NATURE_SERIOUS;
+        legal(&t, k1, &s, "66 Stat Points with Serious (the maximum)");
         FRESH();
         s.sides[0].members[0].ability = 2u; /* Intimidate on Rillaboom */
         invalid(&t, k1, &s, "ability of another forme");

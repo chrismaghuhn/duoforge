@@ -70,6 +70,12 @@ foreach(_file IN LISTS _files)
         set(_re_token "${_re_banned_token_fp}")
     endif()
 
+    # Quantized evaluation permits only fixed-width integer arithmetic, never
+    # floating computation. This does not extend the encoder FP exception.
+    if(_rel MATCHES "^src/eval/(arithmetic|kernels|inputs)\\.[ch]$")
+        set(_re_token "${_boundary}(float|double|_Thread_local|thread_local|long|short|int|signed|unsigned|intptr_t|intmax_t|ptrdiff_t)([^A-Za-z0-9_]|$)")
+    endif()
+
     set(_is_alloc_file FALSE)
     if(_rel STREQUAL "src/core/alloc.c")
         set(_is_alloc_file TRUE)

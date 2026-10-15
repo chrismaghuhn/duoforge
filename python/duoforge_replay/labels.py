@@ -6,8 +6,11 @@ TEAM_TABLE (45 bytes, bit i in byte i // 8 at i % 8). A reason per slot
 says why the set has its size:
 
 - EXACT: one option;
-- TARGET_UNKNOWN: the move (slot and Mega choice) with every target, when
-  redirection or retargeting was possible, or a cant line names the move;
+- TARGET_UNKNOWN: the move (slot and Mega choice) with every target, when the
+  move has more than one target to choose, or a cant line names the move. The
+  line names the position the move hit, and redirection or retargeting may
+  have moved it there; the engine confirms no target, so none is read from
+  the line (#512 S3);
 - MOVE_HIDDEN: every move option with the shown Mega choice, when the move
   never showed (it fainted or left first, or a cant line names no move);
 - FORCED, UNKNOWN: every option, no information;
@@ -23,19 +26,10 @@ from duoforge_live.lines import flat_position, line_kind
 from duoforge_live.data import trace_to_c
 from duoforge_live.game import TEAM_TABLE
 
-from .points import TEAM_SELECTION, TURN, Skip
+from .points import TEAM_SELECTION, TURN, Skip, after_switches
 
 NOT_REQUESTED, EXACT, TARGET_UNKNOWN, MOVE_HIDDEN, FORCED, UNKNOWN = range(6)
 TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
-# The other side's single-turn lines that draw single-target moves (Follow Me, Rage Powder, Spotlight).
-REDIRECT_TURN = {"move: Follow Me", "move: Rage Powder", "Rage Powder", "move: Spotlight", "Spotlight"}
-# Abilities whose -activate right before a move line draws it (sim: onAnyRedirectTarget).
-_REDIRECT_ABILITY = {"ability: Lightning Rod", "ability: Storm Drain"}
-# Moves whose line may name another target than the chosen one by their own rule (data/moves.ts smartTarget, step G78):
-# Dragon Darts goes to the chosen foe's ally when the chosen foe cannot be hit, and the line names the ally. A Ghost
-# user's Curse aimed at its partner (or with no target) becomes randomNormal (data/moves.ts curse onModifyMove, step
-# G84b), so its line names a random foe; a non-Ghost Curse has no target and is labelled before this matters.
-_SMART_TARGET = {"DRAGONDARTS", "CURSE"}
 
 
 @dataclass(frozen=True)
@@ -67,21 +61,20 @@ def team_label(leads, seen_back, member_count=6):
     return Label((0, 0), bytes(bits), (NOT_REQUESTED, NOT_REQUESTED))
 
 
-def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, vacant=frozenset(), barred=((), ())):
+def turn_label(log, point, side, lists, moves, member_of, tables, stop_line, barred=((), ())):
     """The label of a TURN point: per own slot, from the lines log[point.line:min(point.end, stop_line)].
     moves[k] are the move ids of the occupant of slot k at the point (None for none); member_of(details) is the own
-    roster index of a switch line's details; vacant holds the flat positions empty or fainted at the point; barred[k]
-    the move slots of slot k that the view bars at the point (its Disable slot, its Choice lock's slot)."""
+    roster index of a switch line's details; barred[k] the move slots of slot k that the view bars at the point (its
+    Disable slot, its Choice lock's slot)."""
     end = min(point.end, stop_line)
     segment = log[point.line:end]
     # A slot whose action never showed chose a move only if the switch phase of the turn is over (Showdown runs
     # switches first): some move, cant, Mega Evolution or confusion line came. A game that ends while the players
     # choose (a forfeit, the timer) shows none, and then a switch is as possible as a move.
-    acted = any(line_kind(line) in ("move", "cant", "-mega") or
-                (line_kind(line) == "-activate" and line.split("|")[3:4] == ["confusion"]) for line in segment)
+    acted = any(after_switches(line) for line in segment)
     slots, reasons = [], []
     for k in (0, 1):
-        mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, vacant, barred[k])
+        mask, reason = _slot_label(segment, side, k, lists[k], moves[k], member_of, tables, barred[k])
         if reason is None:
             reason, mask = UNKNOWN if end < point.end or not acted else MOVE_HIDDEN, None
             if reason == MOVE_HIDDEN:
@@ -104,7 +97,7 @@ def _move_options(options_list, mega, move_slot=None):
                  if o.kind == options.MOVE and o.mega == mega and (move_slot is None or o.move_slot == move_slot))
 
 
-def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant, barred=()):
+def _slot_label(segment, side, k, options_list, moves, member_of, tables, barred=()):
     """(mask, reason) of slot k, or (None, None) when its action never showed in the segment."""
     kinds = {o.kind for o in options_list}
     if kinds == {options.NONE}:
@@ -113,7 +106,7 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
         return _all(options_list), FORCED
     position = side * 2 + k
     mega = _mega_shown(segment, position)
-    acted = False  # a move-phase line of anyone came before
+    acted = False  # a line of an action the engine runs after the switches came before
     encored = False  # an Encore started on this position since the choice
     for index, line in enumerate(segment):
         kind = line_kind(line)
@@ -124,7 +117,7 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
             member = member_of(parts[3])
             found = [i for i, o in enumerate(options_list) if o.kind == options.SWITCH and o.reserve == member]
             return (_mask(found), EXACT) if len(found) == 1 else (_all(options_list), UNKNOWN)
-        if kind in ("move", "cant", "-mega"):
+        if after_switches(line):
             acted = True
         if kind == "faint" and flat_position(parts[2]) == position:
             return None, None
@@ -152,11 +145,11 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
                 # Encored one too: a player who chose it sees no replacement), with the shown Mega choice
                 mask = _move_options(options_list, mega)
                 return (mask, MOVE_HIDDEN) if mask else (_all(options_list), UNKNOWN)
-            return _move_label(segment, index, parts, side, options_list, moves, mega, tables, vacant)
+            return _move_label(parts, options_list, moves, mega, tables)
     return None, None
 
 
-def _move_label(segment, index, parts, side, options_list, moves, mega, tables, vacant):
+def _move_label(parts, options_list, moves, mega, tables):
     attrs = [p for p in parts[3:] if p.startswith("[")]
     if "[from]lockedmove" in attrs or "[from] lockedmove" in attrs:
         return _all(options_list), FORCED
@@ -172,33 +165,10 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
                   if o.kind == options.MOVE and o.move_slot == move_slot and o.mega == mega]
     if not candidates:
         return _all(options_list), UNKNOWN
-    targets = {options_list[i].target for i in candidates}
-    if targets == {options.TARGET_NONE}:
-        return _mask(candidates), EXACT
-    shown = flat_position(parts[4]) if len(parts) > 4 else None
-    uncertain = shown is None or "[notarget]" in attrs or any(a.startswith("[spread]") for a in attrs) \
-        or trace_to_c.key(name) in _SMART_TARGET
-    if not uncertain and any(position // 2 == shown // 2 for position in vacant):
-        uncertain = True  # a position of the target's side was empty at the point: Showdown retargets
-    if not uncertain:
-        target_side = shown // 2
-        before = segment[:index]
-        for line in before:
-            kind, p = line_kind(line), line.split("|")
-            if kind == "-singleturn" and len(p) > 3 and p[3] in REDIRECT_TURN and flat_position(p[2]) is not None \
-                    and flat_position(p[2]) // 2 == target_side:
-                uncertain = True  # a redirector of the target's side was up
-            if kind == "faint" and flat_position(p[2]) is not None and flat_position(p[2]) // 2 == target_side:
-                uncertain = True  # the chosen target may have fainted: Showdown retargets
-        previous = [line for line in before if line_kind(line) is not None][-1:]
-        following = [line for line in segment[index + 1:] if line_kind(line) is not None][:1]
-        if any(line_kind(line) == "-activate" and line.split("|")[3:4] and line.split("|")[3] in _REDIRECT_ABILITY
-               for line in previous + following):
-            uncertain = True  # Lightning Rod or Storm Drain drew it (its line comes right after the move line)
-    if not uncertain:
-        exact = [i for i in candidates if options_list[i].target == shown]
-        if len(exact) == 1:
-            return _mask(exact), EXACT
+    if len(candidates) == 1:
+        return _mask(candidates), EXACT  # no target to choose (or one)
+    # the line names the position the move hit, not the one chosen: redirection or retargeting may lie between, and
+    # the engine confirms neither (#512 S3), so every target of the move stays
     return _mask(candidates), TARGET_UNKNOWN
 
 
@@ -270,7 +240,6 @@ class Context:
     moves: tuple  # per slot: the occupant's move ids, or None
     roster: tuple  # the own members' base forme ids
     data: object
-    vacant: frozenset = frozenset()  # flat positions empty or fainted at the point
     barred: tuple = ((), ())  # per slot: the move slots the view bars (the Disable slot, the Choice lock's slot)
 
     def member_of(self, details):
@@ -286,11 +255,9 @@ def context(tracker, side=None):
     moves = tuple(list(members[p.occupant].sheet["moves"]) if p.occupant < len(members) else None
                   for p in tracker._positions[side])
     roster = tuple(tracker.data.base_forme(member.sheet["species"]) for member in members)
-    vacant = frozenset(s * 2 + k for s in (0, 1) for k, p in enumerate(tracker._positions[s])
-                       if p.occupant >= len(tracker._member(s) or ()) or p.fainted)
     barred = tuple(frozenset(slot for slot in (p.disable_slot - 1, p.choice_slot) if 0 <= slot < 4)
                    for p in tracker._positions[side])
-    return Context(side, moves, roster, tracker.data, vacant, barred)
+    return Context(side, moves, roster, tracker.data, barred)
 
 
 def compute(ctx, log, point, lists, stop_line, leads, seen_back):
@@ -299,7 +266,7 @@ def compute(ctx, log, point, lists, stop_line, leads, seen_back):
         return team_label(leads, seen_back, len(ctx.roster))
     if point.boundary == TURN:
         return turn_label(log, point, ctx.side, lists, ctx.moves, ctx.member_of, ctx.data.tables, stop_line,
-                          ctx.vacant, ctx.barred)
+                          ctx.barred)
     return switch_label(log, point, ctx.side, lists, ctx.member_of, stop_line)
 
 

@@ -82,19 +82,20 @@ class MeterTest(unittest.TestCase):
         self.assertEqual(dict(out["excluded"]), {})
         self.assertEqual(out["result"], 1.0)
         # turn 1 (its state: the foe's replacement, a wait point), turn 2, and turn 3, which ends the battle: the foe's
-        # Ampharos faints before it moves, its move never shows, and the turn is mixed over its move options
+        # Ampharos faints before it moves, its move never shows, and the turn is mixed over its move options. Turns 1
+        # and 2 are mixed too: the foe's aimed moves have more than one target option, and a target line does not
+        # confirm the target the foe chose (#512 S3, TARGET_UNKNOWN until the engine answers it, #523)
         self.assertEqual(len(out["turns"]), 3)
-        self.assertEqual(out["mixed"], [False, False, True])
+        self.assertEqual(out["mixed"], [True, True, True])
         self.assertEqual(out["dropped"], [0, 0, 0])  # the true team: no world the turns refute
         for luck in out["turns"]:
             self.assertTrue(-2.0 <= luck <= 2.0, luck)
         foe_inputs = [self.trace["steps"][k]["input"]["p2"] for k in (1, 3, 4)]
         self.assertEqual(len(played), 3)
-        for turn, worlds in zip(foe_inputs[:2], played[:2]):
-            self.assertEqual(worlds, [{turn}] * len(worlds))  # every world: the trace's foe choice, alone
-        for pairs in played[2]:  # every world: a set of more than one pair that holds the trace's choice
-            self.assertIn(foe_inputs[2], pairs)
-            self.assertGreater(len(pairs), 1)
+        for turn, worlds in zip(foe_inputs, played):
+            for pairs in worlds:  # every world: a set of more than one pair that holds the trace's choice
+                self.assertIn(turn, pairs)
+                self.assertGreater(len(pairs), 1)
 
 
     def test_a_world_the_turn_refutes_is_left_out(self):
@@ -108,7 +109,9 @@ class MeterTest(unittest.TestCase):
         self.assertEqual(len(out["turns"]), 3)
         self.assertGreater(out["dropped"][0], 0)
         self.assertLess(out["dropped"][0], out["worlds"])
-        self.assertEqual(played[0], [{self.trace["steps"][1]["input"]["p2"]}] * (out["worlds"] - out["dropped"][0]))
+        self.assertEqual(len(played[0]), out["worlds"] - out["dropped"][0])
+        for pairs in played[0]:  # every world left: a target set (#512 S3) that holds the trace's foe choice
+            self.assertIn(self.trace["steps"][1]["input"]["p2"], pairs)
 
 
     def test_a_foes_switch_is_the_switch_option_of_every_world(self):
@@ -148,7 +151,7 @@ class MeterTest(unittest.TestCase):
         self.assertNotEqual(first["turns"], self.battle(samples=2)[0]["turns"])
 
     def test_a_foe_slot_the_log_tells_nothing_of_is_excluded_and_a_hidden_move_is_a_set(self):
-        ctx = type("Ctx", (), {"moves": (None, None), "member_of": staticmethod(lambda d: -1), "vacant": frozenset(),
+        ctx = type("Ctx", (), {"moves": (None, None), "member_of": staticmethod(lambda d: -1),
                                "barred": ((), ()), "data": data.load(kind="pool")})()
         lists = [[options.Option(options.MOVE, 0, 0, 0, 0, ""), options.Option(options.MOVE, 1, 0, 0, 0, "")]] * 2
         with self.assertRaisesRegex(cts_luck.Excluded, "foe-action-unknown"):
@@ -179,7 +182,7 @@ class MeterTest(unittest.TestCase):
             got = ev.luck_all(logs, BOT, ROOT, self.path, sha, self.path, sha, bot_commit="1ffa6a03")
         self.assertEqual((got["battles"], got["finished"]), (1, 1))
         self.assertEqual(got["turns_excluded"], {})
-        self.assertEqual((got["turns_valued"], got["turns_mixed"]), (3, 1))
+        self.assertEqual((got["turns_valued"], got["turns_mixed"]), (3, 3))
         self.assertEqual((got["samples"], got["checkpoint_sha256"]), (cts_luck.SAMPLES, sha))
         self.assertEqual(got["result"]["mean"], 1.0)
         text = json.dumps(got)

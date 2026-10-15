@@ -1,0 +1,29 @@
+{
+  "name": "fz518_ice_fang_sub",
+  "purpose": "Ice Fang into a Substitute (issue 518): Baxcalibur, p1b, breaks Passimian's Substitute with Ice Fang (step 2); the pin draws both secondary rolls for the null target (sim/battle-actions.ts:1336-1350) and applies neither. A battle of the differential fuzzing of issue 396 (free random sets, fz_2_37), cut after its step 3: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,e9ea8eeec2ef70264a22199a035d77640a3e305be0e46743ed47834f654dfeb9",
+  "teams": [
+    "spiritomb (M) @ froslassite\nAbility: infiltrator\nLevel: 50\nEVs: 1 HP / 2 Def / 3 SpD / 2 Spe\nGentle Nature\n- destinybond\n- calmmind\n- lashout\n- disable\n\nninetales (M) @ silverpowder\nAbility: drought\nLevel: 50\nEVs: 15 HP / 12 Atk / 7 Def / 9 SpA / 12 SpD / 11 Spe\nLax Nature\n- solarbeam\n- darkpulse\n- hyperbeam\n- hypnosis\n\ngoodrahisui (F) @ passhoberry\nAbility: shellarmor\nLevel: 50\nEVs: 10 HP / 9 Atk / 7 Def / 7 SpA / 8 SpD / 13 Spe\nLax Nature\n- curse\n- sludgewave\n- hydropump\n- muddywater\n\ngourgeistsuper (F) @ widelens\nAbility: frisk\nLevel: 50\nEVs: 10 HP / 9 Atk / 11 Def / 13 SpA / 12 SpD / 11 Spe\nRash Nature\n- curse\n- grassknot\n- brutalswing\n- flamethrower\n\nbaxcalibur (M) @ barbaracite\nAbility: thermalexchange\nLevel: 50\nEVs: 7 HP / 6 Atk / 4 Def / 5 SpA / 5 SpD / 4 Spe\nBashful Nature\n- icefang\n- aerialace\n- crunch\n- glaiverush\n\numbreon (F) @ alakazite\nAbility: innerfocus\nLevel: 50\nEVs: 10 HP / 10 Atk / 14 Def / 8 SpA / 15 SpD / 9 Spe\nLax Nature\n- detect\n- lightscreen\n- charm\n- raindance",
+    "lycanrocmidnight (M) @ medichamite\nAbility: keeneye\nLevel: 50\nEVs: 12 HP / 13 Atk / 12 Def / 12 SpA / 7 SpD / 10 Spe\nBrave Nature\n- outrage\n- knockoff\n- lowsweep\n- substitute\n\npassimian (M) @ rockyhelmet\nAbility: defiant\nLevel: 50\nEVs: 10 HP / 10 Atk / 9 Def / 9 SpA / 14 SpD / 14 Spe\nRelaxed Nature\n- substitute\n- closecombat\n- curse\n- drainpunch\n\ngarbodor (M)\nAbility: weakarmor\nLevel: 50\nEVs: 10 HP / 9 Atk / 13 Def / 10 SpA / 11 SpD / 13 Spe\nRash Nature\n- sludgewave\n- poisonjab\n- raindance\n- substitute\n\nscizor (M) @ scizorite\nAbility: technician\nLevel: 50\nEVs: 4 HP / 4 Atk / 8 Def / 5 SpA / 2 SpD / 4 Spe\nDocile Nature\n- ironhead\n- strugglebug\n- steelwing\n- brutalswing\n\narmarouge (M) @ glalitite\nAbility: weakarmor\nLevel: 50\nEVs: 11 HP / 5 Atk / 9 Def / 11 SpA / 14 SpD / 16 Spe\nQuirky Nature\n- wideguard\n- hyperbeam\n- firespin\n- calmmind\n\ngreninja (M) @ floettite\nAbility: torrent\nLevel: 50\nEVs: 6 HP / 11 Atk / 15 Def / 10 SpA / 11 SpD / 13 Spe\nMild Nature\n- hydropump\n- waterpulse\n- protect\n- uturn"
+  ],
+  "choices": [
+    {
+      "p1": "team 6543",
+      "p2": "team 2145"
+    },
+    {
+      "p1": "move 2, move 2 2",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p1": "move 1, move 1 1",
+      "p2": "move 4 1, move 3 -1"
+    },
+    {
+      "p1": "switch 4, move 4 -1",
+      "p2": "move 2 -2, move 3 -1"
+    }
+  ]
+}
