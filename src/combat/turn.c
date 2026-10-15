@@ -6182,6 +6182,14 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
+    /* hitStepTryImmunity (sim/battle-actions.ts:676-684), after TryHit: a Prankster-boosted Curse fails on a Dark foe, -immune and
+     * nothing else, so no HP cost and no curse (issue 556: Mega Banette's Curse into Sharpedo), as in the general step. */
+    if (target / 2u != user / 2u && dfi_ability(b, dfi_at(b, user), DFI_ABILITY_PRANKSTER) &&
+        dfi_has_type(b, dfi_at(b, target), DFI_TYPE_DARK)) {
+        dfi_immune(r, target, 0u);
+        r->mres |= DFI_MRES_FALSE;
+        return DUOFORGE_OK;
+    }
     /* onHit: directDamage(source.maxhp / 2) to the user (sim/battle.ts directDamage: at least 1; no [from] on the line) */
     {
         const dfi_member *um = dfi_at(b, user);
