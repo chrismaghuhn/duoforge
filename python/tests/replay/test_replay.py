@@ -31,6 +31,16 @@ NEWLINE = chr(10)
 # DUOFORGE_REPLAY_PIN_DUMP=PATH every compared value (to list what changed, never to update the pin silently).
 PIN = data.ROOT / "python" / "tests" / "support" / "data" / "replay" / "behaviour_pin.json"
 
+_NAME_TABLES = {}
+
+
+def _name_tables(team_c):
+    """trace_to_c.load_tables of the data kind with the `team_c` flag, read once."""
+    from duoforge_live.data import trace_to_c
+    if team_c not in _NAME_TABLES:
+        _NAME_TABLES[team_c] = trace_to_c.load_tables(str(data.ROOT), team_c)
+    return _NAME_TABLES[team_c]
+
 
 def node_stats(*args, stdin=None):
     script = data.ROOT / "tools" / "reference" / "ps_stats.js"
@@ -461,7 +471,8 @@ class SpectatorTest(unittest.TestCase):
                         continue  # the trace ends at this point: no choice was made
                     text = trace["steps"][k]["input"][f"p{side + 1}"]
                     state = state0 if k == 0 else trace["steps"][k - 1]["state"]
-                    kind, choice = trace_to_c.convert_choice(text, side, state, roster_names)
+                    locked = trace_to_c.locked_slots(trace, k, battle.spec, _name_tables(trace_to_c.spec_is_team_c(battle.name, battle.spec)))
+                    kind, choice = trace_to_c.convert_choice(text, side, state, roster_names, locked=locked)
                     if kind == "team":
                         index = TEAM_TABLE.index(tuple(choice[:4]))
                         self.assertTrue(label.team[index // 8] >> (index % 8) & 1, (where, text))
