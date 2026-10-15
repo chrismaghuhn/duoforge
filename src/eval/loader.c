@@ -1,5 +1,6 @@
 #include "eval/model.h"
 #include "eval/graph.h"
+#include "encode/encode_internal.h"
 #include "core/alloc.h"
 #include "core/sha256.h"
 #include "state/context_internal.h"
@@ -232,7 +233,8 @@ static duoforge_status dfi_read(const char *path, const uint8_t expected[32],
         return dfi_eval_error(error, DUOFORGE_E_NULL_ARGUMENT, "load", "eval_load_argument");
     }
     if (!dfi_absolute(path)) { return dfi_eval_error(error, DUOFORGE_E_INVALID_ARGUMENT, "load", "eval_private_absolute_path"); }
-    if (version != 6u || (mask >> 47u) != 0u) {
+    uint32_t input_width = 0u;
+    if (version != 6u || dfi_encoder_check(version, mask, &input_width) != DUOFORGE_OK) {
         return dfi_eval_error(error, DUOFORGE_E_SCHEMA_MISMATCH, "load", "eval_encoder_mask");
     }
     FILE *stream = NULL;

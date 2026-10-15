@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import graph_registry
@@ -32,6 +33,12 @@ class Registry(unittest.TestCase):
                     config=copy.deepcopy(self.config);config[graph][field]+=1
                     with self.assertRaisesRegex(ValueError,"eval_graph_declaration_changed:"+graph):
                         graph_registry.render(config)
+
+    def test_actual_bc6_mask_and_defined_encoder_features(self):
+        self.assertEqual(graph_registry.BC6_MASK,0x082000835233ffff)
+        with mock.patch.object(graph_registry,"BC6_MASK",0x082000835233ffff | (1<<44)):
+            with self.assertRaisesRegex(ValueError,"eval_graph_encoder_mask_undefined"):
+                graph_registry.render(self.config)
 
     def test_extra_field_refuses(self):
         self.config["small"]["extra"]=0

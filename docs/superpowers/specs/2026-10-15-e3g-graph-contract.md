@@ -16,7 +16,22 @@ tests freeze the source shapes and counts without importing that generator.
 
 Private artifact graph identities are 1001=full, 1002=small, 1003=medium.
 DFEVAL format/arithmetic remain 1; these are not public gameplay identifiers.
-All descriptors pin encoder 6, mask bits 0..46, width 1094, the SHA-256 of the
+Encoder/mask validity follows the defined features of that encoder, exactly
+as `checkpoint.ext_supported_of()` and the C encoder preflight do. Encoder 6
+includes reserve families at bits 59..63; a contiguous low-bit cutoff is not
+its feature set. Undefined bits refuse `eval_encoder_mask`, as do an older
+encoder and its incompatible mask. Defined masks still must equal the
+registered value; disagreement refuses `eval_graph_schema`.
+
+The full BC6 registration pins `0x082000835233ffff` (bits 0..17, 20, 21, 25,
+28, 30, 32, 33, 39, 53, 59). HS obtained it locally from the configuration of
+checkpoint SHA-256
+`bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39`;
+no private weights were transferred. Small and medium retain the same
+teacher input contract. This corrects the initial invalid bits-0..46 mask;
+it changes no graph topology, arithmetic, dimensions or tensor inventory.
+
+All descriptors pin encoder 6, that exact mask, width 1094, the SHA-256 of the
 compact JSON feature-name list, and E3a's compact feature-name/group/coordinate
 mapping SHA-256. No serialized graph, instruction stream or arbitrary shape is
 executed. Public loading selects only these compiled descriptors after hashing

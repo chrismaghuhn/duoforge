@@ -128,3 +128,41 @@ endforeach()
 add_test(NAME duoforge.eval.tiles_concurrent COMMAND duoforge_eval_tiles --race)
 duoforge_label_test(duoforge.eval.tiles_concurrent full engine ci-tsan)
 set_tests_properties(duoforge.eval.tiles_concurrent PROPERTIES TIMEOUT 300)
+
+# E4 offline private-artifact bridge; CI exercises synthetic data only.
+add_executable(duoforge_bc6_runner "${PROJECT_SOURCE_DIR}/tools/eval/bc6_runner.c")
+target_include_directories(duoforge_bc6_runner PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(duoforge_bc6_runner PRIVATE duoforge_batch duoforge)
+duoforge_configure_target(duoforge_bc6_runner)
+get_target_property(_bc6_ipo duoforge_bc6_runner INTERPROCEDURAL_OPTIMIZATION)
+if(NOT _bc6_ipo)
+    set(_bc6_ipo OFF)
+endif()
+target_compile_definitions(duoforge_bc6_runner PRIVATE
+    DFE4_COMPILER="${CMAKE_C_COMPILER_ID}" DFE4_PLATFORM="${CMAKE_SYSTEM_NAME}"
+    DFE4_CONFIG="$<CONFIG>" DFE4_IPO="${_bc6_ipo}")
+if(DUOFORGE_PYTHON)
+    foreach(_check IN ITEMS export_bc6 bc6_gates)
+        add_test(NAME duoforge.eval.${_check} COMMAND "${DUOFORGE_PYTHON}"
+            "${PROJECT_SOURCE_DIR}/tools/eval/tests/test_${_check}.py")
+        duoforge_label_test(duoforge.eval.${_check} full tools python ci-no-skip)
+        set_tests_properties(duoforge.eval.${_check} PROPERTIES TIMEOUT 300 ENVIRONMENT
+            "DUOFORGE_E4_RUNNER=$<TARGET_FILE:duoforge_eval_graphs>;DUOFORGE_BC6_RUNNER=$<TARGET_FILE:duoforge_bc6_runner>;DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1;OPENBLAS_NUM_THREADS=1;JAX_PLATFORMS=cpu")
+    endforeach()
+else()
+    foreach(_check IN ITEMS export_bc6 bc6_gates)
+        add_test(NAME duoforge.eval.${_check} COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: needs NumPy/Python")
+        duoforge_label_test(duoforge.eval.${_check} full tools python ci-no-skip)
+        set_tests_properties(duoforge.eval.${_check} PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+    endforeach()
+endif()
+if(DUOFORGE_LEARN_PYTHON AND DUOFORGE_NODE AND DUOFORGE_PS_REFERENCE_DIR)
+    add_test(NAME duoforge.eval.bc6_float COMMAND "${DUOFORGE_LEARN_PYTHON}"
+        "${PROJECT_SOURCE_DIR}/tools/eval/tests/test_bc6_float.py")
+    set_tests_properties(duoforge.eval.bc6_float PROPERTIES TIMEOUT 300 ENVIRONMENT
+        "DUOFORGE_E4_RUNNER=$<TARGET_FILE:duoforge_eval_graphs>;DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1;OPENBLAS_NUM_THREADS=1;JAX_PLATFORMS=cpu;DUOFORGE_NODE=${DUOFORGE_NODE};DUOFORGE_PS_REFERENCE_DIR=${DUOFORGE_PS_REFERENCE_DIR}")
+else()
+    add_test(NAME duoforge.eval.bc6_float COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: needs JAX, Node 22 and pinned Showdown")
+    set_tests_properties(duoforge.eval.bc6_float PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+endif()
+duoforge_label_test(duoforge.eval.bc6_float slow tools python ci-no-skip requires-jax)

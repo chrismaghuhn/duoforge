@@ -73,7 +73,7 @@ def artifact(label, unit, context):
     for at,value in [(8,1),(12,256),(24,SHAPES[label][0]),(28,1),(32,6),(36,1094),
                      (48,3),(52,3),(56,count),(60,len(META)),(88,int(species)),(92,int(moves))]:
         struct.pack_into("<I",buf,at,value)
-    for at,value in [(40,(1<<47)-1),(64,256),(72,len(buf))]:struct.pack_into("<Q",buf,at,value)
+    for at,value in [(40,0x082000835233ffff),(64,256),(72,len(buf))]:struct.pack_into("<Q",buf,at,value)
     buf[96:128]=bytes.fromhex(fingerprint);buf[128:160]=bytes([3])*32;buf[160:192]=bytes([4])*32
     buf[192:224]=hashlib.sha256(json.dumps(list(features.FEATURE_NAMES),separators=(",",":")).encode()).digest()
     groups=("glob","side","position","occupant","member","present","species","item","ability","nature","moves","pp","move_count")
@@ -245,6 +245,17 @@ def main():
                 offset=next((i for i,(a,b) in enumerate(zip(got,want)) if a!=b),min(len(got),len(want)))
                 raise AssertionError(f"{label} unit {unit}: intermediate mismatch at byte {offset}; sizes {len(got)}/{len(want)}")
             streams.append(hashlib.sha256(got).hexdigest())
+        # Source-mask correction: undefined bits, old encoders/masks and a
+        # different defined mask all refuse, preserving the model sentinel.
+        for version,mask,reason in [(6,0x082000835233ffff | (1<<44),"eval_encoder_mask"),
+                (5,(1<<43)-1,"eval_encoder_mask"),(6,(1<<43)-1,"eval_graph_schema"),
+                (6,0x082000835233fffe,"eval_graph_schema")]:
+            buf,_,_,_=artifact(label,1024,context)
+            struct.pack_into("<I",buf,32,version);struct.pack_into("<Q",buf,40,mask)
+            path.write_bytes(buf)
+            invoke([runner,"--contract",str(path.resolve()),hashlib.sha256(buf).hexdigest(),
+                    str(version),hex(mask),reason])
+            checks+=1
         base,tensors,scales,offsets=artifact(label,1024,context)
         path.write_bytes(base)
         invoke([runner,"--oom",str(path.resolve()),hashlib.sha256(base).hexdigest(),str(SHAPES[label][0])])

@@ -263,17 +263,29 @@ int main(int argc,char **argv)
         for(size_t fail=0u;fail<4u;++fail) {
             cold_allocations a={0u,0u,fail};dfi_eval_allocator allocator={cold_allocate,cold_release,&a};
             df_sentinel sentinel;duoforge_evaluator *model=(duoforge_evaluator *)&sentinel;duoforge_eval_error error;
-            DF_CHECK_EQ_U64(&t,dfi_eval_load_descriptor(argv[2],hash,context,6u,UINT64_C(140737488355327),
+            DF_CHECK_EQ_U64(&t,dfi_eval_load_descriptor(argv[2],hash,context,6u,UINT64_C(0x082000835233ffff),
                 shape->graph,&allocator,&model,&error),DUOFORGE_E_OUT_OF_MEMORY);
             DF_CHECK(&t,model==(duoforge_evaluator *)&sentinel);DF_CHECK_EQ_U64(&t,a.frees,fail);
         }
+    }
+    else if(argc==7&&strcmp(argv[1],"--contract")==0) {
+        uint8_t hash[32];
+        if(!df_hex_to_bytes(argv[3],hash,sizeof hash)){duoforge_context_destroy(context);return 2;}
+        df_sentinel sentinel;duoforge_evaluator *model=(duoforge_evaluator *)&sentinel;
+        duoforge_eval_error error;
+        const uint32_t version=(uint32_t)strtoul(argv[4],NULL,10);
+        const uint64_t mask=(uint64_t)strtoull(argv[5],NULL,0);
+        DF_CHECK_EQ_U64(&t,duoforge_evaluator_load(argv[2],hash,context,version,mask,&model,&error),
+                        DUOFORGE_E_SCHEMA_MISMATCH);
+        DF_CHECK(&t,model==(duoforge_evaluator *)&sentinel);
+        DF_CHECK(&t,strcmp(error.reason,argv[6])==0);
     }
     else if((argc==6&&strcmp(argv[1],"--run")==0)||(argc==5&&strcmp(argv[1],"--refuse")==0)) {
         uint8_t hash[32];
         if(!df_hex_to_bytes(argv[3],hash,sizeof hash)){duoforge_context_destroy(context);return 2;}
         df_sentinel sentinel;duoforge_evaluator *model=(duoforge_evaluator *)&sentinel;
         duoforge_eval_error error;
-        const duoforge_status st=duoforge_evaluator_load(argv[2],hash,context,6u,UINT64_C(140737488355327),&model,&error);
+        const duoforge_status st=duoforge_evaluator_load(argv[2],hash,context,6u,UINT64_C(0x082000835233ffff),&model,&error);
         if(strcmp(argv[1],"--refuse")==0) {
             DF_CHECK(&t,st!=DUOFORGE_OK&&model==(duoforge_evaluator *)&sentinel);
             DF_CHECK(&t,strcmp(error.reason,argv[4])==0);
