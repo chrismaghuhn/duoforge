@@ -1,8 +1,9 @@
 # 0083 - Singles: `DUOFORGE_ACTIVE_PER_SIDE` as a capacity, and the Champions-singles development kind
 
 Status: **draft for the HS** (OU lane, step O2 of the [OU design](../superpowers/specs/2026-10-15-gen9-ou-design.md),
-section 2.2; Q8 accepted the capacity reading on 2026-10-14). **The number 0083, the kind value 8 and the name
-`duoforge_context_active_per_side` are provisional until the HS assigns them** (Q7). The owner's decision of
+section 2.2; Q8 accepted the capacity reading on 2026-10-14). The owner confirmed the number 0083, the kind value 8
+and the name `duoforge_context_active_per_side` on 2026-10-15 (Q7), and accepted the narrowing of view audit #323
+(section 7). The owner's decision of
 2026-10-15 (Q1 changed, directly Gen 9 OU) leaves this step as it was: singles on proven mechanics. Its reference
 battles are recorded in `[Gen 9 Champions] OU` (owner and HS, 2026-10-15; section 6).
 
@@ -12,7 +13,7 @@ battles are recorded in `[Gen 9 Champions] OU` (owner and HS, 2026-10-15; sectio
 (`include/duoforge/duoforge.h`, the comment above the constant). No struct changes size, no offset moves,
 `python/duoforge/_layout.py` is unchanged. The game type comes from the data kind:
 
-- `DUOFORGE_DATA_KIND_POOL_SINGLES_DEV` (provisional value 8): today's pool tables and the POOL_DEV rules (the same
+- `DUOFORGE_DATA_KIND_POOL_SINGLES_DEV` (value 8): today's pool tables and the POOL_DEV rules (the same
   support manifest, the same pool tail), one position per side. Every existing kind keeps its behaviour and its bytes.
 - `duoforge_context_active_per_side(ctx, &n)`: 1 for the singles kind, 2 for every other kind. NULL arguments give
   `DUOFORGE_E_NULL_ARGUMENT`; it allocates nothing. Callers do not derive the game type from a kind table.
