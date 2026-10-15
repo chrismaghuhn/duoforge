@@ -123,7 +123,7 @@ EXT_FIELDS = {
     "TRAP_ELAPSED": (("v2bits", sum(EXT2_TRAP_ELAPSED)),),  # POSITION_EXT2 (volatiles2), a record field of its own
     # Attract's source position (step G87, decision 0080): volatiles2 bits 12-13, the source's flat position
     "ATTRACT_SOURCE": (("v2bits", _ATTRACT_SOURCE_BITS),),
-    # Gravity (step K4, #475, decision 0015 5df): the field view's gravity_turns, folded from FIELD_START / FIELD_END detail 6
+    # Gravity (step K4, #475, decision 0015 5dl): the field view's gravity_turns, folded from FIELD_START / FIELD_END detail 6
     "GRAVITY": (("global", "gravity_turns"),),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
@@ -1430,7 +1430,7 @@ class Tracker:
             if detail == 2:
                 self._trick_room = FIELD_TURNS
             elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
-                # K4 (#475, decision 0015 5df): Gravity counts five turns; no extender is modelled for it
+                # K4 (#475, decision 0015 5dl): Gravity counts five turns; no extender is modelled for it
                 self._gravity = FIELD_TURNS
             else:
                 # DUOFORGE_FIELD_* -> the observation's DUOFORGE_TERRAIN_*: Grassy, Psychic (Team C), Electric and Misty

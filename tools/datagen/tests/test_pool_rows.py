@@ -281,7 +281,7 @@ class PoolRows(unittest.TestCase):
                                         Rows.moves)):
             # a row of the pool is UNMODELED; an id that the format does not have (Telekinesis) needs no row
             self.assertEqual(sorted(set(ids) & set(rows) - listed(kind, array)), [], kind)
-        # step K4 (#475, decision 0015 5df): Gravity is an engine row now (dfi_grounded tests the field's Gravity turns first)
+        # step K4 (#475, decision 0015 5dl): Gravity is an engine row now (dfi_grounded tests the field's Gravity turns first)
         self.assertNotIn('gravity', listed('MOVE', 'dfi_pool_move_unmodeled'))
         self.assertIn('[DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,', block('const uint8_t dfi_pool_ability_handler['))
         self.assertNotIn('levitate', listed('ABILITY', 'dfi_pool_ability_unmodeled'))

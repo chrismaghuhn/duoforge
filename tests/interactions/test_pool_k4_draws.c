@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_k4_draws (white-box): step K4 (#475, decision 0015 5df), Gravity's accuracy rule with the draws of the
+ * duoforge.state.pool_k4_draws (white-box): step K4 (#475, decision 0015 5dl), Gravity's accuracy rule with the draws of the
  * recorded k4 battles changed by one value each.
  *
  * The recorded battles are replayed by duoforge.reference.conformance_pool_data with the reference's draws. Here one
@@ -237,7 +237,7 @@ static uint32_t replay_triple_axel(df_test *t, duoforge_context *ctx, uint32_t a
     return used;
 }
 
-/* 3. The later hit at a non-zero stage pair (M10, decision 0015 5df). In k4_gravity_multihit the Triple Axel step (step 2)
+/* 3. The later hit at a non-zero stage pair (M10, decision 0015 5dl). In k4_gravity_multihit the Triple Axel step (step 2)
  * hits three times under Gravity with the recorded accuracy draws 47, 52 and 72. Here the user is raised to accuracy +1 and
  * the target to evasion +6, set on the live battle after steps 0 and 1; the reachable pair (1, 6) is not reached by the
  * marked content (Double Team is unmarked, Minimize and Sweet Scent are unmodelled), so the rule is checked white-box. The

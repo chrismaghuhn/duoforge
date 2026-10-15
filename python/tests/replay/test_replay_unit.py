@@ -402,7 +402,7 @@ class LinesTest(unittest.TestCase):
         self.assertTrue(self.stop("|-setboost|p1a: Staraptor|atk|6|[from] move: Swords Dance").startswith("line:-setboost"))
 
     def test_feature_lines_stop(self):
-        # K4 (#475): Gravity folds (the field view's gravity_turns, decision 0015 5df); its start and end lines do not stop
+        # K4 (#475): Gravity folds (the field view's gravity_turns, decision 0015 5dl); its start and end lines do not stop
         self.assertEqual(lines.check("|-fieldstart|move: Gravity", self.view), "fold")
         self.assertEqual(lines.check("|-fieldend|move: Gravity", self.view), "fold")
         self.assertEqual(lines.check("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo",

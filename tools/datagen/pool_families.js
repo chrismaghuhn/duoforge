@@ -1995,7 +1995,7 @@ function moveIsModelled(raw, id) {
     if (raw.sideCondition !== undefined && !MODELLED_SIDE.has(raw.sideCondition)) {
         return false;
     }
-    // Step K4 (#475, decision 0015 5df): Gravity is modelled (gen_closure.py PSEUDO_WEATHER); the gravity-flagged moves are not
+    // Step K4 (#475, decision 0015 5dl): Gravity is modelled (gen_closure.py PSEUDO_WEATHER); the gravity-flagged moves are not
     // (gen_closure.py 'flag gravity': Gravity's choice disable and onStart removal are not built).
     if (raw.flags && raw.flags.gravity) {
         return false;

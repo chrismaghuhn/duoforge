@@ -100,7 +100,7 @@ SIDE_CONDITION = {'tailwind': 1, 'reflect': 2, 'lightscreen': 3}
 # Step G37 (POOL only): the four entry hazards. The values are the DUOFORGE_SIDE_* values of SIDE_START and SIDE_END (Aurora Veil is 4, a
 # handler of its own): Stealth Rock 5, Spikes 6, Toxic Spikes 7, Sticky Web 8. Their moves have the target class foeSide.
 SIDE_CONDITION_P = dict(SIDE_CONDITION, stealthrock=5, spikes=6, toxicspikes=7, stickyweb=8)
-PSEUDO_WEATHER = {'trickroom': 1, 'gravity': 2}  # K4 (#475): Gravity, decision 0015 5df
+PSEUDO_WEATHER = {'trickroom': 1, 'gravity': 2}  # K4 (#475): Gravity, decision 0015 5dl
 # K4 (#475): the pool moves with the gravity flag (data/moves.ts:1712, 5903, 5942, 8906, 10861). They stay UNMODELLED ('flag
 # gravity') until Gravity's choice disable and onStart removal are built; a new gravity-flagged pool move fails the generator.
 GRAVITY_FLAG_MOVES = frozenset({'bounce', 'fly', 'flyingpress', 'highjumpkick', 'magnetrise'})
@@ -399,16 +399,16 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         fail('move %s: the condition is not the pinned text' % mid)
     if pool and 'gravity: 1' in f['flags'][1] and mid not in GRAVITY_FLAG_MOVES:
         fail('move %s: a pool move with the gravity flag is new: Gravity\'s choice disable (data/moves.ts:7811-7831) and its '
-             'onStart removal (:7779-7800) must be built before it is modelled (decision 0015 5df)' % mid)
+             'onStart removal (:7779-7800) must be built before it is modelled (decision 0015 5dl)' % mid)
     if pool and mid == 'gravity':
         # K4 (#475): the Gravity condition's facts the engine implements; a change of any of them stops the generator.
         cond = norm(f['condition'][1]) if 'condition' in f else ''
         for fact in GRAVITY_CONDITION_FACTS:
             if fact not in cond:
-                fail('move gravity: the condition lost the pinned fact %r (data/moves.ts:7754-7842, decision 0015 5df)' % fact)
+                fail('move gravity: the condition lost the pinned fact %r (data/moves.ts:7754-7842, decision 0015 5dl)' % fact)
         for absent in GRAVITY_CONDITION_ABSENT:
             if absent in cond:
-                fail('move gravity: the condition gained %r (data/moves.ts:7754-7842, decision 0015 5df)' % absent)
+                fail('move gravity: the condition gained %r (data/moves.ts:7754-7842, decision 0015 5dl)' % absent)
     if pool and handled[0] == 'SUBSTITUTE':
         for name, text in (('onTryHit', SUBSTITUTE_ONTRYHIT), ('onHit', SUBSTITUTE_ONHIT), ('condition', SUBSTITUTE_CONDITION)):
             if name not in f or norm(f[name][1]) != text:
@@ -481,7 +481,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             # Step G92 (decision 0062): cantusetwice (Gigaton Hammer, dropped; Blood Moon) has no reader in the turn code: unmodelled.
             if fl in FLAGS_THAT_MATTER or fl == 'cantusetwice':
                 unmodeled.append('flag %s' % fl)
-            # K4 (#475, decision 0015 5df): the gravity flag is read by Gravity's choice disable, cant line and onStart removal
+            # K4 (#475, decision 0015 5dl): the gravity flag is read by Gravity's choice disable, cant line and onStart removal
             # (data/moves.ts:7811-7831, :7779-7800), none of which is built: the flag is a reason to refuse the move.
             if fl == 'gravity':
                 unmodeled.append('flag gravity')

@@ -117,7 +117,7 @@ static bool dfi_line_variant(const duoforge_event *e, const dfi_line_schema *s)
                e->detail == DUOFORGE_BLOCK_WIDE_GUARD || e->detail == DUOFORGE_BLOCK_QUICK_GUARD;
     case DUOFORGE_EVENT_WEATHER: return e->detail <= DUOFORGE_WEATHER_SNOW;
     case DUOFORGE_EVENT_FIELD_START:
-    /* Step K4 (#475, decision 0015 5df): Gravity (6) is accepted by itself; 7 (Magic Room) is refused until K5. */
+    /* Step K4 (#475, decision 0015 5dl): Gravity (6) is accepted by itself; 7 (Magic Room) is refused until K5. */
     case DUOFORGE_EVENT_FIELD_END:
         return (e->detail >= DUOFORGE_FIELD_GRASSY_TERRAIN && e->detail <= DUOFORGE_FIELD_MISTY_TERRAIN) ||
                e->detail == DUOFORGE_FIELD_GRAVITY;

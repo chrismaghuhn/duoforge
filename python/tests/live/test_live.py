@@ -1440,7 +1440,7 @@ class TrackerTest(unittest.TestCase):
 
 
 class GravityViewTest(unittest.TestCase):
-    """K4 (#475, decision 0015 5df): the field view's gravity_turns per step, for both viewers, from the recorded k4 battles.
+    """K4 (#475, decision 0015 5dl): the field view's gravity_turns per step, for both viewers, from the recorded k4 battles.
     The view extension holds FIELD_EXT at offset 16 (python/duoforge/_layout.py: OBSERVATION_EXT), gravity_turns its byte 0.
     Gravity is set in turn 1 (state 2 shows 4 after the turn-1 residual), counts down one per residual and is gone after the
     fifth residual (state 6 shows 0): the same count for both players, since the field is shared."""

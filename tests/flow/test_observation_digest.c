@@ -391,7 +391,7 @@ static void step_plumbing(df_test *t)
     duoforge_battle_destroy(legacy); duoforge_battle_destroy(observed); duoforge_context_destroy(ctx);
 }
 
-/* Step K4 (#475, decision 0015 5df): FIELD_START and FIELD_END accept detail 6 (Gravity) and refuse 7 (Magic Room, K5). */
+/* Step K4 (#475, decision 0015 5dl): FIELD_START and FIELD_END accept detail 6 (Gravity) and refuse 7 (Magic Room, K5). */
 static void field_detail_vectors(df_test *t)
 {
     const dfi_visible_identity identity = {0x0102u, 1u, 1u};
