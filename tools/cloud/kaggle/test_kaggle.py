@@ -353,6 +353,54 @@ class KaggleTest(unittest.TestCase):
         self.assertIn("still running", r.stderr)
 
 
+class PseudonymizeTest(unittest.TestCase):
+    """pseudonymize.py: the copy for Kaggle without replay ids, the map apart and local."""
+
+    def make(self, root):
+        import numpy as np
+        sys.path.insert(0, os.path.join(kaggle_run.REPO, "python"))
+        from duoforge_replay.dataset import write_npz
+        src = os.path.join(root, "ds")
+        os.makedirs(src)
+        with open(os.path.join(src, "manifest.json"), "w", encoding="utf-8") as f:
+            json.dump({"parts": [{"part": "part-x-00000"}, {"part": "part-x-00001"}]}, f)
+        for k, ids in enumerate((["gen9championsvgc2026regmc-1111111111", "gen9championsvgc2026regmc-2222222222"], [])):
+            part = os.path.join(src, f"part-x-{k:05d}")
+            os.makedirs(part)
+            write_npz(os.path.join(part, "games.npz"), {"replay_id": np.array(ids, dtype="<U36"),
+                                                       "players": np.zeros((len(ids), 2), np.uint64)})
+            with open(os.path.join(part, "manifest.json"), "w", encoding="utf-8") as f:
+                json.dump({"games_sha256": sha(os.path.join(part, "games.npz")), "unit": f"x-{k:05d}"}, f)
+        return src
+
+    def test_the_copy_has_labels_the_map_is_apart_and_nothing_else_changes(self):
+        import numpy as np
+        import pseudonymize
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self.make(tmp)
+            dst, mp = os.path.join(tmp, "copy"), os.path.join(tmp, "map.json")
+            self.assertEqual(pseudonymize.pseudonymize(src, dst, mp), 2)
+            with np.load(os.path.join(dst, "part-x-00000", "games.npz")) as z:
+                self.assertEqual(list(z["replay_id"]), ["game-00000-000000", "game-00000-000001"])
+                self.assertEqual(z["players"].shape, (2, 2))
+            m = json.load(open(os.path.join(dst, "part-x-00000", "manifest.json"), encoding="utf-8"))
+            self.assertEqual(m["games_sha256"], sha(os.path.join(dst, "part-x-00000", "games.npz")))
+            self.assertEqual(m["unit"], "x-00000")
+            ids = json.load(open(mp, encoding="utf-8"))["replay_ids"]
+            self.assertEqual(ids["game-00000-000001"], "gen9championsvgc2026regmc-2222222222")
+            for d, _, names in os.walk(dst):
+                for n in names:
+                    with open(os.path.join(d, n), "rb") as f:
+                        self.assertNotIn(b"2222222222", f.read())
+            with self.assertRaisesRegex(SystemExit, "--out exists"):
+                pseudonymize.pseudonymize(src, dst, os.path.join(tmp, "map2.json"))
+            with self.assertRaisesRegex(SystemExit, "--map lies inside --out"):
+                pseudonymize.pseudonymize(src, os.path.join(tmp, "c2"), os.path.join(tmp, "c2", "map.json"))
+            with self.assertRaisesRegex(SystemExit, "inside the repository"):
+                pseudonymize.pseudonymize(src, os.path.join(kaggle_run.REPO, "copy-test"), os.path.join(tmp, "m3.json"))
+            self.assertFalse(os.path.exists(os.path.join(kaggle_run.REPO, "copy-test")))
+
+
 class JobTest(unittest.TestCase):
     """kaggle_job.py's pieces that run without Kaggle: the data check, the job's arguments, the deadline."""
 

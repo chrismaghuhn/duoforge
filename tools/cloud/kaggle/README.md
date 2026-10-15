@@ -11,6 +11,7 @@ into the repository, and nothing is public on Kaggle.
 | --- | --- |
 | `kaggle_run.py` | the local commands: `plan`, `privacy`, `upload`, `start`, `fetch` (its docstring has the details) |
 | `kaggle_job.py` | the job of the private notebook: the repository at the exact commit, its library, the data by sha256, the environment, `python -m duoforge_learn.bc` with a deadline; `status.json`, `env.json` and the run in `/kaggle/working` |
+| `pseudonymize.py` | a copy of a replay dataset without its replay ids (public battle ids): each becomes a meaningless label, and the map label -> replay id stays local in a file of its own, apart from the copy (HauptSession 2026-10-15). Only the copy goes into a content list |
 | `test_kaggle.py` | the tests, against a stub `kaggle` only |
 
 ## The rules the commands follow
@@ -34,6 +35,8 @@ into the repository, and nothing is public on Kaggle.
   - **The tournament sun team** is refused by its sha256 in `plan`, in every later command and again in the notebook. The owner's exception of 2026-10-15 is AWS and #458 only.
   - **Any file inside the repository:** the notebook takes the repository from GitHub at the exact commit.
 - **The commit:** the notebook checks out exactly `--commit` and refuses another (`wrong_commit`).
+- **No replay ids:** a replay dataset goes to Kaggle only as its `pseudonymize.py` copy. `duoforge_learn.bc` reads the
+  replay id for its messages only, so it trains on the copy as on the original.
 
 ## Runs longer than a session
 
