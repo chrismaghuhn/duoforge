@@ -1,0 +1,36 @@
+{
+  "name": "o2_moody_queued_faint",
+  "purpose": "Moody with a queued faint (decision 0083 section 7): at step 5 Perish Song's perish0 knocks out Scovillain, p2b, and Politoed in the residual; Scovillain's Moody runs after it in the same residual and draws its two stats (MOODY, MOODY): Pokemon.faint() only sets hp 0 and the handler loop skips only a fainted holder (sim/battle.ts:512-514). The engine skipped the handler of a holder at 0 HP. A battle of the doubles differential campaign of decision 0083 section 7 (tools/reference/diff_driver.py random, seed 90, two Reg M-C teams, its battle 17), cut after its step 5: adopted as the regression fixture of that fix. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,b9e141db2c850c9aaa9d6dffca339df40808f4f59c8f5cd72fbb6c17c2b4d009",
+  "teams": [
+    "Gengar (F) @ Gengarite\nAbility: Cursed Body\nLevel: 50\nEVs: 25 HP / 1 Def / 8 SpA / 32 Spe\nTimid Nature\n- Shadow Ball\n- Sludge Bomb\n- Perish Song\n- Protect\n\nHatterene (F) @ Fairy Feather\nAbility: Magic Bounce\nLevel: 50\nEVs: 27 HP / 6 Def / 32 SpA\nQuiet Nature\n- Dazzling Gleam\n- Psychic\n- Trick Room\n- Protect\n\nScovillain (M)\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 1 Def / 32 SpA\nModest Nature\n- Flamethrower\n- Rage Powder\n- Leaf Storm\n- Protect\n\nPelipper (M) @ Choice Scarf\nAbility: Drizzle\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hurricane\n- Muddy Water\n- Weather Ball\n- Soak\n\nAegislash (M) @ Spell Tag\nAbility: Stance Change\nLevel: 50\nEVs: 11 HP / 32 Atk / 23 Spe\nAdamant Nature\n- Poltergeist\n- Shadow Sneak\n- King's Shield\n- Sacred Sword\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nAdamant Nature\n- Fake Out\n- Flare Blitz\n- Throat Chop\n- Parting Shot",
+    "Scovillain (M)\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 1 Def / 32 SpA\nModest Nature\n- Flamethrower\n- Rage Powder\n- Leaf Storm\n- Protect\n\nIncineroar (M) @ Shuca Berry\nAbility: Intimidate\nLevel: 50\nEVs: 25 HP / 20 Def / 13 SpD / 8 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n- Fake Out\n\nPelipper (F) @ Focus Sash\nAbility: Drizzle\nLevel: 50\nEVs: 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Soak\n- Hurricane\n- Tailwind\n- Weather Ball\n\nHatterene (F) @ Life Orb\nAbility: Magic Bounce\nLevel: 50\nEVs: 27 HP / 7 Def / 32 SpA\nQuiet Nature\n- Expanding Force\n- Dazzling Gleam\n- Trick Room\n- Protect\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 27 HP / 25 Def / 8 SpA / 1 SpD / 5 Spe\nBold Nature\n- Protect\n- Perish Song\n- Weather Ball\n- Helping Hand\n\nAbsol (M) @ Absolite Z\nAbility: Pressure\nLevel: 50\nEVs: 1 HP / 26 Atk / 7 Def / 32 Spe\nAdamant Nature\n- Night Slash\n- Close Combat\n- Will-O-Wisp\n- Detect"
+  ],
+  "choices": [
+    {
+      "p1": "team 6125",
+      "p2": "team 6154"
+    },
+    {
+      "p1": "move 1 2, move 3 mega",
+      "p2": "switch 3, move 2"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 4 -2, move 1 -1"
+    },
+    {
+      "p1": "move 4 2, move 2 -1",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "move 3 1, move 3 2"
+    }
+  ]
+}

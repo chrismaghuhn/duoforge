@@ -92,25 +92,45 @@ Battle Clause, and their turn limit at 1001 is not modelled either, as before th
 
 ## 7. Fixes found by the singles campaigns that apply to doubles too
 
-- A Substitute's hit is a null target, not a false one, for `runMoveEffects` and `selfDrops` (decision 0032): it now
-  also sets the selfSwitch flag (U-turn, Flip Turn), `mustrecharge` (Hyper Beam), the lockedmove (Outrage) and Glaive
-  Rush's volatile (sim/battle-actions.ts:1062-1065, 1286-1312, 1317-1335).
+Every fix below has its own test. Where the case is legal in Reg M-C, the test is a doubles reference battle under
+`tests/reference/specs/` that main fails and this step passes. Where the case is a refusal, the test is a white-box C test
+that builds the state. The battles named `fz_90_*` come from a doubles differential campaign (seed 90, 400 battles of two
+Reg M-C teams).
+
+- A Substitute's hit is a null target, not a false one, for `selfDrops` (decision 0032). The selfSwitch flag, `mustrecharge`
+  and the lockedmove came to main with issues 517 to 519. This step adds Glaive Rush's volatile
+  (sim/battle-actions.ts:1317-1335). Test: `o2_glaive_rush_substitute` (written for it).
 - A Choice item's lock on a lockedmove names its slot in the observation and in the conformance comparison, as the
-  reference's choice lock does.
-- Last Respects after a spent Revival Blessing PP of its side is refused (`E_UNSUPPORTED`): `side.totalFainted` counts
-  every faint (sim/battle.ts:2554) and the state does not count revivals, so the roster count of decision 0009 section
-  4.1 undercounts. A stored counter would be a state change and is left to the HS.
+  reference's choice lock does. This narrows the view audit of 2026-10-10 (#323), which hid the slot of a foe after a
+  lockedmove, a Choice lock included: the Choice lock's slot stays when the lock's drawn count ends, so showing it tells
+  nothing about the count. The live tracker's view follows (`_shown_locked_slot`). Tests: `o2_choice_lockedmove` (written
+  for it; main fails it in the state and both views) and `LockedMoveSlotTest` in `python/tests/live/test_live.py`.
+- Last Respects after a spent Revival Blessing PP of its side is refused (`E_UNSUPPORTED`). `side.totalFainted` counts
+  every faint (sim/battle.ts:2554), and the state does not count revivals, so the roster count of decision 0009 section
+  4.1 undercounts. A stored counter would be a state change and is left to the HS. Test: `duoforge.state.last_respects_revival`.
+  It continues the reference battle `o2_last_respects_revival`: after the revival the turn is refused and the battle is
+  unchanged; before it the same turn runs.
 - Moody's residual handler of a Pokemon whose faint is queued and not yet processed (Perish Song's perish0 earlier in the
-  same residual) runs and draws: `Pokemon.faint()` only sets hp 0, the handler loop skips only a `fainted` holder
-  (sim/battle.ts:512-514), and the boost of a Pokemon at 0 HP does nothing (Moody is banned in Champions OU).
+  same residual) runs and draws. `Pokemon.faint()` only sets hp 0, the handler loop skips only a `fainted` holder
+  (sim/battle.ts:512-514), and the boost of a Pokemon at 0 HP does nothing. Moody is banned in Champions OU but legal in
+  Reg M-C. Test: `o2_moody_queued_faint` (`fz_90_17`, cut after its step 5).
 - Stance Change resets a type that Soak or Double Shock set, as Mega Evolution already did: `formeChange` calls
-  `setSpecies`, which calls `setType(species.types, true)` (sim/pokemon.ts:1387-1392).
+  `setSpecies`, which calls `setType(species.types, true)` (sim/pokemon.ts:1387-1392). Test: `o2_stance_change_soak`
+  (`fz_90_282`, cut after its step 1).
 - The converter's Pressure count of the viewer's own Pokemon took the sheet's ability again when a Mega Evolved Pokemon
-  switched back in; Mega Evolution is permanent (sim/battle-actions.ts:1902), so the Mega's ability counts
-  (found by a Custom Game battle with a Mega Absol). The engine was right; the reference was wrong.
-- A Magic Bounce holder under Throat Chop that bounces a sound move (Parting Shot) shows `cant|holder|move: Throat Chop`
-  and the bounced run ends there: Throat Chop's `onModifyMove` (data/moves.ts:19406-19411) runs in `useMoveInner` before
-  the move line (sim/battle-actions.ts:439-445). The engine ran the bounced move.
+  switched back in. Mega Evolution is permanent (sim/battle-actions.ts:1902), so the Mega's ability counts. A Custom Game
+  battle with a Mega Absol found it. The engine was right; the converter was wrong. Test: `o2_pressure_after_mega`
+  (`fz_90_345`, cut after its step 11); the converter of main fails it on the observed PP.
+- A Magic Bounce holder under Throat Chop that bounces a sound move (Parting Shot) shows `cant|holder|move: Throat Chop`,
+  and the bounced run ends there. Throat Chop's `onModifyMove` (data/moves.ts:19417-19422) runs in `useMoveInner` before
+  the move line (sim/battle-actions.ts:439-445). In doubles, `getRandomTarget` first draws one RANDOM_TARGET over the
+  holder's standing foes (sim/battle.ts:2490-2521); in singles it takes the foe's slot 0 without a draw. The engine ran the
+  bounced move. The doubles part is its own change (issue 570, test `fz570_throat_chop_bounce`); this step adds the singles
+  branch.
+
+Five battles of the same doubles campaign still diverge (`fz_90_14`, `120`, `161`, `217`, `234`). Main fails them too.
+In each of them a Moody holder's residual meets the no-order Protect/stall pair of a speed tie: the reference draws that
+tie at sort time and then the Moody draws, and the engine draws Moody first. This step does not change that order.
 
 ## 8. Cost of the capacity reading (measured)
 

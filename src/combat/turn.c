@@ -7259,12 +7259,12 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
             }
         }
     }
-    /* Throat Chop's onModifyMove (data/moves.ts:19406-19411): useMoveInner runs ModifyMove before the move line
-     * (battle-actions.ts:439), so a holder under Throat Chop shows `cant|holder|move: Throat Chop` for a sound move and the
-     * bounced run ends there with false (`!move`, :443-445): no move line, and the holder's result is false (useMove).
+    /* Throat Chop's onModifyMove (data/moves.ts:19417-19422): useMoveInner runs ModifyMove before the move line
+     * (sim/battle-actions.ts:439), so a holder under Throat Chop shows `cant|holder|move: Throat Chop` for a sound move and the
+     * bounced run ends there with false (`!move`, :444-445): no move line, and the holder's result is false (useMove).
      * Before that test the false move's target no longer equals the base target (:440-442), so getRandomTarget runs with
-     * no move (sim/battle.ts getRandomTarget): in singles the foe's slot 0 without a draw, in doubles randomFoe, one
-     * sample over the holder's standing foes (sim/side.ts:369-373, 390-403) whose result nothing reads. */
+     * no move (sim/battle.ts:2490-2521): in singles the foe's slot 0 without a draw (:2509), in doubles randomFoe (:2521),
+     * one sample over the holder's standing foes (sim/side.ts:369-373, 390-403) whose result nothing reads. */
     if (b->tail.sides[holder / 2u].positions[holder % 2u].throat_chop_turns != 0u &&
         (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_SOUND) != 0u) {
         const duoforge_event e =

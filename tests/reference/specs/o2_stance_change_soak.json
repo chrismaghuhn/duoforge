@@ -1,0 +1,21 @@
+{
+  "name": "o2_stance_change_soak",
+  "purpose": "Stance Change ends a Soak type (decision 0083 section 7): at step 1 Pelipper, p1b, soaks Aegislash, p2b (Water), whose Sacred Sword then turns it to Aegislash-Blade: formeChange calls setSpecies, which resets the types (sim/pokemon.ts:1387-1392), so Incineroar's Flare Blitz is super effective against Steel/Ghost again. The engine kept the Water type. A battle of the doubles differential campaign of decision 0083 section 7 (tools/reference/diff_driver.py random, seed 90, two Reg M-C teams, its battle 282), cut after its step 1: adopted as the regression fixture of that fix. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,ce23c645ed7294477365416c4557172373c9203688f9d2d2946a5c73ee43d4db",
+  "teams": [
+    "Incineroar (M) @ Shuca Berry\nAbility: Intimidate\nLevel: 50\nEVs: 25 HP / 20 Def / 13 SpD / 8 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n- Fake Out\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 27 HP / 25 Def / 8 SpA / 1 SpD / 5 Spe\nBold Nature\n- Protect\n- Perish Song\n- Weather Ball\n- Helping Hand\n\nPelipper (F) @ Focus Sash\nAbility: Drizzle\nLevel: 50\nEVs: 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Soak\n- Hurricane\n- Tailwind\n- Weather Ball\n\nScovillain (M)\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 1 Def / 32 SpA\nModest Nature\n- Flamethrower\n- Rage Powder\n- Leaf Storm\n- Protect\n\nHatterene (F) @ Life Orb\nAbility: Magic Bounce\nLevel: 50\nEVs: 27 HP / 7 Def / 32 SpA\nQuiet Nature\n- Expanding Force\n- Dazzling Gleam\n- Trick Room\n- Protect\n\nAbsol (M) @ Absolite Z\nAbility: Pressure\nLevel: 50\nEVs: 1 HP / 26 Atk / 7 Def / 32 Spe\nAdamant Nature\n- Night Slash\n- Close Combat\n- Will-O-Wisp\n- Detect",
+    "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nAdamant Nature\n- Fake Out\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n\nPelipper (M) @ Choice Scarf\nAbility: Drizzle\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hurricane\n- Muddy Water\n- Weather Ball\n- Soak\n\nAegislash (M) @ Spell Tag\nAbility: Stance Change\nLevel: 50\nEVs: 11 HP / 32 Atk / 23 Spe\nAdamant Nature\n- Poltergeist\n- Shadow Sneak\n- King's Shield\n- Sacred Sword\n\nGengar (F) @ Gengarite\nAbility: Cursed Body\nLevel: 50\nEVs: 25 HP / 1 Def / 8 SpA / 32 Spe\nTimid Nature\n- Shadow Ball\n- Sludge Bomb\n- Perish Song\n- Protect\n\nScovillain (M)\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 1 Def / 32 SpA\nModest Nature\n- Flamethrower\n- Rage Powder\n- Leaf Storm\n- Protect\n\nHatterene (F) @ Fairy Feather\nAbility: Magic Bounce\nLevel: 50\nEVs: 27 HP / 6 Def / 32 SpA\nQuiet Nature\n- Dazzling Gleam\n- Psychic\n- Trick Room\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5314",
+      "p2": "team 1352"
+    },
+    {
+      "p1": "move 2, move 1 2",
+      "p2": "move 2 -2, move 4 1"
+    }
+  ]
+}

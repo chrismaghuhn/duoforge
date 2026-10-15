@@ -1754,8 +1754,10 @@ class Tracker:
 
     def _shown_locked_slot(self, p, own):
         """The locked slot the view shows: a running two-turn move's or a Choice lock's, but none for a foe whose last
-        move is a lockedmove, whose drawn length may end silently (src/state/observation.c, dfi_maybe_lockedmove)."""
-        if not own and p.last_move is not None and self.data.move_flags(p.last_move) & _LOCKED_MOVE:
+        move is a lockedmove, whose drawn length may end silently (src/state/observation.c, dfi_maybe_lockedmove), unless
+        a Choice item locks the same move (decision 0083: the Choice lock still names its slot)."""
+        if not own and p.choice_slot == MOVE_SLOT_NONE and p.last_move is not None and \
+                self.data.move_flags(p.last_move) & _LOCKED_MOVE:
             return MOVE_SLOT_NONE
         return p.locked_slot if p.locked_slot != MOVE_SLOT_NONE else p.choice_slot
 
