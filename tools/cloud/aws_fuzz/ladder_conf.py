@@ -5,6 +5,7 @@ networks named by sha256 only.
     python3 ladder_conf.py shas CONF                  the networks' sha256, one per line (the box fetches nets/<sha>.npz)
     python3 ladder_conf.py arms CONF                  the arms' names, one per line, in the conf's order
     python3 ladder_conf.py workers CONF               the workers of each arm
+    python3 ladder_conf.py probe CONF                 1 for a probe-only campaign (no game), else 0
     python3 ladder_conf.py argv CONF ARM NETS OUT     arm ARM's ladder arguments, one per line (NETS: where the box put
                                                       the networks)
 
@@ -20,6 +21,8 @@ commit and builds each arm's command line here, so the two cannot differ. Keys (
     seed=N                          required: the ladder's seed, decimal or 0x hex, every arm
     workers=N                       optional (default 8): engine workers per arm, fixed for the run (HauptSession: 8)
     max_steps=N                     optional (default 1000)
+    probe_only=0|1                  optional (default 0): 1 plays no game; the box runs the arms' network probe
+                                    (ladder --probe-only) under each pin variant and uploads probe.json per variant
     checkpoint=SHA256               required: the main network
     foe_net=SHA256                  required: the foe model
     teams_from=SHA256               required: the pool network whose config's teams are the suite's pool
@@ -34,7 +37,7 @@ import sys
 
 MAX_ARMS = 3  # HauptSession, 2026-10-14: three arms of 16 CPUs on a c7a.16xlarge, 16 left for the box; 4 only by its decision
 REQUIRED = ("kind", "pairs", "seed", "checkpoint", "foe_net", "teams_from", "opponents")
-OPTIONAL = {"workers": "8", "max_steps": "1000"}
+OPTIONAL = {"workers": "8", "max_steps": "1000", "probe_only": "0"}
 SHA = re.compile(r"^[0-9a-f]{64}$")
 STEP = re.compile(r"^[0-9a-z][0-9a-z-]{0,31}$")
 NAME = re.compile(r"^[a-z0-9]{1,16}$")
@@ -113,6 +116,7 @@ def parse(text):
     conf["seed"] = _int(raw["seed"], "seed", 0, 2**64 - 1)
     conf["workers"] = _int(raw.get("workers", OPTIONAL["workers"]), "workers", 1, 16)
     conf["max_steps"] = _int(raw.get("max_steps", OPTIONAL["max_steps"]), "max_steps", 1, 100000)
+    conf["probe_only"] = _int(raw.get("probe_only", OPTIONAL["probe_only"]), "probe_only", 0, 1)
     for key in ("checkpoint", "foe_net", "teams_from"):
         if not SHA.match(raw[key]):
             raise ConfError(f"{key} must be a 64-digit lowercase sha256 (got {raw[key]!r})")
@@ -157,7 +161,7 @@ def argv(conf, arm_name, nets, out):
 
 def main(argv_=None):
     args = sys.argv[1:] if argv_ is None else argv_
-    counts = {"check": 2, "shas": 2, "arms": 2, "workers": 2, "argv": 5}
+    counts = {"check": 2, "shas": 2, "arms": 2, "workers": 2, "probe": 2, "argv": 5}
     if not args or args[0] not in counts or len(args) != counts[args[0]]:
         print(__doc__.split("\n\n")[1], file=sys.stderr)
         return 2
@@ -170,6 +174,8 @@ def main(argv_=None):
             print("\n".join(a["name"] for a in conf["arms"]))
         elif args[0] == "workers":
             print(conf["workers"])
+        elif args[0] == "probe":
+            print(conf["probe_only"])
         elif args[0] == "argv":
             print("\n".join(argv(conf, args[2], args[3], args[4])))
     except (OSError, ConfError) as err:

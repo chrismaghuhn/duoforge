@@ -269,6 +269,29 @@ class DecisionsDigestTest(unittest.TestCase):
         self.assertEqual(len(digest), 64)
         self.assertTrue(all(c in "0123456789abcdef" for c in digest))
 
+    def test_each_decision_has_its_own_digest_in_step_and_seat_order(self):
+        # #484, 2026-10-15: the AWS box's games differed with no way to name the decision; one digest per decision does.
+        records = self.records()  # env 1 (step 0, seat 1); env 0 (step 2, seat 0) and (step 0, seat 1)
+        games = ladder.decisions_rows_digests(records, 3)
+        self.assertEqual([len(g) for g in games], [2, 1, 0])
+        self.assertEqual(games, ladder.decisions_rows_digests(list(reversed(records)), 3))  # order of input aside
+        self.assertTrue(all(len(d) == 16 for g in games for d in g))
+        changed = copy.deepcopy(records)
+        changed[1]["choice"] = 9  # env 0, step 2: the second decision of game 0
+        after = ladder.decisions_rows_digests(changed, 3)
+        self.assertEqual([i for i in range(2) if after[0][i] != games[0][i]], [1])
+        self.assertEqual(after[1:], games[1:])
+        with self.assertRaisesRegex(ValueError, "outside the arm's 1 games"):
+            ladder.decisions_rows_digests(records, 1)
+
+    def test_the_pins_are_the_environment_that_decides_the_bits(self):
+        with mock.patch.dict(os.environ, {"XLA_FLAGS": "--xla_cpu_max_isa=AVX2", "ONEDNN_MAX_CPU_ISA": "AVX2"}):
+            os.environ.pop("OPENBLAS_CORETYPE", None)
+            got = ladder.pins()
+        self.assertEqual(sorted(got), sorted(ladder.PIN_VARIABLES))
+        self.assertEqual((got["XLA_FLAGS"], got["ONEDNN_MAX_CPU_ISA"], got["OPENBLAS_CORETYPE"]),
+                         ("--xla_cpu_max_isa=AVX2", "AVX2", None))
+
     def test_numpy_simd_names_the_disabled_targets_and_what_numpy_found(self):
         # ladder.json records NumPy's SIMD dispatch (#484): the AWS box and the local run must record the same.
         with mock.patch.dict(os.environ, {"NPY_DISABLE_CPU_FEATURES": "X86_V4 AVX512_ICL"}):

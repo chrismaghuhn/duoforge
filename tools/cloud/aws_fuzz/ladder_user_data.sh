@@ -138,6 +138,10 @@ log "${#SHAS[@]} networks read and checked"
 # (X86_V3, AVX2), and the box refuses (numpy_dispatch) if NumPy still enables an AVX-512 target.
 STEP=arms
 export JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
+# oneDNN (in jaxlib, behind XLA) picks its kernels at run time, AVX-512 ones included: capped at the Ryzen's AVX2, as
+# XLA's own code is (HauptSession, 2026-10-15: limits of the instruction set only, nothing switched off; the second
+# equality proof differed in four games with NumPy pinned). The network probe shows whether the caps suffice.
+export ONEDNN_MAX_CPU_ISA=AVX2
 export NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"
 # Checked, not only logged (HauptSession): every name known to NumPy, no AVX-512 target enabled (numpy_dispatch.py).
 "$WORK/venv/bin/python" "$TOOLS/numpy_dispatch.py" "$WORK/numpy_simd.json" >> "$LOG" 2> "$WORK/numpy_dispatch.err" ||
@@ -163,11 +167,51 @@ json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu"
            "arms": {a: f"{i * int(cpus)}-{(i + 1) * int(cpus) - 1}" for i, a in enumerate(arms)},
            "nproc": os.cpu_count(), "avx512": any(f.startswith("avx512") for f in flags), "python": platform.python_version(),
            "pip_freeze": freeze, "numpy_simd": numpy_simd, "libc": list(platform.libc_ver()),
-           "pins": {k: os.environ.get(k) for k in ("JAX_PLATFORMS", "XLA_FLAGS", "OPENBLAS_CORETYPE", "OPENBLAS_NUM_THREADS",
-                                                   "NPY_DISABLE_CPU_FEATURES")}},
+           "pins": {k: os.environ.get(k) for k in ("JAX_PLATFORMS", "XLA_FLAGS", "ONEDNN_MAX_CPU_ISA", "OPENBLAS_CORETYPE",
+                                                   "OPENBLAS_NUM_THREADS", "NPY_DISABLE_CPU_FEATURES")}},
           open(out, "w"), indent=1)
 PY
 aws s3 cp "$WORK/env.json" "$S3_BASE/env.json" --only-show-errors
+
+# --- a probe-only campaign (probe_only=1): no game; the network probe of the first arm under each pin variant, one
+# after the other, each with its probe.json under probe/<variant>/ (HauptSession, 2026-10-15: the smallest variant
+# that gives this machine's bits is the one to keep). Every variant runs on the first arm's CPUs.
+probe=$(python3 "$TOOLS/ladder_conf.py" probe "$CONF") || refuse bad_conf 'ladder_conf.py probe'
+if [ "$probe" = 1 ]; then
+    STEP=probe
+    ISA_ONLY="--xla_cpu_max_isa=AVX2"
+    VARIANTS=(
+        "none||"
+        "isa|$ISA_ONLY|AVX2"
+        "isa-noxnnpack|$ISA_ONLY --xla_cpu_use_xnnpack=false|AVX2"
+        "isa-noxnnpack-noonednn|$ISA_ONLY --xla_cpu_use_xnnpack=false --xla_cpu_use_onednn=false|AVX2"
+        "isa-noxnnpack-noonednn-nofastmath|$ISA_ONLY --xla_cpu_use_xnnpack=false --xla_cpu_use_onednn=false --xla_cpu_enable_fast_math=false|AVX2"
+    )
+    failed=''
+    for variant in "${VARIANTS[@]}"; do
+        IFS='|' read -r name xla onednn <<< "$variant"
+        out="$WORK/probe/$name"
+        mkdir -p "$out"
+        list=$(python3 "$TOOLS/ladder_conf.py" argv "$CONF" "${ARMS[0]}" "$NETS" "$out") ||
+            refuse bad_conf "ladder_conf.py argv ${ARMS[0]}"
+        mapfile -t ARGS <<< "$list"
+        # the variant's own environment: XLA_FLAGS and ONEDNN_MAX_CPU_ISA as it names them, unset where it names none
+        unsets=() sets=()
+        if [ -n "$xla" ]; then sets+=("XLA_FLAGS=$xla"); else unsets+=(-u XLA_FLAGS); fi
+        if [ -n "$onednn" ]; then sets+=("ONEDNN_MAX_CPU_ISA=$onednn"); else unsets+=(-u ONEDNN_MAX_CPU_ISA); fi
+        log "probe $name: XLA_FLAGS='$xla' ONEDNN_MAX_CPU_ISA='$onednn'"
+        if (cd "$REPO" && env "${unsets[@]}" "${sets[@]}" taskset -c "0-$((DF_CPUS - 1))" "$WORK/venv/bin/python" -u \
+            -m duoforge_search.ladder "${ARGS[@]}" --probe-only) > "$out/probe.log" 2>&1 && [ -f "$out/probe.json" ]; then
+            aws s3 cp "$out/probe.json" "$S3_BASE/probe/$name/probe.json" --only-show-errors
+        else
+            tail -n 40 "$out/probe.log" >> "$LOG"
+            failed="$failed $name"
+        fi
+    done
+    [ -z "$failed" ] || refuse probe_failed "the probe variant(s)$failed failed"
+    log 'probe done'
+    exit 0
+fi
 
 # --- the arms, side by side, each on CPUs of its own; each writes its own ladder.json
 declare -A PIDS

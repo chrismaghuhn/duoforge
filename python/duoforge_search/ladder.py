@@ -378,6 +378,61 @@ def games_digests(decisions, games):
     return [decisions_digest(rows) for rows in per_game]
 
 
+def decisions_rows_digests(decisions, games):
+    """Each game's decisions one by one: a list of `games` lists, game g's [env, step, seat, kind, choice] rows in
+    (step, seat) order, each as the first 16 hex digits of its sha256 (#484, 2026-10-15). Two runs whose games_sha256
+    differ name the first decision that differs, by its index in the game; the decision itself (step, seat) is read in
+    the run's own decision file. Hashes only: no decision file leaves an AWS box."""
+    per_game = [[] for _ in range(games)]
+    for r in decisions:
+        if not 0 <= int(r["env"]) < games:
+            raise ValueError(f"a decision of env {r['env']} outside the arm's {games} games")
+        per_game[int(r["env"])].append([r["env"], r["step"], r["seat"], r["kind"], r.get("choice")])
+    return [[hashlib.sha256(json.dumps(row).encode("utf-8")).hexdigest()[:16]
+             for row in sorted(rows, key=lambda row: (row[1], row[2], json.dumps(row)))] for rows in per_game]
+
+
+# The environment that decides the network's float32 bits and NumPy's routines on a machine (#484): recorded with every
+# ladder report, so that two reports to be bit-identical show the same, and ladder_equal.py compares it.
+PIN_VARIABLES = ("JAX_PLATFORMS", "XLA_FLAGS", "ONEDNN_MAX_CPU_ISA", "NPY_DISABLE_CPU_FEATURES", "OPENBLAS_CORETYPE",
+                 "OPENBLAS_NUM_THREADS")
+
+
+def pins():
+    """The pin variables of this process, None where unset."""
+    return {name: os.environ.get(name) for name in PIN_VARIABLES}
+
+
+def net_probe(batch, nets, capacity=None):
+    """The networks' float32 bits on the arm's own games, in the shapes the search calls them (#484, HauptSession
+    2026-10-15): for each net (role -> {"model", "params", "encoder", "ext"}), the sha256 of model.apply on the batch's
+    rows as they stand (every game's first decision, 2 x games rows, the root call's shape) and of model.value on the
+    leaf call's padded shape (capacity rows, the batch's rows repeated). Two machines whose probes agree compute the
+    networks bit for bit alike on these inputs; the AWS box and this machine are compared by it before any game."""
+    from .lookahead import CAPACITY
+    capacity = CAPACITY if capacity is None else int(capacity)
+
+    def digest(*arrays):
+        h = hashlib.sha256()
+        for a in arrays:
+            a = np.ascontiguousarray(np.asarray(a))
+            h.update(f"{a.dtype}{a.shape}".encode("ascii"))
+            h.update(a.tobytes())
+        return h.hexdigest()
+
+    out = {}
+    for role, net in sorted(nets.items()):
+        obs, slots, pairs = batch.query_encoded(net["encoder"], net["ext"])
+        rows = 2 * batch.envs
+        inputs = (obs.reshape(rows, -1), slots.reshape((rows,) + slots.shape[2:]),
+                  pairs.reshape((rows,) + pairs.shape[2:]))
+        logp_pairs, logp_team, _ = net["model"].apply(net["params"], *inputs)
+        values = np.resize(np.asarray(inputs[0], np.float32), (capacity, inputs[0].shape[1]))
+        out[role] = {f"apply_{rows}": digest(logp_pairs, logp_team),
+                     f"value_{capacity}": digest(net["model"].value(net["params"], values))}
+    return out
+
+
 def recorded_reproduction(scores, digest, recorded_arm, recorded_dir, name):
     """Whether this run's previous arm plays the recorded step arm's games: True when the per-game scores and the digest
     of the decisions both match, False when either differs. None when the recorded run has no such arm, or when its
@@ -463,6 +518,7 @@ def _summary(records, games, decisions=None, seconds=None):
                     "fallback_decisions": sum(r["kind"] in foe_arena.FALLBACK_KINDS for r in non_team),
                     "non_team_decisions": len(non_team), "decisions_sha256": decisions_digest(decisions),
                     "games_sha256": games_digests(decisions, games),
+                    "games_decisions": decisions_rows_digests(decisions, games),
                     "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions),
                     "duplicate_rows": duplicate_rows(decisions)})
         if decisions:
@@ -644,6 +700,9 @@ def main(argv=None):
     p.add_argument("--opponent", action="append", default=[], metavar="NAME=PATH",
                    help="a raw greedy opponent: bc6, bot or ppo (each once)")
     p.add_argument("--out", required=True, help="the output directory, outside the repository")
+    p.add_argument("--probe-only", action="store_true",
+                   help="no game: the networks' probe on the arm's games (net_probe) and the machine's conditions, "
+                        "written to OUT/probe.json (#484: the AWS box's pin variants)")
     p.add_argument("--pairs", type=int, default=1024)
     p.add_argument("--seed", type=lambda text: int(text, 0), default=SEED)
     p.add_argument("--workers", type=int, default=8)
@@ -762,6 +821,18 @@ def main(argv=None):
         if paired_run is not None and paired_run["conditions"].get("table_sha256") != table_info["sha256"]:
             raise SystemExit(f"--paired-with's table_sha256 is {paired_run['conditions'].get('table_sha256')!r}, "
                              f"this run's is {table_info['sha256']!r}")
+        probe_nets = {"checkpoint": main_net, "foe_net": foe_net,
+                      **{f"opponent {name}": net for name, net in opponent_nets.items()}}
+        with duoforge.Batch(ctx, pool.setups(rows["side0"], rows["side1"]), args.workers, args.seed) as probe_batch:
+            probe = net_probe(probe_batch, probe_nets)
+        if args.probe_only:
+            probe_out = {"commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": arena.cpu_model(),
+                         "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()), "pins": pins(),
+                         "games": int(rows.shape[0]), "seed": hex(args.seed), "net_probe": probe}
+            with open(os.path.join(args.out, "probe.json"), "w", encoding="utf-8") as f:
+                json.dump(probe_out, f, indent=1)
+            print(json.dumps(probe_out, indent=1))
+            return 0
         learner_team = np.where(rows["learner_seat"] == 0, rows["side0"], rows["side1"])
         opponent_team = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
 
@@ -856,7 +927,7 @@ def main(argv=None):
         "previous": None if args.previous is None else {"name": args.previous, "settings": previous_cfg},
         "arms": [arm for arm, _ in arm_steps] + (["R"] if args.raw else []), "h2h": args.h2h,
         "gates": GATES, "commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": arena.cpu_model(),
-        "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()),
+        "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()), "pins": pins(), "net_probe": probe,
         "encoders": {"main": main_net["encoder"], "foe": foe_net["encoder"],
                      **{f"opponent {name}": net["encoder"] for name, net in opponent_nets.items()}},
         "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},
