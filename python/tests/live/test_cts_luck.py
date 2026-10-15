@@ -198,5 +198,31 @@ class MeterTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "--bot-commit"):
             ev.luck_all(logs, BOT, ROOT, self.path, sha, self.path, sha)
 
+class TargetLineTest(unittest.TestCase):
+    """The lines the target narrowing reads (README, the third comparison): the single target of a slot user's first
+    |move| line, and the faints before it (addition (c))."""
+
+    SEGMENT = ["|move|p1b: Garchomp|Protect||[still]", "|-fail|p1b: Garchomp",
+               "|move|p2a: Jolteon|Thunderbolt|p1a: Krookodile",
+               "|move|p1a: Krookodile|Earthquake|p2b: Ampharos|[spread] p1b,p2a,p2b", "|faint|p2a: Jolteon",
+               "|move|p2b: Ampharos|Thunderbolt|p1a: Krookodile"]
+
+    def test_the_single_target_of_the_first_move_line(self):
+        self.assertEqual(cts_luck.line_target(self.SEGMENT, 2), 0)  # Jolteon's Thunderbolt at p1a
+        self.assertEqual(cts_luck.line_target(self.SEGMENT, 3), 0)  # Ampharos's, after Jolteon fainted
+        self.assertIsNone(cts_luck.line_target(self.SEGMENT, 0))  # a [spread] line names no single target
+        self.assertIsNone(cts_luck.line_target(self.SEGMENT, 1))  # an empty target (Protect that failed)
+
+    def test_no_target_when_a_cant_switch_or_faint_line_of_the_user_comes_first(self):
+        for first in ("|cant|p2a: Jolteon|par", "|switch|p2a: Raichu|Raichu, L50|100/100", "|faint|p2a: Jolteon"):
+            self.assertIsNone(cts_luck.line_target([first] + self.SEGMENT, 2), first)
+        self.assertIsNone(cts_luck.line_target([], 2))
+
+    def test_the_faints_before_the_users_move_line(self):
+        self.assertEqual(cts_luck.faints_before(self.SEGMENT, 2), frozenset())
+        self.assertEqual(cts_luck.faints_before(self.SEGMENT, 3), frozenset({2}))  # Jolteon fell before Ampharos moved
+        self.assertEqual(cts_luck.faints_before(["|faint|p1b: Garchomp"] + self.SEGMENT, 2), frozenset({1}))
+
+
 if __name__ == "__main__":
     unittest.main()

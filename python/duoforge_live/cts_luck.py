@@ -101,6 +101,21 @@ def line_target(segment, position):
     return None
 
 
+def faints_before(segment, position):
+    """The flat positions the turn's |faint| lines name before the first |move| line of position's user (README, the
+    third comparison, addition (c)): what the engine's step must have fainted before that user's MOVE event."""
+    from .lines import flat_position, line_kind
+    fainted = set()
+    for line in segment:
+        kind = line_kind(line)
+        parts = line.split("|")
+        if kind == "move" and len(parts) > 2 and flat_position(parts[2]) == position:
+            break
+        if kind == "faint" and len(parts) > 2 and flat_position(parts[2]) is not None:
+            fainted.add(flat_position(parts[2]))
+    return frozenset(fainted)
+
+
 def world_context(ctx, foe_side):
     """The label context of a world: the particle's, with the foe's roster as the world's own engine roster (its
     observation's members, in the world's order: an option's reserve is a roster index of the world; in the committed
@@ -166,16 +181,18 @@ class Meter:
             raise ValueError("the value head gives a value that is not finite")
         return out
 
-    def _reproduced(self, worlds, w, seat, turn, pair, compared, targets):
+    def _reproduced(self, worlds, w, seat, turn, pair, compared, targets, faints):
         """Whether the engine resolves the foe pair in world w to the lines' targets: the world stepped on a copy
         (privileged.step_events, the search's own hypothesis only) with the bot's choice and the pair, under the turn's
         `samples` seeds (the expectation's own); reproduced when under one seed the first MOVE event of every compared
-        slot's user names its line's target. A step the engine refuses is Excluded("leaf-refused"), as a refused
-        leaf."""
+        slot's user names its line's target. A seed counts only when, before each such MOVE event, the step fainted
+        the positions the log's faint lines name before the user's move line (faints, addition (c)); a seed that does
+        not is discarded (counted in self.targets["seeds-discarded"]). A step the engine refuses is
+        Excluded("leaf-refused"), as a refused leaf."""
         from duoforge import _layout, privileged
         from duoforge.batch import search_seeds
         from duoforge_search import lookahead
-        foe, move = 1 - seat, _layout.CONSTANTS["DUOFORGE_EVENT_MOVE"]
+        foe, move, faint = 1 - seat, _layout.CONSTANTS["DUOFORGE_EVENT_MOVE"], _layout.CONSTANTS["DUOFORGE_EVENT_FAINT"]
         choice = np.zeros(2, _layout.FACTORED_CHOICE)
         choice["slot"][seat] = divmod(turn.own, lookahead.OPTIONS)
         choice["slot"][foe] = pair
@@ -184,11 +201,17 @@ class Meter:
             got = privileged.step_events(worlds, w, choice, rng=search_seeds(LUCK_SEED, key, sample))
             if got["status"] != 0:
                 raise Excluded("leaf-refused")
-            moved = {}
+            moved, fainted = {}, set()  # per user: (its first MOVE event's target, the positions fainted before it)
             for event in got["events"][seat]:
                 if int(event["kind"]) == move:
-                    moved.setdefault(int(event["position"]), int(event["other"]))
-            if all(moved.get(foe * 2 + k) == targets[k] for k in compared):
+                    moved.setdefault(int(event["position"]), (int(event["other"]), frozenset(fainted)))
+                elif int(event["kind"]) == faint:
+                    fainted.add(int(event["position"]))
+            users = [moved.get(foe * 2 + k) for k in compared]
+            if any(u is not None and u[1] != faints[k] for u, k in zip(users, compared)):
+                self.targets["seeds-discarded"] += 1
+                continue
+            if all(u is not None and u[0] == targets[k] for u, k in zip(users, compared)):
                 return True
         return False
 
@@ -253,6 +276,7 @@ class Meter:
         self.last = {"foe": [], "reasons": [], "rosters": [], "kept": kept, "mixed_before": False,
                      "not_reproduced": 0}  # per world played (diagnostics, tests)
         targets = [line_target(segment, foe * 2 + k) for k in (0, 1)]
+        faints = [faints_before(segment, foe * 2 + k) for k in (0, 1)]
         unknown = []  # worlds whose label tells nothing of a foe slot (a world that cannot play the lines is left out)
         for w in kept:
             if not asked:
@@ -276,7 +300,8 @@ class Meter:
             if compared:
                 self.targets["worlds-compared"] += 1
                 self.targets["slots-compared"] += len(compared)
-                pairs = [pair for pair in pairs if self._reproduced(worlds, w, p, turn, pair, compared, targets)]
+                pairs = [pair for pair in pairs
+                         if self._reproduced(worlds, w, p, turn, pair, compared, targets, faints)]
                 if not pairs:  # no pair of the world reaches the lines' target: it cannot play the turn
                     self.targets["worlds-not-reproduced"] += 1
                     self.targets["slots-lost"] += len(compared)

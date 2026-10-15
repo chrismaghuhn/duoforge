@@ -33,5 +33,28 @@ class RefusedRecordTest(unittest.TestCase):
                 self.assertNotIn("SCHEMA_MISMATCH", str(caught.exception))
 
 
+class TargetAdditionsTest(unittest.TestCase):
+    """The third comparison's additions (README): (a) a set with more than 5% of its compared foe slots lost as
+    target-not-reproduced is not evaluable and does not pass; (b) the #406 rule, a Serious member with 0 SP."""
+
+    def test_a_set_over_the_lost_limit_is_not_evaluable_and_does_not_pass(self):
+        self.assertEqual(check.verdict(0.001, 0.002, {"slots-compared": 100, "slots-lost": 5}),
+                         (True, 0.05, True, True))
+        self.assertEqual(check.verdict(0.001, 0.002, {"slots-compared": 100, "slots-lost": 6}),
+                         (True, 0.06, False, False))
+        self.assertEqual(check.verdict(0.05, 0.01, {"slots-compared": 100, "slots-lost": 0}), (False, 0.0, True, False))
+        self.assertEqual(check.verdict(0.05, 0.01, {}), (False, 0.0, True, False))  # nothing compared: nothing lost
+        self.assertEqual(check.verdict(None, None, {}), (None, 0.0, True, None))
+
+    def test_the_406_rule_counts_serious_members_with_zero_stat_points(self):
+        head = "Pikachu @ Light Ball\nAbility: Static\nLevel: 50\n"
+        serious = head + "Serious Nature\n- Thunderbolt\n"
+        no_nature = head + "EVs: 0 HP / 0 Atk\n- Thunderbolt\n"
+        trained = head + "EVs: 2 HP\nSerious Nature\n- Thunderbolt\n"
+        timid = head + "Timid Nature\n- Thunderbolt\n"
+        self.assertEqual(check.zero_sp_serious("\n".join([serious, no_nature, trained, timid])), 2)
+        self.assertEqual(check.zero_sp_serious(trained + "\n" + timid), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

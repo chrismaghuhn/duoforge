@@ -77,15 +77,24 @@ def zero_sp_serious(team):
     """The members of a paste with a Serious nature (or none) and 0 SP (no EVs line, or all zero): the rule of the #406
     teams the registry marks pending (the third comparison, addition (b))."""
     out = 0
-    for block in team.strip().split("
-
-"):
+    for block in team.strip().split("\n\n"):
         lines = [line.strip() for line in block.splitlines()]
         nature = next((line for line in lines if line.endswith(" Nature")), "Serious Nature")
         evs = next((line for line in lines if line.startswith("EVs:")), None)
         zero = evs is None or all(int(part.split()[0]) == 0 for part in evs[len("EVs:"):].split("/"))
         out += nature == "Serious Nature" and zero
     return out
+
+
+def verdict(mean, half, targets):
+    """(criterion, lost share, evaluable, passed) of a set: the criterion fixed in advance (the 95% interval of the mean
+    difference includes 0, or |mean| < 0.01; None without two turns), the share of the meter's compared foe slots lost
+    as target-not-reproduced, evaluable when that share is at most LOST_LIMIT (addition (a)), and passed when both."""
+    criterion = None if mean is None or half is None else bool(abs(mean) < 0.01 or abs(mean) <= half)
+    compared = targets.get("slots-compared", 0)
+    lost = targets.get("slots-lost", 0) / compared if compared else 0.0
+    evaluable = lost <= LOST_LIMIT
+    return criterion, lost, evaluable, None if criterion is None else bool(criterion and evaluable)
 
 
 def read_streams(path):
@@ -381,14 +390,12 @@ def main(argv=None):
     unmixed = np.array([x["meter"] - x["luck_py"] for x in pairs if not x["mixed"]])
     clustered = by_battle(pairs)
     clustered_unmixed = by_battle([x for x in pairs if not x["mixed"]])
-    lost = targets["slots-lost"] / targets["slots-compared"] if targets["slots-compared"] else 0.0
-    evaluable = lost <= LOST_LIMIT
-    criterion = None if mean is None or half is None else bool(abs(mean) < 0.01 or abs(mean) <= half)
+    criterion, lost, evaluable, passed = verdict(mean, half, targets)
     result = {"battles": len(names), "player_battles_skipped": dict(skipped), "turns_compared": n,
               "mean_difference": mean, "half_width": half, "half_width_by_battle": clustered,
               "correlation": corr,
               "criterion": criterion, "evaluable": evaluable,
-              "passed": None if criterion is None else bool(criterion and evaluable),
+              "passed": passed,
               "targets": dict(targets), "target_slots_lost_share": lost, "battles_406": battles_406,
               "mixed_before": sum(x["mixed_before"] for x in pairs),
               "became_unique": sum(x["mixed_before"] and not x["mixed"] for x in pairs),
