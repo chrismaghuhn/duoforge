@@ -251,6 +251,9 @@ int main(void)
     ENTRY(DFI_Q_NONE);
     ENTRY(DFI_Q_MOVE);
     ENTRY(DFI_Q_RESIDUAL);
+    ENTRY(DFI_ORDER_SWITCH); /* #512 S4: the action orders the replay points read (a switch before Mega Evolution before a move) */
+    ENTRY(DFI_ORDER_MEGA);
+    ENTRY(DFI_ORDER_MOVE);
     printf("\n}}\n");
     return 0;
 }

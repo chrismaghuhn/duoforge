@@ -550,6 +550,10 @@ def check(line, view):
             return "keep"
         if own and ("[identify]" in attrs or not froms):
             return "fold"  # Frisk, or the holder's own announcement (Air Balloon): an item the open sheet shows
+        if not froms and len(args) == 2 and item is not None and effect == "Air Balloon":
+            # The announcement of a balloon that Trick, Switcheroo, Thief or Covet gives (issue 520): setItem runs the item's
+            # Start before the giver's own -item line (sim/pokemon.ts:1885-1887), which follows and changes the item.
+            return "fold"
         if any(f in _ITEM_CHANGE_FROM for f in froms):
             if len(froms) == 1 and _item_change_played(froms[0], attrs, view):
                 return _feature("ITEM_CHANGE")

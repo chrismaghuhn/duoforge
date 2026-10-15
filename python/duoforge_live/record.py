@@ -21,8 +21,8 @@ possible lockedmove and the Revival Blessing proxy itself (E_UNSUPPORTED, reason
 field or a contradiction (E_MALFORMED) is an assembler error and raises. Python holds no copy of the predicate.
 
 The tracker refuses, with a named reason, only a record that the engine has and the lines do not determine:
-unburden-without-item-line, last-move-not-on-sheet, own-command-unknown, and move-result-not-determined (the library
-cannot tell an action's result from its events). The POOL tail's move_result is the library's classification of each move
+unburden-without-item-line, last-move-not-on-sheet, own-command-unknown, pp-uses-past-maximum (more uses of an own move
+folded than it has PP), and move-result-not-determined (the library cannot tell an action's result from its events). The POOL tail's move_result is the library's classification of each move
 action's events (duoforge_move_result, the engine's rule; the tracker only collects the events); its other fields are the
 tracker's folds (party order, Aurora Veil, the position counters, item_now, the toxic stage, the raised flag, and the
 view-extension folds of #342: the entry hazards and their creation order, Wide Guard, Taunt, Heal Block, Yawn and Disable
@@ -174,6 +174,18 @@ def assemble(tracker, observation):
     if reason is not None:
         return zero, E_UNSUPPORTED, 0, reason
     return record, 0, 0, None
+
+
+def build(tracker, observation):
+    """The PUBLIC_STATE record of what the tracker folded at its point, without the engine's verdict: for a caller that
+    builds a world of it, where duoforge_battle_from_view gives the verdict (the replay pipeline's options, #512 D7).
+    Refusal (a named reason) where the lines do not determine the record: the assembler's own refusals and
+    tracker_refusal."""
+    out = _record(tracker, observation)
+    reason = tracker_refusal(tracker)
+    if reason is not None:
+        raise Refusal(reason)
+    return out
 
 
 def _record(t, observation):
@@ -352,6 +364,8 @@ def _member(t, s, pre, member, own):
         mpre = f"{pre}move{k}."
         s.put(mpre + "move_id", sheet["moves"][k])
         if own:
+            if member.uses[k] > member.pp_max[k]:
+                raise Refusal("pp-uses-past-maximum")  # more uses folded than the move has PP: the PP is not determined
             s.put(mpre + "pp", member.pp_max[k] - member.uses[k])
         s.put(mpre + "pp_max", member.pp_max[k])
 

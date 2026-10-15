@@ -132,6 +132,17 @@ _Static_assert((DFI_VOL_FLINCH + DFI_VOL_PROTECT + DFI_VOL_FLASH_FIRE + DFI_VOL_
 #define DFI_QRES_NONE 0u
 #define DFI_QRES_PRIORITIZED 1u /* After You (prioritizeAction): order class 3 */
 #define DFI_QRES_QUASHED 2u     /* Quash (action.order = 201): order class 201 */
+/* Action orders (sim/battle-queue.ts:174-195): the order class of each queued action, the first key of comparePriority. Exported
+ * to Python (duoforge._state_layout.VALUES) so the replay pipeline reads the order of the turn's actions from here (#512 S4). */
+#define DFI_ORDER_SWITCH_IN 3u    /* instaswitch: a replacement */
+#define DFI_ORDER_REVIVE 6u /* revivalblessing (decision 0025 item 6): after an instaswitch, before runSwitch */
+#define DFI_ORDER_RUN_SWITCH 101u /* the entry of a Pokemon that came in */
+#define DFI_ORDER_SWITCH 103u     /* a voluntary switch */
+#define DFI_ORDER_MEGA 104u       /* megaEvo */
+#define DFI_ORDER_MOVE 200u
+#define DFI_ORDER_PRIORITIZED 3u /* After You: queue.prioritizeAction sets order 3 (sim/battle-queue.ts:282-292) */
+#define DFI_ORDER_QUASHED 201u   /* Quash: action.order = 201 (data/moves.ts:14454-14475) */
+#define DFI_ORDER_RESIDUAL 300u
 
 typedef struct dfi_member {
     uint16_t species_id; /* SYNTHETIC: caller id; later the base forme id */

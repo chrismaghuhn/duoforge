@@ -20,14 +20,10 @@ from duoforge_live import lines
 FIXTURE = Path(__file__).resolve().parent.parent / "support" / "data" / "replay" / "c12_real_cb_4.log"
 
 
-class _Stats:
-    """A stand-in for the Showdown stat source (no Node): fixed stats per forme."""
-
-    def stats(self, species, nature, stat_points):
-        return [100 + len(species), 90, 80, 70, 60, 50]
-
-
 def stats_factory():
+    """The stand-in for the Showdown stat source (no Node): the replay unit tests' committed Showdown stats, which the
+    engine's worlds of the replay points take (#512 D7)."""
+    from python.tests.replay.test_replay_unit import _Stats
     return _Stats()
 
 

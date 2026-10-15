@@ -2,7 +2,7 @@
 
 Public Showdown replays of Reg M-C with open team sheets become rows for behavior cloning. Each row is one player at one decision:
 - DuoForge's observation of that player;
-- the superset options;
+- the options the engine gives that player at that point (`superset.py`: a world built from the point's public record);
 - the set of options the log shows the player chose.
 
 Design: `docs/superpowers/specs/2026-10-02-m11-replay-data-design.md`.
@@ -202,7 +202,7 @@ Between parts the build waits while the fuzz pause file exists. A full run is an
 | Array | Content |
 |---|---|
 | `observation` | `_layout.OBSERVATION`, from the player's side. The own side shows HP as the public percentage, PP from the uses seen, and stat points and stats from the prior (`prior_level` per member) |
-| `domain` | `_layout.FACTORED_DOMAIN`: the superset slot lists and the full pair mask, or the team domain. A position under Encore offers only its Encored move (and Struggle, and its switches) |
+| `domain` | `_layout.FACTORED_DOMAIN`: the engine's domain of the own side in a world built from the point's public record (`duoforge_battle_from_view`, #512 D7), its slot lists and pair mask, or the team domain. A point whose world the engine refuses or whose record the log does not determine has no row (`points.refused.<reason>`) |
 | `ext` | `_layout.OBSERVATION_EXT`, the tracker view's extension record at the point (decision 0018), as live. The manifest records the tracker folds (`tracker_folds`) and the record revision; `bc_data` loads only datasets of format version 3 or later folded under this checkout's folds |
 | `picks_hypotheses`, `hypothesis` | H, the pick tuples the row's perspective was folded with (1 when the picks are known), and the row's index among them (format version 4; see below) |
 | `label_slots`, `label_team`, `label_reason` | the options that agree with the log, per slot (a 32-bit mask) or over the 360 team tuples (45 bytes); the reason per slot: `labels.EXACT`, `TARGET_UNKNOWN`, `MOVE_HIDDEN`, `FORCED`, `UNKNOWN`, `NOT_REQUESTED` |
