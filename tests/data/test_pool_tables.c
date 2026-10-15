@@ -1985,6 +1985,18 @@ int main(void)
         DF_CHECK(&t, !dfi_manifest_mega_of(&claws, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_CHARIZARDITEX));
         DF_CHECK(&t, dfi_manifest_mega_of(&claws, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_CHARIZARDITEY));
     }
+    {
+        /* Step K4 tripwire (decision 0015 5df): the gravity-flagged moves stay unmodelled. Gravity's disable of these moves
+         * (data/moves.ts:7811-7831, the choice refused with cant) and its onStart volatile removal (:7779-7800) are not built.
+         * A flagged move that becomes modelled or marked fails here: the disable and the removal come with it first. */
+        static const uint32_t gravity_flagged[] = {DFI_MOVE_BOUNCE, DFI_MOVE_FLY, DFI_MOVE_FLYINGPRESS,
+                                                   DFI_MOVE_HIGHJUMPKICK, DFI_MOVE_MAGNETRISE};
+        for (size_t k = 0u; k < sizeof gravity_flagged / sizeof gravity_flagged[0]; ++k) {
+            if (dfi_support.moves[gravity_flagged[k]] != 0u) {
+                df_check_impl(&t, false, "a gravity-flagged move is modelled or marked: build Gravity's disable (data/moves.ts:7811-7831) and the onStart volatile removal (:7779-7800) first", __FILE__, __LINE__);
+            }
+        }
+    }
 
     return df_test_end(&t);
 }
