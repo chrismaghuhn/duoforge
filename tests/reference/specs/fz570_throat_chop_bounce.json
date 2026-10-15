@@ -1,0 +1,36 @@
+{
+  "name": "fz570_throat_chop_bounce",
+  "purpose": "Magic Bounce under Throat Chop (issue 570): Incineroar, p1a, Throat Chops Hatterene, p1b, at step 4; at step 5 Incineroar, p2b, uses Parting Shot into Hatterene, whose Magic Bounce bounces it. Throat Chop's onModifyMove stops the bounced sound move in useMoveInner before the move line (data/moves.ts:19417-19422, sim/battle-actions.ts:439-445): cant|p1b: Hatterene|move: Throat Chop, no move line, and getRandomTarget's randomFoe draws one RANDOM_TARGET over the holder's standing foes first (sim/battle.ts:2490-2521). A battle of a doubles differential campaign (tools/reference/diff_driver.py random, seed 90, two Reg M-C teams, its battle 141), cut after its step 5: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,2b1c997b780b5aceab923ee6fce18c8e015a00fc7ca5a91d5889624e27689ac2",
+  "teams": [
+    "Gengar (F) @ Gengarite\nAbility: Cursed Body\nLevel: 50\nEVs: 25 HP / 1 Def / 8 SpA / 32 Spe\nTimid Nature\n- Shadow Ball\n- Sludge Bomb\n- Perish Song\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nAdamant Nature\n- Fake Out\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n\nPelipper (M) @ Choice Scarf\nAbility: Drizzle\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hurricane\n- Muddy Water\n- Weather Ball\n- Soak\n\nScovillain (M)\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 1 Def / 32 SpA\nModest Nature\n- Flamethrower\n- Rage Powder\n- Leaf Storm\n- Protect\n\nHatterene (F) @ Fairy Feather\nAbility: Magic Bounce\nLevel: 50\nEVs: 27 HP / 6 Def / 32 SpA\nQuiet Nature\n- Dazzling Gleam\n- Psychic\n- Trick Room\n- Protect\n\nAegislash (M) @ Spell Tag\nAbility: Stance Change\nLevel: 50\nEVs: 11 HP / 32 Atk / 23 Spe\nAdamant Nature\n- Poltergeist\n- Shadow Sneak\n- King's Shield\n- Sacred Sword",
+    "Incineroar (M) @ Shuca Berry\nAbility: Intimidate\nLevel: 50\nEVs: 25 HP / 20 Def / 13 SpD / 8 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n- Fake Out\n\nAbsol (M) @ Absolite Z\nAbility: Pressure\nLevel: 50\nEVs: 1 HP / 26 Atk / 7 Def / 32 Spe\nAdamant Nature\n- Night Slash\n- Close Combat\n- Will-O-Wisp\n- Detect\n\nPelipper (F) @ Focus Sash\nAbility: Drizzle\nLevel: 50\nEVs: 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Soak\n- Hurricane\n- Tailwind\n- Weather Ball\n\nScovillain (M)\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 1 Def / 32 SpA\nModest Nature\n- Flamethrower\n- Rage Powder\n- Leaf Storm\n- Protect\n\nHatterene (F) @ Life Orb\nAbility: Magic Bounce\nLevel: 50\nEVs: 27 HP / 7 Def / 32 SpA\nQuiet Nature\n- Expanding Force\n- Dazzling Gleam\n- Trick Room\n- Protect\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 27 HP / 25 Def / 8 SpA / 1 SpD / 5 Spe\nBold Nature\n- Protect\n- Perish Song\n- Weather Ball\n- Helping Hand"
+  ],
+  "choices": [
+    {
+      "p1": "team 2645",
+      "p2": "team 5461"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "move 1 2, move 1 -1"
+    },
+    {
+      "p1": "move 3 -2, move 4 2",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 -2, move 3",
+      "p2": "move 4, switch 4"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 1 -2, move 3 2"
+    }
+  ]
+}

@@ -1134,6 +1134,13 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
         *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE; /* Magic Bounce took it: its TryHit's null, normalised to false */
         return DUOFORGE_OK;
     }
+    /* Magic Bounce took it and Throat Chop stopped the bounced sound move before its line (issue 570): the holder's [cant]
+     * right after the move line, at the move's target. The TryHit's null is normalised to false, as for any bounce. */
+    if (n != 0u && !reflected && body[0].kind == DUOFORGE_EVENT_CANT && body[0].position == e0->other &&
+        body[0].cause == DUOFORGE_CAUSE_MOVE && body[0].id2 == DFI_MOVE_THROATCHOP) {
+        *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        return DUOFORGE_OK;
+    }
     if ((e0->flags & DUOFORGE_EVENT_FLAG_NOTARGET) != 0u) {
         *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE; /* no target: false */
         return DUOFORGE_OK;

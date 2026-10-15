@@ -422,6 +422,7 @@ class Tracker:
         self._rage_powder = tables["MOVE"].get("RAGEPOWDER")
         self._wide_guard = tables["MOVE"].get("WIDEGUARD")
         self._struggle = tables["MOVE"].get("STRUGGLE")
+        self._throat_chop_id = tables["MOVE"].get("THROATCHOP")  # a bounced sound move's stop (issue 570, _bounce_cant)
         self._attract = tables["MOVE"].get("ATTRACT")  # the check before an infatuated occupant's move (step G71)
         self._soak = tables["MOVE"].get("SOAK")
         self._symbiosis = tables["ABILITY"]["SYMBIOSIS"] + 1 if "SYMBIOSIS" in tables["ABILITY"] else None
@@ -952,9 +953,13 @@ class Tracker:
                         # endTurn: moveLastTurnResult = moveThisTurnResult, this turn's undefined (src/combat/turn.c)
                         p.result_last, p.result_now = p.result_now, 0
             return
-        starts = (kind == EV["MOVE"] and cause == trace_to_c.CAUSE["NONE"]) or kind == EV["CONFUSED"] or \
-            (kind == EV["CANT"] and cause != trace_to_c.CAUSE["ABILITY"])
         action = self._action
+        # A Magic Bounce holder's [cant] Throat Chop right after the move line that targets it is the bounced run, inside the
+        # action (issue 570), not an action of its own
+        bounce_cant = action is not None and action["events"] and self._bounce_cant(action["events"][-1], e, action["pos"])
+        starts = not bounce_cant and (
+            (kind == EV["MOVE"] and cause == trace_to_c.CAUSE["NONE"]) or kind == EV["CONFUSED"] or
+            (kind == EV["CANT"] and cause != trace_to_c.CAUSE["ABILITY"]))
         if starts and action is not None and action["pos"] == pos and action["confused"] and kind != EV["CONFUSED"]:
             action["confused"] = False  # the move the confusion line let through, or its [cant]
             action["events"].append(e)
@@ -970,6 +975,13 @@ class Tracker:
                             "activation": p.activation}
         elif action is not None:
             action["events"].append(e)
+
+    def _bounce_cant(self, prev, e, user):
+        """`e` is the [cant] Throat Chop of the target of `user`'s move line `prev`, a foe: Magic Bounce took the move and
+        Throat Chop stopped the bounced run before its line (issue 570, src/combat/turn.c dfi_bounce)."""
+        return e[0] == EV["CANT"] and e[3] == trace_to_c.CAUSE["MOVE"] and e[5] == self._throat_chop_id and \
+            prev[0] == EV["MOVE"] and prev[3] == trace_to_c.CAUSE["NONE"] and prev[1] == user and prev[2] == e[1] and \
+            e[1] != NOPOS and e[1] // 2 != user // 2
 
     def _pre_action(self, events, pos):
         """The last of `events` is a line of `pos` that comes before its action's first line: a wake-up or a thaw
@@ -1001,7 +1013,8 @@ class Tracker:
                 p.result_now = record.move_result_of(self.data, action["pos"], events)
                 break
         for i, e in enumerate(events):
-            if e[0] == EV["MOVE"] and e[3] == trace_to_c.CAUSE["ABILITY"] and e[1] != NOPOS:
+            if (e[0] == EV["MOVE"] and e[3] == trace_to_c.CAUSE["ABILITY"] or
+                    i > 0 and self._bounce_cant(events[i - 1], e, action["pos"])) and e[1] != NOPOS:
                 # Magic Bounce: the holder's result is that of the reflected run (src/combat/turn.c, the bounced move)
                 holder = self._at(e[1])
                 if holder.occupant != ROSTER_NONE and not holder.fainted:

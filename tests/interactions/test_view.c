@@ -566,8 +566,11 @@ static void mr_end_action(df_test *t, const duoforge_context *ctx, mr_track *tr,
     }
     for (uint32_t j = start; j < end; ++j) {
         const uint32_t h = ev[j].position;
-        if (ev[j].kind == DUOFORGE_EVENT_MOVE && ev[j].cause == DUOFORGE_CAUSE_ABILITY && h < DFI_POSITIONS_MR_TEST &&
-            !tr->fainted[h]) {
+        const bool bounced_cant = j > start && ev[j].kind == DUOFORGE_EVENT_CANT && ev[j].cause == DUOFORGE_CAUSE_MOVE &&
+                                  ev[j].id2 == DFI_MOVE_THROATCHOP && ev[j - 1u].kind == DUOFORGE_EVENT_MOVE &&
+                                  ev[j - 1u].position == pos && ev[j - 1u].other == h; /* issue 570: the stopped bounced run */
+        if (((ev[j].kind == DUOFORGE_EVENT_MOVE && ev[j].cause == DUOFORGE_CAUSE_ABILITY) || bounced_cant) &&
+            h < DFI_POSITIONS_MR_TEST && !tr->fainted[h]) {
             mr_set(t, ctx, tr, h, h, &ev[j], end - j);
         }
     }
@@ -616,7 +619,13 @@ static void mr_step(df_test *t, const duoforge_context *ctx, mr_track *tr, const
             }
             continue;
         }
-        const bool starts = pos < DFI_POSITIONS_MR_TEST &&
+        /* A Magic Bounce holder's [cant] Throat Chop right after the move line that targets it is the bounced run, inside the
+         * action (issue 570), not an action of its own. */
+        const bool bounce_cant = open && i > 0u && e->kind == DUOFORGE_EVENT_CANT && e->cause == DUOFORGE_CAUSE_MOVE &&
+                                 e->id2 == DFI_MOVE_THROATCHOP && ev[i - 1u].kind == DUOFORGE_EVENT_MOVE &&
+                                 ev[i - 1u].cause == DUOFORGE_CAUSE_NONE && ev[i - 1u].position == user &&
+                                 ev[i - 1u].other == pos && pos / 2u != user / 2u;
+        const bool starts = pos < DFI_POSITIONS_MR_TEST && !bounce_cant &&
                             ((e->kind == DUOFORGE_EVENT_MOVE && e->cause == DUOFORGE_CAUSE_NONE) ||
                              e->kind == DUOFORGE_EVENT_CONFUSED ||
                              (e->kind == DUOFORGE_EVENT_CANT && e->cause != DUOFORGE_CAUSE_ABILITY));
