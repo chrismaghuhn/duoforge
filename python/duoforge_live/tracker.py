@@ -411,9 +411,7 @@ class Tracker:
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
         self._baton_pass = data.tables["MOVE"].get("BATONPASS", -1)  # its receiver takes the leaver's copy (G74)
-        # the moves of the engine's partial trap (G90); a closure table has none
-        self._trap_moves = {data.tables["MOVE"][trace_to_c.key(name)] for name in lines.PARTIAL_TRAP_MOVES
-                            if trace_to_c.key(name) in data.tables["MOVE"]}
+        self._trap_moves = data.partial_trap_moves  # the moves of the engine's partial trap (G90; #512 S1)
         self._phantom_force = data.tables["MOVE"].get("PHANTOMFORCE", -1)  # breaks a Protect as Feint does (G58)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)

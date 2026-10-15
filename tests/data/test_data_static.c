@@ -83,8 +83,11 @@ static void rows_move(df_test *t, const duoforge_context *ctx, uint32_t count)
         /* the table's flags, plus LOCKED_MOVE exactly on the lockedmove moves (set from the move's special, view audit
          * 2026-10-10) */
         const uint32_t locked = m->special == DFI_SPECIAL_LOCKED_MOVE ? DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE : 0u;
-        DF_CHECK_EQ_U64(t, got.flags, (uint32_t)dfi_pool_move_static_flags[id] | locked);
+        /* and PARTIAL_TRAP exactly on the partial-trap moves (from the special too, #512 S1) */
+        const uint32_t trap = m->special == DFI_SPECIAL_PARTIAL_TRAP ? DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP : 0u;
+        DF_CHECK_EQ_U64(t, got.flags, (uint32_t)dfi_pool_move_static_flags[id] | locked | trap);
         DF_CHECK_EQ_U64(t, dfi_pool_move_static_flags[id] & DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE, 0u); /* never a table bit */
+        DF_CHECK_EQ_U64(t, dfi_pool_move_static_flags[id] & DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP, 0u);
         DF_CHECK_EQ_U64(t, got.crit_stage, (uint32_t)m->crit_ratio - 1u);
         DF_CHECK_EQ_U64(t, got.drain[0], m->drain[0]);
         DF_CHECK_EQ_U64(t, got.drain[1], m->drain[1]);
@@ -100,7 +103,7 @@ static void rows_move(df_test *t, const duoforge_context *ctx, uint32_t count)
         DF_CHECK(t, got.hits_min >= 1u && got.hits_min <= got.hits_max);
         DF_CHECK(t, (int32_t)got.priority >= -7 && (int32_t)got.priority <= 5);
         DF_CHECK(t, got.pp >= 1u);
-        DF_CHECK(t, (got.flags & ~0x1FFFu) == 0u); /* through LOCKED_MOVE 0x1000 (view audit 2026-10-10) */
+        DF_CHECK(t, (got.flags & ~0x3FFFu) == 0u); /* through PARTIAL_TRAP 0x2000 (#512 S1) */
         DF_CHECK(t, got.category != DUOFORGE_MOVE_CATEGORY_STATUS || got.base_power == 0u);
     }
 }
@@ -548,7 +551,7 @@ static void coverage(df_test *t, const duoforge_context *pool)
     }
     /* 1..15 but ADJACENT_FOE (5), which no row of the pool has (the pin has it for a few moves outside the format) */
     DF_CHECK_EQ_U64(t, classes, 0xFFDEu);
-    DF_CHECK_EQ_U64(t, flags, 0x1FFFu); /* every public flag is on some pool row: MUST_PRESSURE (step G53), LOCKED_MOVE too */
+    DF_CHECK_EQ_U64(t, flags, 0x3FFFu); /* every public flag is on some pool row: MUST_PRESSURE (step G53), LOCKED_MOVE, PARTIAL_TRAP */
     DF_CHECK_EQ_U64(t, items, 0x7u);
     DF_CHECK_EQ_U64(t, abilities, 0x1Fu);
 }

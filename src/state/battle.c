@@ -70,6 +70,27 @@ static bool dfi_member_setup_valid(const struct duoforge_context *ctx, const duo
     return dfi_closure_fields_zero(m);
 }
 
+/* The per-member check of a side's registered members (dfi_side_setup_valid), and of duoforge_data_member_setup_valid. */
+static bool dfi_member_accepted(const struct duoforge_context *ctx, const duoforge_member_setup *m)
+{
+    if (dfi_context_is_closure(ctx)) {
+        const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
+        return dfi_closure_member_setup_valid(&lim, m);
+    }
+    return dfi_member_setup_valid(ctx, m);
+}
+
+duoforge_status duoforge_data_member_setup_valid(const duoforge_context *ctx, const duoforge_member_setup *member,
+                                                 bool *out_valid)
+{
+    if (ctx == NULL || member == NULL || out_valid == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    const duoforge_member_setup m = *member; /* read the input once */
+    *out_valid = dfi_member_accepted(ctx, &m);
+    return DUOFORGE_OK;
+}
+
 static bool dfi_side_setup_valid(const struct duoforge_context *ctx, const duoforge_side_setup *side)
 {
     const uint32_t member_count = side->member_count;
@@ -84,12 +105,9 @@ static bool dfi_side_setup_valid(const struct duoforge_context *ctx, const duofo
         return false;
     }
     const bool closure = dfi_context_is_closure(ctx);
-    const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
         if (m < member_count) {
-            const bool valid = closure ? dfi_closure_member_setup_valid(&lim, &side->members[m])
-                                       : dfi_member_setup_valid(ctx, &side->members[m]);
-            if (!valid) {
+            if (!dfi_member_accepted(ctx, &side->members[m])) {
                 return false;
             }
         } else if (!dfi_member_setup_is_zero(&side->members[m])) {

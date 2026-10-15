@@ -433,6 +433,9 @@ duoforge_status duoforge_data_move_static(const duoforge_context *ctx, uint32_t 
     if (m->special == DFI_SPECIAL_LOCKED_MOVE) {
         r.flags |= DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE;
     }
+    if (m->special == DFI_SPECIAL_PARTIAL_TRAP) {
+        r.flags |= DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP; /* #512 S1 */
+    }
     r.crit_stage = m->crit_ratio > 0u ? (uint32_t)m->crit_ratio - 1u : 0u;
     r.drain[0] = m->drain[0];
     r.drain[1] = m->drain[1];

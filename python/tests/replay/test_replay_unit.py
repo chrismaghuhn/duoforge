@@ -1579,11 +1579,11 @@ class GameTest(unittest.TestCase):
         self.assertEqual(caught.exception.reason, "skip:regmb-pp")
         with self.assertRaises(game.Skip) as caught:
             self.run_game(lines_)  # Reg M-C: no PP difference; Kingambit cannot learn Wish under POOL
-        self.assertEqual(caught.exception.reason, "skip:pool-illegal Kingambit move Wish")
+        self.assertEqual(caught.exception.reason, "skip:pool-illegal Kingambit engine-setup")  # it cannot learn Wish
 
     def test_pool_illegal_skip(self):
         lines_ = self.with_moves("DragonPulse,ElectroShot,Snarl,Protect", "DragonPulse,ElectroShot,MirrorCoat,Protect")
-        self.assertEqual(self.skip_reason(lines_), "skip:pool-illegal Archaludon move MirrorCoat")
+        self.assertEqual(self.skip_reason(lines_), "skip:pool-illegal Archaludon engine-setup")  # Mirror Coat
 
     def test_two_games_in_one_log_skip(self):
         # a Bo3 log with a second game's lines: one game per row, so the log is skipped and counted

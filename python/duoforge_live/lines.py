@@ -164,9 +164,8 @@ _START = {"move: Taunt": "TAUNT", "Taunt": "TAUNT", "Encore": "ENCORE", "Substit
           "move: No Retreat": "NO_RETREAT", "Charge": "CHARGE", "move: Dragon Cheer": "DRAGON_CHEER",
           "move: Focus Energy": "FOCUS_ENERGY"}
 # The partial trap (step G90, decision 0060) is not in _START: its three line forms are checked whole (_trap_features), for the
-# five moves the engine marks (src/data/support_manifest.c); Snap Trap ("stays unmarked: decision 0060 section 8"), Whirlpool,
-# Magma Storm and Thunder Cage stay unknown lines. The converter reads the sixth, Snap Trap, but no engine battle has it.
-PARTIAL_TRAP_MOVES = ("Bind", "Wrap", "Fire Spin", "Sand Tomb", "Infestation")
+# moves the engine plays as one (view.data.partial_trap: DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP and the support gate, #512
+# S1); Snap Trap ("stays unmarked: decision 0060 section 8") and the moves outside the pool stay unknown lines.
 _WEATHER = {"Sandstorm": "WEATHER_SAND", "Snowscape": "WEATHER_SNOW", "Snow": "WEATHER_SNOW"}
 _FIELD = {"move: Electric Terrain": "TERRAIN_ELECTRIC", "move: Misty Terrain": "TERRAIN_MISTY",
           "move: Gravity": "GRAVITY"}
@@ -183,17 +182,33 @@ _SINGLE_MOVE = {"Glaive Rush": "GLAIVE_RUSH", "move: Glaive Rush": "GLAIVE_RUSH"
 _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet", "move: Recycle",
                      "move: Knock Off", "move: Incinerate", "move: Fling", "move: Bug Bite", "move: Pluck", "stealeat",
                      "ability: Pickpocket", "ability: Magician", "ability: Harvest", "ability: Pickup"}
-# The item changes the engine models (steps G16, G29, G64), which the tracker folds: Knock Off, Thief, Trick and
-# Switcheroo take an item (-enditem), Bug Bite steals a berry (stealeat), Trick, Switcheroo, Thief and Covet give one
-# (-item). The converter checks each line's shape. Every other source of _ITEM_CHANGE_FROM stops on its line.
-_ITEM_TAKEN_FOLD = {"move: Knock Off", "move: Thief", "move: Trick", "move: Switcheroo", "stealeat"}
-_ITEM_GIVEN_FOLD = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet"}
+# The item changes the tracker folds are those the engine plays (#512 S1, duoforge_data_supported; steps G16, G29, G64):
+# a source move or ability it supports takes an item (-enditem) or gives one (-item), stealeat folds when the [move] that
+# steals the berry is supported (Bug Bite). The converter checks each line's shape. Every other source stops on its line.
+
+
+def _hazard_removal_played(effect, froms, view):
+    """Whether the engine plays a hazard's removal (-sideend of a hazard): Toxic Spikes absorbed by a grounded Poison
+    type has no source (step G37: -sideend|side|move: Toxic Spikes|[of] holder); a removal [from] a move folds when the
+    engine plays that move (#512 S1, duoforge_data_supported: Defog, Rapid Spin, Mortal Spin and Tidy Up are not)."""
+    if not froms:
+        return _SIDE[effect] == "TOXIC_SPIKES"
+    return len(froms) == 1 and froms[0].startswith("move: ") and view.data.supported("MOVE", froms[0][len("move: "):])
+
+
+def _item_change_played(source, attrs, view):
+    """Whether the engine plays the item change of a -enditem or -item line's single [from] source."""
+    if source == "stealeat":
+        moves = [a[len("[move] "):] for a in attrs if a.startswith("[move] ")]
+        return len(moves) == 1 and view.data.supported("MOVE", moves[0])
+    for prefix, table in (("move: ", "MOVE"), ("ability: ", "ABILITY")):
+        if source.startswith(prefix):
+            return view.data.supported(table, source[len(prefix):])
+    return False
+
 # Attract's effect names (data/moves.ts attract): the start and the end print it bare, its check and the visible ends with
 # the move's prefix (Mental Herb, Oblivious); the family's feature shows them (ATTRACT_FOLD)
 _ATTRACT = {"Attract", "move: Attract"}
-# Ability changes by the holder's own ability on contact, which the engine does not model (DFI_HANDLER_UNMODELED, or
-# not in the pool): their -activate line stops.
-_ABILITY_ACTIVATE_UNMODELED = {"ability: Mummy", "ability: Lingering Aroma"}
 
 # The fold's own effects, beside the generic kinds (the converter's step_events and the tracker's _event).
 # The -activate effects of the committed reference battles (python/tests/test_replay.py checks that their spectator
@@ -349,7 +364,7 @@ def check(line, view):
     if kind == "-damage" and "[partiallytrapped]" in attrs:
         # the residual of a partial trap (step G90): -damage|T|hp|[from] move: M|[partiallytrapped], nothing else
         if (len(args) == 2 and len(attrs) == 2 and attrs[1] == "[partiallytrapped]" and attrs[0].startswith("[from] move: ")
-                and attrs[0][len("[from] move: "):] in PARTIAL_TRAP_MOVES and flat_position(args[0]) is not None):
+                and view.data.partial_trap(attrs[0][len("[from] move: "):]) and flat_position(args[0]) is not None):
             return _trap_features()
         _unknown(kind, "partiallytrapped")
     if kind in GENERIC:
@@ -372,7 +387,7 @@ def check(line, view):
             _unknown(kind, f"{effect} [silent]")
         return _feature("RESERVE_VOLATILES")
     if kind == "-activate":
-        if effect.startswith("move: ") and effect[len("move: "):] in PARTIAL_TRAP_MOVES:
+        if effect.startswith("move: ") and view.data.partial_trap(effect[len("move: "):]):
             # the start of a partial trap (step G90): -activate|T|move: M|[of] S, nothing else
             if len(args) == 2 and len(attrs) == 1 and attrs[0].startswith("[of] ") and                     flat_position(args[0]) is not None and flat_position(attrs[0][len("[of] "):]) is not None:
                 return _trap_features()
@@ -401,9 +416,9 @@ def check(line, view):
                     flat_position(h) is not None and view.ability_now(h) == spirit + 1 for h in holders)):
                 raise Stop("line:-activate Skill Swap Wandering Spirit")
             return _feature("ABILITY_CHANGE")
-        if effect in _ABILITY_ACTIVATE_UNMODELED:
-            # Mummy and Lingering Aroma give the attacker the holder's ability, printed as -activate|holder|ability:
-            # Mummy|attacker|[ability] Old (sim/pokemon.ts setAbility); the engine does not model either
+        if effect.startswith("ability: ") and not view.data.supported("ABILITY", effect[len("ability: "):]):
+            # an ability the engine does not play (duoforge_data_supported, #512 S1): Mummy and Lingering Aroma give the
+            # attacker the holder's ability, printed as -activate|holder|ability: Mummy|attacker|[ability] Old
             raise Stop(f"line:-activate {effect}")
         if effect == "move: Poltergeist" and len(args) == 3:
             # Poltergeist (step G64): it names the item its target holds; the open sheet's item is no news (an
@@ -442,7 +457,7 @@ def check(line, view):
         # the end of a partial trap (step G90): -end|T|M|[partiallytrapped] (the duration), or with |[silent] (the source left,
         # a Substitute, the residual with a fainted source); the pin prints the move with or without "move: "
         name = effect[len("move: "):] if effect.startswith("move: ") else effect
-        if (name in PARTIAL_TRAP_MOVES and len(args) == 2 and flat_position(args[0]) is not None
+        if (view.data.partial_trap(name) and len(args) == 2 and flat_position(args[0]) is not None
                 and attrs in (["[partiallytrapped]"], ["[partiallytrapped]", "[silent]"])):
             return _trap_features()
         _unknown(kind, effect)
@@ -494,9 +509,7 @@ def check(line, view):
             return "fold"
         if effect in _SIDE:
             froms = _froms(attrs)
-            if kind == "-sideend" and _SIDE[effect] in _HAZARDS and (froms or _SIDE[effect] != "TOXIC_SPIKES"):
-                # a hazard's removal: the engine models only Toxic Spikes absorbed by a grounded Poison type (step G37:
-                # -sideend|side|move: Toxic Spikes|[of] holder); Defog, Rapid Spin, Mortal Spin, Tidy Up stop
+            if kind == "-sideend" and _SIDE[effect] in _HAZARDS and not _hazard_removal_played(effect, froms, view):
                 _unknown(kind, f"{effect}" + (f" [from] {froms[0]}" if froms else ""))
             return _feature(_SIDE[effect])
         _unknown(kind, effect)
@@ -516,9 +529,9 @@ def check(line, view):
     if kind == "-enditem":
         froms = _froms(attrs)
         if any(f in _ITEM_CHANGE_FROM or f.startswith("move: ") for f in froms):
-            if len(froms) == 1 and froms[0] in _ITEM_TAKEN_FOLD:
+            if len(froms) == 1 and _item_change_played(froms[0], attrs, view):
                 return _feature("ITEM_CHANGE")
-            _unknown(kind, f"[from] {froms[0]}")  # Incinerate, Fling, Pickpocket, ...: not modelled
+            _unknown(kind, f"[from] {froms[0]}")  # Incinerate, Fling, Pickpocket, ...: not played
         item = tables["ITEM"].get(trace_to_c.key(effect))
         if not froms and item is not None and item + 1 == view.item_now(args[0]):
             return "fold"  # the holder used its own item up (a berry, Focus Sash, White Herb, a popped balloon)
@@ -538,9 +551,9 @@ def check(line, view):
         if own and ("[identify]" in attrs or not froms):
             return "fold"  # Frisk, or the holder's own announcement (Air Balloon): an item the open sheet shows
         if any(f in _ITEM_CHANGE_FROM for f in froms):
-            if len(froms) == 1 and froms[0] in _ITEM_GIVEN_FOLD:
+            if len(froms) == 1 and _item_change_played(froms[0], attrs, view):
                 return _feature("ITEM_CHANGE")
-            _unknown(kind, f"[from] {froms[0]}")  # Recycle, Harvest, Pickup, Magician, ...: not modelled
+            _unknown(kind, f"[from] {froms[0]}")  # Recycle, Harvest, Pickup, Magician, ...: not played
         _unknown(kind, effect)
     if kind == "detailschange":
         sheet = view.sheet_of(args[0])

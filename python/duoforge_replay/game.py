@@ -152,10 +152,8 @@ def _check_sheets(sheets, format_id, data):
         raise Skip("skip:regmb-pp")  # BC spec 11: their PP under Reg M-B differ from the engine's (M-C) data
     for sheet, mon in zip(sheets[0] + sheets[1], parsed[0] + parsed[1]):
         issue = data.setup_issue(mon)
-        if issue is not None:
-            what, index = issue
-            name = sheet["moves"][index] if what == "move" else sheet["ability"] if what == "ability" else ""
-            raise Skip(f"skip:pool-illegal {sheet['species']} {what} {name}".rstrip())
+        if issue is not None:  # the engine's own setup refuses the member (#512: it names no field)
+            raise Skip(f"skip:pool-illegal {sheet['species']} {issue[0]}")
 
 
 def _prepass(replay_id, format_id, log, data):

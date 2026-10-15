@@ -418,6 +418,28 @@ class CtsTest(unittest.TestCase):
         for s in self.held(run, 3, "Farigiraf"):
             self.assertTrue({"protect", "trickroom"} <= {m.lower().replace(" ", "") for m in s[3]}, s)
 
+    def test_the_setup_check_is_the_engines(self):
+        """#512: setup_issue asks the engine's per-member check (duoforge_data_member_setup_valid) and names its refusal
+        "engine-setup"; no copy of the rules is in Python."""
+        first = FIXTURE["foe_team"].split("\n\n")[0]
+        self.assertIsNone(cts.setup_issue(self.data, teams._paste(first)[0]))
+        bad = teams._paste(first.replace("- Spirit Break", "- Snarl"))[0]  # Grimmsnarl does not learn Snarl
+        self.assertEqual(cts.setup_issue(self.data, bad), ("engine-setup", None))
+
+    def test_the_lines_read_the_engines_support(self):
+        """#512 S1: the partial-trap moves and the abilities the lines stop on are the engine's (the flag and
+        duoforge_data_supported), not hand lists: the five trap moves it plays (Snap Trap is unmarked), Mummy and
+        Lingering Aroma unplayed."""
+        names = {v: k for k, v in self.data.tables["MOVE"].items() if k != "COUNT"}
+        self.assertEqual({names[m] for m in self.data.partial_trap_moves},
+                         {"BIND", "WRAP", "FIRESPIN", "SANDTOMB", "INFESTATION"})
+        self.assertFalse(self.data.partial_trap("Snap Trap"))
+        self.assertTrue(self.data.partial_trap("Fire Spin"))
+        for name, played in (("Mummy", False), ("Lingering Aroma", False), ("Intimidate", True)):
+            self.assertEqual(self.data.supported("ABILITY", name), played, name)
+        for name, played in (("Knock Off", True), ("Defog", False), ("Rapid Spin", False)):
+            self.assertEqual(self.data.supported("MOVE", name), played, name)
+
     def test_the_prior_refuses_a_set_the_engine_refuses(self):
         # Grimmsnarl does not learn Snarl in the pool tables (data.setup_issue)
         bad = teams._paste(FIXTURE["foe_team"].split("\n\n")[0].replace("- Spirit Break", "- Snarl"))
