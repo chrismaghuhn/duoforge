@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The conformance set champions-singles (decision 0083): every committed singles battle, recorded against the pinned
-Showdown in [Gen 9 Champions] Custom Game, through the converter and the differential runner of this build under
+Showdown in [Gen 9 Champions] OU, through the converter and the differential runner of this build under
 DUOFORGE_DATA_KIND_POOL_SINGLES_DEV. Every battle must PASS: the states, requests, events, views and draws of every step
 equal the reference's (tests/support/conformance_compare.c, the comparator of the doubles sets).
 

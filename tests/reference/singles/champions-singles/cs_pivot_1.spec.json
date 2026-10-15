@@ -1,214 +1,101 @@
 {
  "name": "cs_pivot_1",
- "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 84, its battle 212) kept for what its log shows: pivot.",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 86, its battle 148) kept for what its log shows: pivot.",
  "data": "pool",
- "format": "gen9championscustomgame",
- "seed": "sodium,5c0dc4430c62c7f3d1702744fc1bafb8823289febc3a417a31db0e6fa2d241b7",
+ "format": "gen9championsou",
+ "seed": "sodium,6ff4c605d47052d6bfebab848b34aa3454b10e3e15da9eb2ee9b84eb847c6880",
  "teams": [
-  "Ceruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSableye (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nTimid Nature\n- Quash\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Haze\n- Protect\n\nQuaquaval (M) @ Black Glasses\nAbility: Moxie\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect",
-  "Incineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n\nRillaboom (M)\nAbility: Overgrow\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nSinistcha\nAbility: Hospitality\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Rage Powder\n- Matcha Gotcha\n- Protect\n- Giga Drain"
+  "Ceruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Haze\n- Protect\n\nQuaquaval (M) @ Black Glasses\nAbility: Moxie\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n\nSableye (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nTimid Nature\n- Quash\n- Protect\n\nMetagross @ Metagrossite\nAbility: Clear Body\nLevel: 50\nEVs: 16 HP / 25 Atk / 25 Spe\nAdamant Nature\n- Protect\n- Iron Head\n- Psychic Fangs\n- Stomping Tantrum",
+  "Incineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n\nSinistcha\nAbility: Hospitality\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Rage Powder\n- Matcha Gotcha\n- Protect\n- Giga Drain\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Helping Hand\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nRillaboom (M)\nAbility: Overgrow\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- Protect\n\nNinetales (M) @ Choice Scarf\nAbility: Drought\nLevel: 50\nEVs: 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Overheat\n- Heat Wave\n- Solar Beam\n- Fake Tears"
  ],
  "choices": [
   {
-   "p1": "team 5",
-   "p2": "team 1"
+   "p1": "team 1",
+   "p2": "team 5"
   },
   {
-   "p1": "move 2",
+   "p1": "move 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
    "p2": "move 2 1"
   },
   {
-   "p1": "move 1 1",
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1",
    "p2": "move 2 1"
   },
   {
-   "p1": "switch 3"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 3"
-  },
-  {
-   "p1": "switch 2",
-   "p2": "move 3"
-  },
-  {
-   "p1": "switch 3",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 2",
-   "p2": "switch 2"
-  },
-  {
-   "p1": "move 1 1",
+   "p1": "move 1",
    "p2": "move 1 1"
   },
   {
    "p1": "switch 6"
   },
   {
-   "p1": "move 2",
+   "p1": "move 2 1 mega",
    "p2": "move 2 1"
-  },
-  {
-   "p1": "switch 4",
-   "p2": "move 4"
-  },
-  {
-   "p1": "switch 4",
-   "p2": "switch 5"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 2"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "switch 2"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "switch 4"
-  },
-  {
-   "p1": "switch 5",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 2",
-   "p2": "switch 5"
-  },
-  {
-   "p1": "move 1",
-   "p2": "switch 2"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 3"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 2"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 2"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 1 1"
   },
   {
    "p2": "switch 6"
   },
   {
+   "p1": "move 4 1",
+   "p2": "move 4 1"
+  },
+  {
+   "p2": "switch 3"
+  },
+  {
    "p1": "switch 5",
-   "p2": "move 1"
+   "p2": "move 3"
   },
   {
    "p1": "move 1 1",
    "p2": "move 2"
   },
   {
-   "p1": "switch 5",
+   "p1": "move 2",
    "p2": "move 4 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2"
   },
   {
    "p1": "switch 2"
   },
   {
-   "p1": "move 1 1",
-   "p2": "move 4 1"
-  },
-  {
-   "p1": "switch 5"
+   "p1": "move 2",
+   "p2": "move 3"
   },
   {
    "p1": "move 2",
-   "p2": "move 2"
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
   },
   {
    "p1": "move 1 1",
@@ -216,11 +103,83 @@
   },
   {
    "p1": "move 2",
-   "p2": "move 4 1"
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3"
   },
   {
    "p1": "move 1 1",
-   "p2": "move 4 1"
+   "p2": "move 1"
+  },
+  {
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1 1"
   }
  ]
 }

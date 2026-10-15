@@ -7223,6 +7223,19 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
             }
         }
     }
+    /* Throat Chop's onModifyMove (data/moves.ts:19406-19411): useMoveInner runs ModifyMove before the move line
+     * (battle-actions.ts:439), so a holder under Throat Chop shows `cant|holder|move: Throat Chop` for a sound move and the
+     * bounced run ends there with false (`!move`, :443-445): no move line, and the holder's result is false (useMove). */
+    if (b->tail.sides[holder / 2u].positions[holder % 2u].throat_chop_turns != 0u &&
+        (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_SOUND) != 0u) {
+        const duoforge_event e =
+            dfi_ev(DUOFORGE_EVENT_CANT, holder, DUOFORGE_CAUSE_MOVE, DFI_MOVE_THROATCHOP, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e); /* [cant] move: Throat Chop */
+        dfi_tail_pos *tp = &b->tail.sides[holder / 2u].positions[holder % 2u];
+        tp->move_result = (uint8_t)(((uint32_t)tp->move_result & ~0x13u) | DFI_MOVE_RESULT_FALSE); /* wide-operands-reviewed: <= 0x3F */
+        r->mres |= DFI_MRES_FALSE; /* the original move's TryHit returns null, normalised to false */
+        return DUOFORGE_OK;
+    }
     const uint32_t saved_mres = r->mres;
     const uint32_t saved_last = r->last_move;
     const uint32_t saved_target = r->move_target;
@@ -11780,6 +11793,14 @@ static duoforge_status dfi_end_turn(dfi_run *r)
     if (!dfi_add_u32(b->turn, 1u, &turn) || turn > UINT16_MAX || !dfi_add_u32(b->request_epoch, 1u, &epoch) ||
         epoch == UINT32_MAX) {
         return DUOFORGE_E_EXHAUSTED;
+    }
+    /* The Endless Battle Clause of the singles reference format ([Gen 9 Champions] OU, Standard AG,
+     * data/mods/champions/rulesets.ts:2-8) is checked in nextTurn from turn 101 on (sim/battle.ts:1836, 1854-1903: the
+     * staleness of every Pokemon, then a tie or a loss), and the turn limit of every format ties at turn 1001 (:1839-1843).
+     * The engine models neither, so a singles battle that reaches turn 101 is refused here, by name of the rule, before any
+     * change (decision 0083 section 6). */
+    if (dfi_context_singles(r->ctx) && turn > 100u) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
     b->turn = (uint16_t)turn;
     b->request_epoch = epoch;

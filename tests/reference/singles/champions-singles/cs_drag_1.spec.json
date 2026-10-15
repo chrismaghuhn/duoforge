@@ -1,28 +1,96 @@
 {
  "name": "cs_drag_1",
- "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 84, its battle 105) kept for what its log shows: drag.",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 86, its battle 345) kept for what its log shows: drag.",
  "data": "pool",
- "format": "gen9championscustomgame",
- "seed": "sodium,c5b6542876403fb2f608366d8f0cb777b98dae11d36624c4d244ca84e9e87619",
+ "format": "gen9championsou",
+ "seed": "sodium,c121fd555df99b7d4b86b5f984b96a1b726b7f4ab60c3c81ffa0b5c068065480",
  "teams": [
-  "Kingambit (M) @ Expert Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Low Sweep\n- Iron Head\n- Protect\n- Kowtow Cleave\n\nGarchomp (M) @ Lum Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Iron Tail\n- Earthquake\n- Protect\n- Dragon Tail\n\nArmarouge (M) @ Life Orb\nAbility: Weak Armor\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Lava Plume\n- Acid Spray\n- Protect\n- Flare Blitz\n\nVolcarona (M) @ Focus Sash\nAbility: Flame Body\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Lunge\n- Zen Headbutt\n- Fiery Dance\n- Protect\n\nToxtricity (M) @ Rocky Helmet\nAbility: Punk Rock\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Protect\n- Poison Jab\n- Sludge Bomb\n- Drain Punch\n\nCorviknight (M) @ Leftovers\nAbility: Mirror Armor\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Protect\n- Iron Head\n- Bulk Up\n- Hurricane",
-  "Staraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis"
+  "Farigiraf (F) @ Life Orb\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Coil\n- Ice Beam\n\nSableye (M) @ Roseli Berry\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 8 Def / 26 SpD\nCalm Nature\n- Foul Play\n- Light Screen\n- Reflect\n- Encore\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Protect",
+  "Froslass (F) @ Froslassite\nAbility: Cursed Body\nLevel: 50\nEVs: 14 HP / 20 SpA / 32 Spe\nTimid Nature\n- Blizzard\n- Shadow Ball\n- Aurora Veil\n- Protect\n\nSwampert (M) @ Swampertite\nAbility: Torrent\nLevel: 50\nEVs: 8 HP / 32 Atk / 26 Spe\nAdamant Nature\n- Wave Crash\n- High Horsepower\n- Ice Punch\n- Rock Slide\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Recover\n- Protect\n\nQuaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Surf\n- Protect\n\nStaraptor (M) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Brave Bird\n- Whirlwind\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect"
  ],
  "choices": [
   {
-   "p1": "team 3",
-   "p2": "team 3"
+   "p1": "team 6",
+   "p2": "team 4"
   },
   {
-   "p1": "move 4 1",
-   "p2": "move 1"
+   "p1": "move 2",
+   "p2": "move 1 1"
   },
   {
-   "p1": "move 1",
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2",
    "p2": "move 2 1"
   },
   {
+   "p1": "move 1 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2",
    "p2": "switch 5"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1 1 mega"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "switch 2",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
   },
   {
    "p1": "switch 3",
@@ -30,113 +98,44 @@
   },
   {
    "p1": "move 4 1",
-   "p2": "move 4 1"
-  },
-  {
-   "p1": "move 3",
-   "p2": "move 2 1 mega"
+   "p2": "move 1"
   },
   {
    "p1": "move 1 1",
-   "p2": "switch 6"
+   "p2": "move 3 1"
   },
   {
-   "p1": "move 4 1",
-   "p2": "move 1 1"
+   "p2": "switch 2"
   },
   {
-   "p1": "switch 4",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "move 3 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 4"
-  },
-  {
-   "p1": "move 3",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 3",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1 1",
+   "p1": "move 2 1",
    "p2": "move 2 1"
   },
   {
-   "p1": "move 3",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 6"
-  },
-  {
-   "p1": "move 3",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 3",
+   "p1": "move 2 1",
    "p2": "move 4"
   },
   {
    "p1": "move 2 1",
-   "p2": "move 3"
+   "p2": "move 4"
   },
   {
-   "p2": "switch 6"
+   "p2": "switch 3"
   },
   {
-   "p1": "move 2 1",
-   "p2": "move 1 1"
+   "p1": "move 1 1",
+   "p2": "switch 5"
   },
   {
-   "p1": "move 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 3",
-   "p2": "move 2 1"
+   "p2": "switch 5"
   },
   {
    "p1": "move 4 1",
-   "p2": "move 3"
+   "p2": "move 4"
   },
   {
-   "p1": "move 2 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 5"
-  },
-  {
-   "p1": "move 3 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 2"
-  },
-  {
-   "p1": "move 4 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 3"
-  },
-  {
-   "p1": "move 2 1",
-   "p2": "move 3"
+   "p1": "move 1 1",
+   "p2": "move 3 1"
   }
  ]
 }

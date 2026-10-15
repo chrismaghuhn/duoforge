@@ -1,16 +1,16 @@
 {
  "name": "cs_aurora_veil_2",
- "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 84, its battle 69) kept for what its log shows: aurora veil.",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 86, its battle 453) kept for what its log shows: aurora veil.",
  "data": "pool",
- "format": "gen9championscustomgame",
- "seed": "sodium,ea69dd868dd08fa8a8f04ae94141d6a68a397dee6442cb48f04daf6c307748ea",
+ "format": "gen9championsou",
+ "seed": "sodium,960ca87b0f3e12d6fb807f83b8cd64ae23e8b987c585944ff23a668fe4669a0e",
  "teams": [
-  "Ninetales-Alola (F) @ Leftovers\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Aurora Veil\n- Protect\n- Helping Hand\n- Icy Wind\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect\n- Iron Head\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
-  "Ceruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect"
+  "Ceruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect\n- Iron Head\n\nPelipper (M) @ Focus Sash\nAbility: Drizzle\nLevel: 50\nModest Nature\n- Protect\n- Tailwind\n- Weather Ball\n- Hurricane\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nNinetales-Alola (F) @ Leftovers\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Aurora Veil\n- Protect\n- Helping Hand\n- Icy Wind\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil",
+  "Kingambit (M) @ Expert Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Low Sweep\n- Iron Head\n- Protect\n- Kowtow Cleave\n\nCorviknight (M) @ Leftovers\nAbility: Mirror Armor\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Protect\n- Iron Head\n- Bulk Up\n- Hurricane\n\nVolcarona (M) @ Focus Sash\nAbility: Flame Body\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Lunge\n- Zen Headbutt\n- Fiery Dance\n- Protect\n\nToxtricity (M) @ Rocky Helmet\nAbility: Punk Rock\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Protect\n- Poison Jab\n- Sludge Bomb\n- Drain Punch\n\nGarchomp (M) @ Lum Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Iron Tail\n- Earthquake\n- Protect\n- Dragon Tail\n\nArmarouge (M) @ Life Orb\nAbility: Weak Armor\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Lava Plume\n- Acid Spray\n- Protect\n- Flare Blitz"
  ],
  "choices": [
   {
-   "p1": "team 5",
+   "p1": "team 2",
    "p2": "team 1"
   },
   {
@@ -18,73 +18,87 @@
    "p2": "move 3"
   },
   {
-   "p1": "move 1",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "switch 5",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 2"
-  },
-  {
-   "p1": "move 1",
+   "p1": "move 3 1",
    "p2": "move 3"
   },
   {
-   "p1": "move 2",
+   "p1": "move 3 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 6",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "switch 6",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "move 4 1",
    "p2": "move 2 1"
   },
   {
+   "p2": "switch 5"
+  },
+  {
+   "p1": "switch 5",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "switch 6"
+  },
+  {
    "p1": "move 2",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 3",
    "p2": "move 1 1"
   },
   {
    "p1": "switch 5"
   },
   {
-   "p1": "move 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 3",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "switch 3",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
+   "p1": "move 3 1",
    "p2": "move 2 1"
   },
   {
@@ -96,22 +110,7 @@
   },
   {
    "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 3"
-  },
-  {
-   "p1": "move 1",
-   "p2": "switch 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "switch 5"
+   "p2": "move 4 1"
   },
   {
    "p1": "move 1",
@@ -119,46 +118,34 @@
   },
   {
    "p1": "move 1",
-   "p2": "move 1 1 mega"
+   "p2": "move 4 1"
   },
   {
-   "p1": "switch 4",
+   "p1": "switch 2",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 2",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "move 1",
    "p2": "move 3"
   },
   {
-   "p1": "switch 4",
+   "p1": "move 1",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "switch 2"
+  },
+  {
+   "p1": "move 1",
    "p2": "move 1 1"
   },
   {
    "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "switch 4"
-  },
-  {
-   "p1": "move 1 1",
    "p2": "move 1 1"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 4"
-  },
-  {
-   "p1": "move 1",
-   "p2": "switch 2"
-  },
-  {
-   "p1": "move 1",
-   "p2": "move 1"
   },
   {
    "p1": "move 1",
@@ -166,7 +153,35 @@
   },
   {
    "p1": "move 1",
-   "p2": "move 3 1"
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 1",
+   "p2": "switch 6"
+  },
+  {
+   "p1": "move 1",
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
   }
  ]
 }

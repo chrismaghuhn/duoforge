@@ -3,8 +3,8 @@
 Status: **draft for the HS** (OU lane, step O2 of the [OU design](../superpowers/specs/2026-10-15-gen9-ou-design.md),
 section 2.2; Q8 accepted the capacity reading on 2026-10-14). **The number 0083, the kind value 8 and the name
 `duoforge_context_active_per_side` are provisional until the HS assigns them** (Q7). The owner's decision of
-2026-10-15 (Q1 changed, directly Gen 9 OU) leaves this step as it was: singles on proven mechanics, recorded against
-`[Gen 9 Champions] Custom Game`.
+2026-10-15 (Q1 changed, directly Gen 9 OU) leaves this step as it was: singles on proven mechanics. Its reference
+battles are recorded in `[Gen 9 Champions] OU` (owner and HS, 2026-10-15; section 6).
 
 ## 1. The capacity reading
 
@@ -64,14 +64,31 @@ that the reference's fill order is the lead then the rest ascending and stops (`
 
 ## 6. The reference format
 
-The reference battles are recorded in `[Gen 9 Champions] Custom Game` (`gen9championscustomgame`, config/formats.ts:316-322):
-the Champions mod with no clause, no ban and no Endless Battle Clause, so it tests singles on proven mechanics. Its
-`debug: true` reports the exact HP to both players (sim/battle.ts:227) and adds `|debug|` lines. The converter
-(`trace_to_c.champions_public_hp`) drops the debug lines and rewrites the **shared** copy of every split line to the
-Champions display (sim/pokemon.ts:2066-2074: the floored percentage, at least 1, the flags at 20 and 50); the secret
-copies stay exact. Its other option, `battle: {trunc: Math.trunc}`, differs from the default truncation only for
-values of 2^16 and more at the 16-bit truncations (sim/battle-actions.ts:1841, 1859; sim/battle.ts:2366-2369), which no
-level 50 battle reaches.
+The reference battles are recorded in `[Gen 9 Champions] OU` (`gen9championsou`, config/formats.ts:255-259), the real
+format (owner and HS, 2026-10-15; the first draft used `[Gen 9 Champions] Custom Game`). The reasons:
+
+- Showdown shows the HP as a player sees it, so the converter needs no conversion of its own: the HP lines are read as
+  in the VGC battles. Custom Game's `debug: true` shows the exact HP to everyone and would need a rewrite in Python.
+- It is the same basis as the VGC reference battles, which are recorded in their real format.
+- The pool is the one of O1 (`data/formats/champions-ou.json`), and the format's clauses act almost only on the team
+  check, not on the battle.
+
+**The clauses.** `Standard` of the Champions mod (data/mods/champions/rulesets.ts:2-15): Obtainable, Team Preview,
+Cancel Mod, Endless Battle Clause, Adjust Level = 50, Species Clause, Item Clause = 1, Min Team Size = 6, Sleep Moves
+Clause, Nickname Clause, OHKO Clause, Evasion Clause, and the format's banlist (AG, Uber, Moody, Damp Rock, King's
+Rock, Light Clay, Quick Claw, Baton Pass, Last Respects, Shed Tail). All of them but the Endless Battle Clause act in
+the team validator only. The trace tool (`ps_trace.js`) runs no validator, so every team of the set and of the gate
+campaign is checked with the pinned `TeamValidator` for `gen9championsou`: the 26 battles of the set and the 452 teams
+of the gate campaign are legal. Team Preview brings 6 of 6, as the kind does (section 3).
+
+**The Endless Battle Clause.** Showdown checks it in `nextTurn` (sim/battle.ts:1773, 1803-1903): nothing happens before
+turn 101 (:1836); from turn 101 on, a battle in which every Pokemon is stale ends in a tie or a loss (:1854-1903). The
+turn limit of every format ties at turn 1001 (:1839-1843). The engine models neither (no staleness, no turn limit). Under
+the singles kind a step that would start turn 101 is therefore **refused by name**: `DUOFORGE_E_UNSUPPORTED` from
+`dfi_end_turn`, before any change (test: `duoforge.state.singles`, turn 100 refused and turn 99 accepted). In the reference
+battles the clause never acts: the campaigns stop after 100 steps (`--max-steps 100`, so no battle passes turn 100), and
+the longest battle of the set ends on turn 52. The doubles kinds keep their behaviour: their formats have no Endless
+Battle Clause, and their turn limit at 1001 is not modelled either, as before this step.
 
 ## 7. Fixes found by the singles campaigns that apply to doubles too
 
@@ -85,12 +102,15 @@ level 50 battle reaches.
   4.1 undercounts. A stored counter would be a state change and is left to the HS.
 - Moody's residual handler of a Pokemon whose faint is queued and not yet processed (Perish Song's perish0 earlier in the
   same residual) runs and draws: `Pokemon.faint()` only sets hp 0, the handler loop skips only a `fainted` holder
-  (sim/battle.ts:512-514), and the boost of a Pokemon at 0 HP does nothing (`cs_moody_perish_1`, `_2`).
+  (sim/battle.ts:512-514), and the boost of a Pokemon at 0 HP does nothing (Moody is banned in Champions OU).
 - Stance Change resets a type that Soak or Double Shock set, as Mega Evolution already did: `formeChange` calls
-  `setSpecies`, which calls `setType(species.types, true)` (sim/pokemon.ts:1387-1392; `cs_stance_soak_1`).
+  `setSpecies`, which calls `setType(species.types, true)` (sim/pokemon.ts:1387-1392).
 - The converter's Pressure count of the viewer's own Pokemon took the sheet's ability again when a Mega Evolved Pokemon
   switched back in; Mega Evolution is permanent (sim/battle-actions.ts:1902), so the Mega's ability counts
-  (`cs_pressure_mega_1`). The engine was right; the reference was wrong.
+  (found by a Custom Game battle with a Mega Absol). The engine was right; the reference was wrong.
+- A Magic Bounce holder under Throat Chop that bounces a sound move (Parting Shot) shows `cant|holder|move: Throat Chop`
+  and the bounced run ends there: Throat Chop's `onModifyMove` (data/moves.ts:19406-19411) runs in `useMoveInner` before
+  the move line (sim/battle-actions.ts:439-445). The engine ran the bounced move.
 
 ## 8. Cost of the capacity reading (measured)
 

@@ -10,7 +10,8 @@
  *   - the public view: one foe lead (foe_leads[1] is none), the foe's bench order hidden; a world's pick order is the lead,
  *     then the rest ascending, and any other order is refused;
  *   - the invariant: a state with slot 1 occupied under the singles kind is SINGLES_SLOT, the same bytes under POOL_DEV
- *     are not (the doubles kind may occupy it).
+ *     are not (the doubles kind may occupy it);
+ *   - the Endless Battle Clause: a turn that would start turn 101 is refused (E_UNSUPPORTED), the battle unchanged.
  * The battles against the pinned Showdown are tools/reference/singles (duoforge.reference.singles_conformance).
  */
 #include <string.h>
@@ -211,6 +212,40 @@ static void check_battle(df_test *t)
     DF_CHECK_EQ_U64(t, first, DFI_INV_SINGLES_SLOT);
     DF_CHECK(t, strcmp(dfi_invariant_name(DFI_INV_SINGLES_SLOT), "SINGLES_SLOT") == 0);
     DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+
+    /* The Endless Battle Clause (decision 0083 section 6): a turn that would start turn 101 is refused, the battle
+     * unchanged; the turn before it starts turn 100. Both sides switch, so no Pokemon faints. */
+    {
+        duoforge_decision_bundle sw;
+        memset(&sw, 0, sizeof sw);
+        sw.epoch = b->request_epoch;
+        sw.response_mask = 3u;
+        for (uint32_t s = 0u; s < 2u; ++s) {
+            duoforge_factored_domain ds;
+            DF_CHECK(t, duoforge_battle_factored(ctx, b, s, &ds) == DUOFORGE_OK);
+            duoforge_side_choice *r = &sw.responses[s];
+            r->epoch = b->request_epoch;
+            r->side = (uint8_t)s;
+            r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+            for (uint32_t i = 0u; i < ds.slot_count[0]; ++i) {
+                if (ds.slots[0][i].kind == DUOFORGE_SLOT_SWITCH) {
+                    r->slots[0] = ds.slots[0][i];
+                    break;
+                }
+            }
+            r->slots[1] = ds.slots[1][0];
+            DF_CHECK_EQ_U64(t, r->slots[0].kind, DUOFORGE_SLOT_SWITCH);
+        }
+        struct duoforge_battle late = *b;
+        late.turn = 99u;
+        DF_CHECK(t, duoforge_battle_step(ctx, &late, &sw, &res) == DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, late.turn, 100u);
+        late = *b;
+        late.turn = 100u;
+        const struct duoforge_battle before = late;
+        DF_CHECK(t, duoforge_battle_step(ctx, &late, &sw, &res) == DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK(t, memcmp(&late, &before, sizeof late) == 0);
+    }
 
     duoforge_battle_destroy(b);
     duoforge_context_destroy(ctx);

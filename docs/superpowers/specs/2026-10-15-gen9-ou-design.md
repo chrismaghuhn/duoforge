@@ -345,7 +345,7 @@ restructure window. Each step's gates are fixed in the PR before its runs.
 | # | content | gate (besides P1–P6 for VGC) |
 |--:|---|---|
 | **O1** | `data/formats/champions-ou.json` in the step 10 shape, for `[Gen 9 Champions] OU` (facts with pin lines: ruleset, banlist, clauses, level, team size 6 of 6, the timer); its legal pool from the pinned validator; the folder layout per format agreed with the restructure lane (Q9) | Reg M-C tables byte-identical (P5); the pool is a subset of today's tables or every extra row is named; the definition reproduces the validator's legal set |
-| **O2** | singles game type under a Champions-singles development kind over today's pool: positions as in 2.2, singles target resolution, 6-lead team selection, `duoforge_context_active_per_side`; the capacity decision for `DUOFORGE_ACTIVE_PER_SIDE` as its own decision file (Q8); reference battles against `[Gen 9 Champions] Custom Game` | a conformance set `champions-singles` passes; new perft pins for singles; a differential campaign with 0 divergences and 0 unsupported; the layout test unchanged; the measured state and view sizes reported |
+| **O2** | singles game type under a Champions-singles development kind over today's pool: positions as in 2.2, singles target resolution, 6-lead team selection, `duoforge_context_active_per_side`; the capacity decision for `DUOFORGE_ACTIVE_PER_SIDE` as its own decision file (Q8); reference battles against `[Gen 9 Champions] OU` (`gen9championsou`, changed 2026-10-15 from `[Gen 9 Champions] Custom Game`: the real format, as for the VGC battles) | a conformance set `champions-singles` passes; new perft pins for singles; a differential campaign with 0 divergences and 0 unsupported; the layout test unchanged; the measured state and view sizes reported |
 | – | **dependency, content lane (Q5):** Rapid Spin, Mortal Spin, Defog, Court Change, Tidy Up, Supreme Overlord, Mold Breaker, Protean and Libero under Reg M-C | the content lane's own gates |
 | **O3** | ~~**Milestone Champions OU (engine):** a Champions OU kind with the format's rules (6 of 6, the clauses, the Endless Battle Clause); the VGC marks are valid as they are, because the semantics are the same~~ **Dropped 2026-10-15 (Q1 changed); its work goes into O12.** | — |
 | **O4** | ~~singles encoder `<HS: E-S1>` without Tera, C and Python, format-keyed~~ **Dropped 2026-10-15 (Q1 changed); its work goes into O12.** | — |
@@ -396,8 +396,8 @@ The questions as asked, with the answers. The section 9 steps follow them.
   the removal moves (O3, and the bot milestone O7).
   **Changed 2026-10-15 (owner): directly Gen 9 OU.** Champions OU is no intermediate target any more; O3–O7 are dropped
   (section 9), the singles encoder, replays, BC and search go into O12, and the other step numbers stay. O2's reference
-  battles stay against `[Gen 9 Champions] Custom Game` (singles on proven mechanics), and O1's `champions-ou.json` stays
-  as development data for the singles tests.
+  battles test singles on proven mechanics, against `[Gen 9 Champions] OU` (the real format, owner and HS,
+  2026-10-15), and O1's `champions-ou.json` stays as development data for the singles tests.
 - **Q2 (owner).** *Top baseline for OU?* **1825**; 1695 is reported beside it.
 - **Q3 (owner).** *BC rating threshold?* **From 1500 with weights** as the default (6.2); 1700 is measured beside it.
 - **Q4 (owner).** *Play venue?* **Only the local arena** until the gates of the OU search step pass (O12 in this

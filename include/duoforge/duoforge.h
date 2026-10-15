@@ -133,7 +133,7 @@ const char *duoforge_status_name(duoforge_status status);
 #define DUOFORGE_DATA_KIND_POOL_DEV    7u /* the pool tables; as CLOSURE_DEV over them, with
                                              POOL's moves and abilities (development fixtures) */
 #define DUOFORGE_DATA_KIND_POOL_SINGLES_DEV 8u /* the pool tables and POOL_DEV's rules, in singles
-                                             ([Gen 9 Champions] Custom Game, decision 0083): one
+                                             ([Gen 9 Champions] OU, decision 0083): one
                                              position per side (slot 0), every registered member
                                              brought (brought_count = max_roster), team selection
                                              picks the lead only (development fixtures) */

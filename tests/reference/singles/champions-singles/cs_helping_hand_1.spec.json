@@ -1,62 +1,57 @@
 {
  "name": "cs_helping_hand_1",
- "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 84, its battle 175) kept for what its log shows: helping hand, protect, win, faint, mega.",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 86, its battle 366) kept for what its log shows: helping hand, follow me, coaching, rage powder, light screen.",
  "data": "pool",
- "format": "gen9championscustomgame",
- "seed": "sodium,1a01c9d9423acd5464dcafa0611a0bbcf6bf74ed8aa4c83e82e143424d84761f",
+ "format": "gen9championsou",
+ "seed": "sodium,cd4010939850ada40b3789d1d1adc77e300fdfbf4c789dff26de4dd2a0be9d25",
  "teams": [
-  "Basculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: No Ability\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Psychic\n- Helping Hand",
-  "Raichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect"
+  "Basculegion (M) @ Choice Scarf\nAbility: Adaptability\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Wave Crash\n\nKingambit (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 1 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Dire Claw\n- Coaching\n- Fake Out\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Follow Me\n- Trick Room\n- Helping Hand\n- Terrain Pulse\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect",
+  "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n- Dire Claw\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nDragapult (M) @ Kasib Berry\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 1 Def / 1 SpD / 32 Spe\nTimid Nature\n- Shadow Ball\n- Breaking Swipe\n- Light Screen\n- Reflect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nSinistcha @ Colbur Berry\nAbility: Hospitality\nLevel: 50\nEVs: 29 HP / 8 Def / 24 SpD / 5 Spe\nBold Nature\n- Matcha Gotcha\n- Shadow Ball\n- Protect\n- Rage Powder"
  ],
  "choices": [
   {
    "p1": "team 4",
-   "p2": "team 5"
+   "p2": "team 1"
   },
   {
-   "p1": "switch 2",
-   "p2": "move 3"
+   "p1": "switch 5",
+   "p2": "move 2 1"
   },
   {
-   "p1": "move 1 1",
-   "p2": "move 4"
+   "p1": "move 1",
+   "p2": "move 1"
   },
   {
-   "p1": "move 1 1",
-   "p2": "move 3"
+   "p1": "move 3",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
   },
   {
    "p1": "switch 4",
    "p2": "move 2 1"
   },
   {
-   "p1": "switch 4"
+   "p1": "move 2 1",
+   "p2": "move 1"
   },
   {
-   "p1": "move 1 1",
-   "p2": "switch 4"
+   "p1": "switch 5",
+   "p2": "move 2 1"
   },
   {
-   "p1": "move 1 1",
-   "p2": "move 3"
+   "p1": "move 2 1",
+   "p2": "move 1"
   },
   {
-   "p2": "switch 5"
+   "p1": "move 3",
+   "p2": "move 1"
   },
   {
-   "p1": "move 1 1",
-   "p2": "move 3 1"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "move 4 1"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "move 4 1"
-  },
-  {
-   "p1": "switch 3"
+   "p1": "switch 2",
+   "p2": "move 2 1"
   },
   {
    "p1": "move 1 1",
@@ -66,57 +61,64 @@
    "p2": "switch 6"
   },
   {
-   "p1": "switch 6",
+   "p1": "switch 4",
    "p2": "move 3"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 1 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 6"
-  },
-  {
-   "p1": "move 2 1",
-   "p2": "move 2 1"
-  },
-  {
-   "p1": "move 2 1",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 2"
-  },
-  {
-   "p1": "move 2",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 5",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 1 1 mega",
-   "p2": "move 3"
-  },
-  {
-   "p1": "move 3",
-   "p2": "move 1 1"
-  },
-  {
-   "p1": "switch 5"
   },
   {
    "p1": "move 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 1 1",
    "p2": "move 1 1"
+  },
+  {
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 4 1"
+  },
+  {
+   "p2": "switch 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3"
+  },
+  {
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1"
   }
  ]
 }
