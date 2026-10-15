@@ -168,7 +168,7 @@ the mid-turn one a `PIVOT`. Both already exist; no new boundary.
 
 ## 7. Status of the recordings (2026-10-10, end of the batch round)
 
-Specs in `tests/reference/specs/g82_*` (teams checked against `legal_pool.json` and the support manifest marks; no problems):
+Specs in `tests/reference/specs/g82_*` (teams checked against `data/formats/pools/reg-mc.json` and the support manifest marks; no problems):
 - R1 `g82_r1_normal_heal`: the replacement Gardevoir enters paralysed at 139/175; `-heal 175/175 [from] move: Healing Wish`, status cleared.
 - R2 `g82_r2_full_hp_kept`: a full-HP entrant; no heal line, the wish waits.
 - R3 `g82_r3_second_wish_false`: a second Healing Wish on the occupied slot; `|move|` then `|faint|`, no `-fail`, no heal. FALSE by the pin (see section 2 above).

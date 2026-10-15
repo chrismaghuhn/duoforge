@@ -72,7 +72,7 @@ foreach(_file IN LISTS _files)
 
     # Quantized evaluation permits only fixed-width integer arithmetic, never
     # floating computation. This does not extend the encoder FP exception.
-    if(_rel MATCHES "^src/eval/(arithmetic|kernels|inputs)\\.[ch]$")
+    if(_rel MATCHES "^src/eval/(arithmetic|kernels|inputs|normalization)\\.[ch]$")
         set(_re_token "${_boundary}(float|double|_Thread_local|thread_local|long|short|int|signed|unsigned|intptr_t|intmax_t|ptrdiff_t)([^A-Za-z0-9_]|$)")
     endif()
 

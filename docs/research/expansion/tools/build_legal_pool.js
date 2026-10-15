@@ -9,7 +9,7 @@
  *   --checkout  the pinned, built Showdown checkout (default C:/Dev/src/pokemon-showdown); a git checkout must be
  *               at the pin
  *   --duoforge  the DuoForge worktree whose closure and extended tables give in_duoforge
- *   --out       the output file (default legal_pool.json next to this script)
+ *   --out       the output file (default data/formats/pools/reg-mc.json of the repository)
  * Without options it writes what it always wrote (Reg M-C, data/formats/reg-mc.json).
  *
  * Writes:
@@ -36,7 +36,7 @@ const childProcess = require('child_process');
 
 const OPTIONS = { '--format': 'gen9championsvgc2026regmc', '--checkout': 'C:/Dev/src/pokemon-showdown',
   '--duoforge': 'C:/Dev/src/duoforge/.claude/worktrees/epic-yalow-463a67',
-  '--out': path.join(__dirname, 'legal_pool.json') };
+  '--out': path.join(__dirname, '..', '..', '..', '..', 'data', 'formats', 'pools', 'reg-mc.json') };
 {
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i += 2) {
