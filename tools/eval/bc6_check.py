@@ -159,11 +159,12 @@ def evaluate(root, records, runner_path, artifact, artifact_sha, kind, model, pa
             request=load_request(root,record);rows=request["rows"]
             neural=request["open"]
             if ((request["step"]==0)&(request["encode"]!=0)).any():fail("bc6_encoding_failed")
-            # Don't ask the network about terminal/refused rows: the solver's
-            # utility contract reads only neural rows. Padding stays fixed.
-            teacher=np.zeros(len(rows),np.float32);candidate=np.zeros_like(teacher)
+            # Preserve the original complete leaf order and padded value
+            # calls. Terminal/refused values are discarded by table(), never
+            # counted as easy zero-error neural rows. C needs neural rows only.
+            teacher=value_batches(model,params,rows,float_oracle)
+            candidate=np.zeros_like(teacher)
             if neural.any():
-                teacher[neural]=value_batches(model,params,rows[neural],float_oracle)
                 raw=native.values(rows[neural]);again=native.values(rows[neural])
                 stream.update(raw.astype("<i4").tobytes());repeat.update(again.astype("<i4").tobytes())
                 if not np.array_equal(raw,again):fail("bc6_integer_reproduction")

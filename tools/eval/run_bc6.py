@@ -231,6 +231,8 @@ def main(argv=None):
         import bc6_gates as gates
         model=checkpoint.trained_model(config,params)
         oracle=jax.jit(lambda p,x:float_value(p,config["model"],cols,x))
+        from duoforge_live.search import HONEST_SETTINGS
+        if any(SEARCH[k]!=v for k,v in HONEST_SETTINGS.items()):fail("bc6_live_policy_changed")
         tables=live_data.for_config(config)
         context=tables.context()
         kind=context.config["data_kind"]

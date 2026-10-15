@@ -186,6 +186,38 @@ class FrozenInputs(unittest.TestCase):
             self.assertEqual(old.read_bytes(),b"frozen game inventory")
             self.assertTrue((root/"calibration.json").is_file())
 
+    def test_teacher_keeps_original_leaf_order_with_terminal_between_neural_rows(self):
+        rows=np.zeros((3,1094),np.float32);rows[:,0]=[1,2,3]
+        req=dict(rows=rows,open=np.array([True,False,True]),step=np.zeros(3,np.uint32),
+                 encode=np.zeros(3,np.uint32),results=np.array([0,1,0],np.uint32),
+                 cutoff_tiebreaks=np.zeros(3,np.uint32),valid_key=np.ones(3,bool))
+        record=dict(file="private.npz",group="game",stratum="open",seat=0,boundary="TURN",
+                    interactions=[],uniform=0.2,terminal=1,step_refused=0,digest_refused=0)
+        class Model:
+            def check(self,x):pass
+            def value(self,p,x):
+                np.testing.assert_array_equal(x[:3,0],[1,2,3])
+                return x[:,0]
+        class Native:
+            def __init__(self,*a,**k):pass
+            def __enter__(self):return self
+            def __exit__(self,*a):pass
+            def values(self,x):
+                np.testing.assert_array_equal(x[:,0],[1,3])
+                return (x[:,0]*(1<<20)).astype(np.int32)
+        req["weights"]=np.array([1.]);req["qs"]=np.array([[1.]])
+        def table(r,q,values,cutoff=False):
+            return np.zeros((1,1,1)),np.array([1.])
+        score={r:dict(agree=True,tv=0.,regret=0.,stable=True,ev_agree=True) for r in gates.RULES}
+        with mock.patch.object(check,"load_request",return_value=req),mock.patch.object(check,"Runner",Native), \
+                mock.patch.object(check,"table",side_effect=table), \
+                mock.patch.object(gates,"compare_decision",return_value=score):
+            result=check.evaluate(Path("unused"),[record],"unused",Path("unused"),"a"*64,2,Model(),None,
+                                  lambda p,x:x[:,0],"ev",0.5)
+        self.assertEqual(result[0]["open"],[0.0,0.0])
+        self.assertEqual(result[4]["neural_rows"],2)
+        self.assertEqual(result[4]["terminal"],1)
+
     def test_sha_pin_precedes_build_parsing_lock_or_any_output(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);source=root/"wrong.npz";source.write_bytes(b"not an NPZ")
