@@ -529,6 +529,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_THUNDERWAVE] = 1u,
             [DFI_MOVE_FIREPUNCH] = 1u,
             [DFI_MOVE_ICEHAMMER] = 1u,
+            /* Step K3 (Speed Swap, decision 0015 5de): the two stored Speeds are exchanged (onHit), the presence bit is public as
+             * POSITION_EXT_SPEED_SWAPPED, and a live swap refuses the public record (PUBLIC_CAUSE_SPEED_SWAP). */
+            [DFI_MOVE_SPEEDSWAP] = 1u,
             /* Step G70 (Skill Swap, decision 0041): the two holders swap their abilities (onHit, the ability events and the
              * Start and End of the abilities that move; an ally swap is modelled, the Mega and the Illusion cases are named). */
             [DFI_MOVE_SKILLSWAP] = 1u,
@@ -1009,6 +1012,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPEED_SWAPPED) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_CURSE) |  /* step G84b (decision 0063): the Ghost Curse volatile (bit 36) */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES) |

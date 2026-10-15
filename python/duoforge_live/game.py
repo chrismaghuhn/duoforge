@@ -66,6 +66,7 @@ class Game:
         self.dirty = None  # the class (b) reason: the rest of the game is raw
         self.last_raw = []  # the raw ranking of the last decision point
         self.outcomes = []  # one search.Outcome per decision point played with a search
+        self.rule = None  # the root rule this game's decisions play (duoforge_live.ab), None: the search's own
 
     @classmethod
     def closed_sheets(cls, data, policy, own_text, prior, search=None, room="", episode=0, seed=None, n=None):
@@ -166,7 +167,8 @@ class Game:
                 outcome = self.search.decide(parts, obs_parts[0], slots[0], pair_mask,
                                              key=live_search.decision_key(self.room, self.epoch),
                                              episode=self.episode, budget=budget,
-                                             **({} if worlds is None else {"worlds": worlds}))
+                                             **({} if worlds is None else {"worlds": worlds}),
+                                             **({} if self.rule is None else {"rule": self.rule}))
             except Exception as err:  # class (b): a failure outside the search (the parts, the roots)
                 outcome = live_search.Outcome(None, "error", "b", f"{type(err).__name__}: {err}", 0.0)
             if outcome.fallback == "b":

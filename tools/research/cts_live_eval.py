@@ -71,10 +71,19 @@ def battle(records, bot):
     class (b) error) as "no_search", a team choice as "team"; the seconds are the search's, but a dirty game's."""
     out = {"kind": "other", "result": "unfinished", "causes": collections.Counter(), "fallbacks": collections.Counter(),
            "engine_refuses_record": 0, "defaults": 0, "timer_missing": 0, "rejected": 0, "unavailable": 0,
-           "dirty": False, "fallback": None, "stop": None, "seconds": [], "start": None, "code": None}
+           "dirty": False, "fallback": None, "stop": None, "seconds": [], "start": None, "code": None, "arm": None,
+           "foe_lead": None}
     fed = False
+    sides, foe_lead, started = {}, [], False  # the foe's two leads: its switch lines before the first turn
     for r in records:
         line = r.get("in", "")
+        parts = line.split("|") if isinstance(line, str) else []
+        if len(parts) > 3 and parts[1] == "player" and parts[3]:
+            sides[parts[2]] = _toid(parts[3]) == bot
+        elif len(parts) > 1 and parts[1] == "turn":
+            started = True
+        elif len(parts) > 3 and parts[1] == "switch" and not started and sides.get(parts[2][:2]) is False:
+            foe_lead.append(parts[3].split(",")[0].strip())
         if out["start"] is None and line.startswith("|t:|"):
             out["start"] = int(line[len("|t:|"):])  # the battle's first timestamp (unix seconds)
         if "feed" in r:
@@ -103,8 +112,11 @@ def battle(records, bot):
             out["unavailable"] += 1
         elif "dirty" in r:
             out["dirty"] = True
-        elif "log_format" in r and r.get("code"):
-            out["code"] = r["code"]  # the bot's commit and dirty state, in every battle's first record (format 2)
+        elif "log_format" in r and (r.get("code") or r.get("search_rule")):
+            if r.get("code"):
+                out["code"] = r["code"]  # the bot's commit and dirty state, in every battle's first record (format 2)
+            if r.get("search_rule"):
+                out["arm"] = r["search_rule"]["arm"]  # the A/B test of the root rule (duoforge_live.ab)
         elif "summary" in r and out["code"] is None:
             out["code"] = (r["summary"] or {}).get("code")  # the bot's commit and dirty state (pkmn_arena, since #480)
         elif "end" in r:
@@ -118,6 +130,7 @@ def battle(records, bot):
     elif fed:
         out["kind"] = "particles"
     out["causes"], out["fallbacks"] = dict(out["causes"]), dict(out["fallbacks"])
+    out["foe_lead"] = " + ".join(sorted(foe_lead)) if len(foe_lead) == 2 else None  # species only: no name
     return out
 
 
@@ -155,6 +168,74 @@ def summarize(battles):
     out["engine_refuses_record_share"] = out["engine_refuses_record"] / max(1, decisions)
     return out
 
+
+def wilson(k, n, z=1.96):
+    """[k / n, low, high]: the Wilson interval of a share (z: 1.96 for 95%), None for n = 0."""
+    import math
+    if n == 0:
+        return None
+    p = k / n
+    centre, half = p + z * z / (2 * n), z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return [p, (centre - half) / (1 + z * z / n), (centre + half) / (1 + z * z / n)]
+
+
+# The A/B test's analysis (docs/benchmarks/2026-10-14-ab-root-rule/README.md, HauptSession, fixed before the deploy):
+# read only at three looks, 30, 60 and 100 decided battles per arm; at 30 and 60 the difference's 99% interval, at 100
+# its 95% one. The strata (per opponent, per foe lead) are described only, from 10 decided battles per arm on.
+AB_LOOKS = {30: 2.576, 60: 2.576, 100: 1.96}  # the look -> its z (99%, 99%, 95%)
+AB_STRATUM_MIN = 10
+
+
+def _newcombe(x, y):
+    """Newcombe's interval (his method 10) of the difference y - x of two shares from their Wilson intervals."""
+    import math
+    d = y[0] - x[0]
+    return {"value": d, "low": d - math.sqrt((y[0] - y[1]) ** 2 + (x[2] - x[0]) ** 2),
+            "high": d + math.sqrt((y[2] - y[0]) ** 2 + (x[0] - x[1]) ** 2)}
+
+
+def ab_arms(rows):
+    """The A/B test of the root rule (docs/benchmarks/2026-10-14-ab-root-rule): rows (battle(), opponent letter, foe
+    lead) of the battles that name an arm, every one counted in its arm (intention to treat): the decided battles (a
+    win, a loss or a tie), the wins, the unfinished ones, those played without the search after a class (b) error
+    (dirty or a decision without a search), and the win rate with its Wilson interval. The difference 2e - 0 has
+    Newcombe's interval at 95%; "look" names the last of AB_LOOKS both arms reached, and "at_look" the difference's
+    interval at that look's level (None before the first look): the only reading a preference may rest on. The same
+    per opponent letter and per foe lead (the foe's two lead species), descriptive only: a stratum with fewer than
+    AB_STRATUM_MIN decided battles in an arm gives its counts only, and no stratum has a look."""
+    from duoforge_live import ab
+
+    def arms(subset, minimum=0, looks=True):
+        out = {}
+        for a in ab.ARMS:
+            played = [b for b in subset if b["arm"] == a]
+            decided = [b for b in played if b["result"] in ("win", "loss", "tie")]
+            wins = sum(b["result"] == "win" for b in decided)
+            out[a] = {"battles": len(played), "decided": len(decided), "wins": wins,
+                      "unfinished": len(played) - len(decided),
+                      "without_search": sum(1 for b in played if b["dirty"] or b["causes"].get("no_search")),
+                      "kinds": dict(collections.Counter(b["kind"] for b in played)),
+                      "win_rate": wilson(wins, len(decided)) if len(decided) >= max(1, minimum) else None}
+        rates = [out[a]["win_rate"] for a in ab.ARMS]
+        reached = [n for n in AB_LOOKS if all(out[a]["decided"] >= n for a in ab.ARMS)] if looks else []
+        out["look"] = reached[-1] if reached else None
+        if None in rates:
+            out["difference"] = None
+        else:
+            at = None
+            if out["look"] is not None:  # the look's level, from the wins and decided battles of each arm
+                z = AB_LOOKS[out["look"]]
+                x, y = (wilson(out[a]["wins"], out[a]["decided"], z) for a in ab.ARMS)
+                at = {"level": {2.576: 0.99, 1.96: 0.95}[z], **{k: v for k, v in _newcombe(x, y).items() if k != "value"}}
+            out["difference"] = {"of": f"{ab.ARMS[1]} - {ab.ARMS[0]}", **_newcombe(*rates), "at_look": at}
+        return out
+    battles = [b for b, _, _ in rows]
+    return {"looks": {str(n): {2.576: 0.99, 1.96: 0.95}[z] for n, z in AB_LOOKS.items()},
+            "stratum_min": AB_STRATUM_MIN, "all": arms(battles),
+            "by_opponent": {o: arms([b for b, oo, _ in rows if oo == o], AB_STRATUM_MIN, looks=False)
+                            for o in sorted({o for _, o, _ in rows})},
+            "by_lead": {lead: arms([b for b, _, ll in rows if ll == lead], AB_STRATUM_MIN, looks=False)
+                        for lead in sorted({ll for _, _, ll in rows if ll})}}
 
 def run_logs(directory, since=None, code=None):
     """The run logs (arena-run-*.json) started at or after `since` (ISO, UTC), with code: of a bot commit that starts
@@ -325,29 +406,17 @@ def _sha256(path):
     return h.hexdigest()
 
 
-def replay_all(directory, bot, root, labels=None, since=None, code=None, details=None):
-    """--replay over a log directory: the aggregates of replay() (module docstring); with labels (opponent id ->
-    letter) also per opponent; with since (unix seconds) only the battles that started then or later."""
-    import os
-    from duoforge_live import cts, data, pkmn_arena
-    from duoforge_live.arena import provenance
-    tables = data.load(kind="pool")
-    prior = cts.SetPrior.from_table(tables)
-    engine_root = Path(cts.__file__).resolve().parents[2]
-    names = unmodelled((engine_root / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
-    if not names:
-        raise SystemExit("no [unmodelled] marker found in src/data/pool_tables.c: its format changed")
-    library = os.environ.get("DUOFORGE_LIBRARY")
+def selected(directory, bot, since, code, skipped):
+    """The battle logs of the bot over the particles that a replay follows, in name order: (path, records, own team
+    paste), the paste the registry team the battle's first request matches. What is left out is counted in skipped by
+    reason (no_particles, before_since, other_code, no_request, team_unknown, team_differs)."""
     import hashlib
+    from duoforge_live import data, pkmn_arena
     played = {json.loads(p.read_text(encoding="utf-8")).get("team_sha256")
               for p in Path(directory).glob("arena-run-*.json")} - {None}  # the bot's --team, when its run logs name it
     teams_dir = data.ROOT / "data" / "teams"
     pastes = [(teams_dir / (t["id"] + ".txt")).read_text(encoding="utf-8")
               for t in json.loads((teams_dir / "index.json").read_text(encoding="utf-8"))["teams"]]
-    points, refused, unexplained, skipped, stopped = 0, 0, 0, collections.Counter(), collections.Counter()
-    per = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
-    per_team = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
-    occurs, alone = collections.Counter(), collections.Counter()
     for path in sorted(Path(directory).glob(f"battle-*-{bot}.jsonl")):
         records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
         if not any("feed" in r for r in records):
@@ -371,7 +440,28 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
         if played and hashlib.sha256(team[0].encode("utf-8")).hexdigest() not in played:
             skipped["team_differs"] += 1  # the registry paste is not the --team the bot played (its stats may differ)
             continue
-        out = replay(records, tables, prior, team[0], cts.room_of_log(path, bot), names)
+        yield path, records, team[0]
+
+
+def replay_all(directory, bot, root, labels=None, since=None, code=None, details=None):
+    """--replay over a log directory: the aggregates of replay() (module docstring); with labels (opponent id ->
+    letter) also per opponent; with since (unix seconds) only the battles that started then or later."""
+    import os
+    from duoforge_live import cts, data, pkmn_arena
+    from duoforge_live.arena import provenance
+    tables = data.load(kind="pool")
+    prior = cts.SetPrior.from_table(tables)
+    engine_root = Path(cts.__file__).resolve().parents[2]
+    names = unmodelled((engine_root / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
+    if not names:
+        raise SystemExit("no [unmodelled] marker found in src/data/pool_tables.c: its format changed")
+    library = os.environ.get("DUOFORGE_LIBRARY")
+    points, refused, unexplained, skipped, stopped = 0, 0, 0, collections.Counter(), collections.Counter()
+    per = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
+    per_team = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})
+    occurs, alone = collections.Counter(), collections.Counter()
+    for path, records, team in selected(directory, bot, since, code, skipped):
+        out = replay(records, tables, prior, team, cts.room_of_log(path, bot), names)
         points += out["points"]
         if labels is not None:
             o = opponent(records, bot)
@@ -410,6 +500,162 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
                 "by_team": {k: {**v, "searchable_share": 1.0 - v["refused"] / max(1, v["points"])}
                             for k, v in sorted(per_team.items())}})}
 
+
+def interval(values):
+    """(mean, half width of a normal 95% interval) of values, None for none; the half width None for one value."""
+    import statistics
+    if not values:
+        return None
+    mean = statistics.fmean(values)
+    return {"mean": mean, "half": None if len(values) < 2 else 1.96 * statistics.stdev(values) / len(values) ** 0.5,
+            "n": len(values)}
+
+
+def luck_series(battles):
+    """The luck aggregates of battles ({"turns", "mixed", "dropped", "worlds", "result", "excluded"} each,
+    cts_luck.battle; the share of the valued turns' worlds the turn refuted): per battle its
+    summed luck and its largest turn, per series the mean summed luck and the result with the luck taken off, with
+    intervals, each also without the turns whose foe action was mixed over a set (only the series' means say
+    something; a single battle is an anecdote). Every mean is over the battles with a result; the unfinished ones (a log
+    without its end) are counted apart, with their valued turns."""
+    unfinished = [b for b in battles if b["result"] is None]
+    battles = [b for b in battles if b["result"] is not None]  # every mean over the same battles: those with a result
+    finished = battles
+    excluded = collections.Counter()
+    for b in battles:
+        excluded.update(b["excluded"])
+    valued = sum(len(b["turns"]) for b in battles)
+    mixed = sum(sum(b["mixed"]) for b in battles)
+
+    def unmixed(b):  # the battle's luck without its mixed turns (HauptSession: the series mean with and without them)
+        return sum(t for t, m in zip(b["turns"], b["mixed"]) if not m)
+    return {"battles": len(battles) + len(unfinished), "finished": len(finished), "unfinished": len(unfinished),
+            "turns_valued": valued, "turns_unfinished": sum(len(b["turns"]) for b in unfinished),
+            "turns_partial": dict(sum((collections.Counter(b.get("partial", {})) for b in battles),
+                                      collections.Counter())),
+            "unfinished_excluded": dict(sorted(sum((collections.Counter(b["excluded"]) for b in unfinished),
+                                                   collections.Counter()).items())),
+            "turns_excluded": dict(sorted(excluded.items())),
+            "valued_share": valued / max(1, valued + sum(excluded.values())),
+            "turns_mixed": mixed, "mixed_share": mixed / max(1, valued),
+            "worlds_dropped_share": sum(sum(b["dropped"]) for b in battles)
+            / max(1, sum(len(b["dropped"]) * b["worlds"] for b in battles)),
+            "luck_per_battle": interval([sum(b["turns"]) for b in battles]),
+            "luck_per_battle_unmixed": interval([unmixed(b) for b in battles]),
+            "largest_turn": interval([max(b["turns"], key=abs) for b in battles if b["turns"]]),
+            "result": interval([b["result"] for b in finished]),
+            "result_minus_luck": interval([b["result"] - sum(b["turns"]) for b in finished]),
+            "result_minus_luck_unmixed": interval([b["result"] - unmixed(b) for b in finished])}
+
+
+# The live search of each bot commit (HauptSession, 2026-10-14): a series is replayed with the settings its bot played,
+# the ladder step whose settings equal that commit's live HONEST_SETTINGS (checked against each commit's
+# python/duoforge_live/search.py). An unknown commit is refused by name, never guessed. From the bot that writes its
+# search settings in the run log's head on (search_settings), the head names them, and a known commit's step must agree.
+SEARCH_STEPS = {"1ffa6a03": "0", "a7dd956b": "2e", "5c503d8a": "2e"}
+SEARCH_DIFFERS_LIMIT = 0.05  # a larger share of replayed decisions the bot decided otherwise: no report (HauptSession)
+# The bot processes of the series whose logs name no code (the HauptSession, from the VPS, 2026-10-14): a process's start
+# is its run log's name and "started". Of the processes before a7dd956b only 1ffa6a03 played over the particles
+# (a75c380a has no cts.py and answered closed sheets with /choose default), so a battle log with fed batches whose
+# directory's run logs all started with 1ffa6a03 is that process's. Anything else is refused by name.
+PROCESS_STARTS = {"1ffa6a03": "2026-10-13T19:23:34Z"}
+
+
+def series_run_logs(directory, code=None):
+    """The heads of the run logs of a series: with code, those of that bot commit (clean); without, those that name no
+    code (the bots before the run logs named it). Other bots' run logs in a shared directory are not the series'."""
+    heads = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(Path(directory).glob("arena-run-*.json"))]
+    return [h for h in heads if (_in_series(h.get("code"), code) if code is not None else not h.get("code"))]
+
+
+def check_bot_commit(directory, commit):
+    """SystemExit unless the run logs that name no code (series_run_logs) all started as commit's process
+    (PROCESS_STARTS), and there is one: --bot-commit is the content's assignment of logs that name no code, never a
+    declaration."""
+    start = PROCESS_STARTS.get(str(commit or "")[:8])
+    if start is None:
+        raise SystemExit(f"--bot-commit {commit!r}: no process start is known for it (PROCESS_STARTS names "
+                         f"{sorted(PROCESS_STARTS)})")
+    starts = sorted({h.get("started") for h in series_run_logs(directory)})
+    if starts != [start]:
+        raise SystemExit(f"--bot-commit {commit!r}: the run logs without a code started {starts}, not as its "
+                         f"process ({start})")
+
+
+def search_step(commit):
+    """The ladder step of a bot commit (SEARCH_STEPS, by its first 8 characters); SystemExit for an unknown one."""
+    step = SEARCH_STEPS.get(str(commit or "")[:8])
+    if step is None:
+        raise SystemExit(f"the live search of bot commit {commit!r} is unknown: SEARCH_STEPS names "
+                         f"{sorted(SEARCH_STEPS)}")
+    return step
+
+
+def luck_all(directory, bot, root, checkpoint, checkpoint_sha256, foe_net, foe_net_sha256, labels=None, since=None,
+             code=None, samples=None, bot_commit=None):
+    """--luck over a log directory (#494, docs/benchmarks/2026-10-14-cts-luck/README.md): every battle log a replay
+    follows (selected) valued by cts_luck.battle with the checkpoint's honest search (the bot's: its file pinned by
+    checkpoint_sha256, the foe network by foe_net_sha256); the aggregates of luck_series, per opponent and team with
+    labels, the battles the replay refuses by name. The search plays the settings of the series' bot commit (code, or
+    bot_commit for logs that name none: then no battle may name one); the share of replayed decisions the bot decided
+    otherwise is reported, and above SEARCH_DIFFERS_LIMIT (or with nothing compared) the result says report_blocked."""
+    from duoforge_live import cts, cts_luck, data, pkmn_arena, policy as live_policy, search as live_search
+    from duoforge_live.arena import provenance
+    if pkmn_arena.sha256_of(checkpoint) != checkpoint_sha256:
+        raise SystemExit(f"{checkpoint}: not the pinned checkpoint {checkpoint_sha256}")
+    samples = cts_luck.SAMPLES if samples is None else samples
+    if (code is None) == (bot_commit is None):
+        raise SystemExit("--luck replays one bot commit's series: give --code, or --bot-commit for logs without a code")
+    from duoforge_search import ladder
+    if bot_commit is not None:
+        check_bot_commit(directory, bot_commit)
+    named = [h.get("search_settings") for h in series_run_logs(directory, code)]  # this series' run logs only
+    if any(x is not None for x in named):  # the bot names its search in its run logs' head: that one, the same in all
+        if any(x != named[0] for x in named):
+            raise SystemExit(f"the run logs of {directory} name different search settings: not one series")
+        settings, step = dict(named[0]), "run-log"
+        known = SEARCH_STEPS.get(str(code if code is not None else bot_commit)[:8])
+        if known is not None and ladder.step_settings(known) != settings:
+            raise SystemExit(f"the run logs' search settings are not step {known}'s, which SEARCH_STEPS gives the commit")
+    else:
+        step = search_step(code if code is not None else bot_commit)
+        settings = ladder.step_settings(step)
+    tables = data.for_checkpoint(checkpoint)
+    prior = cts.SetPrior.from_table(tables)
+    net = live_policy.load(checkpoint)
+    live = live_search.load(checkpoint, settings=settings, foe_net=foe_net, foe_net_sha256=foe_net_sha256)
+    skipped, refused = collections.Counter(), collections.Counter()
+    battles, per, per_team = [], collections.defaultdict(list), collections.defaultdict(list)
+    try:
+        live.searcher = cts.Capture(live.searcher)
+        with cts_luck.Meter(live.searcher.searcher, samples) as meter:
+            for path, records, team in selected(directory, bot, since, code, skipped):
+                if bot_commit is not None and battle(records, bot)["code"]:
+                    raise SystemExit("--bot-commit is for logs without a code: this series names its own")
+                try:
+                    out = cts_luck.battle(path, tables, net, live, team, bot, prior, meter)
+                except cts.Refused as r:
+                    refused[str(r).split(" ")[0]] += 1
+                    continue
+                battles.append(out)
+                if labels is not None:
+                    o = opponent(records, bot)
+                    per[labels.get(o, "?")].append(out)
+                    per_team[team_label(labels, o, foe_team(records, bot))].append(out)
+    finally:
+        live.close()
+    engine_root = Path(cts.__file__).resolve().parents[2]
+    searches = sum(b["searches"] for b in battles)
+    differs = sum(b["search_differs"] for b in battles)
+    share = differs / max(1, searches)
+    return {**luck_series(battles), "skipped": dict(skipped), "refused_battles": dict(refused), "samples": samples,
+            "search_step": step, "bot_commit": code if code is not None else bot_commit,
+            "searches": searches, "search_differs": differs, "search_differs_share": share,
+            "report_blocked": searches == 0 or share > SEARCH_DIFFERS_LIMIT,  # nothing compared blocks it too
+            "checkpoint_sha256": checkpoint_sha256, "foe_net_sha256": foe_net_sha256,
+            "engine_code": provenance(engine_root), "tool_code": provenance(root),
+            **({} if labels is None else {"by_opponent": {k: luck_series(v) for k, v in sorted(per.items())},
+                                          "by_team": {k: luck_series(v) for k, v in sorted(per_team.items())}})}
 
 def _code_of(b):
     """A battle's bot commit (its log's code), "" when the log names none."""
@@ -450,7 +696,24 @@ def main(argv=None):
                    help="only the battles and run logs of a bot commit that starts with this (a measurement series)")
     p.add_argument("--replay", action="store_true",
                    help="replay the logs through the particles: the refused decision points and their content")
+    p.add_argument("--luck", action="store_true",
+                   help="the luck meter (#494): replay the logs with the bot's search and value each searched turn's "
+                        "luck (needs --checkpoint and --checkpoint-sha256)")
+    p.add_argument("--checkpoint", default=None, help="--luck: the bot's checkpoint (private, outside the repository)")
+    p.add_argument("--checkpoint-sha256", default=None, help="--luck: the checkpoint's pin, checked before loading")
+    p.add_argument("--samples", type=int, default=None, help="--luck: chance seeds per world (default: cts_luck.SAMPLES)")
+    p.add_argument("--bot-commit", default=None,
+                   help="--luck: the bot commit of a series whose logs name none (its search settings, SEARCH_STEPS)")
+    from duoforge_live import search as live_search
+    live_search.add_foe_net_arguments(p)
     args = p.parse_args(argv)
+    if args.luck and (args.replay or args.details):
+        raise SystemExit("--luck is its own replay: not with --replay or --details")
+    if args.luck and not (args.checkpoint and args.checkpoint_sha256):
+        raise SystemExit("--luck values with the bot's network: it needs --checkpoint and --checkpoint-sha256")
+    if not args.luck and (args.checkpoint or args.checkpoint_sha256 or args.samples is not None or args.bot_commit):
+        raise SystemExit("--checkpoint, --checkpoint-sha256, --samples and --bot-commit belong to --luck")
+    live_search.check_foe_net_arguments(args, args.luck)
     from duoforge_live.arena import provenance
     from duoforge_replay.dataset import refuse_repository
     if args.out:
@@ -476,7 +739,12 @@ def main(argv=None):
             raise SystemExit("--details is the replay's per-battle file: it needs --replay")
         refuse_repository(Path(args.details).parent)
         details = []
-    if args.replay:
+    if args.luck:
+        result = {"since": args.since, "code_filter": args.code, "by_code": by_code,
+                  **luck_all(args.logs, bot, ROOT, args.checkpoint, args.checkpoint_sha256,
+                             live_search.foe_net_of(args), live_search.foe_net_sha256_of(args), labels, since,
+                             args.code, args.samples, args.bot_commit)}
+    elif args.replay:
         result = {"since": args.since, "code_filter": args.code, "by_code": by_code,
                   **replay_all(args.logs, bot, ROOT, labels, since, args.code, details)}
         if details is not None:
@@ -491,6 +759,10 @@ def main(argv=None):
                 teams[team_label(labels, o, foe_team(records, bot))].append(battles[-1])
         result = {"code": code, "since": args.since, "code_filter": args.code, "logs": len(logs), "kept": len(kept),
                   "by_code": by_code, **summarize(battles), "runs": run_logs(args.logs, args.since, args.code)}
+        tested = [(b, labels.get(opponent(records, bot), "?") if labels is not None else "?", b["foe_lead"])
+                  for records, b in zip(kept, battles) if b["arm"] is not None]
+        if tested:  # the A/B test of the root rule: its battles by arm
+            result["ab_root_rule"] = ab_arms(tested)
         if labels is not None:
             result["by_opponent"] = {k: summarize(v) for k, v in sorted(groups.items())}
             result["by_team"] = {k: summarize(v) for k, v in sorted(teams.items())}

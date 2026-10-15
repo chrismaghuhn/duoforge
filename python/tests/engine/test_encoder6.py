@@ -210,7 +210,8 @@ class Encoder6Test(unittest.TestCase):
         self.assertEqual(sorted(_x_list("DUOFORGE_VIEWEXT_RESERVE_OWN")),
                          sorted([("RESERVE_VOLATILES", "22", "HEALING_WISH"), ("VOLATILES2", "4", "TRAP_ELAPSED"),
                                  ("VOLATILES2", "5", "TRAP_ELAPSED"), ("VOLATILES2", "6", "TRAP_ELAPSED"),
-                                 ("VOLATILES2", "12", "ATTRACT_SOURCE"), ("VOLATILES2", "13", "ATTRACT_SOURCE")]))
+                                 ("VOLATILES2", "12", "ATTRACT_SOURCE"), ("VOLATILES2", "13", "ATTRACT_SOURCE"),
+                                 ("RESERVE_VOLATILES", "23", "SPEED_SWAPPED")]))  # step K3 (decision 0015 5de)
 
     def test_every_lane_feature_gates_a_reserve_column(self):
         # A lane's feature (bits 43 to 58: HEALING_WISH 43, G82) is shown only through its reserve bit: each one gates

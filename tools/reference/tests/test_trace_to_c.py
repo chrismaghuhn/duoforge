@@ -564,6 +564,32 @@ class Refusals(unittest.TestCase):
         self.control('c11_follow_me_rod', mutate, 'unknown-volatile',
                      'trace_to_c: electroshot without twoturnmove on Archaludon', 'electroshot')
 
+    def test_a_lockedmove_lock_needs_its_move_in_the_set_and_its_slot(self):
+        """Issue 516: the slot of a lockedmove lock is that of the user's last move line in its set. A move the set does
+        not have, a lock without its slot given to convert_choice, and another hard lock with a single request row (its
+        slot not known) are refused, never taken as slot 0."""
+        def not_in_set(spec, trace):
+            self.assertIn('- Outrage\n', spec['teams'][0])
+            spec['teams'][0] = spec['teams'][0].replace('- Outrage\n', '- Dragon Pulse\n', 1)
+        self.control('g56_outrage_full', not_in_set, 'locked-move-slot',
+                     'trace_to_c: the locked move Outrage of Garchomp is not in its set', 'Outrage')
+
+        def other_lock(spec, trace):
+            mon = mon_of(trace['steps'][1]['state'], 0, 'Garchomp')
+            self.assertEqual(mon['volatiles'], ['lockedmove'])
+            mon['volatiles'] = ['stall']  # a known volatile in place of the lock: the one row has no known reason
+        self.control('g56_outrage_full', other_lock, 'request-single-row',
+                     'trace_to_c: step 1 side 0 slot 1: a request with one row for a member with 3 moves and no known lock',
+                     'stall')
+
+        spec, trace = battle('g56_outrage_full')
+        state = trace['steps'][1]['state']
+        self.assertEqual(trace['steps'][2]['input']['p1'], 'move 1 1, move 1')
+        roster_of = [{}, {}]
+        self.assert_refused(lambda: trace_to_c.convert_choice('move 1 1, move 1', 0, state, roster_of), 'locked-move-slot',
+                            "trace_to_c: side 0 slot 1 is locked and its move slot is not given: 'move 1 1, move 1'",
+                            'not-given')
+
     def test_twoturnmove_without_a_lock_recorded_earlier(self):
         def mutate(spec, trace):
             charging = mon_of(trace['steps'][2]['state'], 0, 'Archaludon')  # the charge turn of d02
@@ -695,6 +721,31 @@ class Library(unittest.TestCase):
                 self.assertIn('#include "reference/conformance_types.h"\n', text)
                 self.assertNotIn('typedef struct df_conf_', text)  # the types live in their own header
         self.assertEqual(trace_to_c.types_header(), committed('conformance_types.h'))
+
+    def test_a_lockedmove_lock_is_offered_and_chosen_in_its_own_slot(self):
+        """Issue 516: during the lock of Outrage the request has one row, the locked move (sim/pokemon.ts:1083-1095), and
+        "move 1" chooses it (sim/side.ts:675-690). The bit offered and the slot chosen are the slot of Outrage in the set,
+        as the engine has them: g56_outrage_full's Garchomp holds Outrage in slot 0; in a copy whose set puts it in slot 1
+        both move to slot 1, and nothing else of the battle changes."""
+        name = 'g56_outrage_full'
+        spec, trace = battle(name)
+        base = convert(name, spec, trace)
+        self.assertEqual(base['steps'][1]['enabled'][0], (3, 1 << 0))
+        self.assertEqual(base['steps'][2]['cmds'][0][1], (1, 0, 255, 0, 0))
+        self.assertIn('- Outrage\n- Dragon Claw\n', spec['teams'][0])
+        spec['teams'][0] = spec['teams'][0].replace('- Outrage\n- Dragon Claw\n', '- Dragon Claw\n- Outrage\n')
+        moved = convert(name, spec, trace)
+        locked_steps = [k for k, step in enumerate(trace['steps'])
+                        if k > 0 and 'lockedmove' in mon_of(trace['steps'][k - 1]['state'], 0, 'Garchomp')['volatiles']]
+        self.assertEqual(locked_steps, [2, 3, 4])
+        self.assertEqual(moved['steps'][1]['enabled'][0], (3, 1 << 1))
+        self.assertEqual(moved['steps'][3]['enabled'][0], (3, 1 << 1))
+        self.assertEqual(moved['steps'][2]['cmds'][0][1], (1, 1, 255, 0, 0))
+        self.assertEqual(moved['steps'][4]['cmds'][0][1], (1, 1, 255, 0, 0))
+        for k, (a, b) in enumerate(zip(base['steps'], moved['steps'])):
+            for key in a:
+                if key not in ('enabled', 'cmds') and key != 'mons':
+                    self.assertEqual(a[key], b[key], '%d %s' % (k, key))
 
     def test_every_draw_is_a_tape_entry_or_dropped(self):
         """In every committed battle the steps' tape entries and drop counts add up to the draws of the trace."""
@@ -2431,7 +2482,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 292)  # K1 (#476, entry 5dc): Temper Flare makes 292; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
+        self.assertEqual(len(marked), 293)  # K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2491,6 +2542,8 @@ class Library(unittest.TestCase):
                             done = done or (name in ('After You', 'Quash') and after.startswith('|-activate|') and after.endswith('|move: ' + name))
                             # Destiny Bond (step G76): its start line, -singlemove (data/moves.ts:3493-3495).
                             done = done or (name == 'Destiny Bond' and after.startswith('|-singlemove|'))
+                            # Speed Swap (step K3, decision 0015 5de): its -activate line (the swap of two stored Speeds).
+                            done = done or (name == 'Speed Swap' and after.startswith('|-activate|') and 'move: Speed Swap' in after)
                             # Rage Powder (step G30): the single-turn line of its condition.
                             done = done or (name == 'Rage Powder' and after.startswith('|-singleturn|') and after.endswith('|move: Rage Powder'))
                             # An item that a move gave (Trick, Switcheroo, Thief, Covet; step G29): its -item line.

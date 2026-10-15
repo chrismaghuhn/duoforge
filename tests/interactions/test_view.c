@@ -1384,6 +1384,35 @@ static uint8_t mr_of(df_test *t, const duoforge_context *ctx, uint32_t user, con
     return out;
 }
 
+/* Speed Swap's move result (step K3, #473; decision 0015 5de): the exchange (VOLATILE_START of the user, detail SPEED_SWAP) is
+ * true; a Protect's BLOCKED is null; a Psychic Terrain BLOCKED (detail PSYCHIC_TERRAIN, turn.c) is false; an IMMUNE by Good as Gold
+ * is false (data/abilities.ts:1630-1641, onTryHit null on a Status move, normalised to false); a body with no class is refused. */
+static void test_speed_swap_result(df_test *t)
+{
+    duoforge_context *kp = df_make_context(&df_config_pool);
+    const uint8_t none = (uint8_t)DUOFORGE_NO_POSITION;
+    duoforge_event ev[3];
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_SPEEDSWAP, 0u);
+    /* (a) the swap */
+    ev[1] = mr_ev(DUOFORGE_EVENT_VOLATILE_START, 0u, 2u, DUOFORGE_CAUSE_MOVE, 0u, 0u);
+    ev[1].detail = (uint8_t)DUOFORGE_VOLATILE_SPEED_SWAP;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    /* (b) a Protect that blocks it: null */
+    ev[1] = mr_ev(DUOFORGE_EVENT_BLOCKED, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_NULL);
+    /* (c) Psychic Terrain's block of a grounded target (the engine sets FALSE for it): false */
+    ev[1] = mr_ev(DUOFORGE_EVENT_BLOCKED, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].detail = (uint8_t)DUOFORGE_FIELD_PSYCHIC_TERRAIN;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* (d) Good as Gold's IMMUNE on the foe: false */
+    ev[1] = mr_ev(DUOFORGE_EVENT_IMMUNE, 2u, none, DUOFORGE_CAUSE_ABILITY, 0u, (uint16_t)(1u + DFI_ABILITY_GOODASGOLD));
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* (e) the move alone, no class: refused, nothing written */
+    uint8_t out = 0x55u;
+    DF_CHECK(t, duoforge_move_result(kp, 0u, ev, 1u, &out) == DUOFORGE_E_UNSUPPORTED && out == 0x55u);
+    duoforge_context_destroy(kp);
+}
+
 /* duoforge_move_result: the classes of the engine's rule on hand-built actions (the corpus comparison is the live test's,
  * duoforge.python.live), the unclassified bit, the refusals with nothing written, the argument checks. */
 static void test_move_result(df_test *t)
@@ -1665,6 +1694,7 @@ int main(void)
     test_uniforms(&t);
     test_hp_display(&t);
     test_move_result(&t);
+    test_speed_swap_result(&t);
     test_arguments(&t);
     test_counter_information_safety(&t);
     test_unsupported_member_world(&t);

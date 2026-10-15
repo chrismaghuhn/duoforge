@@ -7,6 +7,7 @@ duoforge_add_test(NAME duoforge.batch.step_query SOURCES interactions/test_batch
 duoforge_add_test(NAME duoforge.batch.reset_setups SOURCES interactions/test_batch_reset_setups.c LIBS duoforge_batch TIMEOUT 120 TIER quick AREA interactions LABELS ci-tsan)
 duoforge_add_test(NAME duoforge.encode SOURCES interactions/test_encode.c LIBS duoforge_batch TIMEOUT 120 TIER quick AREA interactions LABELS ci-tsan)
 duoforge_add_test(NAME duoforge.search.seeds SOURCES interactions/test_search_seeds.c LIBS duoforge_batch TIMEOUT 60 TIER quick AREA interactions LABELS ci-tsan)
+duoforge_add_test(NAME duoforge.search.digest SOURCES interactions/test_search_digest.c WHITEBOX LIBS duoforge_batch TIMEOUT 120 TIER quick AREA interactions LABELS ci-tsan)
 duoforge_add_test(NAME duoforge.search.expand SOURCES interactions/test_search_expand.c LIBS duoforge_batch TIMEOUT 300 TIER quick AREA interactions LABELS ci-tsan)
 duoforge_add_test(NAME duoforge.view SOURCES interactions/test_view.c WHITEBOX LIBS duoforge_batch TIMEOUT 300 TIER quick AREA interactions LABELS ci-tsan)
 duoforge_add_test(NAME duoforge.view.causes SOURCES interactions/test_view_causes.c WHITEBOX LIBS duoforge_batch TIMEOUT 300 TIER quick AREA interactions)

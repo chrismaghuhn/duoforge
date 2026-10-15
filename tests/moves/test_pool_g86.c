@@ -34,7 +34,7 @@ static void test_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HARD_PRESS, 105u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ICE_SPINNER, 106u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_BELLY_DRUM, 107u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, 121u); /* G96 Psychic Terrain (decision 0065) before UNMODELED: UNMODELED 121 */ /* batch 8: UNMODELED after Ally Switch (0x77) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, 122u); /* K3 Speed Swap (decision 0015 5de) before UNMODELED: UNMODELED 122 */ /* batch 8: UNMODELED after Ally Switch (0x77) */
     DF_CHECK(t, dfi_pool_moves[DFI_MOVE_HEAVYSLAM].special == DFI_SPECIAL_HEAVY_SLAM);
     DF_CHECK(t, dfi_pool_moves[DFI_MOVE_HARDPRESS].special == DFI_SPECIAL_HARD_PRESS);
     DF_CHECK(t, dfi_pool_moves[DFI_MOVE_ICESPINNER].special == DFI_SPECIAL_ICE_SPINNER);

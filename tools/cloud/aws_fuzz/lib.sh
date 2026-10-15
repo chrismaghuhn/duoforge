@@ -20,6 +20,8 @@ DF_DEFAULT_MAX_HOURS=2
 DF_COST_CAP_USD=10
 DF_DISK_GB=60
 DF_CHUNK_BATTLES=500
+# A ladder campaign (#484): one instance type for a whole series, never mixed (HauptSession); no fallback to another.
+DF_LADDER_TYPE=c7a.16xlarge
 
 DF_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -147,6 +149,9 @@ df_ami() {
 # can never be the same prefix; a launch continues a run only when told to (launch.sh --resume <run id>).
 DF_RUN_ID_RE='^[0-9a-f]{12}-[0-9]{3,5}-[0-9]{1,12}-[0-9]{8}T[0-9]{6}Z$'
 df_valid_run_id() { [[ $1 =~ $DF_RUN_ID_RE ]]; }
+# A ladder run: fuzz/ladder/<campaign>/<commit12>-ladder-<launch time>/ (one arm, never resumed: a new launch is a new run).
+DF_LADDER_RUN_ID_RE='^[0-9a-f]{12}-ladder-[0-9]{8}T[0-9]{6}Z$'
+df_valid_ladder_run_id() { [[ $1 =~ $DF_LADDER_RUN_ID_RE ]]; }
 
 # A key of the campaign's campaign.conf in the commit that the box will build (the working copy only for the offline
 # tests, which say so with DUOFORGE_FUZZ_NO_GIT_CHECK=1), or the default.
@@ -172,6 +177,12 @@ df_run_id_prefix() { # commit campaign
     printf '%s-%s-%s-' "${1:0:12}" "$chunk" "$seed"
 }
 
+# $DF_DIR/ladder_user_data.sh with its placeholders filled; every value is validated before it gets here.
+df_render_ladder_user_data() { # campaign commit bucket max-minutes run-id
+    sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" \
+        -e "s|@RUN_ID@|$5|g" "$DF_DIR/ladder_user_data.sh"
+}
+
 # $DF_DIR/user_data.sh with its placeholders filled; every value is validated before it gets here.
 df_render_user_data() { # campaign commit bucket max-minutes run-id resume(yes|no)
     sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" \
@@ -184,12 +195,13 @@ df_max_price() { # hours
 }
 
 # Fills DF_RUN_ARGS with the arguments of `aws ec2 run-instances` (without --dry-run): spot, the instance profile, the
-# group, the tags project=duoforge, purpose=fuzz and campaign=<id> on the instance, its volume and the spot request,
-# shutdown behaviour terminate, IMDSv2 only, a gp3 root volume that goes with the instance.
-df_build_run_args() { # ami type subnet sg campaign max-hours user-data
-    local ami=$1 type=$2 subnet=$3 sg=$4 campaign=$5 hours=$6 userdata=$7 tags price
+# group, the tags project=duoforge, purpose=<fuzz|ladder> (default fuzz) and campaign=<id> on the instance, its volume
+# and the spot request, shutdown behaviour terminate, IMDSv2 only, a gp3 root volume that goes with the instance.
+df_build_run_args() { # ami type subnet sg campaign max-hours user-data [purpose]
+    local ami=$1 type=$2 subnet=$3 sg=$4 campaign=$5 hours=$6 userdata=$7 purpose=${8:-fuzz} tags price
+    case $purpose in fuzz | ladder) ;; *) df_die "purpose '$purpose' is not fuzz or ladder" ;; esac
     price=$(df_max_price "$hours")
-    tags="Tags=[{Key=project,Value=duoforge},{Key=purpose,Value=fuzz},{Key=campaign,Value=$campaign}]"
+    tags="Tags=[{Key=project,Value=duoforge},{Key=purpose,Value=$purpose},{Key=campaign,Value=$campaign}]"
     DF_RUN_ARGS=(
         --image-id "$ami"
         --instance-type "$type"

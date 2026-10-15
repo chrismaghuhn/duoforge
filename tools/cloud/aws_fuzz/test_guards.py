@@ -78,7 +78,12 @@ case "$svc $op" in
                     echo "An error occurred (UnauthorizedOperation) when calling the RunInstances operation: You are not authorized to perform this operation. User: arn:aws:iam::$STUB_ACCOUNT:user/pokeengine is not authorized to perform: ec2:RunInstances on resource: arn:aws:ec2:eu-central-1:$STUB_ACCOUNT:instance/* Encoded authorization failure message: AbC123-xyz_9" >&2
                 fi
                 exit 254 ;;
-            *) echo i-0abc123 ;;
+            *)
+                if [ "${STUB_RUN:-ok}" = nocap ]; then
+                    echo "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation" >&2
+                    exit 254
+                fi
+                echo i-0abc123 ;;
         esac ;;
 esac
 exit 0
@@ -100,8 +105,31 @@ json.dump({'results': [entry], 'errors': 0}, open(out, 'w'))
 """
 
 
+def fuzz_campaigns():
+    """The fuzz campaigns of campaigns/: every directory but a ladder campaign's (kind=ladder, #484, tested apart)."""
+    base = os.path.join(HERE, 'campaigns')
+    names = []
+    for name in sorted(os.listdir(base)):
+        with open(os.path.join(base, name, 'campaign.conf'), encoding='utf-8') as f:
+            if 'kind=ladder' not in [line.strip() for line in f]:
+                names.append(name)
+    return names
+
+
 def posix(path):
     return path.replace('\\', '/')
+
+
+def aws_safe_env(env, missing):
+    """An environment in which even the real AWS CLI reaches nothing (HauptSession, after #484's probe tests reached the
+    real CLI on 2026-10-14; it stopped at parameter parsing): no AWS_* variable of the caller (profile, keys, session
+    token, role, container credentials), the config and credentials files at `missing`, a path that does not exist, no
+    instance metadata, and every endpoint at a closed local port. Every test that runs a script uses it."""
+    assert not os.path.exists(missing), missing
+    env = {k: v for k, v in env.items() if not k.upper().startswith('AWS_')}
+    env.update(AWS_CONFIG_FILE=posix(missing), AWS_SHARED_CREDENTIALS_FILE=posix(missing), AWS_EC2_METADATA_DISABLED='true',
+               AWS_ENDPOINT_URL='http://127.0.0.1:9')
+    return env
 
 
 @unittest.skipIf(BASH is None, 'bash is not on the PATH')
@@ -117,15 +145,21 @@ class Guards(unittest.TestCase):
         os.chmod(stub, os.stat(stub).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         self.log = os.path.join(self.tmp, 'calls.log')
         open(self.log, 'w').close()
-        self.env = dict(os.environ, PATH=self.stubdir + os.pathsep + os.environ['PATH'], STUB_LOG=posix(self.log),
-                        STUB_ARN='arn:aws:iam::%s:user/pokeengine' % ACCOUNT, STUB_ACCOUNT=ACCOUNT,
-                        DUOFORGE_FUZZ_NO_GIT_CHECK='1', AWS_CONFIG_FILE=posix(os.path.join(self.tmp, 'none')),
-                        AWS_SHARED_CREDENTIALS_FILE=posix(os.path.join(self.tmp, 'none')))
-        for var in ('AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN', 'DUOFORGE_FUZZ_BUCKET'):
-            self.env.pop(var, None)
-        # the stub must be what `aws` is, or a test would reach the real thing
-        found = subprocess.run([BASH, '-c', 'command -v aws'], env=self.env, capture_output=True, text=True).stdout.strip()
-        self.assertTrue(found.replace('\\', '/').lower().endswith('/bin/aws') and 'aws_fuzz_test_' in found.lower(), found)
+        self.env = aws_safe_env(dict(os.environ, PATH=self.stubdir + os.pathsep + os.environ['PATH'],
+                                     STUB_LOG=posix(self.log), STUB_ARN='arn:aws:iam::%s:user/pokeengine' % ACCOUNT,
+                                     STUB_ACCOUNT=ACCOUNT, DUOFORGE_FUZZ_NO_GIT_CHECK='1'),
+                                os.path.join(self.tmp, 'none'))
+        self.env.pop('DUOFORGE_FUZZ_BUCKET', None)
+        self.assert_aws_is_stub(self.env, self.stubdir)
+
+    def assert_aws_is_stub(self, env, stubdir):
+        """The stub in `stubdir` must be what `aws` is under `env`, or a test would reach the real thing: checked before
+        anything runs (every test, in setUp, and every test that puts another stub first)."""
+        found = subprocess.run([BASH, '-c', 'type -t aws; command -v aws'], env=env, capture_output=True,
+                               text=True).stdout.split('\n')
+        kind, path = found[0].strip(), found[1].strip().replace('\\', '/').lower() if len(found) > 1 else ''
+        self.assertEqual(kind, 'file', found)
+        self.assertTrue(path.endswith('/%s/aws' % os.path.basename(stubdir).lower()) and 'aws_fuzz_test_' in path, found)
 
     def run_script(self, script, *args, **env):
         e = dict(self.env, **env)
@@ -281,6 +315,7 @@ class Guards(unittest.TestCase):
         os.chmod(probe, 0o755)
         env = dict(self.env, PATH=probe_dir + os.pathsep + self.env['PATH'])
         env = {k: v for k, v in env.items() if k not in SWITCHES}
+        self.assert_aws_is_stub(env, probe_dir)
         script = '. "%s/lib.sh"; df_init; df_aws x; echo "after: ${MSYS_NO_PATHCONV:-unset}"' % posix(HERE)
         r = subprocess.run([BASH, '-c', script], env=env, capture_output=True, text=True)
         self.assertEqual(r.stdout.splitlines()[:2], ['PATHCONV=1 EXCL=*', 'after: unset'], r.stdout + r.stderr)
@@ -564,7 +599,7 @@ esac
                 self.assertIn(text, r.stderr)
 
     def test_the_campaigns_of_the_repository_load_and_plan(self):
-        for name in sorted(os.listdir(os.path.join(HERE, 'campaigns'))):
+        for name in fuzz_campaigns():
             with self.subTest(campaign=name):
                 r = self.chunks_eval('campaign_conf_load "%s/campaigns/%s/campaign.conf"; campaign_plan 64; echo ${PHASES[*]}'
                                      % (posix(HERE), name))
@@ -986,7 +1021,7 @@ esac
 
     def test_the_campaigns_are_well_formed(self):
         base = os.path.join(HERE, 'campaigns')
-        found = sorted(os.listdir(base))
+        found = fuzz_campaigns()
         self.assertTrue({'closure-mirror', 'team-c-mirror', 'weather-sand-snow'} <= set(found))
         for name in found:
             with self.subTest(campaign=name):
@@ -1047,7 +1082,7 @@ esac
     def test_every_team_of_a_campaign_exists_and_every_pairing_uses_known_teams(self):
         with open(os.path.join(HERE, '..', '..', '..', 'data', 'teams', 'index.json'), encoding='utf-8') as f:
             registry = {team['id'] for team in json.load(f)['teams']}
-        for name in sorted(os.listdir(os.path.join(HERE, 'campaigns'))):
+        for name in fuzz_campaigns():
             with self.subTest(campaign=name):
                 keys, _comments = self.read_conf(name)
                 known = {'A', 'B', 'C'}
@@ -1123,16 +1158,388 @@ esac
                       statements['ReadAmiParameter']['Resource'])
         self.assertEqual(statements['ListResultsBucket']['Condition']['StringLike']['s3:prefix'], ['fuzz/', 'fuzz/*'])
         for s in role['Statement']:
+            resources = [s['Resource']] if isinstance(s['Resource'], str) else s['Resource']
+            if s.get('Sid') == 'ReadNets':  # the ladder campaigns' networks (#484): read-only, nets/ only
+                self.assertEqual((s['Action'], resources), ('s3:GetObject', ['arn:aws:s3:::<BUCKET>/nets/*']))
+                continue
             self.assertTrue(all(r.endswith('/fuzz/*') or 'prefix' in json.dumps(s.get('Condition', {})) for r in
-                                ([s['Resource']] if isinstance(s['Resource'], str) else s['Resource'])), s)
+                                resources), s)
+        on_nets = [s for s in role['Statement'] if any('/nets/' in r for r in
+                                                       ([s['Resource']] if isinstance(s['Resource'], str) else s['Resource']))]
+        self.assertEqual([s['Sid'] for s in on_nets], ['ReadNets'])  # no write, no delete on nets/
 
     # ------------------------------------------------------------------ shellcheck
     @unittest.skipIf(shutil.which('shellcheck') is None, 'shellcheck is not installed')
     def test_shellcheck_is_clean(self):
-        scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh', 'chunks.sh')]
+        scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh', 'chunks.sh',
+                                                   'launch_ladder.sh', 'ladder_user_data.sh', 'ladder_box_lib.sh')]
         r = subprocess.run(['shellcheck', '-x', '-S', 'warning', *[posix(s) for s in scripts]], capture_output=True, text=True,
                            cwd=HERE)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+
+LADDER = ('--campaign', 'ladder-equal-2e', '--commit', SHA, '--bucket', 'my-fuzz-bucket')
+NET = 'b' * 64
+
+
+@unittest.skipIf(BASH is None, 'bash is not on the PATH')
+class LadderLaunch(unittest.TestCase):
+    """launch_ladder.sh and the ladder box (#484), against the stub aws only: nothing here reaches AWS (owner rule: only
+    the HauptSession launches, from its chat)."""
+
+    setUp = Guards.setUp
+    assert_aws_is_stub = Guards.assert_aws_is_stub
+    run_script = Guards.run_script
+    calls = Guards.calls
+    real_launches = Guards.real_launches
+
+    def test_no_test_has_a_way_to_the_real_aws(self):
+        # The environment every test runs scripts in: nothing of the caller's AWS setup, files that do not exist, no
+        # metadata, a closed local endpoint; and `aws` is the stub (setUp checked it before this test began).
+        self.assertEqual(sorted(k for k in self.env if k.upper().startswith('AWS_')),
+                         ['AWS_CONFIG_FILE', 'AWS_EC2_METADATA_DISABLED', 'AWS_ENDPOINT_URL', 'AWS_SHARED_CREDENTIALS_FILE'])
+        self.assertFalse(os.path.exists(self.env['AWS_CONFIG_FILE']))
+        self.assertEqual(self.env['AWS_ENDPOINT_URL'], 'http://127.0.0.1:9')
+        self.assertEqual(self.env['AWS_EC2_METADATA_DISABLED'], 'true')
+        polluted = dict(os.environ, AWS_PROFILE='owner', AWS_ACCESS_KEY_ID='x', AWS_SECRET_ACCESS_KEY='y',
+                        AWS_SESSION_TOKEN='z', AWS_ROLE_ARN='r', aws_default_profile='p')
+        safe = aws_safe_env(polluted, os.path.join(self.tmp, 'none'))
+        for var in ('AWS_PROFILE', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN', 'AWS_ROLE_ARN',
+                    'aws_default_profile'):
+            self.assertNotIn(var, safe)
+        with self.assertRaises(AssertionError):  # a stub that is not first on the PATH is caught before a run
+            self.assert_aws_is_stub(self.env, os.path.join(self.tmp, 'elsewhere'))
+
+    def test_without_the_approval_flag_one_c7a_request_tagged_ladder_is_printed_and_nothing_launched(self):
+        r = self.run_script('launch_ladder.sh', *LADDER)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('nothing was launched', r.stdout)
+        self.assertIn('--instance-type c7a.16xlarge', r.stdout)
+        self.assertEqual(len(re.findall(r'Key=purpose\\?,Value=ladder', r.stdout)), 3)  # printf %q escapes the commas
+        self.assertIn('s3://my-fuzz-bucket/fuzz/ladder/ladder-equal-2e/' + SHA[:12] + '-ladder-', r.stdout)
+        self.assertIn('arms          main (side by side', r.stdout)
+        for sha in ('bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39',
+                    '213b773b3448521ff251668133b6a1ebe7d5144f707e2f316974ddbad21e1b99',
+                    'ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb'):
+            self.assertIn(sha, r.stdout)
+        self.assertEqual(self.real_launches(), [])
+        self.assertFalse([c for c in self.calls() if ' create-' in c or ' put-' in c or ' s3 ' in ' ' + c])
+        self.assertNotIn(ACCOUNT, r.stdout + r.stderr)
+
+    def test_with_the_flag_exactly_one_c7a_request_and_no_fallback_without_capacity(self):
+        r = self.run_script('launch_ladder.sh', *LADDER, '--i-have-owner-approval')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        (call,) = self.real_launches()
+        for needle in ('--instance-type c7a.16xlarge', 'MarketType=spot', 'Name=duoforge-fuzz', 'HttpTokens=required',
+                       '--instance-initiated-shutdown-behavior terminate'):
+            self.assertIn(needle, call)
+        self.assertEqual(call.count('Key=purpose,Value=ladder'), 3)
+        open(self.log, 'w').close()
+        r = self.run_script('launch_ladder.sh', *LADDER, '--i-have-owner-approval', STUB_RUN='nocap')
+        self.assertEqual(r.returncode, 2)
+        self.assertIn('no spot capacity for c7a.16xlarge', r.stderr)
+        self.assertIn('never mix', r.stderr)
+        self.assertEqual(len(self.real_launches()), 1)  # one type, no fallback to another
+
+    def test_the_guards_hold_for_ladder_launches(self):
+        cases = (({'STUB_ARN': 'arn:aws:iam::%s:user/someone' % ACCOUNT}, LADDER, "not a ':user/pokeengine'"),
+                 ({}, LADDER + ('--sg-name', 'open'), 'only duoforge-fuzz'),
+                 ({}, LADDER + ('--max-hours', '3'), 'between 1 and 2'),
+                 ({}, LADDER + ('--types', 'c6a.16xlarge'), 'unknown argument'),
+                 ({}, ('--campaign', 'weather-sand-snow', '--commit', SHA, '--bucket', 'my-fuzz-bucket'),
+                  'not a valid ladder campaign'),
+                 ({'STUB_SG_INBOUND': '1'}, LADDER, 'not as required'))
+        for env, args, message in cases:
+            with self.subTest(args=args[-2:], env=env):
+                open(self.log, 'w').close()
+                r = self.run_script('launch_ladder.sh', *args, **env)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn(message, r.stderr)
+                self.assertEqual(self.real_launches(), [])
+
+    def render(self, minutes=120):
+        script = '. %s; df_render_ladder_user_data ladder-equal-2e %s my-fuzz-bucket %d %s' % (
+            shlex.quote(posix(os.path.join(HERE, 'lib.sh'))), SHA, minutes, SHA[:12] + '-ladder-20261014T030000Z')
+        r = subprocess.run([BASH, '-c', script], env=self.env, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return r.stdout
+
+    def test_the_ladder_box_starts_with_the_watchdog_pins_the_machine_and_refuses_by_name(self):
+        text = self.render(60)
+        lines = text.splitlines()
+        self.assertEqual(lines[0], '#!/bin/bash')
+        self.assertTrue(lines[1].startswith('shutdown -h +60 '), lines[1])
+        self.assertNotRegex(text, r'@[A-Z_]+@')
+        for needle in ('XLA_FLAGS=--xla_cpu_max_isa=AVX2', 'OPENBLAS_CORETYPE=Haswell', 'OPENBLAS_NUM_THREADS=1',
+                       'NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"', '"numpy_simd": numpy_simd',
+                       '"NPY_DISABLE_CPU_FEATURES")', 'numpy_dispatch.py" "$WORK/numpy_simd.json"', '"libc": list(platform.libc_ver())', 'JAX_PLATFORMS=cpu', 'taskset -c "$cpus"', 'DF_CPUS=16', 'DF_SPARE=16', 'ladder_conf.py" arms',
+                       '"$S3_BASE/$arm/ladder.json"', 'ladder_requirements.txt', '--no-deps', 'pip" check',
+                       '. "$TOOLS/ladder_box_lib.sh"', 'ladder_nets_probe "$DF_BUCKET" "$NETS_KEY_PREFIX/.write-probe-',
+                       'trap finish EXIT', "trap 'REASON=terminated; exit 143' TERM INT", 'REASON="failed_in_$STEP"',
+                       'shutdown -h now', 'status.json', 's3://$DF_BUCKET/fuzz/ladder/$DF_CAMPAIGN/$DF_RUN_ID'):
+            self.assertIn(needle, text)
+        # Every refusal the README names is one the box makes (a refusal is a named exit, never a silent one).
+        for name in ('nets_writable', 'nets_probe_unclear', 'nets_unreadable', 'net_sha_mismatch', 'wrong_commit',
+                     'wrong_run', 'no_campaign', 'bad_conf', 'build', 'python_env', 'numpy_dispatch', 'cpus',
+                     'ladder_failed'):
+            self.assertRegex(text, r'\brefuse %s\b' % name, name)
+        self.assertEqual(text.count('refuse bad_conf'), 6)  # check, shas (failed, empty), arms (failed, empty), argv
+        # A failed arm's ladder.json would pass for a result: only an arm that succeeded uploads one.
+        upload = text.index('"$S3_BASE/$arm/ladder.json"')
+        self.assertIn('if [ -n "${GOOD[$arm]:-}" ]; then', text[upload - 200:upload])
+        uploads = [l for l in lines if re.search(r'\baws s3 cp\b', l) and 's3://$DF_BUCKET/$NETS_KEY_PREFIX' not in l]
+        for line in uploads:  # what goes up: ladder.json, env.json, status.json and logs; never a decision file or a net
+            self.assertRegex(line, r'(ladder\.json|env\.json|status\.json|\$LOG|ladder-tail\.log)', line)
+            self.assertNotIn('/out/step-', line)
+            self.assertNotIn('decisions', line)
+            self.assertNotIn('.npz', line)
+        self.assertNotRegex(text, r'AKIA[0-9A-Z]{16}|aws_secret_access_key|BEGIN [A-Z ]*PRIVATE KEY')
+
+    def test_the_ladder_conf_is_checked_and_builds_each_arms_command_line(self):
+        import ladder_conf
+        good = ('kind=ladder\narm=a step=2e previous=0 h2h=1\narm=b step=d2-33 previous=2e\npairs=8\nseed=0x10\n'
+                'checkpoint=%s\nfoe_net=%s\nteams_from=%s\nopponents=bot=%s ppo=%s\n') % (NET, NET, 'c' * 64, 'd' * 64, 'c' * 64)
+        conf = ladder_conf.parse(good)
+        self.assertEqual([a['name'] for a in conf['arms']], ['a', 'b'])
+        self.assertEqual((conf['workers'], conf['max_steps']), (8, 1000))  # the HauptSession's 8 workers per arm
+        self.assertEqual(ladder_conf.shas(conf), [NET, 'c' * 64, 'd' * 64])
+        argv = ladder_conf.argv(conf, 'a', '/n', '/o')
+        self.assertEqual(argv[:8], ['--checkpoint', '/n/%s.npz' % NET, '--foe-net', '/n/%s.npz' % NET,
+                                    '--teams-from', '/n/%s.npz' % ('c' * 64), '--step', '2e'])
+        self.assertEqual(argv[8:11], ['--previous', '0', '--h2h'])
+        self.assertEqual(argv[argv.index('--seed') + 1], '0x10')
+        self.assertEqual(argv[-2:], ['--out', '/o'])
+        b = ladder_conf.argv(conf, 'b', '/n', '/o')
+        self.assertEqual(b[b.index('--step') + 1:b.index('--step') + 4], ['d2-33', '--previous', '2e'])
+        self.assertNotIn('--h2h', b)
+        with self.assertRaisesRegex(ladder_conf.ConfError, "no arm 'c'"):
+            ladder_conf.argv(conf, 'c', '/n', '/o')
+        bad = {'kind=fuzz': 'not a ladder campaign', 'pairs=0': 'pairs=0', 'workers=17': 'workers=17',
+               'checkpoint=xyz': 'sha256', 'opponents=bot': 'NAME=SHA256', 'extra=1': 'unknown key',
+               'opponents=bot=%s bot=%s' % (NET, NET): 'twice', 'arm=c step=../x': 'step name',
+               'arm=C step=0': 'lowercase', 'arm=c step=0 h2h=1': 'needs previous', 'arm=c previous=0': 'no step',
+               'arm=c step=0 path=/x': 'is not step=', 'arm=a step=0': 'arm name twice',
+               'arm=x step=0\narm=y step=0': '4 arms: 1 to 3'}
+        for line, message in bad.items():
+            key = line.partition('=')[0]
+            text = '\n'.join(l for l in good.splitlines() if key == 'arm' or not l.startswith(key + '=')) + '\n' + line + '\n'
+            with self.subTest(line=line), self.assertRaisesRegex(ladder_conf.ConfError, message):
+                ladder_conf.parse(text)
+        with self.assertRaisesRegex(ladder_conf.ConfError, 'arm= without a name'):
+            ladder_conf.parse(good + 'arm=\n')  # a ConfError (exit 2), not a traceback
+        with self.assertRaisesRegex(ladder_conf.ConfError, '0 arms'):
+            ladder_conf.parse('\n'.join(l for l in good.splitlines() if not l.startswith('arm=')))
+        with self.assertRaisesRegex(ladder_conf.ConfError, 'missing key'):
+            ladder_conf.parse(good.replace('pairs=8\n', ''))
+        for name, arms in (('ladder-equal-2e', ['main']), ('ladder-equal-2e-beside', ['main', 'beside0', 'beside1'])):
+            with open(os.path.join(HERE, 'campaigns', name, 'campaign.conf'), encoding='utf-8') as f:
+                conf = ladder_conf.parse(f.read())
+            self.assertEqual([a['name'] for a in conf['arms']], arms)
+            self.assertEqual(conf['arms'][0]['step'], '2e')  # the arm compared, alone and beside others
+
+    def test_the_conf_tool_prints_each_answer_and_refuses_a_bad_call(self):
+        conf = posix(os.path.join(HERE, 'campaigns', 'ladder-equal-2e-beside', 'campaign.conf'))
+        tool = os.path.join(HERE, 'ladder_conf.py')
+        run = lambda *a: subprocess.run([sys.executable, tool, *a], env=self.env, capture_output=True, text=True)
+        self.assertEqual(run('workers', conf).stdout.split(), ['8'])
+        self.assertEqual(run('arms', conf).stdout.split(), ['main', 'beside0', 'beside1'])
+        self.assertEqual(run('check', conf).returncode, 0)
+        for bad in (('workers',), ('arms', conf, 'x'), ('nope', conf)):
+            self.assertEqual(run(*bad).returncode, 2, bad)
+
+    # The probe that keeps nets/ read-only (ladder_box_lib.sh), against a stub aws: each of its three probes (a plain
+    # write, an encrypted write, a delete) must be denied; one that succeeds is a refusal, and so is one that fails
+    # otherwise (no credentials, no answer): that is no proof of read-only.
+    PROBE_STUB = textwrap.dedent('''\
+        #!/usr/bin/env bash
+        echo "$*" >> "$STUB_LOG"
+        if [[ "$*" == *put-object* ]]; then  # as the real CLI: the body must be a regular file (not /dev/null)
+            body=$(printf '%s\\n' "$@" | sed -n '/^--body$/{n;p;}')
+            [ -f "$body" ] || { echo "Error parsing parameter '--body': Blob values must be a path to a file." >&2; exit 252; }
+        fi
+        case "$*" in
+            *delete-object*) answer=$STUB_DELETE ;;
+            *--server-side-encryption*) answer=$STUB_SSE ;;
+            *put-object*) answer=$STUB_PLAIN ;;
+            *) echo "unexpected call: $*" >&2; exit 9 ;;
+        esac
+        case $answer in
+            ok) echo '{}' ;;
+            denied) echo 'An error occurred (AccessDenied) when calling the operation: Access Denied' >&2; exit 254 ;;
+            nocreds) echo 'Unable to locate credentials. You can configure credentials by running "aws configure".' >&2
+                     exit 253 ;;
+            silent) exit 255 ;;
+        esac
+        ''')
+
+    def probe(self, plain='denied', sse='denied', delete='denied'):
+        # As in Guards.setUp: the stub first on the PATH (set from here, as a Windows PATH where this is Windows), no
+        # credentials anywhere, and `aws` checked to be the stub before the probe runs: never the real CLI.
+        probe_bin = os.path.join(self.tmp, 'probe_bin')
+        os.makedirs(probe_bin, exist_ok=True)
+        stub = os.path.join(probe_bin, 'aws')
+        with open(stub, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(self.PROBE_STUB)
+        os.chmod(stub, os.stat(stub).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        open(self.log, 'w').close()
+        env = dict(self.env, PATH=probe_bin + os.pathsep + self.env['PATH'], STUB_PLAIN=plain, STUB_SSE=sse,
+                   STUB_DELETE=delete)
+        self.assert_aws_is_stub(env, probe_bin)
+        script = '. %s; ladder_nets_probe my-fuzz-bucket nets/.write-probe-run1' % shlex.quote(
+            posix(os.path.join(HERE, 'ladder_box_lib.sh')))
+        r = subprocess.run([BASH, '-c', script], capture_output=True, text=True, env=env, timeout=60)
+        calls = self.calls()
+        self.assertTrue(calls, 'the stub saw no call')
+        for call in calls:  # the probe touches the run's own key under nets/ and nothing else
+            self.assertIn('--bucket my-fuzz-bucket --key nets/.write-probe-run1', call)
+        return r.returncode, r.stdout.strip(), calls
+
+    def test_nets_is_read_only_only_when_every_probe_is_denied(self):
+        status, out, calls = self.probe()
+        self.assertEqual(status, 0, out)
+        self.assertIn('every probe', out)
+        self.assertEqual([c.split()[1] for c in calls], ['put-object', 'put-object', 'delete-object'])
+        self.assertIn('--server-side-encryption AES256', calls[1])
+
+    def test_a_probe_that_succeeds_is_writable_and_its_key_is_deleted_again(self):
+        for answers, which in (({'plain': 'ok'}, 'plain'), ({'sse': 'ok'}, 'sse'), ({'delete': 'ok'}, 'delete')):
+            with self.subTest(which=which):
+                status, out, calls = self.probe(**answers)
+                self.assertEqual(status, 3, out)
+                self.assertIn('the %s probe' % which, out)
+                self.assertIn('succeeded', out)
+                self.assertEqual(calls[-1].split()[1], 'delete-object')  # a written probe key does not stay
+
+    def test_a_probe_that_fails_otherwise_is_unclear_and_no_proof(self):
+        for answers, needle in (({'plain': 'nocreds'}, 'Unable to locate credentials'), ({'plain': 'silent'}, 'no output'),
+                                ({'sse': 'nocreds'}, 'the sse probe'), ({'delete': 'silent'}, 'the delete probe')):
+            with self.subTest(answers=answers):
+                status, out, _ = self.probe(**answers)
+                self.assertEqual(status, 4, out)
+                self.assertIn('not with AccessDenied', out)
+                self.assertIn(needle, out)
+
+class NumpyDispatch(unittest.TestCase):
+    """numpy_dispatch.py's check (#484, HauptSession 2026-10-15): the box runs NumPy on the local machine's targets.
+    Pure: the targets are given, no NumPy and nothing of AWS."""
+
+    KNOWN = ['X86_V3', 'X86_V4', 'AVX512_ICL', 'AVX512_SPR']  # numpy 2.5.3's dispatch targets on x86-64
+    OFF = 'X86_V4 AVX512_ICL AVX512_SPR'
+
+    def run_check(self, disabled, on):
+        import numpy_dispatch
+        return numpy_dispatch.check(disabled, ['X86_V2'], self.KNOWN, self.KNOWN, {t: t in on for t in self.KNOWN})
+
+    def test_every_avx512_target_off_passes_and_is_recorded(self):
+        problem, record = self.run_check(self.OFF, ['X86_V3'])
+        self.assertIsNone(problem)
+        self.assertEqual(record, {'disabled': self.OFF.split(), 'baseline': ['X86_V2'], 'found': ['X86_V3'],
+                                  'not_found': ['X86_V4', 'AVX512_ICL', 'AVX512_SPR']})
+
+    def test_an_unknown_name_is_refused(self):
+        # A misspelt (or baseline) name would disable nothing: the box must not run on it.
+        for disabled in ('X86_V4 AVX512_ICL AVX512SPR', 'AVX512F', 'X86_V2 X86_V4'):
+            with self.subTest(disabled=disabled):
+                problem, record = self.run_check(disabled, ['X86_V3'])
+                self.assertIn("not among NumPy's dispatch targets", problem)
+                self.assertEqual(record['disabled'], disabled.split())
+
+    def test_an_avx512_target_still_enabled_is_refused(self):
+        for on in (['X86_V3', 'X86_V4'], ['X86_V3', 'AVX512_ICL']):
+            with self.subTest(on=on):
+                problem, _ = self.run_check('AVX512_SPR', on)
+                self.assertIn('still enables the AVX-512 target', problem)
+
+    def test_no_variable_is_refused(self):
+        problem, _ = self.run_check('', ['X86_V3'])
+        self.assertIn('is not set', problem)
+
+    def test_the_command_line_refuses_a_bad_call(self):
+        r = subprocess.run([sys.executable, os.path.join(HERE, 'numpy_dispatch.py')], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 2)
+
+
+class LadderEqual(unittest.TestCase):
+    """ladder_equal.py, the equality proof of an AWS ladder campaign (#484): every field but the timing ones."""
+
+    @staticmethod
+    def report(**changes):
+        r = {'conditions': {'commit': SHA, 'dirty': False, 'seed': '0x1', 'cpu': 'here', 'library': '0.45.0'},
+             'opponents': {'bot': {'arms': {'step': {'decisions_sha256': 'd' * 64, 'scores': [1.0, 0.0, 0.5],
+                                                     'pair_interval': {'pairs': 2, 'score': 0.5, '95': [0.0, 1.0]},
+                                                     'wall_seconds': {'p99': 0.1}, 'seconds': 3.0}},
+                                   'paired': {}}},
+             'h2h': None, 'p99_seconds': 0.1}
+        for path, value in changes.items():
+            node = r
+            *head, last = path.split('.')
+            for key in head:
+                node = node[key]
+            node[last] = value
+        return r
+
+    def test_equal_reports_differ_only_in_timing(self):
+        import ladder_equal
+        aws = self.report(**{'conditions.cpu': 'AMD EPYC', 'p99_seconds': 0.3,
+                             'opponents.bot.arms.step.seconds': 9.0})
+        result = ladder_equal.compare(self.report(), aws)
+        self.assertTrue(result['equal'])
+        self.assertEqual(result['differs'], [])
+        self.assertEqual(result['digests'], {'bot.step': {'local': 'd' * 64, 'aws': 'd' * 64, 'equal': True}})
+        self.assertIn('wall_seconds', result['skipped'])
+
+    def test_a_digest_a_score_or_a_condition_that_differs_is_named(self):
+        import ladder_equal
+        cases = {'opponents.bot.arms.step.decisions_sha256': 'e' * 64,
+                 'opponents.bot.arms.step.scores': [1.0, 0.0, 0.5000000000000001],
+                 'conditions.seed': '0x2', 'conditions.library': '0.46.0'}
+        for path, value in cases.items():
+            with self.subTest(path=path):
+                result = ladder_equal.compare(self.report(), self.report(**{path: value}))
+                self.assertFalse(result['equal'])
+                self.assertTrue(any(d.startswith(path) for d in result['differs']), result['differs'])
+        result = ladder_equal.compare(self.report(), self.report(**{'opponents.bot.arms.step.decisions_sha256': 'e' * 64}))
+        self.assertFalse(result['digests']['bot.step']['equal'])
+
+    def test_a_field_on_one_side_a_list_of_another_length_another_commit_or_type_is_named(self):
+        import ladder_equal
+        extra = self.report()
+        extra['opponents']['bot']['arms']['step']['diagnostics'] = {'fallbacks': 0}
+        cases = ((self.report(), extra, 'opponents.bot.arms.step.diagnostics (AWS only)'),
+                 (extra, self.report(), 'opponents.bot.arms.step.diagnostics (local only)'),
+                 (self.report(), self.report(**{'opponents.bot.arms.step.scores': [1.0, 0.0]}),
+                  'opponents.bot.arms.step.scores (length 3 vs 2)'),
+                 (self.report(), self.report(**{'conditions.commit': 'e' * 40}), 'conditions.commit'),
+                 (self.report(), self.report(**{'opponents.bot.arms.step.scores': [1, 0.0, 0.5]}),
+                  'opponents.bot.arms.step.scores[0]'))  # 1 and 1.0: equal numbers, another type
+        for local, aws, path in cases:
+            with self.subTest(path=path):
+                result = ladder_equal.compare(local, aws)
+                self.assertFalse(result['equal'])
+                self.assertIn(path, result['differs'])
+
+    def test_a_dirty_run_or_one_without_conditions_proves_nothing(self):
+        import ladder_equal
+        for bad in (self.report(**{'conditions.dirty': True}), self.report(**{'conditions.dirty': None}), {'opponents': {}}):
+            with self.subTest(bad=bad.get('conditions')), self.assertRaises(ValueError):
+                ladder_equal.compare(self.report(), bad)
+
+    def test_the_command_line_exits_by_the_result(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for name, r in (('local', self.report()), ('aws', self.report()),
+                            ('other', self.report(**{'opponents.bot.arms.step.scores': [0.0, 0.0, 0.5]}))):
+                paths.append(os.path.join(tmp, name + '.json'))
+                with open(paths[-1], 'w', encoding='utf-8') as f:
+                    json.dump(r, f)
+            script = os.path.join(HERE, 'ladder_equal.py')
+            env = aws_safe_env(os.environ, os.path.join(tmp, 'none'))
+            run = lambda *a: subprocess.run([sys.executable, script, *a], env=env, capture_output=True, text=True)
+            self.assertEqual(run(paths[0], paths[1], '--out', os.path.join(tmp, 'eq.json')).returncode, 0)
+            with open(os.path.join(tmp, 'eq.json'), encoding='utf-8') as f:
+                self.assertTrue(json.load(f)['equal'])
+            self.assertEqual(run(paths[0], paths[2]).returncode, 1)
+            self.assertEqual(run(paths[0], os.path.join(tmp, 'missing.json')).returncode, 2)
 
 
 if __name__ == '__main__':

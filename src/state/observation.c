@@ -131,8 +131,43 @@ static uint8_t dfi_derived_pp(uint32_t pp_max, uint32_t used)
     return (uint8_t)left; /* <= pp_max < 256 */
 }
 
-static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, uint32_t s, uint32_t m,
-                            duoforge_member_view *v)
+/* Step K3 (decision 0015 5de): the Speed the owner sees while a Speed Swap stands: the member's own (unswapped) stored Speed of its
+ * current forme, the Blade's while blade is set, else the derived one (sim/pokemon.ts:1159-1165: the request shows baseStoredStats,
+ * which only setSpecies rebuilds; Speed Swap writes storedStats). False if the forme data refuses it. Only observation uses it. */
+static bool dfi_member_base_speed(const dfi_member *m, bool blade, uint16_t *out)
+{
+    uint16_t stats[DFI_MEMBER_STAT_COUNT];
+    if (blade) {
+        if (!dfi_closure_member_forme_stats(m, DFI_FORME_AEGISLASHBLADE, stats)) {
+            return false;
+        }
+    } else {
+        dfi_member copy = *m;
+        if (!dfi_closure_member_derive(&copy)) {
+            return false;
+        }
+        for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
+            stats[i] = copy.stats[i];
+        }
+    }
+    *out = stats[DFI_STAT_SPE - 1u];
+    return true;
+}
+
+/* Step K3 (decision 0015 5de): the member holds a live Speed Swap (the presence bit of its position). */
+static bool dfi_member_speed_swapped_here(const struct duoforge_battle *b, uint32_t s, uint32_t m)
+{
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (b->sides[s].positions[p].occupant == m &&
+            (b->tail.sides[s].positions[p].single_turn & DFI_SINGLE_TURN_SPEED_SWAP) != 0u) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static duoforge_status dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, uint32_t s, uint32_t m,
+                                       duoforge_member_view *v)
 {
     const dfi_side *side = &b->sides[s];
     const dfi_member *mem = &side->members[m];
@@ -160,6 +195,15 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
         for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
             v->stats[i] = mem->stats[i]; /* the player's own sheet and stats */
         }
+        /* Step K3 (decision 0015 5de; sim/pokemon.ts:1159-1165, the request shows baseStoredStats): while a Speed Swap stands
+         * the owner sees its own unswapped Speed of the current forme, never the swapped value (the foe's hidden Speed). */
+        if (dfi_member_speed_swapped_here(b, s, m)) {
+            uint16_t base_spe = 0u;
+            if (!dfi_member_base_speed(mem, b->tail.sides[s].forme_now[m] == DFI_FORME_AEGISLASHBLADE + 1u, &base_spe)) {
+                return DUOFORGE_E_INVARIANT;
+            }
+            v->stats[DFI_STAT_SPE - 1u] = base_spe;
+        }
         for (uint32_t i = 0u; i < DFI_STAT_POINT_COUNT; ++i) {
             v->stat_points[i] = mem->stat_points[i];
         }
@@ -179,7 +223,7 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
         } else {
             v->location = (uint8_t)DUOFORGE_LOCATION_NOT_BROUGHT;
         }
-        return;
+        return DUOFORGE_OK;
     }
     const dfi_knowledge *know = &b->sides[viewer].knowledge[m];
     v->pp_kind = (uint8_t)DUOFORGE_PP_DERIVED;
@@ -220,6 +264,7 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
         v->hp_kind = (uint8_t)DUOFORGE_HP_UNKNOWN;
         v->location = (uint8_t)DUOFORGE_LOCATION_UNDETERMINED;
     }
+    return DUOFORGE_OK;
 }
 
 /* An active position: stat stages and the volatile conditions the game
@@ -275,12 +320,15 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     out->flash_fire = ((uint32_t)slot->flags & DFI_VOL_FLASH_FIRE) != 0u ? 1u : 0u;
 }
 
-static void dfi_view_side(const struct duoforge_battle *b, uint32_t viewer, uint32_t s, duoforge_side_view *out)
+static duoforge_status dfi_view_side(const struct duoforge_battle *b, uint32_t viewer, uint32_t s, duoforge_side_view *out)
 {
     const dfi_side *side = &b->sides[s];
     const bool own = s == viewer;
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
-        dfi_view_member(b, viewer, s, m, &out->members[m]); /* unregistered slots stay all-zero */
+        const duoforge_status ms = dfi_view_member(b, viewer, s, m, &out->members[m]); /* unregistered slots stay all-zero */
+        if (ms != DUOFORGE_OK) {
+            return ms;
+        }
     }
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
         dfi_view_position(b, viewer, s, p, &out->positions[p]);
@@ -300,6 +348,7 @@ static void dfi_view_side(const struct duoforge_battle *b, uint32_t viewer, uint
     out->reflect_turns = side->reflect_turns;
     out->light_screen_turns = side->light_screen_turns;
     out->tailwind_turns = side->tailwind_turns;
+    return DUOFORGE_OK;
 }
 
 duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duoforge_battle *battle,
@@ -333,7 +382,10 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
     o.terrain_turns = battle->terrain_turns;
     o.trick_room_turns = battle->trick_room_turns;
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
-        dfi_view_side(battle, player, s, &o.sides[s]);
+        const duoforge_status vs = dfi_view_side(battle, player, s, &o.sides[s]);
+        if (vs != DUOFORGE_OK) {
+            return vs;
+        }
     }
     *out_observation = o;
     return DUOFORGE_OK;
@@ -403,6 +455,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->imprison != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_IMPRISON : 0u;
                 /* Step G42: Roost's Flying type is off until the residual of order 25 (-singleturn move: Roost, public). */
                 vol |= (tail->single_turn & DFI_SINGLE_TURN_ROOST) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ROOST : 0u;
+                /* Step K3 (decision 0015 5de): Speed Swap's presence (the values are never public). */
+                vol |= (tail->single_turn & DFI_SINGLE_TURN_SPEED_SWAP) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_SPEED_SWAPPED : 0u;
                 /* Step G60 (decision 0032): the Substitute is up: presence only, its HP is never in the observation. */
                 vol |= tail->substitute_hp != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_SUBSTITUTE : 0u;
                 /* Step G90 (decision 0060): the partial trap is up (-activate at its start, -end at its end): presence only; the

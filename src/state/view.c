@@ -378,6 +378,15 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
             }
         }
     }
+    /* Step K3 (decision 0015 5de): a live Speed Swap on either side. The swapped Speed values are not
+     * public (only the presence bit is), so the record and the rebuild refuse while the bit stands. */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            if ((b->tail.sides[side].positions[p].single_turn & DFI_SINGLE_TURN_SPEED_SWAP) != 0u) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_SPEED_SWAP;
+            }
+        }
+    }
     *out_mask = mask;
     return DUOFORGE_OK;
 }
@@ -824,6 +833,8 @@ typedef enum mr_family {
     MR_HEAL_PULSE,   /* a target at full HP is NOT_FAIL: true */
     MR_PSYCH_UP,     /* G80: the copy (-copyboost) is true even when it copies nothing; else the effect rule (nothing changed: false) */
     MR_ALLY_SWITCH,  /* G80: the swap true; the partner-missing fail (-fail with the move as cause) null; the roll's fail false */
+    MR_SPEED_SWAP,   /* K3 (decision 0015 5de): the exchange of the stored Speeds (dfi_speed_swap's VOLATILE_START at the user) true;
+                        otherwise the hit steps' classes (a Protect null; Psychic Terrain and IMMUNE false); no class: refused */
     MR_REFUSED       /* a handler this classifier does not map: refused */
 } mr_family;
 
@@ -896,6 +907,8 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
         return MR_PSYCH_UP;
     case DFI_SPECIAL_ALLY_SWITCH:
         return MR_ALLY_SWITCH;
+    case DFI_SPECIAL_SPEED_SWAP:
+        return MR_SPEED_SWAP;
     default:
         return MR_REFUSED; /* Substitute, Destiny Bond and every handler not mapped here */
     }
@@ -1297,6 +1310,27 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
             value = (uint8_t)DFI_MOVE_RESULT_NULL;
         } else if (user_fail) {
             value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        break;
+    }
+    case MR_SPEED_SWAP: {
+        /* Step K3 (dfi_speed_swap, data/moves.ts:17430-17449 onHit): the exchange returns nothing, so a swap that happened is true.
+         * Its line is the VOLATILE_START of the user with detail SPEED_SWAP. Without it the hit steps' classes decide, as for the
+         * other status moves: a Psychic Terrain block and an IMMUNE (Good as Gold) are false, a Protect's BLOCKED is null
+         * (classes above); a body with no class is not a case of the engine and is refused. */
+        bool swapped = false;
+        for (uint32_t j = 0u; j < n; ++j) {
+            swapped = swapped || (body[j].kind == DUOFORGE_EVENT_VOLATILE_START && body[j].position == user &&
+                                  body[j].detail == DUOFORGE_VOLATILE_SPEED_SWAP);
+        }
+        if (swapped) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else if (user_fail || (classes & MR_FALSE) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else if ((classes & MR_NULL) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
         } else {
             return DUOFORGE_E_UNSUPPORTED;
         }

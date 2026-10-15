@@ -98,11 +98,13 @@ class Timed:
     def clear(self):
         self.search.clear()
 
-    def decide(self, roots, envs, seats, keys, last_step):
+    def decide(self, roots, envs, seats, keys, last_step, steps_left=None):
         actions, records = np.zeros(len(envs), np.int64), []
         for d in range(len(envs)):
             t = time.perf_counter()
-            a, (r,) = self.search.decide(roots, envs[d:d + 1], seats[d:d + 1], keys[d:d + 1], last_step[d:d + 1])
+            extra = {} if steps_left is None else {"steps_left": steps_left[d:d + 1]}  # D2: passed through as given
+            a, (r,) = self.search.decide(roots, envs[d:d + 1], seats[d:d + 1], keys[d:d + 1], last_step[d:d + 1],
+                                         **extra)
             r["wall"] = time.perf_counter() - t
             actions[d] = a[0]
             records.append(r)

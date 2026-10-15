@@ -18,7 +18,7 @@
 #define DFI_CONTEXT_TABLE_CAPACITY 65535u
 /* The certified profile (decision 0010): a CLOSURE context registers
  * DUOFORGE_MAX_ROSTER members per side and brings this many. */
-#define DFI_CLOSURE_BROUGHT_COUNT 4u
+#define DFI_CLOSURE_BROUGHT_COUNT DFI_FORMAT_BROUGHT_COUNT
 
 struct duoforge_context {
     uint8_t data_kind; /* validated, narrowed copies of the config */
@@ -49,5 +49,7 @@ bool dfi_kind_full_roster(uint32_t data_kind);
 void dfi_context_canonical_bytes(const struct duoforge_context *ctx, uint8_t out[DFI_CONTEXT_BYTES_SIZE]);
 bool dfi_context_fingerprint_matches(const struct duoforge_context *ctx,
                                      const uint8_t fingerprint[DUOFORGE_DIGEST_SIZE]);
+
+#include "data/format_tables.h" /* the format facts (restructure step 10) */
 
 #endif
