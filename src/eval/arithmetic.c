@@ -67,9 +67,12 @@ duoforge_status dfi_eval_dot_bound(uint32_t count, uint32_t input_abs, uint32_t 
     if (!scale.multiplier || scale.shift > 63u || input_abs > 32768u || weight_abs > 128u)
         return DUOFORGE_E_INVALID_ARGUMENT;
     uint64_t one = (uint64_t)input_abs * weight_abs;
-    if (bias_abs > (uint64_t)INT64_MAX || (one && count > ((uint64_t)INT64_MAX - bias_abs) / one))
+    /* Validated factors give one <= 2^22 and count < 2^32, so the
+       unsigned product fits in 54 bits, even for a zero factor. */
+    const uint64_t terms = count * one;
+    if (bias_abs > (uint64_t)INT64_MAX || terms > (uint64_t)INT64_MAX - bias_abs)
         return DUOFORGE_E_EXHAUSTED;
-    uint64_t bound = bias_abs + count * one;
+    uint64_t bound = bias_abs + terms;
     /* Exact upper word of bound * multiplier. bound <= INT64_MAX and a
        uint32 multiplier keep both intermediates within uint64. This tests
        the same limit without a division MSVC IPO may diagnose on dead paths. */
