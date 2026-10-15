@@ -2,7 +2,7 @@
 #define DUOFORGE_COMBAT_TURN_H
 /*
  * The turn core of the combat closure (docs/decisions/0006 sections 4 and 5,
- * step 2 of tasks/M3_M4_COMBAT_CLOSURE.md), mirroring the pinned reference:
+ * step 2 of docs/history/tasks/M3_M4_COMBAT_CLOSURE.md), mirroring the pinned reference:
  *
  *  - the action queue: one move action per acting slot plus the residual
  *    action, sorted like Battle.speedSort (sim/battle.ts:429-463): order,

@@ -189,22 +189,40 @@ df_run_id_prefix() { # commit campaign
     printf '%s-%s-%s-' "${1:0:12}" "$chunk" "$seed"
 }
 
-# $DF_DIR/ladder_user_data.sh with its placeholders filled; every value is validated before it gets here.
+# shellcheck source=render_box.sh
+. "$DF_DIR/render_box.sh"
+
+# The box scripts with their placeholders filled (render_box.sh): what the bootstrap runs on the box. Every value is
+# validated before it gets here.
 df_render_ladder_user_data() { # campaign commit bucket max-minutes run-id
-    sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" \
-        -e "s|@RUN_ID@|$5|g" "$DF_DIR/ladder_user_data.sh"
+    df_render_box "$DF_DIR/ladder_user_data.sh" "$1" "$2" "$3" "$4" "$5" no
 }
 
-# $DF_DIR/oracle_user_data.sh with its placeholders filled; every value is validated before it gets here.
 df_render_oracle_user_data() { # campaign commit bucket max-minutes run-id resume(yes|no)
-    sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" \
-        -e "s|@RUN_ID@|$5|g" -e "s|@RESUME@|${6:-no}|g" "$DF_DIR/oracle_user_data.sh"
+    df_render_box "$DF_DIR/oracle_user_data.sh" "$1" "$2" "$3" "$4" "$5" "${6:-no}"
 }
 
-# $DF_DIR/user_data.sh with its placeholders filled; every value is validated before it gets here.
 df_render_user_data() { # campaign commit bucket max-minutes run-id resume(yes|no)
-    sed -e "s|@CAMPAIGN@|$1|g" -e "s|@COMMIT@|$2|g" -e "s|@BUCKET@|$3|g" -e "s|@MAX_MINUTES@|$4|g" \
-        -e "s|@RUN_ID@|$5|g" -e "s|@RESUME@|$6|g" "$DF_DIR/user_data.sh"
+    df_render_box "$DF_DIR/user_data.sh" "$1" "$2" "$3" "$4" "$5" "$6"
+}
+
+# EC2 takes at most 16384 bytes of user data, before base64 (HauptSession 2026-10-15: the ladder's box script outgrew
+# it and the launch was refused).
+DF_USER_DATA_LIMIT=16384
+
+# The user data a launcher sends: bootstrap_user_data.sh with its placeholders filled. It sets the watchdog first,
+# fetches the commit and runs that commit's box script `script`, rendered on the box by render_box.sh with these values.
+df_render_bootstrap() { # script campaign commit bucket max-minutes run-id resume(yes|no)
+    case $1 in user_data.sh | ladder_user_data.sh | oracle_user_data.sh) ;; *) df_die "no box script '$1'" ;; esac
+    df_render_box "$DF_DIR/bootstrap_user_data.sh" "$2" "$3" "$4" "$5" "$6" "${7:-no}" | sed -e "s|@SCRIPT@|$1|g"
+}
+
+# Refuses, by name, user data longer than EC2 takes: user_data_too_large.
+df_check_user_data_size() { # user-data
+    local size
+    size=$(printf '%s' "$1" | wc -c | tr -d ' ')
+    [ "$size" -le "$DF_USER_DATA_LIMIT" ] ||
+        df_die "user_data_too_large: the user data has $size bytes, more than EC2's $DF_USER_DATA_LIMIT"
 }
 
 # The price ceiling per instance hour that keeps the campaign under the cost cap: cap / hours (two decimals). The cap is

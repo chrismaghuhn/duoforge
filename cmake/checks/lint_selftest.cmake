@@ -133,6 +133,15 @@ double also_forbidden;
 int generic;
 ")
 _lint_case("${WORK}/fp/src/eval/arithmetic.c" banned-token 3 "${WORK}/fp")
+file(WRITE "${WORK}/fp/src/eval/normalization.c" "int32_t normalization_storage;
+int64_t deviation;
+")
+_lint_case("${WORK}/fp/src/eval/normalization.c" CLEAN 0 "${WORK}/fp")
+file(APPEND "${WORK}/fp/src/eval/normalization.c" "float forbidden;
+double also_forbidden;
+int generic;
+")
+_lint_case("${WORK}/fp/src/eval/normalization.c" banned-token 3 "${WORK}/fp")
 file(WRITE "${WORK}/fp/src/eval/other.c" "int64_t outside_registered_kernel;
 ")
 _lint_case("${WORK}/fp/src/eval/other.c" banned-token 1 "${WORK}/fp")

@@ -1,0 +1,17 @@
+{
+  "hostname": "vm",
+  "system": "Linux-6.18.44-fc-v114-x86_64-with-glibc2.39",
+  "architecture": "x86_64",
+  "cpu_model": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "allowed_cpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "benchmark_cpu": 3,
+  "gcc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "python": "3.13.16",
+  "node": "v22.22.0",
+  "showdown_pin": "b2cb775b0616115b775534eaeff50300e1fc81fc"
+}

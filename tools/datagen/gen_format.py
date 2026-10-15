@@ -2,7 +2,7 @@
 """The format definition (restructure step 10, docs/architecture/formats.md).
 
 data/formats/reg-mc.json holds the facts of Reg M-C: the format id, the rules, level, team size and pick, the Stat
-Point limits, the clauses, the timer and the pool source (docs/research/expansion/data/legal_pool.json, the output of
+Point limits, the clauses, the timer and the pool source (data/formats/pools/reg-mc.json, the output of
 the pinned TeamValidator). Every fact quotes the line of the pinned Showdown checkout it comes from.
 
 This tool writes src/data/format_tables.h: the facts the C engine uses, as named constants (DFI_FORMAT_*), with
