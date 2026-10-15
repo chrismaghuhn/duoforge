@@ -1632,6 +1632,12 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
     caller that converts one line at a time (the live tracker) passes the lines it has folded since the last decision point.
     """
     ill = ill if ill is not None else {'side': [False, False], 'truth_at': {}, 'multi': {}, 'replace': {}, 'last_hp': {}, 'shown_at': {}}
+    # Ally Switch (issue 541): truth_at is the end of the step, and a swap line exchanges the two positions of its side. The lines
+    # before the step's swaps read the positions as they were (every swap undone here), and each swap line exchanges them again.
+    truth_at = dict(ill['truth_at'])
+    for s in range(2):
+        if sum(1 for x in log if x.startswith('|swap|p%d' % (s + 1))) % 2 == 1:
+            truth_at[(s, 0)], truth_at[(s, 1)] = truth_at.get((s, 1)), truth_at.get((s, 0))
     if rb_pending is None:
         rb_pending = {}
     out = []
@@ -1774,7 +1780,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # position's Pokemon after the step, which must be the only switch of that side in the step. Otherwise refuse.
             truth = name
             if viewer == side and ill['side'][side]:
-                tn = ill['truth_at'].get((side, pos % 2))
+                tn = truth_at.get((side, pos % 2))
                 if tn != name:
                     if tn is None or ill['multi'].get((side, pos % 2), 0) != 1:
                         raise ConversionError('illusion-owner-truth', 'trace_to_c: the entry of the owner %r cannot be told apart' % line,
@@ -1802,6 +1808,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             new_pos = (pos // 2) * 2 + int(args[1])
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['SWAP'], pos, new_pos, cause, 0, id2)
+            truth_at[(pos // 2, 0)], truth_at[(pos // 2, 1)] = truth_at.get((pos // 2, 1)), truth_at.get((pos // 2, 0))
         elif kind == 'move':
             pos = ev_pos(args[0])
             last_user = pos
@@ -1885,7 +1892,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # Illusion (decision 0026 section 9, Q1): the owner's exact HP is the true member's, so its maximum is the holder's
             # when the line names the disguise on the holder's position.
             if viewer == side and ill['side'][side]:
-                tn = ill['truth_at'].get((side, pos % 2))
+                tn = truth_at.get((side, pos % 2))
                 if tn is not None and tn != name and ill['shown_at'].get((side, pos % 2)) == name:
                     shown_max = tn
             if '[partiallytrapped]' in attrs and (kind != '-damage' or cause != CAUSE['MOVE'] or other != NOPOS):
