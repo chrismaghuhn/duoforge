@@ -230,6 +230,23 @@ class ArenaTest(unittest.TestCase):
         self.assertIn("arena popup", self.stderr.getvalue())
         self.assertEqual(self.run_log()["counts"]["popups"], 1)
 
+    def test_incoming_challenges_are_counted_by_outcome_without_a_name(self):
+        # llms.txt: battles come from challenges, the server puts the bot in them; the notices only inform
+        self.make()
+        self.feed(f"|pm| Other Bot| {NAME}|/challenge {OTS}|{OTS}|||",
+                  f"|pm| Other Bot| {NAME}|/challenge {OTS}|{OTS}|||",
+                  f"|pm| Third Bot| {NAME}|/challenge {CTS}|{CTS}|||",
+                  f"|pm| Other Bot| {NAME}|/challenge",
+                  f"|pm| {NAME}| Other Bot|/challenge {OTS}|{OTS}|||",
+                  f"|pm| Other Bot| {NAME}|hello",
+                  f"|pm| Other Bot| Third Bot|/challenge {OTS}|{OTS}|||")
+        log = self.run_log()
+        self.assertEqual(log["challenges"], {"received": 2, "other_format": 1, "withdrawn": 1, "in_own_name": 1})
+        self.assertEqual(set(log["challenges"]), set(pkmn_arena.CHALLENGES))
+        text = json.dumps(log)
+        self.assertFalse("Other Bot" in text or "otherbot" in text or "Third Bot" in text or "thirdbot" in text)
+        self.assertEqual(self.sent, [])  # nothing is sent: /accept and /reject do nothing on the arena
+
     def test_a_refused_login_stops_without_showing_the_token(self):
         self.make(connections=[(["|challstr|4|abc", f"|nametaken|{NAME}|Unknown bot name or invalid token {TOKEN}"],
                                 1006)])
