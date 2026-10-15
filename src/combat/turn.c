@@ -3214,13 +3214,14 @@ static void dfi_emit_item_left(dfi_run *r, uint32_t flat, uint32_t code, uint32_
 }
 
 /* The item's Start after setItem (sim/pokemon.ts:1885-1887) where it prints a line: Air Balloon's onStart (data/items.ts:191-195)
- * shows the balloon, ITEM_SHOWN, before the line of the move or ability that gave it (issue 520). Klutz, Embargo, Magic Room
- * and Gravity are not marked, so the holder never ignores it here. An item whose Start uses it up is refused before
+ * shows the balloon, ITEM_SHOWN, before the line of the move or ability that gave it (issue 520). It prints nothing while Gravity is
+ * up (`!this.field.getPseudoWeather('gravity')`, the check of the switch-in line in dfi_switch_in). Klutz, Embargo and Magic Room
+ * are not marked, so the holder never ignores the item here. An item whose Start uses it up is refused before
  * (dfi_start_uses_item). */
 static void dfi_item_start_shown(dfi_run *r, uint32_t flat)
 {
     const dfi_member *m = dfi_at(r->b, flat);
-    if (m != NULL && m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_AIRBALLOON)) {
+    if (m != NULL && m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_AIRBALLOON) && r->b->tail.gravity_turns == 0u) {
         const duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_AIRBALLOON,
                                             DUOFORGE_NO_POSITION);
         dfi_emit(r, &shown);
