@@ -33,7 +33,7 @@ then the scripts are used with `check.sh`, which makes read-only and `--dry-run`
   tagged `project=duoforge`; `launch.sh --sg-name` takes no other name.
 - **Two hours at most.** `--max-hours` is 1 or 2 (default 2). The first command of the user data is
   `shutdown -h +<minutes>`, and the instance-initiated shutdown behaviour is `terminate`, so the box is gone after
-  that long whatever happens on it.
+  that long whatever happens on it. (A preview-oracle campaign has caps of its own, 12 hours and $20: its section.)
 - **A price ceiling.** The spot request carries `MaxPrice = 10 / hours` dollars per instance hour, so one campaign cannot
   cost more than the $10 cap (plus a 60 GB gp3 volume that goes with the instance, a few cents).
 - **An exact commit.** `--commit` is the 40-digit sha of a commit on `main`: `launch.sh` checks it is an ancestor of
@@ -168,7 +168,8 @@ role below. The security group `duoforge-fuzz` and the bucket already exist.
    ```
 
    Permissions: `s3:PutObject`, `s3:GetObject` and `s3:ListBucket` on `fuzz/*` of the bucket, and `s3:GetObject` on
-   `nets/*` (`ReadNets`, the ladder campaigns' networks); the box has no other permission:
+   `nets/*` (`ReadNets`, the ladder campaigns' networks) and on `teams/*` (`ReadTeams`, the foe team of a preview-oracle
+   campaign); the box has no other permission:
 
    ```json
    {
@@ -192,6 +193,12 @@ role below. The security group `duoforge-fuzz` and the bucket already exist.
          "Effect": "Allow",
          "Action": "s3:GetObject",
          "Resource": "arn:aws:s3:::<BUCKET>/nets/*"
+       },
+       {
+         "Sid": "ReadTeams",
+         "Effect": "Allow",
+         "Action": "s3:GetObject",
+         "Resource": "arn:aws:s3:::<BUCKET>/teams/*"
        }
      ]
    }
@@ -199,6 +206,9 @@ role below. The security group `duoforge-fuzz` and the bucket already exist.
 
    `ReadNets` (#484, the ladder campaigns): the networks under `nets/`, read-only. The role gets no `PutObject` or
    `DeleteObject` there, and a ladder box that could write to `nets/` refuses by name (`nets_writable`).
+   `ReadTeams` (#458, the preview-oracle campaigns; Owner-Entscheidung 2026-10-15, nur #458): the foe team under
+   `teams/`, read-only in the same way (`teams_writable`). Only `upload_team.sh`, with the owner's credentials, writes
+   there.
 
 2. **`AWSServiceRoleForEC2Spot`**, if the account does not have it yet: IAM, Roles, Create role, AWS service, EC2,
    "EC2 - Spot Instances". (The user `pokeengine` has no IAM write permission, on purpose.)
@@ -358,13 +368,22 @@ tests (against a stub `aws`).
 | `ladder_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` checked read-only; the networks by sha256; the pins; the arms side by side, each on CPUs of its own; the aggregates up |
 | `ladder_requirements.txt` | the Python packages, pinned to the local machine's versions (CPU only) |
 | `ladder_equal.py` | the equality proof: two `ladder.json` compared field by field, timing fields aside |
+| `numpy_dispatch.py` | checks NumPy's SIMD dispatch on the box: every disabled name known, no AVX-512 target enabled; writes the record `numpy_simd` |
 
 **What the box pins** (HauptSession condition), for each arm: XLA's instruction set (`XLA_FLAGS=--xla_cpu_max_isa=AVX2`,
 the local Ryzen 7 5800X's), OpenBLAS's kernel (`OPENBLAS_CORETYPE=Haswell`, `OPENBLAS_NUM_THREADS=1`), 16 CPUs of its own
 (`taskset`: arm *i* on CPUs 16*i* to 16*i*+15, as the local machine has 16), the conf's workers (8),
-`JAX_PLATFORMS=cpu` and the packages of `ladder_requirements.txt` (`pip install --no-deps`, then `pip check`). The
-Python version is not pinned: the box takes the AMI's (Ubuntu 24.04: 3.12.3, the local machine's) and `env.json`
-records it, with the pins, the library's sha256, the instance type, the CPU, whether it has AVX-512 and `pip freeze`. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
+`JAX_PLATFORMS=cpu`, NumPy's SIMD routines (`NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"`: NumPy picks
+its routines at run time, AVX-512 on the c7a's EPYC, `X86_V3` on the Ryzen; its float64 exp and log have SIMD loops for
+AVX-512 only, so with those off both machines run glibc's scalar ones, and `env.json` and `ladder.json` name the libc; the first equality
+proof, 2026-10-14, differed in its decisions with every result equal; the box refuses, `numpy_dispatch`, if NumPy still
+enables an AVX-512 target) and the packages of `ladder_requirements.txt` (`pip install --no-deps`, then `pip check`).
+The Python version is not pinned: the box takes the AMI's (Ubuntu 24.04: 3.12.3, the local machine's) and `env.json`
+records it, with the pins, the library's sha256, the instance type, the CPU, whether it has AVX-512, NumPy's SIMD
+targets (`numpy_simd`: baseline, found, not found, as `numpy.show_runtime()` lists them) and `pip freeze`. Each arm's
+`ladder.json` has a digest per game (`games_sha256`, game g's decisions), so `ladder_equal.py` names every game
+whose decisions differ. `ladder.json` also records `numpy_simd` in its conditions, so the equality proof compares NumPy's
+dispatch too. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
 AWS results count only as their own series, every arm of a comparison runs on the same instance type, and the report
 states openly which parts of `ladder.json` are bit-identical (`ladder_equal.py` names every field that differs).
 
@@ -377,7 +396,8 @@ and no network ever leaves it.
 `nets/` succeeded: a plain write, a write with server-side encryption or a delete; the role is wrong),
 `nets_probe_unclear` (a probe failed with something other than AccessDenied, e.g. no credentials: no proof of
 read-only), `nets_unreadable`, `net_sha_mismatch`, `wrong_commit`, `wrong_run` (the run id is not of the commit),
-`no_campaign`, `bad_conf`, `build`, `python_env`, `cpus` (fewer than 16 per arm plus 16) and `ladder_failed` (naming
+`no_campaign`, `bad_conf`, `build`, `python_env`, `numpy_dispatch` (`numpy_dispatch.py`, with the pinned NumPy: a name in `NPY_DISABLE_CPU_FEATURES` that is not one of NumPy's dispatch targets, or an AVX-512 target still enabled; nothing runs), `cpus`
+(fewer than 16 per arm plus 16) and `ladder_failed` (naming
 the arms that failed; the others' results are still uploaded). A failure without a refusal is named by the step it
 happened in, `failed_in_<step>` (`packages`, `checkout`, `build`, `python`, `nets`, `arms`, `upload`), and a TERM or
 INT (the watchdog's shutdown) is `terminated`. A failure before the AWS CLI is installed (`failed_in_packages`)
@@ -407,7 +427,8 @@ uploads nothing: then only the instance's console output is left.
    `ladder-equal-2e-beside` runs the same arm beside two others (steps 0 and 1b). A digest must not depend on what runs
    beside it (HauptSession). Run the same arm on this machine too, at the same commit, under the machine lock and
    with the box's pins, since `ladder.json` does not record them and `ladder_equal.py` cannot see a missing one:
-   `JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1`, on all 16
+   `JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
+   NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"` (a no-op on the Ryzen, which has none of them), on all 16
    CPUs, with the conf's workers. `python3 tools/cloud/aws_fuzz/ladder_conf.py argv <conf> main <the local networks'
    directory, files named <sha256>.npz> <out>` gives the arguments of `python -m duoforge_search.ladder`. Then compare
    each pair:
@@ -417,8 +438,103 @@ uploads nothing: then only the instance's console output is left.
    results then count only as their own series, and if alone and beside differ, the arms run one per box.
 
 The first use after the proof is the D1 ladder arm (#481), then D2's arms. Their names are in `ladder.STEPS` (agreed
-with the D2 lane), so a campaign names them in its `arm=` lines without a change here. The mirror touchstone stays local:
-the private sun team does not go into the bucket (HauptSession).
+with the D2 lane), so a campaign names them in its `arm=` lines without a change here. The mirror touchstone of the
+ladder stays local: for ladder campaigns the tournament sun team (a private file) does not go into the bucket (HauptSession). For #458's
+preview-oracle series only, the owner decided on 2026-10-15 that the tournament sun team goes into the private bucket
+as `teams/<sha256>.txt`, read-only for the box and checked by its sha256 (Owner-Entscheidung 2026-10-15, nur #458; next
+section).
+
+## Preview-oracle campaigns (#458)
+
+A preview-oracle campaign runs one predeclared series of `python -m duoforge_search.preview_series` (the plan
+`preview-mixed-2026-10-14`, `docs/benchmarks/2026-10-14-preview-mixed/README.md`) on one spot instance at an exact
+commit of main: 3 processes side by side, each on 16 CPUs of its own with 8 workers, 16 CPUs left to the box
+(HauptSession, 2026-10-15). Its results are **a series of their own, on one machine: never paired or mixed with local
+runs.** `preview_series` checks in its first block that a process gives the same result alone as beside the others
+(`equality.json`; exit 3 when it does not). The plan fixes 8 workers, Team A and 1000 steps: a conf can only repeat
+them, and `preview_series` refuses any other.
+
+**Only the HauptSession runs any of this, from its chat, with the owner present** (owner rule), the upload of the team
+included. The lanes deliver the code, this guide and the tests (against a stub `aws`).
+
+| File | Purpose |
+| --- | --- |
+| `campaigns/<id>/campaign.conf` | `kind=oracle`, `plan`, `checkpoint` and `foe_net` (networks by sha256), `ours` (a registry id), `foe_team` (the foe team by sha256), `workers` (8), `max_steps` (`oracle_conf.py`'s docstring has the keys) |
+| `oracle_conf.py` | checks an oracle conf, lists its networks' sha256, the foe team's sha256, our team's id and the workers, and builds the series' command line (the launcher and the box use the same file) |
+| `launch_oracle.sh` | the guards of `launch_ladder.sh`; the ladder's one type `c7a.16xlarge`, no fallback; `--max-hours` 1 to 12 (default 12), a price ceiling of $20 / hours; prints the request, the networks and the foe team's key (never its content) unless `--i-have-owner-approval` |
+| `oracle_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` and `teams/` checked read-only; the networks and the foe team by sha256, our team against `data/teams/index.json`; the pins; the one series command; the aggregates up |
+| `upload_team.sh` | the only way the foe team reaches the bucket: checks the file's sha256, prints only the sha256 and the target key, and with `--i-have-owner-approval` makes one encrypted upload with the owner's profile |
+| `campaigns/preview-mixed/` | the campaign of #458: BC6 (`bda5de8e4e96...`) as checkpoint and foe network, our team A, the tournament sun team (`e1060cf46a8f...`, private), 8 workers, 1000 steps |
+
+The limits are the oracle's own and apart from each other (owner decision 2026-10-15, the defaults), limits and not
+expectations: at most **12 hours** (`--max-hours`, the watchdog `shutdown -h +<minutes>`) and at most **$2.00 per
+instance hour** (`--max-price`, the spot request's `MaxPrice`), so at most $24 for a run. The HauptSession may set both
+at the launch, with the owner; the launcher prints the run's maximum (hours x price). The ladder's and the fuzz
+campaigns' 2 hours and $10 stay as they are.
+
+**What the box pins**, as the ladder box: `XLA_FLAGS=--xla_cpu_max_isa=AVX2`, `OPENBLAS_CORETYPE=Haswell`,
+`OPENBLAS_NUM_THREADS=1`, `JAX_PLATFORMS=cpu`, `DUOFORGE_LIBRARY` (the library built at the commit, Release,
+`duoforge_shared`), `PYTHONPATH`, the packages of `ladder_requirements.txt` (`pip install --no-deps`, then `pip check`),
+and `preview_series --parallel 3 --cpus-per-process 16`, which pins process *i* to CPUs 16*i* to 16*i*+15 itself
+(`taskset`; the box puts none around it). The box needs 3 x 16 + 16 CPUs. `env.json` records the library's sha256, the
+instance type, the CPU, whether it has AVX-512, the Python version, `pip freeze`, the pins, `processes` (3) and
+`cpus_per_process` (16).
+
+**Time.** The series gets a deadline 30 minutes before the watchdog (`--deadline-seconds`): a block that would start
+after it is refused (`deadline` in `series.json`), so the aggregates still go up. `series.json` records every block's
+and every round's seconds; a batch of processes starts only if one as long as the longest so far would end before
+the deadline.
+
+**Resume** (HauptSession, 2026-10-15). The box saves the series' state, its aggregates so far (`series.json`,
+`round.txt`, `equality.json`, `matrix/`, the runs' `conditions.json`, `oracle.json` and arm files), to `state/` of the
+run after every round and every 10 minutes, and once more at the end. After a spot interruption (or a deadline), a
+launch with `--resume <run id>` (the run id the first launch printed, of the same commit) reads that state and runs
+`preview_series --resume`: nothing is drawn anew, the seeds are the plan's, every arm already in the state stays and is
+not played again (the parts of an interrupted block are played again, on the same seeds), so the series ends exactly as
+it would have without the interruption (tested). The results go to the same run; each launch's `env.json` and box log
+are kept under `log/` by its launch time.
+
+**What leaves the box**, under `fuzz/oracle/<campaign>/<commit12>-oracle-<launch time>/`, whatever the exit of the series,
+in one recursive copy: `series.json`, `equality.json`, `matrix/*.json`, `runs/*/conditions.json`, `runs/*/oracle.json`,
+`runs/*/arms/*.json`, then `env.json`, `status.json` and the box's log. **Never a network, never the team file, never a
+decision file, and no log of the series or the oracle** (a refusal there can name a member of the foe team; `series.json`
+names every refusal, an error of another kind by its type only). The foe team is never printed, logged or uploaded by
+the box; it is deleted from the box once the series has run.
+
+**The box refuses by name** (in `status.json`): `wrong_commit`, `wrong_run` (the run id is not of the commit),
+`no_campaign`, `bad_conf`, `build`, `python_env`, `nets_writable` and `teams_writable` (one of the three probes of
+`ladder_nets_probe` on a key of the run's own under `nets/` or `teams/` succeeded: the role is wrong),
+`nets_probe_unclear` and `teams_probe_unclear` (a probe failed otherwise: no proof of read-only), `nets_unreadable`,
+`net_sha_mismatch`, `team_unreadable`, `team_sha_mismatch`, `ours_mismatch` (`data/teams/<ours>.txt` at the commit does
+not have the sha256 that `data/teams/index.json` gives for that id), `cpus` (fewer than 3 x 16 + 16),
+`deadline` (no time is left for the series before the watchdog), `wrong_resume` (the resume flag is not yes or
+no), `no_state` (a resumed launch found no saved state of its run), `oracle_beside_differs` (the series exited 3: the alone-vs-beside check of the first block failed), `oracle_failed`
+(any other non-zero exit, or a `series.json` that does not say `done`) and `upload_failed` (an aggregate could not be uploaded; named after the
+series' own refusal). A failure without a refusal is `failed_in_<step>` (`packages`, `checkout`, `build`, `python`,
+`nets`, `teams`, `series`, `upload`), a TERM or INT (the watchdog's shutdown) is `terminated`.
+
+### The HauptSession's steps, in this order
+
+1. **IAM check.** The role `duoforge-fuzz` has `ReadNets` and `ReadTeams` above (`s3:GetObject` on `nets/*`, and on
+   `teams/*`) and nothing else on `teams/` (no `PutObject`, no `DeleteObject`, no `ListBucket` with that prefix). The
+   user `pokeengine` has nothing on `teams/`. The owner makes the IAM change.
+2. **Upload the networks** as in the ladder's step 2 (`python3 tools/cloud/aws_fuzz/oracle_conf.py shas
+   tools/cloud/aws_fuzz/campaigns/preview-mixed/campaign.conf`; BC6 is already in `nets/`: check it is there).
+3. **Upload the team**, with the owner's profile (the user `pokeengine` has no S3 write permission), first without and
+   then with the flag:
+   `AWS_PROFILE=<the owner's profile> tools/cloud/aws_fuzz/upload_team.sh --file <the team file> --sha256 <foe_team of
+   the conf> --bucket <BUCKET> [--i-have-owner-approval]`. It refuses a file whose sha256 is not the conf's, prints only
+   the sha256 and the key `teams/<sha256>.txt` (never the file's content, path or name), uploads it with `--sse
+   AES256` from stdin and checks the object's length and encryption.
+4. **Launch.** `tools/cloud/aws_fuzz/launch_oracle.sh --campaign preview-mixed --commit <sha of main> --bucket <BUCKET>`
+   prints the request, the networks and the team's key; read it. Then the same command with `--i-have-owner-approval`.
+   Without spot capacity for `c7a.16xlarge` (or below the price ceiling) it stops: wait and launch again. Give
+   `--max-hours` and `--max-price` when they are not the defaults (12 hours, $2.00 an hour). After a spot
+   interruption, launch again with `--resume <run id>`: the series continues from its `state/`.
+5. **Download the results**, after `status.json` says `done`:
+   `aws s3 cp s3://<BUCKET>/fuzz/oracle/preview-mixed/<run id>/ <a directory outside the repository> --recursive`.
+   `status.json` names any refusal, `equality.json` the alone-vs-beside check, `env.json` the pins. The series is its
+   own series on one machine: it is never paired with local runs.
 
 ## Tests
 
@@ -428,3 +544,11 @@ request has the required shape; the user data starts with the watchdog and holds
 says what the task asks; no account id or key is in the directory; `shellcheck` is clean when it is installed. The scheduler (`chunks.sh`) is tested with a stand-in driver: parallelism
 of exactly `parallel`, the seed of each chunk, skipped chunks, the manifest written only after the upload of the chunk
 it adds, a failing chunk, the partial upload of every chunk in flight; `bench_run.py` with a fake `duoforge_bench`.
+The ladder (`LadderLaunch`, `LadderEqual`) and the preview-oracle campaigns (`OracleConf`, `OracleLaunch`,
+`TeamUpload`) have classes of their own, each checking first that `aws` is the stub and that no test has a way to the
+real AWS. `OracleLaunch`: one `c7a.16xlarge` request tagged `purpose=oracle` and nothing launched without the flag,
+exactly one with it and no fallback, the results prefix, the network and the team key printed, `--max-hours` 13 refused
+and 12 accepted, ladder and fuzz campaigns refused; the box's watchdog, pins, every refusal of the list above, the one
+series command, and that only the aggregates go up and the team file is never shown or uploaded. `TeamUpload`: a sha256
+mismatch, a missing flag, a success (one `s3 cp` to `teams/<sha256>.txt` with `--sse AES256`) and a failing upload,
+and in every case neither a line of the team file nor its name appears in the output or the stub's log.

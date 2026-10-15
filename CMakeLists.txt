@@ -114,6 +114,7 @@ set(DUOFORGE_ITEM_SOURCES
     src/combat/items/families.c
     src/combat/items/white_herb.c
 )
+set(DUOFORGE_EVAL_PRIVATE_SOURCES src/eval/loader.c src/eval/workspace.c)
 set(DUOFORGE_OBSERVATION_SOURCES src/core/sha256_stream.c src/state/observation_digest.c src/state/request.c)
 
 set(DUOFORGE_SOURCES
@@ -171,6 +172,8 @@ set(DUOFORGE_BATCH_SOURCES
     src/batch/batch.c
     src/encode/encode.c
     src/search/search.c
+    src/eval/api.c
+    ${DUOFORGE_EVAL_PRIVATE_SOURCES}
     src/state/view.c
 )
 # The encoder (src/encode/encode.c, decision 0021) is byte-equal to the reference's float32
@@ -191,7 +194,8 @@ if(WIN32)
     # scan reads this target's objects, not linked archives: keep the new
     # private helpers in an archive so none becomes a DLL export.
     list(REMOVE_ITEM _duoforge_shared_sources ${DUOFORGE_ITEM_SOURCES} ${DUOFORGE_OBSERVATION_SOURCES})
-    add_library(duoforge_private STATIC ${DUOFORGE_ITEM_SOURCES} ${DUOFORGE_OBSERVATION_SOURCES})
+    add_library(duoforge_private STATIC ${DUOFORGE_ITEM_SOURCES} ${DUOFORGE_OBSERVATION_SOURCES}
+        ${DUOFORGE_EVAL_PRIVATE_SOURCES})
     target_include_directories(duoforge_private PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
     set_target_properties(duoforge_private PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -201,7 +205,11 @@ if(WIN32)
     endif()
     duoforge_configure_target(duoforge_private)
 endif()
-add_library(duoforge_shared SHARED ${_duoforge_shared_sources} ${DUOFORGE_BATCH_SOURCES})
+set(_duoforge_shared_batch_sources ${DUOFORGE_BATCH_SOURCES})
+if(WIN32)
+    list(REMOVE_ITEM _duoforge_shared_batch_sources ${DUOFORGE_EVAL_PRIVATE_SOURCES})
+endif()
+add_library(duoforge_shared SHARED ${_duoforge_shared_sources} ${_duoforge_shared_batch_sources})
 if(WIN32)
     target_link_libraries(duoforge_shared PRIVATE duoforge_private)
     # request.c retains all its old entry points through explicit exports;

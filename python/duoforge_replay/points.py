@@ -6,9 +6,11 @@ A spectator log has no requests. The points come from the line structure:
   |start|);
 - TURN: after each |turn|N;
 - a switch point: before a |switch| that is not a TURN action. A |switch| is
-  a TURN action when no |move|, |cant|, |-mega| or confusion |-activate| line
-  of the current turn came before it: at the pin Showdown runs switch actions
-  (order 103) before Mega Evolution (104) and moves (200). A switch point is
+  a TURN action when no line that opens an action of a later order class came
+  before it in the current turn: the order classes are the engine's
+  (DFI_ORDER_* of src/state/battle_internal.h, duoforge._state_layout.VALUES),
+  and action_order() names the action a line opens (a move's |move|, |cant| or
+  confusion |-activate|, a Mega Evolution's |-mega|). A switch point is
   a REPLACEMENT when an |upkeep| lies between it and the previous point, else
   a PIVOT (as trace_to_c.boundary_of). It covers the run of |switch| lines up
   to the next action line; a position that switches a second time starts a
@@ -23,15 +25,35 @@ point does (spectator.SpectatorTracker.at_point).
 from dataclasses import dataclass
 
 from duoforge import _layout
+from duoforge._state_layout import VALUES
 from duoforge_live.lines import Stop, flat_position, line_kind
 
 C = _layout.CONSTANTS
 TEAM_SELECTION, TURN, REPLACEMENT, PIVOT = (C[f"DUOFORGE_BOUNDARY_{n}"] for n in
                                             ("TEAM_SELECTION", "TURN", "REPLACEMENT", "PIVOT"))
-# Lines after which a |switch| of the turn is no TURN action any more.
-_ACTED = {"move", "cant", "-mega"}
+# The engine's action order classes (comparePriority's first key): a voluntary switch, Mega Evolution, a move.
+ORDER_SWITCH, ORDER_MEGA, ORDER_MOVE = (VALUES[f"DFI_ORDER_{n}"] for n in ("SWITCH", "MEGA", "MOVE"))
 # Lines that end a run of switch lines: anything that acts or a turn boundary.
 _RUN_ENDS = {"move", "cant", "turn", "upkeep", "win", "tie", "-mega"}
+
+
+def action_order(line):
+    """The order class of the action whose first line this is, or None: a move action opens with its |move| line, a
+    |cant| or a confusion |-activate| (the move runs, or the confusion hits instead), a Mega Evolution with |-mega|.
+    The protocol says which action a line opens; the engine says where that action runs in the turn."""
+    kind = line_kind(line)
+    if kind in ("move", "cant") or (kind == "-activate" and line.split("|")[3:4] == ["confusion"]):
+        return ORDER_MOVE
+    if kind == "-mega":
+        return ORDER_MEGA
+    return None
+
+
+def after_switches(line):
+    """Whether the line opens an action the engine runs after every voluntary switch of the turn: a |switch| that
+    comes later in the turn answers a request of its own, it is no TURN action."""
+    order = action_order(line)
+    return order is not None and order > ORDER_SWITCH
 # Effects of the outgoing member's own switch-out, printed before its |switch| line (data/abilities.ts onSwitchOut):
 # they belong to the answer of the request, not to its point.
 _SWITCH_OUT = {("-heal", "[from] ability: Regenerator"), ("-curestatus", "[from] ability: Natural Cure")}
@@ -134,7 +156,7 @@ def find(lines):
             exited.clear()
         elif kind == "upkeep":
             turn_open, upkeep_since_point = False, True
-        elif kind in _ACTED or (kind == "-activate" and lines[i].split("|")[3:4] == ["confusion"]):
+        elif after_switches(lines[i]):
             acted = True
         elif kind == "-activate" and lines[i].split("|")[3:4] == ["ability: Emergency Exit"] and turn_open and not acted:
             # an Emergency Exit before any action of the turn (an entering member that the hazards took to half or

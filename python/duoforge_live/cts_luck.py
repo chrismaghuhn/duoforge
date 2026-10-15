@@ -50,6 +50,7 @@ class Turn:
     sets: list  # per world: the particle's foe sets at the point (the world's)
     lines_at: int  # the particle tracker's line count at the point
     turn: int
+    decision: object = None  # the bot's decision record's rqid at the point
 
 
 def foe_options(domain):
@@ -70,7 +71,7 @@ def foe_shown(segment, side, lists, ctx):
     for a slot no option agrees with."""
     from duoforge_replay import labels
     label = labels.turn_label(segment, _Point(0, len(segment)), side, lists, ctx.moves, ctx.member_of, ctx.data.tables,
-                              len(segment), ctx.vacant, ctx.barred)
+                              len(segment), ctx.barred)
     out = []
     for k in (0, 1):
         found = [i for i in range(len(lists[k])) if label.slots[k] >> i & 1]
@@ -167,7 +168,7 @@ class Meter:
             raise ValueError(f"{len(contexts)} particles and {weights.shape} weights for {self.search.s} worlds")
         return Turn(seat, int(search_record["key"]), int(own), weights, contexts,
                     [list(p.sets) for p in game.tracker.particles], len(game.tracker._lines()),
-                    int(game.tracker.observations()[0]["turn"]))
+                    int(game.tracker.observations()[0]["turn"]), record.get("decision"))
 
     def expected(self, turn, segment, facts):
         """(mean value of the turn's alternatives, mixed) on the search's worlds as they still stand (no search ran
@@ -296,7 +297,8 @@ def result_of(records, bot):
 
 def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
     """The luck of one closed-sheet battle log: {"turns": [luck per valued turn], "mixed": [whether the turn's foe
-    action was mixed over a set the lines narrow it to], "dropped": [the worlds the turn refuted], "worlds", "result",
+    action was mixed over a set the lines narrow it to], "dropped": [the worlds the turn refuted], "decisions": [the
+    rqid of each valued turn's decision], "worlds", "result",
     "excluded": Counter, "partial": Counter of valued turns whose rest after a pivot inside them is valued nowhere}.
     live is a LiveSearch whose searcher is a cts.Capture; meter a Meter on its search. cts.Refused for a log the
     replay does not follow (as cts.replay_closed), by name."""
@@ -315,7 +317,7 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
     if not any("feed" in r for r in records):
         raise cts.Refused("open_sheets_log")
     result = result_of(records, bot)
-    excluded, luck, mixed, dropped = collections.Counter(), [], [], []
+    excluded, luck, mixed, dropped, decisions = collections.Counter(), [], [], [], []
     partial = collections.Counter()  # valued turns whose rest after a pivot inside them is valued nowhere
     searches = differs = 0
     pending = None
@@ -335,6 +337,7 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
         luck.append(actual() - expected)
         mixed.append(was_mixed)
         dropped.append(left_out)
+        decisions.append(turn.decision)
     replayed = cts.LogReplay(records, data, policy, team_text, prior, key, search=live, waits=True)
     for game, record in replayed:
         if pending is not None:  # the state that happened after the pending turn: this point's particles
@@ -380,5 +383,6 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
             last_feed = max(i for i, r in enumerate(records) if "feed" in r)
             value(pending, replayed.game.tracker._lines() + [r["in"] for r in records[last_feed + 1:]
                                                                if isinstance(r.get("in"), str)], lambda: result)
-    return {"turns": luck, "mixed": mixed, "dropped": dropped, "worlds": meter.search.s, "result": result,
+    return {"turns": luck, "mixed": mixed, "dropped": dropped, "decisions": decisions, "worlds": meter.search.s,
+            "result": result,
             "excluded": excluded, "partial": partial, "searches": searches, "search_differs": differs}

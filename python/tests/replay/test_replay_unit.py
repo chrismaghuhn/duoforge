@@ -330,15 +330,26 @@ class AliasTest(unittest.TestCase):
         with mock.patch.object(type(self.pool), "setup_issue", return_value=None):
             result = self.run_game(self.with_species("Sinistcha-Masterpiece"))
         self.assertFalse([k for k in result.counters if "name:" in k or k.startswith("internal:")], result.counters)
-        self.assertGreater(result.counters["points.written"], 4)
+        # the engine builds no world of a set its setup refuses (#512 D7): the alias's points are reached and refused
+        reached = result.counters["points.written"] + sum(v for k, v in result.counters.items()
+                                                          if k.startswith("points.refused."))
+        self.assertGreater(reached, 4)
         # the alias in the |switch| details folds as its base forme: no stop the plain log does not have
         stops = lambda c: {k: v for k, v in c.items() if k.startswith("perspectives.stopped.")}
         with mock.patch.object(type(self.pool), "setup_issue", return_value=None):
             plain = self.run_game(self.log)
         self.assertEqual(stops(result.counters), stops(plain.counters))
-        sinistcha = self.pool.forme("Sinistcha")
-        species = {int(m["species_id"]) for r in result.rows for m in r.observation["sides"][1]["members"]}
-        self.assertIn(sinistcha, species)
+        # the observation names the base forme (the spectator's fold; the rows of this game are refused above)
+        from duoforge_live import teams
+        from duoforge_replay import points, spectator
+        log = self.with_species("Sinistcha-Masterpiece")
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
+        tracker = spectator.SpectatorTracker(self.pool, sheets, 0, spectator.hindsight_picks(log, 0, self.pool, sheets),
+                                             _stats_of(self.pool, sheets, 0), log)
+        species = set()
+        for _ in spectator.walk(tracker, log, points.find(log)):
+            species |= {int(m["species_id"]) for m in tracker.observation()["sides"][1]["members"]}
+        self.assertIn(self.pool.forme("Sinistcha"), species)
 
 
 class _View:
@@ -991,10 +1002,18 @@ class LabelsTest(unittest.TestCase):
         return [self.lists[slot][i] for i in range(len(self.lists[slot])) if label.slots[slot] >> i & 1]
 
     def test_plain_move_exact(self):
-        got = self.label(["|move|p1a: Staraptor|Close Combat|p2a: Foe", "|move|p1b: Gholdengo|Make It Rain|p2a: Foe|[spread] p2a,p2b"])
+        got = self.label(["|move|p1a: Staraptor|Protect|p1a: Staraptor", "|move|p1b: Gholdengo|Make It Rain|p2a: Foe|[spread] p2a,p2b"])
         self.assertEqual(got.reasons, (self.L.EXACT, self.L.EXACT))
         [o] = self.options_of(got, 0)
-        self.assertEqual((o.kind, o.move_slot, o.target, o.mega), (self.O.MOVE, 1, 2, 0))
+        self.assertEqual((o.kind, o.move_slot, o.target, o.mega), (self.O.MOVE, 3, self.O.TARGET_NONE, 0))
+
+    def test_an_aimed_move_keeps_every_target(self):
+        # #512 S3: the line names the position the move hit; redirection or retargeting may lie between and the engine
+        # confirms neither, so a plain line with nothing in front of it still gives every target of the move
+        got = self.label(["|move|p1a: Staraptor|Close Combat|p2a: Foe"])
+        self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
+        self.assertEqual({o.target for o in self.options_of(got, 0)}, {1, 2, 3})
+        self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
 
     def test_mega_shown(self):
         got = self.label(["|detailschange|p1a: Staraptor|Staraptor-Mega, L50, F", "|-mega|p1a: Staraptor|Staraptor|Staraptite",
@@ -1098,7 +1117,7 @@ class LabelsTest(unittest.TestCase):
 
     def test_encore_after_the_own_move_changes_nothing(self):
         # only the lines before the position's own move line can replace its choice
-        got = self.label(["|move|p1a: Staraptor|Close Combat|p2a: Foe", "|move|p2a: Foe|Encore|p1a: Staraptor",
+        got = self.label(["|move|p1a: Staraptor|Protect|p1a: Staraptor", "|move|p2a: Foe|Encore|p1a: Staraptor",
                           "|-start|p1a: Staraptor|Encore"])
         self.assertEqual(got.reasons[0], self.L.EXACT)
 
@@ -1197,11 +1216,46 @@ class RevivalLabelTest(unittest.TestCase):
 FIXTURE = Path(__file__).resolve().parent.parent / "support" / "data" / "replay" / "c12_real_cb_4.log"
 
 
+UNIT_STATS = Path(__file__).resolve().parent.parent / "support" / "data" / "replay" / "unit_stats.json"
+
+
 class _Stats:
-    """A stand-in for the Showdown stat source (the unit tests run without Node): fixed stats per forme."""
+    """A stand-in for the Showdown stat source (the unit tests run without Node): the pinned Showdown's stats of every
+    query these tests make, committed in UNIT_STATS (duoforge.python.replay checks them against Showdown). The engine
+    builds a world of each point (superset, #512 D7) and takes only stats that agree with the stat points and nature.
+    With DUOFORGE_REPLAY_UNIT_STATS_RECORD set (and Node with the pinned checkout) the queries go to Showdown and
+    UNIT_STATS is written again at exit."""
+
+    table = None
+    source = None
+
+    def __init__(self):
+        import json
+        import os
+        if _Stats.table is None:
+            _Stats.table = json.loads(UNIT_STATS.read_text(encoding="utf-8"))
+            if os.environ.get("DUOFORGE_REPLAY_UNIT_STATS_RECORD"):
+                import atexit
+                from duoforge_replay.stats import StatSource
+                _Stats.source = StatSource(os.environ["DUOFORGE_NODE"], os.environ["DUOFORGE_PS_REFERENCE_DIR"])
+                atexit.register(_Stats.write)
+
+    @staticmethod
+    def key(species, nature, stat_points):
+        return f"{species}|{nature}|{','.join(str(int(v)) for v in stat_points)}"
+
+    @staticmethod
+    def write():
+        import json
+        UNIT_STATS.write_text(json.dumps(_Stats.table, sort_keys=True, indent=0) + chr(10), encoding="utf-8")
 
     def stats(self, species, nature, stat_points):
-        return [100 + len(species), 90, 80, 70, 60, 50]
+        key = self.key(species, nature, stat_points)
+        if key not in _Stats.table:
+            if _Stats.source is None:
+                raise KeyError(f"{key}: not in {UNIT_STATS.name} (record it with DUOFORGE_REPLAY_UNIT_STATS_RECORD)")
+            _Stats.table[key] = _Stats.source.stats(species, nature, stat_points)
+        return list(_Stats.table[key])
 
 
 class GameTest(unittest.TestCase):
@@ -1287,7 +1341,7 @@ class GameTest(unittest.TestCase):
 
         def empty_turn_label(ctx, log, point, lists, stop_line, leads, back):
             label = real(ctx, log, point, lists, stop_line, leads, back)
-            if point.index == 3:
+            if point.index == 4:  # a TURN point of both sides (point 3, the Parting Shot PIVOT, has no options: #512 D7)
                 label = labels.Label((0, 0), label.team, (labels.TARGET_UNKNOWN, labels.EXACT))
             return label
         with mock.patch.object(labels, "compute", empty_turn_label):
@@ -1558,14 +1612,15 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.counters["perspectives.stopped.feature:FORME_CHANGE"], 2)
         self.assertGreater(len(result.rows), 4)
 
-    def test_charge_target_hidden_when_its_side_has_a_vacancy(self):
+    def test_an_own_charge_target_stays_hidden(self):
+        # #512 S3: the release line names the position the move hit, which redirection or retargeting may have changed;
+        # the engine confirms no target, so the stored one stays hidden even beside a plain release line
         from duoforge_live import teams
         from duoforge_replay.spectator import HIDDEN_TARGET, SpectatorTracker
-        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in self.log if line.startswith("|showteam|"))
-        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), self.log)
-        faint = self.log.index("|faint|p2b: Charizard")
-        tracker.feed(self.log[:faint + 1])  # p2b fainted, not replaced yet
-        tracker._log = self.log[:tracker._fed + 1] + ["|move|p1a: Salamence|Draco Meteor|p2a: Politoed|[from]lockedmove"]
+        log = self.log + ["|move|p1a: Salamence|Draco Meteor|p2a: Politoed|[from]lockedmove"]
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), log)
+        tracker.feed(self.log[:self.log.index("|turn|9")])
         self.assertEqual(tracker._own_target(0), HIDDEN_TARGET)
 
     def with_moves(self, old, new):
@@ -1607,16 +1662,16 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.counters["perspectives.stopped.line:-fail unboost"], 2, result.counters)
 
     def test_an_encored_position_offers_only_its_encored_move(self):
-        # Incineroar used Fake Out on turn 1; an Encore before the turn's upkeep holds it to Fake Out on turn 2
-        lines = self.insert_after("|move|p2b: Farigiraf|Psychic|p1a: Indeedee", "|-start|p1b: Incineroar|Encore")
+        # Incineroar used Flare Blitz on turn 5; an Encore right after it holds it to Flare Blitz on turn 6 (the engine's
+        # domain, #512 D7: no other move and no Struggle, which comes only when no move is usable)
+        lines = self.insert_after("|move|p1b: Incineroar|Flare Blitz|p2a: Farigiraf", "|-start|p1b: Incineroar|Encore")
         result = self.run_game(lines)
-        rows = [r for r in result.rows if r.side == 0 and int(r.observation["turn"]) == 2]
+        rows = [r for r in result.rows if r.side == 0 and int(r.observation["turn"]) == 6]
         self.assertTrue(rows, result.counters)
         domain = rows[0].domain
         slots = [domain["slots"][1][i] for i in range(int(domain["slot_count"][1]))]
-        from duoforge_live import options
-        moves = {int(o["move_slot"]) for o in slots if int(o["kind"]) == 1} - {options.STRUGGLE}
-        self.assertEqual(len(moves), 1, moves)  # Fake Out only (with its targets); Struggle stays, as everywhere
+        moves = {int(o["move_slot"]) for o in slots if int(o["kind"]) == 1}
+        self.assertEqual(moves, {1}, moves)  # Flare Blitz only (with its targets)
         self.assertTrue(any(int(o["kind"]) == 2 for o in slots))  # it can still switch
         self.assertGreater(int(rows[0].ext["sides"][0]["positions"][1]["encore_slot"]), 0)
 
@@ -1645,7 +1700,7 @@ class SupersetTest(unittest.TestCase):
         pool = data.load(kind="pool")
         sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
         picks = spectator.hindsight_picks(log, 0, pool, sheets)
-        tracker = spectator.SpectatorTracker(pool, sheets, 0, picks, lambda m, f: ([100] * 6, [0] * 6), log)
+        tracker = spectator.SpectatorTracker(pool, sheets, 0, picks, _stats_of(pool, sheets, 0), log)
         seen = []
         for point in spectator.walk(tracker, log, points.find(log)):
             if point.boundary == points.REPLACEMENT and spectator.own_requested(tracker):
@@ -1655,24 +1710,46 @@ class SupersetTest(unittest.TestCase):
         self.assertTrue(seen)
         self.assertTrue(all(kinds[-1] == options.PASS and set(kinds[:-1]) <= {options.SWITCH} for kinds in seen), seen)
 
-    def test_struggle_beside_every_move_list(self):
-        # an effect outside the view can disable every move (two or more too), and then the request is Struggle
+    def test_the_lists_are_the_engines_domain(self):
+        # #512 D7: the slot lists are the commands of the engine's domain, in its order, pair mask included; Struggle
+        # only where the engine offers it (no usable move), never beside every move list
         from duoforge_live import options, teams
         from duoforge_replay import points, spectator, superset
         log = FIXTURE.read_text(encoding="utf-8").splitlines()
         pool = data.load(kind="pool")
         sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
         picks = spectator.hindsight_picks(log, 0, pool, sheets)
-        tracker = spectator.SpectatorTracker(pool, sheets, 0, picks, lambda m, f: ([100] * 6, [0] * 6), log)
+        tracker = spectator.SpectatorTracker(pool, sheets, 0, picks, _stats_of(pool, sheets, 0), log)
         moving = 0
         for point in spectator.walk(tracker, log, points.find(log)):
             if point.boundary == points.TURN and spectator.own_requested(tracker):
-                _, lists = superset.domain(tracker)
-                for slot in lists:
-                    if any(o.kind == options.MOVE for o in slot):
+                domain, lists = superset.domain(tracker)
+                for s, slot in enumerate(lists):
+                    self.assertEqual([(o.kind, o.move_slot, o.target, o.mega, o.reserve) for o in slot],
+                                     [tuple(int(c[f]) for f in ("kind", "move_slot", "target", "mega", "reserve"))
+                                      for c in domain["slots"][s][:int(domain["slot_count"][s])]])
+                    if any(o.kind == options.MOVE and o.move_slot < 4 for o in slot):
                         moving += 1
-                        self.assertTrue(any(o.move_slot == options.STRUGGLE for o in slot), slot)
+                        self.assertFalse(any(o.move_slot == options.STRUGGLE for o in slot), slot)
         self.assertGreater(moving, 10)
+
+    def test_a_point_without_options_is_counted_not_written(self):
+        # the Parting Shot PIVOT of turn 2 holds the own partner's move still queued, which the spectator does not see
+        # chosen: its record is not determined, so the point has no options and no row, and the game counts it
+        result = GameTest.run_game(self._game(), FIXTURE.read_text(encoding="utf-8").splitlines())
+        self.assertEqual(result.counters["points.refused.record:own-command-unknown"], 1, result.counters)
+        self.assertNotIn(3, [r.point for r in result.rows if r.side == 0])
+
+    def _game(self):
+        GameTest.setUpClass()
+        return GameTest("test_clean_game")
+
+
+def _stats_of(pool, sheets, side):
+    """stats_of of a side's sheets with the empty prior (zero stat points) and the committed Showdown stats (_Stats)."""
+    from duoforge_replay import game, prior
+    empty = prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]})
+    return game._side(sheets, side, pool, empty, _Stats())[1]
 
 
 def stats_factory():
