@@ -3,6 +3,9 @@
 #include "state/context_internal.h"
 #include "support/check.h"
 #include <stdio.h>
+#if defined(_MSC_VER)
+#include <share.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 
@@ -58,7 +61,7 @@ static void *allocate(size_t bytes, void *user)
     if (a->mutate != NULL) {
         FILE *file = NULL;
 #if defined(_MSC_VER)
-        if (fopen_s(&file, a->mutate, "r+b") != 0) { file = NULL; }
+        file = _fsopen(a->mutate, "r+b", _SH_DENYNO);
 #else
         file = fopen(a->mutate, "r+b");
 #endif

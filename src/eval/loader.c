@@ -3,6 +3,9 @@
 #include "core/sha256.h"
 #include "state/context_internal.h"
 #include <stdio.h>
+#if defined(_MSC_VER)
+#include <share.h>
+#endif
 #include <string.h>
 #include <limits.h>
 
@@ -233,7 +236,9 @@ static duoforge_status dfi_read(const char *path, const uint8_t expected[32],
     }
     FILE *stream = NULL;
 #if defined(_MSC_VER)
-    if (fopen_s(&stream, path, "rb") != 0) { stream = NULL; }
+    /* Preserve fopen's sharing: the second hash detects concurrent changes.
+     * fopen_s denies the sharing needed by the independent mutation test. */
+    stream = _fsopen(path, "rb", _SH_DENYNO);
 #else
     stream = fopen(path, "rb");
 #endif
