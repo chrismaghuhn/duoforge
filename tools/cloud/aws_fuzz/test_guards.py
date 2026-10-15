@@ -1272,7 +1272,10 @@ class LadderLaunch(unittest.TestCase):
         self.assertNotRegex(text, r'@[A-Z_]+@')
         for needle in ('XLA_FLAGS=--xla_cpu_max_isa=AVX2', 'OPENBLAS_CORETYPE=Haswell', 'OPENBLAS_NUM_THREADS=1',
                        'NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"', '"numpy_simd": numpy_simd',
-                       '"NPY_DISABLE_CPU_FEATURES")', 'numpy_dispatch.py" "$WORK/numpy_simd.json"', '"libc": list(platform.libc_ver())', 'JAX_PLATFORMS=cpu', 'taskset -c "$cpus"', 'DF_CPUS=16', 'DF_SPARE=16', 'ladder_conf.py" arms',
+                       '"NPY_DISABLE_CPU_FEATURES")', 'numpy_dispatch.py" "$WORK/numpy_simd.json"', '"libc": list(platform.libc_ver())', 'export ONEDNN_MAX_CPU_ISA=AVX2',
+                       'probe=$(python3 "$TOOLS/ladder_conf.py" probe "$CONF")', '--probe-only',
+                       '"none||"', '--xla_cpu_use_xnnpack=false', '--xla_cpu_use_onednn=false',
+                       '--xla_cpu_enable_fast_math=false', 'JAX_PLATFORMS=cpu', 'taskset -c "$cpus"', 'DF_CPUS=16', 'DF_SPARE=16', 'ladder_conf.py" arms',
                        '"$S3_BASE/$arm/ladder.json"', 'ladder_requirements.txt', '--no-deps', 'pip" check',
                        '. "$TOOLS/ladder_box_lib.sh"', 'ladder_nets_probe "$DF_BUCKET" "$NETS_KEY_PREFIX/.write-probe-',
                        'trap finish EXIT', "trap 'REASON=terminated; exit 143' TERM INT", 'REASON="failed_in_$STEP"',
@@ -1281,7 +1284,7 @@ class LadderLaunch(unittest.TestCase):
         # Every refusal the README names is one the box makes (a refusal is a named exit, never a silent one).
         for name in ('nets_writable', 'nets_probe_unclear', 'nets_unreadable', 'net_sha_mismatch', 'wrong_commit',
                      'wrong_run', 'no_campaign', 'bad_conf', 'build', 'python_env', 'numpy_dispatch', 'cpus',
-                     'ladder_failed'):
+                     'ladder_failed', 'probe_failed'):
             self.assertRegex(text, r'\brefuse %s\b' % name, name)
         self.assertEqual(text.count('refuse bad_conf'), 6)  # check, shas (failed, empty), arms (failed, empty), argv
         # A failed arm's ladder.json would pass for a result: only an arm that succeeded uploads one.
@@ -1319,7 +1322,7 @@ class LadderLaunch(unittest.TestCase):
                'opponents=bot=%s bot=%s' % (NET, NET): 'twice', 'arm=c step=../x': 'step name',
                'arm=C step=0': 'lowercase', 'arm=c step=0 h2h=1': 'needs previous', 'arm=c previous=0': 'no step',
                'arm=c step=0 path=/x': 'is not step=', 'arm=a step=0': 'arm name twice',
-               'arm=x step=0\narm=y step=0': '4 arms: 1 to 3'}
+               'arm=x step=0\narm=y step=0': '4 arms: 1 to 3', 'probe_only=2': 'probe_only=2'}
         for line, message in bad.items():
             key = line.partition('=')[0]
             text = '\n'.join(l for l in good.splitlines() if key == 'arm' or not l.startswith(key + '=')) + '\n' + line + '\n'
@@ -1342,6 +1345,9 @@ class LadderLaunch(unittest.TestCase):
         tool = os.path.join(HERE, 'ladder_conf.py')
         run = lambda *a: subprocess.run([sys.executable, tool, *a], env=self.env, capture_output=True, text=True)
         self.assertEqual(run('workers', conf).stdout.split(), ['8'])
+        self.assertEqual(run('probe', conf).stdout.split(), ['0'])  # a ladder campaign plays its games
+        probe_conf = posix(os.path.join(HERE, 'campaigns', 'ladder-probe-2e', 'campaign.conf'))
+        self.assertEqual(run('probe', probe_conf).stdout.split(), ['1'])  # the probe campaign plays none
         self.assertEqual(run('arms', conf).stdout.split(), ['main', 'beside0', 'beside1'])
         self.assertEqual(run('check', conf).returncode, 0)
         for bad in (('workers',), ('arms', conf, 'x'), ('nope', conf)):

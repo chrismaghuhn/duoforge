@@ -361,7 +361,9 @@ tests (against a stub `aws`).
 | `numpy_dispatch.py` | checks NumPy's SIMD dispatch on the box: every disabled name known, no AVX-512 target enabled; writes the record `numpy_simd` |
 
 **What the box pins** (HauptSession condition), for each arm: XLA's instruction set (`XLA_FLAGS=--xla_cpu_max_isa=AVX2`,
-the local Ryzen 7 5800X's), OpenBLAS's kernel (`OPENBLAS_CORETYPE=Haswell`, `OPENBLAS_NUM_THREADS=1`), 16 CPUs of its own
+the local Ryzen 7 5800X's) and oneDNN's (`ONEDNN_MAX_CPU_ISA=AVX2`: jaxlib's oneDNN picks its kernels at run time,
+AVX-512 ones included; the second equality proof, 2026-10-15, differed in four games of every opponent with NumPy and
+glibc equal), OpenBLAS's kernel (`OPENBLAS_CORETYPE=Haswell`, `OPENBLAS_NUM_THREADS=1`), 16 CPUs of its own
 (`taskset`: arm *i* on CPUs 16*i* to 16*i*+15, as the local machine has 16), the conf's workers (8),
 `JAX_PLATFORMS=cpu`, NumPy's SIMD routines (`NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"`: NumPy picks
 its routines at run time, AVX-512 on the c7a's EPYC, `X86_V3` on the Ryzen; its float64 exp and log have SIMD loops for
@@ -373,7 +375,34 @@ records it, with the pins, the library's sha256, the instance type, the CPU, whe
 targets (`numpy_simd`: baseline, found, not found, as `numpy.show_runtime()` lists them) and `pip freeze`. Each arm's
 `ladder.json` has a digest per game (`games_sha256`, game g's decisions), so `ladder_equal.py` names every game
 whose decisions differ. `ladder.json` also records `numpy_simd` in its conditions, so the equality proof compares NumPy's
-dispatch too. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
+dispatch too, and the pins themselves (`pins`) and a **network probe** (`net_probe`): each network's float32 bits on the
+arm's own games (every game's first decision), in the shapes the search calls it (`model.apply` on 2 x games rows,
+`model.value` on the leaf call's 16,384 rows), as sha256 per network. Two machines whose probes agree compute the
+networks bit for bit alike before any game is played; `ladder_equal.py` compares it with the rest. `games_decisions`
+holds, per game, a 16-hex digest of each decision in (step, seat) order, so a differing game names its first differing
+decision (its step and seat are in the run's own decision file). The pins only cap the instruction set: nothing is
+switched off, so the box computes as the Ryzen does with its default settings (where none of the caps changes a bit,
+which the local probe shows), and every local run so far stays comparable. **Timing runs never use the pins, and live
+play (the VPS) keeps the default settings.** Switching anything off (XNNPACK, oneDNN, fast math) would start a new
+local series, not paired with the runs before it, and is decided first and stated here before any run.
+
+**Probe-only campaigns** (`probe_only=1` in `campaign.conf`, e.g. `ladder-probe-2e`): no game. The box runs the
+probe of the first arm (`ladder --probe-only`) under five pin variants, one after the other, and uploads each
+`probe/<variant>/probe.json`:
+
+| variant | `XLA_FLAGS` | `ONEDNN_MAX_CPU_ISA` |
+|---|---|---|
+| `none` | unset | unset |
+| `isa` | `--xla_cpu_max_isa=AVX2` | `AVX2` |
+| `isa-noxnnpack` | + `--xla_cpu_use_xnnpack=false` | `AVX2` |
+| `isa-noxnnpack-noonednn` | + `--xla_cpu_use_onednn=false` | `AVX2` |
+| `isa-noxnnpack-noonednn-nofastmath` | + `--xla_cpu_enable_fast_math=false` | `AVX2` |
+
+The smallest variant whose probe equals this machine's (run the same probe locally: `ladder ... --probe-only`) is the
+one to keep. It takes a few minutes; the HauptSession starts it with the owner, as every AWS run. A variant that fails
+is a refusal, `probe_failed`.
+
+Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
 AWS results count only as their own series, every arm of a comparison runs on the same instance type, and the report
 states openly which parts of `ladder.json` are bit-identical (`ladder_equal.py` names every field that differs).
 
@@ -386,7 +415,8 @@ and no network ever leaves it.
 `nets/` succeeded: a plain write, a write with server-side encryption or a delete; the role is wrong),
 `nets_probe_unclear` (a probe failed with something other than AccessDenied, e.g. no credentials: no proof of
 read-only), `nets_unreadable`, `net_sha_mismatch`, `wrong_commit`, `wrong_run` (the run id is not of the commit),
-`no_campaign`, `bad_conf`, `build`, `python_env`, `numpy_dispatch` (`numpy_dispatch.py`, with the pinned NumPy: a name in `NPY_DISABLE_CPU_FEATURES` that is not one of NumPy's dispatch targets, or an AVX-512 target still enabled; nothing runs), `cpus`
+`no_campaign`, `bad_conf`, `build`, `python_env`, `probe_failed` (a probe-only campaign's variant failed),
+`numpy_dispatch` (`numpy_dispatch.py`, with the pinned NumPy: a name in `NPY_DISABLE_CPU_FEATURES` that is not one of NumPy's dispatch targets, or an AVX-512 target still enabled; nothing runs), `cpus`
 (fewer than 16 per arm plus 16) and `ladder_failed` (naming
 the arms that failed; the others' results are still uploaded). A failure without a refusal is named by the step it
 happened in, `failed_in_<step>` (`packages`, `checkout`, `build`, `python`, `nets`, `arms`, `upload`), and a TERM or
@@ -416,9 +446,10 @@ uploads nothing: then only the instance's console output is left.
    `ladder-equal-2e` runs the arm `main` (step 2e, 8 pairs against `bot`, `bc6` and `ppo`) alone, and
    `ladder-equal-2e-beside` runs the same arm beside two others (steps 0 and 1b). A digest must not depend on what runs
    beside it (HauptSession). Run the same arm on this machine too, at the same commit, under the machine lock and
-   with the box's pins, since `ladder.json` does not record them and `ladder_equal.py` cannot see a missing one:
-   `JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
-   NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"` (a no-op on the Ryzen, which has none of them), on all 16
+   with the box's pins (`ladder.json` records them, and `ladder_equal.py` names a pin that differs):
+   `JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 ONEDNN_MAX_CPU_ISA=AVX2 OPENBLAS_CORETYPE=Haswell
+   OPENBLAS_NUM_THREADS=1 NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"` (no-ops on the Ryzen, which has no
+   AVX-512; `ladder.json` records them, `pins`, and `ladder_equal.py` compares them), on all 16
    CPUs, with the conf's workers. `python3 tools/cloud/aws_fuzz/ladder_conf.py argv <conf> main <the local networks'
    directory, files named <sha256>.npz> <out>` gives the arguments of `python -m duoforge_search.ladder`. Then compare
    each pair:
