@@ -2,7 +2,7 @@
 
 One Showdown paste for each team (`<id>.txt`) and an index (`index.json`), shared by the differential loop and the learner.
 
-Ids are stable and never reused, and a file never changes under its id: a correction is a new team with a new id (the old entry gets `superseded_by`). The files are LF (`.gitattributes`), and the `sha256` of the index is that of the text with CRLF turned into LF. Every gender is stated, Level 50, EVs are Stat Points, nothing else is allowed in a set.
+Ids are stable and never reused, and a file never changes under its id: a correction is a new team with a new id (the old entry gets `superseded_by`). A team that the engine's setup refuses is marked, never deleted: `"status": "pending"` with its `"status_reason"` (the default, unwritten, is `active`). A reader of every registry team (the closed-sheet set prior's build) skips a pending team and counts it by its reason; a list of ids (a network's pool) still loads it, and the setup decides. Since #558 (2026-10-15) four teams are pending with `#406: 0 SP with Serious` (`LL_6AAA0DB038886B36383C1598_17`, `LL_6AAD0D0AE905C1DB68744103_13`, `LL_6A9083127A62DE813014077C_8`, `LL_6A5E4489937230B102D4026E_110`). The files are LF (`.gitattributes`), and the `sha256` of the index is that of the text with CRLF turned into LF. Every gender is stated, Level 50, EVs are Stat Points, nothing else is allowed in a set.
 
 The format, the index, the rules and `tools/reference/import_paste.py` (which makes a registry file of any paste) are described in `tools/reference/README.md`, section "The team registry". `python tools/reference/team_registry.py <repo root>` checks the registry.
 

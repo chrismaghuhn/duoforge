@@ -81,6 +81,27 @@ duoforge_status dfi_eval_dot_bound(uint32_t count, uint32_t input_abs, uint32_t 
     if (scaled_high > UINT64_C(0x7fffffff)) return DUOFORGE_E_EXHAUSTED;
     *out = bound; return DUOFORGE_OK;
 }
+duoforge_status dfi_eval_dot_bound32(uint32_t count, uint32_t input_abs, uint32_t weight_abs,
+                                    uint64_t bias_abs, dfi_eval_scale scale, uint64_t *out)
+{
+    if (!out) return DUOFORGE_E_NULL_ARGUMENT;
+    if (!scale.multiplier || scale.shift > 63u || input_abs > UINT32_C(2147483648) || weight_abs > 128u)
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    const uint64_t one = (uint64_t)input_abs * weight_abs;
+    /* one <= 2^38. Each limb product fits, even when the full sum does not. */
+    const uint64_t low = (one & UINT64_C(0xffffffff)) * count;
+    const uint64_t high = (one >> 32u) * count + (low >> 32u);
+    if (high > UINT64_C(0x7fffffff)) return DUOFORGE_E_EXHAUSTED;
+    const uint64_t terms = (high << 32u) | (low & UINT64_C(0xffffffff));
+    if (bias_abs > (uint64_t)INT64_MAX || terms > (uint64_t)INT64_MAX - bias_abs)
+        return DUOFORGE_E_EXHAUSTED;
+    const uint64_t bound = terms + bias_abs;
+    const uint64_t scaled_low = (bound & UINT64_C(0xffffffff)) * scale.multiplier;
+    const uint64_t scaled_high = (bound >> 32u) * scale.multiplier + (scaled_low >> 32u);
+    if (scaled_high > UINT64_C(0x7fffffff)) return DUOFORGE_E_EXHAUSTED;
+    *out = bound;
+    return DUOFORGE_OK;
+}
 /* Binary32 significand has at most 24 bits; a uint32 factor gives <= 56 bits.
    Nonfinite values always refuse, including masked/padded input cells. */
 static duoforge_status bits_magnitude(uint32_t bits, uint32_t factor, uint32_t shift, uint64_t *out)

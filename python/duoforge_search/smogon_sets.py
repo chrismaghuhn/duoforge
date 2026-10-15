@@ -167,13 +167,17 @@ def legal(live_data, species, s):
 
 
 def registry_sets(root, names, live_data):
-    """({species: {bucket: Counter({set: teams})}}, counts) of every registry team: a set once per team that has it."""
+    """({species: {bucket: Counter({set: teams})}}, counts) of every registry team: a set once per team that has it. A
+    team the registry marks pending (status, #406) is skipped and counted by its status_reason."""
     from duoforge import data
     from duoforge_replay.prior import parse_paste
     index = json.loads((Path(root) / "index.json").read_text(encoding="utf-8"))
     out = defaultdict(lambda: defaultdict(Counter))
     counts = Counter()
     for entry in index["teams"]:
+        if entry.get("status", "active") == "pending":
+            counts[f"registry.pending.{entry['status_reason']}"] += 1
+            continue
         seen = set()
         for species, item, ability, nature, moves, _ in parse_paste((Path(root) / f"{entry['id']}.txt").read_text(
                 encoding="utf-8")):

@@ -1634,11 +1634,28 @@ class GameTest(unittest.TestCase):
         self.assertEqual(caught.exception.reason, "skip:regmb-pp")
         with self.assertRaises(game.Skip) as caught:
             self.run_game(lines_)  # Reg M-C: no PP difference; Kingambit cannot learn Wish under POOL
-        self.assertEqual(caught.exception.reason, "skip:pool-illegal Kingambit move Wish")
+        self.assertEqual(caught.exception.reason, "skip:pool-illegal Kingambit engine-setup")  # it cannot learn Wish
 
     def test_pool_illegal_skip(self):
         lines_ = self.with_moves("DragonPulse,ElectroShot,Snarl,Protect", "DragonPulse,ElectroShot,MirrorCoat,Protect")
-        self.assertEqual(self.skip_reason(lines_), "skip:pool-illegal Archaludon move MirrorCoat")
+        self.assertEqual(self.skip_reason(lines_), "skip:pool-illegal Archaludon engine-setup")  # Mirror Coat
+
+    def test_an_open_sheet_member_with_serious_plays(self):
+        """#512 review: an open sheet shows no Stat Points (|showteam|), so the setup check (_check_sheets) takes
+        teams.SP_PLACEHOLDER for them; a Serious member is no pool-illegal skip (#406 refuses only a set whose own Stat
+        Points are 0). Without the placeholder this raises skip:pool-illegal <species> engine-setup."""
+        from duoforge_live import teams
+        from duoforge_replay import game
+        natures = ("Adamant", "Modest", "Jolly", "Bold", "Timid", "Calm", "Careful", "Impish", "Brave", "Quiet", "Sassy")
+        shown = [line for line in self.log if line.startswith("|showteam|")]
+        nature = next(n for n in natures if any(f"|{n}|" in line for line in shown))
+        lines_ = [line.replace(f"|{nature}|", "|Serious|", 1) if line.startswith("|showteam|") else line
+                  for line in self.log]
+        packed = game._header(lines_)[5]
+        sheets = tuple(teams.unpack(packed[s]) for s in (0, 1))
+        self.assertIn("Serious", [m["nature"] for side in sheets for m in side])
+        self.assertTrue(all(not any(m["evs"]) for side in sheets for m in side))  # the sheets show no Stat Points
+        game._check_sheets(sheets, "gen9championsvgc2026regmcbo3", self.data)  # no Skip
 
     def test_two_games_in_one_log_skip(self):
         # a Bo3 log with a second game's lines: one game per row, so the log is skipped and counted

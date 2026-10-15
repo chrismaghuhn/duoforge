@@ -29,7 +29,6 @@
 #define DFI_SPEED_BIAS 10000u   /* speed key: 10000 + speed, or 10000 - speed under Trick Room */
 #define DFI_SPEED_CAP 10000u    /* getStat caps Speed at 10000 (sim/pokemon.ts:636) */
 #define DFI_LEVEL DFI_FORMAT_LEVEL
-#define DFI_STALL_DURATION 2u /* data/conditions.ts: stall */
 
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
@@ -4640,7 +4639,7 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
-    const uint32_t duration = dfi_holds(b, dfi_at(b, user), DFI_ITEM_LIGHTCLAY) ? DFI_SCREEN_TURNS_MAX : 5u;
+    const uint32_t duration = dfi_holds(b, dfi_at(b, user), DFI_SCREEN_EXTENDER) ? DFI_SCREEN_TURNS_MAX : DFI_SCREEN_TURNS;
     *turns = (uint8_t)duration; /* <= 8 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_START, DUOFORGE_NO_POSITION);
     e.detail = (uint8_t)side;
@@ -7895,7 +7894,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             dfi_fail_still(r, user);
             return DUOFORGE_OK;
         }
-        const uint32_t screen = dfi_holds(r->b, m, DFI_ITEM_LIGHTCLAY) ? DFI_SCREEN_TURNS_MAX : 5u;
+        const uint32_t screen = dfi_holds(r->b, m, DFI_SCREEN_EXTENDER) ? DFI_SCREEN_TURNS_MAX : DFI_SCREEN_TURNS;
         const uint32_t duration = md->side_condition == DFI_SIDE_CONDITION_TAILWIND ? DFI_TAILWIND_TURNS_MAX : screen;
         *turns = (uint8_t)duration; /* <= 8 */
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_START, DUOFORGE_NO_POSITION);
@@ -7944,7 +7943,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             return DUOFORGE_OK;
         }
         b->terrain = (uint8_t)terrain;
-        b->terrain_turns = (uint8_t)dfi_field_start_turns(b, dfi_at(b, user), DFI_ITEM_TERRAINEXTENDER); /* G55 */
+        b->terrain_turns = (uint8_t)dfi_field_start_turns(b, dfi_at(b, user), DFI_TERRAIN_EXTENDER); /* G55 */
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)dfi_terrain_field_detail(terrain);
         dfi_emit(r, &e);
@@ -10048,7 +10047,7 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
     } else if (terrain != DFI_TERRAIN_NONE) {
         if (b->terrain != terrain) {
             b->terrain = (uint8_t)terrain;
-            b->terrain_turns = (uint8_t)dfi_field_start_turns(b, m, DFI_ITEM_TERRAINEXTENDER); /* G55 */
+            b->terrain_turns = (uint8_t)dfi_field_start_turns(b, m, DFI_TERRAIN_EXTENDER); /* G55 */
             /* -fieldstart|move: X Terrain|[from] ability: X|[of] holder */
             duoforge_event e =
                 dfi_ev(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_ABILITY, a, flat);
