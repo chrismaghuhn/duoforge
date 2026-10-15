@@ -4,6 +4,7 @@ member in through the engine's own switch."""
 import os
 os.environ["JAX_PLATFORMS"] = "cpu"
 
+import json
 import unittest
 
 import numpy as np
@@ -146,6 +147,43 @@ class Probe(unittest.TestCase):
             self.assertIn(bench, role_check.occupants(batch, 0, 0))
         _, need = role_check.setup_choices(self.turn_one(), [0], 0, [(ours[0], theirs[0])], first_pair)
         self.assertEqual(need.tolist(), [False])  # both active: no turn 1
+
+
+
+class OnTheLog(unittest.TestCase):
+    """The role check on the closed-sheet fixture log of the KO check's tests (the arena bot's own log), with the
+    bot's particles: every decision's role table holds a probe or a named reason for each pair in each world."""
+    setUpClass = classmethod(lambda cls: _closed().setUpClass.__func__(cls))
+    tearDownClass = classmethod(lambda cls: cls.tmp.cleanup())
+
+    def test_every_decision_gets_a_role_table(self):
+        import io
+        from collections import Counter
+        from python.tests.live.test_live_client import FIXTURE
+        from python.tests.live.test_pkmn_arena import NAME
+        live, net, tables = _closed().load(self)
+        pairs = io.StringIO()
+        rows = role_check.battle(self.log, tables, net, live, FIXTURE["team"], NAME, self.prior, Counter(), pairs)
+        tables_seen = [json.loads(line) for line in pairs.getvalue().splitlines()]
+        self.assertTrue(tables_seen)
+        reasons = {"fainted", "not_active", "not_a_turn", "cannot_switch_in", "setup_refused", "step_refused"}
+        probes = 0
+        for t in tables_seen:
+            self.assertEqual(len(t["worlds"]), live.searcher.searcher.s)
+            for got in t["worlds"]:
+                if isinstance(got, dict):
+                    probes += 1
+                    self.assertEqual(got["winner"], role_check.race(got["turns_b"], got["turns_x"], got["first"]))
+                else:
+                    self.assertIn(got, reasons)
+        self.assertGreater(probes, 0)
+        for r in rows:  # an own faint in the fixture's few turns is possible, not required
+            self.assertIn(r["phase"], ("early", "middle", "endgame"))
+
+
+def _closed():
+    from python.tests.search.test_ko_check import ClosedReplayTest
+    return ClosedReplayTest
 
 
 if __name__ == "__main__":
