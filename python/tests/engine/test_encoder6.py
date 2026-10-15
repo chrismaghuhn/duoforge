@@ -211,7 +211,9 @@ class Encoder6Test(unittest.TestCase):
                          sorted([("RESERVE_VOLATILES", "22", "HEALING_WISH"), ("VOLATILES2", "4", "TRAP_ELAPSED"),
                                  ("VOLATILES2", "5", "TRAP_ELAPSED"), ("VOLATILES2", "6", "TRAP_ELAPSED"),
                                  ("VOLATILES2", "12", "ATTRACT_SOURCE"), ("VOLATILES2", "13", "ATTRACT_SOURCE"),
-                                 ("RESERVE_VOLATILES", "23", "SPEED_SWAPPED")]))  # step K3 (decision 0015 5de)
+                                 ("RESERVE_VOLATILES", "23", "SPEED_SWAPPED"),  # step K3 (decision 0015 5de)
+                                 ("FIELD_FLAGS", "0", "MAGIC_ROOM"), ("FIELD_FLAGS", "1", "MAGIC_ROOM"),
+                                 ("FIELD_FLAGS", "2", "MAGIC_ROOM")]))  # step K5 (decision 0015 5dm): Magic Room's turns
 
     def test_every_lane_feature_gates_a_reserve_column(self):
         # A lane's feature (bits 43 to 58: HEALING_WISH 43, G82) is shown only through its reserve bit: each one gates

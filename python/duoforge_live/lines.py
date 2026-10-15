@@ -151,7 +151,8 @@ EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
                                           "WIDE_GUARD", "STICKY_WEB",
-                                           "CURSE", "HEALING_WISH", "PARTIAL_TRAP", "TRAP_ELAPSED", "SPEED_SWAPPED")) | ATTRACT_FOLD
+                                           "CURSE", "HEALING_WISH", "PARTIAL_TRAP", "TRAP_ELAPSED", "SPEED_SWAPPED",
+                                           "MAGIC_ROOM")) | ATTRACT_FOLD
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -168,7 +169,8 @@ _START = {"move: Taunt": "TAUNT", "Taunt": "TAUNT", "Encore": "ENCORE", "Substit
 # Magma Storm and Thunder Cage stay unknown lines. The converter reads the sixth, Snap Trap, but no engine battle has it.
 PARTIAL_TRAP_MOVES = ("Bind", "Wrap", "Fire Spin", "Sand Tomb", "Infestation")
 _WEATHER = {"Sandstorm": "WEATHER_SAND", "Snowscape": "WEATHER_SNOW", "Snow": "WEATHER_SNOW"}
-_FIELD = {"move: Electric Terrain": "TERRAIN_ELECTRIC", "move: Misty Terrain": "TERRAIN_MISTY"}
+_FIELD = {"move: Electric Terrain": "TERRAIN_ELECTRIC", "move: Misty Terrain": "TERRAIN_MISTY",
+          "move: Magic Room": "MAGIC_ROOM"}  # K5 (#475): Magic Room folds when the library shows it (feature 47)
 _SIDE = {"move: Aurora Veil": "AURORA_VEIL", "Aurora Veil": "AURORA_VEIL", "move: Stealth Rock": "STEALTH_ROCK",
          "Stealth Rock": "STEALTH_ROCK", "move: Spikes": "SPIKES", "Spikes": "SPIKES",
          "move: Toxic Spikes": "TOXIC_SPIKES", "Toxic Spikes": "TOXIC_SPIKES", "move: Sticky Web": "STICKY_WEB",

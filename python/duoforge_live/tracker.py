@@ -125,6 +125,8 @@ EXT_FIELDS = {
     "ATTRACT_SOURCE": (("v2bits", _ATTRACT_SOURCE_BITS),),
     # Gravity (step K4, #475, decision 0015 5dl): the field view's gravity_turns, folded from FIELD_START / FIELD_END detail 6
     "GRAVITY": (("global", "gravity_turns"),),
+    # Magic Room (step K5, #475, decision 0015 5dm): bits 0-2 of the field flags (the turns) and the setter's member code
+    "MAGIC_ROOM": (("global", "flags"), ("global", "magic_room_source")),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
@@ -356,6 +358,8 @@ class Tracker:
     _party = None
     _ally_move = None
     _as_pending = None
+    _magic_room = 0  # step K5 (#475): Magic Room's remaining turns and its setter's member code (set per battle in __init__)
+    _magic_room_source = 0
     # A particle of closed team sheets (decision 0081) folds a drawn foe sheet: it raises SheetContradiction where a line
     # contradicts that sheet and the open-sheet fold would go on. Off for every open-sheet tracker.
     check_foe_sheet = False
@@ -383,6 +387,8 @@ class Tracker:
         self._field_turns_next = FIELD_TURNS  # set per line by _extended_field
         self._terrain = self._terrain_turns = 0
         self._trick_room = 0
+        self._magic_room = 0  # K5 (#475): Magic Room's remaining turns (0-5) and its setter's member code (0, or 1 + side * 6 + roster index)
+        self._magic_room_source = 0
         self._gravity = 0  # K4 (#475): the Gravity turns of the field, 5 from its start (FIELD_START detail 6)
         self._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]  # reflect, light screen, tailwind, Aurora Veil turns per side
         self._hazards = [collections.Counter(), collections.Counter()]  # entry hazard layers per side, by ext field
@@ -1119,12 +1125,19 @@ class Tracker:
             holds_choice = not m.item_used and self._item_of(m) in self._choice_items
             if p.choice_slot != MOVE_SLOT_NONE and not holds_choice and e[3] != trace_to_c.CAUSE["ABILITY"]:
                 p.choice_slot = MOVE_SLOT_NONE  # choicelock's onBeforeMove: its Choice item is gone (a Trick, Knock Off)
+            # Magic Room (step K5, #475): every item's effect is off, so no Choice lock is enforced and none is set; the record keeps
+            # a lock that stands, and a lock that would be SET is not reproduced here (no rule logic in Python): the line stops
+            # explicitly, and the foe's choice-lock contradiction test below is not made (the foe is free to choose).
+            magic_room = self._magic_room != 0
+            if magic_room and p.choice_slot == MOVE_SLOT_NONE and holds_choice and ident in m.sheet["moves"] and (
+                    e[3] != trace_to_c.CAUSE["ABILITY"]):
+                raise lines.Stop("unfolded:magic-room-choice-lock")
             if self.check_foe_sheet and pos // 2 != self.side and e[3] == trace_to_c.CAUSE["NONE"] and ident != self._struggle:
                 # A drawn foe sheet (decision 0081, cts.ParticleTracker) the line contradicts, where the open-sheet fold
                 # would go on in silence: an own move off the sheet, or another move than the one a Choice item locked
                 if ident not in m.sheet["moves"]:
                     raise SheetContradiction("move-not-on-set")
-                if p.choice_slot != MOVE_SLOT_NONE and holds_choice and m.sheet["moves"][p.choice_slot] != ident:
+                if p.choice_slot != MOVE_SLOT_NONE and holds_choice and not magic_room and m.sheet["moves"][p.choice_slot] != ident:
                     raise SheetContradiction("choice-lock", member=p.occupant)
             if (p.choice_slot == MOVE_SLOT_NONE and holds_choice and ident in m.sheet["moves"]
                     and e[3] != trace_to_c.CAUSE["ABILITY"]):
@@ -1432,6 +1445,10 @@ class Tracker:
             elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
                 # K4 (#475, decision 0015 5dl): Gravity counts five turns; no extender is modelled for it
                 self._gravity = FIELD_TURNS
+            elif detail == C["DUOFORGE_FIELD_MAGIC_ROOM"]:
+                # K5 (#475, decision 0015 5dm): five turns (Persistent is not in the pool); `other` is the setter's position
+                self._magic_room = FIELD_TURNS
+                self._magic_room_source = 1 + (e[2] // 2) * 6 + self._at(e[2]).occupant
             else:
                 # DUOFORGE_FIELD_* -> the observation's DUOFORGE_TERRAIN_*: Grassy, Psychic (Team C), Electric and Misty
                 # (POOL, step G25)
@@ -1441,6 +1458,8 @@ class Tracker:
                 self._trick_room = 0
             elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
                 self._gravity = 0
+            elif detail == C["DUOFORGE_FIELD_MAGIC_ROOM"]:
+                self._magic_room = self._magic_room_source = 0  # the end of the turns, or a restart (no -fieldstart follows it)
             else:
                 self._terrain = self._terrain_turns = 0
         elif kind in (EV["SIDE_START"], EV["SIDE_END"]) and amount in _HAZARD:
@@ -1632,6 +1651,7 @@ class Tracker:
         self._terrain_turns = down(self._terrain_turns)
         self._trick_room = down(self._trick_room)
         self._gravity = down(self._gravity)  # K4: the residual order 27.2, after Trick Room
+        self._magic_room = down(self._magic_room)  # K5: 27.6; its end line clears the setter
         self._conditions = [[down(n) for n in c] for c in self._conditions]
         for side in self._positions:
             for p in side:

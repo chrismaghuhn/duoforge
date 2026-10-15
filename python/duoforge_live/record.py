@@ -408,6 +408,9 @@ def _tail(t, s, boundary):
         for k, p in enumerate(t._positions[side]):
             attract[side * 2 + k] = p.attract
     s.put_list("tail5.attract_source", attract)
+    # Magic Room (step K5, #475, decision 0015 5dm): the rev 5 reserve bytes 8 (turns) and 9 (the setter's member code)
+    s.put("tail5.magic_room_turns", t._magic_room)
+    s.put("tail5.magic_room_source", t._magic_room_source)
     # tail rev 5 (step G80): Ally Switch's counter per flat position, (level << 2) | turns, 0 = none
     s.put_list("tail5.ally_switch", [(p.ally_level << 2) | p.ally_turns if p.ally_level else 0
                                       for side in (0, 1) for p in t._positions[side]])
