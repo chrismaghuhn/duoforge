@@ -71,4 +71,6 @@ rsync -av --partial <user>@<host>:/workspace/runs/<name>/ runs/<name>/
 ~/df-learn/bin/python -m duoforge_learn.ladder runs/<name> --pick 8 --workers 8 --out runs/<name>/ladder
 ```
 
+**From #558 on, a new series** (HauptSession, 2026-10-15). `duoforge_learn.ladder` (and `duoforge_search.arena`, `book_ab`, `preview_ab` on a run's pool) loads the pool through the engine's setup check (`teams.load_accepted`) and leaves out every team the engine refuses, by name: `conditions.pool` in its result holds the teams kept, the sha256 of their ids and every refused team with the engine's status. Since #558 (#406: exactly 0 Stat Points with Serious is refused at setup) four of params-49333's pool teams are refused, so its pool has 648 of 652 teams and the pairings drawn from it change; the engine changed with #558 too. Results from #558 on are never paired or mixed with results from before it.
+
 The ladder writes `ladder.json` and `ladder.md`: Elo overall and per team with 95 % intervals, plus the team-against-team matrix of the strongest checkpoint.

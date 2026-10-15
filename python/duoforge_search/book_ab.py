@@ -4,6 +4,8 @@ The candidate checkpoint without/with book plays the unchanged checkpoint and
 the fixed stage-1 panel. Both arms get the same ordered team rows, batch seed,
 workers and cutoff. Bootstrap resamples keep paired seat orders together.
 Nothing here starts training or turn search.
+
+From #558 on the pool is filtered by the engine (a refused team is left out, named in conditions.pool): a new series, never paired or mixed with results from before it.
 """
 import argparse
 import json
@@ -168,14 +170,17 @@ def main(argv=None):
     for label, path in zip(("BC", "3600", "11000"), paths[1:]):
         opponents[label], config = load(path, label)
         configs.append(config)
-    pool, kind = ladder._pool_of(args.run_dir)
+    refused = []  # the engine's filter (#558): a refused team is left out, named in conditions.pool
+    pool, kind = ladder._pool_of(args.run_dir, refused=refused)
     rows = paired_rows(len(pool.ids), args.games, args.seed)
     with duoforge.Context(data_kind=kind) as context:
         for config in configs:
             if config.get("format") == 2:
                 checkpoint.check_ids(config, context)
         reports = run(context, pool, rows, candidate, opponents, evidence, args)
-    conditions = {"games_per_arm_per_opponent": args.games, "workers": args.workers,
+    from duoforge import teams
+    conditions = {"pool": teams.pool_record(pool, refused), "games_per_arm_per_opponent": args.games,
+                  "workers": args.workers,
                   "seed": args.seed, "max_steps": args.max_steps, "resamples": args.resamples,
                   "bootstrap_unit": "paired seat orders", "book_sha256": evidence.source_sha256,
                   "book_mode": args.book_mode, "book_min_count": args.book_min_count, "book_weight": args.book_weight,
