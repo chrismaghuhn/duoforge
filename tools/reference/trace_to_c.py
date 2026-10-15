@@ -1258,12 +1258,14 @@ def ev_tuple(kind, position=NOPOS, other=NOPOS, cause=0, ident=0, ident2=0, hp=0
 def leech_heal_source(log, i):
     """Step G84 (decision 0047): the silent heal at log[i] is the Leech Seed heal when the nearest preceding Leech Seed damage line
     of this step (within three lines) names, as [of], the Pokemon that the heal goes to: the source's slot. Returns that position
-    or None. A heal with no such damage before it is not a Leech Seed heal (it stays dropped, as every other silent line)."""
+    or None. A heal with no such damage before it is not a Leech Seed heal (it stays dropped, as every other silent line). A damage line
+    with no [of] drains into the holder itself: an Ally Switch put it on its source's slot (spreadDamage omits [of] when the source
+    is the target, sim/battle.ts:2155; issue 541)."""
     for j in range(i - 1, max(-1, i - 4), -1):
         p = log[j].split('|')
         if len(p) > 2 and p[1] == '-damage' and '[from] Leech Seed' in log[j]:
             of = [x for x in p if x.startswith('[of] ')]
-            return ev_pos(of[0][len('[of] '):]) if of else None
+            return ev_pos(of[0][len('[of] '):]) if of else ev_pos(p[2])
     return None
 
 
