@@ -539,6 +539,102 @@ class SameGamesTest(unittest.TestCase):
         self.assertFalse(ladder.same_games([1.0], [1.0, 1.0]))
 
 
+class _ProbeModel:
+    """A network for the probe's tests: apply, value and act of plain NumPy, scaled by its params."""
+
+    def apply(self, params, x, y):
+        return x * params, (y * params).sum(axis=1)
+
+    def value(self, params, obs):
+        return obs.sum(axis=1) * params
+
+    def act(self, params, key, obs, slots, mask, is_team, greedy=False):
+        return (obs * params).argmax(axis=1), (obs * params).max(axis=1), None
+
+
+class _ProbePlayer:
+    """A player whose indices calls the networks of its scene, as a search and an opponent do."""
+
+    def __init__(self, nets):
+        self.nets, self.seen = nets, []
+
+    def indices(self, batch, choices, step=None, seats=None, last_step=None):
+        self.seen.append(step)
+        x = np.full((2, 3), float(step + 1), dtype=np.float32)
+        model = self.nets["checkpoint"]
+        model.apply(2.0, x, x)
+        model.apply(2.0, x, x)  # the same call again: kept once
+        model.value(2.0, x + 1)
+        self.nets["opponent bot"].act(3.0, None, x, x, x, x, greedy=True)
+        return np.zeros((2, 2), dtype=np.uint16)
+
+
+class NetProbeTest(unittest.TestCase):
+    """The recorded network probe (#484, HauptSession 2026-10-15): the first steps' calls, saved and made again."""
+
+    def record(self, steps=2):
+        recorder = ladder.CallRecorder(steps)
+        nets = {"checkpoint": recorder.model("checkpoint", _ProbeModel()),
+                "opponent bot": recorder.model("opponent bot", _ProbeModel())}
+        inner = _ProbePlayer(nets)
+        player = recorder.player(inner)
+        recorder.opponent = "bot"
+        for t in range(4):
+            player.indices(None, None, step=t, seats=None, last_step=False)
+        nets["checkpoint"].value(2.0, np.ones((2, 3), dtype=np.float32))  # outside a step: not recorded
+        return recorder, inner
+
+    def nets(self, checkpoint=2.0, bot=3.0):
+        return {"checkpoint": {"model": _ProbeModel(), "params": checkpoint},
+                "opponent bot": {"model": _ProbeModel(), "params": bot}}
+
+    def test_only_the_first_steps_calls_are_recorded_in_order_and_a_repeat_once(self):
+        recorder, inner = self.record(steps=2)
+        self.assertEqual(inner.seen, [0, 1, 2, 3])  # every step played
+        self.assertEqual([(c["role"], c["fn"]) for c in recorder.calls],
+                         [("checkpoint", "apply"), ("checkpoint", "value"), ("opponent bot", "act")] * 2)
+        self.assertEqual({c["opponent"] for c in recorder.calls}, {"bot"})
+        self.assertTrue(recorder.calls[2]["greedy"])
+        self.assertFalse(recorder.active)
+
+    def test_the_player_stays_an_instance_of_the_class_play_suite_checks(self):
+        from duoforge_learn import evaluate
+        recorder = ladder.CallRecorder(1)
+        opponent = evaluate.Player(_ProbeModel(), 1.0, 0, "bot")
+        wrapped = recorder.player(opponent, evaluate.Player)
+        self.assertIsInstance(wrapped, evaluate.Player)
+        self.assertEqual(wrapped.name, "bot")
+
+    def test_the_same_calls_save_to_the_same_bytes_and_replay_to_the_same_digests(self):
+        recorder, _ = self.record()
+        with tempfile.TemporaryDirectory() as tmp:
+            first, second = os.path.join(tmp, "a.npz"), os.path.join(tmp, "b.npz")
+            sha = recorder.save(first)
+            self.assertEqual(sha, recorder.save(second))
+            with open(first, "rb") as f:
+                self.assertEqual(sha, hashlib.sha256(f.read()).hexdigest())
+            probe = ladder.net_probe(first, self.nets())
+            again = ladder.net_probe(second, self.nets())
+        self.assertEqual(probe, again)
+        self.assertEqual((probe["inputs_sha256"], probe["calls"], len(probe["per_call"])), (sha, 6, 6))
+        self.assertEqual(probe["calls_meta"][2], {"role": "opponent bot", "fn": "act", "shapes": [[2, 3]] * 4,
+                                                  "opponent": "bot"})
+
+    def test_a_network_computing_otherwise_names_its_first_call(self):
+        recorder, _ = self.record()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "probe.npz")
+            recorder.save(path)
+            base = ladder.net_probe(path, self.nets())
+            other = ladder.net_probe(path, self.nets(bot=3.5))
+            with self.assertRaisesRegex(ValueError, "'opponent bot', which this run does not load"):
+                ladder.net_probe(path, {"checkpoint": self.nets()["checkpoint"]})
+        self.assertNotEqual(base["sha256"], other["sha256"])
+        differ = [i for i, (a, b) in enumerate(zip(base["per_call"], other["per_call"])) if a != b]
+        self.assertEqual(differ, [2, 5])  # the bot's act calls, the checkpoint's alike
+        self.assertEqual(other["calls_meta"][differ[0]]["role"], "opponent bot")
+
+
 class CliGuardTest(unittest.TestCase):
     """Each refusal raises SystemExit before any network is loaded and before the output directory exists."""
 
@@ -566,6 +662,18 @@ class CliGuardTest(unittest.TestCase):
     def test_out_inside_the_repository_is_refused(self):
         out = os.path.join(str(ROOT), "ladder-guard-test-out")
         self.assertRefused("inside the repository", self.argv(out), out)
+
+    def test_the_probe_options_are_checked_before_any_network(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out")
+            self.assertRefused("--probe-only needs --probe-inputs", self.argv(out, extra=["--probe-only"]), out)
+            self.assertRefused("--probe-only plays none", self.argv(out, extra=[
+                "--probe-only", "--probe-inputs", "p.npz", "--record-probe-inputs", os.path.join(tmp, "r.npz")]), out)
+            self.assertRefused("--record-steps must be at least 1", self.argv(out, extra=[
+                "--record-probe-inputs", os.path.join(tmp, "r.npz"), "--record-steps", "0"]), out)
+            inside = os.path.join(str(ROOT), "probe-guard-test.npz")
+            self.assertRefused("--record-probe-inputs .* is inside the repository",
+                               self.argv(out, extra=["--record-probe-inputs", inside]), out)
 
     def test_unknown_opponent_name_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:

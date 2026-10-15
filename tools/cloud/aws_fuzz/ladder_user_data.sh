@@ -19,6 +19,8 @@ shutdown -h +@MAX_MINUTES@ "duoforge ladder watchdog: at most @MAX_MINUTES@ minu
 #
 # nets/ must be read-only for the box (HauptSession): a probe write there that succeeds is a refusal by name
 # (nets_writable), and so is a network that cannot be read (nets_unreadable) or has another sha256 (net_sha_mismatch).
+# A probe campaign's inputs come from probes/<sha256>.npz, read-only as well (probes_writable, probes_probe_unclear,
+# probe_inputs_unreadable, probe_inputs_sha_mismatch).
 # Every refusal is named in status.json, uploaded with the log; a failure without a refusal is named by its step
 # (failed_in_<step>), a TERM or INT (the watchdog's shutdown) is "terminated". Then the box powers itself off. A failure
 # before the AWS CLI is installed (failed_in_packages) uploads nothing: the console output is all that is left of it.
@@ -41,6 +43,7 @@ WORK=/opt/duoforge-ladder
 LOG=/var/log/duoforge-ladder.log
 S3_BASE="s3://$DF_BUCKET/fuzz/ladder/$DF_CAMPAIGN/$DF_RUN_ID"
 NETS_KEY_PREFIX=nets
+PROBES_KEY_PREFIX=probes
 STATUS=failed
 REASON=unknown
 STEP=packages
@@ -132,6 +135,24 @@ for sha in "${SHAS[@]}"; do
 done
 log "${#SHAS[@]} networks read and checked"
 
+# --- a probe campaign's inputs (probe_inputs, probe_sha256): probes/<sha256>.npz, read-only for the box like nets/,
+# put beside the networks under its sha256 (ladder_conf.py argv passes it to every arm as --probe-inputs)
+list=$(python3 "$TOOLS/ladder_conf.py" probe "$CONF") || refuse bad_conf 'ladder_conf.py probe'
+read -r PROBE_INPUTS PROBE_SHA <<< "$list" || true
+if [ -n "$PROBE_INPUTS" ]; then
+    verdict=$(ladder_nets_probe "$DF_BUCKET" "$PROBES_KEY_PREFIX/.write-probe-$DF_RUN_ID") && probe_rc=0 || probe_rc=$?
+    case $probe_rc in
+        0) log "probes/ is read-only for the box: $verdict" ;;
+        3) refuse probes_writable "s3://$DF_BUCKET/$PROBES_KEY_PREFIX/ must be read-only for the box: $verdict" ;;
+        *) refuse probes_probe_unclear "$verdict" ;;
+    esac
+    aws s3 cp "s3://$DF_BUCKET/$PROBES_KEY_PREFIX/$PROBE_INPUTS.npz" "$NETS/$PROBE_INPUTS.npz" --only-show-errors >> "$LOG" 2>&1 ||
+        refuse probe_inputs_unreadable "probes/$PROBE_INPUTS.npz could not be read"
+    [ "$(sha256sum "$NETS/$PROBE_INPUTS.npz" | cut -d' ' -f1)" = "$PROBE_INPUTS" ] ||
+        refuse probe_inputs_sha_mismatch "probes/$PROBE_INPUTS.npz has another sha256"
+    log "the probe's inputs read and checked: $PROBE_INPUTS"
+fi
+
 # --- the pins: the local machine's instruction set, BLAS kernel and CPU count. NumPy picks its own SIMD routines at
 # run time (exp, log, sums: AVX-512 on the c7a's EPYC, AVX2 on the local Ryzen); the first equality proof (2026-10-14)
 # differed in decisions with every result equal. NPY_DISABLE_CPU_FEATURES keeps NumPy on the local machine's targets
@@ -173,11 +194,12 @@ json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu"
 PY
 aws s3 cp "$WORK/env.json" "$S3_BASE/env.json" --only-show-errors
 
-# --- a probe-only campaign (probe_only=1): no game; the network probe of the first arm under each pin variant, one
-# after the other, each with its probe.json under probe/<variant>/ (HauptSession, 2026-10-15: the smallest variant
-# that gives this machine's bits is the one to keep). Every variant runs on the first arm's CPUs.
-probe=$(python3 "$TOOLS/ladder_conf.py" probe "$CONF") || refuse bad_conf 'ladder_conf.py probe'
-if [ "$probe" = 1 ]; then
+# --- a probe campaign: first the network probe of the first arm (ladder --probe-only: every recorded network call made
+# again, hashed) under each pin variant, one after the other on the first arm's CPUs, each with its probe.json under
+# probe/<variant>/; then the arms under the first variant whose probe is probe_sha256, this machine's bits on the local
+# machine's (HauptSession, 2026-10-15), recorded as pin_variant in each ladder.json; no variant giving it, no game.
+PIN_VARIANT=''
+if [ -n "$PROBE_INPUTS" ]; then
     STEP=probe
     ISA_ONLY="--xla_cpu_max_isa=AVX2"
     VARIANTS=(
@@ -188,6 +210,7 @@ if [ "$probe" = 1 ]; then
         "isa-noxnnpack-noonednn-nofastmath|$ISA_ONLY --xla_cpu_use_xnnpack=false --xla_cpu_use_onednn=false --xla_cpu_enable_fast_math=false|AVX2"
     )
     failed=''
+    match=''
     for variant in "${VARIANTS[@]}"; do
         IFS='|' read -r name xla onednn <<< "$variant"
         out="$WORK/probe/$name"
@@ -201,16 +224,25 @@ if [ "$probe" = 1 ]; then
         if [ -n "$onednn" ]; then sets+=("ONEDNN_MAX_CPU_ISA=$onednn"); else unsets+=(-u ONEDNN_MAX_CPU_ISA); fi
         log "probe $name: XLA_FLAGS='$xla' ONEDNN_MAX_CPU_ISA='$onednn'"
         if (cd "$REPO" && env "${unsets[@]}" "${sets[@]}" taskset -c "0-$((DF_CPUS - 1))" "$WORK/venv/bin/python" -u \
-            -m duoforge_search.ladder "${ARGS[@]}" --probe-only) > "$out/probe.log" 2>&1 && [ -f "$out/probe.json" ]; then
+            -m duoforge_search.ladder "${ARGS[@]}" --probe-only --pin-variant "$name") > "$out/probe.log" 2>&1 &&
+            [ -f "$out/probe.json" ]; then
             aws s3 cp "$out/probe.json" "$S3_BASE/probe/$name/probe.json" --only-show-errors
+            got=$("$WORK/venv/bin/python" -c 'import json, sys; print(json.load(open(sys.argv[1]))["net_probe"]["sha256"])' \
+                "$out/probe.json") || got=''
+            log "probe $name: $got"
+            if [ -z "$match" ] && [ "$got" = "$PROBE_SHA" ]; then match=$variant; fi
         else
             tail -n 40 "$out/probe.log" >> "$LOG"
             failed="$failed $name"
         fi
     done
     [ -z "$failed" ] || refuse probe_failed "the probe variant(s)$failed failed"
-    log 'probe done'
-    exit 0
+    [ -n "$match" ] || refuse probe_no_match "no pin variant gives the local probe $PROBE_SHA: no game"
+    IFS='|' read -r PIN_VARIANT xla onednn <<< "$match"
+    if [ -n "$xla" ]; then export XLA_FLAGS="$xla"; else unset XLA_FLAGS; fi
+    if [ -n "$onednn" ]; then export ONEDNN_MAX_CPU_ISA="$onednn"; else unset ONEDNN_MAX_CPU_ISA; fi
+    log "probe done: the arms run under $PIN_VARIANT (XLA_FLAGS='$xla' ONEDNN_MAX_CPU_ISA='$onednn')"
+    STEP=arms
 fi
 
 # --- the arms, side by side, each on CPUs of its own; each writes its own ladder.json
@@ -221,6 +253,7 @@ for i in "${!ARMS[@]}"; do
     list=$(python3 "$TOOLS/ladder_conf.py" argv "$CONF" "$arm" "$NETS" "$WORK/arms/$arm/out") ||
         refuse bad_conf "ladder_conf.py argv $arm"
     mapfile -t ARGS <<< "$list"
+    [ -z "$PIN_VARIANT" ] || ARGS+=(--pin-variant "$PIN_VARIANT")
     log "arm $arm on CPUs $((i * DF_CPUS))-$(((i + 1) * DF_CPUS - 1)): ladder ${ARGS[*]}"
     cpus="$((i * DF_CPUS))-$(((i + 1) * DF_CPUS - 1))"
     (cd "$REPO" && exec taskset -c "$cpus" "$WORK/venv/bin/python" -u -m duoforge_search.ladder "${ARGS[@]}") \

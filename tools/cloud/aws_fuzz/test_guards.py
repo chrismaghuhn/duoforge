@@ -1273,7 +1273,10 @@ class LadderLaunch(unittest.TestCase):
         for needle in ('XLA_FLAGS=--xla_cpu_max_isa=AVX2', 'OPENBLAS_CORETYPE=Haswell', 'OPENBLAS_NUM_THREADS=1',
                        'NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"', '"numpy_simd": numpy_simd',
                        '"NPY_DISABLE_CPU_FEATURES")', 'numpy_dispatch.py" "$WORK/numpy_simd.json"', '"libc": list(platform.libc_ver())', 'export ONEDNN_MAX_CPU_ISA=AVX2',
-                       'probe=$(python3 "$TOOLS/ladder_conf.py" probe "$CONF")', '--probe-only',
+                       'list=$(python3 "$TOOLS/ladder_conf.py" probe "$CONF")', '--probe-only --pin-variant "$name"',
+                       'ARGS+=(--pin-variant "$PIN_VARIANT")', '[ "$got" = "$PROBE_SHA" ]',
+                       'ladder_nets_probe "$DF_BUCKET" "$PROBES_KEY_PREFIX/.write-probe-',
+                       '"s3://$DF_BUCKET/$PROBES_KEY_PREFIX/$PROBE_INPUTS.npz" "$NETS/$PROBE_INPUTS.npz"',
                        '"none||"', '--xla_cpu_use_xnnpack=false', '--xla_cpu_use_onednn=false',
                        '--xla_cpu_enable_fast_math=false', 'JAX_PLATFORMS=cpu', 'taskset -c "$cpus"', 'DF_CPUS=16', 'DF_SPARE=16', 'ladder_conf.py" arms',
                        '"$S3_BASE/$arm/ladder.json"', 'ladder_requirements.txt', '--no-deps', 'pip" check',
@@ -1284,15 +1287,20 @@ class LadderLaunch(unittest.TestCase):
         # Every refusal the README names is one the box makes (a refusal is a named exit, never a silent one).
         for name in ('nets_writable', 'nets_probe_unclear', 'nets_unreadable', 'net_sha_mismatch', 'wrong_commit',
                      'wrong_run', 'no_campaign', 'bad_conf', 'build', 'python_env', 'numpy_dispatch', 'cpus',
-                     'ladder_failed', 'probe_failed'):
+                     'ladder_failed', 'probe_failed', 'probe_no_match', 'probes_writable', 'probes_probe_unclear',
+                     'probe_inputs_unreadable', 'probe_inputs_sha_mismatch'):
             self.assertRegex(text, r'\brefuse %s\b' % name, name)
-        self.assertEqual(text.count('refuse bad_conf'), 6)  # check, shas (failed, empty), arms (failed, empty), argv
+        # check, shas (failed, empty), probe, arms (failed, empty), argv (the probe's and each arm's)
+        self.assertEqual(text.count('refuse bad_conf'), 8)
         # A failed arm's ladder.json would pass for a result: only an arm that succeeded uploads one.
         upload = text.index('"$S3_BASE/$arm/ladder.json"')
         self.assertIn('if [ -n "${GOOD[$arm]:-}" ]; then', text[upload - 200:upload])
-        uploads = [l for l in lines if re.search(r'\baws s3 cp\b', l) and 's3://$DF_BUCKET/$NETS_KEY_PREFIX' not in l]
-        for line in uploads:  # what goes up: ladder.json, env.json, status.json and logs; never a decision file or a net
-            self.assertRegex(line, r'(ladder\.json|env\.json|status\.json|\$LOG|ladder-tail\.log)', line)
+        downloads = ('s3://$DF_BUCKET/$NETS_KEY_PREFIX', 's3://$DF_BUCKET/$PROBES_KEY_PREFIX')
+        uploads = [l for l in lines if re.search(r'\baws s3 cp\b', l) and not any(d in l for d in downloads)]
+        self.assertTrue(any('"$S3_BASE/probe/$name/probe.json"' in l for l in uploads))
+        for line in uploads:  # what goes up: ladder.json, probe.json, env.json, status.json and logs; never a decision
+            # file, a net or the probe's inputs
+            self.assertRegex(line, r'(ladder\.json|probe\.json|env\.json|status\.json|\$LOG|ladder-tail\.log)', line)
             self.assertNotIn('/out/step-', line)
             self.assertNotIn('decisions', line)
             self.assertNotIn('.npz', line)
@@ -1317,12 +1325,19 @@ class LadderLaunch(unittest.TestCase):
         self.assertNotIn('--h2h', b)
         with self.assertRaisesRegex(ladder_conf.ConfError, "no arm 'c'"):
             ladder_conf.argv(conf, 'c', '/n', '/o')
+        self.assertNotIn('--probe-inputs', argv)
+        probed = ladder_conf.parse(good + 'probe_inputs=%s\nprobe_sha256=%s\n' % ('e' * 64, 'f' * 64))
+        p = ladder_conf.argv(probed, 'a', '/n', '/o')  # the probe's inputs beside the networks, by their sha256
+        self.assertEqual(p[p.index('--probe-inputs') + 1], '/n/%s.npz' % ('e' * 64))
+        self.assertNotIn('e' * 64, ladder_conf.shas(probed))  # read from probes/, not nets/
         bad = {'kind=fuzz': 'not a ladder campaign', 'pairs=0': 'pairs=0', 'workers=17': 'workers=17',
                'checkpoint=xyz': 'sha256', 'opponents=bot': 'NAME=SHA256', 'extra=1': 'unknown key',
                'opponents=bot=%s bot=%s' % (NET, NET): 'twice', 'arm=c step=../x': 'step name',
                'arm=C step=0': 'lowercase', 'arm=c step=0 h2h=1': 'needs previous', 'arm=c previous=0': 'no step',
                'arm=c step=0 path=/x': 'is not step=', 'arm=a step=0': 'arm name twice',
-               'arm=x step=0\narm=y step=0': '4 arms: 1 to 3', 'probe_only=2': 'probe_only=2'}
+               'arm=x step=0\narm=y step=0': '4 arms: 1 to 3', 'probe_inputs=%s' % NET: 'go together',
+               'probe_sha256=%s' % NET: 'go together', 'probe_only=1': 'unknown key',
+               'probe_inputs=xyz\nprobe_sha256=%s' % NET: 'probe_inputs must be a 64-digit'}
         for line, message in bad.items():
             key = line.partition('=')[0]
             text = '\n'.join(l for l in good.splitlines() if key == 'arm' or not l.startswith(key + '=')) + '\n' + line + '\n'
@@ -1345,9 +1360,11 @@ class LadderLaunch(unittest.TestCase):
         tool = os.path.join(HERE, 'ladder_conf.py')
         run = lambda *a: subprocess.run([sys.executable, tool, *a], env=self.env, capture_output=True, text=True)
         self.assertEqual(run('workers', conf).stdout.split(), ['8'])
-        self.assertEqual(run('probe', conf).stdout.split(), ['0'])  # a ladder campaign plays its games
-        probe_conf = posix(os.path.join(HERE, 'campaigns', 'ladder-probe-2e', 'campaign.conf'))
-        self.assertEqual(run('probe', probe_conf).stdout.split(), ['1'])  # the probe campaign plays none
+        self.assertEqual(run('probe', conf).stdout.split(), [])  # no probe campaign
+        probe_conf = os.path.join(HERE, 'campaigns', 'ladder-probe-2e', 'campaign.conf')
+        with open(probe_conf, encoding='utf-8') as f:
+            keys = dict(l.split('=', 1) for l in f.read().splitlines() if l.startswith('probe_'))
+        self.assertEqual(run('probe', posix(probe_conf)).stdout.split(), [keys['probe_inputs'], keys['probe_sha256']])
         self.assertEqual(run('arms', conf).stdout.split(), ['main', 'beside0', 'beside1'])
         self.assertEqual(run('check', conf).returncode, 0)
         for bad in (('workers',), ('arms', conf, 'x'), ('nope', conf)):

@@ -96,8 +96,11 @@ echo "run id        $run_id"
 echo "networks      s3://$bucket/nets/<sha256>.npz, read-only for the box:"
 for s in "${shas[@]}"; do echo "                $s"; done
 echo "arms          ${arms[*]} (side by side, 16 CPUs and $workers workers each, 16 CPUs left to the box)"
-if [ "$probe" = 1 ]; then
-    echo "mode          PROBE ONLY: no game; the network probe of ${arms[0]} under five pin variants (probe/<variant>/)"
+if [ -n "$probe" ]; then
+    read -r probe_inputs probe_sha <<< "$probe"
+    echo "mode          PROBE: the network probe of ${arms[0]} under five pin variants (probe/<variant>/), then the"
+    echo "              arms under the first variant giving $probe_sha, or no game (probe_no_match)"
+    echo "probe inputs  s3://$bucket/probes/$probe_inputs.npz, read-only for the box"
 fi
 echo "results       s3://$bucket/fuzz/ladder/$campaign/$run_id/ (<arm>/ladder.json, env.json, status.json, log/)"
 echo "type          $DF_LADDER_TYPE (the only type of a series, no fallback)"
