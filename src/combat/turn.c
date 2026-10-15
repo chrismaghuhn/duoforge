@@ -7478,7 +7478,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * request offers nothing else), so choicelock's onBeforeMove, which
      * would fail another move (data/conditions.ts), never runs; a decoded
      * state that queues another move fails loudly (Team C). */
-    if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u && q->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE &&
+    if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u && !dfi_items_suppressed(r->b) && q->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE &&
         q->move_slot != DUOFORGE_MOVE_SLOT_RECHARGE && q->move_slot + 1u != pos->locked_move) {
         return DUOFORGE_E_INVARIANT;
     }
@@ -7796,6 +7796,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             dfi_emit(r, &anim);
         }
         if (md->special == DFI_SPECIAL_PHANTOM_FORCE || charge_weather != skip_weather) {
+            if (dfi_magic_room_lock_conflict(pos, q->move_slot)) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
             pos->charge_turns = (uint8_t)DFI_CHARGE_TURNS_MAX;
             pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */
             pos->locked_target = q->target;
@@ -8829,6 +8832,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                     st = dfi_draw(r->draws, DFI_SITE_LOCK_TURNS, 2u, 4u, &count_turns);
                     if (st != DUOFORGE_OK) {
                         return st;
+                    }
+                    if (dfi_magic_room_lock_conflict(dfi_pos(b, user), q->move_slot)) {
+                        return DUOFORGE_E_UNSUPPORTED;
                     }
                     ut->lock_turns = (uint8_t)count_turns; /* wide-operands-reviewed: 2 or 3 */
                     dfi_pos(b, user)->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */

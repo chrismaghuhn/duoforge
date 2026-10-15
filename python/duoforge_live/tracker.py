@@ -29,6 +29,7 @@ refused with the engine's status and cause mask.
 """
 import collections
 import json
+import re
 
 import numpy as np
 
@@ -889,9 +890,21 @@ class Tracker:
             if src is not None and tgt is not None and self._at(src).occupant != ROSTER_NONE \
                     and self._at(tgt).occupant != ROSTER_NONE and self._ability_at(src) and self._ability_at(tgt):
                 swap_ids = {0: (self._ability_at(tgt) - 1, self._ability_at(src) - 1)}
+        room_ids = None
+        if parts[1] == "-fieldend" and parts[2:3] == ["move: Magic Room"]:
+            # Magic Room's end names its setter as that Pokemon's toString() (`p1a: Name` while it stands, `p1: Name` once it does not):
+            # the tracker's own record of the room names the member, and the line must name the same one (an Illusion holder, which
+            # prints its disguise, does not match: the line stops)
+            named = re.match(r"^\[of\] p([12])[ab]?: (.*)$", parts[3]) if len(parts) == 4 else None
+            code = self._magic_room_source
+            if (not code or named is None or int(named.group(1)) - 1 != (code - 1) // 6
+                    or self._names[int(named.group(1)) - 1].get(named.group(2)) != (code - 1) % 6):
+                raise lines.Stop("unfolded:magic-room-setter")
+            room_ids = {0: code}
         try:
             events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables, self._rb_pending,
-                                            swap_ids=swap_ids, lead=self._lines[-4:-1])  # the Leech Seed heal reads back
+                                            swap_ids=swap_ids, lead=self._lines[-4:-1],  # the Leech Seed heal reads back
+                                            room_ids=room_ids)
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
             detail = getattr(e, "detail", None)
             raise lines.Stop(f"converter:{e.rule}" + (f" {detail}" if detail else "")) from e

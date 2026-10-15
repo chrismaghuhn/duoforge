@@ -1621,7 +1621,7 @@ def swap_partners(trace, teams, roster_of, tables):
 def room_setters(trace, roster_of):
     """Step K5 (#475, decision 0015 5dm): the member code (1 + side * 6 + roster index) of the setter of every Magic Room end line,
     for `-fieldend|move: Magic Room|[of] X` (data/moves.ts:10788-10790), where X is the setter's toString() at the END time: its slot
-    and name while it is active, its bare name once it is not (sim/pokemon.ts:531-533). The converter follows the room from its
+    and name while it is active, its fullname `p1: Name` once it is not (sim/pokemon.ts:531-533). The converter follows the room from its
     `-fieldstart` (which names the setter with its slot) to its end line (a restart ends the room with this line and no -fieldstart);
     an end line whose name is not the setter's (a disguised holder prints the disguise) is refused. Returns one dict per step: line
     index -> the code."""
@@ -1648,10 +1648,12 @@ def room_setters(trace, roster_of):
             else:
                 if setter is None:
                     raise ConversionError('magic-room-line', 'trace_to_c: Magic Room end without its start %r' % line, detail='end')
-                name = of[0].split(': ', 1)[1] if ev_pos(of[0]) is not None else of[0]
-                if name != setter[2]:
-                    raise ConversionError('magic-room-setter', 'trace_to_c: Magic Room end names %r, the setter is %r (an Illusion '
-                                          'holder prints its disguise): %r' % (name, setter[2], line), detail='setter')
+                # the setter's toString(): `p1a: Name` while it is active, `p1: Name` (its fullname) once it is not
+                named = re.match(r'^p([12])[ab]?: (.*)$', of[0])
+                if named is None or (int(named.group(1)) - 1, named.group(2)) != (setter[0], setter[2]) or                         (ev_pos(of[0]) is not None and ev_pos(of[0]) // 2 != setter[0]):
+                    raise ConversionError('magic-room-setter', 'trace_to_c: Magic Room end names %r, the setter is side %d %r (an '
+                                          'Illusion holder prints its disguise): %r' % (of[0], setter[0] + 1, setter[2], line),
+                                          detail='setter')
                 marks[i] = 1 + setter[0] * 6 + setter[1]
                 setter = None
         out.append(marks)
@@ -2358,9 +2360,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             field = names[args[0]]
             ident = 0
             if field == FIELD_MAGIC_ROOM:
-                # Step K5: the start and the end name the setter ([of], a position or, benched, a bare name). The end carries its member
+                other = NOPOS if other is None else other  # `[of] p1: Name`, the fullname of a benched setter, has no slot
+                # Step K5: the start and the end name the setter ([of], a position or, benched, `p1: Name`). The end carries its member
                 # code in `id` when the setter is not on the field (room_setters, the converter's own follow of the room).
-                if cause != 0 or id2 != 0 or (kind == '-fieldstart') != (other != NOPOS):
+                if cause != 0 or id2 != 0 or (kind == '-fieldstart' and other == NOPOS):
                     raise ConversionError('magic-room-line', 'trace_to_c: unexpected Magic Room line %r' % line, detail='shape')
                 if kind == '-fieldend' and other == NOPOS:
                     ident = (room_ids or {}).get(i, 0)

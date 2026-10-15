@@ -8,7 +8,7 @@
 #include "combat/run_internal.h"
 
 /* The setter of the room as the end line prints it (`[of] ' + this.effectState.source`, data/moves.ts:10788-10790): the Pokemon's
- * toString() at THAT time (sim/pokemon.ts:531-533), its slot while it is active, its bare name once it is not. The event carries
+ * toString() at THAT time (sim/pokemon.ts:531-533), its slot while it is active, its fullname `p1: Name` (side and name) once it is not. The event carries
  * `other` = the setter's position while it stands on the field (dfi_attract_source_flat: on the field and not fainted), else
  * DUOFORGE_NO_POSITION with the member code in `id`. The code is the room's own, read before it is cleared. */
 static inline duoforge_event dfi_magic_room_end_event(const struct duoforge_battle *b)
@@ -20,6 +20,14 @@ static inline duoforge_event dfi_magic_room_end_event(const struct duoforge_batt
     e.other = (uint8_t)flat;
     e.id = (uint16_t)(flat == DUOFORGE_NO_POSITION ? code : 0u);
     return e;
+}
+
+/* One byte, locked_move, holds the move of a Choice lock AND the move of a charge or of a lockedmove (Outrage). Under Magic Room a
+ * Choice-locked holder may use another move (the volatile stays, its onBeforeMove and onDisableMove return, data/conditions.ts:
+ * 332-345); if that move charges or locks, the byte would have to keep two moves. That is not modelled: refused (E_UNSUPPORTED). */
+static inline bool dfi_magic_room_lock_conflict(const dfi_active_slot *pos, uint32_t move_slot)
+{
+    return ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u && (uint32_t)pos->locked_move != move_slot + 1u;
 }
 
 /* Magic Room as a move (moveHit -> addPseudoWeather, sim/field.ts:186-212). The room that is up is REMOVED by its own re-use
