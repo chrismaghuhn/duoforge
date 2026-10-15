@@ -167,7 +167,7 @@ What the M2 decision surface already covers, and what the closure adds.
 
 ## 5. Build order (owner decision 2026-09-30: continuous, no backlog)
 
-The roadmap describes a first vertical slice (M3) and dependency-ordered closure tasks (M4). The owner decided to build both as one continuous run in the order below, with nothing parked; the task statement is `tasks/M3_M4_COMBAT_CLOSURE.md`. The two groups below are kept as the dependency order, not as separate milestones.
+The roadmap describes a first vertical slice (M3) and dependency-ordered closure tasks (M4). The owner decided to build both as one continuous run in the order below, with nothing parked; the task statement is `docs/history/tasks/M3_M4_COMBAT_CLOSURE.md`. The two groups below are kept as the dependency order, not as separate milestones.
 
 **M3, first combat slice.** Real species, stat and move data for the two teams, restricted to:
 

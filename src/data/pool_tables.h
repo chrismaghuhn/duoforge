@@ -7,7 +7,7 @@
  * followed by Team C, decision 0009) unchanged as the prefix, then the rows
  * that the steps of the content expansion add (P1, G2) and then a row for
  * every other move, item, ability and forme of the legal pool of the format
- * (docs/research/expansion/data/legal_pool.json, the output of the pinned
+ * (data/formats/pools/reg-mc.json, the output of the pinned
  * TeamValidator), read from Pokemon Showdown b2cb775b0616115b775534eaeff50300e1fc81fc (the input files of
  * closure_tables.h). Every id below an extended count (DFI_EXT_FORME_COUNT,
  * DFI_EXT_MOVE_COUNT, DFI_EXT_ITEM_COUNT, DFI_EXT_ABILITY_COUNT) is the
