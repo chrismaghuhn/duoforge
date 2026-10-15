@@ -56,7 +56,12 @@ static void *allocate(size_t bytes, void *user)
 {
     allocations *a = user;
     if (a->mutate != NULL) {
-        FILE *file = fopen(a->mutate, "r+b");
+        FILE *file = NULL;
+#if defined(_MSC_VER)
+        if (fopen_s(&file, a->mutate, "r+b") != 0) { file = NULL; }
+#else
+        file = fopen(a->mutate, "r+b");
+#endif
         if (file != NULL) { (void)fputc(0, file); (void)fclose(file); }
         a->mutate = NULL;
     }

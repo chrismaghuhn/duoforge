@@ -231,7 +231,12 @@ static duoforge_status dfi_read(const char *path, const uint8_t expected[32],
     if (version != 6u || (mask >> 47u) != 0u) {
         return dfi_eval_error(error, DUOFORGE_E_SCHEMA_MISMATCH, "load", "eval_encoder_mask");
     }
-    FILE *stream = fopen(path, "rb");
+    FILE *stream = NULL;
+#if defined(_MSC_VER)
+    if (fopen_s(&stream, path, "rb") != 0) { stream = NULL; }
+#else
+    stream = fopen(path, "rb");
+#endif
     uint8_t *bytes = NULL;
     duoforge_evaluator *model = NULL;
     if (stream == NULL) { FAIL(DUOFORGE_E_INVALID_ARGUMENT, "eval_file_open"); }
