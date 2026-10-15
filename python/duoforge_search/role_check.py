@@ -256,9 +256,12 @@ class RolePolicy:
 
 
 def living(batch, env, side):
-    """The roster indices of the side's brought members with HP left, as the side itself sees them."""
+    """The roster indices of the side's brought members (its brought_order, as the side itself sees it) with HP
+    left; a member not brought to the battle is no answer and no foe."""
     own = batch.observations[env, side]["sides"][side]
-    return [m for m in range(int(own["member_count"])) if int(own["members"][m]["hp"]) > 0]
+    count = int(own["member_count"])
+    brought = [int(m) for m in own["brought_order"] if int(m) < count]
+    return [m for m in brought if int(own["members"][m]["hp"]) > 0]
 
 
 def role_table(search, p, key):

@@ -132,6 +132,13 @@ class Probe(unittest.TestCase):
             role_check.probe_pair(batch, 0, 0, bench, x, first_pair, rng)
         self.assertEqual(caught.exception.args[0], "not_active")
 
+    def test_only_brought_members_live(self):
+        batch = self.turn_one()
+        for side in (0, 1):
+            got = role_check.living(batch, 0, side)
+            self.assertEqual(len(got), 4)  # four of six brought (the picks): the others are neither answer nor foe
+            self.assertTrue(set(role_check.occupants(batch, 0, side)) <= set(got))  # the leads are among them
+
     def test_turn_one_brings_a_benched_member_in_through_the_engine(self):
         batch = self.turn_one()
         ours, theirs = role_check.occupants(batch, 0, 0), role_check.occupants(batch, 0, 1)
