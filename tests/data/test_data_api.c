@@ -421,6 +421,48 @@ static void test_synthetic(df_test *t)
     DF_CHECK(t, duoforge_data_count(ctx, 1u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
     DF_CHECK(t, duoforge_data_count(ctx, 0u, &count) == DUOFORGE_E_INVALID_ARGUMENT);
     DF_CHECK(t, duoforge_data_find(ctx, 9u, "rillaboom", 9u, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    /* duoforge_data_member_setup_valid (#512) under SYNTHETIC: the kind's own per-member check (species and move ids
+     * below the context's counts, hp_max and pp_max set, trailing slots and the table fields zero), and setup agrees on
+     * a side of four such members with the member under test first. */
+    duoforge_member_setup good;
+    memset(&good, 0, sizeof good);
+    good.species_id = 1u;
+    good.hp_max = 100u;
+    good.move_count = 1u;
+    good.moves[0].move_id = 2u;
+    good.moves[0].pp_max = 10u;
+    duoforge_member_setup cases[7];
+    for (uint32_t k = 0u; k < 7u; ++k) {
+        cases[k] = good;
+    }
+    cases[1].species_id = 3u;       /* the context has 3 species */
+    cases[2].hp_max = 0u;           /* derived only under the kinds with tables */
+    cases[3].move_count = 0u;
+    cases[4].moves[0].pp_max = 0u;
+    cases[5].moves[1].move_id = 1u; /* a slot past move_count */
+    cases[6].nature = 1u;           /* a table field */
+    for (uint32_t k = 0u; k < 7u; ++k) {
+        bool valid = k != 0u;
+        DF_CHECK(t, duoforge_data_member_setup_valid(ctx, &cases[k], &valid) == DUOFORGE_OK);
+        DF_CHECK(t, valid == (k == 0u));
+        duoforge_battle_setup s;
+        memset(&s, 0, sizeof s);
+        s.rng_initseq = 1u;
+        for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+            s.sides[side].member_count = 4u;
+            for (uint32_t m = 0u; m < 4u; ++m) {
+                s.sides[side].members[m] = good;
+            }
+        }
+        s.sides[0].members[0] = cases[k];
+        duoforge_battle *made = NULL;
+        const duoforge_status got = duoforge_battle_create(ctx, &s, &made);
+        duoforge_battle_destroy(made);
+        if (!DF_CHECK(t, valid == (got == DUOFORGE_OK) && (valid || got == DUOFORGE_E_INVALID_ARGUMENT))) {
+            fprintf(stderr, "  SYNTHETIC member case %u: member_setup_valid %d, create %s\n", k, (int)valid,
+                    status_text(got));
+        }
+    }
     duoforge_context_destroy(ctx);
 }
 

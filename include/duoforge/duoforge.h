@@ -497,7 +497,6 @@ duoforge_status duoforge_data_request_target_class(const duoforge_context *ctx, 
    fingerprint (not by pointer); every call checks the fingerprint ---- */
 typedef struct duoforge_battle duoforge_battle;
 
-/* Allocating. */
 /* Whether duoforge_battle_create would accept `member` as a registered member of a side under the context's kind:
    exactly the per-member check it applies to each of a side's member_count members (decision 0015 under the kinds with
    tables: the forme, its ability, its moves and their PP fields, the item, the nature, the gender and the Stat Points;
@@ -507,6 +506,7 @@ typedef struct duoforge_battle duoforge_battle;
    every drawn set (#512). */
 duoforge_status duoforge_data_member_setup_valid(const duoforge_context *ctx, const duoforge_member_setup *member,
                                                  bool *out_valid);
+/* Allocating. */
 duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duoforge_battle_setup *setup,
                                        duoforge_battle **out_battle);
 duoforge_status duoforge_battle_create_decoded(const duoforge_context *ctx, const uint8_t *bytes,

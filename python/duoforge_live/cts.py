@@ -472,10 +472,8 @@ def true_sheet(text):
     return teams.pack(teams.to_text([dict(_sheet(s, s.get("gender", "")), evs=[0] * 6) for s in teams._paste(text)]))
 
 
-# The Stat Points of a drawn foe sheet whose set states none (#512, HauptSession 2026-10-15). No sheet shows them and
-# no world of the search reads them (the worlds' spreads are the belief's: test_live_cts checks it), so they only have
-# to pass the engine's setup check under every nature: 0 in all is refused with Serious (#406), one point in HP passes.
-SP_PLACEHOLDER = (1, 0, 0, 0, 0, 0)
+# The Stat Points of a drawn foe sheet whose set states none (teams.SP_PLACEHOLDER, #512).
+SP_PLACEHOLDER = teams.SP_PLACEHOLDER
 
 
 def _sheet(s, gender):
