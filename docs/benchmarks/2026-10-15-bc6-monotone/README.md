@@ -157,9 +157,10 @@ HauptSession's go, under the machine lock and the WSL watchdog, not exclusive, w
 
 ### Positions and edits
 
-- The same 100 games as part 1: recorded again by the same tool with the same seed `0x2026101500000509` (the
-  recording is deterministic; the run checks that every game's recorded choices equal part 1's by their digest, or
-  stops by name, `games_differ`).
+- The same 100 games as part 1: recorded again by the same tool with the same seed `0x2026101500000509`, in the same
+  environment as part 1's run (no pins). The recording is deterministic: the run recomputes part 1's rows (the removed
+  edits) and checks, game by game, that their digest equals part 1's `rows.jsonl`, or stops by name, `games_differ`.
+- Detect's slot takes the `pp_max` of the pool's own Detect slots, which must all agree (no PP rule is derived).
 - The same positions and the same edits as part 1 (own and mirror, every move of every active member with at least
   2 moves). Each edit is now built twice, at the same positions:
   - **removed:** as in part 1;

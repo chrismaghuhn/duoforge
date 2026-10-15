@@ -12,11 +12,19 @@ setup_refused, removed_move_used (a recorded choice uses the removed move), repl
 its offered options, differ).
 
     python -m duoforge_search.monotone --checkpoint BC6 --teams-from POOL_NET --out DIR
+        [--replace detect --part1-rows PART1_ROWS]
+
+Part 2 (--replace detect, the README's "Part 2"): every edit is also built with Detect in the edited move's slot
+(Edit.replace), the member keeping its move count; the rows gain the replaced edit's value change and refusal
+(REPLACE_REFUSALS) and whether the member carries Protect (the reading's subset), and keep part 1's fields
+(PART1_KEYS) unchanged: each game's part-1 fields must equal part 1's rows (games_digest), or the run stops by name
+(games_differ). report_detect gives part 2's aggregates and the predeclared reading.
 
 DIR lies outside the repository: rows.jsonl (one row per edit, position and viewing seat) and report.json (the
 aggregates, with the conditions: commit, dirty, the library's, the checkpoint's and the pool config's sha256).
 """
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -31,6 +39,12 @@ from . import positions
 
 C = _layout.CONSTANTS
 REFUSALS = ("setup_refused", "removed_move_used", "replay_diverged")
+# Part 2: the replaced edit's refusals. detect_not_allowed: the engine's setup check refuses Detect for the member.
+REPLACE_REFUSALS = ("detect_not_allowed", "already_detect", "removed_is_detect", "removed_move_used", "replay_diverged")
+PART1_KEYS = ("game", "t", "side", "seat", "kind", "member", "species", "move", "category", "protect_like", "refused",
+              "dv", "dp")
+READING_MIN = 200  # fewer paired edits in the subset (own or mirror): no conclusion (HauptSession, 2026-10-15)
+SMALL, LARGE_SHARE, SMALL_SHARE = 0.02, 0.50, 0.25  # |dV_rd| of one point of win probability; the reading's shares
 SEED = 0x2026101500000509
 BOOTSTRAP_SEED = 0x509
 THRESHOLD = 0.01  # one point of win probability (p = (1 + V) / 2), or of the value in the comparison reading
@@ -55,10 +69,12 @@ class Net:
 
 @dataclass(frozen=True)
 class Edit:
-    """One move (id) of the member at roster index `member` of `side` (the setup's member order), removed."""
+    """One move (id) of the member at roster index `member` of `side` (the setup's member order), removed; or, with
+    replace = (move id, pp_max), replaced by that move in the same slot (part 2)."""
     side: int
     member: int
     move: int
+    replace: tuple = None
 
 
 @dataclass
@@ -138,6 +154,15 @@ def _setup(pool, game, edit):
     kept = [x for x in moves if int(x["move_id"]) != edit.move]
     if len(kept) != len(moves) - 1:
         raise ValueError(f"member {edit.member} of side {edit.side} has no move {edit.move} to remove")
+    if edit.replace is not None:
+        move, pp_max = (int(x) for x in edit.replace)
+        if move != edit.move and any(int(x["move_id"]) == move for x in moves):
+            raise ValueError(f"member {edit.member} of side {edit.side} already has move {move}")
+        j = next(j for j, x in enumerate(moves) if int(x["move_id"]) == edit.move)
+        member["moves"][j]["move_id"], member["moves"][j]["pp_max"] = move, pp_max
+        side["members"][edit.member] = member
+        setups[0]["sides"][edit.side] = side
+        return setups
     member["moves"][:] = np.zeros(1, _layout.MOVE_SETUP)
     for j, x in enumerate(kept):
         member["moves"][j] = x
@@ -164,7 +189,7 @@ def walk(ctx, pool, game, edit=None, reference=None, on_turn=None):
         try:
             batch.reset_setups(np.array([0], np.uint32), np.array([0], np.uint32), _setup(pool, game, edit))
         except duoforge.DuoforgeError:
-            out.stop = ("setup_refused", 0)
+            out.stop = ("detect_not_allowed" if edit is not None and edit.replace is not None else "setup_refused", 0)
             return out
         for t, labels in enumerate(game["steps"]):
             requested = _query(batch)
@@ -292,10 +317,56 @@ def protect_ids(ctx):
     return ids, missing
 
 
-def measure_game(ctx, pool, game, net, game_index=0, protect=None):
+def detect_slot(ctx, pool, required=True):
+    """(Detect's move id, pp_max) for part 2's replacement: the pp_max copied from the pool's own Detect slots, which
+    must all agree (no PP rule is derived here). None, or ValueError when required, if the pool has none."""
+    detect = int(data.find(ctx, data.TABLE_MOVE, "detect"))
+    pps = set()
+    for side in pool.sides:
+        for m in side["members"][:int(side["member_count"])]:
+            for x in m["moves"][:int(m["move_count"])]:
+                if int(x["move_id"]) == detect:
+                    pps.add(int(x["pp_max"]))
+    if len(pps) > 1:
+        raise ValueError(f"the pool's Detect slots have pp_max {sorted(pps)}: no single one to copy")
+    if not pps:
+        if required:
+            raise ValueError("the pool has no Detect slot to copy its pp_max from")
+        return None
+    return detect, pps.pop()
+
+
+def replace_refusal(move, have, detect):
+    """The replaced edit's refusal known before any build: the edited move is Detect itself, or the member already
+    carries Detect (a duplicate move); else None."""
+    if move == detect:
+        return "removed_is_detect"
+    if detect in have:
+        return "already_detect"
+    return None
+
+
+def in_subset(move, have, protect):
+    """The reading's subset (HauptSession, 2026-10-15): the member carries Protect and the edited move is not Protect."""
+    return protect in have and move != protect
+
+
+def games_digest(rows):
+    """game -> sha256 of its rows' part-1 fields (PART1_KEYS) in order: part 2's games must give part 1's."""
+    out = {}
+    for r in rows:
+        h = out.setdefault(r["game"], hashlib.sha256())
+        h.update((json.dumps({k: r[k] for k in PART1_KEYS}, sort_keys=True) + "\n").encode("utf-8"))
+    return {g: h.hexdigest() for g, h in out.items()}
+
+
+def measure_game(ctx, pool, game, net, game_index=0, protect=None, replace=None):
     """The rows of one recorded game: per TURN boundary position, per edit of an active member's move and per viewing
-    seat, the value change (dv on the value scale, dp = dv / 2 on the win-probability scale) or its refusal."""
+    seat, the value change (dv on the value scale, dp = dv / 2 on the win-probability scale) or its refusal. With
+    replace = (Detect's id, pp_max) (part 2), each edit is also built with Detect in the move's slot: the row adds
+    dv_replaced, refused_replaced, dv_rd = dv_replaced - dv where both were built, carries_protect and subset."""
     protect = protect_ids(ctx)[0] if protect is None else protect
+    protect_id = int(data.find(ctx, data.TABLE_MOVE, "protect")) if replace is not None else None
     values = _Values(net)
     base_rows = {}
     base = walk(ctx, pool, game, on_turn=lambda t, b: base_rows.__setitem__(t, _rows_at(b, net)))
@@ -313,6 +384,19 @@ def measure_game(ctx, pool, game, net, game_index=0, protect=None):
                  on_turn=lambda t, b: edited_rows.__setitem__(t, _rows_at(b, net)) if t in at else None)
         built = [t for t in at if t in edited_rows]
         v = dict(zip(built, values([r for t in built for r in edited_rows[t]]).reshape(-1, 2))) if built else {}
+        if replace is not None:
+            have = base.moves[(edit.side, edit.member)]
+            before = replace_refusal(edit.move, have, int(replace[0]))
+            v2, w2 = {}, None
+            if before is None:
+                replaced = Edit(edit.side, edit.member, edit.move, replace=tuple(int(x) for x in replace))
+                rows2 = {}
+                w2 = walk(ctx, pool, game, edit=replaced, reference=base.events,
+                          on_turn=lambda t, b: rows2.__setitem__(t, _rows_at(b, net)) if t in at else None)
+                built2 = [t for t in at if t in rows2]
+                if built2:
+                    v2 = dict(zip(built2, values([r for t in built2 for r in rows2[t]]).reshape(-1, 2)))
+            subset = in_subset(edit.move, have, protect_id)
         category, protect_like = _category(ctx, edit.move, protect)
         for t in at:
             for seat in (0, 1):
@@ -325,6 +409,15 @@ def measure_game(ctx, pool, game, net, game_index=0, protect=None):
                     row["dv"], row["dp"] = dv, dv / 2
                 else:
                     row["refused"] = w.stop[0] if w.stop is not None else "replay_diverged"
+                if replace is not None:
+                    row.update({"carries_protect": protect_id in have, "subset": subset, "refused_replaced": None,
+                                "dv_replaced": None, "dv_rd": None})
+                    if t in v2:
+                        row["dv_replaced"] = float(v2[t][seat]) - float(base_v[t][seat])
+                        if row["dv"] is not None:
+                            row["dv_rd"] = row["dv_replaced"] - row["dv"]
+                    else:
+                        row["refused_replaced"] = before or (w2.stop[0] if w2.stop is not None else "replay_diverged")
                 yield row
 
 
@@ -396,6 +489,83 @@ def report(rows, bootstrap=2000, seed=BOOTSTRAP_SEED):
     return out
 
 
+def _bootstrap_stat(values_by_game, bootstrap, seed, stat):
+    games = sorted(values_by_game)
+    if not games:
+        return None
+    draws = np.random.default_rng(seed).integers(0, len(games), size=(bootstrap, len(games)))
+    stats = [stat(np.concatenate([values_by_game[games[g]] for g in draw])) for draw in draws]
+    return float(np.percentile(stats, 2.5)), float(np.percentile(stats, 97.5))
+
+
+def _detect_part(rows, bootstrap, seed):
+    """Part 2's aggregates of one group's paired rows of one kind (own or mirror)."""
+    paired = [r for r in rows if r["dv_rd"] is not None]
+    out = {"paired": len(paired)}
+    if not paired:
+        return out
+    a = np.abs(np.array([r["dv_rd"] for r in paired]))
+    by_game = {}
+    for r in paired:
+        by_game.setdefault(r["game"], []).append(abs(r["dv_rd"]))
+    by_game = {g: np.array(x) for g, x in by_game.items()}
+    above = int((a > SMALL).sum())
+    shares = {g: (x > SMALL).astype(np.float64) for g, x in by_game.items()}
+    out["abs_dv_rd"] = {"quantiles": {str(q): float(np.percentile(a, q)) for q in QUANTILES},
+                        "median": float(np.median(a)), "mean": float(a.mean()),
+                        "median_cluster_95": _bootstrap_stat(by_game, bootstrap, seed, np.median),
+                        "mean_cluster_95": _bootstrap_stat(by_game, bootstrap, seed, np.mean)}
+    out["share_above"] = {"threshold": SMALL, "above": above, "share": above / len(paired),
+                          "wilson_95": wilson(above, len(paired)),
+                          "cluster_95": _bootstrap_stat(shares, bootstrap, seed, np.mean)}
+    signed = np.array([r["dv_rd"] for r in paired])
+    out["signed_dv_rd_quantiles"] = {str(q): float(np.percentile(signed, q)) for q in QUANTILES}
+    # descriptive only: part 1's wrong way on the same rows, removed and replaced, and their paired difference
+    removed = np.array([wrong_way(r) for r in paired], np.float64)
+    replaced = np.array([wrong_way(dict(r, dp=r["dv_replaced"] / 2)) for r in paired], np.float64)
+    diff = {}
+    for r, x, y in zip(paired, removed, replaced):
+        diff.setdefault(r["game"], []).append(x - y)
+    out["wrong_way"] = {"removed": float(removed.mean()), "replaced": float(replaced.mean()),
+                        "difference": float((removed - replaced).mean()),
+                        "difference_cluster_95": _bootstrap_stat({g: np.array(x) for g, x in diff.items()}, bootstrap,
+                                                                 seed, np.mean)}
+    return out
+
+
+def reading(subset):
+    """The predeclared reading (README "Part 2", HauptSession 2026-10-15) of the subset's own and mirror parts."""
+    parts = [subset[kind] for kind in ("own", "mirror")]
+    if any(p["paired"] < READING_MIN for p in parts):
+        return "no_conclusion_too_few"
+    if any(p["abs_dv_rd"]["median"] > SMALL or p["share_above"]["share"] > LARGE_SHARE for p in parts):
+        return "missing_slot_moves_value"
+    if all(p["abs_dv_rd"]["median"] <= SMALL and p["share_above"]["share"] <= SMALL_SHARE for p in parts):
+        return "missing_slot_not_driving"
+    return "no_conclusion"
+
+
+def report_detect(rows, bootstrap=2000, seed=BOOTSTRAP_SEED):
+    """Part 2's aggregates: per group (the subset; the other edits, descriptive only) and kind, the paired rows'
+    |dV_rd| and the share above SMALL; the replaced edits' refusals per group; the reading, on the subset only."""
+    rows = list(rows)
+    out = {"refused_replaced": {"subset": {}, "other": {}}}
+    for r in rows:
+        if r["refused_replaced"] is not None:
+            group = out["refused_replaced"]["subset" if r["subset"] else "other"]
+            group[r["refused_replaced"]] = group.get(r["refused_replaced"], 0) + 1
+    for group, keep in (("subset", True), ("other", False)):
+        part = [r for r in rows if r["subset"] == keep]
+        out[group] = {kind: _detect_part([r for r in part if r["kind"] == kind], bootstrap, seed)
+                      for kind in ("own", "mirror")}
+        out[group]["by_category"] = {
+            c: {kind: _detect_part([r for r in part if r["kind"] == kind and (r["category"] == c if c != "protect_like"
+                                                                             else r["protect_like"])], bootstrap, seed)
+                for kind in ("own", "mirror")} for c in ("physical", "special", "status", "protect_like")}
+    out["reading"] = reading(out["subset"])
+    return out
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="python -m duoforge_search.monotone", description=__doc__.split("\n\n")[0])
     p.add_argument("--checkpoint", required=True, help="BC6")
@@ -405,7 +575,13 @@ def main(argv=None):
     p.add_argument("--seed", type=lambda text: int(text, 0), default=SEED)
     p.add_argument("--max-steps", type=int, default=1000)
     p.add_argument("--bootstrap", type=int, default=2000)
+    p.add_argument("--replace", choices=("detect",), default=None,
+                   help="part 2: also build every edit with Detect in the edited move's slot (README, Part 2)")
+    p.add_argument("--part1-rows", default=None,
+                   help="part 1's rows.jsonl: with --replace, each game's part-1 fields must equal them (games_differ)")
     args = p.parse_args(argv)
+    if (args.replace is None) != (args.part1_rows is None):
+        raise SystemExit("--replace and --part1-rows go together")
     from duoforge_learn import checkpoint as ck
     from . import arena, foe_arena
     repo = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -425,13 +601,26 @@ def main(argv=None):
                   "sha256": {"library": arena._sha256(library), "checkpoint": arena._sha256(args.checkpoint),
                              "teams_from": arena._sha256(args.teams_from)},
                   "seed": args.seed, "pairs": args.pairs, "max_steps": args.max_steps, "threshold": THRESHOLD,
-                  "bootstrap": args.bootstrap, "bootstrap_seed": BOOTSTRAP_SEED, "encoder": net.encoder}
+                  "bootstrap": args.bootstrap, "bootstrap_seed": BOOTSTRAP_SEED, "encoder": net.encoder,
+                  "replace": args.replace}
+    part1 = None
+    if args.part1_rows is not None:
+        with open(args.part1_rows, encoding="utf-8") as f:
+            part1 = games_digest(json.loads(line) for line in f)
+        conditions["sha256"]["part1_rows"] = arena._sha256(args.part1_rows)
     rows_path = os.path.join(out_dir, "rows.jsonl")
-    ends = {}
+    ends, written = {}, set()
     with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, open(rows_path, "w", encoding="utf-8") as f:
         pool = duoforge.teams.load(ctx, teams_config["teams"]["ids"])
         protect, missing = protect_ids(ctx)
         conditions["protect_like_missing"] = missing
+        replace = None
+        if args.replace is not None:
+            try:
+                replace = detect_slot(ctx, pool)
+            except ValueError as err:
+                raise SystemExit(str(err)) from None
+            conditions["replace_slot"] = {"move": replace[0], "pp_max": replace[1]}
         games = foe_arena.games(len(pool.ids), args.pairs, args.seed)
         for g, row in enumerate(games):
             side0, side1 = (int(row["side0"]), int(row["side1"])) if row["learner_seat"] == 0 else \
@@ -441,13 +630,22 @@ def main(argv=None):
             ends[game["end"]] = ends.get(game["end"], 0) + 1
             if game["end"] == "refused":
                 continue
-            for r in measure_game(ctx, pool, game, net, game_index=g, protect=protect):
+            rows = list(measure_game(ctx, pool, game, net, game_index=g, protect=protect, replace=replace))
+            if part1 is not None and games_digest(rows).get(g) != part1.get(g):
+                raise SystemExit(f"games_differ: game {g}'s part-1 rows are not part 1's")
+            for r in rows:
                 f.write(json.dumps(r) + "\n")
+                written.add(r["game"])
             f.flush()
     with open(rows_path, encoding="utf-8") as f:
         rep = report((json.loads(line) for line in f), bootstrap=args.bootstrap)
     rep["games"] = {"count": len(games), "ends": ends}
     rep["conditions"] = conditions
+    if args.replace is not None:
+        if written != set(part1):
+            raise SystemExit("games_differ: the games with rows are not part 1's")
+        with open(rows_path, encoding="utf-8") as f:
+            rep["detect"] = report_detect((json.loads(line) for line in f), bootstrap=args.bootstrap)
     with open(os.path.join(out_dir, "report.json"), "w", encoding="utf-8") as f:
         json.dump(rep, f, indent=2, sort_keys=True)
     print(json.dumps({k: rep[k] for k in ("games", "refused")}, sort_keys=True))
