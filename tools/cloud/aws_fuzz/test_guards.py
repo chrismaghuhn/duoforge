@@ -403,8 +403,8 @@ class Guards(unittest.TestCase):
                 self.assertIsNone(re.search(r'@[A-Z_]+@', text))
                 self.assertLess(len(text.encode()), 4096)  # far below EC2's 16384, whatever the box scripts grow to
                 for needle in ("commit='%s'" % SHA, 'git -C "$boot" fetch -q --depth 1 origin "$commit"',
-                               '[ "$(git -C "$boot" rev-parse HEAD)" = "$commit" ]', '. "$boot/tools/cloud/aws_fuzz/render_box.sh"',
-                               'df_render_box "$boot/tools/cloud/aws_fuzz/%s" \'weather-sand-snow\' "$commit" '
+                               '[ "$(git -C "$boot" rev-parse HEAD)" = "$commit" ]',
+                               'set -- "$boot/tools/cloud/aws_fuzz/%s" \'weather-sand-snow\' "$commit" '
                                '\'my-fuzz-bucket\' "$left" \'%s\' \'yes\'' % (script, RUN),
                                "trap '[ $? -eq 0 ] || shutdown -h now' EXIT", 'exec bash /opt/duoforge-box.sh'):
                     self.assertIn(needle, text)
@@ -423,21 +423,34 @@ class Guards(unittest.TestCase):
                 self.assertIn('df_check_user_data_size "$userdata"', launcher)
 
     def test_the_box_renders_its_script_as_the_dry_run_does(self):
-        # The bootstrap's rendering and the dry run's are one function (render_box.sh): with the same values, the
-        # box script the bootstrap would write equals the dry run's.
+        # The rendering part of the rendered bootstrap, run against a copy of the box scripts with 117 minutes left,
+        # writes byte for byte the box script the dry run shows (render_box.sh) with the same values; it needs nothing
+        # of the commit but the box script, so a commit from before the bootstrap renders too (a resumed series:
+        # its run id and the resume flag pass through unchanged).
         for script, render in (('user_data.sh', 'df_render_user_data weather-sand-snow %s my-fuzz-bucket 117 %s yes'),
                                ('ladder_user_data.sh', 'df_render_ladder_user_data weather-sand-snow %s my-fuzz-bucket 117 %s'),
                                ('oracle_user_data.sh', 'df_render_oracle_user_data weather-sand-snow %s my-fuzz-bucket 117 %s yes')):
             with self.subTest(script=script):
                 resume = 'no' if script == 'ladder_user_data.sh' else 'yes'
-                box = ('. "%s/render_box.sh"; df_render_box "%s/%s" weather-sand-snow %s my-fuzz-bucket 117 %s %s'
-                       % (posix(HERE), posix(HERE), script, SHA, RUN, resume))
-                dry = '. "%s/lib.sh"; ' % posix(HERE) + render % (SHA, RUN)
-                a = subprocess.run([BASH, '-c', box], env=self.env, capture_output=True, text=True)
-                b = subprocess.run([BASH, '-c', dry], env=self.env, capture_output=True, text=True)
+                text = self.bootstrap(script, resume=resume)
+                part = text[text.index('set -- "$boot'):text.index('> /opt/duoforge-box.sh') + len('> /opt/duoforge-box.sh')]
+                boot = os.path.join(self.tmp, 'boot-' + script)
+                os.makedirs(os.path.join(boot, 'tools', 'cloud', 'aws_fuzz'))
+                shutil.copy(os.path.join(HERE, script), os.path.join(boot, 'tools', 'cloud', 'aws_fuzz', script))
+                out = os.path.join(self.tmp, 'box-' + script)
+                run = 'boot=%s; commit=%s; left=117\n%s' % (shlex.quote(posix(boot)), SHA,
+                                                             part.replace('/opt/duoforge-box.sh', shlex.quote(posix(out))))
+                a = subprocess.run([BASH, '-c', run], env=self.env, capture_output=True, text=True)
+                b = subprocess.run([BASH, '-c', '. "%s/lib.sh"; ' % posix(HERE) + render % (SHA, RUN)], env=self.env,
+                                   capture_output=True, text=True)
                 self.assertEqual((a.returncode, b.returncode), (0, 0), a.stderr + b.stderr)
-                self.assertEqual(a.stdout, b.stdout)
-                self.assertTrue(a.stdout.split('\n')[1].startswith('shutdown -h +117 '))
+                with open(out, encoding='utf-8', newline='') as f:
+                    box = f.read()
+                self.assertEqual(box, b.stdout)
+                self.assertTrue(box.split('\n')[1].startswith('shutdown -h +117 '))
+                self.assertIn(RUN, box)
+                if resume == 'yes':
+                    self.assertRegex(box, r"DF_RESUME='?yes'?")
 
     def test_user_data_longer_than_ec2_takes_is_refused_by_name(self):
         for size, refused in ((16384, False), (16385, True)):
