@@ -1,6 +1,9 @@
 # Private synthetic integer oracle, no model load or trained parameters.
 duoforge_add_test(NAME duoforge.eval.kernels SOURCES eval/test_kernels.c WHITEBOX TIER quick AREA engine)
-if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND NOT MSVC)
+# Clang's GNU-style driver can target the MSVC runtime/linker. That target
+# cannot use GNU --wrap; keep the allocation watch on GNU-compatible linkers.
+if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND NOT MSVC
+        AND NOT CMAKE_C_SIMULATE_ID STREQUAL "MSVC")
     target_compile_definitions(duoforge_eval_kernels PRIVATE DF_EVAL_ALLOC_HOOKS)
     target_link_options(duoforge_eval_kernels PRIVATE
         "LINKER:--wrap=malloc" "LINKER:--wrap=calloc" "LINKER:--wrap=realloc" "LINKER:--wrap=free")

@@ -24,13 +24,24 @@ void *__wrap_realloc(void *p,size_t n) { if(allocation_watch)++allocations;retur
 void __wrap_free(void *p) { if(allocation_watch)++allocations;__real_free(p); }
 #endif
 
+static FILE *open_oracle(const char *path)
+{
+#if defined(_MSC_VER)
+    FILE *file = NULL;
+    if (fopen_s(&file, path, "rb") != 0) return NULL;
+    return file;
+#else
+    return fopen(path, "rb");
+#endif
+}
+
 static uint64_t read64(const uint8_t *p) { uint64_t x=0; for(uint32_t i=0;i<8u;++i)x|=(uint64_t)p[i]<<(8u*i);return x; }
 static void write64(uint8_t *p,uint64_t v) { for(uint32_t i=0;i<8u;++i)p[i]=(uint8_t)(v>>(8u*i)); }
 static int64_t signed64(uint64_t v) { return v <= INT64_MAX ? (int64_t)v : -1 - (int64_t)(UINT64_MAX-v); }
 /* Fixed byte framing deliberately avoids struct ABI/host-endian assumptions. */
 static int oracle(const char *path)
 {
-    FILE *file=fopen(path,"rb"); if(!file)return 2;
+    FILE *file=open_oracle(path); if(!file)return 2;
     uint8_t frame[64],result[12];
     while(fread(frame,1,sizeof(frame),file)==sizeof(frame)) {
         uint64_t a[8]; for(uint32_t i=0;i<8u;++i)a[i]=read64(frame+8u*i);
@@ -70,7 +81,7 @@ static int oracle(const char *path)
 }
 static int input_oracle(const char *path)
 {
-    FILE *file = fopen(path, "rb"); if (!file) return 2;
+    FILE *file = open_oracle(path); if (!file) return 2;
     uint8_t header[28], raw[1094u * 4u];
     if (fread(header, 1, sizeof(header), file) != sizeof(header)) { fclose(file); return 3; }
     uint32_t h[7];
