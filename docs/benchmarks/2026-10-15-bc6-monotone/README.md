@@ -247,3 +247,6 @@ commit with `dirty: false`, the library's sha256, BC6's checkpoint sha256 and th
   - part 1's wrong-way rate on the same rows: removed 23 % / 26 %, replaced 7 % / 9 % (own / mirror).
 - **Meaning:** under learnset-checked setups this probe cannot separate a missing move from a weaker one. Part 1
   stands as it is.
+- **Lesson (HauptSession, 2026-10-15):** "no conclusion" is accepted and part 2 is not repeated. In future probes, the
+  size of the subset is estimated before the run **with the legality check** (the engine's setup check on each edit),
+  not from the rows of an earlier run alone.
