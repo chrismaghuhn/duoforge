@@ -175,6 +175,16 @@ def table(values, step_statuses, encode_statuses, leaf_results, tiebreaks, plan,
     cube = np.empty(n, dtype=np.float64)
     cube[cell] = v
     cube = cube.reshape(k, m, s)
+    a, stderr = cell_stats(cube)
+    counts = {"refused": int(refused.sum()), "terminal": int(terminal.sum()), "cut_off": int(cut.sum()),
+              "unresolved": int(unresolved.sum())}
+    return Table(a, stderr, counts, cube)
+
+
+def cell_stats(cube):
+    """(a, stderr) of a (K, M, S) float64 cube of leaf values: each cell's mean over its samples (math.fsum) and its
+    standard error (NaN for one sample), as Table holds them."""
+    k, m, s = cube.shape
     a = np.empty((k, m), dtype=np.float64)
     stderr = np.full((k, m), np.nan, dtype=np.float64)
     for r in range(k):
@@ -184,9 +194,7 @@ def table(values, step_statuses, encode_statuses, leaf_results, tiebreaks, plan,
             a[r, c] = mean
             if s > 1:
                 stderr[r, c] = math.sqrt(math.fsum((t - mean) ** 2 for t in x) / (s - 1) / s)
-    counts = {"refused": int(refused.sum()), "terminal": int(terminal.sum()), "cut_off": int(cut.sum()),
-              "unresolved": int(unresolved.sum())}
-    return Table(a, stderr, counts, cube)
+    return a, stderr
 
 
 def _means(cube):
