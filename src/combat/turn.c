@@ -1268,8 +1268,19 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         if (chosen == user && cls != DUOFORGE_TARGET_CLASS_ADJACENT_FOE) {
             /* getTarget (sim/battle.ts:2459-2462): a move that targets an adjacent ally, any or normal returns null when the
              * chosen location is the user's own position. Ally Switch (step G80) moves the user onto the slot its target was
-             * chosen for, so the move finds nothing to hit ([notarget], then -fail). */
-            return DUOFORGE_OK;
+             * chosen for, so the move finds nothing to hit ([notarget], then -fail). Not on the locked turn of a two-turn move
+             * (the twoturnmove volatile, issue 541): its own location is no valid target (validTargetLoc, sim/battle.ts:
+             * 2399-2431), so getTarget retargets at random. */
+            if (dfi_pos(r->b, user)->charge_turns == 0u) {
+                return DUOFORGE_OK;
+            }
+            uint32_t t = 0u;
+            const duoforge_status st = dfi_random_foe(r, side, &t);
+            if (st == DUOFORGE_OK && t < DFI_POSITIONS) {
+                targets[0] = t;
+                *count = 1u;
+            }
+            return st;
         }
         if (chosen / 2u == side) {
             /* The ally: hit while it stands; a fainted ally is not
