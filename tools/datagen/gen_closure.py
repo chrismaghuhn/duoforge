@@ -106,7 +106,11 @@ PSEUDO_WEATHER = {'trickroom': 1, 'gravity': 2}  # K4 (#475): Gravity, decision 
 GRAVITY_FLAG_MOVES = frozenset({'bounce', 'fly', 'flyingpress', 'highjumpkick', 'magnetrise'})
 # K4 (#475): facts of Gravity's condition (data/moves.ts:7754-7842, normalized) that the engine implements; each must be in the pin.
 GRAVITY_CONDITION_FACTS = ("duration: 5,", "chainModify([6840, 4096])", "onFieldResidualOrder: 27,",
-                           "onFieldResidualSubOrder: 2,", "this.add('-fieldend', 'move: Gravity');")
+                           "onFieldResidualSubOrder: 2,", "this.add('-fieldend', 'move: Gravity');",
+                           "this.add('-fieldstart', 'move: Gravity');", "if (typeof accuracy !== 'number') return;")
+# K4 (#475): what the condition must NOT contain: no onFieldRestart (sim/field.ts:196-197: the re-use returns false, the timer is
+# not reset) and no `[of]` on its lines (the -fieldstart text is `move: Gravity` alone).
+GRAVITY_CONDITION_ABSENT = ("onFieldRestart", "[of]")
 STATUS_IMMUNITY = {'brn': 1, 'frz': 2, 'par': 4, 'prankster': 8}
 # Type-chart keys without a consumer in the closure (no poison source, powder
 # move, sandstorm or hail, and no trapping).
@@ -402,6 +406,9 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for fact in GRAVITY_CONDITION_FACTS:
             if fact not in cond:
                 fail('move gravity: the condition lost the pinned fact %r (data/moves.ts:7754-7842, decision 0015 5df)' % fact)
+        for absent in GRAVITY_CONDITION_ABSENT:
+            if absent in cond:
+                fail('move gravity: the condition gained %r (data/moves.ts:7754-7842, decision 0015 5df)' % absent)
     if pool and handled[0] == 'SUBSTITUTE':
         for name, text in (('onTryHit', SUBSTITUTE_ONTRYHIT), ('onHit', SUBSTITUTE_ONHIT), ('condition', SUBSTITUTE_CONDITION)):
             if name not in f or norm(f[name][1]) != text:
