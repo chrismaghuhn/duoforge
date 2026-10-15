@@ -1258,12 +1258,14 @@ def ev_tuple(kind, position=NOPOS, other=NOPOS, cause=0, ident=0, ident2=0, hp=0
 def leech_heal_source(log, i):
     """Step G84 (decision 0047): the silent heal at log[i] is the Leech Seed heal when the nearest preceding Leech Seed damage line
     of this step (within three lines) names, as [of], the Pokemon that the heal goes to: the source's slot. Returns that position
-    or None. A heal with no such damage before it is not a Leech Seed heal (it stays dropped, as every other silent line)."""
+    or None. A heal with no such damage before it is not a Leech Seed heal (it stays dropped, as every other silent line). A damage line
+    with no [of] drains into the holder itself: an Ally Switch put it on its source's slot (spreadDamage omits [of] when the source
+    is the target, sim/battle.ts:2155; issue 541)."""
     for j in range(i - 1, max(-1, i - 4), -1):
         p = log[j].split('|')
         if len(p) > 2 and p[1] == '-damage' and '[from] Leech Seed' in log[j]:
             of = [x for x in p if x.startswith('[of] ')]
-            return ev_pos(of[0][len('[of] '):]) if of else None
+            return ev_pos(of[0][len('[of] '):]) if of else ev_pos(p[2])
     return None
 
 
@@ -1674,6 +1676,12 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
     caller that converts one line at a time (the live tracker) passes the lines it has folded since the last decision point.
     """
     ill = ill if ill is not None else {'side': [False, False], 'truth_at': {}, 'multi': {}, 'replace': {}, 'last_hp': {}, 'shown_at': {}}
+    # Ally Switch (issue 541): truth_at is the end of the step, and a swap line exchanges the two positions of its side. The lines
+    # before the step's swaps read the positions as they were (every swap undone here), and each swap line exchanges them again.
+    truth_at = dict(ill['truth_at'])
+    for s in range(2):
+        if sum(1 for x in log if x.startswith('|swap|p%d' % (s + 1))) % 2 == 1:
+            truth_at[(s, 0)], truth_at[(s, 1)] = truth_at.get((s, 1)), truth_at.get((s, 0))
     if rb_pending is None:
         rb_pending = {}
     out = []
@@ -1816,7 +1824,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # position's Pokemon after the step, which must be the only switch of that side in the step. Otherwise refuse.
             truth = name
             if viewer == side and ill['side'][side]:
-                tn = ill['truth_at'].get((side, pos % 2))
+                tn = truth_at.get((side, pos % 2))
                 if tn != name:
                     if tn is None or ill['multi'].get((side, pos % 2), 0) != 1:
                         raise ConversionError('illusion-owner-truth', 'trace_to_c: the entry of the owner %r cannot be told apart' % line,
@@ -1844,6 +1852,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             new_pos = (pos // 2) * 2 + int(args[1])
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['SWAP'], pos, new_pos, cause, 0, id2)
+            truth_at[(pos // 2, 0)], truth_at[(pos // 2, 1)] = truth_at.get((pos // 2, 1)), truth_at.get((pos // 2, 0))
         elif kind == 'move':
             pos = ev_pos(args[0])
             last_user = pos
@@ -1927,7 +1936,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # Illusion (decision 0026 section 9, Q1): the owner's exact HP is the true member's, so its maximum is the holder's
             # when the line names the disguise on the holder's position.
             if viewer == side and ill['side'][side]:
-                tn = ill['truth_at'].get((side, pos % 2))
+                tn = truth_at.get((side, pos % 2))
                 if tn is not None and tn != name and ill['shown_at'].get((side, pos % 2)) == name:
                     shown_max = tn
             if '[partiallytrapped]' in attrs and (kind != '-damage' or cause != CAUSE['MOVE'] or other != NOPOS):
@@ -2940,7 +2949,8 @@ class FoePressure:
         if kind == EV['SWAP']:
             # Ally Switch (step G80): the user and its ally exchange their slots, the occupants with them (sim/battle.ts:1588-1607)
             self.own_occ[v][slot], self.own_occ[v][other % 2] = self.own_occ[v][other % 2], self.own_occ[v][slot]
-        elif kind == EV['SWITCH']:
+        elif kind in (EV['SWITCH'], EV['DRAG']):
+            # a drag (step G46: Roar, Whirlwind, Dragon Tail) enters a member as a switch does (issue 541)
             self.own_occ[v][slot] = ident
             self.alive[v][ident] = hp != 0
             self.has_pressure[v][ident] = self.teams[v][ident]['ability'] == self.pressure

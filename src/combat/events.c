@@ -294,6 +294,15 @@ static void dfi_own_event(dfi_own_pressure *o, const struct duoforge_battle *aft
             o->pressure[m] = after->sides[o->side].members[m].ability == 1u + DFI_ABILITY_PRESSURE;
         }
         break;
+    case DUOFORGE_EVENT_SWAP:
+        /* Ally Switch (step G80, issue 541): the two occupants exchange their slots, so a later move of the foe names the
+         * holder that now stands at its target position */
+        if (e->other < 2u * DUOFORGE_ACTIVE_PER_SIDE && (uint32_t)e->other / 2u == o->side) {
+            const uint32_t other_slot = (uint32_t)e->other % 2u;
+            o->occupant[slot] = o->occupant[other_slot];
+            o->occupant[other_slot] = m;
+        }
+        break;
     default:
         break;
     }

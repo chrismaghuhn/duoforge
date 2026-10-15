@@ -604,8 +604,11 @@ static bool dfi_queue_record_valid(const struct duoforge_battle *b, const dfi_qu
         return plain && bound && r->reserve == 0u;
     }
     if (kind == DFI_Q_MOVE) {
-        /* reserve: the order class of a move (DFI_QRES_*, step G62); a plain move has 0. */
-        return bound && r->reserve <= DFI_QRES_QUASHED && r->move_slot <= DUOFORGE_MOVE_SLOT_RECHARGE &&
+        /* reserve: the order class of a move (DFI_QRES_*, step G62; a plain move has 0) and its original target (bits 2-4,
+         * issue 541; any of the eight values is a roster index + 1, none or not recorded); bits 5-7 are zero. */
+        const uint32_t res = r->reserve;
+        return bound && (res & DFI_QRES_ORDER_MASK) <= DFI_QRES_QUASHED &&
+               (res >> DFI_QRES_ORIGINAL_SHIFT) <= DFI_QRES_ORIGINAL_MASK && r->move_slot <= DUOFORGE_MOVE_SLOT_RECHARGE &&
                (r->target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE || r->target == DUOFORGE_TARGET_NONE);
     }
     /* RESIDUAL has no actor and no operand. */
@@ -745,7 +748,9 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          (tp->trap_turns != 0u || tp->trap_band == 0u) &&
                          (tp->trap_turns != 0u ? (tp->trap_turns + tp->trap_elapsed == 5u || tp->trap_turns + tp->trap_elapsed == 6u)
                                                : tp->trap_elapsed == 0u);
-    const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
+    /* The seed's source is a slot (decision 0047): an Ally Switch can put the seeded Pokemon on it, which then drains into itself
+     * (issue 541), so the holder's own position is allowed. */
+    const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX;
     const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
                               tp->stockpile_spd <= tp->stockpile;
     /* Rev 3 (step G20): the variant of the Protect volatile belongs to the volatile (zero when it is down). */

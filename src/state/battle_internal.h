@@ -130,6 +130,15 @@ _Static_assert((DFI_VOL_FLINCH + DFI_VOL_PROTECT + DFI_VOL_FLASH_FIRE + DFI_VOL_
 #define DFI_QRES_NONE 0u
 #define DFI_QRES_PRIORITIZED 1u /* After You (prioritizeAction): order class 3 */
 #define DFI_QRES_QUASHED 2u     /* Quash (action.order = 201): order class 201 */
+#define DFI_QRES_ORDER_MASK 3u  /* bits 0-1: the order class above */
+/* Bits 2-4 of the reserve byte of a MOVE record (issue 541): resolveAction's originalTarget (sim/battle-queue.ts:273), the
+ * Pokemon at the chosen location when the move was queued, which Stalwart's tracksTarget aims at while it stands
+ * (sim/battle.ts:2437-2447). Its roster index + 1, or DFI_QRES_ORIGINAL_NONE when the location held none; 0 when it was not
+ * recorded: only a turn in which a Pokemon on the field has Stalwart or Mega Evolves into it records it, so a battle without
+ * Stalwart keeps every record byte as before. Bits 5-7 are zero. */
+#define DFI_QRES_ORIGINAL_SHIFT 2u
+#define DFI_QRES_ORIGINAL_MASK 7u
+#define DFI_QRES_ORIGINAL_NONE 7u
 /* Action orders (sim/battle-queue.ts:174-195): the order class of each queued action, the first key of comparePriority. Exported
  * to Python (duoforge._state_layout.VALUES) so the replay pipeline reads the order of the turn's actions from here (#512 S4). */
 #define DFI_ORDER_SWITCH_IN 3u    /* instaswitch: a replacement */
@@ -374,7 +383,7 @@ typedef struct dfi_tail_pos {
     uint8_t trap_band;         /* 0/1: the trapper holds a Binding Band (1/6 per turn, not 1/8); 0 when not trapped */
     uint8_t trap_elapsed;      /* step G90 (decision 0060): residual phases the partial trap has been through, 0..5 while it is up,
                                 * 0 without it (+1 per residual with the trap up, 0 at its start and its end); public */
-    uint8_t leech_seed_source; /* flat position that gets the HP + 1, 0 = no Leech Seed (never the occupant's own) */
+    uint8_t leech_seed_source; /* flat position that gets the HP + 1, 0 = no Leech Seed (the occupant's own after an Ally Switch onto it) */
     uint8_t yawn_turns;        /* Yawn: turns until sleep, 0 = none */
     uint8_t focus_energy;      /* 0/1 */
     uint8_t stockpile;         /* layers 0..3 */

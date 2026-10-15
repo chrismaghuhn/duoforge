@@ -280,7 +280,7 @@ static void test_swap_position_fields(df_test *t)
     sa->confusion_turns = 5u; sc->confusion_turns = 6u;
     sa->charge_turns = 7u; sc->charge_turns = 8u;
     sa->locked_move = 9u; sc->locked_move = 10u;
-    sa->locked_target = 11u; sc->locked_target = 12u; /* kept: a slot location */
+    sa->locked_target = 11u; sc->locked_target = 12u; /* the Pokemon's lastMoveTargetLoc: it moves (issue 541) */
     sa->move_actions = 13u; sc->move_actions = 14u;
     sa->switch_flag = 15u; sc->switch_flag = 16u;
     /* the tail of each position: every byte distinct, the Healing Wish bit set on position 0 only (a slot condition) */
@@ -314,7 +314,7 @@ static void test_swap_position_fields(df_test *t)
 
     dfi_swap_position_state(b, 0u, 0u, 1u);
 
-    /* the slot records: the Pokemon's fields moved, locked_target stayed with the slot */
+    /* the slot records: the Pokemon's fields moved, locked_target with them */
     DF_CHECK_EQ_U64(t, sc->activation_id, 1001u);
     DF_CHECK_EQ_U64(t, sa->activation_id, 2001u);
     DF_CHECK_EQ_U64(t, sc->occupant, 2u);
@@ -339,8 +339,8 @@ static void test_swap_position_fields(df_test *t)
     DF_CHECK_EQ_U64(t, sa->move_actions, 14u);
     DF_CHECK_EQ_U64(t, sc->switch_flag, 15u);
     DF_CHECK_EQ_U64(t, sa->switch_flag, 16u);
-    DF_CHECK_EQ_U64(t, sa->locked_target, 11u);
-    DF_CHECK_EQ_U64(t, sc->locked_target, 12u);
+    DF_CHECK_EQ_U64(t, sc->locked_target, 11u);
+    DF_CHECK_EQ_U64(t, sa->locked_target, 12u);
     /* the tail: every byte moved, except the Healing Wish bit of each slot, which stayed */
     for (size_t k = 0u; k < sizeof(dfi_tail_pos); ++k) {
         if (k == offsetof(dfi_tail_pos, position_flags)) {
