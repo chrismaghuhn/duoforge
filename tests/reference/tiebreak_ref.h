@@ -26,14 +26,14 @@ typedef struct df_tb_battle {
     uint32_t stop_count;
 } df_tb_battle;
 
-#define DF_REFERENCE_TIEBREAK_COUNT 1183u
+#define DF_REFERENCE_TIEBREAK_COUNT 1185u
 #define DF_REFERENCE_CLOSURE_STOPS 833u
 #define DF_REFERENCE_TEAM_C_STOPS 734u
-#define DF_REFERENCE_POOL_STOPS 5656u
+#define DF_REFERENCE_POOL_STOPS 5678u
 #define tb_battles df_reference_tiebreak_battles
 extern const df_tb_battle tb_battles[DF_REFERENCE_TIEBREAK_COUNT];
 
-/* 7223 stops: 201 of an ended battle; decided by the count 1762,
- * the HP percentage 2233, the total HP 2788, a tie 239;
- * winners: side 0 3375, side 1 3609, tie 239 */
+/* 7245 stops: 203 of an ended battle; decided by the count 1771,
+ * the HP percentage 2239, the total HP 2793, a tie 239;
+ * winners: side 0 3392, side 1 3614, tie 239 */
 #endif

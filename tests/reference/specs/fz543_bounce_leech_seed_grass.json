@@ -1,0 +1,83 @@
+{
+  "name": "fz543_bounce_leech_seed_grass",
+  "purpose": "Espeon's Magic Bounce reflects Trevenant's Leech Seed (step 1); Trevenant is Grass, so the bounced seed is -immune in hitStepTryImmunity before any accuracy roll (data/moves.ts:10202-10231); on main the engine rolled the accuracy first (issue 543). A battle of the differential fuzzing of issue 396 (free random sets, fz_254_28), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,78202ad53f4a6c93e484fc51892a79ef46e6c8b8312b1d44f2100199c943b81e",
+  "teams": [
+    "golisopod (M)\nAbility: emergencyexit\nLevel: 50\nEVs: 8 HP / 9 Atk / 13 Def / 12 SpA / 19 SpD / 5 Spe\nRelaxed Nature\n- closecombat\n- aquajet\n- screech\n- darkpulse\n\ndelphox (F) @ delphoxite\nAbility: blaze\nLevel: 50\nEVs: 9 HP / 15 Atk / 10 Def / 13 SpA / 9 SpD / 10 Spe\nCareful Nature\n- agility\n- psychicterrain\n- skillswap\n- lightscreen\n\nmeowscarada (F) @ cobaberry\nAbility: overgrow\nLevel: 50\nEVs: 1 Def / 1 SpA / 2 SpD / 2 Spe\nBrave Nature\n- lowkick\n- throatchop\n- suckerpunch\n- skillswap\n\ntrevenant (F) @ spelltag\nAbility: frisk\nLevel: 50\nEVs: 11 HP / 14 Atk / 8 Def / 9 SpA / 13 SpD / 11 Spe\nNaive Nature\n- psychic\n- confuseray\n- grassyglide\n- leechseed\n\nsandaconda (F) @ hardstone\nAbility: sandveil\nLevel: 50\nEVs: 13 HP / 6 Atk / 14 Def / 7 SpA / 14 SpD / 12 Spe\nDocile Nature\n- glare\n- sandtomb\n- outrage\n- scaryface\n\naggron (M) @ chopleberry\nAbility: sturdy\nLevel: 50\nEVs: 7 HP / 7 Atk / 7 Def / 15 SpA / 6 SpD / 7 Spe\nAdamant Nature\n- superpower\n- crunch\n- earthpower\n- taunt",
+    "reuniclus (M) @ chopleberry\nAbility: overcoat\nLevel: 50\nEVs: 2 SpD\nDocile Nature\n- recover\n- reflect\n- imprison\n- icepunch\n\nbanette (M) @ banettite\nAbility: frisk\nLevel: 50\nEVs: 14 HP / 6 Atk / 11 Def / 12 SpA / 13 SpD / 10 Spe\nGentle Nature\n- gunkshot\n- knockoff\n- shadowclaw\n- dazzlinggleam\n\nglalie (M) @ rindoberry\nAbility: innerfocus\nLevel: 50\nEVs: 14 HP / 12 Atk / 13 Def / 9 SpA / 5 SpD / 13 Spe\nHasty Nature\n- chillingwater\n- disable\n- darkpulse\n- switcheroo\n\nespeon (F) @ scolipite\nAbility: magicbounce\nLevel: 50\nEVs: 15 HP / 11 Atk / 5 Def / 8 SpA / 8 SpD / 12 Spe\nCalm Nature\n- weatherball\n- psychicterrain\n- yawn\n- drainingkiss\n\nsylveon (M) @ cobaberry\nAbility: pixilate\nLevel: 50\nEVs: 10 HP / 6 Atk / 12 Def / 15 SpA / 13 SpD / 10 Spe\nQuiet Nature\n- psychup\n- doubleedge\n- trailblaze\n- sunnyday\n\nflareon (M) @ widelens\nAbility: flashfire\nLevel: 50\nEVs: 13 HP / 9 Atk / 15 Def / 6 SpA / 11 SpD / 12 Spe\nDocile Nature\n- helpinghand\n- lavaplume\n- faketears\n- batonpass"
+  ],
+  "choices": [
+    {
+      "p1": "team 4362",
+      "p2": "team 1436"
+    },
+    {
+      "p1": "move 4 2, move 4 1",
+      "p2": "switch 4, move 2"
+    },
+    {
+      "p1": "move 4 1, move 4 2",
+      "p2": "switch 3, move 2"
+    },
+    {
+      "p1": "move 4 2, switch 4",
+      "p2": "move 4 -2, move 2"
+    },
+    {
+      "p1": "move 1 -2, move 1 mega",
+      "p2": "switch 3, move 4 1"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 2 -2, move 1",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 3 -2, move 4",
+      "p2": "move 3 2, move 2"
+    },
+    {
+      "p1": "move 3 1, move 2",
+      "p2": "move 4, move 4 1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 2, switch 3",
+      "p2": "move 4 1, move 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4 2, move 3 2",
+      "p2": "move 2 2, move 3 2"
+    },
+    {
+      "p1": "move 4 -2, move 3 -1",
+      "p2": "move 4 1, move 2"
+    },
+    {
+      "p1": "pass, switch 4",
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 1, move 2 2",
+      "p2": "move 4 1, move 4"
+    },
+    {
+      "p1": "move 4 2, move 2 2",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "switch 3, move 2 1",
+      "p2": "move 3, pass"
+    }
+  ]
+}
