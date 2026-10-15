@@ -16,8 +16,9 @@ checked-out commit's traces: a trace added later shifts it.
   is excluded by name, as is a point whose public record the open-sheet tracker refuses
   (true-record-unsupported:<its reason>), a true world the engine refuses or a choice that matches no option.
 
-Passed when the 95% interval of the mean per-turn difference (meter - luck.py) includes 0, or |mean| < 0.01; the
-correlation is reported only. Aggregates only (the battles are the project's own committed ones).
+Passed when the 95% interval of the mean per-turn difference (meter - luck.py) includes 0, or |mean| < 0.01, and the
+set is evaluable: at most 5% of the meter's compared foe slots lost as target-not-reproduced (the third comparison,
+addition (a)); the correlation is reported only. Aggregates only (the battles are the project's own committed ones).
 
     python tools/research/cts_luck_check.py STREAMS.jsonl CHECKPOINT CHECKPOINT_SHA256 OUT.json [--limit N]
 """
@@ -38,6 +39,7 @@ sys.path.append(str(ROOT / "python"))
 sys.path.append(str(Path(__file__).resolve().parent))
 
 HIDDEN_VOLATILES = {"partiallytrapped", "twoturnmove"}
+LOST_LIMIT = 0.05  # the share of compared foe slots lost as target-not-reproduced above which a set is not evaluable
 
 
 class Skip(Exception):
@@ -69,6 +71,21 @@ def pool_battles(root, at=None):
         if trace_to_c.spec_data(stem, spec) == "pool":
             names.append(stem)
     return names[::5]
+
+
+def zero_sp_serious(team):
+    """The members of a paste with a Serious nature (or none) and 0 SP (no EVs line, or all zero): the rule of the #406
+    teams the registry marks pending (the third comparison, addition (b))."""
+    out = 0
+    for block in team.strip().split("
+
+"):
+        lines = [line.strip() for line in block.splitlines()]
+        nature = next((line for line in lines if line.endswith(" Nature")), "Serious Nature")
+        evs = next((line for line in lines if line.startswith("EVs:")), None)
+        zero = evs is None or all(int(part.split()[0]) == 0 for part in evs[len("EVs:"):].split("/"))
+        out += nature == "Serious Nature" and zero
+    return out
 
 
 def read_streams(path):
@@ -310,6 +327,7 @@ def main(argv=None):
     search = live.searcher.searcher
     streams = read_streams(args.streams)
     pairs, skipped, meter_excluded, oracle_skips = [], collections.Counter(), collections.Counter(), collections.Counter()
+    targets, battles_406 = collections.Counter(), 0
     if args.battles is not None and args.traces_at is not None:
         raise SystemExit("--battles is the selection itself: not with --traces-at")
     names = (Path(args.battles).read_text(encoding="utf-8").split() if args.battles is not None
@@ -323,6 +341,7 @@ def main(argv=None):
                     skipped["no-stream"] += 1
                     continue
                 spec, trace = trace_to_c.load_battle(str(ROOT), name)
+                battles_406 += any(zero_sp_serious(team) for team in spec["teams"])
                 for player in (0, 1):
                     messages = streams[name][player]
                     log = Path(tmp, f"battle-gen9championsvgc2026regmc-{n}-p{player + 1}.jsonl")
@@ -340,16 +359,18 @@ def main(argv=None):
                         skipped[f"meter:{type(err).__name__}:{msg}"] += 1
                         continue
                     meter_excluded.update(got["excluded"])
+                    targets.update(got["targets"])
                     try:
                         truth, sk = oracle(name, player, messages, spec, trace, tables, search, got["decisions"])
                     except Skip as s:  # a battle the true side cannot follow (an updated request), by name
                         skipped[f"oracle:{s}"] += 1
                         continue
                     oracle_skips.update(sk)
-                    for rqid, luck, mixed in zip(got["decisions"], got["turns"], got["mixed"]):
+                    for rqid, luck, mixed, before in zip(got["decisions"], got["turns"], got["mixed"],
+                                                         got["mixed_before"]):
                         if rqid in truth:
                             pairs.append({"meter": luck, "luck_py": truth[rqid], "mixed": mixed,
-                                          "battle": name})
+                                          "mixed_before": before, "battle": name})
     finally:
         live.close()
     diffs = np.array([x["meter"] - x["luck_py"] for x in pairs])
@@ -360,10 +381,17 @@ def main(argv=None):
     unmixed = np.array([x["meter"] - x["luck_py"] for x in pairs if not x["mixed"]])
     clustered = by_battle(pairs)
     clustered_unmixed = by_battle([x for x in pairs if not x["mixed"]])
+    lost = targets["slots-lost"] / targets["slots-compared"] if targets["slots-compared"] else 0.0
+    evaluable = lost <= LOST_LIMIT
+    criterion = None if mean is None or half is None else bool(abs(mean) < 0.01 or abs(mean) <= half)
     result = {"battles": len(names), "player_battles_skipped": dict(skipped), "turns_compared": n,
               "mean_difference": mean, "half_width": half, "half_width_by_battle": clustered,
               "correlation": corr,
-              "passed": None if mean is None or half is None else bool(abs(mean) < 0.01 or abs(mean) <= half),
+              "criterion": criterion, "evaluable": evaluable,
+              "passed": None if criterion is None else bool(criterion and evaluable),
+              "targets": dict(targets), "target_slots_lost_share": lost, "battles_406": battles_406,
+              "mixed_before": sum(x["mixed_before"] for x in pairs),
+              "became_unique": sum(x["mixed_before"] and not x["mixed"] for x in pairs),
               "unmixed": {"turns": int(unmixed.size), "mean_difference": float(unmixed.mean()) if unmixed.size else None,
                           "half_width": float(1.96 * unmixed.std(ddof=1) / math.sqrt(unmixed.size))
                           if unmixed.size > 1 else None, "half_width_by_battle": clustered_unmixed},

@@ -7,7 +7,9 @@ chance seeds of the same actions. Everything about the battle is the engine's an
   replayed honest search; world w is particle w), weighed as the search weighs them;
 - the same actions: the bot's accepted choice (cts.pair_texts of cts.logged_choice) and, in each world, the foe's action
   the turn's lines show (duoforge_replay.labels.turn_label on that world's foe options, the particle's sheets, the
-  world's own roster); a set the lines narrow it to is mixed by the foe model; a world the turn refutes or that cannot
+  world's own roster); a set the lines narrow it to is mixed by the foe model; a target the lines show narrows a
+  target-unknown slot to the pairs whose step the engine resolves to it (the third comparison of the README: the
+  search's own worlds stepped by privileged.step_events, never a true state); a world the turn refutes or that cannot
   play what the lines show is left out; a turn the lines tell nothing of, or with no world left, is excluded by name;
 - the alternatives: Batch.expand of every world with both choices under C seeds, search_seeds(LUCK_SEED, key, sample),
   the key drawn from the decision's search key (common random numbers: the seeds never depend on the choices);
@@ -82,6 +84,23 @@ def foe_shown(segment, side, lists, ctx):
         out.append(found)
     return out, tuple(_reason_name(r) for r in label.reasons)
 
+def line_target(segment, position):
+    """The single target the turn's first |move| line of position's user names (a flat position), or None when it
+    names none: a [spread] line, an empty target, or no move line (its cant, switch or faint line comes first). The
+    line names the position the move resolved to, as the engine's MOVE event does (`other`)."""
+    from .lines import flat_position, line_kind
+    for line in segment:
+        kind = line_kind(line)
+        parts = line.split("|")
+        if kind in ("switch", "faint", "cant") and len(parts) > 2 and flat_position(parts[2]) == position:
+            return None
+        if kind == "move" and len(parts) > 2 and flat_position(parts[2]) == position:
+            if len(parts) < 5 or any(part.startswith("[spread]") for part in parts[5:]):
+                return None
+            return flat_position(parts[4])
+    return None
+
+
 def world_context(ctx, foe_side):
     """The label context of a world: the particle's, with the foe's roster as the world's own engine roster (its
     observation's members, in the world's order: an option's reserve is a roster index of the world; in the committed
@@ -120,6 +139,9 @@ class Meter:
         self.leaves = duoforge.Batch(search.worlds.context, np.resize(duoforge.reference_setups([0]), self.capacity),
                                      1, LUCK_SEED)
         self.last = None
+        # the target narrowing over every turn this meter valued: compared foe slots and the worlds that held them,
+        # those of them lost as target-not-reproduced (README, the third comparison, addition (a))
+        self.targets = collections.Counter()
 
     def close(self):
         self.leaves.close()
@@ -143,6 +165,32 @@ class Meter:
         if not np.isfinite(out).all():
             raise ValueError("the value head gives a value that is not finite")
         return out
+
+    def _reproduced(self, worlds, w, seat, turn, pair, compared, targets):
+        """Whether the engine resolves the foe pair in world w to the lines' targets: the world stepped on a copy
+        (privileged.step_events, the search's own hypothesis only) with the bot's choice and the pair, under the turn's
+        `samples` seeds (the expectation's own); reproduced when under one seed the first MOVE event of every compared
+        slot's user names its line's target. A step the engine refuses is Excluded("leaf-refused"), as a refused
+        leaf."""
+        from duoforge import _layout, privileged
+        from duoforge.batch import search_seeds
+        from duoforge_search import lookahead
+        foe, move = 1 - seat, _layout.CONSTANTS["DUOFORGE_EVENT_MOVE"]
+        choice = np.zeros(2, _layout.FACTORED_CHOICE)
+        choice["slot"][seat] = divmod(turn.own, lookahead.OPTIONS)
+        choice["slot"][foe] = pair
+        key = turn_key(turn.key)
+        for sample in range(self.samples):
+            got = privileged.step_events(worlds, w, choice, rng=search_seeds(LUCK_SEED, key, sample))
+            if got["status"] != 0:
+                raise Excluded("leaf-refused")
+            moved = {}
+            for event in got["events"][seat]:
+                if int(event["kind"]) == move:
+                    moved.setdefault(int(event["position"]), int(event["other"]))
+            if all(moved.get(foe * 2 + k) == targets[k] for k in compared):
+                return True
+        return False
 
     def turn(self, game, record, search_record, policy):
         """The searched turn of a decision point the search just decided (game.candidates; search_record its record):
@@ -179,7 +227,12 @@ class Meter:
         the turn (duoforge_replay.facts.side_facts, as the particle filter takes them), and a world whose sets do not
         agree with them (cts.agrees, the particle filter's own test: a move used, an item or ability revealed that
         its set lacks) could not play the turn. Returns (expected, mixed, worlds left out); Excluded
-        ("foe-action-not-in-worlds") when the turn refutes every world."""
+        ("foe-action-not-in-worlds") when the turn refutes every world.
+
+        A target-unknown foe slot whose line names one target (line_target) is narrowed in each world to the pairs
+        the engine resolves to it (_reproduced); a world with no such pair is left out (target-not-reproduced, counted
+        in self.targets). self.last["mixed_before"] says whether the turn would be mixed without the narrowing (the
+        after-S3 method)."""
         import duoforge
         from duoforge import _layout
         from duoforge_learn.luck import leaf_values
@@ -197,7 +250,9 @@ class Meter:
             raise Excluded("foe-action-not-in-worlds")
         plan = []  # (world, foe pair or None, its weight in the world)
         mixed = False
-        self.last = {"foe": [], "reasons": [], "rosters": [], "kept": kept}  # per world played (diagnostics, tests)
+        self.last = {"foe": [], "reasons": [], "rosters": [], "kept": kept, "mixed_before": False,
+                     "not_reproduced": 0}  # per world played (diagnostics, tests)
+        targets = [line_target(segment, foe * 2 + k) for k in (0, 1)]
         unknown = []  # worlds whose label tells nothing of a foe slot (a world that cannot play the lines is left out)
         for w in kept:
             if not asked:
@@ -215,6 +270,18 @@ class Meter:
             pairs = [(a, b) for a in first for b in second if int(domain["allowed"][a]) >> b & 1]
             if not pairs:  # the world's own domain bars the pair the lines show (a Choice lock, Taunt, Disable, ...)
                 continue
+            if len(pairs) > 1:
+                self.last["mixed_before"] = True
+            compared = [k for k in (0, 1) if reasons[k] == "target-unknown" and targets[k] is not None]
+            if compared:
+                self.targets["worlds-compared"] += 1
+                self.targets["slots-compared"] += len(compared)
+                pairs = [pair for pair in pairs if self._reproduced(worlds, w, p, turn, pair, compared, targets)]
+                if not pairs:  # no pair of the world reaches the lines' target: it cannot play the turn
+                    self.targets["worlds-not-reproduced"] += 1
+                    self.targets["slots-lost"] += len(compared)
+                    self.last["not_reproduced"] += 1
+                    continue
             self.last["foe"].append([(lists[0][a], lists[1][b]) for a, b in pairs])
             self.last["reasons"].append(reasons)
             self.last["rosters"].append(ctx.roster)  # the world's foe roster (base formes), its reserves' order
@@ -318,6 +385,8 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
         raise cts.Refused("open_sheets_log")
     result = result_of(records, bot)
     excluded, luck, mixed, dropped, decisions = collections.Counter(), [], [], [], []
+    mixed_before, not_reproduced = [], []  # per valued turn: mixed without the narrowing; its worlds lost to it
+    targets_at = collections.Counter(meter.targets)
     partial = collections.Counter()  # valued turns whose rest after a pivot inside them is valued nowhere
     searches = differs = 0
     pending = None
@@ -336,6 +405,8 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
             return
         luck.append(actual() - expected)
         mixed.append(was_mixed)
+        mixed_before.append(bool(meter.last["mixed_before"]))
+        not_reproduced.append(int(meter.last["not_reproduced"]))
         dropped.append(left_out)
         decisions.append(turn.decision)
     replayed = cts.LogReplay(records, data, policy, team_text, prior, key, search=live, waits=True)
@@ -383,6 +454,9 @@ def battle(path, data, policy, live, team_text, bot, prior, meter, budget=1e9):
             last_feed = max(i for i, r in enumerate(records) if "feed" in r)
             value(pending, replayed.game.tracker._lines() + [r["in"] for r in records[last_feed + 1:]
                                                                if isinstance(r.get("in"), str)], lambda: result)
+    targets = collections.Counter(meter.targets)
+    targets.subtract(targets_at)
     return {"turns": luck, "mixed": mixed, "dropped": dropped, "decisions": decisions, "worlds": meter.search.s,
-            "result": result,
+            "result": result, "mixed_before": mixed_before, "not_reproduced": not_reproduced,
+            "targets": +targets,
             "excluded": excluded, "partial": partial, "searches": searches, "search_differs": differs}
