@@ -10,18 +10,19 @@
  * type, not a Levitate holder and not an Air Balloon holder (step G67: `return item !== 'airballoon'`, read live, so Knock Off
  * and Trick move it at once). Gravity (step K4) grounds first, below; Ingrain, Smack Down, Magnet Rise and Telekinesis are unmarked rows, so no battle
  * has them; Eelevate is an unmarked ability. The ability is the current one (a Mega's, or one that Trace copied). Stealth Rock does
- * not read it (moves.ts:17814-17838). */
+ * not read it (moves.ts:17814-17838). Magic Room (step K5) empties the item that this reads (`this.ignoringItem() ? '' : this.item`,
+ * sim/pokemon.ts:2152): an Iron Ball does not ground and an Air Balloon holder is grounded. */
 static bool dfi_grounded_test(const struct duoforge_battle *b, const dfi_member *m)
 {
     /* Step K4 (#475, sim/pokemon.ts:2149): Gravity grounds every Pokemon first, before Iron Ball, Flying and Levitate. */
     if (b->tail.gravity_turns != 0u) {
         return true;
     }
-    if (dfi_holds(b, m, DFI_ITEM_IRONBALL)) {
+    if (dfi_holds_effect(b, m, DFI_ITEM_IRONBALL)) {
         return true;
     }
     return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE) &&
-           !dfi_holds(b, m, DFI_ITEM_AIRBALLOON);
+           !dfi_holds_effect(b, m, DFI_ITEM_AIRBALLOON);
 }
 
 /* Keep the hot entry point inline without duplicating the type/ability

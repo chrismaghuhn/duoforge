@@ -9,19 +9,20 @@
  * :4200-4219 Misty Seed; the generator checks that each is Grassy Seed for its terrain and its stat): onSwitchInPriority
  * -1, onStart (not ignoringItem, the terrain is up) and onTerrainChange (the terrain is up) both call useItem, and the
  * item's boosts raise one stage of one stat: Defense for the Grassy and Electric Seeds, Special Defense for the Psychic and
- * Misty Seeds. The terrain a seed waits for, or DFI_TERRAIN_NONE for a member that holds none. */
+ * Misty Seeds. The terrain a seed waits for, or DFI_TERRAIN_NONE for a member that holds none, or while Magic Room is up (step K5:
+ * an item's handlers are not run for a Pokemon that ignores its item, sim/battle.ts:877). */
 static inline uint32_t dfi_seed_terrain(const struct duoforge_battle *b, const dfi_member *m)
 {
-    if (dfi_holds(b, m, DFI_ITEM_GRASSYSEED)) {
+    if (dfi_holds_effect(b, m, DFI_ITEM_GRASSYSEED)) {
         return DFI_TERRAIN_GRASSY;
     }
-    if (dfi_holds(b, m, DFI_ITEM_PSYCHICSEED)) {
+    if (dfi_holds_effect(b, m, DFI_ITEM_PSYCHICSEED)) {
         return DFI_TERRAIN_PSYCHIC;
     }
-    if (dfi_holds(b, m, DFI_ITEM_ELECTRICSEED)) {
+    if (dfi_holds_effect(b, m, DFI_ITEM_ELECTRICSEED)) {
         return DFI_TERRAIN_ELECTRIC;
     }
-    if (dfi_holds(b, m, DFI_ITEM_MISTYSEED)) {
+    if (dfi_holds_effect(b, m, DFI_ITEM_MISTYSEED)) {
         return DFI_TERRAIN_MISTY;
     }
     return DFI_TERRAIN_NONE;

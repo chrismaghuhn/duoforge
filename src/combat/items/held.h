@@ -37,6 +37,31 @@ static inline bool dfi_holds(const struct duoforge_battle *b, const dfi_member *
     return m != NULL && dfi_item_code(b, m) == 1u + id;
 }
 
+/* Step K5 (#475, decision 0015 5dm): the item EFFECTS of a member. Magic Room (data/moves.ts:10754-10797) makes every Pokemon ignore
+ * its item (sim/pokemon.ts:879-885 ignoringItem, the pseudo weather test at :882): hasItem() is false and no item handler runs
+ * (sim/battle.ts:609 singleEvent, :877 runEvent), while getItem() and takeItem() are untouched. So the rules that run an item's
+ * effect (a berry, a boost, the Choice lock, Life Orb, Air Balloon, a herb) ask dfi_holds_effect / dfi_item_effect_code, and the rules
+ * that move or read the item itself (Knock Off, Trick, Thief, Covet, Bug Bite, Frisk, Poltergeist, Acrobatics, the Mega Stone, the
+ * removal of a Choice lock) keep dfi_holds / dfi_item_code, which see the item whatever the room says. Every effect site is called
+ * for a member on the field, so the benched-holder half of ignoringItem (sim/pokemon.ts:880) holds by construction. Persistent,
+ * Klutz, Embargo and Primal Orbs are not in the pool. */
+static inline bool dfi_items_suppressed(const struct duoforge_battle *b)
+{
+    return b->tail.magic_room_turns != 0u;
+}
+
+/* dfi_item_code for an item's EFFECT: 0 while Magic Room is up. */
+static inline uint32_t dfi_item_effect_code(const struct duoforge_battle *b, const dfi_member *m)
+{
+    return dfi_items_suppressed(b) ? 0u : dfi_item_code(b, m);
+}
+
+/* dfi_holds for an item's EFFECT (Pokemon.hasItem): false while Magic Room is up. */
+static inline bool dfi_holds_effect(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
+{
+    return !dfi_items_suppressed(b) && dfi_holds(b, m, id);
+}
+
 /* singleEvent TakeItem of the item (data/items.ts, the onTakeItem of the Mega Stones: they refuse their own species,
  * Floettite's variant at :2194 gives the same result; the Champions mod changes none): a Pokemon that holds an item
  * that can be taken from it. The only items of the pool with an onTakeItem are the Mega Stones, and takeItem() asks
