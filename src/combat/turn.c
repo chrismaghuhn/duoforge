@@ -3148,7 +3148,7 @@ static bool dfi_stone_refused_for(const dfi_member *recipient, uint32_t code)
 }
 
 /* A Pokemon that gets item `code` on the spot uses it in setItem's onStart: a White Herb with a lowered stat, a terrain seed
- * whose terrain is up (data/items.ts whiteherb, grassyseed, psychicseed). The engine refuses that case, not guesses it. */
+ * whose terrain is up (data/items.ts whiteherb, grassyseed, psychicseed, electricseed, mistyseed). The engine refuses that case, not guesses it. */
 static bool dfi_start_uses_item(struct duoforge_battle *b, uint32_t flat, uint32_t code)
 {
     if (code == 1u + DFI_ITEM_GRASSYSEED) {
@@ -3156,6 +3156,12 @@ static bool dfi_start_uses_item(struct duoforge_battle *b, uint32_t flat, uint32
     }
     if (code == 1u + DFI_ITEM_PSYCHICSEED) {
         return b->terrain == DFI_TERRAIN_PSYCHIC;
+    }
+    if (code == 1u + DFI_ITEM_ELECTRICSEED) {
+        return b->terrain == DFI_TERRAIN_ELECTRIC;
+    }
+    if (code == 1u + DFI_ITEM_MISTYSEED) {
+        return b->terrain == DFI_TERRAIN_MISTY;
     }
     if (code == 1u + DFI_ITEM_WHITEHERB) {
         const dfi_active_slot *pos = dfi_pos(b, flat);

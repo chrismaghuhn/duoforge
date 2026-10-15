@@ -196,11 +196,11 @@ static void check_no_pass(df_test *t, const duoforge_context *ctx, const char *n
     }
 }
 
-/* The refusal of a terrain seed that starts on its user (dfi_symbiosis, decision 0015 5bm): the Sitrus battle with the holder
- * Floette-Eternal holding a Psychic Seed, and Psychic Terrain up at the step of the pass (set at the boundary before it: nothing
+/* The refusal of a terrain seed that starts on its user (dfi_symbiosis, decision 0015 5bm), for the Psychic, Electric and Misty Seed: the Sitrus
+ * battle with the holder Floette-Eternal holding the seed, and its terrain up at the step of the pass (set at the boundary before it: nothing
  * before the pass uses the terrain). The step returns E_UNSUPPORTED, and the battle the caller holds is byte-for-byte the battle
  * before the step: the step ran on a working copy (src/state/request.c), so no state change is visible. */
-static void check_seed_refusal(df_test *t, const duoforge_context *ctx)
+static void check_seed_refusal(df_test *t, const duoforge_context *ctx, uint32_t item, uint32_t terrain)
 {
     const df_conf_battle *cb = find("g69_symbiosis_sitrus");
     if (!DF_CHECK(t, cb != NULL)) {
@@ -222,13 +222,13 @@ static void check_seed_refusal(df_test *t, const duoforge_context *ctx)
     }
     duoforge_battle_setup setup;
     build_setup(cb, &setup);
-    setup.sides[0].members[0].item = (uint8_t)(DFI_ITEM_PSYCHICSEED + 1u); /* the holder's sheet item, id + 1 as the conformance tables */
+    setup.sides[0].members[0].item = (uint8_t)(item + 1u); /* the holder's sheet item, id + 1 as the conformance tables */
     duoforge_battle *b = NULL;
     if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
         return;
     }
     if (advance(t, ctx, cb, b, 0u, pass_k - 1u)) {
-        b->terrain = DFI_TERRAIN_PSYCHIC;
+        b->terrain = (uint8_t)terrain;
         b->terrain_turns = DFI_FIELD_TURNS_MAX;
         duoforge_battle snapshot = *b;
         const df_conf_step *st = &cb->steps[pass_k - 1u];
@@ -253,7 +253,9 @@ int main(void)
         check_sitrus(&t, ctx);
         check_no_pass(&t, ctx, "g69_symbiosis_eject");
         check_no_pass(&t, ctx, "g69_symbiosis_stone");
-        check_seed_refusal(&t, ctx);
+        check_seed_refusal(&t, ctx, DFI_ITEM_PSYCHICSEED, DFI_TERRAIN_PSYCHIC);
+        check_seed_refusal(&t, ctx, DFI_ITEM_ELECTRICSEED, DFI_TERRAIN_ELECTRIC);
+        check_seed_refusal(&t, ctx, DFI_ITEM_MISTYSEED, DFI_TERRAIN_MISTY);
         duoforge_context_destroy(ctx);
     }
     return df_test_end(&t);

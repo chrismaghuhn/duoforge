@@ -8,12 +8,13 @@
  *     Room, K6), the setter's member code is in magic_room_source (1 + side * 6 + roster index), for both viewers, through the
  *     start, the countdown, the end of the five turns and the restart that ends the room early (setter on the field and benched);
  *   - a Choice-locked holder that would charge or lock with another move under the room is refused (E_UNSUPPORTED), atomically;
- *   - an Illusion holder whose disguise is up that uses Magic Room is refused (E_UNSUPPORTED) (the predicate of the dispatch): Showdown keeps the disguise
- *     on the benched setter (data/abilities.ts:2075-2079), so its end line would name the disguise while the digest hashes the member.
+ *   - an Illusion holder whose disguise is up that uses Magic Room is refused (E_UNSUPPORTED), by the predicate and by the turn's
+ *     dispatch: Showdown keeps the disguise on the benched setter (data/abilities.ts:2075-2079), so its end line would
+ *     name the disguise while the digest hashes the member.
  * The engine's replay of the recorded battles (tests/reference/traces/k5_*.json: the events with the setter, the requests with the
- * lock, the item effects that are off, the residual's herb after the room's end (k5_mr_herb_end) and the tie of two Leftovers holders
- * (k5_mr_tie)) is pinned by duoforge.reference.conformance_pool and the converter; the live tracker's fold by
- * python/tests.
+ * lock, the item effects that are off) is pinned by duoforge.reference.conformance_pool and the converter; the six later recordings
+ * are k5_mr_herb_end (the residual's herb after the room's end), k5_mr_tie (two Leftovers holders tie), k5_mr_tie_herb,
+ * k5_mr_tie_seed, k5_mr_tie_switch and k5_mr_tie_update (ties of the other counting sites); the live tracker's fold by python/tests.
  */
 #include <stdio.h>
 #include <string.h>
@@ -221,8 +222,9 @@ static void check_lock_conflict(df_test *t, const duoforge_context *ctx)
 
 /* An Illusion holder with its disguise up that uses Magic Room is refused: the lead of i2_illusion_break (Zoroark, disguised after the team
  * step) is refused as the user, no other position is, and a battle without a disguise (k5_mr_end_active) refuses nobody. No pool species
- * has Illusion and Magic Room together (the member rules refuse a move outside the learnset), so the rule is checked on the predicate
- * the move's dispatch asks (dfi_magic_room_refused, combat/field/magic_room_refusal.h: the dispatch returns E_UNSUPPORTED before any line). */
+ * has Illusion and Magic Room together (the member rules refuse a move outside the learnset), so this function checks the predicate
+ * the move's dispatch asks (dfi_magic_room_refused, combat/field/magic_room_refusal.h), and check_illusion_step checks the dispatch's
+ * E_UNSUPPORTED through a step. */
 static void check_illusion_setter(df_test *t, const duoforge_context *ctx)
 {
     duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
@@ -243,6 +245,44 @@ static void check_illusion_setter(df_test *t, const duoforge_context *ctx)
     }
 }
 
+/* The dispatch of the move asks that predicate: i2_illusion_break after its team step (Zoroark, disguised, leads side 0), Magic Room in
+ * the first move slot of that lead, and the recorded command of turn 1 for slot 0 (the move, with no target). The turn runs on a copy
+ * the way request.c runs it (dfi_turn_run), because duoforge_battle_step refuses this state before the dispatch: a Zoroark that
+ * knows Magic Room fails the state check (E_INVARIANT). The turn returns E_UNSUPPORTED, and the battle the caller holds is equal to
+ * its clone. */
+static void check_illusion_step(df_test *t, const duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("i2_illusion_break");
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (!DF_CHECK(t, cb != NULL && b != NULL)) {
+        return;
+    }
+    DF_CHECK(t, dfi_illusion_disguise_up(&b->sides[0], &b->tail.sides[0], 0u) != 0);
+    b->sides[0].members[b->sides[0].positions[0].occupant].moves[0].move_id = (uint16_t)DFI_MOVE_MAGICROOM;
+    duoforge_battle *before = NULL;
+    DF_CHECK(t, duoforge_battle_clone(ctx, b, &before) == DUOFORGE_OK && before != NULL);
+    duoforge_decision_bundle bd;
+    bundle_of(&cb->steps[1], b, &bd);
+    bd.responses[0].slots[0] = (duoforge_slot_command){DFI_SLOT_MOVE, 0u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
+    for (uint32_t k = 0u; k < 2u; ++k) { /* the foe passes, so that the recorded Moonblast does not break the disguise first */
+        bd.responses[1].slots[k] = (duoforge_slot_command){DFI_SLOT_PASS, 0u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
+    }
+    struct duoforge_battle tmp = *b;
+    dfi_events events;
+    memset(&events, 0, sizeof events);
+    dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
+    draws.tape = NULL;
+    draws.tape_len = 0u;
+    const duoforge_status refused = dfi_turn_run(ctx, &tmp, bd.responses, &draws, &events);
+    if (!DF_CHECK(t, refused == DUOFORGE_E_UNSUPPORTED)) {
+        fprintf(stderr, "  the turn returned %s\n", duoforge_status_name(refused));
+    }
+    bool equal = false;
+    DF_CHECK(t, before != NULL && duoforge_battle_equal(ctx, b, before, &equal) == DUOFORGE_OK && equal);
+    duoforge_battle_destroy(before);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -254,6 +294,7 @@ int main(void)
         check_views(&t, ctx);
         check_lock_conflict(&t, ctx);
         check_illusion_setter(&t, ctx);
+        check_illusion_step(&t, ctx);
         duoforge_context_destroy(ctx);
     }
     return df_test_end(&t);
