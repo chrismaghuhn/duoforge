@@ -230,6 +230,40 @@ def parse_team(text, tables):
     return team
 
 
+def locked_move_slot(steps, side, slot, mon, team, tables):
+    """The move slot of the lockedmove lock of the active Pokemon at (side, slot): the move of its last `|move|` line from that
+    position, in the steps up to now (the lock starts with the user's own move and every locked turn prints the move again),
+    looked up in the member's set. A move the set does not have (a called Outrage) or no such line stops the conversion."""
+    pos = 'p%d%s: ' % (side + 1, 'ab'[slot])
+    forme = tables['FORME'][key(mon['set_species'])]
+    member = next((m for m in team if m['species'] == forme), None)
+    for step in reversed(steps):
+        for line in reversed(step['log']):
+            parts = line.split('|')
+            if len(parts) > 3 and parts[1] == 'move' and parts[2].startswith(pos):
+                move = tables['MOVE'].get(key(parts[3]))
+                if member is None or move not in member['moves']:
+                    raise ConversionError('locked-move-slot', 'trace_to_c: the locked move %s of %s is not in its set' % (
+                        parts[3], mon['set_species']), detail=parts[3])
+                return member['moves'].index(move)
+    raise ConversionError('locked-move-slot', 'trace_to_c: no move line for the lock of %s' % mon['set_species'],
+                          detail='no-move-line')
+
+
+def locked_slots(trace, step, spec, tables):
+    """{(side, slot): move slot} of every active Pokemon locked by lockedmove whose request has the one row of the locked
+    move, in the state the choices of `step` are made in (issue 516): for convert_choice."""
+    state = trace['start']['state'] if step == 0 else trace['steps'][step - 1]['state']
+    out = {}
+    for s, sd in enumerate(state['sides']):
+        rows = sd.get('enabled') or []
+        for k, ai in enumerate(sd['active']):
+            if ai >= 0 and k < len(rows) and len(rows[k]) == 1 and 'lockedmove' in sd['pokemon'][ai]['volatiles']:
+                out[(s, k)] = locked_move_slot(trace['steps'][:step], s, k, sd['pokemon'][ai],
+                                               parse_team(spec['teams'][s], tables), tables)
+    return out
+
+
 COND_INDEX = {'tailwind': 0, 'reflect': 1, 'lightscreen': 2}  # the order of a side's 'conditions'
 
 
@@ -876,9 +910,10 @@ def two_turn_lock(p, key, remembered):
     return remembered[key]
 
 
-def convert_choice(text, side, state, roster_of, mid_turn=False):
+def convert_choice(text, side, state, roster_of, mid_turn=False, locked=None):
     """A Showdown choice string -> ('team', picks) or ('slots', [cmd, cmd]).
-    mid_turn: the request was made during the turn (a pivot), not at its end."""
+    mid_turn: the request was made during the turn (a pivot), not at its end. locked: {(side, slot): move slot} of the
+    lockedmove locks in `state` (locked_slots); a lockedmove lock without its entry stops the conversion."""
     if text.startswith('team '):
         return ('team', [int(c) - 1 for c in text[len('team '):]])
     cmds = []
@@ -897,13 +932,19 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
                 cmds.append((1, MOVE_SLOT_RECHARGE, 0xFF, 0, 0))
                 continue
             n = int(words[1]) - 1
+            rows = state['sides'][side].get('enabled') or []
+            if 'lockedmove' in mon['volatiles'] and slot < len(rows) and len(rows[slot]) == 1:
+                # The lockedmove lock (issue 516): the request's one row is the locked move, so "move 1" is its slot in the set.
+                if not locked or (side, slot) not in locked:
+                    raise ConversionError('locked-move-slot', 'trace_to_c: side %d slot %d is locked and its move slot is '
+                                          'not given: %r' % (side, slot, text), detail='not-given')
+                n = locked[(side, slot)]
             mega = 1 if words[-1] == 'mega' else 0
             if mega:
                 words = words[:-1]
             # Struggle is what the reference's request offers: [2] for the
             # slot, with no PP left or with every move with PP disabled
             # (Champions' Fake Out, a choice lock; Team C).
-            rows = state['sides'][side].get('enabled') or []
             struggle = slot < len(rows) and rows[slot] == [2]
             # Imprison's hidden disable (step G38): with every move with PP disabled or hidden-disabled, getMoves() is empty and
             # chooseMove pushes Struggle for any `move N` (sim/side.ts:699-706, before the disabled check), although the request
@@ -2565,11 +2606,13 @@ def convert_battle(name, spec, trace, tables):
     rb_pending = {}  # side -> the position of its last Revival Blessing user (see step_events)
     swaps = swap_partners(trace, teams, roster_of, tables)  # step G70: the ability pair of every ally Skill Swap
     for k, step in enumerate(trace['steps']):
+        step_index = k  # k is reused by the slot loops below
         public_lines(step['log'], roster_of, shown, ill_pub)
         kinds = {}
         for side, sid in enumerate(('p1', 'p2')):
             if sid in step['input']:
-                kinds[side] = convert_choice(step['input'][sid], side, state, roster_of, mid_turn)
+                kinds[side] = convert_choice(step['input'][sid], side, state, roster_of, mid_turn,
+                                             locked_slots(trace, step_index, spec, tables))
         tape = []
         dropped = 0
         for d in step['draws']:
@@ -2773,6 +2816,17 @@ def convert_battle(name, spec, trace, tables):
                     row.append(0xFF)
                 elif rows[k] == [2]:
                     row.append(0x10)
+                elif 'lockedmove' in sd['pokemon'][ai]['volatiles'] and len(rows[k]) == 1:
+                    # The lock of Outrage, Thrash and Petal Dance (step G56, issue 516): a hard lock, so the request has the
+                    # one row of the locked move (sim/pokemon.ts:1083-1095, getMoves(lockedMove)), not one row per slot.
+                    # The bit is the slot of that move in the member's set, as the engine offers it.
+                    row.append(1 << locked_move_slot(trace['steps'][:step_index + 1], s, k, sd['pokemon'][ai], teams[s], tables))
+                elif len(rows[k]) == 1 and len(sd['pokemon'][ai]['pp']) > 1:
+                    # Another hard lock with a single row (Uproar, Rollout, Bide, ...): its slot is not known here.
+                    raise ConversionError('request-single-row', 'trace_to_c: step %d side %d slot %d: a request with one '
+                                          'row for a member with %d moves and no known lock' % (
+                                              step_index, s, k, len(sd['pokemon'][ai]['pp'])),
+                                          detail=' '.join(sd['pokemon'][ai]['volatiles']))
                 else:
                     eff = list(rows[k])
                     # Imprison's hidden disable (step G38): the request shows the move as enabled for the last active Pokemon,

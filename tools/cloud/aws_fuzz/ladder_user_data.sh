@@ -132,9 +132,17 @@ for sha in "${SHAS[@]}"; do
 done
 log "${#SHAS[@]} networks read and checked"
 
-# --- the pins: the local machine's instruction set, BLAS kernel and CPU count
+# --- the pins: the local machine's instruction set, BLAS kernel and CPU count. NumPy picks its own SIMD routines at
+# run time (exp, log, sums: AVX-512 on the c7a's EPYC, AVX2 on the local Ryzen); the first equality proof (2026-10-14)
+# differed in decisions with every result equal. NPY_DISABLE_CPU_FEATURES keeps NumPy on the local machine's targets
+# (X86_V3, AVX2), and the box refuses (numpy_dispatch) if NumPy still enables an AVX-512 target.
 STEP=arms
 export JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
+export NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"
+# Checked, not only logged (HauptSession): every name known to NumPy, no AVX-512 target enabled (numpy_dispatch.py).
+"$WORK/venv/bin/python" "$TOOLS/numpy_dispatch.py" "$WORK/numpy_simd.json" >> "$LOG" 2> "$WORK/numpy_dispatch.err" ||
+    refuse numpy_dispatch "$(cat "$WORK/numpy_dispatch.err")"
+log 'numpy dispatch checked: every name known, no AVX-512 target enabled (the record above, numpy_simd.json)'
 export DUOFORGE_LIBRARY="$LIB" PYTHONPATH="$REPO/python"
 list=$(python3 "$TOOLS/ladder_conf.py" arms "$CONF") || refuse bad_conf 'ladder_conf.py arms'
 [ -n "$list" ] || refuse bad_conf 'the conf names no arm'
@@ -150,11 +158,13 @@ arms = sys.argv[6:]
 flags = next((l.split(":", 1)[1].split() for l in open("/proc/cpuinfo") if l.startswith("flags")), [])
 model = next((l.split(":", 1)[1].strip() for l in open("/proc/cpuinfo") if l.startswith("model name")), "")
 freeze = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True).stdout.split()
+numpy_simd = json.load(open(os.path.join(os.path.dirname(out), "numpy_simd.json")))  # numpy_dispatch.py's record
 json.dump({"commit": commit, "library_sha256": lib, "instance_type": kind, "cpu": model, "cpus_per_arm": int(cpus),
            "arms": {a: f"{i * int(cpus)}-{(i + 1) * int(cpus) - 1}" for i, a in enumerate(arms)},
            "nproc": os.cpu_count(), "avx512": any(f.startswith("avx512") for f in flags), "python": platform.python_version(),
-           "pip_freeze": freeze, "pins": {k: os.environ.get(k) for k in ("JAX_PLATFORMS", "XLA_FLAGS", "OPENBLAS_CORETYPE",
-                                                                         "OPENBLAS_NUM_THREADS")}},
+           "pip_freeze": freeze, "numpy_simd": numpy_simd, "libc": list(platform.libc_ver()),
+           "pins": {k: os.environ.get(k) for k in ("JAX_PLATFORMS", "XLA_FLAGS", "OPENBLAS_CORETYPE", "OPENBLAS_NUM_THREADS",
+                                                   "NPY_DISABLE_CPU_FEATURES")}},
           open(out, "w"), indent=1)
 PY
 aws s3 cp "$WORK/env.json" "$S3_BASE/env.json" --only-show-errors

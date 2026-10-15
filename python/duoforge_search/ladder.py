@@ -35,6 +35,7 @@ import copy
 import hashlib
 import json
 import os
+import platform
 import subprocess
 import sys
 import time
@@ -341,12 +342,40 @@ def same_games(scores_a, scores_b):
     return a.shape == b.shape and bool(np.array_equal(a, b))
 
 
+def numpy_simd():
+    """NumPy's SIMD dispatch in this process (#484): the targets NPY_DISABLE_CPU_FEATURES disables, NumPy's baseline and
+    the dispatch targets found and not found. NumPy picks its exp, log and sum routines at run time (AVX-512 on the AWS
+    box's EPYC, AVX2 on the local Ryzen), so two runs whose decisions are to be bit-identical record the same here, and
+    ladder_equal.py compares it. NumPy's float64 exp and log have SIMD loops for AVX-512 only: with those off, both run
+    the C library's (glibc's) scalar ones, which is why the conditions name the libc as well. None where NumPy does not
+    expose it."""
+    try:
+        from numpy._core import _multiarray_umath as m
+    except ImportError:
+        return None
+    return {"disabled": os.environ.get("NPY_DISABLE_CPU_FEATURES", "").split(), "baseline": list(m.__cpu_baseline__),
+            "found": [t for t in m.__cpu_dispatch__ if m.__cpu_features__.get(t)],
+            "not_found": [t for t in m.__cpu_dispatch__ if not m.__cpu_features__.get(t)]}
+
+
 def decisions_digest(decisions):
     """The sha256 hex of every decision as a JSON line [env, step, seat, kind, choice], in (env, step, seat) order: two
     runs that decide alike give the same digest, whatever the order of their records."""
     rows = [[r["env"], r["step"], r["seat"], r["kind"], r.get("choice")] for r in decisions]
     rows.sort(key=lambda row: (row[0], row[1], row[2], json.dumps(row)))
     return hashlib.sha256("\n".join(json.dumps(row) for row in rows).encode("utf-8")).hexdigest()
+
+
+def games_digests(decisions, games):
+    """decisions_digest of each game alone, game g's decisions being those of env g (one game per env in a ladder arm):
+    a list of `games` digests, the empty game's digest where a game has no decision. Two runs whose decisions_sha256
+    differ name the first game that differs (#484: AWS against local, 2026-10-14). ValueError for an env outside."""
+    per_game = [[] for _ in range(games)]
+    for r in decisions:
+        if not 0 <= int(r["env"]) < games:
+            raise ValueError(f"a decision of env {r['env']} outside the arm's {games} games")
+        per_game[int(r["env"])].append(r)
+    return [decisions_digest(rows) for rows in per_game]
 
 
 def recorded_reproduction(scores, digest, recorded_arm, recorded_dir, name):
@@ -433,6 +462,7 @@ def _summary(records, games, decisions=None, seconds=None):
                     "fallback_share": foe_arena.fallback_share(decisions),
                     "fallback_decisions": sum(r["kind"] in foe_arena.FALLBACK_KINDS for r in non_team),
                     "non_team_decisions": len(non_team), "decisions_sha256": decisions_digest(decisions),
+                    "games_sha256": games_digests(decisions, games),
                     "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions),
                     "duplicate_rows": duplicate_rows(decisions)})
         if decisions:
@@ -826,6 +856,7 @@ def main(argv=None):
         "previous": None if args.previous is None else {"name": args.previous, "settings": previous_cfg},
         "arms": [arm for arm, _ in arm_steps] + (["R"] if args.raw else []), "h2h": args.h2h,
         "gates": GATES, "commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": arena.cpu_model(),
+        "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()),
         "encoders": {"main": main_net["encoder"], "foe": foe_net["encoder"],
                      **{f"opponent {name}": net["encoder"] for name, net in opponent_nets.items()}},
         "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},

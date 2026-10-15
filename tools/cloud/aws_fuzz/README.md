@@ -368,13 +368,22 @@ tests (against a stub `aws`).
 | `ladder_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` checked read-only; the networks by sha256; the pins; the arms side by side, each on CPUs of its own; the aggregates up |
 | `ladder_requirements.txt` | the Python packages, pinned to the local machine's versions (CPU only) |
 | `ladder_equal.py` | the equality proof: two `ladder.json` compared field by field, timing fields aside |
+| `numpy_dispatch.py` | checks NumPy's SIMD dispatch on the box: every disabled name known, no AVX-512 target enabled; writes the record `numpy_simd` |
 
 **What the box pins** (HauptSession condition), for each arm: XLA's instruction set (`XLA_FLAGS=--xla_cpu_max_isa=AVX2`,
 the local Ryzen 7 5800X's), OpenBLAS's kernel (`OPENBLAS_CORETYPE=Haswell`, `OPENBLAS_NUM_THREADS=1`), 16 CPUs of its own
 (`taskset`: arm *i* on CPUs 16*i* to 16*i*+15, as the local machine has 16), the conf's workers (8),
-`JAX_PLATFORMS=cpu` and the packages of `ladder_requirements.txt` (`pip install --no-deps`, then `pip check`). The
-Python version is not pinned: the box takes the AMI's (Ubuntu 24.04: 3.12.3, the local machine's) and `env.json`
-records it, with the pins, the library's sha256, the instance type, the CPU, whether it has AVX-512 and `pip freeze`. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
+`JAX_PLATFORMS=cpu`, NumPy's SIMD routines (`NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"`: NumPy picks
+its routines at run time, AVX-512 on the c7a's EPYC, `X86_V3` on the Ryzen; its float64 exp and log have SIMD loops for
+AVX-512 only, so with those off both machines run glibc's scalar ones, and `env.json` and `ladder.json` name the libc; the first equality
+proof, 2026-10-14, differed in its decisions with every result equal; the box refuses, `numpy_dispatch`, if NumPy still
+enables an AVX-512 target) and the packages of `ladder_requirements.txt` (`pip install --no-deps`, then `pip check`).
+The Python version is not pinned: the box takes the AMI's (Ubuntu 24.04: 3.12.3, the local machine's) and `env.json`
+records it, with the pins, the library's sha256, the instance type, the CPU, whether it has AVX-512, NumPy's SIMD
+targets (`numpy_simd`: baseline, found, not found, as `numpy.show_runtime()` lists them) and `pip freeze`. Each arm's
+`ladder.json` has a digest per game (`games_sha256`, game g's decisions), so `ladder_equal.py` names every game
+whose decisions differ. `ladder.json` also records `numpy_simd` in its conditions, so the equality proof compares NumPy's
+dispatch too. Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
 AWS results count only as their own series, every arm of a comparison runs on the same instance type, and the report
 states openly which parts of `ladder.json` are bit-identical (`ladder_equal.py` names every field that differs).
 
@@ -387,7 +396,8 @@ and no network ever leaves it.
 `nets/` succeeded: a plain write, a write with server-side encryption or a delete; the role is wrong),
 `nets_probe_unclear` (a probe failed with something other than AccessDenied, e.g. no credentials: no proof of
 read-only), `nets_unreadable`, `net_sha_mismatch`, `wrong_commit`, `wrong_run` (the run id is not of the commit),
-`no_campaign`, `bad_conf`, `build`, `python_env`, `cpus` (fewer than 16 per arm plus 16) and `ladder_failed` (naming
+`no_campaign`, `bad_conf`, `build`, `python_env`, `numpy_dispatch` (`numpy_dispatch.py`, with the pinned NumPy: a name in `NPY_DISABLE_CPU_FEATURES` that is not one of NumPy's dispatch targets, or an AVX-512 target still enabled; nothing runs), `cpus`
+(fewer than 16 per arm plus 16) and `ladder_failed` (naming
 the arms that failed; the others' results are still uploaded). A failure without a refusal is named by the step it
 happened in, `failed_in_<step>` (`packages`, `checkout`, `build`, `python`, `nets`, `arms`, `upload`), and a TERM or
 INT (the watchdog's shutdown) is `terminated`. A failure before the AWS CLI is installed (`failed_in_packages`)
@@ -417,7 +427,8 @@ uploads nothing: then only the instance's console output is left.
    `ladder-equal-2e-beside` runs the same arm beside two others (steps 0 and 1b). A digest must not depend on what runs
    beside it (HauptSession). Run the same arm on this machine too, at the same commit, under the machine lock and
    with the box's pins, since `ladder.json` does not record them and `ladder_equal.py` cannot see a missing one:
-   `JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1`, on all 16
+   `JAX_PLATFORMS=cpu XLA_FLAGS=--xla_cpu_max_isa=AVX2 OPENBLAS_CORETYPE=Haswell OPENBLAS_NUM_THREADS=1
+   NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512_ICL AVX512_SPR"` (a no-op on the Ryzen, which has none of them), on all 16
    CPUs, with the conf's workers. `python3 tools/cloud/aws_fuzz/ladder_conf.py argv <conf> main <the local networks'
    directory, files named <sha256>.npz> <out>` gives the arguments of `python -m duoforge_search.ladder`. Then compare
    each pair:
