@@ -7355,6 +7355,10 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
         m->stats[i] = stats[i];
     }
     *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
+    /* formeChange -> setSpecies -> setType(species.types, true) (sim/pokemon.ts:1392, 2109-2127): a type that Soak or Double Shock
+     * set ends, without a line, as at a Mega Evolution (issue 556: a Soaked Aegislash is Steel/Ghost again after its change). */
+    b->tail.sides[side].soak_type[idx] = 0u;
+    b->tail.sides[side].type2[idx] = 0u;
     /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats, so a live Speed Swap ends here. */
     b->tail.sides[user / 2u].positions[user % 2u].single_turn = (uint8_t)((uint32_t)b->tail.sides[user / 2u].positions[user % 2u].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
