@@ -693,6 +693,32 @@ class NetProbeTest(unittest.TestCase):
         self.assertEqual(other["calls_meta"][differ[0]]["role"], "opponent bot")
 
 
+class PoolFilterTest(unittest.TestCase):
+    """The pool network's teams after the engine's filter (HauptSession 2026-10-15, after #558): named in the
+    conditions, and runs paired only on the same filtered pool."""
+
+    class Pool:
+        def __init__(self, ids):
+            self.ids = tuple(ids)
+
+    def test_the_record_names_the_kept_teams_and_every_refusal(self):
+        got = ladder.pool_condition(self.Pool(["A", "B"]), [("X", "DUOFORGE_E_INVALID_ARGUMENT")])
+        self.assertEqual(got["teams"], 2)
+        self.assertEqual(got["ids_sha256"], hashlib.sha256(b"A\nB").hexdigest())
+        self.assertEqual((got["refused_count"], got["refused"]), (1, [{"id": "X", "status": "DUOFORGE_E_INVALID_ARGUMENT"}]))
+        self.assertNotEqual(ladder.pool_condition(self.Pool(["B", "A"]), [])["ids_sha256"], got["ids_sha256"])
+
+    def test_a_run_is_paired_only_on_the_same_filtered_pool(self):
+        pool = ladder.pool_condition(self.Pool(["A", "B"]), [("X", "DUOFORGE_E_INVALID_ARGUMENT")])
+        ladder.pool_guard({"pool": dict(pool)}, pool, "--previous-run")
+        ladder.pool_guard({}, None, "--previous-run")  # a matchup: its teams are hashed apart
+        with self.assertRaisesRegex(SystemExit, "before #558's pool filter"):
+            ladder.pool_guard({"pool_teams": 3}, pool, "--paired-with")
+        other = ladder.pool_condition(self.Pool(["A", "B", "X"]), [])
+        with self.assertRaisesRegex(SystemExit, "another filtered pool"):
+            ladder.pool_guard({"pool": other}, pool, "--paired-with")
+
+
 class CliGuardTest(unittest.TestCase):
     """Each refusal raises SystemExit before any network is loaded and before the output directory exists."""
 

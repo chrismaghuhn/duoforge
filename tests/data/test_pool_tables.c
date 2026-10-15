@@ -18,7 +18,7 @@
  * Every forme also has the pool moves it learns and its legal abilities
  * (decision 0015 section 2). Both are checked against literal lists that were
  * written from the validator's answer in docs/research/expansion/data/
- * legal_pool.json (every species with every single move, and its legal
+ * data/formats/pools/reg-mc.json (every species with every single move, and its legal
  * abilities), not from the Champions learnsets that the generator parses:
  * the two sources agree. The set of every forme is among them.
  *
@@ -53,7 +53,7 @@
  * one the generator computes for the rows with that change and nothing else. */
 #define STEPS_ROWS_HASH_HEX "b4d25af552d4c2d734289633b197c420901ecf924099dab578508d1e874c5635"
 
-/* The counts of the rows of the steps, and of the whole pool (legal_pool.json: 264 distinct selectable formes and
+/* The counts of the rows of the steps, and of the whole pool (data/formats/pools/reg-mc.json: 264 distinct selectable formes and
  * 82 Mega formes, 510 moves and Struggle, 166 items, 215 abilities). */
 #define G2_FORMES 28u
 #define G2_MOVES 72u
@@ -366,7 +366,7 @@ static const legal_case legal_formes[] = {
 
 /* ---- Step G2: the rows that the 17 target teams need (docs/research/expansion/data/team_gaps.json) ---- */
 
-/* The new formes, as the validator's record of docs/research/expansion/data/legal_pool.json and the pinned
+/* The new formes, as the validator's record of data/formats/pools/reg-mc.json and the pinned
  * data/pokedex.ts have them: dex number, weight in hectograms, types, base stats, gender rule. */
 typedef struct forme_case {
     uint32_t id;
@@ -531,7 +531,7 @@ int main(void)
      * step G2 added 5 formes (23 to 27), 22 moves (50 to 71), 3 items (49 to 51) and 3 abilities (26 to 28), in the
      * order of the research's pool_rows; the whole-pool step (decision 0015 section 4.2) appends a row for every
      * other forme, move, item and ability of the legal pool. The ids of every step start where the previous ones end,
-     * and the counts are those of docs/research/expansion/data/legal_pool.json: 293 selectable formes of which 29 are
+     * and the counts are those of data/formats/pools/reg-mc.json: 293 selectable formes of which 29 are
      * cosmetic copies (264 rows), 82 Mega formes, the 510 moves and Struggle, 166 items and 215 abilities. */
     DF_CHECK_EQ_U64(&t, DFI_POOL_FORME_COUNT, POOL_FORMES);
     DF_CHECK_EQ_U64(&t, DFI_POOL_MOVE_COUNT, POOL_MOVES);
@@ -1159,7 +1159,7 @@ int main(void)
      * closure, Team C and G2 and for the 72 moves of those steps; the whole pool has more moves and abilities for
      * the same formes, so a case holds for the moves below G2_MOVES and its abilities are listed in the forme's
      * list in that order. Every other base forme is checked against the validator by pool_families.js and against
-     * legal_pool.json by pool_rows.py. A Mega forme has no learnable move and its one ability. */
+     * data/formats/pools/reg-mc.json by pool_rows.py. A Mega forme has no learnable move and its one ability. */
     {
         DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, (DFI_POOL_MOVE_COUNT + 7u) / 8u);
         DF_CHECK_EQ_U64(&t, DFI_POOL_LEARN_BYTES, 64u);

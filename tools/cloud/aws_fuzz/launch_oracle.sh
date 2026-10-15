@@ -117,10 +117,9 @@ if [ ${#subnets[@]} -eq 0 ] || [ -z "${subnets[0]}" ]; then
 fi
 
 max_minutes=$((max_hours * 60))
-userdata=$(df_render_oracle_user_data "$campaign" "$commit" "$bucket" "$max_minutes" "$run_id" "$resume_flag")
-# EC2 takes at most 16384 bytes of user data (before base64): a longer box script would be refused at launch.
-size=$(printf '%s' "$userdata" | wc -c | tr -d ' ')
-[ "$size" -le 16384 ] || df_die "the user data has $size bytes, more than EC2's 16384"
+userdata=$(df_render_bootstrap oracle_user_data.sh "$campaign" "$commit" "$bucket" "$max_minutes" "$run_id" "$resume_flag")
+df_check_user_data_size "$userdata"  # EC2 takes at most 16384 bytes of user data (before base64)
+box=$(df_render_oracle_user_data "$campaign" "$commit" "$bucket" "$max_minutes" "$run_id" "$resume_flag")
 
 echo "oracle campaign $campaign"
 echo "commit        $commit"
@@ -137,7 +136,8 @@ echo "price ceiling \$$max_price per instance hour, apart from the hours: at mos
 echo "security grp  $DF_SG_NAME ($DF_SG_ID, no inbound rule)"
 echo "ami           $ami"
 echo "subnet        ${subnets[0]}"
-echo "user data     $size bytes, first command: shutdown -h +$max_minutes"
+echo "user data     $(printf '%s' "$userdata" | wc -c | tr -d ' ') bytes (the bootstrap; at most $DF_USER_DATA_LIMIT), first command: shutdown -h +$max_minutes"
+echo "box script    oracle_user_data.sh at the commit, $(printf '%s' "$box" | wc -c | tr -d ' ') bytes rendered, run by the bootstrap"
 
 df_build_run_args "$ami" "$DF_LADDER_TYPE" "${subnets[0]}" "$DF_SG_ID" "$campaign" "$max_hours" "$userdata" oracle "$max_price"
 echo

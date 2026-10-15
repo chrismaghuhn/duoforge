@@ -17,4 +17,4 @@ The files here are **agent-generated research drafts**. They are **not contracts
 
 ## Before combat work
 
-The owner decided on 2026-09-30 to build the closure continuously with no backlog, in the order of `mechanics-inventory.md` section 5 (`tasks/M3_M4_COMBAT_CLOSURE.md`). The remaining open points are in section 7 and in `docs/OPEN_DECISIONS.md`. Combat work starts only when the owner asks for it.
+The owner decided on 2026-09-30 to build the closure continuously with no backlog, in the order of `mechanics-inventory.md` section 5 (`docs/history/tasks/M3_M4_COMBAT_CLOSURE.md`). The remaining open points are in section 7 and in `docs/OPEN_DECISIONS.md`. Combat work starts only when the owner asks for it.

@@ -1,9 +1,9 @@
-// Independent cross-check of legal_pool.json (read-only). Recomputes every
+// Independent cross-check of data/formats/pools/reg-mc.json (read-only). Recomputes every
 // (selectable species, move) pair with checkMove + checkCanLearn directly and
 // compares it with the pairs build_legal_pool.js got from validateSet.
 // Expected output: equal pair counts and 0 diffs.
 const {Dex, TeamValidator} = require('C:/Dev/src/pokemon-showdown/dist/sim');
-const j = require('./legal_pool.json');
+const j = require('../../../../data/formats/pools/reg-mc.json');
 const format = Dex.formats.get('gen9championsvgc2026regmc');
 const dex = Dex.forFormat(format);
 const v = TeamValidator.get(format.id);

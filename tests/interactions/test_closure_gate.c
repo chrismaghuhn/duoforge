@@ -1,5 +1,5 @@
 /*
- * duoforge.combat.closure_gate (step 13 of tasks/M3_M4_COMBAT_CLOSURE.md):
+ * duoforge.combat.closure_gate (step 13 of docs/history/tasks/M3_M4_COMBAT_CLOSURE.md):
  * the two reference teams of decision 0004 under CLOSURE data (K1), in all
  * four pairings (A-B, B-A, A-A, B-B), from team selection to TERMINAL with
  * random legal choices (team picks, moves, Mega Evolution, switches,
