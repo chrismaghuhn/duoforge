@@ -77,8 +77,11 @@ Fixed on 2026-10-15 (HauptSession), before the deploy of #558 (with the fuzzing 
   | 1 | `c1f00e87` | 15 / 15 |
   | 2 | `59d8a540` | 0 / 0 |
   | 3 | `00931d3a` (#558 and D1/S1) | 0 / 0 |
+  | 4 | `342770b3` (#592: the arena at vgc.bot) | 0 / 0 |
 
   Section 3 began with the deploy of 2026-10-15, 06:58 UTC: bot commit `00931d3a50ed5b3a524c46dd94b562055c58029a` without local changes, library `5b3f7dae…`, run log `arena-run-20261015T065804Z`, seed `5548249904766606275`. The commit was entered here afterwards from the HauptSession's deploy message, without any look at results.
+
+  Section 4 began with the deploy of 2026-10-15, 23:28 UTC: bot commit `342770b35837a5dc82b11134bd7ec62abb0105d4` without local changes, library `aaf51a12…`, run log `arena-run-20261015T232827Z`, seed `5422513649703044711`. The bot connects through vgc.bot (#592). It was entered the same way as section 3, without any look at results.
 
   A later deploy during the test starts a further section in the same way.
 - **Reports** give each section on its own: per arm the decided battles and the win rate with its Wilson interval, and the difference with Newcombe's interval.
