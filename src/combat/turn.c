@@ -1621,11 +1621,15 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * it has a status, in the ModifyDef event (sim/battle-actions.ts:1707). Psyshock's Defense is in that event too (its
      * overrideDefensiveStat is 'def'), a special hit's Special Defense is not. runEvent applies the product of all the
      * handlers' chainModify once (sim/battle.ts:2382), so the weather's 1.5 and this one are one chained modifier. */
+    /* Both handlers read the defender's effectiveWeather with the weather condition as the effect (sim/pokemon.ts:2190-2198):
+     * while a Mega Sol holder is the active Pokemon that is sun, so a Mega Sol user's hit gets neither boost (issue 521;
+     * the pin excludes Electro Shot by the effect's id, and the effect here is the weather, so no move is excluded). */
+    const uint32_t def_weather = dfi_move_weather(r, a, true);
     uint32_t dchain = 4096u;
     bool dok = true;
-    if (dfi_field_weather(r) == DFI_WEATHER_SAND && def_index == DFI_STAGE_SPD && dfi_has_type(r->b, d, DFI_TYPE_ROCK)) {
+    if (def_weather == DFI_WEATHER_SAND && def_index == DFI_STAGE_SPD && dfi_has_type(r->b, d, DFI_TYPE_ROCK)) {
         dok = dfi_chain_modify(dchain, 6144u, &dchain);
-    } else if (dfi_field_weather(r) == DFI_WEATHER_SNOW && def_index == DFI_STAGE_DEF && dfi_has_type(r->b, d, DFI_TYPE_ICE)) {
+    } else if (def_weather == DFI_WEATHER_SNOW && def_index == DFI_STAGE_DEF && dfi_has_type(r->b, d, DFI_TYPE_ICE)) {
         dok = dfi_chain_modify(dchain, 6144u, &dchain);
     }
     if (def_index == DFI_STAGE_DEF && d->status != DFI_STATUS_NONE && dfi_ability(r->b, d, DFI_ABILITY_MARVELSCALE)) {
