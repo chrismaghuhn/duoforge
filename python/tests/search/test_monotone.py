@@ -176,26 +176,57 @@ class Games(unittest.TestCase):
         self.assertTrue(walk.stop is None or walk.stop[1] > t, walk.stop)
         self.assertEqual(seen["moves"], base.moves[(side, member)])
 
+    def legal_replacement(self):
+        """A move the engine accepts in place of an edited move of a member of this game that does not carry it: found
+        by asking the engine's setup check (A/B/C carry no Detect, and their formes' legality is the engine's)."""
+        base = monotone.walk(self.ctx, self.pool, self.game)
+        setups = monotone._setup(self.pool, self.game, None)
+        others = sorted({int(x["move_id"]) for side in setups[0]["sides"] for m in side["members"]
+                         for x in m["moves"][:int(m["move_count"])]})
+        with duoforge.Batch(self.ctx, setups, 1, self.game["seed"]) as batch:
+            for (side, member), have in sorted(base.moves.items()):
+                for move in others:
+                    if move in have:
+                        continue
+                    edit = monotone.Edit(side, member, have[0], replace=(move, 0))
+                    try:
+                        batch.reset_setups(np.array([0], np.uint32), np.array([0], np.uint32),
+                                           monotone._setup(self.pool, self.game, edit))
+                    except duoforge.DuoforgeError:
+                        continue
+                    return move
+        self.fail("no member of the game accepts another member's move")
+
     def test_the_replaced_rows_keep_part_ones_fields_and_pair_the_two_edits(self):
         plain = list(monotone.measure_game(self.ctx, self.pool, self.game, self.net, game_index=3))
-        detect = monotone.detect_slot(self.ctx, self.pool, required=False) or (0xBEEF, 8)
-        rows = list(monotone.measure_game(self.ctx, self.pool, self.game, self.net, game_index=3, replace=detect))
+        replace = (self.legal_replacement(), 0)
+        rows = list(monotone.measure_game(self.ctx, self.pool, self.game, self.net, game_index=3, replace=replace))
         self.assertEqual([{k: r[k] for k in monotone.PART1_KEYS} for r in rows], plain)
         self.assertEqual(monotone.games_digest(rows), monotone.games_digest(plain))
+        paired = 0
         for r in rows:
             self.assertIn(r["refused_replaced"], (None, *monotone.REPLACE_REFUSALS))
             self.assertIsInstance(r["subset"], bool)
             if r["refused"] is None and r["refused_replaced"] is None:
                 self.assertAlmostEqual(r["dv_rd"], r["dv_replaced"] - r["dv"], places=6)
+                paired += 1
             else:
                 self.assertIsNone(r["dv_rd"])
+            if r["refused_replaced"] == "detect_not_allowed":
+                self.assertTrue(r["refused_replaced_status"].startswith("DUOFORGE_E_"))
+            else:
+                self.assertIsNone(r["refused_replaced_status"])
+        self.assertGreater(paired, 0)  # the pairing itself is tested, not only its refusals
+        rep = monotone.report_detect(rows, bootstrap=50, seed=0x509)
+        self.assertEqual(sum(rep["paired"][k]["paired"] for k in ("own", "mirror")), paired)
 
 
 def _p2(kind, dv, dv_replaced, game=0, subset=True, refused=None, refused_replaced=None, category="status"):
     row = _r(kind, dv, game=game, category=category, refused=refused)
     built = refused is None and refused_replaced is None
     row.update({"subset": subset, "carries_protect": subset, "refused_replaced": refused_replaced,
-                "dv_replaced": dv_replaced, "dv_rd": dv_replaced - dv if built else None})
+                "refused_replaced_status": "DUOFORGE_E_INVALID_ARGUMENT" if refused_replaced == "detect_not_allowed"
+                else None, "dv_replaced": dv_replaced, "dv_rd": dv_replaced - dv if built else None})
     return row
 
 
@@ -232,6 +263,24 @@ class DetectParts(unittest.TestCase):
         finally:
             ctx.close()
 
+    def test_the_games_checks_stop_by_name(self):
+        rows = [dict(_r("own", 0.03, game=g), t=3, member=1, species=7, move=9) for g in (0, 1)]
+        part1 = monotone.games_digest(rows)
+        monotone.check_game(part1, 0, rows[:1])
+        monotone.check_games(part1, {0, 1})
+        with self.assertRaisesRegex(SystemExit, "games_differ: game 0"):
+            monotone.check_game(part1, 0, [dict(rows[0], dv=0.04)])
+        with self.assertRaisesRegex(SystemExit, "games_differ: game 2"):
+            monotone.check_game(part1, 2, [dict(rows[0], game=2)])
+        for written in ({0}, {0, 1, 2}):
+            with self.assertRaisesRegex(SystemExit, "games_differ: the games"):
+                monotone.check_games(part1, written)
+
+    def test_the_cli_takes_replace_and_part_one_together(self):
+        for extra in (["--replace", "detect"], ["--part1-rows", "rows.jsonl"]):
+            with self.assertRaisesRegex(SystemExit, "go together"):
+                monotone.main(["--checkpoint", "x.npz", "--teams-from", "y.npz", "--out", "/nonexistent/out", *extra])
+
     def test_the_games_digest_names_a_differing_game(self):
         rows = [dict(_r(kind, dv, game=g), t=3, member=1, species=7, move=9)
                 for kind, dv, g in (("own", 0.03, 0), ("mirror", 0.0, 0), ("own", 0.01, 1))]
@@ -255,6 +304,8 @@ class DetectParts(unittest.TestCase):
         self.assertEqual(rep["other"]["own"]["paired"], 50)
         self.assertEqual(rep["refused_replaced"], {"subset": {"detect_not_allowed": 1},
                                                    "other": {"detect_not_allowed": 1}})
+        self.assertEqual(rep["refused_replaced_statuses"], {"DUOFORGE_E_INVALID_ARGUMENT": 2})
+        self.assertEqual(rep["paired"]["own"], {"part1_built": 302, "paired": 300, "share": 300 / 302})
         self.assertLessEqual(rep["subset"]["own"]["abs_dv_rd"]["median"], 0.02)
         self.assertEqual(rep["subset"]["own"]["share_above"]["share"], 0.0)
         self.assertEqual(monotone.report_detect(small + large + refused, bootstrap=200, seed=0x509), rep)
@@ -267,6 +318,10 @@ class DetectParts(unittest.TestCase):
         self.assertEqual(read(rows(0.05)), "missing_slot_moves_value")
         self.assertEqual(read(rows(0.01) [:250 * 2:2] + rows(0.05, kinds=("mirror",))), "missing_slot_moves_value")
         self.assertEqual(read(rows(0.01, n=150)), "no_conclusion_too_few")
+        self.assertEqual(read(rows(0.01)[:250 * 2:2] + rows(0.01, n=150, kinds=("mirror",))), "no_conclusion_too_few")
+        self.assertEqual(read(rows(0.02)), "missing_slot_not_driving")  # at the bounds: median 0.02, share 0
+        quarter = [_p2(kind, 0.0, 0.05 if g % 4 == 0 else 0.0, game=g) for g in range(400) for kind in ("own", "mirror")]
+        self.assertEqual(read(quarter), "missing_slot_not_driving")  # share exactly 25 %
         # median above nothing, share between 25 and 50 %: no conclusion
         mixed = [_p2(kind, 0.0, 0.05 if g % 10 < 4 else 0.0, game=g) for g in range(250) for kind in ("own", "mirror")]
         self.assertEqual(read(mixed), "no_conclusion")

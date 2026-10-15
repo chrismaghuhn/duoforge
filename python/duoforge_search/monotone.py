@@ -88,6 +88,7 @@ class Walk:
     turns: dict = field(default_factory=dict)
     moves: dict = field(default_factory=dict)
     first_use: dict = field(default_factory=dict)
+    status: str = None  # the engine's status name where it refused the setup
 
 
 def _key(seed, game, step):
@@ -188,8 +189,9 @@ def walk(ctx, pool, game, edit=None, reference=None, on_turn=None):
     with duoforge.Batch(ctx, _setup(pool, game, None), 1, game["seed"]) as batch:
         try:
             batch.reset_setups(np.array([0], np.uint32), np.array([0], np.uint32), _setup(pool, game, edit))
-        except duoforge.DuoforgeError:
+        except duoforge.DuoforgeError as err:
             out.stop = ("detect_not_allowed" if edit is not None and edit.replace is not None else "setup_refused", 0)
+            out.status = err.status_name
             return out
         for t, labels in enumerate(game["steps"]):
             requested = _query(batch)
@@ -360,6 +362,19 @@ def games_digest(rows):
     return {g: h.hexdigest() for g, h in out.items()}
 
 
+def check_game(part1, g, rows):
+    """games_differ unless game g's part-1 fields (games_digest) are part 1's."""
+    if games_digest(rows).get(g) != part1.get(g):
+        raise SystemExit(f"games_differ: game {g}'s part-1 rows are not part 1's")
+
+
+def check_games(part1, written):
+    """games_differ unless the games with rows are exactly part 1's."""
+    if set(written) != set(part1):
+        raise SystemExit(f"games_differ: the games with rows are not part 1's ({len(set(written))} against "
+                         f"{len(set(part1))})")
+
+
 def measure_game(ctx, pool, game, net, game_index=0, protect=None, replace=None):
     """The rows of one recorded game: per TURN boundary position, per edit of an active member's move and per viewing
     seat, the value change (dv on the value scale, dp = dv / 2 on the win-probability scale) or its refusal. With
@@ -411,13 +426,15 @@ def measure_game(ctx, pool, game, net, game_index=0, protect=None, replace=None)
                     row["refused"] = w.stop[0] if w.stop is not None else "replay_diverged"
                 if replace is not None:
                     row.update({"carries_protect": protect_id in have, "subset": subset, "refused_replaced": None,
-                                "dv_replaced": None, "dv_rd": None})
+                                "refused_replaced_status": None, "dv_replaced": None, "dv_rd": None})
                     if t in v2:
                         row["dv_replaced"] = float(v2[t][seat]) - float(base_v[t][seat])
                         if row["dv"] is not None:
                             row["dv_rd"] = row["dv_replaced"] - row["dv"]
                     else:
                         row["refused_replaced"] = before or (w2.stop[0] if w2.stop is not None else "replay_diverged")
+                        if w2 is not None:
+                            row["refused_replaced_status"] = w2.status
                 yield row
 
 
@@ -549,11 +566,19 @@ def report_detect(rows, bootstrap=2000, seed=BOOTSTRAP_SEED):
     """Part 2's aggregates: per group (the subset; the other edits, descriptive only) and kind, the paired rows'
     |dV_rd| and the share above SMALL; the replaced edits' refusals per group; the reading, on the subset only."""
     rows = list(rows)
-    out = {"refused_replaced": {"subset": {}, "other": {}}}
+    out = {"refused_replaced": {"subset": {}, "other": {}}, "refused_replaced_statuses": {}}
     for r in rows:
         if r["refused_replaced"] is not None:
             group = out["refused_replaced"]["subset" if r["subset"] else "other"]
             group[r["refused_replaced"]] = group.get(r["refused_replaced"], 0) + 1
+        if r["refused_replaced_status"] is not None:  # the engine's status of each setup it refused
+            statuses = out["refused_replaced_statuses"]
+            statuses[r["refused_replaced_status"]] = statuses.get(r["refused_replaced_status"], 0) + 1
+    out["paired"] = {}
+    for kind in ("own", "mirror"):  # the paired set against part 1's built edits
+        part = [r for r in rows if r["kind"] == kind]
+        built, paired = sum(r["refused"] is None for r in part), sum(r["dv_rd"] is not None for r in part)
+        out["paired"][kind] = {"part1_built": built, "paired": paired, "share": paired / built if built else None}
     for group, keep in (("subset", True), ("other", False)):
         part = [r for r in rows if r["subset"] == keep]
         out[group] = {kind: _detect_part([r for r in part if r["kind"] == kind], bootstrap, seed)
@@ -631,8 +656,8 @@ def main(argv=None):
             if game["end"] == "refused":
                 continue
             rows = list(measure_game(ctx, pool, game, net, game_index=g, protect=protect, replace=replace))
-            if part1 is not None and games_digest(rows).get(g) != part1.get(g):
-                raise SystemExit(f"games_differ: game {g}'s part-1 rows are not part 1's")
+            if part1 is not None:
+                check_game(part1, g, rows)
             for r in rows:
                 f.write(json.dumps(r) + "\n")
                 written.add(r["game"])
@@ -642,8 +667,7 @@ def main(argv=None):
     rep["games"] = {"count": len(games), "ends": ends}
     rep["conditions"] = conditions
     if args.replace is not None:
-        if written != set(part1):
-            raise SystemExit("games_differ: the games with rows are not part 1's")
+        check_games(part1, written)
         with open(rows_path, encoding="utf-8") as f:
             rep["detect"] = report_detect((json.loads(line) for line in f), bootstrap=args.bootstrap)
     with open(os.path.join(out_dir, "report.json"), "w", encoding="utf-8") as f:

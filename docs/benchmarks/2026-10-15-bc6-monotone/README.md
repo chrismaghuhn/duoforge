@@ -168,7 +168,8 @@ HauptSession's go, under the machine lock and the WSL watchdog, not exclusive, w
 - The replaced setup goes through the engine's setup check like the removed one. Named refusals of the replaced
   edit, on top of part 1's (`setup_refused`, `removed_move_used`, `replay_diverged`):
   - `detect_not_allowed`: the engine's setup check refuses Detect for the member (counted apart from other setup
-    refusals);
+    refusals; the replaced setup differs from the accepted one only in that slot, and the engine's status of each
+    refusal is recorded and reported);
   - `already_detect`: the member already has Detect (a duplicate move);
   - `removed_is_detect`: the edited move is Detect itself (the replacement would change nothing).
 - **The paired set:** the (position, edit, viewing seat) rows for which both the removed and the replaced edit were
