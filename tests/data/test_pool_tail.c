@@ -406,8 +406,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {12, 0, 243, 0, 0, 0, 0, 0},
     {12, 0, 243, 0, 0, 0, 0, 0},
     {12, 0, 243, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 0, 255, 0, 0, 0}, /* step K5: Magic Room's turns, the rev 5 reserve byte 8 (every other value is TAIL_FIELD) */
+    {0, 0, 0, 0, 255, 0, 0, 0}, /* step K5: Magic Room's setter, the reserve byte 9 */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -795,6 +795,14 @@ typedef struct tail_case {
 
 MUT(m_gravity, y->tail.gravity_turns = 6u)
 MUT(m_field_pad, y->tail.field_pad = 1u)
+/* step K5 (#475, decision 0015 5dm): Magic Room's turns (rev 5 reserve byte 8) and setter (byte 9, the member code 1 + side * 6 + roster) */
+MUT(m_mr_turns6, y->tail.magic_room_turns = 6u; y->tail.magic_room_source = 1u)
+MUT(m_mr_no_setter, y->tail.magic_room_turns = 3u)
+MUT(m_mr_setter_no_turns, y->tail.magic_room_source = 1u)
+MUT(m_mr_setter13, y->tail.magic_room_turns = 2u; y->tail.magic_room_source = 13u)
+MUT(m_mr_setter255, y->tail.magic_room_turns = 2u; y->tail.magic_room_source = 255u)
+MUT(v_mr_last_turn_first_setter, y->tail.magic_room_turns = 1u; y->tail.magic_room_source = 1u)
+MUT(v_mr_five_turns_last_setter, y->tail.magic_room_turns = 5u; y->tail.magic_room_source = 12u)
 /* step G46, party_order (the brought members are 0..3 on both sides, the leads 0 and 1): */
 MUT(m_party_dup, dfi_party_put(&y->tail, 0u, 1u, dfi_party_entry(&y->tail, 0u, 0u)))  /* the lead twice */
 MUT(m_party_hole, dfi_party_put(&y->tail, 1u, 0u, 0u))                              /* an empty lead */
@@ -1124,6 +1132,13 @@ MUT(v_ally_trap, {
 
 static const tail_case cases[] = {
     {"gravity above 5", DFI_INV_TAIL_FIELD, false, m_gravity},
+    {"K5: Magic Room above 5 turns", DFI_INV_TAIL_FIELD, false, m_mr_turns6},
+    {"K5: Magic Room turns without a setter", DFI_INV_TAIL_FIELD, false, m_mr_no_setter},
+    {"K5: a Magic Room setter without turns", DFI_INV_TAIL_FIELD, false, m_mr_setter_no_turns},
+    {"K5: a Magic Room setter code of 13", DFI_INV_TAIL_FIELD, false, m_mr_setter13},
+    {"K5: a Magic Room setter code of 255", DFI_INV_TAIL_FIELD, false, m_mr_setter255},
+    {"K5: Magic Room, 1 turn, the first setter, is valid", DFI_INV_NONE, false, v_mr_last_turn_first_setter},
+    {"K5: Magic Room, 5 turns, the last setter (side 1, roster 5), is valid", DFI_INV_NONE, false, v_mr_five_turns_last_setter},
     {"the pad byte of the field block", DFI_INV_TAIL_FIELD, false, m_field_pad},
     {"a lead twice in the party order (step G46)", DFI_INV_TAIL_PARTY, false, m_party_dup},
     {"an empty lead in the party order", DFI_INV_TAIL_PARTY, false, m_party_hole},
@@ -1258,7 +1273,7 @@ static const tail_case cases[] = {
 static bool is_reserved_offset(size_t off)
 {
     if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: the last 8 of its 16 reserve bytes (4..7 are Ally Switch's, 0..3 Attract's) */
-        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE + DFI_ENC_TAIL5_ALLY_SWITCH_COUNT;
+        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_MAGIC_ROOM_SOURCE_OFF + 1u; /* 0..3 Attract, 4..7 Ally Switch, 8 and 9 Magic Room (K5) */
     }
     if (off < DFI_ENC_TAIL_FIELD_SIZE) {
         return off >= DFI_ENC_TAIL_FIELD_RESERVED_OFF;
@@ -1294,7 +1309,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 21u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); step G90 takes 1 of the position block's 4 (rev 5: 16 more); decision 0066 takes the 12 member bytes 9 */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 19u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); step G90 takes 1 of the position block's 4 (rev 5: 16 more); decision 0066 takes the 12 member bytes 9; step K5 takes the rev 5 reserve bytes 8 and 9 */
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_ATTRACT_OFF, 44u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_ALLY_SWITCH_OFF, 4u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF, 32u); /* step G90 (decision 0060): the partial trap's elapsed count */
@@ -1317,7 +1332,7 @@ int main(void)
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
         /* step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes; step G90 adds the elapsed count
          * (one byte of a position's reserved four) and a pad byte per position, so each position is an even 36 bytes */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 336u); /* 316 + the Ally Switch byte and the pad of each position (G80); decision 0066: +12 member bytes (9) */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 338u); /* step K5: +2 (Magic Room turns and setter); 316 + the Ally Switch byte and the pad of each position (G80); decision 0066: +12 member bytes (9) */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 162u); /* decision 0066: the six sleep-count bytes are data, the reserved byte gone */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 38u); /* 35 data bytes, pos_pad (G90), the Ally Switch byte and its pad (G80) */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
@@ -1325,7 +1340,7 @@ int main(void)
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 21u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved; decision 0066: the member bytes 9 are data */
+        DF_CHECK_EQ_U64(&t, reserved, 19u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved; decision 0066: the member bytes 9 are data */
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1623,10 +1638,10 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        /* 21 reserved bytes: the field block's +1..+6 are party_order (G46), the position block's byte 32 is the elapsed
+        /* 19 reserved bytes (step K5 took the rev 5 reserve bytes 8 and 9): the field block's +1..+6 are party_order (G46), the position block's byte 32 is the elapsed
          * count (G90), the member block's byte 9 is the sleep cant count (decision 0066), the Attract sources (G71) and the
          * Ally Switch bytes (G80) are data */
-        DF_CHECK_EQ_U64(&t, all_reserved, 21u);    }
+        DF_CHECK_EQ_U64(&t, all_reserved, 19u);    }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
     {
@@ -1809,6 +1824,38 @@ int main(void)
                 DF_CHECK_BYTES(&t, after, before, n, "a refused step changes nothing");
             }
             duoforge_battle_destroy(y);
+        }
+        /* step K5 (#475, decision 0015 5dm): Magic Room's turns and setter are the rev 5 reserve bytes 8 and 9 of the encoding. They
+         * round-trip through the decoder; a pair the invariants refuse is refused by the decoder as TAIL_FIELD; byte 10 stays reserved. */
+        {
+            duoforge_battle *z = NULL;
+            DF_CHECK(&t, duoforge_battle_clone(kp, x, &z) == DUOFORGE_OK && z != NULL);
+            z->tail.magic_room_turns = 4u;
+            z->tail.magic_room_source = 8u; /* side 1, roster 1 */
+            uint8_t enc_z[DF_STATE_ENCODED_MAX];
+            const size_t nz = dfi_encode_unchecked(kp, z, enc_z);
+            const size_t r5 = DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_RESERVED_OFF;
+            DF_CHECK_EQ_U64(&t, enc_z[r5 + DFI_ENC_TAIL5_MAGIC_ROOM_TURNS_OFF], 4u);
+            DF_CHECK_EQ_U64(&t, enc_z[r5 + DFI_ENC_TAIL5_MAGIC_ROOM_SOURCE_OFF], 8u);
+            dfi_invariant inv_z = DFI_INV_NONE;
+            DF_CHECK(&t, decode_both(&t, kp, enc_z, nz, &inv_z) == DUOFORGE_OK);
+            duoforge_battle *back = NULL;
+            uint8_t *in_z = df_heap_copy(enc_z, nz);
+            DF_CHECK(&t, duoforge_battle_create_decoded(kp, in_z, nz, &back) == DUOFORGE_OK && back != NULL);
+            df_free(in_z);
+            DF_CHECK(&t, back != NULL && back->tail.magic_room_turns == 4u && back->tail.magic_room_source == 8u);
+            uint8_t enc_back[DF_STATE_ENCODED_MAX];
+            DF_CHECK_EQ_U64(&t, dfi_encode_unchecked(kp, back, enc_back), nz);
+            DF_CHECK_BYTES(&t, enc_back, enc_z, nz, "the Magic Room bytes round-trip");
+            duoforge_battle_destroy(back);
+            enc_z[r5 + DFI_ENC_TAIL5_MAGIC_ROOM_SOURCE_OFF] = 0u; /* turns without a setter */
+            DF_CHECK(&t, decode_both(&t, kp, enc_z, nz, &inv_z) == DUOFORGE_E_MALFORMED);
+            DF_CHECK_EQ_U64(&t, inv_z, DFI_INV_TAIL_FIELD);
+            enc_z[r5 + DFI_ENC_TAIL5_MAGIC_ROOM_SOURCE_OFF] = 8u;
+            enc_z[r5 + DFI_ENC_TAIL5_MAGIC_ROOM_COUNT + DFI_ENC_TAIL5_MAGIC_ROOM_TURNS_OFF] = 1u; /* reserve byte 10 */
+            DF_CHECK(&t, decode_both(&t, kp, enc_z, nz, &inv_z) == DUOFORGE_E_MALFORMED);
+            DF_CHECK_EQ_U64(&t, inv_z, DFI_INV_TAIL_RESERVED);
+            duoforge_battle_destroy(z);
         }
         /* step G56: a lock without its locked move is refused by the decoder as the tail's (TAIL_POSITION), as Rage Powder's
          * marker without its Follow Me flag: the encoded lock of a battle whose slot holds no locked move. So is a lock whose

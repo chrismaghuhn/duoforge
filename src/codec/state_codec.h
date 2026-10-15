@@ -164,6 +164,11 @@
  * position's dfi_tail_pos.ally_switch). Bytes 0..3 are lane B's and 8..15 stay free; all of them are zero and refused otherwise. */
 #define DFI_ENC_TAIL5_ALLY_SWITCH_OFF 4u
 #define DFI_ENC_TAIL5_ALLY_SWITCH_COUNT 4u
+/* Step K5 (#475, decision 0015 5dm): reserve byte 8 holds Magic Room's remaining turns (0..5) and byte 9 its setter, the member code
+ * 1 + side * 6 + roster index (0 = none; 1..12), like Attract's source. Bytes 10..15 stay zero and are refused otherwise. */
+#define DFI_ENC_TAIL5_MAGIC_ROOM_TURNS_OFF 8u
+#define DFI_ENC_TAIL5_MAGIC_ROOM_SOURCE_OFF 9u
+#define DFI_ENC_TAIL5_MAGIC_ROOM_COUNT 2u
 #define DFI_ENC_TAIL5_SIZE (DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_RESERVED_SIZE)
 /* The whole tail: rev 4 (288) and rev 5 (60). */
 #define DFI_ENC_TAIL_SIZE (DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_SIZE)
@@ -235,7 +240,8 @@
     (DFI_ENC_TAIL_FIELD_RESERVED_SIZE +                                                                                \
      DUOFORGE_SIDE_COUNT * (DFI_ENC_TAIL_SIDE_RESERVED_SIZE +                                                          \
                             DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE) +                               \
-     (DFI_ENC_TAIL5_RESERVED_SIZE - DFI_ENC_TAIL5_ATTRACT_SIZE - DFI_ENC_TAIL5_ALLY_SWITCH_COUNT))
+     (DFI_ENC_TAIL5_RESERVED_SIZE - DFI_ENC_TAIL5_ATTRACT_SIZE - DFI_ENC_TAIL5_ALLY_SWITCH_COUNT -                       \
+      DFI_ENC_TAIL5_MAGIC_ROOM_COUNT))
 /* The encoded size of a state under a POOL kind, and the largest of any kind: buffers of tests and tools that do
  * not ask duoforge_battle_encoded_size. Not a public constant. */
 #define DFI_STATE_POOL_ENCODED_SIZE (DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIZE)
@@ -351,10 +357,10 @@ _Static_assert(DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_
                "the positions' rev 5 bytes end the block's data");
 _Static_assert(DFI_ENC_TAIL5_ALLY_SWITCH_COUNT == DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE,
                "one Ally Switch byte per flat position (step G80)");
-_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 21u,
-               "21 of them are reserved (step G46 takes 6 of the field block's 7, step G90 the position block's byte 32 "
+_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 19u,
+               "19 of them are reserved (step G46 takes 6 of the field block's 7, step G90 the position block's byte 32 "
                "of its four, decision 0066 the member byte 9 of its twelve members (2 sides x 6), the Attract (G71) and "
-               "Ally Switch (G80) bytes of the rev 5 reserve are data)");
+               "Ally Switch (G80) and Magic Room (K5) bytes of the rev 5 reserve are data)");
 _Static_assert(DFI_ENC_TAIL5_ATTRACT_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE <= DFI_ENC_TAIL5_SIZE, "the Attract bytes are in the rev 5 block");
 _Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1357u, "the state with the POOL tail is 1357 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data

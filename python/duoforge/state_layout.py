@@ -140,7 +140,12 @@ def fields(pool=True):
     res = tail5 + _o("TAIL5_RESERVED_OFF")
     ally, ally_n = _o("TAIL5_ALLY_SWITCH_OFF"), _o("TAIL5_ALLY_SWITCH_COUNT")
     out.append(("tail5.ally_switch", res + ally, ally_n))
-    out.append(("tail5.reserved", res + ally + ally_n, _o("TAIL5_RESERVED_SIZE") - ally - ally_n))
+    # step K5 (#475): Magic Room's remaining turns and setter member code, the next two bytes; the rest of the reserve is zero
+    mr, mr_n = _o("TAIL5_MAGIC_ROOM_TURNS_OFF"), _o("TAIL5_MAGIC_ROOM_COUNT")
+    assert mr == ally + ally_n and _o("TAIL5_MAGIC_ROOM_SOURCE_OFF") == mr + 1
+    out.append(("tail5.magic_room_turns", res + mr, 1))
+    out.append(("tail5.magic_room_source", res + mr + 1, 1))
+    out.append(("tail5.reserved", res + mr + mr_n, _o("TAIL5_RESERVED_SIZE") - mr - mr_n))
     return out
 
 

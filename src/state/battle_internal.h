@@ -348,6 +348,7 @@ _Static_assert((DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLA
 #define DFI_TAIL_SPIKES_MAX 3u
 #define DFI_TAIL_STICKY_WEB_MAX 1u
 #define DFI_TAIL_GRAVITY_MAX 5u       /* gravity: duration 5 */
+#define DFI_TAIL_MAGIC_ROOM_MAX 5u    /* magic room: duration 5 (Persistent is not in the pool) */
 /* rev 2, per roster member */
 #define DFI_TAIL_ITEM_NONE 255u       /* item_now: the member holds nothing (0 = as the member says, 1..254 = item id + 1) */
 #define DFI_TAIL_TOXIC_STAGE_MAX 15u  /* the toxic counter stops at 15 */
@@ -488,6 +489,12 @@ typedef struct dfi_pool_tail {
      * the rev 5 reserve bytes 0..3 (state_codec.h DFI_ENC_TAIL5_ATTRACT_*), not part of dfi_tail_pos: a switch-out or a faint of
      * the infatuated occupant clears its byte explicitly (dfi_tail_clear_occupant). */
     uint8_t attract_source[DFI_ATTRACT_SLOTS];
+    /* Step K5 (#475, decision 0015 5dm): Magic Room (data/moves.ts:10754-10797), the rev 5 reserve bytes 8 and 9
+     * (state_codec.h DFI_ENC_TAIL5_MAGIC_ROOM_*). magic_room_turns is its remaining turns (0 = not up, at most
+     * DFI_TAIL_MAGIC_ROOM_MAX); magic_room_source is the setter's member code (the Attract encoding, 1 + side * 6 + roster
+     * index; 0 exactly when the room is not up). */
+    uint8_t magic_room_turns;
+    uint8_t magic_room_source;
 } dfi_pool_tail;
 
 /* The packed value of one side's party order, and one entry of it (roster index + 1, 0 = empty). */

@@ -100,6 +100,9 @@ static void dfi_encode_tail5(const dfi_pool_tail *tail, uint8_t *out)
         const dfi_tail_pos *tp = &tail->sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
         out[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_OFF + f] = tp->ally_switch;
     }
+    /* step K5 (#475): Magic Room's turns and setter, reserve bytes 8 and 9 (bytes 10..15 stay zero) */
+    out[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_MAGIC_ROOM_TURNS_OFF] = tail->magic_room_turns;
+    out[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_MAGIC_ROOM_SOURCE_OFF] = tail->magic_room_source;
 }
 
 static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
@@ -160,6 +163,9 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
     for (uint32_t i = DFI_ENC_TAIL5_ATTRACT_SIZE; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
         if (i >= DFI_ENC_TAIL5_ALLY_SWITCH_OFF && i < DFI_ENC_TAIL5_ALLY_SWITCH_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_COUNT) {
             continue; /* step G80: the Ally Switch bytes are read by dfi_parse_tail5 and checked by the invariants */
+        }
+        if (i == DFI_ENC_TAIL5_MAGIC_ROOM_TURNS_OFF || i == DFI_ENC_TAIL5_MAGIC_ROOM_SOURCE_OFF) {
+            continue; /* step K5: Magic Room's bytes are read by dfi_parse_tail5 and checked by the invariants */
         }
         any |= in[DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_RESERVED_OFF + i];
     }
@@ -230,6 +236,8 @@ static void dfi_parse_tail5(const uint8_t *in, dfi_pool_tail *tail)
     for (uint32_t i = 0u; i < DFI_ENC_TAIL5_ATTRACT_SIZE; ++i) { /* step G71: the Attract source per position */
         tail->attract_source[i] = in[DFI_ENC_TAIL5_ATTRACT_OFF + i];
     }
+    tail->magic_room_turns = in[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_MAGIC_ROOM_TURNS_OFF]; /* step K5 */
+    tail->magic_room_source = in[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_MAGIC_ROOM_SOURCE_OFF];
 }
 
 static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)

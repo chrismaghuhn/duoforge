@@ -52,6 +52,7 @@ TAIL5_SIDE_SIZE = 18
 TAIL5_POS_SIZE = 2
 TAIL5_RESERVED_SIZE = 16
 TAIL5_ALLY_OFF = 4                  # step G80 (decision 0044): reserve bytes 4..7 are the Ally Switch volatile, one per flat position
+TAIL5_MR_OFF = 8                    # step K5 (#475, decision 0015 5dm): reserve byte 8 is Magic Room's turns, byte 9 its setter's member code
 TAIL5_SIZE = 2 * TAIL5_SIDE_SIZE + 4 * TAIL5_POS_SIZE + TAIL5_RESERVED_SIZE        # 60
 TAIL_SIZE = TAIL_REV4_SIZE + TAIL5_SIZE                             # 348
 POOL_STATE_SIZE = STATE_SIZE + TAIL_SIZE
@@ -91,6 +92,7 @@ TAIL_STEALTH_ROCK_MAX = 1
 TAIL_SPIKES_MAX = 3
 TAIL_STICKY_WEB_MAX = 1
 TAIL_GRAVITY_MAX = 5
+TAIL_MAGIC_ROOM_MAX = 5
 TAIL_ITEM_NONE = 255
 TAIL_TOXIC_STAGE_MAX = 15
 TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet (the status bound of every kind is below)
@@ -412,7 +414,7 @@ def empty_tail():
     # party: step G46, per side the 3 bytes of party_order (entry k = roster index + 1 at bits 3k..3k+2, 0 = empty)
     # Step G71 (decision 0034): the Attract source per flat position, the first 4 bytes of the rev 5 reserve (0 = none).
     return {'gravity': 0, 'party': [[0, 0, 0], [0, 0, 0]], 'sides': [empty_tail_side(), empty_tail_side()],
-            'attract': [0, 0, 0, 0]}
+            'attract': [0, 0, 0, 0], 'magic_room': [0, 0]}
 
 
 def party_entries(party_bytes):
@@ -990,7 +992,8 @@ def tail_is_zero(tail):
                 and all(v == 0 for v in ill_values(ts['ill']))
                 and all(v == 0 for f in TAIL_MEMBER_LIST_FIELDS for v in ts[f]))
     return (tail['gravity'] == 0 and all(v == 0 for p in tail['party'] for v in p)
-            and all(side_zero(ts) for ts in tail['sides']) and all(v == 0 for v in tail.get('attract', [0] * 4)))
+            and all(side_zero(ts) for ts in tail['sides']) and all(v == 0 for v in tail.get('attract', [0] * 4))
+            and all(v == 0 for v in tail.get('magic_room', [0, 0])))
 
 
 def hazard_order_valid(ts):
@@ -1112,6 +1115,17 @@ def attract_byte_ok(st, flat):
     return pair in ((1, 2), (2, 1))
 
 
+def magic_room_valid(st):
+    """Step K5 (#475): no turns means no setter; otherwise 1..5 turns and a setter member code 1..12 (1 + side * 6 + roster index)
+    naming a member of its side below the side's member count (the setter may be benched or fainted)."""
+    turns, code = st['tail']['magic_room']
+    if turns == 0:
+        return code == 0
+    if turns > TAIL_MAGIC_ROOM_MAX or not 1 <= code <= 2 * MAX_ROSTER:
+        return False
+    return (code - 1) % MAX_ROSTER < st['sides'][(code - 1) // MAX_ROSTER]['member_count']
+
+
 def check_tail(ctx, st):
     """The POOL tail: absent (all zero) under every other kind; under POOL each value in range, none at a position
     without a standing occupant, the member overrides only where they can be (a soak type, a current ability and a
@@ -1121,6 +1135,8 @@ def check_tail(ctx, st):
     if not has_pool_tail(ctx):
         return 'OK' if tail_is_zero(tail) else 'TAIL_KIND'
     if tail['gravity'] > TAIL_GRAVITY_MAX:
+        return 'TAIL_FIELD'
+    if not magic_room_valid(st):
         return 'TAIL_FIELD'
     for s in range(2):
         if not party_valid(tail['party'][s], st['sides'][s]['brought']):
@@ -1263,15 +1279,16 @@ def tail_bytes(tail):
     reserve[0:4] = bytes(tail.get('attract', [0] * 4))  # step G71: Attract's sources (data)
     for flat in range(4):  # step G80: reserve bytes 4..7, the Ally Switch volatile of each flat position
         reserve[TAIL5_ALLY_OFF + flat] = tail['sides'][flat // 2]['pos'][flat % 2]['ally_switch']
+    reserve[TAIL5_MR_OFF:TAIL5_MR_OFF + 2] = bytes(tail.get('magic_room', [0, 0]))  # step K5: Magic Room's turns and setter
     out += bytes(reserve)
     assert len(out) == TAIL_SIZE
     return bytes(out)
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 21 reserved bytes: 13 of the rev 4 part (step G46: the field block's +1..+6 are
-    party_order; step G90: a position's byte +32 is trap_elapsed) and the 8 of the rev 5 reserve at the end that are not the
-    Attract sources 0..3 (step G71) or the Ally Switch bytes 4..7 (step G80). Decision 0066 took the member bytes +9 (sleep cant)."""
+    """The offsets (within the tail) of the 19 reserved bytes: 13 of the rev 4 part (step G46: the field block's +1..+6 are
+    party_order; step G90: a position's byte +32 is trap_elapsed) and the 6 of the rev 5 reserve at the end that are not the
+    Attract sources 0..3 (step G71), the Ally Switch bytes 4..7 (step G80) or Magic Room's bytes 8 and 9 (step K5). Decision 0066 took the member bytes +9 (sleep cant)."""
     offs = [TAIL_FIELD_SIZE - 1]
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
@@ -1279,8 +1296,8 @@ def tail_reserved_offsets():
             offs += [so + 8 + TAIL_POS_SIZE * p + 33 + i for i in range(3)]
     assert len(offs) == 13
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
-    offs += [rev5_reserve + i for i in range(TAIL5_ALLY_OFF + 4, TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 21
+    offs += [rev5_reserve + i for i in range(TAIL5_MR_OFF + 2, TAIL5_RESERVED_SIZE)]
+    assert len(offs) == 19
     return offs
 
 
@@ -1331,6 +1348,8 @@ def parse_tail(b):
         tp['ally_switch'] = b[r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE + TAIL5_ALLY_OFF + flat]  # step G80: the reserve byte of the flat position
     # Step G71: the Attract sources, the first 4 bytes of the reserve (r5 + 44 = rev 5 block offset 44).
     tail['attract'] = list(b[r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE:r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE + 4])
+    mr0 = r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE + TAIL5_MR_OFF  # step K5: Magic Room's turns and setter
+    tail['magic_room'] = [b[mr0], b[mr0 + 1]]
     return tail
 
 

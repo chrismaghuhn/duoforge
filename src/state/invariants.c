@@ -855,6 +855,22 @@ static bool dfi_attract_byte_ok(const struct duoforge_battle *b, uint32_t flat)
     return (g_inf == DFI_GENDER_MALE && g_src == DFI_GENDER_FEMALE) || (g_inf == DFI_GENDER_FEMALE && g_src == DFI_GENDER_MALE);
 }
 
+/* Step K5 (#475, decision 0015 5dm): Magic Room's tail bytes. No turns means no setter; otherwise the turns are 1..5 and the setter
+ * is a member code of 1..12 (1 + side * 6 + roster index) naming a member of its side below the side's member count. The setter
+ * may be benched or fainted: the room outlives it. */
+static bool dfi_magic_room_ok(const struct duoforge_battle *b)
+{
+    const uint32_t turns = b->tail.magic_room_turns;
+    const uint32_t code = b->tail.magic_room_source;
+    if (turns == 0u) {
+        return code == 0u;
+    }
+    if (turns > DFI_TAIL_MAGIC_ROOM_MAX || code == 0u || code > DFI_ATTRACT_MEMBER_MAX) {
+        return false;
+    }
+    return (code - 1u) % DUOFORGE_MAX_ROSTER < b->sides[(code - 1u) / DUOFORGE_MAX_ROSTER].member_count;
+}
+
 /* The position pads (pos_pad) are never encoded and are not state (decision 0060): a tail is zero when every other byte is. */
 static bool dfi_tail_zero_ignoring_pads(const dfi_pool_tail *t)
 {
@@ -873,7 +889,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
     if (!lim.pool_rules) {
         return dfi_tail_zero_ignoring_pads(&b->tail) ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
     }
-    if (b->tail.gravity_turns > DFI_TAIL_GRAVITY_MAX || b->tail.field_pad != 0u) {
+    if (b->tail.gravity_turns > DFI_TAIL_GRAVITY_MAX || b->tail.field_pad != 0u || !dfi_magic_room_ok(b)) {
         return DFI_INV_TAIL_FIELD;
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
