@@ -2,7 +2,7 @@
 
 ## Starting point
 
-- **M1 is complete.** Deterministic primitives and owned state are in `docs/decisions/0001`–`0003` and `tasks/M1_DETERMINISTIC_PRIMITIVES.md`; the last commit on branch `chris/practical-thompson-xasnox` is green in CI (Linux GCC/Clang, ASan/UBSan, MSVC x64/Win32).
+- **M1 is complete.** Deterministic primitives and owned state are in `docs/decisions/0001`–`0003` and `docs/history/tasks/M1_DETERMINISTIC_PRIMITIVES.md`; the last commit on branch `chris/practical-thompson-xasnox` is green in CI (Linux GCC/Clang, ASan/UBSan, MSVC x64/Win32).
   - If M1 is not yet merged into `main`, base your work on that branch.
 - **Owner decisions** (`docs/decisions/0004`):
   - rules basis **Pokémon Champions**, format `[Gen 9 Champions] VGC 2026 Reg M-C`;

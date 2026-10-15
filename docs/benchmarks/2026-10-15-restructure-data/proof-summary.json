@@ -1,0 +1,343 @@
+{
+ "P1_inventory": {
+  "debug": {
+   "added": [
+    "duoforge.python.generated_marks"
+   ],
+   "after": 1492,
+   "after_sha256": "a888ba21043953fa5995e77f41e84a948751a81fa3035b3b4259ead29c8c0fa1",
+   "before": 1491,
+   "before_sha256": "eb0e418aa0a48a1f4a9d8997ba4d16b069c93eec0778d76c172348de1210de16",
+   "removed": []
+  },
+  "ipo": {
+   "added": [
+    "duoforge.python.generated_marks"
+   ],
+   "after": 1492,
+   "after_sha256": "a888ba21043953fa5995e77f41e84a948751a81fa3035b3b4259ead29c8c0fa1",
+   "before": 1491,
+   "before_sha256": "eb0e418aa0a48a1f4a9d8997ba4d16b069c93eec0778d76c172348de1210de16",
+   "removed": []
+  },
+  "noipo": {
+   "added": [
+    "duoforge.python.generated_marks"
+   ],
+   "after": 1492,
+   "after_sha256": "a888ba21043953fa5995e77f41e84a948751a81fa3035b3b4259ead29c8c0fa1",
+   "before": 1491,
+   "before_sha256": "eb0e418aa0a48a1f4a9d8997ba4d16b069c93eec0778d76c172348de1210de16",
+   "removed": []
+  }
+ },
+ "P1_selected_tests": {
+  "after-ipo": 255,
+  "after-noipo": 249,
+  "before-ipo": 254,
+  "before-noipo": 248
+ },
+ "P2_reference": {
+  "executions": 2654,
+  "ipo": {
+   "canonical_sha256": "2046d2134c1b99e7c70eedfe40a8a5e9bc9d177a9bc716cc3da5544e627fcb46",
+   "equal": true
+  },
+  "noipo": {
+   "canonical_sha256": "2046d2134c1b99e7c70eedfe40a8a5e9bc9d177a9bc716cc3da5544e627fcb46",
+   "equal": true
+  },
+  "steps": 22710,
+  "stops": 8603,
+  "unique_battles": 1164,
+  "variants": {
+   "duoforge_reference_conformance": {
+    "battles": 90,
+    "sha256": "620dd6f94faa5fc2751158f062c58edf75f48394aba7a9a49e6bc96bf8f9f271",
+    "steps": 1430,
+    "stops": 0
+   },
+   "duoforge_reference_conformance_pool": {
+    "battles": 90,
+    "sha256": "80e1d85185bfa59498b4fe756f12dc30e41ca2ffdbbb5159118d91a8a374d0c6",
+    "steps": 1430,
+    "stops": 0
+   },
+   "duoforge_reference_conformance_pool_data": {
+    "battles": 1001,
+    "sha256": "64d9796708615649a2874e16cdc497ab5270ef026e8547b291ea1833e5a8be2b",
+    "steps": 5821,
+    "stops": 0
+   },
+   "duoforge_reference_conformance_team_c": {
+    "battles": 73,
+    "sha256": "1acfad0da5393e2095176d094ab2748800b305cfbfee048e04f127a1720c39c5",
+    "steps": 1337,
+    "stops": 0
+   },
+   "duoforge_reference_conformance_team_c_pool": {
+    "battles": 73,
+    "sha256": "a375e1b3e1196b3463c68a76898176a29c8b506a47deb07d4c971a7b747c6fc0",
+    "steps": 1337,
+    "stops": 0
+   },
+   "duoforge_reference_tiebreak": {
+    "battles": 90,
+    "sha256": "b374c2d908d5bd00776a571f7bc6842722f0fb6e6401c9770b3f27001c07e4ea",
+    "steps": 1430,
+    "stops": 833
+   },
+   "duoforge_reference_tiebreak_pool": {
+    "battles": 90,
+    "sha256": "8dd38f6a3c45107d8747544e8ea90f46b457a6e66c660a12a81631ff97984cfd",
+    "steps": 1430,
+    "stops": 833
+   },
+   "duoforge_reference_tiebreak_pool_data": {
+    "battles": 1001,
+    "sha256": "d75318855a76dd71fe8aa4bb1018f00637855491d1e1bb416771e8188e3e2a9c",
+    "steps": 5821,
+    "stops": 5469
+   },
+   "duoforge_reference_tiebreak_team_c": {
+    "battles": 73,
+    "sha256": "78e1cb58a1fd273b438d99fb9d5db2bdc876b174da5bc73339bc002b2de7fb34",
+    "steps": 1337,
+    "stops": 734
+   },
+   "duoforge_reference_tiebreak_team_c_pool": {
+    "battles": 73,
+    "sha256": "2b52952ebe93f0dde23ef15ebe240d2cad353ea022416e776cdc03d48d8723e8",
+    "steps": 1337,
+    "stops": 734
+   }
+  }
+ },
+ "P6_public_surface": {
+  "debug": {
+   "exports": 243,
+   "exports_sha256": "7baccd43263777fc0f6aa15840cd0f0fcc3aa683471920051ead6cb2396d6928",
+   "fingerprints": {
+    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "POOL": "5d41dab82340b8f19b21011348f232d9d36d84d4046fd1d41c297e4846b556e6",
+    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+   },
+   "layout_sha256": "4eb40481e70a70fd1b3fe4de3230b50e2dd627abeb8758807787f54438df1a04"
+  },
+  "ipo": {
+   "exports": 243,
+   "exports_sha256": "7baccd43263777fc0f6aa15840cd0f0fcc3aa683471920051ead6cb2396d6928",
+   "fingerprints": {
+    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "POOL": "5d41dab82340b8f19b21011348f232d9d36d84d4046fd1d41c297e4846b556e6",
+    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+   },
+   "layout_sha256": "4eb40481e70a70fd1b3fe4de3230b50e2dd627abeb8758807787f54438df1a04"
+  },
+  "noipo": {
+   "exports": 243,
+   "exports_sha256": "7baccd43263777fc0f6aa15840cd0f0fcc3aa683471920051ead6cb2396d6928",
+   "fingerprints": {
+    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "POOL": "5d41dab82340b8f19b21011348f232d9d36d84d4046fd1d41c297e4846b556e6",
+    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+   },
+   "layout_sha256": "4eb40481e70a70fd1b3fe4de3230b50e2dd627abeb8758807787f54438df1a04"
+  }
+ },
+ "after": {
+  "commit": "e76aac13f05b8b7e3a785de917923accc28d1a3e",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "ac555c167dce3e7bea91aed117eff5d869687eb8",
+  "dirty": false,
+  "phase": "before"
+ },
+ "objects": {
+  "debug": {
+   "differing": 1,
+   "differing_names": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "files": 271,
+   "shared_library_after": "b6867a2324f231fc0d705d6af2a17291e94ccadc695763c0210e10d4e1a5d5c1",
+   "shared_library_before": "b6867a2324f231fc0d705d6af2a17291e94ccadc695763c0210e10d4e1a5d5c1"
+  },
+  "ipo": {
+   "differing": 156,
+   "differing_names": [
+    "CMakeFiles/duoforge.dir/src/combat/events.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/items/families.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/items/white_herb.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge.dir/src/data/pool_tables.c.o",
+    "CMakeFiles/duoforge.dir/src/data/support_manifest.c.o",
+    "CMakeFiles/duoforge.dir/src/state/battle.c.o",
+    "CMakeFiles/duoforge.dir/src/state/closure_member.c.o",
+    "CMakeFiles/duoforge.dir/src/state/context.c.o",
+    "CMakeFiles/duoforge.dir/src/state/data_query.c.o",
+    "CMakeFiles/duoforge.dir/src/state/identity.c.o",
+    "CMakeFiles/duoforge.dir/src/state/invariants.c.o",
+    "CMakeFiles/duoforge.dir/src/state/knowledge.c.o",
+    "CMakeFiles/duoforge.dir/src/state/observation.c.o",
+    "CMakeFiles/duoforge.dir/src/state/observation_digest.c.o",
+    "CMakeFiles/duoforge.dir/src/state/request.c.o",
+    "CMakeFiles/duoforge.dir/src/state/transition.c.o",
+    "CMakeFiles/duoforge_batch.dir/src/encode/encode.c.o",
+    "CMakeFiles/duoforge_batch.dir/src/state/view.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/events.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/items/families.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/items/white_herb.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/data/pool_tables.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/data/support_manifest.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/encode/encode.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/battle.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/closure_member.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/context.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/data_query.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/identity.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/invariants.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/knowledge.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/observation.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/observation_digest.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/request.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/transition.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/view.c.o",
+    "CMakeFiles/duoforge_state_layout_dump.dir/tools/layout/state_layout_dump.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_batch.a",
+    "tests/CMakeFiles/duoforge_combat_ability_family.dir/abilities/test_ability_family.c.o",
+    "tests/CMakeFiles/duoforge_combat_closure_gate.dir/interactions/test_closure_gate.c.o",
+    "tests/CMakeFiles/duoforge_combat_focus_sash_confusion.dir/interactions/test_focus_sash_confusion.c.o",
+    "tests/CMakeFiles/duoforge_combat_item_family.dir/items/test_item_family.c.o",
+    "tests/CMakeFiles/duoforge_combat_move_rules.dir/moves/test_move_rules.c.o",
+    "tests/CMakeFiles/duoforge_combat_team_c_gate.dir/interactions/test_team_c_gate.c.o",
+    "tests/CMakeFiles/duoforge_combat_turn.dir/flow/test_turn.c.o",
+    "tests/CMakeFiles/duoforge_data_api.dir/data/test_data_api.c.o",
+    "tests/CMakeFiles/duoforge_data_pool_tables.dir/data/test_pool_tables.c.o",
+    "tests/CMakeFiles/duoforge_data_static.dir/data/test_data_static.c.o",
+    "tests/CMakeFiles/duoforge_observation_digest.dir/flow/test_observation_digest.c.o",
+    "tests/CMakeFiles/duoforge_reference_conformance_pool.dir/interactions/test_conformance.c.o",
+    "tests/CMakeFiles/duoforge_reference_conformance_pool_data.dir/interactions/test_conformance.c.o",
+    "tests/CMakeFiles/duoforge_reference_conformance_team_c_pool.dir/interactions/test_conformance.c.o",
+    "tests/CMakeFiles/duoforge_reference_tiebreak_pool.dir/interactions/test_tiebreak.c.o",
+    "tests/CMakeFiles/duoforge_reference_tiebreak_pool_data.dir/interactions/test_tiebreak.c.o",
+    "tests/CMakeFiles/duoforge_reference_tiebreak_team_c_pool.dir/interactions/test_tiebreak.c.o",
+    "tests/CMakeFiles/duoforge_request_information.dir/flow/test_information.c.o",
+    "tests/CMakeFiles/duoforge_request_observation_ext.dir/mechanics/test_observation_ext.c.o",
+    "tests/CMakeFiles/duoforge_search_digest.dir/interactions/test_search_digest.c.o",
+    "tests/CMakeFiles/duoforge_state_ability_now.dir/abilities/test_ability_now.c.o",
+    "tests/CMakeFiles/duoforge_state_clone_equal.dir/flow/test_clone_equal.c.o",
+    "tests/CMakeFiles/duoforge_state_closure_setup.dir/data/test_closure_setup.c.o",
+    "tests/CMakeFiles/duoforge_state_identity.dir/flow/test_identity.c.o",
+    "tests/CMakeFiles/duoforge_state_invariants.dir/flow/test_invariants.c.o",
+    "tests/CMakeFiles/duoforge_state_knowledge.dir/mechanics/test_knowledge.c.o",
+    "tests/CMakeFiles/duoforge_state_mega_by_stone.dir/forms/test_mega_by_stone.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_ac1.dir/abilities/test_pool_ac1.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_fainted_holder.dir/flow/test_pool_fainted_holder.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g11.dir/moves/test_pool_g11.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g16.dir/items/test_pool_g16.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g17.dir/moves/test_pool_g17.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g19.dir/moves/test_pool_g19.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g20.dir/mechanics/test_pool_g20.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g20_protect.dir/mechanics/test_pool_g20_protect.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g22.dir/abilities/test_pool_g22.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g26.dir/moves/test_pool_g26.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g27.dir/interactions/test_pool_g27.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g29.dir/items/test_pool_g29.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g30.dir/interactions/test_pool_g30.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g31.dir/moves/test_pool_g31.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g33.dir/interactions/test_pool_g33.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g34.dir/interactions/test_pool_g34.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g35.dir/interactions/test_pool_g35.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g36.dir/mechanics/test_pool_g36.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g37.dir/mechanics/test_pool_g37.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g38.dir/moves/test_pool_g38.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g39.dir/interactions/test_pool_g39.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g41.dir/abilities/test_pool_g41.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g42.dir/moves/test_pool_g42.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g43.dir/forms/test_pool_g43.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g44.dir/moves/test_pool_g44.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g45.dir/abilities/test_pool_g45.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g47.dir/interactions/test_pool_g47.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g48.dir/moves/test_pool_g48.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g49.dir/items/test_pool_g49.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g50.dir/moves/test_pool_g50.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g51.dir/forms/test_pool_g51.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g52.dir/interactions/test_pool_g52.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g53.dir/abilities/test_pool_g53.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g54.dir/moves/test_pool_g54.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g55.dir/items/test_pool_g55.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g56.dir/moves/test_pool_g56.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g57.dir/abilities/test_pool_g57.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g58.dir/moves/test_pool_g58.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g59.dir/forms/test_pool_g59.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g60.dir/moves/test_pool_g60.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g61.dir/abilities/test_pool_g61.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g62.dir/moves/test_pool_g62.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g63.dir/abilities/test_pool_g63.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g64.dir/moves/test_pool_g64.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g65.dir/abilities/test_pool_g65.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g66.dir/forms/test_pool_g66.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g67.dir/interactions/test_pool_g67.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g68.dir/moves/test_pool_g68.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g69.dir/abilities/test_pool_g69.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g7.dir/mechanics/test_pool_g7.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g70.dir/moves/test_pool_g70.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g71.dir/moves/test_pool_g71.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g72.dir/mechanics/test_pool_g72.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g72b.dir/moves/test_pool_g72b.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g73.dir/abilities/test_pool_g73.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g74.dir/moves/test_pool_g74.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g75.dir/interactions/test_pool_g75.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g76.dir/moves/test_pool_g76.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g77.dir/interactions/test_pool_g77.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g78.dir/moves/test_pool_g78.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g79.dir/abilities/test_pool_g79.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g8.dir/moves/test_pool_g8.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g80.dir/moves/test_pool_g80.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g81.dir/abilities/test_pool_g81.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g82.dir/moves/test_pool_g82.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g83.dir/interactions/test_pool_g83.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g86.dir/moves/test_pool_g86.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g87.dir/moves/test_pool_g87.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g88.dir/moves/test_pool_g88.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g9.dir/moves/test_pool_g9.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g90.dir/moves/test_pool_g90.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g92.dir/moves/test_pool_g92.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_i2.dir/interactions/test_pool_i2.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_k1.dir/moves/test_pool_k1.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_k2.dir/abilities/test_pool_k2.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_k3.dir/moves/test_pool_k3.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_mega2.dir/forms/test_pool_mega2.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_setup.dir/data/test_pool_setup.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_tail.dir/data/test_pool_tail.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_terrain.dir/mechanics/test_pool_terrain.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_weather.dir/mechanics/test_pool_weather.c.o",
+    "tests/CMakeFiles/duoforge_state_team_c_setup.dir/data/test_team_c_setup.c.o",
+    "tests/CMakeFiles/duoforge_test_support.dir/support/conformance_compare.c.o",
+    "tests/CMakeFiles/duoforge_test_support.dir/support/fixtures.c.o",
+    "tests/CMakeFiles/duoforge_view.dir/interactions/test_view.c.o",
+    "tests/CMakeFiles/duoforge_view_causes.dir/interactions/test_view_causes.c.o",
+    "tests/CMakeFiles/duoforge_view_sleep_count.dir/interactions/test_sleep_count.c.o"
+   ],
+   "files": 271,
+   "shared_library_after": "7faba1331fb91c220f65e9cb7a9e470ceac0cf24b013b47510c98e9db1d722bd",
+   "shared_library_before": "7faba1331fb91c220f65e9cb7a9e470ceac0cf24b013b47510c98e9db1d722bd"
+  },
+  "ipo_note": "of the differing IPO .o files, 153 have byte-equal contents in every .gnu.lto_* section and differ only in the per-translation-unit id suffix of the section names (GCC derives it from the input text, comments included); the rest is bench main.c.o (embeds the commit) and the two static archives holding these objects",
+  "noipo": {
+   "differing": 1,
+   "differing_names": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "files": 271,
+   "shared_library_after": "23530c4a0fbaa7fb8b9175f455e1d03afc1b0cf34170fd602801f7278d4ce1bc",
+   "shared_library_before": "23530c4a0fbaa7fb8b9175f455e1d03afc1b0cf34170fd602801f7278d4ce1bc"
+  }
+ }
+}

@@ -17,6 +17,8 @@ then the scripts are used with `check.sh`, which makes read-only and `--dry-run`
 | `check.sh` | the permission check: read-only and `--dry-run` calls, then a list of what is missing |
 | `launch.sh` | prints the request (default) or, with `--i-have-owner-approval`, makes it |
 | `user_data.sh` | what the box runs: build as the hosted `linux-full` job does, optional bench, play the chunks, upload, power off |
+| `bootstrap_user_data.sh` | the user data every launcher sends: the watchdog first, then the commit's box script, fetched and rendered on the box |
+| `render_box.sh` | the one rendering of a box script's placeholders: the launchers' dry runs, the tests and the bootstrap use it |
 | `chunks.sh` | the chunk scheduler the box sources: parallel chunks, background uploads, done-manifest, partial uploads |
 | `bench_run.py` | the raw engine benchmark of `bench=1`: `duoforge_bench` on all vCPUs, `bench.json` |
 | `collect.sh` | downloads a campaign and replays every kept case locally (`diff_driver.py corpus`) |
@@ -34,6 +36,14 @@ then the scripts are used with `check.sh`, which makes read-only and `--dry-run`
 - **Two hours at most.** `--max-hours` is 1 or 2 (default 2). The first command of the user data is
   `shutdown -h +<minutes>`, and the instance-initiated shutdown behaviour is `terminate`, so the box is gone after
   that long whatever happens on it. (A preview-oracle campaign has caps of its own, 12 hours and $20: its section.)
+- **A small user data: the bootstrap** (HauptSession, 2026-10-15). EC2 takes at most 16,384 bytes of user data, and the
+  ladder's box script outgrew it (16,570 bytes rendered: the launch was refused, nothing started). Every launcher sends
+  `bootstrap_user_data.sh` (about 1.9 KB): its first command is the watchdog; it fetches the exact commit, checks it,
+  renders that commit's box script (`user_data.sh`, `ladder_user_data.sh` or `oracle_user_data.sh`) with the values the
+  launcher validated through `render_box.sh`, the rendering of the dry run, and runs it with the whole minutes left of
+  the watchdog, so the box never outlives it. A failure in the bootstrap powers the box off at once and uploads nothing
+  (its console output is all that is left, as for `failed_in_packages`). Every launcher refuses user data longer than
+  16,384 bytes by name, `user_data_too_large`, and its dry run prints the bootstrap's size and the rendered box script's.
 - **A price ceiling.** The spot request carries `MaxPrice = 10 / hours` dollars per instance hour, so one campaign cannot
   cost more than the $10 cap (plus a 60 GB gp3 volume that goes with the instance, a few cents).
 - **An exact commit.** `--commit` is the 40-digit sha of a commit on `main`: `launch.sh` checks it is an ancestor of
@@ -372,7 +382,7 @@ tests (against a stub `aws`).
 | `campaigns/<id>/campaign.conf` | `kind=ladder`, one to three `arm=NAME step=S [previous=P] [h2h=0\|1]` lines, and for every arm `pairs`, `seed`, `workers` (8), `max_steps` and every network by its sha256 (`ladder_conf.py`'s docstring has the keys) |
 | `ladder_conf.py` | checks a ladder conf, lists its networks' sha256 and its arms, and builds each arm's command line (the launcher and the box use the same file) |
 | `launch_ladder.sh` | the guards of `launch.sh`; one instance type, `c7a.16xlarge`, for a whole series, no fallback; prints the request unless `--i-have-owner-approval` |
-| `ladder_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` (and `probes/`) checked read-only; the networks (and a probe campaign's inputs) by sha256; the pins; a probe campaign's pin variants; the arms side by side, each on CPUs of its own; the aggregates up |
+| `ladder_user_data.sh` | the box script (run by the bootstrap): the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` (and `probes/`) checked read-only; the networks (and a probe campaign's inputs) by sha256; the pins; a probe campaign's pin variants; the arms side by side, each on CPUs of its own; the aggregates up |
 | `ladder_requirements.txt` | the Python packages, pinned to the local machine's versions (CPU only) |
 | `ladder_equal.py` | the equality proof: two `ladder.json` compared field by field, timing fields aside |
 | `numpy_dispatch.py` | checks NumPy's SIMD dispatch on the box: every disabled name known, no AVX-512 target enabled; writes the record `numpy_simd` |
