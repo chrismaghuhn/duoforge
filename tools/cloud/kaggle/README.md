@@ -71,7 +71,8 @@ The resumed run must run at the same commit (refused otherwise). On the same Kag
 
 ## The first run: a short BC test
 
-The job `bc-short` proves the chain in minutes on a GPU: `--preset S --epochs 2 --patience 2 --batch 1024` on the content list's data, with seed 1.
+The job `bc-short` proves the chain in minutes on a GPU: `--preset S --epochs 2 --patience 2 --batch 1024
+--source-weight bo1_belief=1` on the content list's data, with seed 1 (a Bo1 source needs its weight named).
 
 It is compared with the same run on this machine, at the same commit, on the same data:
 - the loss curve (train and validation NLL per epoch);

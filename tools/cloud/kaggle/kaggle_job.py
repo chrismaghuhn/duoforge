@@ -25,7 +25,8 @@ DEADLINE_SECONDS = 11 * 3600  # a Kaggle GPU session ends after 12 hours; the st
 REFUSED = {"e1060cf46a8f30bc3e56ad6fb1e038a9ed3dafd47a9ec9913b8399542320c281": "the tournament sun team"}
 # The short job proves the chain (minutes): a small model, two epochs. The full job takes its arguments from the plan's
 # configuration file bc-args.json: a list of flags of duoforge_learn.bc from ALLOWED, never a path.
-SHORT = ["--preset", "S", "--epochs", "2", "--patience", "2", "--batch", "1024"]
+SHORT = ["--preset", "S", "--epochs", "2", "--patience", "2", "--batch", "1024",
+         "--source-weight", "bo1_belief=1"]  # a Bo1 source needs its weight named (M11 Bo1 spec section 5)
 ALLOWED = {"--preset", "--embed", "--member", "--position", "--hidden", "--layers", "--option", "--epochs", "--patience",
            "--batch", "--learning-rate", "--value-coef", "--weights", "--format-weight", "--source-weight",
            "--pick-hypotheses-weight", "--split"}
