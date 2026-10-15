@@ -1,0 +1,77 @@
+{
+  "name": "fz556_trick_illusion",
+  "purpose": "Zoroark-Hisui, p1a, disguised as Venusaur, uses Trick on Golurk (step 7), which holds nothing: the -enditem of the Payapa Berry carries the disguise's name, so the foe folds the item use into Venusaur's row while Venusaur, on the bench, still holds its White Herb (decision 0026 section 4); the break at step 14 gives the use to Zoroark-Hisui's row. On main the knowledge invariant refused the disguise's row at step 7 (E_INVARIANT, issue 556). A battle of the differential fuzzing of issue 396 (free random sets, fz_244_67), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,d1fec7f84cb9a7c78483c32ee92f8bbb5f8e70f4e2c4bd39160384ce918a5d56",
+  "teams": [
+    "primarina (M) @ widelens\nAbility: torrent\nLevel: 50\nEVs: 10 HP / 13 Atk / 13 Def / 14 SpA / 9 SpD / 7 Spe\nBrave Nature\n- psychup\n- acrobatics\n- sing\n- reflect\n\nmeganium (M) @ mawilite\nAbility: overgrow\nLevel: 50\nEVs: 11 HP / 11 Atk / 4 Def / 10 SpA / 9 SpD / 21 Spe\nNaughty Nature\n- grassyglide\n- leafstorm\n- doubleedge\n- gigadrain\n\nzoroarkhisui (F) @ lopunnite\nAbility: illusion\nLevel: 50\nEVs: 14 HP / 7 Atk / 6 Def / 18 SpA / 11 SpD / 10 Spe\nCalm Nature\n- throatchop\n- aerialace\n- trick\n- substitute\n\nvenusaur (M) @ whiteherb\nAbility: chlorophyll\nLevel: 50\nEVs: 15 HP / 14 Atk / 9 Def / 10 SpA / 12 SpD / 6 Spe\nJolly Nature\n- petalblizzard\n- bodyslam\n- outrage\n- earthpower\n\nsandaconda (M) @ scraftinite\nAbility: sandveil\nLevel: 50\nEVs: 7 HP / 10 Atk / 10 Def / 7 SpA / 13 SpD / 19 Spe\nCareful Nature\n- irondefense\n- mudslap\n- substitute\n- earthpower\n\nbanette (M) @ charcoal\nAbility: frisk\nLevel: 50\nEVs: 9 HP / 9 Atk / 11 Def / 13 SpA / 10 SpD / 14 Spe\nMild Nature\n- darkpulse\n- thunder\n- destinybond\n- nastyplot",
+    "pangoro (F) @ fairyfeather\nAbility: ironfist\nLevel: 50\nEVs: 9 HP / 6 Atk / 18 Def / 15 SpA / 8 SpD / 10 Spe\nHasty Nature\n- focusblast\n- sunnyday\n- superpower\n- rocktomb\n\nbellibolt (F) @ smoothrock\nAbility: static\nLevel: 50\nEVs: 10 HP / 15 Atk / 12 Def / 8 SpA / 13 SpD / 8 Spe\nDocile Nature\n- weatherball\n- thunderbolt\n- confuseray\n- wildcharge\n\ntaurospaldeaaqua (M) @ payapaberry\nAbility: angerpoint\nLevel: 50\nEVs: 11 HP / 12 Atk / 10 Def / 17 SpA / 8 SpD / 8 Spe\nLonely Nature\n- swagger\n- chillingwater\n- lashout\n- stompingtantrum\n\ngolurk\nAbility: ironfist\nLevel: 50\nEVs: 7 HP / 15 Atk / 10 Def / 12 SpA / 9 SpD / 13 Spe\nQuirky Nature\n- rockslide\n- phantomforce\n- ironhead\n- closecombat\n\nhippowdon (M) @ chandelurite\nAbility: sandforce\nLevel: 50\nEVs: 13 HP / 6 Atk / 9 Def / 10 SpA / 11 SpD / 17 Spe\nImpish Nature\n- superpower\n- bodyslam\n- helpinghand\n- whirlwind\n\nscolipede (M) @ scolipite\nAbility: speedboost\nLevel: 50\nEVs: 13 HP / 8 Atk / 7 Def / 5 SpA / 9 SpD / 12 Spe\nHardy Nature\n- sunnyday\n- megahorn\n- assurance\n- throatchop"
+  ],
+  "choices": [
+    {
+      "p1": "team 4623",
+      "p2": "team 3142"
+    },
+    {
+      "p1": "move 4 -2, move 3",
+      "p2": "move 2 2, move 3 2"
+    },
+    {
+      "p1": "switch 4, move 2 1",
+      "p2": "move 2 -2, move 4 -1"
+    },
+    {
+      "p1": "move 1 2, move 2 -1",
+      "p2": "move 3 -2, move 4 2"
+    },
+    {
+      "p1": "move 3 1, move 4",
+      "p2": "move 2 2, switch 3"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 1 -2, move 4 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 2, move 3",
+      "p2": "move 1 -2, move 4 2"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "move 4 -2, move 3 1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 1 2, move 2 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 4, move 2 2",
+      "p2": "move 1 2, move 1"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1, move 3 2",
+      "p2": "move 3 -2, move 1"
+    }
+  ]
+}

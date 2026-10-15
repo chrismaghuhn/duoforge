@@ -4799,7 +4799,12 @@ static duoforge_status dfi_encore_replace(dfi_run *r, uint32_t flat, uint32_t sl
     dfi_queue_record rec = *old;
     rec.move_slot = (uint8_t)slot;
     rec.reserve = 0u;
-    const uint32_t cls = dfi_pool_moves[tm->moves[slot].move_id].target_class;
+    uint32_t cls = dfi_pool_moves[tm->moves[slot].move_id].target_class;
+    /* The Champions resolveAction gives a non-Ghost user's Curse the target self before it picks one (sim/battle-queue.ts:263-266),
+     * so getRandomTarget returns the user and draws nothing (issue 556: a frozen Sylveon Encored into Curse). */
+    if (tm->moves[slot].move_id == DFI_MOVE_CURSE && !dfi_has_type(b, tm, DFI_TYPE_GHOST)) {
+        cls = DUOFORGE_TARGET_CLASS_SELF;
+    }
     dfi_cancel_actions(b, old->activation_id); /* `old` is not valid from here */
     uint32_t target = 0u;
     duoforge_status st = dfi_resolve_target(r, flat, cls, &target);
@@ -6172,6 +6177,14 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
+    /* hitStepTryImmunity (sim/battle-actions.ts:676-684), after TryHit: a Prankster-boosted Curse fails on a Dark foe, -immune and
+     * nothing else, so no HP cost and no curse (issue 556: Mega Banette's Curse into Sharpedo), as in the general step. */
+    if (target / 2u != user / 2u && dfi_ability(b, dfi_at(b, user), DFI_ABILITY_PRANKSTER) &&
+        dfi_has_type(b, dfi_at(b, target), DFI_TYPE_DARK)) {
+        dfi_immune(r, target, 0u);
+        r->mres |= DFI_MRES_FALSE;
+        return DUOFORGE_OK;
+    }
     /* onHit: directDamage(source.maxhp / 2) to the user (sim/battle.ts directDamage: at least 1; no [from] on the line) */
     {
         const dfi_member *um = dfi_at(b, user);
@@ -7337,6 +7350,10 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
         m->stats[i] = stats[i];
     }
     *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
+    /* formeChange -> setSpecies -> setType(species.types, true) (sim/pokemon.ts:1392, 2109-2127): a type that Soak or Double Shock
+     * set ends, without a line, as at a Mega Evolution (issue 556: a Soaked Aegislash is Steel/Ghost again after its change). */
+    b->tail.sides[side].soak_type[idx] = 0u;
+    b->tail.sides[side].type2[idx] = 0u;
     /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats, so a live Speed Swap ends here. */
     b->tail.sides[user / 2u].positions[user % 2u].single_turn = (uint8_t)((uint32_t)b->tail.sides[user / 2u].positions[user % 2u].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
@@ -8748,11 +8765,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         /* Glaive Rush (step G19): its self effect, applied like the recharge's by selfDrops to the user once a target was not
          * ruled out (a miss or a Protect gives none), shows nothing: -singlemove|user|Glaive Rush|[silent]
-         * (data/moves.ts:6647-6678; the public view infers it from the move line, decision 0018 section 6.1). */
+         * (data/moves.ts:6647-6678; the public view infers it from the move line, decision 0018 section 6.1). A target whose hit a
+         * Substitute took is null, not false, and counts too (issue 556, the cause of issue 518). */
         if (md->special == DFI_SPECIAL_GLAIVE_RUSH) {
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             if (hit_any) {
                 b->tail.sides[side].positions[q->slot].glaive_rush = 1u;

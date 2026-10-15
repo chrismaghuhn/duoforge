@@ -1,0 +1,25 @@
+{
+  "name": "fz556_encore_curse",
+  "purpose": "Vanilluxe Encores Sylveon (step 2), whose last move was Curse and which queued Giga Impact: the Champions resolveAction gives a non-Ghost user's Curse the target self (sim/battle-queue.ts:263-266), so the changed action draws no random target. On main the engine drew one and stopped with E_INVARIANT at step 2 (issue 556). A battle of the differential fuzzing of issue 396 (free random sets, fz_279_28), cut after its step 2. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,d5c2ee6f2859f8652a860f088b358d862c72b5c9a65fd058a84c5d242e2433b4",
+  "teams": [
+    "avalugghisui (M) @ medichamite\nAbility: sturdy\nLevel: 50\nEVs: 9 HP / 9 Atk / 13 Def / 13 SpA / 7 SpD / 15 Spe\nTimid Nature\n- stompingtantrum\n- blizzard\n- bodyslam\n- crunch\n\ntyranitar (F) @ tyranitarite\nAbility: sandstream\nLevel: 50\nEVs: 10 HP / 16 Atk / 6 Def / 18 SpA / 10 SpD / 6 Spe\nQuiet Nature\n- earthquake\n- crunch\n- scaryface\n- heavyslam\n\nmilotic (F) @ mawilite\nAbility: cutecharm\nLevel: 50\nEVs: 7 HP / 3 Atk / 10 Def / 10 SpA / 6 SpD / 8 Spe\nMild Nature\n- irontail\n- waterpulse\n- ironhead\n- lightscreen\n\nskarmory (F) @ passhoberry\nAbility: keeneye\nLevel: 50\nEVs: 9 HP / 12 Atk / 2 Def / 9 SpA / 7 SpD / 5 Spe\nQuiet Nature\n- taunt\n- sunnyday\n- icywind\n- swordsdance\n\nvenusaur (M) @ scraftinite\nAbility: overgrow\nLevel: 50\nEVs: 12 HP / 6 Atk / 11 Def / 16 SpA / 12 SpD / 9 Spe\nSassy Nature\n- leechseed\n- acidspray\n- earthpower\n- frenzyplant\n\nrotomwash @ lightclay\nAbility: levitate\nLevel: 50\nEVs: 10 HP / 8 Atk / 5 Def / 10 SpA / 11 SpD / 10 Spe\nQuiet Nature\n- chargebeam\n- lightscreen\n- eerieimpulse\n- thunderwave",
+    "zoroark (M) @ garchompite\nAbility: illusion\nLevel: 50\nEVs: 5 HP / 10 Atk / 10 Def / 5 SpA / 6 SpD / 9 Spe\nRash Nature\n- snarl\n- nastyplot\n- substitute\n- encore\n\nlycanrocdusk (F) @ expertbelt\nAbility: toughclaws\nLevel: 50\nEVs: 15 HP / 11 Atk / 11 Def / 7 SpA / 9 SpD / 13 Spe\nCareful Nature\n- helpinghand\n- howl\n- stealthrock\n- taunt\n\nmudsdale (F) @ clefablite\nAbility: innerfocus\nLevel: 50\nEVs: 9 HP / 11 Atk / 12 Def / 10 SpA / 7 SpD / 17 Spe\nSerious Nature\n- rockslide\n- lashout\n- gigaimpact\n- ironhead\n\nsylveon (M) @ pyroarite\nAbility: pixilate\nLevel: 50\nEVs: 12 HP / 12 Atk / 10 Def / 17 SpA / 7 SpD / 8 Spe\nHardy Nature\n- protect\n- bodyslam\n- curse\n- gigaimpact\n\nvanilluxe (M) @ silverpowder\nAbility: snowwarning\nLevel: 50\nEVs: 11 HP / 10 Atk / 13 Def / 11 SpA / 12 SpD / 9 Spe\nQuiet Nature\n- frostbreath\n- weatherball\n- allyswitch\n- snowscape\n\ntalonflame (M) @ charcoal\nAbility: galewings\nLevel: 50\nEVs: 13 HP / 9 Atk / 8 Def / 11 SpA / 13 SpD / 12 Spe\nNaughty Nature\n- hurricane\n- raindance\n- firespin\n- thief"
+  ],
+  "choices": [
+    {
+      "p1": "team 1342",
+      "p2": "team 4135"
+    },
+    {
+      "p1": "move 2, move 3 1",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 3 1, switch 4",
+      "p2": "move 4 1, move 4 -1"
+    }
+  ]
+}

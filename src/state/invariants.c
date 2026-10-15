@@ -450,6 +450,18 @@ uint32_t dfi_illusion_shown_occupant(const dfi_side *side, const dfi_tail_side *
     return occ;
 }
 
+/* Illusion (decision 0026): member m of the side can be shown as a disguise, so the foe's row of it may hold the holder's facts: the
+ * side has a holder (Species Clause allows one) and m is not it. */
+static bool dfi_illusion_disguise_candidate(const dfi_side *side, uint32_t m)
+{
+    for (uint32_t h = 0u; h < DUOFORGE_MAX_ROSTER && h < side->member_count; ++h) {
+        if (side->members[h].ability == DFI_ABILITY_ILLUSION + 1u) { /* the sheet's ability is id + 1 */
+            return h != m;
+        }
+    }
+    return false;
+}
+
 /* Knowledge of player p about the opponent: every seen bit names a brought
  * member, and every foe occupant is seen. Runs after both sides passed, so
  * member_count and brought_mask are already in range. */
@@ -508,9 +520,12 @@ static bool dfi_knowledge_valid(const struct duoforge_battle *b, uint32_t p)
         if (k->revealed > (DFI_REVEALED_ITEM_CONSUMED | DFI_REVEALED_MEGA)) {
             return false;
         }
-        /* The old item_used: the item is gone, used up or taken by a move (the tail's item_now, step G16). */
+        /* The old item_used: the item is gone, used up or taken by a move (the tail's item_now, step G16). On a side with an
+         * Illusion holder the row of a member other than the holder may carry the holder's item instead: a disguised holder's
+         * consumed or given item is shown under the disguise's name and folded into the disguise's row (decision 0026 section 4),
+         * and no later line about the real member contradicts it (issue 556). */
         if ((k->revealed & DFI_REVEALED_ITEM_CONSUMED) != 0u && mem->item_consumed != 1u &&
-            b->tail.sides[1u - p].item_now[m] != DFI_TAIL_ITEM_NONE) {
+            b->tail.sides[1u - p].item_now[m] != DFI_TAIL_ITEM_NONE && !dfi_illusion_disguise_candidate(opp, m)) {
             return false;
         }
         if (((k->revealed & DFI_REVEALED_MEGA) != 0u) != (mem->is_mega == 1u)) {

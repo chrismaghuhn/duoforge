@@ -18,7 +18,7 @@ typedef struct df_conf_cmd {
 /* present, hp, pp (the true PP), stages (biased by 6), stall counter present, fainted,
  * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the
  * locked move slot (0xFF none) and its target, Mega forme, the item still
- * held, and what the opponent has seen: seen, HP percent and colour flag
+ * held (bit 0; bit 1: the opponent attributes the other item use, an Illusion hid it, issue 556), and what the opponent has seen: seen, HP percent and colour flag
  * of the last public display (DUOFORGE_HP_FLAG_*) */
 typedef struct df_conf_mon {
     uint32_t present, hp;
