@@ -199,8 +199,16 @@ STRICT_KIND = {'closure': 'CLOSURE', 'team_c': 'TEAM_C', 'pool': 'POOL'}  # the 
 # your own), the file, the data kind its members need, the SHA-256 of the sets as they are used (what the run's identity
 # holds).
 Team = collections.namedtuple('Team', 'id path data sha256')
-Params = collections.namedtuple('Params', 'seed battles pairings max_steps switch_weight mega_weight domain_rate teams',
-                                defaults=(0.0, None))
+Params = collections.namedtuple('Params',
+                                'seed battles pairings max_steps switch_weight mega_weight domain_rate teams format',
+                                defaults=(0.0, None, None))
+# --format: the Showdown format of the battles. None is Reg M-C (gen_real_specs.FORMAT, doubles); the singles formats of
+# trace_to_c.SINGLES_FORMATS (decision 0083) play every team as pool data under DUOFORGE_DATA_KIND_POOL_SINGLES_DEV.
+FORMATS = (gen_real_specs.FORMAT,) + trace_to_c.SINGLES_FORMATS
+
+
+def format_of(params):
+    return params.format or gen_real_specs.FORMAT
 
 
 # ------------------------------------------------------------ what battle i is
@@ -302,11 +310,11 @@ def derive(params, index, teams):
                     'Showdown accepted.' % (index, params.seed, who(ids[0]), who(ids[1]), policy_seed)),
     }
     kinds = [data_of(params, team_id) for team_id in ids]
-    if 'pool' in kinds:
+    if 'pool' in kinds or format_of(params) in trace_to_c.SINGLES_FORMATS:
         spec['data'] = 'pool'
     elif 'team_c' in kinds:
         spec['data'] = 'team_c'
-    spec.update({'format': gen_real_specs.FORMAT, 'seed': ps_seed, 'teams': sides})
+    spec.update({'format': format_of(params), 'seed': ps_seed, 'teams': sides})
     return spec, policy_seed, pairing
 
 
@@ -352,11 +360,11 @@ def mid_turn_before(trace, step):
     return step > 0 and not any(line.startswith('|upkeep') for line in trace['steps'][step - 1]['log'])
 
 
-def canonical_choice(text, side, state, roster_of, mid_turn, locked=None):
+def canonical_choice(text, side, state, roster_of, mid_turn, locked=None, singles=False):
     """The choice that trace_to_c.convert_choice makes of a Showdown text, as a value that goes in a set: ('team',
     picks) or ('slots', (command, command)), a command being (kind, move_slot, target, mega, reserve), the leaves of
     the engine's duoforge_slot_command."""
-    kind, value = trace_to_c.convert_choice(text, side, state, roster_of, mid_turn, locked)
+    kind, value = trace_to_c.convert_choice(text, side, state, roster_of, mid_turn, locked, singles=singles)
     if kind == 'team':
         return ('team', tuple(value))
     return ('slots', tuple(tuple(command) for command in value))
@@ -403,6 +411,9 @@ def domain_choices(trace, samples, spec=None, tables=None):
     lock (trace_to_c.locked_slots); without them such a lock stops the conversion."""
     if not samples:
         return []
+    singles = spec is not None and trace_to_c.spec_singles(spec)
+    if singles:
+        trace = trace_to_c.padded_singles(trace)  # the states as convert_battle reads them (decision 0083)
     roster_of = roster_tables(trace)
     out = []
     for sample in sorted(samples, key=lambda x: (x['step'], x['side'])):
@@ -413,9 +424,10 @@ def domain_choices(trace, samples, spec=None, tables=None):
             raise DomainError('%s: the side did not answer a step of the recording' % where)
         state, mid_turn = state_before(trace, step), mid_turn_before(trace, step)
         locked = trace_to_c.locked_slots(trace, step, spec, tables) if spec is not None else None
-        by_text = {text: canonical_choice(text, side, state, roster_of, mid_turn, locked) for text in sample['accepted']}
+        by_text = {text: canonical_choice(text, side, state, roster_of, mid_turn, locked, singles)
+                   for text in sample['accepted']}
         played_text = trace['steps'][step]['input'][sid]
-        played = canonical_choice(played_text, side, state, roster_of, mid_turn, locked)
+        played = canonical_choice(played_text, side, state, roster_of, mid_turn, locked, singles)
         choices = set(by_text.values())
         if played not in choices:
             raise DomainError('%s: what was played (%r) is not among the %d choices that Showdown accepted'
@@ -487,7 +499,7 @@ def convert_and_run(name, spec, text, trace, ended, runner, tables_for, kinds, s
         return Evaluated(base.new_result(name, 'REF_ERROR', detail='a domain sample disagrees with the recording',
                                          messages=[str(e)]), text, trace, ended)
     records = io.StringIO()
-    strict = STRICT_KIND[trace_to_c.spec_data(name, spec)]
+    strict = 'POOL_SINGLES_DEV' if trace_to_c.spec_singles(spec) else STRICT_KIND[trace_to_c.spec_data(name, spec)]
     conformance_records.write_battle(data, team_c, records, kind=kinds[strict], domain=sets)
     seconds['convert'] += clock() - t0
     t0 = clock()
@@ -833,6 +845,8 @@ def run_parameters(params):
            'domain_rate': params.domain_rate}
     if params.teams:
         out['teams'] = {t.id: {'sha256': t.sha256, 'data': t.data} for t in sorted(params.teams)}
+    if params.format is not None:
+        out['format'] = params.format  # only when given: the parameters of a Reg M-C run stay what they were
     return out
 
 
@@ -1267,6 +1281,9 @@ def add_arguments(modes):
                    'own as a pairing letter (NAME one letter but A, B or C); six sets with every gender stated; the data '
                    'kind (CLOSURE, TEAM_C or POOL) follows its members, and a name that no data kind has is refused before '
                    'anything is played; repeat for more teams')
+    p.add_argument('--format', choices=FORMATS, default=None,
+                   help='the Showdown format of the battles (default %s); %s is singles (decision 0083): every team '
+                   'plays as pool data under POOL_SINGLES_DEV' % (gen_real_specs.FORMAT, ', '.join(trace_to_c.SINGLES_FORMATS)))
     p.add_argument('--keep-traces', action='store_true',
                    help='keep the spec and the trace of every PASS battle in kept/ (what `promote` chooses coverage from)')
     p.add_argument('--workers', type=int, default=4, help='threads, each with a worker and a runner (default 4)')
@@ -1310,7 +1327,7 @@ def validate(parser, args):
     if (args.node or shutil.which('node')) is None:
         parser.error('node is not on the PATH (--node)')
     return Params(args.seed, args.battles, pairings, args.max_steps, args.switch_weight, args.mega_weight,
-                  args.domain_rate, teams or None)
+                  args.domain_rate, teams or None, args.format)
 
 
 def forwarded(args, outdir):
@@ -1323,6 +1340,8 @@ def forwarded(args, outdir):
         out += ['--team', name if path is None else '%s=%s' % (name, os.path.abspath(path))]
     if args.keep_traces:
         out.append('--keep-traces')
+    if args.format is not None:
+        out += ['--format', args.format]
     if args.node:
         out += ['--node', args.node]
     return out

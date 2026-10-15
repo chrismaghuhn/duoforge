@@ -128,6 +128,7 @@ sim/battle.ts:2563) forgets it.
 
 Stdlib only; CTest runs it with --check when Python is available.
 """
+import copy
 import io
 import json
 import os
@@ -910,12 +911,23 @@ def two_turn_lock(p, key, remembered):
     return remembered[key]
 
 
-def convert_choice(text, side, state, roster_of, mid_turn=False, locked=None):
+def convert_choice(text, side, state, roster_of, mid_turn=False, locked=None, singles=False):
     """A Showdown choice string -> ('team', picks) or ('slots', [cmd, cmd]).
     mid_turn: the request was made during the turn (a pivot), not at its end. locked: {(side, slot): move slot} of the
-    lockedmove locks in `state` (locked_slots); a lockedmove lock without its entry stops the conversion."""
+    lockedmove locks in `state` (locked_slots); a lockedmove lock without its entry stops the conversion.
+    singles (decision 0083): a team choice is its lead alone, [lead]; the order Showdown makes of the text (the positions
+    typed, then the rest in order, sim/side.ts chooseTeam) must be the lead followed by the rest in roster order, the one
+    order the engine's singles team selection gives, else the conversion stops."""
     if text.startswith('team '):
-        return ('team', [int(c) - 1 for c in text[len('team '):]])
+        picks = [int(c) - 1 for c in text[len('team '):]]
+        if singles:
+            size = len(state['sides'][side]['pokemon'])
+            order = picks[:size] + [i for i in range(size) if i not in picks]
+            if not picks or order != [picks[0]] + [i for i in range(size) if i != picks[0]]:
+                raise ConversionError('singles-team-order', 'trace_to_c: singles team %r is not a lead followed by the '
+                                      'rest in order' % text)
+            return ('team', [picks[0]])
+        return ('team', picks)
     cmds = []
     actives = state['sides'][side]['active']
     for slot, part in enumerate(text.split(', ')):
@@ -987,6 +999,10 @@ def convert_choice(text, side, state, roster_of, mid_turn=False, locked=None):
             cmds.append((3, 0, 0, 0, 0) if asked else (0, 0, 0, 0, 0))
         else:
             raise ConversionError('choice-kind', 'trace_to_c: choice %r is not supported' % part, detail=words[0])
+    if singles:
+        if len(cmds) != 1:
+            raise ConversionError('singles-choice', 'trace_to_c: singles choice %r has %d parts' % (text, len(cmds)))
+        cmds.append((0, 0, 0, 0, 0))  # slot 1 of a singles side is never requested (decision 0083)
     return ('slots', cmds)
 
 
@@ -999,6 +1015,7 @@ TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2, 'electricterrain': 3,
 FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 FIELD_ELECTRIC_TERRAIN = 4  # DUOFORGE_FIELD_ELECTRIC_TERRAIN (POOL, step G25)
 FIELD_MISTY_TERRAIN = 5  # DUOFORGE_FIELD_MISTY_TERRAIN (POOL, step G25)
+FIELD_GRAVITY = 6  # DUOFORGE_FIELD_GRAVITY (POOL, step K4, #475; decision 0015 5dl)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
 BLOCK_QUICK_GUARD = 6  # DUOFORGE_BLOCK_QUICK_GUARD (POOL, decision 0029): -activate move: Quick Guard
 FOE_SIDE_MOVES = ('Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web')  # the moves with the target class foeSide (POOL, step G37)
@@ -2358,7 +2375,8 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         elif kind in ('-fieldstart', '-fieldend'):
             cause, id2, other = ev_cause(attrs, tables)
             names = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN,
-                     'move: Electric Terrain': FIELD_ELECTRIC_TERRAIN, 'move: Misty Terrain': FIELD_MISTY_TERRAIN}
+                     'move: Electric Terrain': FIELD_ELECTRIC_TERRAIN, 'move: Misty Terrain': FIELD_MISTY_TERRAIN,
+                     'move: Gravity': FIELD_GRAVITY}
             if kind == '-fieldend' and args[0] == 'Misty Terrain':
                 # Misty Terrain's onFieldEnd has no "move: " in its line (data/moves.ts:12198-12200 at the pin); no other
                 # line of the field has this form, and a -fieldstart of it is an error.
@@ -2573,6 +2591,31 @@ def magma_armor_frozen(spec, trace):
                 raise ConversionError('magmaarmor-frozen', 'trace_to_c: a frozen Magma Armor holder: %s' % line, detail=name)
 
 
+# decision 0083: the singles formats of the pin a battle may be recorded in. [Gen 9 Champions] OU (config/formats.ts:255-259)
+# is the owner's reference for O2: the real format, so the shared lines show the HP a player sees, as in the VGC battles.
+SINGLES_FORMATS = ('gen9championsou',)
+
+
+def spec_singles(spec):
+    """True for a battle recorded in a singles format (decision 0083): it runs under DUOFORGE_DATA_KIND_POOL_SINGLES_DEV."""
+    return spec.get('format') in SINGLES_FORMATS
+
+
+def padded_singles(trace):
+    """A singles trace with every state's `active` list padded to two entries (decision 0083): slot 0 is the reference's one
+    position, slot 1 is the empty position of the engine's capacity (flat position side * 2 + 1, never occupied). A copy; the
+    trace is not changed. Every other part of the converter reads the states of a singles battle as those of doubles."""
+    out = copy.deepcopy(trace)
+    states = [out['start']['state']] + [st['state'] for st in out['steps']]
+    for state in states:
+        for side in state['sides']:
+            if len(side['active']) != 1:
+                raise ConversionError('singles-active', 'trace_to_c: a singles state with %d active positions' %
+                                      len(side['active']))
+            side['active'] = side['active'] + [-1]  # ps_trace.js writes -1 for an empty position
+    return out
+
+
 def convert_battle(name, spec, trace, tables):
     """One battle as plain data, in the field order of the df_conf_* types
     (conformance_types.h): {'name', 'purpose', 'member_count', 'members',
@@ -2584,6 +2627,8 @@ def convert_battle(name, spec, trace, tables):
     shared arrays; 'dropped' is the number of draws the step dropped.
     Pure: no file IO, and spec and trace are not changed. What the converter
     does not model raises ConversionError."""
+    if spec_singles(spec):
+        trace = padded_singles(trace)
     magma_armor_frozen(spec, trace)  # step G77: no frozen Magma Armor holder in the battle (the Update tie is folded on it)
     teams = [parse_team(spec['teams'][s], tables) for s in range(2)]
     members = []
@@ -2664,7 +2709,7 @@ def convert_battle(name, spec, trace, tables):
         for side, sid in enumerate(('p1', 'p2')):
             if sid in step['input']:
                 kinds[side] = convert_choice(step['input'][sid], side, state, roster_of, mid_turn,
-                                             locked_slots(trace, step_index, spec, tables))
+                                             locked_slots(trace, step_index, spec, tables), singles=spec_singles(spec))
         tape = []
         dropped = 0
         for d in step['draws']:
@@ -2940,6 +2985,7 @@ class FoePressure:
         self.own_occ = [[None, None], [None, None]]  # roster index of the viewer's own occupant of each slot
         self.alive = [[False] * 6, [False] * 6]
         self.has_pressure = [[False] * 6, [False] * 6]
+        self.mega = [[False] * 6, [False] * 6]  # Mega Evolution is a permanent forme change (sim/battle-actions.ts:1902)
 
     def _standing(self, v):
         return sum(1 for o in self.own_occ[v] if o is not None and self.alive[v][o] and self.has_pressure[v][o])
@@ -2953,7 +2999,8 @@ class FoePressure:
             # a drag (step G46: Roar, Whirlwind, Dragon Tail) enters a member as a switch does (issue 541)
             self.own_occ[v][slot] = ident
             self.alive[v][ident] = hp != 0
-            self.has_pressure[v][ident] = self.teams[v][ident]['ability'] == self.pressure
+            # A Mega that switches back in keeps its Mega ability, not the sheet's
+            self.has_pressure[v][ident] = self.teams[v][ident]['ability'] == self.pressure and not self.mega[v][ident]
         elif kind in (EV['DAMAGE'], EV['HEAL']) and hp_kind == 1 and occ is not None:
             self.alive[v][occ] = hp != 0
         elif kind == EV['FAINT'] and occ is not None:
@@ -2963,6 +3010,7 @@ class FoePressure:
         elif kind == EV['ABILITY'] and cause == CAUSE['MOVE'] and occ is not None:
             self.has_pressure[v][occ] = ident == self.pressure  # Skill Swap (step G70): the holder's new ability is `ident`
         elif kind == EV['MEGA'] and occ is not None:
+            self.mega[v][occ] = True
             self.has_pressure[v][occ] = False  # the Mega formes of the pool that have Pressure lose it (Tough Claws, Magic Bounce)
 
     def _extra(self, v, mid, flags, other):

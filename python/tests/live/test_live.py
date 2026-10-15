@@ -495,8 +495,9 @@ class BreakProtectTest(unittest.TestCase):
 
 class LockedMoveSlotTest(unittest.TestCase):
     """View audit of 2026-10-10 (#323): a foe whose last used move is a lockedmove (Outrage, Thrash, Petal Dance:
-    DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE) shows no locked slot, a Choice lock included, as the C observation hides it
-    (src/state/observation.c dfi_maybe_lockedmove). The last move is pokemon.moveUsed's: set by the position's own
+    DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE) shows no locked slot, as the C observation hides it (src/state/observation.c
+    dfi_maybe_lockedmove). A Choice lock on the same move still shows its slot (decision 0083 section 7, the reference's
+    choicelock): the slot stays when the lock's drawn count ends, so it tells nothing about the count. The last move is pokemon.moveUsed's: set by the position's own
     move lines (a locked turn included), not by a move another effect makes it use, cleared when it leaves."""
 
     @classmethod
@@ -532,12 +533,23 @@ class LockedMoveSlotTest(unittest.TestCase):
         self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["MOVE"], pos, 0, cause, self.M[name], flags=flags))
 
     def test_a_foe_after_a_lockedmove_shows_no_locked_slot(self):
+        from types import SimpleNamespace
+        sheet = {"item": 0, "moves": [self.M["OUTRAGE"], self.M["DRAGONCLAW"], self.M["PROTECT"]]}  # no Choice item
+        self.t._occupant = lambda pos: SimpleNamespace(sheet=sheet, uses=[0, 0, 0], item_used=0, item_now=0)
         p = self.t._positions[1][0]
-        p.choice_slot = 0
+        p.locked_slot = 0  # a lock slot the tracker holds for the foe's Outrage
         self.move(2, "OUTRAGE")
         self.assertEqual(self.t._shown_locked_slot(p, own=False), self.tracker.MOVE_SLOT_NONE)
         self.move(2, "OUTRAGE", flags=trace_to_c.FLAG["LOCKED"])  # a locked turn is a move use too
         self.assertEqual(self.t._shown_locked_slot(p, own=False), self.tracker.MOVE_SLOT_NONE)
+
+    def test_a_foe_choice_locked_into_a_lockedmove_shows_the_choice_slot(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 0
+        self.move(2, "OUTRAGE")
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 0)
+        self.move(2, "OUTRAGE", flags=trace_to_c.FLAG["LOCKED"])
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 0)
 
     def test_a_foe_after_another_move_shows_its_choice_slot(self):
         p = self.t._positions[1][0]
@@ -1437,6 +1449,30 @@ class TrackerTest(unittest.TestCase):
         self.assertFalse(differences(after, before))
         self.assertEqual(lists[0], lists_before[0])
         self.assertEqual(lists[1], [o for o in lists_before[1] if o.kind != options.SWITCH])
+
+
+class GravityViewTest(unittest.TestCase):
+    """K4 (#475, decision 0015 5dl): the field view's gravity_turns per step, for both viewers, from the recorded k4 battles.
+    The view extension holds FIELD_EXT at offset 16 (python/duoforge/_layout.py: OBSERVATION_EXT), gravity_turns its byte 0.
+    Gravity is set in turn 1 (state 2 shows 4 after the turn-1 residual), counts down one per residual and is gone after the
+    fifth residual (state 6 shows 0): the same count for both players, since the field is shared."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.ref = Reference.get()
+
+    def test_the_countdown_is_five_turns_for_both_viewers(self):
+        gravity = 16  # FIELD_EXT.gravity_turns within OBSERVATION_EXT
+        sequences = {
+            "k4_gravity_start_turns": [0, 0, 4, 3, 2, 1, 0, 0],
+            "k4_gravity_reuse_fail": [0, 0, 4, 3, 2, 1, 0, 0],
+            "k4_gravity_trick_room_order": [0, 0, 4, 3, 2, 1, 0],
+        }
+        for name, want in sequences.items():
+            exts = self.ref.pool().battles_by_name[name].exts  # the k4 battles are POOL battles
+            for k, value in enumerate(want):
+                for viewer in (0, 1):
+                    self.assertEqual(exts[(k, viewer)][gravity], value, f"{name} state {k} viewer {viewer}")
 
 
 if __name__ == "__main__":

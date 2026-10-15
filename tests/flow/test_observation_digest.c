@@ -391,10 +391,32 @@ static void step_plumbing(df_test *t)
     duoforge_battle_destroy(legacy); duoforge_battle_destroy(observed); duoforge_context_destroy(ctx);
 }
 
+/* Step K4 (#475, decision 0015 5dl): FIELD_START and FIELD_END accept detail 6 (Gravity) and refuse 7 (Magic Room, K5). */
+static void field_detail_vectors(df_test *t)
+{
+    const dfi_visible_identity identity = {0x0102u, 1u, 1u};
+    const uint32_t kinds[2] = {DUOFORGE_EVENT_FIELD_START, DUOFORGE_EVENT_FIELD_END};
+    for (uint32_t k = 0u; k < 2u; ++k) {
+        for (uint32_t detail = 0u; detail <= 8u; ++detail) {
+            dfi_observation_digest d;
+            DF_CHECK(t, dfi_observation_digest_init(&d, 0u) == DUOFORGE_OK);
+            d.identity[0] = identity;
+            duoforge_event e = dfi_event_make(kinds[k], DUOFORGE_NO_POSITION);
+            e.detail = (uint8_t)detail;
+            dfi_observation_fold(&d, &e, 0u);
+            const bool accepted = detail == DUOFORGE_FIELD_GRAVITY ||
+                                  (detail >= DUOFORGE_FIELD_GRASSY_TERRAIN && detail <= DUOFORGE_FIELD_MISTY_TERRAIN);
+            DF_CHECK(t, accepted ? d.status == DUOFORGE_OK : (d.status == DUOFORGE_E_UNSUPPORTED && !d.complete));
+        }
+    }
+    DF_CHECK_EQ_U64(t, DUOFORGE_FIELD_GRAVITY, 6u);
+}
+
 int main(void)
 {
     df_test t; df_test_begin(&t, "duoforge.observation.digest");
     line_vectors(&t); request_vectors(&t); stream_vector(&t); rows_mismatch(&t);
     hidden_worlds_and_identity(&t); trapping_changes_request(&t); step_plumbing(&t);
+    field_detail_vectors(&t);
     return df_test_end(&t);
 }

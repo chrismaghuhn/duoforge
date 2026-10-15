@@ -378,6 +378,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_PSYCHUP] = 1u,       /* step G80 (decision 0044): the target's stages, Focus Energy and Dragon Cheer, -copyboost */
             [DFI_MOVE_HOWL] = 1u,          /* step G80: the allies class with the primary boost (Charm's role); Soundproof per target */
             [DFI_MOVE_ALLYSWITCH] = 1u,    /* step G80: the swap, the consecutive roll, the Illusion refusal (E_UNSUPPORTED) */
+            [DFI_MOVE_GRAVITY] = 1u,       /* step K4 (#475, decision 0015 5dl): the field for five turns, the 27.2 residual, grounding, the re-use -fail */
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
             /* Step G88 (decision 0046): Lash Out (x2 base power when the user's stat fell this turn, LOWERED) and Assurance (x2 when
              * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */
@@ -1020,6 +1021,8 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS) |
+                         /* Step K4 (#475, decision 0015 5dl): Gravity, gravity_turns of the field view (encoder 5 column, encode.c). */
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_GRAVITY) |
                          /* Step G87 (decision 0080): Attract's source position (volatiles2 bits 12-13), public, verified against the
                           * recorded pool battles and the from_view worlds of tests/test_pool_g87.c. */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE)

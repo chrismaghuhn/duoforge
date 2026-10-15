@@ -1924,6 +1924,8 @@ int main(void)
             }
         }
         dfi_pool_tail want = x->tail;
+        /* step K4 (#475, data/moves.ts:7832-7833): Gravity counts down in the residual (order 27.2): the example's 5 turns are 4 */
+        want.gravity_turns = (uint8_t)(want.gravity_turns != 0u ? want.gravity_turns - 1u : 0u);
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             want.sides[s].wide_guard = 0u;
             want.sides[s].quick_guard = 0u; /* step G54: Quick Guard lasts this turn, as Wide Guard does (the residual clears it) */

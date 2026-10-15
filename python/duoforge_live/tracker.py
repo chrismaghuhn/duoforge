@@ -129,6 +129,8 @@ EXT_FIELDS = {
     "TRAP_ELAPSED": (("v2bits", sum(EXT2_TRAP_ELAPSED)),),  # POSITION_EXT2 (volatiles2), a record field of its own
     # Attract's source position (step G87, decision 0080): volatiles2 bits 12-13, the source's flat position
     "ATTRACT_SOURCE": (("v2bits", _ATTRACT_SOURCE_BITS),),
+    # Gravity (step K4, #475, decision 0015 5dl): the field view's gravity_turns, folded from FIELD_START / FIELD_END detail 6
+    "GRAVITY": (("global", "gravity_turns"),),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
@@ -390,6 +392,7 @@ class Tracker:
         self._field_turns_next = FIELD_TURNS  # set per line by _extended_field
         self._terrain = self._terrain_turns = 0
         self._trick_room = 0
+        self._gravity = 0  # K4 (#475): the Gravity turns of the field, 5 from its start (FIELD_START detail 6)
         self._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]  # reflect, light screen, tailwind, Aurora Veil turns per side
         self._hazards = [collections.Counter(), collections.Counter()]  # entry hazard layers per side, by ext field
         self._mega_used = [0, 0]
@@ -429,6 +432,7 @@ class Tracker:
         self._rage_powder = tables["MOVE"].get("RAGEPOWDER")
         self._wide_guard = tables["MOVE"].get("WIDEGUARD")
         self._struggle = tables["MOVE"].get("STRUGGLE")
+        self._throat_chop_id = tables["MOVE"].get("THROATCHOP")  # a bounced sound move's stop (issue 570, _bounce_cant)
         self._attract = tables["MOVE"].get("ATTRACT")  # the check before an infatuated occupant's move (step G71)
         self._soak = tables["MOVE"].get("SOAK")
         self._symbiosis = tables["ABILITY"]["SYMBIOSIS"] + 1 if "SYMBIOSIS" in tables["ABILITY"] else None
@@ -963,9 +967,13 @@ class Tracker:
                         # endTurn: moveLastTurnResult = moveThisTurnResult, this turn's undefined (src/combat/turn.c)
                         p.result_last, p.result_now = p.result_now, 0
             return
-        starts = (kind == EV["MOVE"] and cause == trace_to_c.CAUSE["NONE"]) or kind == EV["CONFUSED"] or \
-            (kind == EV["CANT"] and cause != trace_to_c.CAUSE["ABILITY"])
         action = self._action
+        # A Magic Bounce holder's [cant] Throat Chop right after the move line that targets it is the bounced run, inside the
+        # action (issue 570), not an action of its own
+        bounce_cant = action is not None and action["events"] and self._bounce_cant(action["events"][-1], e, action["pos"])
+        starts = not bounce_cant and (
+            (kind == EV["MOVE"] and cause == trace_to_c.CAUSE["NONE"]) or kind == EV["CONFUSED"] or
+            (kind == EV["CANT"] and cause != trace_to_c.CAUSE["ABILITY"]))
         if starts and action is not None and action["pos"] == pos and action["confused"] and kind != EV["CONFUSED"]:
             action["confused"] = False  # the move the confusion line let through, or its [cant]
             action["events"].append(e)
@@ -981,6 +989,13 @@ class Tracker:
                             "activation": p.activation}
         elif action is not None:
             action["events"].append(e)
+
+    def _bounce_cant(self, prev, e, user):
+        """`e` is the [cant] Throat Chop of the target of `user`'s move line `prev`, a foe: Magic Bounce took the move and
+        Throat Chop stopped the bounced run before its line (issue 570, src/combat/turn.c dfi_bounce)."""
+        return e[0] == EV["CANT"] and e[3] == trace_to_c.CAUSE["MOVE"] and e[5] == self._throat_chop_id and \
+            prev[0] == EV["MOVE"] and prev[3] == trace_to_c.CAUSE["NONE"] and prev[1] == user and prev[2] == e[1] and \
+            e[1] != NOPOS and e[1] // 2 != user // 2
 
     def _pre_action(self, events, pos):
         """The last of `events` is a line of `pos` that comes before its action's first line: a wake-up or a thaw
@@ -1012,7 +1027,8 @@ class Tracker:
                 p.result_now = record.move_result_of(self.data, action["pos"], events)
                 break
         for i, e in enumerate(events):
-            if e[0] == EV["MOVE"] and e[3] == trace_to_c.CAUSE["ABILITY"] and e[1] != NOPOS:
+            if (e[0] == EV["MOVE"] and e[3] == trace_to_c.CAUSE["ABILITY"] or
+                    i > 0 and self._bounce_cant(events[i - 1], e, action["pos"])) and e[1] != NOPOS:
                 # Magic Bounce: the holder's result is that of the reflected run (src/combat/turn.c, the bounced move)
                 holder = self._at(e[1])
                 if holder.occupant != ROSTER_NONE and not holder.fainted:
@@ -1439,6 +1455,9 @@ class Tracker:
         elif kind == EV["FIELD_START"]:
             if detail == 2:
                 self._trick_room = FIELD_TURNS
+            elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
+                # K4 (#475, decision 0015 5dl): Gravity counts five turns; no extender is modelled for it
+                self._gravity = FIELD_TURNS
             else:
                 # DUOFORGE_FIELD_* -> the observation's DUOFORGE_TERRAIN_*: Grassy, Psychic (Team C), Electric and Misty
                 # (POOL, step G25)
@@ -1446,6 +1465,8 @@ class Tracker:
         elif kind == EV["FIELD_END"]:
             if detail == 2:
                 self._trick_room = 0
+            elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
+                self._gravity = 0
             else:
                 self._terrain = self._terrain_turns = 0
         elif kind in (EV["SIDE_START"], EV["SIDE_END"]) and amount in _HAZARD:
@@ -1636,6 +1657,7 @@ class Tracker:
         self._weather_turns = down(self._weather_turns)
         self._terrain_turns = down(self._terrain_turns)
         self._trick_room = down(self._trick_room)
+        self._gravity = down(self._gravity)  # K4: the residual order 27.2, after Trick Room
         self._conditions = [[down(n) for n in c] for c in self._conditions]
         for side in self._positions:
             for p in side:
@@ -1767,8 +1789,10 @@ class Tracker:
 
     def _shown_locked_slot(self, p, own):
         """The locked slot the view shows: a running two-turn move's or a Choice lock's, but none for a foe whose last
-        move is a lockedmove, whose drawn length may end silently (src/state/observation.c, dfi_maybe_lockedmove)."""
-        if not own and p.last_move is not None and self.data.move_flags(p.last_move) & _LOCKED_MOVE:
+        move is a lockedmove, whose drawn length may end silently (src/state/observation.c, dfi_maybe_lockedmove), unless
+        a Choice item locks the same move (decision 0083: the Choice lock still names its slot)."""
+        if not own and p.choice_slot == MOVE_SLOT_NONE and p.last_move is not None and \
+                self.data.move_flags(p.last_move) & _LOCKED_MOVE:
             return MOVE_SLOT_NONE
         return p.locked_slot if p.locked_slot != MOVE_SLOT_NONE else p.choice_slot
 
@@ -1940,6 +1964,8 @@ def restrict_ext(ext, folds):
                     dst[name] = dst[name] | (src[name] & bit)
                 elif where == "side":
                     dst[field] = src[field]
+                elif where == "global":
+                    out["field"][field] = ext["field"][field]
                 else:
                     group = "positions" if where == "position" else "members"
                     dst[group][field] = src[group][field]

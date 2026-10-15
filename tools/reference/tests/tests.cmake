@@ -60,6 +60,13 @@ else()
     duoforge_label_test(duoforge.reference.dump_views full tools ci-no-skip)
     set_tests_properties(duoforge.reference.dump_views PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
 endif()
+# The conformance set champions-singles (decision 0083): the committed singles battles through the converter and the runner
+# of this build under POOL_SINGLES_DEV; every battle must pass. Their re-recording is champions_singles_traces (pinned.cmake).
+add_test(NAME duoforge.reference.champions_singles
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/tests/test_champions_singles.py"
+        "$<TARGET_FILE:duoforge_diff_runner>")
+duoforge_label_test(duoforge.reference.champions_singles full tools ci-no-skip)
+set_tests_properties(duoforge.reference.champions_singles PROPERTIES TIMEOUT 300 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 # The replay driver without Node: the buckets and the order of its output with
 # fake children and the real converter, the records writer, and every committed
 # battle through the runner of this build (a stand-in answers the reference).

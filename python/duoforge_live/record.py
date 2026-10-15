@@ -207,6 +207,8 @@ def _record(t, observation):
     s.put("terrain", t._terrain)
     s.put("terrain_turns", t._terrain_turns)
     s.put("trick_room_turns", t._trick_room)
+    if size > _FIELDS["tail.field.gravity_turns"][0]:  # the POOL tail (K4): a closure record has no tail field
+        s.put("tail.field.gravity_turns", t._gravity)
     leads = [PICK_NONE, PICK_NONE]
     for side in (0, 1):
         _side(t, s, side, side == player, boundary)

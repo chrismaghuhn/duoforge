@@ -664,6 +664,57 @@ class AttractConfusionTest(unittest.TestCase):
         self.assertIsNone(record.move_result_of(self.data, 2, [move, hit, tuple(heal)]))
 
 
+class BounceThroatChopSegmentTest(unittest.TestCase):
+    """Issue 570: a Magic Bounce holder under Throat Chop that bounces a sound move shows `cant|holder|move: Throat Chop` right
+    after the user's move line, with no move line of its own (src/combat/turn.c dfi_bounce). The cant is the bounced run inside
+    the user's action, not an action of the holder: both results are false, as the engine's (Tracker._segment, _end_action).
+    Needs the library (the POOL tables)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker, cls.D = tracker, data.load(kind="pool")
+        cls.M = cls.D.tables["MOVE"]
+
+    def setUp(self):
+        tr = self.tracker
+        t = tr.Tracker.__new__(tr.Tracker)
+        t.data, t.side, t._spectator = self.D, 0, False
+        t._action = None  # no move action open (Tracker._segment)
+        t._struggle, t._attract, t._throat_chop_id = self.M["STRUGGLE"], self.M["ATTRACT"], self.M["THROATCHOP"]
+        t._positions = [[tr._Position(), tr._Position()] for _ in (0, 1)]
+        for s, side in enumerate(t._positions):
+            for k, p in enumerate(side):
+                p.occupant, p.activation = k, 10 * s + k + 1  # one activation id per Pokemon
+        self.t = t
+
+    def feed(self, events):
+        for e in events:
+            self.t._segment(e)
+
+    def test_the_holders_cant_belongs_to_the_bounced_action(self):
+        from duoforge._state_layout import VALUES
+        from duoforge_live.data import trace_to_c
+        EV, CAUSE, NOPOS = trace_to_c.EV, trace_to_c.CAUSE, trace_to_c.NOPOS
+        shot = trace_to_c.ev_tuple(EV["MOVE"], 3, 1, CAUSE["NONE"], self.M["PARTINGSHOT"])  # p2b into p1b
+        cant = trace_to_c.ev_tuple(EV["CANT"], 1, NOPOS, CAUSE["MOVE"], 0, self.M["THROATCHOP"])
+        self.feed([shot, cant, trace_to_c.ev_tuple(EV["UPKEEP"], NOPOS)])
+        false = VALUES["DFI_MOVE_RESULT_FALSE"]
+        self.assertEqual(self.t._positions[1][1].result_now, false)  # the user: Magic Bounce took the move
+        self.assertEqual(self.t._positions[0][1].result_now, false)  # the holder: Throat Chop stopped the bounced run
+
+    def test_a_cant_of_another_position_still_starts_its_own_action(self):
+        from duoforge._state_layout import VALUES
+        from duoforge_live.data import trace_to_c
+        EV, CAUSE, NOPOS = trace_to_c.EV, trace_to_c.CAUSE, trace_to_c.NOPOS
+        shot = trace_to_c.ev_tuple(EV["MOVE"], 3, 1, CAUSE["NONE"], self.M["PARTINGSHOT"])
+        drop = trace_to_c.ev_tuple(EV["UNBOOST"], 1, NOPOS, CAUSE["NONE"], amount=1)
+        cant = trace_to_c.ev_tuple(EV["CANT"], 0, NOPOS, CAUSE["MOVE"], 0, self.M["THROATCHOP"])  # not the move's target
+        self.feed([shot, drop, cant, trace_to_c.ev_tuple(EV["UPKEEP"], NOPOS)])
+        self.assertEqual(self.t._positions[0][0].result_now, VALUES["DFI_MOVE_RESULT_FALSE"])  # its own [cant]
+        self.assertNotEqual(self.t._positions[1][1].result_now, 0)  # the Parting Shot's own action was classified
+
+
 class HpDisplayTest(unittest.TestCase):
     """duoforge.view.hp_display: the library's display (duoforge_hp_display) and its refusals as DuoforgeError."""
 

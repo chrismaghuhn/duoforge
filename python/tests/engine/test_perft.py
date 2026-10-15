@@ -77,7 +77,7 @@ class PinTest(unittest.TestCase):
             for d, pin in s["depths"].items():
                 self.assertIsInstance(pin["count"], int, (s["name"], d))
                 self.assertEqual(len(pin["sequence_sha256"]), 64, (s["name"], d))
-        self.assertEqual(kinds, {"CLOSURE", "POOL"})
+        self.assertEqual(kinds, {"CLOSURE", "POOL", "POOL_SINGLES_DEV"})  # decision 0083: the singles positions
         self.assertTrue({"TEAM_SELECTION", "TURN", "PIVOT", "REPLACEMENT"} <= boundaries)
 
     def test_the_file_is_in_the_writers_form(self):
