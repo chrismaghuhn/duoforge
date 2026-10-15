@@ -1,0 +1,24 @@
+{
+  "name": "fz519_flip_turn_sub",
+  "purpose": "Flip Turn into a Substitute (issue 519): Sharpedo, p1a, breaks Tauros's Substitute with Flip Turn (step 1) and switches out at step 2. runMoveEffects sets the selfSwitch flag for the null target too (data/mods/champions/scripts.ts:349-352, sim/battle-actions.ts:1290-1296, 1311-1312). A battle of the differential fuzzing of issue 396 (free random sets, fz_179_72), cut after its step 2: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,5a3950c30199ceab3ea6a56496f1cec1804b2c4c92ae8c6b4be130226a06d76d",
+  "teams": [
+    "sharpedo (M) @ alakazite\nAbility: roughskin\nLevel: 50\nEVs: 10 HP / 13 Atk / 10 Def / 10 SpA / 12 SpD / 11 Spe\nSerious Nature\n- flipturn\n- darkpulse\n- nightslash\n- gigaimpact\n\narcaninehisui (F) @ falinksite\nAbility: rockhead\nLevel: 50\nEVs: 10 HP / 7 Atk / 12 Def / 11 SpA / 16 SpD / 8 Spe\nImpish Nature\n- protect\n- sunnyday\n- flamethrower\n- howl\n\ntaurospaldeaaqua (M)\nAbility: angerpoint\nLevel: 50\nEVs: 1 HP / 1 Atk / 3 Def / 2 SpA / 3 SpD / 3 Spe\nBashful Nature\n- bodyslam\n- curse\n- earthquake\n- protect\n\nbarbaracle (M) @ barbaracite\nAbility: sniper\nLevel: 50\nEVs: 6 HP / 9 Atk / 15 Def / 11 SpA / 13 SpD / 12 Spe\nLonely Nature\n- razorshell\n- scald\n- icebeam\n- substitute\n\nquaquaval (F) @ froslassite\nAbility: moxie\nLevel: 50\nEVs: 20 HP / 6 Atk / 6 Def / 11 SpA / 10 SpD / 13 Spe\nLonely Nature\n- flipturn\n- knockoff\n- chillingwater\n- roost\n\ngarchomp (F) @ icyrock\nAbility: sandveil\nLevel: 50\nEVs: 13 HP / 12 Atk / 9 Def / 12 SpA / 6 SpD / 14 Spe\nSassy Nature\n- breakingswipe\n- dragontail\n- scaleshot\n- dragonclaw",
+    "mrmime (F) @ silkscarf\nAbility: filter\nLevel: 50\nEVs: 15 HP / 10 Atk / 4 Def / 13 SpA / 13 SpD / 11 Spe\nCareful Nature\n- teeterdance\n- grassknot\n- icywind\n- mistyterrain\n\ntaurospaldeablaze (M) @ charizarditey\nAbility: angerpoint\nLevel: 50\nEVs: 11 HP / 8 Atk / 13 Def / 8 SpA / 14 SpD / 12 Spe\nBashful Nature\n- outrage\n- bodypress\n- substitute\n- endeavor\n\nlycanrocdusk (M) @ scraftinite\nAbility: toughclaws\nLevel: 50\nEVs: 10 HP / 11 Atk / 9 Def / 11 SpA / 16 SpD / 9 Spe\nCareful Nature\n- stoneedge\n- rocktomb\n- roar\n- crunch\n\nhatterene (F) @ leftovers\nAbility: magicbounce\nLevel: 50\nEVs: 13 HP / 11 Atk / 8 Def / 8 SpA / 14 SpD / 12 Spe\nAdamant Nature\n- psychup\n- healingwish\n- thunderwave\n- hyperbeam\n\ngreninja (M) @ spelltag\nAbility: torrent\nLevel: 50\nEVs: 12 HP / 11 Atk / 12 Def / 10 SpA / 8 SpD / 13 Spe\nBrave Nature\n- hydropump\n- quickattack\n- icywind\n- skittersmack\n\nbellibolt (F) @ hardstone\nAbility: static\nLevel: 50\nEVs: 4 HP / 14 Atk / 11 Def / 10 SpA / 13 SpD / 14 Spe\nQuirky Nature\n- gigaimpact\n- eerieimpulse\n- toxic\n- confuseray"
+  ],
+  "choices": [
+    {
+      "p1": "team 1625",
+      "p2": "team 1263"
+    },
+    {
+      "p1": "move 1 2, move 4 1",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "switch 3, pass"
+    }
+  ]
+}
