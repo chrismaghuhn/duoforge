@@ -7231,16 +7231,25 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
             return DUOFORGE_E_UNSUPPORTED;
         }
     }
-    /* A Prankster-boosted original move gives the bounced move its priority (useMoveInner, battle-actions.ts:411). Psychic
-     * Terrain then stops it at a grounded source, and an Armor Tail holder on the source's side stops it: both not modelled. */
+    /* The original move's priority is the bounced move's (useMoveInner, battle-actions.ts:409-412: the activeMove's, a
+     * Prankster boost or a move's own, Baby-Doll Eyes). Psychic Terrain then stops it at a grounded source: not modelled. An
+     * Armor Tail or Queenly Majesty holder on the source's side stops it in TryMove (onFoeTryMove, data/abilities.ts:3716-3734;
+     * issue 543), after the move line: [still], then cant|holder|ability|move|[of] the bouncer, and the bounced move is false. */
+    uint32_t shield_flat = DFI_POSITIONS;
+    uint32_t shield = 0u;
     if (dfi_move_priority(b, um, md) > DFI_PRIORITY_BIAS) {
         if (b->terrain == DFI_TERRAIN_PSYCHIC) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const bool exempt = md->target_class == DFI_TARGET_CLASS_FOE_SIDE || md->target_class == DUOFORGE_TARGET_CLASS_ALL;
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE && !exempt && shield == 0u; ++slot) {
             const uint32_t flat = (user / 2u) * 2u + slot;
-            if (dfi_alive(b, flat) && dfi_ability(b, dfi_at(b, flat), DFI_ABILITY_ARMORTAIL)) {
-                return DUOFORGE_E_UNSUPPORTED;
+            const dfi_member *sm = dfi_at(b, flat);
+            if (dfi_alive(b, flat)) {
+                shield = dfi_ability(b, sm, DFI_ABILITY_ARMORTAIL)        ? 1u + DFI_ABILITY_ARMORTAIL
+                         : dfi_ability(b, sm, DFI_ABILITY_QUEENLYMAJESTY) ? 1u + DFI_ABILITY_QUEENLYMAJESTY
+                                                                         : 0u;
+                shield_flat = flat;
             }
         }
     }
@@ -7262,7 +7271,13 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
     bool hit[DFI_POSITIONS] = {false, false, false, false};
     bool guarded[DFI_POSITIONS] = {false, false, false, false};
     const uint32_t count = 1u;
-    if (md->side_condition >= DUOFORGE_SIDE_STEALTH_ROCK) {
+    if (shield != 0u) {
+        dfi_still(r);
+        r->mres |= DFI_MRES_FALSE; /* onFoeTryMove returns false */
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, shield_flat, DUOFORGE_CAUSE_ABILITY, shield, holder);
+        e.id = (uint16_t)move_id;
+        dfi_emit(r, &e);
+    } else if (md->side_condition >= DUOFORGE_SIDE_STEALTH_ROCK) {
         st = dfi_hazard_move(r, holder, md); /* TryHitSide: no Protect, no accuracy */
     } else {
         st = dfi_protect_targets(r, holder, targets, count, guarded, dfi_no_inv_miss, false, hit, md);
