@@ -621,9 +621,8 @@ def pool_condition(pool, refused):
     #558): the teams kept, the sha256 of their ids in order (the games are drawn from these), and every team the
     engine's setup check refused, with its status. A run's games depend on the filtered pool, so runs are paired only
     on the same one (pool_guard)."""
-    ids = list(pool.ids)
-    return {"teams": len(ids), "ids_sha256": hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest(),
-            "refused_count": len(refused), "refused": [{"id": team, "status": status} for team, status in refused]}
+    from duoforge import teams
+    return teams.pool_record(pool, refused)
 
 
 def pool_guard(recorded, pool, flag):
@@ -1017,10 +1016,7 @@ def main(argv=None):
     with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
         pool_record = None
         if matchup is None:  # the engine's setup check filters the pool network's teams, each refusal named
-            pool, refused_teams = teams.load_accepted(ctx, teams_config["teams"]["ids"])
-            pool_record = pool_condition(pool, refused_teams)
-            for team, status in refused_teams:
-                print(f"pool: team {team} refused by the engine ({status}), left out", file=sys.stderr)
+            pool, pool_record = foe_arena.load_pool(ctx, teams_config["teams"]["ids"])
             rows = foe_arena.games(len(pool.ids), args.pairs, args.seed)
         else:
             pool = matchup_pool(ctx, matchup)

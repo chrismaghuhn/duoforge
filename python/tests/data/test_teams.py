@@ -193,6 +193,53 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(pool.sha256, alone.sha256)
         np.testing.assert_array_equal(pool.weights, [1.0, 3.0])
 
+    def test_the_pool_record_names_the_kept_teams_and_every_refusal(self):
+        pool = teams.TeamPool.from_setups(("A", "B"), duoforge.reference_setups([0])["sides"][0])
+        got = teams.pool_record(pool, [("X", INVALID)])
+        import hashlib
+        self.assertEqual(got, {"teams": 2, "ids_sha256": hashlib.sha256(b"A\nB").hexdigest(), "refused_count": 1,
+                               "refused": [{"id": "X", "status": INVALID}]})
+
+    def test_every_pool_user_filters_by_name(self):
+        # The pool users the HauptSession named after #558 (foe_arena, tree_offline, the learn ladder): a pool with a
+        # team the engine refuses loads without it, the refusal named; the learn ladder's other callers stay strict.
+        from unittest import mock
+        from duoforge_learn import checkpoint, ladder as learn_ladder
+        from duoforge_search import foe_arena
+        refused_id = "LL_6A5E4489937230B102D4026E_110"
+        pool_kind = _layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]
+        ids = ["A", refused_id, "B"]
+        with duoforge.Context(data_kind=pool_kind) as ctx:
+            real = teams.load_accepted  # load_pool reads the repository's registry; here the test's root
+            with mock.patch.object(teams, "load_accepted", side_effect=lambda c, i: real(c, i, root=ROOT)):
+                pool, record = foe_arena.load_pool(ctx, ids)
+        self.assertEqual(pool.ids, ("A", "B"))
+        self.assertEqual((record["teams"], record["refused"]), (2, [{"id": refused_id, "status": INVALID}]))
+        import json
+        with open(os.path.join(ROOT, "index.json"), encoding="utf-8") as f:
+            sha = {t["id"]: t["sha256"] for t in json.load(f)["teams"]}
+        config = {"format": 2, "data": {"kind": "pool"}, "train": {"teams_root": ROOT},
+                  "teams": {"ids": ids, "sha256": [sha[t] for t in ids], "weights": [1.0, 2.0, 3.0]}}
+        with mock.patch.object(learn_ladder, "_checkpoints", return_value=[(0, "ckpt.npz")]), \
+                mock.patch.object(checkpoint, "load", return_value=(None, config)):
+            with self.assertRaisesRegex(teams.TeamError, refused_id):  # no list: strict, as before
+                learn_ladder._pool_of("run")
+            refused = []
+            pool, kind = learn_ladder._pool_of("run", refused=refused)
+            self.assertEqual((pool.ids, kind), (("A", "B"), pool_kind))
+            self.assertEqual(refused, [(refused_id, INVALID)])
+            np.testing.assert_array_equal(pool.weights, [1.0, 3.0])
+            config["teams"]["sha256"][0] = "0" * 64  # a kept team's file changed since the run
+            with self.assertRaisesRegex(SystemExit, "a team file changed"):
+                learn_ladder._pool_of("run", refused=[])
+        import inspect
+        from duoforge_search import tree_offline
+        for source, needles in ((inspect.getsource(tree_offline.main), ('foe_arena.load_pool(', '"pool": pool_info')),
+                                (inspect.getsource(foe_arena.main), ('load_pool(', 'report["conditions"]["pool"]')),
+                                (inspect.getsource(learn_ladder.main), ('refused=refused', '"pool": teams.pool_record'))):
+            for needle in needles:
+                self.assertIn(needle, source)
+
     def test_unknown_id_is_refused(self):
         with duoforge.Context() as ctx, self.assertRaisesRegex(teams.TeamError, "MC999"):
             teams.load(ctx, ["MC999"], root=ROOT)
