@@ -1,0 +1,30 @@
+{
+  "name": "k5_mr_choice",
+  "purpose": "Magic Room with a Choice Scarf: Staraptor locks into Quick Attack on turn 1 (before the room starts), is free to use any move while the room is up (no Scarf speed, no lock offered), and is locked into Quick Attack again once the room has ended.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000005108",
+  "teams": [
+    "Alakazam (F) @ Alakazite\nAbility: Inner Focus\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Magic Room\n- Psyshock\n- Protect\n- Trick\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n- Coil\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Iron Head\n\nIndeedee-F (F) @ Leftovers\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Staraptor (F) @ Choice Scarf\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Quick Attack\n- Close Combat\n- Brave Bird\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Iron Head\n- Protect\n\nIndeedee-F (F) @ Leftovers\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n- Coil\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3",
+      "move 3, move 3",
+      "move 2 2, move 3",
+      "move 3, move 3",
+      "move 2 2, move 3",
+      "move 3, move 3"
+    ],
+    "p2": [
+      "move 1 2, move 1",
+      "move 3 2, move 1",
+      "move 2 2, move 1",
+      "move 4, move 1",
+      "move 2 2, move 1",
+      "move 1 2, move 1"
+    ],
+    "max_steps": 7
+  }
+}
