@@ -10,6 +10,7 @@
  * encoder's two files (decision 0021).
  */
 #include <duoforge/duoforge_encode.h>
+#include <string.h>
 
 /* The checks duoforge_batch_query_encoded runs before any row: the version's
    obs width into *out_obs_size, or E_INVALID_ARGUMENT for an unknown version
@@ -27,5 +28,13 @@ duoforge_status dfi_encode_leaf(const duoforge_context *ctx, const duoforge_batt
 
 /* Row `row` of `rows` (obs_size float32 values each) set to all zero. */
 void dfi_encode_clear(void *rows, uint32_t obs_size, uint32_t row);
+
+/* Existing encoder-6 binary32 row to integer bits. No FP computation or second
+   feature recipe; memcpy avoids aliasing/alignment assumptions. Capacity is
+   fixed by the validated encoder-6 schema. Private inline: no new export. */
+static inline void dfi_encoder_input_bits(const void *row, uint32_t bits[1094])
+{
+    memcpy(bits, row, 1094u * sizeof(*bits));
+}
 
 #endif

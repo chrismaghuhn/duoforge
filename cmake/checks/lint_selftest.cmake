@@ -120,6 +120,23 @@ file(WRITE "${WORK}/fp/src/encode/other.c" "static float fixture_fp;
 ")
 _lint_case("${WORK}/fp/src/encode/other.c" banned-token 1 "${WORK}/fp")
 
+# Quantized kernels allow fixed-width integer storage without any FP extension.
+file(MAKE_DIRECTORY "${WORK}/fp/src/eval")
+file(WRITE "${WORK}/fp/src/eval/arithmetic.c" "int8_t weights;
+int16_t features;
+int32_t result;
+int64_t sum;
+")
+_lint_case("${WORK}/fp/src/eval/arithmetic.c" CLEAN 0 "${WORK}/fp")
+file(APPEND "${WORK}/fp/src/eval/arithmetic.c" "float forbidden;
+double also_forbidden;
+int generic;
+")
+_lint_case("${WORK}/fp/src/eval/arithmetic.c" banned-token 3 "${WORK}/fp")
+file(WRITE "${WORK}/fp/src/eval/other.c" "int64_t outside_registered_kernel;
+")
+_lint_case("${WORK}/fp/src/eval/other.c" banned-token 1 "${WORK}/fp")
+
 if(_bad)
     message(FATAL_ERROR "LINT_SELFTEST FAILED")
 endif()
