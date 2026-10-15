@@ -6419,6 +6419,18 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
      * Struggle's recoil is not in this function (the move body applies it after the hit loop), so for Struggle the pop waits
      * for that recoil: the move body pops it (step G67, measured in fz_6700000_3: Struggle, the sub's [damage], [from] recoil,
      * then -enditem). */
+    /* The move's own AfterSubDamage first (singleEvent, data/moves.ts:18368): Stone Axe and Ceaseless Edge lay their hazard on the
+     * user's foe side when the user still stands and has no Sheer Force (data/moves.ts stoneaxe and ceaselessedge
+     * onAfterSubDamage; issue 518). The hit's own onAfterHit does not run for the Substitute's holder. */
+    if ((md->special == DFI_SPECIAL_STONE_AXE || md->special == DFI_SPECIAL_CEASELESS_EDGE) && dfi_at(b, user)->hp != 0u &&
+        !dfi_sf_strips(b, dfi_at(b, user), md)) {
+        const uint32_t kind = md->special == DFI_SPECIAL_STONE_AXE ? DUOFORGE_SIDE_STEALTH_ROCK : DUOFORGE_SIDE_SPIKES;
+        bool added = false;
+        const duoforge_status hz = dfi_add_hazard(r, 1u - user / 2u, kind, &added);
+        if (hz != DUOFORGE_OK) {
+            return hz;
+        }
+    }
     if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u && dfi_holds(r->b, dfi_at(r->b, target), DFI_ITEM_AIRBALLOON)) {
         dfi_use_item(r, target);
     }
@@ -8653,9 +8665,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             if (pivot == NULL) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
+            /* A target whose hit a Substitute took is null, not false (data/mods/champions/scripts.ts:349-352), and
+             * runMoveEffects' selfSwitch block runs for it too (sim/battle-actions.ts:1290-1296, 1311-1312; issue 519). */
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             if (hit_any && m->hp != 0u && dfi_can_switch(b, side)) {
                 pos->switch_flag = pivot->flag;
@@ -8693,11 +8707,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* A recharge move (flags.recharge, self: {volatileStatus: 'mustrecharge'}; step G17): selfDrops (sim/battle-actions.ts:
          * 1096, 1317-1335) puts the volatile on the user for every target that was not ruled out (a miss, a Protect or an
          * immunity make it `false`; a knocked-out target is still a hit), once: a second addVolatile changes nothing.
-         * -mustrecharge|user (data/conditions.ts:374-376, onStart). */
+         * -mustrecharge|user (data/conditions.ts:374-376, onStart). A target whose hit a Substitute took is null, not false
+         * (data/mods/champions/scripts.ts:349-352), so it counts too (issue 517). */
         if ((dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_RECHARGE) != 0u && move_id != DFI_MOVE_STRUGGLE) {
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             dfi_tail_pos *tail = &b->tail.sides[side].positions[q->slot];
             if (hit_any && tail->must_recharge == 0u) {
@@ -8725,9 +8740,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * when the count is 2 or more. Either way the duration is 2 in this step (lock_restarted), which the countdown and the
          * end of the lock read. */
         if (md->special == DFI_SPECIAL_LOCKED_MOVE) {
+            /* A target whose hit a Substitute took is null, not false (data/mods/champions/scripts.ts:349-352): selfDrops puts the
+             * lock on the user for it too (sim/battle-actions.ts:1317-1335; issue 518). */
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             if (hit_any) {
                 dfi_tail_pos *ut = &b->tail.sides[side].positions[q->slot];
@@ -8748,10 +8765,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* The empty secondary of Stone Axe and Ceaseless Edge (step G48, `secondary: {}`, the Sheer Force placeholder): without
          * Sheer Force the pin runs it for every target that was not ruled out (sim/battle-actions.ts:1336-1349: a secondary
          * with no chance always applies, after the roll), so one SECONDARY roll per hit target and nothing else. Sheer Force
-         * (step G61) strips the secondary: no roll. */
+         * (step G61) strips the secondary: no roll. A target whose hit a Substitute took is null, not false, and draws its roll
+         * too (issue 518). */
         if ((md->special == DFI_SPECIAL_STONE_AXE || md->special == DFI_SPECIAL_CEASELESS_EDGE) && !dfi_sf_strips(r->b, m, md)) {
             for (uint32_t i = 0u; i < count; ++i) {
-                if (hit[i]) {
+                if (hit[i] || sub_off[i]) {
                     uint32_t roll = 0u;
                     st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
                     if (st != DUOFORGE_OK) {
@@ -8863,10 +8881,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* Ice Fang (step G44, data/moves.ts:9347-9368): two secondaries in order, and for each hit target the loop of
          * secondaries() draws random(100) before each one (sim/battle-actions.ts:1336-1354): a freeze at 10 (a status of the
          * move, dfi_try_status as a status secondary does), then a flinch at 10 (a volatile of the target). Both rolls are
-         * drawn for a target that fainted, as for any secondary. */
+         * drawn for a target that fainted, as for any secondary, and for a target whose hit a Substitute took (a null target,
+         * not false; issue 518): it takes no effect (moveHit of a null target does nothing), as for the other secondaries. */
         if (md->special == DFI_SPECIAL_ICE_FANG && !dfi_sf_strips(r->b, m, md)) {
             for (uint32_t i = 0u; i < count; ++i) {
-                if (!hit[i]) {
+                if (!hit[i] && !sub_off[i]) {
                     continue;
                 }
                 uint32_t roll = 0u;
@@ -8874,7 +8893,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll < 10u) {
+                if (hit[i] && roll < 10u) {
                     st = dfi_try_status(r, targets[i], DFI_STATUS_FRZ, user, move_id, DFI_ORIGIN_OTHER, 0u);
                     if (st != DUOFORGE_OK) {
                         return st;
@@ -8884,7 +8903,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll < 10u) {
+                if (hit[i] && roll < 10u) {
                     st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_FLINCH);
                     if (st != DUOFORGE_OK) {
                         return st;
@@ -8895,11 +8914,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* Tri Attack (step G44, data/moves.ts:19845-19864): a secondary of chance 20, one SECONDARY roll per hit target, and
          * its onHit draws sample(['brn', 'par', 'frz']) (SITE_STATUS_PICK, random(3)) then trySetStatus without a source move,
          * as Dire Claw's pick does (the reference draws the pick after every successful roll, also for a target that fainted,
-         * has a status or is immune). */
+         * has a status or is immune). A target whose hit a Substitute took (null, not false; issue 518) draws the roll, and its
+         * onHit does not run (moveHit of a null target does nothing): no pick. */
         if (md->special == DFI_SPECIAL_TRI_ATTACK && !dfi_sf_strips(r->b, m, md)) {
             static const uint8_t tri_pick[3] = {DFI_STATUS_BRN, DFI_STATUS_PAR, DFI_STATUS_FRZ};
             for (uint32_t i = 0u; i < count; ++i) {
-                if (!hit[i]) {
+                if (!hit[i] && !sub_off[i]) {
                     continue;
                 }
                 uint32_t roll = 0u;
@@ -8907,7 +8927,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (!dfi_tri_attack_chance_hit(roll)) {
+                if (!hit[i] || !dfi_tri_attack_chance_hit(roll)) {
                     continue;
                 }
                 uint32_t v = 0u;
