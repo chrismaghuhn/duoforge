@@ -7601,6 +7601,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         const uint32_t chosen = q->target;
         aimed = (chosen < DFI_POSITIONS && chosen / 2u == side && dfi_at(b, chosen) != NULL) ? chosen : (1u - side) * 2u;
         aimed = dfi_at(b, aimed) != NULL ? aimed : DUOFORGE_NO_POSITION;
+        /* getTarget's null for the user's own location (sim/battle.ts:2459-2462; Ally Switch put the user there, issue 541):
+         * useMoveInner prints the line with no target, then [notarget] and -fail before getMoveTargets and TryMove
+         * (sim/battle-actions.ts:457-465), so a two-turn move does not charge. */
+        if (chosen == user) {
+            aimed = DUOFORGE_NO_POSITION;
+        }
     }
     /* The move line; a locked turn says [from] lockedmove. Later lines
      * amend it. */
