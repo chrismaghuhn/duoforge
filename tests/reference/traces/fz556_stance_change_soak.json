@@ -1,0 +1,7230 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "fz556_stance_change_soak.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,441331b2646550f1d84d6cf4c33105dd7dc1e94e99f456bed30df3aa3b357d62",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Oranguru, L50, M|",
+   "|poke|p1|Aegislash, L50, M|",
+   "|poke|p1|Ceruledge, L50, F|",
+   "|poke|p1|Squawkabilly, L50, F|",
+   "|poke|p1|Glalie, L50, M|",
+   "|poke|p1|Meowscarada, L50, F|",
+   "|poke|p2|Gholdengo, L50|",
+   "|poke|p2|Tauros-Paldea-Combat, L50, M|",
+   "|poke|p2|Wyrdeer, L50, M|",
+   "|poke|p2|Archaludon, L50, M|",
+   "|poke|p2|Samurott-Hisui, L50, F|",
+   "|poke|p2|Chesnaught, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Oranguru",
+       "set_species": "Oranguru",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 178,
+       "maxhp": 178,
+       "item": "mentalherb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        12,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Aegislash",
+       "set_species": "Aegislash",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 151,
+       "maxhp": 151,
+       "item": "aerodactylite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 162,
+       "maxhp": 162,
+       "item": "charizarditey",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        16,
+        12,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Squawkabilly",
+       "set_species": "Squawkabilly",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 167,
+       "maxhp": 167,
+       "item": "charcoal",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Glalie",
+       "set_species": "Glalie",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 164,
+       "maxhp": 164,
+       "item": "pyroarite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Meowscarada",
+       "set_species": "Meowscarada",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 165,
+       "maxhp": 165,
+       "item": "airballoon",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "blastoisinite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        20,
+        12,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Tauros-Paldea-Combat",
+       "set_species": "Tauros-Paldea-Combat",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 157,
+       "maxhp": 157,
+       "item": "choicescarf",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        16,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Wyrdeer",
+       "set_species": "Wyrdeer",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 191,
+       "maxhp": 191,
+       "item": "fairyfeather",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        12,
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Archaludon",
+       "set_species": "Archaludon",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 173,
+       "maxhp": 173,
+       "item": "blazikenite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Samurott-Hisui",
+       "set_species": "Samurott-Hisui",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 171,
+       "maxhp": 171,
+       "item": "",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Chesnaught",
+       "set_species": "Chesnaught",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 173,
+       "maxhp": 173,
+       "item": "scopelens",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 5263",
+    "p2": "team 5613"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Glalie|Glalie, L50, M|164/164",
+    "|switch|p1a: Glalie|Glalie, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Aegislash|Aegislash, L50, M|151/151",
+    "|switch|p1b: Aegislash|Aegislash, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2a: Samurott|Samurott-Hisui, L50, F|171/171",
+    "|switch|p2a: Samurott|Samurott-Hisui, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2b: Chesnaught|Chesnaught, L50, M|173/173",
+    "|switch|p2b: Chesnaught|Chesnaught, L50, M|100/100",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 164,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 173,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 191,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 3",
+    "p2": "move 2 1, move 3 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 91
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 96
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 88
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 98
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 5,
+     "value": 1
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 4,
+     "value": 3
+    }
+   ],
+   "log": [
+    "|move|p2a: Samurott|Drill Run|p1a: Glalie",
+    "|split|p1",
+    "|-damage|p1a: Glalie|119/164",
+    "|-damage|p1a: Glalie|72/100",
+    "|move|p1a: Glalie|Blizzard|p2a: Samurott|[spread] p2b",
+    "|-miss|p1a: Glalie|p2a: Samurott",
+    "|-supereffective|p2b: Chesnaught|1",
+    "|split|p2",
+    "|-damage|p2b: Chesnaught|53/173",
+    "|-damage|p2b: Chesnaught|30/100",
+    "|move|p2b: Chesnaught|Iron Head|p1b: Aegislash",
+    "|-resisted|p1b: Aegislash|1",
+    "|split|p1",
+    "|-damage|p1b: Aegislash|138/151",
+    "|-damage|p1b: Aegislash|91/100",
+    "|move|p1b: Aegislash|Destiny Bond|p1b: Aegislash",
+    "|-singlemove|p1b: Aegislash|Destiny Bond",
+    "|-ability|p1a: Glalie|Moody|boost",
+    "|-boost|p1a: Glalie|def|2",
+    "|-unboost|p1a: Glalie|spe|1",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 119,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         2,
+         0,
+         0,
+         -1,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 138,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         12
+        ],
+        "volatiles": [
+         "destinybond"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         11,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         15,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 191,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, move 2 -1",
+    "p2": "move 4 2, move 3 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 14
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 5,
+     "value": 3
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 4,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p2a: Samurott|Soak|p1b: Aegislash",
+    "|-start|p1b: Aegislash|typechange|Water",
+    "|move|p2b: Chesnaught|Iron Head|p1b: Aegislash",
+    "|-resisted|p1b: Aegislash|1",
+    "|split|p1",
+    "|-damage|p1b: Aegislash|126/151",
+    "|-damage|p1b: Aegislash|83/100",
+    "|cant|p1b: Aegislash|flinch",
+    "|move|p1a: Glalie|Shadow Ball|p1b: Aegislash",
+    "|split|p1",
+    "|-damage|p1b: Aegislash|101/151",
+    "|-damage|p1b: Aegislash|66/100",
+    "|-unboost|p1b: Aegislash|spd|1",
+    "|-ability|p1a: Glalie|Moody|boost",
+    "|-boost|p1a: Glalie|spd|2",
+    "|-unboost|p1a: Glalie|def|1",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 119,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         2,
+         -1,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 101,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         11,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         14,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 191,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 4",
+    "p2": "move 2 -2, move 3 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 62
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 94
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 7
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 5,
+     "value": 4
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 4,
+     "value": 3
+    }
+   ],
+   "log": [
+    "|move|p2a: Samurott|Drill Run|p2b: Chesnaught",
+    "|-resisted|p2b: Chesnaught|1",
+    "|split|p2",
+    "|-damage|p2b: Chesnaught|39/173",
+    "|-damage|p2b: Chesnaught|22/100",
+    "|move|p2b: Chesnaught|Iron Head|p2a: Samurott",
+    "|-resisted|p2a: Samurott|1",
+    "|split|p2",
+    "|-damage|p2a: Samurott|148/171",
+    "|-damage|p2a: Samurott|86/100",
+    "|move|p1b: Aegislash|Substitute|p1b: Aegislash",
+    "|-start|p1b: Aegislash|Substitute",
+    "|split|p1",
+    "|-damage|p1b: Aegislash|64/151",
+    "|-damage|p1b: Aegislash|42/100",
+    "|move|p1a: Glalie|Shadow Ball|p2b: Chesnaught",
+    "|-immune|p2b: Chesnaught|[from] ability: Bulletproof",
+    "|-ability|p1a: Glalie|Moody|boost",
+    "|-boost|p1a: Glalie|spe|2",
+    "|-unboost|p1a: Glalie|spd|1",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 119,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         1,
+         0,
+         1,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         14,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 148,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         10,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 39,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 191,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 1 1",
+    "p2": "move 1 -2, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 89
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 5,
+     "value": 3
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 4,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p1a: Glalie|Shadow Ball|p2b: Chesnaught",
+    "|-immune|p2b: Chesnaught|[from] ability: Bulletproof",
+    "|move|p2a: Samurott|Ice Beam|p2b: Chesnaught",
+    "|-supereffective|p2b: Chesnaught|1",
+    "|split|p2",
+    "|-damage|p2b: Chesnaught|0 fnt",
+    "|-damage|p2b: Chesnaught|0 fnt",
+    "|faint|p2b: Chesnaught",
+    "|-formechange|p1b: Aegislash|Aegislash-Blade|",
+    "|move|p1b: Aegislash|Giga Impact|p2a: Samurott",
+    "|split|p2",
+    "|-damage|p2a: Samurott|53/171",
+    "|-damage|p2a: Samurott|30/100",
+    "|-mustrecharge|p1b: Aegislash",
+    "|-ability|p1a: Glalie|Moody|boost",
+    "|-boost|p1a: Glalie|spd|2",
+    "|-unboost|p1a: Glalie|def|1",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 119,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         3,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         13,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         7,
+         11
+        ],
+        "volatiles": [
+         "mustrecharge",
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         10,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 191,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Wyrdeer|Wyrdeer, L50, M|191/191",
+    "|switch|p2b: Wyrdeer|Wyrdeer, L50, M|100/100",
+    "|-ability|p2b: Wyrdeer|Intimidate|boost",
+    "|-unboost|p1a: Glalie|atk|1",
+    "|-immune|p1b: Aegislash",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 119,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         3,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         13,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         7,
+         11
+        ],
+        "volatiles": [
+         "mustrecharge",
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         10,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 191,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 2, move 1",
+    "p2": "move 2 -2, move 3 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 72
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 94
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:undefined",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 5,
+     "value": 0
+    },
+    {
+     "site": "MOODY",
+     "context": "Residual",
+     "lo": 0,
+     "hi": 4,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p1a: Glalie|Taunt|p2b: Wyrdeer",
+    "|-start|p2b: Wyrdeer|move: Taunt",
+    "|move|p2a: Samurott|Drill Run|p2b: Wyrdeer",
+    "|split|p2",
+    "|-damage|p2b: Wyrdeer|145/191",
+    "|-damage|p2b: Wyrdeer|75/100",
+    "|move|p2b: Wyrdeer|High Horsepower|p1a: Glalie",
+    "|split|p1",
+    "|-damage|p1a: Glalie|71/164",
+    "|-damage|p1a: Glalie|43/100",
+    "|cant|p1b: Aegislash|recharge",
+    "|-ability|p1a: Glalie|Moody|boost",
+    "|-boost|p1a: Glalie|atk|2",
+    "|-unboost|p1a: Glalie|spa|1",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 71,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         -1,
+         3,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         7,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 53,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         11,
+         8
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 2 1",
+    "p2": "move 1 1, move 3 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 14
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 49
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 50
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 51
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 56
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    }
+   ],
+   "log": [
+    "|move|p1a: Glalie|Blizzard|p2a: Samurott|[spread] p2a,p2b",
+    "|-resisted|p2a: Samurott|1",
+    "|-crit|p2b: Wyrdeer",
+    "|split|p2",
+    "|-damage|p2a: Samurott|29/171",
+    "|-damage|p2a: Samurott|16/100",
+    "|split|p2",
+    "|-damage|p2b: Wyrdeer|52/191",
+    "|-damage|p2b: Wyrdeer|27/100",
+    "|move|p2a: Samurott|Ice Beam|p1a: Glalie",
+    "|-resisted|p1a: Glalie|1",
+    "|-crit|p1a: Glalie",
+    "|split|p1",
+    "|-damage|p1a: Glalie|39/164",
+    "|-damage|p1a: Glalie|23/100",
+    "|move|p2b: Wyrdeer|High Horsepower|p1a: Glalie",
+    "|split|p1",
+    "|-damage|p1a: Glalie|0 fnt",
+    "|-damage|p1a: Glalie|0 fnt",
+    "|faint|p1a: Glalie",
+    "|move|p1b: Aegislash|Brick Break|p2a: Samurott",
+    "|-supereffective|p2a: Samurott|1",
+    "|split|p2",
+    "|-damage|p2a: Samurott|0 fnt",
+    "|-damage|p2a: Samurott|0 fnt",
+    "|faint|p2a: Samurott",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         7,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 52,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         10,
+         8
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 3, pass",
+    "p2": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Gholdengo|Gholdengo, L50|172/172",
+    "|switch|p2a: Gholdengo|Gholdengo, L50|100/100",
+    "|split|p1",
+    "|switch|p1a: Meowscarada|Meowscarada, L50, F|165/165",
+    "|switch|p1a: Meowscarada|Meowscarada, L50, F|100/100",
+    "|-item|p1a: Meowscarada|Air Balloon",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         7,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        0
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 52,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         10,
+         8
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, move 4",
+    "p2": "move 2 -2, move 3 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 52
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 36
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Low Sweep|p1b: Aegislash",
+    "|-immune|p1b: Aegislash",
+    "|move|p2a: Gholdengo|Low Kick|p2b: Wyrdeer",
+    "|split|p2",
+    "|-damage|p2b: Wyrdeer|21/191",
+    "|-damage|p2b: Wyrdeer|10/100",
+    "|move|p2b: Wyrdeer|High Horsepower|p2a: Gholdengo",
+    "|-supereffective|p2a: Gholdengo|1",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|78/172",
+    "|-damage|p2a: Gholdengo|45/100",
+    "|move|p1b: Aegislash|Substitute|p1b: Aegislash",
+    "|-fail|p1b: Aegislash|move: Substitute",
+    "|-end|p2b: Wyrdeer|move: Taunt",
+    "|upkeep",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         19,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         7,
+         10
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 78,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         19,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 21,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 2, move 4",
+    "p2": "move 1 -2, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Shadow Claw|p2b: Wyrdeer",
+    "|-immune|p2b: Wyrdeer",
+    "|move|p2a: Gholdengo|Hyper Beam|p2b: Wyrdeer",
+    "|split|p2",
+    "|-damage|p2b: Wyrdeer|0 fnt",
+    "|-damage|p2b: Wyrdeer|0 fnt",
+    "|-mustrecharge|p2a: Gholdengo",
+    "|faint|p2b: Wyrdeer",
+    "|move|p1b: Aegislash|Substitute|p1b: Aegislash",
+    "|-fail|p1b: Aegislash|move: Substitute",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         19,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         7,
+         9
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 78,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         12,
+         20
+        ],
+        "volatiles": [
+         "mustrecharge"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 -2, move 1 2",
+    "p2": "move 1, pass"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
+     "site": "CRIT",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 8,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:undefined",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Shadow Claw|p1b: Aegislash",
+    "|-supereffective|p1b: Aegislash|1",
+    "|-end|p1b: Aegislash|Substitute",
+    "|cant|p2a: Gholdengo|recharge",
+    "|move|p1b: Aegislash|Giga Impact|p2a: Gholdengo",
+    "|-immune|p2a: Gholdengo",
+    "|upkeep",
+    "|turn|10"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         19,
+         14,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         15,
+         7,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 78,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, move 2 1",
+    "p2": "move 2 -2, pass"
+   },
+   "draws": [],
+   "log": [
+    "|move|p1a: Meowscarada|Low Sweep|p2a: Gholdengo",
+    "|-immune|p2a: Gholdengo",
+    "|move|p2a: Gholdengo|Low Kick|p2: Wyrdeer|[notarget]",
+    "|-fail|p2a: Gholdengo",
+    "|move|p1b: Aegislash|Brick Break|p2a: Gholdengo",
+    "|-immune|p2a: Gholdengo",
+    "|upkeep",
+    "|turn|11"
+   ],
+   "state": {
+    "turn": 11,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         18,
+         14,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         14,
+         7,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 78,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         18,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 -2, move 3",
+    "p2": "move 2 2, pass"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 81
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Trick|p1b: Aegislash",
+    "|-activate|p1a: Meowscarada|move: Trick|[of] p1b: Aegislash",
+    "|-item|p1b: Aegislash|Air Balloon",
+    "|-item|p1b: Aegislash|Air Balloon|[from] move: Trick",
+    "|-item|p1a: Meowscarada|Aerodactylite|[from] move: Trick",
+    "|move|p2a: Gholdengo|Low Kick|p1b: Aegislash",
+    "|-immune|p1b: Aegislash",
+    "|move|p1b: Aegislash|Destiny Bond|p1b: Aegislash",
+    "|-singlemove|p1b: Aegislash|Destiny Bond",
+    "|upkeep",
+    "|turn|12"
+   ],
+   "state": {
+    "turn": 12,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         18,
+         14,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 64,
+        "maxhp": 151,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         14,
+         6,
+         9
+        ],
+        "volatiles": [
+         "destinybond"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 78,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         17,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 1, move 4",
+    "p2": "move 4 2, pass"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 28
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 91
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Shadow Claw|p2a: Gholdengo",
+    "|-supereffective|p2a: Gholdengo|1",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|14/172",
+    "|-damage|p2a: Gholdengo|8/100",
+    "|move|p2a: Gholdengo|Power Gem|p1b: Aegislash",
+    "|-resisted|p1b: Aegislash|1",
+    "|split|p1",
+    "|-damage|p1b: Aegislash|6/151",
+    "|-damage|p1b: Aegislash|3/100",
+    "|-enditem|p1b: Aegislash|Air Balloon",
+    "|move|p1b: Aegislash|Substitute|p1b: Aegislash",
+    "|-fail|p1b: Aegislash|move: Substitute|[weak]",
+    "|upkeep",
+    "|turn|13"
+   ],
+   "state": {
+    "turn": 13,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         18,
+         13,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash-Blade",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 6,
+        "maxhp": 151,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         14,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         17,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 -2, move 1 1",
+    "p2": "move 3 2, pass"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 55
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 11
+    },
+    {
+     "site": "CONFUSION_TURNS",
+     "context": "Start",
+     "lo": 2,
+     "hi": 6,
+     "value": 4
+    },
+    {
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 100,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Trick|p1b: Aegislash",
+    "|-activate|p1a: Meowscarada|move: Trick|[of] p1b: Aegislash",
+    "|-item|p1b: Aegislash|Aerodactylite|[from] move: Trick",
+    "|-enditem|p1a: Meowscarada|Aerodactylite|[silent]|[from] move: Trick",
+    "|move|p2a: Gholdengo|Confuse Ray|p1b: Aegislash",
+    "|-start|p1b: Aegislash|confusion",
+    "|-activate|p1b: Aegislash|confusion",
+    "|split|p1",
+    "|-damage|p1b: Aegislash|0 fnt|[from] confusion",
+    "|-damage|p1b: Aegislash|0 fnt|[from] confusion",
+    "|faint|p1b: Aegislash",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 13,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         18,
+         13,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         14,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         17,
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Ceruledge|Ceruledge, L50, F|162/162",
+    "|switch|p1b: Ceruledge|Ceruledge, L50, F|100/100",
+    "|turn|14"
+   ],
+   "state": {
+    "turn": 14,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         18,
+         13,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         14,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         17,
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1 -1",
+    "p2": "move 1 -2, pass"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 18
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    }
+   ],
+   "log": [
+    "|move|p1a: Meowscarada|Triple Axel|p2a: Gholdengo",
+    "|-resisted|p2a: Gholdengo|1",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|10/172",
+    "|-damage|p2a: Gholdengo|5/100",
+    "|-resisted|p2a: Gholdengo|1",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|2/172",
+    "|-damage|p2a: Gholdengo|1/100",
+    "|-resisted|p2a: Gholdengo|1",
+    "|split|p2",
+    "|-damage|p2a: Gholdengo|0 fnt",
+    "|-damage|p2a: Gholdengo|0 fnt",
+    "|faint|p2a: Gholdengo",
+    "|-hitcount|p2: Gholdengo|3",
+    "|win|p1"
+   ],
+   "state": {
+    "turn": 14,
+    "ended": true,
+    "winner": "p1",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 165,
+        "maxhp": 165,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         18,
+         13,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "charizarditey",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 164,
+        "item": "pyroarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aegislash",
+        "set_species": "Aegislash",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 151,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         14,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 172,
+        "item": "blastoisinite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         17,
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wyrdeer",
+        "set_species": "Wyrdeer",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 191,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         9,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott-Hisui",
+        "set_species": "Samurott-Hisui",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         9,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 173,
+        "item": "scopelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         13,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

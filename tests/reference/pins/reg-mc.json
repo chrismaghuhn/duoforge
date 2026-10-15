@@ -4,6 +4,6 @@
   "sets": {
     "closure": {"battles": 90, "certified": 26, "fixture_matches": 0, "live_stop_total": 0, "live_stops": {}, "names_sha256": "e329f515401db0c81d230dab60ebbd38c4d78d4507357e40d6f566059811fe18", "outcomes": {"equal": 2594, "refused": 310}, "own_pp_stops": 0, "tiebreak_stops": 833},
     "team_c": {"battles": 73, "certified": 23, "fixture_matches": 144, "live_stop_total": 0, "live_stops": {}, "names_sha256": "9d129e36d93cadd1cc5a063f72b686705006813c88df07c43cb30ca23dffcb9e", "outcomes": {}, "own_pp_stops": 0, "tiebreak_stops": 734},
-    "pool": {"battles": 1003, "certified": 1003, "fixture_matches": 0, "live_stop_total": 189, "live_stops": {"feature:DESTINY_BOND": 12, "feature:DRAGON_CHEER": 20, "feature:FORME_CHANGE": 16, "feature:ILLUSION": 3, "feature:ROOST": 8, "feature:SUBSTITUTE": 128, "line:-end": 2}, "names_sha256": "01eded8c063b2988c97479b7238ee33369830934a85198f3576b1687f15752f6", "outcomes": {"equal": 11892, "refused": 609, "tracker refuses: unburden-without-item-line": 4}, "own_pp_stops": 13, "tiebreak_stops": 5487}
+    "pool": {"battles": 1007, "certified": 1007, "fixture_matches": 0, "live_stop_total": 193, "live_stops": {"feature:DESTINY_BOND": 14, "feature:DRAGON_CHEER": 20, "feature:FORME_CHANGE": 16, "feature:ILLUSION": 3, "feature:ROOST": 8, "feature:SUBSTITUTE": 130, "line:-end": 2}, "names_sha256": "4ada427c1d48512bc8b10670f51265561d74be4a92fa0f6d342f0ad472a1afa0", "outcomes": {"equal": 11947, "refused": 613, "tracker refuses: unburden-without-item-line": 4}, "own_pp_stops": 14, "tiebreak_stops": 5524}
   }
 }

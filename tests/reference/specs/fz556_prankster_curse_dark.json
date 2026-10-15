@@ -1,0 +1,69 @@
+{
+  "name": "fz556_prankster_curse_dark",
+  "purpose": "Mega Banette, with Prankster, uses Curse on Sharpedo (step 2): the Prankster test of hitStepTryImmunity (sim/battle-actions.ts:676-684) comes before the onHit, so Sharpedo is -immune and Banette pays no HP. On main the engine took half of Banette's HP, so Scale Shot knocked it out after one hit and the step stopped with E_INVARIANT (issue 556). A battle of the differential fuzzing of issue 396 (free random sets, fz_380_44), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,438bbd179684e6d7eec1826228145e685ebb78f02b0e09e28f166f7f5eb83179",
+  "teams": [
+    "overqwil (M) @ dragalgite\nAbility: intimidate\nLevel: 50\nEVs: 5 HP / 7 Atk / 9 Def / 4 SpA / 6 SpD / 6 Spe\nCalm Nature\n- mudshot\n- liquidation\n- haze\n- sludgewave\n\nhoundoom (F) @ houndoominite\nAbility: flashfire\nLevel: 50\nEVs: 16 HP / 10 Atk / 14 Def / 11 SpA / 5 SpD / 10 Spe\nQuiet Nature\n- protect\n- swagger\n- foulplay\n- psychicfangs\n\nwigglytuff (F) @ leek\nAbility: frisk\nLevel: 50\nEVs: 4 HP / 12 Atk / 13 Def / 9 SpA / 20 SpD / 8 Spe\nNaive Nature\n- icespinner\n- focusblast\n- knockoff\n- psyshock\n\nbanette (M) @ banettite\nAbility: frisk\nLevel: 50\nEVs: 7 HP / 11 Atk / 14 Def / 13 SpA / 12 SpD / 9 Spe\nAdamant Nature\n- shadowball\n- nightshade\n- nastyplot\n- curse\n\nblaziken (F) @ gengarite\nAbility: blaze\nLevel: 50\nEVs: 7 HP / 12 Atk / 16 Def / 10 SpA / 10 SpD / 11 Spe\nModest Nature\n- shadowclaw\n- poisonjab\n- agility\n- roar\n\nswampert (M) @ spelltag\nAbility: damp\nLevel: 50\nEVs: 13 HP / 15 Atk / 14 Def / 10 SpA / 8 SpD / 6 Spe\nRash Nature\n- waterpulse\n- rocktomb\n- surf\n- stealthrock",
+    "gyarados (M)\nAbility: moxie\nLevel: 50\nEVs: 7 HP / 15 Atk / 10 Def / 16 SpA / 7 SpD / 11 Spe\nHardy Nature\n- doubleedge\n- thunder\n- darkpulse\n- powerwhip\n\nsharpedo (M) @ garchompitez\nAbility: speedboost\nLevel: 50\nEVs: 15 HP / 14 Atk / 10 Def / 10 SpA / 9 SpD / 8 Spe\nQuiet Nature\n- scaleshot\n- thief\n- swagger\n- darkpulse\n\nmedicham (M) @ tyranitarite\nAbility: purepower\nLevel: 50\nEVs: 12 HP / 14 Atk / 12 Def / 6 SpA / 16 SpD / 6 Spe\nRash Nature\n- brickbreak\n- hyperbeam\n- quickguard\n- drainpunch\n\narbok (M) @ hawluchanite\nAbility: intimidate\nLevel: 50\nEVs: 4 HP / 5 Atk / 5 Def / 5 SpA / 5 SpD / 7 Spe\nBashful Nature\n- scaleshot\n- earthquake\n- screech\n- glare\n\nincineroar (F) @ slowbronite\nAbility: intimidate\nLevel: 50\nEVs: 6 HP / 8 Atk / 11 Def / 5 SpA / 4 SpD / 5 Spe\nAdamant Nature\n- endeavor\n- throatchop\n- substitute\n- willowisp\n\nsalamence (M) @ mentalherb\nAbility: moxie\nLevel: 50\nEVs: 7 HP / 9 Atk / 14 Def / 11 SpA / 13 SpD / 12 Spe\nHardy Nature\n- steelwing\n- aerialace\n- flamethrower\n- dragonclaw"
+  ],
+  "choices": [
+    {
+      "p1": "team 4356",
+      "p2": "team 6254"
+    },
+    {
+      "p1": "move 1 2 mega, move 1 1",
+      "p2": "move 4 1, move 4 2"
+    },
+    {
+      "p1": "move 4 2, move 1 -1",
+      "p2": "move 1 2, move 1 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, move 1 -1",
+      "p2": "move 2 2, move 1 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 4 -2, move 2 -1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 4 2",
+      "p2": "move 4 2, move 2 -1"
+    },
+    {
+      "p1": "move 2 -2, move 1 2",
+      "p2": "move 3 -2, move 4 -1"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 1 -2, switch 4"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3 2, move 1 1"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 2 -2, switch 4"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1 2, move 2 1"
+    }
+  ]
+}
