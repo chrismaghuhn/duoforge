@@ -1,0 +1,132 @@
+src/combat/turn.c:254 [dfi_flower_veil_holder] if (m != NULL && m->hp != 0u && dfi_ability(b, m, DFI_ABILITY_FLOWERVEIL)) {
+src/combat/turn.c:267 [dfi_flower_veil_block] dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_FLOWERVEIL, holder);
+src/combat/turn.c:275 [dfi_clear_body_block] const duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_CLEARBODY, flat);
+src/combat/turn.c:291 [dfi_powder_immune] return dfi_powder_natural_immune(b, m) || dfi_ability(b, m, DFI_ABILITY_OVERCOAT);
+src/combat/turn.c:912 [dfi_boost] const uint32_t want = dfi_ability(r->b, m, DFI_ABILITY_CONTRARY) ? 12u - (uint32_t)boosts[i] : boosts[i];
+src/combat/turn.c:937 [dfi_boost] boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] != DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_GUARDDOG)) {
+src/combat/turn.c:942 [dfi_boost] (void)dfi_boost(r, flat, guard_dog_atk_up, flat, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_GUARDDOG, DFI_BOOST_PRIMARY));
+src/combat/turn.c:953 [dfi_boost] const uint32_t intimidate_guard = dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS) ? DFI_ABILITY_INNERFOCUS
+src/combat/turn.c:955 [dfi_boost] : dfi_ability(r->b, m, DFI_ABILITY_OBLIVIOUS) ? DFI_ABILITY_OBLIVIOUS
+src/combat/turn.c:970 [dfi_boost] dfi_ability(r->b, m, DFI_ABILITY_HYPERCUTTER)) {
+src/combat/turn.c:974 [dfi_boost] dfi_ev(DUOFORGE_EVENT_FAIL, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_HYPERCUTTER, flat);
+src/combat/turn.c:992 [dfi_boost] capped[DFI_STAGE_ACCURACY] < DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_KEENEYE)) {
+src/combat/turn.c:995 [dfi_boost] const duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_KEENEYE, flat);
+src/combat/turn.c:1000 [dfi_boost] capped[DFI_STAGE_DEF] < DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_BIGPECKS)) {
+src/combat/turn.c:1003 [dfi_boost] const duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_BIGPECKS, flat);
+src/combat/turn.c:1013 [dfi_boost] if (source != flat && source != DFI_POSITIONS && dfi_ability(r->b, m, DFI_ABILITY_CLEARBODY)) {
+src/combat/turn.c:1033 [dfi_boost] if (source != flat && source != DFI_POSITIONS && dfi_ability(r->b, m, DFI_ABILITY_MIRRORARMOR) &&
+src/combat/turn.c:1034 [dfi_boost] !(effect.cause == DUOFORGE_CAUSE_ABILITY && effect.id2 == 1u + DFI_ABILITY_MIRRORARMOR)) {
+src/combat/turn.c:1042 [dfi_boost] dfi_ev(DUOFORGE_EVENT_ABILITY, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ABILITY_MIRRORARMOR, DUOFORGE_NO_POSITION);
+src/combat/turn.c:1047 [dfi_boost] dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_MIRRORARMOR, DFI_BOOST_SECONDARY));
+src/combat/turn.c:1543 [dfi_get_damage] if (crit && (dfi_ability(r->b, d, DFI_ABILITY_SHELLARMOR) || dfi_ability(r->b, d, DFI_ABILITY_BATTLEARMOR))) {
+src/combat/turn.c:1593 [dfi_get_damage] if (pin_active != user && dfi_ability(r->b, dfi_at(r->b, pin_active), DFI_ABILITY_UNAWARE)) {
+src/combat/turn.c:1596 [dfi_get_damage] if (pin_active == target && user != target && dfi_ability(r->b, a, DFI_ABILITY_UNAWARE)) {
+src/combat/turn.c:1624 [dfi_get_damage] if (def_index == DFI_STAGE_DEF && d->status != DFI_STATUS_NONE && dfi_ability(r->b, d, DFI_ABILITY_MARVELSCALE)) {
+src/combat/turn.c:1800 [dfi_get_damage] if (dfi_ability(r->b, a, DFI_ABILITY_PUNKROCK) && md->special != DFI_SPECIAL_STRUGGLE &&
+src/combat/turn.c:1859 [dfi_get_damage] if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FLASHFIRE) &&
+src/combat/turn.c:1887 [dfi_get_damage] if ((move_type == DFI_TYPE_ICE || move_type == DFI_TYPE_FIRE) && dfi_ability(r->b, d, DFI_ABILITY_THICKFAT)) {
+src/combat/turn.c:1894 [dfi_get_damage] if (move_type == DFI_TYPE_WATER && dfi_ability(r->b, a, DFI_ABILITY_WATERBUBBLE)) {
+src/combat/turn.c:1897 [dfi_get_damage] if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, d, DFI_ABILITY_WATERBUBBLE)) {
+src/combat/turn.c:2040 [dfi_get_damage] if ((dfi_ability(r->b, d, DFI_ABILITY_SOLIDROCK) || dfi_ability(r->b, d, DFI_ABILITY_FILTER)) && mod > DFI_BIAS6) {
+src/combat/turn.c:2046 [dfi_get_damage] if (dfi_ability(r->b, d, DFI_ABILITY_MULTISCALE) && d->hp >= d->hp_max) {
+src/combat/turn.c:2056 [dfi_get_damage] if (dfi_ability(r->b, d, DFI_ABILITY_AURAGUARD) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+src/combat/turn.c:2064 [dfi_get_damage] if (dfi_ability(r->b, d, DFI_ABILITY_PUNKROCK) && md->special != DFI_SPECIAL_STRUGGLE &&
+src/combat/turn.c:2076 [dfi_get_damage] if (partner != NULL && partner->hp != 0u && dfi_ability(r->b, partner, DFI_ABILITY_FRIENDGUARD)) {
+src/combat/turn.c:2291 [dfi_try_status] if (status == DFI_STATUS_FRZ && dfi_ability(r->b, m, DFI_ABILITY_MAGMAARMOR)) {
+src/combat/turn.c:2305 [dfi_try_status] if (status == DFI_STATUS_BRN && dfi_ability(r->b, m, DFI_ABILITY_THERMALEXCHANGE)) {
+src/combat/turn.c:2310 [dfi_try_status] dfi_immune(r, flat, 1u + DFI_ABILITY_THERMALEXCHANGE); /* [-immune] [from] ability: Thermal Exchange */
+src/combat/turn.c:2319 [dfi_try_status] if (status == DFI_STATUS_BRN && dfi_ability(r->b, m, DFI_ABILITY_WATERBUBBLE)) {
+src/combat/turn.c:2324 [dfi_try_status] dfi_immune(r, flat, 1u + DFI_ABILITY_WATERBUBBLE); /* [-immune] [from] ability: Water Bubble */
+src/combat/turn.c:2332 [dfi_try_status] if (status == DFI_STATUS_PAR && dfi_ability(r->b, m, DFI_ABILITY_LIMBER)) {
+src/combat/turn.c:2337 [dfi_try_status] dfi_immune(r, flat, 1u + DFI_ABILITY_LIMBER); /* [-immune] [from] ability: Limber */
+src/combat/turn.c:2354 [dfi_try_status] if (dfi_ability(r->b, m, DFI_ABILITY_LEAFGUARD)) {
+src/combat/turn.c:2365 [dfi_try_status] dfi_immune(r, flat, 1u + DFI_ABILITY_LEAFGUARD); /* [-immune] [from] ability: Leaf Guard */
+src/combat/turn.c:2749 [dfi_add_volatile] if (dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS)) {
+src/combat/turn.c:2983 [dfi_bug_bite] if (tm->hp != 0u && dfi_ability(b, tm, DFI_ABILITY_STICKYHOLD)) {
+src/combat/turn.c:2985 [dfi_bug_bite] 1u + DFI_ABILITY_STICKYHOLD, DUOFORGE_NO_POSITION);
+src/combat/turn.c:3078 [dfi_knock_off] if (tm->hp != 0u && dfi_ability(b, tm, DFI_ABILITY_STICKYHOLD)) {
+src/combat/turn.c:3080 [dfi_knock_off] 1u + DFI_ABILITY_STICKYHOLD, DUOFORGE_NO_POSITION);
+src/combat/turn.c:3345 [dfi_thief] if (tm->hp != 0u && dfi_ability(b, tm, DFI_ABILITY_STICKYHOLD)) {
+src/combat/turn.c:3347 [dfi_thief] 1u + DFI_ABILITY_STICKYHOLD, DUOFORGE_NO_POSITION);
+src/combat/turn.c:3600 [dfi_sturdy_saves] if (tm == NULL || !dfi_ability(r->b, tm, DFI_ABILITY_STURDY) || tm->hp != tm->hp_max || *damage < tm->hp) {
+src/combat/turn.c:3603 [dfi_sturdy_saves] const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ABILITY, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ABILITY_STURDY,
+src/combat/turn.c:3732 [dfi_attract_update] if (dfi_ability(b, m, DFI_ABILITY_OBLIVIOUS)) {
+src/combat/turn.c:3733 [dfi_attract_update] duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_OBLIVIOUS,
+src/combat/turn.c:3737 [dfi_attract_update] duoforge_event end = dfi_ev(DUOFORGE_EVENT_VOLATILE_END, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_OBLIVIOUS,
+src/combat/turn.c:3754 [dfi_update] dfi_ability(r->b, dfi_at(r->b, flat), DFI_ABILITY_OBLIVIOUS);
+src/combat/turn.c:3819 [dfi_sand_immune] if (dfi_ability(b, m, DFI_ABILITY_SANDRUSH) || dfi_ability(b, m, DFI_ABILITY_OVERCOAT) ||
+src/combat/turn.c:3820 [dfi_sand_immune] dfi_ability(b, m, DFI_ABILITY_SANDVEIL) ||
+src/combat/turn.c:4517 [dfi_attract_start] if (dfi_ability(b, im, DFI_ABILITY_OBLIVIOUS)) {
+src/combat/turn.c:4679 [dfi_run_perish_song] if (flat != user && dfi_ability(b, t, DFI_ABILITY_GOODASGOLD)) {
+src/combat/turn.c:4680 [dfi_run_perish_song] dfi_immune(r, flat, 1u + DFI_ABILITY_GOODASGOLD);
+src/combat/turn.c:4687 [dfi_run_perish_song] if (flat != user && dfi_ability(b, t, DFI_ABILITY_SOUNDPROOF)) {
+src/combat/turn.c:4688 [dfi_run_perish_song] dfi_immune(r, flat, 1u + DFI_ABILITY_SOUNDPROOF);
+src/combat/turn.c:5289 [dfi_yawn] if (dfi_ability(b, tm, DFI_ABILITY_LEAFGUARD)) {
+src/combat/turn.c:5300 [dfi_yawn] dfi_immune(r, flat, 1u + DFI_ABILITY_LEAFGUARD);
+src/combat/turn.c:5396 [dfi_run_helping_hand] if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
+src/combat/turn.c:5397 [dfi_run_helping_hand] dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
+src/combat/turn.c:5435 [dfi_run_coaching] if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
+src/combat/turn.c:5436 [dfi_run_coaching] dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
+src/combat/turn.c:5876 [dfi_accuracy_check] const bool unaware_target = user != target && dfi_ability(b, dfi_at(b, target), DFI_ABILITY_UNAWARE);
+src/combat/turn.c:5877 [dfi_accuracy_check] const bool unaware_user = user != target && dfi_ability(b, dfi_at(b, user), DFI_ABILITY_UNAWARE);
+src/combat/turn.c:5881 [dfi_accuracy_check] const bool keen_eye_user = dfi_ability(b, dfi_at(b, user), DFI_ABILITY_KEENEYE);
+src/combat/turn.c:5899 [dfi_accuracy_check] if ((dfi_field_weather(r) == DFI_WEATHER_SNOW && dfi_ability(b, victim, DFI_ABILITY_SNOWCLOAK)) ||
+src/combat/turn.c:5900 [dfi_accuracy_check] (dfi_field_weather(r) == DFI_WEATHER_SAND && dfi_ability(b, victim, DFI_ABILITY_SANDVEIL))) {
+src/combat/turn.c:6164 [dfi_run_curse] if (target != user && dfi_ability(b, dfi_at(b, target), DFI_ABILITY_GOODASGOLD)) {
+src/combat/turn.c:6165 [dfi_run_curse] dfi_immune(r, target, 1u + DFI_ABILITY_GOODASGOLD);
+src/combat/turn.c:6305 [dfi_run_belly_drum] if (dfi_ability(b, m, DFI_ABILITY_CONTRARY)) {
+src/combat/turn.c:6485 [dfi_drag_blocked] const uint32_t blockers[2] = {DFI_ABILITY_SUCTIONCUPS, DFI_ABILITY_GUARDDOG};
+src/combat/turn.c:6687 [dfi_try_hit_abilities] if (dfi_ability(r->b, tm, DFI_ABILITY_FLASHFIRE) && move_type == DFI_TYPE_FIRE) {
+src/combat/turn.c:6691 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_FLASHFIRE);
+src/combat/turn.c:6700 [dfi_try_hit_abilities] } else if (dfi_ability(r->b, tm, DFI_ABILITY_LIGHTNINGROD) && move_type == DFI_TYPE_ELECTRIC) {
+src/combat/turn.c:6703 [dfi_try_hit_abilities] dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_LIGHTNINGROD, DFI_BOOST_PRIMARY))) {
+src/combat/turn.c:6704 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_LIGHTNINGROD);
+src/combat/turn.c:6707 [dfi_try_hit_abilities] } else if (dfi_ability(r->b, tm, DFI_ABILITY_GOODASGOLD) && status_move) {
+src/combat/turn.c:6708 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_GOODASGOLD);
+src/combat/turn.c:6710 [dfi_try_hit_abilities] } else if (dfi_is_ohko(md) && dfi_ability(r->b, tm, DFI_ABILITY_STURDY)) {
+src/combat/turn.c:6713 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_STURDY);
+src/combat/turn.c:6715 [dfi_try_hit_abilities] } else if (dfi_ability(r->b, tm, DFI_ABILITY_BULLETPROOF) && (dfi_pool_move_flags3[move_id] & DFI_MOVE_FLAG3_BULLET) != 0u) {
+src/combat/turn.c:6720 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_BULLETPROOF);
+src/combat/turn.c:6722 [dfi_try_hit_abilities] } else if (dfi_ability(r->b, tm, DFI_ABILITY_VOLTABSORB) && tm->hp != 0u && move_type == DFI_TYPE_ELECTRIC) {
+src/combat/turn.c:6728 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_VOLTABSORB);
+src/combat/turn.c:6730 [dfi_try_hit_abilities] dfi_heal(r, t, (uint32_t)tm->hp_max / 4u, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_VOLTABSORB, user);
+src/combat/turn.c:6733 [dfi_try_hit_abilities] } else if (dfi_ability(r->b, tm, DFI_ABILITY_TELEPATHY) && !status_move && t / 2u == user / 2u) {
+src/combat/turn.c:6737 [dfi_try_hit_abilities] const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_TELEPATHY,
+src/combat/turn.c:6741 [dfi_try_hit_abilities] } else if (dfi_ability(r->b, tm, DFI_ABILITY_OBLIVIOUS) && move_id == DFI_MOVE_TAUNT) {
+src/combat/turn.c:6745 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_OBLIVIOUS);
+src/combat/turn.c:6747 [dfi_try_hit_abilities] } else if (powder_move && dfi_ability(r->b, tm, DFI_ABILITY_OVERCOAT) && !dfi_powder_natural_immune(b, tm)) {
+src/combat/turn.c:6751 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_OVERCOAT);
+src/combat/turn.c:6753 [dfi_try_hit_abilities] } else if (dfi_ability(r->b, tm, DFI_ABILITY_SOUNDPROOF) && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_SOUND) != 0u) {
+src/combat/turn.c:6756 [dfi_try_hit_abilities] dfi_immune(r, t, 1u + DFI_ABILITY_SOUNDPROOF);
+src/combat/turn.c:6786 [dfi_try_hit_abilities] } else if (move_type == DFI_TYPE_GROUND && !iron_ground && dfi_ability(b, tm, DFI_ABILITY_LEVITATE)) {
+src/combat/turn.c:6792 [dfi_try_hit_abilities] dfi_immune(r, targets[i], 1u + DFI_ABILITY_LEVITATE);
+src/combat/turn.c:6856 [dfi_accuracy_targets] if ((dfi_field_weather(r) == DFI_WEATHER_SNOW && dfi_ability(r->b, acc_target, DFI_ABILITY_SNOWCLOAK)) ||
+src/combat/turn.c:6857 [dfi_accuracy_targets] (dfi_field_weather(r) == DFI_WEATHER_SAND && dfi_ability(r->b, acc_target, DFI_ABILITY_SANDVEIL))) {
+src/combat/turn.c:6953 [dfi_status_effects] if ((success || dfi_ability(b, dfi_at(b, targets[i]), DFI_ABILITY_MIRRORARMOR)) && m->hp != 0u &&
+src/combat/turn.c:7211 [dfi_bounce] if (dfi_alive(b, flat) && dfi_ability(b, dfi_at(b, flat), DFI_ABILITY_ARMORTAIL)) {
+src/combat/turn.c:7224 [dfi_bounce] e.id2 = (uint16_t)(1u + DFI_ABILITY_MAGICBOUNCE); /* wide-operands-reviewed: 106 */
+src/combat/turn.c:7682 [dfi_run_move_body] if (flat == user || holder == NULL || holder->hp == 0u || !dfi_ability(r->b, holder, DFI_ABILITY_LIGHTNINGROD)) {
+src/combat/turn.c:7695 [dfi_run_move_body] 1u + DFI_ABILITY_LIGHTNINGROD, DUOFORGE_NO_POSITION);
+src/combat/turn.c:7788 [dfi_run_move_body] : dfi_ability(r->b, holder, DFI_ABILITY_ARMORTAIL)           ? 1u + DFI_ABILITY_ARMORTAIL
+src/combat/turn.c:7789 [dfi_run_move_body] : dfi_ability(r->b, holder, DFI_ABILITY_QUEENLYMAJESTY)      ? 1u + DFI_ABILITY_QUEENLYMAJESTY
+src/combat/turn.c:7869 [dfi_run_move_body] if (dfi_alive(b, flat) && !dfi_semi_invulnerable(r, flat) && dfi_ability(b, dfi_at(b, flat), DFI_ABILITY_MAGICBOUNCE)) {
+src/combat/turn.c:8216 [dfi_run_move_body] if (!hit[i] || t == user || dfi_semi_invulnerable(r, t) || !dfi_ability(b, dfi_at(b, t), DFI_ABILITY_MAGICBOUNCE)) {
+src/combat/turn.c:8244 [dfi_run_move_body] dfi_ability(r->b, dfi_at(b, targets[i]), DFI_ABILITY_STICKYHOLD)) {
+src/combat/turn.c:9083 [dfi_run_move_body] if (dfi_ability(r->b, tm, DFI_ABILITY_THERMALEXCHANGE) && move_type == DFI_TYPE_FIRE) {
+src/combat/turn.c:9086 [dfi_run_move_body] dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_THERMALEXCHANGE, DFI_BOOST_PRIMARY));
+src/combat/turn.c:9991 [dfi_trace] if (copied == 1u + DFI_ABILITY_LIMBER && dfi_at(b, flat)->status == DFI_STATUS_PAR) {
+src/combat/turn.c:9996 [dfi_trace] if (copied == 1u + DFI_ABILITY_WATERBUBBLE && dfi_at(b, flat)->status == DFI_STATUS_BRN) {
+src/combat/turn.c:10001 [dfi_trace] if (copied == 1u + DFI_ABILITY_MAGMAARMOR && dfi_at(b, flat)->status == DFI_STATUS_FRZ) {
+src/combat/turn.c:10006 [dfi_trace] if (copied == 1u + DFI_ABILITY_OBLIVIOUS && b->tail.sides[flat / 2u].positions[flat % 2u].taunt_turns != 0u) {
+src/combat/turn.c:10116 [dfi_skill_swap_update_due] if (code == 1u + DFI_ABILITY_LIMBER) {
+src/combat/turn.c:10119 [dfi_skill_swap_update_due] if (code == 1u + DFI_ABILITY_THERMALEXCHANGE) {
+src/combat/turn.c:10122 [dfi_skill_swap_update_due] if (code == 1u + DFI_ABILITY_OBLIVIOUS) {
+src/combat/turn.c:10125 [dfi_skill_swap_update_due] if (code == 1u + DFI_ABILITY_MAGMAARMOR) {
+src/combat/field/terrain.h:19 [dfi_grounded_test] return !dfi_has_type(b, m, DFI_TYPE_FLYING) && !dfi_ability(b, m, DFI_ABILITY_LEVITATE) &&
+src/state/view.c:811 [mr_absorbs] return ability == DFI_ABILITY_LIGHTNINGROD || ability == DFI_ABILITY_SAPSIPPER || ability == DFI_ABILITY_MOTORDRIVE ||
+src/state/view.c:812 [mr_absorbs] ability == DFI_ABILITY_WATERABSORB || ability == DFI_ABILITY_VOLTABSORB || ability == DFI_ABILITY_DRYSKIN ||
+src/data/closure_tables.h:93 [?] #define DFI_ABILITY_FLASHFIRE 3u
+src/data/closure_tables.h:94 [?] #define DFI_ABILITY_LIGHTNINGROD 4u
+src/data/closure_tables.h:95 [?] #define DFI_ABILITY_GOODASGOLD 5u
+src/data/closure_tables.h:99 [?] #define DFI_ABILITY_ARMORTAIL 9u
+src/data/closure_tables.h:102 [?] #define DFI_ABILITY_CONTRARY 12u
