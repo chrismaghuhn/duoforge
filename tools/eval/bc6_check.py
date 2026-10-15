@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 import json
+import os
 import struct
 import subprocess
 
@@ -19,8 +20,14 @@ import bc6_gates as gates
 class Runner:
     def __init__(self, executable, artifact, digest, kind, trace=None, trace_count=0):
         self.executable=str(executable)
-        command=[self.executable,"--run",str(artifact),str(kind),digest]
-        if trace is not None:command += [str(trace),str(trace_count)]
+        def local_path(path):
+            # Windows bridges may run through WSL interop on the same Owner
+            # computer. They need a Windows/UNC spelling, not a Linux path.
+            if os.name!="nt" and Path(self.executable).suffix.lower()==".exe":
+                return subprocess.check_output(["wslpath","-w",str(path)],text=True).strip()
+            return str(path)
+        command=[self.executable,"--run",local_path(artifact),str(kind),digest]
+        if trace is not None:command += [local_path(trace),str(trace_count)]
         self.child=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
     def _read(self, n):

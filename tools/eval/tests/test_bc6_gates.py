@@ -147,6 +147,45 @@ class FrozenInputs(unittest.TestCase):
             a.write_bytes(b"corrupt")
             with self.assertRaisesRegex(ValueError,"request_identity"):check.load_request(root,record)
 
+    def test_calibration_recipe_is_frozen_first_and_short_pivot_rows_do_not_duplicate(self):
+        records=[]
+        for stratum in gates.STRATA:
+            for i in range(32):
+                records.append(dict(group=f"{stratum}/g{i}",seat=i%2,key=i,file=f"{stratum}/{i}.npz",
+                    sha256="a"*64,boundary=gates.BOUNDARIES[(i//2)%3],interactions=["field","item","ability"],
+                    stratum=stratum))
+        def load(root,record):
+            n=32 if record["boundary"]=="PIVOT" else 128
+            return dict(rows=np.zeros((n,1094),np.float32),open=np.ones(n,bool))
+        class Native:
+            def __init__(self,*args,**kwargs):pass
+            def __enter__(self):return self
+            def __exit__(self,*args):pass
+            def values(self,rows):return np.zeros(len(rows),np.int32)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);old=root/"calibration-corpus.json";old.write_bytes(b"frozen game inventory")
+            class Model:
+                def check(self,rows):pass
+                def value(self,params,rows):
+                    recipe=json.loads((root/"calibration-recipe.json").read_text(encoding="utf-8"))
+                    self_test.assertEqual(len(recipe["rows"]),4096)
+                    self_test.assertEqual(len({tuple(x) for x in recipe["rows"]}),4096)
+                    return np.zeros(len(rows),np.float32)
+            self_test=self
+            import bc6_oracle
+            with mock.patch.object(check,"load_request",side_effect=load), \
+                    mock.patch.object(check,"Runner",Native), \
+                    mock.patch.object(run,"integer_parameters",return_value=({}, {}, {})), \
+                    mock.patch.object(run,"pack_artifact",return_value=b"synthetic pipeline control"), \
+                    mock.patch.object(bc6_oracle,"integer_trace",return_value=b""):
+                result=run.calibrate(root,records,{},Model(),None,lambda p,x:np.zeros(len(x),np.float32),
+                    {},b"metadata",("a"*64,"b"*64),"unused synthetic runner",2)
+            self.assertEqual(result["selected_unit"],256)
+            self.assertEqual(result["rows"],4096)
+            self.assertFalse(result["heldout_read"])
+            self.assertEqual(old.read_bytes(),b"frozen game inventory")
+            self.assertTrue((root/"calibration.json").is_file())
+
     def test_sha_pin_precedes_build_parsing_lock_or_any_output(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);source=root/"wrong.npz";source.write_bytes(b"not an NPZ")

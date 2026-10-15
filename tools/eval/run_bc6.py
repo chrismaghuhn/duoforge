@@ -66,21 +66,31 @@ def calibrate(root, records, flat, model, params, oracle, engine, meta, hashes, 
     chosen=[]
     for s in ("open","closed"):
         chosen+=select([r for r in records if r["stratum"]==s],CALIBRATION_ROOTS_PER_STRATUM)
-    rows=[];ids=[]
-    # Predetermined 64 rows per root, no value/outcome-dependent sampling.
+    # Round-robin across the fixed selected roots. PIVOT roots can have
+    # fewer than 64 neural rows; fill from the other selected roots without
+    # duplication or consulting values. No new game/root is substituted.
+    ordered=[]
     for r in chosen:
         req=load_request(root,r);indices=np.flatnonzero(req["open"])
         from bc6_corpus import word
-        indices=sorted(indices,key=lambda i:word(r["group"],r["key"],int(i)))[:64]
-        rows.extend(req["rows"][indices]);ids.extend((r["file"],int(i)) for i in indices)
+        indices=sorted(indices,key=lambda i:word(r["group"],r["key"],int(i)))
+        ordered.append((r,req,indices))
+    rows=[];ids=[]
+    for rank in range(max((len(x[2]) for x in ordered),default=0)):
+        for r,req,indices in ordered:
+            if rank<len(indices) and len(rows)<CALIBRATION_ROWS:
+                i=int(indices[rank]);rows.append(req["rows"][i]);ids.append((r["file"],i))
+        if len(rows)==CALIBRATION_ROWS:break
     if len(rows)!=CALIBRATION_ROWS:fail("bc6_calibration_row_count")
-    rows=np.array(rows,np.float32);teacher=value_batches(model,params,rows,oracle)
+    rows=np.array(rows,np.float32)
     candidates=[]
     # The calibration manifest's recipe is pinned before trying a unit. The
     # final selected-unit manifest is frozen before held-out values are read.
-    recipe=dict(method=METHOD,units=list(UNITS),rows=ids,selection="lowest MAE, then lower unit",
+    recipe=dict(method=METHOD,units=list(UNITS),rows=ids,
+                root_sha256={r["file"]:r["sha256"] for r in chosen},selection="lowest MAE, then lower unit",
                 teacher_sha256=TEACHER)
     recipe_sha=sha(canonical(recipe));write_private(root/"calibration-recipe.json",canonical(recipe),False)
+    teacher=value_batches(model,params,rows,oracle)
     for unit in UNITS:
         try:
             tensors,scales,_=integer_parameters(flat,unit)
@@ -181,7 +191,7 @@ def main(argv=None):
         from duoforge_learn import checkpoint
         params,config=checkpoint.load_trained(checkpoint_path)
         mask=checkpoint.ext_supported_of(config)
-        print(json.dumps(dict(teacher_sha256=TEACHER,encoder=checkpoint.encoder_of(config),
+        print(json.dumps(dict(commit=clean_commit(ROOT),dirty=False,teacher_sha256=TEACHER,encoder=checkpoint.encoder_of(config),
             source_mask=mask,source_mask_hex=hex(mask),registered_mask_hex=hex(BC6_MASK),
             graph=config["model"],graph_mask_matches=mask==BC6_MASK,
             trained_file_transferred=False,weights_printed=False,artifact_exported=False,fidelity_gates="NOT_RUN")))
@@ -244,7 +254,7 @@ def main(argv=None):
         # Freeze exact selected request files and metadata before any value
         # evaluation, including unit calibration. No holdout-driven retries.
         frozen=dict(schema=1,split_sha256=split_sha,requests=chosen,
-                    corpus_sha256={s:file_sha(out/(s+".json")) for s in corpora})
+                    corpus_sha256={s:file_sha(out/(s+"-corpus.json")) for s in corpora})
         write_private(out/"gate-manifest.json",canonical(frozen),False)
         meta=metadata(commit,split_sha,args.training_commit,args.training_dirty)
         hashes=feature_hashes(features,cols)
@@ -304,6 +314,8 @@ def main(argv=None):
         numeric["fidelity_pass"]=all(numeric["gates"].values())
         numeric.update(commit=commit,dirty=False,machine=platform.machine(),system=platform.system(),
             teacher_sha256=TEACHER,artifact_sha256=digest,artifact_bytes=len(artifact),
+            engine_context_sha256=engine["fingerprint"],library_sha256=file_sha(library),
+            runtime=audit["runtime"],selected_unit=calibration["selected_unit"],
             split_sha256=split_sha,calibration_sha256=calibration_sha,
             activation_calibration_sample=calibration["activation_sample"],
             gate_manifest_sha256=file_sha(out/"gate-manifest.json"),profiles=results,

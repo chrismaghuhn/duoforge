@@ -65,6 +65,8 @@ class FloatExtraction(unittest.TestCase):
                         [("synthetic-a",teams.text("A")),("synthetic-b",teams.text("B"))])
                 records=result["requests"]
                 self.assertTrue(records)
+                self.assertTrue((root/"calibration-corpus.json").is_file())
+                self.assertFalse((root/"calibration.json").exists())
                 self.assertEqual({r["stratum"] for r in records},{"open","closed"})
                 self.assertTrue(all(r["worlds"]==16 for r in records))
                 for record in records:

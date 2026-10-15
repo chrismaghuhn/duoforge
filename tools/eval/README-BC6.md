@@ -36,7 +36,9 @@ pinned, built Showdown checkout. Set `DUOFORGE_PS_REFERENCE_DIR` (and
 absolute paths outside every Git checkout; the output directory must be
 new. The driver builds only the private bridge and shared library, Release
 with IPO. Additional previously built native bridges can be supplied with
-repeated `--runner PATH` options. They read the same private artifact locally.
+repeated `--runner PATH` options. They read the same private artifact locally. Under WSL, Windows `.exe`
+bridges use `wslpath` for that same computer's Windows/UNC paths; no artifact
+is sent to another machine.
 
 ```bash
 tools/ci/machine_lock.sh --exclusive e4-bc6 env OPENBLAS_NUM_THREADS=1 \
@@ -85,14 +87,16 @@ The code constants, not caller-supplied size/seed knobs, define the run:
   or any TURN/REPLACEMENT/PIVOT × seat, field/item/ability coverage fail.
   Named unsupported tracker/world/battle attempts are counted and are never
   replaced by newly seeded games. Model, encoding and unexpected errors fail.
-- Calibration uses 32 roots per stratum, 64 seeded neural rows per root
-  (4,096 total). Units 256,512,1024,2048,4096,8192,16384 are tried only on
+- Calibration fixes 32 roots per stratum, then selects 4,096 seeded neural
+  rows round-robin across them without duplication (short PIVOT requests
+  contribute fewer rows; no other root is substituted). Units 256,512,1024,2048,4096,8192,16384 are tried only on
   calibration, lowest MAE then lower unit wins. Unrepresentable quantization
   candidates refuse by name; inference failures abort. No hold-out tuning.
 
 `split.json`, corpus manifests and `gate-manifest.json` freeze source,
-context, seeds, exact requests and policies before the value runs. The final
-calibration manifest is frozen before held-out values are read. All of these
+context, seeds, exact requests and policies before the value runs. The exact calibration row recipe is written before even calibration values
+are evaluated. The final calibration manifest is frozen before held-out
+values are read. Corpus inventories use separate `*-corpus.json` files. All of these
 files, including generated games, stay private outside the checkout.
 
 ## Conversion and gates

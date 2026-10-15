@@ -305,7 +305,7 @@ def main():
         fidelity_gates="NOT_RUN_BY_EXPORTER",adoption=False)
     if not args.check and (args.output.exists() or args.audit.exists()):fail("export_output_exists")
     write_private(args.output,data,args.check);write_private(args.audit,canonical(report),args.check)
-    print(json.dumps(dict(check=args.check,artifact_sha256=sha(data),artifact_bytes=len(data),value_tensors=27,
+    print(json.dumps(dict(commit=export_commit,dirty=False,check=args.check,artifact_sha256=sha(data),artifact_bytes=len(data),value_tensors=27,
                          learned_elements=MAX_PARAMETERS,fidelity_gates="NOT_RUN_BY_EXPORTER")))
 
 

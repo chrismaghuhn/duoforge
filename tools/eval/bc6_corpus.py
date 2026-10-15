@@ -221,5 +221,5 @@ def collect(split, games, out, checkpoint_path, tables, model, params, node, che
     for record in records:
         if not record["eligible"]:refusals[record["stratum"]+":engine_refused_leaves"]+=1
     manifest=dict(schema=1,split=split,requests=records,attempts=attempts,refusals=dict(refusals))
-    write_private(out/(split+".json"),canonical(manifest),False)
+    write_private(out/(split+"-corpus.json"),canonical(manifest),False)
     return manifest
