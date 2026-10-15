@@ -4,12 +4,13 @@ every foe Pokemon left? A measurement on the bot's own worlds, nothing live.
 The pair probe (probe_pair, setup_choices): one of our living members B (on the field or on the bench) against one living
 foe member X, in a world of the decision. Turn 1 brings them in: a side whose member is not active plays the likeliest
 legal pair of its policy that switches the member in (the policy picks the slot), the other side its likeliest pair;
-turn 1 is left out when both are already active. Where turn 1 ends at a replacement (or a pivot) boundary, each
-requested side plays its policy's likeliest legal pair there, through the engine, up to REPLACE_ROUNDS times, until a
-turn (settle_choice); who fell in these steps and how is kept apart (fell_in). Turn 2 is the probe: B tries each of its
-commands, its partner and the foe side playing their likeliest pairs, and X does the same against B. Every number comes
-from the engine's events of the step (privileged.step_events on the world, an offline measurement like the oracle's,
-never a player's), nothing from a type or damage rule here:
+turn 1 is left out when both are already active. Where the world stands at a replacement (or a pivot) boundary,
+before turn 1 (the decision right after a faint) or after it, each requested side plays its policy's likeliest legal
+pair there, through the engine, up to REPLACE_ROUNDS times in all, until a turn (settle_choice); who fell in these
+steps and how is kept apart (fell_in). Turn 2 is the probe: B tries each of its commands, its partner and the foe side
+playing their likeliest pairs, and X does the same against B. Every number comes from the engine's events of the step
+(privileged.step_events on the world, an offline measurement like the oracle's, never a player's), nothing from a type
+or damage rule here:
 - the damage of B's command to X: the HP X loses to hits that B's [move] makes (DAMAGE with no cause after B's
   [move]), read from X's side's events (its exact HP); the same for X against B;
 - best: each side's command with the most damage (the worst case for us on X's side);
@@ -47,7 +48,7 @@ _TURN, _TERMINAL = C["DUOFORGE_BOUNDARY_TURN"], C["DUOFORGE_BOUNDARY_TERMINAL"]
 _SETTLE = (C["DUOFORGE_BOUNDARY_REPLACEMENT"], C["DUOFORGE_BOUNDARY_PIVOT"])
 PROBE_SAMPLE = 0x7000  # the probe's seeds: search_seeds(seed, key, PROBE_SAMPLE + world), one per world
 REPLACE_SAMPLE = 0x7400  # a replacement step's seed: search_seeds(seed, key, REPLACE_SAMPLE + 0x100 * round + world)
-REPLACE_ROUNDS = 3  # replacement or pivot steps after turn 1 at most; a world short of a turn then: "replacement_chain"
+REPLACE_ROUNDS = 3  # replacement or pivot steps per pair and world at most; past them: "replacement_chain"
 HAZARDS = ("stealthrock", "spikes")  # the entry hazards that deal damage, by the engine's move names
 
 
@@ -314,8 +315,10 @@ def living(batch, env, side):
 def role_table(search, p, key):
     """({(b, x): [probe dict, or the Unprobed reason as a str, per world]}, {(b, x): [None, or fell_in's [[who, how]]
     of the setup's steps, per world]}) for every living member b of ours and x of the foe's (in world 0's rosters; a
-    pair dead in a world is "fainted" there). A world whose setup felled b or x is "fell_in_setup"; one whose battle
-    ended in it "setup_ended"."""
+    pair dead in a world is "fainted" there). Each pair in each world goes its own way (_advance): a world standing at a
+    replacement (the decision right after a faint) plays it by the policy first, then turn 1 brings b and x in, then any
+    replacement after it, then the probe. A world whose setup felled b or x is "fell_in_setup"; one whose battle ended
+    in it "setup_ended"."""
     worlds, leaves, s = search.worlds, search.leaves, search.s
     if s > 0x100:
         raise ValueError(f"the replacement steps' seeds hold 256 worlds, the search has {s}")
@@ -328,40 +331,25 @@ def role_table(search, p, key):
     pairs = [(b, x) for b in living(worlds, 0, p) for x in living(worlds, 0, foe)]
     out = {pair: [None] * s for pair in pairs}
     fell = {pair: [None] * s for pair in pairs}
-    wants, roots = [], []
-    for w in range(s):
-        for b, x in pairs:
-            if b not in living(worlds, w, p) or x not in living(worlds, w, foe):
-                out[(b, x)][w] = "fainted"
-                continue
-            wants.append((b, x))
-            roots.append(w)
     rng = {w: _seeds(search.seed, key, PROBE_SAMPLE + w) for w in range(s)}
-    if roots:
-        choices = np.zeros((len(roots), 2), _layout.FACTORED_CHOICE)
-        need = np.zeros(len(roots), bool)
-        ok = []
-        for n, (w, bx) in enumerate(zip(roots, wants)):  # each pair in each world on its own: a refusal is that one's
-            try:
-                one, flag = setup_choices(worlds, [w], p, [bx], pol)
-            except Unprobed as err:
-                out[bx][w] = err.args[0]
+    stepped = []  # (world, pair, state, choice, env, sample) of the entries that take an engine step
+    for w in range(s):
+        for bx in pairs:
+            if bx[0] not in living(worlds, w, p) or bx[1] not in living(worlds, w, foe):
+                out[bx][w] = "fainted"
                 continue
-            choices[n], need[n] = one[0], flag[0]
-            ok.append(n)
-        direct = [n for n in ok if not need[n]]
-        for n in direct:
-            out[wants[n]][roots[n]] = _probe(worlds, roots[n], p, wants[n], pol, rng[roots[n]])
-        moved = [n for n in ok if need[n]]
-        if moved:
-            hazards = {data.find(_raw(worlds).context, data.TABLE_MOVE, name) for name in HAZARDS}
-            import duoforge
-            with duoforge.Batch(_raw(leaves).context, np.resize(duoforge.reference_setups([0]), leaves.envs), 1,
-                                search.seed) as scratch:
-                for start in range(0, len(moved), leaves.envs):
-                    part = moved[start:start + leaves.envs]
-                    _settle(search, p, key, [(roots[n], wants[n], choices[n]) for n in part], (leaves, scratch),
-                            policy, pol, rng, hazards, out, fell)
+            state = {"setup": False, "settles": 0}
+            nxt = _advance(worlds, w, w, bx, state, p, pol, rng, out, fell)
+            if nxt is not None:
+                stepped.append((w, bx, state, nxt[0], w, nxt[1]))
+    if stepped:
+        hazards = {data.find(_raw(worlds).context, data.TABLE_MOVE, name) for name in HAZARDS}
+        import duoforge
+        with duoforge.Batch(_raw(leaves).context, np.resize(duoforge.reference_setups([0]), leaves.envs), 1,
+                            search.seed) as scratch:
+            for start in range(0, len(stepped), leaves.envs):
+                _steps(search, p, key, stepped[start:start + leaves.envs], (leaves, scratch), policy, pol, rng,
+                       hazards, out, fell)
     return out, fell
 
 
@@ -370,27 +358,63 @@ def _raw(batch):
     return getattr(batch, "batch", batch)
 
 
-def _settle(search, p, key, entries, batches, policy, pol, rng, hazards, out, fell):
-    """Turn 1 of each entry (world, (b, x), its FACTORED_CHOICE) through the engine, then each replacement or pivot
-    boundary by the policy (settle_choice), up to REPLACE_ROUNDS steps, alternating between the two batches; the probe
-    at the first turn. Each step's events come from privileged.step_events on the step's source with the expansion's
-    seed and choice, and its digest must equal the expanded environment's (else RuntimeError: the events would not be
-    the step's)."""
-    src = search.worlds
-    live = [(w, bx, choice, w, PROBE_SAMPLE + w) for w, bx, choice in entries]  # (world, pair, choice, env, sample)
-    for rnd in range(REPLACE_ROUNDS + 1):
+def _advance(batch, env, w, bx, state, p, pol, rng, out, fell):
+    """The next engine step of pair bx in world w, standing at batch environment env: (FACTORED_CHOICE, sample) or
+    None where its cell is decided now (written to out). state: whether turn 1 was played ("setup") and the replacement
+    or pivot steps so far ("settles", at most REPLACE_ROUNDS)."""
+    if any(who in ("b", "x") for who, _ in fell[bx][w] or ()):
+        out[bx][w] = "fell_in_setup"
+        return None
+    kind = boundary(batch, env)
+    if kind == _TERMINAL:
+        out[bx][w] = "setup_ended"
+        return None
+    if kind in _SETTLE:
+        if state["settles"] >= REPLACE_ROUNDS:
+            out[bx][w] = "replacement_chain"
+            return None
+        try:
+            choice = settle_choice(batch, env, pol)
+        except Unprobed as err:
+            out[bx][w] = err.args[0]
+            return None
+        state["settles"] += 1
+        return choice, REPLACE_SAMPLE + 0x100 * (state["settles"] - 1) + w
+    if kind != _TURN:
+        out[bx][w] = "not_a_turn"
+        return None
+    if not state["setup"]:
+        state["setup"] = True
+        try:
+            choices, need = setup_choices(batch, [env], p, [bx], pol)
+        except Unprobed as err:
+            out[bx][w] = err.args[0]
+            return None
+        if need[0]:
+            return choices[0], PROBE_SAMPLE + w
+    out[bx][w] = _probe(batch, env, p, bx, pol, rng[w])
+    return None
+
+
+def _steps(search, p, key, entries, batches, policy, pol, rng, hazards, out, fell):
+    """The engine steps of the entries (world, pair, state, choice, env, sample) through the engine, alternating
+    between the two batches, each entry advanced (_advance) after each step until its cell is decided. Each step's
+    events come from privileged.step_events on the step's source with the expansion's seed and choice, and its digest
+    must equal the expanded environment's (else RuntimeError: the events would not be the step's)."""
+    src, live, rnd = search.worlds, entries, 0
+    while live:
         dst = batches[rnd % 2]
         source = _raw(src)
         _, step, _, _, _ = dst.expand(source, search.encoder, search.ext_supported, search.seed,
                                       np.full(source.envs, key, np.uint64), np.full(source.envs, p, np.uint8),
-                                      np.array([e[3] for e in live], np.uint32),
                                       np.array([e[4] for e in live], np.uint32),
-                                      np.array([e[2] for e in live], _layout.FACTORED_CHOICE))
+                                      np.array([e[5] for e in live], np.uint32),
+                                      np.array([e[3] for e in live], _layout.FACTORED_CHOICE))
         step = np.array(step, copy=True)
         target = _raw(dst)
         policy.refresh(target, len(live))
         nxt = []
-        for j, (w, bx, choice, env, sample) in enumerate(live):
+        for j, (w, bx, state, choice, env, sample) in enumerate(live):
             if step[j] != 0:
                 out[bx][w] = "setup_refused"
                 continue
@@ -401,23 +425,10 @@ def _settle(search, p, key, entries, batches, policy, pol, rng, hazards, out, fe
             def occupant(pos, j=j):
                 return occupants(target, j, pos // 2)[pos % 2]
             fell[bx][w] = (fell[bx][w] or []) + fell_in(got["events"][p], occupant, hazards, p, *bx)
-            kind = boundary(target, j)
-            if any(who in ("b", "x") for who, _ in fell[bx][w]):
-                out[bx][w] = "fell_in_setup"
-            elif kind == _TURN:
-                out[bx][w] = _probe(target, j, p, bx, pol, rng[w])
-            elif kind == _TERMINAL:
-                out[bx][w] = "setup_ended"
-            elif kind in _SETTLE and rnd < REPLACE_ROUNDS:
-                try:
-                    nxt.append((w, bx, settle_choice(target, j, pol), j, REPLACE_SAMPLE + 0x100 * rnd + w))
-                except Unprobed as err:
-                    out[bx][w] = err.args[0]
-            else:
-                out[bx][w] = "replacement_chain" if kind in _SETTLE else "not_a_turn"
-        if not nxt:
-            return
-        src, live = dst, nxt
+            ahead = _advance(target, j, w, bx, state, p, pol, rng, out, fell)
+            if ahead is not None:
+                nxt.append((w, bx, state, ahead[0], j, ahead[1]))
+        src, live, rnd = dst, nxt, rnd + 1
 
 
 def _seeds(seed, key, sample):

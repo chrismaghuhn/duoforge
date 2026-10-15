@@ -199,6 +199,21 @@ class Probe(unittest.TestCase):
                                  role_check.legal_pairs(batch, env, side)[0])
         got = privileged_step(batch, env, choice)
         self.assertEqual(got["status"], 0)
+        # a pair in a world standing there plays the replacement first (the decision right after a faint)
+        b, x = role_check.living(batch, env, 0)[0], role_check.living(batch, env, 1)[0]
+        rng = {0: duoforge.search_seeds(1, 2, role_check.PROBE_SAMPLE)}
+
+        def advance(state, fell=None):
+            out, fells = {(b, x): [None]}, {(b, x): [fell]}
+            return role_check._advance(batch, env, 0, (b, x), state, 0, first_pair, rng, out, fells), out[(b, x)][0]
+        state = {"setup": False, "settles": 0}
+        ahead, cell = advance(state)
+        self.assertIsNone(cell)
+        self.assertEqual(ahead[0].tobytes(), choice.tobytes())
+        self.assertEqual((ahead[1], state), (role_check.REPLACE_SAMPLE, {"setup": False, "settles": 1}))
+        self.assertEqual(advance({"setup": True, "settles": role_check.REPLACE_ROUNDS}), (None, "replacement_chain"))
+        self.assertEqual(advance({"setup": False, "settles": 0}, [["own_other", "hit"], ["x", "hazard"]]),
+                         (None, "fell_in_setup"))
 
 
 
