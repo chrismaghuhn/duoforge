@@ -2997,6 +2997,11 @@ static duoforge_status dfi_bug_bite(dfi_run *r, uint32_t user, uint32_t target, 
     e.id = (uint16_t)move_id;
     e.flags = (uint8_t)DUOFORGE_EVENT_FLAG_EATEN;
     dfi_emit(r, &e); /* [-enditem] [from] stealeat [move] Bug Bite [of] user */
+    if (dfi_items_suppressed(b)) {
+        /* Step K5 (#475): the Eat singleEvent runs the berry's handler for the eater (sim/battle.ts:609: an item's handlers are not run for a
+         * Pokemon that ignores its item), so under Magic Room the user takes the berry and eats nothing: no heal, no cure. */
+        return DUOFORGE_OK;
+    }
     if (item == 1u + DFI_ITEM_SITRUSBERRY) {
         if (um->hp < um->hp_max && !dfi_heal_blocked(b, user)) {
             dfi_heal(r, user, (uint32_t)um->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY, DUOFORGE_NO_POSITION);
@@ -11417,7 +11422,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
         }
     }
-    /* Step K5 (#475, data/moves.ts:10786-10787, Magic Room's onFieldResidualOrder 27 and SubOrder 6): after Gravity (27.2), before the
+    /* Step K5 (#475, data/moves.ts:10787-10788, Magic Room's onFieldResidualOrder 27 and SubOrder 6): after Gravity (27.2), before the
      * terrains (27.7). Its end line names the setter (combat/field/magic_room.h). */
     if (b->tail.magic_room_turns != 0u) {
         if (!dfi_magic_room_residual(r)) {

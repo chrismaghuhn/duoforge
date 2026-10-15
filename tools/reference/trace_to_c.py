@@ -1620,7 +1620,7 @@ def swap_partners(trace, teams, roster_of, tables):
 
 def room_setters(trace, roster_of):
     """Step K5 (#475, decision 0015 5dm): the member code (1 + side * 6 + roster index) of the setter of every Magic Room end line,
-    for `-fieldend|move: Magic Room|[of] X` (data/moves.ts:10788-10790), where X is the setter's toString() at the END time: its slot
+    for `-fieldend|move: Magic Room|[of] X` (data/moves.ts:10789-10791), where X is the setter's toString() at the END time: its slot
     and name while it is active, its fullname `p1: Name` once it is not (sim/pokemon.ts:531-533). The converter follows the room from its
     `-fieldstart` (which names the setter with its slot) to its end line (a restart ends the room with this line and no -fieldstart);
     an end line whose name is not the setter's (a disguised holder prints the disguise) is refused. Returns one dict per step: line

@@ -421,7 +421,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
          * position has no tail. */
         /* Step K4 (#475, decision 0015 5dl): the field view's Gravity turns, public (-fieldstart|move: Gravity, data/moves.ts:7773-7778). */
         o.field.gravity_turns = battle->tail.gravity_turns;
-        /* Step K5 (#475, decision 0015 5dm): Magic Room, public (-fieldstart|move: Magic Room|[of] setter, data/moves.ts:10768-10774): the
+        /* Step K5 (#475, decision 0015 5dm): Magic Room, public (-fieldstart|move: Magic Room|[of] setter, data/moves.ts:10773-10778): the
          * remaining turns as the binary count of bits 0 to 2 of the field flags (shown under feature 47), and the setter's member code,
          * which is not encoded. */
         const uint32_t field_flags = (uint32_t)o.field.flags | (uint32_t)battle->tail.magic_room_turns;

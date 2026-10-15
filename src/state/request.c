@@ -163,7 +163,7 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
          * other slot (data/conditions.ts); the lock does not trap, and with
          * no usable locked move the slot gets Struggle. */
         /* Step K5 (#475, decision 0015 5dm): the volatile stays under Magic Room, but its onDisableMove returns for a Pokemon that
-         * ignores its item (data/conditions.ts:338-345 `if (pokemon.ignoringItem()) return;`): every move is offered, and the
+         * ignores its item (data/conditions.ts:349-356, onDisableMove `if (pokemon.ignoringItem() ...) return;`; enforcement, :337-347, runs only when `!pokemon.ignoringItem()`): every move is offered, and the
          * lock is enforced again once the room has ended. */
         const bool choice = ((uint32_t)own->flags & DFI_VOL_CHOICE_LOCK) != 0u && b->tail.magic_room_turns == 0u;
         uint32_t moves = 0u;

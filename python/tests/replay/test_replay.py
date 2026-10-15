@@ -149,6 +149,9 @@ EXTS = {}  # (battle, side) -> the tracker's view extension at each point specta
 # Features the library models but its view does not show yet: its honest search refuses them with a named, counted
 # public cause, and a spectator rightly stops there (decision 0040: Aegislash-Blade, member_ext.forme not filled).
 VIEW_REFUSED = {"FORME_CHANGE": "DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"}
+# Effects whose record the tracker cannot write without a rule of its own, so it stops by name (no rule logic in Python): a Choice
+# item that would set its lock under Magic Room (step K5, decision 0015 5dm; k5_mr_choice_new). The engine models it.
+EXPLICIT_STOPS = {"unfolded:magic-room-choice-lock"}
 
 
 def allowed_stop(reason):
@@ -157,6 +160,8 @@ def allowed_stop(reason):
     library's view refuses with a public cause (VIEW_REFUSED), or a view bit this tracker does not fold yet
     (lines.UNFOLDED)."""
     if reason in HIDDEN:
+        return True
+    if reason in EXPLICIT_STOPS:
         return True
     if reason.startswith("unfolded:"):
         return reason[len("unfolded:"):] in set(lines.UNFOLDED.values())  # a view bit the tracker does not fold yet
