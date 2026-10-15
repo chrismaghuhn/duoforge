@@ -418,3 +418,37 @@ Still in force: no engine code before this specification is merged. O1 starts af
 
 No engine, generator or Python code; no number assignments; no training; no play anywhere; no other Gen 9 tier (UU,
 RU, ...), whose replays #413 mentions as a later data source; no National Dex; no Ubers; no doubles OU.
+
+## 12. Lessons from the Argentum project
+
+Added 2026-10-15 (owner). Lessons from an earlier project, recorded as guidance for the steps named; they are
+candidates, not decisions, unless a step's gate adopts them.
+
+### A. Content pipeline (for O11, after restructure steps 4, 5 and 12)
+
+- Content is data composed from a few well-named primitives (move families, flags, generated handler tables). New
+  engine vocabulary comes only as a last resort, and always in its own PR.
+- The ~125 Gen 9 OU entries at baseline 1825 are classified first: (a) data only, (b) a composition of existing
+  primitives, (c) a new mechanic (for example Tera, Heavy-Duty Boots, Protosynthesis).
+- (a) and (b) run as an agent loop: the skills `add-entry` and `content-loop`, built on `tools/new_mechanic.py`
+  (restructure step 12), one PR per batch, several sessions in parallel on disjoint packages. (c) gets one PR per
+  mechanic.
+- The order follows the usage share at baseline 1825, so the first batches unlock the most teams.
+- Gate per entry: a recorded reference battle against the pinned Showdown with a fixed seed. Gate per batch: a short
+  random-set fuzz campaign of the format with 0 divergences (the #396 tooling), as a gate before the merge, not after it.
+- Rule: fix the generator or the scaffold, never the generated output. Downgrade an entry to "unsupported" rather than
+  ship an approximation.
+
+### B. Features for unseen entries (for the OU encoder in O12 and the own network)
+
+- Per move, ability and item, four channels are added to the id embedding:
+  1. structured fields from the engine tables (type, category, power, accuracy, PP, priority, flags, target);
+  2. name dropout (about 0.5) in training, with a `name_seen` mask, so that an unseen id falls back to its features;
+  3. a word bag of the description;
+  4. a frozen text embedding, computed once offline and stored as a table in the checkpoint; at run time it is only a
+     lookup.
+- The source for text is Showdown's data (MIT). No texts under non-commercial licenses.
+- Expected value, from the earlier project: the text alone gave little (1–2 points in imitation); the gain came from
+  combining it with diverse training data. So (1) and (2) come first, and (3) and (4) only behind a measured gate.
+- Compatible with the integer CPU evaluation (D4): every feature is a precomputed table.
+- These are candidates, not decisions: each channel needs a measurement against a gate fixed before the run.
