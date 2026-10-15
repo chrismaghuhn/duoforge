@@ -228,3 +228,22 @@ commit with `dirty: false`, the library's sha256, BC6's checkpoint sha256 and th
 - The result goes to #509 as aggregates, with the commit, `dirty: false`, the library's sha256 and BC6's sha256.
 - **Disclosed:** a smoke of 2 games may run before this section's final commit to check the tool; its numbers fix
   nothing and are not reported.
+
+## Results of part 2 (run 2026-10-15): no conclusion, too few paired edits
+
+- **Provenance:** commit `703aee54`, `dirty: false`; library `4bb8d6c7…` (part 1's); BC6 `bda5de8e…`; pool config
+  `ef1abe65…`. Label `bc6-detect`, under the machine lock and the WSL watchdog, not exclusive, at least 8 GB free, in
+  part 1's environment.
+- **Part 1 reproduced:** every game's part-1 rows equal part 1's by their digest. 6,135 built edits; wrong way 1,305
+  own and 1,364 mirror, as in part 1.
+- **Reading: `no_conclusion_too_few`.** The pool kind checks each forme's learnset, and the engine refuses Detect for
+  almost every member.
+  - `detect_not_allowed`: 12,282 rows in the subset and 10,694 outside it, all `DUOFORGE_E_INVALID_ARGUMENT`.
+  - Paired edits: 60 own and 60 mirror (1.0 % of part 1's built edits; 22 distinct edits in 7 games).
+  - In the subset: 43 own and 43 mirror, below the predeclared 200.
+- **Descriptive only** (the subset, 43 paired rows each, 7 games):
+  - median |ΔV_rd|: own 0.022 (cluster 95 % 0.014–0.044), mirror 0.014 (0.011–0.026);
+  - share above 0.02: own 51 % (Wilson 37–65 %), mirror 42 % (28–57 %);
+  - part 1's wrong-way rate on the same rows: removed 23 % / 26 %, replaced 7 % / 9 % (own / mirror).
+- **Meaning:** under learnset-checked setups this probe cannot separate a missing move from a weaker one. Part 1
+  stands as it is.
