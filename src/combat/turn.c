@@ -7787,9 +7787,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                              md->special == DFI_SPECIAL_PHANTOM_FORCE;
     /* Pressure (step G53, dfi_pressure_extra): after the move's own PP and the redirection, before TryMove (the pin's order,
      * sim/battle-actions.ts:473-484). The extra comes off the user's slot as deductPP does, clamped at 0. A locked turn has
-     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP). The state is exact
-     * whatever the move line shows; what the viewer can attribute is the view's business (the fold in events.c). */
-    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
+     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP), the turn of a lockedmove
+     * (Outrage) included (issue 544). The state is exact whatever the move line shows; what the viewer can attribute is the
+     * view's business (the fold in events.c). */
+    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked && !lock_move) {
         const uint32_t extra = dfi_pressure_extra(b, user, target_class, move_id, targets, count);
         if (extra != 0u) {
             dfi_move_slot *pressed = &m->moves[q->move_slot];
