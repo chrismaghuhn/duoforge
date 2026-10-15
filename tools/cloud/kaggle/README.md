@@ -18,7 +18,7 @@ into the repository, and nothing is public on Kaggle.
 ## The rules the commands follow
 
 - **Nothing reaches Kaggle without `--i-have-owner-approval`.** Without the flag a command only shows what it would do.
-- **The token** (owner, 2026-10-15): the owner's Kaggle token lies in WSL at Kaggle's default place, `/home/chris/.kaggle/access_token` (chmod 600).
+- **The token** (owner, 2026-10-15): the owner's Kaggle token lies in WSL at Kaggle's default place, `~/.kaggle/access_token` (chmod 600).
   - The Kaggle CLI finds it there by itself. The script never reads the file and never shows anything of it: it only reports "token present" or "token missing", by the file's existence.
   - Every output of the CLI that is shown has token-like strings (32 or more letters, digits, dashes or underscores) redacted.
   - **Only this script, started by the HauptSession with the owner, calls Kaggle.** No lane and no builder uses `kaggle` directly. The same WSL home holds the lanes' jobs, so the kaggle library lives only in its own venv (below), never in a venv for training, the short run or the tests.
@@ -70,7 +70,7 @@ The resumed run must run at the same commit (refused otherwise). On the same Kag
 
 ## The HauptSession's steps, in this order
 
-1. **The token:** the owner's, at `/home/chris/.kaggle/access_token` in WSL (chmod 600). The script only checks that it is there.
+1. **The token:** the owner's, at `~/.kaggle/access_token` in WSL (chmod 600). The script only checks that it is there.
 2. **The Kaggle venv:** as above, in WSL; every command below runs with it.
 3. **The content list:** `python tools/cloud/kaggle/kaggle_run.py plan --name <name> --data <dirs> --out <plan.json outside the repository>`. Read it and release it (or not).
 4. **Privacy:** `kaggle_run.py privacy --owner <user> --i-have-owner-approval` checks the account (every command below takes `--owner <user>` too).

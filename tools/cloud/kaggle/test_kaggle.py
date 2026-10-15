@@ -47,9 +47,18 @@ STUB = textwrap.dedent('''\
     kind, op = a[0], a[1]
     if op == "list":
         refs = os.environ.get("STUB_" + kind.upper(), "").split(",") + ([appear] if appeared and kind == "datasets" else [])
-        print("ref,title")
-        for r in filter(None, refs):
-            print(r + "," + r.split("/")[-1])
+        refs = [r for r in refs if r]
+        size = min(int(opt("--page-size") or 20), int(os.environ.get("STUB_PAGE_MAX", "200")))  # as kaggle 2.2.4
+        start = int(opt("--page-token") or 0)
+        page = refs[start:start + size]
+        if start + size < len(refs):
+            print("Next Page Token = " + str(start + size))
+        if page:
+            print("ref,title")
+            for r in page:
+                print(r + "," + r.split("/")[-1])
+        else:
+            print("No datasets found" if kind == "datasets" else "Not found")
     elif kind == "datasets" and op == "metadata":
         ref = a[-1]
         meta = {"id": ref} if ref in unknown else {"id": ref, "isPrivate": ref not in public}
@@ -68,7 +77,7 @@ STUB = textwrap.dedent('''\
             shutil.copytree(d, target)
         print("Your private " + ("Dataset" if op == "create" else "Notebook") + " is being created")
     elif op == "status":
-        print(a[2] + ' has status "' + os.environ.get("STUB_STATUS", "complete") + '"')
+        print(a[2] + ' has status "KernelWorkerStatus.' + os.environ.get("STUB_STATUS", "COMPLETE") + '"')
     elif op == "output":
         src = os.environ["STUB_OUTPUT"]
         shutil.copytree(src, opt("-p"), dirs_exist_ok=True)
@@ -254,6 +263,19 @@ class KaggleTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertFalse([c for c in self.calls() if c[-1] == f"{USER}/other" and c[1] == "metadata"])
 
+    def test_every_page_of_the_list_is_checked(self):
+        refs = [f"{USER}/duoforge-{k:03d}" for k in range(5)]
+        pages = {"STUB_DATASETS": ",".join(refs), "STUB_PAGE_MAX": "2"}  # three pages of two
+        r = self.run_tool("privacy", "--owner", USER, "--i-have-owner-approval", **pages)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        listed = [c for c in self.calls() if c[:2] == ["datasets", "list"]]
+        self.assertEqual([c[c.index("--page-token") + 1] if "--page-token" in c else None for c in listed],
+                         [None, "2", "4"])
+        self.assertEqual(sorted(c[-1] for c in self.calls() if c[1] == "metadata"), refs)
+        r = self.run_tool("privacy", "--owner", USER, "--i-have-owner-approval", STUB_PUBLIC=refs[-1], **pages)
+        self.assertEqual(r.returncode, 3, r.stderr)
+        self.assertIn(f"not private: dataset {refs[-1]}", r.stderr)  # the entry on the last page
+
     def test_privacy_is_checked_again_after_each_step(self):
         p = self.make_plan()
         keep = os.path.join(self.tmp, "kept")
@@ -366,9 +388,12 @@ class KaggleTest(unittest.TestCase):
                          ("a" * 40, p["sha256"], 1, 300.0, "Tesla P100", "0.4.38", "12.4"))
         self.assertEqual(m["weights_sha256"], sha(os.path.join(dest, "run", "bc.npz")))
         r = self.run_tool("fetch", "--plan", self.plan, "--job", "bc-short", "--out", dest, "--owner", USER,
-                          "--i-have-owner-approval", STUB_OUTPUT=out, STUB_STATUS="running")
+                          "--i-have-owner-approval", STUB_OUTPUT=out, STUB_STATUS="RUNNING")
         self.assertEqual(r.returncode, 2)
         self.assertIn("still running", r.stderr)
+        r = self.run_tool("fetch", "--plan", self.plan, "--job", "bc-short", "--out", dest, "--owner", USER,
+                          "--i-have-owner-approval", STUB_OUTPUT=out, STUB_STATUS="CANCEL_REQUESTED")
+        self.assertIn("still running", r.stderr)  # a cancel asked for has not ended the notebook yet
 
 
 class PseudonymizeTest(unittest.TestCase):
@@ -384,6 +409,8 @@ class PseudonymizeTest(unittest.TestCase):
         os.makedirs(src)
         with open(os.path.join(src, "manifest.json"), "w", encoding="utf-8") as f:
             json.dump({"parts": [{"part": "part-x-00000"}, {"part": "part-x-00001"}]}, f)
+        with open(os.path.join(src, "replay-dataset.json"), "w", encoding="utf-8") as f:
+            json.dump({"inputs": []}, f)
         games = ((["gen9championsvgc2026regmc-1111111111", "gen9championsvgc2026regmc-2222222222"],
                   [[self.T0, self.T], [self.T, self.R]]), ([], np.zeros((0, 2))))
         for k, (ids, players) in enumerate(games):
@@ -434,7 +461,7 @@ class PseudonymizeTest(unittest.TestCase):
                         data = f.read()
                     self.assertNotIn(b"2222222222", data)
                     self.assertNotIn(str(self.R).encode(), data)
-            self.assertEqual(sorted(os.listdir(out)), ["manifest.json", "part-x-00000", "part-x-00001"])
+            self.assertEqual(sorted(os.listdir(out)), ["manifest.json", "part-x-00000", "part-x-00001", "replay-dataset.json"])
 
     def test_the_same_seed_gives_the_same_ids_another_seed_others(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -474,6 +501,45 @@ class PseudonymizeTest(unittest.TestCase):
                 f.write("not hex\n")
             with self.assertRaisesRegex(SystemExit, "64 hex digits"):
                 pseudonymize.pseudonymize(src, j("c7"), j("m7"), j("p7"), j("bad-seed"))
+            for what, path in (("--seed-file", (j("m8"), j("p8"), os.path.join(src, "seed"))),
+                               ("--map", (os.path.join(src, "m"), j("p9"), j("s9")))):
+                with self.subTest(inside=what), self.assertRaisesRegex(SystemExit, f"{what} lies inside --dataset"):
+                    pseudonymize.pseudonymize(src, j("c8"), *path)
+            self.assertFalse(os.path.exists(os.path.join(src, "seed")))  # never made, so never copied
+
+    def test_a_dataset_it_cannot_fully_rewrite_is_refused_and_a_failure_leaves_no_copy(self):
+        import numpy as np
+        import pseudonymize
+        sys.path.insert(0, os.path.join(kaggle_run.REPO, "python"))
+        from duoforge_replay.dataset import write_npz
+        with tempfile.TemporaryDirectory() as tmp:
+            j = lambda *a: os.path.join(tmp, *a)  # noqa: E731
+            run = lambda src, name: pseudonymize.pseudonymize(  # noqa: E731
+                src, j(name), j(name + "-m"), j(name + "-p"), j("seed"))
+            flat = self.make(j("flat"))  # a dataset written in one directory: dataset.parts() would read it itself
+            os.remove(os.path.join(flat, "replay-dataset.json"))
+            stray = self.make(j("stray"))
+            shutil.copy(os.path.join(stray, "part-x-00000", "games.npz"), os.path.join(stray, "games.npz"))
+            nogames = self.make(j("nogames"))
+            os.remove(os.path.join(nogames, "part-x-00001", "games.npz"))
+            clash = self.make(j("clash"))
+            shutil.copytree(os.path.join(clash, "part-x-00000"), os.path.join(clash, "part-y-00000"))
+            empty = self.make(j("empty"))
+            for part in ("part-x-00000", "part-x-00001"):
+                write_npz(os.path.join(empty, part, "games.npz"), {"replay_id": np.array([], dtype="<U36"),
+                                                                   "players": np.zeros((0, 2), np.uint64)})
+            broken = self.make(j("broken"))  # no players array: the rewrite fails after the copy is made
+            write_npz(os.path.join(broken, "part-x-00001", "games.npz"), {"replay_id": np.array([], dtype="<U36")})
+            for src, name, message in ((flat, "c1", "only a dataset built in parts"),
+                                       (stray, "c2", "an npz outside its parts"),
+                                       (nogames, "c3", "hold no games.npz"),
+                                       (clash, "c4", "the same suffix"),
+                                       (empty, "c5", "holds no game"),
+                                       (broken, "c6", "players")):
+                with self.subTest(message=message):
+                    with self.assertRaisesRegex(BaseException, message):
+                        run(src, name)
+                    self.assertFalse(os.path.exists(j(name)))  # no raw or half-made copy is left
 
 
 class JobTest(unittest.TestCase):
@@ -535,6 +601,10 @@ class JobTest(unittest.TestCase):
             self.assertEqual(proc.stopped, "term")
             self.assertEqual(kaggle_job.run_bc(["bc"], {}, log, 100.0, clock=lambda: 0.0,
                                                popen=lambda *a, **k: Proc(ends=2), poll=0), "done")
+            finished = Proc(ends=None)
+            finished.terminate = lambda: setattr(finished, "ends", 0)  # it had ended (exit 0) just as TERM came
+            self.assertEqual(kaggle_job.run_bc(["bc"], {}, log, 100.0, clock=lambda: 101.0,
+                                               popen=lambda *a, **k: finished, poll=0), "done")
 
 
 if __name__ == "__main__":

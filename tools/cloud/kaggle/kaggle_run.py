@@ -13,7 +13,8 @@ without --i-have-owner-approval nothing reaches Kaggle, the command only shows w
 plan       the content list of a run's dataset: every file with its size, sha256 and origin (training data, networks,
            configurations). Nothing is uploaded before the HauptSession has released this list (README). The
            tournament sun team is refused by name: it never goes to Kaggle (the exception of 2026-10-15 is AWS and #458
-           only), nor does any file inside the repository or any file under a private run directory that is no input.
+           only), nor does any file inside the repository. Which private files are inputs is the HauptSession's
+           release of this list.
 privacy    every dataset and notebook of the account whose name starts with PREFIX, each must be private, else a named
            refusal (exit 3). It runs before and after every upload, start and fetch.
 upload     the plan's files as ONE private dataset named after the plan's sha256 (PREFIX + the first 12 digits), after
@@ -54,6 +55,11 @@ JOBS = ("bc-short", "bc")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}$")
 APPROVAL = "--i-have-owner-approval"
+# kaggle 2.2.4 (kaggle_requirements.txt): what its list prints for no entry, its pages, and the finished states of a
+# notebook's KernelWorkerStatus (CANCEL_REQUESTED still runs)
+EMPTY = {"datasets": "No datasets found", "kernels": "Not found"}
+MAX_PAGES = 50
+FINISHED = ("COMPLETE", "ERROR", "CANCEL_ACKNOWLEDGED")
 
 
 class Refused(SystemExit):
@@ -174,11 +180,25 @@ class Kaggle:
 
     # ---- privacy: every dataset and notebook of PREFIX, by its own metadata; a missing field is a refusal
     def mine(self, kind):
-        out = self.run(kind, "list", "--mine", "--csv", "--page-size", "100")
-        lines = [l for l in out.splitlines() if l.strip()]
-        if not lines or not lines[0].lower().startswith("ref"):
-            raise Refused(f"kaggle {kind} list gave no table: cannot check privacy", 3)
-        refs = [l.split(",")[0].strip() for l in lines[1:]]
+        """Every entry of the account, page by page (kaggle 2.2.4: a first line "Next Page Token = T" while more
+        follow; "No datasets found" / "Not found" for none); any other answer is a refusal."""
+        refs, token = [], None
+        for _ in range(MAX_PAGES):
+            out = self.run(kind, "list", "--mine", "--csv", "--page-size", "200",
+                           *(["--page-token", token] if token else []))
+            lines = [l for l in out.splitlines() if l.strip()]
+            token = None
+            if lines and lines[0].startswith("Next Page Token = "):
+                token = lines.pop(0)[len("Next Page Token = "):].strip()
+            if lines == [EMPTY[kind]]:
+                lines = []
+            elif not lines or not lines[0].lower().startswith("ref,"):
+                raise Refused(f"kaggle {kind} list gave no table: cannot check privacy", 3)
+            refs += [l.split(",")[0].strip() for l in lines[1:]]
+            if not token:
+                break
+        else:
+            raise Refused(f"kaggle {kind} list has more than {MAX_PAGES} pages: cannot check privacy", 3)
         ours = [r for r in refs if r.split("/")[-1].startswith(PREFIX)]
         others = [r for r in ours if r.split("/")[0] != self.user]
         if others:
@@ -357,7 +377,10 @@ def main(argv=None):
             raise Refused("--out is inside the repository: weights are private")
         slug = f"{p['dataset']}-{args.job}"
         status = k.run("kernels", "status", k.ref(slug))
-        if "complete" not in status and "error" not in status and "cancel" not in status:
+        m = re.search(r'has status "(?:KernelWorkerStatus\.)?([A-Za-z_]+)"', status)
+        if not m:
+            raise Refused(f"notebook {slug}: its status cannot be read: {k.mask(status.strip())}")
+        if m.group(1).upper() not in FINISHED:
             raise Refused(f"notebook {slug} is still running: {k.mask(status.strip())}")
         os.makedirs(args.out, exist_ok=True)
         k.run("kernels", "output", k.ref(slug), "-p", args.out)

@@ -113,16 +113,25 @@ def bc_args(job, plan, root):
     return args
 
 
+JAX_PROBE = """import json
+try:
+    import jax, jaxlib
+    print(json.dumps({"jax": jax.__version__, "jaxlib": jaxlib.__version__,
+                      "devices": [str(d) for d in jax.devices()], "backend": jax.default_backend()}))
+except Exception as err:
+    print(json.dumps({"jax": None, "jax_error": type(err).__name__}))
+"""
+
+
 def environment(lib):
     import platform
     info = {"python": platform.python_version(), "library_sha256": sha256(lib) if lib else None}
+    # in a process of its own: a jax started here would hold the GPU's memory through the whole bc run
+    probe = subprocess.run([sys.executable, "-c", JAX_PROBE], capture_output=True, text=True)
     try:
-        import jax
-        import jaxlib
-        info.update(jax=jax.__version__, jaxlib=jaxlib.__version__,
-                    devices=[str(d) for d in jax.devices()], backend=jax.default_backend())
-    except Exception as err:  # noqa: BLE001 -- recorded, the run then fails on its own
-        info.update(jax=None, jax_error=type(err).__name__)
+        info.update(json.loads(probe.stdout.strip().splitlines()[-1]))
+    except (IndexError, ValueError):
+        info.update(jax=None, jax_error=f"probe exit {probe.returncode}")
     smi = shutil.which("nvidia-smi")
     if smi:
         q = subprocess.run([smi, "--query-gpu=name,driver_version,memory.total", "--format=csv,noheader"],
@@ -148,11 +157,11 @@ def run_bc(cmd, env, log, deadline, clock=time.monotonic, popen=subprocess.Popen
                 if clock() >= deadline:
                     p.terminate()
                     try:
-                        p.wait(timeout=60)
+                        code = p.wait(timeout=60)
                     except subprocess.TimeoutExpired:
                         p.kill()
-                        p.wait()
-                    return "partial"
+                        code = p.wait()
+                    return "done" if code == 0 else "partial"  # 0: it had finished just as the deadline came
 
 
 def main(job, root=INPUT, work=WORK):

@@ -17,10 +17,12 @@ pseudonyms are the second.
     python tools/cloud/kaggle/pseudonymize.py --dataset SRC --out DST --map REPLAY_IDS.json --player-map PLAYER_IDS.json
         --seed-file SEED
 
-DST must not exist; DST, the maps and the seed lie outside the repository, and the maps and the seed outside DST. A
-missing seed file is made (32 random bytes, hex); an existing one is used as it is. The copy is checked afterwards: no
-replay id and no player hash of the source is left in any of its files, every row's player class is its source's, and
-one player has one id throughout.
+DST must not exist; DST, the maps and the seed lie outside the repository, and the maps and the seed outside DST and
+outside SRC. SRC must be a dataset built in parts (replay-dataset.json), every part with its games.npz, no npz outside
+the parts and no two parts with the same suffix; anything else is refused. A missing seed file is made (32 random
+bytes, hex); an existing one is used as it is. The copy is checked afterwards: no replay id and no player hash of the
+source is left in any of its files, every row's player class is its source's, and one player has one id throughout.
+Any failure after the copy is made removes it.
 """
 import argparse
 import hashlib
@@ -88,31 +90,52 @@ def label(part, index):
 
 
 def pseudonymize(src, dst, map_path, player_map_path, seed_path):
-    from duoforge_replay.dataset import write_npz  # the dataset's own format: byte-identical for equal arrays
+    from duoforge_replay.dataset import MARKER, write_npz  # the dataset's own format: byte-identical for equal arrays
     for path, what in ((dst, "--out"), (map_path, "--map"), (player_map_path, "--player-map"), (seed_path, "--seed-file")):
         if inside(path, REPO):
             raise SystemExit(f"{what} is inside the repository: the copy, the maps and the seed are private")
     for path, what in ((map_path, "--map"), (player_map_path, "--player-map"), (seed_path, "--seed-file")):
         if inside(path, dst):
             raise SystemExit(f"{what} lies inside --out: it must stay local, apart from the copy")
+        if inside(path, src):
+            raise SystemExit(f"{what} lies inside --dataset: it would be copied into the copy")
     if os.path.exists(dst):
         raise SystemExit("--out exists: give a new directory")
     if not os.path.isfile(os.path.join(src, "manifest.json")):
         raise SystemExit("--dataset holds no manifest.json: not a replay dataset")
+    if not os.path.isfile(os.path.join(src, MARKER)):  # dataset.parts() would read the directory itself
+        raise SystemExit(f"--dataset holds no {MARKER}: only a dataset built in parts is supported")
+    parts = sorted(n for n in os.listdir(src) if os.path.isdir(os.path.join(src, n)))
+    stray = [os.path.relpath(os.path.join(d, n), src) for d, _, names in os.walk(src) for n in names
+             if n.endswith(".npz") and os.path.dirname(os.path.relpath(os.path.join(d, n), src)) not in parts]
+    if stray or not parts or any(not n.startswith("part-") or n.endswith(".tmp") for n in parts):
+        raise SystemExit("--dataset holds an npz outside its parts, no part, or a directory that is no finished "
+                         "part: not supported")
+    missing = [n for n in parts if not os.path.isfile(os.path.join(src, n, "games.npz"))]
+    if missing:
+        raise SystemExit(f"{len(missing)} part(s) of --dataset hold no games.npz (e.g. {missing[0]}): not supported")
+    if len({label(n, 0) for n in parts}) != len(parts):
+        raise SystemExit("two parts of --dataset end in the same suffix: their labels would collide")
     seed = read_seed(seed_path)
     shutil.copytree(src, dst)
+    try:
+        return rewrite(src, dst, parts, map_path, player_map_path, seed, write_npz)
+    except BaseException:  # a failure leaves no raw or half-made copy behind
+        shutil.rmtree(dst, ignore_errors=True)
+        raise
+
+
+def rewrite(src, dst, parts, map_path, player_map_path, seed, write_npz):
     mapping, seen = {}, set()
     originals = set()
-    for part in sorted(os.listdir(dst)):  # every player hash of the dataset, for one id per player throughout
-        games = os.path.join(dst, part, "games.npz")
-        if os.path.isfile(games):
-            with np.load(games, allow_pickle=False) as z:
-                originals.update(int(h) for h in z["players"].reshape(-1))
+    for part in parts:  # every player hash of the dataset, for one id per player throughout
+        with np.load(os.path.join(dst, part, "games.npz"), allow_pickle=False) as z:
+            originals.update(int(h) for h in z["players"].reshape(-1))
+    if not originals:
+        raise SystemExit("--dataset holds no game: nothing to pseudonymize")
     ids_of = player_ids(originals, seed)
-    for part in sorted(os.listdir(dst)):
+    for part in parts:
         games = os.path.join(dst, part, "games.npz")
-        if not os.path.isfile(games):
-            continue
         with np.load(games, allow_pickle=False) as z:
             arrays = {k: z[k] for k in z.files}
         ids = [str(x) for x in arrays["replay_id"]]
@@ -145,17 +168,14 @@ def pseudonymize(src, dst, map_path, player_map_path, seed_path):
                 numbers = {int(x) for x in re.findall(r"\d{6,}", text)}
             if any(rid in text for rid in seen) or numbers & originals:
                 left.append(os.path.relpath(path, dst))
-    for part in sorted(os.listdir(dst)):  # every row keeps its player class; one player has one id throughout
+    for part in parts:  # every row keeps its player class; one player has one id throughout
         games = os.path.join(dst, part, "games.npz")
-        if not os.path.isfile(games):
-            continue
         with np.load(os.path.join(src, part, "games.npz"), allow_pickle=False) as a, np.load(games) as b:
             for h, pid in zip(a["players"].reshape(-1), b["players"].reshape(-1)):
                 if player_class(h) != player_class(pid) or ids_of[int(h)] != int(pid):
                     left.append(f"{part}/games.npz (a player's class or id)")
                     break
     if left:
-        shutil.rmtree(dst)
         raise SystemExit(f"an id of the source is left, or a class changed, in {len(left)} file(s) of the copy "
                          f"(e.g. {left[0]}): the copy was removed")
     with open(map_path, "w", encoding="utf-8") as f:
