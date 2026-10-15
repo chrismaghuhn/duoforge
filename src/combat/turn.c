@@ -7489,6 +7489,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * wherever an Ally Switch put it. Its record names it (DFI_QRES_ORIGINAL_*); a record made in a turn that could not track
      * has none, and that case is refused rather than guessed. */
     uint32_t chosen = q->target;
+    if (run_class == DFI_TARGET_CLASS_RANDOM_NORMAL && dfi_ability(b, m, DFI_ABILITY_STALWART)) {
+        /* A randomNormal move's original target is the one resolveAction drew when the move was queued, and Stalwart aims at it
+         * with no draw of its own (sim/battle-queue.ts:268-273); that draw is not modelled: refused. */
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     if (chosen < DFI_POSITIONS && dfi_ability(b, m, DFI_ABILITY_STALWART)) {
         const uint32_t orig = ((uint32_t)q->reserve >> DFI_QRES_ORIGINAL_SHIFT) & DFI_QRES_ORIGINAL_MASK;
         if (orig == 0u) {
