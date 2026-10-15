@@ -4280,7 +4280,7 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
                  * (data/conditions.ts:193-194): a Focus Sash holder at full
                  * HP that it would faint uses the item and keeps 1 HP. */
                 (void)dfi_sturdy_saves(r, user, &damage);
-                if (dfi_focus_sash_saves(dfi_item_code(r->b, m), m, damage)) {
+                if (dfi_focus_sash_saves(dfi_item_effect_code(r->b, m), m, damage)) {
                     dfi_use_item(r, user);
                     damage = (uint32_t)m->hp - 1u;
                 }
@@ -4641,7 +4641,7 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
-    const uint32_t duration = dfi_holds(b, dfi_at(b, user), DFI_ITEM_LIGHTCLAY) ? DFI_SCREEN_TURNS_MAX : 5u;
+    const uint32_t duration = dfi_holds_effect(b, dfi_at(b, user), DFI_ITEM_LIGHTCLAY) ? DFI_SCREEN_TURNS_MAX : 5u;
     *turns = (uint8_t)duration; /* <= 8 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_START, DUOFORGE_NO_POSITION);
     e.detail = (uint8_t)side;
@@ -5893,7 +5893,7 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
          * differ and the second is not modelled, so a user with either is refused here, never played with the first's
          * arithmetic. */
         const dfi_member *shooter = dfi_at(b, user);
-        if (dfi_ability(b, shooter, DFI_ABILITY_COMPOUNDEYES) || dfi_holds(b, shooter, DFI_ITEM_WIDELENS)) {
+        if (dfi_ability(b, shooter, DFI_ABILITY_COMPOUNDEYES) || dfi_holds_effect(b, shooter, DFI_ITEM_WIDELENS)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
         /* The same for the target's Snow Cloak in snow and Sand Veil in a sandstorm (step G39: 3277/4096 in the same event). */
@@ -5903,7 +5903,7 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
             return DUOFORGE_E_UNSUPPORTED;
         }
         /* And the target's Bright Powder (step G49): it is the same ModifyAccuracy event, after the stages. */
-        if (dfi_holds(b, victim, DFI_ITEM_BRIGHTPOWDER)) {
+        if (dfi_holds_effect(b, victim, DFI_ITEM_BRIGHTPOWDER)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
         /* The rational comparison below is proved for the accuracy 90 only (combat/moves/multiaccuracy.h, checkG33), and so is
@@ -6568,7 +6568,7 @@ static void dfi_red_card(dfi_run *r, uint32_t user, uint32_t holder)
     struct duoforge_battle *b = r->b;
     const dfi_member *hm = dfi_at(b, holder);
     const dfi_member *um = dfi_at(b, user);
-    if (holder == user || hm == NULL || um == NULL || hm->hp == 0u || um->hp == 0u || !dfi_holds(b, hm, DFI_ITEM_REDCARD)) {
+    if (holder == user || hm == NULL || um == NULL || hm->hp == 0u || um->hp == 0u || !dfi_holds_effect(b, hm, DFI_ITEM_REDCARD)) {
         return;
     }
     if (dfi_pos(b, user)->occupant == DFI_OCCUPANT_NONE || !dfi_can_switch(b, user / 2u) ||
@@ -6893,7 +6893,7 @@ static duoforge_status dfi_accuracy_targets(dfi_run *r, uint32_t user, const uin
                  * priority, so the pin's order between them is the holders' Speed, and an exact tie draws. The chain rounds
                  * at each step, so the two orders agree only for some prefixes: when they differ the order is not modelled
                  * (E_UNSUPPORTED, never a guess). With no powder the chain is Wide Lens's alone. */
-                const bool acc_bright_powder = base_accuracy != 0u && dfi_holds(r->b, acc_target, DFI_ITEM_BRIGHTPOWDER);
+                const bool acc_bright_powder = base_accuracy != 0u && dfi_holds_effect(r->b, acc_target, DFI_ITEM_BRIGHTPOWDER);
                 if (acc_wide_lens && acc_bright_powder) {
                     uint32_t wide_first = acc_chain;
                     uint32_t powder_first = acc_chain;
@@ -7274,7 +7274,7 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
                 base_accuracy = 0u;
             }
             const bool acc_compound_eyes = base_accuracy != 0u && dfi_ability(b, hm, DFI_ABILITY_COMPOUNDEYES);
-            const bool acc_wide_lens = base_accuracy != 0u && dfi_holds(b, hm, DFI_ITEM_WIDELENS);
+            const bool acc_wide_lens = base_accuracy != 0u && dfi_holds_effect(b, hm, DFI_ITEM_WIDELENS);
             const uint32_t move_type = dfi_move_type_now(r, hm, md);
             const bool powder_move = (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_POWDER) != 0u;
             const bool pre_try = hit[0];
@@ -7419,7 +7419,7 @@ static duoforge_status dfi_smart_targets(dfi_run *r, uint32_t user, uint32_t tar
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t flat = i == 0u ? targets[0] : partner;
         const dfi_member *held = dfi_at(b, flat);
-        if (*dfi_sub_hp_of(b, flat) != 0u || dfi_holds(b, held, DFI_ITEM_REDCARD) || dfi_holds(b, held, DFI_ITEM_EJECTBUTTON)) {
+        if (*dfi_sub_hp_of(b, flat) != 0u || dfi_holds_effect(b, held, DFI_ITEM_REDCARD) || dfi_holds_effect(b, held, DFI_ITEM_EJECTBUTTON)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
     }
@@ -7450,7 +7450,7 @@ static duoforge_status dfi_partial_trap_start(dfi_run *r, uint32_t user, uint32_
     tp->trap_turns = (uint8_t)turns; /* wide-operands-reviewed: 5 or 6 */
     tp->trap_source = (uint8_t)(user + 1u); /* wide-operands-reviewed: <= 4 */
     tp->trap_move = (uint16_t)(move_id + 1u); /* wide-operands-reviewed: a move id + 1 */
-    tp->trap_band = dfi_holds(b, dfi_at(b, user), DFI_ITEM_BINDINGBAND) ? 1u : 0u;
+    tp->trap_band = dfi_holds_effect(b, dfi_at(b, user), DFI_ITEM_BINDINGBAND) ? 1u : 0u;
     tp->trap_elapsed = 0u; /* step G90: the residual phases counted from the start (decision 0060, hidden counters) */
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, target, DUOFORGE_CAUSE_MOVE, move_id, user);
     dfi_emit(r, &e);
@@ -7583,7 +7583,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * the lock stays until the holder leaves the field. Struggle sets none:
      * Struggle is not in the move slots, so its lock would end at the next
      * DisableMove before it could matter. */
-    if (dfi_holds(r->b, m, DFI_ITEM_CHOICESCARF) && q->move_slot < DUOFORGE_MAX_MOVE_SLOTS &&
+    if (dfi_holds_effect(r->b, m, DFI_ITEM_CHOICESCARF) && q->move_slot < DUOFORGE_MAX_MOVE_SLOTS &&
         ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u) {
         pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_CHOICE_LOCK);    /* wide-operands-reviewed: < 256 */
         pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u);           /* wide-operands-reviewed: <= 4 */
@@ -7925,7 +7925,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             dfi_fail_still(r, user);
             return DUOFORGE_OK;
         }
-        const uint32_t screen = dfi_holds(r->b, m, DFI_ITEM_LIGHTCLAY) ? DFI_SCREEN_TURNS_MAX : 5u;
+        const uint32_t screen = dfi_holds_effect(r->b, m, DFI_ITEM_LIGHTCLAY) ? DFI_SCREEN_TURNS_MAX : 5u;
         const uint32_t duration = md->side_condition == DFI_SIDE_CONDITION_TAILWIND ? DFI_TAILWIND_TURNS_MAX : screen;
         *turns = (uint8_t)duration; /* <= 8 */
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_START, DUOFORGE_NO_POSITION);
@@ -8147,7 +8147,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * target, in the accuracy loop below. The target's Bright Powder (step G49, priority -2 like Wide Lens) joins the
      * chain there; the two of priority -2 are checked for order in that loop. */
     const bool acc_compound_eyes = base_accuracy != 0u && dfi_ability(r->b, m, DFI_ABILITY_COMPOUNDEYES);
-    const bool acc_wide_lens = base_accuracy != 0u && dfi_holds(r->b, m, DFI_ITEM_WIDELENS);
+    const bool acc_wide_lens = base_accuracy != 0u && dfi_holds_effect(r->b, m, DFI_ITEM_WIDELENS);
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
     uint32_t move_type = dfi_move_type_now(r, m, md);
@@ -8634,7 +8634,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                  * on their own. */
                 const dfi_member *tm = dfi_at(b, targets[i]);
                 (void)dfi_sturdy_saves(r, targets[i], &damage[i]); /* step G39, priority -30: before the Sash's -40, which then sees hp - 1 */
-                if (dfi_focus_sash_saves(dfi_item_code(b, tm), tm, damage[i])) {
+                if (dfi_focus_sash_saves(dfi_item_effect_code(b, tm), tm, damage[i])) {
                     dfi_use_item(r, targets[i]);
                     damage[i] = (uint32_t)tm->hp - 1u;
                 }
@@ -9051,7 +9051,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         for (uint32_t i = 0u; i < count; ++i) {
             if (hit[i] && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u &&
-                dfi_holds(r->b, dfi_at(b, targets[i]), DFI_ITEM_ROCKYHELMET)) {
+                dfi_holds_effect(r->b, dfi_at(b, targets[i]), DFI_ITEM_ROCKYHELMET)) {
                 const uint32_t helmet = (uint32_t)m->hp_max / 6u;
                 st = dfi_deal(r, user, helmet == 0u ? 1u : helmet, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_ROCKYHELMET,
                               targets[i], DFI_DMG_ITEM);
@@ -9335,7 +9335,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             for (uint32_t i = 0u; i < count; ++i) {
                 const uint32_t t = targets[i];
                 const dfi_member *tm = dfi_at(b, t);
-                if (hit[i] && t != user && tm != NULL && tm->hp != 0u && dfi_holds(b, tm, DFI_ITEM_EJECTBUTTON) &&
+                if (hit[i] && t != user && tm != NULL && tm->hp != 0u && dfi_holds_effect(b, tm, DFI_ITEM_EJECTBUTTON) &&
                     dfi_can_switch(b, t / 2u) && ((r->drag_pending >> t) & 1u) == 0u) { /* items.ts:270 (forceSwitchFlag) */
                     /* AfterMoveSecondary is no left-to-right event (sim/battle.ts:788-796 lists Invulnerability, TryHit,
                      * DamagingHit and EntryHazard only): the handlers go by speedSort, the faster holder first. The one that
@@ -9439,7 +9439,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * runs before this, sets it (drag_pending, step G46). */
     /* Sheer Force (step G61): the holder's own AfterMoveSecondarySelf is not run for a move it stripped
      * (sim/battle-actions.ts:536, useMoveInner), so no Life Orb recoil and no user Emergency Exit from it. */
-    if (any && dfi_holds(r->b, m, DFI_ITEM_LIFEORB) && ((r->drag_pending >> user) & 1u) == 0u &&
+    if (any && dfi_holds_effect(r->b, m, DFI_ITEM_LIFEORB) && ((r->drag_pending >> user) & 1u) == 0u &&
         !dfi_sf_strips(r->b, m, md)) {
         const uint32_t recoil = (uint32_t)m->hp_max / 10u;
         const uint32_t user_before = m->hp;
