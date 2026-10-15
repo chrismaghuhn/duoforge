@@ -2900,7 +2900,8 @@ class FoePressure:
         if kind == EV['SWAP']:
             # Ally Switch (step G80): the user and its ally exchange their slots, the occupants with them (sim/battle.ts:1588-1607)
             self.own_occ[v][slot], self.own_occ[v][other % 2] = self.own_occ[v][other % 2], self.own_occ[v][slot]
-        elif kind == EV['SWITCH']:
+        elif kind in (EV['SWITCH'], EV['DRAG']):
+            # a drag (step G46: Roar, Whirlwind, Dragon Tail) enters a member as a switch does (issue 541)
             self.own_occ[v][slot] = ident
             self.alive[v][ident] = hp != 0
             self.has_pressure[v][ident] = self.teams[v][ident]['ability'] == self.pressure
