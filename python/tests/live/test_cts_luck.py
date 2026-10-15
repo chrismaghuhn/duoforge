@@ -83,19 +83,29 @@ class MeterTest(unittest.TestCase):
         self.assertEqual(out["result"], 1.0)
         # turn 1 (its state: the foe's replacement, a wait point), turn 2, and turn 3, which ends the battle: the foe's
         # Ampharos faints before it moves, its move never shows, and the turn is mixed over its move options. Turns 1
-        # and 2 are mixed too: the foe's aimed moves have more than one target option, and a target line does not
-        # confirm the target the foe chose (#512 S3, TARGET_UNKNOWN until the engine answers it, #523)
+        # and 2 were mixed after #512 S3 (the foe's aimed moves have more than one target option, TARGET_UNKNOWN); the
+        # engine's replay of each candidate in the search's own worlds narrows them to the pair whose step reaches the
+        # lines' targets with the faints of the log before the move (README, the third comparison): the trace's choice
         self.assertEqual(len(out["turns"]), 3)
-        self.assertEqual(out["mixed"], [True, True, True])
+        self.assertEqual(out["mixed"], [False, False, True])
+        self.assertEqual(out["mixed_before"], [True, True, True])
         self.assertEqual(out["dropped"], [0, 0, 0])  # the true team: no world the turns refute
+        self.assertEqual(out["not_reproduced"], [0, 0, 0])
+        # both foe slots compared in all 16 worlds of turns 1 and 2; a seed whose faints before a move differ from the
+        # log's is discarded (turn 2: Garchomp falls to the ally's Earthquake in some seeds, never in the log)
+        self.assertEqual((out["targets"]["worlds-compared"], out["targets"]["slots-compared"]), (32, 64))
+        self.assertNotIn("worlds-not-reproduced", out["targets"])
+        self.assertGreater(out["targets"]["seeds-discarded"], 0)
         for luck in out["turns"]:
             self.assertTrue(-2.0 <= luck <= 2.0, luck)
         foe_inputs = [self.trace["steps"][k]["input"]["p2"] for k in (1, 3, 4)]
         self.assertEqual(len(played), 3)
-        for turn, worlds in zip(foe_inputs, played):
-            for pairs in worlds:  # every world: a set of more than one pair that holds the trace's choice
-                self.assertIn(turn, pairs)
-                self.assertGreater(len(pairs), 1)
+        for turn, worlds in zip(foe_inputs[:2], played[:2]):
+            for pairs in worlds:  # every world: exactly the trace's choice
+                self.assertEqual(pairs, {turn})
+        for pairs in played[2]:  # every world: a set of more than one pair that holds the trace's choice
+            self.assertIn(foe_inputs[2], pairs)
+            self.assertGreater(len(pairs), 1)
 
 
     def test_a_world_the_turn_refutes_is_left_out(self):
@@ -110,7 +120,7 @@ class MeterTest(unittest.TestCase):
         self.assertGreater(out["dropped"][0], 0)
         self.assertLess(out["dropped"][0], out["worlds"])
         self.assertEqual(len(played[0]), out["worlds"] - out["dropped"][0])
-        for pairs in played[0]:  # every world left: a target set (#512 S3) that holds the trace's foe choice
+        for pairs in played[0]:  # every world left: its narrowed set holds the trace's foe choice
             self.assertIn(self.trace["steps"][1]["input"]["p2"], pairs)
 
 
@@ -182,7 +192,7 @@ class MeterTest(unittest.TestCase):
             got = ev.luck_all(logs, BOT, ROOT, self.path, sha, self.path, sha, bot_commit="1ffa6a03")
         self.assertEqual((got["battles"], got["finished"]), (1, 1))
         self.assertEqual(got["turns_excluded"], {})
-        self.assertEqual((got["turns_valued"], got["turns_mixed"]), (3, 3))
+        self.assertEqual((got["turns_valued"], got["turns_mixed"]), (3, 1))  # turns 1 and 2 narrowed to one pair
         self.assertEqual((got["samples"], got["checkpoint_sha256"]), (cts_luck.SAMPLES, sha))
         self.assertEqual(got["result"]["mean"], 1.0)
         text = json.dumps(got)
