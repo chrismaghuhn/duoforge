@@ -1,0 +1,24 @@
+{
+  "name": "fz521_mega_sol_sand",
+  "purpose": "Mega Sol against a sandstorm's Special Defense (issue 521): Meganium-Mega, p2b, hits its ally Tyranitar with Energy Ball in a sandstorm (step 1). Sandstorm's onModifySpD reads the defender's effectiveWeather with the weather as the effect (data/conditions.ts:640-645), which is sun while the Mega Sol holder is the active Pokemon (sim/pokemon.ts:2190-2198): no 1.5x. A battle of the differential fuzzing of issue 396 (free random sets, fz_2_42), cut after its step 2: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,9156d54534d0e6ed5c74b8b7b943f509557f0a44482ed7c6ab443ca0efcd1822",
+  "teams": [
+    "pincurchin (M) @ brightpowder\nAbility: electricsurge\nLevel: 50\nEVs: 11 HP / 7 Atk / 10 Def / 15 SpA / 10 SpD / 13 Spe\nNaughty Nature\n- bodyslam\n- thunder\n- surf\n- scald\n\npawmot (F) @ mistyseed\nAbility: voltabsorb\nLevel: 50\nEVs: 14 HP / 12 Atk / 6 Def / 6 SpA / 13 SpD / 15 Spe\nBrave Nature\n- firepunch\n- wildcharge\n- seedbomb\n- encore\n\nbeedrill (M) @ magnet\nAbility: swarm\nLevel: 50\nEVs: 16 HP / 7 Atk / 6 Def / 14 SpA / 14 SpD / 9 Spe\nJolly Nature\n- sludgebomb\n- protect\n- thief\n- bugbite\n\nkingambit (M) @ lopunnite\nAbility: pressure\nLevel: 50\nEVs: 10 HP / 13 Atk / 16 Def / 10 SpA / 6 SpD / 11 Spe\nSerious Nature\n- guillotine\n- xscissor\n- quickguard\n- airslash\n\ndragapult (M) @ pinsirite\nAbility: infiltrator\nLevel: 50\nEVs: 9 HP / 9 Atk / 10 Def / 7 SpA / 10 SpD / 11 Spe\nTimid Nature\n- outrage\n- dragonclaw\n- surf\n- uturn\n\nhawlucha (F) @ passhoberry\nAbility: unburden\nLevel: 50\nEVs: 8 HP / 8 Atk / 14 Def / 15 SpA / 10 SpD / 11 Spe\nRash Nature\n- stoneedge\n- steelwing\n- helpinghand\n- firepunch",
+    "tyranitar (F)\nAbility: sandstream\nLevel: 50\nEVs: 11 HP / 11 Atk / 11 Def / 13 SpA / 7 SpD / 13 Spe\nSerious Nature\n- darkpulse\n- powergem\n- fireblast\n- outrage\n\nfarigiraf (F) @ scolipite\nAbility: armortail\nLevel: 50\nEVs: 13 HP / 7 Atk / 13 Def / 13 SpA / 8 SpD / 12 Spe\nMild Nature\n- chargebeam\n- roar\n- psychicterrain\n- thunderwave\n\npelipper (M) @ chopleberry\nAbility: drizzle\nLevel: 50\nEVs: 1 HP / 2 Atk / 1 Def / 1 SpD / 3 Spe\nJolly Nature\n- hyperbeam\n- steelwing\n- weatherball\n- gunkshot\n\nmeganium (F) @ meganiumite\nAbility: overgrow\nLevel: 50\nEVs: 12 HP / 15 Atk / 10 Def / 7 SpA / 9 SpD / 13 Spe\nLax Nature\n- weatherball\n- energyball\n- lightscreen\n- petalblizzard\n\nvivillon (F) @ wacanberry\nAbility: friendguard\nLevel: 50\nEVs: 5 HP / 4 Atk / 7 Def / 4 SpA / 1 SpD / 3 Spe\nModest Nature\n- substitute\n- gigadrain\n- confuseray\n- irondefense\n\ndecidueyehisui (M) @ dragonfang\nAbility: overgrow\nLevel: 50\nEVs: 8 HP / 10 Atk / 16 Def / 10 SpA / 10 SpD / 12 Spe\nDocile Nature\n- scaryface\n- steelwing\n- grassyglide\n- haze"
+  ],
+  "choices": [
+    {
+      "p1": "team 3164",
+      "p2": "team 1426"
+    },
+    {
+      "p1": "move 1 1, move 4 1",
+      "p2": "move 4, move 2 -1 mega"
+    },
+    {
+      "p2": "switch 3, pass"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "fz519_uturn_sub",
+  "purpose": "U-turn into a Substitute (issue 519): Golisopod, p2a, breaks Chesnaught's Substitute with U-turn (step 1) and switches out at step 2. runMoveEffects sets the selfSwitch flag for the null target too (data/mods/champions/scripts.ts:349-352, sim/battle-actions.ts:1290-1296, 1311-1312). A battle of the differential fuzzing of issue 396 (free random sets, fz_144_13), cut after its step 2: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,9a4300db056d51cf9f8555ede278c959416c4336b1b1047888692a0e50152964",
+  "teams": [
+    "sableye (F) @ mentalherb\nAbility: prankster\nLevel: 50\nEVs: 7 HP / 5 Atk / 8 Def / 10 SpA / 9 SpD / 7 Spe\nGentle Nature\n- quash\n- skittersmack\n- reflect\n- encore\n\nindeedeef (F) @ aggronite\nAbility: psychicsurge\nLevel: 50\nEVs: 12 HP / 7 Atk / 8 Def / 16 SpA / 12 SpD / 11 Spe\nBashful Nature\n- psychup\n- psyshock\n- skillswap\n- drainpunch\n\nsandaconda (M) @ manectite\nAbility: sandveil\nLevel: 50\nEVs: 11 HP / 7 Atk / 17 Def / 8 SpA / 13 SpD / 10 Spe\nImpish Nature\n- scaryface\n- rocktomb\n- ironhead\n- stealthrock\n\npinsir (M) @ alakazite\nAbility: hypercutter\nLevel: 50\nEVs: 1 HP\nNaughty Nature\n- bind\n- superpower\n- quickattack\n- stoneedge\n\nbaxcalibur (M) @ skarmorite\nAbility: thermalexchange\nLevel: 50\nEVs: 13 HP / 8 Atk / 9 Def / 8 SpA / 13 SpD / 15 Spe\nAdamant Nature\n- crunch\n- highhorsepower\n- raindance\n- helpinghand\n\nsirfetchd (M) @ charcoal\nAbility: steadfast\nLevel: 50\nEVs: 13 HP / 18 Atk / 9 Def / 4 SpA / 8 SpD / 14 Spe\nJolly Nature\n- finalgambit\n- aerialace\n- brickbreak\n- dualwingbeat",
+    "quaquaval (F) @ magnet\nAbility: torrent\nLevel: 50\nEVs: 1 HP / 1 Atk / 3 SpA / 1 SpD / 1 Spe\nQuirky Nature\n- aquacutter\n- closecombat\n- wavecrash\n- lowkick\n\nluxray (F) @ galladite\nAbility: intimidate\nLevel: 50\nEVs: 14 HP / 11 Atk / 10 Def / 15 SpA / 9 SpD / 7 Spe\nLax Nature\n- crunch\n- raindance\n- confuseray\n- thunder\n\nemolga (F) @ garchompite\nAbility: static\nLevel: 50\nEVs: 6 HP / 3 Atk / 4 Def / 5 SpA / 2 SpD / 9 Spe\nNaive Nature\n- chargebeam\n- risingvoltage\n- taunt\n- lightscreen\n\nampharos (F) @ sablenite\nAbility: static\nLevel: 50\nEVs: 13 HP / 19 Atk / 10 Def / 7 SpA / 5 SpD / 12 Spe\nImpish Nature\n- dazzlinggleam\n- megakick\n- discharge\n- roar\n\ngolisopod (F) @ golisopite\nAbility: emergencyexit\nLevel: 50\nEVs: 7 HP / 16 Atk / 14 Def / 5 SpA / 10 SpD / 14 Spe\nBashful Nature\n- rockslide\n- uturn\n- liquidation\n- suckerpunch\n\nchesnaught (M) @ raichunitex\nAbility: overgrow\nLevel: 50\nEVs: 2 HP / 5 Atk / 3 Def / 2 SpA / 3 SpD / 8 Spe\nQuiet Nature\n- helpinghand\n- endeavor\n- stoneedge\n- substitute"
+  ],
+  "choices": [
+    {
+      "p1": "team 5324",
+      "p2": "team 5621"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    }
+  ]
+}

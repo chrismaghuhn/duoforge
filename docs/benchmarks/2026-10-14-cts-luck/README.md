@@ -164,6 +164,29 @@ The comparison with `duoforge_learn.luck` on battles whose state is known is a *
     - **A move locked by Outrage at a replacement, 1:** `g56_outrage_cut`.
   - **The meter** values such a turn at the pivot from its particles, which the engine encodes itself (`search._encoded`, no public record), and counts the rest as a partial turn. luck.py has no true world there. These turns are therefore missing from the comparison, not wrongly valued.
 
+### The second comparison, after S3 (2026-10-15)
+
+Run as the HauptSession asked: after #512 S3 (#540) made a targeted foe move with more than one possible target `TARGET_UNKNOWN`, so that the meter mixes more turns. The tool, the criterion and the battles are the same: `gate-battles.txt`, 196 battles. The first result above stays as it is.
+
+- **Provenance:**
+  - the commit is `ec2e6dc4` (main with #540), clean;
+  - the library is the WSL build of that commit, sha256 `e52c40108d251d77bd00627b2b114766cf70e857eae826006674b2fa78328332`;
+  - BC6 sha256 `bda5de8e4e960f3df41b029cd4d3d87fc48838fdd47c8562a78649e222ee9f39`;
+  - under the lock and the watchdog, not exclusive, with 14 GB free at the start.
+
+| Run | Turns | Mixed turns (share) | Mean difference, 95% interval | Battle-clustered | Correlation | Unmixed: turns, mean, 95% | By the criterion fixed in advance |
+|---|---|---|---|---|---|---|---|
+| first, `8c9e8933` / `bc5b7bd6` | 1,448 | 238 (16%) | +0.0060 [0.0017, 0.0102] | ±0.0050 | 0.773 | 1,210, −0.0019 ± 0.0029 | passed, narrowly |
+| **after S3**, `ec2e6dc4` | 1,448 | **917 (63%)** | **+0.0177 [0.0111, 0.0242]** | ±0.0096 | 0.606 | 531, −0.0019 ± 0.0034 | **not passed** |
+
+- **By the criterion fixed in advance, the second comparison fails:** |mean| is above 0.01, and the interval does not include 0.
+- **The mixed turns carry the difference again.** Derived from the two means, the 917 mixed turns run about +0.029 per turn above luck.py (no interval computed). The 531 unmixed turns agree with luck.py, their interval includes 0. S3 moved 679 turns from unmixed to mixed. A mixed turn's bias is smaller than before (+0.029 against +0.046), but there are almost four times as many.
+- **Dropped out, by name:** the same as in the first run.
+  - player battles: redraw cap 29, Outrage lock 1;
+  - the meter's turns: `no-decision-record` 302, `not-turn:REPLACEMENT` 119, `not-searched:unreconstructible` 81, `not-searched:forced` 15, `not-turn:PIVOT` 1, `foe-action-unknown` 1, `leaf-refused` 1;
+  - luck.py's turns: `hidden-counter` 77, `true-record-unsupported:engine-refuses-record` 32, `true-record-unsupported:pivot-switch-reason-unknown` 2.
+- **What follows from it** is the HauptSession's decision. By the README, a failed gate means no live report until the cause is reported. The cause is the known one: the weighting of hidden foe actions by BC6 (#509), now on 63% of the turns.
+
 ### After the fact (after seeing the result)
 
 The HauptSession set this on 2026-10-15, after the result above was known; it is not part of the definition fixed in advance.

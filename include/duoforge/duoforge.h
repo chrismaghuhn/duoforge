@@ -348,7 +348,9 @@ duoforge_status duoforge_data_forme_moves(const duoforge_context *ctx, uint32_t 
    item below duoforge_data_count(ITEM) is legal (0 = none; the Item Clause
    allows each item once per side); every nature below duoforge_data_count(
    NATURE) is legal; Stat Points are at most DUOFORGE_STAT_POINTS_MAX per stat
-   and DUOFORGE_STAT_POINTS_TOTAL_MAX in all. */
+   and DUOFORGE_STAT_POINTS_TOTAL_MAX in all, and a member with the nature
+   Serious has at least one (the pinned validator refuses exactly 0 with
+   Serious, issue 406). */
 
 /* ---- static features of the data rows (decision 0020) ----
    What a learner may know about a forme, move, item, ability or nature without a

@@ -1,0 +1,52 @@
+{
+  "name": "fz519_volt_switch_sub",
+  "purpose": "Volt Switch into a Substitute (issue 519): Rotom, p2b, breaks Altaria's Substitute with Volt Switch (step 8); runMoveEffects' selfSwitch runs for the null target (sim/battle-actions.ts:1290-1296, 1311-1312), so Rotom switches out (step 9). A battle of the differential fuzzing of issue 396 (free random sets, fz_3_38), cut after its step 9: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,aa61510e821906a8e21a54f0e3d9224d02edc8e98958a291c6446385f9b43ce0",
+  "teams": [
+    "altaria (F) @ mawilite\nAbility: cloudnine\nLevel: 50\nEVs: 13 HP / 10 Atk / 9 Def / 6 SpA / 15 SpD / 13 Spe\nRelaxed Nature\n- icebeam\n- protect\n- weatherball\n- substitute\n\nbastiodon (M) @ salamencite\nAbility: soundproof\nLevel: 50\nEVs: 5 HP / 11 Atk / 17 Def / 13 SpA / 13 SpD / 7 Spe\nRash Nature\n- heavyslam\n- scaryface\n- outrage\n- trailblaze\n\ngrimmsnarl (M) @ brightpowder\nAbility: frisk\nLevel: 50\nEVs: 13 HP / 11 Atk / 15 Def / 8 SpA / 9 SpD / 10 Spe\nMild Nature\n- imprison\n- bodypress\n- fakeout\n- shadowclaw\n\nclefable (F) @ garchompitez\nAbility: unaware\nLevel: 50\nEVs: 13 HP / 12 Atk / 9 Def / 15 SpA / 9 SpD / 8 Spe\nMild Nature\n- skillswap\n- encore\n- tickle\n- thunderpunch\n\ntyrantrum (M) @ scovillainite\nAbility: rockhead\nLevel: 50\nEVs: 9 HP / 8 Atk / 17 Def / 8 SpA / 9 SpD / 4 Spe\nModest Nature\n- dragonclaw\n- bodyslam\n- ironhead\n- brickbreak\n\nsimisear (M) @ blackbelt\nAbility: blaze\nLevel: 50\nEVs: 15 HP / 10 Atk / 12 Def / 10 SpA / 10 SpD / 9 Spe\nLax Nature\n- overheat\n- crunch\n- blazekick\n- flareblitz",
+    "rotomheat @ steelixite\nAbility: levitate\nLevel: 50\nEVs: 12 HP / 9 Atk / 8 Def / 6 SpA / 7 SpD / 15 Spe\nImpish Nature\n- voltswitch\n- eerieimpulse\n- electricterrain\n- willowisp\n\ngarganacl (M) @ damprock\nAbility: sturdy\nLevel: 50\nEVs: 10 HP / 11 Atk / 15 Def / 10 SpA / 10 SpD / 10 Spe\nModest Nature\n- stompingtantrum\n- heavyslam\n- stoneedge\n- powergem\n\numbreon (M) @ cameruptite\nAbility: synchronize\nLevel: 50\nEVs: 4 HP / 5 Atk / 10 Def / 3 SpA / 3 SpD / 5 Spe\nHardy Nature\n- calmmind\n- psychup\n- weatherball\n- psychic\n\njolteon (F) @ grassyseed\nAbility: voltabsorb\nLevel: 50\nEVs: 10 HP / 15 Atk / 11 Def / 9 SpA / 11 SpD / 10 Spe\nDocile Nature\n- hypervoice\n- charm\n- calmmind\n- doubleedge\n\nprimarina (M) @ silverpowder\nAbility: torrent\nLevel: 50\nEVs: 6 HP / 10 Atk / 7 Def / 10 SpA / 6 SpD / 8 Spe\nDocile Nature\n- protect\n- waterpulse\n- surf\n- amnesia\n\ngholdengo @ charcoal\nAbility: goodasgold\nLevel: 50\nEVs: 11 HP / 9 Atk / 15 Def / 5 SpA / 14 SpD / 12 Spe\nQuiet Nature\n- lowsweep\n- sandstorm\n- heavyslam\n- nastyplot"
+  ],
+  "choices": [
+    {
+      "p1": "team 3124",
+      "p2": "team 6431"
+    },
+    {
+      "p1": "move 4 -2, move 4",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 1 2, move 2 2"
+    },
+    {
+      "p1": "move 2 2, move 1 1",
+      "p2": "move 2, move 2 -1"
+    },
+    {
+      "p1": "move 4 1, move 2",
+      "p2": "move 1 -2, move 4 1"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 4, switch 4"
+    },
+    {
+      "p1": "move 2 1, move 3 2",
+      "p2": "switch 4, move 2 1"
+    },
+    {
+      "p1": "move 4 2, move 4",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 4 1, move 1 2",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    }
+  ]
+}

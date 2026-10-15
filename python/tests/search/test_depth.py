@@ -11,7 +11,7 @@ import numpy as np
 
 import duoforge
 from duoforge import _layout, features
-from duoforge_search import SearchError, belief, honest, infokey, matrix
+from duoforge_search import SearchError, belief, honest, infokey, lookahead, matrix
 from python.tests.search.test_infokey import Recorded
 from python.tests.search.test_search import _v2s
 
@@ -268,8 +268,9 @@ class TwoTurns(Depth):
             self.assertNotEqual(a["tables"], b["tables"])
 
     def refusing(self, refuse):
-        """A patch of evaluators.make whose evaluator marks the depth-2 leaves refuse(choices) selects as refused
-        (E_UNSUPPORTED), as C reports a refused step."""
+        """A patch of evaluators.make whose evaluator marks the depth-2 leaves refuse(envs, choices, asked, p) selects
+        as refused (E_UNSUPPORTED), as C reports a refused step: envs, each leaf's depth-1 node; asked (leaves, 2), the
+        seats that node asks; p, our seat."""
         class Refusing:
             name = "jax"
 
@@ -277,9 +278,11 @@ class TwoTurns(Depth):
                 self.inner = inner
 
             def leaves(self, source, seed, keys, viewers, root_envs, samples, choices, cut, costs=None):
+                envs = np.asarray(root_envs)
+                selected = refuse(envs, choices, source.requests["requested"][envs] != 0, int(viewers[0]))
                 got = self.inner.leaves(source, seed, keys, viewers, root_envs, samples, choices, cut, costs)
                 step = got.step.copy()
-                step[refuse(np.asarray(root_envs), choices)] = C["DUOFORGE_E_UNSUPPORTED"]
+                step[selected] = C["DUOFORGE_E_UNSUPPORTED"]
                 return got._replace(step=step)
 
         return mock.patch.object(honest.evaluators, "make",
@@ -289,9 +292,9 @@ class TwoTurns(Depth):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             _, base = self.abc_turn(ctx, steps_left=UNLIMITED, **DEPTH2)
             # Every depth-2 leaf below root row 0 (node env < m * s) refused: row 0 leaves the solve, named.
-            with self.refusing(lambda envs, choices: envs < 2 * 2):
+            with self.refusing(lambda envs, choices, asked, p: envs < 2 * 2):
                 _, part = self.abc_turn(ctx, steps_left=UNLIMITED, **DEPTH2)
-            with self.refusing(lambda envs, choices: np.ones(envs.size, bool)):
+            with self.refusing(lambda envs, choices, asked, p: np.ones(envs.size, bool)):
                 actions, every = self.abc_turn(ctx, steps_left=UNLIMITED, **DEPTH2)
         for b, p in ((base[x], part[x]) for x in searched(self, base)):
             self.assertEqual(p["kind"], "searched")
@@ -303,6 +306,85 @@ class TwoTurns(Depth):
             self.assertEqual((r["kind"], r["reason"], r["causes"]),
                              ("unreconstructible", "engine_refused_leaves", ["engine_refused_leaves"]))
             self.assertEqual(action, b["raw"])  # played raw and counted, as at depth 1
+
+    @staticmethod
+    def second_candidate(envs, choices, asked, p):
+        """The leaves of our second candidate at every node that asks us (#536): a refused leaf drops only its own
+        candidate at its information set, which keeps its first."""
+        own = choices["slot"][:, p, 0].astype(np.int64) * lookahead.OPTIONS + choices["slot"][:, p, 1]
+        selected = np.zeros(envs.size, bool)
+        for e in np.unique(envs[asked[:, p]]):
+            pairs = list(dict.fromkeys(own[envs == e].tolist()))
+            if len(pairs) > 1:
+                selected |= (envs == e) & (own == pairs[1])
+        return selected
+
+    @staticmethod
+    def foe_only(envs, choices, asked, p):
+        """The leaves of every depth-1 node that asks only the foe (#536)."""
+        return ~asked[:, p] & asked[:, 1 - p]
+
+    def solved_trees(self, ctx, refuse=None):
+        """(actions, records, [(tree.Tree, TreeSolution) per searched decision]) of the A/B/C turn at depth 2 on the
+        digest key, its depth-2 leaves refused where refuse selects."""
+        calls, original = [], honest.tree.solve_tree
+
+        def solve(shape, *args, **kwargs):
+            solved = original(shape, *args, **kwargs)
+            calls.append((shape, solved))
+            return solved
+
+        settings = {"root_solver": "rm", "depth": 2}
+        with mock.patch.object(honest.tree, "solve_tree", side_effect=solve):
+            if refuse is None:
+                return (*self.abc_turn(ctx, steps_left=UNLIMITED, **settings), calls)
+            with self.refusing(refuse):
+                return (*self.abc_turn(ctx, steps_left=UNLIMITED, **settings), calls)
+
+    def test_a_refused_candidate_leaves_its_set_with_the_others_and_its_row_in_the_solve(self):
+        # #536, case 1: one candidate of an information set refused, the set keeps its other one, no row is dropped.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            _, base, base_trees = self.solved_trees(ctx)
+            _, part, trees = self.solved_trees(ctx, self.second_candidate)
+        self.assertEqual([r["kind"] for r in base], ["searched"] * 3)
+        self.assertEqual(len(trees), len(base_trees))
+        for b, r, (b_shape, _), (shape, solved) in zip(base, part, base_trees, trees):
+            self.assertEqual(r["kind"], "searched")
+            self.assertEqual(r["refused_pairs"], [])
+            self.assertEqual(r["own_pairs"], b["own_pairs"])
+            self.assertGreater(r["tree"]["leaves"]["refused"], 0)
+            sets = r["tree"]["information_sets"]
+            self.assertEqual(sets, b["tree"]["information_sets"])
+            self.assertGreater(sets, 0)
+            self.assertEqual(r["tree"]["dropped_candidates"], sets)  # every set had two candidates and loses one
+            # the shortened sets in the tree: the first candidate valid with its prior as before, the second invalid
+            # with no prior and no play; every column past the set's candidates padded alike
+            self.assertTrue(b_shape.own_valid[:, :2].all())
+            np.testing.assert_array_equal(shape.own_valid[:, 0], np.ones(sets, bool))
+            np.testing.assert_array_equal(shape.own_valid[:, 1:], np.zeros((sets, shape.own_valid.shape[1] - 1), bool))
+            np.testing.assert_array_equal(shape.own_prior[:, 0], b_shape.own_prior[:, 0])
+            self.assertTrue((shape.own_prior[:, 1:] == 0.0).all())
+            self.assertTrue((solved.own[:, 1:] == 0.0).all())
+            np.testing.assert_allclose(solved.own[:, 0], 1.0)
+
+    def test_a_refused_leaf_of_a_node_asking_only_the_foe_drops_its_root_row(self):
+        # #536, case 2: at a depth-1 node that asks only the foe (A/B/C decision 2 on the digest key: node 7, root
+        # row 1), a refused leaf cannot drop a candidate of ours: it drops the root row; the other rows are solved,
+        # and with no row left the decision is engine_refused_leaves.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            _, base, _ = self.solved_trees(ctx)
+            _, part, _ = self.solved_trees(ctx, self.foe_only)
+            actions, none_left, _ = self.solved_trees(
+                ctx, lambda envs, choices, asked, p: self.foe_only(envs, choices, asked, p) | (envs < 2 * 2))
+        self.assertEqual(timeless(part[:2]), timeless(base[:2]))  # no node asks only the foe there
+        b, r = base[2], part[2]
+        self.assertEqual(r["kind"], "searched")
+        self.assertEqual(r["refused_pairs"], [b["own_pairs"][1]])
+        self.assertEqual(r["own_pairs"], [b["own_pairs"][0]])
+        self.assertGreater(r["tree"]["leaves"]["refused"], 0)
+        self.assertEqual(r["tree"]["dropped_candidates"], 0)  # no candidate of ours: the row goes
+        self.assertEqual((none_left[2]["kind"], none_left[2]["reason"]), ("unreconstructible", "engine_refused_leaves"))
+        self.assertEqual(int(actions[2]), b["raw"])  # played raw and counted, as at depth 1
 
 
 class DigestKeyed(Depth):

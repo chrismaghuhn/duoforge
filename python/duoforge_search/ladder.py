@@ -33,12 +33,15 @@ private and the report holds aggregates, per-game scores and decision digests on
 import argparse
 import copy
 import hashlib
+import io
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
+import zipfile
 
 import numpy as np
 
@@ -391,6 +394,171 @@ def games_digests(decisions, games):
     return [decisions_digest(rows) for rows in per_game]
 
 
+def decisions_rows_digests(decisions, games):
+    """Each game's decisions one by one: a list of `games` lists, game g's [env, step, seat, kind, choice] rows in
+    (step, seat) order, each as the first 16 hex digits of its sha256 (#484, 2026-10-15). Two runs whose games_sha256
+    differ name the first decision that differs, by its index in the game; the decision itself (step, seat) is read in
+    the run's own decision file. Hashes only: no decision file leaves an AWS box."""
+    per_game = [[] for _ in range(games)]
+    for r in decisions:
+        if not 0 <= int(r["env"]) < games:
+            raise ValueError(f"a decision of env {r['env']} outside the arm's {games} games")
+        per_game[int(r["env"])].append([r["env"], r["step"], r["seat"], r["kind"], r.get("choice")])
+    return [[hashlib.sha256(json.dumps(row).encode("utf-8")).hexdigest()[:16]
+             for row in sorted(rows, key=lambda row: (row[1], row[2], json.dumps(row)))] for rows in per_game]
+
+
+# The environment that decides the network's float32 bits and NumPy's routines on a machine (#484): recorded with every
+# ladder report, so that two reports to be bit-identical show the same, and ladder_equal.py compares it.
+PIN_VARIANT = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
+PIN_VARIABLES = ("JAX_PLATFORMS", "XLA_FLAGS", "ONEDNN_MAX_CPU_ISA", "NPY_DISABLE_CPU_FEATURES", "OPENBLAS_CORETYPE",
+                 "OPENBLAS_NUM_THREADS")
+
+
+def pins():
+    """The pin variables of this process, None where unset."""
+    return {name: os.environ.get(name) for name in PIN_VARIABLES}
+
+
+class _RecordingModel:
+    """A network that records its apply, value and act calls while its recorder is active (CallRecorder)."""
+
+    def __init__(self, recorder, role, model):
+        self._recorder, self._role, self._model = recorder, role, model
+
+    def __getattr__(self, name):
+        return getattr(self._model, name)
+
+    def apply(self, params, *inputs):
+        self._recorder.record(self._role, "apply", inputs)
+        return self._model.apply(params, *inputs)
+
+    def value(self, params, obs):
+        self._recorder.record(self._role, "value", (obs,))
+        return self._model.value(params, obs)
+
+    def act(self, params, key, obs, slots, mask, is_team, greedy=False):
+        self._recorder.record(self._role, "act", (obs, slots, mask, is_team), key=key, greedy=greedy)
+        return self._model.act(params, key, obs, slots, mask, is_team, greedy=greedy)
+
+
+class _StepPlayer:
+    """A player whose calls of the first `steps` steps (play_suite's step) switch its recorder on. CallRecorder.player
+    mixes it into the player's own class's place where play_suite checks it (an opponent must be an evaluate.Player)."""
+
+    def __init__(self, recorder, player):
+        self._recorder, self._player = recorder, player
+
+    def __getattr__(self, name):
+        return getattr(self._player, name)
+
+    def indices(self, batch, choices, step=None, seats=None, last_step=None):
+        self._recorder.active = step is not None and step < self._recorder.steps
+        try:
+            return self._player.indices(batch, choices, step=step, seats=seats, last_step=last_step)
+        finally:
+            self._recorder.active = False
+
+
+class CallRecorder:
+    """Every network call of a run's first `steps` steps, in call order (#484, HauptSession 2026-10-15): the role
+    (checkpoint, foe_net, opponent NAME), the function (apply, value, act), its inputs as given, the opponent whose
+    games were playing. A call repeating the one before it with the same inputs is kept once. save() writes them as
+    one compressed .npz, byte for byte the same for the same calls: the network probe's inputs (--probe-inputs), every
+    compiled shape the first moves use, on the very positions of the games."""
+
+    def __init__(self, steps):
+        self.steps, self.active, self.opponent = int(steps), False, None
+        self.calls, self._last = [], None
+
+    def model(self, role, model):
+        return _RecordingModel(self, role, model)
+
+    def player(self, player, kind=object):
+        """player, its indices calls switching the recording on for the first steps; an instance of kind too."""
+        return type("StepPlayer", (_StepPlayer, kind), {})(self, player)
+
+    def record(self, role, fn, inputs, key=None, greedy=False):
+        if not self.active:
+            return
+        arrays = [np.array(x) for x in inputs]
+        key = None if key is None else np.array(key)
+        mark = (role, fn, bool(greedy), tuple(hashlib.sha256(a.tobytes()).hexdigest() + str(a.shape) for a in arrays),
+                None if key is None else key.tobytes())
+        if mark == self._last:
+            return
+        self._last = mark
+        self.calls.append({"role": role, "fn": fn, "inputs": arrays, "key": key, "greedy": bool(greedy),
+                           "opponent": self.opponent})
+
+    def save(self, path):
+        """Writes the calls to path (.npz) and returns its sha256."""
+        arrays, meta = {}, []
+        for i, call in enumerate(self.calls):
+            for j, a in enumerate(call["inputs"]):
+                arrays[f"c{i}_{j}"] = a
+            if call["key"] is not None:
+                arrays[f"c{i}_key"] = call["key"]
+            meta.append({"role": call["role"], "fn": call["fn"], "greedy": call["greedy"], "opponent": call["opponent"],
+                         "inputs": len(call["inputs"]), "key": call["key"] is not None,
+                         "shapes": [list(a.shape) for a in call["inputs"]]})
+        arrays["meta"] = np.frombuffer(json.dumps(meta, sort_keys=True).encode("utf-8"), dtype=np.uint8)
+        # np.savez stamps each member with the time: a fixed stamp and order make the same calls the same bytes
+        with zipfile.ZipFile(path, "w") as z:
+            for name in sorted(arrays):
+                buf = io.BytesIO()
+                np.lib.format.write_array(buf, np.ascontiguousarray(arrays[name]), allow_pickle=False)
+                info = zipfile.ZipInfo(name + ".npy", date_time=(1980, 1, 1, 0, 0, 0))
+                z.writestr(info, buf.getvalue(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=6)
+        with open(path, "rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()
+
+
+def net_probe(path, nets):
+    """The network probe (#484, HauptSession 2026-10-15): the calls a CallRecorder saved to path, made again in their
+    order with the same inputs, each call's outputs hashed (sha256 of their dtype, shape and bytes). nets: role ->
+    {"model", "params"}. Returns the inputs file's sha256, the number of calls, each call's first 16 hex digits
+    (per_call), what each call was (calls_meta: role, function, shapes, opponent) and the sha256 over all calls. Two
+    machines whose probes agree compute every network call of the games' first moves bit for bit alike; where they do
+    not, the first differing index of per_call names the call."""
+    with open(path, "rb") as f:
+        file_sha = hashlib.sha256(f.read()).hexdigest()
+    data = np.load(path, allow_pickle=False)
+    meta = json.loads(bytes(data["meta"]).decode("utf-8"))
+
+    def digest(outputs):
+        h = hashlib.sha256()
+        for a in outputs if isinstance(outputs, (tuple, list)) else (outputs,):
+            if a is None:  # an output the call leaves out (act's without a key)
+                h.update(b"None")
+                continue
+            a = np.ascontiguousarray(np.asarray(a))
+            h.update(f"{a.dtype}{a.shape}".encode("ascii"))
+            h.update(a.tobytes())
+        return h.hexdigest()
+
+    per_call = []
+    for i, call in enumerate(meta):
+        if call["role"] not in nets:
+            raise ValueError(f"the probe's call {i} is of {call['role']!r}, which this run does not load")
+        net = nets[call["role"]]
+        inputs = [data[f"c{i}_{j}"] for j in range(call["inputs"])]
+        if call["fn"] == "apply":
+            out = net["model"].apply(net["params"], *inputs)
+        elif call["fn"] == "value":
+            out = net["model"].value(net["params"], *inputs)
+        elif call["fn"] == "act":
+            key = data[f"c{i}_key"] if call["key"] else None
+            out = net["model"].act(net["params"], key, *inputs, greedy=call["greedy"])
+        else:
+            raise ValueError(f"the probe's call {i} has an unknown function {call['fn']!r}")
+        per_call.append(digest(out))
+    total = hashlib.sha256("\n".join(per_call).encode("ascii")).hexdigest()
+    return {"inputs_sha256": file_sha, "calls": len(per_call), "sha256": total,
+            "per_call": [d[:16] for d in per_call],
+            "calls_meta": [{k: c[k] for k in ("role", "fn", "shapes", "opponent")} for c in meta]}
+
+
 def recorded_reproduction(scores, digest, recorded_arm, recorded_dir, name):
     """Whether this run's previous arm plays the recorded step arm's games: True when the per-game scores and the digest
     of the decisions both match, False when either differs. None when the recorded run has no such arm, or when its
@@ -506,6 +674,7 @@ def _summary(records, games, decisions=None, seconds=None):
                     "fallback_decisions": sum(r["kind"] in foe_arena.FALLBACK_KINDS for r in non_team),
                     "non_team_decisions": len(non_team), "decisions_sha256": decisions_digest(decisions),
                     "games_sha256": games_digests(decisions, games),
+                    "games_decisions": decisions_rows_digests(decisions, games),
                     "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions),
                     "tree_limit": tree_limit(decisions),
                     "duplicate_rows": duplicate_rows(decisions)})
@@ -688,6 +857,19 @@ def main(argv=None):
     p.add_argument("--opponent", action="append", default=[], metavar="NAME=PATH",
                    help="a raw greedy opponent: bc6, bot or ppo (each once)")
     p.add_argument("--out", required=True, help="the output directory, outside the repository")
+    p.add_argument("--probe-inputs", default=None, metavar="NPZ",
+                   help="the network probe's inputs (written by --record-probe-inputs): every call made again, its "
+                        "outputs hashed into conditions.net_probe (#484)")
+    p.add_argument("--probe-only", action="store_true",
+                   help="no game: the network probe (needs --probe-inputs) and the machine's conditions, written to "
+                        "OUT/probe.json (#484: the AWS box's pin variants)")
+    p.add_argument("--record-probe-inputs", default=None, metavar="NPZ",
+                   help="record every network call of the first --record-steps steps of every game of the step arm "
+                        "against every opponent and save them to NPZ (outside the repository), the probe's inputs")
+    p.add_argument("--record-steps", type=int, default=3)
+    p.add_argument("--pin-variant", default=None,
+                   help="the name of the pin variant the run's environment is (the AWS box's probe campaigns, #484); "
+                        "recorded in the conditions, pin_variant, beside the pins themselves")
     p.add_argument("--pairs", type=int, default=1024)
     p.add_argument("--seed", type=lambda text: int(text, 0), default=SEED)
     p.add_argument("--workers", type=int, default=8)
@@ -701,6 +883,14 @@ def main(argv=None):
                    help="a recorded run: this step is paired with its step arm on the same games (its first games), "
                         "without replaying the recorded step; exclusive with --previous, --h2h and --previous-run")
     args = p.parse_args(argv)
+    if args.probe_only and args.probe_inputs is None:
+        raise SystemExit("--probe-only needs --probe-inputs (the recorded calls it makes again)")
+    if args.record_probe_inputs is not None and args.probe_only:
+        raise SystemExit("--record-probe-inputs records the games' calls: --probe-only plays none")
+    if args.record_steps < 1:
+        raise SystemExit("--record-steps must be at least 1")
+    if args.pin_variant is not None and not PIN_VARIANT.match(args.pin_variant):
+        raise SystemExit(f"--pin-variant {args.pin_variant!r}: lowercase letters, digits and dashes, at most 40")
     if args.paired_with is not None:
         for flag, given in (("--previous", args.previous), ("--h2h", args.h2h), ("--previous-run", args.previous_run)):
             if given:
@@ -711,6 +901,12 @@ def main(argv=None):
         refuse_repository(args.out)
     except ValueError:
         raise SystemExit(f"--out {args.out} is inside the repository (AGENTS.md)") from None
+    if args.record_probe_inputs is not None:
+        try:
+            refuse_repository(os.path.dirname(os.path.abspath(args.record_probe_inputs)))
+        except ValueError:
+            raise SystemExit(f"--record-probe-inputs {args.record_probe_inputs} is inside the repository "
+                             "(AGENTS.md)") from None
     opponents = _opponents(args.opponent)
     if (args.teams_from is None) == (args.matchup is None):
         raise SystemExit("give exactly one of --teams-from (a pool network's teams) and --matchup OURS FOE")
@@ -806,22 +1002,41 @@ def main(argv=None):
         if paired_run is not None and paired_run["conditions"].get("table_sha256") != table_info["sha256"]:
             raise SystemExit(f"--paired-with's table_sha256 is {paired_run['conditions'].get('table_sha256')!r}, "
                              f"this run's is {table_info['sha256']!r}")
+        probe_nets = {"checkpoint": main_net, "foe_net": foe_net,
+                      **{f"opponent {name}": net for name, net in opponent_nets.items()}}
+        probe = None if args.probe_inputs is None else net_probe(args.probe_inputs, probe_nets)
+        if args.probe_only:
+            probe_out = {"commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": arena.cpu_model(),
+                         "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()), "pins": pins(),
+                         "games": int(rows.shape[0]), "seed": hex(args.seed), "pin_variant": args.pin_variant,
+                         "net_probe": probe}
+            with open(os.path.join(args.out, "probe.json"), "w", encoding="utf-8") as f:
+                json.dump(probe_out, f, indent=1)
+            print(json.dumps(probe_out, indent=1))
+            return 0
         learner_team = np.where(rows["learner_seat"] == 0, rows["side0"], rows["side1"])
         opponent_team = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
 
         def excluded(team_indices):
             return [source_ids.get(pool.ids[int(i)]) for i in team_indices]
 
-        def searcher(step_name, exclude):
+        recorder = None if args.record_probe_inputs is None else CallRecorder(args.record_steps)
+
+        def searcher(step_name, exclude, record=False):
+            model, foe = main_net["model"], foe_tuple
+            if record:
+                model = recorder.model("checkpoint", model)
+                foe = (recorder.model("foe_net", foe_tuple[0]),) + tuple(foe_tuple[1:])
             options = dict(step_settings(step_name), table=table, exclude_teams=exclude, workers=args.workers,
-                           foe_net=foe_tuple)
-            return honest.Honest(ctx, main_net["model"], main_net["params"], main_net["encoder"], main_net["ext"],
-                                 **options)
+                           foe_net=foe)
+            return honest.Honest(ctx, model, main_net["params"], main_net["encoder"], main_net["ext"], **options)
 
         def play_search(arm, step_name, opponent_player):
-            with searcher(step_name, excluded(opponent_team)) as search:
+            record = recorder is not None and arm == "step"
+            with searcher(step_name, excluded(opponent_team), record) as search:
                 player = arena.SearchPlayer(foe_arena.Timed(search), arm, args.seed, max_steps=args.max_steps)
-                records = evaluate.play_suite(ctx, pool, rows, player, opponent_player, args.workers, args.seed,
+                learner, other = (recorder.player(player), recorder.player(opponent_player, evaluate.Player))                     if record else (player, opponent_player)
+                records = evaluate.play_suite(ctx, pool, rows, learner, other, args.workers, args.seed,
                                               max_steps=args.max_steps)
             return records, [r for row in sorted(player.records) for r in player.records[row]]
 
@@ -829,7 +1044,10 @@ def main(argv=None):
         raw_player = evaluate.Player(main_net["model"], main_net["params"], main_net["encoder"], "R", main_net["ext"])
         opponent_out, pooled = {}, {"step": [], "previous": []}
         for name, net in opponent_nets.items():
-            opponent_player = evaluate.Player(net["model"], net["params"], net["encoder"], name, net["ext"])
+            model = net["model"] if recorder is None else recorder.model(f"opponent {name}", net["model"])
+            if recorder is not None:
+                recorder.opponent = name
+            opponent_player = evaluate.Player(model, net["params"], net["encoder"], name, net["ext"])
             arms, scores = {}, {}
             for arm, step_name in arm_steps:
                 started = time.perf_counter()
@@ -859,6 +1077,11 @@ def main(argv=None):
                 entry["same_games_as_recorded"] = recorded_reproduction(
                     scores["previous"], arms["previous"]["decisions_sha256"], old, recorded_dir, name)
             opponent_out[name] = entry
+        recorded_probe = None
+        if recorder is not None:
+            recorded_probe = {"sha256": recorder.save(args.record_probe_inputs), "calls": len(recorder.calls),
+                              "steps": recorder.steps}
+            print(f"probe inputs: {len(recorder.calls)} calls, sha256 {recorded_probe['sha256']}", file=sys.stderr)
 
         h2h = None
         if args.h2h:
@@ -901,7 +1124,8 @@ def main(argv=None):
         "previous": None if args.previous is None else {"name": args.previous, "settings": previous_cfg},
         "arms": [arm for arm, _ in arm_steps] + (["R"] if args.raw else []), "h2h": args.h2h,
         "gates": GATES, "commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": arena.cpu_model(),
-        "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()),
+        "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()), "pins": pins(), "pin_variant": args.pin_variant,
+        "net_probe": probe, "probe_inputs_recorded": recorded_probe,
         "encoders": {"main": main_net["encoder"], "foe": foe_net["encoder"],
                      **{f"opponent {name}": net["encoder"] for name, net in opponent_nets.items()}},
         "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},
