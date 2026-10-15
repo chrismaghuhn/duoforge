@@ -1,4 +1,7 @@
-"""Preview-only N/E/X measurement: value vs raw turn-1 rollout, private outputs."""
+"""Preview-only N/E/X measurement: value vs raw turn-1 rollout, private outputs.
+
+From #558 on the pool is filtered by the engine (a refused team is left out, named in conditions.pool): a new series, never paired or mixed with results from before it.
+"""
 import argparse
 import json
 from pathlib import Path
@@ -185,7 +188,8 @@ def main(argv=None):
             models[key] = policy.make(model_config)
         players.append(evaluate.Player(models[key], params, checkpoint.encoder_of(config), name, checkpoint.ext_supported_of(config)))
         fingerprints[name] = arena._sha256(path)
-    pool, kind = ladder._pool_of(args.run_dir, args.teams_root)
+    refused = []  # the engine's filter (#558): a refused team is left out, named in conditions.pool
+    pool, kind = ladder._pool_of(args.run_dir, args.teams_root, refused=refused)
     with duoforge.Context(data_kind=kind) as context:
         for config in configs:
             if config.get("format") == 2:
@@ -194,7 +198,8 @@ def main(argv=None):
         table, source_ids, belief_info = honest.spread_table(
             context, args.belief_root, sources=None if args.belief_root else honest.SPREAD_SOURCES)
         results = run(context, pool, players[0], dict(zip(("R", "BC", "3600", "11000"), players)), table, source_ids, args)
-    conditions = {"search": "honest", "preview_only": True, "k": 8, "m": 8, "worlds": args.worlds,
+    from duoforge import teams
+    conditions = {"pool": teams.pool_record(pool, refused), "search": "honest", "preview_only": True, "k": 8, "m": 8, "worlds": args.worlds,
                   "lam": .5, "capacity": args.capacity, "workers": args.workers,
                   "rollout_steps_limit": args.rollout_steps, "games_vs_raw": args.games, "games_vs_panel": args.panel_games,
                   "max_steps": args.max_steps, "resamples": args.resamples, "bootstrap_unit": "paired seat orders",

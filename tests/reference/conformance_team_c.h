@@ -8,11 +8,7 @@
 #include "rng/draw.h"
 #include "reference/conformance_types.h"
 
-#define DF_REFERENCE_BATTLE_COUNT 73u
-#define DF_REFERENCE_REAL_BATTLES 23u
-#define DF_REFERENCE_FIXTURE_MATCHES 144u
-#define DF_REFERENCE_TAPE_COUNT 6987u
-#define DF_REFERENCE_EVENT_COUNT 28320u
+#include "reference_counts_team_c.h"
 #define conf_battles df_reference_team_c_battles
 #define conf_tape df_reference_team_c_tape
 #define conf_events df_reference_team_c_events

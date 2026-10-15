@@ -1,8 +1,8 @@
 # Value-graph proposal before synthetic E3g results
 
-Status: **proposed for Owner/HS review**. HS authorized the full BC6-M value path
-with synthetic parameters immediately; the small and medium declarations below
-require approval before implementation or registration. This document starts no
+Status: **approved by Owner/HS in #569 (`95e69e2b`) on 2026-10-15**. All three
+declarations below are frozen for E3g implementation and registration with
+synthetic parameters. This document starts no
 training, checkpoint conversion, calibration, timing comparison or live adoption.
 E4 remains off. Training budgets, seeds and private data identities belong to the
 separately approved private E4 manifests, not this public proposal.
@@ -199,9 +199,9 @@ not pass the integrated expand/project/digest/inference memory gate.
 
 ## Approval and delivery boundaries
 
-1. Owner/HS review this documentation proposal. Full BC6-M synthetic wiring may
-   proceed under the existing HS Go; small/medium stay out of the registry and
-   implementation until this declaration is approved.
+1. Owner/HS approved all three declarations in #569. E3g may wire and register
+   each of them with synthetic parameters; changing a frozen declaration needs
+   explicit review before its results.
 2. E3g ships registered scalar graphs in bounded PRs with exact source/wire/stage
    inventories, independent synthetic intermediate parity, checked resources,
    full recomputation, unchanged legacy behavior and unchanged public exports.
