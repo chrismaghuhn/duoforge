@@ -759,7 +759,7 @@ int main(void)
     }
     /* 43 before the POOL tail (decision 0015 section 7), then TAIL_KIND, _SIDE, _POSITION, _MEMBER, _SCHEMA,
      * _RESERVED and (rev 2) _FIELD; test_pool_tail.c checks each of the seven. */
-    DF_CHECK_EQ_U64(&t, (unsigned)DFI_INV_COUNT, 51u); /* step G46: TAIL_PARTY */
+    DF_CHECK_EQ_U64(&t, (unsigned)DFI_INV_COUNT, 52u); /* step G46: TAIL_PARTY; decision 0083: SINGLES_SLOT */
 #undef RESET
 #undef RESET_TO
 

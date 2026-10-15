@@ -1,0 +1,179 @@
+{
+ "name": "cs_quash_2",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 86, its battle 529) kept for what its log shows: quash.",
+ "data": "pool",
+ "format": "gen9championsou",
+ "seed": "sodium,caf3c9b8f9d181015d1bfc123c553d2fad2fc114cd48844df098de8a8190ba81",
+ "teams": [
+  "Dragapult (M) @ Kasib Berry\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 1 Def / 1 SpD / 32 Spe\nTimid Nature\n- Shadow Ball\n- Breaking Swipe\n- Light Screen\n- Reflect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nSinistcha @ Colbur Berry\nAbility: Hospitality\nLevel: 50\nEVs: 29 HP / 8 Def / 24 SpD / 5 Spe\nBold Nature\n- Matcha Gotcha\n- Shadow Ball\n- Protect\n- Rage Powder\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n- Dire Claw\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect",
+  "Ceruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nMetagross @ Metagrossite\nAbility: Clear Body\nLevel: 50\nEVs: 16 HP / 25 Atk / 25 Spe\nAdamant Nature\n- Protect\n- Iron Head\n- Psychic Fangs\n- Stomping Tantrum\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Haze\n- Protect\n\nQuaquaval (M) @ Black Glasses\nAbility: Moxie\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n\nSableye (M)\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nTimid Nature\n- Quash\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 5",
+   "p2": "team 6"
+  },
+  {
+   "p1": "move 4 mega",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2"
+  },
+  {
+   "p2": "switch 6"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 4",
+   "p2": "switch 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 6"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "switch 3"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 5"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1 mega"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "switch 2",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1"
+  }
+ ]
+}

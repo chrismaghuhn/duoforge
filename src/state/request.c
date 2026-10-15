@@ -40,13 +40,33 @@ static bool dfi_list_push(dfi_slot_list *l, uint32_t kind, uint32_t move_slot, u
 }
 
 /* Selectable targets of a class for the actor at (side, slot), ascending
- * flat positions (decision 0005 section 4). Returns the count, 1..3. */
-static uint32_t dfi_targets(uint32_t cls, uint32_t side, uint32_t slot, uint8_t out[3])
+ * flat positions (decision 0005 section 4). Returns the count, 1..3.
+ * Singles (decision 0083): only slot 0 of each side exists, so the targets
+ * are the locations sim/battle.ts validTargetLoc accepts with one position
+ * per side: the foe for normal, any and adjacentFoe, the user for
+ * adjacentAllyOrSelf, and none for adjacentAlly (it has no adjacent ally;
+ * the choice names no target, sim/side.ts chooseMove). */
+static uint32_t dfi_targets(uint32_t cls, uint32_t side, uint32_t slot, bool singles, uint8_t out[3])
 {
     const uint32_t me = side * DUOFORGE_ACTIVE_PER_SIDE + slot;
     const uint32_t ally = side * DUOFORGE_ACTIVE_PER_SIDE + (1u - slot);
     const uint32_t foe0 = (1u - side) * DUOFORGE_ACTIVE_PER_SIDE;
     uint32_t n = 0u;
+    if (singles) {
+        switch (cls) {
+        case DUOFORGE_TARGET_CLASS_NORMAL:
+        case DUOFORGE_TARGET_CLASS_ANY:
+        case DUOFORGE_TARGET_CLASS_ADJACENT_FOE:
+            out[0] = (uint8_t)foe0;
+            return 1u;
+        case DUOFORGE_TARGET_CLASS_ADJACENT_ALLY_OR_SELF:
+            out[0] = (uint8_t)me;
+            return 1u;
+        default:
+            out[0] = (uint8_t)DUOFORGE_TARGET_NONE;
+            return 1u;
+        }
+    }
     switch (cls) {
     case DUOFORGE_TARGET_CLASS_NORMAL:
     case DUOFORGE_TARGET_CLASS_ANY:
@@ -235,7 +255,7 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
             /* The class the move has for this user (step G84: a non-Ghost Curse targets the user, so no target is offered) */
             const uint32_t user_class = dfi_user_target_class(b, s * DUOFORGE_ACTIVE_PER_SIDE + slot,
                                                               dfi_pool_moves[mv->move_id].special, ctx->move_target_classes[mv->move_id]);
-            const uint32_t nt = dfi_targets(user_class, s, slot, targets);
+            const uint32_t nt = dfi_targets(user_class, s, slot, dfi_context_singles(ctx), targets);
             for (uint32_t ti = 0u; ti < nt; ++ti) {
                 for (uint32_t mg = 0u; mg < megas; ++mg) {
                     if (!dfi_list_push(out, DUOFORGE_SLOT_MOVE, k, targets[ti], mg, 0u)) {
@@ -470,7 +490,7 @@ static duoforge_status dfi_enumerate_side(const duoforge_context *ctx, const str
 {
     const dfi_side *side = &b->sides[s];
     if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
-        dfi_enumerate_team(b, s, side->member_count, ctx->brought_count, k);
+        dfi_enumerate_team(b, s, side->member_count, dfi_context_pick_count(ctx), k);
         return DUOFORGE_OK;
     }
     dfi_slot_list lists[DUOFORGE_ACTIVE_PER_SIDE];
@@ -528,7 +548,7 @@ static duoforge_status dfi_side_accepts(const duoforge_context *ctx, const struc
     c.side = (uint8_t)s;
     if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
         const uint32_t n = b->sides[s].member_count;
-        const uint32_t m = ctx->brought_count;
+        const uint32_t m = dfi_context_pick_count(ctx);
         if (m > DUOFORGE_MAX_ROSTER) {
             return DUOFORGE_E_INVARIANT;
         }
@@ -695,7 +715,7 @@ duoforge_status duoforge_battle_factored(const duoforge_context *ctx, const duof
     if (dfi_player_requested(battle, player) && battle->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
         d.kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
         d.member_count = (uint8_t)battle->sides[player].member_count;
-        d.pick_count = (uint8_t)ctx->brought_count;
+        d.pick_count = (uint8_t)dfi_context_pick_count(ctx);
     } else if (dfi_player_requested(battle, player)) {
         /* The slot lists and the pair rule of the enumeration, so both forms
          * hold the same domain. */

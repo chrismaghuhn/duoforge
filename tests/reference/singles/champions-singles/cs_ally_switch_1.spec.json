@@ -1,0 +1,239 @@
+{
+ "name": "cs_ally_switch_1",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 86, its battle 31) kept for what its log shows: ally switch.",
+ "data": "pool",
+ "format": "gen9championsou",
+ "seed": "sodium,4333e04ef56940eb823aaa44b9da15a261d74f0fa1af52627871fcebee0da551",
+ "teams": [
+  "Lucario (M) @ Life Orb\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Circle Throw\n- Protect\n\nRotom-Wash @ Magnet\nAbility: Levitate\nLevel: 50\nEVs: 31 HP / 15 Def / 8 SpA / 8 SpD / 4 Spe\nModest Nature\n- Protect\n- Thunderbolt\n- Hydro Pump\n- Will-O-Wisp\n\nStaraptor (F) @ Eject Button\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Whirlwind\n- Brave Bird\n- Protect\n\nGarchomp (M) @ Black Glasses\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nKingambit (M) @ Focus Sash\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect",
+  "Milotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nAudino (F)\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Ally Switch\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 4",
+   "p2": "team 4"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1"
+  },
+  {
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 3"
+  },
+  {
+   "p2": "switch 3"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "switch 6",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 2"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p2": "switch 6"
+  },
+  {
+   "p1": "switch 6",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "switch 6",
+   "p2": "move 2"
+  },
+  {
+   "p1": "switch 6"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 2"
+  },
+  {
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "switch 5",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 5"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  }
+ ]
+}

@@ -25,7 +25,10 @@
 //
 // A choice for one side is drawn like this, with the policy's own generator:
 //   team preview  4 distinct Pokemon of the team (side.pickedTeamSize()), in
-//                 random order: "team 3512";
+//                 random order: "team 3512"; in singles (decision 0083) a
+//                 random lead alone, "team 3", which Showdown fills with the
+//                 rest in order: the one order of the engine's singles team
+//                 selection;
 //   switch        (a replacement or a pivot) each slot that must switch takes
 //                 a random standing reserve not taken by the other slot, else
 //                 "pass"; the slots take their turn in random order, so with
@@ -45,7 +48,7 @@
 // Showdown judges the text with side.choose(text). A rejected text is cleared
 // with side.clearChoice() and a new one is drawn. After 200 rejections every
 // joint option of the side is enumerated in a fixed order (team: permutations
-// in lexicographic order; switch and move: the options of slot 0 times those
+// in lexicographic order, in singles the leads in order; switch and move: the options of slot 0 times those
 // of slot 1, a slot's options in the order pass, switches by position, moves
 // by index with their targets 1, 2, -1, -2 and then with mega) and a random
 // one of those Showdown accepts is taken; if it accepts none the error is
@@ -188,7 +191,13 @@ function enabledMoves(request) {
     return request.moves.map((entry, i) => [i, entry]).filter(([, entry]) => !entry.disabled);
 }
 
+// Singles (decision 0083): the team choice names the lead only.
+function singles(side) {
+    return side.battle.gameType === 'singles';
+}
+
 function drawTeam(side, rng) {
+    if (singles(side)) return teamText(side, [rng.below(side.pokemon.length)]);
     const order = rng.shuffle([...side.pokemon.keys()]);
     return teamText(side, order.slice(0, side.pickedTeamSize()));
 }
@@ -305,6 +314,7 @@ function joint(slotOptions) {
 
 function enumerate(side) {
     if (side.requestState === 'teampreview') {
+        if (singles(side)) return [...side.pokemon.keys()].map((lead) => teamText(side, [lead]));
         return permutations(side.pokemon.length, side.pickedTeamSize()).map((positions) => teamText(side, positions));
     }
     const reserves = standingReserves(side);

@@ -2,11 +2,13 @@
 #define DUOFORGE_TESTS_SUPPORT_POOL_H
 /*
  * POOL fixtures (docs/decisions/0015): the contexts of the two POOL data
- * kinds, roster 6 and brought 4, like the CLOSURE and TEAM_C ones.
+ * kinds, roster 6 and brought 4, like the CLOSURE and TEAM_C ones, and of
+ * the singles kind (decision 0083), roster 6 and brought 6.
  */
 #include <duoforge/duoforge.h>
 
 extern const duoforge_context_config df_config_pool;
 extern const duoforge_context_config df_config_pool_dev;
+extern const duoforge_context_config df_config_pool_singles;
 
 #endif

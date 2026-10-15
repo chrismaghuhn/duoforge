@@ -295,6 +295,9 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
         const dfi_active_slot *slot = &side->positions[p];
         const uint32_t occupant = slot->occupant;
+        if (p >= dfi_context_active(ctx) && occupant != DFI_OCCUPANT_NONE) {
+            return DFI_INV_SINGLES_SLOT; /* singles occupies slot 0 only (decision 0083) */
+        }
         if (occupant == DFI_OCCUPANT_NONE) {
             if (slot->activation_id != 0u) {
                 return DFI_INV_EMPTY_WITH_ACTIVATION;
@@ -1209,6 +1212,8 @@ const char *dfi_invariant_name(dfi_invariant id)
         return "TAIL_FIELD";
     case DFI_INV_TAIL_PARTY:
         return "TAIL_PARTY";
+    case DFI_INV_SINGLES_SLOT:
+        return "SINGLES_SLOT";
     case DFI_INV_COUNT:
     default:
         return "UNKNOWN";

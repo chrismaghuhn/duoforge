@@ -36,6 +36,12 @@ add_test(NAME duoforge.reference.trace_run
         "${DUOFORGE_PS_REFERENCE_DIR}")
 duoforge_label_test(duoforge.reference.trace_run reference tools ci-no-skip)
 set_tests_properties(duoforge.reference.trace_run PROPERTIES TIMEOUT 600)
+# The traces of the conformance set champions-singles (decision 0083) are what the pinned Showdown records from their specs.
+add_test(NAME duoforge.reference.champions_singles_traces
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/tests/test_champions_singles_traces.py"
+        "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
+duoforge_label_test(duoforge.reference.champions_singles_traces reference tools ci-no-skip)
+set_tests_properties(duoforge.reference.champions_singles_traces PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 # The persistent worker (differential loop): its JSON-lines protocol over raw pipes.
 add_test(NAME duoforge.reference.worker_protocol
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/tests/test_ps_worker.py"

@@ -1,0 +1,193 @@
+{
+ "name": "cs_aurora_veil_1",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 86, its battle 218) kept for what its log shows: aurora veil.",
+ "data": "pool",
+ "format": "gen9championsou",
+ "seed": "sodium,b25ce63fd0c095b3e28d30b1d181d0003a9b8aeb2800734ab0aa2738b084b172",
+ "teams": [
+  "Garchomp (M) @ Black Glasses\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nDelphox (M) @ Delphoxite\nAbility: Blaze\nLevel: 50\nEVs: 9 HP / 7 Def / 18 SpA / 32 Spe\nTimid Nature\n- Flamethrower\n- Psychic\n- Protect\n- Encore\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Dragon Tail\n- Protect\n\nGyarados (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nKingambit (M) @ Focus Sash\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect",
+  "Greninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect\n\nQuaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Surf\n- Protect\n\nSwampert (M) @ Swampertite\nAbility: Torrent\nLevel: 50\nEVs: 8 HP / 32 Atk / 26 Spe\nAdamant Nature\n- Wave Crash\n- High Horsepower\n- Ice Punch\n- Rock Slide\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Recover\n- Protect\n\nStaraptor (M) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Brave Bird\n- Whirlwind\n- Protect\n\nFroslass (F) @ Froslassite\nAbility: Cursed Body\nLevel: 50\nEVs: 14 HP / 20 SpA / 32 Spe\nTimid Nature\n- Blizzard\n- Shadow Ball\n- Aurora Veil\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 3",
+   "p2": "team 6"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3 mega"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "switch 6",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "switch 3"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "switch 5",
+   "p2": "move 3"
+  },
+  {
+   "p1": "switch 6",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 3 mega",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 4"
+  },
+  {
+   "p2": "switch 4"
+  },
+  {
+   "p1": "switch 2",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p2": "switch 3"
+  },
+  {
+   "p1": "switch 2",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 5"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 6"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  }
+ ]
+}

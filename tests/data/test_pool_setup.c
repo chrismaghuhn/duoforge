@@ -305,9 +305,9 @@ int main(void)
         duoforge_context_destroy(out);
         out = NULL;
         c = df_config_pool_dev;
-        c.data_kind = DUOFORGE_DATA_KIND_POOL_DEV + 1u;
+        c.data_kind = DUOFORGE_DATA_KIND_POOL_SINGLES_DEV + 1u; /* 8 is POOL_SINGLES_DEV (decision 0083), 9 no kind */
         DF_CHECK(&t, duoforge_context_create(&c, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == NULL);
-        DF_CHECK_EQ_U64(&t, c.data_kind, 8u);
+        DF_CHECK_EQ_U64(&t, c.data_kind, 9u);
         c.data_kind = 0u;
         DF_CHECK(&t, duoforge_context_create(&c, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == NULL);
     }

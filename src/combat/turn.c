@@ -64,9 +64,9 @@ static bool dfi_pos_flag(const struct duoforge_battle *b, uint32_t flat, uint32_
     return (((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & bit) != 0u);
 }
 
-/* The brought members of a side at 0 HP: side.totalFainted, since the
- * data has no revival and faints are processed before the next action
- * (decision 0009 section 4.1; Last Respects). */
+/* The brought members of a side at 0 HP: side.totalFainted, since faints are processed before the next action (decision 0009
+ * section 4.1; Last Respects). A revived member (Revival Blessing, decision 0025 item 6) fainted once more than the roster
+ * shows, and the state does not count revivals: dfi_revival_spent below refuses that case. */
 static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t side)
 {
     const dfi_side *sd = &b->sides[side];
@@ -78,6 +78,26 @@ static uint32_t dfi_fainted_members(const struct duoforge_battle *b, uint32_t si
     return n;
 }
 
+/* A brought member of the side has spent PP of Revival Blessing (used it, with or without a revive). side.totalFainted then may
+ * exceed the members at 0 HP (sim/battle.ts:2554 counts every faint; the revive returns the member to the roster), so a Last
+ * Respects of that side is refused (E_UNSUPPORTED), never played with the roster count. */
+static bool dfi_revival_spent(const struct duoforge_battle *b, uint32_t side)
+{
+    const dfi_side *sd = &b->sides[side];
+    for (uint32_t m = 0u; m < sd->member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
+        if ((((uint32_t)sd->brought_mask >> m) & 1u) == 0u) {
+            continue;
+        }
+        for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+            const dfi_move_slot *ms = &sd->members[m].moves[k];
+            if (ms->move_id == DFI_MOVE_REVIVALBLESSING && ms->pp < ms->pp_max) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
 {
     /* The Mega forme is that of the pair (base forme, stone): the member still holds the stone (a Mega Stone is never
@@ -87,7 +107,8 @@ static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
 
 /* The member's types now (Pokemon.getTypes): its forme's, or the one type that Soak set (setType, sim/pokemon.ts:2109;
  * the POOL tail's soak_type of the member, zero under every other kind), which lasts until the Pokemon leaves the field,
- * faints or Mega Evolves (setSpecies resets the types, sim/pokemon.ts:1392). `m` is a member of `b`. */
+ * faints, Mega Evolves or changes forme by Stance Change (setSpecies resets the types, sim/pokemon.ts:1392). `m` is a member
+ * of `b`. */
 /* The move result classes of one move action (step G42; dfi_run_move, the pin's moveThisTurnResult of sim/battle-actions.ts):
  * TRUE when a target took the move, FALSE for a literal `false` of the hit steps (a miss, an immunity, a failed effect, a
  * Psychic Terrain block that returns null and is normalised to false, an action that is stopped before it moves), NULL for a
@@ -1163,8 +1184,8 @@ static bool dfi_alive(struct duoforge_battle *b, uint32_t flat)
     return m != NULL && m->hp != 0u;
 }
 
-/* side.randomFoe: sample over the active foes that have not fainted
- * (RANDOM_TARGET). *out = DFI_POSITIONS when there is none. */
+/* getRandomTarget's foe (sim/battle.ts:2509-2521): side.randomFoe, a sample over the active foes that have not fainted
+ * (RANDOM_TARGET); in singles the one foe position, with no draw. *out = DFI_POSITIONS when there is none. */
 static duoforge_status dfi_random_foe(dfi_run *r, uint32_t side, uint32_t *out)
 {
     uint32_t foes[DUOFORGE_ACTIVE_PER_SIDE] = {0};
@@ -1178,6 +1199,12 @@ static duoforge_status dfi_random_foe(dfi_run *r, uint32_t side, uint32_t *out)
     }
     *out = DFI_POSITIONS;
     if (n == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (dfi_context_singles(r->ctx)) {
+        /* Singles (decision 0083): getRandomTarget returns pokemon.side.foe.active[0] without a draw
+         * (sim/battle.ts:2509). */
+        *out = foes[0];
         return DUOFORGE_OK;
     }
     uint32_t v = 0u;
@@ -1307,6 +1334,9 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
          * which finds no standing adjacent ally in doubles (sim/battle.ts:
          * 2461-2508). */
         const uint32_t ally = side * 2u + (1u - user % 2u);
+        if (chosen == DUOFORGE_TARGET_NONE && dfi_context_singles(r->ctx)) {
+            return DUOFORGE_OK; /* singles (decision 0083): no target is chosen and getRandomTarget is null (sim/battle.ts:2505) */
+        }
         if (chosen == user) {
             return DUOFORGE_OK; /* getTarget's null for the user's own location (sim/battle.ts:2459-2462): [notarget] */
         }
@@ -1714,8 +1744,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     } else if (md->special == DFI_SPECIAL_LAST_RESPECTS) {
         /* Last Respects (Team C): 50 + 50 per fainted member of the user's
          * side (basePowerCallback, data/moves.ts:10091-10105). side.totalFainted
-         * is derived: no revival in the data, and every faint is processed
-         * before the next action starts (decision 0009 section 4.1). */
+         * is derived: every faint is processed before the next action starts
+         * (decision 0009 section 4.1); after a Revival Blessing it is not. */
+        if (dfi_revival_spent(r->b, user / 2u)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
         power = 50u + 50u * dfi_fainted_members(r->b, user / 2u);
     }
     uint32_t bp_chain = 4096u;
@@ -2021,8 +2054,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         ((physical && ds->reflect_turns != 0u) ||
          (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u) ||
          r->b->tail.sides[target / 2u].aurora_veil_turns != 0u)) {
-        ok = ok && dfi_chain_modify(chain, 2732u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 2732u)) {
+        /* `this.activePerHalf > 1 ? chainModify([2732, 4096]) : chainModify(0.5)` (data/moves.ts:859-860, 10337-10338 and
+         * 14864-14865): 2048/4096 in singles (decision 0083). */
+        const uint32_t screen = dfi_context_singles(r->ctx) ? 2048u : 2732u;
+        ok = ok && dfi_chain_modify(chain, screen, &chain);
+        if (!dfi_mods_push(mlist, &mods, screen)) {
             return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
         }
     }
@@ -4346,7 +4382,8 @@ static duoforge_status dfi_double_shock_self(dfi_run *r, uint32_t user, uint32_t
  * -fail|target (the move still animates) and null; otherwise target.setType('Water') and -start|target|typechange|Water.
  * setType refuses (without `enforce`) Arceus and Silvally (species numbers 493 and 773, sim/pokemon.ts:2113-2118; no
  * pool forme is one) and a Terastallized Pokemon (the format has no Terastallization). The type stays until the
- * occupant leaves, faints or Mega Evolves (dfi_tail_clear_occupant, dfi_run_mega). True when the type was set. */
+ * occupant leaves, faints, Mega Evolves or changes forme by Stance Change (dfi_tail_clear_occupant, dfi_run_mega,
+ * dfi_stance_change). True when the type was set. */
 static bool dfi_soak(dfi_run *r, uint32_t flat, uint32_t move_id)
 {
     struct duoforge_battle *b = r->b;
@@ -5486,6 +5523,12 @@ static duoforge_status dfi_run_clangorous_soul(dfi_run *r, uint32_t user, const 
  * it already: one action per turn, and the residual ends it. */
 static duoforge_status dfi_run_follow_me(dfi_run *r, uint32_t user, uint32_t move_id)
 {
+    if (dfi_context_singles(r->ctx)) {
+        /* Singles (decision 0083): onTry returns activePerHalf > 1, false; trySpreadMoveHit shows -fail with [still]
+         * (sim/battle-actions.ts trySpreadMoveHit, the Try event). */
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
     dfi_active_slot *pos = dfi_pos(r->b, user);
     if (((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u) {
         return DUOFORGE_E_INVARIANT;
@@ -5653,7 +5696,8 @@ static duoforge_status dfi_run_after_you(dfi_run *r, uint32_t user, uint32_t mov
     }
     const uint32_t t = targets[0];
     uint32_t idx = 0u;
-    if (!dfi_queued_move_index(r->b, t, &idx)) {
+    /* Singles (decision 0083): `if (this.activePerHalf === 1) return false` comes first in onHit. */
+    if (dfi_context_singles(r->ctx) || !dfi_queued_move_index(r->b, t, &idx)) {
         r->mres |= DFI_MRES_FALSE; /* onHit returns false */
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
@@ -5678,7 +5722,8 @@ static duoforge_status dfi_run_quash(dfi_run *r, uint32_t user, uint32_t move_id
     }
     const uint32_t t = targets[0];
     uint32_t idx = 0u;
-    if (!dfi_queued_move_index(r->b, t, &idx)) {
+    /* Singles (decision 0083): `if (this.activePerHalf === 1) return false` comes first in onHit. */
+    if (dfi_context_singles(r->ctx) || !dfi_queued_move_index(r->b, t, &idx)) {
         r->mres |= DFI_MRES_FALSE; /* onHit returns false */
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
@@ -7248,22 +7293,24 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
      * (sim/battle-actions.ts:439), so a holder under Throat Chop shows `cant|holder|move: Throat Chop` for a sound move and the
      * bounced run ends there with false (`!move`, :444-445): no move line, and the holder's result is false (useMove).
      * Before that test the false move's target no longer equals the base target (:440-442), so getRandomTarget runs with
-     * no move (sim/battle.ts:2490-2521): randomFoe (:2521), one sample over the holder's standing foes (sim/side.ts:369-373,
-     * 390-403) whose result nothing reads. */
+     * no move (sim/battle.ts:2490-2521): in singles the foe's slot 0 without a draw (:2509), in doubles randomFoe (:2521),
+     * one sample over the holder's standing foes (sim/side.ts:369-373, 390-403) whose result nothing reads. */
     if (b->tail.sides[holder / 2u].positions[holder % 2u].throat_chop_turns != 0u &&
         (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_SOUND) != 0u) {
         const duoforge_event e =
             dfi_ev(DUOFORGE_EVENT_CANT, holder, DUOFORGE_CAUSE_MOVE, DFI_MOVE_THROATCHOP, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e); /* [cant] move: Throat Chop */
-        uint32_t foes = 0u;
-        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
-            foes += dfi_alive(b, (1u - holder / 2u) * 2u + slot) ? 1u : 0u;
-        }
-        if (foes != 0u) {
-            uint32_t unused = 0u;
-            const duoforge_status ds = dfi_draw(r->draws, DFI_SITE_RANDOM_TARGET, 0u, foes, &unused);
-            if (ds != DUOFORGE_OK) {
-                return ds;
+        if (!dfi_context_singles(r->ctx)) {
+            uint32_t foes = 0u;
+            for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+                foes += dfi_alive(b, (1u - holder / 2u) * 2u + slot) ? 1u : 0u;
+            }
+            if (foes != 0u) {
+                uint32_t unused = 0u;
+                const duoforge_status ds = dfi_draw(r->draws, DFI_SITE_RANDOM_TARGET, 0u, foes, &unused);
+                if (ds != DUOFORGE_OK) {
+                    return ds;
+                }
             }
         }
         dfi_tail_pos *tp = &b->tail.sides[holder / 2u].positions[holder % 2u];
@@ -7394,6 +7441,10 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
         m->stats[i] = stats[i];
     }
     *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
+    /* setSpecies -> setType(species.types, true) (sim/pokemon.ts:1387-1392): a type that Soak or Double Shock set ends, without
+     * a line. Both formes are Steel/Ghost. */
+    b->tail.sides[side].soak_type[idx] = 0u;
+    b->tail.sides[side].type2[idx] = 0u;
     /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats, so a live Speed Swap ends here. */
     b->tail.sides[user / 2u].positions[user % 2u].single_turn = (uint8_t)((uint32_t)b->tail.sides[user / 2u].positions[user % 2u].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
@@ -8823,9 +8874,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * ruled out (a miss or a Protect gives none), shows nothing: -singlemove|user|Glaive Rush|[silent]
          * (data/moves.ts:6647-6678; the public view infers it from the move line, decision 0018 section 6.1). */
         if (md->special == DFI_SPECIAL_GLAIVE_RUSH) {
+            /* A target whose hit a Substitute took is null, not false (data/mods/champions/scripts.ts:349-352): selfDrops sets
+             * the effect for it too (sim/battle-actions.ts:1317-1335). */
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             if (hit_any) {
                 b->tail.sides[side].positions[q->slot].glaive_rush = 1u;
@@ -10698,11 +10751,13 @@ static void dfi_speed_boost(dfi_run *r, uint32_t flat)
  * can fall are those above -6 and not the raised one, drawn the same way. The boost is the ability's own: one boost call
  * {raised: +2, lowered: -1} with the raised key first (positives_first), so its line is -ability|holder|Moody|boost, then
  * -boost for the rise and -unboost for the fall. The draws come before the boost, so a boost that is refused (no foe left)
- * still draws. A holder that has fainted (or is no longer on the field) does not run it. */
+ * still draws. A holder whose faint was processed (or that is no longer on the field) does not run it; one whose faint is
+ * only queued (Perish Song's perish0 earlier in this residual, dfi_residual_holder_stands) runs it: Pokemon.faint() only
+ * sets hp 0, so the handler draws, and the boost of a Pokemon at 0 HP does nothing. */
 static duoforge_status dfi_moody(dfi_run *r, uint32_t flat)
 {
     const dfi_member *m = dfi_at(r->b, flat);
-    if (m == NULL || m->hp == 0u || !dfi_ability(r->b, m, DFI_ABILITY_MOODY)) {
+    if (m == NULL || !dfi_ability(r->b, m, DFI_ABILITY_MOODY)) {
         return DUOFORGE_OK;
     }
     dfi_active_slot *pos = dfi_pos(r->b, flat);
@@ -11863,6 +11918,14 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         epoch == UINT32_MAX) {
         return DUOFORGE_E_EXHAUSTED;
     }
+    /* The Endless Battle Clause of the singles reference format ([Gen 9 Champions] OU, Standard AG,
+     * data/mods/champions/rulesets.ts:2-8) is checked in nextTurn from turn 101 on (sim/battle.ts:1836, 1854-1903: the
+     * staleness of every Pokemon, then a tie or a loss), and the turn limit of every format ties at turn 1001 (:1839-1843).
+     * The engine models neither, so a singles battle that reaches turn 101 is refused here, by name of the rule, before any
+     * change (decision 0083 section 6). */
+    if (dfi_context_singles(r->ctx) && turn > 100u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     b->turn = (uint16_t)turn;
     b->request_epoch = epoch;
     b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TURN;
@@ -11924,8 +11987,9 @@ static bool dfi_has_reserve(const struct duoforge_battle *b, uint32_t side)
  * starts. A REPLACEMENT can follow a REPLACEMENT: when a side passed for a
  * fainted position and the Emergency Exit holder went to the bench. */
 /* The drag in (step G46, sim/battle-actions.ts:162-174, dragIn). The reserve is drawn first, from the bench in side.pokemon
- * order (party_order, the non-fainted reserves; no draw when there is none: sim/battle.ts:1570-1588), and only then the
- * outgoing holder's DragOut runs: a block after the draw still consumed it (the pin's order, mirrored on purpose). The
+ * order (party_order past the active positions, one of them in singles; the non-fainted reserves; no draw when there is none:
+ * sim/battle.ts:1570-1588), and only then the outgoing holder's DragOut runs: a block after the draw still consumed it (the
+ * pin's order, mirrored on purpose). The
  * switch-in is switchIn with isDrag (no BeforeSwitchOut, no Update, the [drag] line), and its entry runs at once (gen 5+,
  * battle-actions.ts:153-155), together with the entries queued right behind it. */
 static duoforge_status dfi_drag_in(dfi_run *r, uint32_t side, uint32_t slot)
@@ -11938,7 +12002,7 @@ static duoforge_status dfi_drag_in(dfi_run *r, uint32_t side, uint32_t slot)
     }
     uint32_t cand[DUOFORGE_MAX_ROSTER];
     uint32_t n = 0u;
-    for (uint32_t k = DUOFORGE_ACTIVE_PER_SIDE; k < brought && k < DUOFORGE_MAX_ROSTER; ++k) {
+    for (uint32_t k = dfi_context_active(r->ctx); k < brought && k < DUOFORGE_MAX_ROSTER; ++k) {
         const uint32_t e = dfi_party_entry(&b->tail, side, k);
         if (e != 0u && e <= DUOFORGE_MAX_ROSTER && sd->members[e - 1u].hp != 0u) {
             cand[n] = e - 1u;

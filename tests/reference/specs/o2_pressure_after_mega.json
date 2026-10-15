@@ -1,0 +1,58 @@
+{
+  "name": "o2_pressure_after_mega",
+  "purpose": "Pressure after Mega Evolution (decision 0083 section 7): Absol, p2b, Mega Evolves at step 2 (Absol-Mega-Z, no Pressure), leaves and comes back at step 10; at step 11 the foes' moves cost one PP each. Mega Evolution is permanent (sim/battle-actions.ts:1902), so the converter's PP count takes the Mega's ability, not the sheet's Pressure again. The engine was right; the converter was wrong. A battle of the doubles differential campaign of decision 0083 section 7 (tools/reference/diff_driver.py random, seed 90, two Reg M-C teams, its battle 345), cut after its step 11: adopted as the regression fixture of that fix. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,ab9ee5d2ff92cf41fb83350471c2ab643d374613faa108b9ee118218f68e372d",
+  "teams": [
+    "Pelipper (M) @ Choice Scarf\nAbility: Drizzle\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hurricane\n- Muddy Water\n- Weather Ball\n- Soak\n\nGengar (F) @ Gengarite\nAbility: Cursed Body\nLevel: 50\nEVs: 25 HP / 1 Def / 8 SpA / 32 Spe\nTimid Nature\n- Shadow Ball\n- Sludge Bomb\n- Perish Song\n- Protect\n\nHatterene (F) @ Fairy Feather\nAbility: Magic Bounce\nLevel: 50\nEVs: 27 HP / 6 Def / 32 SpA\nQuiet Nature\n- Dazzling Gleam\n- Psychic\n- Trick Room\n- Protect\n\nAegislash (M) @ Spell Tag\nAbility: Stance Change\nLevel: 50\nEVs: 11 HP / 32 Atk / 23 Spe\nAdamant Nature\n- Poltergeist\n- Shadow Sneak\n- King's Shield\n- Sacred Sword\n\nScovillain (M)\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 1 Def / 32 SpA\nModest Nature\n- Flamethrower\n- Rage Powder\n- Leaf Storm\n- Protect\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nAdamant Nature\n- Fake Out\n- Flare Blitz\n- Throat Chop\n- Parting Shot",
+    "Pelipper (F) @ Focus Sash\nAbility: Drizzle\nLevel: 50\nEVs: 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Soak\n- Hurricane\n- Tailwind\n- Weather Ball\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 27 HP / 25 Def / 8 SpA / 1 SpD / 5 Spe\nBold Nature\n- Protect\n- Perish Song\n- Weather Ball\n- Helping Hand\n\nAbsol (M) @ Absolite Z\nAbility: Pressure\nLevel: 50\nEVs: 1 HP / 26 Atk / 7 Def / 32 Spe\nAdamant Nature\n- Night Slash\n- Close Combat\n- Will-O-Wisp\n- Detect\n\nScovillain (M)\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 1 Def / 32 SpA\nModest Nature\n- Flamethrower\n- Rage Powder\n- Leaf Storm\n- Protect\n\nIncineroar (M) @ Shuca Berry\nAbility: Intimidate\nLevel: 50\nEVs: 25 HP / 20 Def / 13 SpD / 8 Spe\nImpish Nature\n- Flare Blitz\n- Throat Chop\n- Parting Shot\n- Fake Out\n\nHatterene (F) @ Life Orb\nAbility: Magic Bounce\nLevel: 50\nEVs: 27 HP / 7 Def / 32 SpA\nQuiet Nature\n- Expanding Force\n- Dazzling Gleam\n- Trick Room\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5624",
+      "p2": "team 2345"
+    },
+    {
+      "p1": "move 4, switch 3",
+      "p2": "move 4 -2, move 1 -1"
+    },
+    {
+      "p1": "move 3 1, move 4 mega",
+      "p2": "move 2, move 1 -1 mega"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 1, switch 3",
+      "p2": "move 1 1, move 1 -1"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 2, switch 4"
+    },
+    {
+      "p1": "move 3 1, move 4 1",
+      "p2": "move 1 2, move 1 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 -2, move 1 2",
+      "p2": "move 3 -2, move 1 -1"
+    },
+    {
+      "p1": "pass, switch 4",
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3, move 2 1",
+      "p2": "move 3 1, move 1 2"
+    }
+  ]
+}
