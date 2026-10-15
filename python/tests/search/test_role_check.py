@@ -37,7 +37,7 @@ class Events(unittest.TestCase):
     def test_damage_counts_the_users_hits_on_the_target_only(self):
         e = events(ev("MOVE", 0, other=2), ev("DAMAGE", 2, hp=70),  # 0 hits 2: 30
                    ev("MOVE", 1, other=2), ev("DAMAGE", 2, hp=60),  # the partner hits 2: not 0's
-                   ev("DAMAGE", 2, hp=55, cause=C["DUOFORGE_CAUSE_RECOIL"]),  # no plain hit
+                   ev("DAMAGE", 2, hp=55, cause=C["DUOFORGE_CAUSE_NONE"] + 4),  # a caused damage (recoil): no plain hit
                    ev("MOVE", 0, other=2), ev("DAMAGE", 2, hp=40),  # 0 again: 15
                    ev("UPKEEP", 255), ev("DAMAGE", 2, hp=35))  # residual after the moves
         self.assertEqual(role_check._damage(e, 0, 2, 100), (45, True))
