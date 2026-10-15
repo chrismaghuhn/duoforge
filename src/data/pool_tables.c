@@ -940,7 +940,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {10u, 0u, 30u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Boomburst -- data/moves.ts:1690-1702 */
     {12u, 1u, 140u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Bounce -- data/moves.ts:1703-1747  [unmodelled: callback onTryMove; condition block] */
+    /* Bounce -- data/moves.ts:1703-1747  [unmodelled: callback onTryMove; condition block; flag gravity] */
     {7u, 0u, 85u, 85u, 5u, 8u, 8u, 2u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Breaking Swipe -- data/moves.ts:1789-1806 */
     {2u, 0u, 60u, 100u, 15u, 16u, 8u, 7u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
@@ -1138,9 +1138,9 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {1u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Flower Trick -- data/moves.ts:5881-5893 */
     {9u, 0u, 70u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 108u},
-    /* Fly -- data/moves.ts:5894-5934  [unmodelled: callback onTryMove; condition block] */
+    /* Fly -- data/moves.ts:5894-5934  [unmodelled: callback onTryMove; condition block; flag gravity] */
     {7u, 0u, 90u, 95u, 15u, 16u, 8u, 2u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* Flying Press -- data/moves.ts:5935-5951  [unmodelled: callback onEffectiveness] */
+    /* Flying Press -- data/moves.ts:5935-5951  [unmodelled: callback onEffectiveness; flag gravity] */
     {5u, 0u, 100u, 95u, 10u, 12u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Focus Energy -- data/moves.ts:5971-6000  [unmodelled: condition block; primary volatile focusenergy] */
     {12u, 2u, 0u, 0u, 30u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
@@ -1174,8 +1174,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {9u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Grav Apple -- data/moves.ts:7731-7753, data/mods/champions/moves.ts:464-467  [unmodelled: callback onBasePower] */
     {9u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* Gravity -- data/moves.ts:7754-7842  [unmodelled: condition block; pseudo weather gravity] */
-    {14u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Gravity -- data/moves.ts:7754-7842 */
+    {14u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 2u, 0u},
     /* Growth -- data/moves.ts:7860-7882, data/mods/champions/moves.ts:472-475  [unmodelled: callback onModifyMove] */
     {9u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Guard Split -- data/moves.ts:7949-7971  [unmodelled: callback onHit] */
@@ -1208,7 +1208,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {16u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 104u},
     /* Hex -- data/moves.ts:8607-8627  [unmodelled: callback basePowerCallback] */
     {8u, 1u, 65u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* High Jump Kick -- data/moves.ts:8898-8914  [unmodelled: callback onMoveFail; field hasCrashDamage] */
+    /* High Jump Kick -- data/moves.ts:8898-8914  [unmodelled: callback onMoveFail; field hasCrashDamage; flag gravity] */
     {5u, 0u, 130u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Horn Drill -- data/moves.ts:8979-8994 */
     {12u, 0u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 112u},
@@ -1292,7 +1292,7 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Magnetic Flux -- data/moves.ts:10826-10852  [unmodelled: callback onHitSide] */
     {3u, 2u, 0u, 0u, 20u, 20u, 8u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* Magnet Rise -- data/moves.ts:10853-10889  [unmodelled: callback onTry; condition block; primary volatile magnetrise] */
+    /* Magnet Rise -- data/moves.ts:10853-10889  [unmodelled: callback onTry; condition block; flag gravity; primary volatile magnetrise] */
     {3u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Matcha Gotcha -- data/moves.ts:11027-11044 */
     {9u, 1u, 80u, 90u, 15u, 16u, 8u, 7u, 1u, 130u, {0u, 0u}, {1u, 2u}, 20u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
@@ -6828,7 +6828,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BELCH] = "callback onTry",
     [DFI_MOVE_BLOCK] = "callback onHit",
     [DFI_MOVE_BONERUSH] = "field multihit",
-    [DFI_MOVE_BOUNCE] = "callback onTryMove; condition block",
+    [DFI_MOVE_BOUNCE] = "callback onTryMove; condition block; flag gravity",
     [DFI_MOVE_BULLETSEED] = "field multihit",
     [DFI_MOVE_BURNINGJEALOUSY] = "secondary",
     [DFI_MOVE_BURNUP] = "callback onTryMove; self effect",
@@ -6858,8 +6858,8 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_FIREFANG] = "field secondaries",
     [DFI_MOVE_FLAIL] = "callback basePowerCallback",
     [DFI_MOVE_FLING] = "callback onPrepareHit; condition block",
-    [DFI_MOVE_FLY] = "callback onTryMove; condition block",
-    [DFI_MOVE_FLYINGPRESS] = "callback onEffectiveness",
+    [DFI_MOVE_FLY] = "callback onTryMove; condition block; flag gravity",
+    [DFI_MOVE_FLYINGPRESS] = "callback onEffectiveness; flag gravity",
     [DFI_MOVE_FOCUSENERGY] = "condition block; primary volatile focusenergy",
     [DFI_MOVE_FOCUSPUNCH] = "callback beforeMoveCallback; callback priorityChargeCallback; condition block",
     [DFI_MOVE_FORESTSCURSE] = "callback onHit",
@@ -6868,7 +6868,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_GIGATONHAMMER] = "flag cantusetwice",
     [DFI_MOVE_GRASSYTERRAIN] = "condition block; field terrain",
     [DFI_MOVE_GRAVAPPLE] = "callback onBasePower",
-    [DFI_MOVE_GRAVITY] = "condition block; pseudo weather gravity",
     [DFI_MOVE_GROWTH] = "callback onModifyMove",
     [DFI_MOVE_GUARDSPLIT] = "callback onHit",
     [DFI_MOVE_GUARDSWAP] = "callback onHit",
@@ -6876,7 +6875,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_HEALBELL] = "callback onHit; target allyTeam",
     [DFI_MOVE_HEATCRASH] = "callback basePowerCallback; callback onTryHit",
     [DFI_MOVE_HEX] = "callback basePowerCallback",
-    [DFI_MOVE_HIGHJUMPKICK] = "callback onMoveFail; field hasCrashDamage",
+    [DFI_MOVE_HIGHJUMPKICK] = "callback onMoveFail; field hasCrashDamage; flag gravity",
     [DFI_MOVE_INFERNALPARADE] = "callback basePowerCallback",
     [DFI_MOVE_INGRAIN] = "condition block; primary volatile ingrain",
     [DFI_MOVE_INSTRUCT] = "callback onHit",
@@ -6886,7 +6885,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_MAGICPOWDER] = "callback onHit",
     [DFI_MOVE_MAGICROOM] = "condition block; pseudo weather magicroom",
     [DFI_MOVE_MAGNETICFLUX] = "callback onHitSide",
-    [DFI_MOVE_MAGNETRISE] = "callback onTry; condition block; primary volatile magnetrise",
+    [DFI_MOVE_MAGNETRISE] = "callback onTry; condition block; flag gravity; primary volatile magnetrise",
     [DFI_MOVE_MEANLOOK] = "callback onHit",
     [DFI_MOVE_METALBURST] = "callback damageCallback; callback onModifyTarget; callback onTry; target scripted",
     [DFI_MOVE_METEORBEAM] = "callback onTryMove",
@@ -7077,10 +7076,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x1eu, 0xb3u, 0xbdu, 0xdau, 0x06u, 0x03u, 0x5cu, 0x7du,
-    0xf9u, 0x87u, 0x22u, 0xceu, 0x95u, 0x0fu, 0xb8u, 0xfcu,
-    0x3cu, 0x07u, 0xbdu, 0x47u, 0x9fu, 0x5bu, 0x46u, 0xeau,
-    0xd8u, 0xb4u, 0x77u, 0xd4u, 0xadu, 0xe2u, 0xd1u, 0x21u,
+    0x08u, 0x60u, 0x30u, 0x7du, 0x87u, 0x27u, 0x3bu, 0x00u,
+    0xadu, 0xf7u, 0x6au, 0xa8u, 0xcbu, 0x35u, 0x20u, 0x9cu,
+    0x55u, 0x7eu, 0xd4u, 0x4du, 0x5au, 0x44u, 0xd1u, 0x77u,
+    0xceu, 0x83u, 0x95u, 0x2cu, 0xdeu, 0x79u, 0xc5u, 0x15u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

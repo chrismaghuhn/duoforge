@@ -277,10 +277,12 @@ class PoolRows(unittest.TestCase):
         for kind, array, ids, rows in (('ABILITY', 'dfi_pool_ability_unmodeled', ['eelevate'], Rows.abilities),
                                        ('ITEM', 'dfi_pool_item_unmodeled', [], Rows.items),
                                        ('MOVE', 'dfi_pool_move_unmodeled',
-                                        ['gravity', 'ingrain', 'magnetrise', 'telekinesis', 'smackdown'],
+                                        ['ingrain', 'magnetrise', 'telekinesis', 'smackdown'],
                                         Rows.moves)):
             # a row of the pool is UNMODELED; an id that the format does not have (Telekinesis) needs no row
             self.assertEqual(sorted(set(ids) & set(rows) - listed(kind, array)), [], kind)
+        # step K4 (#475, decision 0015 5dl): Gravity is an engine row now (dfi_grounded tests the field's Gravity turns first)
+        self.assertNotIn('gravity', listed('MOVE', 'dfi_pool_move_unmodeled'))
         self.assertIn('[DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,', block('const uint8_t dfi_pool_ability_handler['))
         self.assertNotIn('levitate', listed('ABILITY', 'dfi_pool_ability_unmodeled'))
         self.assertIn('[DFI_ITEM_AIRBALLOON] = DFI_HANDLER_NONE,', block('const uint8_t dfi_pool_item_handler['))

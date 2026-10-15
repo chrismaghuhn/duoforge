@@ -1300,6 +1300,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
 #define DUOFORGE_FIELD_ELECTRIC_TERRAIN 4u /* POOL kinds (step G25): FIELD_START / FIELD_END detail */
 #define DUOFORGE_FIELD_MISTY_TERRAIN   5u /* POOL kinds (step G25) */
+#define DUOFORGE_FIELD_GRAVITY         6u /* step K4 (#475, decision 0015 5dl): FIELD_START / FIELD_END detail, no [of] */
 #define DUOFORGE_SIDE_TAILWIND     1u
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u

@@ -999,6 +999,7 @@ TERRAIN = {'': 0, 'grassyterrain': 1, 'psychicterrain': 2, 'electricterrain': 3,
 FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 FIELD_ELECTRIC_TERRAIN = 4  # DUOFORGE_FIELD_ELECTRIC_TERRAIN (POOL, step G25)
 FIELD_MISTY_TERRAIN = 5  # DUOFORGE_FIELD_MISTY_TERRAIN (POOL, step G25)
+FIELD_GRAVITY = 6  # DUOFORGE_FIELD_GRAVITY (POOL, step K4, #475; decision 0015 5dl)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
 BLOCK_QUICK_GUARD = 6  # DUOFORGE_BLOCK_QUICK_GUARD (POOL, decision 0029): -activate move: Quick Guard
 FOE_SIDE_MOVES = ('Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web')  # the moves with the target class foeSide (POOL, step G37)
@@ -2307,7 +2308,8 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         elif kind in ('-fieldstart', '-fieldend'):
             cause, id2, other = ev_cause(attrs, tables)
             names = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN,
-                     'move: Electric Terrain': FIELD_ELECTRIC_TERRAIN, 'move: Misty Terrain': FIELD_MISTY_TERRAIN}
+                     'move: Electric Terrain': FIELD_ELECTRIC_TERRAIN, 'move: Misty Terrain': FIELD_MISTY_TERRAIN,
+                     'move: Gravity': FIELD_GRAVITY}
             if kind == '-fieldend' and args[0] == 'Misty Terrain':
                 # Misty Terrain's onFieldEnd has no "move: " in its line (data/moves.ts:12198-12200 at the pin); no other
                 # line of the field has this form, and a -fieldstart of it is an error.

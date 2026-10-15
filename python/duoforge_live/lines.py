@@ -167,8 +167,7 @@ _START = {"move: Taunt": "TAUNT", "Taunt": "TAUNT", "Encore": "ENCORE", "Substit
 # moves the engine plays as one (view.data.partial_trap: DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP and the support gate, #512
 # S1); Snap Trap ("stays unmarked: decision 0060 section 8") and the moves outside the pool stay unknown lines.
 _WEATHER = {"Sandstorm": "WEATHER_SAND", "Snowscape": "WEATHER_SNOW", "Snow": "WEATHER_SNOW"}
-_FIELD = {"move: Electric Terrain": "TERRAIN_ELECTRIC", "move: Misty Terrain": "TERRAIN_MISTY",
-          "move: Gravity": "GRAVITY"}
+_FIELD = {"move: Electric Terrain": "TERRAIN_ELECTRIC", "move: Misty Terrain": "TERRAIN_MISTY"}
 _SIDE = {"move: Aurora Veil": "AURORA_VEIL", "Aurora Veil": "AURORA_VEIL", "move: Stealth Rock": "STEALTH_ROCK",
          "Stealth Rock": "STEALTH_ROCK", "move: Spikes": "SPIKES", "Spikes": "SPIKES",
          "move: Toxic Spikes": "TOXIC_SPIKES", "Toxic Spikes": "TOXIC_SPIKES", "move: Sticky Web": "STICKY_WEB",
@@ -231,7 +230,7 @@ _FOLD_SINGLE_TURN = {"Protect", "move: Protect", "Helping Hand", "move: Follow M
 _FOLD_START = {"confusion", "ability: Flash Fire"}
 _FOLD_END = {"confusion"}
 _FOLD_WEATHER = {"RainDance", "SunnyDay", "none"}
-_FOLD_FIELD = {"move: Grassy Terrain", "move: Psychic Terrain", "move: Trick Room"}
+_FOLD_FIELD = {"move: Grassy Terrain", "move: Psychic Terrain", "move: Trick Room", "move: Gravity"}  # K4: Gravity folds (no feature stop)
 _FOLD_SIDE = {"move: Tailwind", "Reflect", "move: Reflect", "move: Light Screen"}
 
 

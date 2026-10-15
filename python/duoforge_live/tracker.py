@@ -129,6 +129,8 @@ EXT_FIELDS = {
     "TRAP_ELAPSED": (("v2bits", sum(EXT2_TRAP_ELAPSED)),),  # POSITION_EXT2 (volatiles2), a record field of its own
     # Attract's source position (step G87, decision 0080): volatiles2 bits 12-13, the source's flat position
     "ATTRACT_SOURCE": (("v2bits", _ATTRACT_SOURCE_BITS),),
+    # Gravity (step K4, #475, decision 0015 5dl): the field view's gravity_turns, folded from FIELD_START / FIELD_END detail 6
+    "GRAVITY": (("global", "gravity_turns"),),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
@@ -387,6 +389,7 @@ class Tracker:
         self._field_turns_next = FIELD_TURNS  # set per line by _extended_field
         self._terrain = self._terrain_turns = 0
         self._trick_room = 0
+        self._gravity = 0  # K4 (#475): the Gravity turns of the field, 5 from its start (FIELD_START detail 6)
         self._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]  # reflect, light screen, tailwind, Aurora Veil turns per side
         self._hazards = [collections.Counter(), collections.Counter()]  # entry hazard layers per side, by ext field
         self._mega_used = [0, 0]
@@ -1434,6 +1437,9 @@ class Tracker:
         elif kind == EV["FIELD_START"]:
             if detail == 2:
                 self._trick_room = FIELD_TURNS
+            elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
+                # K4 (#475, decision 0015 5dl): Gravity counts five turns; no extender is modelled for it
+                self._gravity = FIELD_TURNS
             else:
                 # DUOFORGE_FIELD_* -> the observation's DUOFORGE_TERRAIN_*: Grassy, Psychic (Team C), Electric and Misty
                 # (POOL, step G25)
@@ -1441,6 +1447,8 @@ class Tracker:
         elif kind == EV["FIELD_END"]:
             if detail == 2:
                 self._trick_room = 0
+            elif detail == C["DUOFORGE_FIELD_GRAVITY"]:
+                self._gravity = 0
             else:
                 self._terrain = self._terrain_turns = 0
         elif kind in (EV["SIDE_START"], EV["SIDE_END"]) and amount in _HAZARD:
@@ -1631,6 +1639,7 @@ class Tracker:
         self._weather_turns = down(self._weather_turns)
         self._terrain_turns = down(self._terrain_turns)
         self._trick_room = down(self._trick_room)
+        self._gravity = down(self._gravity)  # K4: the residual order 27.2, after Trick Room
         self._conditions = [[down(n) for n in c] for c in self._conditions]
         for side in self._positions:
             for p in side:
@@ -1935,6 +1944,8 @@ def restrict_ext(ext, folds):
                     dst[name] = dst[name] | (src[name] & bit)
                 elif where == "side":
                     dst[field] = src[field]
+                elif where == "global":
+                    out["field"][field] = ext["field"][field]
                 else:
                     group = "positions" if where == "position" else "members"
                     dst[group][field] = src[group][field]

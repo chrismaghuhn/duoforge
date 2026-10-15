@@ -10,6 +10,10 @@
  * binary64 arithmetic and the rational differ. A multiaccuracy move with another accuracy is refused (E_UNSUPPORTED) until its
  * proof is added there and the value here; the only multiaccuracy rows of the pool are Triple Axel (90) and Population Bomb
  * (90, not marked).
+ *
+ * Gravity's later-hit rule (step K4, turn.c) and its two binary64 exceptions are derived for the base 90 as well
+ * (tools/datagen/pool_families.js, checkK4): raising the proven base requires re-deriving K4's exception list for the new
+ * base there first.
  */
 #include <stdbool.h>
 #include <stdint.h>
