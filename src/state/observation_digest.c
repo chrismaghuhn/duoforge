@@ -17,6 +17,7 @@
 #define DFI_LINE_AMOUNT UINT32_C(128)
 #define DFI_LINE_FLAGS UINT32_C(256)
 #define DFI_LINE_IDENTITY UINT32_C(512) /* visible identity in place of DFI_LINE_ID */
+#define DFI_LINE_SIDE UINT32_C(1024) /* step K5: the identity's side byte, before the identity (Magic Room's end line only) */
 #define DFI_CAUSE_BIT(x) (UINT64_C(1) << DUOFORGE_CAUSE_##x)
 #define BASIC (DFI_CAUSE_BIT(NONE) | DFI_CAUSE_BIT(MOVE) | DFI_CAUSE_BIT(ITEM) | DFI_CAUSE_BIT(ABILITY))
 
@@ -117,10 +118,10 @@ static bool dfi_line_variant(const duoforge_event *e, const dfi_line_schema *s)
                e->detail == DUOFORGE_BLOCK_WIDE_GUARD || e->detail == DUOFORGE_BLOCK_QUICK_GUARD;
     case DUOFORGE_EVENT_WEATHER: return e->detail <= DUOFORGE_WEATHER_SNOW;
     case DUOFORGE_EVENT_FIELD_START:
-    /* Step K4 (#475, decision 0015 5dl): Gravity (6) is accepted by itself; 7 (Magic Room) is refused until K5. */
+    /* Step K4 (#475, decision 0015 5dl): Gravity (6) is accepted by itself. Step K5 (decision 0015 5dm): so is 7, Magic Room, on its own. */
     case DUOFORGE_EVENT_FIELD_END:
         return (e->detail >= DUOFORGE_FIELD_GRASSY_TERRAIN && e->detail <= DUOFORGE_FIELD_MISTY_TERRAIN) ||
-               e->detail == DUOFORGE_FIELD_GRAVITY;
+               e->detail == DUOFORGE_FIELD_GRAVITY || e->detail == DUOFORGE_FIELD_MAGIC_ROOM;
     case DUOFORGE_EVENT_SIDE_START:
     case DUOFORGE_EVENT_SIDE_END: return e->detail < 2u && e->amount >= DUOFORGE_SIDE_TAILWIND && e->amount <= DUOFORGE_SIDE_STICKY_WEB;
     case DUOFORGE_EVENT_TYPE_CHANGE:
@@ -160,6 +161,13 @@ duoforge_status dfi_observation_line_encode(const duoforge_event *e,
     if (e == NULL || size == NULL) { return DUOFORGE_E_NULL_ARGUMENT; }
     dfi_line_schema s;
     if (!dfi_line_schema_of(e->kind, &s) || !dfi_line_variant(e, &s)) { return DUOFORGE_E_UNSUPPORTED; }
+    if (e->kind == DUOFORGE_EVENT_FIELD_END && e->detail == DUOFORGE_FIELD_MAGIC_ROOM) {
+        /* Step K5 (decision 0015 5dm): ONLY this line carries the setter, as what a player sees: the other position if it is on the field,
+         * its side and its shown name (forme and gender, the Illusion projection of the capture). The member code in the event's id is
+         * an internal value and does not belong in an observation; the digest contains only what a player sees. Every other FIELD_END
+         * line, and the digest vectors, keep their bytes. */
+        s.fields = DFI_LINE_OTHER|DFI_LINE_SIDE|DFI_LINE_IDENTITY|DFI_LINE_DETAIL;
+    }
     if ((s.fields & DFI_LINE_IDENTITY) != 0u && (identity == NULL || identity->valid != 1u)) { return DUOFORGE_E_INVARIANT; }
     if ((s.fields & DFI_LINE_HP) != 0u && e->hp_kind != DUOFORGE_HP_EXACT && e->hp_kind != DUOFORGE_HP_PERCENT) {
         return DUOFORGE_E_INVARIANT;
@@ -171,6 +179,7 @@ duoforge_status dfi_observation_line_encode(const duoforge_event *e,
     if ((s.fields & DFI_LINE_OTHER) != 0u) { dfi_u8(bytes, &n, e->other); }
     if ((s.fields & DFI_LINE_CAUSE) != 0u) { dfi_u8(bytes, &n, e->cause); }
     if ((s.fields & DFI_LINE_ID) != 0u) { dfi_u16(bytes, &n, e->id); }
+    if ((s.fields & DFI_LINE_SIDE) != 0u) { dfi_u8(bytes, &n, identity->side); }
     if ((s.fields & DFI_LINE_IDENTITY) != 0u) { dfi_u16(bytes, &n, identity->forme); dfi_u8(bytes, &n, identity->gender); }
     if ((s.fields & DFI_LINE_ID2) != 0u) { dfi_u16(bytes, &n, e->id2); }
     if ((s.fields & DFI_LINE_HP) != 0u) {
@@ -342,12 +351,32 @@ void dfi_observation_capture(dfi_observation_digest *digest, const struct duofor
     const duoforge_event *event, uint32_t index)
 {
     if (digest->status != DUOFORGE_OK || index >= DUOFORGE_MAX_EVENTS) { return; }
+    const bool room_end = event->kind == DUOFORGE_EVENT_FIELD_END && event->detail == DUOFORGE_FIELD_MAGIC_ROOM;
     if (event->kind != DUOFORGE_EVENT_SWITCH && event->kind != DUOFORGE_EVENT_DRAG &&
-        event->kind != DUOFORGE_EVENT_REVIVE && event->kind != DUOFORGE_EVENT_ILLUSION_END) { return; }
-    const uint32_t side = (uint32_t)event->position / DUOFORGE_ACTIVE_PER_SIDE;
+        event->kind != DUOFORGE_EVENT_REVIVE && event->kind != DUOFORGE_EVENT_ILLUSION_END && !room_end) { return; }
+    uint32_t side = (uint32_t)event->position / DUOFORGE_ACTIVE_PER_SIDE;
     uint32_t member = event->id;
     if ((event->kind == DUOFORGE_EVENT_SWITCH || event->kind == DUOFORGE_EVENT_DRAG) &&
         side != digest->viewer && event->reserved[0] != 0u) { member = (uint32_t)event->reserved[0] - 1u; }
+    if (room_end) {
+        /* Step K5: the setter of Magic Room as the end line shows it (sim/pokemon.ts:531-533 toString): on the field, its position
+         * (`other`) and, under a disguise, the name of the shown member; benched, the member code of the event (an internal value, read here
+         * and never hashed) names the member whose own name the line shows. */
+        if (event->other < DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT) {
+            side = (uint32_t)event->other / DUOFORGE_ACTIVE_PER_SIDE;
+            const uint32_t slot = (uint32_t)event->other % DUOFORGE_ACTIVE_PER_SIDE;
+            member = battle->sides[side].positions[slot].occupant;
+            if (dfi_illusion_disguise_up(&battle->sides[side], &battle->tail.sides[side], slot) != 0 &&
+                battle->tail.sides[side].illusion.shown != 0u) {
+                member = (uint32_t)battle->tail.sides[side].illusion.shown - 1u; /* the name the viewer sees */
+            }
+        } else if (event->id >= 1u && event->id <= DFI_ATTRACT_MEMBER_MAX) {
+            side = ((uint32_t)event->id - 1u) / DUOFORGE_MAX_ROSTER;
+            member = ((uint32_t)event->id - 1u) % DUOFORGE_MAX_ROSTER;
+        } else {
+            dfi_observation_error(digest, DUOFORGE_E_INVARIANT, "observation_identity", event->kind); return;
+        }
+    }
     if (side >= DUOFORGE_SIDE_COUNT || member >= battle->sides[side].member_count || member >= DUOFORGE_MAX_ROSTER) {
         dfi_observation_error(digest, DUOFORGE_E_INVARIANT, "observation_identity", event->kind); return;
     }
@@ -362,6 +391,7 @@ void dfi_observation_capture(dfi_observation_digest *digest, const struct duofor
         dfi_observation_error(digest, DUOFORGE_E_INVARIANT, "observation_identity_forme", event->kind); return;
     }
     digest->identity[index].gender = m->gender;
+    digest->identity[index].side = room_end ? (uint8_t)side : 0u; /* wide-operands-reviewed: side < 2 */
     digest->identity[index].valid = 1u;
 }
 

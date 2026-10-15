@@ -918,7 +918,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
    well. Here: POSITION_EXT2 bits 4 to 6, the partial trap's elapsed count (decision 0060), each with VIEWEXT feature 45 (TRAP_ELAPSED).
    Step G87 (decision 0080): the two bits of Attract's source (volatiles2 bits 12 and 13) are shown under ATTRACT_SOURCE
-   (one entry per bit: the macro compares the bit number exactly). */
+   (one entry per bit: the macro compares the bit number exactly).
+   Step K5 (decision 0015 5dm): the three bits 0 to 2 of duoforge_field_ext.flags are Magic Room's remaining turns (a small counter, as
+   TRAP_ELAPSED), shown under MAGIC_ROOM (47). Bits 3 to 5 are reserved for Wonder Room (K6). */
 #define DUOFORGE_VIEWEXT_RESERVE_OWN(X) \
     X(RESERVE_VOLATILES, 22u, HEALING_WISH) \
     X(RESERVE_VOLATILES, 23u, SPEED_SWAPPED) \
@@ -926,7 +928,10 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
     X(VOLATILES2, 5u, TRAP_ELAPSED)     \
     X(VOLATILES2, 6u, TRAP_ELAPSED)     \
     X(VOLATILES2, 12u, ATTRACT_SOURCE)  \
-    X(VOLATILES2, 13u, ATTRACT_SOURCE)
+    X(VOLATILES2, 13u, ATTRACT_SOURCE)  \
+    X(FIELD_FLAGS, 0u, MAGIC_ROOM)      \
+    X(FIELD_FLAGS, 1u, MAGIC_ROOM)      \
+    X(FIELD_FLAGS, 2u, MAGIC_ROOM)
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
@@ -988,6 +993,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED     45u
 /* Speed Swap (step K3, decision 0015 5de): the occupant's speed was swapped (presence bit 23 of volatiles, no values). */
 #define DUOFORGE_VIEWEXT_FEATURE_SPEED_SWAPPED    46u
+#define DUOFORGE_VIEWEXT_FEATURE_MAGIC_ROOM       47u /* step K5 (#475, decision 0015 5dm): Magic Room's remaining turns, bits 0 to 2 of duoforge_field_ext.flags */
 #define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
 /* The content expansion's features above the tiers (HauptSession's blocks, lane B 53-58). */
 #define DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE   53u /* step G87 (decision 0080): the flat position of Attract's source, bits 12-13 of volatiles2 */
@@ -998,11 +1004,19 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS   62u /* duoforge_side_ext.conditions */
 #define DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS       63u /* duoforge_field_ext.flags */
 
+/* Magic Room's turns in duoforge_field_ext.flags (step K5): bits 0 to 2, the remaining turns 0..5 in binary, each bit shown under
+   DUOFORGE_VIEWEXT_FEATURE_MAGIC_ROOM. */
+#define DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT0 0x0001u
+#define DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT1 0x0002u
+#define DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT2 0x0004u
+
 /* Field-wide, public. */
 typedef struct duoforge_field_ext {
     uint8_t gravity_turns; /* 0 to 5: remaining turns */
-    uint8_t reserved0;     /* zero */
-    uint16_t flags;        /* DUOFORGE_FIELD_FLAG_* presence bits (decision 0050; none defined yet) */
+    uint8_t magic_room_source; /* Magic Room's setter: 0 = none, else 1 + side * 6 + roster index (the transform_source encoding). NOT encoded
+                                  (encoder 6 has no column for it); the setter is public (the -fieldstart line names it). */
+    uint16_t flags;        /* DUOFORGE_FIELD_FLAG_* bits (decision 0050: presence bits or small counters/codes, like TRAP_ELAPSED);
+                              bits 0 to 2 are Magic Room's turns (K5), bits 3 to 5 are Wonder Room's (K6, reserved) */
     uint8_t reserved[12];  /* zero */
 } duoforge_field_ext; /* 16 bytes */
 
@@ -1286,6 +1300,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_FIELD_ELECTRIC_TERRAIN 4u /* POOL kinds (step G25): FIELD_START / FIELD_END detail */
 #define DUOFORGE_FIELD_MISTY_TERRAIN   5u /* POOL kinds (step G25) */
 #define DUOFORGE_FIELD_GRAVITY         6u /* step K4 (#475, decision 0015 5dl): FIELD_START / FIELD_END detail, no [of] */
+#define DUOFORGE_FIELD_MAGIC_ROOM      7u /* step K5 (#475, decision 0015 5dm): FIELD_START / FIELD_END detail. START: other = the setter's position.
+                                              END (the end of the five turns, or a restart): other = the setter's position when it is on the field,
+                                              else DUOFORGE_NO_POSITION and the setter's member code (1 + side * 6 + roster index) in id. */
 #define DUOFORGE_SIDE_TAILWIND     1u
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u

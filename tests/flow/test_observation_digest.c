@@ -64,7 +64,7 @@ static duoforge_status encode_request(const request_fixture *f, uint8_t *out, ui
 
 static void line_vectors(df_test *t)
 {
-    const dfi_visible_identity identity = {0x0102u, 1u, 1u};
+    const dfi_visible_identity identity = {0x0102u, 1u, 1u, 0u};
     for (uint32_t i = 0u; i < sizeof df_observation_lines / sizeof df_observation_lines[0]; ++i) {
         uint8_t expected[DFI_OBSERVATION_LINE_MAX]; uint8_t bytes[DFI_OBSERVATION_LINE_MAX];
         const size_t n = strlen(df_observation_lines[i].hex) / 2u;
@@ -173,7 +173,7 @@ static void stream_vector(df_test *t)
         key[i] = 1u; DF_CHECK(t, dfi_observation_key_nonzero(key)); key[i] = 0u;
     }
     DF_CHECK(t, dfi_observation_digest_init(&digest, 0u) == DUOFORGE_OK);
-    digest.identity[1] = (dfi_visible_identity){0x0102u, 1u, 1u};
+    digest.identity[1] = (dfi_visible_identity){0x0102u, 1u, 1u, 0u};
     for (uint32_t i = 0u; i < 3u; ++i) { dfi_observation_fold(&digest, &df_observation_lines[i].event, i); }
     dfi_observation_finish_view(&digest, &f.result, &f.request, &f.view, &f.ext, &f.domain, 3u);
     uint8_t expected[32]; DF_CHECK(t, df_hex_to_bytes(DF_OBSERVATION_STREAM_SHA256, expected, sizeof expected));
@@ -391,10 +391,10 @@ static void step_plumbing(df_test *t)
     duoforge_battle_destroy(legacy); duoforge_battle_destroy(observed); duoforge_context_destroy(ctx);
 }
 
-/* Step K4 (#475, decision 0015 5dl): FIELD_START and FIELD_END accept detail 6 (Gravity) and refuse 7 (Magic Room, K5). */
+/* Step K4 (#475, decision 0015 5dl): FIELD_START and FIELD_END accept detail 6 (Gravity); step K5 (decision 0015 5dm) accepts 7 (Magic Room) on its own. */
 static void field_detail_vectors(df_test *t)
 {
-    const dfi_visible_identity identity = {0x0102u, 1u, 1u};
+    const dfi_visible_identity identity = {0x0102u, 1u, 1u, 0u};
     const uint32_t kinds[2] = {DUOFORGE_EVENT_FIELD_START, DUOFORGE_EVENT_FIELD_END};
     for (uint32_t k = 0u; k < 2u; ++k) {
         for (uint32_t detail = 0u; detail <= 8u; ++detail) {
@@ -404,12 +404,88 @@ static void field_detail_vectors(df_test *t)
             duoforge_event e = dfi_event_make(kinds[k], DUOFORGE_NO_POSITION);
             e.detail = (uint8_t)detail;
             dfi_observation_fold(&d, &e, 0u);
-            const bool accepted = detail == DUOFORGE_FIELD_GRAVITY ||
+            const bool accepted = detail == DUOFORGE_FIELD_GRAVITY || detail == DUOFORGE_FIELD_MAGIC_ROOM ||
                                   (detail >= DUOFORGE_FIELD_GRASSY_TERRAIN && detail <= DUOFORGE_FIELD_MISTY_TERRAIN);
             DF_CHECK(t, accepted ? d.status == DUOFORGE_OK : (d.status == DUOFORGE_E_UNSUPPORTED && !d.complete));
         }
     }
     DF_CHECK_EQ_U64(t, DUOFORGE_FIELD_GRAVITY, 6u);
+    DF_CHECK_EQ_U64(t, DUOFORGE_FIELD_MAGIC_ROOM, 7u);
+    /* The old FIELD_END lines (details 1 to 6) keep their bytes: the kind and the detail, nothing else (decision 0082). */
+    for (uint32_t detail = DUOFORGE_FIELD_GRASSY_TERRAIN; detail <= DUOFORGE_FIELD_GRAVITY; ++detail) {
+        duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
+        e.detail = (uint8_t)detail; e.id = 3u; e.other = 1u; /* an id and an other that the line must not carry */
+        uint8_t bytes[64]; uint32_t n = 0u;
+        DF_CHECK(t, dfi_observation_line_encode(&e, &identity, bytes, sizeof bytes, &n) == DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, n, 2u);
+        DF_CHECK(t, bytes[0] == DUOFORGE_EVENT_FIELD_END && bytes[1] == detail);
+    }
+}
+
+/* Step K5 (decision 0015 5dm): only Magic Room's end line (FIELD_END detail 7) carries the setter, as what a player sees: the
+ * setter's position if it is on the field, its side and its shown name. "The member code is an internal value and does not belong
+ * in an observation; the digest contains only what a player sees." */
+static void magic_room_vectors(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_c1);
+    duoforge_battle *a = df_make_f1(ctx); duoforge_battle *b = NULL;
+    DF_CHECK(t, duoforge_battle_clone(ctx, a, &b) == DUOFORGE_OK && b != NULL);
+    if (b == NULL) { duoforge_battle_destroy(a); duoforge_context_destroy(ctx); return; }
+    const uint32_t lead = a->sides[0].positions[0].occupant;
+    uint32_t bench[2] = {DUOFORGE_MAX_ROSTER, DUOFORGE_MAX_ROSTER};
+    for (uint32_t m = 0u, k = 0u; m < a->sides[0].member_count && k < 2u; ++m) {
+        if (m != lead && m != a->sides[0].positions[1].occupant) { bench[k++] = m; }
+    }
+    DF_CHECK(t, bench[1] < DUOFORGE_MAX_ROSTER && a->sides[0].members[bench[0]].species_id != a->sides[0].members[bench[1]].species_id);
+    /* (i) two particles with a different roster order and the same view: b is a with the two bench members swapped. */
+    const dfi_member held = b->sides[0].members[bench[0]];
+    b->sides[0].members[bench[0]] = b->sides[0].members[bench[1]]; b->sides[0].members[bench[1]] = held;
+    uint8_t left_bytes[64]; uint8_t right_bytes[64]; uint32_t ln = 0u; uint32_t rn = 0u;
+    dfi_observation_digest left; dfi_observation_digest right; duoforge_event projected;
+    duoforge_event raw = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
+    raw.detail = (uint8_t)DUOFORGE_FIELD_MAGIC_ROOM;
+    DF_CHECK(t, dfi_observation_digest_init(&left, 0u) == DUOFORGE_OK && dfi_observation_digest_init(&right, 0u) == DUOFORGE_OK);
+    raw.id = (uint16_t)(1u + bench[0]); /* side 0, the member in a at index bench[0] */
+    dfi_observation_capture(&left, a, &raw, 0u);
+    dfi_event_project(&raw, 0u, &projected);
+    DF_CHECK(t, dfi_observation_line_encode(&projected, &left.identity[0], left_bytes, sizeof left_bytes, &ln) == DUOFORGE_OK);
+    raw.id = (uint16_t)(1u + bench[1]); /* the same Pokemon, at the other index in b */
+    dfi_observation_capture(&right, b, &raw, 0u);
+    dfi_event_project(&raw, 0u, &projected);
+    DF_CHECK(t, dfi_observation_line_encode(&projected, &right.identity[0], right_bytes, sizeof right_bytes, &rn) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, ln, rn);
+    DF_CHECK_BYTES(t, left_bytes, right_bytes, ln, "the roster order of a particle does not split the digest of Magic Room's end");
+    DF_CHECK_EQ_U64(t, left.identity[0].forme, a->sides[0].members[bench[0]].species_id);
+    /* (iii) the same Pokemon active (its position) and benched (no position) are different lines. */
+    duoforge_event active = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
+    active.detail = (uint8_t)DUOFORGE_FIELD_MAGIC_ROOM; active.other = 0u;
+    DF_CHECK(t, dfi_observation_digest_init(&left, 0u) == DUOFORGE_OK);
+    dfi_observation_capture(&left, a, &active, 0u);
+    uint8_t active_bytes[64]; uint32_t an = 0u; uint8_t benched_bytes[64]; uint32_t bn = 0u;
+    dfi_event_project(&active, 0u, &projected);
+    DF_CHECK(t, dfi_observation_line_encode(&projected, &left.identity[0], active_bytes, sizeof active_bytes, &an) == DUOFORGE_OK);
+    duoforge_event benched = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
+    benched.detail = (uint8_t)DUOFORGE_FIELD_MAGIC_ROOM; benched.id = (uint16_t)(1u + lead);
+    DF_CHECK(t, dfi_observation_digest_init(&right, 0u) == DUOFORGE_OK);
+    dfi_observation_capture(&right, a, &benched, 0u);
+    dfi_event_project(&benched, 0u, &projected);
+    DF_CHECK(t, dfi_observation_line_encode(&projected, &right.identity[0], benched_bytes, sizeof benched_bytes, &bn) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, left.identity[0].forme, right.identity[0].forme);
+    DF_CHECK(t, an != bn || memcmp(active_bytes, benched_bytes, an) != 0);
+    /* The side is part of the line: the same index on the other side is another Pokemon. */
+    duoforge_event foe = benched; foe.id = (uint16_t)(1u + DUOFORGE_MAX_ROSTER + lead);
+    DF_CHECK(t, dfi_observation_digest_init(&right, 0u) == DUOFORGE_OK);
+    dfi_observation_capture(&right, a, &foe, 0u);
+    uint8_t foe_bytes[64]; uint32_t fn = 0u;
+    dfi_event_project(&foe, 0u, &projected);
+    DF_CHECK(t, dfi_observation_line_encode(&projected, &right.identity[0], foe_bytes, sizeof foe_bytes, &fn) == DUOFORGE_OK);
+    DF_CHECK(t, fn != bn || memcmp(foe_bytes, benched_bytes, fn) != 0);
+    /* a code outside 1..12 names nobody: the capture refuses */
+    benched.id = 13u;
+    DF_CHECK(t, dfi_observation_digest_init(&right, 0u) == DUOFORGE_OK);
+    dfi_observation_capture(&right, a, &benched, 0u);
+    DF_CHECK(t, right.status == DUOFORGE_E_INVARIANT && !right.complete);
+    duoforge_battle_destroy(b); duoforge_battle_destroy(a); duoforge_context_destroy(ctx);
 }
 
 int main(void)
@@ -417,6 +493,6 @@ int main(void)
     df_test t; df_test_begin(&t, "duoforge.observation.digest");
     line_vectors(&t); request_vectors(&t); stream_vector(&t); rows_mismatch(&t);
     hidden_worlds_and_identity(&t); trapping_changes_request(&t); step_plumbing(&t);
-    field_detail_vectors(&t);
+    field_detail_vectors(&t); magic_room_vectors(&t);
     return df_test_end(&t);
 }

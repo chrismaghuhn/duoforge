@@ -220,7 +220,8 @@ def _own_features(prefix, exceptions=None):
 # DUOFORGE_VIEWEXT_RESERVE_OWN, the C encoder's list, which python/tests/test_encoder6.py compares with them.
 _RESERVE_EXCEPTIONS = {"RESERVE_VOLATILES": _VOLATILE_FEATURE, "VOLATILES2": {"TRAP_ELAPSED_BIT0": "TRAP_ELAPSED", "TRAP_ELAPSED_BIT1": "TRAP_ELAPSED",
                  "TRAP_ELAPSED_BIT2": "TRAP_ELAPSED"}, "RESERVE_GUARDS": {},
-                       "SIDE_CONDITIONS": {}, "FIELD_FLAGS": {}}
+                       "SIDE_CONDITIONS": {},
+                       "FIELD_FLAGS": {"MAGIC_ROOM_BIT0": "MAGIC_ROOM", "MAGIC_ROOM_BIT1": "MAGIC_ROOM", "MAGIC_ROOM_BIT2": "MAGIC_ROOM"}}  # K5
 # Encoder 6's reserve families (decision 0050): (bit numbers, the family's feature, the own features of its bits).
 _RES_VOLATILES = (range(22, 32), FEATURE_BITS["RESERVE_VOLATILES"],
                     _own_features("DUOFORGE_POSITION_EXT_", _RESERVE_EXCEPTIONS["RESERVE_VOLATILES"]))

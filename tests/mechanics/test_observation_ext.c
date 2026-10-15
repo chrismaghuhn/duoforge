@@ -67,7 +67,7 @@ static void test_layout(df_test *t)
     DF_CHECK(t, sizeof(duoforge_observation_ext) == 192u);
     DF_CHECK(t, DUOFORGE_OBSERVATION_EXT_SIZE == 192u && DUOFORGE_OBSERVATION_EXT_REVISION == 1u);
 
-    DF_CHECK(t, offsetof(duoforge_field_ext, gravity_turns) == 0u && offsetof(duoforge_field_ext, reserved0) == 1u);
+    DF_CHECK(t, offsetof(duoforge_field_ext, gravity_turns) == 0u && offsetof(duoforge_field_ext, magic_room_source) == 1u);
     DF_CHECK(t, offsetof(duoforge_field_ext, flags) == 2u && offsetof(duoforge_field_ext, reserved) == 4u); /* 0050 */
 
     DF_CHECK(t, offsetof(duoforge_position_ext, volatiles) == 0u);
@@ -190,6 +190,7 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 11u) | ((uint64_t)1u << 2u) | ((uint64_t)1u << 20u) | ((uint64_t)1u << 3u) |
                      ((uint64_t)1u << 18u) | ((uint64_t)1u << 45u) | /* step G90: Partial trap (bit 18), TRAP_ELAPSED (bit 45) */
                      ((uint64_t)1u << 39u) | /* step G30: Rage Powder (bit 39) */
+                     ((uint64_t)1u << 47u) | /* step K5: Magic Room's turns, bits 0-2 of the field flags (decision 0015 5dm) */
                      ((uint64_t)1u << 53u) | /* step G87: Attract's source position (bits 12-13 of volatiles2, decision 0080) */
                      ((uint64_t)1u << 10u) | /* step G36: the ailment Tox (bit 10) */
                      ((uint64_t)1u << 21u) | /* step G27: Disable (bit 21) */

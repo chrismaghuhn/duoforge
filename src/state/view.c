@@ -916,7 +916,7 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
 
 /* A status move changed something at a position it reached (not `stopped`; the user only for a move of its own side): a
  * stage, a status that stayed (one a berry cured in the same action did not), a volatile, a type, an item, an ability, a
- * heal, a Protect, a side or field condition that started, a weather that started, Trick Room's own end.
+ * heal, a Protect, a side or field condition that started, a weather that started, Trick Room's own end and Magic Room's (step K5).
  * The last action of a turn reaches the caller with the residual's events after it (no line marks where the residual
  * begins), so the events that only the residual makes never count as the move's: a side condition's end (no status move
  * of the engine ends one; Psychic Fangs is a damaging move), a field's end other than Trick Room's toggle by the Trick Room
@@ -925,7 +925,7 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
  * that an ability announces (its -ability line right before, cause NONE: Moody and Speed Boost in the residual, a Defiant
  * answer) is the ability's, never the move's (data/abilities.ts moody and speedboost run onResidual). */
 static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user, uint32_t stopped, bool selfish,
-                       bool trick_room)
+                       uint32_t toggle_field)
 {
     uint32_t statused = 0u;
     uint32_t announced = DFI_POSITIONS_MR; /* the position whose ability announced the stage changes that follow */
@@ -999,8 +999,8 @@ static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user
             }
             break;
         case DUOFORGE_EVENT_FIELD_END:
-            if (e->cause == DUOFORGE_CAUSE_NONE && trick_room && e->detail == DUOFORGE_FIELD_TRICK_ROOM) {
-                return true; /* Trick Room again ends it (onFieldRestart) */
+            if (e->cause == DUOFORGE_CAUSE_NONE && toggle_field != 0u && e->detail == toggle_field) {
+                return true; /* Trick Room again ends it (onFieldRestart), and so does Magic Room (step K5, data/moves.ts:10783-10785) */
             }
             break;
         case DUOFORGE_EVENT_WEATHER:
@@ -1021,7 +1021,9 @@ static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user
 static uint8_t mr_effect_value(const duoforge_event *body, uint32_t n, uint32_t user, uint32_t stopped, bool selfish,
                                const dfi_move_data *md, bool failed, uint32_t classes)
 {
-    if (mr_changed(body, n, user, stopped, selfish, md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM)) {
+    const uint32_t toggle = md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM ? DUOFORGE_FIELD_TRICK_ROOM
+                            : md->pseudo_weather == DFI_PSEUDO_WEATHER_MAGIC_ROOM ? DUOFORGE_FIELD_MAGIC_ROOM : 0u;
+    if (mr_changed(body, n, user, stopped, selfish, toggle)) {
         return (uint8_t)DFI_MOVE_RESULT_TRUE;
     }
     if (failed || (classes & MR_FALSE) != 0u) {

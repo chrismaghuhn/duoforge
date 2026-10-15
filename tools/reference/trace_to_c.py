@@ -1000,6 +1000,7 @@ FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 FIELD_ELECTRIC_TERRAIN = 4  # DUOFORGE_FIELD_ELECTRIC_TERRAIN (POOL, step G25)
 FIELD_MISTY_TERRAIN = 5  # DUOFORGE_FIELD_MISTY_TERRAIN (POOL, step G25)
 FIELD_GRAVITY = 6  # DUOFORGE_FIELD_GRAVITY (POOL, step K4, #475; decision 0015 5dl)
+FIELD_MAGIC_ROOM = 7  # DUOFORGE_FIELD_MAGIC_ROOM (POOL, step K5, #475; decision 0015 5dm)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
 BLOCK_QUICK_GUARD = 6  # DUOFORGE_BLOCK_QUICK_GUARD (POOL, decision 0029): -activate move: Quick Guard
 FOE_SIDE_MOVES = ('Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web')  # the moves with the target class foeSide (POOL, step G37)
@@ -1617,8 +1618,48 @@ def swap_partners(trace, teams, roster_of, tables):
     return out
 
 
+def room_setters(trace, roster_of):
+    """Step K5 (#475, decision 0015 5dm): the member code (1 + side * 6 + roster index) of the setter of every Magic Room end line,
+    for `-fieldend|move: Magic Room|[of] X` (data/moves.ts:10788-10790), where X is the setter's toString() at the END time: its slot
+    and name while it is active, its bare name once it is not (sim/pokemon.ts:531-533). The converter follows the room from its
+    `-fieldstart` (which names the setter with its slot) to its end line (a restart ends the room with this line and no -fieldstart);
+    an end line whose name is not the setter's (a disguised holder prints the disguise) is refused. Returns one dict per step: line
+    index -> the code."""
+    out = []
+    setter = None  # (side, roster index, name) while the room is up
+    for step in trace['steps']:
+        marks = {}
+        for i, line in enumerate(step['log']):
+            parts = line.split('|')
+            kind = parts[1] if len(parts) > 1 else ''
+            args = [x for x in parts[2:] if not x.startswith('[')]
+            of = [x[len('[of] '):] for x in parts[2:] if x.startswith('[of] ')]
+            if kind not in ('-fieldstart', '-fieldend') or not args or args[0] != 'move: Magic Room':
+                continue
+            if len(of) != 1:
+                raise ConversionError('magic-room-line', 'trace_to_c: Magic Room line without exactly one [of]: %r' % line,
+                                      detail='of')
+            if kind == '-fieldstart':
+                if setter is not None or ev_pos(of[0]) is None or any(x.startswith('[persistent]') for x in parts[2:]):
+                    raise ConversionError('magic-room-line', 'trace_to_c: unexpected Magic Room start %r' % line, detail='start')
+                pos = ev_pos(of[0])
+                name = of[0].split(': ', 1)[1]
+                setter = (pos // 2, roster_of[pos // 2][name], name)
+            else:
+                if setter is None:
+                    raise ConversionError('magic-room-line', 'trace_to_c: Magic Room end without its start %r' % line, detail='end')
+                name = of[0].split(': ', 1)[1] if ev_pos(of[0]) is not None else of[0]
+                if name != setter[2]:
+                    raise ConversionError('magic-room-setter', 'trace_to_c: Magic Room end names %r, the setter is %r (an Illusion '
+                                          'holder prints its disguise): %r' % (name, setter[2], line), detail='setter')
+                marks[i] = 1 + setter[0] * 6 + setter[1]
+                setter = None
+        out.append(marks)
+    return out
+
+
 def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None, boost_pre=None, lead=(),
-                setboost_old=None):
+                setboost_old=None, room_ids=None):
     """The events `viewer` sees in one step, in protocol order.
 
     ill (decision 0026, Illusion; None = no holder in the battle): 'side' (per side: a holder is on it), 'truth_at' ((side, p) ->
@@ -2309,13 +2350,23 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             cause, id2, other = ev_cause(attrs, tables)
             names = {'move: Grassy Terrain': 1, 'move: Trick Room': 2, 'move: Psychic Terrain': FIELD_PSYCHIC_TERRAIN,
                      'move: Electric Terrain': FIELD_ELECTRIC_TERRAIN, 'move: Misty Terrain': FIELD_MISTY_TERRAIN,
-                     'move: Gravity': FIELD_GRAVITY}
+                     'move: Gravity': FIELD_GRAVITY, 'move: Magic Room': FIELD_MAGIC_ROOM}
             if kind == '-fieldend' and args[0] == 'Misty Terrain':
                 # Misty Terrain's onFieldEnd has no "move: " in its line (data/moves.ts:12198-12200 at the pin); no other
                 # line of the field has this form, and a -fieldstart of it is an error.
                 names['Misty Terrain'] = FIELD_MISTY_TERRAIN
             field = names[args[0]]
-            e = ev_tuple(EV['FIELD_START' if kind == '-fieldstart' else 'FIELD_END'], NOPOS, other, cause, 0, id2,
+            ident = 0
+            if field == FIELD_MAGIC_ROOM:
+                # Step K5: the start and the end name the setter ([of], a position or, benched, a bare name). The end carries its member
+                # code in `id` when the setter is not on the field (room_setters, the converter's own follow of the room).
+                if cause != 0 or id2 != 0 or (kind == '-fieldstart') != (other != NOPOS):
+                    raise ConversionError('magic-room-line', 'trace_to_c: unexpected Magic Room line %r' % line, detail='shape')
+                if kind == '-fieldend' and other == NOPOS:
+                    ident = (room_ids or {}).get(i, 0)
+                    if ident == 0:
+                        raise ConversionError('magic-room-line', 'trace_to_c: Magic Room end without its setter %r' % line, detail='setter')
+            e = ev_tuple(EV['FIELD_START' if kind == '-fieldstart' else 'FIELD_END'], NOPOS, other, cause, ident, id2,
                          detail=field)
         elif kind in ('-sidestart', '-sideend'):
             side = int(args[0][1]) - 1
@@ -2607,6 +2658,7 @@ def convert_battle(name, spec, trace, tables):
     dup_rows = set()  # (side, roster) of the real member whose name the holder shows, from dup_step on
     rb_pending = {}  # side -> the position of its last Revival Blessing user (see step_events)
     swaps = swap_partners(trace, teams, roster_of, tables)  # step G70: the ability pair of every ally Skill Swap
+    rooms = room_setters(trace, roster_of)  # step K5: the setter of every Magic Room end line
     for k, step in enumerate(trace['steps']):
         step_index = k  # k is reused by the slot loops below
         public_lines(step['log'], roster_of, shown, ill_pub)
@@ -2683,7 +2735,7 @@ def convert_battle(name, spec, trace, tables):
         setboost = (setboost_olds(step['log'], state)
                     if any(l.startswith('|-setboost|') and l.endswith('|[from] ability: Anger Point') for l in step['log']) else [])
         events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k], boost_pre,
-                              setboost_old=list(setboost))
+                              setboost_old=list(setboost), room_ids=rooms[k])
                   for viewer in range(2)]
         for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
             if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:

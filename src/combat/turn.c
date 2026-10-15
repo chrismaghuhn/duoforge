@@ -729,6 +729,7 @@ static uint32_t dfi_raw_speed_key(const dfi_member *m)
 }
 
 #include "combat/field/trick_room.h"
+#include "combat/field/magic_room.h"
 
 /* Battle.updateSpeed: every standing active Pokemon's speed is taken again;
  * a fainted one keeps the value it had (getAllActive skips it). */
@@ -8010,6 +8011,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         r->mres |= DFI_MRES_TRUE; /* addPseudoWeather returns true */
         return DUOFORGE_OK;
     }
+    if (status_move && md->pseudo_weather == DFI_PSEUDO_WEATHER_MAGIC_ROOM) {
+        /* Step K5 (#475, data/moves.ts:10754-10797): the start, or the removal by a restart (combat/field/magic_room.h). */
+        dfi_run_magic_room(r, user);
+        return DUOFORGE_OK;
+    }
     /* Substitute (decision 0032, data/moves.ts:18305-18374): onTryHit, then the Substitute's start and its cost. A status move with
      * no effect of its own, so it is dispatched before the generic status check below. */
     if (md->special == DFI_SPECIAL_SUBSTITUTE) {
@@ -11399,6 +11405,16 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             e.detail = (uint8_t)DUOFORGE_FIELD_GRAVITY;
             dfi_emit(r, &e); /* [-fieldend] */
         } else {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
+        }
+    }
+    /* Step K5 (#475, data/moves.ts:10786-10787, Magic Room's onFieldResidualOrder 27 and SubOrder 6): after Gravity (27.2), before the
+     * terrains (27.7). Its end line names the setter (combat/field/magic_room.h). */
+    if (b->tail.magic_room_turns != 0u) {
+        if (!dfi_magic_room_residual(r)) {
             dfi_residual_faints(r);
             if (r->ended) {
                 return DUOFORGE_OK;

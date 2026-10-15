@@ -11,6 +11,7 @@ typedef struct dfi_visible_identity {
     uint16_t forme; /* displayed species/forme at emission time, not a roster index */
     uint8_t gender;
     uint8_t valid;
+    uint8_t side; /* step K5: the side of the identity, set only for Magic Room's end line (FIELD_END detail 7), which names a Pokemon that may be benched */
 } dfi_visible_identity;
 typedef struct dfi_observation_digest {
     dfi_sha256_state hash;

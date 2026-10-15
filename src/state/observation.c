@@ -421,6 +421,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
          * position has no tail. */
         /* Step K4 (#475, decision 0015 5dl): the field view's Gravity turns, public (-fieldstart|move: Gravity, data/moves.ts:7773-7778). */
         o.field.gravity_turns = battle->tail.gravity_turns;
+        /* Step K5 (#475, decision 0015 5dm): Magic Room, public (-fieldstart|move: Magic Room|[of] setter, data/moves.ts:10768-10774): the
+         * remaining turns as the binary count of bits 0 to 2 of the field flags (shown under feature 47), and the setter's member code,
+         * which is not encoded. */
+        o.field.flags = (uint16_t)((uint32_t)o.field.flags | (uint32_t)battle->tail.magic_room_turns);
+        o.field.magic_room_source = battle->tail.magic_room_source;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
              * residual, so it is set only at a boundary inside a turn (a PIVOT), as decision 0018 section 3.3 says. */

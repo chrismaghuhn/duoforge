@@ -123,7 +123,7 @@ int main(void)
            FIELD(duoforge_observation, weather_turns), FIELD(duoforge_observation, terrain),
            FIELD(duoforge_observation, terrain_turns), FIELD(duoforge_observation, trick_room_turns),
            FIELD(duoforge_observation, reserved), FIELD(duoforge_observation, sides));
-    STRUCT(duoforge_field_ext, false, FIELD(duoforge_field_ext, gravity_turns), FIELD(duoforge_field_ext, reserved0),
+    STRUCT(duoforge_field_ext, false, FIELD(duoforge_field_ext, gravity_turns), FIELD(duoforge_field_ext, magic_room_source),
            FIELD(duoforge_field_ext, flags), FIELD(duoforge_field_ext, reserved));
     STRUCT(duoforge_position_ext, false, FIELD(duoforge_position_ext, volatiles),
            FIELD(duoforge_position_ext, ability_now), FIELD(duoforge_position_ext, type_now),
@@ -225,6 +225,10 @@ int main(void)
     CONSTANT(DUOFORGE_EVENT_FIELD_END, false);
     CONSTANT(DUOFORGE_FIELD_TRICK_ROOM, false);
     CONSTANT(DUOFORGE_FIELD_GRAVITY, false);
+    CONSTANT(DUOFORGE_FIELD_MAGIC_ROOM, false);
+    CONSTANT(DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT0, false);
+    CONSTANT(DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT1, false);
+    CONSTANT(DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT2, false);
     CONSTANT(DUOFORGE_MAX_EVENTS, false);
     CONSTANT(DUOFORGE_NO_POSITION, false);
     CONSTANT(DUOFORGE_E_INVALID_ARGUMENT, false);
@@ -357,6 +361,7 @@ int main(void)
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_ROOST, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_SPEED_SWAPPED, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_MAGIC_ROOM, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_TRANSFORM, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_COUNT, false);
