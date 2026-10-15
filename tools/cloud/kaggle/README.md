@@ -89,15 +89,22 @@ It is compared with the same run on this machine, at the same commit, on the sam
 
 They are not bit-identical: another device, XLA on a GPU. The check is that both lie in the expected range of each other. The local run's numbers are recorded below before the first Kaggle run; the Kaggle run's are added after it.
 
+**This dataset is only for the chain test; before real training it is built anew once the content has caught up**
+(HauptSession 2026-10-15: "Dieser Datensatz ist nur für den Kettentest; vor echtem Training wird nach dem Nachziehen des
+Inhalts neu gebaut." Teams with content the engine does not support yet, such as Mold Breaker, Protean or Mega Stones,
+drop out of it entirely.)
+
 **The data of the first run** (HauptSession 2026-10-15): `bo1-regmc` built anew on main `779e7693` from the inputs of
 the dataset of 2026-10-11 (the source parquet `6a7d913b…`, the corpus `62b37c4a…`, Showdown `b2cb775b`, seed 1, k 1),
 its manifest naming commit `779e7693`, dirty false. **It is not an exact rebuild of `bo1-regmc` of 2026-10-11**: that
 prior file (`4d377f69…`) is gone, and the prior was made anew from the same pastes (`e72a17ce…`). The code differs
 too: the new build refuses points the old one wrote (`world:DUOFORGE_E_UNSUPPORTED` and others), 549,053 rows from
-30,741 games against 862,815 from 30,625. Only its `pseudonymize.py` copy goes to Kaggle (content list
-`duoforge-6eefd2286db7`, 532 files, 56,633,755 bytes).
+30,741 games against 862,815 from 30,625. Only its `pseudonymize.py` copy goes to Kaggle, without replay ids and player hashes
+(content list `duoforge-f3ea014ecbad`, 532 files, 56,633,706 bytes).
 
-**The local run** (2026-10-15, commit `f634143a` of this branch, library sha256 `4ba34a4d…` built from it, CPU,
+**The local run** (2026-10-15, commit `f634143a` of this branch, and again at `8bb4dbcf` on the copy without player
+hashes: the same numbers to the last digit and bit-identical parameters, only the weights file's config naming the
+dataset differs; library sha256 `4ba34a4d…` built from it, CPU,
 `JAX_PLATFORMS=cpu`, the copy above, seed 1; 504,220 training and 44,833 validation rows), 214 s in all:
 
 | epoch | train NLL | validation NLL | validation top-1 (exact) | validation value MSE |
