@@ -1,0 +1,109 @@
+{
+  "name": "fz541_leech_seed_self_drain",
+  "purpose": "Gourgeist seeds Wyrdeer (step 2) and Ally Switch puts Wyrdeer on Gourgeist's slot (step 3): the seed's source is a slot, so Wyrdeer drains into itself with no [of] (sim/battle.ts:2155) and a silent heal; on main the tail invariant refused the state (E_INVARIANT) and the converter dropped the heal (issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_233_98), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,1eac38e0b59da05753d8f256ea8d77f26fbc3051422f2d7389b880845b1f49af",
+  "teams": [
+    "falinks @ falinksite\nAbility: battlearmor\nLevel: 50\nEVs: 9 HP / 13 Atk / 13 Def / 6 SpA / 13 SpD / 12 Spe\nLonely Nature\n- helpinghand\n- sunnyday\n- focusblast\n- lunge\n\narcanine (F) @ pidgeotite\nAbility: intimidate\nLevel: 50\nEVs: 11 HP / 5 Atk / 13 Def / 6 SpA / 15 SpD / 16 Spe\nRelaxed Nature\n- dragonpulse\n- crunch\n- scaryface\n- ironhead\n\nsableye (M) @ silverpowder\nAbility: prankster\nLevel: 50\nEVs: 9 HP / 10 Atk / 17 Def / 9 SpA / 13 SpD / 8 Spe\nBold Nature\n- calmmind\n- taunt\n- drainpunch\n- thunderpunch\n\navalugghisui (M) @ froslassite\nAbility: sturdy\nLevel: 50\nEVs: 9 HP / 10 Atk / 12 Def / 12 SpA / 8 SpD / 15 Spe\nBrave Nature\n- irondefense\n- hardpress\n- rocktomb\n- icebeam\n\nsirfetchd (M) @ colburberry\nAbility: scrappy\nLevel: 50\nEVs: 8 HP / 9 Atk / 13 Def / 10 SpA / 16 SpD / 10 Spe\nCareful Nature\n- coaching\n- leafblade\n- curse\n- bravebird\n\nslurpuff (F) @ manectite\nAbility: unburden\nLevel: 50\nEVs: 8 HP / 13 Atk / 15 Def / 9 SpA / 9 SpD / 12 Spe\nSassy Nature\n- drainpunch\n- raindance\n- lightscreen\n- dazzlinggleam",
+    "gourgeistsuper (M) @ tyranitarite\nAbility: frisk\nLevel: 50\nEVs: 8 HP / 8 Atk / 11 Def / 8 SpA / 18 SpD / 13 Spe\nGentle Nature\n- thief\n- leechseed\n- allyswitch\n- grassyglide\n\northworm (M) @ chilanberry\nAbility: sandveil\nLevel: 50\nEVs: 10 HP / 17 Atk / 9 Def / 14 SpA / 7 SpD / 9 Spe\nQuiet Nature\n- bodyslam\n- hyperbeam\n- ironhead\n- heavyslam\n\nsharpedo (M) @ raichunitey\nAbility: roughskin\nLevel: 50\nEVs: 11 HP / 12 Atk / 13 Def / 6 SpA / 15 SpD / 9 Spe\nBold Nature\n- aquajet\n- poisonfang\n- hydropump\n- nightslash\n\ntrevenant (M) @ blackbelt\nAbility: frisk\nLevel: 50\nEVs: 12 HP / 8 Atk / 9 Def / 12 SpA / 10 SpD / 15 Spe\nLonely Nature\n- seedbomb\n- nightshade\n- lashout\n- rockslide\n\nscizor (M) @ ironball\nAbility: swarm\nLevel: 50\nEVs: 14 HP / 9 Atk / 11 Def / 6 SpA / 12 SpD / 14 Spe\nBashful Nature\n- agility\n- aerialace\n- protect\n- feint\n\nwyrdeer (F) @ muscleband\nAbility: frisk\nLevel: 50\nEVs: 1 HP / 1 Atk / 1 Def / 1 SpA / 4 SpD / 2 Spe\nHasty Nature\n- helpinghand\n- imprison\n- confuseray\n- agility"
+  ],
+  "choices": [
+    {
+      "p1": "team 2351",
+      "p2": "team 6125"
+    },
+    {
+      "p1": "move 2 2, move 4 1",
+      "p2": "move 3 2, move 1 -1"
+    },
+    {
+      "p1": "move 3 -2, move 2 1",
+      "p2": "move 2, move 2 -1"
+    },
+    {
+      "p1": "move 4 -2, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 2 -2, move 1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 2 -2, move 4 1"
+    },
+    {
+      "p1": "move 2 1, move 4 -1",
+      "p2": "switch 3, move 1"
+    },
+    {
+      "p1": "move 4 1, move 4 1",
+      "p2": "move 2 1, move 2 1"
+    },
+    {
+      "p1": "move 2 -2, switch 4",
+      "p2": "move 1, move 4 2"
+    },
+    {
+      "p1": "switch 4, move 2 mega",
+      "p2": "move 1 -2, move 2 -1"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 1 1, move 3"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 2 2, switch 3"
+    },
+    {
+      "p1": "move 4 2, move 3 2",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4 1, move 1 -1",
+      "p2": "move 2 1, move 3"
+    },
+    {
+      "p1": "move 4 -2, move 2",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 1, switch 3",
+      "p2": "move 2 2, move 1 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 2, move 3",
+      "p2": "move 4 1, move 4 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 2, move 1 -1",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 2 -2, move 4 2",
+      "p2": "move 4 2, move 1 1"
+    },
+    {
+      "p1": "move 1 -2, move 4 -1",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "pass, move 4 1",
+      "p2": "move 2 2, pass"
+    }
+  ]
+}

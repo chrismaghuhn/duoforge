@@ -1,0 +1,82 @@
+{
+  "name": "fz541_locked_target_ally_switch",
+  "purpose": "Forretress charges Solar Beam (step 1), Alakazam's Ally Switch moves it (step 2): the locked target moves with the Pokemon's slot record, so the beam fires at Victreebel from the new slot; on main the engine stopped with E_INVARIANT at step 2 (issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_140_80), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,c085faa8f4b5cca5736569827f33588ac5332f72772db281963a3170b6d90f6e",
+  "teams": [
+    "volcarona (M) @ magnet\nAbility: flamebody\nLevel: 50\nEVs: 12 HP / 9 Atk / 13 Def / 13 SpA / 8 SpD / 11 Spe\nImpish Nature\n- airslash\n- protect\n- heatwave\n- fierydance\n\nvictreebel (M)\nAbility: chlorophyll\nLevel: 50\nEVs: 14 HP / 10 Atk / 10 Def / 19 SpA / 5 SpD / 8 Spe\nHardy Nature\n- reflect\n- seedbomb\n- encore\n- sludgebomb\n\nhydreigon (F) @ skarmorite\nAbility: levitate\nLevel: 50\nEVs: 12 HP / 15 Atk / 7 Def / 8 SpA / 9 SpD / 15 Spe\nAdamant Nature\n- earthquake\n- assurance\n- fireblast\n- lashout\n\ngrapploct (M) @ brightpowder\nAbility: limber\nLevel: 50\nEVs: 13 HP / 14 Atk / 9 Def / 12 SpA / 9 SpD / 9 Spe\nAdamant Nature\n- hyperbeam\n- hydropump\n- muddywater\n- substitute\n\nlycanrocmidnight (F) @ shucaberry\nAbility: noguard\nLevel: 50\nEVs: 9 HP / 9 Atk / 12 Def / 11 SpA / 13 SpD / 12 Spe\nLonely Nature\n- lashout\n- upperhand\n- howl\n- endeavor\n\ngoodrahisui (M) @ feraligite\nAbility: shellarmor\nLevel: 50\nEVs: 10 HP / 17 Atk / 18 Def / 10 SpA / 5 SpD / 6 Spe\nTimid Nature\n- protect\n- thunderbolt\n- sunnyday\n- knockoff",
+    "salamence (F) @ salamencite\nAbility: intimidate\nLevel: 50\nEVs: 9 HP / 14 Atk / 9 Def / 13 SpA / 12 SpD / 9 Spe\nLax Nature\n- dragontail\n- hypervoice\n- crunch\n- dracometeor\n\nalakazam (M) @ alakazite\nAbility: innerfocus\nLevel: 50\nEVs: 13 HP / 11 Atk / 13 Def / 8 SpA / 11 SpD / 10 Spe\nCalm Nature\n- speedswap\n- dazzlinggleam\n- psychic\n- allyswitch\n\nrotomheat @ shucaberry\nAbility: levitate\nLevel: 50\nEVs: 10 HP / 11 Atk / 10 Def / 8 SpA / 6 SpD / 9 Spe\nQuiet Nature\n- nastyplot\n- thunder\n- trick\n- nightshade\n\npikachu (F) @ whiteherb\nAbility: static\nLevel: 50\nEVs: 12 HP / 9 Atk / 10 Def / 12 SpA / 11 SpD / 12 Spe\nLax Nature\n- risingvoltage\n- knockoff\n- grassknot\n- alluringvoice\n\nforretress (F) @ staraptite\nAbility: sturdy\nLevel: 50\nEVs: 1 HP / 1 Atk / 1 Def / 1 SpD\nLonely Nature\n- ironhead\n- bugbuzz\n- solarbeam\n- sandtomb\n\npolitoed (M) @ electricseed\nAbility: drizzle\nLevel: 50\nEVs: 1 Atk / 1 Spe\nMild Nature\n- earthquake\n- focusblast\n- weatherball\n- icepunch"
+  ],
+  "choices": [
+    {
+      "p1": "team 6412",
+      "p2": "team 6542"
+    },
+    {
+      "p1": "move 4 1, move 3",
+      "p2": "switch 4, move 3 2"
+    },
+    {
+      "p1": "move 1, switch 4",
+      "p2": "move 4 mega, move 1"
+    },
+    {
+      "p1": "move 2 2, move 3 -1",
+      "p2": "switch 4, move 1 1"
+    },
+    {
+      "p1": "switch 4, move 2 -1",
+      "p2": "switch 3, move 1 2"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 3 2, move 3 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 3 2, move 1 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1, move 4 2",
+      "p2": "move 4 -2, move 2 -1"
+    },
+    {
+      "p1": "move 4 -2, move 1",
+      "p2": "move 1 -2, move 4 2"
+    },
+    {
+      "p1": "move 1, switch 3",
+      "p2": "move 3 -2, move 2 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 1 1",
+      "p2": "move 1 2, move 2 -1"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "pass, move 3 1"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "pass, move 1"
+    },
+    {
+      "p1": "move 4 -2, move 1 2",
+      "p2": "pass, move 2 -1"
+    },
+    {
+      "p1": "move 2 1, move 4 1",
+      "p2": "pass, move 2 1"
+    }
+  ]
+}
