@@ -2457,7 +2457,7 @@ static duoforge_status dfi_lum_berry(dfi_run *r, uint32_t flat)
 {
     struct duoforge_battle *b = r->b;
     dfi_member *m = dfi_at(b, flat);
-    if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_LUMBERRY) || dfi_unnerved(b, flat)) {
+    if (m == NULL || m->hp == 0u || !dfi_holds_effect(b, m, DFI_ITEM_LUMBERRY) || dfi_unnerved(b, flat)) {
         return DUOFORGE_OK;
     }
     dfi_use_item_core(r, flat, DUOFORGE_NO_POSITION);
@@ -2533,7 +2533,7 @@ static duoforge_status dfi_mental_herb(dfi_run *r, uint32_t flat)
     struct duoforge_battle *b = r->b;
     const dfi_member *m = dfi_at(b, flat);
     dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
-    if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_MENTALHERB)) {
+    if (m == NULL || m->hp == 0u || !dfi_holds_effect(b, m, DFI_ITEM_MENTALHERB)) {
         return DUOFORGE_OK;
     }
     const bool attract = b->tail.attract_source[flat] != 0u; /* step G71 (decision 0034): the list's first condition */
@@ -3754,9 +3754,9 @@ static duoforge_status dfi_update(dfi_run *r)
          * draws no tie order: dfi_attract_update below still ends it. */
         const bool oblivious_infatuated = r->b->tail.attract_source[flat] != 0u &&
                                           dfi_ability(r->b, dfi_at(r->b, flat), DFI_ABILITY_OBLIVIOUS);
-        const bool bears = dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
-                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
-                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || oblivious_infatuated;
+        const bool bears = dfi_holds_effect(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
+                           dfi_holds_effect(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
+                           dfi_holds_effect(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || oblivious_infatuated;
         bearers |= bears ? 1u << flat : 0u;
     }
     /* the inert infatuated holders: their silent end is state only, and nothing else reads it in this update */
@@ -3785,7 +3785,7 @@ static duoforge_status dfi_update(dfi_run *r)
             return attract;
         }
         const dfi_member *m = dfi_at(r->b, flat);
-        if (m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max &&
+        if (m->hp != 0u && dfi_holds_effect(r->b, m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max &&
             !dfi_heal_blocked(r->b, flat) && !dfi_unnerved(r->b, flat)) {
             dfi_use_item_core(r, flat, DUOFORGE_NO_POSITION);
             dfi_heal(r, flat, (uint32_t)m->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY,
@@ -3796,7 +3796,7 @@ static duoforge_status dfi_update(dfi_run *r)
          * Unnerve); Mental Herb's (data/items.ts:3906-3918) cures the holder's volatiles (dfi_mental_herb). One item per holder,
          * so the two never meet on one Pokemon. */
         const dfi_active_slot *pos = dfi_pos(r->b, flat);
-        if (m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_LUMBERRY) && (m->status != DFI_STATUS_NONE || pos->confusion_turns != 0u)) {
+        if (m->hp != 0u && dfi_holds_effect(r->b, m, DFI_ITEM_LUMBERRY) && (m->status != DFI_STATUS_NONE || pos->confusion_turns != 0u)) {
             const duoforge_status lum = dfi_lum_berry(r, flat);
             if (lum != DUOFORGE_OK) {
                 return lum;
@@ -4894,7 +4894,7 @@ static duoforge_status dfi_encore(dfi_run *r, uint32_t user, uint32_t flat, bool
     /* A target that holds Mental Herb keeps its queued move: the Champions onStart changes the action only when the target has
      * no Mental Herb (data/mods/champions/moves.ts:330, `!target.hasItem('mentalherb')`). The herb's Update, which follows the
      * move, removes the lock before the target acts (dfi_mental_herb), so the target's own move runs. */
-    if (replace && !dfi_holds(b, tm, DFI_ITEM_MENTALHERB)) {
+    if (replace && !dfi_holds_effect(b, tm, DFI_ITEM_MENTALHERB)) {
         return dfi_encore_replace(r, flat, slot);
     }
     return DUOFORGE_OK;
@@ -10969,12 +10969,12 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             list[n] = (dfi_residual_entry){DFI_RES_MOODY, flat, 28u, speed, 2u, true};
             n += 1u;
         }
-        if (dfi_holds(r->b, m, DFI_ITEM_LEFTOVERS)) {
+        if (dfi_holds_effect(r->b, m, DFI_ITEM_LEFTOVERS)) {
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
             n += 1u;
         }
         /* White Herb's onResidual (order 29, an item: sub-order 8; Team C). */
-        if (dfi_holds(r->b, m, DFI_ITEM_WHITEHERB)) {
+        if (dfi_holds_effect(r->b, m, DFI_ITEM_WHITEHERB)) {
             list[n] = (dfi_residual_entry){DFI_RES_WHITE_HERB, flat, 29u, speed, 8u, true};
             n += 1u;
         }

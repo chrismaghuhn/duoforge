@@ -5,7 +5,7 @@
 bool dfi_herb_due(struct duoforge_battle *b, uint32_t flat)
 {
     const dfi_member *m = dfi_at(b, flat);
-    if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_WHITEHERB)) {
+    if (m == NULL || m->hp == 0u || !dfi_holds_effect(b, m, DFI_ITEM_WHITEHERB)) {
         return false;
     }
     const dfi_active_slot *pos = dfi_pos(b, flat);
@@ -38,5 +38,5 @@ void dfi_white_herb(dfi_run *r, uint32_t flat, dfi_item_use_fn use_item)
 bool dfi_herb_holder(struct duoforge_battle *b, uint32_t flat)
 {
     const dfi_member *m = dfi_at(b, flat);
-    return m != NULL && m->hp != 0u && dfi_holds(b, m, DFI_ITEM_WHITEHERB);
+    return m != NULL && m->hp != 0u && dfi_holds_effect(b, m, DFI_ITEM_WHITEHERB);
 }
