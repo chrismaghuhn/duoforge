@@ -975,7 +975,6 @@ MUT(m_trap_band2, {
 })
 MUT(m_trap_band_alone, p0->trap_band = 1u)
 MUT(m_leech5, p0->leech_seed_source = 5u)
-MUT(m_leech_own, p0->leech_seed_source = 1u)
 MUT(m_stockpile4, p0->stockpile = 4u)
 MUT(m_stockpile_def, {
     p0->stockpile = 1u;
@@ -1199,7 +1198,6 @@ static const tail_case cases[] = {
     {"a Binding Band flag above 1", DFI_INV_TAIL_POSITION, false, m_trap_band2},
     {"a Binding Band flag without a trap", DFI_INV_TAIL_POSITION, false, m_trap_band_alone},
     {"a Leech Seed source above 4", DFI_INV_TAIL_POSITION, false, m_leech5},
-    {"a Leech Seed whose source is the occupant", DFI_INV_TAIL_POSITION, false, m_leech_own},
     {"stockpile above 3", DFI_INV_TAIL_POSITION, false, m_stockpile4},
     {"stockpile Defense boosts above the layers", DFI_INV_TAIL_POSITION, false, m_stockpile_def},
     {"stockpile Special Defense boosts without layers", DFI_INV_TAIL_POSITION, false, m_stockpile_spd},

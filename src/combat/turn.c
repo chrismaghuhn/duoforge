@@ -10724,7 +10724,10 @@ static duoforge_status dfi_leech_drain(dfi_run *r, uint32_t holder)
     }
     const uint32_t before = h->hp;
     /* this.damage in the volatile's onResidual: its effect is the condition (DFI_DMG_CONDITION; Magic Guard refuses it) */
-    const duoforge_status st = dfi_deal(r, holder, amount, DUOFORGE_CAUSE_LEECH_SEED, 0u, target, DFI_DMG_CONDITION); /* -damage [from] Leech Seed [of] */
+    /* An Ally Switch can put the holder on its source's slot (issue 541): it drains into itself, and the line has no [of] (spreadDamage
+     * names the source only when it is not the target, sim/battle.ts:2155). */
+    const uint32_t of = target == holder ? DUOFORGE_NO_POSITION : target;
+    const duoforge_status st = dfi_deal(r, holder, amount, DUOFORGE_CAUSE_LEECH_SEED, 0u, of, DFI_DMG_CONDITION); /* -damage [from] Leech Seed [of] */
     if (st != DUOFORGE_OK) {
         return st;
     }

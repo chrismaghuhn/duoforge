@@ -730,7 +730,9 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          (tp->trap_turns != 0u || tp->trap_band == 0u) &&
                          (tp->trap_turns != 0u ? (tp->trap_turns + tp->trap_elapsed == 5u || tp->trap_turns + tp->trap_elapsed == 6u)
                                                : tp->trap_elapsed == 0u);
-    const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
+    /* The seed's source is a slot (decision 0047): an Ally Switch can put the seeded Pokemon on it, which then drains into itself
+     * (issue 541), so the holder's own position is allowed. */
+    const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX;
     const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
                               tp->stockpile_spd <= tp->stockpile;
     /* Rev 3 (step G20): the variant of the Protect volatile belongs to the volatile (zero when it is down). */

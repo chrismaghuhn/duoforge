@@ -374,7 +374,7 @@ typedef struct dfi_tail_pos {
     uint8_t trap_band;         /* 0/1: the trapper holds a Binding Band (1/6 per turn, not 1/8); 0 when not trapped */
     uint8_t trap_elapsed;      /* step G90 (decision 0060): residual phases the partial trap has been through, 0..5 while it is up,
                                 * 0 without it (+1 per residual with the trap up, 0 at its start and its end); public */
-    uint8_t leech_seed_source; /* flat position that gets the HP + 1, 0 = no Leech Seed (never the occupant's own) */
+    uint8_t leech_seed_source; /* flat position that gets the HP + 1, 0 = no Leech Seed (the occupant's own after an Ally Switch onto it) */
     uint8_t yawn_turns;        /* Yawn: turns until sleep, 0 = none */
     uint8_t focus_energy;      /* 0/1 */
     uint8_t stockpile;         /* layers 0..3 */
