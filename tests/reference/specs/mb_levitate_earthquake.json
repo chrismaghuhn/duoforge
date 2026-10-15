@@ -1,0 +1,24 @@
+{
+  "name": "mb_levitate_earthquake",
+  "purpose": "Mold Breaker (step K6, decision 0015 5dn): Excadrill (Mold Breaker) uses Earthquake into the Levitate holders Rotom-Wash and Hydreigon: both are hit (the ability is ignored). The next turn Garchomp (no breaker) uses Earthquake into the same two: -immune [from] ability: Levitate for both.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006101",
+  "teams": [
+    "Excadrill (M)\nAbility: Mold Breaker\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Earthquake\n- Protect\n- Swords Dance\n- Fissure\n\nStaraptor (F)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Roost\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Earthquake\n- Protect\n- Rock Slide\n\nSnorlax (M)\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Body Slam\n- Protect\n\nAzumarill (M)\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Aqua Jet\n- Protect\n\nMamoswine (M)\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Protect",
+    "Rotom-Wash\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Hydro Pump\n- Nasty Plot\n- Thunder Wave\n\nHydreigon (M)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Dark Pulse\n- Nasty Plot\n\nSnorlax (M)\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Body Slam\n- Protect\n\nAzumarill (M)\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Aqua Jet\n- Protect\n\nMamoswine (M)\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Protect\n\nStaraptor (F)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Roost"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 2",
+      "switch 3, move 2",
+      "move 1, move 2"
+    ],
+    "p2": [
+      "move 2, move 2",
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "max_steps": 4
+  }
+}
