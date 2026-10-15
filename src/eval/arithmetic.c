@@ -68,7 +68,7 @@ duoforge_status dfi_eval_dot_bound(uint32_t count, uint32_t input_abs, uint32_t 
         return DUOFORGE_E_INVALID_ARGUMENT;
     uint64_t one = (uint64_t)input_abs * weight_abs;
     /* Validated factors give one <= 2^22 and count < 2^32, so the
-       unsigned product fits in 54 bits, even for a zero factor. */
+       product fits in 54 bits, even for a zero factor. */
     const uint64_t terms = count * one;
     if (bias_abs > (uint64_t)INT64_MAX || terms > (uint64_t)INT64_MAX - bias_abs)
         return DUOFORGE_E_EXHAUSTED;
