@@ -228,7 +228,7 @@ The acceptance test for 1 to 4 is that all committed battles replay without a di
 
 ## 8. Files
 
-- `data/legal_pool.json`: from `tools/build_legal_pool.js`; `tools/lp_*.js` are its cross-checks.
+- `data/legal_pool.json` (now `data/formats/pools/reg-mc.json`, restructure step 9): from `tools/build_legal_pool.js`; `tools/lp_*.js` are its cross-checks.
 - `data/classification.json`: from `tools/classify.js`, `families.js`, `moves_check.js` and `lib.js`.
 - `data/usage.json`: transcribed from the Smogon and Pikalytics pages with a web fetch tool. There is no script.
 - `differential-testing.md`: the design sketch, written against the step-5 commit before its review fixes.

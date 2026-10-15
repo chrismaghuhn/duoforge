@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[3]
 HEADER = re.compile(r"(GENERATED|Generated) (by|from) [A-Za-z]")
 CODE = (".c", ".h", ".py")
 JSON_KEYS = {"tests/reference/traces/": "harness", "tests/reference/battles/": "conformance",
-             "docs/research/expansion/data/legal_pool.json": "meta"}
+             "data/formats/pools/": "meta"}
 
 
 def tracked():
