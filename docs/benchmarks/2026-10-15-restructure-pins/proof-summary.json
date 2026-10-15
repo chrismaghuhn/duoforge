@@ -1,0 +1,134 @@
+{
+ "P1_inventory": {
+  "debug": {
+   "equal": true,
+   "names": 1494,
+   "sha256": "42e61aebd6abe027483550a49d78875fcfe31223abaf92f4f85742c6e85f48fe"
+  },
+  "ipo": {
+   "equal": true,
+   "names": 1494,
+   "sha256": "42e61aebd6abe027483550a49d78875fcfe31223abaf92f4f85742c6e85f48fe"
+  },
+  "noipo": {
+   "equal": true,
+   "names": 1494,
+   "sha256": "42e61aebd6abe027483550a49d78875fcfe31223abaf92f4f85742c6e85f48fe"
+  }
+ },
+ "P1_selected_tests": {
+  "after-ipo": 257,
+  "after-noipo": 251,
+  "before-ipo": 257,
+  "before-noipo": 251
+ },
+ "P2_reference": {
+  "executions": 2654,
+  "ipo": "2046d2134c1b99e7c70eedfe40a8a5e9bc9d177a9bc716cc3da5544e627fcb46",
+  "noipo": "2046d2134c1b99e7c70eedfe40a8a5e9bc9d177a9bc716cc3da5544e627fcb46",
+  "steps": 22710,
+  "stops": 8603,
+  "unique_battles": 1164
+ },
+ "after": {
+  "commit": "23eaf3b4765229ab8d548795c7db8b5a911d6091",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "779e76933c5d483c94eef83279148cf2f80f7dfa",
+  "dirty": false,
+  "phase": "before"
+ },
+ "native_reports": {
+  "debug": {
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 13646 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 26235 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   },
+   "sha256": "7c74e8f2b907c66ddbe07b6ac7e88f2ec34b83667cbdeec94eac357b53b9d346"
+  },
+  "ipo": {
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 13646 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 26235 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   },
+   "sha256": "7c74e8f2b907c66ddbe07b6ac7e88f2ec34b83667cbdeec94eac357b53b9d346"
+  },
+  "noipo": {
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 13646 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 26235 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   },
+   "sha256": "7c74e8f2b907c66ddbe07b6ac7e88f2ec34b83667cbdeec94eac357b53b9d346"
+  }
+ },
+ "objects": {
+  "debug": {
+   "differing": 88,
+   "differing_engine": [],
+   "exports_equal": true,
+   "files": 274,
+   "fingerprints": {
+    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "POOL": "5d41dab82340b8f19b21011348f232d9d36d84d4046fd1d41c297e4846b556e6",
+    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+   },
+   "layout_equal": true,
+   "library": "efc334d5906eb9926b8d4603e20d5935039a7716f2a76d979c02711d91cd2c03",
+   "library_equal": true
+  },
+  "ipo": {
+   "differing": 164,
+   "differing_engine": [],
+   "exports_equal": true,
+   "files": 274,
+   "fingerprints": {
+    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "POOL": "5d41dab82340b8f19b21011348f232d9d36d84d4046fd1d41c297e4846b556e6",
+    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+   },
+   "layout_equal": true,
+   "library": "7faba1331fb91c220f65e9cb7a9e470ceac0cf24b013b47510c98e9db1d722bd",
+   "library_equal": true
+  },
+  "noipo": {
+   "differing": 1,
+   "differing_engine": [],
+   "exports_equal": true,
+   "files": 274,
+   "fingerprints": {
+    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "POOL": "5d41dab82340b8f19b21011348f232d9d36d84d4046fd1d41c297e4846b556e6",
+    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+   },
+   "layout_equal": true,
+   "library": "4ba34a4dfbdd5d5e1613891d80c2b283c0c5943834726a8bd2fcc08b7cb82912",
+   "library_equal": true
+  }
+ }
+}
