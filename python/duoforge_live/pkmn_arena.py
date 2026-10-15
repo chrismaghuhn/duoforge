@@ -1,5 +1,7 @@
-"""PKMN Arena (https://vgc.ellep.dev, spec https://vgc.ellep.dev/llms.txt): the live client's mode for the public VGC
-bot ladder (owner, 2026-10-12), next to the Showdown modes and never instead of them.
+"""PKMN Arena (https://vgc.bot, spec https://vgc.bot/llms.txt): the live client's mode for the public VGC bot ladder
+(owner, 2026-10-12), next to the Showdown modes and never instead of them. The arena moved from vgc.ellep.dev to vgc.bot
+on 2026-10-15; the mode connects to vgc.bot only and never falls back to the old address (OLD_HOSTS, which the Showdown
+mode refuses as it refuses HOST).
 
     python -m duoforge_live --server arena --format ID --checkpoint P [--team FILE] [--team-pool FILE]
                             [--search raw|honest [--foe-net P]] [--log-dir DIR]
@@ -51,8 +53,9 @@ from .data import trace_to_c
 from .game import Game
 from .lines import Stop, line_kind
 
-URL = "wss://vgc.ellep.dev/showdown/websocket"
-HOST = "vgc.ellep.dev"
+URL = "wss://vgc.bot/showdown/websocket"
+HOST = "vgc.bot"
+OLD_HOSTS = ("vgc.ellep.dev",)  # the arena's address before its move (2026-10-15): never connected to, never a fallback
 NAME_ENV, TOKEN_ENV = "ARENA_BOT_NAME", "ARENA_BOT_TOKEN"
 TOKEN_PREFIX = "pka_"
 # The registered formats (llms.txt): closed and open team sheets. Each has a random-team ladder: the id + "random".

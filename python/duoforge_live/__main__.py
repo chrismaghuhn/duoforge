@@ -138,8 +138,13 @@ def main(argv=None):
     if _is_arena(argv):
         return arena_main(argv)
     args = _arguments(argv)
-    if args.server == ARENA or (urllib.parse.urlparse(args.server).hostname or "") == pkmn_arena.HOST:
+    host = urllib.parse.urlparse(args.server).hostname or ""
+    if args.server == ARENA or host == pkmn_arena.HOST:
         print(f"duoforge_live: {pkmn_arena.HOST} is PKMN Arena: use --server {ARENA}", file=sys.stderr)
+        raise SystemExit(2)
+    if host in pkmn_arena.OLD_HOSTS:
+        print(f"duoforge_live: {host} was PKMN Arena's address before it moved to {pkmn_arena.HOST}: "
+              f"use --server {ARENA}", file=sys.stderr)
         raise SystemExit(2)
     config = client.Config(name=args.name, team=args.team, log_dir=args.log_dir, team_link=args.team_link,
                            challenge=args.challenge, challenge_format=args.challenge_format, server=args.server)

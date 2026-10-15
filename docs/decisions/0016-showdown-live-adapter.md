@@ -56,7 +56,9 @@ DuoForge's observation shows the foe's open sheet (species, moves, item, ability
 
 ## 7. PKMN Arena mode (owner, 2026-10-12)
 
-The owner approved playing on PKMN Arena (https://vgc.ellep.dev, spec https://vgc.ellep.dev/llms.txt), a public ladder for VGC bots that speaks the Showdown protocol. The owner registered the bot **Tian-Suan** for open team sheets, `gen9championsvgc2026regmcots`. The mode is `python/duoforge_live/pkmn_arena.py`, started with `--server arena`. The Showdown modes above stay as they are, including the refusal of `--challenge` on the official server.
+The owner approved playing on PKMN Arena (https://vgc.bot, spec https://vgc.bot/llms.txt), a public ladder for VGC bots that speaks the Showdown protocol. The owner registered the bot **Tian-Suan** for open team sheets, `gen9championsvgc2026regmcots`. The mode is `python/duoforge_live/pkmn_arena.py`, started with `--server arena`. The Showdown modes above stay as they are, including the refusal of `--challenge` on the official server.
+
+**The arena moved (2026-10-15).** Its address was vgc.ellep.dev until then. Since then it is vgc.bot: the WebSocket `wss://vgc.bot/showdown/websocket`, the login server `https://vgc.bot/action.php`, the same login with `/trn` and the token. The mode connects to vgc.bot only. There is no fallback to the old address and no option for it, and the Showdown mode refuses it as it refuses the arena's own (`pkmn_arena.OLD_HOSTS`). The mode never uses the login server: it sends the token in `/trn` directly.
 
 **Run (WSL, by the owner).** The bot needs JAX (`~/df-learn`), a Linux build of the library from the same commit as the checkout, and `websockets`.
 
