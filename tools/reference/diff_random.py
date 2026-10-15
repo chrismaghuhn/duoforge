@@ -175,6 +175,8 @@ PAUSE_POLL = 15  # seconds between two looks at the pause file
 PAUSED_STATUS = 75  # a chunk that found the pause file once it held the lock leaves with this (EX_TEMPFAIL)
 LABEL_TAKEN_STATUS = 73  # tools/ci/machine_lock.sh refused the chunk: a live job holds or waits with its label
 LOCK_NESTED_STATUS = 74  # tools/ci/machine_lock.sh refused the chunk: it runs inside a job that holds this lock
+LOCK_WITHDRAWN_STATUS = 78  # tools/ci/machine_lock.sh: the chunk was withdrawn (its ticket deleted), nothing started
+LOCK_BAD_TEST_MV_STATUS = 79  # tools/ci/machine_lock.sh: a test's DUOFORGE_MACHINE_LOCK_TEST_MV is no executable file
 LOCK_HELD_ENV = 'DUOFORGE_FUZZ_LOCK_HELD'  # set in the environment of the chunks the loop starts: they hold the lock
 WORKER_TIMEOUT = 300  # seconds for one answer of the worker (a play of 300 steps is a few seconds)
 RUNNER_TIMEOUT = 60  # seconds for one battle in the engine
@@ -350,11 +352,11 @@ def mid_turn_before(trace, step):
     return step > 0 and not any(line.startswith('|upkeep') for line in trace['steps'][step - 1]['log'])
 
 
-def canonical_choice(text, side, state, roster_of, mid_turn):
+def canonical_choice(text, side, state, roster_of, mid_turn, locked=None):
     """The choice that trace_to_c.convert_choice makes of a Showdown text, as a value that goes in a set: ('team',
     picks) or ('slots', (command, command)), a command being (kind, move_slot, target, mega, reserve), the leaves of
     the engine's duoforge_slot_command."""
-    kind, value = trace_to_c.convert_choice(text, side, state, roster_of, mid_turn)
+    kind, value = trace_to_c.convert_choice(text, side, state, roster_of, mid_turn, locked)
     if kind == 'team':
         return ('team', tuple(value))
     return ('slots', tuple(tuple(command) for command in value))
@@ -392,12 +394,13 @@ def choice_shape(text):
     return '/'.join(shape)
 
 
-def domain_choices(trace, samples):
+def domain_choices(trace, samples, spec=None, tables=None):
     """The domain samples of a play (dicts with 'step', 'side' and the Showdown texts 'accepted') as the sets of the
     records: dicts with 'step', 'side', 'accepted' (the texts), 'choices' (the canonical choices, in the ascending
     order of the record) and 'rendered' ({text: the choice as the runner prints it}), by step and side. What was
     played at that step is accepted, so it must be in its set: else DomainError. A ConversionError or an untyped
-    error of the converter passes."""
+    error of the converter passes. `spec` and `tables` (the battle's spec and name tables) give the slot of a lockedmove
+    lock (trace_to_c.locked_slots); without them such a lock stops the conversion."""
     if not samples:
         return []
     roster_of = roster_tables(trace)
@@ -409,9 +412,10 @@ def domain_choices(trace, samples):
         if step >= len(trace['steps']) or sid not in trace['steps'][step]['input']:
             raise DomainError('%s: the side did not answer a step of the recording' % where)
         state, mid_turn = state_before(trace, step), mid_turn_before(trace, step)
-        by_text = {text: canonical_choice(text, side, state, roster_of, mid_turn) for text in sample['accepted']}
+        locked = trace_to_c.locked_slots(trace, step, spec, tables) if spec is not None else None
+        by_text = {text: canonical_choice(text, side, state, roster_of, mid_turn, locked) for text in sample['accepted']}
         played_text = trace['steps'][step]['input'][sid]
-        played = canonical_choice(played_text, side, state, roster_of, mid_turn)
+        played = canonical_choice(played_text, side, state, roster_of, mid_turn, locked)
         choices = set(by_text.values())
         if played not in choices:
             raise DomainError('%s: what was played (%r) is not among the %d choices that Showdown accepted'
@@ -471,7 +475,7 @@ def convert_and_run(name, spec, text, trace, ended, runner, tables_for, kinds, s
     try:
         team_c = trace_to_c.spec_is_team_c(name, spec)
         data = trace_to_c.convert_battle(name, spec, trace, tables_for(team_c))
-        sets = domain_choices(trace, domain)
+        sets = domain_choices(trace, domain, spec, tables_for(team_c))
     except trace_to_c.ConversionError as e:
         seconds['convert'] += clock() - t0
         return Evaluated(base.oracle_gap(name, e), text, trace, ended)
@@ -1035,6 +1039,9 @@ def orchestrate(params, outdir, args_forward, minutes, start=0, run=run_process,
             raise base.ToolError('a chunk (from battle %d) was refused by the machine lock: this run is nested inside a job '
                                  'that holds the lock (DUOFORGE_MACHINE_LOCK_HELD); give --no-lock to run under that '
                                  'job, or start the run as a job of its own' % done)
+        if status == LOCK_WITHDRAWN_STATUS:
+            raise base.ToolError('a chunk (from battle %d) was withdrawn from the machine lock (its ticket was deleted '
+                                 'while it waited) and did not start: the run stops here' % done)
         if status == LABEL_TAKEN_STATUS:
             raise base.ToolError('a chunk (from battle %d) was refused by the machine lock: a live job labelled %r '
                                  'already holds a slot or waits (another run into the same directory?)' % (done, label))

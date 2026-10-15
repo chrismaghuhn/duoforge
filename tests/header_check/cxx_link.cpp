@@ -6,6 +6,7 @@
 #include "duoforge/duoforge_batch.h"
 #include "duoforge/duoforge_encode.h"
 #include "duoforge/duoforge_search.h"
+#include "duoforge/duoforge_eval.h"
 
 int main()
 {
@@ -39,6 +40,13 @@ int main()
         std::fprintf(stderr, "cxx link: unexpected digest preflight\n");
         return 1;
     }
+    if (duoforge_evaluator_load(nullptr, nullptr, nullptr, 6u, 0u, nullptr, &error) != DUOFORGE_E_NULL_ARGUMENT ||
+        duoforge_eval_workspace_create(nullptr, 1u, 1u, nullptr, &error) != DUOFORGE_E_NULL_ARGUMENT ||
+        duoforge_eval_workspace_destroy(nullptr, &error) != DUOFORGE_OK) {
+        std::fprintf(stderr, "cxx link: unexpected evaluator lifecycle\n");
+        return 1;
+    }
+    duoforge_evaluator_destroy(nullptr);
     std::printf("cxx link: OK %s\n", v);
     return 0;
 }

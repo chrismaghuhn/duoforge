@@ -114,6 +114,31 @@ class StepSettingsTest(unittest.TestCase):
                 ladder.step_settings("a")
 
 
+class DepthTwoStepsTest(unittest.TestCase):
+    """D2's arms (README docs/benchmarks/2026-10-14-depth-d2; the AWS campaign #484 starts them by these names): fixed
+    names whose settings live here, so a campaign starts them by name alone."""
+
+    def test_the_depth_two_arms_are_2e_with_the_tree(self):
+        tree = {"depth": 2, "root_solver": "rm", "info_key": "digest", "capacity": 16384}
+        for width in (2, 3, 4):
+            for name, extra in ((f"d2-{width}{width}", {}), (f"d2-model-{width}{width}", {"foe_below": "model"})):
+                with self.subTest(arm=name):
+                    self.assertEqual(ladder.step_settings(name),
+                                     {**ladder.step_settings("2e"), **tree, "k2": width, "m2": width, **extra})
+                    self.assertIsNone(ladder.size_refusal(name))
+
+    def test_the_equal_time_controls_are_one_turn_2e_on_the_rm_solver(self):
+        controls = {"d2c-k12m12": {"k": 12, "m": 12, "capacity": 2304},
+                    "d2c-k16m16": {"k": 16, "m": 16, "capacity": 4096}, "d2c-s32": {"s": 32, "capacity": 2048},
+                    "d2c-s48": {"s": 48, "capacity": 3072}, "d2c-s64": {"s": 64, "capacity": 4096}}
+        for name, delta in controls.items():
+            with self.subTest(arm=name):
+                settings = ladder.step_settings(name)
+                self.assertEqual(settings, {**ladder.step_settings("2e"), "root_solver": "rm", **delta})
+                self.assertEqual(settings["capacity"], settings["k"] * settings["m"] * settings["s"])
+                self.assertIsNone(ladder.size_refusal(name))
+
+
 class StepOneTest(unittest.TestCase):
     """Step 1 (issue #363 in the ladder, #440): team preview as a Nash matrix game, with its two controls."""
 
@@ -249,6 +274,39 @@ class RefusedLeavesTest(unittest.TestCase):
         self.assertEqual(got["refused_share"], 0.0)
 
 
+class TreeLimitTest(unittest.TestCase):
+    # The depth-2 decisions at the tree's iteration bound, counted per arm with the position that reached it, so that
+    # a new one is told apart from the known calibration decision of D2's offline pass.
+    @staticmethod
+    def tree(env, key, step, iterations, bound=490):
+        return {"kind": "searched", "env": env, "key": key, "step": step, "depth": {"max_iterations": bound},
+                "tree": {"iterations": iterations}}
+
+    @staticmethod
+    def unconverged(env, key, step, solver):
+        return {"kind": "unreconstructible", "reason": "solver_unconverged", "env": env, "key": key, "step": step,
+                "depth": {"max_iterations": 490}, "solver_failed": solver}
+
+    def test_decisions_at_the_bound_and_unconverged_are_counted_with_their_position(self):
+        records = [self.tree(1, 11, 3, 120), self.tree(56, 179, 9, 490), self.tree(2, 22, 4, 489),
+                   self.unconverged(7, 77, 5, "tree"), self.unconverged(9, 99, 7, "root"),
+                   {"kind": "unreconstructible", "reason": "solver_unconverged", "env": 8, "key": 88, "step": 6},
+                   {"kind": "team"}]
+        self.assertEqual(ladder.tree_limit(records), {
+            "bound": 490, "tree_decisions": 4, "at_bound": 1, "unconverged": 1, "root_unconverged": 1,
+            "positions": [{"env": 56, "key": 179, "step": 9, "iterations": 490},
+                          {"env": 7, "key": 77, "step": 5, "iterations": None}]})
+
+    def test_a_searched_preview_has_no_tree_and_is_left_out(self):
+        # a depth-2 arm with a searched team preview: that record has "depth" but no tree
+        preview = {"kind": "searched", "env": 3, "key": 33, "step": 0, "depth": {"max_iterations": 490}}
+        got = ladder.tree_limit([preview, self.tree(1, 11, 3, 490)])
+        self.assertEqual((got["tree_decisions"], got["at_bound"]), (1, 1))
+
+    def test_no_depth_two_decision_is_none(self):
+        self.assertIsNone(ladder.tree_limit([{"kind": "searched", "env": 1, "key": 1, "step": 1}, {"kind": "team"}]))
+
+
 class DecisionsDigestTest(unittest.TestCase):
     def records(self):
         return [decision(1, 0, 1, choice=3), decision(0, 2, 0, kind="raw", choice=1),
@@ -268,6 +326,29 @@ class DecisionsDigestTest(unittest.TestCase):
         digest = ladder.decisions_digest(self.records())
         self.assertEqual(len(digest), 64)
         self.assertTrue(all(c in "0123456789abcdef" for c in digest))
+
+    def test_numpy_simd_names_the_disabled_targets_and_what_numpy_found(self):
+        # ladder.json records NumPy's SIMD dispatch (#484): the AWS box and the local run must record the same.
+        with mock.patch.dict(os.environ, {"NPY_DISABLE_CPU_FEATURES": "X86_V4 AVX512_ICL"}):
+            simd = ladder.numpy_simd()
+        self.assertEqual(simd["disabled"], ["X86_V4", "AVX512_ICL"])
+        self.assertEqual(sorted(simd), ["baseline", "disabled", "found", "not_found"])
+        from numpy._core import _multiarray_umath as m
+        self.assertEqual(sorted(simd["found"] + simd["not_found"]), sorted(m.__cpu_dispatch__))
+
+    def test_each_game_has_its_own_digest_and_one_choice_changes_only_its_game(self):
+        # #484: AWS and local runs differed in decisions_sha256 only; the per-game digests name the game that differs.
+        records = self.records()
+        games = ladder.games_digests(records, 3)
+        self.assertEqual(games, [ladder.decisions_digest([r for r in records if r["env"] == g]) for g in range(3)])
+        self.assertEqual(games[2], ladder.decisions_digest([]))  # a game without decisions
+        self.assertEqual(games, ladder.games_digests(list(reversed(records)), 3))  # input order does not matter
+        changed = copy.deepcopy(records)
+        changed[0]["choice"] = 4  # env 1
+        after = ladder.games_digests(changed, 3)
+        self.assertEqual([g for g in range(3) if after[g] != games[g]], [1])
+        with self.assertRaisesRegex(ValueError, "outside the arm's 1 games"):
+            ladder.games_digests(records, 1)
 
 
 class ReproductionTest(unittest.TestCase):
@@ -1082,6 +1163,58 @@ class SummaryDuplicateRowsTest(unittest.TestCase):
         self.assertEqual(searching["duplicate_rows"], ladder.duplicate_rows(decisions))
         self.assertEqual(searching["duplicate_rows"]["duplicate_rows"], 1)
         self.assertNotIn("duplicate_rows", raw)
+
+
+class StepsLeftTest(unittest.TestCase):
+    """D2's steps_left through the harness (plan docs/superpowers/plans/2026-10-14-depth-search-d2.md step 6): a
+    SearchPlayer that knows play_suite's max_steps passes each decision's steps left; one that does not calls decide
+    as before."""
+
+    class Recorder:
+        def __init__(self):
+            self.calls = []
+
+        def decide(self, roots, envs, seats, keys, last_step, **extra):
+            self.calls.append((np.asarray(last_step).tolist(), extra))
+            return np.zeros(len(envs), np.int64), [{"env": int(e)} for e in envs]
+
+    def indices(self, player, step, last_step):
+        import duoforge
+        from duoforge import _layout
+        with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as batch:
+            batch.query_factored()
+            choices = np.zeros((1, 2), _layout.FACTORED_CHOICE)
+            player.indices(batch, choices, step=step, seats=np.array([0]), last_step=last_step)
+
+    def test_max_steps_gives_each_decision_its_steps_left(self):
+        recorder = self.Recorder()
+        player = arena.SearchPlayer(recorder, "d2", 1, max_steps=10)
+        self.indices(player, 3, False)
+        self.indices(player, 9, True)
+        self.assertEqual([extra["steps_left"].tolist() for _, extra in recorder.calls], [[7], [1]])
+
+    def test_without_max_steps_decide_is_called_as_before(self):
+        recorder = self.Recorder()
+        self.indices(arena.SearchPlayer(recorder, "d1", 1), 3, False)
+        self.assertEqual(recorder.calls, [([False], {})])
+
+    def test_steps_left_must_agree_with_the_last_step_flag(self):
+        player = arena.SearchPlayer(self.Recorder(), "d2", 1, max_steps=10)
+        for step, last_step in ((9, False), (3, True)):
+            with self.subTest(step=step), self.assertRaisesRegex(ValueError, "max_steps"):
+                self.indices(player, step, last_step)
+        with self.assertRaisesRegex(ValueError, "max_steps"):
+            arena.SearchPlayer(self.Recorder(), "d2", 1, max_steps=0)
+
+    def test_the_timed_wrapper_passes_steps_left_through(self):
+        recorder = self.Recorder()
+        timed = foe_arena.Timed(recorder)
+        timed.decide(None, np.array([0, 1]), np.array([0, 0]), np.array([5, 6], np.uint64), np.array([False, False]),
+                     steps_left=np.array([4, 3]))
+        timed.decide(None, np.array([0]), np.array([0]), np.array([5], np.uint64), np.array([False]))
+        self.assertEqual([extra["steps_left"].tolist() if "steps_left" in extra else None
+                          for _, extra in recorder.calls], [[4], [3], None])
 
 
 if __name__ == "__main__":

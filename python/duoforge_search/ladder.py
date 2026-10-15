@@ -35,6 +35,7 @@ import copy
 import hashlib
 import json
 import os
+import platform
 import subprocess
 import sys
 import time
@@ -80,7 +81,20 @@ STEPS = {"0": {"base": None, "settings": {}},
          # Step 2 (#433, predeclared 2026-10-13): 2e, the best answer to the foe model and the worlds (lambda 0, no Nash
          # share), passed every gate (phase B, the README) and is the live search since 2026-10-14 (owner). Its
          # siblings 2d and 2l were screened on search/2-width and did not qualify.
-         "2e": {"base": "0", "settings": {"rule": "ev"}}}
+         "2e": {"base": "0", "settings": {"rule": "ev"}},
+         # D2 of the depth search (README docs/benchmarks/2026-10-14-depth-d2; the names the AWS campaign #484 starts
+         # them by): the two-turn tree below 2e's root (its root rule, spec section 5), K2 = M2 per name, the value call
+         # padded to 16,384 rows (spec section 7.2), keyed by the engine's observation digest (decision 0082).
+         # d2-model-* adds foe_below "model" (Q4); one of them runs, at the best width.
+         **{f"d2-{w}{w}": {"base": "2e", "settings": {"depth": 2, "k2": w, "m2": w, "root_solver": "rm",
+                                                      "info_key": "digest", "capacity": 16384}} for w in (2, 3, 4)},
+         **{f"d2-model-{w}{w}": {"base": f"d2-{w}{w}", "settings": {"foe_below": "model"}} for w in (2, 3, 4)},
+         # D2's equal-time controls: one turn, 2e's rule on the rm root solver (no LP size limit), K and M or S
+         # widened; each D2 arm's control is the one whose exclusive local p99 is closest (the README).
+         "d2c-k12m12": {"base": "2e", "settings": {"root_solver": "rm", "k": 12, "m": 12, "capacity": 2304}},
+         "d2c-k16m16": {"base": "2e", "settings": {"root_solver": "rm", "k": 16, "m": 16, "capacity": 4096}},
+         **{f"d2c-s{s}": {"base": "2e", "settings": {"root_solver": "rm", "s": s, "capacity": 64 * s}}
+            for s in (32, 48, 64)}}
 
 
 def size_refusal(name):
@@ -341,12 +355,40 @@ def same_games(scores_a, scores_b):
     return a.shape == b.shape and bool(np.array_equal(a, b))
 
 
+def numpy_simd():
+    """NumPy's SIMD dispatch in this process (#484): the targets NPY_DISABLE_CPU_FEATURES disables, NumPy's baseline and
+    the dispatch targets found and not found. NumPy picks its exp, log and sum routines at run time (AVX-512 on the AWS
+    box's EPYC, AVX2 on the local Ryzen), so two runs whose decisions are to be bit-identical record the same here, and
+    ladder_equal.py compares it. NumPy's float64 exp and log have SIMD loops for AVX-512 only: with those off, both run
+    the C library's (glibc's) scalar ones, which is why the conditions name the libc as well. None where NumPy does not
+    expose it."""
+    try:
+        from numpy._core import _multiarray_umath as m
+    except ImportError:
+        return None
+    return {"disabled": os.environ.get("NPY_DISABLE_CPU_FEATURES", "").split(), "baseline": list(m.__cpu_baseline__),
+            "found": [t for t in m.__cpu_dispatch__ if m.__cpu_features__.get(t)],
+            "not_found": [t for t in m.__cpu_dispatch__ if not m.__cpu_features__.get(t)]}
+
+
 def decisions_digest(decisions):
     """The sha256 hex of every decision as a JSON line [env, step, seat, kind, choice], in (env, step, seat) order: two
     runs that decide alike give the same digest, whatever the order of their records."""
     rows = [[r["env"], r["step"], r["seat"], r["kind"], r.get("choice")] for r in decisions]
     rows.sort(key=lambda row: (row[0], row[1], row[2], json.dumps(row)))
     return hashlib.sha256("\n".join(json.dumps(row) for row in rows).encode("utf-8")).hexdigest()
+
+
+def games_digests(decisions, games):
+    """decisions_digest of each game alone, game g's decisions being those of env g (one game per env in a ladder arm):
+    a list of `games` digests, the empty game's digest where a game has no decision. Two runs whose decisions_sha256
+    differ name the first game that differs (#484: AWS against local, 2026-10-14). ValueError for an env outside."""
+    per_game = [[] for _ in range(games)]
+    for r in decisions:
+        if not 0 <= int(r["env"]) < games:
+            raise ValueError(f"a decision of env {r['env']} outside the arm's {games} games")
+        per_game[int(r["env"])].append(r)
+    return [decisions_digest(rows) for rows in per_game]
 
 
 def recorded_reproduction(scores, digest, recorded_arm, recorded_dir, name):
@@ -412,6 +454,36 @@ def paired_with_condition(recorded, path):
             "file": os.path.basename(path)}
 
 
+def tree_limit(decisions):
+    """The depth-2 tree decisions at the tree's iteration bound: those that converged only at the bound (tree
+    iterations >= depth.max_iterations) and those whose tree solve did not converge (solver_unconverged with
+    solver_failed "tree"), each position with its env, key and step, so that a new position at the bound is told
+    apart from a known one; reported only, a run never changes the bound. A tree decision is a searched record with a
+    tree (a searched team preview has none) or a tree failure; root_unconverged counts the depth-2 decisions whose
+    root solve (rm_iterations) failed instead. None without a depth-2 tree decision."""
+    def failed(r, solver):
+        return r["kind"] == "unreconstructible" and r.get("reason") == "solver_unconverged" \
+            and r.get("solver_failed") == solver
+    depth_two = [r for r in decisions if "depth" in r]
+    tree = [r for r in depth_two if (r["kind"] == "searched" and "tree" in r) or failed(r, "tree")]
+    if not tree:
+        return None
+    positions, at_bound, unconverged = [], 0, 0
+    for r in tree:
+        if r["kind"] == "searched":
+            if int(r["tree"]["iterations"]) >= int(r["depth"]["max_iterations"]):
+                at_bound += 1
+                positions.append({"env": r["env"], "key": r["key"], "step": r.get("step"),
+                                  "iterations": int(r["tree"]["iterations"])})
+        else:
+            unconverged += 1
+            positions.append({"env": r["env"], "key": r["key"], "step": r.get("step"), "iterations": None})
+    bounds = sorted({int(r["depth"]["max_iterations"]) for r in tree})
+    return {"bound": bounds[0] if len(bounds) == 1 else bounds, "tree_decisions": len(tree), "at_bound": at_bound,
+            "unconverged": unconverged, "root_unconverged": sum(failed(r, "root") for r in depth_two),
+            "positions": positions}
+
+
 def wall_seconds(decisions):
     """The p50, p95, p99 and max wall seconds of the searched decisions; None without any."""
     wall = np.array([r["wall"] for r in decisions if r["kind"] == "searched"], np.float64)
@@ -433,7 +505,9 @@ def _summary(records, games, decisions=None, seconds=None):
                     "fallback_share": foe_arena.fallback_share(decisions),
                     "fallback_decisions": sum(r["kind"] in foe_arena.FALLBACK_KINDS for r in non_team),
                     "non_team_decisions": len(non_team), "decisions_sha256": decisions_digest(decisions),
+                    "games_sha256": games_digests(decisions, games),
                     "refused_leaves": refused_leaves(decisions), "wall_seconds": wall_seconds(decisions),
+                    "tree_limit": tree_limit(decisions),
                     "duplicate_rows": duplicate_rows(decisions)})
         if decisions:
             out["diagnostics"] = arena.diagnostics(decisions, games)
@@ -746,7 +820,7 @@ def main(argv=None):
 
         def play_search(arm, step_name, opponent_player):
             with searcher(step_name, excluded(opponent_team)) as search:
-                player = arena.SearchPlayer(foe_arena.Timed(search), arm, args.seed)
+                player = arena.SearchPlayer(foe_arena.Timed(search), arm, args.seed, max_steps=args.max_steps)
                 records = evaluate.play_suite(ctx, pool, rows, player, opponent_player, args.workers, args.seed,
                                               max_steps=args.max_steps)
             return records, [r for row in sorted(player.records) for r in player.records[row]]
@@ -790,7 +864,8 @@ def main(argv=None):
         if args.h2h:
             with searcher(args.step, excluded(opponent_team)) as learner_search, \
                     searcher(args.previous, excluded(learner_team)) as opponent_search:
-                learner = arena.SearchPlayer(foe_arena.Timed(learner_search), "step", args.seed)
+                learner = arena.SearchPlayer(foe_arena.Timed(learner_search), "step", args.seed,
+                                             max_steps=args.max_steps)
 
                 class SearchingOpponent(evaluate.Player):
                     """play_suite takes an evaluate.Player as its opponent and calls its indices; the searching
@@ -804,7 +879,7 @@ def main(argv=None):
                         return self.player.indices(batch, choices, step=step, seats=seats, last_step=last_step)
 
                 opponent = SearchingOpponent(arena.SearchPlayer(foe_arena.Timed(opponent_search), "previous",
-                                                                args.seed))
+                                                                args.seed, max_steps=args.max_steps))
                 records = evaluate.play_suite(ctx, pool, rows, learner, opponent, args.workers, args.seed,
                                               max_steps=args.max_steps)
             h2h = {**pair_interval(arena.scores(records)), "unfinished": int(records["unfinished"].sum()),
@@ -826,6 +901,7 @@ def main(argv=None):
         "previous": None if args.previous is None else {"name": args.previous, "settings": previous_cfg},
         "arms": [arm for arm, _ in arm_steps] + (["R"] if args.raw else []), "h2h": args.h2h,
         "gates": GATES, "commit": commit, "dirty": dirty, "library": duoforge.version(), "cpu": arena.cpu_model(),
+        "numpy_simd": numpy_simd(), "libc": list(platform.libc_ver()),
         "encoders": {"main": main_net["encoder"], "foe": foe_net["encoder"],
                      **{f"opponent {name}": net["encoder"] for name, net in opponent_nets.items()}},
         "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},
