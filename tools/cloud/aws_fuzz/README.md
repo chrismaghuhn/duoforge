@@ -168,7 +168,8 @@ role below. The security group `duoforge-fuzz` and the bucket already exist.
    ```
 
    Permissions: `s3:PutObject`, `s3:GetObject` and `s3:ListBucket` on `fuzz/*` of the bucket, and `s3:GetObject` on
-   `nets/*` (`ReadNets`, the ladder campaigns' networks); the box has no other permission:
+   `nets/*` (`ReadNets`, the ladder campaigns' networks) and on `probes/*` (`ReadProbes`, a probe campaign's inputs);
+   the box has no other permission:
 
    ```json
    {
@@ -192,13 +193,20 @@ role below. The security group `duoforge-fuzz` and the bucket already exist.
          "Effect": "Allow",
          "Action": "s3:GetObject",
          "Resource": "arn:aws:s3:::<BUCKET>/nets/*"
+       },
+       {
+         "Sid": "ReadProbes",
+         "Effect": "Allow",
+         "Action": "s3:GetObject",
+         "Resource": "arn:aws:s3:::<BUCKET>/probes/*"
        }
      ]
    }
    ```
 
    `ReadNets` (#484, the ladder campaigns): the networks under `nets/`, read-only. The role gets no `PutObject` or
-   `DeleteObject` there, and a ladder box that could write to `nets/` refuses by name (`nets_writable`).
+   `DeleteObject` there, and a ladder box that could write to `nets/` refuses by name (`nets_writable`). `ReadProbes`
+   (#484, probe campaigns): the network probe's inputs under `probes/`, read-only in the same way (`probes_writable`).
 
 2. **`AWSServiceRoleForEC2Spot`**, if the account does not have it yet: IAM, Roles, Create role, AWS service, EC2,
    "EC2 - Spot Instances". (The user `pokeengine` has no IAM write permission, on purpose.)
@@ -355,7 +363,7 @@ tests (against a stub `aws`).
 | `campaigns/<id>/campaign.conf` | `kind=ladder`, one to three `arm=NAME step=S [previous=P] [h2h=0\|1]` lines, and for every arm `pairs`, `seed`, `workers` (8), `max_steps` and every network by its sha256 (`ladder_conf.py`'s docstring has the keys) |
 | `ladder_conf.py` | checks a ladder conf, lists its networks' sha256 and its arms, and builds each arm's command line (the launcher and the box use the same file) |
 | `launch_ladder.sh` | the guards of `launch.sh`; one instance type, `c7a.16xlarge`, for a whole series, no fallback; prints the request unless `--i-have-owner-approval` |
-| `ladder_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` checked read-only; the networks by sha256; the pins; the arms side by side, each on CPUs of its own; the aggregates up |
+| `ladder_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` (and `probes/`) checked read-only; the networks (and a probe campaign's inputs) by sha256; the pins; a probe campaign's pin variants; the arms side by side, each on CPUs of its own; the aggregates up |
 | `ladder_requirements.txt` | the Python packages, pinned to the local machine's versions (CPU only) |
 | `ladder_equal.py` | the equality proof: two `ladder.json` compared field by field, timing fields aside |
 | `numpy_dispatch.py` | checks NumPy's SIMD dispatch on the box: every disabled name known, no AVX-512 target enabled; writes the record `numpy_simd` |
@@ -375,20 +383,30 @@ records it, with the pins, the library's sha256, the instance type, the CPU, whe
 targets (`numpy_simd`: baseline, found, not found, as `numpy.show_runtime()` lists them) and `pip freeze`. Each arm's
 `ladder.json` has a digest per game (`games_sha256`, game g's decisions), so `ladder_equal.py` names every game
 whose decisions differ. `ladder.json` also records `numpy_simd` in its conditions, so the equality proof compares NumPy's
-dispatch too, and the pins themselves (`pins`) and a **network probe** (`net_probe`): each network's float32 bits on the
-arm's own games (every game's first decision), in the shapes the search calls it (`model.apply` on 2 x games rows,
-`model.value` on the leaf call's 16,384 rows), as sha256 per network. Two machines whose probes agree compute the
-networks bit for bit alike before any game is played; `ladder_equal.py` compares it with the rest. `games_decisions`
-holds, per game, a 16-hex digest of each decision in (step, seat) order, so a differing game names its first differing
+dispatch too, and the pins themselves (`pins`, and `pin_variant` in a probe campaign). `games_decisions` holds, per
+game, a 16-hex digest of each decision in (step, seat) order, so a differing game names its first differing
 decision (its step and seat are in the run's own decision file). The pins only cap the instruction set: nothing is
 switched off, so the box computes as the Ryzen does with its default settings (where none of the caps changes a bit,
 which the local probe shows), and every local run so far stays comparable. **Timing runs never use the pins, and live
 play (the VPS) keeps the default settings.** Switching anything off (XNNPACK, oneDNN, fast math) would start a new
 local series, not paired with the runs before it, and is decided first and stated here before any run.
 
-**Probe-only campaigns** (`probe_only=1` in `campaign.conf`, e.g. `ladder-probe-2e`): no game. The box runs the
-probe of the first arm (`ladder --probe-only`) under five pin variants, one after the other, and uploads each
-`probe/<variant>/probe.json`:
+**The network probe** (`net_probe`, HauptSession 2026-10-15). `ladder --record-probe-inputs FILE` records every network
+call of the first three steps (`--record-steps`) of the step arm's games against every opponent, as the run makes
+them: our network's `apply` (the search's root and foe-policy calls, with their real row counts) and `value` (the leaf
+calls of 1,024 rows, the capacity of step 2e), the foe model's `apply`, the opponents' `act`; their inputs, in call
+order, into one `.npz` that is byte for byte the same for the same calls (the generator: the ladder itself, run
+locally; it prints the file's sha256 and records it, `probe_inputs_recorded`). `ladder --probe-inputs FILE` makes
+every call again and hashes its outputs: `net_probe` has the inputs' sha256, a 16-hex digest per call (`per_call`),
+what each call was (`calls_meta`: network, function, shapes, opponent) and the sha256 over all calls. Two machines
+whose probes agree compute every network call of the games' first moves bit for bit alike; where they do not, the
+first differing call names the network, the function and the shapes. `ladder --probe-only` runs only the probe.
+
+**Probe campaigns** (`probe_inputs=<sha256>` and `probe_sha256=<sha256>` in `campaign.conf`, e.g. `ladder-probe-2e`).
+The probe's inputs are read from `probes/<sha256>.npz` of the bucket (not `nets/`), read-only for the box like
+`nets/` (the role's `ReadProbes`; a box that could write there refuses, `probes_writable`), and checked against their
+sha256. The box runs the first arm's probe (`ladder --probe-only`) under five pin variants, one after the other, and
+uploads each `probe/<variant>/probe.json`:
 
 | variant | `XLA_FLAGS` | `ONEDNN_MAX_CPU_ISA` |
 |---|---|---|
@@ -398,9 +416,11 @@ probe of the first arm (`ladder --probe-only`) under five pin variants, one afte
 | `isa-noxnnpack-noonednn` | + `--xla_cpu_use_onednn=false` | `AVX2` |
 | `isa-noxnnpack-noonednn-nofastmath` | + `--xla_cpu_enable_fast_math=false` | `AVX2` |
 
-The smallest variant whose probe equals this machine's (run the same probe locally: `ladder ... --probe-only`) is the
-one to keep. It takes a few minutes; the HauptSession starts it with the owner, as every AWS run. A variant that fails
-is a refusal, `probe_failed`.
+Then it plays the arms under the first variant whose probe is `probe_sha256` (the local machine's probe on the same
+inputs), recorded as `pin_variant` in each arm's `ladder.json` beside the pins; each arm's `ladder.json` has the probe
+too. No variant giving it: no game, the refusal `probe_no_match`; a variant that fails: `probe_failed`. The
+HauptSession starts it with the owner, as every AWS run, and uploads the inputs first (step 2 below). A variant that
+switches something off is chosen only by this campaign and only for AWS runs; the local series keeps its settings.
 
 Whether the pins suffice is what the equality proof shows: if it is not bit-identical,
 AWS results count only as their own series, every arm of a comparison runs on the same instance type, and the report
@@ -415,18 +435,20 @@ and no network ever leaves it.
 `nets/` succeeded: a plain write, a write with server-side encryption or a delete; the role is wrong),
 `nets_probe_unclear` (a probe failed with something other than AccessDenied, e.g. no credentials: no proof of
 read-only), `nets_unreadable`, `net_sha_mismatch`, `wrong_commit`, `wrong_run` (the run id is not of the commit),
-`no_campaign`, `bad_conf`, `build`, `python_env`, `probe_failed` (a probe-only campaign's variant failed),
+`no_campaign`, `bad_conf`, `build`, `python_env`, `probes_writable`, `probes_probe_unclear`,
+`probe_inputs_unreadable`, `probe_inputs_sha_mismatch` (a probe campaign's inputs, as for `nets/`), `probe_failed` (a
+probe campaign's variant failed), `probe_no_match` (no variant gives the local probe: no game),
 `numpy_dispatch` (`numpy_dispatch.py`, with the pinned NumPy: a name in `NPY_DISABLE_CPU_FEATURES` that is not one of NumPy's dispatch targets, or an AVX-512 target still enabled; nothing runs), `cpus`
 (fewer than 16 per arm plus 16) and `ladder_failed` (naming
 the arms that failed; the others' results are still uploaded). A failure without a refusal is named by the step it
-happened in, `failed_in_<step>` (`packages`, `checkout`, `build`, `python`, `nets`, `arms`, `upload`), and a TERM or
+happened in, `failed_in_<step>` (`packages`, `checkout`, `build`, `python`, `nets`, `probe`, `arms`, `upload`), and a TERM or
 INT (the watchdog's shutdown) is `terminated`. A failure before the AWS CLI is installed (`failed_in_packages`)
 uploads nothing: then only the instance's console output is left.
 
 ### The HauptSession's steps, in this order
 
-1. **IAM check.** The role `duoforge-fuzz` has the statement `ReadNets` above (`s3:GetObject` on `nets/*` only) and
-   nothing else on `nets/`. The bucket has Public Access Block on and server-side encryption (in the console, or
+1. **IAM check.** The role `duoforge-fuzz` has the statements `ReadNets` and `ReadProbes` above (`s3:GetObject` on
+   `nets/*` and on `probes/*` only) and nothing else on `nets/` or `probes/`. The bucket has Public Access Block on and server-side encryption (in the console, or
    `aws s3api get-public-access-block --bucket <BUCKET>` and `aws s3api get-bucket-encryption --bucket <BUCKET>` with
    the owner's profile). The owner makes the IAM change.
 2. **Upload the networks with their sha256.** For each sha256 the campaign names (`python3
@@ -435,7 +457,10 @@ uploads nothing: then only the instance's console output is left.
    - upload it as `nets/<sha256>.npz` with the owner's credentials (the user `pokeengine` has no S3 write permission):
      `aws s3 cp <file> s3://<BUCKET>/nets/<sha256>.npz --sse AES256`.
 
-   Only the networks the conf names go up; no run directory, no decision file.
+   A probe campaign's inputs go up the same way, as `probes/<probe_inputs>.npz` (`sha256sum` first; the file is
+   recorded locally with `ladder --record-probe-inputs`, outside the repository).
+
+   Only the networks and the probe inputs the conf names go up; no run directory, no decision file.
 3. **Launch.** `tools/cloud/aws_fuzz/launch_ladder.sh --campaign <id> --commit <sha of main> --bucket <BUCKET>` prints
    the request and the networks; read it. Then the same command with `--i-have-owner-approval`. Without spot capacity
    for `c7a.16xlarge` it stops: wait and launch again, or restart the whole series on another type (never mixed).

@@ -1162,11 +1162,17 @@ esac
             if s.get('Sid') == 'ReadNets':  # the ladder campaigns' networks (#484): read-only, nets/ only
                 self.assertEqual((s['Action'], resources), ('s3:GetObject', ['arn:aws:s3:::<BUCKET>/nets/*']))
                 continue
+            if s.get('Sid') == 'ReadProbes':  # a probe campaign's inputs (#484): read-only, probes/ only
+                self.assertEqual((s['Action'], resources), ('s3:GetObject', ['arn:aws:s3:::<BUCKET>/probes/*']))
+                continue
             self.assertTrue(all(r.endswith('/fuzz/*') or 'prefix' in json.dumps(s.get('Condition', {})) for r in
                                 resources), s)
         on_nets = [s for s in role['Statement'] if any('/nets/' in r for r in
                                                        ([s['Resource']] if isinstance(s['Resource'], str) else s['Resource']))]
         self.assertEqual([s['Sid'] for s in on_nets], ['ReadNets'])  # no write, no delete on nets/
+        on_probes = [s for s in role['Statement'] if any('/probes/' in r for r in
+                                                         ([s['Resource']] if isinstance(s['Resource'], str) else s['Resource']))]
+        self.assertEqual([s['Sid'] for s in on_probes], ['ReadProbes'])  # nor on probes/
 
     # ------------------------------------------------------------------ shellcheck
     @unittest.skipIf(shutil.which('shellcheck') is None, 'shellcheck is not installed')
