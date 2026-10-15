@@ -50,6 +50,17 @@ def games(n_teams, pairs, seed=SEED):
     return np.array(rows, dtype=suite.SUITE)
 
 
+def load_pool(ctx, ids):
+    """(pool, its record) of a pool network's team ids under ctx, through the engine's filter (teams.load_accepted;
+    HauptSession 2026-10-15, after #558): a team the engine's setup check refuses is left out, named on stderr and in
+    the record (teams.pool_record), which the caller writes into its conditions."""
+    from duoforge import teams
+    pool, refused = teams.load_accepted(ctx, ids)
+    for team, status in refused:
+        print(f"pool: team {team} refused by the engine ({status}), left out", file=sys.stderr)
+    return pool, teams.pool_record(pool, refused)
+
+
 def fallback_share(records):
     """The share of a searcher's non-team decisions that played raw because the search could not run."""
     decisions = [r for r in records if r["kind"] != "team"]
@@ -130,7 +141,7 @@ def main(argv=None):
     digests = check_nets(args.foe_net, args.bot)
 
     import duoforge
-    from duoforge import _layout, teams
+    from duoforge import _layout
     from duoforge_learn import checkpoint as ck, evaluate
     from duoforge_live.search import HONEST_SETTINGS
     from . import arena, honest
@@ -152,7 +163,8 @@ def main(argv=None):
                              "encoders": {k: v[2] for k, v in nets.items()},
                              "foe_and_bot_sha256_prefix": [d[:12] for d in digests]}}
     with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
-        pool = teams.load(ctx, config["teams"]["ids"])
+        pool, pool_info = load_pool(ctx, config["teams"]["ids"])
+        report["conditions"]["pool"] = pool_info
         rows = games(len(pool.ids), args.pairs, args.seed)
         table, source_ids, table_info = honest.live_spread_table(ctx)
         bot_teams = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])

@@ -80,6 +80,17 @@ class SmogonSetsTest(unittest.TestCase):
         self.assertNotIn("grimmsnarl", sets)
         self.assertEqual(sum(sets["farigiraf"]["farigiraf"].values()), 1)
 
+    def test_a_team_the_registry_marks_pending_is_skipped_and_counted_by_its_reason(self):
+        """#406: a team marked "status": "pending" stays in the registry but gives no set; it is counted by its reason."""
+        reg = Registry([FARIGIRAF, FARIGIRAF.replace("Bold", "Calm")], self)
+        index = json.loads((reg.root / "index.json").read_text(encoding="utf-8"))
+        index["teams"][1].update(status="pending", status_reason="#406: 0 SP with Serious")
+        (reg.root / "index.json").write_text(json.dumps(index), encoding="utf-8")
+        sets, counts = S.registry_sets(reg.root, self.names, self.data)
+        self.assertEqual(sum(sets["farigiraf"]["farigiraf"].values()), 1)  # the Bold team only
+        self.assertEqual(counts["registry.teams"], 1)
+        self.assertEqual(counts["registry.pending.#406: 0 SP with Serious"], 1)
+
     def test_marginals_take_the_highest_cutoff_with_enough_weight_and_engine_names(self):
         heavy = ss.MIN_WEIGHT
         src = sources({"Farigiraf": entry({"sitrusberry": heavy, "nothing": heavy}, {"armortail": 2 * heavy},

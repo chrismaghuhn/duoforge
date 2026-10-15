@@ -85,6 +85,17 @@ def supported(ctx, table, ident):
     return bool(out.value)
 
 
+def member_setup_valid(ctx, member):
+    """duoforge_data_member_setup_valid: whether duoforge_battle_create would accept `member` (a MEMBER_SETUP record)
+    as a member of a side under the context's kind, by exactly its per-member check (no side rule, no support gate)."""
+    record = np.array(member, dtype=_layout.MEMBER_SETUP)  # a contiguous copy; a 0-d record stays 0-d
+    if record.shape != ():
+        raise ValueError(f"one MEMBER_SETUP record, not shape {record.shape}")
+    out = ctypes.c_bool()
+    check(load_library().duoforge_data_member_setup_valid(_handle(ctx), ptr(record), ctypes.byref(out)))
+    return bool(out.value)
+
+
 def forme_info(ctx, species_id):
     """duoforge_data_forme_info as a dict (abilities is the full 3-entry array; ability_count says how many are set)."""
     return _read(load_library().duoforge_data_forme_info, ctx, species_id, _layout.FORME_INFO, "species_id")

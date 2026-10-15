@@ -22,7 +22,11 @@
  *     E_INVALID_ARGUMENT (random mutations, and an exhaustive sweep of every
  *     forme against every move, ability, gender, item, nature and species id);
  *   - the composition rule of the support gate is checked against the white-box
- *     gate over random manifests of this test's own.
+ *     gate over random manifests of this test's own;
+ *   - duoforge_data_member_setup_valid (#512) is the per-member part of the
+ *     same setup: in the sweep, whose fillers are legal and clash with nothing,
+ *     it says false exactly when setup refuses with E_INVALID_ARGUMENT; NULL
+ *     arguments are refused and leave the answer untouched.
  */
 #include <stdio.h>
 #include <string.h>
@@ -417,6 +421,48 @@ static void test_synthetic(df_test *t)
     DF_CHECK(t, duoforge_data_count(ctx, 1u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
     DF_CHECK(t, duoforge_data_count(ctx, 0u, &count) == DUOFORGE_E_INVALID_ARGUMENT);
     DF_CHECK(t, duoforge_data_find(ctx, 9u, "rillaboom", 9u, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    /* duoforge_data_member_setup_valid (#512) under SYNTHETIC: the kind's own per-member check (species and move ids
+     * below the context's counts, hp_max and pp_max set, trailing slots and the table fields zero), and setup agrees on
+     * a side of four such members with the member under test first. */
+    duoforge_member_setup good;
+    memset(&good, 0, sizeof good);
+    good.species_id = 1u;
+    good.hp_max = 100u;
+    good.move_count = 1u;
+    good.moves[0].move_id = 2u;
+    good.moves[0].pp_max = 10u;
+    duoforge_member_setup cases[7];
+    for (uint32_t k = 0u; k < 7u; ++k) {
+        cases[k] = good;
+    }
+    cases[1].species_id = 3u;       /* the context has 3 species */
+    cases[2].hp_max = 0u;           /* derived only under the kinds with tables */
+    cases[3].move_count = 0u;
+    cases[4].moves[0].pp_max = 0u;
+    cases[5].moves[1].move_id = 1u; /* a slot past move_count */
+    cases[6].nature = 1u;           /* a table field */
+    for (uint32_t k = 0u; k < 7u; ++k) {
+        bool valid = k != 0u;
+        DF_CHECK(t, duoforge_data_member_setup_valid(ctx, &cases[k], &valid) == DUOFORGE_OK);
+        DF_CHECK(t, valid == (k == 0u));
+        duoforge_battle_setup s;
+        memset(&s, 0, sizeof s);
+        s.rng_initseq = 1u;
+        for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+            s.sides[side].member_count = 4u;
+            for (uint32_t m = 0u; m < 4u; ++m) {
+                s.sides[side].members[m] = good;
+            }
+        }
+        s.sides[0].members[0] = cases[k];
+        duoforge_battle *made = NULL;
+        const duoforge_status got = duoforge_battle_create(ctx, &s, &made);
+        duoforge_battle_destroy(made);
+        if (!DF_CHECK(t, valid == (got == DUOFORGE_OK) && (valid || got == DUOFORGE_E_INVALID_ARGUMENT))) {
+            fprintf(stderr, "  SYNTHETIC member case %u: member_setup_valid %d, create %s\n", k, (int)valid,
+                    status_text(got));
+        }
+    }
     duoforge_context_destroy(ctx);
 }
 
@@ -915,6 +961,7 @@ static duoforge_status oracle_setup(df_test *t, const kase *c, const duoforge_ba
 
 /* Setup against the oracle, with the public create (gated) and the white-box one (not gated). */
 static unsigned long g_outcomes[KIND_COUNT][3]; /* OK, UNSUPPORTED, INVALID_ARGUMENT by kind */
+static unsigned long g_member_valid[KIND_COUNT][2]; /* duoforge_data_member_setup_valid in the sweep: false, true */
 
 static void check_setup(df_test *t, kase *c, const duoforge_battle_setup *s, const char *what)
 {
@@ -1231,6 +1278,31 @@ static void sweep_member(df_test *t, kase *c, const duoforge_member_setup *under
         DF_CHECK(t, s.sides[side].member_count == count); /* the fixture needs enough supported fillers */
     }
     check_setup(t, c, &s, "sweep");
+    /* The member alone (#512): the fillers are legal and share no dex number or item with it, so setup refuses the
+     * setup with E_INVALID_ARGUMENT exactly when the member fails the per-member check. */
+    bool valid = false;
+    DF_CHECK(t, duoforge_data_member_setup_valid(c->ctx, under_test, &valid) == DUOFORGE_OK);
+    duoforge_battle *made = NULL;
+    const duoforge_status got = duoforge_battle_create(c->ctx, &s, &made);
+    duoforge_battle_destroy(made);
+    if (!DF_CHECK(t, valid == (got != DUOFORGE_E_INVALID_ARGUMENT))) {
+        fprintf(stderr, "  %s sweep: member_setup_valid %d, create %s\n", c->kind_name, (int)valid, status_text(got));
+    }
+    g_member_valid[c - g_kase][valid ? 1 : 0] += 1u;
+}
+
+/* duoforge_data_member_setup_valid's contract: a NULL pointer is E_NULL_ARGUMENT and leaves the answer untouched. */
+static void test_member_setup_valid_contract(df_test *t, kase *c)
+{
+    ensure_fillers(t, c);
+    bool valid = true;
+    DF_CHECK(t, duoforge_data_member_setup_valid(NULL, &c->filler[0], &valid) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_member_setup_valid(c->ctx, NULL, &valid) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, valid);
+    DF_CHECK(t, duoforge_data_member_setup_valid(c->ctx, &c->filler[0], NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    valid = false;
+    DF_CHECK(t, duoforge_data_member_setup_valid(c->ctx, &c->filler[0], &valid) == DUOFORGE_OK);
+    DF_CHECK(t, valid); /* a filler is a legal member */
 }
 
 /* The formes that get the full sweep, every move, ability, gender, item and nature id against them: the prefix (the
@@ -1505,8 +1577,12 @@ int main(void)
         test_exhaustive(&t, c);
         test_every_row(&t, c);
         test_gate_composition(&t, c, k);
-        fprintf(stderr, "  %s: setups OK %lu, UNSUPPORTED %lu, INVALID_ARGUMENT %lu\n", c->kind_name,
-                g_outcomes[k][0], g_outcomes[k][1], g_outcomes[k][2]);
+        test_member_setup_valid_contract(&t, c);
+        /* non-vacuity: the sweep asked the member check both ways */
+        DF_CHECK(&t, g_member_valid[k][0] > 0u && g_member_valid[k][1] > 0u);
+        fprintf(stderr, "  %s: setups OK %lu, UNSUPPORTED %lu, INVALID_ARGUMENT %lu; member check false %lu, true %lu\n",
+                c->kind_name, g_outcomes[k][0], g_outcomes[k][1], g_outcomes[k][2], g_member_valid[k][0],
+                g_member_valid[k][1]);
     }
     for (uint32_t k = 0u; k < KIND_COUNT; ++k) {
         duoforge_context_destroy(g_kase[k].ctx);

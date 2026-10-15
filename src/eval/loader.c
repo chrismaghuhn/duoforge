@@ -1,4 +1,5 @@
 #include "eval/model.h"
+#include "eval/graph.h"
 #include "core/alloc.h"
 #include "core/sha256.h"
 #include "state/context_internal.h"
@@ -146,7 +147,7 @@ static bool dfi_tensor(const uint8_t *file, size_t size, const uint8_t *entry,
     if (!dfi_align(cursor, file, size) || dfi_u32(entry + 80) != spec->scale_count) { return false; }
     if (spec->scale_count == 0u) { return dfi_u64(entry + 72) == 0u; }
     if (dfi_u64(entry + 72) != *cursor || !dfi_span(size, *cursor, (uint64_t)spec->scale_count * 8u) ||
-        spec->input_bound > 32768u || spec->bias_bound > INT64_MAX) { return false; }
+        spec->input_bound > UINT32_C(2147483648) || spec->bias_bound > INT64_MAX) { return false; }
     /* No magnitude multiplication until its absolute bound has been proved. */
     uint64_t bound = (uint64_t)spec->fan_in * spec->input_bound;
     if (weight_abs != 0u && bound > (uint64_t)INT64_MAX / weight_abs) { return false; }
@@ -269,11 +270,15 @@ static duoforge_status dfi_read(const char *path, const uint8_t expected[32],
     if (ferror(stream) || !dfi_sha256_final(&hash, digest)) { FAIL(DUOFORGE_E_MALFORMED, "eval_file_read"); }
     if (size < sizeof header) { FAIL(DUOFORGE_E_MALFORMED, "eval_header"); }
     if (!dfi_equal(digest, expected, 32u)) { FAIL(DUOFORGE_E_MALFORMED, "eval_file_sha256"); }
-    /* Production registry is deliberately empty. No weight slab allocation. */
     if (graph == NULL) {
-        status = dfi_validate(header, size, context, version, mask, NULL, error);
-        goto done;
+        const dfi_eval_shape *shape = dfi_eval_shape_lookup(dfi_u32(header + 24u));
+        if (shape == NULL) {
+            status = dfi_validate(header, size, context, version, mask, NULL, error);
+            goto done;
+        }
+        graph = shape->graph;
     }
+    if ((uint64_t)size > graph->file_max) { FAIL(DUOFORGE_E_CAPACITY, "eval_file_capacity"); }
     if (fseek(stream, 0, SEEK_SET) != 0) { FAIL(DUOFORGE_E_MALFORMED, "eval_file_seek"); }
     bytes = allocator->allocate(size, allocator->user);
     if (bytes == NULL) { FAIL(DUOFORGE_E_OUT_OF_MEMORY, "eval_file_allocation"); }
@@ -288,6 +293,12 @@ static duoforge_status dfi_read(const char *path, const uint8_t expected[32],
     model = allocator->allocate(sizeof *model, allocator->user);
     if (model == NULL) { FAIL(DUOFORGE_E_OUT_OF_MEMORY, "eval_model_allocation"); }
     memset(model, 0, sizeof *model);
+    model->graph = graph;
+    model->file = bytes;
+    model->file_bytes = size;
+    model->allocator = *allocator;
+    status = dfi_eval_graph_bind(model, error);
+    if (status != DUOFORGE_OK) { goto done; }
     model->lifetime = allocator->allocate(sizeof *model->lifetime, allocator->user);
     if (model->lifetime == NULL) { FAIL(DUOFORGE_E_OUT_OF_MEMORY, "eval_lifetime_allocation"); }
     memset(model->lifetime, 0, sizeof *model->lifetime);
@@ -315,6 +326,7 @@ done:
     }
     if (bytes != NULL) { allocator->release(bytes, allocator->user); }
     if (model != NULL) {
+        if (model->parameters != NULL) { allocator->release(model->parameters, allocator->user); }
         allocator->release(model->lifetime, allocator->user);
         allocator->release(model, allocator->user);
     }
@@ -325,7 +337,7 @@ duoforge_status dfi_eval_load(const char *path, const uint8_t expected[32],
     const duoforge_context *context, uint32_t version, uint64_t mask,
     duoforge_evaluator **out, duoforge_eval_error *error)
 {
-    /* E3g installs explicit compiled registry lookup here, never a file graph. */
+    /* Registered graphs bind only after SHA and the complete tensor validation. */
     return dfi_read(path, expected, context, version, mask, NULL, &dfi_default_allocator, out, error);
 }
 duoforge_status dfi_eval_load_descriptor(const char *path, const uint8_t expected[32],
@@ -349,6 +361,7 @@ void dfi_eval_model_release(const duoforge_evaluator *immutable)
     dfi_error_lock_leave(&model->lifetime->lock);
     if (last) {
         const dfi_eval_allocator allocator = model->allocator;
+        if (model->parameters != NULL) { allocator.release(model->parameters, allocator.user); }
         allocator.release(model->file, allocator.user);
         dfi_error_lock_destroy(&model->lifetime->lock);
         void *owner = model->lifetime->owner;

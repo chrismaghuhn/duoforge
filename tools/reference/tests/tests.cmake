@@ -1,4 +1,4 @@
-# Independent format pins and mutation controls use only the standard library.
+# The derived reference-set sums, the lower bounds and the mutation controls use only the standard library.
 add_test(NAME duoforge.reference.format_pins
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/tests/test_battle_pins.py")
 duoforge_label_test(duoforge.reference.format_pins quick tools ci-no-skip)

@@ -136,10 +136,13 @@ def team_matrix(context, pool, rows, player, workers, seed=LADDER_SEED):
     return np.divide(total, count, out=np.full((n, n), np.nan), where=count > 0)
 
 
-def _pool_of(run_dir, teams_root=None):
+def _pool_of(run_dir, teams_root=None, refused=None):
     """(team pool, data kind) of a run, from its first checkpoint: format 2
     names its teams and data kind; format 1 (decision 0014) trained on Teams
-    A and B under CLOSURE."""
+    A and B under CLOSURE. refused: None (a team the engine refuses stops
+    the load) or a list that collects the refused teams as (id, status)
+    (teams.load_accepted's filter, HauptSession 2026-10-15, after #558); the
+    kept teams' files must still match the run's hashes."""
     import duoforge
     from duoforge import teams
 
@@ -160,9 +163,17 @@ def _pool_of(run_dir, teams_root=None):
         return teams.TeamPool.from_setups(saved["ids"], np.array([by_id[t] for t in saved["ids"]]),
                                           saved["weights"]), kind
     train = config.get("train", {})
+    root = teams_root or train.get("teams_root", "data/teams")
     with duoforge.Context(data_kind=kind) as ctx:
-        pool = teams.load(ctx, saved["ids"], root=teams_root or train.get("teams_root", "data/teams"), weights=saved["weights"])
-    if list(pool.sha256) != list(saved["sha256"]):
+        if refused is None:
+            pool = teams.load(ctx, saved["ids"], root=root, weights=saved["weights"])
+        else:
+            pool, found = teams.load_accepted(ctx, saved["ids"], root=root, weights=saved["weights"])
+            refused.extend(found)
+            for team, status in found:
+                print(f"pool: team {team} refused by the engine ({status}), left out", file=sys.stderr)
+    expected = dict(zip(saved["ids"], saved["sha256"]))
+    if list(pool.sha256) != [expected[t] for t in pool.ids]:
         raise SystemExit(f"{run_dir}: a team file changed since the run (sha256 {saved['sha256']} -> {pool.sha256})")
     return pool, kind
 
@@ -208,7 +219,8 @@ def main(argv=None):
     from . import evaluate, policy, suite
     from .checkpoint import encoder_of, ext_supported_of, load, load_current, model_config
 
-    pool, kind = _pool_of(args.teams_from or args.run_dirs[0])
+    refused = []
+    pool, kind = _pool_of(args.teams_from or args.run_dirs[0], refused=refused)
     rows = suite.make_suite(len(pool.ids), LADDER_SEED, games=args.games, budget=args.budget)
     models = {}
 
@@ -264,8 +276,10 @@ def main(argv=None):
     os.makedirs(out, exist_ok=True)
     book_info = {} if evidence is None else {"book": {**book_preview.info(args, evidence),
         "players": {player.name: player.summary() for player in players}}}
+    from duoforge import teams
     with open(os.path.join(out, "ladder.json"), "w", encoding="utf-8") as f:
-        json.dump({**book_info, "players": table, "teams": list(pool.ids), "suite": {"games": args.games, "budget": args.budget,
+        json.dump({**book_info, "players": table, "teams": list(pool.ids), "pool": teams.pool_record(pool, refused),
+                   "suite": {"games": args.games, "budget": args.budget,
                    "rows": int(rows.shape[0])}, "team_matrix_player": players[best].name,
                    "team_matrix": [[None if np.isnan(x) else round(float(x), 4) for x in r] for r in matrix]},
                   f, indent=1)

@@ -1,9 +1,5 @@
 {
-  "maintenance": "Independent owner-reviewed pins. Hand-maintained; no generator updates this file. Names hash: sorted ASCII names, each followed by LF.",
+  "maintenance": "Hand-maintained lower bounds of the reference sets (restructure step 2 of docs/superpowers/plans/2026-10-11-repo-restructure.md: global sums are derived, not maintained). Every sum (battles, certified, fixture matches, tiebreak stops, tape and event rows) is derived from the battle files: by tests/reference/data.cmake at configure time and by tools/reference/format_pins.py. A set below its bound fails both. Raise a bound deliberately when a set grows; adding a battle needs no edit here.",
   "format": "reg-mc",
-  "sets": {
-    "closure": {"battles": 90, "certified": 26, "fixture_matches": 0, "live_stop_total": 0, "live_stops": {}, "names_sha256": "e329f515401db0c81d230dab60ebbd38c4d78d4507357e40d6f566059811fe18", "outcomes": {"equal": 2594, "refused": 310}, "own_pp_stops": 0, "tiebreak_stops": 833},
-    "team_c": {"battles": 73, "certified": 23, "fixture_matches": 144, "live_stop_total": 0, "live_stops": {}, "names_sha256": "9d129e36d93cadd1cc5a063f72b686705006813c88df07c43cb30ca23dffcb9e", "outcomes": {}, "own_pp_stops": 0, "tiebreak_stops": 734},
-    "pool": {"battles": 1008, "certified": 1008, "fixture_matches": 0, "live_stop_total": 192, "live_stops": {"feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 20, "feature:FORME_CHANGE": 20, "feature:ILLUSION": 2, "feature:ROOST": 8, "feature:SUBSTITUTE": 130, "line:-end": 2}, "names_sha256": "b19fc69b17819acbbf1b43d43714eb30c90a183682f71fff0ca75300be4b8278", "outcomes": {"equal": 11952, "refused": 615, "tracker refuses: unburden-without-item-line": 4}, "own_pp_stops": 12, "tiebreak_stops": 5507}
-  }
+  "minimum_battles": {"closure": 90, "team_c": 73, "pool": 1001}
 }

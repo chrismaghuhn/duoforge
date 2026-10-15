@@ -156,8 +156,8 @@ def dump_local(args):
 
 def _with_sheets(lines, own, foe):
     """A batch with both true open sheets put in right after its team-preview request (the oracle arm), as
-    cts.ParticleTracker puts in a particle's: the foe's true team in the particles' form (cts.true_sheet: no stat
-    points, as the server shows it; review of #385 step 5)."""
+    cts.ParticleTracker puts in a particle's: the foe's true team as the server shows it (cts.true_sheet: no stat
+    points; a particle's sheet carries its set's own or cts.SP_PLACEHOLDER, which no world reads; review of #385 step 5)."""
     from duoforge_live import cts, teams
     for i, line in enumerate(lines):
         side = cts._preview_side(line)
