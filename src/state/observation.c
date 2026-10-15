@@ -291,8 +291,10 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
      * Its owner's request shows whether it runs; the foe sees only the public last move, since the drawn count may end
      * silently (dfi_maybe_lockedmove, view audit 2026-10-10). */
     const bool lockedmove = s == viewer ? b->tail.sides[s].positions[p].lock_turns != 0u : dfi_maybe_lockedmove(b, s * 2u + p);
+    /* A Choice item's lock under it is the reference's locked slot all the same (choicelock, issue 544): the same move. */
+    const bool choice = ((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u;
     const uint32_t locked_index =
-        slot->locked_move != 0u && !lockedmove ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
+        slot->locked_move != 0u && (!lockedmove || choice) ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
     out->locked_slot = (uint8_t)locked_index; /* <= 0xFF */
     if (slot->charge_turns != 0u && s == viewer) {
         out->locked_target = slot->locked_target; /* a choice lock has no target (Team C) */

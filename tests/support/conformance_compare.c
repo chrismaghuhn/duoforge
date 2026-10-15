@@ -337,7 +337,8 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
             if (pos != NULL && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
                 /* Step G56: a lockedmove (Outrage) keeps its slot in locked_move too, but the reference has no locked slot for it
                  * (its count is the tail's lock_turns; the lock is compared through the request and the move lines). */
-                const bool lockedmove = b->tail.sides[s].positions[pos - b->sides[s].positions].lock_turns != 0u;
+                const bool lockedmove = b->tail.sides[s].positions[pos - b->sides[s].positions].lock_turns != 0u &&
+                                        ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u; /* a Choice lock shows its slot (issue 544) */
                 const uint32_t lslot = pos->locked_move != 0u && !lockedmove ? (uint32_t)pos->locked_move - 1u : 0xFFu;
                 const uint32_t ltarget = pos->locked_move != 0u && !lockedmove ? pos->locked_target : 0u;
                 const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
