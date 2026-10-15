@@ -224,6 +224,24 @@ Run as the HauptSession asked: after #512 S3 (#540) made a targeted foe move wit
 - how many of the turns mixed by the after-S3 method become unique;
 - `target-not-reproduced` worlds, and every exclusion by name.
 
+**Approved by the HauptSession on 2026-10-15, with two additions, both fixed here before any code or run:**
+- **(a) A limit on lost worlds.**
+  - The unit is a *compared foe slot*: a `target-unknown` slot whose line names a single target, in a world the meter keeps.
+  - It counts as lost when its world is left out as `target-not-reproduced`.
+  - If more than 5% of a set's compared foe slots are lost, that set is **not evaluable**. It does not pass, whatever its mean.
+- **(b) Battles lost to the #406 teams, per set.**
+  - The rule is the registry's: the four teams marked `pending` in `data/teams/index.json` ("#406: 0 SP with Serious"), and, member by member, any member with a Serious nature and 0 SP.
+  - Counted now, before the run: **0 of 196 in the gate's set and 0 of 196 in the disjoint set**, by either rule. The traces are battles the engine reproduced, so no set holds such a member. The run reports any battle the meter refuses by name as before, so a later change would show there.
+- **`privileged.step_events` steps only the search's own hypotheses:** the worlds the search built from the particles. It never steps a true state, a trace's state or anything the bot could not have had.
+- **What these details mean in the code:**
+  - **A candidate is a pair of the world's foe options.** When both foe slots are compared, a pair is reproduced only when, under one and the same seed, the engine's target matches the line's for both slots.
+  - **The line** is the first `|move|` line of the slot's user in the turn. It is not compared when it has `[spread]` or an empty target, or when the user's `|cant|`, `|switch|` or `|faint|` line comes first.
+  - **A step the engine refuses** excludes the turn as `leaf-refused`, as a refused leaf does. It never drops the pair.
+- **The tool.** `cts_luck_check.py` only reports more; the comparison itself is unchanged. It adds:
+  - the meter's target counts and the share in (a);
+  - per turn, whether the after-S3 method would have mixed it (so it can count the turns that become unique);
+  - `evaluable`, with `passed` = the fixed criterion and `evaluable`.
+
 ### After the fact (after seeing the result)
 
 The HauptSession set this on 2026-10-15, after the result above was known; it is not part of the definition fixed in advance.
