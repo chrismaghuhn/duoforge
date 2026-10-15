@@ -565,6 +565,53 @@ class LockedMoveSlotTest(unittest.TestCase):
         self.move(0, "OUTRAGE")
         self.assertEqual(self.t._shown_locked_slot(p, own=True), 0)
 
+    def test_magic_room_sets_no_choice_lock_and_a_lock_that_would_be_set_stops(self):
+        # K5 (#475, decision 0015 5dm): under Magic Room the Choice item's onModifyMove does not run. Without a lock the move line is
+        # the case the record cannot reproduce by a rule of its own (no rule logic in Python): the line stops, explicitly
+        from duoforge_live import lines
+        p = self.t._positions[1][0]
+        self.move(2, "OUTRAGE")  # control: no room, the lock is set to the move of the line
+        self.assertEqual(p.choice_slot, 0)
+        p.choice_slot = self.tracker.MOVE_SLOT_NONE
+        self.t._magic_room, self.t._magic_room_source = 3, 1
+        with self.assertRaises(lines.Stop) as caught:
+            self.move(2, "OUTRAGE")
+        self.assertEqual(str(caught.exception), "unfolded:magic-room-choice-lock")
+        self.assertEqual(p.choice_slot, self.tracker.MOVE_SLOT_NONE)
+
+    def test_magic_room_keeps_a_lock_that_stands_and_lets_another_move_through(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 0
+        self.t._magic_room, self.t._magic_room_source = 3, 1
+        self.move(2, "DRAGONCLAW")  # free choice under the room: the volatile stays as it was stored
+        self.assertEqual(p.choice_slot, 0)
+
+
+class MagicRoomViewTest(unittest.TestCase):
+    """K5 (#475, decision 0015 5dm): the field view's Magic Room per state, for both viewers, from the recorded k5 battles. FIELD_EXT sits
+    at offset 16 of OBSERVATION_EXT: byte 17 is magic_room_source, bytes 18-19 the flags (bits 0-2: the turns left; bits 3-5 stay zero).
+    The room is set in turn 1 (state 2 shows 4 after the turn-1 residual) and is gone after the fifth residual (state 6 shows 0)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.ref = Reference.get()
+
+    def view(self, name, k, viewer):
+        ext = self.ref.pool().battles_by_name[name].exts[(k, viewer)]
+        return ext[18] | ext[19] << 8, ext[17]
+
+    def test_the_countdown_and_the_setter_for_both_viewers(self):
+        want = {
+            "k5_mr_end_active": [(0, 0), (0, 0), (4, 1), (3, 1), (2, 1), (1, 1), (0, 0), (0, 0)],
+            "k5_mr_end_benched": [(0, 0), (0, 0), (4, 1), (3, 1), (2, 1), (1, 1), (0, 0), (0, 0)],
+            "k5_mr_restart_active": [(0, 0), (0, 0), (4, 1), (3, 1), (0, 0), (4, 1)],
+            "k5_mr_restart_benched": [(0, 0), (0, 0), (4, 1), (0, 0), (0, 0), (4, 7)],  # Gardevoir (side 1, roster 0): code 7
+        }
+        for name, states in want.items():
+            for k, value in enumerate(states):
+                for viewer in (0, 1):
+                    self.assertEqual(self.view(name, k, viewer), value, f"{name} state {k} viewer {viewer}")
+
 
 class OptionsTest(unittest.TestCase):
     """Test 1 (the options) and test 2 (the choice text) of the spec."""

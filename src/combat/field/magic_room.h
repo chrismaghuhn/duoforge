@@ -8,7 +8,7 @@
 #include "combat/run_internal.h"
 
 /* The setter of the room as the end line prints it (`[of] ' + this.effectState.source`, data/moves.ts:10788-10790): the Pokemon's
- * toString() at THAT time (sim/pokemon.ts:531-533), its slot while it is active, its fullname `p1: Name` (side and name) once it is not. The event carries
+ * toString() at the moment of the end (sim/pokemon.ts:531-533), its slot while it is active, its fullname `p1: Name` (side and name) once it is not. The event carries
  * `other` = the setter's position while it stands on the field (dfi_attract_source_flat: on the field and not fainted), else
  * DUOFORGE_NO_POSITION with the member code in `id`. The code is the room's own, read before it is cleared. */
 static inline duoforge_event dfi_magic_room_end_event(const struct duoforge_battle *b)
@@ -18,7 +18,8 @@ static inline duoforge_event dfi_magic_room_end_event(const struct duoforge_batt
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
     e.detail = (uint8_t)DUOFORGE_FIELD_MAGIC_ROOM;
     e.other = (uint8_t)flat;
-    e.id = (uint16_t)(flat == DUOFORGE_NO_POSITION ? code : 0u);
+    const uint32_t named = flat == DUOFORGE_NO_POSITION ? code : 0u; /* the code names a setter that is not on the field */
+    e.id = (uint16_t)named;
     return e;
 }
 

@@ -29,7 +29,7 @@ Order: the field flags first; then per side, own first, the guard bits and the c
 
 ## Not reserved
 
-Ailments, weather, terrain and slot kinds are closed in gen 9 (Tox is in; SV has no Frostbite and no primal weather). An unknown value there stays an error. Counters (turns) cannot be reserved: a new counter still needs a new encoder. The expansion's convention is presence bits.
+Ailments, weather, terrain and slot kinds are closed in gen 9 (Tox is in; SV has no Frostbite and no primal weather). An unknown value there stays an error. Counters (turns) cannot be reserved as such: a new counter needs a new encoder, unless it fits bits that a family already owns. The expansion's convention is presence bits or small counters/codes in the reserve bits, like the partial trap's TRAP_ELAPSED (volatiles2 bits 4-6) and Magic Room's turns (step K5, bits 0-2 of `duoforge_field_ext.flags`, feature `MAGIC_ROOM` 47, one `DUOFORGE_VIEWEXT_RESERVE_OWN` entry per bit, no encoder change: the width stays 1094 and the column order is the same). Values that are not a presence, a small count or a code still need a new encoder; Magic Room's setter has no column (`duoforge_field_ext.magic_room_source`, formerly `reserved0`, is in the view and not encoded).
 
 ## Tests
 

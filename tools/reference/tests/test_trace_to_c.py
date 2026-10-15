@@ -2212,6 +2212,43 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, maxhp, tables)
 
+    def test_magic_room_lines_name_the_setter_and_the_end_carries_its_member_code(self):
+        """Step K5 (#475, decision 0015 5dm): `-fieldstart|move: Magic Room|[of] p1a: X` is FIELD_START detail 7 with the setter's position
+        in `other`. The end line names the setter as its toString() at THAT time: the slot while it stands (other = its position, id 0), the
+        fullname `p1: X` once it does not (other none, the member code 1 + side * 6 + roster index in id), which room_setters follows from
+        the start line. A restart ends the room with the end line alone; an end that names another Pokemon (an Illusion holder prints its
+        disguise) is refused."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Alakazam': 0, 'Milotic': 1}, {'Gardevoir': 0, 'Staraptor': 1}]
+        maxhp = [{'Alakazam': 100, 'Milotic': 100}, {'Gardevoir': 100, 'Staraptor': 100}]
+        start = '|-fieldstart|move: Magic Room|[of] p1a: Alakazam'
+        active = '|-fieldend|move: Magic Room|[of] p1a: Alakazam'
+        benched = '|-fieldend|move: Magic Room|[of] p1: Alakazam'
+        kind = {'start': trace_to_c.EV['FIELD_START'], 'end': trace_to_c.EV['FIELD_END']}
+        self.assertEqual(trace_to_c.FIELD_MAGIC_ROOM, 7)
+        e = trace_to_c.step_events([start], 0, roster, maxhp, tables)[0]
+        self.assertEqual((e[0], e[2], e[4], e[11]), (kind['start'], 0, 0, 7))
+        ids = trace_to_c.room_setters({'steps': [{'log': [start, active]}]}, roster)
+        self.assertEqual(ids, [{1: 1}])  # side 0, roster 0: the code 1
+        e = trace_to_c.step_events([start, active], 0, roster, maxhp, tables, room_ids=ids[0])[1]
+        self.assertEqual((e[0], e[2], e[4], e[11]), (kind['end'], 0, 0, 7))  # on the field: its position, no id
+        ids = trace_to_c.room_setters({'steps': [{'log': [start]}, {'log': [benched]}]}, roster)
+        self.assertEqual(ids, [{}, {0: 1}])
+        e = trace_to_c.step_events([benched], 0, roster, maxhp, tables, room_ids=ids[1])[0]
+        self.assertEqual((e[0], e[2], e[4], e[11]), (kind['end'], trace_to_c.NOPOS, 1, 7))  # benched: no position, the member code
+        gardevoir = '|-fieldstart|move: Magic Room|[of] p2a: Gardevoir'
+        ids = trace_to_c.room_setters({'steps': [{'log': [gardevoir, '|-fieldend|move: Magic Room|[of] p2: Gardevoir']}]}, roster)
+        self.assertEqual(ids, [{1: 7}])  # side 1, roster 0: the code 7
+        # refusals: an end without its start, a name that is not the setter's, a second start, no [of], an end without its code
+        for log in ([active], [start, '|-fieldend|move: Magic Room|[of] p1a: Milotic'], [start, '|-fieldend|move: Magic Room|[of] p2: Alakazam'],
+                    [start, start], ['|-fieldstart|move: Magic Room'], [start, '|-fieldend|move: Magic Room']):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.room_setters({'steps': [{'log': log}]}, roster)
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.step_events([benched], 0, roster, maxhp, tables)  # no code: the end of a benched setter is refused
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.step_events(['|-fieldstart|move: Magic Room|[of] p1: Alakazam'], 0, roster, maxhp, tables)  # a start names a slot
+
     def test_perish_song_lines_are_events_and_rows_are_what_the_protocol_lines_say(self):
         """Perish Song (step G26): `-start|X|perishN` is a VOLATILE_START of the volatile PERISH (5) with the count N in
         `amount` (3, 2, 1, and 0 from onEnd, which a `faint` line follows); `-fieldactivate|move: Perish Song` is an ACTIVATE
@@ -2544,6 +2581,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Destiny Bond' and after.startswith('|-singlemove|'))
                             # Speed Swap (step K3, decision 0015 5de): its -activate line (the swap of two stored Speeds).
                             done = done or (name == 'Speed Swap' and after.startswith('|-activate|') and 'move: Speed Swap' in after)
+                            # Magic Room (step K5, decision 0015 5dm): its start line, or the end line of a restart (the room is up).
+                            done = done or (name == 'Magic Room' and after.startswith(('|-fieldstart|move: Magic Room', '|-fieldend|move: Magic Room')))
                             # Rage Powder (step G30): the single-turn line of its condition.
                             done = done or (name == 'Rage Powder' and after.startswith('|-singleturn|') and after.endswith('|move: Rage Powder'))
                             # An item that a move gave (Trick, Switcheroo, Thief, Covet; step G29): its -item line.

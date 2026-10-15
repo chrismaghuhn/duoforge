@@ -910,8 +910,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    DUOFORGE_SIDE_CONDITION_X or DUOFORGE_FIELD_FLAG_X with DUOFORGE_VIEWEXT_FEATURE_X) only under that one as well. Families:
    duoforge_position_ext.volatiles bits 22 to 31, duoforge_observation_ext.volatiles2 (32 bits per position),
    duoforge_side_ext.guard_flags bits 2 to 7, duoforge_side_ext.conditions (8 bits), duoforge_field_ext.flags (16 bits).
-   No bit of the new fields is defined yet (DUOFORGE_POSITION_EXT2_*, DUOFORGE_SIDE_CONDITION_*, DUOFORGE_FIELD_FLAG_*): each
-   stays zero until a step defines it, as every field here. A new bit with a feature of its own adds one entry to
+   Of the new fields only the bits that a step has defined are non-zero (DUOFORGE_POSITION_EXT2_*, DUOFORGE_SIDE_CONDITION_*,
+   DUOFORGE_FIELD_FLAG_*: Magic Room's turns, step K5, bits 0-2 of the field flags); each other bit stays zero until a step defines it,
+   as every field here. Decision 0050: a reserve bit is a presence bit or part of a small counter/code (TRAP_ELAPSED, Magic Room). A new bit with a feature of its own adds one entry to
    DUOFORGE_VIEWEXT_RESERVE_OWN below, next to its definition; nothing else (the C encoder reads the list, features.py
    derives the same from the names, and python/tests/test_encoder6.py checks that the two agree). */
 /* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says

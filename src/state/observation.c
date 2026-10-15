@@ -424,7 +424,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
         /* Step K5 (#475, decision 0015 5dm): Magic Room, public (-fieldstart|move: Magic Room|[of] setter, data/moves.ts:10768-10774): the
          * remaining turns as the binary count of bits 0 to 2 of the field flags (shown under feature 47), and the setter's member code,
          * which is not encoded. */
-        o.field.flags = (uint16_t)((uint32_t)o.field.flags | (uint32_t)battle->tail.magic_room_turns);
+        const uint32_t field_flags = (uint32_t)o.field.flags | (uint32_t)battle->tail.magic_room_turns;
+        o.field.flags = (uint16_t)field_flags;
         o.field.magic_room_source = battle->tail.magic_room_source;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
