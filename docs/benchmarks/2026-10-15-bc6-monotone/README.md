@@ -144,3 +144,69 @@ Protect-like is a subset of status here; Silk Trap, Burning Bulwark and Obstruct
 is the same for own and mirror, since each edit is read from both seats.
 
 By the viewing seat: own 22.6 % (seat 0) and 20.0 % (seat 1); mirror 21.5 % (seat 0) and 23.0 % (seat 1).
+
+## Part 2: a missing move or a weaker move? (predeclared 2026-10-15, the Detect probe)
+
+Part 1's wrong-way rate (about 21–22 %) has two readings. The value may misjudge a **weaker** move set. Or it may react
+to a **missing** move: real teams always carry four moves, so a member with three is a state BC6 never saw. Part 2
+separates the two by putting Detect where the move was, so the member keeps four moves, and comparing that with the
+removal.
+
+**This section is a predeclaration, committed and pushed before any run of part 2.** The run starts only on the
+HauptSession's go, under the machine lock and the WSL watchdog, not exclusive, with at least 8 GB free.
+
+### Positions and edits
+
+- The same 100 games as part 1: recorded again by the same tool with the same seed `0x2026101500000509` (the
+  recording is deterministic; the run checks that every game's recorded choices equal part 1's by their digest, or
+  stops by name, `games_differ`).
+- The same positions and the same edits as part 1 (own and mirror, every move of every active member with at least
+  2 moves). Each edit is now built twice, at the same positions:
+  - **removed:** as in part 1;
+  - **replaced:** the move's slot holds Detect instead, `move_count` unchanged, the other moves in their slots.
+- The replaced setup goes through the engine's setup check like the removed one. Named refusals of the replaced
+  edit, on top of part 1's (`setup_refused`, `removed_move_used`, `replay_diverged`):
+  - `detect_not_allowed`: the engine's setup check refuses Detect for the member (counted apart from other setup
+    refusals);
+  - `already_detect`: the member already has Detect (a duplicate move);
+  - `removed_is_detect`: the edited move is Detect itself (the replacement would change nothing).
+- **The paired set:** the (position, edit, viewing seat) rows for which both the removed and the replaced edit were
+  built. Every comparison below is on this set; its size and its share of part 1's built edits are reported.
+- Detect is not a neutral move: it has real value in doubles. It is chosen because it is legal on most members and
+  deals no damage, not because it is worthless. The reading below accounts for that.
+
+### Metric
+
+- **ΔV_rd** = V_X(replaced) − V_X(removed), on BC6's value scale [−1, 1], from seat X's view; V as in part 1.
+- **Main result:** the distribution of |ΔV_rd|, own and mirror apart: the 1, 5, 25, 50, 75, 95 and 99 % quantiles and
+  the mean, with a 95 % game-cluster bootstrap interval for the median and the mean (2,000 resamples, seed `0x509`).
+- **The share that tells the readings apart:** the share of paired rows with |ΔV_rd| > 0.02 (one point of win
+  probability), with a 95 % Wilson and a game-cluster interval, own and mirror apart.
+- **Beside it, descriptive only:** the signed ΔV_rd quantiles; and, on the paired set, Δp(replaced − unedited)
+  against Δp(removed − unedited): part 1's wrong-way rate computed both ways on the same rows, with the paired
+  difference and its game-cluster interval. Since Detect has value of its own, the replaced edit's "wrong way" is not a
+  monotonicity error; it is reported only to show how much of part 1's rate moves with the missing slot.
+
+### Reading (fixed before the run)
+
+- If the **median |ΔV_rd| is at most 0.02** and the share above 0.02 is **at most 25 %** (own and mirror each), BC6
+  values a removed move about as it values Detect in its place: the missing slot is not what drives part 1's rate, and
+  part 1 stands as a measure of how BC6 values weaker move sets.
+- If the **median |ΔV_rd| is above 0.02**, or the share above 0.02 is **above 50 %** (own or mirror), the missing slot
+  itself moves the value: part 1's rate is partly an artifact of an out-of-distribution input, and later networks are
+  compared on the replaced edits as well.
+- Between the two: no conclusion; the numbers are reported as they are.
+- Either way, a wrong way is a hint, not a proof (as in part 1).
+
+### Reported (aggregates only)
+
+The counts (positions, paired rows, each named refusal of either edit), the results above, the split by the replaced
+move's category (physical, special, status, Protect-like) for the main result, and the provenance as in part 1: the
+commit with `dirty: false`, the library's sha256, BC6's checkpoint sha256 and the pool config's sha256.
+
+### Run
+
+- The tool gains `--replace detect` on this branch, with tests (the replaced setup, the three new refusals, the
+  paired set, the games' digest check). One run, label `bc6-detect`.
+- **Disclosed:** a smoke of 2 games may run before this section's final commit to check the tool; its numbers fix
+  nothing and are not reported.
