@@ -7,7 +7,7 @@ bool dfi_type_booster_base_power(const struct duoforge_battle *b, const dfi_memb
     /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
      * and the sixteen others, decision 0015): 4915/4096 for a move of its
      * type (onBasePowerPriority 15). */
-    if (dfi_type_booster_applies(dfi_item_code(b, a), move_type)) {
+    if (dfi_type_booster_applies(dfi_item_effect_code(b, a), move_type)) {
         ok = ok && dfi_chain_modify(*bp_chain, DFI_TYPE_BOOSTER_MODIFIER, bp_chain);
     }
     return ok;

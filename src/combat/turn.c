@@ -385,12 +385,12 @@ static duoforge_status dfi_speed_key(const dfi_run *r, uint32_t side, const dfi_
     if (active && b->sides[side].tailwind_turns != 0u) {
         chain = 8192u;
     }
-    if (active && dfi_holds(b, m, DFI_ITEM_CHOICESCARF) && !dfi_chain_modify(chain, 6144u, &chain)) {
+    if (active && dfi_holds_effect(b, m, DFI_ITEM_CHOICESCARF) && !dfi_chain_modify(chain, 6144u, &chain)) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Iron Ball (step G83, data/items.ts:3062-3064, onModifySpe): chainModify(0.5) for its standing holder, in the chain of the
      * items (one item per holder: never with Choice Scarf). */
-    if (active && dfi_holds(b, m, DFI_ITEM_IRONBALL) && !dfi_chain_modify(chain, 2048u, &chain)) {
+    if (active && dfi_holds_effect(b, m, DFI_ITEM_IRONBALL) && !dfi_chain_modify(chain, 2048u, &chain)) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Unburden's volatile (Team C): chainModify(2) while its holder holds no item (data/abilities.ts:5247-5251): the
@@ -1519,11 +1519,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* Leek (step G77, data/items.ts:3322-3337, onModifyCritRatio of the user: +2 when its base species is Farfetch'd or
      * Sirfetch'd; the pool has no other forme of either, and the item's itemUser list is not checked by the sim for it,
      * only for Z-moves, so the holder's species decides). */
-    const bool leek_crit = dfi_holds(r->b, a, DFI_ITEM_LEEK) &&
+    const bool leek_crit = dfi_holds_effect(r->b, a, DFI_ITEM_LEEK) &&
                            (a->species_id == DFI_FORME_FARFETCHD || a->species_id == DFI_FORME_SIRFETCHD);
     uint32_t ratio = (uint32_t)md->crit_ratio + dfi_dragon_cheer_stage(r->b, user) +
                      (dfi_ability(r->b, a, DFI_ABILITY_SUPERLUCK) ? 1u : 0u) +
-                     (dfi_holds(r->b, a, DFI_ITEM_SCOPELENS) ? 1u : 0u) + (leek_crit ? 2u : 0u);
+                     (dfi_holds_effect(r->b, a, DFI_ITEM_SCOPELENS) ? 1u : 0u) + (leek_crit ? 2u : 0u);
     if (ratio > 4u) {
         ratio = 4u;
     }
@@ -1784,7 +1784,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * Glasses) of its holder. The item the holder has now (dfi_item_code); the move's category is the table's, which is the
      * pinned one for every marked move (no marked move changes its category at the pin). */
     {
-        const uint32_t held_now = dfi_item_code(r->b, a);
+        const uint32_t held_now = dfi_item_effect_code(r->b, a);
         if ((held_now == 1u + DFI_ITEM_MUSCLEBAND && md->category == DFI_CATEGORY_PHYSICAL) ||
             (held_now == 1u + DFI_ITEM_WISEGLASSES && md->category == DFI_CATEGORY_SPECIAL)) {
             ok = ok && dfi_chain_modify(bp_chain, 4505u, &bp_chain);
@@ -1988,7 +1988,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     uint32_t chain = 4096u;
     uint32_t mods = 0u; /* the ModifyDamage modifiers in the chain */
     uint32_t mlist[DFI_MODIFY_DAMAGE_MAX] = {0u}; /* and their values, for the commutation test below */
-    if (dfi_holds(r->b, a, DFI_ITEM_LIFEORB)) {
+    if (dfi_holds_effect(r->b, a, DFI_ITEM_LIFEORB)) {
         ok = dfi_chain_modify(chain, 5324u, &chain);
         if (!dfi_mods_push(mlist, &mods, 5324u)) {
             return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
@@ -1996,7 +1996,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     /* Expert Belt's onModifyDamage (step G28, data/items.ts:1901-1914): 4915/4096 when the hit is super effective
      * (typeMod > 0: the combined type effectiveness above the neutral one). */
-    if (dfi_holds(r->b, a, DFI_ITEM_EXPERTBELT) && mod > DFI_BIAS6) {
+    if (dfi_holds_effect(r->b, a, DFI_ITEM_EXPERTBELT) && mod > DFI_BIAS6) {
         ok = ok && dfi_chain_modify(chain, 4915u, &chain);
         if (!dfi_mods_push(mlist, &mods, 4915u)) {
             return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
@@ -2005,7 +2005,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
      * others, decision 0015; combat/items/families.h) is eaten by a super
      * effective hit of its type, the Normal berry by any Normal hit. */
-    const uint32_t berry_item = dfi_item_code(r->b, d);
+    const uint32_t berry_item = dfi_item_effect_code(r->b, d);
     if (dfi_resist_berry_applies(berry_item, move_type, mod) && !dfi_unnerved(r->b, target) && !r->sub_hit) {
         const duoforge_status berry_status =
             dfi_resist_berry_hit(r, target, berry_item, &ok, &chain, mlist, &mods, dfi_use_item);
