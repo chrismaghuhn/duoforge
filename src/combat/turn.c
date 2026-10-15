@@ -5099,7 +5099,9 @@ static void dfi_run_swap_scratch(dfi_run *r, uint32_t user, uint32_t partner)
  * exchange their occupants (sim/battle.ts:1588-1607 moves the Pokemon objects, every field of the Pokemon with them), each of
  * the following moves with the Pokemon:
  *   - sides[side].positions[a/c] (dfi_active_slot): activation_id, occupant, stages, flags, stall, confusion, charge, locked_move,
- *     move_actions, switch_flag: yes (they belong to the activation). locked_target: NO (a slot location in the pin, it stays).
+ *     move_actions, switch_flag, locked_target: yes (they belong to the activation; the locked target is the Pokemon's
+ *     lastMoveTargetLoc, sim/pokemon.ts:913 and sim/side.ts:677, a location that names the same position from either slot; issue
+ *     541).
  *   - tail.sides[side].positions[a/c] (dfi_tail_pos): every field: yes (moves, Follow Me and Protect, counters, Dragon Cheer,
  *     move_result, ally_switch). position_flags bit 0 (Healing Wish): NO (a slot condition; the Swap rule of Healing Wish belongs
  *     to its own step, decision 0044).
@@ -5124,13 +5126,9 @@ void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t 
 {
     dfi_active_slot *sa = &b->sides[side].positions[a];
     dfi_active_slot *sc = &b->sides[side].positions[c];
-    const uint8_t locked_a = sa->locked_target;
-    const uint8_t locked_c = sc->locked_target;
     const dfi_active_slot slot_tmp = *sa;
     *sa = *sc;
     *sc = slot_tmp;
-    sa->locked_target = locked_a; /* a slot location in the pin: it stays with the slot */
-    sc->locked_target = locked_c;
     dfi_tail_pos *ta = &b->tail.sides[side].positions[a];
     dfi_tail_pos *tc = &b->tail.sides[side].positions[c];
     const uint32_t hw = (uint32_t)DFI_POSFLAG_HEALING_WISH;
@@ -5172,9 +5170,9 @@ void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t 
 
 /* The swap of Ally Switch (sim/battle.ts swapPosition, sim/battle.ts:1588-1607; step G80, decision 0044 section 2). The two slots
  * of the user's side exchange their occupant with everything that goes with it: the slot record (stages, flags, stall, confusion,
- * charge, locked move, move actions, switch flag, activation id), and the position's tail (the moves, the Follow Me and Protect
- * state, the Ally Switch counter, the stats-raised flag and the Dragon Cheer stage). What stays with the slot: locked_target (a slot
- * location in the pin) and position_flags bit 0 (Healing Wish, a slot condition). A flat trapper or seeder named by another
+ * charge, locked move and its target, move actions, switch flag, activation id), and the position's tail (the moves, the Follow Me
+ * and Protect state, the Ally Switch counter, the stats-raised flag and the Dragon Cheer stage). What stays with the slot:
+ * position_flags bit 0 (Healing Wish, a slot condition). A flat trapper or seeder named by another
  * position's trap_source follows the Pokemon to its new slot; a seed (leech_seed_source) stays on its slot. party_order entries 0 and 1
  * of the side swap.
  * Queued moves and switches of the two Pokemon follow them (their slot); the target of a queued move is a slot and does not change.
