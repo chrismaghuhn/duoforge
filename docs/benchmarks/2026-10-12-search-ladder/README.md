@@ -316,7 +316,12 @@ pilots. The mirror arm (our own search piloting the sun team) follows when the h
 **How.** The replay feeds each log's lines through the live `Game` (between two decision records as one batch, the
 previous choice accepted first, as the bot does) and lets the step's search decide each decision point. Its worlds then
 take the probes: each own pair against each foe pair of each world, stepped one turn by the engine (`Batch.expand`,
-4 samples per world). A KO is a member whose public HP reached 0 in that turn; no rule in Python decides it.
+4 samples per world). A KO is a member whose public HP reached 0 in that turn; no rule in Python decides it. It is
+the turn's outcome, not a hit's: a foe member fainting by its own Explosion, recoil or poison counts as an own KO.
+- Refusals (the branch's review, before any run): the report counts the probed and the refused leaves. A decision
+  with a weighted cell (own pair, foe pair, world) whose every probe the engine refused has no KO facts: it is
+  counted apart (`unprobed_decisions`), never read as "no KO". A game refused midway counts as refused, and none
+  of its decisions enters the counts.
 - Own pairs probed: the candidates, the played and the raw pair, and every legal option of each slot with its likeliest
   partner (`lookahead.select_slots`).
 - Foe pairs per world: the search's columns and every foe slot option with its likeliest partner under the foe model.

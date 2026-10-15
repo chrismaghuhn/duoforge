@@ -81,14 +81,26 @@ class PureTest(unittest.TestCase):
 
     def test_aggregate_counts_each_group(self):
         def row(own, foe):
-            return {"played_is_search": True, "0.5": {"own": own, "foe": foe}, "0.9": {"own": own, "foe": foe}}
+            return {"played_is_search": True, "leaves": 8, "refused": 1, "unprobed": 0,
+                    "0.5": {"own": own, "foe": foe}, "0.9": {"own": own, "foe": foe}}
         rows = [row({"available": True, "played": False, "missed": "not_candidate"},
                     {"threatened": True, "answered": False, "missed": "unavoidable", "known": 1.0}),
-                row({"available": True, "played": True}, {"threatened": False, "answered": True})]
+                row({"available": True, "played": True}, {"threatened": False, "answered": True}),
+                {"played_is_search": False, "leaves": 8, "refused": 8, "unprobed": 2}]  # no KO facts: apart
         got = ko_check.aggregate(rows)
+        self.assertEqual((got["decisions"], got["unprobed_decisions"]), (3, 1))
+        self.assertEqual((got["leaves"], got["refused_leaves"]), (24, 10))
         self.assertEqual(got["0.5"]["own"], {"available": 2, "played": 1, "not_candidate": 1})
         self.assertEqual(got["0.5"]["foe"], {"threatened": 1, "answered": 0, "unavoidable": 1})
         self.assertEqual(got["0.5"]["foe_known_mean"], 1.0)
+
+    def test_a_cell_whose_every_probe_was_refused_is_unprobed_unless_it_does_not_count(self):
+        # Review of the branch: summarize would read such a cell as no KO (and no threat: "answered").
+        probes = {"q": np.array([[0.75, 0.25], [1.0, 0.0]]), "n": np.array([[[2, 2]], [[2, 0]]])}
+        self.assertEqual(ko_check.unprobed(probes, [0.5, 0.5]), 0)  # world 1's second column is padding (q 0)
+        probes["n"] = np.array([[[2, 0]], [[2, 0]]])
+        self.assertEqual(ko_check.unprobed(probes, [0.5, 0.5]), 1)
+        self.assertEqual(ko_check.unprobed(probes, [0.0, 1.0]), 0)  # a world of no weight does not count
 
     def test_room_of_a_log_file(self):
         self.assertEqual(cts.room_of(f"x/{ROOM}-tiansuan.jsonl"), ROOM)
@@ -185,6 +197,49 @@ class ReplayTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "played_from"):
             ko_check.decision_row(game, net, live, record, search_record, 1, played_from="raw")
 
+    def test_a_ko_is_counted_on_the_side_whose_member_fainted(self):
+        # Review of the branch: the probes' faints by side, the engine's counts replaced. A faint on the foe's side is
+        # an own KO, one on ours a foe KO, never the other way round.
+        live, net, tables = self.load()
+        game, record, search_record = next(cts.replay(self.log, tables, net, live, FIXTURE["team"], 0))
+        search, p = live.searcher.searcher, int(search_record["seat"])
+        own = search_record["own_pairs"][:2]
+        for side, expected in ((1 - p, (1.0, 0.0)), (p, (0.0, 1.0))):
+            calls = []
+
+            def fainted(sides, seen):
+                counts = np.zeros((len(sides), 2), np.int64)
+                if calls:  # the leaves; the first call is the root
+                    counts[:, side] = 1
+                calls.append(len(sides))
+                return counts
+
+            with self.subTest(side=side), mock.patch.object(ko_check, "fainted", side_effect=fainted):
+                got = ko_check.probe(search, p, search_record["key"], own, search_record["foe_pairs"], 1)
+                self.assertGreater(len(calls), 1)
+                for name, value in zip(("own_ko", "foe_ko"), expected):
+                    cells = got[name][~np.isnan(got[name])]
+                    self.assertTrue(cells.size)
+                    np.testing.assert_array_equal(cells, value)
+
+    def test_a_decision_with_an_unprobed_cell_is_named_and_has_no_ko_facts(self):
+        live, net, tables = self.load()
+        game, record, search_record = next(cts.replay(self.log, tables, net, live, FIXTURE["team"], 0))
+        real = ko_check.probe
+
+        def refusing(*args, **kwargs):  # every probe of the first own pair against world 0's first column refused
+            got = real(*args, **kwargs)
+            got["n"] = got["n"].copy()
+            got["n"][0, 0, 0] = 0
+            return got
+
+        with mock.patch.object(ko_check, "probe", side_effect=refusing):
+            row = ko_check.decision_row(game, net, live, record, search_record, 1)
+        self.assertEqual(row["unprobed"], 1)
+        for key in ("ko_played", "ko_best", "threat_raw", "threat_played", "0.5", "0.9"):
+            self.assertNotIn(key, row)
+        self.assertEqual(ko_check.aggregate([row])["unprobed_decisions"], 1)
+
     def test_probe_answers_from_the_leaves_engine_state(self):
         # The probe of a pair against a column is the engine's: the same leaf expanded again gives the same KO facts.
         live, net, tables = self.load()
@@ -217,7 +272,28 @@ class ReplayTest(unittest.TestCase):
                 self.assertEqual((report["played"], report["sheets"]), (played, "open"))
                 self.assertTrue(rows)
                 self.assertEqual({r["played"] for r in rows}, {played})
-        for bad in (["--played", "raw"], []):
+        # a game refused midway counts as refused, its rows dropped: none of its decisions reaches the report
+        real, calls = ko_check.decision_row, []
+
+        def refuse_second(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 2:
+                raise cts.Refused("sent_not_allowed")
+            return real(*args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as out, mock.patch.dict(os.environ, ENV), \
+                mock.patch.object(ko_check, "decision_row", side_effect=refuse_second), \
+                contextlib.redirect_stdout(io.StringIO()):
+            ko_check.main(["--logs", self.logs, "--team", team, "--checkpoint", self.path, "--step", "0",
+                           "--samples-per-world", "1", "--out", os.path.join(out, "r"), "--played", "log"])
+            with open(os.path.join(out, "r", "report.json"), encoding="utf-8") as f:
+                report = json.load(f)
+            with open(os.path.join(out, "r", "decisions.jsonl"), encoding="utf-8") as f:
+                self.assertEqual(f.read(), "")
+        self.assertEqual(len(calls), 2)
+        self.assertEqual((report["decisions"], report["games"]["refused"]), (0, {"sent_not_allowed": 1}))
+        self.assertNotIn("followed", report["games"])
+        for bad in (["--played", "raw"], [], ["--played", "log", "--bot", NAME], ["--played", "log", "--limit", "0"]):
             with self.subTest(bad=bad), self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
                 ko_check.main(["--logs", self.logs, "--team", team, "--checkpoint", self.path, *bad,
                                "--out", os.path.join(self.tmp.name, "never")])

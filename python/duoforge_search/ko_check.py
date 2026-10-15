@@ -10,7 +10,8 @@ candidates, not chosen" (the evaluation or the rule: 2d, 2e, 2l).
 
 Whether a pair knocks out is the engine's answer, never a rule here: each probe is a search leaf (Batch.expand) of
 the decision's own worlds, its one turn stepped by the engine, and a KO is a member whose public HP reached 0 during
-that turn (the viewer's observation after the leaf against the one at the root). The probes are the search's own
+that turn (the viewer's observation after the leaf against the one at the root). A KO is the turn's outcome, not a
+hit's: any faint counts, so a foe member fainting by its own Explosion, recoil or poison is an own KO here. The probes are the search's own
 candidates, the played and the raw pair, and every legal option of each slot with its likeliest partner
 (lookahead.select_slots); on the foe side the search's foe columns and every foe slot option with its likeliest partner
 under the foe model, per world.
@@ -76,8 +77,8 @@ def probe(search, p, key, own, foe_columns, samples=SAMPLES_PER_WORLD):
     own: the own pairs to probe (flat indices); foe_columns: the search's foe pairs per world (its record's foe_pairs).
     Returns a dict: the own pairs; per world the foe pairs probed; own_ko and foe_ko (W, K, max columns) means over the
     samples of "a foe member / an own member went to 0 HP this turn" (NaN where a world has fewer columns or every
-    sample was refused); q (W, max columns), the foe model's probability of each column renormalized in its world;
-    refused, the leaves the engine refused."""
+    sample was refused); n (W, K, max columns), the samples each mean has; q (W, max columns), the foe model's
+    probability of each column renormalized in its world; refused, the leaves the engine refused."""
     from duoforge import _layout
     C = _layout.CONSTANTS
     seen = (C["DUOFORGE_HP_EXACT"], C["DUOFORGE_HP_PERCENT"])
@@ -135,7 +136,15 @@ def probe(search, p, key, own, foe_columns, samples=SAMPLES_PER_WORLD):
     for world in range(s):
         q_padded[world, :len(q[world])] = q[world]
     return {"own": own.tolist(), "foe_sets": [c.tolist() for c in foe_sets], "own_ko": own_ko, "foe_ko": foe_ko,
-            "q": q_padded, "refused": int(refused.sum()), "leaves": int(total)}
+            "q": q_padded, "n": sums["n"], "refused": int(refused.sum()), "leaves": int(total)}
+
+
+def unprobed(probes, weights):
+    """The cells (world, own pair, foe column) that count in summarize (the world's weight and the column's q above 0)
+    but have no sample the engine stepped: every probe of the cell refused. summarize would read such a cell as no KO;
+    a decision with one is refused by name instead (decision_row)."""
+    counts = (np.asarray(weights, np.float64)[:, None, None] > 0) & (probes["q"][:, None, :] > 0)
+    return int((counts & (probes["n"] == 0)).sum())
 
 
 def summarize(probes, weights):
@@ -212,12 +221,15 @@ def decision_row(game, policy, live, record, searched, samples, thresholds=(LIKE
     wide, _ = lookahead.select_slots(logp[0], legal, 1)
     own = sorted(set(wide.tolist()) | set(candidates) | {sent, raw, chosen})
     probes = probe(search, p, int(searched["key"]), own, searched["foe_pairs"], samples)
-    facts = summarize(probes, searched["weights"])
     row = {"turn": int(root_view(game)[0]["turn"]), "played_is_search": sent == chosen, "played": played_from,
            "k": len(candidates), "probed": len(own), "leaves": probes["leaves"], "refused": probes["refused"],
-           "ko_played": float(facts["ko"][own.index(played)]), "ko_best": float(facts["ko"].max()),
+           "unprobed": unprobed(probes, searched["weights"])}
+    if row["unprobed"]:  # a cell whose every probe the engine refused has no KO facts: the decision is named, not read
+        return row
+    facts = summarize(probes, searched["weights"])
+    row.update({"ko_played": float(facts["ko"][own.index(played)]), "ko_best": float(facts["ko"].max()),
            "threat_raw": float(facts["threat"][own.index(raw)]),
-           "threat_played": float(facts["threat"][own.index(played)])}
+           "threat_played": float(facts["threat"][own.index(played)])})
     for threshold in thresholds:
         row[str(threshold)] = classify(own, facts["ko"], facts["threat"], candidates, played, raw, threshold,
                                        facts["worst"], facts["worst_ko"], searched["foe_pairs"], searched["weights"])
@@ -225,12 +237,16 @@ def decision_row(game, policy, live, record, searched, samples, thresholds=(LIKE
 
 
 def aggregate(rows, thresholds=(LIKELY, SURE)):
-    """The counts of the report: per threshold and side, the decisions in each group."""
-    out = {"decisions": len(rows), "played_is_search": sum(r["played_is_search"] for r in rows)}
+    """The counts of the report: the leaves probed and refused; the decisions with a cell every probe of which the
+    engine refused (unprobed), counted apart; per threshold and side, the other decisions in each group."""
+    probed = [r for r in rows if not r["unprobed"]]
+    out = {"decisions": len(rows), "played_is_search": sum(r["played_is_search"] for r in rows),
+           "leaves": sum(r["leaves"] for r in rows), "refused_leaves": sum(r["refused"] for r in rows),
+           "unprobed_decisions": len(rows) - len(probed)}
     for threshold in thresholds:
         own, foe = Counter(), Counter()
         known = []
-        for r in rows:
+        for r in probed:
             facts = r[str(threshold)]
             own["available"] += facts["own"]["available"]
             own["played"] += facts["own"]["available"] and facts["own"]["played"]
@@ -274,6 +290,10 @@ def main(argv=None):
     played = args.played
     if args.closed and not args.bot:
         raise SystemExit("--closed needs --bot: the logs' names give the particles' key")
+    if args.bot and not args.closed:
+        raise SystemExit("--bot applies to --closed only")
+    if args.limit is not None and args.limit < 1:
+        raise SystemExit("--limit must be at least 1")
     from . import ladder
     try:
         settings = ladder.step_settings(args.step)
@@ -307,17 +327,21 @@ def main(argv=None):
                                                                      team_text):
                     refused["other_team"] += 1
                     continue
+                game_rows = []  # a game counts whole or not at all: a refusal midway drops its rows
                 try:
                     decisions = (replay_closed(path, tables, net, live, team_text, args.bot, prior, points)
                                  if args.closed else replay(path, tables, net, live, team_text, episode))
                     for game, record, searched in decisions:
-                        row = decision_row(game, net, live, record, searched, args.samples_per_world,
-                                           played_from=played)
-                        rows.append(row)
-                        f.write(json.dumps(row) + "\n")
-                    games["followed"] += 1
+                        game_rows.append(decision_row(game, net, live, record, searched, args.samples_per_world,
+                                                      played_from=played))
                 except Refused as err:
                     refused[str(err)] += 1
+                    game_rows = []
+                else:
+                    games["followed"] += 1
+                    rows.extend(game_rows)
+                    for row in game_rows:
+                        f.write(json.dumps(row) + "\n")
                 print(f"{episode + 1}/{len(files)} games, {len(rows)} decisions", file=sys.stderr, flush=True)
     finally:
         live.close()
