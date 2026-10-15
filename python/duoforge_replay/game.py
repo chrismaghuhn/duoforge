@@ -9,7 +9,8 @@ exception is a bug, and the caller counts it as internal:<type>.
 Counters:
 - perspectives.kept, perspectives.stopped.<reason>;
 - points.written (rows); points.dropped.<reason>: the game's decision points
-  (either side) after a perspective's stop;
+  (either side) after a perspective's stop; points.refused.<reason>: an own
+  point the engine gives no options for (superset.Refused), left out;
 - labels.<REASON> per asked slot of the rows, labels.TEAM for team rows;
 - turn-scoped.<NAME>: single-turn feature lines that stopped nothing;
 - turns.total: the game's turns, per perspective; turns.kept: the turns complete before the perspective's stop
@@ -19,7 +20,8 @@ Counters:
 With pick_hypotheses (M11 pick hypotheses spec) a perspective stopped by picks-incomplete is folded once more per
 pick tuple the log allows; these rows carry picks_hypotheses = H and their hypothesis index, and count apart:
 - perspectives.hypotheses_kept, perspectives.hypotheses_stopped.<reason>: per such perspective, its common stop;
-- points.hypotheses: their rows; turns.hypotheses: the turns complete before the common stop, once per perspective.
+- points.hypotheses: their rows; turns.hypotheses: the turns complete before the common stop, once per perspective;
+- points.hypotheses_refused.<reason>: a point of such a fold the engine gives no options for, per fold.
 The counters above stay as without the option: the perspective still counts as stopped by picks-incomplete.
 """
 import collections
@@ -286,9 +288,10 @@ def _label_outside_domain(row):
     return not any(s0 >> i & 1 and int(allowed[i]) & s1 for i in range(32))
 
 
-def _fold(tracker, lines, points):
+def _fold(tracker, lines, points, refused=None):
     """The taken points of one fold of a perspective, (point, observation, domain, lists, context, ext) for each
-    point its side is asked at, and the Stop that ended it (None when it ran to the end)."""
+    point its side is asked at and the engine gives options for, and the Stop that ended it (None when it ran to the
+    end). A point without options (superset.Refused) is left out and its reason appended to `refused`."""
     taken, stop, done = [], None, 0
     try:
         for point in walk(tracker, lines, points):
@@ -296,9 +299,10 @@ def _fold(tracker, lines, points):
             if own_requested(tracker):
                 try:
                     domain, lists = superset.domain(tracker)
-                except line_classes.Stop as e:  # the user's types are not settled (Tracker.current_types): cut here
-                    e.line = point.line
-                    raise
+                except superset.Refused as e:
+                    if refused is not None:
+                        refused.append(e.reason)
+                    continue
                 taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker),
                               tracker.observation_ext().copy()))
         feed_lines(tracker, lines, done, len(lines))  # a stop after the last point still cuts the last labels
@@ -356,15 +360,16 @@ def _rows_of(lines, side, leads, back, prior_level, extra, taken, stop, h=1, k=0
     return out
 
 
-def hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra=None):
+def hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra=None, refused=None):
     """The rows of one perspective folded once per pick tuple of `hyps` (hindsight.pick_hypotheses) past team
     selection, under their common stop (_common_stop): (rows per pick tuple, each marked H = len(hyps) and its
-    index; the common stop, None when every fold ran to the end). `lines` and `points` as process has them."""
+    index; the common stop, None when every fold ran to the end). `lines` and `points` as process has them; the
+    reasons of the points without options of every fold are appended to `refused` (_fold)."""
     prior_level, stats_of = _side(sheets, side, data, prior, stats)
     leads, back = hindsight(lines, side, data, sheets)
     runs = []
     for picks in hyps:  # the team selection row is the one the perspective has: not repeated
-        taken, stop = _fold(SpectatorTracker(data, sheets, side, picks, stats_of, lines), lines, points)
+        taken, stop = _fold(SpectatorTracker(data, sheets, side, picks, stats_of, lines), lines, points, refused)
         runs.append(([t for t in taken if t[0].boundary != TEAM_SELECTION], stop))
     kept, common = _common_stop(runs)
     return [_rows_of(lines, side, leads, back, prior_level, extra, taken, common, len(hyps), k)
@@ -384,7 +389,10 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
         counters[f"points.dropped.{stop.reason}"] += len(points)
         counters["turns.total"] += turns
         return []
-    taken, stop = _fold(tracker, lines, points)
+    refused = []
+    taken, stop = _fold(tracker, lines, points, refused)
+    for reason in refused:
+        counters[f"points.refused.{reason}"] += 1
     rows = _rows_of(lines, side, leads, back, prior_level, extra, taken, stop)
     for point, row in zip((t[0] for t in taken), rows):
         label = row.label
@@ -412,7 +420,10 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
         if len(hyps) == 1:  # a sheet of fewer than six: one tuple, yet the picks are not seen; never rows with H 1
             counters["perspectives.hypotheses_stopped.single-hypothesis"] += 1
             return rows
-        per_hypothesis, common = hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra)
+        refused = []
+        per_hypothesis, common = hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra, refused)
+        for reason in refused:
+            counters[f"points.hypotheses_refused.{reason}"] += 1
         for h_rows in per_hypothesis:
             rows += h_rows
         counters["points.hypotheses"] += sum(len(r) for r in per_hypothesis)
