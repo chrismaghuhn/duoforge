@@ -176,6 +176,7 @@ PAUSED_STATUS = 75  # a chunk that found the pause file once it held the lock le
 LABEL_TAKEN_STATUS = 73  # tools/ci/machine_lock.sh refused the chunk: a live job holds or waits with its label
 LOCK_NESTED_STATUS = 74  # tools/ci/machine_lock.sh refused the chunk: it runs inside a job that holds this lock
 LOCK_WITHDRAWN_STATUS = 78  # tools/ci/machine_lock.sh: the chunk was withdrawn (its ticket deleted), nothing started
+LOCK_BAD_TEST_MV_STATUS = 79  # tools/ci/machine_lock.sh: a test's DUOFORGE_MACHINE_LOCK_TEST_MV is no executable file
 LOCK_HELD_ENV = 'DUOFORGE_FUZZ_LOCK_HELD'  # set in the environment of the chunks the loop starts: they hold the lock
 WORKER_TIMEOUT = 300  # seconds for one answer of the worker (a play of 300 steps is a few seconds)
 RUNNER_TIMEOUT = 60  # seconds for one battle in the engine

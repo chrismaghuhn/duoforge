@@ -50,6 +50,7 @@
 #   DUOFORGE_MACHINE_LOCK        slot 0, the lock directory (default: $TEMP/duoforge-machine.lock)
 #   DUOFORGE_MACHINE_LOCK_SLOTS  jobs at once (default 2); the same in every session
 #   DUOFORGE_MACHINE_LOCK_POLL   seconds between two looks while waiting (default 15)
+#   DUOFORGE_MACHINE_LOCK_TEST_MV  tests only: a stand-in for mv in the claim (named on stderr; 79 if not executable)
 # exported to the holder:
 #   DUOFORGE_JOBS                processors / slots (at least 1); every processor with --exclusive
 #   DUOFORGE_MACHINE_LOCK_HELD   the holder's label; DUOFORGE_MACHINE_LOCK_HELD_DIR its lock (status 74 inside it; on
@@ -64,6 +65,7 @@
 #   76  the watchdog stopped the job: its holder's Windows process is gone, or its slot was taken over
 #   77  the watchdog refused to start: not on Linux (uname -s), e.g. under Git Bash on Windows
 #   78  machine_lock.sh: withdrawn, nothing started (its ticket was deleted while it waited)
+#   79  machine_lock.sh refused: DUOFORGE_MACHINE_LOCK_TEST_MV (tests only) is no executable file
 #   2   the watchdog refused to start: no holder to watch, or bash older than 5.1
 # A command that exits with one of these itself cannot be told from them.
 set -u
@@ -77,6 +79,7 @@ MACHINE_LOCK_TAKEN=73
 # The status of a call refused because it is nested inside a job that holds this lock.
 MACHINE_LOCK_NESTED=74
 MACHINE_LOCK_WITHDRAWN=78
+MACHINE_LOCK_BAD_TEST_MV=79
 
 # The Windows process id of this shell (Git Bash), or its own pid elsewhere.
 machine_lock_pid() {
@@ -247,7 +250,9 @@ machine_lock_withdrawn() { # label ticket: names a withdrawal on stderr; the slo
 machine_lock_claim() { # ticket: 0 claimed (this waiter's to start), 1 withdrawn (deleted first), 2 the rename failed
     # with the ticket still there (on Windows a reader without share-delete can hold it): no withdrawal, try again
     local claimed="${1%/*}/.${1##*/}.claimed" # a dot file: no waiter's scan of the queue (*) sees it
-    if ! mv -- "$1" "$claimed" 2> /dev/null; then
+    # DUOFORGE_MACHINE_LOCK_TEST_MV: for tests only, a stand-in for mv that races the claim (a PATH stub is not
+    # reliable: Git's bin/bash.exe launcher puts its own usr/bin first)
+    if ! "${DUOFORGE_MACHINE_LOCK_TEST_MV:-mv}" -- "$1" "$claimed" 2> /dev/null; then
         [ -e "$1" ] && return 2
         return 1
     fi
@@ -291,6 +296,13 @@ machine_lock_acquire() { # [--exclusive] label
             "lock ($MACHINE_LOCK); it would wait for slots the outer job holds. Run the inner work without the lock," \
             "or as a job of its own." >&2
         return "$MACHINE_LOCK_NESTED"
+    fi
+    if [ -n "${DUOFORGE_MACHINE_LOCK_TEST_MV:-}" ]; then # a test's stand-in for mv: named, and never a silent fallback
+        echo "machine lock: test mv override active: $DUOFORGE_MACHINE_LOCK_TEST_MV" >&2
+        if [ ! -f "$DUOFORGE_MACHINE_LOCK_TEST_MV" ] || [ ! -x "$DUOFORGE_MACHINE_LOCK_TEST_MV" ]; then
+            echo "machine lock: refused: DUOFORGE_MACHINE_LOCK_TEST_MV ($DUOFORGE_MACHINE_LOCK_TEST_MV) is no executable"                 "file" >&2
+            return "$MACHINE_LOCK_BAD_TEST_MV"
+        fi
     fi
     local queue="$MACHINE_LOCK.queue"
     slots=${DUOFORGE_MACHINE_LOCK_SLOTS-2}

@@ -1858,22 +1858,19 @@ exit $rc
         return env
 
     def mv_stub_env(self, tmp, lock, race, slots='1'):
-        """The environment of a lock call whose `mv` is MV_STUB (checked to be what `mv` is), racing as `race`."""
+        """The environment of a lock call whose claim renames with MV_STUB, racing as `race`. The stub is named by
+        DUOFORGE_MACHINE_LOCK_TEST_MV, not put first on the PATH: Git's bin/bash.exe launcher (the bash of the MSVC jobs)
+        puts its own usr/bin first (#532's CI). Every test checks that the stub ran (its log or its message)."""
         stub_dir = os.path.join(tmp, 'stub')
         os.makedirs(stub_dir, exist_ok=True)
         stub = os.path.join(stub_dir, 'mv')
         with io.open(stub, 'w', encoding='ascii', newline='\n') as f:
             f.write(self.MV_STUB)
         os.chmod(stub, 0o755)  # Linux needs it; MSYS takes the #! line alone
-        real_mv = subprocess.run([rnd.find_bash(), '-c', 'command -v mv'], capture_output=True, text=True).stdout.strip()
-        env = self.withdraw_env(lock, slots, RACE=race, RACE_LOG=os.path.join(tmp, 'race.log').replace('\\', '/'),
-                                REAL_MV=real_mv, LOCK_BASH=rnd.find_bash().replace('\\', '/'),
-                                LOCK_SCRIPT=os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/'),
-                                PATH=stub_dir + os.pathsep + os.environ['PATH'])
-        found = subprocess.run([rnd.find_bash(), '-c', 'command -v mv'], capture_output=True, text=True,
-                               env=env).stdout.strip().replace('\\', '/')
-        self.assertTrue(found.endswith('/stub/mv'), found)  # the race is the stub's
-        return env
+        return self.withdraw_env(lock, slots, RACE=race, RACE_LOG=os.path.join(tmp, 'race.log').replace('\\', '/'),
+                                 REAL_MV='mv', LOCK_BASH=rnd.find_bash().replace('\\', '/'),
+                                 LOCK_SCRIPT=os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/'),
+                                 DUOFORGE_MACHINE_LOCK_TEST_MV=stub.replace('\\', '/'))
 
     @staticmethod
     def touch(path):
@@ -1941,6 +1938,31 @@ exit $rc
                     self.assertEqual(seen, 'gone')  # and the withdrawer learns that it started
                 self.assertFalse([n for n in os.listdir(tmp) if n.startswith('lock') and n != 'lock.queue'])  # no slot
                 self.assertEqual(os.listdir(lock + '.queue'), [])  # no ticket, no claimed one
+                # the stand-in is named whenever it is active
+                self.assertIn('machine lock: test mv override active: %s' % env['DUOFORGE_MACHINE_LOCK_TEST_MV'],
+                              done.stderr)
+
+    def test_a_test_mv_that_is_no_executable_file_is_refused_with_status_79(self):
+        # DUOFORGE_MACHINE_LOCK_TEST_MV never falls back to mv in silence: a missing file, a plain file or a directory
+        # is refused, named, before any ticket (HauptSession, 2026-10-15).
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            plain = os.path.join(tmp, 'plain')
+            with io.open(plain, 'w', encoding='ascii', newline='\n') as f:
+                f.write('not a program\n')
+            os.chmod(plain, 0o644)
+            ran = os.path.join(tmp, 'ran')
+            for target in (os.path.join(tmp, 'missing'), plain, tmp):
+                with self.subTest(target=os.path.basename(target)):
+                    env = self.withdraw_env(os.path.join(tmp, 'lock'),
+                                            DUOFORGE_MACHINE_LOCK_TEST_MV=target.replace('\\', '/'))
+                    done = subprocess.run([rnd.find_bash(), script, 'racer', sys.executable.replace('\\', '/'), '-c',
+                                           self.touch(ran)], capture_output=True, text=True, timeout=60, env=env)
+                    self.assertEqual(done.returncode, rnd.LOCK_BAD_TEST_MV_STATUS, done.stderr)
+                    self.assertIn('machine lock: test mv override active: ', done.stderr)
+                    self.assertIn('is no executable file', done.stderr)
+                    self.assertFalse(os.path.exists(ran))
+                    self.assertFalse([n for n in os.listdir(tmp) if n.startswith('lock')])  # no ticket, no slot
 
     def test_a_call_with_the_same_label_in_the_moment_of_the_claim_is_refused(self):
         # The owner is written before the claim: from the moment the slot is taken, a call with the same label sees the
