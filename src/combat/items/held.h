@@ -43,7 +43,7 @@ static inline bool dfi_holds(const struct duoforge_battle *b, const dfi_member *
  * effect (a berry, a boost, the Choice lock, Life Orb, Air Balloon, a herb) ask dfi_holds_effect / dfi_item_effect_code, and the rules
  * that move or read the item itself (Knock Off, Trick, Thief, Covet, Bug Bite, Frisk, Poltergeist, Acrobatics, the Mega Stone, the
  * removal of a Choice lock) keep dfi_holds / dfi_item_code, which see the item whatever the room says. Every effect site is called
- * for a member on the field, so the benched-holder half of ignoringItem (sim/pokemon.ts:880) holds by construction. Persistent,
+ * for a member on the field, so the benched-holder half of ignoringItem (sim/pokemon.ts:881) holds by construction. Persistent,
  * Klutz, Embargo and Primal Orbs are not in the pool. */
 static inline bool dfi_items_suppressed(const struct duoforge_battle *b)
 {

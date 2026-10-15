@@ -9,20 +9,21 @@
  * :4200-4219 Misty Seed; the generator checks that each is Grassy Seed for its terrain and its stat): onSwitchInPriority
  * -1, onStart (not ignoringItem, the terrain is up) and onTerrainChange (the terrain is up) both call useItem, and the
  * item's boosts raise one stage of one stat: Defense for the Grassy and Electric Seeds, Special Defense for the Psychic and
- * Misty Seeds. The terrain a seed waits for, or DFI_TERRAIN_NONE for a member that holds none, or while Magic Room is up (step K5:
- * an item's handlers are not run for a Pokemon that ignores its item, sim/battle.ts:877). */
+ * Misty Seeds. The terrain a seed waits for, or DFI_TERRAIN_NONE for a member that holds none. By possession (step K5): under Magic
+ * Room the seed's handlers still exist (they enter the switch-in and eachEvent orders and a tie's draw, sim/battle.ts:1124-1130)
+ * and do nothing when they run (:609-611, and onStart's own ignoringItem test), see dfi_terrain_seed. */
 static inline uint32_t dfi_seed_terrain(const struct duoforge_battle *b, const dfi_member *m)
 {
-    if (dfi_holds_effect(b, m, DFI_ITEM_GRASSYSEED)) {
+    if (dfi_holds(b, m, DFI_ITEM_GRASSYSEED)) {
         return DFI_TERRAIN_GRASSY;
     }
-    if (dfi_holds_effect(b, m, DFI_ITEM_PSYCHICSEED)) {
+    if (dfi_holds(b, m, DFI_ITEM_PSYCHICSEED)) {
         return DFI_TERRAIN_PSYCHIC;
     }
-    if (dfi_holds_effect(b, m, DFI_ITEM_ELECTRICSEED)) {
+    if (dfi_holds(b, m, DFI_ITEM_ELECTRICSEED)) {
         return DFI_TERRAIN_ELECTRIC;
     }
-    if (dfi_holds_effect(b, m, DFI_ITEM_MISTYSEED)) {
+    if (dfi_holds(b, m, DFI_ITEM_MISTYSEED)) {
         return DFI_TERRAIN_MISTY;
     }
     return DFI_TERRAIN_NONE;
@@ -35,7 +36,7 @@ static inline void dfi_terrain_seed(dfi_run *r, uint32_t flat)
     static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
     static const uint8_t spd_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 7u, 6u, 6u, 6u};
     const dfi_member *m = dfi_at(r->b, flat);
-    if (m == NULL || m->hp == 0u) {
+    if (m == NULL || m->hp == 0u || dfi_items_suppressed(r->b)) {
         return;
     }
     const uint32_t terrain = dfi_seed_terrain(r->b, m);

@@ -1,0 +1,30 @@
+{
+  "name": "k5_mr_tie",
+  "purpose": "Two Leftovers holders of one Speed under Magic Room: the item does not heal (no -heal at the residual while the room is up), but its handler exists, so the pair is a tie of the residual sort and the shuffle draws as it does outside the room; after the room ends the heals show.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000005110",
+  "teams": [
+    "Alakazam (F) @ Alakazite\nAbility: Inner Focus\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Magic Room\n- Psyshock\n- Protect\n- Trick\n\nGardevoir (F) @ Leftovers\nAbility: Telepathy\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Knock Off\n- Thief\n- Protect\n- Psyshock\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n- Coil\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Iron Head\n\nIndeedee-F (F) @ Lum Berry\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Staraptor (F) @ Rocky Helmet\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n- Brave Bird\n\nGardevoir (F) @ Leftovers\nAbility: Telepathy\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Knock Off\n- Thief\n- Protect\n- Psyshock\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n- Coil\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Iron Head\n\nIndeedee-F (F) @ Lum Berry\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 4 2",
+      "move 2 1, move 3",
+      "move 3, move 1 1",
+      "move 2 1, move 3",
+      "move 3, move 1 1",
+      "move 2 1, move 3"
+    ],
+    "p2": [
+      "move 1, move 4 2",
+      "move 1, move 3",
+      "move 1, move 1 1",
+      "move 1, move 3",
+      "move 1, move 1 1",
+      "move 1, move 3"
+    ],
+    "max_steps": 7
+  }
+}

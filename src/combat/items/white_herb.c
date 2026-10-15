@@ -34,9 +34,10 @@ void dfi_white_herb(dfi_run *r, uint32_t flat, dfi_item_use_fn use_item)
 }
 
 /* A standing Pokemon whose White Herb is unused: it has the herb's
- * handlers (side.allies() keeps only Pokemon with HP). */
+ * handlers (side.allies() keeps only Pokemon with HP). By possession: the handlers of an ignored item are collected too and
+ * draw in a tie (sim/battle.ts:1124-1130); dfi_herb_due says whether the handler does anything (step K5). */
 bool dfi_herb_holder(struct duoforge_battle *b, uint32_t flat)
 {
     const dfi_member *m = dfi_at(b, flat);
-    return m != NULL && m->hp != 0u && dfi_holds_effect(b, m, DFI_ITEM_WHITEHERB);
+    return m != NULL && m->hp != 0u && dfi_holds(b, m, DFI_ITEM_WHITEHERB);
 }

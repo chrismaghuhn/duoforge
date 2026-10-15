@@ -91,6 +91,9 @@ ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the
 # volatiles2's ATTRACT_SOURCE bits (step G87): the source's flat position (0-3) at bit _ATTRACT_SOURCE_SHIFT
 _ATTRACT_SOURCE_BITS = C["DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_LO"] | C["DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_HI"]
 _ATTRACT_SOURCE_SHIFT = C["DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_LO"].bit_length() - 1
+# The FIELD_FLAGS bits that hold Magic Room's turns (decision 0050: bits 0-2 of the field flags).
+_MAGIC_ROOM_FLAG_BITS = (C["DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT0"] | C["DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT1"] |
+                         C["DUOFORGE_FIELD_FLAG_MAGIC_ROOM_BIT2"])
 EXT_FIELDS = {
     "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (), "TERRAIN_ELECTRIC": (), "TERRAIN_MISTY": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
@@ -127,7 +130,8 @@ EXT_FIELDS = {
     # Gravity (step K4, #475, decision 0015 5dl): the field view's gravity_turns, folded from FIELD_START / FIELD_END detail 6
     "GRAVITY": (("global", "gravity_turns"),),
     # Magic Room (step K5, #475, decision 0015 5dm): bits 0-2 of the field flags (the turns) and the setter's member code
-    "MAGIC_ROOM": (("global", "flags"), ("global", "magic_room_source")),
+    # Only these bits: FIELD_FLAG bits 3-5 belong to the next feature (Wonder Room), and a tracker that folds Magic Room alone must leave them be.
+    "MAGIC_ROOM": (("global_bits", "flags", _MAGIC_ROOM_FLAG_BITS), ("global", "magic_room_source")),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
@@ -1909,7 +1913,7 @@ class Tracker:
         o["revision"], o["player"], o["epoch"] = EXT_REVISION, self.side, self.epoch
         o["supported"] = lines.LIBRARY_SUPPORTED
         # Magic Room (step K5): the turns left in bits 0-2 of the field flags and the setter's member code (the view's magic_room_source)
-        o["field"]["flags"] = self._magic_room
+        o["field"]["flags"] = (int(o["field"]["flags"]) & ~_MAGIC_ROOM_FLAG_BITS) | (self._magic_room & _MAGIC_ROOM_FLAG_BITS)
         o["field"]["magic_room_source"] = self._magic_room_source
         for side in (0, 1):
             v = o["sides"][side]
@@ -1960,7 +1964,8 @@ def restrict_ext(ext, folds):
     for name, bit in lines.FEATURES.items():
         if not folds >> bit & 1:
             continue
-        for where, field in EXT_FIELDS[name]:
+        for where, field, *rest in EXT_FIELDS[name]:
+            mask = rest[0] if rest else 0
             for s in (0, 1):
                 src, dst = ext["sides"][s], out["sides"][s]
                 if where == "bit":
@@ -1974,6 +1979,8 @@ def restrict_ext(ext, folds):
                     dst[field] = src[field]
                 elif where == "global":
                     out["field"][field] = ext["field"][field]
+                elif where == "global_bits":
+                    out["field"][field] = int(out["field"][field]) | (int(ext["field"][field]) & mask)
                 else:
                     group = "positions" if where == "position" else "members"
                     dst[group][field] = src[group][field]

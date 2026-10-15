@@ -826,6 +826,15 @@ class LinesTest(unittest.TestCase):
         source = tracker.restrict_ext(full, 1 << lines.FEATURES["ATTRACT_SOURCE"])
         self.assertEqual(source["volatiles2"].tolist(), (full["volatiles2"] & tracker._ATTRACT_SOURCE_BITS).tolist())
         self.assertEqual(source["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
+        # Magic Room (step K5): only bits 0-2 of the field flags (the turns) and the setter's code; a bit outside them (bits 3-5 are
+        # Wonder Room's, K6) is left untouched: dropped from the cut, not merged into it
+        full_flags = full.copy()
+        full_flags["field"]["flags"] = 0xFFFF
+        room = tracker.restrict_ext(full_flags, 1 << lines.FEATURES["MAGIC_ROOM"])
+        self.assertEqual(int(room["field"]["flags"]), 0x0007)
+        self.assertEqual(int(room["field"]["magic_room_source"]), int(full_flags["field"]["magic_room_source"]))
+        self.assertEqual(room["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
+        self.assertEqual(tracker._MAGIC_ROOM_FLAG_BITS, 0x0007)
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))

@@ -5,6 +5,7 @@
  * boundary; turn flow owns evaluation order. Magic Room (data/moves.ts:10754-10797): a pseudo weather of five turns (Persistent,
  * the seven-turn form, is not in the pool) that makes every Pokemon ignore its item (the effect helpers of combat/items/held.h).
  * Its state is the tail's magic_room_turns and magic_room_source (the setter's member code, the Attract encoding). */
+#include "combat/field/magic_room_refusal.h"
 #include "combat/run_internal.h"
 
 /* The setter of the room as the end line prints it (`[of] ' + this.effectState.source`, data/moves.ts:10789-10791): the Pokemon's

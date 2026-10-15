@@ -1782,7 +1782,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     /* Muscle Band and Wise Glasses (step G49, data/items.ts:4239-4251 and :7754-7766, onBasePowerPriority 16: after
      * Sharpness's 19 and before the type boosters' 15): 4505/4096 for a Physical move (Muscle Band) or a Special move (Wise
-     * Glasses) of its holder. The item the holder has now (dfi_item_code); the move's category is the table's, which is the
+     * Glasses) of its holder. The item effect the holder has now (dfi_item_effect_code); the move's category is the table's, which is the
      * pinned one for every marked move (no marked move changes its category at the pin). */
     {
         const uint32_t held_now = dfi_item_effect_code(r->b, a);
@@ -3760,9 +3760,11 @@ static duoforge_status dfi_update(dfi_run *r)
          * draws no tie order: dfi_attract_update below still ends it. */
         const bool oblivious_infatuated = r->b->tail.attract_source[flat] != 0u &&
                                           dfi_ability(r->b, dfi_at(r->b, flat), DFI_ABILITY_OBLIVIOUS);
-        const bool bears = dfi_holds_effect(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
-                           dfi_holds_effect(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
-                           dfi_holds_effect(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || oblivious_infatuated;
+        /* Step K5: by possession; the handler of an ignored item exists (it enters the sort and a tie's draw,
+         * sim/battle.ts:1124-1130) and does nothing when it runs (:609-611), as below. */
+        const bool bears = dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
+                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
+                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || oblivious_infatuated;
         bearers |= bears ? 1u << flat : 0u;
     }
     /* the inert infatuated holders: their silent end is state only, and nothing else reads it in this update */
@@ -7482,7 +7484,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     /* A choice-locked actor queues only its locked move or Struggle (the
      * request offers nothing else), so choicelock's onBeforeMove, which
      * would fail another move (data/conditions.ts), never runs; a decoded
-     * state that queues another move fails loudly (Team C). */
+     * state that queues another move fails loudly (Team C). The exception is Magic Room (step K5): the lock volatile stays while
+     * the room is up and its enforcement is an item effect that is ignored (data/conditions.ts:332-339), so the request offers
+     * every move and any queued move is accepted. */
     if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u && !dfi_items_suppressed(r->b) && q->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE &&
         q->move_slot != DUOFORGE_MOVE_SLOT_RECHARGE && q->move_slot + 1u != pos->locked_move) {
         return DUOFORGE_E_INVARIANT;
@@ -8020,7 +8024,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         return DUOFORGE_OK;
     }
     if (status_move && md->pseudo_weather == DFI_PSEUDO_WEATHER_MAGIC_ROOM) {
-        /* Step K5 (#475, data/moves.ts:10754-10797): the start, or the removal by a restart (combat/field/magic_room.h). */
+        /* Step K5 (#475, data/moves.ts:10754-10797): the start, or the removal by a restart (combat/field/magic_room.h); an Illusion
+         * holder whose disguise is up is refused first (dfi_magic_room_refused). */
+        if (dfi_magic_room_refused(b, user)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
         dfi_run_magic_room(r, user);
         return DUOFORGE_OK;
     }
@@ -9946,7 +9954,8 @@ static bool dfi_has_switch_in(const struct duoforge_battle *b, const dfi_member 
     return dfi_has_entry(b, m) || dfi_seed_terrain(b, m) != DFI_TERRAIN_NONE ||
            dfi_ability(b, m, DFI_ABILITY_HOSPITALITY) || dfi_ability(b, m, DFI_ABILITY_CLOUDNINE) ||
            m->status == DFI_STATUS_TOX ||
-           dfi_holds_effect(b, m, DFI_ITEM_AIRBALLOON); /* its onStart is a SwitchIn handler too (step G67) */
+           dfi_holds(b, m, DFI_ITEM_AIRBALLOON); /* its onStart is a SwitchIn handler too (step G67); it exists under Magic Room, where
+                                                  * its own ignoringItem test (data/items.ts:191-195) shows nothing (step K5) */
 }
 
 /* Hospitality (step G30, data/abilities.ts:1874-1887, onStart): the holder heals every adjacent ally by a quarter of its
@@ -10986,12 +10995,16 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             list[n] = (dfi_residual_entry){DFI_RES_MOODY, flat, 28u, speed, 2u, true};
             n += 1u;
         }
-        if (dfi_holds_effect(r->b, m, DFI_ITEM_LEFTOVERS)) {
+        /* Leftovers' and White Herb's handlers are listed by possession: the collection (sim/battle.ts:1124-1130 getItem) has no
+         * ignoringItem filter, the item is suppressed only when its handler runs (sim/battle.ts:609-611). So a holder under Magic
+         * Room has its entry in the sort and in a tie's draw, and the entry does its work only if the room is gone by then:
+         * Leftovers (order 5) runs under it, White Herb (29) runs after the room's end (27.6; step K5). */
+        if (dfi_holds(r->b, m, DFI_ITEM_LEFTOVERS)) {
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
             n += 1u;
         }
         /* White Herb's onResidual (order 29, an item: sub-order 8; Team C). */
-        if (dfi_holds_effect(r->b, m, DFI_ITEM_WHITEHERB)) {
+        if (dfi_holds(r->b, m, DFI_ITEM_WHITEHERB)) {
             list[n] = (dfi_residual_entry){DFI_RES_WHITE_HERB, flat, 29u, speed, 8u, true};
             n += 1u;
         }
@@ -11265,8 +11278,10 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             continue; /* Throat Chop's (order 22): silent, its count goes down below */
         }
         if (e->kind == DFI_RES_LEFTOVERS) {
-            dfi_heal(r, e->flat, (uint32_t)m->hp_max / 16u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_LEFTOVERS,
-                     DUOFORGE_NO_POSITION); /* heal(baseMaxhp / 16) */
+            if (dfi_holds_effect(b, m, DFI_ITEM_LEFTOVERS)) { /* the handler runs only while the item is not ignored */
+                dfi_heal(r, e->flat, (uint32_t)m->hp_max / 16u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_LEFTOVERS,
+                         DUOFORGE_NO_POSITION); /* heal(baseMaxhp / 16) */
+            }
             continue;
         }
         if (e->kind == DFI_RES_GRASSY) {
