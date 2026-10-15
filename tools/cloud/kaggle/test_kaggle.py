@@ -372,9 +372,11 @@ class KaggleTest(unittest.TestCase):
 
 
 class PseudonymizeTest(unittest.TestCase):
-    """pseudonymize.py: the copy for Kaggle without replay ids, the map apart and local."""
+    """pseudonymize.py: the copy for Kaggle without replay ids and player hashes; the maps and the seed apart, local."""
 
-    def make(self, root):
+    T0, T, R = 400 * 123456789, 400 * 98765432 + 60, 123456789012347  # one hash of each class (h % 400 = 0, 60, 347)
+
+    def make(self, root, leak=False):
         import numpy as np
         sys.path.insert(0, os.path.join(kaggle_run.REPO, "python"))
         from duoforge_replay.dataset import write_npz
@@ -382,41 +384,96 @@ class PseudonymizeTest(unittest.TestCase):
         os.makedirs(src)
         with open(os.path.join(src, "manifest.json"), "w", encoding="utf-8") as f:
             json.dump({"parts": [{"part": "part-x-00000"}, {"part": "part-x-00001"}]}, f)
-        for k, ids in enumerate((["gen9championsvgc2026regmc-1111111111", "gen9championsvgc2026regmc-2222222222"], [])):
+        games = ((["gen9championsvgc2026regmc-1111111111", "gen9championsvgc2026regmc-2222222222"],
+                  [[self.T0, self.T], [self.T, self.R]]), ([], np.zeros((0, 2))))
+        for k, (ids, players) in enumerate(games):
             part = os.path.join(src, f"part-x-{k:05d}")
             os.makedirs(part)
             write_npz(os.path.join(part, "games.npz"), {"replay_id": np.array(ids, dtype="<U36"),
-                                                       "players": np.zeros((len(ids), 2), np.uint64)})
+                                                       "players": np.array(players, np.uint64).reshape(-1, 2)})
+            m = {"games_sha256": sha(os.path.join(part, "games.npz")), "unit": f"x-{k:05d}"}
+            if leak and k == 0:
+                m["note"] = f"player {self.R}"
             with open(os.path.join(part, "manifest.json"), "w", encoding="utf-8") as f:
-                json.dump({"games_sha256": sha(os.path.join(part, "games.npz")), "unit": f"x-{k:05d}"}, f)
+                json.dump(m, f)
         return src
 
-    def test_the_copy_has_labels_the_map_is_apart_and_nothing_else_changes(self):
+    def run_it(self, tmp, src, name, seed="seed"):
+        import pseudonymize
+        out = os.path.join(tmp, name)
+        maps = os.path.join(tmp, f"{name}-replay-ids.json"), os.path.join(tmp, f"{name}-player-ids.json")
+        pseudonymize.pseudonymize(src, out, maps[0], maps[1], os.path.join(tmp, seed))
+        return out, maps
+
+    def players(self, out):
         import numpy as np
+        with np.load(os.path.join(out, "part-x-00000", "games.npz")) as z:
+            return [[int(x) for x in row] for row in z["players"]], list(z["replay_id"])
+
+    def test_the_copy_has_labels_and_class_keeping_ids_and_the_maps_and_seed_stay_apart(self):
         import pseudonymize
         with tempfile.TemporaryDirectory() as tmp:
             src = self.make(tmp)
-            dst, mp = os.path.join(tmp, "copy"), os.path.join(tmp, "map.json")
-            self.assertEqual(pseudonymize.pseudonymize(src, dst, mp), 2)
-            with np.load(os.path.join(dst, "part-x-00000", "games.npz")) as z:
-                self.assertEqual(list(z["replay_id"]), ["game-00000-000000", "game-00000-000001"])
-                self.assertEqual(z["players"].shape, (2, 2))
-            m = json.load(open(os.path.join(dst, "part-x-00000", "manifest.json"), encoding="utf-8"))
-            self.assertEqual(m["games_sha256"], sha(os.path.join(dst, "part-x-00000", "games.npz")))
-            self.assertEqual(m["unit"], "x-00000")
-            ids = json.load(open(mp, encoding="utf-8"))["replay_ids"]
-            self.assertEqual(ids["game-00000-000001"], "gen9championsvgc2026regmc-2222222222")
-            for d, _, names in os.walk(dst):
+            out, (rmap, pmap) = self.run_it(tmp, src, "copy")
+            players, labels = self.players(out)
+            self.assertEqual(labels, ["game-00000-000000", "game-00000-000001"])
+            originals = {self.T0, self.T, self.R}
+            self.assertFalse({h for row in players for h in row} & originals)  # no player hash is left
+            self.assertEqual([[pseudonymize.player_class(h) for h in row] for row in players],
+                             [["T0", "T"], ["T", "R"]])  # every row keeps its classes, so its split and sub-bucket
+            self.assertEqual(players[0][1], players[1][0])  # one player, one id
+            self.assertEqual(json.load(open(rmap, encoding="utf-8"))["replay_ids"]["game-00000-000001"],
+                             "gen9championsvgc2026regmc-2222222222")
+            self.assertEqual(json.load(open(pmap, encoding="utf-8"))["players"][str(self.R)], str(players[1][1]))
+            self.assertRegex(open(os.path.join(tmp, "seed"), encoding="utf-8").read().strip(), r"^[0-9a-f]{64}$")
+            m = json.load(open(os.path.join(out, "part-x-00000", "manifest.json"), encoding="utf-8"))
+            self.assertEqual(m["games_sha256"], sha(os.path.join(out, "part-x-00000", "games.npz")))
+            for d, _, names in os.walk(out):
                 for n in names:
                     with open(os.path.join(d, n), "rb") as f:
-                        self.assertNotIn(b"2222222222", f.read())
-            with self.assertRaisesRegex(SystemExit, "--out exists"):
-                pseudonymize.pseudonymize(src, dst, os.path.join(tmp, "map2.json"))
-            with self.assertRaisesRegex(SystemExit, "--map lies inside --out"):
-                pseudonymize.pseudonymize(src, os.path.join(tmp, "c2"), os.path.join(tmp, "c2", "map.json"))
-            with self.assertRaisesRegex(SystemExit, "inside the repository"):
-                pseudonymize.pseudonymize(src, os.path.join(kaggle_run.REPO, "copy-test"), os.path.join(tmp, "m3.json"))
+                        data = f.read()
+                    self.assertNotIn(b"2222222222", data)
+                    self.assertNotIn(str(self.R).encode(), data)
+            self.assertEqual(sorted(os.listdir(out)), ["manifest.json", "part-x-00000", "part-x-00001"])
+
+    def test_the_same_seed_gives_the_same_ids_another_seed_others(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self.make(tmp)
+            a, _ = self.run_it(tmp, src, "a")
+            b, _ = self.run_it(tmp, src, "b")  # the seed file of the first run, again
+            c, _ = self.run_it(tmp, src, "c", seed="other-seed")
+            self.assertEqual(self.players(a), self.players(b))
+            self.assertNotEqual(self.players(a)[0], self.players(c)[0])
+            with open(os.path.join(a, "part-x-00000", "games.npz"), "rb") as x, \
+                    open(os.path.join(b, "part-x-00000", "games.npz"), "rb") as y:
+                self.assertEqual(x.read(), y.read())  # byte-identical: a rebuild gives the same copy
+
+    def test_a_hash_left_in_a_file_and_bad_paths_are_refused(self):
+        import pseudonymize
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self.make(tmp, leak=True)
+            with self.assertRaisesRegex(SystemExit, "an id of the source is left"):
+                self.run_it(tmp, src, "leaky")
+            self.assertFalse(os.path.exists(os.path.join(tmp, "leaky")))  # the copy was removed
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self.make(tmp)
+            out, _ = self.run_it(tmp, src, "copy")
+            j = lambda *a: os.path.join(tmp, *a)  # noqa: E731
+            cases = ((out, j("m1"), j("p1"), j("s1"), "--out exists"),
+                     (j("c2"), j("c2", "m"), j("p2"), j("s2"), "--map lies inside --out"),
+                     (j("c3"), j("m3"), j("c3", "p"), j("s3"), "--player-map lies inside --out"),
+                     (j("c4"), j("m4"), j("p4"), j("c4", "s"), "--seed-file lies inside --out"),
+                     (os.path.join(kaggle_run.REPO, "copy-test"), j("m5"), j("p5"), j("s5"), "inside the repository"),
+                     (j("c6"), j("m6"), j("p6"), os.path.join(kaggle_run.REPO, "seed-test"), "inside the repository"))
+            for dst, rm, pm, seed, message in cases:
+                with self.subTest(message=message), self.assertRaisesRegex(SystemExit, message):
+                    pseudonymize.pseudonymize(src, dst, rm, pm, seed)
             self.assertFalse(os.path.exists(os.path.join(kaggle_run.REPO, "copy-test")))
+            self.assertFalse(os.path.exists(os.path.join(kaggle_run.REPO, "seed-test")))
+            with open(j("bad-seed"), "w", encoding="utf-8") as f:
+                f.write("not hex\n")
+            with self.assertRaisesRegex(SystemExit, "64 hex digits"):
+                pseudonymize.pseudonymize(src, j("c7"), j("m7"), j("p7"), j("bad-seed"))
 
 
 class JobTest(unittest.TestCase):
