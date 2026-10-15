@@ -8766,11 +8766,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         /* Glaive Rush (step G19): its self effect, applied like the recharge's by selfDrops to the user once a target was not
          * ruled out (a miss or a Protect gives none), shows nothing: -singlemove|user|Glaive Rush|[silent]
-         * (data/moves.ts:6647-6678; the public view infers it from the move line, decision 0018 section 6.1). */
+         * (data/moves.ts:6647-6678; the public view infers it from the move line, decision 0018 section 6.1). A target whose hit a
+         * Substitute took is null, not false, and counts too (issue 556, the cause of issue 518). */
         if (md->special == DFI_SPECIAL_GLAIVE_RUSH) {
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             if (hit_any) {
                 b->tail.sides[side].positions[q->slot].glaive_rush = 1u;
