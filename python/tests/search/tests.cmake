@@ -23,6 +23,7 @@ duoforge_add_python_test(smogon_dex python.tests.search.test_smogon_dex quick se
 duoforge_add_learner_test(search python.tests.search.test_search slow search ci-linux-proof)
 duoforge_add_learner_test(honest python.tests.search.test_honest slow search ci-linux-proof)
 duoforge_add_learner_test(value_rows python.tests.search.test_value_rows slow search ci-linux-proof)
+duoforge_add_learner_test(ko_check python.tests.search.test_ko_check slow search ci-linux-proof)
 duoforge_add_learner_test(evaluator_quick python.tests.search.test_evaluator_quick quick search ci-linux-proof)
 duoforge_add_learner_test(evaluator python.tests.search.test_evaluator slow search ci-linux-proof)
 duoforge_add_learner_test(depth python.tests.search.test_depth slow search)
