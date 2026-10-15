@@ -210,7 +210,7 @@ jobs:
           python tools/ci/check_ctest_labels.py \
             --inventory "$RUNNER_TEMP/ctest-inventory.json" --log ctest.log \
             --no-skip-label ci-no-skip --present-label ci-linux-proof \
-            --present-count 19 --nonempty-label ci-ps-trace
+            --present-count 21 --nonempty-label ci-ps-trace
 
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan
