@@ -233,8 +233,11 @@ class LoadTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "a team file changed"):
                 learn_ladder._pool_of("run", refused=[])
         import inspect
-        from duoforge_search import tree_offline
+        from duoforge_search import arena, book_ab, preview_ab, tree_offline
         for source, needles in ((inspect.getsource(tree_offline.main), ('foe_arena.load_pool(', '"pool": pool_info')),
+                                (inspect.getsource(arena.main), ('refused=refused', '"pool": teams.pool_record')),
+                                (inspect.getsource(book_ab.main), ('refused=refused', '"pool": teams.pool_record')),
+                                (inspect.getsource(preview_ab.main), ('refused=refused', '"pool": teams.pool_record')),
                                 (inspect.getsource(foe_arena.main), ('load_pool(', 'report["conditions"]["pool"]')),
                                 (inspect.getsource(learn_ladder.main), ('refused=refused', '"pool": teams.pool_record'))):
             for needle in needles:

@@ -12,6 +12,8 @@ checkpoints, over the run's team suite; every configuration writes its games,
 decision records and times, and summary.json holds the scores, Elo,
 intervals, paired differences, diagnostics and the conditions a rerun needs.
 bootstrap_mean, bootstrap_paired and elo are NumPy.
+
+From #558 on the pool is filtered by the engine (a refused team is left out, named in conditions.pool): a new series, never paired or mixed with results from before it.
 """
 import argparse
 import contextlib
@@ -449,7 +451,8 @@ def main(argv=None):
 
     from duoforge_learn import checkpoint, luck, policy
     require_deterministic_gpu(jax)
-    pool, kind = ladder._pool_of(args.run_dir)
+    refused = []  # the engine's filter (#558): a refused team is left out, named in conditions.pool
+    pool, kind = ladder._pool_of(args.run_dir, refused=refused)
     spread = source_ids = table_info = None
     if args.search == "honest":
         from . import honest
@@ -492,7 +495,9 @@ def main(argv=None):
         jaxlib = importlib.metadata.version("jaxlib")
     except importlib.metadata.PackageNotFoundError:
         jaxlib = None
+    from duoforge import teams
     conditions = {
+        "pool": teams.pool_record(pool, refused),
         "oracle": ORACLE, "capacity": args.capacity, "workers": args.workers, "max_steps": args.max_steps,
         "games": args.games, "suite_rows": int(rows.shape[0]), "agents": agents, "km": [f"{k}x{m}" for k, m in km],
         "s": samples, "search_seed": hex(lookahead.SEARCH_SEED), "arena_seed": hex(ARENA_SEED),
