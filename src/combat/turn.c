@@ -4809,7 +4809,12 @@ static duoforge_status dfi_encore_replace(dfi_run *r, uint32_t flat, uint32_t sl
     dfi_queue_record rec = *old;
     rec.move_slot = (uint8_t)slot;
     rec.reserve = 0u;
-    const uint32_t cls = dfi_pool_moves[tm->moves[slot].move_id].target_class;
+    uint32_t cls = dfi_pool_moves[tm->moves[slot].move_id].target_class;
+    /* The Champions resolveAction gives a non-Ghost user's Curse the target self before it picks one (sim/battle-queue.ts:263-266),
+     * so getRandomTarget returns the user and draws nothing (issue 556: a frozen Sylveon Encored into Curse). */
+    if (tm->moves[slot].move_id == DFI_MOVE_CURSE && !dfi_has_type(b, tm, DFI_TYPE_GHOST)) {
+        cls = DUOFORGE_TARGET_CLASS_SELF;
+    }
     dfi_cancel_actions(b, old->activation_id); /* `old` is not valid from here */
     uint32_t target = 0u;
     duoforge_status st = dfi_resolve_target(r, flat, cls, &target);
