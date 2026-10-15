@@ -255,17 +255,17 @@ function main() {
         }
         totals[t.dataset] += t.rows.length;
     }
-    line('#define DF_REFERENCE_TIEBREAK_COUNT ' + tables.length + 'u');
-    for (const [dataset, total] of Object.entries(totals)) {
-        line('#define DF_REFERENCE_' + dataset.toUpperCase() + '_STOPS ' + total + 'u');
-    }
+    // The counts are derived from the battle files by tests/reference/data.cmake at configure time.
+    line('#include "reference_counts_tiebreak.h"');
     line('#define tb_battles df_reference_tiebreak_battles');
     line('extern const df_tb_battle tb_battles[DF_REFERENCE_TIEBREAK_COUNT];');
     line('');
-    line(`/* ${stats.stops} stops: ${stats.ended} of an ended battle; decided by the count ${stats.byStage[1]},`);
-    line(` * the HP percentage ${stats.byStage[2]}, the total HP ${stats.byStage[3]}, a tie ${stats.byStage[4]};`);
-    line(` * winners: side 0 ${stats.winners.p1}, side 1 ${stats.winners.p2}, tie ${stats.winners['']} */`);
     line('#endif');
+    // The run's statistics go to stderr, not into the header (stdout): a new battle changes them (restructure step 2).
+    process.stderr.write(`${stats.stops} stops: ${stats.ended} of an ended battle; decided by the count ${stats.byStage[1]},` +
+        ` the HP percentage ${stats.byStage[2]}, the total HP ${stats.byStage[3]}, a tie ${stats.byStage[4]};` +
+        ` winners: side 0 ${stats.winners.p1}, side 1 ${stats.winners.p2}, tie ${stats.winners['']};` +
+        ` ${tables.length} battles, stops ${JSON.stringify(totals)}\n`);
     const text = out.join('\n') + '\n';
 
     if (args.length === 4) {

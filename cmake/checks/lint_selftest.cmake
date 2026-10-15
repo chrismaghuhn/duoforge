@@ -150,6 +150,14 @@ double also_forbidden;
 int generic;
 ")
 _lint_case("${WORK}/fp/src/eval/graph.c" banned-token 3 "${WORK}/fp")
+file(WRITE "${WORK}/fp/src/eval/tiles.c" "int32_t scheduled_value;
+")
+_lint_case("${WORK}/fp/src/eval/tiles.c" CLEAN 0 "${WORK}/fp")
+file(APPEND "${WORK}/fp/src/eval/tiles.c" "float forbidden;
+double also_forbidden;
+int generic;
+")
+_lint_case("${WORK}/fp/src/eval/tiles.c" banned-token 3 "${WORK}/fp")
 file(WRITE "${WORK}/fp/src/eval/other.c" "int64_t outside_registered_kernel;
 ")
 _lint_case("${WORK}/fp/src/eval/other.c" banned-token 1 "${WORK}/fp")
