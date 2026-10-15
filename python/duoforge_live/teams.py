@@ -27,6 +27,13 @@ def _pack_name(name):
     return re.sub(r"[^A-Za-z0-9]+", "", name or "")
 
 
+# The Stat Points of a sheet that states none (#512, HauptSession 2026-10-15): a closed-sheet particle's drawn set, and
+# an open sheet (the server's |showteam| shows no Stat Points). No world of the search and no replayed battle reads them
+# (their spreads are the belief's or the prior's: test_live_cts checks it), so they only have to pass the engine's setup
+# check under every nature: 0 in all is refused with Serious (#406), one point in HP passes.
+SP_PLACEHOLDER = (1, 0, 0, 0, 0, 0)
+
+
 def _paste(paste):
     """The sets of a paste in the converter's dialect (trace_to_c.parse_team)."""
     sets = []

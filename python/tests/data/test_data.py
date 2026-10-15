@@ -7,6 +7,8 @@ in Python (the values are the C library's, so the same row read twice, or throug
 """
 import unittest
 
+import numpy as np
+
 import duoforge
 from duoforge import _layout, data
 
@@ -105,9 +107,46 @@ class DataTest(unittest.TestCase):
                              ("earthquake", False)):
             flags = data.move_static(self.pool, data.find(self.pool, data.TABLE_MOVE, name))["flags"]
             self.assertEqual(bool(flags & c["DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE"]), locked, name)
+        # the partial trap (step G90; #512 S1): the five pool moves the engine models as the volatile partiallytrapped
+        # carry the flag, Snap Trap not (decision 0060 section 8); the live tracker reads its trap lines by it
+        for name, trap in (("bind", True), ("wrap", True), ("firespin", True), ("sandtomb", True), ("snaptrap", False),
+                           ("infestation", True), ("closecombat", False), ("outrage", False)):
+            flags = data.move_static(self.pool, data.find(self.pool, data.TABLE_MOVE, name))["flags"]
+            self.assertEqual(bool(flags & c["DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP"]), trap, name)
         self.assertEqual(data.move_static(self.pool, data.find(self.pool, data.TABLE_MOVE, "earthquake"))["target_class"],
                          11)
         self.assertEqual(tuple(sorted(mv)), tuple(sorted(_layout.MOVE_STATIC.names)))
+
+    def test_member_setup_valid(self):
+        """duoforge_data_member_setup_valid (#512): the per-member check of duoforge_battle_create, through the binding."""
+        from duoforge import teams
+        paste = ("Garchomp (M) @ Choice Scarf\nAbility: Rough Skin\nLevel: 50\nEVs: 32 Atk / 2 Def / 32 Spe\nJolly Nature\n"
+                 "- Earthquake\n- Dragon Claw\n- Rock Slide\n- Protect\n")
+        member = teams.side_setup(self.pool, teams.parse(paste, "garchomp"), "garchomp")["members"][0]
+        self.assertTrue(data.member_setup_valid(self.pool, member))
+        illegal = member.copy()
+        illegal["moves"][3]["move_id"] = data.find(self.pool, data.TABLE_MOVE, "moonblast")  # Garchomp never learns it
+        self.assertFalse(data.member_setup_valid(self.pool, illegal))
+        twice = member.copy()
+        twice["moves"][1]["move_id"] = twice["moves"][0]["move_id"]  # the same move twice
+        self.assertFalse(data.member_setup_valid(self.pool, twice))
+        with self.assertRaises(ValueError):
+            data.member_setup_valid(self.pool, np.zeros(2, dtype=_layout.MEMBER_SETUP))
+
+    def test_member_setup_valid_refuses_zero_stat_points_with_serious(self):
+        """The rule of #406 (#558), verbatim: exactly 0 Stat Points TOGETHER WITH the nature Serious is refused. Counter
+        checks: 0 Stat Points with another nature is accepted, and Serious with Stat Points is accepted."""
+        from duoforge import teams
+
+        def member(nature, evs):
+            paste = (f"Garchomp (M) @ Choice Scarf\nAbility: Rough Skin\nLevel: 50\n{evs}{nature} Nature\n"
+                     "- Earthquake\n- Dragon Claw\n- Rock Slide\n- Protect\n")
+            return teams.side_setup(self.pool, teams.parse(paste, "garchomp"), "garchomp")["members"][0]
+        self.assertFalse(data.member_setup_valid(self.pool, member("Serious", "")))  # 0 Stat Points, Serious
+        self.assertTrue(data.member_setup_valid(self.pool, member("Adamant", "")))  # 0 Stat Points, another nature
+        self.assertTrue(data.member_setup_valid(self.pool, member("Hardy", "")))  # 0, another neutral nature
+        self.assertTrue(data.member_setup_valid(self.pool, member("Serious", "EVs: 1 Spe\n")))  # Serious with 1 point
+        self.assertTrue(data.member_setup_valid(self.pool, member("Serious", "EVs: 32 Atk / 2 Def / 32 Spe\n")))
 
     def test_item_ability_nature_and_type_effect(self):
         c = _layout.CONSTANTS
