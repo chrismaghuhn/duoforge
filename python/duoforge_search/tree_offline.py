@@ -210,7 +210,7 @@ def main(argv=None):
         commit, dirty = os.environ["DUOFORGE_COMMIT"], os.environ.get("DUOFORGE_DIRTY", "true") == "true"
 
     import duoforge
-    from duoforge import _layout, teams
+    from duoforge import _layout
     from duoforge_learn import checkpoint as ck, evaluate
 
     def load(x):
@@ -226,7 +226,7 @@ def main(argv=None):
     os.makedirs(args.out, exist_ok=True)
     rows_path = os.path.join(args.out, "rows.jsonl")
     with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
-        pool = teams.load(ctx, teams_config["teams"]["ids"])
+        pool, pool_info = foe_arena.load_pool(ctx, teams_config["teams"]["ids"])
         rows = foe_arena.games(len(pool.ids), args.pairs, seed)
         table, source_ids, table_info = honest.live_spread_table(ctx)
         opponent_team = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
@@ -261,7 +261,8 @@ def main(argv=None):
                              "widths": widths, "pairs": args.pairs, "seed": hex(seed), "every": args.every,
                              "max_iterations": args.max_iterations, "info_key": args.info_key,
                              "max_steps": args.max_steps, "workers": args.workers, "opponent": name,
-                             "table_sha256": table_info["sha256"], "shadow_settings": shadow_settings},
+                             "table_sha256": table_info["sha256"], "shadow_settings": shadow_settings,
+                             "pool": pool_info},
               "digests": {"played": played, "plain": plain, "equal": None if plain is None else plain == played},
               "bounds": bounds(read_rows(rows_path), BUDGET_SECONDS, max(widths))}
     with open(os.path.join(args.out, "report.json"), "w", encoding="utf-8") as f:

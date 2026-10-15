@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Check independently maintained reference-set pins; never generate/update them."""
+"""The reference sets: every battle file checked, every sum derived from them, each set against its lower bound.
+
+Restructure step 2 (docs/superpowers/plans/2026-10-11-repo-restructure.md): global sums are derived, not maintained.
+tests/reference/pins/<format>.json holds only the hand-maintained lower bound of each set's battle count; the sums
+(battles, names, certified, fixture matches, tiebreak stops, live outcomes and stops, own-PP stops) are derived here
+from the battle files, as tests/reference/data.cmake derives the native runners' counts at configure time. A battle's
+own pins stay checked per battle (capture_battle_pins.py --check)."""
 import collections
 import hashlib
 import json
@@ -67,15 +73,24 @@ def summaries(root, format_name='reg-mc'):
     return result
 
 
+SETS = ('closure', 'team_c', 'pool')
+
+
 def check(root, format_name='reg-mc'):
+    """The derived sums of each set; fails for an invalid battle file or a set below its lower bound."""
     pin_file = root / 'tests/reference/pins' / (format_name + '.json')
-    expected = json.loads(pin_file.read_text(encoding='ascii'))
-    if expected['format'] != format_name:
+    bounds = json.loads(pin_file.read_text(encoding='ascii'))
+    if bounds.get('format') != format_name:
         raise ValueError(f'{pin_file}: wrong format')
+    if set(bounds) != {'maintenance', 'format', 'minimum_battles'} or set(bounds['minimum_battles']) != set(SETS):
+        raise ValueError(f'{pin_file}: expected maintenance, format and minimum_battles of {", ".join(SETS)}')
     actual = summaries(root, format_name)
-    if actual != expected['sets']:
-        raise ValueError(f'{pin_file}: independent reference-set pins differ\n'
-                         + json.dumps({'expected': expected['sets'], 'actual': actual}, sort_keys=True))
+    for dataset in SETS:
+        minimum = bounds['minimum_battles'][dataset]
+        if type(minimum) is not int or minimum < 0:
+            raise ValueError(f'{pin_file}: invalid minimum for {dataset}')
+        if actual[dataset]['battles'] < minimum:
+            raise ValueError(f'{pin_file}: {dataset} has {actual[dataset]["battles"]} battles, below the minimum {minimum}')
     return actual
 
 
@@ -85,8 +100,9 @@ def main():
     except (ValueError, KeyError, OSError) as error:
         print(f'reference format pins: {error}', file=sys.stderr)
         return 1
-    print('reference format pins: ' + '/'.join(str(result[k]['battles']) for k in ('closure', 'team_c', 'pool'))
-          + ' battles and all independent sums match')
+    print('reference format pins: ' + '/'.join(str(result[k]['battles']) for k in SETS)
+          + ' battles, every battle file valid and every set at or above its minimum; derived sums:')
+    print(json.dumps(result, indent=1, sort_keys=True))
     return 0
 
 

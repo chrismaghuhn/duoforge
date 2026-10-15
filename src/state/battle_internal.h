@@ -59,6 +59,7 @@ typedef struct dfi_move_slot {
 #define DFI_TERRAIN_MISTY 4u    /* POOL (step G25): Misty Terrain */
 #define DFI_FIELD_TURNS_MAX 5u  /* Trick Room, and weather and terrain without the rock or Terrain Extender */
 #define DFI_FIELD_TURNS_EXTENDED_MAX 8u /* step G55: weather or terrain set with its rock or Terrain Extender */
+#define DFI_SCREEN_TURNS 5u     /* Reflect, Light Screen and Aurora Veil without Light Clay */
 #define DFI_SCREEN_TURNS_MAX 8u /* Reflect and Light Screen with Light Clay */
 #define DFI_TAILWIND_TURNS_MAX 4u
 
@@ -81,6 +82,7 @@ _Static_assert((DFI_VOL_FLINCH + DFI_VOL_PROTECT + DFI_VOL_FLASH_FIRE + DFI_VOL_
                     DFI_VOL_UNBURDEN | DFI_VOL_CHOICE_LOCK | DFI_VOL_NEWLY_SWITCHED),
                "the DFI_VOL_* bits are pairwise disjoint");
 #define DFI_STALL_LEVEL_MAX 6u /* success chance 1 / 3^level */
+#define DFI_STALL_DURATION 2u /* data/conditions.ts: stall */
 #define DFI_STALL_TURNS_MAX 2u
 #define DFI_CONFUSION_TURNS_MAX 5u
 #define DFI_CHARGE_TURNS_MAX 2u
