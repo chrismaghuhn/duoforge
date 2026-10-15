@@ -269,6 +269,29 @@ class DecisionsDigestTest(unittest.TestCase):
         self.assertEqual(len(digest), 64)
         self.assertTrue(all(c in "0123456789abcdef" for c in digest))
 
+    def test_numpy_simd_names_the_disabled_targets_and_what_numpy_found(self):
+        # ladder.json records NumPy's SIMD dispatch (#484): the AWS box and the local run must record the same.
+        with mock.patch.dict(os.environ, {"NPY_DISABLE_CPU_FEATURES": "X86_V4 AVX512_ICL"}):
+            simd = ladder.numpy_simd()
+        self.assertEqual(simd["disabled"], ["X86_V4", "AVX512_ICL"])
+        self.assertEqual(sorted(simd), ["baseline", "disabled", "found", "not_found"])
+        from numpy._core import _multiarray_umath as m
+        self.assertEqual(sorted(simd["found"] + simd["not_found"]), sorted(m.__cpu_dispatch__))
+
+    def test_each_game_has_its_own_digest_and_one_choice_changes_only_its_game(self):
+        # #484: AWS and local runs differed in decisions_sha256 only; the per-game digests name the game that differs.
+        records = self.records()
+        games = ladder.games_digests(records, 3)
+        self.assertEqual(games, [ladder.decisions_digest([r for r in records if r["env"] == g]) for g in range(3)])
+        self.assertEqual(games[2], ladder.decisions_digest([]))  # a game without decisions
+        self.assertEqual(games, ladder.games_digests(list(reversed(records)), 3))  # input order does not matter
+        changed = copy.deepcopy(records)
+        changed[0]["choice"] = 4  # env 1
+        after = ladder.games_digests(changed, 3)
+        self.assertEqual([g for g in range(3) if after[g] != games[g]], [1])
+        with self.assertRaisesRegex(ValueError, "outside the arm's 1 games"):
+            ladder.games_digests(records, 1)
+
 
 class ReproductionTest(unittest.TestCase):
     def test_the_scores_and_the_decision_digest_must_both_match(self):

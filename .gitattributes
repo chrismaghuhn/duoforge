@@ -23,3 +23,4 @@ tests/support/observation_digest_vectors.h linguist-generated=true
 tests/reference/traces/** linguist-generated=true
 tests/reference/battles/** linguist-generated=true
 docs/research/expansion/data/legal_pool.json linguist-generated=true
+data/formats/pools/*.json linguist-generated=true

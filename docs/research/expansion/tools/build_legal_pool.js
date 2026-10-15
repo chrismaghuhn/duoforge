@@ -1,11 +1,19 @@
 'use strict';
 /*
- * build_legal_pool.js -- read-only inventory of what is LEGAL in
- *   gen9championsvgc2026regmc
+ * build_legal_pool.js -- read-only inventory of what is LEGAL in a format
+ *   (default gen9championsvgc2026regmc)
  * at the pinned Showdown checkout, using Showdown's own TeamValidator.
  *
- * Writes (next to this script):
- *   legal_pool.json
+ * usage: node build_legal_pool.js [--format ID] [--checkout DIR] [--duoforge DIR] [--out FILE]
+ *   --format    the Showdown format id (default gen9championsvgc2026regmc)
+ *   --checkout  the pinned, built Showdown checkout (default C:/Dev/src/pokemon-showdown); a git checkout must be
+ *               at the pin
+ *   --duoforge  the DuoForge worktree whose closure and extended tables give in_duoforge
+ *   --out       the output file (default legal_pool.json next to this script)
+ * Without options it writes what it always wrote (Reg M-C, data/formats/reg-mc.json).
+ *
+ * Writes:
+ *   the --out file
  *
  * Nothing under C:/Dev/src/pokemon-showdown or the DuoForge worktree is
  * modified; both are only read.
@@ -24,19 +32,40 @@
  */
 const fs = require('fs');
 const path = require('path');
-const SD = 'C:/Dev/src/pokemon-showdown';
-const { Dex, TeamValidator } = require(SD + '/dist/sim');
+const childProcess = require('child_process');
 
-const OUT_DIR = __dirname;
-const FORMAT_ID = 'gen9championsvgc2026regmc';
+const OPTIONS = { '--format': 'gen9championsvgc2026regmc', '--checkout': 'C:/Dev/src/pokemon-showdown',
+  '--duoforge': 'C:/Dev/src/duoforge/.claude/worktrees/epic-yalow-463a67',
+  '--out': path.join(__dirname, 'legal_pool.json') };
+{
+  const argv = process.argv.slice(2);
+  for (let i = 0; i < argv.length; i += 2) {
+    if (!(argv[i] in OPTIONS) || i + 1 >= argv.length) throw new Error('usage: build_legal_pool.js [--format ID] [--checkout DIR] [--duoforge DIR] [--out FILE]');
+    OPTIONS[argv[i]] = argv[i + 1];
+  }
+}
+const SD = OPTIONS['--checkout'];
+const OUT_FILE = OPTIONS['--out'];
+const FORMAT_ID = OPTIONS['--format'];
 const PIN = 'b2cb775b0616115b775534eaeff50300e1fc81fc';
-const DUOFORGE = 'C:/Dev/src/duoforge/.claude/worktrees/epic-yalow-463a67';
+const DUOFORGE = OPTIONS['--duoforge'];
+if (fs.existsSync(path.join(SD, '.git'))) {
+  const head = childProcess.execFileSync('git', ['-C', SD, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  if (head !== PIN) throw new Error(`the checkout is at ${head}, not at the pin ${PIN}`);
+}
+const { Dex, TeamValidator } = require(path.resolve(SD, 'dist', 'sim'));
 
 const format = Dex.formats.get(FORMAT_ID);
 if (!format.exists) throw new Error('format missing');
 const dex = Dex.forFormat(format);
 const validator = TeamValidator.get(FORMAT_ID);
 const ruleTable = Dex.formats.getRuleTable(format);
+// The rules block below names these team-level clauses: a format without them is refused, not described wrongly.
+for (const rule of ['speciesclause', 'nicknameclause']) {
+  if (!ruleTable.has(rule)) throw new Error(`${FORMAT_ID} lacks ${rule}`);
+}
+if (ruleTable.valueRules.get('itemclause') !== '1') throw new Error(`${FORMAT_ID} lacks Item Clause = 1`);
+if (!format.mod.startsWith('champions')) throw new Error(`${FORMAT_ID} is not a Champions format (Stat Points, no Tera)`);
 
 function mkSet(species, ability, item, moves, extra) {
   return Object.assign({
@@ -530,7 +559,7 @@ const out = {
   for (const k of ['species', 'moves', 'abilities', 'items']) {
     parts.push('  ' + JSON.stringify(k) + ': [' + NL + out[k].map(x => '    ' + JSON.stringify(x)).join(',' + NL) + NL + '  ]');
   }
-  fs.writeFileSync(path.join(OUT_DIR, 'legal_pool.json'), '{' + NL + parts.join(',' + NL) + NL + '}' + NL);
+  fs.writeFileSync(OUT_FILE, '{' + NL + parts.join(',' + NL) + NL + '}' + NL);
 }
 console.log(JSON.stringify({ counts, crossProductMs }, null, 1));
 console.log('coverage:', JSON.stringify(coverage, null, 1));
