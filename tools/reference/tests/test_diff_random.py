@@ -674,7 +674,8 @@ class Domain(unittest.TestCase):
                     if sid not in step['input']:
                         continue
                     mid_turn = rnd.mid_turn_before(trace, k)
-                    got = rnd.canonical_choice(step['input'][sid], side, rnd.state_before(trace, k), roster_of, mid_turn)
+                    got = rnd.canonical_choice(step['input'][sid], side, rnd.state_before(trace, k), roster_of, mid_turn,
+                                               trace_to_c.locked_slots(trace, k, spec, tables(team_c)))
                     if data['steps'][k]['team']:
                         picks = tuple(data['steps'][k]['picks'][side])
                         want = ('team', picks[:len(got[1])])
