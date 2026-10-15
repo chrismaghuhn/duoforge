@@ -12122,11 +12122,18 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
              * keeps the lock into the residual, where its end (fieldEvent, onEnd) would need the lock's count and the
              * order of that end, which is not modelled: refused. A sleeping holder is not refused (its lock is deleted
              * silently at the residual, as the pin does). */
-            const uint32_t mover = (uint32_t)q.side * 2u + (uint32_t)q.slot;
+            uint32_t mover = (uint32_t)q.side * 2u + (uint32_t)q.slot;
             const bool lock_before = b->tail.sides[mover / 2u].positions[mover % 2u].lock_turns != 0u;
             st = dfi_run_move(&r, &q, &ran);
             if (st != DUOFORGE_OK) {
                 return st;
+            }
+            /* An Ally Switch (step G80) moved the mover to the other slot of its side, with its queued action (issue 541): the
+             * epilogue below (AfterMove, the lock's countdown) is the mover's, at its new slot, not the partner's. */
+            const uint32_t moved_to = (uint32_t)q.side * 2u + (1u - (uint32_t)q.slot);
+            if (dfi_pos(b, mover)->activation_id != q.activation_id && dfi_pos(b, moved_to)->activation_id == q.activation_id) {
+                q.slot = (uint8_t)(1u - (uint32_t)q.slot); /* wide-operands-reviewed: 0 or 1 */
+                mover = moved_to;
             }
             if (lock_before && !r.move_used) {
                 const dfi_member *mm = dfi_at(b, mover);
