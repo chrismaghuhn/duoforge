@@ -186,6 +186,43 @@ Run as the HauptSession asked: after #512 S3 (#540) made a targeted foe move wit
   - the meter's turns: `no-decision-record` 302, `not-turn:REPLACEMENT` 119, `not-searched:unreconstructible` 81, `not-searched:forced` 15, `not-turn:PIVOT` 1, `foe-action-unknown` 1, `leaf-refused` 1;
   - luck.py's turns: `hidden-counter` 77, `true-record-unsupported:engine-refuses-record` 32, `true-record-unsupported:pivot-switch-reason-unknown` 2.
 - **What follows from it** is the HauptSession's decision. By the README, a failed gate means no live report until the cause is reported. The cause is the known one: the weighting of hidden foe actions by BC6 (#509), now on 63% of the turns.
+- **The HauptSession's decision (2026-10-15):** live reports of the meter are suspended until a new comparison passes.
+
+### The third comparison: target candidates from the engine's replay (fixed in advance)
+
+**Fixed on 2026-10-15, before any code or run of it** (HauptSession: "the target is information, not luck"). Since S3, a targeted foe move whose line names one of several possible targets is `TARGET_UNKNOWN`, and the meter mixes its candidates by BC6. The target the line shows is public, though. Narrowing the candidates to it takes no luck away; it only takes away a mixing that is not needed.
+
+**The method.** It changes only the foe slots whose reason is `target-unknown` (`labels.TARGET_UNKNOWN`).
+- **Hidden moves stay as they were.** `move-hidden` and the other reasons are mixed by BC6 as before.
+- **Replaying each candidate.** In each world the meter keeps (the rules above unchanged), each candidate pair of that world is stepped on a copy of the world:
+  - with the bot's accepted choice and that pair;
+  - under each of the turn's C = 8 seeds (`search_seeds(LUCK_SEED, turn_key, sample)`, the seeds of the expectation itself);
+  - by `duoforge.privileged.step_events`, which steps a copy and returns the events.
+
+  `privileged.step_events` is the tests' and the oracle's helper. Here it steps only the search's own hypotheses, never a true state, so the meter stays honest; the meter is no player.
+- **The comparison.** For a target-unknown foe slot, the engine's `DUOFORGE_EVENT_MOVE` of that slot's user names a target (`other`), as the line `|move|<user>|<move>|<target>` does: the target the move resolved to, after any redirection.
+  - **Reproduced:** a candidate is reproduced when, under at least one of the eight seeds, the engine's target is the line's target. A random retarget is chance, so one seed is enough.
+  - **Not compared:** a slot whose line names no single target (a spread move, a move without a target, or no |move| line at all) is not compared, and its set stays as it is.
+- **Narrowing.** The world keeps only the reproduced candidates.
+  - One left: the slot is unique in that world, with no mixing.
+  - Several left: they are mixed by BC6, renormalized on them.
+  - None left: the world is left out, counted by name `target-not-reproduced`.
+- **No rule in Python.** No redirection rule (Follow Me, Rage Powder, Storm Drain, Lightning Rod, Ally Switch, a fainted target, ...) is written in Python. The comparison only reads the engine's result. A turn whose every world is left out is excluded as `foe-action-not-in-worlds`, as before.
+- **The tool.** `cts_luck.py` (the meter) changes. `tools/research/cts_luck_check.py` and the luck.py side are unchanged, and so is everything else of the definition: C, the seeds, the worlds, the exclusions and the pivot limit.
+
+**Two battle sets, both fixed now:**
+- **The gate's 196**, `gate-battles.txt`: every fifth pool battle of `8c9e8933`'s traces, from index 0. They have been seen three times, and the method changes after seeing their results.
+- **A disjoint set of 196**, `gate-battles-disjoint.txt`: the same rule from index 2 (indices 2, 7, 12, …, 977 of the same 979 pool battles). It has no battle in common with the gate's; the file was written with that check. Its streams come from the same pinned Showdown.
+
+**The criterion is the one fixed in advance, and BOTH sets must pass it:** the 95% interval of the mean per-turn difference (meter − luck.py) includes 0, or |mean| < 0.01. The new method becomes the meter's only if both pass. The meter goes live again only then, with its own README row.
+
+**Reported per set:**
+- the commit and dirty flag, the library's and BC6's sha256;
+- the turns compared, the mean difference with its 95% interval, and the battle-clustered interval (descriptive);
+- the correlation;
+- mixed and unmixed apart;
+- how many of the turns mixed by the after-S3 method become unique;
+- `target-not-reproduced` worlds, and every exclusion by name.
 
 ### After the fact (after seeing the result)
 
