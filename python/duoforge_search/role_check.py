@@ -331,16 +331,26 @@ def _probe(batch, env, p, bx, policy, rng):
 
 
 def answers(table, foes=None):
-    """{x: share of the worlds in which some b of ours wins x's KO race} over the worlds the pairs were probed in;
-    refusals and pairs dead in a world count as no answer there."""
-    by_x = {}
+    """{x: the share, among the worlds in which some pair (b, x) was probed, of those in which some b of ours wins x's
+    KO race; None where no pair of x was probed in any world}. A world without a probe of x (x not brought in it under
+    closed sheets, a turn 1 that ended in a replacement, any named refusal) is left out of x's share, never read as
+    no answer; the report counts those cells apart."""
+    won, probed = {}, {}
     for (b, x), worlds in table.items():
         if foes is not None and x not in foes:
             continue
-        won = by_x.setdefault(x, [False] * len(worlds))
+        w_won = won.setdefault(x, [False] * len(worlds))
+        w_probed = probed.setdefault(x, [False] * len(worlds))
         for w, got in enumerate(worlds):
-            won[w] |= isinstance(got, dict) and got["winner"] == "b"
-    return {x: sum(v) / len(v) for x, v in by_x.items()}
+            if isinstance(got, dict):
+                w_probed[w] = True
+                w_won[w] |= got["winner"] == "b"
+    return {x: (sum(a and q for a, q in zip(won[x], probed[x])) / sum(probed[x]) if any(probed[x]) else None)
+            for x in won}
+
+
+def _answered(share):
+    return share is not None and share >= ANSWER
 
 
 # --- the logs: every own faint, the role table before and after it --------------------------------------------------
@@ -380,10 +390,12 @@ def battle(path, tables, net, live, team_text, bot, prior, counts, pairs_out=Non
                 pairs_out.write(json.dumps({"turn": turn, "b": b, "x": x, "worlds": worlds}) + "\n")
         if before is not None and ours > before["fainted"]:
             alive = set(now["answers"])
-            lost = [x for x in alive if before["answers"].get(x, 0.0) >= ANSWER > now["answers"][x]]
+            known = [x for x in alive if now["answers"][x] is not None and before["answers"].get(x) is not None]
+            lost = [x for x in known if _answered(before["answers"][x]) and not _answered(now["answers"][x])]
             rows.append({"turn": turn, "phase": phase(turn), "foes_left": len(alive),
-                         "answered_before": sum(before["answers"].get(x, 0.0) >= ANSWER for x in alive),
-                         "answered_after": sum(now["answers"][x] >= ANSWER for x in alive),
+                         "foes_unknown": len(alive) - len(known),
+                         "answered_before": sum(_answered(before["answers"].get(x)) for x in alive),
+                         "answered_after": sum(_answered(now["answers"][x]) for x in alive),
                          "lost_last_answer": len(lost), "switch_candidate": before["switch"], "result": result})
         before = now
     return rows
@@ -400,6 +412,7 @@ def aggregate(rows):
                      "lost_last_answer_game_lost": sum(r["result"] == -1.0 for r in lost),
                      "lost_last_answer_switch_candidate": sum(r["switch_candidate"] for r in lost),
                      "foes_left": sum(r["foes_left"] for r in part),
+                     "foes_unknown": sum(r.get("foes_unknown", 0) for r in part),
                      "answered_after": sum(r["answered_after"] for r in part),
                      "games_lost": sum(r["result"] == -1.0 for r in part)}
     return out

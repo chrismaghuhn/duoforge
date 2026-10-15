@@ -63,6 +63,10 @@ class Tables(unittest.TestCase):
                  (0, 6): [lose, lose, lose, lose]}
         self.assertEqual(role_check.answers(table), {5: 0.5, 6: 0.0})
         self.assertEqual(role_check.answers(table, foes={6}), {6: 0.0})
+        # a world with no probe of x leaves x's share (x not brought there, a turn 1 ending in a replacement)
+        table = {(0, 5): [win, "fainted", "not_a_turn", lose], (1, 5): [lose, "fainted", "not_a_turn", lose],
+                 (0, 7): ["fainted", "not_a_turn", "fainted", "setup_refused"]}
+        self.assertEqual(role_check.answers(table), {5: 0.5, 7: None})
 
     def test_the_report_sums_the_own_faints_by_phase(self):
         def row(turn, lost, switch, result):
@@ -71,8 +75,8 @@ class Tables(unittest.TestCase):
         rows = [row(2, 1, True, -1.0), row(5, 0, False, 1.0), row(8, 2, False, -1.0), row(9, 0, True, None)]
         got = role_check.aggregate(rows)
         self.assertEqual(got["all"], {"own_faints": 4, "lost_last_answer": 2, "lost_last_answer_game_lost": 2,
-                                      "lost_last_answer_switch_candidate": 1, "foes_left": 8, "answered_after": 5,
-                                      "games_lost": 2})
+                                      "lost_last_answer_switch_candidate": 1, "foes_left": 8, "foes_unknown": 0,
+                                      "answered_after": 5, "games_lost": 2})
         self.assertEqual((got["early"]["own_faints"], got["middle"]["own_faints"], got["endgame"]["own_faints"]),
                          (1, 1, 2))
         self.assertEqual([role_check.phase(t) for t in (1, 3, 4, 6, 7, 20)],
