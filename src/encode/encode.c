@@ -236,6 +236,11 @@ static duoforge_status dfi_check_record(const duoforge_observation *ob, const du
         return DUOFORGE_E_UNSUPPORTED; /* a mask bit the records' library does not support */
     }
     bool bad = ext->field.gravity_turns > 5u;
+    /* Step K5 (#475, decision 0015 5dm): FIELD_FLAGS bits 0-2 hold Magic Room's turns (0 to 5) and magic_room_source its setter (0, or
+     * 1 + side * 6 + roster, at most 12), the two set together or both zero. Bits 3-15 are not checked: 3-5 are the next feature's, and 6-15 are encoder 6's
+     * reserve columns, which show a value instead of refusing it (decision 0050). No width and no column order changes. */
+    const uint32_t room_turns = (uint32_t)ext->field.flags & 7u;
+    bad = bad || room_turns > 5u || ext->field.magic_room_source > 12u || (room_turns != 0u) != (ext->field.magic_room_source != 0u);
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         const duoforge_side_ext *x = &ext->sides[s];
         bad = bad || x->aurora_veil_turns > 8u || x->stealth_rock > 1u || x->spikes > 3u || x->toxic_spikes > 2u ||

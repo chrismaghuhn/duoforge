@@ -188,6 +188,34 @@ class EncodeCTest(unittest.TestCase):
                     self.assertEqual(st, 0, what)
                     self.assert_same(got, (want[0][row], want[1][row], want[2][row]), what)
 
+    def test_magic_room_fields_are_refused_by_the_c_encoder(self):
+        # decision 0015 5dm: turns 6 and 7, a source above 12, a source without turns and turns without a source are INVALID_ARGUMENT
+        # (a malformed record), in C and in the reference; bits 3-5 beside valid turns are accepted
+        with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups(list(range(4))), 1,
+                                                       SEED) as batch:
+            policy = duoforge.RandomPolicy(SEED, 4)
+            policy.start_episodes(np.arange(4), np.zeros(4, dtype=np.uint64))
+            batch.query_factored()
+            batch.step_factored(policy.choose_factored(batch))
+            batch.query_factored()
+            ob, d = batch.observations.reshape(-1).copy(), batch.domains.reshape(-1).copy()
+        base = _records(ob)
+        cases = ((6, 1, False), (7, 1, False), (1, 13, False), (0, 1, False), (3, 0, False),
+                 (5, 12, True), (0, 0, True), (0x38 | 2, 1, True), (0x38, 0, True))
+        for flags, source, ok in cases:
+            ext = base.copy()
+            ext["field"]["flags"] = flags
+            ext["field"]["magic_room_source"] = source
+            want, err = reference(6, features.ALL_FEATURES, ob, d, ext)
+            st, *_ = c_encode(6, features.ALL_FEATURES, ob[0], d[0], ext[0])
+            what = f"flags {flags:#x} source {source}"
+            if not ok:
+                self.assertIsInstance(err, ValueError, what)
+                self.assertEqual(st, C["DUOFORGE_E_INVALID_ARGUMENT"], what)
+            else:
+                self.assertIsNone(err, what)
+                self.assertEqual(st, 0, what)
+
     def test_fuzzed_rows_refuse_as_the_reference(self):
         with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups(list(range(4))), 1,
                                                        SEED) as batch:
@@ -213,7 +241,8 @@ class EncodeCTest(unittest.TestCase):
             ("x", ("supported",), (0, features.BASE_VALUE_FEATURES, features.ALL_FEATURES)),
             ("x", ("field", "gravity_turns"), (0, 5, 6)), ("x", ("sides", "spikes"), (3, 4)),
             ("x", ("sides", "guard_flags"), (0, 1, 2, 3, 4, 128)),
-            ("x", ("sides", "conditions"), (0, 1, 128)), ("x", ("field", "flags"), (0, 1, 1 << 15)),
+            ("x", ("sides", "conditions"), (0, 1, 128)), ("x", ("field", "flags"), (0, 1, 2, 5, 6, 7, 0x38, 1 << 6, 1 << 15)),
+            ("x", ("field", "magic_room_source"), (0, 1, 12, 13, 255)),
             ("x", ("volatiles2",), (0, 1, 1 << 31)),
             ("x", ("sides", "positions", "volatiles"), (0, 1 << 19, 1 << 20, 1 << 21, 1 << 22, 1 << 31)),
             ("x", ("sides", "positions", "type_now"), (0, 1, 18, 19)),

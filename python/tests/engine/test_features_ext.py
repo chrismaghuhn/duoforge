@@ -407,6 +407,12 @@ class FeaturesExtTest(unittest.TestCase):
     def test_record_values_outside_their_ranges_raise(self):
         ob, d = self.obs, self.domains
         cases = (("gravity_turns", lambda e: e["field"].__setitem__("gravity_turns", 6)),
+                 # Magic Room (decision 0015 5dm): turns 6 and 7, a source above 12, either without the other
+                 ("magic_room_turns", lambda e: (e["field"].__setitem__("flags", 6), e["field"].__setitem__("magic_room_source", 1))),
+                 ("magic_room_turns", lambda e: (e["field"].__setitem__("flags", 7), e["field"].__setitem__("magic_room_source", 1))),
+                 ("magic_room_source", lambda e: (e["field"].__setitem__("flags", 1), e["field"].__setitem__("magic_room_source", 13))),
+                 ("magic_room_source", lambda e: e["field"].__setitem__("magic_room_source", 1)),  # a source without turns
+                 ("magic_room_source", lambda e: e["field"].__setitem__("flags", 3)),  # turns without a source
                  ("aurora_veil_turns", lambda e: e["sides"]["aurora_veil_turns"].__setitem__((0, 1), 9)),
                  ("stealth_rock", lambda e: e["sides"]["stealth_rock"].__setitem__((0, 1), 2)),
                  ("spikes", lambda e: e["sides"]["spikes"].__setitem__((0, 1), 4)),
@@ -434,6 +440,17 @@ class FeaturesExtTest(unittest.TestCase):
                 ext["field"], ext["sides"] = field_ext, sides
                 with self.assertRaisesRegex(ValueError, field):  # guard_flags and volatiles: encoder 6's reserve
                     features.encode_batch(ob, d, ext, ALL, encoder=5)
+
+    def test_magic_room_flag_bits_3_to_5_are_left_alone(self):
+        # decision 0015 5dm: only bits 0-2 (the turns) are checked against the source; bits 3-5 belong to the next feature and 6-15
+        # are encoder 6's reserve columns, shown and not refused
+        ob, d = self.obs, self.domains
+        ext = _records(ob)
+        ext["field"]["flags"] = 0xFFC0 | 0x38 | 2
+        ext["field"]["magic_room_source"] = 1
+        features.encode_batch(ob, d, ext, ALL)  # no ValueError
+        ext["field"]["flags"] = 5
+        features.encode_batch(ob, d, ext, ALL)
 
     def test_as_encoder_serves_the_old_versions(self):
         from python.tests.support import _reference_features as reference

@@ -74,6 +74,7 @@ def _reserve(ext, observations):
     """Records and observations with a distinct pattern in every reserve family, per absolute side and position."""
     ext, observations = ext.copy(), observations.copy()
     ext["field"]["flags"] = 0b1010_0000_0000_0101
+    ext["field"]["magic_room_source"] = 1  # bits 0-2 are Magic Room's turns (here 5): its setter is set with them (decision 0015 5dm)
     for s in range(2):
         ext["sides"]["guard_flags"][:, s] |= np.uint8(1 << (2 + s))
         ext["sides"]["conditions"][:, s] = 1 << (5 + s)

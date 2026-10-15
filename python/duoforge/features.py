@@ -582,11 +582,18 @@ def _check_records(ob, ext, mask, encoder=ENCODER):
         raise ValueError(f"ext_supported has the bit of {_FEATURE_NAME[bit]}, which this library does not support")
     rec = ext[present]
     checks = [("gravity_turns", rec["field"]["gravity_turns"], 5)]
+    # Magic Room (step K5, decision 0015 5dm): FIELD_FLAGS bits 0-2 hold its turns (0 to 5) and magic_room_source its setter (at most
+    # 12), set together or both zero; bits 3-15 are not checked (3-5 are the next feature's, 6-15 are encoder 6's reserve columns)
+    flags = rec["field"]["flags"].astype(np.int64)
+    room_turns = flags & 7
+    checks += [("magic_room_turns", room_turns, 5), ("magic_room_source", rec["field"]["magic_room_source"], 12)]
     checks += [(name, rec["sides"][name], top) for name, top in _SIDE_RANGES]
     checks += [(name, rec["sides"]["positions"][name], top) for name, top in _POSITION_RANGES]
     for name, values, top in checks:
         if (values > top).any():
             raise ValueError(f"extension field {name} {int(values[values > top].flat[0])} is above {top}")
+    if ((room_turns != 0) != (rec["field"]["magic_room_source"] != 0)).any():
+        raise ValueError("extension field magic_room_source and the turns in the field flags must be set together")
     guards = rec["sides"]["guard_flags"].astype(np.int64) & ~sum(bit for bit, _ in _GUARDS)
     volatiles = rec["sides"]["positions"]["volatiles"].astype(np.int64)
     unknown = volatiles & ~sum(bit for _, bit, _ in VOLATILES)
