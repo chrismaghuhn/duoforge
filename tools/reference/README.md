@@ -62,8 +62,9 @@ Whatever the converter does not model raises `ConversionError`, a `SystemExit` w
 CTest also runs `tools/reference/tests/test_trace_to_c.py` as `duoforge.reference.converter_api` (Python only, no Node and no checkout). Its negative controls change in-memory copies of committed battles and assert the rule, the detail and the exact message of each refusal. It checks that the library reproduces every conformance payload and the three declaration headers, the shape of the data against the declarations of the record types (and `step_record` against the declared field names), that `convert_battle` does no file IO and leaves its inputs alone, that a choice passing both slots of a switch request converts, and the command line: `--check`, the usage message, a refused trace (status 1 and its message) and write and check of all three files on a small copy.
 
 To add a battle: write its spec (gender for every gendered species), record the trace with `ps_trace.js`,
-then explicitly capture its pins and regenerate both payload components. Deliberately update the
-dataset line in the independently maintained format pin before rebuilding and running the quick guard:
+then explicitly capture its pins and regenerate both payload components. No sum needs an edit: the set sums are
+derived from the battle files (restructure step 2), so parallel changes that each add a battle do not collide.
+Rebuild and run the quick guard:
 
 ```sh
 # Use the configured build's library and diff runner, PYTHONPATH=<repo>/python:<repo>,
@@ -77,12 +78,16 @@ python tools/reference/trace_to_c.py . --check
 node tools/reference/tiebreak_ref.js <checkout> . --check tests/reference/tiebreak_ref.h
 ```
 
-`tests/reference/pins/reg-mc.json` is an **independently hand-maintained** format pin:
-counts, sorted-name SHA-256 (ASCII name plus LF), certified/fixture counts, tiebreak stops,
-live outcomes, tracker stops and own-PP totals. Adding a battle requires a deliberate edit
-to its dataset's line. No generator updates this file. `duoforge.reference.format_pins`
-checks it in the quick tier, including coordinated deletion/rename controls. The native
-runners compare aggregate counts to this independent pin rather than their array bounds.
+`tests/reference/pins/reg-mc.json` holds only the **hand-maintained lower bound** of each set's battle count
+(restructure step 2 of `docs/superpowers/plans/2026-10-11-repo-restructure.md`: global sums are derived, not
+maintained). Every sum is derived from the battle files: `tests/reference/data.cmake` writes the native runners'
+counts at configure time (`reference_pins.h` and `reference_counts_<set>.h`, `reference_counts_tiebreak.h` in the
+build directory; the committed `conformance*.h` and `tiebreak_ref.h` include them), and `format_pins.py` derives
+the names, certified and fixture counts, tiebreak stops, live outcomes, tracker stops and own-PP totals.
+`duoforge.reference.format_pins` checks every battle file (identity, payload row counts, pins, files equal to
+specs and traces) and each set against its bound in the quick tier; a set below its bound fails the configure
+too. Raise a bound deliberately when a set grows. The native runners compare their own counts to the derived
+sums rather than to their array bounds; a battle's own pins stay checked per battle (below).
 
 The pin capture tool seeds only missing battle files by default. It does not observe or
 change existing pins in that mode. A deliberate re-pin must use `--update-existing`;
@@ -92,7 +97,7 @@ every changed file and field is printed, including removals and nested outcome/s
 python tools/reference/capture_battle_pins.py . --update-existing
 ```
 
-Review that output and update the independent format pin deliberately if intended.
+Review that output; the derived sums follow by themselves.
 `duoforge.reference.battle_pins` registers `--check` in the full tier. This particular
 full-tier tool depends on the configured Python/library/runner/Node/pinned Showdown;
 unconfigured profiles retain a visible skip. The Python/reference CI jobs require it
@@ -101,7 +106,7 @@ to execute through the unchanged `ci-no-skip` guard.
 `capture_battle_pins.py` freezes the public engine setup's certified/dev outcome, Team C fixture membership,
 and the existing live assembler comparisons for each battle. Normal tests compare against these frozen
 pins; they never refresh them. An intentional pin change requires reviewing the per-battle difference.
-The live test derives its global outcomes/stops and own-PP refusal set from those independent pins.
+The live test derives its global outcomes/stops and own-PP refusal set from those per-battle pins.
 UNMODELED table-row counts remain global until the definition-file work in restructure step 5.
 
 Both native reference runners accept `--digest-out <file>`. They emit one ASCII TSV row per battle:
