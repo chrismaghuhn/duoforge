@@ -50,6 +50,8 @@ duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES interactions/test_pool_g3
 # Step G34: a batch of small rules (Gale Wings, accuracy and base power abilities, Solid Rock and Multiscale in the damage chain,
 # Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES interactions/test_pool_g33.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+# Step K4 (#475, decision 0015 5df): Gravity's accuracy rule (first hit 6840/4096, later hit integer) with one recorded draw changed.
+duoforge_add_test(NAME duoforge.state.pool_k4_draws SOURCES interactions/test_pool_k4_draws.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 duoforge_add_test(NAME duoforge.state.pool_g52 SOURCES interactions/test_pool_g52.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES interactions/test_pool_g34.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
