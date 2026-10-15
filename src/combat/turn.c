@@ -6141,6 +6141,18 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
     if (count != 1u || target >= DFI_POSITIONS) {
         return DUOFORGE_E_INVARIANT; /* dfi_curse_targets always leaves one target for a Ghost user */
     }
+    if (target != user && dfi_invulnerable_to(r, user, target, DFI_MOVE_CURSE)) {
+        /* The Invulnerability step (step G58, sim/battle-actions.ts:556) comes before Good as Gold's TryHit, as for Coaching: a
+         * -miss and nothing else, so no HP cost and no curse (issue 522: a Ghost Curse into Phantom Force). */
+        duoforge_event *mv = dfi_last_move(r);
+        if (mv != NULL) {
+            mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_MISS); /* wide-operands-reviewed */
+        }
+        const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, target);
+        dfi_emit(r, &miss);
+        r->mres |= DFI_MRES_FALSE;
+        return DUOFORGE_OK;
+    }
     /* TryHit: Good as Gold on a foe (data/abilities.ts:1630-1636): -immune, the status move stops, no Update */
     if (target != user && dfi_ability(b, dfi_at(b, target), DFI_ABILITY_GOODASGOLD)) {
         dfi_immune(r, target, 1u + DFI_ABILITY_GOODASGOLD);
