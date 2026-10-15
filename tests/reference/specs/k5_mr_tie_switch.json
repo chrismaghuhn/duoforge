@@ -1,24 +1,26 @@
 {
   "name": "k5_mr_tie_switch",
-  "purpose": "Two Air Balloon holders of one Speed switch in on one turn under Magic Room: the balloon shows no line, but its onStart handlers exist, so the two entering Pokemon tie in the switch-in order and the shuffle draws.",
+  "purpose": "Two Air Balloon holders of one Speed replace two fainted Pokemon on one turn under Magic Room: the balloon shows no line, but its onStart handlers exist, so the two entering Pokemon tie in the switch-in order and the shuffle draws.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000005113",
   "teams": [
-    "Alakazam (F) @ Alakazite\nAbility: Inner Focus\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Magic Room\n- Psyshock\n- Protect\n- Trick\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Iron Head\n\nMilotic (F) @ Air Balloon\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n- Coil\n\nIndeedee-F (F) @ Lum Berry\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
-    "Staraptor (F) @ Rocky Helmet\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n- Brave Bird\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Iron Head\n\nMilotic (F) @ Air Balloon\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n- Coil\n\nIndeedee-F (F) @ Lum Berry\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect"
+    "Alakazam (F) @ Alakazite\nAbility: Inner Focus\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Magic Room\n- Psyshock\n- Protect\n- Trick\n\nGardevoir (F) @ Leftovers\nAbility: Telepathy\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Memento\n- Protect\n\nMilotic (F) @ Air Balloon\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n- Coil\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Iron Head\n\nIndeedee-F (F) @ Lum Berry\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Staraptor (F) @ Rocky Helmet\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n- Brave Bird\n\nGardevoir (F) @ Leftovers\nAbility: Telepathy\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Memento\n- Protect\n\nMilotic (F) @ Air Balloon\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n- Coil\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Iron Head\n\nIndeedee-F (F) @ Lum Berry\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect"
   ],
   "plan": {
     "p1": [
-      "move 1, move 3",
-      "move 3, switch 3",
+      "move 1, move 2",
+      "move 2 1, move 1 1",
+      "move 3, move 3",
       "move 3, move 3"
     ],
     "p2": [
-      "move 1, move 1",
-      "move 1, switch 3",
-      "move 1, move 1"
+      "move 1, move 2",
+      "move 2 1, move 1 1",
+      "move 1, move 3",
+      "move 1, move 3"
     ],
-    "max_steps": 4
+    "max_steps": 5
   }
 }

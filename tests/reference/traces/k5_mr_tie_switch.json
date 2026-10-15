@@ -15,16 +15,16 @@
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
    "|poke|p1|Alakazam, L50, F|",
-   "|poke|p1|Kingambit, L50, M|",
+   "|poke|p1|Gardevoir, L50, F|",
    "|poke|p1|Milotic, L50, F|",
+   "|poke|p1|Kingambit, L50, M|",
    "|poke|p1|Indeedee-F, L50, F|",
-   "|poke|p1|Gholdengo, L50|",
    "|poke|p1|Raichu, L50, F|",
    "|poke|p2|Staraptor, L50, F|",
-   "|poke|p2|Kingambit, L50, M|",
+   "|poke|p2|Gardevoir, L50, F|",
    "|poke|p2|Milotic, L50, F|",
+   "|poke|p2|Kingambit, L50, M|",
    "|poke|p2|Indeedee-F, L50, F|",
-   "|poke|p2|Gholdengo, L50|",
    "|poke|p2|Raichu, L50, F|",
    "|teampreview|4",
    "|split|p1",
@@ -88,13 +88,13 @@
        "locked": null
       },
       {
-       "species": "Kingambit",
-       "set_species": "Kingambit",
+       "species": "Gardevoir",
+       "set_species": "Gardevoir",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 207,
-       "maxhp": 207,
-       "item": "blackglasses",
+       "hp": 175,
+       "maxhp": 175,
+       "item": "leftovers",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -109,8 +109,8 @@
         0
        ],
        "pp": [
-        8,
-        16
+        12,
+        8
        ],
        "volatiles": [],
        "locked": null
@@ -145,6 +145,34 @@
        "locked": null
       },
       {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
        "species": "Indeedee-F",
        "set_species": "Indeedee-F",
        "mega": 0,
@@ -167,34 +195,6 @@
        ],
        "pp": [
         8
-       ],
-       "volatiles": [],
-       "locked": null
-      },
-      {
-       "species": "Gholdengo",
-       "set_species": "Gholdengo",
-       "mega": 0,
-       "switch_flag": 0,
-       "hp": 179,
-       "maxhp": 179,
-       "item": "lifeorb",
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        8,
-        16
        ],
        "volatiles": [],
        "locked": null
@@ -270,13 +270,13 @@
        "locked": null
       },
       {
-       "species": "Kingambit",
-       "set_species": "Kingambit",
+       "species": "Gardevoir",
+       "set_species": "Gardevoir",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 207,
-       "maxhp": 207,
-       "item": "blackglasses",
+       "hp": 175,
+       "maxhp": 175,
+       "item": "leftovers",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -291,8 +291,8 @@
         0
        ],
        "pp": [
-        8,
-        16
+        12,
+        8
        ],
        "volatiles": [],
        "locked": null
@@ -327,6 +327,34 @@
        "locked": null
       },
       {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
        "species": "Indeedee-F",
        "set_species": "Indeedee-F",
        "mega": 0,
@@ -349,34 +377,6 @@
        ],
        "pp": [
         8
-       ],
-       "volatiles": [],
-       "locked": null
-      },
-      {
-       "species": "Gholdengo",
-       "set_species": "Gholdengo",
-       "mega": 0,
-       "switch_flag": 0,
-       "hp": 179,
-       "maxhp": 179,
-       "item": "lifeorb",
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        8,
-        16
        ],
        "volatiles": [],
        "locked": null
@@ -507,19 +507,17 @@
     "|switch|p1a: Alakazam|Alakazam, L50, F|132/132",
     "|switch|p1a: Alakazam|Alakazam, L50, F|100/100",
     "|split|p1",
-    "|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
-    "|switch|p1b: Kingambit|Kingambit, L50, M|100/100",
+    "|switch|p1b: Gardevoir|Gardevoir, L50, F|175/175",
+    "|switch|p1b: Gardevoir|Gardevoir, L50, F|100/100",
     "|split|p2",
     "|switch|p2a: Staraptor|Staraptor, L50, F|192/192",
     "|switch|p2a: Staraptor|Staraptor, L50, F|100/100",
     "|split|p2",
-    "|switch|p2b: Kingambit|Kingambit, L50, M|207/207",
-    "|switch|p2b: Kingambit|Kingambit, L50, M|100/100",
+    "|switch|p2b: Gardevoir|Gardevoir, L50, F|175/175",
+    "|switch|p2b: Gardevoir|Gardevoir, L50, F|100/100",
     "|-ability|p2a: Staraptor|Intimidate|boost",
     "|-fail|p1a: Alakazam|unboost|atk|[from] ability: Inner Focus|[of] p1a: Alakazam",
-    "|-unboost|p1b: Kingambit|atk|1",
-    "|-ability|p1b: Kingambit|Defiant|boost",
-    "|-boost|p1b: Kingambit|atk|2",
+    "|-unboost|p1b: Gardevoir|atk|1",
     "|turn|1"
    ],
    "state": {
@@ -587,19 +585,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 175,
+        "maxhp": 175,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         -1,
          0,
          0,
          0,
@@ -608,8 +606,8 @@
          0
         ],
         "pp": [
-         8,
-         16
+         12,
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -644,13 +642,13 @@
         "locked": null
        },
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "lumberry",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -665,7 +663,8 @@
          0
         ],
         "pp": [
-         8
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -723,13 +722,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 175,
+        "maxhp": 175,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -744,8 +743,8 @@
          0
         ],
         "pp": [
-         8,
-         16
+         12,
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -780,13 +779,13 @@
         "locked": null
        },
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "lumberry",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -801,7 +800,8 @@
          0
         ],
         "pp": [
-         8
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -813,8 +813,8 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1",
-    "p2": "move 1, move 1"
+    "p1": "move 1, move 2",
+    "p2": "move 1, move 2"
    },
    "draws": [
     {
@@ -1000,40 +1000,24 @@
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
      "group": [
-      "H:protect:p2a:end",
-      "H:stall:p2a:end"
+      "H:leftovers:p1b:cb",
+      "H:leftovers:p2b:cb"
      ],
-     "start": 1
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 3,
-     "hi": 7,
-     "value": 4,
+     "hi": 5,
+     "value": 3,
      "group": [
-      "H:protect:p1b:end",
-      "H:stall:p1b:end",
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
-     ],
-     "start": 3
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 4,
-     "hi": 7,
-     "value": 4,
-     "group": [
-      "H:protect:p1b:end",
-      "H:stall:p1b:end",
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
      ],
      "start": 3
     },
@@ -1041,22 +1025,50 @@
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 5,
-     "hi": 7,
-     "value": 6,
+     "hi": 9,
+     "value": 5,
      "group": [
-      "H:protect:p1b:end",
       "H:stall:p1b:end",
       "H:protect:p2b:end",
-      "H:stall:p2b:end"
+      "H:stall:p2b:end",
+      "H:protect:p1b:end"
      ],
-     "start": 3
+     "start": 5
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 6,
+     "hi": 9,
+     "value": 8,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p2b:end",
+      "H:stall:p2b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 5
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 7,
+     "hi": 9,
+     "value": 7,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p2b:end",
+      "H:stall:p2b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 5
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -1067,10 +1079,10 @@
    "log": [
     "|move|p2a: Staraptor|Protect|p2a: Staraptor",
     "|-singleturn|p2a: Staraptor|Protect",
-    "|move|p2b: Kingambit|Protect|p2b: Kingambit",
-    "|-singleturn|p2b: Kingambit|Protect",
-    "|move|p1b: Kingambit|Protect|p1b: Kingambit",
-    "|-singleturn|p1b: Kingambit|Protect",
+    "|move|p2b: Gardevoir|Protect|p2b: Gardevoir",
+    "|-singleturn|p2b: Gardevoir|Protect",
+    "|move|p1b: Gardevoir|Protect|p1b: Gardevoir",
+    "|-singleturn|p1b: Gardevoir|Protect",
     "|move|p1a: Alakazam|Magic Room|p1a: Alakazam",
     "|-fieldstart|move: Magic Room|[of] p1a: Alakazam",
     "|upkeep",
@@ -1141,19 +1153,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 175,
+        "maxhp": 175,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         -1,
          0,
          0,
          0,
@@ -1162,8 +1174,8 @@
          0
         ],
         "pp": [
-         7,
-         16
+         12,
+         7
         ],
         "volatiles": [
          "stall"
@@ -1200,13 +1212,13 @@
         "locked": null
        },
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "lumberry",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1221,7 +1233,8 @@
          0
         ],
         "pp": [
-         8
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -1281,13 +1294,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 175,
+        "maxhp": 175,
+        "item": "leftovers",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1302,8 +1315,8 @@
          0
         ],
         "pp": [
-         7,
-         16
+         12,
+         7
         ],
         "volatiles": [
          "stall"
@@ -1340,13 +1353,13 @@
         "locked": null
        },
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "lumberry",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1361,7 +1374,8 @@
          0
         ],
         "pp": [
-         8
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -1373,21 +1387,21 @@
   },
   {
    "input": {
-    "p1": "move 3, switch 3",
-    "p2": "move 1, switch 3"
+    "p1": "move 2 1, move 1 1",
+    "p2": "move 2 1, move 1 1"
    },
    "draws": [
     {
      "site": "SPEED_TIE",
      "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
      "group": [
-      "A:switch:p1b:",
-      "A:switch:p2b:"
+      "A:move:p1b:memento",
+      "A:move:p2b:memento"
      ],
-     "start": 0
+     "start": 2
     },
     {
      "site": "SPEED_TIE",
@@ -1406,18 +1420,6 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
      "value": 3,
      "group": [
       "P:p1b:0:",
@@ -1427,51 +1429,36 @@
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
+     "context": "queue",
      "lo": 2,
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "A:move:p1b:memento",
+      "A:move:p2b:memento"
      ],
      "start": 2
     },
     {
-     "site": "SPEED_TIE",
-     "context": "switch-order",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:1:S",
-      "P:p2b:1:-"
-     ],
-     "start": 2
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 55
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
     },
     {
      "site": "SPEED_TIE",
@@ -1511,41 +1498,508 @@
     },
     {
      "site": "SPEED_TIE",
-     "context": "field:Residual",
+     "context": "queue",
      "lo": 1,
      "hi": 3,
      "value": 2,
      "group": [
-      "H:protect:p1a:end",
-      "H:stall:p1a:end"
+      "A:move:p2b:memento",
+      "A:move:p1b:memento"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 93
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1b:memento",
+      "A:move:p2b:memento"
+     ],
+     "start": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 19
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "H:leftovers:p1b:cb",
+      "H:leftovers:p2b:cb"
+     ],
+     "start": 0
     }
    ],
    "log": [
+    "|move|p1a: Alakazam|Psyshock|p2a: Staraptor",
+    "|split|p2",
+    "|-damage|p2a: Staraptor|96/192",
+    "|-damage|p2a: Staraptor|50/100y",
+    "|move|p2a: Staraptor|Brave Bird|p1a: Alakazam",
+    "|split|p1",
+    "|-damage|p1a: Alakazam|0 fnt",
+    "|-damage|p1a: Alakazam|0 fnt",
+    "|faint|p1a: Alakazam",
+    "|split|p2",
+    "|-damage|p2a: Staraptor|52/192|[from] Recoil",
+    "|-damage|p2a: Staraptor|27/100|[from] Recoil",
+    "|move|p2b: Gardevoir|Memento|p1b: Gardevoir",
+    "|-unboost|p1b: Gardevoir|atk|2",
+    "|-unboost|p1b: Gardevoir|spa|2",
+    "|faint|p2b: Gardevoir",
+    "|move|p1b: Gardevoir|Memento|p2a: Staraptor",
+    "|-unboost|p2a: Staraptor|atk|2",
+    "|-unboost|p2a: Staraptor|spa|2",
+    "|faint|p1b: Gardevoir",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Alakazam",
+        "set_species": "Alakazam",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 132,
+        "item": "alakazite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         11,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "leftovers",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 52,
+        "maxhp": 192,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         -2,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "leftovers",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "airballoon",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 3, switch 4",
+    "p2": "pass, switch 3"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:instaswitch:p1b:",
+      "A:instaswitch:p2b:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "INSERT_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:instaswitch:p1b:",
+      "A:runSwitch:p1a::1"
+     ]
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1a:1:S",
+      "P:p2b:1:S"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Milotic|Milotic, L50, F|202/202",
+    "|switch|p1a: Milotic|Milotic, L50, F|100/100",
     "|split|p2",
     "|switch|p2b: Milotic|Milotic, L50, F|202/202",
     "|switch|p2b: Milotic|Milotic, L50, F|100/100",
     "|split|p1",
-    "|switch|p1b: Milotic|Milotic, L50, F|202/202",
-    "|switch|p1b: Milotic|Milotic, L50, F|100/100",
-    "|move|p1a: Alakazam|Protect|p1a: Alakazam",
-    "|-singleturn|p1a: Alakazam|Protect",
-    "|move|p2a: Staraptor|Protect||[still]",
-    "|-fail|p2a: Staraptor",
-    "|upkeep",
+    "|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p1b: Kingambit|Kingambit, L50, M|100/100",
     "|turn|3"
    ],
    "state": {
@@ -1569,11 +2023,9 @@
        [
         1,
         1,
-        1,
         1
        ],
        [
-        1,
         1,
         1
        ]
@@ -1583,38 +2035,6 @@
        1
       ],
       "pokemon": [
-       {
-        "species": "Alakazam",
-        "set_species": "Alakazam",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 132,
-        "maxhp": 132,
-        "item": "alakazite",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         12,
-         7,
-         12
-        ],
-        "volatiles": [
-         "stall"
-        ],
-        "locked": null
-       },
        {
         "species": "Milotic",
         "set_species": "Milotic",
@@ -1666,24 +2086,24 @@
          0
         ],
         "pp": [
-         7,
+         8,
          16
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Alakazam",
+        "set_species": "Alakazam",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "lumberry",
+        "hp": 0,
+        "maxhp": 132,
+        "item": "alakazite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -1694,7 +2114,38 @@
          0
         ],
         "pp": [
-         8
+         11,
+         11,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7
         ],
         "volatiles": [],
         "locked": null
@@ -1729,7 +2180,7 @@
         "set_species": "Staraptor",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 192,
+        "hp": 52,
         "maxhp": 192,
         "item": "rockyhelmet",
         "status": "",
@@ -1737,17 +2188,17 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
+         -2,
          0,
-         0,
-         0,
+         -2,
          0,
          0,
          0,
          0
         ],
         "pp": [
-         6,
-         16
+         7,
+         15
         ],
         "volatiles": [],
         "locked": null
@@ -1782,6 +2233,34 @@
         "locked": null
        },
        {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
         "species": "Kingambit",
         "set_species": "Kingambit",
         "mega": 0,
@@ -1803,35 +2282,8 @@
          0
         ],
         "pp": [
-         7,
+         8,
          16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "lumberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
         ],
         "volatiles": [],
         "locked": null
@@ -1843,8 +2295,8 @@
   },
   {
    "input": {
-    "p1": "move 3, move 3",
-    "p2": "move 1, move 1 1"
+    "p1": "move 3, move 1",
+    "p2": "move 1, move 3"
    },
    "draws": [
     {
@@ -1854,34 +2306,34 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "A:move:p1b:coil",
-      "A:move:p2b:scald"
+      "A:move:p1a:coil",
+      "A:move:p2b:coil"
      ],
      "start": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
@@ -1890,29 +2342,46 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "A:move:p2b:scald",
-      "A:move:p1b:coil"
+      "A:move:p2b:coil",
+      "A:move:p1a:coil"
      ],
      "start": 2
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
@@ -1921,46 +2390,46 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "A:move:p2b:scald",
-      "A:move:p1b:coil"
+      "A:move:p2b:coil",
+      "A:move:p1a:coil"
      ],
      "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
+     "lo": 1,
+     "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
+     "lo": 1,
+     "hi": 3,
      "value": 2,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
@@ -1969,117 +2438,89 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "A:move:p1b:coil",
-      "A:move:p2b:scald"
+      "A:move:p1a:coil",
+      "A:move:p2b:coil"
      ],
      "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 63
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 18
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 8
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 90
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 1,
      "hi": 3,
-     "value": 1,
+     "value": 2,
      "group": [
       "H:protect:p2a:end",
       "H:stall:p2a:end"
@@ -2088,30 +2529,42 @@
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 3,
      "group": [
-      "P:p1b:0:",
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 3
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
       "P:p2b:0:"
      ],
-     "start": 2
+     "start": 1
     }
    ],
    "log": [
-    "|move|p1a: Alakazam|Protect||[still]",
-    "|-fail|p1a: Alakazam",
     "|move|p2a: Staraptor|Protect|p2a: Staraptor",
     "|-singleturn|p2a: Staraptor|Protect",
-    "|move|p1b: Milotic|Coil|p1b: Milotic",
-    "|-boost|p1b: Milotic|atk|1",
-    "|-boost|p1b: Milotic|def|1",
-    "|-boost|p1b: Milotic|accuracy|1",
-    "|move|p2b: Milotic|Scald|p1a: Alakazam",
-    "|split|p1",
-    "|-damage|p1a: Alakazam|81/132",
-    "|-damage|p1a: Alakazam|61/100",
+    "|move|p1b: Kingambit|Protect|p1b: Kingambit",
+    "|-singleturn|p1b: Kingambit|Protect",
+    "|move|p1a: Milotic|Coil|p1a: Milotic",
+    "|-boost|p1a: Milotic|atk|1",
+    "|-boost|p1a: Milotic|def|1",
+    "|-boost|p1a: Milotic|accuracy|1",
+    "|move|p2b: Milotic|Coil|p2b: Milotic",
+    "|-boost|p2b: Milotic|atk|1",
+    "|-boost|p2b: Milotic|def|1",
+    "|-boost|p2b: Milotic|accuracy|1",
     "|upkeep",
     "|turn|4"
    ],
@@ -2136,11 +2589,9 @@
        [
         1,
         1,
-        1,
         1
        ],
        [
-        1,
         1,
         1
        ]
@@ -2150,36 +2601,6 @@
        1
       ],
       "pokemon": [
-       {
-        "species": "Alakazam",
-        "set_species": "Alakazam",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 81,
-        "maxhp": 132,
-        "item": "alakazite",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         12,
-         6,
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
        {
         "species": "Milotic",
         "set_species": "Milotic",
@@ -2234,21 +2655,23 @@
          7,
          16
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
+        "species": "Alakazam",
+        "set_species": "Alakazam",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "lumberry",
+        "hp": 0,
+        "maxhp": 132,
+        "item": "alakazite",
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -2259,7 +2682,38 @@
          0
         ],
         "pp": [
-         8
+         11,
+         11,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7
         ],
         "volatiles": [],
         "locked": null
@@ -2294,7 +2748,7 @@
         "set_species": "Staraptor",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 192,
+        "hp": 52,
         "maxhp": 192,
         "item": "rockyhelmet",
         "status": "",
@@ -2302,17 +2756,17 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
+         -2,
          0,
-         0,
-         0,
+         -2,
          0,
          0,
          0,
          0
         ],
         "pp": [
-         5,
-         16
+         6,
+         15
         ],
         "volatiles": [
          "stall"
@@ -2332,6 +2786,35 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
          0,
          0,
          0,
@@ -2341,9 +2824,8 @@
          0
         ],
         "pp": [
-         15,
-         8,
-         20
+         11,
+         7
         ],
         "volatiles": [],
         "locked": null
@@ -2370,35 +2852,8 @@
          0
         ],
         "pp": [
-         7,
+         8,
          16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Indeedee-F",
-        "set_species": "Indeedee-F",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 177,
-        "maxhp": 177,
-        "item": "lumberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
         ],
         "volatiles": [],
         "locked": null
