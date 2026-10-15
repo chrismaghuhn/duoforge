@@ -222,10 +222,24 @@ def load(context, ids, root="data/teams", weights=None):
         return _load(context, ids, root, weights, json.load(f), index_path)
 
 
-def _load(context, ids, root, weights, index_json, index_path):
-    """load's work on an index already read (index_json, the parsed index.json at index_path)."""
+def load_accepted(context, ids, root="data/teams", weights=None):
+    """load, except that a team the library refuses under the context (check: duoforge_battle_create's status) is
+    left out by name instead of stopping the load: (the TeamPool of the accepted teams, in the order of ids, their
+    weights with them; the refused teams as (id, status name) pairs, in the order of ids). The engine decides, no rule
+    here. Every other fault (the index, a hash, the text, a name the tables lack) still raises TeamError, and so does
+    a pool with no team left."""
+    index_path = os.path.join(root, "index.json")
+    with open(index_path, encoding="utf-8") as f:
+        refused = []
+        pool = _load(context, ids, root, weights, json.load(f), index_path, refused=refused)
+    return pool, refused
+
+
+def _load(context, ids, root, weights, index_json, index_path, refused=None):
+    """load's work on an index already read (index_json, the parsed index.json at index_path). refused: None (a
+    refused team raises TeamError) or a list that collects the refused teams as (id, status name) (load_accepted)."""
     index = {t["id"]: t for t in index_json["teams"]}
-    shas, sides = [], []
+    shas, sides, kept = [], [], []
     for team in ids:
         if team not in index:
             raise TeamError(f"team {team} is not in {index_path}")
@@ -238,10 +252,21 @@ def _load(context, ids, root, weights, index_json, index_path):
         side = side_setup(context, parse(raw.decode("utf-8"), path), team)
         st = check(context, side)
         if st != 0:
-            raise TeamError(f"team {team} is refused under this context's data kind: {status_name(st)}")
+            if refused is None:
+                raise TeamError(f"team {team} is refused under this context's data kind: {status_name(st)}")
+            refused.append((team, status_name(st)))
+            continue
         shas.append(sha)
         sides.append(side)
-    return TeamPool(tuple(ids), tuple(shas), weights, np.array(sides, dtype=_layout.SIDE_SETUP))
+        kept.append(team)
+    if refused and not kept:
+        raise TeamError(f"every team of {len(ids)} is refused under this context's data kind")
+    if weights is not None and refused:
+        w = np.asarray(weights, dtype=np.float64)
+        if w.shape != (len(ids),):
+            raise ValueError(f"{w.size} weights for {len(ids)} teams")
+        weights = w[[k for k, team in enumerate(ids) if team in set(kept)]]
+    return TeamPool(tuple(kept), tuple(shas), weights, np.array(sides, dtype=_layout.SIDE_SETUP))
 
 
 def load_root(context, root, weights=None):

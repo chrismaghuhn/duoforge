@@ -61,7 +61,7 @@
   "active_per_side": 2
  },
  "pool": {
-  "source": "docs/research/expansion/data/legal_pool.json",
+  "source": "data/formats/pools/reg-mc.json",
   "sha256": "b6351b56ea8ea20cb9d1944ff41fe443d9d8f763dd9506ddd3f9921be50353e2",
   "made_by": "docs/research/expansion/tools/build_legal_pool.js: the pinned TeamValidator for showdown_format_id at showdown_commit (its meta names both)"
  }

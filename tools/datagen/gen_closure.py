@@ -3150,7 +3150,7 @@ ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', '
 # step that gives it a flag value, and adds its id here.
 ENGINE_PIVOT_MOVES = ('voltswitch', 'revivalblessing', 'batonpass')  # step G32: switch flag 6; step G74: Baton Pass, switch flag 8
 # The one ability that the pin tags as not released and that the pool still has: Aura Guard is the ability of
-# Lucario-Mega-Z, whose set the pinned validator accepts (docs/research/expansion/data/legal_pool.json, 'abilities_mega_only').
+# Lucario-Mega-Z, whose set the pinned validator accepts (data/formats/pools/reg-mc.json, 'abilities_mega_only').
 # The row exists because the format has the forme; it is UNMODELED like every ability with a callback. Any other tag fails.
 LEGAL_DESPITE_TAG = {'auraguard': 'Future'}
 # What an ability or item entry may have and still be pure data. Anything else is a callback or a field that the
@@ -3349,7 +3349,7 @@ def derive_family(src, champ, rid, expected, matchers, what):
 
 
 def load_legal_pool(repo):
-    """The ids that TeamValidator accepted at the pin: docs/research/expansion/data/legal_pool.json, the output of
+    """The ids that TeamValidator accepted at the pin: data/formats/pools/reg-mc.json, the output of
     build_legal_pool.js (its Showdown commit and format are checked), with the legal moves and abilities of every
     species. duoforge.data.pool_families runs the pinned validator on the pool again."""
     with io.open(os.path.join(repo, LEGAL_POOL), encoding='utf-8') as fh:
@@ -4842,7 +4842,7 @@ def check_c5_facts(moves_ts, champ_moves, only=None):
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
-    ability and forme of the legal pool (docs/research/expansion/data/legal_pool.json) in the file's order, then the
+    ability and forme of the legal pool (data/formats/pools/reg-mc.json) in the file's order, then the
     family columns of every item and ability, the handler columns, and the legal moves and abilities of every forme,
     the prefix included. Cosmetic formes that the validator treats as their base forme are one row of the base forme
     plus a name alias."""
@@ -5378,7 +5378,7 @@ def render_pool(dp, dx):
  * followed by Team C, decision 0009) unchanged as the prefix, then the rows
  * that the steps of the content expansion add (P1, G2) and then a row for
  * every other move, item, ability and forme of the legal pool of the format
- * (docs/research/expansion/data/legal_pool.json, the output of the pinned
+ * (data/formats/pools/reg-mc.json, the output of the pinned
  * TeamValidator), read from Pokemon Showdown %s (the input files of
  * closure_tables.h). Every id below an extended count (DFI_EXT_FORME_COUNT,
  * DFI_EXT_MOVE_COUNT, DFI_EXT_ITEM_COUNT, DFI_EXT_ABILITY_COUNT) is the

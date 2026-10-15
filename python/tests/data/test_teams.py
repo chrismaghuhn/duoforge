@@ -171,6 +171,28 @@ class LoadTest(unittest.TestCase):
         with duoforge.Context() as ctx, self.assertRaisesRegex(teams.TeamError, "sha256"):
             teams.load(ctx, ["A"], root=root)
 
+    def test_load_accepted_leaves_a_refused_team_out_by_name(self):
+        # A registry team the engine refuses under POOL since #406 (exactly 0 Stat Points with Serious): load stops on
+        # it; load_accepted leaves it out, named with the engine's status, and keeps the others in order with their
+        # weights (the ladder's pool filter, HauptSession 2026-10-15).
+        refused_id = "LL_6A5E4489937230B102D4026E_110"
+        pool_kind = _layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]
+        ids = ["A", refused_id, "B"]
+        with duoforge.Context(data_kind=pool_kind) as ctx:
+            with self.assertRaisesRegex(teams.TeamError, refused_id):
+                teams.load(ctx, ids, root=ROOT)
+            pool, refused = teams.load_accepted(ctx, ids, root=ROOT, weights=[1.0, 5.0, 3.0])
+            alone = teams.load(ctx, ["A", "B"], root=ROOT)
+            with self.assertRaisesRegex(teams.TeamError, "every team of 1"):
+                teams.load_accepted(ctx, [refused_id], root=ROOT)
+            with self.assertRaisesRegex(teams.TeamError, "MC999"):  # other faults still stop the load
+                teams.load_accepted(ctx, ["A", "MC999"], root=ROOT)
+        self.assertEqual(refused, [(refused_id, INVALID)])
+        self.assertEqual(pool.ids, ("A", "B"))
+        self.assertEqual(pool.sides.tobytes(), alone.sides.tobytes())
+        self.assertEqual(pool.sha256, alone.sha256)
+        np.testing.assert_array_equal(pool.weights, [1.0, 3.0])
+
     def test_unknown_id_is_refused(self):
         with duoforge.Context() as ctx, self.assertRaisesRegex(teams.TeamError, "MC999"):
             teams.load(ctx, ["MC999"], root=ROOT)

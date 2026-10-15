@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The generated pool tables against docs/research/expansion/data/legal_pool.json (decision 0015 section 4.2).
+"""The generated pool tables against data/formats/pools/reg-mc.json (decision 0015 section 4.2).
 
 gen_closure.py --pool writes a row for every forme, move, item and ability of the legal pool of the format. This test
 reads the committed src/data/pool_tables.{h,c} and the committed output of the pinned TeamValidator and checks, with
@@ -41,7 +41,7 @@ def read(rel):
 
 HEADER = read('src/data/pool_tables.h')
 SOURCE = read('src/data/pool_tables.c')
-LEGAL = json.load(open(os.path.join(ROOT, 'docs', 'research', 'expansion', 'data', 'legal_pool.json'), encoding='utf-8'))
+LEGAL = json.load(open(os.path.join(ROOT, 'data', 'formats', 'pools', 'reg-mc.json'), encoding='utf-8'))
 
 
 def define(name):
@@ -231,7 +231,7 @@ class PoolRows(unittest.TestCase):
                 self.assertEqual(priority, rec['priority'] + 8)
                 self.assertEqual(target, TARGETS[rec['target']])
                 capped = rec['pp']
-                # legal_pool.json has the PP after the Champions cap of 20 (data/mods/champions/scripts.ts).
+                # data/formats/pools/reg-mc.json has the PP after the Champions cap of 20 (data/mods/champions/scripts.ts).
                 self.assertEqual(min(pp_base, 20), rec['pp'])
                 self.assertEqual(pp_max, capped if rec['pp'] == 1 else (capped // 5 + 1) * 4)
 

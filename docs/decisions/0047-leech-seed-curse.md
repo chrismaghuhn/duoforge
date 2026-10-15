@@ -22,7 +22,7 @@ none; the learnset is `learnsets.ts:29`, Venusaur among others).
   path); `spreadDamage` (`sim/battle.ts:2204`) has no Substitute check outside gen 1. So the holder's drain goes through a
   Substitute, and the heal goes to the source slot regardless.
 - Big Root: `onTryHeal` multiplies the heal by 5324/4096 for effect `leechseed` (`data/items.ts:489-493`). Big Root is **not**
-  in the duoforge pool (`legal_pool.json`: `in_duoforge: false`), so it is not modelled and cannot appear in a team.
+  in the duoforge pool (`data/formats/pools/reg-mc.json`: `in_duoforge: false`), so it is not modelled and cannot appear in a team.
 - Baton Pass: `copyVolatileFrom` copies every volatile unless the condition is `noCopy` (`sim/pokemon.ts:1246-1251`). The
   Leech Seed condition has no `noCopy` (10212-10228), so it is copied; `sourceSlot` goes with it unchanged.
 - Protect: Leech Seed has the `protect` flag, so Protect blocks it (10210).
@@ -77,7 +77,7 @@ so the source slot is known to both viewers. No refusal.
 
 ## 5. Recordings (POOL; six members a side; unique items; real genders; marked content; learnsets from `learnsets.ts`)
 
-Legal sets found in `legal_pool.json` (learners and abilities legal): Venusaur (Overgrow, Chlorophyll) and Meganium for Leech
+Legal sets found in `data/formats/pools/reg-mc.json` (learners and abilities legal): Venusaur (Overgrow, Chlorophyll) and Meganium for Leech
 Seed; Gengar (Ghost/Poison, Cursed Body, marked since G27) and Tauros (Normal, Intimidate, Sheer Force) for Curse; Sitrus Berry
 is in the pool (`in_duoforge: true`) for the tie. Each of the items, moves and abilities must be marked before the recording
 (the manifest is the mark; G84 adds `leechseed` and `curse`, which are not marked on main).

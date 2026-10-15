@@ -3,6 +3,23 @@ third_party/** -text
 tests/lint_fixtures/** -text
 data/teams/** text eol=lf
 data/teams_pending/** text eol=lf
+# Generated files (restructure step 9): reviews and diffs show them as generated. A C, header or Python file here
+# names its generator in its first lines; the JSON data names it in tests/reference and tools/reference/README.md.
+# duoforge.python.generated_marks checks both directions.
 src/combat/generated/move_handlers.h linguist-generated=true
+src/data/closure_tables.h linguist-generated=true
+src/data/closure_tables.c linguist-generated=true
+src/data/extended_tables.h linguist-generated=true
+src/data/extended_tables.c linguist-generated=true
+src/data/pool_tables.h linguist-generated=true
+src/data/pool_tables.c linguist-generated=true
 src/data/format_tables.h linguist-generated=true
+python/duoforge/_state_layout.py linguist-generated=true
+python/duoforge/_view_layout.py linguist-generated=true
+tests/data/pcg32_kat_vectors.h linguist-generated=true
+tests/reference/*.h linguist-generated=true
+tests/support/goldens.c linguist-generated=true
+tests/support/observation_digest_vectors.h linguist-generated=true
+tests/reference/traces/** linguist-generated=true
+tests/reference/battles/** linguist-generated=true
 data/formats/pools/*.json linguist-generated=true

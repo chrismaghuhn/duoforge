@@ -141,7 +141,7 @@ Every call is failure-atomic: on error nothing is mutated or leaked, and the onl
 - Roadmap and status: `docs/ROADMAP.md`, `docs/support/README.md` (status manifest), `docs/OPEN_DECISIONS.md`
 - Architecture and contracts: `docs/ARCHITECTURE.md`, `docs/DECISION_CONTRACT.md`, `docs/DETERMINISM_AND_REPLAY.md`, `docs/TESTING_AND_BENCHMARKS.md`, `docs/SOURCES.md`
 - Evidence: `docs/certification/closure-v1/`, `docs/benchmarks/`, `docs/learning/` (with `docs/learning/RUNBOOK.md`)
-- Plans: `docs/superpowers/plans/`; task statements: `tasks/`
+- Plans: `docs/superpowers/plans/`; milestone task statements (M0–M4, history): `docs/history/tasks/`
 - Research drafts (unverified): `docs/research/`
 
 ## License

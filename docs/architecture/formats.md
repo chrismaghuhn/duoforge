@@ -13,7 +13,7 @@ exactly Reg M-C, and every fact below keeps today's value.
   ruleset, Flat Rules, banlist, level, team size and pick, moves per set, Stat Point limits, IVs, the clauses, Tera
   and the VGC timer;
 - `engine.active_per_side`: the position count of the game type;
-- the pool source: `docs/research/expansion/data/legal_pool.json` with its SHA-256, made by
+- the pool source: `data/formats/pools/reg-mc.json` with its SHA-256, made by
   `docs/research/expansion/tools/build_legal_pool.js` (the pinned `TeamValidator` for the format). The pool is a
   reference, never a copy: the ids and their order live in that one file.
 
