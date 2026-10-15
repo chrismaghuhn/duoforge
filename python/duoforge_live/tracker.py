@@ -1908,6 +1908,9 @@ class Tracker:
             return o
         o["revision"], o["player"], o["epoch"] = EXT_REVISION, self.side, self.epoch
         o["supported"] = lines.LIBRARY_SUPPORTED
+        # Magic Room (step K5): the turns left in bits 0-2 of the field flags and the setter's member code (the view's magic_room_source)
+        o["field"]["flags"] = self._magic_room
+        o["field"]["magic_room_source"] = self._magic_room_source
         for side in (0, 1):
             v = o["sides"][side]
             v["aurora_veil_turns"] = self._conditions[side][3]
