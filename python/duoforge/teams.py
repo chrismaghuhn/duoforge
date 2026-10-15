@@ -235,6 +235,15 @@ def load_accepted(context, ids, root="data/teams", weights=None):
     return pool, refused
 
 
+def pool_record(pool, refused):
+    """The record of a pool after load_accepted's filter (HauptSession 2026-10-15, after #558), as the tools write it
+    into their conditions: the teams kept, the sha256 of their ids in order (a tool's games are drawn from these), and
+    every refused team with the engine's status."""
+    ids = list(pool.ids)
+    return {"teams": len(ids), "ids_sha256": hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest(),
+            "refused_count": len(refused), "refused": [{"id": team, "status": status} for team, status in refused]}
+
+
 def _load(context, ids, root, weights, index_json, index_path, refused=None):
     """load's work on an index already read (index_json, the parsed index.json at index_path). refused: None (a
     refused team raises TeamError) or a list that collects the refused teams as (id, status name) (load_accepted)."""

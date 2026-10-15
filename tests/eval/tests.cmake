@@ -8,6 +8,44 @@ if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND NOT MSVC
     target_link_options(duoforge_eval_kernels PRIVATE
         "LINKER:--wrap=malloc" "LINKER:--wrap=calloc" "LINKER:--wrap=realloc" "LINKER:--wrap=free")
 endif()
+
+# Compiled, frozen value graphs; parameters exist only in temporary synthetic files.
+duoforge_add_test(NAME duoforge.eval.graphs SOURCES eval/test_graph.c WHITEBOX LIBS duoforge_batch TIER quick AREA engine)
+if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND NOT MSVC
+        AND NOT CMAKE_C_SIMULATE_ID STREQUAL "MSVC")
+    target_compile_definitions(duoforge_eval_graphs PRIVATE DF_EVAL_ALLOC_HOOKS)
+    target_link_options(duoforge_eval_graphs PRIVATE
+        "LINKER:--wrap=malloc" "LINKER:--wrap=calloc" "LINKER:--wrap=realloc" "LINKER:--wrap=free")
+endif()
+if(DUOFORGE_PYTHON)
+    foreach(_graph IN ITEMS full small medium)
+        add_test(NAME duoforge.eval.graph_${_graph} COMMAND "${DUOFORGE_PYTHON}"
+            "${PROJECT_SOURCE_DIR}/tools/eval/tests/graph_oracle.py" "$<TARGET_FILE:duoforge_eval_graphs>" "${_graph}")
+        duoforge_label_test(duoforge.eval.graph_${_graph} full engine python ci-no-skip)
+        set_tests_properties(duoforge.eval.graph_${_graph} PROPERTIES TIMEOUT 120)
+    endforeach()
+    add_test(NAME duoforge.eval.graph_registry COMMAND "${DUOFORGE_PYTHON}"
+        "${PROJECT_SOURCE_DIR}/tools/eval/graph_registry.py" --check)
+    duoforge_label_test(duoforge.eval.graph_registry quick tools python ci-no-skip)
+    add_test(NAME duoforge.eval.graph_registry_rules COMMAND "${DUOFORGE_PYTHON}"
+        "${PROJECT_SOURCE_DIR}/tools/eval/tests/test_graph_registry.py")
+    duoforge_label_test(duoforge.eval.graph_registry_rules quick tools python ci-no-skip)
+    add_test(NAME duoforge.eval.graph_arithmetic COMMAND "${DUOFORGE_PYTHON}"
+        "${PROJECT_SOURCE_DIR}/tools/eval/tests/graph_arithmetic_oracle.py" "$<TARGET_FILE:duoforge_eval_graphs>")
+    duoforge_label_test(duoforge.eval.graph_arithmetic quick engine python ci-no-skip)
+else()
+    foreach(_graph IN ITEMS full small medium registry registry_rules arithmetic)
+        add_test(NAME duoforge.eval.graph_${_graph} COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
+        if(_graph STREQUAL "registry" OR _graph STREQUAL "registry_rules")
+            duoforge_label_test(duoforge.eval.graph_${_graph} quick tools python ci-no-skip)
+        elseif(_graph STREQUAL "arithmetic")
+            duoforge_label_test(duoforge.eval.graph_${_graph} quick engine python ci-no-skip)
+        else()
+            duoforge_label_test(duoforge.eval.graph_${_graph} full engine python ci-no-skip)
+        endif()
+        set_tests_properties(duoforge.eval.graph_${_graph} PROPERTIES TIMEOUT 120 SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+    endforeach()
+endif()
 if(DUOFORGE_PYTHON)
     add_test(NAME duoforge.eval.integer_oracle COMMAND "${DUOFORGE_PYTHON}"
         "${PROJECT_SOURCE_DIR}/tools/eval/tests/integer_oracle.py" "$<TARGET_FILE:duoforge_eval_kernels>")
@@ -66,3 +104,27 @@ else()
     duoforge_label_test(duoforge.eval.normalization_oracle quick engine python ci-no-skip)
     set_tests_properties(duoforge.eval.normalization_oracle PROPERTIES TIMEOUT 60 SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
 endif()
+
+# E3b private tile scheduling: runtime synthetic parameters, no file or training.
+duoforge_add_test(NAME duoforge.eval.tiles SOURCES eval/test_tiles.c WHITEBOX LIBS duoforge_batch TIER quick AREA engine)
+if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND NOT MSVC
+        AND NOT CMAKE_C_SIMULATE_ID STREQUAL "MSVC")
+    target_compile_definitions(duoforge_eval_tiles PRIVATE DF_EVAL_ALLOC_HOOKS)
+    target_link_options(duoforge_eval_tiles PRIVATE
+        "LINKER:--wrap=malloc" "LINKER:--wrap=calloc" "LINKER:--wrap=realloc" "LINKER:--wrap=free")
+endif()
+foreach(_graph IN ITEMS full small medium)
+    if(_graph STREQUAL "full")
+        set(_graph_id 1001)
+    elseif(_graph STREQUAL "small")
+        set(_graph_id 1002)
+    else()
+        set(_graph_id 1003)
+    endif()
+    add_test(NAME duoforge.eval.tiles_${_graph} COMMAND duoforge_eval_tiles ${_graph_id})
+    duoforge_label_test(duoforge.eval.tiles_${_graph} full engine)
+    set_tests_properties(duoforge.eval.tiles_${_graph} PROPERTIES TIMEOUT 300)
+endforeach()
+add_test(NAME duoforge.eval.tiles_concurrent COMMAND duoforge_eval_tiles --race)
+duoforge_label_test(duoforge.eval.tiles_concurrent full engine ci-tsan)
+set_tests_properties(duoforge.eval.tiles_concurrent PROPERTIES TIMEOUT 300)

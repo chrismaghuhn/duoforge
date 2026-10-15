@@ -52,19 +52,25 @@ TEAM_SELECTION, TURN, REPLACEMENT, PIVOT = (C[f"DUOFORGE_BOUNDARY_{n}"] for n in
 UNDETERMINED, BENCH, ACTIVE, NOT_BROUGHT = (C[f"DUOFORGE_LOCATION_{n}"] for n in
                                             ("UNDETERMINED", "BENCH", "ACTIVE", "NOT_BROUGHT"))
 HP_EXACT, HP_PERCENT = C["DUOFORGE_HP_EXACT"], C["DUOFORGE_HP_PERCENT"]
-HP_UNKNOWN = 3  # DUOFORGE_HP_UNKNOWN (include/duoforge/duoforge.h)
+HP_UNKNOWN = C["DUOFORGE_HP_UNKNOWN"]
 FLAG_FOLLOW_ME, FLAG_HELPING_HAND, FLAG_UNBURDEN = (C[f"DUOFORGE_POSITION_FLAG_{n}"] for n in
                                                     ("FOLLOW_ME", "HELPING_HAND", "UNBURDEN"))
 SPECTATOR = 2  # the converter's viewer of a spectator: no side, so every HP line reads as the public percent
-# The items that lengthen a weather from 5 to 8 turns (data/items.ts, data/conditions.ts durationCallback).
-_WEATHER_ITEM = {"RainDance": "Damp Rock", "SunnyDay": "Heat Rock", "Sandstorm": "Smooth Rock", "Snowscape": "Icy Rock",
-                 "Snow": "Icy Rock"}
-PP_EXACT, PP_DERIVED = 1, 2  # DUOFORGE_PP_EXACT, DUOFORGE_PP_DERIVED
-STAGE_NEUTRAL = 6  # DFI_STAGE_NEUTRAL: stages are stored biased (src/state/battle_internal.h)
-FIELD_TURNS = 5  # weather, terrain, Trick Room
-FIELD_TURNS_EXTENDED = 8  # DFI_FIELD_TURNS_MAX: a weather rock or Terrain Extender held by the setter
-TAILWIND_TURNS, SCREEN_TURNS, SCREEN_TURNS_CLAY = 4, 5, 8  # DFI_TAILWIND_TURNS_MAX, 5, DFI_SCREEN_TURNS_MAX
-STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c), DFI_STALL_LEVEL_MAX
+PP_EXACT, PP_DERIVED = C["DUOFORGE_PP_EXACT"], C["DUOFORGE_PP_DERIVED"]
+STAGE_NEUTRAL = _ENC["DFI_STAGE_NEUTRAL"]  # stages are stored biased
+# The durations a field effect starts with and the held items that lengthen them, the engine's own (#512 D1; the
+# durationCallback of data/conditions.ts and data/moves.ts): the setter's item is read when the effect starts.
+FIELD_TURNS = _ENC["DFI_FIELD_TURNS_MAX"]  # weather, terrain, Trick Room
+FIELD_TURNS_EXTENDED = _ENC["DFI_FIELD_TURNS_EXTENDED_MAX"]  # a weather rock or Terrain Extender held by the setter
+TAILWIND_TURNS = _ENC["DFI_TAILWIND_TURNS_MAX"]
+SCREEN_TURNS, SCREEN_TURNS_CLAY = _ENC["DFI_SCREEN_TURNS"], _ENC["DFI_SCREEN_TURNS_MAX"]  # the latter with Light Clay
+STALL_DURATION, STALL_LEVEL_MAX = _ENC["DFI_STALL_DURATION"], _ENC["DFI_STALL_LEVEL_MAX"]
+ALLY_SWITCH_LEVEL_MAX, ALLY_SWITCH_TURNS = _ENC["DFI_ALLY_SWITCH_LEVEL_MAX"], _ENC["DFI_ALLY_SWITCH_TURNS_MAX"]
+# A -weather line's name (the protocol's; "Snow" is an older server's Snowscape) -> the item that lengthens it (an ITEM id)
+_WEATHER_ROCK = {name: _ENC[f"DFI_WEATHER_ROCK_{w}"] for name, w in
+                 (("RainDance", "RAIN"), ("SunnyDay", "SUN"), ("Sandstorm", "SAND"), ("Snowscape", "SNOW"),
+                  ("Snow", "SNOW"))}
+TERRAIN_EXTENDER, SCREEN_EXTENDER = _ENC["DFI_TERRAIN_EXTENDER"], _ENC["DFI_SCREEN_EXTENDER"]
 FREEZE_TURNS = _ENC["DFI_FREEZE_TURNS"]  # a freeze's status counter at its start, one less per [cant] frz
 THROAT_CHOP_TURNS = _ENC["DFI_TAIL_THROAT_CHOP_MAX"]  # throatchop's duration, counted down in the residual
 ENCORE_TURNS = _ENC["DFI_ENCORE_TURNS"]  # encore's duration; one more when its target has no move left this turn
@@ -408,9 +414,7 @@ class Tracker:
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
         self._baton_pass = data.tables["MOVE"].get("BATONPASS", -1)  # its receiver takes the leaver's copy (G74)
-        # the moves of the engine's partial trap (G90); a closure table has none
-        self._trap_moves = {data.tables["MOVE"][trace_to_c.key(name)] for name in lines.PARTIAL_TRAP_MOVES
-                            if trace_to_c.key(name) in data.tables["MOVE"]}
+        self._trap_moves = data.partial_trap_moves  # the moves of the engine's partial trap (G90; #512 S1)
         self._phantom_force = data.tables["MOVE"].get("PHANTOMFORCE", -1)  # breaks a Protect as Feint does (G58)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)
@@ -640,10 +644,10 @@ class Tracker:
         self._field_turns_next = FIELD_TURNS
         parts = line.split("|")
         kind = parts[1] if len(parts) > 1 else ""
-        if kind == "-weather" and len(parts) > 2 and parts[2] in _WEATHER_ITEM and "[upkeep]" not in parts:
-            item = _WEATHER_ITEM[parts[2]]
+        if kind == "-weather" and len(parts) > 2 and parts[2] in _WEATHER_ROCK and "[upkeep]" not in parts:
+            item = _WEATHER_ROCK[parts[2]]
         elif kind == "-fieldstart" and len(parts) > 2 and parts[2].endswith(" Terrain"):
-            item = "Terrain Extender"
+            item = TERRAIN_EXTENDER
         else:
             return
         of = [p[len("[of] "):] for p in parts if p.startswith("[of] ")]
@@ -652,7 +656,7 @@ class Tracker:
             holder = self._member_of(of[0])
         elif self._last_move is not None:
             holder = self._occupant(self._last_move[0])
-        if holder is not None and self._holds(holder, trace_to_c.key(item)):
+        if holder is not None and self._holds_id(holder, item):
             self._field_turns_next = FIELD_TURNS_EXTENDED
 
     def _turn_scoped_stop(self, boundary):
@@ -707,7 +711,11 @@ class Tracker:
         """Whether `member` holds the item of ITEM table key `key` now, as far as the lines showed: not seen used up or
         lost (item_used), the sheet's item or the one a move gave it."""
         item = self.data.tables["ITEM"].get(key)
-        return item is not None and not member.item_used and self._item_of(member) == item + 1
+        return item is not None and self._holds_id(member, item)
+
+    def _holds_id(self, member, item):
+        """_holds by the item's id (an ITEM id, the engine's: the library's rows are the converter's tables)."""
+        return not member.item_used and self._item_of(member) == item + 1
 
     def _item_received(self, pos, code, public):
         """The occupant of `pos` now holds the item `code` (+ 1) that a move or Symbiosis gave it: its old item is no
@@ -1461,7 +1469,7 @@ class Tracker:
                 # a screen (Reflect, Light Screen, Aurora Veil, step G20): 5 turns, 8 when the user holds Light Clay
                 # (durationCallback); the user is the last move line's
                 user = self._occupant(self._last_move[0])
-                turns = SCREEN_TURNS_CLAY if self._holds(user, "LIGHTCLAY") else SCREEN_TURNS
+                turns = SCREEN_TURNS_CLAY if self._holds_id(user, SCREEN_EXTENDER) else SCREEN_TURNS
             self._conditions[detail][index] = turns
         elif kind == EV["SIDE_END"]:
             self._conditions[detail][_SIDE_CONDITION[amount]] = 0
@@ -1615,8 +1623,8 @@ class Tracker:
     def _ally_pass(self, p):
         """Ally Switch's counter after a passed roll: the first use starts at level 1 (no roll), a later one goes up to 6;
         either way the duration is 2 turns (dfi_ally_switch_prepare)."""
-        p.ally_level = 1 if p.ally_level == 0 else min(6, p.ally_level + 1)
-        p.ally_turns = 2
+        p.ally_level = 1 if p.ally_level == 0 else min(ALLY_SWITCH_LEVEL_MAX, p.ally_level + 1)
+        p.ally_turns = ALLY_SWITCH_TURNS
 
     def _upkeep(self):
         def down(n):

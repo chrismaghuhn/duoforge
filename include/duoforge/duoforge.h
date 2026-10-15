@@ -403,6 +403,12 @@ duoforge_status duoforge_data_forme_static(const duoforge_context *ctx, uint32_t
                                                          turns (Outrage, Thrash, Petal Dance). A public fact of the move: the
                                                          engine's observation hides a foe's locked slot while its last move
                                                          has it (view audit 2026-10-10), and the live tracker does the same */
+#define DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP 0x2000u /* the partial trap (step G90, decision 0060): a hit traps its target in the
+                                                          volatile partiallytrapped (Bind, Wrap, Fire Spin, Sand Tomb and
+                                                          Infestation in the pool; Snap Trap is not modelled as one, decision
+                                                          0060 section 8). Whether the engine plays the move is
+                                                          duoforge_data_supported. The live tracker reads its trap lines by it
+                                                          (#512 S1) */
 
 /* A move. 64 bytes. */
 typedef struct duoforge_move_static {
@@ -491,6 +497,15 @@ duoforge_status duoforge_data_request_target_class(const duoforge_context *ctx, 
    fingerprint (not by pointer); every call checks the fingerprint ---- */
 typedef struct duoforge_battle duoforge_battle;
 
+/* Whether duoforge_battle_create would accept `member` as a registered member of a side under the context's kind:
+   exactly the per-member check it applies to each of a side's member_count members (decision 0015 under the kinds with
+   tables: the forme, its ability, its moves and their PP fields, the item, the nature, the gender and the Stat Points;
+   the SYNTHETIC kind's own fields). It checks nothing of the side (the member counts, Species Clause and Item Clause)
+   and not the support gate (duoforge_data_supported). A NULL pointer is E_NULL_ARGUMENT and leaves *out_valid
+   untouched; otherwise DUOFORGE_OK with the answer. The member is read once. The live closed-sheet prior asks it for
+   every drawn set (#512). */
+duoforge_status duoforge_data_member_setup_valid(const duoforge_context *ctx, const duoforge_member_setup *member,
+                                                 bool *out_valid);
 /* Allocating. */
 duoforge_status duoforge_battle_create(const duoforge_context *ctx, const duoforge_battle_setup *setup,
                                        duoforge_battle **out_battle);

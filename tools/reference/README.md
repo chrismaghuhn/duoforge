@@ -62,8 +62,9 @@ Whatever the converter does not model raises `ConversionError`, a `SystemExit` w
 CTest also runs `tools/reference/tests/test_trace_to_c.py` as `duoforge.reference.converter_api` (Python only, no Node and no checkout). Its negative controls change in-memory copies of committed battles and assert the rule, the detail and the exact message of each refusal. It checks that the library reproduces every conformance payload and the three declaration headers, the shape of the data against the declarations of the record types (and `step_record` against the declared field names), that `convert_battle` does no file IO and leaves its inputs alone, that a choice passing both slots of a switch request converts, and the command line: `--check`, the usage message, a refused trace (status 1 and its message) and write and check of all three files on a small copy.
 
 To add a battle: write its spec (gender for every gendered species), record the trace with `ps_trace.js`,
-then explicitly capture its pins and regenerate both payload components. Deliberately update the
-dataset line in the independently maintained format pin before rebuilding and running the quick guard:
+then explicitly capture its pins and regenerate both payload components. No sum needs an edit: the set sums are
+derived from the battle files (restructure step 2), so parallel changes that each add a battle do not collide.
+Rebuild and run the quick guard:
 
 ```sh
 # Use the configured build's library and diff runner, PYTHONPATH=<repo>/python:<repo>,
@@ -77,12 +78,16 @@ python tools/reference/trace_to_c.py . --check
 node tools/reference/tiebreak_ref.js <checkout> . --check tests/reference/tiebreak_ref.h
 ```
 
-`tests/reference/pins/reg-mc.json` is an **independently hand-maintained** format pin:
-counts, sorted-name SHA-256 (ASCII name plus LF), certified/fixture counts, tiebreak stops,
-live outcomes, tracker stops and own-PP totals. Adding a battle requires a deliberate edit
-to its dataset's line. No generator updates this file. `duoforge.reference.format_pins`
-checks it in the quick tier, including coordinated deletion/rename controls. The native
-runners compare aggregate counts to this independent pin rather than their array bounds.
+`tests/reference/pins/reg-mc.json` holds only the **hand-maintained lower bound** of each set's battle count
+(restructure step 2 of `docs/superpowers/plans/2026-10-11-repo-restructure.md`: global sums are derived, not
+maintained). Every sum is derived from the battle files: `tests/reference/data.cmake` writes the native runners'
+counts at configure time (`reference_pins.h` and `reference_counts_<set>.h`, `reference_counts_tiebreak.h` in the
+build directory; the committed `conformance*.h` and `tiebreak_ref.h` include them), and `format_pins.py` derives
+the names, certified and fixture counts, tiebreak stops, live outcomes, tracker stops and own-PP totals.
+`duoforge.reference.format_pins` checks every battle file (identity, payload row counts, pins, files equal to
+specs and traces) and each set against its bound in the quick tier; a set below its bound fails the configure
+too. Raise a bound deliberately when a set grows. The native runners compare their own counts to the derived
+sums rather than to their array bounds; a battle's own pins stay checked per battle (below).
 
 The pin capture tool seeds only missing battle files by default. It does not observe or
 change existing pins in that mode. A deliberate re-pin must use `--update-existing`;
@@ -92,7 +97,7 @@ every changed file and field is printed, including removals and nested outcome/s
 python tools/reference/capture_battle_pins.py . --update-existing
 ```
 
-Review that output and update the independent format pin deliberately if intended.
+Review that output; the derived sums follow by themselves.
 `duoforge.reference.battle_pins` registers `--check` in the full tier. This particular
 full-tier tool depends on the configured Python/library/runner/Node/pinned Showdown;
 unconfigured profiles retain a visible skip. The Python/reference CI jobs require it
@@ -101,7 +106,7 @@ to execute through the unchanged `ci-no-skip` guard.
 `capture_battle_pins.py` freezes the public engine setup's certified/dev outcome, Team C fixture membership,
 and the existing live assembler comparisons for each battle. Normal tests compare against these frozen
 pins; they never refresh them. An intentional pin change requires reviewing the per-battle difference.
-The live test derives its global outcomes/stops and own-PP refusal set from those independent pins.
+The live test derives its global outcomes/stops and own-PP refusal set from those per-battle pins.
 UNMODELED table-row counts remain global until the definition-file work in restructure step 5.
 
 Both native reference runners accept `--digest-out <file>`. They emit one ASCII TSV row per battle:
@@ -330,7 +335,7 @@ data/teams/index.json    {"registry": 1, "teams": [entry, ...]}, an entry for ea
 data/teams/README.md     a pointer to this section
 ```
 
-**The index.** An entry is `{"id", "name", "source": {"url", "event", "placing"}, "notes", "sha256"}`, the keys in that order, and after them `"superseded_by"` once a correction has replaced the team (the one thing of an entry that ever changes). The `id` is an upper case letter, then upper case letters, digits and underscores, 32 characters at most (a dash is how a pairing joins two ids, so an id has none): `A`, `B`, `C`, `MC405`. `name` says what the team is; `source` is the URL of the paste, the event and the placing, each a string or `null`; `notes` is what a reader should know (where the genders come from, what a team is a copy of); `sha256` is the SHA-256 of the text of `<id>.txt` **with CRLF turned into LF** (as `tools/datagen/gen_closure.py` hashes its inputs), so that a checkout with Windows line ends has the same hash as one with LF: a reader hashes `data.replace(b"\r\n", b"\n")` (`team_registry.sha256_of`). The files are LF in the repository and in every checkout (`.gitattributes`: `data/teams/** text eol=lf`), so the committed hashes are those of the bytes as well. The committed registry has `A` and `B` (the owner's two teams, decision 0004), and `C` (Team C, decision 0009): copies of `tests/reference/teams/team_a.txt`, `team_b.txt` and `docs/research/third-team/team-c.txt`, which stay where they are because other tests use them (a test holds each pair byte for byte equal). `A` and `B` are not the raw pastes of pokepast.es (they have genders that the pastes do not state, chosen when the reference battles were made, and not those of the standard below), so they have the ids `A` and `B`, not `MC405` and `MC408`; their `notes` say so. **The survey teams.** Every team of the VGCPastes Reg M-C survey of 2026-10-02 whose paste states its EVs (227 pastes, the fetched ones of `duoforge-data/vgcpastes-mc-2026-10-02`) that passes setup under the `POOL` kind of the version at hand is in the registry under the id `PP_` and the upper case pokepast.es id of its paste (`PP_0071E895C381DD1C` for pokepast.es/0071e895c381dd1c): the paste id is the one thing of such a team that never changes, which is what the learner's many-team runs need (`--teams PP_...`). `name` is the survey's description with its row (`MC409`), `source.url` is the paste, `event` and `placing` are the survey's, and `notes` has the row, the date and every change that `import_paste.py` made. The raw pastes of `A` and `B` are in it too (`PP_470A6EC2468AF8A4` and `PP_7C9C0663EF60180E`, with the genders of the standard, so not teams `A` and `B`), and `PP_8025F0AEF5F2D1B6` was imported earlier by another step. A later import, when a step makes more of the survey playable, adds new `PP_` teams and never edits a file or an entry that is there. What keeps the others out, team by team, is `docs/research/expansion/data/registry_blockers.json` (made with the public data API of the context: every unsupported move, item, ability and Mega Stone, every ability that the base forme does not have, in the order of the sets).
+**The index.** An entry is `{"id", "name", "source": {"url", "event", "placing"}, "notes", "sha256"}`, the keys in that order, and after them `"superseded_by"` once a correction has replaced the team, and `"status": "pending"` with `"status_reason"` for a team that the engine's setup refuses (#406): these are the only things of an entry that ever change. The `status` is `active` (the default, unwritten) or `pending`, and a `status_reason` goes with `pending` and only with it. The `id` is an upper case letter, then upper case letters, digits and underscores, 32 characters at most (a dash is how a pairing joins two ids, so an id has none): `A`, `B`, `C`, `MC405`. `name` says what the team is; `source` is the URL of the paste, the event and the placing, each a string or `null`; `notes` is what a reader should know (where the genders come from, what a team is a copy of); `sha256` is the SHA-256 of the text of `<id>.txt` **with CRLF turned into LF** (as `tools/datagen/gen_closure.py` hashes its inputs), so that a checkout with Windows line ends has the same hash as one with LF: a reader hashes `data.replace(b"\r\n", b"\n")` (`team_registry.sha256_of`). The files are LF in the repository and in every checkout (`.gitattributes`: `data/teams/** text eol=lf`), so the committed hashes are those of the bytes as well. The committed registry has `A` and `B` (the owner's two teams, decision 0004), and `C` (Team C, decision 0009): copies of `tests/reference/teams/team_a.txt`, `team_b.txt` and `docs/research/third-team/team-c.txt`, which stay where they are because other tests use them (a test holds each pair byte for byte equal). `A` and `B` are not the raw pastes of pokepast.es (they have genders that the pastes do not state, chosen when the reference battles were made, and not those of the standard below), so they have the ids `A` and `B`, not `MC405` and `MC408`; their `notes` say so. **The survey teams.** Every team of the VGCPastes Reg M-C survey of 2026-10-02 whose paste states its EVs (227 pastes, the fetched ones of `duoforge-data/vgcpastes-mc-2026-10-02`) that passes setup under the `POOL` kind of the version at hand is in the registry under the id `PP_` and the upper case pokepast.es id of its paste (`PP_0071E895C381DD1C` for pokepast.es/0071e895c381dd1c): the paste id is the one thing of such a team that never changes, which is what the learner's many-team runs need (`--teams PP_...`). `name` is the survey's description with its row (`MC409`), `source.url` is the paste, `event` and `placing` are the survey's, and `notes` has the row, the date and every change that `import_paste.py` made. The raw pastes of `A` and `B` are in it too (`PP_470A6EC2468AF8A4` and `PP_7C9C0663EF60180E`, with the genders of the standard, so not teams `A` and `B`), and `PP_8025F0AEF5F2D1B6` was imported earlier by another step. A later import, when a step makes more of the survey playable, adds new `PP_` teams and never edits a file or an entry that is there. What keeps the others out, team by team, is `docs/research/expansion/data/registry_blockers.json` (made with the public data API of the context: every unsupported move, item, ability and Mega Stone, every ability that the base forme does not have, in the order of the sets).
 
 **Ids are stable and never reused, and a file never changes under its id.** A reader that records the SHA-256 of a file (the learner does) refuses a file that changed under the same id. `python tools/reference/team_registry.py <repo root>` and the test `duoforge.reference.team_registry` hold the committed registry to its index: every entry has its file and every `<id>.txt` its entry, the file is the `sha256` of its entry, the keys, ids and `superseded_by` are as above, and every paste is in the form below and one the converter reads (a name that neither the closure nor the pool tables have is a problem, category `names`, never a team checked for its form only). A correction of a team (a wrong move, a gender) is a new team with a new id and its own entry: the old entry stays, with `"superseded_by": "<the new id>"`, and so does its file.
 
