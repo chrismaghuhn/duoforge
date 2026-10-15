@@ -1,0 +1,21 @@
+{
+  "name": "fz518_outrage_sub",
+  "purpose": "Outrage into a Substitute (issue 518): Tauros, p2a, breaks Lycanroc's Substitute with Outrage (step 1). selfDrops puts the lockedmove volatile on the user for the null target too (sim/battle-actions.ts:1317-1335; data/mods/champions/scripts.ts:349-352), so the lock's count is drawn (random(2, 4), data/conditions.ts lockedmove onStart). A battle of the differential fuzzing of issue 396 (free random sets, fz_116_36), cut after its step 1: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,a6abe8e67bbb1521afd5ef2b2f361678c25f28fef6391ab19234ba904beb8c8c",
+  "teams": [
+    "garganacl (F) @ absolite\nAbility: sturdy\nLevel: 50\nEVs: 7 HP / 7 Atk / 9 Def / 9 SpA / 7 SpD / 3 Spe\nImpish Nature\n- rockslide\n- raindance\n- ironhead\n- doubleedge\n\nexcadrill (M) @ excadrite\nAbility: sandrush\nLevel: 50\nEVs: 12 HP / 5 Atk / 10 Def / 15 SpA / 9 SpD / 15 Spe\nSerious Nature\n- substitute\n- rockslide\n- shadowclaw\n- metalsound\n\nlycanroc (F) @ blackbelt\nAbility: sandrush\nLevel: 50\nEVs: 13 HP / 15 Atk / 6 Def / 12 SpA / 13 SpD / 7 Spe\nJolly Nature\n- closecombat\n- accelerock\n- zenheadbutt\n- substitute\n\ncorviknight (M) @ salamencite\nAbility: mirrorarmor\nLevel: 50\nEVs: 14 HP / 8 Atk / 13 Def / 8 SpA / 11 SpD / 12 Spe\nHardy Nature\n- reflect\n- assurance\n- scaryface\n- powertrip\n\naltaria (F) @ colburberry\nAbility: cloudnine\nLevel: 50\nEVs: 10 HP / 9 Atk / 10 Def / 12 SpA / 11 SpD / 14 Spe\nSerious Nature\n- doubleedge\n- roost\n- tailwind\n- helpinghand\n\nflareon (F) @ passhoberry\nAbility: flashfire\nLevel: 50\nEVs: 4 HP / 4 Atk / 1 Def / 3 SpA / 5 SpD / 5 Spe\nSerious Nature\n- babydolleyes\n- flamethrower\n- scorchingsands\n- overheat",
+    "vileplume (F) @ magnet\nAbility: chlorophyll\nLevel: 50\nEVs: 10 HP / 11 Atk / 14 Def / 9 SpA / 11 SpD / 11 Spe\nCareful Nature\n- petalblizzard\n- acidspray\n- strengthsap\n- sleeppowder\n\nhawlucha (F) @ hawluchanite\nAbility: unburden\nLevel: 50\nEVs: 12 HP / 8 Atk / 11 Def / 12 SpA / 13 SpD / 10 Spe\nJolly Nature\n- grassknot\n- aerialace\n- stoneedge\n- megakick\n\naggron (F) @ salamencite\nAbility: rockhead\nLevel: 50\nEVs: 10 HP / 17 Atk / 4 Def / 9 SpA / 13 SpD / 13 Spe\nJolly Nature\n- flashcannon\n- substitute\n- icywind\n- stealthrock\n\nindeedee (M) @ chopleberry\nAbility: synchronize\nLevel: 50\nEVs: 10 HP / 9 Atk / 9 Def / 14 SpA / 15 SpD / 9 Spe\nQuirky Nature\n- calmmind\n- bodyslam\n- psychic\n- psychicterrain\n\ntaurospaldeaaqua (M) @ spelltag\nAbility: intimidate\nLevel: 50\nEVs: 3 HP / 2 Def / 2 SpA\nNaive Nature\n- outrage\n- aquajet\n- gigaimpact\n- raindance\n\nmilotic (M) @ mentalherb\nAbility: cutecharm\nLevel: 50\nEVs: 19 HP / 7 Atk / 7 Def / 8 SpA / 12 SpD / 13 Spe\nModest Nature\n- raindance\n- dragoncheer\n- haze\n- doubleedge"
+  ],
+  "choices": [
+    {
+      "p1": "team 5314",
+      "p2": "team 5431"
+    },
+    {
+      "p1": "move 3, move 4",
+      "p2": "move 1, move 1"
+    }
+  ]
+}
