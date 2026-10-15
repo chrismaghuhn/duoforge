@@ -16,13 +16,11 @@
     "fixture_matches": 0,
     "live": {
       "outcomes": {
-        "equal": 4,
+        "equal": 46,
         "refused": 4
       },
       "own_pp_stops": [],
-      "stops": {
-        "leech-seed-drain-source": 2
-      }
+      "stops": {}
     }
   },
   "set": "pool",
