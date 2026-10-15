@@ -83,6 +83,14 @@ level 50 battle reaches.
 - Last Respects after a spent Revival Blessing PP of its side is refused (`E_UNSUPPORTED`): `side.totalFainted` counts
   every faint (sim/battle.ts:2554) and the state does not count revivals, so the roster count of decision 0009 section
   4.1 undercounts. A stored counter would be a state change and is left to the HS.
+- Moody's residual handler of a Pokemon whose faint is queued and not yet processed (Perish Song's perish0 earlier in the
+  same residual) runs and draws: `Pokemon.faint()` only sets hp 0, the handler loop skips only a `fainted` holder
+  (sim/battle.ts:512-514), and the boost of a Pokemon at 0 HP does nothing (`cs_moody_perish_1`, `_2`).
+- Stance Change resets a type that Soak or Double Shock set, as Mega Evolution already did: `formeChange` calls
+  `setSpecies`, which calls `setType(species.types, true)` (sim/pokemon.ts:1387-1392; `cs_stance_soak_1`).
+- The converter's Pressure count of the viewer's own Pokemon took the sheet's ability again when a Mega Evolved Pokemon
+  switched back in; Mega Evolution is permanent (sim/battle-actions.ts:1902), so the Mega's ability counts
+  (`cs_pressure_mega_1`). The engine was right; the reference was wrong.
 
 ## 8. Cost of the capacity reading (measured)
 

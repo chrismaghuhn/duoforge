@@ -118,7 +118,8 @@ static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
 
 /* The member's types now (Pokemon.getTypes): its forme's, or the one type that Soak set (setType, sim/pokemon.ts:2109;
  * the POOL tail's soak_type of the member, zero under every other kind), which lasts until the Pokemon leaves the field,
- * faints or Mega Evolves (setSpecies resets the types, sim/pokemon.ts:1392). `m` is a member of `b`. */
+ * faints, Mega Evolves or changes forme by Stance Change (setSpecies resets the types, sim/pokemon.ts:1392). `m` is a member
+ * of `b`. */
 /* The move result classes of one move action (step G42; dfi_run_move, the pin's moveThisTurnResult of sim/battle-actions.ts):
  * TRUE when a target took the move, FALSE for a literal `false` of the hit steps (a miss, an immunity, a failed effect, a
  * Psychic Terrain block that returns null and is normalised to false, an action that is stopped before it moves), NULL for a
@@ -4368,7 +4369,8 @@ static duoforge_status dfi_double_shock_self(dfi_run *r, uint32_t user, uint32_t
  * -fail|target (the move still animates) and null; otherwise target.setType('Water') and -start|target|typechange|Water.
  * setType refuses (without `enforce`) Arceus and Silvally (species numbers 493 and 773, sim/pokemon.ts:2113-2118; no
  * pool forme is one) and a Terastallized Pokemon (the format has no Terastallization). The type stays until the
- * occupant leaves, faints or Mega Evolves (dfi_tail_clear_occupant, dfi_run_mega). True when the type was set. */
+ * occupant leaves, faints, Mega Evolves or changes forme by Stance Change (dfi_tail_clear_occupant, dfi_run_mega,
+ * dfi_stance_change). True when the type was set. */
 static bool dfi_soak(dfi_run *r, uint32_t flat, uint32_t move_id)
 {
     struct duoforge_battle *b = r->b;
@@ -7344,6 +7346,10 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
         m->stats[i] = stats[i];
     }
     *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
+    /* setSpecies -> setType(species.types, true) (sim/pokemon.ts:1387-1392): a type that Soak or Double Shock set ends, without
+     * a line. Both formes are Steel/Ghost. */
+    b->tail.sides[side].soak_type[idx] = 0u;
+    b->tail.sides[side].type2[idx] = 0u;
     /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats, so a live Speed Swap ends here. */
     b->tail.sides[user / 2u].positions[user % 2u].single_turn = (uint8_t)((uint32_t)b->tail.sides[user / 2u].positions[user % 2u].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
@@ -10623,11 +10629,13 @@ static void dfi_speed_boost(dfi_run *r, uint32_t flat)
  * can fall are those above -6 and not the raised one, drawn the same way. The boost is the ability's own: one boost call
  * {raised: +2, lowered: -1} with the raised key first (positives_first), so its line is -ability|holder|Moody|boost, then
  * -boost for the rise and -unboost for the fall. The draws come before the boost, so a boost that is refused (no foe left)
- * still draws. A holder that has fainted (or is no longer on the field) does not run it. */
+ * still draws. A holder whose faint was processed (or that is no longer on the field) does not run it; one whose faint is
+ * only queued (Perish Song's perish0 earlier in this residual, dfi_residual_holder_stands) runs it: Pokemon.faint() only
+ * sets hp 0, so the handler draws, and the boost of a Pokemon at 0 HP does nothing. */
 static duoforge_status dfi_moody(dfi_run *r, uint32_t flat)
 {
     const dfi_member *m = dfi_at(r->b, flat);
-    if (m == NULL || m->hp == 0u || !dfi_ability(r->b, m, DFI_ABILITY_MOODY)) {
+    if (m == NULL || !dfi_ability(r->b, m, DFI_ABILITY_MOODY)) {
         return DUOFORGE_OK;
     }
     dfi_active_slot *pos = dfi_pos(r->b, flat);

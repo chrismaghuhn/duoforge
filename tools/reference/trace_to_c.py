@@ -2983,6 +2983,7 @@ class FoePressure:
         self.own_occ = [[None, None], [None, None]]  # roster index of the viewer's own occupant of each slot
         self.alive = [[False] * 6, [False] * 6]
         self.has_pressure = [[False] * 6, [False] * 6]
+        self.mega = [[False] * 6, [False] * 6]  # Mega Evolution is a permanent forme change (sim/battle-actions.ts:1902)
 
     def _standing(self, v):
         return sum(1 for o in self.own_occ[v] if o is not None and self.alive[v][o] and self.has_pressure[v][o])
@@ -2995,7 +2996,8 @@ class FoePressure:
         elif kind == EV['SWITCH']:
             self.own_occ[v][slot] = ident
             self.alive[v][ident] = hp != 0
-            self.has_pressure[v][ident] = self.teams[v][ident]['ability'] == self.pressure
+            # A Mega that switches back in keeps its Mega ability, not the sheet's
+            self.has_pressure[v][ident] = self.teams[v][ident]['ability'] == self.pressure and not self.mega[v][ident]
         elif kind in (EV['DAMAGE'], EV['HEAL']) and hp_kind == 1 and occ is not None:
             self.alive[v][occ] = hp != 0
         elif kind == EV['FAINT'] and occ is not None:
@@ -3005,6 +3007,7 @@ class FoePressure:
         elif kind == EV['ABILITY'] and cause == CAUSE['MOVE'] and occ is not None:
             self.has_pressure[v][occ] = ident == self.pressure  # Skill Swap (step G70): the holder's new ability is `ident`
         elif kind == EV['MEGA'] and occ is not None:
+            self.mega[v][occ] = True
             self.has_pressure[v][occ] = False  # the Mega formes of the pool that have Pressure lose it (Tough Claws, Magic Bounce)
 
     def _extra(self, v, mid, flags, other):

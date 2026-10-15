@@ -1,0 +1,238 @@
+{
+ "name": "cs_moody_perish_2",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 83, its battle 2972) kept for what its log shows: Moody of a holder whose faint is queued (it still draws).",
+ "data": "pool",
+ "format": "gen9championscustomgame",
+ "seed": "sodium,0391d09b8dadbd3fbc5d9fa0974837a690589877facb2f274de8b2f8aab08676",
+ "teams": [
+  "Politoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 31 HP / 23 Def / 12 SpD\nCalm Nature\n- Weather Ball\n- Hypnosis\n- Perish Song\n- Protect\n\nRillaboom (M) @ Iron Ball\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 20 Def / 14 SpD\nRelaxed Nature\n- Grassy Glide\n- U-turn\n- Fake Out\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Electro Shot\n- Flash Cannon\n- Aura Sphere\n- Protect\n\nGarchomp (M) @ Garchompite Z\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Dragon Pulse\n- Earth Power\n- Power Gem\n- Protect\n\nGengar (M) @ Gengarite\nAbility: Cursed Body\nLevel: 50\nEVs: 30 HP / 1 Def / 1 SpA / 28 SpD / 6 Spe\nModest Nature\n- Shadow Ball\n- Perish Song\n- Substitute\n- Protect\n\nIncineroar (M) @ Chople Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Darkest Lariat\n- Parting Shot\n- Fake Out\n- Protect",
+  "Kingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 8 HP / 32 Atk / 26 Spe\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Sucker Punch\n- Protect\n\nAerodactyl (M) @ Focus Sash\nAbility: Unnerve\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Rock Slide\n- Dual Wingbeat\n- Tailwind\n- Protect\n\nKommo-o (M) @ Leftovers\nAbility: Bulletproof\nLevel: 50\nEVs: 5 HP / 1 Def / 30 SpA / 1 SpD / 29 Spe\nModest Nature\n- Clanging Scales\n- Aura Sphere\n- Clangorous Soul\n- Protect\n\nRotom-Wash @ Sitrus Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 13 SpD / 21 Spe\nTimid Nature\n- Hydro Pump\n- Thunderbolt\n- Eerie Impulse\n- Protect\n\nScovillain (M) @ Scovillainite\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 25 Def / 9 SpD\nBold Nature\n- Overheat\n- Rage Powder\n- Protect\n- Leaf Storm\n\nGengar (M) @ Gengarite\nAbility: Cursed Body\nLevel: 50\nEVs: 30 HP / 11 Def / 1 SpA / 1 SpD / 23 Spe\nTimid Nature\n- Shadow Ball\n- Sludge Bomb\n- Protect\n- Icy Wind"
+ ],
+ "choices": [
+  {
+   "p1": "team 6",
+   "p2": "team 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "switch 6"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 2 mega",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3"
+  },
+  {
+   "p1": "switch 6",
+   "p2": "switch 3"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "switch 6"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4 mega"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 5"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 2",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 2"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 5"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  }
+ ]
+}

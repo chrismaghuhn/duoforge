@@ -1,0 +1,188 @@
+{
+ "name": "cs_pressure_mega_1",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 83, its battle 424) kept for what its log shows: Pressure after a Mega Evolution (the Mega that switches back in keeps its Mega ability).",
+ "data": "pool",
+ "format": "gen9championscustomgame",
+ "seed": "sodium,a4fb7566e93d4f22eda5d6b812fa48a5e27fc1b294bfbc1a423947465d01b39b",
+ "teams": [
+  "Glimmora (M) @ Focus Sash\nAbility: Toxic Debris\nLevel: 50\nEVs: 1 Def / 32 SpA / 1 SpD / 32 Spe\nModest Nature\n- Power Gem\n- Sludge Bomb\n- Earth Power\n- Spiky Shield\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 15 Atk / 18 SpD / 1 Spe\nAdamant Nature\n- Fake Out\n- Wood Hammer\n- Grassy Glide\n- High Horsepower\n\nMilotic (M) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 10 Def / 17 SpA / 5 SpD / 2 Spe\nCalm Nature\n- Scald\n- Ice Beam\n- Icy Wind\n- Protect\n\nAbsol (M) @ Absolite Z\nAbility: Pressure\nLevel: 50\nEVs: 11 HP / 19 Atk / 4 Def / 32 Spe\nJolly Nature\n- Night Slash\n- Will-O-Wisp\n- Close Combat\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 10 Def / 7 SpA / 3 SpD / 14 Spe\nModest Nature\n- Protect\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n\nIncineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 1 Atk / 8 Def / 20 SpD / 5 Spe\nCareful Nature\n- Flare Blitz\n- Snarl\n- Parting Shot\n- Fake Out",
+  "Kingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 10 Atk / 1 Def / 10 SpD / 13 Spe\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Low Kick\n\nSneasler (M) @ Grassy Seed\nAbility: Unburden\nLevel: 50\nEVs: 32 HP / 10 Atk / 4 Def / 3 SpD / 17 Spe\nAdamant Nature\n- Dire Claw\n- Close Combat\n- Rock Slide\n- Protect\n\nArcanine-Hisui (M) @ Focus Sash\nAbility: Rock Head\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Rock Slide\n- Flare Blitz\n- Extreme Speed\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Tailwind\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 10 Atk / 1 Def / 12 SpD / 11 Spe\nAdamant Nature\n- Fake Out\n- Grassy Glide\n- Wood Hammer\n- High Horsepower\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 15 HP / 1 Def / 17 SpA / 1 SpD / 32 Spe\nTimid Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 4",
+   "p2": "team 5"
+  },
+  {
+   "p1": "move 1 1 mega",
+   "p2": "move 4 1"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 1 mega"
+  },
+  {
+   "p1": "switch 6"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1"
+  },
+  {
+   "p2": "switch 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 5",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3"
+  },
+  {
+   "p2": "switch 6"
+  },
+  {
+   "p1": "switch 5",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 5",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "switch 5"
+  },
+  {
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 2 1"
+  },
+  {
+   "p2": "switch 2"
+  },
+  {
+   "p1": "move 2",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 3",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "switch 5"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 3 1"
+  },
+  {
+   "p1": "switch 2"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 2 1"
+  }
+ ]
+}
