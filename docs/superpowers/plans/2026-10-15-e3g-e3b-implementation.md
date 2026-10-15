@@ -1,6 +1,8 @@
 # E3g/E3b: synthetic value graphs, then tile-16 scheduling
 
 Owner/HS authorized E3g and E3b after E3n, with synthetic parameters only.
+Update: #569 (`95e69e2b`) freezes all three graph declarations; HS subsequently
+authorized wiring all three immediately, using those synthetic definitions.
 This is an implementation preparation, not a registered graph, training/export
 approval, performance result or adoption record. E4 remains off. E3n #566 must
 merge before its dependent implementation PR opens. During the exclusive
@@ -15,11 +17,10 @@ timing measurements. No private checkpoint was opened.
 
 The approved [evaluation specification](../specs/2026-10-14-in-engine-evaluation-design.md),
 sections 5, 7 and 11, requires reviewed concrete full/small/medium declarations.
-Its small/medium dimensions remain open. E2's production registry is still empty.
-An HS question asks where the reviewed declarations are located; none was found
-in the inspected source. Do not describe an invented candidate as pre-approved.
-Before implementing a candidate, reconcile its dimensions, topology, tensor
-inventory, scales/arithmetic and resource limits with the reviewed declaration.
+Those are now frozen in the approved
+[experiment declaration](../../benchmarks/2026-10-15-evaluation-graphs/README.md).
+Reconcile every candidate's dimensions, topology, tensor inventory, arithmetic
+and resource limits with that declaration.
 Do not infer the actual teacher configuration from the BC6 nickname.
 
 For the public `model_v2.config("M")` defaults, source inspection gives:

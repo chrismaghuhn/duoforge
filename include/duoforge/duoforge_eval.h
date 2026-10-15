@@ -13,9 +13,9 @@ typedef struct duoforge_eval_workspace duoforge_eval_workspace;
 /* Caller must keep artifacts outside the repository/CI artifacts.
  * Absolute private path; expected_sha256 is mandatory and hashes all bytes of
  * the actual opened file. context/version/mask must match exactly. Output is
- * untouched on refusal. Production graph registry is intentionally empty until
- * E3g installs reviewed descriptors: otherwise valid files currently refuse
- * E_UNSUPPORTED, eval_graph_unregistered. No artifact's own approval claim is
+ * untouched on refusal. Only reviewed compiled graph descriptors are accepted;
+ * unknown identities refuse E_UNSUPPORTED, eval_graph_unregistered.
+ * No artifact's own approval claim is
  * trusted. A loaded model is immutable; context is copied, not borrowed. */
 duoforge_status duoforge_evaluator_load(const char *absolute_path,
     const uint8_t expected_sha256[DUOFORGE_DIGEST_SIZE], const duoforge_context *context,

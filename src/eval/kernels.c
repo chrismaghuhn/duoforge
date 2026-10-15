@@ -52,6 +52,42 @@ duoforge_status dfi_eval_dense32(const int16_t *in, uint32_t ni, const int8_t *w
 {
     return dense_core(in, ni, weights, bias, scales, no, relu, NULL, out);
 }
+duoforge_status dfi_eval_dense_i32(const int32_t *in, uint32_t ni, const int8_t *weights,
+                                  const int64_t *bias, const dfi_eval_scale *scales,
+                                  uint32_t no, bool relu, int32_t *out)
+{
+    if (!in || !weights || !bias || !scales || !out) return DUOFORGE_E_NULL_ARGUMENT;
+    if (!ni || !no) return DUOFORGE_E_INVALID_ARGUMENT;
+    if (!dfi_eval_extent(1u, ni, sizeof(*in), SIZE_MAX) ||
+        !dfi_eval_extent(no, ni, sizeof(*weights), SIZE_MAX) ||
+        !dfi_eval_extent(1u, no, sizeof(*bias), SIZE_MAX) ||
+        !dfi_eval_extent(1u, no, sizeof(*scales), SIZE_MAX) ||
+        !dfi_eval_extent(1u, no, sizeof(*out), SIZE_MAX)) return DUOFORGE_E_CAPACITY;
+    uint32_t input_abs = 0u;
+    for (uint32_t i = 0; i < ni; ++i) {
+        const uint32_t a = (uint32_t)dfi_eval_magnitude(in[i]);
+        if (a > input_abs) input_abs = a;
+    }
+    for (uint32_t o = 0; o < no; ++o) {
+        uint32_t weight_abs = 0u;
+        for (uint32_t i = 0; i < ni; ++i) {
+            const uint32_t a = (uint32_t)dfi_eval_magnitude(weights[(size_t)o * ni + i]);
+            if (a > weight_abs) weight_abs = a;
+        }
+        uint64_t bound;
+        const duoforge_status st = dfi_eval_dot_bound32(ni, input_abs, weight_abs,
+            dfi_eval_magnitude(bias[o]), scales[o], &bound);
+        if (st != DUOFORGE_OK) return st;
+    }
+    for (uint32_t o = 0; o < no; ++o) {
+        int64_t sum = bias[o];
+        for (uint32_t i = 0; i < ni; ++i) sum += (int64_t)in[i] * weights[(size_t)o * ni + i];
+        if (relu && sum < 0) sum = 0;
+        const duoforge_status st = dfi_eval_requant32(sum, scales[o], &out[o]);
+        if (st != DUOFORGE_OK) return st;
+    }
+    return DUOFORGE_OK;
+}
 duoforge_status dfi_eval_embedding(const int8_t *table, uint32_t rows, uint32_t width,
                                   uint32_t id, dfi_eval_scale scale, int16_t *out)
 {

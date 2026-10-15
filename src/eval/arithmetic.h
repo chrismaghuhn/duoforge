@@ -16,6 +16,9 @@ DFI_PRIVATE duoforge_status dfi_eval_requant32(int64_t value, dfi_eval_scale sca
 /* Conservative absolute bounds. These cold proofs use actual max weight magnitude. */
 DFI_PRIVATE duoforge_status dfi_eval_dot_bound(uint32_t count, uint32_t input_abs, uint32_t weight_abs,
                                   uint64_t bias_abs, dfi_eval_scale scale, uint64_t *out);
+/* Int32-input counterpart; proves the full product before narrowing it. */
+DFI_PRIVATE duoforge_status dfi_eval_dot_bound32(uint32_t count, uint32_t input_abs, uint32_t weight_abs,
+                                    uint64_t bias_abs, dfi_eval_scale scale, uint64_t *out);
 /* Convert finite IEEE binary32 bits with an integer-only exact rounding oracle. */
 DFI_PRIVATE duoforge_status dfi_eval_binary32(uint32_t bits, dfi_eval_scale scale, int16_t *out);
 DFI_PRIVATE duoforge_status dfi_eval_binary32_id(uint32_t bits, uint32_t factor, uint32_t capacity, uint32_t *out);
