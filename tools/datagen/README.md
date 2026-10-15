@@ -35,6 +35,24 @@ After regenerating, update the two file hashes in `tests/CMakeLists.txt` and the
 
 `tests/test_gen_closure.py` checks the refusals on small move, item and ability texts without a checkout; CTest runs it as `duoforge.data.gen_closure_refusals` whenever Python is found.
 
+## The format definition
+
+`data/formats/reg-mc.json` (restructure step 10, `docs/architecture/formats.md`) names the Showdown format id and the pool source (`legal_pool.json` with its SHA-256); `--pool` reads both from it. `gen_format.py` writes the engine's format constants:
+
+```sh
+python3 tools/datagen/gen_format.py                    # write src/data/format_tables.h
+python3 tools/datagen/gen_format.py --check            # compare only (duoforge.data.format_regmc)
+python3 tools/datagen/gen_format.py --pin <checkout>   # every fact against its pinned line (duoforge.data.format_pin)
+```
+
+`data/formats/champions-ou.json` is a second definition, `[Gen 9 Champions] OU` (singles; step O1 of `docs/superpowers/specs/2026-10-15-gen9-ou-design.md`). The engine does not read it, so it writes no header; its pool source is `data/formats/pools/champions-ou.json`, made by `build_legal_pool.js --format gen9championsou`:
+
+```sh
+python3 tools/datagen/gen_format.py --format champions-ou                  # check the definition and its pool source
+python3 tools/datagen/gen_format.py --format champions-ou --pin <checkout> # every fact against its pinned line
+python3 tools/datagen/tests/check_format_pool.py node <checkout> champions-ou  # the pool made again by the validator
+```
+
 ## Extended and pool tables
 
 Two more modes write tables that start with the closure:

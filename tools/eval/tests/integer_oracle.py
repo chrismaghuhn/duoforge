@@ -83,6 +83,11 @@ def expect(row):
         value = max(selected, default=0) if e else sum(selected)
         st, q = requant(value, f, g)
         return st, clip(q) if st == OK else 0
+    if op == 12:
+        if not e or f > 63 or b > 32768 or c > 128:
+            return INVALID, 0
+        bound = d + a * b * c
+        return (OK, bound) if bound <= HI and bound * e <= HI else (EXHAUSTED, 0)
     raise AssertionError(op)
 
 def vectors():
@@ -122,6 +127,26 @@ def vectors():
         add(11, *rows[-1][1:])
         add(9, rng.randint(-32768, 32767), rng.randint(-32768, 32767), rng.randint(-32768, 32767),
             rng.randrange(8), rng.randrange(2), rng.randrange(1, 65536), rng.randrange(32))
+    # Append dot-bound controls, keeping every previous vector in order.
+    for bias in (0, 1, (1 << 31)-1, 1 << 31, (1 << 31)+1, 1 << 32,
+                 (1 << 62)-1, 1 << 62, HI, 1 << 63, UMAX):
+        for m in (0, 1, 2, 3, (1 << 32)-1):
+            for shift in (0, 63, 64):
+                add(12, 0, 0, 0, bias, m, shift)
+    for m in (1, 2, 3, 65535, (1 << 32)-1):
+        for delta in (-1, 0, 1):
+            add(12, 0, 0, 0, HI // m + delta, m, 0)
+    bound_rng = random.Random(20261015)
+    for _ in range(4000):
+        add(12, bound_rng.getrandbits(32),
+            bound_rng.choice((0, 1, 32768, 32769, bound_rng.randrange(32769))),
+            bound_rng.choice((0, 1, 128, 129, bound_rng.randrange(129))),
+            bound_rng.getrandbits(64), bound_rng.choice((0, 1, 2, (1 << 32)-1)),
+            bound_rng.choice((0, 63, 64)))
+        count, a, w = bound_rng.randrange(33), bound_rng.randrange(32769), bound_rng.randrange(129)
+        m = bound_rng.randrange(1, 1 << 32)
+        bias = HI // m - count * a * w + bound_rng.choice((-1, 0, 1))
+        add(12, count, a, w, bias, m, bound_rng.randrange(64))
     return rows
 
 def main():

@@ -7,6 +7,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
+#endif
 #ifdef DF_EVAL_ALLOC_HOOKS
 static bool allocation_watch;
 static uint64_t allocations;
@@ -24,13 +28,24 @@ void *__wrap_realloc(void *p,size_t n) { if(allocation_watch)++allocations;retur
 void __wrap_free(void *p) { if(allocation_watch)++allocations;__real_free(p); }
 #endif
 
+static FILE *open_oracle(const char *path)
+{
+#if defined(_MSC_VER)
+    FILE *file = NULL;
+    if (fopen_s(&file, path, "rb") != 0) return NULL;
+    return file;
+#else
+    return fopen(path, "rb");
+#endif
+}
+
 static uint64_t read64(const uint8_t *p) { uint64_t x=0; for(uint32_t i=0;i<8u;++i)x|=(uint64_t)p[i]<<(8u*i);return x; }
 static void write64(uint8_t *p,uint64_t v) { for(uint32_t i=0;i<8u;++i)p[i]=(uint8_t)(v>>(8u*i)); }
 static int64_t signed64(uint64_t v) { return v <= INT64_MAX ? (int64_t)v : -1 - (int64_t)(UINT64_MAX-v); }
 /* Fixed byte framing deliberately avoids struct ABI/host-endian assumptions. */
 static int oracle(const char *path)
 {
-    FILE *file=fopen(path,"rb"); if(!file)return 2;
+    FILE *file=open_oracle(path); if(!file)return 2;
     uint8_t frame[64],result[12];
     while(fread(frame,1,sizeof(frame),file)==sizeof(frame)) {
         uint64_t a[8]; for(uint32_t i=0;i<8u;++i)a[i]=read64(frame+8u*i);
@@ -59,6 +74,13 @@ static int oracle(const char *path)
             dfi_eval_scale s={(uint32_t)a[6],(uint32_t)a[7]};
             st=dfi_eval_pool(x,m,3,1,a[5]!=0,s,&q16);q=q16;break;
         }
+        case 12: {
+            uint64_t bound=0;
+            st=dfi_eval_dot_bound((uint32_t)a[1],(uint32_t)a[2],(uint32_t)a[3],a[4],
+                (dfi_eval_scale){(uint32_t)a[5],(uint32_t)a[6]},&bound);
+            if(st==DUOFORGE_OK)q=(int64_t)bound;
+            break;
+        }
         default:break;
         }
         if(st!=DUOFORGE_OK)q=0;
@@ -70,7 +92,7 @@ static int oracle(const char *path)
 }
 static int input_oracle(const char *path)
 {
-    FILE *file = fopen(path, "rb"); if (!file) return 2;
+    FILE *file = open_oracle(path); if (!file) return 2;
     uint8_t header[28], raw[1094u * 4u];
     if (fread(header, 1, sizeof(header), file) != sizeof(header)) { fclose(file); return 3; }
     uint32_t h[7];
@@ -159,6 +181,18 @@ static void kernels(df_test *t)
     DF_CHECK(t,dfi_eval_dot_bound(640,32768,128,1024,(dfi_eval_scale){2,16},&bound)==DUOFORGE_OK);
     DF_CHECK_EQ_U64(t,bound,UINT64_C(2684355584));
     DF_CHECK(t,dfi_eval_dot_bound(UINT32_MAX,32768,128,INT64_MAX,(dfi_eval_scale){1,0},&bound)==DUOFORGE_E_EXHAUSTED);
+    DF_CHECK(t,dfi_eval_dot_bound(0,0,0,0,(dfi_eval_scale){UINT32_MAX,0},&bound)==DUOFORGE_OK&&bound==0);
+    bound=123;
+    DF_CHECK(t,dfi_eval_dot_bound(0,0,0,0,(dfi_eval_scale){0,0},&bound)==DUOFORGE_E_INVALID_ARGUMENT&&bound==123);
+    DF_CHECK(t,dfi_eval_dot_bound(0,0,0,INT64_MAX,(dfi_eval_scale){1,0},&bound)==DUOFORGE_OK&&bound==(uint64_t)INT64_MAX);
+    bound=123;
+    DF_CHECK(t,dfi_eval_dot_bound(0,0,0,INT64_MAX,(dfi_eval_scale){2,0},&bound)==DUOFORGE_E_EXHAUSTED&&bound==123);
+    DF_CHECK(t,dfi_eval_dot_bound(0,0,0,(uint64_t)INT64_MAX/2u,(dfi_eval_scale){2,0},&bound)==DUOFORGE_OK&&bound==(uint64_t)INT64_MAX/2u);
+    bound=123;
+    DF_CHECK(t,dfi_eval_dot_bound(0,0,0,(uint64_t)INT64_MAX/2u+1u,(dfi_eval_scale){2,0},&bound)==DUOFORGE_E_EXHAUSTED&&bound==123);
+    DF_CHECK(t,dfi_eval_dot_bound(0,0,0,(uint64_t)INT64_MAX/UINT32_MAX,(dfi_eval_scale){UINT32_MAX,0},&bound)==DUOFORGE_OK&&bound==(uint64_t)INT64_MAX/UINT32_MAX);
+    bound=123;
+    DF_CHECK(t,dfi_eval_dot_bound(0,0,0,(uint64_t)INT64_MAX/UINT32_MAX+1u,(dfi_eval_scale){UINT32_MAX,0},&bound)==DUOFORGE_E_EXHAUSTED&&bound==123);
 }
 static void extents(df_test *t)
 {
@@ -235,6 +269,13 @@ static void inputs(df_test *t)
 }
 int main(int argc,char **argv)
 {
+#if defined(_WIN32)
+    if ((argc == 2 || (argc == 3 && strcmp(argv[1], "--inputs") == 0)) &&
+        _setmode(_fileno(stdout), _O_BINARY) == -1) {
+        fputs("eval.oracle: stdout_binary_mode_failed\n", stderr);
+        return 2;
+    }
+#endif
     if(argc==3&&strcmp(argv[1],"--inputs")==0)return input_oracle(argv[2]);
     if(argc==2)return oracle(argv[1]);
     df_test t;df_test_begin(&t,"eval.kernels");

@@ -25,8 +25,11 @@ Dense weights are row-major int8, inputs int16 and biases int64. A channel
 accumulates its bias and products in ascending input index. For fan-in N,
 actual maximum input magnitude A, actual maximum weight magnitude W and bias B,
 prove `abs(B) + N*A*W <= INT64_MAX` and this bound times the positive multiplier
-`<= INT64_MAX`, using division before multiplication. A is at most 32768 and W
-at most 128. The model loader uses approved bounds, not a lucky cancelling
+`<= INT64_MAX`, without overflowing the proof's intermediates. A is at most
+32768 and W at most 128, so the uint32-count term product fits in 54 bits.
+The kernel checks the bias addition and uses two 32-bit product parts plus
+their carry to test the exact scaled limit, without a variable divisor.
+The model loader uses approved bounds, not a lucky cancelling
 sample. The kernel repeats this conservative proof using the actual input.
 Optional ReLU acts on the accumulator before its requantization; normalization
 and the full BC6 dense -> LayerNorm -> ReLU order are separate future nodes.

@@ -67,6 +67,7 @@ python3 "$DF_DIR/ladder_conf.py" check "$conf" || df_die "campaign '$campaign' i
 mapfile -t shas < <(python3 "$DF_DIR/ladder_conf.py" shas "$conf" | tr -d '\r')
 mapfile -t arms < <(python3 "$DF_DIR/ladder_conf.py" arms "$conf" | tr -d '\r')
 workers=$(python3 "$DF_DIR/ladder_conf.py" workers "$conf" | tr -d '\r')
+probe=$(python3 "$DF_DIR/ladder_conf.py" probe "$conf" | tr -d '\r')
 [[ $workers =~ ^[0-9]+$ ]] || df_die "campaign '$campaign': no worker count"
 
 run_id="${commit:0:12}-ladder-$(date -u +%Y%m%dT%H%M%SZ)"
@@ -95,6 +96,12 @@ echo "run id        $run_id"
 echo "networks      s3://$bucket/nets/<sha256>.npz, read-only for the box:"
 for s in "${shas[@]}"; do echo "                $s"; done
 echo "arms          ${arms[*]} (side by side, 16 CPUs and $workers workers each, 16 CPUs left to the box)"
+if [ -n "$probe" ]; then
+    read -r probe_inputs probe_sha <<< "$probe"
+    echo "mode          PROBE: the network probe of ${arms[0]} under five pin variants (probe/<variant>/), then the"
+    echo "              arms under the first variant giving $probe_sha, or no game (probe_no_match)"
+    echo "probe inputs  s3://$bucket/probes/$probe_inputs.npz, read-only for the box"
+fi
 echo "results       s3://$bucket/fuzz/ladder/$campaign/$run_id/ (<arm>/ladder.json, env.json, status.json, log/)"
 echo "type          $DF_LADDER_TYPE (the only type of a series, no fallback)"
 echo "max hours     $max_hours (watchdog: shutdown -h +$max_minutes, behaviour terminate)"

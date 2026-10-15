@@ -32,6 +32,11 @@ This document is committed before the first measurement. Results are added below
   - Otherwise locally under `tools/ci/machine_lock.sh` and the WSL watchdog, spread over nights. The labels are `oracle-mix-*`.
   - The report names the machine of each stage. All stages run on one commit (this PR's merge commit, or a later main named before the start) with a library built from it.
   - Networks and outputs stay private, outside the repository.
+  - **Note (HS, 2026-10-15): the series runs on AWS, as an AWS series of its own, not bit-identical to local runs.**
+    - The equality run of #484 gave equal results and counts but other decision digests in 4 of 16 games. The likely cause is XLA on Zen 4.
+    - The series compares no number with a local run. The controls today and `23|04` are played inside the series, on its final seed.
+    - From local runs it takes only the names of two answers: `15|23` and `12|35`, as columns and as the controls' answers. It takes none of their numbers; the 34.6 above is background only.
+    - `--previous` reads the series' own matrix files only.
 - **Tool check:** a smoke run of 2 pairs (`--our-mix`, `--foe-mix` and `matrix`). It is not a measurement and is not reported.
 
 ## Stages (predeclared)
