@@ -87,7 +87,9 @@ if [ ${#subnets[@]} -eq 0 ] || [ -z "${subnets[0]}" ]; then
 fi
 
 max_minutes=$((max_hours * 60))
-userdata=$(df_render_ladder_user_data "$campaign" "$commit" "$bucket" "$max_minutes" "$run_id")
+userdata=$(df_render_bootstrap ladder_user_data.sh "$campaign" "$commit" "$bucket" "$max_minutes" "$run_id" no)
+df_check_user_data_size "$userdata"
+box=$(df_render_ladder_user_data "$campaign" "$commit" "$bucket" "$max_minutes" "$run_id")
 price=$(df_max_price "$max_hours")
 
 echo "ladder campaign $campaign"
@@ -109,7 +111,8 @@ echo "price ceiling \$$price per instance hour ($DF_COST_CAP_USD / $max_hours: a
 echo "security grp  $DF_SG_NAME ($DF_SG_ID, no inbound rule)"
 echo "ami           $ami"
 echo "subnet        ${subnets[0]}"
-echo "user data     $(printf '%s' "$userdata" | wc -c | tr -d ' ') bytes, first command: shutdown -h +$max_minutes"
+echo "user data     $(printf '%s' "$userdata" | wc -c | tr -d ' ') bytes (the bootstrap; at most $DF_USER_DATA_LIMIT), first command: shutdown -h +$max_minutes"
+echo "box script    ladder_user_data.sh at the commit, $(printf '%s' "$box" | wc -c | tr -d ' ') bytes rendered, run by the bootstrap"
 
 df_build_run_args "$ami" "$DF_LADDER_TYPE" "${subnets[0]}" "$DF_SG_ID" "$campaign" "$max_hours" "$userdata" ladder
 echo

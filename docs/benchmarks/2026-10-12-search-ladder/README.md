@@ -16,6 +16,15 @@ This document is committed before any measurement of the ladder. Each later step
     | `bc6` | BC6 itself | identical to the foe model, so the foe model knows this opponent exactly |
     | `ppo` | params-49333 | a non-human-like bot; reported, not gated (HauptSession) |
 - **Teams:** 49333's pool, 652 teams, because BC6 has no pool of its own.
+  - **The engine's filter, and a new series with #558** (HauptSession, 2026-10-15). The pool network's configuration
+    stays as it is; the ladder loads its teams through the engine's setup check (`teams.load_accepted`) and leaves out
+    every team the engine refuses, by name: `conditions.pool` in `ladder.json` holds the teams kept, the sha256 of their
+    ids and every refused team with the engine's status. Since #558 (#406: exactly 0 Stat Points with Serious is
+    refused at setup) four of the pool's teams are refused (`LL_6AAA0DB038886B36383C1598_17`,
+    `LL_6AAD0D0AE905C1DB68744103_13`, `LL_6A9083127A62DE813014077C_8`, `LL_6A5E4489937230B102D4026E_110`), so the
+    pool has 648 and the team pairs drawn from it change; the engine changed with #558 too (Substitute and others).
+    **Runs from #558 on are a new series: never paired or mixed with the runs before it.** `--previous-run` and
+    `--paired-with` refuse a run without `conditions.pool` (from before the filter) and a run on another filtered pool.
   - 1024 team pairs from seed `0x2026101200000440`.
   - Each pair is played twice, with the teams and seats swapped.
   - Every arm plays the same games: the same suite rows, on the same batch seed.
