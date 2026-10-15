@@ -495,6 +495,31 @@ class LookaheadParts(unittest.TestCase):
         with self.assertRaises(SearchError):
             lookahead.select(bad, mask, 2)
 
+    def test_select_slots_adds_each_slot_options_best_pair(self):
+        # #433: a reflex (slot 0's option 0, Fake Out) fills the joint top k; slot 0's option 1 (Grassy Glide) and
+        # option 2 enter with their likeliest partner, and slot 1's options with theirs.
+        logp = np.full(1024, -50.0, dtype=np.float32)
+        mask = np.zeros(1024, dtype=bool)
+        values = {(0, 0): -0.1, (0, 1): -0.2, (0, 2): -0.3, (0, 3): -0.4, (1, 0): -5.0, (1, 1): -4.0, (1, 2): -6.0,
+                  (1, 3): -7.0, (2, 0): -8.0, (2, 1): -9.0, (2, 2): -8.0, (2, 3): -10.0}
+        for (a, b), v in values.items():
+            mask[a * 32 + b] = True
+            logp[a * 32 + b] = v
+        logp[5] = 0.0  # the best value, but illegal
+        self.assertEqual(lookahead.select(logp, mask, 2)[0].tolist(), [0, 1])
+        pairs, probs = lookahead.select_slots(logp, mask, 2)
+        # slot 0: option 1's best is (1, 1) = 33, option 2's tie (2, 0) / (2, 2) goes to the lower flat index 64;
+        # slot 1: columns 2 and 3 enter with (0, 2) and (0, 3). Ranked as select ranks.
+        self.assertEqual(pairs.tolist(), [0, 1, 2, 3, 33, 64])
+        np.testing.assert_array_equal(probs, np.exp(logp[[0, 1, 2, 3, 33, 64]].astype(np.float64)))
+        self.assertEqual(lookahead.select_slots(logp, mask.reshape(32, 32), 2)[0].tolist(), [0, 1, 2, 3, 33, 64])
+        # k at least the legal pairs: the joint ranking already holds every option, nothing is added
+        np.testing.assert_array_equal(lookahead.select_slots(logp, mask, 16)[0], lookahead.select(logp, mask, 16)[0])
+        with self.assertRaises(SearchError):
+            lookahead.select_slots(logp, np.zeros(1024, dtype=bool), 1)
+        with self.assertRaises(ValueError):
+            lookahead.select_slots(logp, mask, 0)
+
     def test_leaf_plan_order(self):
         d, i, j, s = lookahead.leaf_plan([2, 1], [1, 3], 2)
         self.assertEqual(list(zip(d.tolist(), i.tolist(), j.tolist(), s.tolist())),
