@@ -46,6 +46,8 @@ extern "C" {
 
 /* Structural capacities of state schema 3 (initial profile bound). */
 #define DUOFORGE_SIDE_COUNT       2u
+/* The capacity of every position array (decision 0083): a doubles kind occupies both positions of a side, a singles kind
+   (duoforge_context_active_per_side) only slot 0; slot 1 is then always empty. */
 #define DUOFORGE_ACTIVE_PER_SIDE  2u
 #define DUOFORGE_MAX_ROSTER       6u
 #define DUOFORGE_MAX_MOVE_SLOTS   4u
@@ -130,6 +132,11 @@ const char *duoforge_status_name(duoforge_status status);
                                              pool data (the CLOSURE and TEAM_C ones never do) */
 #define DUOFORGE_DATA_KIND_POOL_DEV    7u /* the pool tables; as CLOSURE_DEV over them, with
                                              POOL's moves and abilities (development fixtures) */
+#define DUOFORGE_DATA_KIND_POOL_SINGLES_DEV 8u /* the pool tables and POOL_DEV's rules, in singles
+                                             ([Gen 9 Champions] Custom Game, decision 0083): one
+                                             position per side (slot 0), every registered member
+                                             brought (brought_count = max_roster), team selection
+                                             picks the lead only (development fixtures) */
 typedef struct duoforge_context duoforge_context;
 typedef struct duoforge_context_config {
     uint32_t data_kind;     /* DUOFORGE_DATA_KIND_* */
@@ -155,6 +162,9 @@ void duoforge_context_destroy(duoforge_context *context); /* NULL is a no-op */
    columns (POOL kinds). Independent of platform and build. */
 duoforge_status duoforge_context_fingerprint(const duoforge_context *context,
                                              uint8_t out_fingerprint[DUOFORGE_DIGEST_SIZE]);
+/* The positions per side that the context's kind occupies: 1 for a singles kind (POOL_SINGLES_DEV), 2 for the others
+   (decision 0083). Checks: NULL(context, out) -> NULL_ARGUMENT. Allocates nothing. */
+duoforge_status duoforge_context_active_per_side(const duoforge_context *context, uint32_t *out_active);
 
 /* ---- battle setup. Every entry at or after a count must be all-zero. A
    battle starts at TEAM_SELECTION with an empty brought set and empty

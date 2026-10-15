@@ -75,7 +75,7 @@ typedef struct duoforge_public_state {
     uint32_t request_mask;
     uint32_t epoch;
     uint8_t foe_seen_mask; /* the foe members the player has seen in battle */
-    uint8_t foe_leads[2];  /* roster indices; DUOFORGE_VIEW_PICK_NONE before the leads are out */
+    uint8_t foe_leads[2];  /* roster indices; DUOFORGE_VIEW_PICK_NONE before the leads are out, and [1] in singles */
     uint8_t foe_pending_mask; /* positions with a queued MOVE */
     uint8_t queue_count;      /* canonical queue records */
     uint8_t reserved[3];   /* zero */

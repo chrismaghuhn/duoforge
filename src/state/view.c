@@ -459,16 +459,17 @@ static duoforge_status dfi_view_counter_support(const duoforge_context *ctx, con
     return dfi_view_foe_revive_proxy(&observation, 1u - (player & 1u)) ? DUOFORGE_E_UNSUPPORTED : DUOFORGE_OK;
 }
 
-/* party_order in a public view (step G46; decision 0023): the foe's bench entries (positions 2 and up) are the order of the
- * foe's hidden pick and switch history, so the view hides them as DFI_PARTY_HIDDEN, exactly as it hides the pick order past
- * the leads. The foe's two actives stay (they are public: the switches show them). The own side is exact. */
-static void dfi_view_hide_foe_party(uint8_t *s, uint32_t foe)
+/* party_order in a public view (step G46; decision 0023): the foe's bench entries (positions `active` and up, 2 or 1 in
+ * singles, decision 0083) are the order of the foe's hidden pick and switch history, so the view hides them as
+ * DFI_PARTY_HIDDEN, exactly as it hides the pick order past the leads. The foe's actives stay (they are public: the switches
+ * show them). The own side is exact. */
+static void dfi_view_hide_foe_party(uint8_t *s, uint32_t foe, uint32_t active)
 {
     dfi_pool_tail t;
     memset(&t, 0, sizeof t);
     uint8_t *pb = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_FIELD_PARTY_OFF + foe * DFI_PARTY_BYTES_PER_SIDE;
     memcpy(t.party_order[foe], pb, DFI_PARTY_BYTES_PER_SIDE);
-    for (uint32_t k = DUOFORGE_ACTIVE_PER_SIDE; k < DUOFORGE_MAX_ROSTER; ++k) {
+    for (uint32_t k = active; k < DUOFORGE_MAX_ROSTER; ++k) {
         dfi_party_put(&t, foe, k, DFI_PARTY_HIDDEN);
     }
     memcpy(pb, t.party_order[foe], DFI_PARTY_BYTES_PER_SIDE);
@@ -490,10 +491,11 @@ static void dfi_view_hide_foe_illusion(uint8_t *s, uint32_t foe, const duoforge_
     memset(il + DFI_ENC_TAIL5_ILL_PENDING_OFF, 0, 4u);
 }
 
-/* The foe's party_order of a world built from a public view (from_view): the two actives from the view (public), then the
- * hypothesis's brought order (its first `count` picks, the brought members in pick order) minus the two actives. The bench
- * is hypothesis-supplied (decision 0023): the true foe order never reaches a world. Nothing is brought: the order is zero. */
-static duoforge_status dfi_view_world_foe_party(uint8_t *s, uint32_t foe, uint32_t brought_mask, const uint8_t *pick_order)
+/* The foe's party_order of a world built from a public view (from_view): the `active` actives from the view (public; two, one
+ * in singles), then the hypothesis's brought order (its first `count` picks, the brought members in pick order) minus them.
+ * The bench is hypothesis-supplied (decision 0023): the true foe order never reaches a world. Nothing is brought: the order is zero. */
+static duoforge_status dfi_view_world_foe_party(uint8_t *s, uint32_t foe, uint32_t brought_mask, const uint8_t *pick_order,
+                                                uint32_t active)
 {
     uint32_t count = 0u;
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
@@ -506,9 +508,10 @@ static duoforge_status dfi_view_world_foe_party(uint8_t *s, uint32_t foe, uint32
     if (count == 0u) {
         memset(t.party_order[foe], 0, DFI_PARTY_BYTES_PER_SIDE);
     } else {
+        /* Singles (decision 0083): one active, so entry 1 is the bench (hidden in the view) and c stays 0. */
         const uint32_t a = dfi_party_entry(&t, foe, 0u);
-        const uint32_t c = dfi_party_entry(&t, foe, 1u);
-        if ((a == 0u) != (c == 0u) || a > DUOFORGE_MAX_ROSTER || c > DUOFORGE_MAX_ROSTER) {
+        const uint32_t c = active > 1u ? dfi_party_entry(&t, foe, 1u) : 0u;
+        if ((active > 1u && (a == 0u) != (c == 0u)) || a > DUOFORGE_MAX_ROSTER || c > DUOFORGE_MAX_ROSTER) {
             return DUOFORGE_E_MALFORMED;
         }
         /* No active is placed yet (team selection): the party is the hypothesis's pick order, the leads first. */
@@ -516,7 +519,7 @@ static duoforge_status dfi_view_world_foe_party(uint8_t *s, uint32_t foe, uint32
         for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER; ++k) {
             dfi_party_put(&t, foe, k, 0u);
         }
-        uint32_t k = placed ? DUOFORGE_ACTIVE_PER_SIDE : 0u;
+        uint32_t k = placed ? active : 0u;
         if (!placed) {
             for (uint32_t i = 0u; i < count && i < DUOFORGE_MAX_ROSTER; ++i) {
                 if (pick_order[i] >= DUOFORGE_MAX_ROSTER) {
@@ -528,13 +531,15 @@ static duoforge_status dfi_view_world_foe_party(uint8_t *s, uint32_t foe, uint32
             return DUOFORGE_OK;
         }
         dfi_party_put(&t, foe, 0u, a);
-        dfi_party_put(&t, foe, 1u, c);
+        if (active > 1u) {
+            dfi_party_put(&t, foe, 1u, c);
+        }
         for (uint32_t i = 0u; i < count && i < DUOFORGE_MAX_ROSTER; ++i) {
             if (pick_order[i] >= DUOFORGE_MAX_ROSTER) {
                 return DUOFORGE_E_MALFORMED;
             }
             const uint32_t r = (uint32_t)pick_order[i] + 1u;
-            if (r == a || r == c) {
+            if (r == a || (active > 1u && r == c)) {
                 continue;
             }
             if (k >= DUOFORGE_MAX_ROSTER) {
@@ -636,7 +641,8 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     }
     const size_t n = dfi_encode_unchecked(ctx, b, s);
     if (dfi_kind_limits_of(ctx->data_kind).pool_rules) {
-        dfi_view_hide_foe_party(s, foe); /* step G46: the foe's party_order past the leads is hidden (decision 0023) */
+        /* step G46: the foe's party_order past the leads is hidden (decision 0023) */
+        dfi_view_hide_foe_party(s, foe, dfi_context_active(ctx));
         dfi_view_hide_foe_illusion(s, foe, b); /* Illusion (decision 0026 section 4): the foe's record hides the disguise's truth */
     }
     uint8_t order[DFI_QUEUE_CAPACITY] = {0};
@@ -683,7 +689,7 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     }
     uint8_t *fs = side_at(s, foe);
     fs[DFI_ENC_SIDE_BROUGHT_OFF] = 0u;
-    for (uint32_t k = 2u; k < DUOFORGE_MAX_ROSTER; ++k) {
+    for (uint32_t k = dfi_context_active(ctx); k < DUOFORGE_MAX_ROSTER; ++k) { /* past the leads: one in singles (0083) */
         fs[DFI_ENC_SIDE_ORDER_OFF + k] = (uint8_t)DUOFORGE_VIEW_PICK_NONE;
     }
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
@@ -722,7 +728,7 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
     out->epoch = battle->request_epoch;
     out->foe_seen_mask = battle->sides[player].seen_mask;
     out->foe_leads[0] = battle->sides[foe].brought_order[0];
-    out->foe_leads[1] = battle->sides[foe].brought_order[1];
+    out->foe_leads[1] = dfi_context_singles(ctx) ? (uint8_t)DUOFORGE_VIEW_PICK_NONE : battle->sides[foe].brought_order[1];
     out->queue_count = battle->queue_len;
     for (uint32_t q = 0u; q < battle->queue_len; ++q) {
         const dfi_queue_record *r = &battle->queue[q];
@@ -1400,6 +1406,15 @@ static duoforge_status dfi_check_picks(const duoforge_context *ctx, const duofor
                 return DUOFORGE_E_INVALID_ARGUMENT;
             }
         }
+        /* Singles (decision 0083): the bench follows the lead in roster order, so a pick order is the lead, then the rest
+         * ascending (dfi_apply_team_selection); any other order is not a state of the game. */
+        if (dfi_context_singles(ctx)) {
+            for (uint32_t k = 2u; k < count; ++k) {
+                if (h->pick_order[k] <= h->pick_order[k - 1u]) {
+                    return DUOFORGE_E_INVALID_ARGUMENT;
+                }
+            }
+        }
     }
     *out_mask = (uint8_t)mask;
     return DUOFORGE_OK;
@@ -1495,7 +1510,8 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     memcpy(fs + DFI_ENC_SIDE_ORDER_OFF, hypothesis->pick_order, DUOFORGE_MAX_ROSTER);
     if (dfi_kind_limits_of(ctx->data_kind).pool_rules) {
         /* the foe's party_order: the actives of the view, the bench from the hypothesis (decision 0023), never the true state */
-        const duoforge_status ps = dfi_view_world_foe_party(s, foe, brought, hypothesis->pick_order);
+        const duoforge_status ps = dfi_view_world_foe_party(s, foe, brought, hypothesis->pick_order,
+                                                            dfi_context_active(ctx));
         if (ps != DUOFORGE_OK) {
             return ps;
         }
@@ -1753,7 +1769,8 @@ static bool dfi_view_neutral_hypothesis(const duoforge_context *ctx, const duofo
                 used |= 1u << m;
             }
         }
-        for (uint32_t pass = 0u; pass < 2u; ++pass) {
+        /* Singles (decision 0083): the bench is the rest in roster order (the second pass alone). */
+        for (uint32_t pass = dfi_context_singles(ctx) ? 1u : 0u; pass < 2u; ++pass) {
             for (uint32_t m = 0u; m < member_count && k < ctx->brought_count; ++m) {
                 const bool seen = ((uint32_t)view->foe_seen_mask >> m & 1u) != 0u;
                 if (((used >> m) & 1u) == 0u && (pass == 1u || seen)) {
@@ -1932,7 +1949,7 @@ static duoforge_status neutral(const duoforge_context *ctx, const duoforge_publi
     const uint32_t foe = v->player ^ 1u;
     uint32_t count = 0u;
     uint32_t mask = 0u;
-    for (uint32_t k = 0u; k < 2u; ++k) {
+    for (uint32_t k = 0u; k < dfi_context_active(ctx); ++k) { /* one lead in singles (decision 0083) */
         const uint32_t m = v->foe_leads[k];
         if (m >= DUOFORGE_MAX_ROSTER || (mask & (1u << m)) != 0u) {
             return DUOFORGE_E_MALFORMED;

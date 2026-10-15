@@ -371,7 +371,7 @@ _Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVE
                                             DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE * 2u,
                "the tail in memory: the reserved bytes gone, the field block's pad, the positions' pads and Ally Switch pads");
 
-/* True for the kinds whose states carry the POOL tail: _POOL and _POOL_DEV. */
+/* True for the kinds whose states carry the POOL tail: _POOL, _POOL_DEV and _POOL_SINGLES_DEV. */
 bool dfi_context_has_pool_tail(const struct duoforge_context *ctx);
 /* The schema id and the encoded size of the states of a context: schema 3 and 1009 bytes, or with the POOL tail
  * DFI_STATE_SCHEMA_POOL_TAIL_REV5 and 1357. */
