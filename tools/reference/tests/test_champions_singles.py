@@ -58,9 +58,12 @@ def main(argv):
     listed = battles()
     for name, spec, trace in listed:
         conformance_records.write_battle(trace_to_c.convert_battle(name, spec, trace, tables), True, records, kind=kind)
-    p = subprocess.run([argv[1]], input=records.getvalue(), capture_output=True, text=True)
+    # bytes, not text: a text pipe on Windows writes CR LF, and the runner refuses the CR
+    p = subprocess.run([argv[1]], input=records.getvalue().encode('ascii'), capture_output=True)
+    stdout = p.stdout.decode('utf-8', 'replace').replace('\r\n', '\n')
+    stderr = p.stderr.decode('utf-8', 'replace').replace('\r\n', '\n')
     verdicts = {}
-    for line in p.stdout.splitlines():
+    for line in stdout.splitlines():
         if line.startswith('R '):
             words = line.split(' ')
             verdicts[words[1]] = words[2]
@@ -68,8 +71,8 @@ def main(argv):
     steps = sum(len(t['steps']) for _, _, t in listed)
     print('champions-singles: %d battles, %d steps, %d pass' % (len(listed), steps, len(listed) - len(failed)))
     if failed or p.returncode not in (0, 1):
-        sys.stdout.write(p.stdout[-6000:])
-        sys.stderr.write(p.stderr[-2000:])
+        sys.stdout.write(stdout[-6000:])
+        sys.stderr.write(stderr[-2000:])
         print('champions-singles: not passing: %s' % ', '.join(failed))
         return 1
     return 0
