@@ -12,6 +12,7 @@
 #include "data/pool_tables.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
+#include "state/knowledge.h"
 
 static void print_event(FILE *out, const char *label, const duoforge_event *e)
 {
@@ -152,8 +153,11 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                  * Stone, set by a Knock Off that the stone refused, doubles no Speed and shows nothing). */
                 const uint32_t target =
                     (s == viewer && (e->vols & 4u) != 0u) ? e->locked_target : DUOFORGE_TARGET_NONE;
+                /* The foe of a Pokemon whose last move is a lockedmove sees no locked slot, a Choice lock's included (view audit
+                 * 2026-10-10, dfi_maybe_lockedmove; issue 544): the reference's slot is the owner's view. */
+                const uint32_t want_slot = s != viewer && dfi_maybe_lockedmove(b, s * 2u + k) ? DUOFORGE_MOVE_SLOT_NONE : e->locked_slot;
                 bool ok = memcmp(pv->stages, e->stages, 7u) == 0 && pv->confused == (e->confusion != 0u ? 1u : 0u) &&
-                          pv->locked_slot == e->locked_slot && pv->locked_target == target &&
+                          pv->locked_slot == want_slot && pv->locked_target == target &&
                           pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
                           pv->flash_fire == ((e->vols & 2u) != 0u ? 1u : 0u) &&
                           pv->charging == ((e->vols & 4u) != 0u ? 1u : 0u) &&
