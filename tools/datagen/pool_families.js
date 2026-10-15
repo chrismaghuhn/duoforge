@@ -977,6 +977,50 @@ function checkG67(dex) {
 // four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
 // another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
 // stands, and leaves a self change, a bounced drop, and a rise alone; no Grass-type forme has the ability.
+// Step K4 (#475, Gravity in a later hit; src/combat/turn.c dfi_accuracy_check): for accuracy 90 and every pair of stages, the
+// binary64 chain of the Champions loop (data/mods/champions/scripts.ts:481-510) gives an integer exactly when the rational
+// (90 x (3+a)/3 or 90 x 3/(3-a)) x (the evasion factor) is an integer, EXCEPT stages (a, e) = (-2, -4) and (4, -4), where it
+// gives 126.00000000000001 and 490.00000000000006. Where it is an integer, Gravity's modifier (sim/battle.ts:929-932,
+// modify with 6840/4096) gives trunc((trunc(value x 6840) + 2047) / 4096), which the engine computes exactly; it is checked
+// here against the binary64 result for every such pair.
+function checkK4() {
+    // The proven base set: src/combat/moves/multiaccuracy.h holds DFI_MULTIACCURACY_PROVEN_BASE and turn.c applies Gravity's
+    // later-hit rule only for it. Each proven base needs its own entry here (its binary64 exceptions and its count of integral
+    // pairs); raising the header's base without an entry fails this check instead of passing on the base 90.
+    const K4_PROVEN = {
+        90: {floatOff: [[-2, -4], [4, -4]], integral: 108},
+    };
+    const header = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'combat', 'moves', 'multiaccuracy.h'), 'utf8');
+    const headerBase = Number(/#define DFI_MULTIACCURACY_PROVEN_BASE (\d+)u/.exec(header)[1]);
+    expect('K4 proven base set equals the header', Object.keys(K4_PROVEN).map(Number), [headerBase]);
+    const table = [1, 4 / 3, 5 / 3, 2, 7 / 3, 8 / 3, 3];
+    const trunc = Math.trunc;
+    const modify = (value, numerator) => trunc((trunc(value * numerator) + 2048 - 1) / 4096);
+    for (const base of Object.keys(K4_PROVEN).map(Number)) {
+        let integral = 0;
+        for (let a = -6; a <= 6; a++) {
+            for (let e = -6; e <= 6; e++) {
+                let acc = base;
+                if (a > 0) acc *= table[a]; else acc /= table[-a];
+                if (e > 0) acc /= table[e]; else if (e < 0) acc *= table[-e];
+                const numA = a > 0 ? 3 + a : 3, denA = a > 0 ? 3 : 3 - a;
+                const numE = e > 0 ? 3 : 3 - e, denE = e > 0 ? 3 + e : 3;
+                const num = base * numA * numE, den = denA * denE;
+                const exactInteger = num % den === 0;
+                const floatOff = K4_PROVEN[base].floatOff.some(([fa, fe]) => fa === a && fe === e);
+                expect('K4 integral stage pair ' + base + ':' + a + ',' + e, Number.isInteger(acc), exactInteger && !floatOff);
+                if (Number.isInteger(acc)) {
+                    integral += 1;
+                    // the gravity modifier: 6840/4096 as the chain's 6840 over 4096 (chainModify, battle.ts:2321-2330)
+                    expect('K4 gravity value ' + base + ':' + a + ',' + e, modify(acc, 6840),
+                        trunc((trunc(num * 6840 / den) + 2047) / 4096));
+                }
+            }
+        }
+        expect('K4 integral pairs of base ' + base, integral, K4_PROVEN[base].integral);
+    }
+}
+
 function checkG33(dex) {
     expect('multihit', ['dualwingbeat', 'tripleaxel', 'twinbeam'].map((id) => dex.moves.get(id).multihit), [2, 3, 2]);
     expect('multiaccuracy', ['dualwingbeat', 'tripleaxel', 'twinbeam'].map((id) => !!dex.moves.get(id).multiaccuracy),
@@ -1951,10 +1995,16 @@ function moveIsModelled(raw, id) {
     if (raw.sideCondition !== undefined && !MODELLED_SIDE.has(raw.sideCondition)) {
         return false;
     }
-    if (raw.pseudoWeather !== undefined && raw.pseudoWeather !== 'trickroom') {
+    // Step K4 (#475, decision 0015 5dl): Gravity is modelled (gen_closure.py PSEUDO_WEATHER); the gravity-flagged moves are not
+    // (gen_closure.py 'flag gravity': Gravity's choice disable and onStart removal are not built).
+    if (raw.flags && raw.flags.gravity) {
         return false;
     }
-    if (raw.condition !== undefined && !(MODELLED_SIDE.has(raw.sideCondition) || raw.pseudoWeather === 'trickroom')) {
+    if (raw.pseudoWeather !== undefined && raw.pseudoWeather !== 'trickroom' && raw.pseudoWeather !== 'gravity') {
+        return false;
+    }
+    if (raw.condition !== undefined && !(MODELLED_SIDE.has(raw.sideCondition) || raw.pseudoWeather === 'trickroom' ||
+                                         raw.pseudoWeather === 'gravity')) {
         return false;
     }
     return true;
@@ -2204,6 +2254,7 @@ function main() {
     checkG27(dex);
     checkG32(dex);
     checkG33(dex);
+    checkK4();
     checkG41(dex);
     checkG67(dex);
     checkG81(dex);

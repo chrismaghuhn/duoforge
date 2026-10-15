@@ -485,8 +485,9 @@ static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_mem
  * getTarget (runMove) and the choice's target still see "normal", and the request offers a target. Wide Guard, the
  * spread modifier and the protect check read the active move's target, so they see the class that this returns; the
  * redirection of getMoveTargets' default branch (Follow Me, Lightning Rod) is not run for a spread class. The user's
- * grounding is its type alone (no Levitate, Air Balloon, Ingrain, Gravity, Magnet Rise, Telekinesis, Smack Down or
- * Roost is modelled; no pool forme that learns the move is a Flying type: tools/datagen/test_pool_rows.py). The
+ * grounding is its type alone (no Levitate, Air Balloon, Ingrain, Magnet Rise, Telekinesis, Smack Down or Roost is
+ * modelled, and Gravity (step K4) is not consulted for it; no pool forme that learns the move is a Flying type:
+ * tools/datagen/test_pool_rows.py). The
  * terrain and the user stay the same through the move, so base power and target class agree. */
 static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
 {
@@ -3212,13 +3213,14 @@ static void dfi_emit_item_left(dfi_run *r, uint32_t flat, uint32_t code, uint32_
 }
 
 /* The item's Start after setItem (sim/pokemon.ts:1885-1887) where it prints a line: Air Balloon's onStart (data/items.ts:191-195)
- * shows the balloon, ITEM_SHOWN, before the line of the move or ability that gave it (issue 520). Klutz, Embargo, Magic Room
- * and Gravity are not marked, so the holder never ignores it here. An item whose Start uses it up is refused before
+ * shows the balloon, ITEM_SHOWN, before the line of the move or ability that gave it (issue 520). It prints nothing while Gravity is
+ * up (`!this.field.getPseudoWeather('gravity')`, the check of the switch-in line in dfi_switch_in). Klutz, Embargo and Magic Room
+ * are not marked, so the holder never ignores the item here. An item whose Start uses it up is refused before
  * (dfi_start_uses_item). */
 static void dfi_item_start_shown(dfi_run *r, uint32_t flat)
 {
     const dfi_member *m = dfi_at(r->b, flat);
-    if (m != NULL && m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_AIRBALLOON)) {
+    if (m != NULL && m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_AIRBALLOON) && r->b->tail.gravity_turns == 0u) {
         const duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_AIRBALLOON,
                                             DUOFORGE_NO_POSITION);
         dfi_emit(r, &shown);
@@ -5904,8 +5906,9 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
         if (dfi_holds(b, victim, DFI_ITEM_BRIGHTPOWDER)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        /* The rational comparison below is proved for the accuracy 90 only (combat/moves/multiaccuracy.h, checkG33): a new
-         * multiaccuracy move extends the proof before it runs. */
+        /* The rational comparison below is proved for the accuracy 90 only (combat/moves/multiaccuracy.h, checkG33), and so is
+         * Gravity's branch after it and its two binary64 exceptions (checkK4): any other base is refused here, before either
+         * is reached. A new multiaccuracy move extends both proofs before it runs. */
         if (!dfi_multiaccuracy_proven(base_accuracy)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
@@ -5915,8 +5918,25 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
         const uint32_t den_a = acc > DFI_BIAS6 ? 3u : 3u + (DFI_BIAS6 - acc);
         const uint32_t num_e = eva > DFI_BIAS6 ? 3u : 3u + (DFI_BIAS6 - eva);
         const uint32_t den_e = eva > DFI_BIAS6 ? 3u + (eva - DFI_BIAS6) : 3u;
-        const uint32_t numerator = base_accuracy * num_a * num_e; /* <= 100 x 9 x 9 */
-        const uint32_t denominator = den_a * den_e;               /* <= 81 */
+        uint32_t numerator = base_accuracy * num_a * num_e; /* <= 100 x 9 x 9 */
+        uint32_t denominator = den_a * den_e;               /* <= 81 */
+        /* Step K4 (#475, Gravity): the later hit's ModifyAccuracy runs after the stages (sim/battle-actions.ts:935; the Champions
+         * loop, data/mods/champions/scripts.ts:481-510). Gravity's chainModify([6840, 4096]) (data/moves.ts:7807-7810) only sets
+         * the event's modifier, and runEvent applies that modifier only to an INTEGER value (sim/battle.ts:929-932). The stage
+         * value is an integer when the rational is, with two exceptions for the accuracy 90 (the only proven base) where
+         * binary64 rounds it off the integer (126.00000000000001 for stages -2 and -4, 490.00000000000006 for 4 and -4;
+         * tools/datagen/pool_families.js checkK4). Both values are above 100, so every draw hits with or without the
+         * modifier: the exception below is not observable and stays as the exact statement of the reference.
+         * Then the value is trunc((trunc(acc x 6840) + 2047) / 4096) and the draw is v < that integer; otherwise nothing changes. */
+        if (b->tail.gravity_turns != 0u && denominator != 0u && numerator % denominator == 0u) {
+            /* stage a is -2 or 4 and stage e is -4, compared on the biased values (acc and eva are at least 0) */
+            const bool float_off_integer = (acc + 2u == DFI_BIAS6 || acc == DFI_BIAS6 + 4u) && eva + 4u == DFI_BIAS6;
+            if (!float_off_integer) {
+                const uint32_t exact_floor = (numerator * 6840u) / denominator;
+                numerator = (exact_floor + 2047u) / 4096u;
+                denominator = 1u;
+            }
+        }
         uint32_t v = 0u;
         const duoforge_status st = dfi_draw(r->draws, DFI_SITE_ACCURACY, 0u, 100u, &v);
         if (st != DUOFORGE_OK) {
@@ -6777,13 +6797,17 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
          * Iron Ball holder is hit by a Ground move whatever its types and ability (the Flying component of the effectiveness
          * is still neutral: its chart immunity counts 0 in dfi_type_mod, as the holder's Effectiveness handler returns 0). */
         const bool iron_ground = move_type == DFI_TYPE_GROUND && tm != NULL && dfi_holds(b, tm, DFI_ITEM_IRONBALL);
-        if (!scrappy && !iron_ground && dfi_type_immune(b, tm, move_type)) {
+        /* Step K4 (#475, sim/pokemon.ts:2149, :2252-2254): under Gravity every Pokemon is grounded, so runImmunity('Ground')
+         * is isGrounded alone: no Flying chart immunity, no Levitate, no Air Balloon. The Iron Ball rule above is the same test. */
+        const bool gravity_ground = move_type == DFI_TYPE_GROUND && tm != NULL && b->tail.gravity_turns != 0u;
+        const bool ground_free = iron_ground || gravity_ground;
+        if (!scrappy && !ground_free && dfi_type_immune(b, tm, move_type)) {
             hit[i] = false;
             smart_dropped = true;
             if (!smart_step) {
                 dfi_immune(r, targets[i], 0u);
             }
-        } else if (move_type == DFI_TYPE_GROUND && !iron_ground && dfi_ability(b, tm, DFI_ABILITY_LEVITATE)) {
+        } else if (move_type == DFI_TYPE_GROUND && !ground_free && dfi_ability(b, tm, DFI_ABILITY_LEVITATE)) {
             /* runImmunity('Ground'): isGrounded is null for a Levitate holder (sim/pokemon.ts:2156), shown as
              * -immune|X|[from] ability: Levitate (:2257-2258); a Flying type is immune first, without the line. */
             hit[i] = false;
@@ -6791,7 +6815,7 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
             if (!smart_step) {
                 dfi_immune(r, targets[i], 1u + DFI_ABILITY_LEVITATE);
             }
-        } else if (move_type == DFI_TYPE_GROUND && dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+        } else if (move_type == DFI_TYPE_GROUND && !gravity_ground && dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
             /* step G67: isGrounded is false for an Air Balloon holder (sim/pokemon.ts:2159, `return item !== 'airballoon'`), so
              * runImmunity prints the plain -immune (its else branch, sim/pokemon.ts:2265); no [from]. */
             hit[i] = false;
@@ -6850,6 +6874,13 @@ static duoforge_status dfi_accuracy_targets(dfi_run *r, uint32_t user, const uin
                 uint32_t acc_chain = 4096u;
                 bool acc_ok = true;
                 const dfi_member *acc_target = dfi_at(b, targets[i]);
+                /* Step K4 (#475, data/moves.ts:7807-7810, the field's ModifyAccuracy with no priority: 0): Gravity's 6840/4096
+                 * runs BEFORE the priority -1 modifiers (Compound Eyes, Snow Cloak, Sand Veil, data/abilities.ts:667, :4010,
+                 * :4374) and the priority -2 group (Wide Lens, Bright Powder, data/items.ts:7713, :659), so it is the first step
+                 * of the chain; sim/battle.ts:resolvePriority and comparePriority order the handlers by priority first. */
+                if (base_accuracy != 0u && b->tail.gravity_turns != 0u) {
+                    acc_ok = dfi_chain_modify(acc_chain, 6840u, &acc_chain);
+                }
                 if (acc_compound_eyes) {
                     acc_ok = dfi_chain_modify(acc_chain, 5325u, &acc_chain);
                 }
@@ -7961,6 +7992,22 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         e.detail = (uint8_t)DUOFORGE_FIELD_TRICK_ROOM;
         dfi_emit(r, &e);
         r->mres |= DFI_MRES_TRUE; /* addPseudoWeather (or its end) returns true */
+        return DUOFORGE_OK;
+    }
+    if (status_move && md->pseudo_weather == DFI_PSEUDO_WEATHER_GRAVITY) {
+        /* Step K4 (#475, data/moves.ts:7754-7842, sim/field.ts:186-212): Gravity has no onFieldRestart, so a Gravity that is
+         * up makes addPseudoWeather return false: the move fails with -fail|user and [still] (sim/battle-actions.ts:1303-1307),
+         * and the timer is not reset. Otherwise 5 turns (the Persistent ability is not in the pool) and -fieldstart|move:
+         * Gravity with no [of] (onFieldStart, :7773-7778). The field's own counter is the tail's (gravity_turns). */
+        if (b->tail.gravity_turns != 0u) {
+            dfi_fail_still(r, user);
+            return DUOFORGE_OK;
+        }
+        b->tail.gravity_turns = (uint8_t)DFI_TAIL_GRAVITY_MAX;
+        duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION);
+        e.detail = (uint8_t)DUOFORGE_FIELD_GRAVITY;
+        dfi_emit(r, &e); /* [-fieldstart] */
+        r->mres |= DFI_MRES_TRUE; /* addPseudoWeather returns true */
         return DUOFORGE_OK;
     }
     /* Substitute (decision 0032, data/moves.ts:18305-18374): onTryHit, then the Substitute's start and its cost. A status move with
@@ -10383,8 +10430,9 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                  * (sim/battle.ts effectTypeOrder), so Cloud Nine's line comes before Air Balloon's on one holder. */
                 /* Air Balloon's onStart (step G67, data/items.ts:191-195): the holder's own -item line, ITEM_SHOWN (decision
                  * 0033). Its place among the handlers is measured against recorded battles (the order of the item's onStart
-                 * against the entry abilities is not pinned yet). Gravity is not modelled (unmarked). */
-                if (m->hp != 0u && dfi_holds(b, m, DFI_ITEM_AIRBALLOON)) {
+                 * against the entry abilities is not pinned yet). */
+                /* Step K4 (#475, data/items.ts:191-195): no line under Gravity (`!this.field.getPseudoWeather('gravity')`). */
+                if (m->hp != 0u && dfi_holds(b, m, DFI_ITEM_AIRBALLOON) && b->tail.gravity_turns == 0u) {
                     duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_AIRBALLOON,
                                                   DUOFORGE_NO_POSITION);
                     dfi_emit(r, &shown);
@@ -11334,6 +11382,21 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         if (b->trick_room_turns == 0u) {
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
             e.detail = (uint8_t)DUOFORGE_FIELD_TRICK_ROOM;
+            dfi_emit(r, &e); /* [-fieldend] */
+        } else {
+            dfi_residual_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
+        }
+    }
+    /* Step K4 (#475, data/moves.ts:7832-7833, Gravity's onFieldResidualOrder 27 and SubOrder 2): after Trick Room (27.1), before
+     * the terrains (27.7). Its end is `-fieldend|move: Gravity` with no [of] (:7834-7836). */
+    if (b->tail.gravity_turns != 0u) {
+        b->tail.gravity_turns = (uint8_t)((uint32_t)b->tail.gravity_turns - 1u); /* wide-operands-reviewed: >= 1 */
+        if (b->tail.gravity_turns == 0u) {
+            duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_END, DUOFORGE_NO_POSITION);
+            e.detail = (uint8_t)DUOFORGE_FIELD_GRAVITY;
             dfi_emit(r, &e); /* [-fieldend] */
         } else {
             dfi_residual_faints(r);

@@ -1439,5 +1439,29 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(lists[1], [o for o in lists_before[1] if o.kind != options.SWITCH])
 
 
+class GravityViewTest(unittest.TestCase):
+    """K4 (#475, decision 0015 5dl): the field view's gravity_turns per step, for both viewers, from the recorded k4 battles.
+    The view extension holds FIELD_EXT at offset 16 (python/duoforge/_layout.py: OBSERVATION_EXT), gravity_turns its byte 0.
+    Gravity is set in turn 1 (state 2 shows 4 after the turn-1 residual), counts down one per residual and is gone after the
+    fifth residual (state 6 shows 0): the same count for both players, since the field is shared."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.ref = Reference.get()
+
+    def test_the_countdown_is_five_turns_for_both_viewers(self):
+        gravity = 16  # FIELD_EXT.gravity_turns within OBSERVATION_EXT
+        sequences = {
+            "k4_gravity_start_turns": [0, 0, 4, 3, 2, 1, 0, 0],
+            "k4_gravity_reuse_fail": [0, 0, 4, 3, 2, 1, 0, 0],
+            "k4_gravity_trick_room_order": [0, 0, 4, 3, 2, 1, 0],
+        }
+        for name, want in sequences.items():
+            exts = self.ref.pool().battles_by_name[name].exts  # the k4 battles are POOL battles
+            for k, value in enumerate(want):
+                for viewer in (0, 1):
+                    self.assertEqual(exts[(k, viewer)][gravity], value, f"{name} state {k} viewer {viewer}")
+
+
 if __name__ == "__main__":
     unittest.main()
