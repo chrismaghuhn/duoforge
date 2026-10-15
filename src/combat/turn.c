@@ -486,8 +486,9 @@ static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_mem
  * getTarget (runMove) and the choice's target still see "normal", and the request offers a target. Wide Guard, the
  * spread modifier and the protect check read the active move's target, so they see the class that this returns; the
  * redirection of getMoveTargets' default branch (Follow Me, Lightning Rod) is not run for a spread class. The user's
- * grounding is its type alone (no Levitate, Air Balloon, Ingrain, Gravity, Magnet Rise, Telekinesis, Smack Down or
- * Roost is modelled; no pool forme that learns the move is a Flying type: tools/datagen/test_pool_rows.py). The
+ * grounding is its type alone (no Levitate, Air Balloon, Ingrain, Magnet Rise, Telekinesis, Smack Down or Roost is
+ * modelled, and Gravity (step K4) is not consulted for it; no pool forme that learns the move is a Flying type:
+ * tools/datagen/test_pool_rows.py). The
  * terrain and the user stay the same through the move, so base power and target class agree. */
 static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
 {
@@ -5883,8 +5884,9 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
         if (dfi_holds(b, victim, DFI_ITEM_BRIGHTPOWDER)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        /* The rational comparison below is proved for the accuracy 90 only (combat/moves/multiaccuracy.h, checkG33): a new
-         * multiaccuracy move extends the proof before it runs. */
+        /* The rational comparison below is proved for the accuracy 90 only (combat/moves/multiaccuracy.h, checkG33), and so is
+         * Gravity's branch after it and its two binary64 exceptions (checkK4): any other base is refused here, before either
+         * is reached. A new multiaccuracy move extends both proofs before it runs. */
         if (!dfi_multiaccuracy_proven(base_accuracy)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
@@ -5899,8 +5901,10 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
         /* Step K4 (#475, Gravity): the later hit's ModifyAccuracy runs after the stages (sim/battle-actions.ts:935; the Champions
          * loop, data/mods/champions/scripts.ts:481-510). Gravity's chainModify([6840, 4096]) (data/moves.ts:7807-7810) only sets
          * the event's modifier, and runEvent applies that modifier only to an INTEGER value (sim/battle.ts:929-932). The stage
-         * value is an integer when the rational is, with two exceptions where binary64 rounds it off the integer
-         * (126.00000000000001 for stages -2 and -4, 490.00000000000006 for 4 and -4; tools/datagen/pool_families.js checkK4).
+         * value is an integer when the rational is, with two exceptions for the accuracy 90 (the only proven base) where
+         * binary64 rounds it off the integer (126.00000000000001 for stages -2 and -4, 490.00000000000006 for 4 and -4;
+         * tools/datagen/pool_families.js checkK4). Both values are above 100, so every draw hits with or without the
+         * modifier: the exception below is not observable and stays as the exact statement of the reference.
          * Then the value is trunc((trunc(acc x 6840) + 2047) / 4096) and the draw is v < that integer; otherwise nothing changes. */
         if (b->tail.gravity_turns != 0u && denominator != 0u && numerator % denominator == 0u) {
             /* stage a is -2 or 4 and stage e is -4, compared on the biased values (acc and eva are at least 0) */
@@ -10372,7 +10376,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                  * (sim/battle.ts effectTypeOrder), so Cloud Nine's line comes before Air Balloon's on one holder. */
                 /* Air Balloon's onStart (step G67, data/items.ts:191-195): the holder's own -item line, ITEM_SHOWN (decision
                  * 0033). Its place among the handlers is measured against recorded battles (the order of the item's onStart
-                 * against the entry abilities is not pinned yet). Gravity is not modelled (unmarked). */
+                 * against the entry abilities is not pinned yet). */
                 /* Step K4 (#475, data/items.ts:191-195): no line under Gravity (`!this.field.getPseudoWeather('gravity')`). */
                 if (m->hp != 0u && dfi_holds(b, m, DFI_ITEM_AIRBALLOON) && b->tail.gravity_turns == 0u) {
                     duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, 1u + DFI_ITEM_AIRBALLOON,
