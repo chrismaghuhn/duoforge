@@ -5,7 +5,8 @@
     data/teams/index.json   {"registry": 1, "teams": [entry, ...]}, an entry for each team in the order they were added
 
 An entry is {"id", "name", "source": {"url", "event", "placing"}, "notes", "sha256"} and, once a correction has
-replaced the team, "superseded_by": the id of the team that replaced it. The id is upper case ([A-Z][A-Z0-9_]*, 32
+replaced the team, "superseded_by": the id of the team that replaced it; a team that the engine's setup refuses is
+marked, never deleted: "status": "pending" (the default, unwritten, is "active") with its "status_reason" (#406). The id is upper case ([A-Z][A-Z0-9_]*, 32
 characters at most; a dash is how a pairing joins two ids, so an id has none); `source` has the three keys, each a string
 or null; `sha256` is the SHA-256 of the text of the paste file with CRLF turned into LF (sha256_of).
 
@@ -45,7 +46,8 @@ INDEX = 'index.json'
 FORMAT = 1
 ID = re.compile(r'[A-Z][A-Z0-9_]{0,31}')
 ENTRY_KEYS = ('id', 'name', 'source', 'notes', 'sha256')
-OPTIONAL_KEYS = ('superseded_by',)
+OPTIONAL_KEYS = ('superseded_by', 'status', 'status_reason')
+STATUSES = ('active', 'pending')  # a pending team stays in the registry; readers of every team skip it (is_pending)
 SOURCE_KEYS = ('url', 'event', 'placing')
 STATS = r'(?:HP|Atk|Def|SpA|SpD|Spe)'
 HEAD = re.compile(r'^(?P<species>[^()@]+?)(?: \((?P<gender>[MF])\))?(?: @ (?P<item>[^@]+))?$')
@@ -126,6 +128,11 @@ def read_index(root):
 def entries(root):
     """The entries of the registry, in the order they were added."""
     return read_index(root)['teams']
+
+
+def is_pending(entry):
+    """Whether an entry is marked pending: a team a reader of every registry team skips and counts by its reason."""
+    return entry.get('status', 'active') == 'pending'
 
 
 def get_entry(root, team_id):
@@ -349,6 +356,13 @@ def problems(root, tables_for=None):
             found.append(('index', '%s: the source is {"url", "event", "placing"}, each a string or null' % where))
         if not isinstance(entry['sha256'], str) or not re.fullmatch(r'[0-9a-f]{64}', entry['sha256']):
             found.append(('index', '%s: the sha256 is 64 hex digits' % where))
+        if 'status' in entry and entry['status'] not in STATUSES:
+            found.append(('index', '%s: the status is one of %s' % (where, ', '.join(STATUSES))))
+        if is_pending(entry) != ('status_reason' in entry):
+            found.append(('index', '%s: a pending team has a status_reason, and only a pending team' % where))
+        elif 'status_reason' in entry and (not isinstance(entry['status_reason'], str)
+                                           or not entry['status_reason'].strip()):
+            found.append(('index', '%s: the status_reason is a string that says something' % where))
     for entry in index['teams']:
         if isinstance(entry, dict) and 'superseded_by' in entry:
             other = entry['superseded_by']

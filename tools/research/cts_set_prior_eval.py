@@ -38,10 +38,13 @@ def _norm(item, ability, nature, moves):
 
 
 def registry_raw():
-    """{species key: Counter(set)} of the registry's members, counted per member."""
+    """{species key: Counter(set)} of the registry's members, counted per member; a team marked pending (status) is
+    skipped."""
     out = collections.defaultdict(collections.Counter)
     index = json.loads((ROOT / "data" / "teams" / "index.json").read_text(encoding="utf-8"))
     for entry in index["teams"]:
+        if entry.get("status", "active") == "pending":
+            continue
         for block in (ROOT / "data" / "teams" / f"{entry['id']}.txt").read_text(encoding="utf-8").strip().split("\n\n"):
             rows = [r.strip() for r in block.strip().split("\n")]
             head = rows[0]

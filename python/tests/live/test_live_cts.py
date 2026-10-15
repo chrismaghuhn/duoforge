@@ -427,16 +427,39 @@ class CtsTest(unittest.TestCase):
         self.assertEqual(cts.setup_issue(self.data, bad), ("engine-setup", None))
 
     def test_the_setup_check_refuses_zero_stat_points_with_serious(self):
-        """The rule of #406 (#558), verbatim: exactly 0 Stat Points TOGETHER WITH the nature Serious is refused. A drawn
-        set carries no Stat Points (cts._sheet), so a Serious set is refused ("engine-setup") and a set of another
-        nature is accepted; Serious with Stat Points is accepted (data.setup_issue of the parsed member)."""
+        """The rule of #406 (#558), verbatim: exactly 0 Stat Points TOGETHER WITH the nature Serious is refused. A set's
+        own Stat Points (a paste's evs) are checked: 0 with Serious is refused ("engine-setup"), 0 with another nature
+        is accepted, and Serious with Stat Points is accepted. A set that states none (the table prior's) carries
+        SP_PLACEHOLDER, which the setup accepts under every nature (HauptSession, 2026-10-15)."""
         first = teams._paste(FIXTURE["foe_team"].split("\n\n")[0])[0]
-        self.assertEqual(cts.setup_issue(self.data, dict(first, nature="Serious")), ("engine-setup", None))
-        self.assertIsNone(cts.setup_issue(self.data, dict(first, nature="Adamant")))
-        self.assertIsNone(cts.setup_issue(self.data, dict(first, nature="Hardy")))
-        member = self.data.team(teams.to_text([dict(cts._sheet(first, "M"), nature="Serious")]))[0]
-        self.assertEqual(self.data.setup_issue(dict(member, sp=[0] * 6)), ("engine-setup", None))
-        self.assertIsNone(self.data.setup_issue(dict(member, sp=[0, 0, 0, 0, 0, 1])))  # Serious with 1 Stat Point
+        zero = [0] * 6
+        self.assertEqual(cts.setup_issue(self.data, dict(first, nature="Serious", evs=zero)), ("engine-setup", None))
+        self.assertIsNone(cts.setup_issue(self.data, dict(first, nature="Adamant", evs=zero)))
+        self.assertIsNone(cts.setup_issue(self.data, dict(first, nature="Hardy", evs=zero)))
+        self.assertIsNone(cts.setup_issue(self.data, dict(first, nature="Serious", evs=[0, 0, 0, 0, 0, 1])))
+        table_set = {k: first[k] for k in ("species", "item", "ability", "moves", "nature")}
+        for nature in ("Serious", "Adamant", "Hardy"):
+            self.assertIsNone(cts.setup_issue(self.data, dict(table_set, nature=nature)), nature)
+
+    def test_a_foe_sheets_stat_points_never_reach_the_worlds(self):
+        """#512 (HauptSession, 2026-10-15): a drawn foe sheet carries Stat Points (its set's own, or SP_PLACEHOLDER)
+        only for the setup check. The search's worlds are the particles' public records and observations with the
+        belief's spreads, so two priors that differ only in the sets' Stat Points give the same records, observations
+        and domains at every decision point. A change that lets a foe sheet's Stat Points into them fails here."""
+        sets = foe_sets()
+        runs = [self.run_closed([dict(s, evs=list(evs)) for s in sets])
+                for evs in (cts.SP_PLACEHOLDER, (32, 0, 2, 0, 0, 32))]
+        self.assertGreater(len(runs[0].points), 1)
+        self.assertEqual(len(runs[0].points), len(runs[1].points))
+        for a, b in zip(runs[0].points, runs[1].points):
+            self.assertEqual(a["sets"], b["sets"])
+            self.assertEqual([np.asarray(p["record"]).tobytes() for p in a["parts"]],
+                             [np.asarray(p["record"]).tobytes() for p in b["parts"]])
+            self.assertEqual([np.asarray(o).tobytes() for o in a["observations"]],
+                             [np.asarray(o).tobytes() for o in b["observations"]])
+            self.assertEqual(a["domain"], b["domain"])
+        # the sheets themselves differ, so the comparison is not vacuous
+        self.assertNotEqual(runs[0].t.particles[0].sets[0]["evs"], runs[1].t.particles[0].sets[0]["evs"])
 
     def test_the_lines_read_the_engines_support(self):
         """#512 S1: the partial-trap moves and the abilities the lines stop on are the engine's (the flag and

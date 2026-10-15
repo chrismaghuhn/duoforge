@@ -156,6 +156,22 @@ class Made(unittest.TestCase):
     def test_a_copy_is_as_it_must_be(self):
         self.assertEqual(self.problems(), [])
 
+    def test_a_marked_team_stays_in_the_registry(self):
+        """#406: a team the engine's setup refuses is marked pending with its reason, never deleted; is_pending tells a
+        reader of every team to skip it. The committed registry marks exactly the four teams of #406."""
+        index = self.index()
+        index['teams'][0].update(status='pending', status_reason='#406: 0 SP with Serious')
+        index['teams'][1].update(status='active')
+        self.write_index(index)
+        self.assertEqual(self.problems(), [])
+        self.assertTrue(reg.is_pending(index['teams'][0]))
+        self.assertFalse(reg.is_pending(index['teams'][1]))
+        self.assertFalse(reg.is_pending(index['teams'][2]))
+        pending = {e['id']: e['status_reason'] for e in reg.entries(ROOT) if reg.is_pending(e)}
+        self.assertEqual(pending, {i: '#406: 0 SP with Serious' for i in (
+            'LL_6AAA0DB038886B36383C1598_17', 'LL_6AAD0D0AE905C1DB68744103_13', 'LL_6A9083127A62DE813014077C_8',
+            'LL_6A5E4489937230B102D4026E_110')})
+
     def test_what_is_wrong_with_the_index(self):
         index = self.index()
         for change, part in (
@@ -172,7 +188,13 @@ class Made(unittest.TestCase):
                 (lambda i: i['teams'][0]['source'].update(extra='x'), 'the source'),
                 (lambda i: i['teams'][0]['source'].update(url=4), 'the source'),
                 (lambda i: i['teams'][0].update(sha256='abc'), 'the sha256'),
-                (lambda i: i['teams'][0].update(superseded_by='NOPE'), 'superseded by')):
+                (lambda i: i['teams'][0].update(superseded_by='NOPE'), 'superseded by'),
+                # a team the setup refuses is marked (#406): status active or pending, a reason with pending only
+                (lambda i: i['teams'][0].update(status='gone', status_reason='x'), 'the status is one of'),
+                (lambda i: i['teams'][0].update(status='pending'), 'a pending team has a status_reason'),
+                (lambda i: i['teams'][0].update(status='active', status_reason='x'), 'a pending team has a status_reason'),
+                (lambda i: i['teams'][0].update(status='pending', status_reason=' '), 'the status_reason is a string'),
+                (lambda i: i['teams'][0].update(status_reason='x', status='pending'), 'in that order')):
             with self.subTest(part):
                 changed = copy.deepcopy(index)
                 change(changed)

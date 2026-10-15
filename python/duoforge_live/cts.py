@@ -381,8 +381,11 @@ class SetPrior:
             s, weight = entry if isinstance(entry, tuple) else (entry, 1)
             if not isinstance(weight, int) or isinstance(weight, bool) or weight < 0:
                 raise ValueError(f"a set weight must be a whole number >= 0: {weight!r}")
+            given = s
             s = {"species": s["species"], "item": s["item"], "ability": s["ability"], "moves": list(s["moves"]),
                  "nature": s["nature"]}
+            if "evs" in given:  # a set's own Stat Points (a paste's), which its particle carries (_sheet)
+                s["evs"] = list(given["evs"])
             issue = setup_issue(data, s)
             if issue is not None:
                 raise ValueError(f"a set the engine refuses ({issue[0]}): {s}")
@@ -465,14 +468,22 @@ def level2(data, sets, member):
 
 def true_sheet(text):
     """A paste's team packed as the open sheets show it (the oracle of #385 step 5): each set in the particles' form
-    (_sheet: level 50, no stat points, the paste's gender), as the pinned server's |showteam| line carries it."""
-    return teams.pack(teams.to_text([_sheet(s, s.get("gender", "")) for s in teams._paste(text)]))
+    (_sheet: level 50, the paste's gender) with no stat points, as the pinned server's |showteam| line carries it."""
+    return teams.pack(teams.to_text([dict(_sheet(s, s.get("gender", "")), evs=[0] * 6) for s in teams._paste(text)]))
+
+
+# The Stat Points of a drawn foe sheet whose set states none (#512, HauptSession 2026-10-15). No sheet shows them and
+# no world of the search reads them (the worlds' spreads are the belief's: test_live_cts checks it), so they only have
+# to pass the engine's setup check under every nature: 0 in all is refused with Serious (#406), one point in HP passes.
+SP_PLACEHOLDER = (1, 0, 0, 0, 0, 0)
 
 
 def _sheet(s, gender):
-    """A set as the open sheets show it: level 50, no stat points, the preview's gender."""
+    """A set as a particle holds it: level 50, the preview's gender, the set's own Stat Points (evs) or
+    SP_PLACEHOLDER."""
+    evs = list(s["evs"]) if "evs" in s else list(SP_PLACEHOLDER)
     return {"name": s["species"], "species": s["species"], "item": s["item"], "ability": s["ability"],
-            "moves": list(s["moves"]), "nature": s["nature"], "evs": [0] * 6, "gender": gender, "level": LEVEL}
+            "moves": list(s["moves"]), "nature": s["nature"], "evs": evs, "gender": gender, "level": LEVEL}
 
 
 def agrees(s, member):
