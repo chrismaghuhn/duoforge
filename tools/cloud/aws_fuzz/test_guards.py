@@ -383,6 +383,74 @@ class Guards(unittest.TestCase):
         self.assertIn('DF_RESUME=yes', r.stdout)
         self.assertLess(len(r.stdout.encode()), 16000)  # the limit of EC2 user data is 16 KB
 
+    # ------------------------------------------------------------------ the bootstrap (HauptSession 2026-10-15)
+    def bootstrap(self, script, minutes=120, resume='yes'):
+        r = subprocess.run([BASH, '-c', '. "%s/lib.sh"; df_render_bootstrap %s weather-sand-snow %s my-fuzz-bucket %d %s %s'
+                            % (posix(HERE), script, SHA, minutes, RUN, resume)], env=self.env, capture_output=True,
+                           text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return r.stdout
+
+    def test_every_launcher_sends_the_bootstrap_which_runs_the_commits_box_script(self):
+        # EC2 refused the ladder's 16,570 bytes of user data (limit 16,384): every launcher sends the bootstrap, which
+        # sets the watchdog first and runs the commit's own box script, rendered on the box by render_box.sh.
+        for script in ('user_data.sh', 'ladder_user_data.sh', 'oracle_user_data.sh'):
+            with self.subTest(script=script):
+                text = self.bootstrap(script)
+                lines = text.split('\n')
+                self.assertEqual(lines[0], '#!/bin/bash')
+                self.assertTrue(lines[1].startswith('shutdown -h +120 '), lines[1])
+                self.assertIsNone(re.search(r'@[A-Z_]+@', text))
+                self.assertLess(len(text.encode()), 4096)  # far below EC2's 16384, whatever the box scripts grow to
+                for needle in ("commit='%s'" % SHA, 'git -C "$boot" fetch -q --depth 1 origin "$commit"',
+                               '[ "$(git -C "$boot" rev-parse HEAD)" = "$commit" ]', '. "$boot/tools/cloud/aws_fuzz/render_box.sh"',
+                               'df_render_box "$boot/tools/cloud/aws_fuzz/%s" \'weather-sand-snow\' "$commit" '
+                               '\'my-fuzz-bucket\' "$left" \'%s\' \'yes\'' % (script, RUN),
+                               "trap '[ $? -eq 0 ] || shutdown -h now' EXIT", 'exec bash /opt/duoforge-box.sh'):
+                    self.assertIn(needle, text)
+                # the box script gets the whole minutes left of the watchdog, never more
+                self.assertIn('\nmax_minutes=120\n', text)
+                self.assertIn('left=$((max_minutes - ($(date +%s) - started + 59) / 60))', text)
+                for secret in ('AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN', 'AKIA', 'ASIA'):
+                    self.assertNotIn(secret, text)
+        with self.assertRaises(AssertionError):
+            self.bootstrap('../evil.sh')  # only the three box scripts
+        for name in ('launch.sh', 'launch_ladder.sh', 'launch_oracle.sh'):
+            with open(os.path.join(HERE, name), encoding='utf-8') as f:
+                launcher = f.read()
+            with self.subTest(launcher=name):
+                self.assertIn('userdata=$(df_render_bootstrap ', launcher)
+                self.assertIn('df_check_user_data_size "$userdata"', launcher)
+
+    def test_the_box_renders_its_script_as_the_dry_run_does(self):
+        # The bootstrap's rendering and the dry run's are one function (render_box.sh): with the same values, the
+        # box script the bootstrap would write equals the dry run's.
+        for script, render in (('user_data.sh', 'df_render_user_data weather-sand-snow %s my-fuzz-bucket 117 %s yes'),
+                               ('ladder_user_data.sh', 'df_render_ladder_user_data weather-sand-snow %s my-fuzz-bucket 117 %s'),
+                               ('oracle_user_data.sh', 'df_render_oracle_user_data weather-sand-snow %s my-fuzz-bucket 117 %s yes')):
+            with self.subTest(script=script):
+                resume = 'no' if script == 'ladder_user_data.sh' else 'yes'
+                box = ('. "%s/render_box.sh"; df_render_box "%s/%s" weather-sand-snow %s my-fuzz-bucket 117 %s %s'
+                       % (posix(HERE), posix(HERE), script, SHA, RUN, resume))
+                dry = '. "%s/lib.sh"; ' % posix(HERE) + render % (SHA, RUN)
+                a = subprocess.run([BASH, '-c', box], env=self.env, capture_output=True, text=True)
+                b = subprocess.run([BASH, '-c', dry], env=self.env, capture_output=True, text=True)
+                self.assertEqual((a.returncode, b.returncode), (0, 0), a.stderr + b.stderr)
+                self.assertEqual(a.stdout, b.stdout)
+                self.assertTrue(a.stdout.split('\n')[1].startswith('shutdown -h +117 '))
+
+    def test_user_data_longer_than_ec2_takes_is_refused_by_name(self):
+        for size, refused in ((16384, False), (16385, True)):
+            with self.subTest(size=size):
+                r = subprocess.run([BASH, '-c', '. "%s/lib.sh"; df_check_user_data_size "$(head -c %d /dev/zero | tr '
+                                    '"\\0" a)" && echo fits' % (posix(HERE), size)], env=self.env, capture_output=True,
+                                   text=True)
+                self.assertEqual(r.returncode != 0, refused, r.stdout + r.stderr)
+                if refused:
+                    self.assertIn('user_data_too_large: the user data has 16385 bytes', r.stderr)
+                else:
+                    self.assertIn('fits', r.stdout)
+
     # ------------------------------------------------------------------ check.sh
     def test_check_reports_a_pass_when_every_dry_run_would_have_succeeded(self):
         r = self.run_script('check.sh', '--bucket', 'my-fuzz-bucket')
@@ -1191,7 +1259,8 @@ esac
     def test_shellcheck_is_clean(self):
         scripts = [os.path.join(HERE, n) for n in ('lib.sh', 'check.sh', 'launch.sh', 'collect.sh', 'user_data.sh', 'chunks.sh',
                                                    'launch_ladder.sh', 'ladder_user_data.sh', 'ladder_box_lib.sh',
-                                                   'launch_oracle.sh', 'oracle_user_data.sh', 'upload_team.sh')]
+                                                   'launch_oracle.sh', 'oracle_user_data.sh', 'upload_team.sh',
+                                                   'bootstrap_user_data.sh', 'render_box.sh')]
         r = subprocess.run(['shellcheck', '-x', '-S', 'warning', *[posix(s) for s in scripts]], capture_output=True, text=True,
                            cwd=HERE)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)

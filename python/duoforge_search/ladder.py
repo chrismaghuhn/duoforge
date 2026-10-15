@@ -616,6 +616,32 @@ def paired_against_recorded(score, recorded, name, pairs):
     return paired_h(score, old)
 
 
+def pool_condition(pool, refused):
+    """The conditions' record of the pool network's teams after the engine's filter (HauptSession 2026-10-15, after
+    #558): the teams kept, the sha256 of their ids in order (the games are drawn from these), and every team the
+    engine's setup check refused, with its status. A run's games depend on the filtered pool, so runs are paired only
+    on the same one (pool_guard)."""
+    ids = list(pool.ids)
+    return {"teams": len(ids), "ids_sha256": hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest(),
+            "refused_count": len(refused), "refused": [{"id": team, "status": status} for team, status in refused]}
+
+
+def pool_guard(recorded, pool, flag):
+    """SystemExit unless the recorded run (its conditions) drew its games from the same filtered pool as this run.
+    pool: this run's pool_condition, None for a matchup (its teams are hashed apart). A run without the record is
+    from before the filter (#558): another series, never paired with this one."""
+    if pool is None:
+        return
+    theirs = recorded.get("pool")
+    if theirs is None:
+        raise SystemExit(f"{flag}'s run has no filtered pool (a run before #558's pool filter): another series, "
+                         f"not paired with this one")
+    if theirs.get("ids_sha256") != pool["ids_sha256"]:
+        raise SystemExit(f"{flag}'s run drew its games from another filtered pool ({theirs.get('teams')} teams, "
+                         f"ids sha256 {str(theirs.get('ids_sha256'))[:12]}) than this run ({pool['teams']} teams, "
+                         f"{pool['ids_sha256'][:12]})")
+
+
 def paired_with_condition(recorded, path):
     """The conditions' record of --paired-with: the recorded step's name and commit and the file's basename only."""
     return {"step": recorded["conditions"]["step"]["name"], "commit": recorded["conditions"]["commit"],
@@ -989,12 +1015,20 @@ def main(argv=None):
     os.makedirs(args.out, exist_ok=True)
 
     with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
-        if matchup is None:
-            pool = teams.load(ctx, teams_config["teams"]["ids"])
+        pool_record = None
+        if matchup is None:  # the engine's setup check filters the pool network's teams, each refusal named
+            pool, refused_teams = teams.load_accepted(ctx, teams_config["teams"]["ids"])
+            pool_record = pool_condition(pool, refused_teams)
+            for team, status in refused_teams:
+                print(f"pool: team {team} refused by the engine ({status}), left out", file=sys.stderr)
             rows = foe_arena.games(len(pool.ids), args.pairs, args.seed)
         else:
             pool = matchup_pool(ctx, matchup)
             rows = matchup_rows(args.pairs)
+        if recorded is not None:
+            pool_guard(recorded["conditions"], pool_record, "--previous-run")
+        if paired_run is not None:
+            pool_guard(paired_run["conditions"], pool_record, "--paired-with")
         table, source_ids, table_info = honest.live_spread_table(ctx)
         if recorded is not None and recorded["conditions"].get("table_sha256") != table_info["sha256"]:
             raise SystemExit(f"--previous-run's table_sha256 is {recorded['conditions'].get('table_sha256')!r}, "
@@ -1129,7 +1163,8 @@ def main(argv=None):
         "encoders": {"main": main_net["encoder"], "foe": foe_net["encoder"],
                      **{f"opponent {name}": net["encoder"] for name, net in opponent_nets.items()}},
         "sha256_prefix": {role: digest[:12] for role, digest in digests.items()},
-        "pool_teams": pool_teams, "games": int(rows.shape[0]), "table_sha256": table_info["sha256"],
+        "pool_teams": pool_teams, "pool": pool_record, "games": int(rows.shape[0]),
+        "table_sha256": table_info["sha256"],
         "opponent_team_in_table": in_table,
         "paired_with": None if paired_run is None else paired_with_condition(paired_run, args.paired_with),
     }
