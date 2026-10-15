@@ -7,6 +7,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
+#endif
 #ifdef DF_EVAL_ALLOC_HOOKS
 static bool allocation_watch;
 static uint64_t allocations;
@@ -265,6 +269,13 @@ static void inputs(df_test *t)
 }
 int main(int argc,char **argv)
 {
+#if defined(_WIN32)
+    if ((argc == 2 || (argc == 3 && strcmp(argv[1], "--inputs") == 0)) &&
+        _setmode(_fileno(stdout), _O_BINARY) == -1) {
+        fputs("eval.oracle: stdout_binary_mode_failed\n", stderr);
+        return 2;
+    }
+#endif
     if(argc==3&&strcmp(argv[1],"--inputs")==0)return input_oracle(argv[2]);
     if(argc==2)return oracle(argv[1]);
     df_test t;df_test_begin(&t,"eval.kernels");
