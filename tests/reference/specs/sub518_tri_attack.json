@@ -1,0 +1,24 @@
+{
+  "name": "sub518_tri_attack",
+  "purpose": "Tri Attack into a Substitute (issue 518): Hydreigon, p1a, hits Milotic's Substitute with Tri Attack (step 2). The pin draws the secondary's roll for the null target (sim/battle-actions.ts:1336-1350), and its onHit (the pick of burn, paralysis or freeze) does not run (moveHit of a null target does nothing).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000005180",
+  "teams": [
+    "Hydreigon (M) @ Life Orb\nAbility: Levitate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Tri Attack\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect",
+    "Milotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Substitute\n- Protect\n- Recover\n\nGholdengo @ Sitrus Berry\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Nasty Plot\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 2",
+      "move 1 1, move 2",
+      "move 1 1, move 2"
+    ],
+    "p2": [
+      "move 1, move 2",
+      "move 3, move 2",
+      "move 3, move 2"
+    ],
+    "max_steps": 3
+  }
+}

@@ -202,6 +202,18 @@ bool dfi_closure_member_setup_valid(const dfi_kind_limits *lim, const duoforge_m
     if (m->nature >= DFI_NATURE_COUNT || !dfi_stat_points_valid(m->stat_points)) {
         return false;
     }
+    /* Exactly 0 Stat Points with Serious is refused by the pinned validator (issue 406, sim/team-validator.ts:1339-1343);
+     * with any other nature 0 is legal. A setup rule only: a battle state may hold such a member (the pin's Battle does not
+     * validate), so dfi_stat_points_valid stays as it is. */
+    if (m->nature == DFI_NATURE_SERIOUS) {
+        uint32_t total = 0u;
+        for (uint32_t i = 0u; i < DFI_STAT_POINT_COUNT; ++i) {
+            total += m->stat_points[i]; /* each at most 32 (checked above) */
+        }
+        if (total == 0u) {
+            return false;
+        }
+    }
     if (!dfi_forme_ability_legal(lim, m->species_id, m->ability)) {
         return false;
     }

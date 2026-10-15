@@ -1,0 +1,48 @@
+{
+  "name": "fz520_switcheroo_air_balloon",
+  "purpose": "Air Balloon given by Switcheroo (issue 520): Klefki, p2a, uses Switcheroo on Arcanine, p1a, and gets its Air Balloon (step 8). target.setItem and source.setItem run the item's Start before the move's -item line (sim/pokemon.ts:1885-1887), and Air Balloon's onStart (data/items.ts:191-195) prints the bare -item line first. A battle of the differential fuzzing of issue 396 (free random sets, fz_1_97), cut after its step 8: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f58fe4d81f96d7109a744c5543b38599050b25a8f3a77dc12dc40ab860ac98cd",
+  "teams": [
+    "gliscor (M) @ glimmoranite\nAbility: sandveil\nLevel: 50\nEVs: 7 HP / 6 Atk / 4 Def / 7 SpA / 6 SpD / 14 Spe\nAdamant Nature\n- brickbreak\n- tailwind\n- strugglebug\n- icefang\n\nroserade (M) @ passhoberry\nAbility: technician\nLevel: 50\nEVs: 8 HP / 13 Atk / 13 Def / 11 SpA / 12 SpD / 9 Spe\nRelaxed Nature\n- raindance\n- grassyglide\n- grassknot\n- gigaimpact\n\npangoro (M) @ garchompitez\nAbility: ironfist\nLevel: 50\nEVs: 11 HP / 11 Atk / 11 Def / 14 SpA / 2 SpD / 17 Spe\nHasty Nature\n- brutalswing\n- helpinghand\n- substitute\n- shadowclaw\n\narcanine (F) @ airballoon\nAbility: intimidate\nLevel: 50\nEVs: 14 HP / 9 Atk / 9 Def / 15 SpA / 6 SpD / 13 Spe\nRelaxed Nature\n- substitute\n- protect\n- aerialace\n- outrage\n\npersianalola (M) @ tyranitarite\nAbility: technician\nLevel: 50\nEVs: 5 HP / 8 Atk / 4 Def / 9 SpA / 8 SpD / 5 Spe\nHardy Nature\n- gunkshot\n- trailblaze\n- taunt\n- amnesia\n\nvanilluxe (M) @ roseliberry\nAbility: snowwarning\nLevel: 50\nEVs: 7 HP / 13 Atk / 15 Def / 6 SpA / 12 SpD / 13 Spe\nCalm Nature\n- iciclecrash\n- icespinner\n- hypervoice\n- hyperbeam",
+    "sneasler (M) @ garchompitez\nAbility: poisontouch\nLevel: 50\nEVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 3 SpD / 1 Spe\nModest Nature\n- focusblast\n- quickguard\n- gigaimpact\n- acrobatics\n\nindeedee (M)\nAbility: innerfocus\nLevel: 50\nEVs: 9 HP / 13 Atk / 5 Def / 15 SpA / 12 SpD / 12 Spe\nGentle Nature\n- dazzlinggleam\n- energyball\n- drainingkiss\n- triattack\n\ntaurospaldeacombat (M) @ metagrossite\nAbility: intimidate\nLevel: 50\nEVs: 6 HP / 11 Atk / 16 Def / 12 SpA / 12 SpD / 9 Spe\nHasty Nature\n- rockslide\n- stoneedge\n- lashout\n- trailblaze\n\nklefki (M) @ hardstone\nAbility: prankster\nLevel: 50\nEVs: 8 HP / 12 Atk / 15 Def / 9 SpA / 12 SpD / 10 Spe\nCareful Nature\n- imprison\n- sandstorm\n- switcheroo\n- drainingkiss\n\nnoivern (F) @ chilanberry\nAbility: frisk\nLevel: 50\nEVs: 10 HP / 13 Atk / 11 Def / 10 SpA / 10 SpD / 12 Spe\nBold Nature\n- flamethrower\n- dragondance\n- agility\n- dragonpulse\n\nrotommow @ dragonfang\nAbility: levitate\nLevel: 50\nEVs: 11 HP / 6 Atk / 16 Def / 7 SpA / 12 SpD / 14 Spe\nGentle Nature\n- thunder\n- electroweb\n- willowisp\n- confuseray"
+  ],
+  "choices": [
+    {
+      "p1": "team 1246",
+      "p2": "team 4135"
+    },
+    {
+      "p1": "move 3, switch 4",
+      "p2": "move 4 2, move 3 1"
+    },
+    {
+      "p1": "move 3, move 4 1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 4 -2, move 4 -1"
+    },
+    {
+      "p1": "switch 3, move 4 1",
+      "p2": "move 2, move 4 -1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 4 1, move 3",
+      "p2": "move 2, move 3 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 1, move 1 1",
+      "p2": "move 3 1, move 1"
+    }
+  ]
+}

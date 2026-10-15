@@ -71,7 +71,7 @@ def foe_shown(segment, side, lists, ctx):
     for a slot no option agrees with."""
     from duoforge_replay import labels
     label = labels.turn_label(segment, _Point(0, len(segment)), side, lists, ctx.moves, ctx.member_of, ctx.data.tables,
-                              len(segment), ctx.vacant, ctx.barred)
+                              len(segment), ctx.barred)
     out = []
     for k in (0, 1):
         found = [i for i in range(len(lists[k])) if label.slots[k] >> i & 1]

@@ -53,6 +53,7 @@ include(moves/tests.cmake)
 include(forms/tests.cmake)
 include(data/tests.cmake)
 include(interactions/tests.cmake)
+include(eval/tests.cmake)
 
 include("${PROJECT_SOURCE_DIR}/tests/data/provenance.cmake")
 # Optional: regenerate from a pinned Pokemon Showdown checkout and compare.
