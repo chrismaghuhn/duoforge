@@ -50,7 +50,8 @@ endif()
 
 # E3n fixed-point normalization and residual operators; runtime synthetic vectors.
 duoforge_add_test(NAME duoforge.eval.normalization SOURCES eval/test_normalization.c WHITEBOX TIER quick AREA engine)
-if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND NOT MSVC)
+if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" AND NOT MSVC
+        AND NOT CMAKE_C_SIMULATE_ID STREQUAL "MSVC")
     target_compile_definitions(duoforge_eval_normalization PRIVATE DF_EVAL_ALLOC_HOOKS)
     target_link_options(duoforge_eval_normalization PRIVATE
         "LINKER:--wrap=malloc" "LINKER:--wrap=calloc" "LINKER:--wrap=realloc" "LINKER:--wrap=free")

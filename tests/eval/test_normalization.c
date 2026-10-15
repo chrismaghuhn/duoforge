@@ -5,6 +5,11 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#if defined(_MSC_VER)
+#define DF_SCAN_VALUES scanf_s
+#else
+#define DF_SCAN_VALUES scanf
+#endif
 #ifdef DF_EVAL_ALLOC_HOOKS
 static bool allocation_watch;
 static uint64_t allocations;
@@ -145,22 +150,30 @@ static void warm_allocations(void)
 
 /* Text transport is test-only; Python arbitrary-precision oracle chooses inputs
    and expected outputs independently. No real parameters or generated files. */
+static int scan_operation(char *op)
+{
+#if defined(_MSC_VER)
+    return scanf_s(" %c", op, 1u);
+#else
+    return scanf(" %c", op);
+#endif
+}
 static int vectors(void)
 {
     char op; uint32_t n,rs,ns,gm,gs,om,os,lm,ls,rm,ss; uint64_t epsilon,hi,lo;
     int32_t x[64],g[64],b[64],scratch[64],out[64]; int16_t small[64];
-    while(scanf(" %c",&op)==1) {
+    while(scan_operation(&op)==1) {
         duoforge_status st; uint64_t root=0;
         if(op=='S') {
-            if(scanf("%"SCNu64" %"SCNu64,&hi,&lo)!=2)return 2;
+            if(DF_SCAN_VALUES("%"SCNu64" %"SCNu64,&hi,&lo)!=2)return 2;
             st=dfi_eval_sqrt128(hi,lo,&root);
             printf("%u %"PRIu64"\n",(uint32_t)st,root);continue;
         }
         if(op=='N'||op=='M') {
-            if(scanf("%u %"SCNu64" %u %u %u %u %u %u",&n,&epsilon,&rs,&ns,&gm,&gs,&om,&os)!=8||n>64)return 2;
-            for(uint32_t i=0;i<n;++i)if(scanf("%"SCNd32,&x[i])!=1)return 2;
-            for(uint32_t i=0;i<n;++i)if(scanf("%"SCNd32,&g[i])!=1)return 2;
-            for(uint32_t i=0;i<n;++i)if(scanf("%"SCNd32,&b[i])!=1)return 2;
+            if(DF_SCAN_VALUES("%u %"SCNu64" %u %u %u %u %u %u",&n,&epsilon,&rs,&ns,&gm,&gs,&om,&os)!=8||n>64)return 2;
+            for(uint32_t i=0;i<n;++i)if(DF_SCAN_VALUES("%"SCNd32,&x[i])!=1)return 2;
+            for(uint32_t i=0;i<n;++i)if(DF_SCAN_VALUES("%"SCNd32,&g[i])!=1)return 2;
+            for(uint32_t i=0;i<n;++i)if(DF_SCAN_VALUES("%"SCNd32,&b[i])!=1)return 2;
             dfi_eval_normalization parameters={epsilon,rs,ns,{gm,gs},{om,os}};
             if(op=='M') {
                 dfi_eval_normalization_stats stats;
@@ -171,9 +184,9 @@ static int vectors(void)
             }
             st=dfi_eval_layernorm32(x,g,b,n,parameters,scratch,64,out);
         }else if(op=='R'||op=='T') {
-            if(scanf("%u %u %u %u %u %u %u",&n,&lm,&ls,&rm,&ss,&om,&os)!=7||n>64)return 2;
-            for(uint32_t i=0;i<n;++i)if(scanf("%"SCNd32,&x[i])!=1)return 2;
-            for(uint32_t i=0;i<n;++i)if(scanf("%"SCNd32,&g[i])!=1)return 2;
+            if(DF_SCAN_VALUES("%u %u %u %u %u %u %u",&n,&lm,&ls,&rm,&ss,&om,&os)!=7||n>64)return 2;
+            for(uint32_t i=0;i<n;++i)if(DF_SCAN_VALUES("%"SCNd32,&x[i])!=1)return 2;
+            for(uint32_t i=0;i<n;++i)if(DF_SCAN_VALUES("%"SCNd32,&g[i])!=1)return 2;
             st=op=='R'?dfi_eval_residual32(x,g,n,(dfi_eval_scale){lm,ls},(dfi_eval_scale){rm,ss},(dfi_eval_scale){om,os},scratch,64,out)
                       :dfi_eval_residual16(x,g,n,(dfi_eval_scale){lm,ls},(dfi_eval_scale){rm,ss},(dfi_eval_scale){om,os},scratch,64,small);
         }else return 2;
