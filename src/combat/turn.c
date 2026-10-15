@@ -5804,8 +5804,15 @@ static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
     if (!dfi_kind_limits_of(r->ctx->data_kind).pool_rules || tail->must_recharge == 0u || m == NULL) {
         return DUOFORGE_E_INVARIANT; /* nothing but a recharging POOL occupant is offered this action */
     }
-    /* getTarget('recharge', no location) has no target class and takes getRandomTarget: a random foe (one draw with two
-     * foes standing), before OverrideAction and BeforeMove; it decides nothing. */
+    /* Stalwart (issue 542): getTarget returns the action's original target, with no draw, while it is active (sim/battle.ts:
+     * 2437-2447). That target is getAtLoc of the recharge action's location, the Pokemon's lastMoveTargetLoc (sim/side.ts:
+     * 675-689, sim/battle-queue.ts:263-273, sim/pokemon.ts:913), which the state does not keep: whether runMove draws is not
+     * known, so the turn is refused rather than guessed. */
+    if (dfi_ability(b, m, DFI_ABILITY_STALWART)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* getTarget('recharge', the stored location) has no target class and takes getRandomTarget: a random foe (one draw with
+     * two foes standing), before OverrideAction and BeforeMove; it decides nothing. */
     uint32_t ignored = 0u;
     duoforge_status st = dfi_resolve_target(r, user, DUOFORGE_TARGET_CLASS_NORMAL, &ignored);
     if (st != DUOFORGE_OK) {
