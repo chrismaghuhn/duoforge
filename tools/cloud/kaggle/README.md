@@ -12,16 +12,21 @@ into the repository, and nothing is public on Kaggle.
 | `kaggle_run.py` | the local commands: `plan`, `privacy`, `upload`, `start`, `fetch` (its docstring has the details) |
 | `kaggle_job.py` | the job of the private notebook: the repository at the exact commit, its library, the data by sha256, the environment, `python -m duoforge_learn.bc` with a deadline; `status.json`, `env.json` and the run in `/kaggle/working` |
 | `pseudonymize.py` | a copy of a replay dataset without its replay ids (public battle ids): each becomes a meaningless label, and the map label -> replay id stays local in a file of its own, apart from the copy (HauptSession 2026-10-15). Only the copy goes into a content list |
+| `kaggle_requirements.txt` | the Kaggle venv's packages, pinned (`kaggle==2.2.4`, `kagglesdk==0.1.37` and their dependencies) |
 | `test_kaggle.py` | the tests, against a stub `kaggle` only |
 
 ## The rules the commands follow
 
 - **Nothing reaches Kaggle without `--i-have-owner-approval`.** Without the flag a command only shows what it would do.
-- **The key** is read only from `--env`, a file outside the repository. The default is
-  `C:\Users\chris\.duoforge-kaggle.env`, with the lines `KAGGLE_USERNAME=...` and `KAGGLE_KEY=...`.
-  - It reaches the Kaggle CLI only through its environment, never on a command line.
-  - The CLI's own configuration directory is an empty temporary one, so no other credentials are used.
-  - Every output of the CLI that is shown is masked. Neither the key nor the user name appears in a log or an error, even when the CLI itself prints them.
+- **The token** (owner, 2026-10-15): the owner's Kaggle token lies in WSL at Kaggle's default place, `/home/chris/.kaggle/access_token` (chmod 600).
+  - The Kaggle CLI finds it there by itself. The script never reads the file and never shows anything of it: it only reports "token present" or "token missing", by the file's existence.
+  - Every output of the CLI that is shown has token-like strings (32 or more letters, digits, dashes or underscores) redacted.
+  - **Only this script, started by the HauptSession with the owner, calls Kaggle.** No lane and no builder uses `kaggle` directly. The same WSL home holds the lanes' jobs, so the kaggle library lives only in its own venv (below), never in a venv for training, the short run or the tests.
+  - `--owner` names the account (its user name, no secret). The datasets and notebooks are named under it, and an entry of another account in the privacy check is a refusal.
+- **The Kaggle venv** (WSL), made once: `python3 -m venv ~/df-kaggle && ~/df-kaggle/bin/pip install -r tools/cloud/kaggle/kaggle_requirements.txt`.
+  - It pins `kaggle==2.2.4` (with `kagglesdk==0.1.37`), on Python 3.12.3.
+  - Its version was read from pip's metadata: importing `kaggle` or running its CLI authenticates, so neither is done outside a run of the HauptSession's.
+  - The script runs as `PATH=~/df-kaggle/bin:$PATH ~/df-kaggle/bin/python tools/cloud/kaggle/kaggle_run.py ...`.
 - **Privacy, before and after every step.** `privacy` (and every `upload`, `start` and `fetch`, before and after) reads the metadata of every dataset and notebook of the account whose name begins with `duoforge-`.
   - Each must say it is private (`isPrivate` for a dataset, `is_private` for a notebook). If not, the command refuses by name (exit 3) and does nothing more.
   - A metadata file that does not name its visibility is a refusal too ("privacy unknown"): the check fails closed.
@@ -61,10 +66,10 @@ The resumed run must run at the same commit (refused otherwise). On the same Kag
 
 ## The HauptSession's steps, in this order
 
-1. **The env file:** create it with the owner's Kaggle key, outside the repository.
-2. **Install the CLI:** `pip install kaggle` (the HauptSession's environment, not a lane's).
+1. **The token:** the owner's, at `/home/chris/.kaggle/access_token` in WSL (chmod 600). The script only checks that it is there.
+2. **The Kaggle venv:** as above, in WSL; every command below runs with it.
 3. **The content list:** `python tools/cloud/kaggle/kaggle_run.py plan --name <name> --data <dirs> --out <plan.json outside the repository>`. Read it and release it (or not).
-4. **Privacy:** `kaggle_run.py privacy --i-have-owner-approval` checks the account.
+4. **Privacy:** `kaggle_run.py privacy --owner <user> --i-have-owner-approval` checks the account (every command below takes `--owner <user>` too).
 5. **Upload:** `kaggle_run.py upload --plan <plan.json>`, first without the flag, then with it.
 6. **Start:** `kaggle_run.py start --plan <plan.json> --commit <sha of main> --job bc-short`, without the flag, then with it.
 7. **Fetch:** when the notebook has finished, `kaggle_run.py fetch --plan <plan.json> --job bc-short --out <a directory outside the repository> --i-have-owner-approval`.
@@ -83,12 +88,17 @@ They are not bit-identical: another device, XLA on a GPU. The check is that both
 ## Tests
 
 `test_kaggle.py` runs with a stub `kaggle` first on the PATH and never against Kaggle.
-- `setUp` checks that `kaggle` is the stub. The environment holds no `KAGGLE_*` variable of the caller and no `~/.kaggle`; `test_no_test_has_a_way_to_the_real_kaggle` checks exactly that.
-- The key of the tests is made up, and every output is searched for it.
+- **Fail closed, as the AWS tests:**
+  - `setUp` checks that `kaggle` is the stub before anything runs.
+  - The environment holds no `KAGGLE_*` variable of the caller (`KAGGLE_API_TOKEN`, `KAGGLE_USERNAME`, `KAGGLE_KEY` removed).
+  - `KAGGLE_CONFIG_DIR` is a directory that does not exist and `HOME` an empty one, so the owner's real token is out of reach, in WSL too.
+  - `test_no_test_has_a_way_to_the_real_kaggle` checks exactly that, and that the script then says "token missing".
+- A test that needs a token present gets a made-up one in a directory of its own, which only the stub sees. Every output is searched for it.
 - **The commands:**
   - nothing reaches Kaggle without the flag;
-  - the key never appears, even when the CLI echoes it;
-  - the env file is read only from outside the repository.
+  - the token file is never opened (a guarded `open`), only its presence is told, and without it nothing is called;
+  - the token never appears, even when the CLI echoes it;
+  - an entry of another account is refused.
 - **The content list:** every file with its size, sha256 and origin; the tournament sun team and repository files are refused; a file changed after the list is refused.
 - **Privacy:** a public or unknown dataset or notebook stops a command before anything is done, and privacy is checked again after each step (the stub can make a new dataset appear public).
 - **Upload, start, resume and fetch:**

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Offline tests of tools/cloud/kaggle, with a stub `kaggle` first on the PATH: nothing here reaches Kaggle (owner rule:
 only the HauptSession starts anything there, with the owner). The stub logs every call and answers from STUB_*
-variables. Fail closed: setUp checks that `kaggle` is the stub before anything runs, the environment holds no
-credential of the caller and no Kaggle configuration (a test checks exactly that), and the key of the tests is a made-up
-one that a test searches for in every output."""
+variables. Fail closed, as the AWS tests: setUp checks that `kaggle` is the stub before anything runs; the environment
+holds no KAGGLE_* variable of the caller (KAGGLE_API_TOKEN, KAGGLE_USERNAME, KAGGLE_KEY removed), its KAGGLE_CONFIG_DIR
+is a directory that does not exist and HOME an empty one, so the owner's real token (~/.kaggle/access_token, in WSL
+too) is out of reach (a test checks exactly that). A test that needs a token present gets a made-up one in a directory
+of its own, which only the stub ever sees, and every output is searched for it."""
 import hashlib
 import json
 import os
@@ -21,7 +23,7 @@ sys.path.insert(0, HERE)
 import kaggle_job  # noqa: E402
 import kaggle_run  # noqa: E402
 
-USER, KEY = "stubuser7", "k3y-" + "9f" * 14  # made up here; searched for in every output
+USER, TOKEN = "stubuser7", "KGAT_" + "9f" * 20  # made up here; searched for in every output
 STUB = textwrap.dedent('''\
     import json, os, shutil, sys
     a = sys.argv[1:]
@@ -35,9 +37,12 @@ STUB = textwrap.dedent('''\
     appeared = appear and os.path.exists(os.environ["STUB_LOG"] + ".appeared")
     if appeared:
         public.add(appear)
-    user = os.environ.get("KAGGLE_USERNAME", "")
-    if os.environ.get("STUB_LEAK") == "1":  # a CLI that echoes its credentials in an error
-        print("error for " + user + " with key " + os.environ.get("KAGGLE_KEY", ""), file=sys.stderr)
+    token = os.path.join(os.environ.get("KAGGLE_CONFIG_DIR", "/nonexistent"), "access_token")
+    if not os.path.isfile(token):  # as the real CLI: no token, no call
+        print("You must authenticate before you can call the Kaggle API.", file=sys.stderr)
+        sys.exit(1)
+    if os.environ.get("STUB_LEAK") == "1":  # a CLI that echoes its token in an error
+        print("error with token " + open(token, encoding="utf-8").read().strip(), file=sys.stderr)
         sys.exit(1)
     kind, op = a[0], a[1]
     if op == "list":
@@ -99,12 +104,14 @@ class KaggleTest(unittest.TestCase):
         os.mkdir(home)
         env = {k: v for k, v in os.environ.items() if not k.upper().startswith("KAGGLE")}
         env.update(PATH=self.bin + os.pathsep + os.environ["PATH"], STUB_LOG=self.log, HOME=home, USERPROFILE=home,
-                   STUB_DATASETS="", STUB_KERNELS="")
+                   KAGGLE_CONFIG_DIR=os.path.join(self.tmp, "no-such-kaggle-config"), STUB_DATASETS="", STUB_KERNELS="")
         self.env = env
         self.assert_kaggle_is_stub(env)
-        self.envfile = os.path.join(self.tmp, "kaggle.env")
-        with open(self.envfile, "w", encoding="utf-8") as f:
-            f.write(f"# test credentials, made up\nKAGGLE_USERNAME={USER}\nKAGGLE_KEY={KEY}\n")
+        # the made-up token of the tests that need one present: a directory of its own, seen by the stub only
+        self.token_dir = os.path.join(self.tmp, "stub-kaggle-config")
+        os.mkdir(self.token_dir)
+        with open(os.path.join(self.token_dir, "access_token"), "w", encoding="utf-8") as f:
+            f.write(TOKEN + "\n")
         self.data = os.path.join(self.tmp, "data", "sheet")
         os.makedirs(self.data)
         for i in range(3):
@@ -118,12 +125,14 @@ class KaggleTest(unittest.TestCase):
         self.assertIsNotNone(found)
         self.assertTrue(os.path.dirname(os.path.abspath(found)).lower() == os.path.abspath(self.bin).lower(), found)
 
-    def run_tool(self, *args, **extra):
+    def run_tool(self, *args, token=True, **extra):
         env = dict(self.env, **extra)
+        if token:
+            env["KAGGLE_CONFIG_DIR"] = self.token_dir
         r = subprocess.run([sys.executable, os.path.join(HERE, "kaggle_run.py"), *args], env=env, capture_output=True,
                            text=True, timeout=120)
         for text in (r.stdout, r.stderr):
-            self.assertNotIn(KEY, text)  # the key never appears, whatever happens
+            self.assertNotIn(TOKEN, text)  # the token never appears, whatever happens
         return r
 
     def calls(self):
@@ -136,21 +145,37 @@ class KaggleTest(unittest.TestCase):
 
     # ------------------------------------------------------------------ the protection
     def test_no_test_has_a_way_to_the_real_kaggle(self):
-        self.assertFalse([k for k in self.env if k.upper().startswith("KAGGLE")])
+        # The environment every test runs the script in: no KAGGLE_* of the caller but a KAGGLE_CONFIG_DIR that does not
+        # exist, an empty HOME (no ~/.kaggle), and `kaggle` is the stub (setUp checked it before this test began).
+        self.assertEqual(sorted(k for k in self.env if k.upper().startswith("KAGGLE")), ["KAGGLE_CONFIG_DIR"])
+        self.assertFalse(os.path.exists(self.env["KAGGLE_CONFIG_DIR"]))
+        for var in ("KAGGLE_API_TOKEN", "KAGGLE_USERNAME", "KAGGLE_KEY"):
+            self.assertNotIn(var, self.env)
         self.assertFalse(os.path.exists(os.path.join(self.env["HOME"], ".kaggle")))
-        polluted = dict(os.environ, KAGGLE_USERNAME="owner", KAGGLE_KEY="x", KAGGLE_CONFIG_DIR="/real")
-        with mock.patch.dict(os.environ, polluted, clear=True), mock.patch("shutil.which", return_value=self.bin + "/kaggle"):
-            k = kaggle_run.Kaggle(USER, KEY)
-            with mock.patch("subprocess.run") as run:
-                run.return_value = subprocess.CompletedProcess([], 0, "ok", "")
-                k.run("datasets", "list")
-            env = run.call_args.kwargs["env"]
-            self.assertEqual((env["KAGGLE_USERNAME"], env["KAGGLE_KEY"]), (USER, KEY))  # only the env file's
-            self.assertNotEqual(env["KAGGLE_CONFIG_DIR"], "/real")
-            self.assertEqual(os.listdir(env["KAGGLE_CONFIG_DIR"]), [])  # an empty configuration of its own
-            self.assertNotIn(KEY, " ".join(run.call_args.args[0]))  # never on the command line
+        with mock.patch.dict(os.environ, self.env, clear=True):
+            self.assertEqual(kaggle_run.token_status(), "token missing")  # the real token is out of reach
         with self.assertRaises(AssertionError):  # a stub that is not first on the PATH is caught before a run
             self.assert_kaggle_is_stub(dict(self.env, PATH=os.environ["PATH"]))
+
+    def test_the_token_file_is_never_read_only_its_presence_is_told(self):
+        real_open = open
+        token = os.path.join(self.token_dir, "access_token")
+
+        def guarded(path, *a, **k):
+            if os.path.abspath(str(path)) == os.path.abspath(token):
+                raise AssertionError("the script opened the token file")
+            return real_open(path, *a, **k)
+        with mock.patch.dict(os.environ, dict(self.env, KAGGLE_CONFIG_DIR=self.token_dir), clear=True), \
+                mock.patch("builtins.open", guarded):
+            self.assertEqual(kaggle_run.token_status(), "token present")
+        self.make_plan()
+        r = self.run_tool("privacy", "--owner", USER, "--i-have-owner-approval", token=False)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("token missing", r.stdout)
+        self.assertEqual(self.calls(), [])  # without a token nothing is called
+        r = self.run_tool("privacy", "--owner", USER, "--i-have-owner-approval")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("token present (the token file is never read)", r.stdout)
 
     def test_without_the_approval_flag_nothing_reaches_kaggle(self):
         self.make_plan()
@@ -158,30 +183,23 @@ class KaggleTest(unittest.TestCase):
                                                                     "--job", "bc-short"),
                     ("fetch", "--plan", self.plan, "--job", "bc-short", "--out", os.path.join(self.tmp, "o"))):
             with self.subTest(cmd=cmd[0]):
-                r = self.run_tool(*cmd, "--env", self.envfile)
+                r = self.run_tool(*cmd, "--owner", USER)
                 self.assertEqual(r.returncode, 0, r.stderr)
                 self.assertIn("nothing reaches Kaggle without --i-have-owner-approval", r.stdout)
         self.assertEqual(self.calls(), [])
 
-    def test_the_key_never_appears_even_when_the_cli_echoes_it(self):
+    def test_the_token_never_appears_even_when_the_cli_echoes_it(self):
         self.make_plan()
-        r = self.run_tool("privacy", "--env", self.envfile, "--i-have-owner-approval", STUB_LEAK="1")
+        r = self.run_tool("privacy", "--owner", USER, "--i-have-owner-approval", STUB_LEAK="1")
         self.assertEqual(r.returncode, 2)
-        self.assertIn("<key>", r.stderr)
-        self.assertNotIn(USER, r.stderr + r.stdout)
+        self.assertIn("<redacted>", r.stderr)
 
-    def test_the_env_file_is_read_only_from_outside_the_repository(self):
-        bad = os.path.join(self.tmp, "bad.env")
-        with open(bad, "w", encoding="utf-8") as f:
-            f.write(f"KAGGLE_USERNAME={USER}\n")
-        cases = ((os.path.join(self.tmp, "missing.env"), "does not exist"), (bad, "lacks KAGGLE_USERNAME or KAGGLE_KEY"),
-                 (os.path.join(kaggle_run.REPO, "kaggle.env"), "inside the repository"))
-        for path, message in cases:
-            with self.subTest(message=message):
-                r = self.run_tool("privacy", "--env", path, "--i-have-owner-approval")
-                self.assertEqual(r.returncode, 2)
-                self.assertIn(message, r.stderr)
-        self.assertEqual(self.calls(), [])
+    def test_entries_of_another_account_are_refused(self):
+        r = self.run_tool("privacy", "--owner", USER, "--i-have-owner-approval", STUB_DATASETS="someoneelse/duoforge-aaa")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("another account than --owner", r.stderr)
+        r = self.run_tool("privacy", "--owner", "not a name", "--i-have-owner-approval")
+        self.assertEqual(r.returncode, 2)
 
     # ------------------------------------------------------------------ the plan
     def test_the_plan_lists_every_file_and_names_the_dataset_by_sha256(self):
@@ -212,7 +230,7 @@ class KaggleTest(unittest.TestCase):
         self.make_plan()
         with open(os.path.join(self.data, "part-00001"), "ab") as f:
             f.write(b"x")
-        r = self.run_tool("upload", "--plan", self.plan, "--env", self.envfile, "--i-have-owner-approval")
+        r = self.run_tool("upload", "--plan", self.plan, "--owner", USER, "--i-have-owner-approval")
         self.assertEqual(r.returncode, 2)
         self.assertIn("has another sha256 now", r.stderr)
         self.assertEqual(self.calls(), [])
@@ -221,18 +239,18 @@ class KaggleTest(unittest.TestCase):
     def test_a_public_or_unknown_dataset_or_notebook_stops_before_anything_is_done(self):
         self.make_plan()
         mine = {"STUB_DATASETS": f"{USER}/duoforge-aaa,{USER}/other", "STUB_KERNELS": f"{USER}/duoforge-aaa-bc"}
-        for extra, needle in (({"STUB_PUBLIC": f"{USER}/duoforge-aaa"}, "not private: dataset <user>/duoforge-aaa"),
-                              ({"STUB_PUBLIC": f"{USER}/duoforge-aaa-bc"}, "not private: notebook <user>/duoforge-aaa-bc"),
+        for extra, needle in (({"STUB_PUBLIC": f"{USER}/duoforge-aaa"}, f"not private: dataset {USER}/duoforge-aaa"),
+                              ({"STUB_PUBLIC": f"{USER}/duoforge-aaa-bc"}, f"not private: notebook {USER}/duoforge-aaa-bc"),
                               ({"STUB_UNKNOWN": f"{USER}/duoforge-aaa"}, "privacy unknown")):
             with self.subTest(needle=needle):
                 open(self.log, "w").close()
-                r = self.run_tool("upload", "--plan", self.plan, "--env", self.envfile, "--i-have-owner-approval",
+                r = self.run_tool("upload", "--plan", self.plan, "--owner", USER, "--i-have-owner-approval",
                                   **mine, **extra)
                 self.assertEqual(r.returncode, 3, r.stderr)
                 self.assertIn(needle, r.stderr)
                 self.assertFalse([c for c in self.calls() if c[1] in ("create", "push")])  # nothing was created
         # only the PREFIX entries are checked: another dataset of the account is not looked at
-        r = self.run_tool("privacy", "--env", self.envfile, "--i-have-owner-approval", **mine)
+        r = self.run_tool("privacy", "--owner", USER, "--i-have-owner-approval", **mine)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertFalse([c for c in self.calls() if c[-1] == f"{USER}/other" and c[1] == "metadata"])
 
@@ -241,15 +259,15 @@ class KaggleTest(unittest.TestCase):
         keep = os.path.join(self.tmp, "kept")
         os.mkdir(keep)
         # the upload makes the new dataset appear public: the check after it refuses, by name
-        r = self.run_tool("upload", "--plan", self.plan, "--env", self.envfile, "--i-have-owner-approval",
+        r = self.run_tool("upload", "--plan", self.plan, "--owner", USER, "--i-have-owner-approval",
                           STUB_KEEP=keep, STUB_APPEAR=f"{USER}/{p['dataset']}")
         self.assertEqual(r.returncode, 3, r.stderr)
-        self.assertIn("after upload: not private: dataset <user>/%s" % p["dataset"], r.stderr)
+        self.assertIn("after upload: not private: dataset %s/%s" % (USER, p["dataset"]), r.stderr)
         ops = [c[:2] for c in self.calls()]
         self.assertEqual(ops[:3], [["datasets", "list"], ["kernels", "list"], ["datasets", "create"]])
         os.remove(self.log + ".appeared")
         open(self.log, "w").close()
-        r = self.run_tool("upload", "--plan", self.plan, "--env", self.envfile, "--i-have-owner-approval",
+        r = self.run_tool("upload", "--plan", self.plan, "--owner", USER, "--i-have-owner-approval",
                           STUB_KEEP=keep)
         self.assertEqual(r.returncode, 0, r.stderr)
         ops = [c[:2] for c in self.calls()]
@@ -261,7 +279,7 @@ class KaggleTest(unittest.TestCase):
         p = self.make_plan()
         keep = os.path.join(self.tmp, "kept")
         os.mkdir(keep)
-        r = self.run_tool("upload", "--plan", self.plan, "--env", self.envfile, "--i-have-owner-approval", STUB_KEEP=keep)
+        r = self.run_tool("upload", "--plan", self.plan, "--owner", USER, "--i-have-owner-approval", STUB_KEEP=keep)
         self.assertEqual(r.returncode, 0, r.stderr)
         (create,) = [c for c in self.calls() if c[1] == "create"]
         self.assertNotIn("--public", create)
@@ -276,7 +294,7 @@ class KaggleTest(unittest.TestCase):
         p = self.make_plan()
         keep = os.path.join(self.tmp, "kept")
         os.mkdir(keep)
-        r = self.run_tool("start", "--plan", self.plan, "--commit", "a" * 40, "--job", "bc-short", "--env", self.envfile,
+        r = self.run_tool("start", "--plan", self.plan, "--commit", "a" * 40, "--job", "bc-short", "--owner", USER,
                           "--i-have-owner-approval", STUB_KEEP=keep)
         self.assertEqual(r.returncode, 0, r.stderr)
         (made,) = os.listdir(keep)
@@ -288,9 +306,9 @@ class KaggleTest(unittest.TestCase):
         job = json.loads(code.split("\nJOB = ", 1)[1].split("\n", 1)[0])
         self.assertEqual((job["commit"], job["job"], job["plan"]["sha256"], job["state_dataset"]),
                          ("a" * 40, "bc-short", p["sha256"], None))
-        self.assertNotIn(KEY, code)
+        self.assertNotIn(TOKEN, code)
         self.assertNotIn(USER, json.dumps(job))
-        r = self.run_tool("start", "--plan", self.plan, "--commit", "main", "--job", "bc-short", "--env", self.envfile,
+        r = self.run_tool("start", "--plan", self.plan, "--commit", "main", "--job", "bc-short", "--owner", USER,
                           "--i-have-owner-approval")
         self.assertEqual(r.returncode, 2)
 
@@ -313,7 +331,7 @@ class KaggleTest(unittest.TestCase):
         keep = os.path.join(self.tmp, "kept")
         os.mkdir(keep)
         r = self.run_tool("start", "--plan", self.plan, "--commit", "a" * 40, "--job", "bc", "--resume-from", partial,
-                          "--env", self.envfile, "--i-have-owner-approval", STUB_KEEP=keep)
+                          "--owner", USER, "--i-have-owner-approval", STUB_KEEP=keep)
         self.assertEqual(r.returncode, 0, r.stderr)
         state_dir, kernel = sorted(os.listdir(keep))
         state = json.load(open(os.path.join(keep, state_dir, "dataset-metadata.json"), encoding="utf-8"))
@@ -326,12 +344,12 @@ class KaggleTest(unittest.TestCase):
         job = json.loads(code.split("\nJOB = ", 1)[1].split("\n", 1)[0])
         self.assertEqual(job["state_dataset"], state["id"].split("/")[1])
         r = self.run_tool("start", "--plan", self.plan, "--commit", "b" * 40, "--job", "bc", "--resume-from", partial,
-                          "--env", self.envfile, "--i-have-owner-approval")
+                          "--owner", USER, "--i-have-owner-approval")
         self.assertEqual(r.returncode, 2)
         self.assertIn("ran at another commit", r.stderr)
         done = self.fetched({"status": "done", "plan_sha256": p["sha256"], "commit": "a" * 40})
         r = self.run_tool("start", "--plan", self.plan, "--commit", "a" * 40, "--job", "bc", "--resume-from", done,
-                          "--env", self.envfile, "--i-have-owner-approval")
+                          "--owner", USER, "--i-have-owner-approval")
         self.assertEqual(r.returncode, 2)
         self.assertIn("not a partial run of this plan", r.stderr)
 
@@ -340,14 +358,14 @@ class KaggleTest(unittest.TestCase):
         out = self.fetched({"status": "done", "reason": "none", "commit": "a" * 40, "seed": 1, "seconds": 300.0,
                             "plan_sha256": p["sha256"], "launches": [{"seconds": 300.0, "status": "done"}]})
         dest = os.path.join(self.tmp, "fetched")
-        r = self.run_tool("fetch", "--plan", self.plan, "--job", "bc-short", "--out", dest, "--env", self.envfile,
+        r = self.run_tool("fetch", "--plan", self.plan, "--job", "bc-short", "--out", dest, "--owner", USER,
                           "--i-have-owner-approval", STUB_OUTPUT=out)
         self.assertEqual(r.returncode, 0, r.stderr)
         m = json.load(open(os.path.join(dest, "manifest.json"), encoding="utf-8"))
         self.assertEqual((m["commit"], m["data_sha256"], m["seed"], m["seconds"], m["gpu"], m["jax"], m["cuda"]),
                          ("a" * 40, p["sha256"], 1, 300.0, "Tesla P100", "0.4.38", "12.4"))
         self.assertEqual(m["weights_sha256"], sha(os.path.join(dest, "run", "bc.npz")))
-        r = self.run_tool("fetch", "--plan", self.plan, "--job", "bc-short", "--out", dest, "--env", self.envfile,
+        r = self.run_tool("fetch", "--plan", self.plan, "--job", "bc-short", "--out", dest, "--owner", USER,
                           "--i-have-owner-approval", STUB_OUTPUT=out, STUB_STATUS="running")
         self.assertEqual(r.returncode, 2)
         self.assertIn("still running", r.stderr)

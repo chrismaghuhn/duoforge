@@ -4,11 +4,11 @@ the weights back, and a manifest. Only the HauptSession runs the commands that r
 without --i-have-owner-approval nothing reaches Kaggle, the command only shows what it would do.
 
     python tools/cloud/kaggle/kaggle_run.py plan --name NAME --data DIR... [--net FILE...] [--config FILE...] --out PLAN
-    python tools/cloud/kaggle/kaggle_run.py privacy --env ENV [--i-have-owner-approval]
-    python tools/cloud/kaggle/kaggle_run.py upload --plan PLAN --env ENV [--i-have-owner-approval]
-    python tools/cloud/kaggle/kaggle_run.py start --plan PLAN --commit SHA --job JOB --env ENV [--resume-from DIR]
+    python tools/cloud/kaggle/kaggle_run.py privacy --owner USER [--i-have-owner-approval]
+    python tools/cloud/kaggle/kaggle_run.py upload --plan PLAN --owner USER [--i-have-owner-approval]
+    python tools/cloud/kaggle/kaggle_run.py start --plan PLAN --commit SHA --job JOB --owner USER [--resume-from DIR]
         [--i-have-owner-approval]
-    python tools/cloud/kaggle/kaggle_run.py fetch --plan PLAN --env ENV --out DIR [--i-have-owner-approval]
+    python tools/cloud/kaggle/kaggle_run.py fetch --plan PLAN --owner USER --out DIR [--i-have-owner-approval]
 
 plan       the content list of a run's dataset: every file with its size, sha256 and origin (training data, networks,
            configurations). Nothing is uploaded before the HauptSession has released this list (README). The
@@ -24,10 +24,13 @@ start      a private notebook (GPU, internet for the public repository) that run
 fetch      the notebook's output to --out, its weights' sha256 and a manifest.json: the commit, the data's sha256 (the
            plan's), the weights' sha256, the versions of JAX and CUDA, the GPU, the seed, the run time and the launches.
 
-The key: read only from --env, a file outside the repository (default C:\\Users\\chris\\.duoforge-kaggle.env) with the
-lines KAGGLE_USERNAME=... and KAGGLE_KEY=...; it goes to the Kaggle CLI in its environment only, never on a command
-line, and every output of the CLI is masked (the key and the username never appear in a log or an error). The CLI's
-own configuration directory is an empty temporary one, so no other credentials are used.
+The token (owner, 2026-10-15): the owner's Kaggle token lies at Kaggle's default place, ~/.kaggle/access_token
+(chmod 600; KAGGLE_CONFIG_DIR moves it), and the Kaggle CLI finds it there by itself. This script NEVER reads that file
+and never shows anything of it: it only reports "token present" or "token missing" (by the file's existence). Every
+output of the CLI that is shown has token-like strings (32 or more letters, digits, dashes or underscores) redacted.
+Only this script, started by the HauptSession with the owner, calls Kaggle: no lane and no builder uses `kaggle`
+directly. --owner names the Kaggle account (its user name, no secret): the datasets and notebooks are named under it,
+and every one the privacy check finds must be its.
 Weights, checkpoints and data stay private (AGENTS.md): nothing of them goes into the repository.
 """
 import argparse
@@ -44,7 +47,6 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 PREFIX = "duoforge-"
-DEFAULT_ENV = r"C:\Users\chris\.duoforge-kaggle.env"
 # The tournament sun team (a private file): never to Kaggle, by its sha256 (Owner/HauptSession 2026-10-15).
 REFUSED = {"e1060cf46a8f30bc3e56ad6fb1e038a9ed3dafd47a9ec9913b8399542320c281": "the tournament sun team"}
 ORIGINS = ("data", "net", "config", "state")
@@ -128,51 +130,39 @@ def check_plan_files(p):
             raise Refused(f"the plan's file {f['path']} has another sha256 now: make the plan again")
 
 
-# ----------------------------------------------------------------------------------------------- the key
-def read_env(path):
-    """(username, key) from the env file outside the repository; Refused without naming any value."""
-    if inside(path, REPO):
-        raise Refused("the env file is inside the repository: keep it outside")
-    if not os.path.isfile(path):
-        raise Refused("the env file does not exist")
-    values = {}
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            key, sep, value = line.partition("=")
-            if not sep:
-                raise Refused("the env file has a line that is not KEY=VALUE (not shown)")
-            values[key.strip()] = value.strip().strip('"').strip("'")
-    user, key = values.get("KAGGLE_USERNAME", ""), values.get("KAGGLE_KEY", "")
-    if not user or not key:
-        raise Refused("the env file lacks KAGGLE_USERNAME or KAGGLE_KEY")
-    if not re.match(r"^[A-Za-z0-9_-]{1,64}$", user):
-        raise Refused("KAGGLE_USERNAME in the env file is not a Kaggle user name (not shown)")
-    return user, key
+# ----------------------------------------------------------------------------------------------- the token
+OWNER = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+TOKENLIKE = re.compile(r"[A-Za-z0-9_\-]{32,}")
+
+
+def token_file():
+    """Where the Kaggle CLI looks for the token: KAGGLE_CONFIG_DIR/access_token, else ~/.kaggle/access_token."""
+    base = os.environ.get("KAGGLE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".kaggle")
+    return os.path.join(base, "access_token")
+
+
+def token_status():
+    """"token present" or "token missing", by the file's existence alone: the file is never opened here."""
+    return "token present" if os.path.isfile(token_file()) else "token missing"
 
 
 class Kaggle:
-    """The Kaggle CLI (`kaggle` on the PATH), with the key in its environment only and every output masked."""
+    """The Kaggle CLI (`kaggle` on the PATH) under the account --owner; it finds the owner's token itself (never read
+    here), and every output of it that is shown has token-like strings redacted."""
 
-    def __init__(self, user, key, log=print):
-        self.user, self.key, self.log = user, key, log
+    def __init__(self, owner, log=print):
+        if not OWNER.match(owner or ""):
+            raise Refused("--owner is not a Kaggle user name")
+        self.user, self.log = owner, log
         self.cli = shutil.which("kaggle")
         if self.cli is None:
             raise Refused("the Kaggle CLI (`kaggle`) is not on the PATH")
-        self.config = tempfile.mkdtemp(prefix="duoforge-kaggle-config-")
 
     def mask(self, text):
-        for secret, shown in ((self.key, "<key>"), (self.user, "<user>")):
-            if secret:
-                text = text.replace(secret, shown)
-        return text
+        return TOKENLIKE.sub("<redacted>", text)
 
     def run(self, *args, check=True):
-        env = {k: v for k, v in os.environ.items() if not k.upper().startswith("KAGGLE")}
-        env.update(KAGGLE_USERNAME=self.user, KAGGLE_KEY=self.key, KAGGLE_CONFIG_DIR=self.config)
-        r = subprocess.run([self.cli, *args], env=env, capture_output=True, text=True)
+        r = subprocess.run([self.cli, *args], capture_output=True, text=True)  # the CLI's own token, never read here
         if check and r.returncode != 0:
             out, err = self.mask(r.stdout), self.mask(r.stderr)
             shown = " ".join(self.mask(a) for a in args[:2])
@@ -189,7 +179,12 @@ class Kaggle:
         if not lines or not lines[0].lower().startswith("ref"):
             raise Refused(f"kaggle {kind} list gave no table: cannot check privacy", 3)
         refs = [l.split(",")[0].strip() for l in lines[1:]]
-        return [r for r in refs if r.split("/")[-1].startswith(PREFIX)]
+        ours = [r for r in refs if r.split("/")[-1].startswith(PREFIX)]
+        others = [r for r in ours if r.split("/")[0] != self.user]
+        if others:
+            raise Refused(f"kaggle {kind} list --mine names {len(others)} {PREFIX}* entr(ies) of another account than "
+                          f"--owner: the CLI's token is not the owner's account", 3)
+        return ours
 
     def dataset_private(self, ref):
         with tempfile.TemporaryDirectory() as tmp:
@@ -294,7 +289,7 @@ def main(argv=None):
     a.add_argument("--out", required=True)
     for name in ("privacy", "upload", "start", "fetch"):
         b = sub.add_parser(name)
-        b.add_argument("--env", default=DEFAULT_ENV)
+        b.add_argument("--owner", required=True, help="the Kaggle account's user name (no secret)")
         b.add_argument(APPROVAL, dest="approved", action="store_true")
         if name != "privacy":
             b.add_argument("--plan", required=True)
@@ -325,10 +320,14 @@ def main(argv=None):
         print(f"{args.command}: nothing reaches Kaggle without {APPROVAL} (the default). It would:")
         if p:
             show_plan(p)
-        print(f"  check privacy, {args.command}, check privacy again (env file: outside the repository, never shown)")
+        print(f"  check privacy, {args.command}, check privacy again; {token_status()} (the token file is never read)")
         return 0
-    user, key = read_env(args.env)
-    k = Kaggle(user, key)
+    status = token_status()
+    print(f"kaggle: {status} (the token file is never read)")
+    if status != "token present":
+        raise Refused("the owner's Kaggle token is missing at Kaggle's default place (~/.kaggle/access_token)")
+    k = Kaggle(args.owner)
+    user = k.user
     k.check_privacy(f"before {args.command}")
     if args.command == "privacy":
         return 0
