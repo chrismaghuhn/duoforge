@@ -237,6 +237,10 @@ Run as the HauptSession asked: after #512 S3 (#540) made a targeted foe move wit
   - **A candidate is a pair of the world's foe options.** When both foe slots are compared, a pair is reproduced only when, under one and the same seed, the engine's target matches the line's for both slots.
   - **The line** is the first `|move|` line of the slot's user in the turn. It is not compared when it has `[spread]` or an empty target, or when the user's `|cant|`, `|switch|` or `|faint|` line comes first.
   - **A step the engine refuses** excludes the turn as `leaf-refused`, as a refused leaf does. It never drops the pair.
+- **(c) A seed counts only when the turn's events match the log up to the move (HauptSession, 2026-10-15, before the run).**
+  - The check covers the faints before the move. Before the first MOVE event of a compared slot's user, the engine's step must have fainted the same positions as the log's `|faint|` lines before that user's `|move|` line.
+  - So the target the pair chose is still alive at the move in the engine exactly when it is in the log. A pair that reaches the line's target only because its own target fainted first, in a seed where nothing fainted in the log, is not reproduced by that seed.
+  - A seed that fails the check is discarded for that pair. The discarded seeds are counted per set and reported with (a) and (b).
 - **The tool.** `cts_luck_check.py` only reports more; the comparison itself is unchanged. It adds:
   - the meter's target counts and the share in (a);
   - per turn, whether the after-S3 method would have mixed it (so it can count the turns that become unique);
