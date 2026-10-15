@@ -176,6 +176,70 @@ static void check_gravity_later_hit(df_test *t, duoforge_context *ctx)
     DF_CHECK_EQ_U64(t, st, DUOFORGE_OK);
 }
 
+/* 3. The later hit at a non-zero stage pair (M10, decision 0015 5df). In k4_gravity_multihit the Triple Axel step (step 2)
+ * hits three times under Gravity with the recorded accuracy draws 47, 52 and 72. Here the user (Milotic, side 1) is raised
+ * to accuracy +1 and the target (Metagross, side 0) to evasion +6, set on the live battle after steps 0 and 1; the reachable
+ * pair (1, 6) is not reached by the marked content (Double Team is unmarked, Minimize and Sweet Scent are unmodelled), so
+ * the rule is checked white-box. The first hit's threshold is then 150 x 4/3 x 3/9 = 66, so the draw 47 hits. The later hit:
+ * accuracy 90 x (3+1)/3 x 3/(3+6) = 40 is an integer, and Gravity's 6840/4096 gives trunc((40 x 6840 + 2047) / 4096) = 67
+ * (sim/battle.ts:929-932, the modify rounding of the integer value), so the draw 66 hits. Without the +2047 (the mutant)
+ * the threshold is 66 and 66 misses: the later hit is not played and the step does not draw its tape. The draw after it
+ * is 26, below 67, so the third hit lands too. The tape of the step is otherwise the recorded one; used must equal len. */
+static void check_later_hit_stage_pair(df_test *t, duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("k4_gravity_multihit");
+    if (!DF_CHECK(t, cb != NULL && cb->step_count > 2u)) {
+        return;
+    }
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup);
+    duoforge_battle *b = NULL;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return;
+    }
+    for (uint32_t si = 0u; si < 2u; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0u;
+        if (!DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res) ==
+                             DUOFORGE_OK) ||
+            !DF_CHECK_EQ_U64(t, used, st->tape_len)) {
+            duoforge_battle_destroy(b);
+            return;
+        }
+    }
+    /* the stages of the pair: user accuracy +1 (biased 7), target evasion +6 (biased DFI_STAGE_MAX) */
+    b->sides[1].positions[0].stages[DFI_STAGE_ACCURACY] = 7u;
+    b->sides[0].positions[0].stages[DFI_STAGE_EVASION] = (uint8_t)DFI_STAGE_MAX;
+    const df_conf_step *st = &cb->steps[2];
+    static dfi_tape_entry buf[K4_TAPE_MAX];
+    if (DF_CHECK(t, st->tape_len <= K4_TAPE_MAX)) {
+        memcpy(buf, &conf_tape[st->tape_off], st->tape_len * sizeof buf[0]);
+        uint32_t seen = 0u;
+        uint32_t idx[3] = {0u, 0u, 0u};
+        for (uint32_t k = 0u; k < st->tape_len && seen < 3u; ++k) {
+            if (buf[k].site == DFI_SITE_ACCURACY) {
+                idx[seen++] = k;
+            }
+        }
+        if (DF_CHECK_EQ_U64(t, seen, 3u) && DF_CHECK_EQ_U64(t, buf[idx[0]].value, 47u) &&
+            DF_CHECK_EQ_U64(t, buf[idx[1]].value, 52u)) {
+            buf[idx[1]].value = 66u; /* the later hit: threshold 67 with the +2047 rule, 66 without */
+            buf[idx[2]].value = 26u; /* the third hit: below both thresholds */
+            duoforge_decision_bundle bd;
+            bundle_of(st, b, &bd);
+            duoforge_step_result res;
+            uint32_t used = 0u;
+            if (DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, buf, st->tape_len, &used, &res) == DUOFORGE_OK)) {
+                DF_CHECK_EQ_U64(t, used, st->tape_len);
+            }
+        }
+    }
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -183,6 +247,7 @@ int main(void)
     duoforge_context *ctx = df_make_context(&df_config_pool);
     check_gravity_first_hit(&t, ctx);
     check_gravity_later_hit(&t, ctx);
+    check_later_hit_stage_pair(&t, ctx);
     duoforge_context_destroy(ctx);
     return df_test_end(&t);
 }
