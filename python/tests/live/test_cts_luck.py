@@ -11,7 +11,6 @@ from unittest import mock
 
 from duoforge_live import cts, cts_luck, data, options, pkmn_arena, policy as live_policy, search as live_search, teams
 from python.tests.live import test_cts_replay
-from python.tests.live.test_pkmn_arena import ENV
 
 BATTLE = "g45_moxie_win"
 SWITCH = "g90_end_fz90_195"  # the foe switches by choice on turn 9
@@ -51,8 +50,8 @@ class MeterTest(unittest.TestCase):
 
     def battle(self, samples=cts_luck.SAMPLES, foe=None, name=BATTLE):
         log, own, true_foe, _ = self.battles[name]
-        with mock.patch.dict(os.environ, ENV):
-            live = live_search.load(self.path, foe_net=self.path, foe_net_sha256=pkmn_arena.sha256_of(self.path))
+        # No environment patch here: restoring os.environ (putenv) while XLA's threads read it (getenv) crashed the process.
+        live = live_search.load(self.path, foe_net=self.path, foe_net_sha256=pkmn_arena.sha256_of(self.path))
         self.addCleanup(live.close)
         live.searcher = cts.Capture(live.searcher)
         net, tables = live_policy.load(self.path), data.for_checkpoint(self.path)
@@ -177,8 +176,7 @@ class MeterTest(unittest.TestCase):
         Path(logs, "arena-run-20261013T192334Z.json").write_text(json.dumps({"started": "2026-10-13T19:23:34Z"}),
                                                                  encoding="utf-8")
         with mock.patch.object(ev, "selected", lambda *args: iter([(Path(self.log), records, self.own)])), \
-                mock.patch.object(cts.SetPrior, "from_table", lambda tables: cts.SetPrior(tables, self.foe)), \
-                mock.patch.dict(os.environ, ENV):
+                mock.patch.object(cts.SetPrior, "from_table", lambda tables: cts.SetPrior(tables, self.foe)):
             got = ev.luck_all(logs, BOT, ROOT, self.path, sha, self.path, sha, bot_commit="1ffa6a03")
         self.assertEqual((got["battles"], got["finished"]), (1, 1))
         self.assertEqual(got["turns_excluded"], {})
