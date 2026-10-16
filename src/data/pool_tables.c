@@ -1490,8 +1490,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 85u, 40u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 6u, {6u, 4u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Seed Bomb -- data/moves.ts:15959-15971 */
     {9u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Seismic Toss -- data/moves.ts:15991-16005  [unmodelled: field damage] */
-    {5u, 0u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Seismic Toss -- data/moves.ts:15991-16005 */
+    {5u, 0u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 114u},
     /* Self-Destruct -- data/moves.ts:16006-16019  [unmodelled: field selfdestruct] */
     {12u, 0u, 200u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Shadow Punch -- data/moves.ts:16102-16114 */
@@ -1610,8 +1610,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 6u, {8u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 111u},
     /* Swallow -- data/moves.ts:18573-18598  [unmodelled: callback onHit; callback onTry] */
     {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* Sweet Kiss -- data/moves.ts:18599-18613  [unmodelled: primary volatile confusion] */
-    {4u, 2u, 0u, 75u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Sweet Kiss -- data/moves.ts:18599-18613 */
+    {4u, 2u, 0u, 75u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 111u},
     /* Sweet Scent -- data/moves.ts:18614-18630  [unmodelled: primary boosts on a non-self target] */
     {12u, 2u, 0u, 100u, 20u, 20u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Switcheroo -- data/moves.ts:18644-18690 */
@@ -6915,7 +6915,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ROUND] = "callback basePowerCallback; callback onTry",
     [DFI_MOVE_SAFEGUARD] = "condition block; side condition safeguard",
     [DFI_MOVE_SALTCURE] = "condition block; secondary volatile saltcure",
-    [DFI_MOVE_SEISMICTOSS] = "field damage",
     [DFI_MOVE_SELFDESTRUCT] = "field selfdestruct",
     [DFI_MOVE_SHEDTAIL] = "callback onHit; callback onTryHit; field selfSwitch shedtail; primary volatile substitute; self effect",
     [DFI_MOVE_SHELLSIDEARM] = "callback onAfterSubDamage; callback onHit; callback onModifyMove; callback onPrepareHit",
@@ -6935,7 +6934,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_STUFFCHEEKS] = "callback onHit; callback onTry",
     [DFI_MOVE_SUPERCELLSLAM] = "callback onMoveFail; field hasCrashDamage",
     [DFI_MOVE_SWALLOW] = "callback onHit; callback onTry",
-    [DFI_MOVE_SWEETKISS] = "primary volatile confusion",
     [DFI_MOVE_SWEETSCENT] = "primary boosts on a non-self target",
     [DFI_MOVE_SYNTHESIS] = "callback onHit",
     [DFI_MOVE_SYRUPBOMB] = "condition block; secondary volatile syrupbomb",
@@ -7070,10 +7068,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x79u, 0xaeu, 0xebu, 0x70u, 0x5eu, 0x73u, 0x67u, 0x8eu,
-    0x05u, 0x00u, 0xa6u, 0xc7u, 0x38u, 0x77u, 0x52u, 0xabu,
-    0xd0u, 0x02u, 0x77u, 0x5cu, 0x50u, 0xeau, 0xb9u, 0xa9u,
-    0x8du, 0x38u, 0x25u, 0x99u, 0x78u, 0x20u, 0x5cu, 0xd0u,
+    0xd1u, 0x4du, 0xe9u, 0x00u, 0x2au, 0x34u, 0x0cu, 0xd6u,
+    0xaeu, 0xa0u, 0x17u, 0x57u, 0xd0u, 0x61u, 0x5du, 0x0bu,
+    0xb9u, 0x3au, 0xfau, 0x1du, 0x02u, 0x9bu, 0x21u, 0x49u,
+    0x1du, 0x49u, 0xe3u, 0xfcu, 0x91u, 0xbcu, 0x44u, 0x4eu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

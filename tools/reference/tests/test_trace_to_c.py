@@ -2510,7 +2510,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 298)  # A0 part 3 (lead decision 2026-10-16): four marks (Solar Blade, Double Hit, Tail Slap, Bone Rush) make 298 (Thrash, Petal Dance, Raging Fury, Snap Trap unmarked again; 302 with them); K4 (#475, entry 5dl): Gravity is marked, makes 294; K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
+        self.assertEqual(len(marked), 310)  # A0 PR-1 (parts 2 and 3): 294 + 12 + 4 = 310; A0 part 3 (lead decision 2026-10-16): four marks (Solar Blade, Double Hit, Tail Slap, Bone Rush) make 298 (Thrash, Petal Dance, Raging Fury, Snap Trap unmarked again; 302 with them); K4 (#475, entry 5dl): Gravity is marked, makes 294; K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2528,7 +2528,7 @@ class Library(unittest.TestCase):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
-                            done = done or (name in ('Charm', 'Fake Tears', 'Tickle') and after.startswith('|-unboost|'))  # Tickle: step G86
+                            done = done or (name in ('Charm', 'Fake Tears', 'Tickle', 'Tearful Look') and after.startswith('|-unboost|'))  # Tickle: step G86; Tearful Look: step A0 part 2 (decision 0015 entry 5co), two target drops (Attack and Special Attack -1)
                             # A stat drop of the target (Scary Face, Noble Roar, Eerie Impulse, Screech, Spicy Extract; their pin
                             # boosts are negative, data/moves.ts:15800, 12769, 4441, 15847, 17450), counted only as the move's own
                             # effect: the line directly after its |move| line, on the move's target or its user, and with no

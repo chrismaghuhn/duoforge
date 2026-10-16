@@ -658,6 +658,23 @@ const dfi_support_manifest dfi_support = {
             /* Step C5 (decision 0015 entry 5cy): Endeavor (the ENDEAVOR special, the Final Gambit damage path): damage = target HP
              * - user HP, immune when the user's HP is not below the target's (data/moves.ts:4784-4804). */
             [DFI_MOVE_ENDEAVOR] = 1u,
+            /* Step A0 (batch A0 part 2): data-only moves through the existing paths: the generic columns and the boosts, status
+             * and secondaries they hold (the Champions overrides of Crabhammer, Crush Claw and Fire Lash as the pin merges them).
+             * Seismic Toss takes Night Shade's LEVEL_DAMAGE, Sweet Kiss Confuse Ray's CONFUSE (both generator rows, no code). Every
+             * field is read by check_a0_facts (gen_closure.py). Not marked: Toxic Thread (its primary status and its primary target
+             * boost are not both applied by the move body, see check_a0_facts). */
+            [DFI_MOVE_DRAGONRUSH] = 1u,
+            [DFI_MOVE_CRABHAMMER] = 1u,
+            [DFI_MOVE_BITE] = 1u,
+            [DFI_MOVE_CROSSCHOP] = 1u,
+            [DFI_MOVE_CRUSHCLAW] = 1u,
+            [DFI_MOVE_DOUBLETEAM] = 1u,
+            [DFI_MOVE_FIRELASH] = 1u,
+            [DFI_MOVE_INFERNO] = 1u,
+            [DFI_MOVE_SEISMICTOSS] = 1u,
+            [DFI_MOVE_SWEETKISS] = 1u,
+            [DFI_MOVE_TEARFULLOOK] = 1u,
+            [DFI_MOVE_AROMATICMIST] = 1u,
         },
     .abilities =
         {
