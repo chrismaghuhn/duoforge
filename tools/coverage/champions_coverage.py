@@ -2,7 +2,7 @@
 """Replay game coverage of the engine: the method of the 2026-10-09..11 expansion reports (77.1 % / 81.9 %),
 reconstructed for C0 (docs/research/expansion/champions-100.md).
 
-    DUOFORGE_LIBRARY=<libduoforge_shared.so> python3 tools/research/champions_coverage.py \
+    DUOFORGE_LIBRARY=<libduoforge_shared.so> python3 tools/coverage/champions_coverage.py \
         --sheets SHEETS.jsonl | --replays FILE_OR_DIR... \
         --out DIR [--package PYTHON_DIR] [--format-prefix gen9championsvgc2026regmc] [--data-kind 6] \
         [--singles] [--aggregate-json PATH]
@@ -265,12 +265,23 @@ def greedy(game_sets, limit):
     return order
 
 
+def _runs():
+    """This checkout's duoforge/runs.py, loaded as a file of its own: --package may name an older commit's duoforge
+    package, which the measurement imports later and which may have no runs module (runs.py imports nothing of it)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("duoforge_runs_of_this_checkout", ROOT / "python" / "duoforge" / "runs.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--sheets", help="JSON lines {id, format, sheets: [packed p1, packed p2]} (private)")
     src.add_argument("--replays", nargs="+", help="replay parquet/JSON lines files or directories (private)")
-    ap.add_argument("--out", required=True, help="output directory, outside the repository")
+    ap.add_argument("--out", default=None, help="output directory, outside the repository "
+                                                "(default: $DUOFORGE_RUNS/coverage/<date>-champions_coverage)")
     ap.add_argument("--package", default=str(ROOT / "python"), help="python/ dir of the duoforge package")
     ap.add_argument("--format-prefix", default="gen9championsvgc2026regmc")
     ap.add_argument("--data-kind", type=int, default=6)
@@ -279,9 +290,13 @@ def main():
     ap.add_argument("--aggregate-json", help="also write the aggregate JSON here (the committed copy)")
     args = ap.parse_args()
 
+    runs = _runs()  # restructure step 8: the default output and the run's manifest
+    if args.out is None:
+        args.out = str(runs.default_out("coverage", "champions_coverage"))
     out = Path(args.out).resolve()
     if ROOT in out.parents or out == ROOT:
         sys.exit(f"{out}: the output holds per-game rows and must be outside the repository")
+    manifest = runs.Manifest("coverage", "tools/coverage/champions_coverage.py", None, root=ROOT)
     out.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, args.package)
     lib = Library(args.data_kind, args.singles)
@@ -355,7 +370,7 @@ def main():
     sole = collections.Counter(next(iter(g)) for g in game_sets if len(g) == 1)
     order = greedy(game_sets, args.greedy)
     agg = {
-        "method": "tools/research/champions_coverage.py (reconstruction of the 2026-10-09 coverage method)",
+        "method": "tools/coverage/champions_coverage.py (reconstruction of the 2026-10-09 coverage method)",
         "format_prefix": args.format_prefix, "data_kind": args.data_kind,
         "formats": dict(formats),
         "games": n_games, "games_playable": playable,
@@ -384,6 +399,7 @@ def main():
         lines.append(f"{i:3d}. {o['token']:<45s} + {o['gain']:5d}  -> {o['playable']:6d} ({100 * o['share']:5.1f}%)"
                      f"  [in {o['in_games']} games]")
     (out / "report.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    manifest.write(out, package=str(Path(args.package).resolve()))  # the duoforge package the measurement imported
     print("\n".join(lines[:4]))
 
 

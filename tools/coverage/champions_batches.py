@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""What batches of gaps are worth in replay games: the batch view of tools/research/champions_coverage.py.
+"""What batches of gaps are worth in replay games: the batch view of tools/coverage/champions_coverage.py.
 
-    python3 tools/research/champions_batches.py --games DIR/games.jsonl --batches BATCHES.json [--out OUT.json]
+    python3 tools/coverage/champions_batches.py --games DIR/games.jsonl --batches BATCHES.json [--out OUT.json]
 
 DIR/games.jsonl is champions_coverage.py's private per-game output (outside the repository). BATCHES.json is a list
 of {"name": str, "tokens": [token, ...]} in the proposed order (tokens as champions_coverage.py writes them, e.g.
