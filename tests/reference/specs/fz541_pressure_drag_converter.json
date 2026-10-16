@@ -1,0 +1,90 @@
+{
+  "name": "fz541_pressure_drag_converter",
+  "purpose": "Corviknight's Pressure, Ally Switch and Pyroar's Roar (steps 5 and 6): the converter's Pressure tracker followed switches but not drags, so after Corviknight was dragged out the reference still charged the Pressure extra (trace_to_c.py FoePressure, issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_340_60), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,4ef1a9344a42ac8ebb0f6eb23e5ddfe2e318cc0a06ff1f409060b963988d6f61",
+  "teams": [
+    "maushold @ icyrock\nAbility: technician\nLevel: 50\nEVs: 15 HP / 7 Atk / 13 Def / 7 SpA / 9 SpD / 15 Spe\nQuiet Nature\n- lowsweep\n- doubleedge\n- beatup\n- babydolleyes\n\nvanilluxe (M) @ froslassite\nAbility: snowwarning\nLevel: 50\nEVs: 11 HP / 10 Atk / 11 Def / 11 SpA / 9 SpD / 14 Spe\nGentle Nature\n- chillingwater\n- beatup\n- iciclecrash\n- allyswitch\n\ngolurk @ mistyseed\nAbility: ironfist\nLevel: 50\nEVs: 7 HP / 9 Atk / 8 Def / 9 SpA / 11 SpD / 13 Spe\nLonely Nature\n- stealthrock\n- sandstorm\n- hyperbeam\n- firepunch\n\ncorviknight (F) @ silverpowder\nAbility: pressure\nLevel: 50\nEVs: 4 HP / 3 Atk / 3 Def / 4 SpA / 4 SpD / 7 Spe\nLax Nature\n- protect\n- reflect\n- irondefense\n- roost\n\nmudsdale (M) @ chilanberry\nAbility: stamina\nLevel: 50\nEVs: 15 HP / 6 Atk / 11 Def / 9 SpA / 9 SpD / 16 Spe\nModest Nature\n- lowsweep\n- endeavor\n- bodyslam\n- hyperbeam\n\ndragapult (F) @ electricseed\nAbility: cursedbody\nLevel: 50\nEVs: 14 HP / 18 Atk / 11 Def / 6 SpA / 4 SpD / 13 Spe\nGentle Nature\n- triattack\n- dragontail\n- dragondance\n- phantomforce",
+    "decidueyehisui (M) @ garchompitez\nAbility: overgrow\nLevel: 50\nEVs: 11 HP / 9 Atk / 8 Def / 13 SpA / 9 SpD / 16 Spe\nNaive Nature\n- shadowsneak\n- gigaimpact\n- batonpass\n- scaryface\n\nkangaskhan (F) @ glimmoranite\nAbility: scrappy\nLevel: 50\nEVs: 4 HP / 7 Atk / 11 Def / 8 SpA / 3 SpD / 7 Spe\nRelaxed Nature\n- hydropump\n- endeavor\n- megakick\n- raindance\n\nvictreebel (M) @ brightpowder\nAbility: chlorophyll\nLevel: 50\nEVs: 13 HP / 14 Atk / 7 Def / 6 SpA / 8 SpD / 18 Spe\nImpish Nature\n- sunnyday\n- knockoff\n- sludgewave\n- thief\n\ndrampa (F) @ wacanberry\nAbility: cloudnine\nLevel: 50\nEVs: 14 HP / 13 Atk / 5 Def / 10 SpA / 11 SpD / 13 Spe\nMild Nature\n- fireblast\n- sunnyday\n- solarbeam\n- earthpower\n\naggron (M) @ medichamite\nAbility: rockhead\nLevel: 50\nEVs: 1 Atk / 2 Def / 1 SpA\nRash Nature\n- protect\n- lowkick\n- ironhead\n- outrage\n\npyroar (M) @ rindoberry\nAbility: moxie\nLevel: 50\nEVs: 20 HP / 12 Atk / 9 Def / 11 SpA / 8 SpD / 6 Spe\nHasty Nature\n- roar\n- flamecharge\n- willowisp\n- sunnyday"
+  ],
+  "choices": [
+    {
+      "p1": "team 2436",
+      "p2": "team 6314"
+    },
+    {
+      "p1": "move 3 1, move 3",
+      "p2": "move 2 -2, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "switch 3, move 3"
+    },
+    {
+      "p1": "move 3 1, move 3",
+      "p2": "move 3, move 2 2"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 1 -2, move 4 1"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1 1, move 2"
+    },
+    {
+      "p1": "move 4 2, switch 4",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 4 1, move 3",
+      "p2": "move 2 1, move 3 -1"
+    },
+    {
+      "p1": "move 1, move 4 2",
+      "p2": "move 1 2, move 1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 4 2, move 1 2"
+    },
+    {
+      "p1": "switch 3, move 2 2",
+      "p2": "move 1, move 3 1"
+    },
+    {
+      "p1": "move 1, move 2 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 1, move 1 2",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 2 -2, switch 3",
+      "p2": "move 2 -2, pass"
+    },
+    {
+      "p1": "switch 3, move 3",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 4 1, move 3",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 4 2, pass"
+    }
+  ]
+}

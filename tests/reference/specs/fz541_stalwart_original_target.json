@@ -1,0 +1,59 @@
+{
+  "name": "fz541_stalwart_original_target",
+  "purpose": "Gourgeist's Ally Switch (step 1) moves Samurott; Archaludon's Stalwart keeps its Draco Meteor on the original target (tracksTarget, sim/battle.ts:2437-2447), so it hits Gourgeist at the new slot; on main the engine hit the Pokemon now standing on the chosen slot (issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_205_98), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,121bdfa475d6d544dd9be3455fa2aa7eb1b2ec10ae6f882c428cfa4dca2e9373",
+  "teams": [
+    "salazzle (F) @ steelixite\nAbility: oblivious\nLevel: 50\nEVs: 4 HP / 4 Atk / 7 Def / 8 SpA / 5 SpD / 4 Spe\nImpish Nature\n- fireblast\n- irontail\n- toxicspikes\n- willowisp\n\northworm (F) @ chimechite\nAbility: sandveil\nLevel: 50\nEVs: 9 HP / 11 Atk / 8 Def / 14 SpA / 15 SpD / 9 Spe\nNaive Nature\n- earthquake\n- heavyslam\n- flashcannon\n- hyperbeam\n\nsylveon (M) @ spelltag\nAbility: pixilate\nLevel: 50\nEVs: 11 HP / 13 Atk / 10 Def / 11 SpA / 9 SpD / 12 Spe\nQuirky Nature\n- moonblast\n- psychup\n- detect\n- bodyslam\n\narchaludon (F) @ pyroarite\nAbility: stalwart\nLevel: 50\nEVs: 12 HP / 9 Atk / 12 Def / 13 SpA / 14 SpD / 6 Spe\nBrave Nature\n- doubleedge\n- dracometeor\n- dragonclaw\n- darkpulse\n\nslowbrogalar (F) @ rindoberry\nAbility: regenerator\nLevel: 50\nEVs: 6 HP / 7 Atk / 3 Def / 3 SpA / 2 SpD / 3 Spe\nImpish Nature\n- raindance\n- chillingwater\n- foulplay\n- sludgewave\n\nbarbaracle (M) @ nevermeltice\nAbility: sniper\nLevel: 50\nEVs: 8 HP / 13 Atk / 8 Def / 15 SpA / 12 SpD / 10 Spe\nImpish Nature\n- shellsmash\n- razorshell\n- rockpolish\n- stoneedge",
+    "glaceon (F) @ mentalherb\nAbility: snowcloak\nLevel: 50\nEVs: 7 HP / 10 Atk / 11 Def / 7 SpA / 12 SpD / 19 Spe\nMild Nature\n- charm\n- alluringvoice\n- weatherball\n- haze\n\ntyrantrum (F) @ glimmoranite\nAbility: rockhead\nLevel: 50\nEVs: 8 HP / 12 Atk / 15 Def / 13 SpA / 9 SpD / 9 Spe\nLax Nature\n- icefang\n- psychicfangs\n- sunnyday\n- playrough\n\nsamurotthisui (F) @ grassyseed\nAbility: sharpness\nLevel: 50\nEVs: 5 HP / 17 Atk / 11 Def / 8 SpA / 13 SpD / 12 Spe\nRelaxed Nature\n- airslash\n- hydropump\n- hyperbeam\n- thief\n\ngourgeist (M)\nAbility: frisk\nLevel: 50\nEVs: 6 HP / 10 Atk / 12 Def / 11 SpA / 16 SpD / 11 Spe\nGentle Nature\n- hypnosis\n- moonblast\n- darkpulse\n- allyswitch\n\nvileplume (F) @ chartiberry\nAbility: chlorophyll\nLevel: 50\nEVs: 16 HP / 15 Atk / 10 Def / 8 SpA / 10 SpD / 7 Spe\nBashful Nature\n- hyperbeam\n- helpinghand\n- grassknot\n- acidspray\n\nbeartic (M) @ pidgeotite\nAbility: snowcloak\nLevel: 50\nEVs: 8 HP / 9 Atk / 16 Def / 12 SpA / 12 SpD / 9 Spe\nBashful Nature\n- trailblaze\n- bodyslam\n- mudshot\n- icefang"
+  ],
+  "choices": [
+    {
+      "p1": "team 1435",
+      "p2": "team 4523"
+    },
+    {
+      "p1": "move 3, move 2 1",
+      "p2": "move 4, switch 4"
+    },
+    {
+      "p1": "move 4 2, switch 3",
+      "p2": "switch 3, move 3 1"
+    },
+    {
+      "p1": "move 2 2, move 3",
+      "p2": "move 2 2, move 1 -1"
+    },
+    {
+      "p1": "switch 3, move 3",
+      "p2": "move 2 2, switch 3"
+    },
+    {
+      "p1": "move 3 -2, move 2 1",
+      "p2": "move 4 1, move 2 1"
+    },
+    {
+      "p1": "move 4 -2, move 3",
+      "p2": "move 2 -2, move 2 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 -2, move 3",
+      "p2": "move 1 2, move 4 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 1, switch 4",
+      "p2": "move 4 1, move 3 2"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 4 1, move 1"
+    }
+  ]
+}

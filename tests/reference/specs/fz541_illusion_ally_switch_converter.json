@@ -1,0 +1,79 @@
+{
+  "name": "fz541_illusion_ally_switch_converter",
+  "purpose": "Houndstone's Ally Switch (step 1) in the turn Charizard switches in: the converter read the switch's roster index from the Illusion table after the step's swaps, so the reference named the wrong member (trace_to_c.py step_events, issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_302_61), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f57a98f22e6a644bdb8da981e299fd6330b6718246201c6b97a3f70de441d583",
+  "teams": [
+    "farigiraf (F) @ nevermeltice\nAbility: armortail\nLevel: 50\nEVs: 2 HP / 6 Atk / 2 Def / 6 SpA / 8 SpD / 6 Spe\nSerious Nature\n- highhorsepower\n- grassknot\n- gigaimpact\n- trick\n\nrotom @ hawluchanite\nAbility: levitate\nLevel: 50\nEVs: 8 HP / 11 Atk / 12 Def / 11 SpA / 15 SpD / 9 Spe\nCareful Nature\n- confuseray\n- foulplay\n- helpinghand\n- discharge\n\nhoundstone (F) @ widelens\nAbility: sandrush\nLevel: 50\nEVs: 3 HP / 6 Atk / 6 Def / 5 SpA / 5 SpD / 3 Spe\nBrave Nature\n- thief\n- crunch\n- allyswitch\n- mudslap\n\ncharizard (F) @ silverpowder\nAbility: solarpower\nLevel: 50\nEVs: 8 HP / 13 Atk / 7 Def / 12 SpA / 11 SpD / 15 Spe\nQuiet Nature\n- crunch\n- bodyslam\n- hyperbeam\n- roar\n\nzoroark (F) @ houndoominite\nAbility: illusion\nLevel: 50\nEVs: 13 HP / 9 Atk / 12 Def / 4 SpA / 17 SpD / 11 Spe\nGentle Nature\n- taunt\n- foulplay\n- bodyslam\n- focusblast\n\nampharos (F) @ damprock\nAbility: static\nLevel: 50\nEVs: 7 HP / 15 Atk / 12 Def / 8 SpA / 9 SpD / 15 Spe\nSassy Nature\n- agility\n- risingvoltage\n- electroweb\n- doubleedge",
+    "conkeldurr (F) @ blastoisinite\nAbility: sheerforce\nLevel: 50\nEVs: 4 Atk / 4 Def / 1 SpA / 1 SpD\nSassy Nature\n- taunt\n- bulkup\n- icepunch\n- upperhand\n\ngolurk @ terrainextender\nAbility: ironfist\nLevel: 50\nEVs: 10 HP / 9 Atk / 8 Def / 13 SpA / 11 SpD / 15 Spe\nTimid Nature\n- zenheadbutt\n- icebeam\n- lowsweep\n- icywind\n\ngallade (M) @ focussash\nAbility: steadfast\nLevel: 50\nEVs: 11 HP / 17 Atk / 11 Def / 5 SpA / 10 SpD / 12 Spe\nNaive Nature\n- trick\n- substitute\n- healpulse\n- taunt\n\ndragonite (F) @ dragoninite\nAbility: innerfocus\nLevel: 50\nEVs: 6 HP / 14 Atk / 13 Def / 13 SpA / 13 SpD / 7 Spe\nNaughty Nature\n- aquajet\n- outrage\n- gigaimpact\n- icespinner\n\nserperior (M) @ charcoal\nAbility: overgrow\nLevel: 50\nEVs: 10 HP / 11 Atk / 10 Def / 7 SpA / 16 SpD / 12 Spe\nRelaxed Nature\n- gigaimpact\n- grassyglide\n- taunt\n- trailblaze\n\ndelphox (F) @ kebiaberry\nAbility: blaze\nLevel: 50\nEVs: 15 HP / 11 Atk / 11 Def / 13 SpA / 7 SpD / 9 Spe\nRelaxed Nature\n- mudslap\n- hypervoice\n- firepunch\n- hypnosis"
+  ],
+  "choices": [
+    {
+      "p1": "team 3142",
+      "p2": "team 5423"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "move 1 -2, move 1 2"
+    },
+    {
+      "p1": "move 3 2, move 1 2",
+      "p2": "move 1, move 4 1 mega"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 4 1, move 2 -1",
+      "p2": "move 3 2, move 1"
+    },
+    {
+      "p1": "move 2 1, move 2 2",
+      "p2": "move 3 2, move 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4 2, move 2 2",
+      "p2": "move 3 2, move 1"
+    },
+    {
+      "p1": "move 3 1, pass",
+      "p2": "move 3 2, move 1 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 3 1, move 1"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "move 1 1, move 2 1"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "switch 3, move 2 -1"
+    },
+    {
+      "p1": "move 4 -2, pass",
+      "p2": "move 1 1, move 3 -1"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p1": "move 4 1, pass",
+      "p2": "move 1 2, move 2"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 4 2, move 4 2"
+    }
+  ]
+}

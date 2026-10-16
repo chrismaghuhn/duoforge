@@ -257,6 +257,36 @@ static void test_illusion_refusal(df_test *t)
     finish(ctx, b);
 }
 
+/* Stalwart with a randomNormal move (issue 541): the original target is the one resolveAction drew when the move was queued
+ * (sim/battle-queue.ts:268-273), a draw the engine does not model, so the move is refused (E_UNSUPPORTED) rather than aimed by a
+ * draw of its own. No recorded battle reaches it (its battle would stop there), so Stalwart is set through the tail's ability_now
+ * of the Outrage user of fz519_volt_switch_sub (Bastiodon, our slot 1). */
+static void test_stalwart_random_refusal(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    duoforge_decision_bundle bd;
+    duoforge_step_result res;
+    if (!start(t, "fz519_volt_switch_sub", &ctx, &b, &bd, &res)) {
+        finish(ctx, b);
+        return;
+    }
+    const uint32_t member = b->sides[0].positions[1].occupant;
+    DF_CHECK(t, member < DUOFORGE_MAX_ROSTER);
+    if (member >= DUOFORGE_MAX_ROSTER) {
+        finish(ctx, b);
+        return;
+    }
+    b->tail.sides[0].ability_now[member] = (uint16_t)(DFI_ABILITY_STALWART + 1u);
+    /* Altaria Protects (move 1), Bastiodon uses Outrage (move 2, randomNormal: no target); the foe's Rotom-Heat aims Eerie
+     * Impulse and Garganacl Heavy Slam at our slot 0 (flat 0) */
+    static const g80_cmd turn1[2][2] = {{MV(1, NO), MV(2, NO)}, {MV(1, 0u), MV(1, 0u)}};
+    turn_bundle(&bd, b, turn1);
+    const duoforge_status st = duoforge_battle_step(ctx, b, &bd, &res);
+    DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
+    finish(ctx, b);
+}
+
 /* dfi_swap_position_state (step G80; the inventory is its comment in combat/turn.c): every field the swap moves gets a distinct
  * value on each side of the exchange before it, and the fields the swap keeps get one too. After the swap, a moved field holds
  * the other position's value, a kept field its own, and nothing outside the two positions and the trap/leech references changes. */
@@ -280,7 +310,7 @@ static void test_swap_position_fields(df_test *t)
     sa->confusion_turns = 5u; sc->confusion_turns = 6u;
     sa->charge_turns = 7u; sc->charge_turns = 8u;
     sa->locked_move = 9u; sc->locked_move = 10u;
-    sa->locked_target = 11u; sc->locked_target = 12u; /* kept: a slot location */
+    sa->locked_target = 11u; sc->locked_target = 12u; /* the Pokemon's lastMoveTargetLoc: it moves (issue 541) */
     sa->move_actions = 13u; sc->move_actions = 14u;
     sa->switch_flag = 15u; sc->switch_flag = 16u;
     /* the tail of each position: every byte distinct, the Healing Wish bit set on position 0 only (a slot condition) */
@@ -314,7 +344,7 @@ static void test_swap_position_fields(df_test *t)
 
     dfi_swap_position_state(b, 0u, 0u, 1u);
 
-    /* the slot records: the Pokemon's fields moved, locked_target stayed with the slot */
+    /* the slot records: the Pokemon's fields moved, locked_target with them */
     DF_CHECK_EQ_U64(t, sc->activation_id, 1001u);
     DF_CHECK_EQ_U64(t, sa->activation_id, 2001u);
     DF_CHECK_EQ_U64(t, sc->occupant, 2u);
@@ -339,8 +369,8 @@ static void test_swap_position_fields(df_test *t)
     DF_CHECK_EQ_U64(t, sa->move_actions, 14u);
     DF_CHECK_EQ_U64(t, sc->switch_flag, 15u);
     DF_CHECK_EQ_U64(t, sa->switch_flag, 16u);
-    DF_CHECK_EQ_U64(t, sa->locked_target, 11u);
-    DF_CHECK_EQ_U64(t, sc->locked_target, 12u);
+    DF_CHECK_EQ_U64(t, sc->locked_target, 11u);
+    DF_CHECK_EQ_U64(t, sa->locked_target, 12u);
     /* the tail: every byte moved, except the Healing Wish bit of each slot, which stayed */
     for (size_t k = 0u; k < sizeof(dfi_tail_pos); ++k) {
         if (k == offsetof(dfi_tail_pos, position_flags)) {
@@ -388,6 +418,7 @@ int main(void)
     test_codec_round_trip(&t);
     test_invariant(&t);
     test_illusion_refusal(&t);
+    test_stalwart_random_refusal(&t);
     test_swap_position_fields(&t);
     return df_test_end(&t);
 }
