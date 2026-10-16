@@ -1,0 +1,119 @@
+{
+ "name": "a0p3_ragingfury_fz_6_102",
+ "purpose": "Random differential battle 102 of run 6 (tools/reference/diff_driver.py random): team D against team A, the sets in a seeded random order, team preview to the end or to the cap, both sides answering every request with random choices (policy seed 1954075078, tools/reference/ps_play.js) that the pinned Showdown accepted.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,75ea62240d4f2321dfc47a240cc96d748b0682d20af40137365b307cd87d2840",
+ "teams": [
+  "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nArcanine (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 Atk / 32 Spe\nJolly Nature\n- Raging Fury\n- Thrash\n- Flare Blitz\n- Extreme Speed\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nScizor (M) @ Scizorite\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk\nAdamant Nature\n- Double Hit\n- U-turn\n- Bullet Punch\n- Swords Dance\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nMeganium (F) @ Expert Belt\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 SpA\nModest Nature\n- Petal Dance\n- Swords Dance\n- Giga Drain\n- Protect",
+  "Ceruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower"
+ ],
+ "choices": [
+  {
+   "p1": "team 1326",
+   "p2": "team 2651"
+  },
+  {
+   "p1": "move 1, switch 4",
+   "p2": "move 3 2, move 2 1"
+  },
+  {
+   "p1": "move 1, move 3 1",
+   "p2": "move 4 -2, move 1 -1"
+  },
+  {
+   "p2": "switch 3, pass"
+  },
+  {
+   "p1": "move 1, move 3 1",
+   "p2": "move 1, move 1 -1"
+  },
+  {
+   "p1": "pass, switch 3",
+   "p2": "pass, switch 4"
+  },
+  {
+   "p1": "move 2, move 4 -1",
+   "p2": "move 2 1, move 4"
+  },
+  {
+   "p1": "move 1, move 4 1",
+   "p2": "move 1, move 2 2"
+  },
+  {
+   "p1": "move 4 2, move 1",
+   "p2": "move 2 1, move 4"
+  },
+  {
+   "p1": "move 3 -2, move 1",
+   "p2": "pass, move 2 -1"
+  },
+  {
+   "p1": "move 2, move 4 -1",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "switch 4, pass"
+  },
+  {
+   "p1": "move 3 mega, move 3 1",
+   "p2": "pass, move 2 1"
+  },
+  {
+   "p1": "move 1 -2, move 2",
+   "p2": "pass, move 1 1"
+  },
+  {
+   "p1": "move 4, pass",
+   "p2": "pass, move 1 2"
+  },
+  {
+   "p1": "move 2 1, pass",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 4, pass",
+   "p2": "pass, move 1 2"
+  },
+  {
+   "p1": "move 2 -2, pass",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 4, pass",
+   "p2": "pass, move 2 -1"
+  },
+  {
+   "p1": "move 4, pass",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 2 1, pass",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 3, pass",
+   "p2": "pass, move 2 2"
+  },
+  {
+   "p1": "move 1 2, pass",
+   "p2": "pass, move 2 2"
+  },
+  {
+   "p1": "move 4, pass",
+   "p2": "pass, move 2 -1"
+  },
+  {
+   "p1": "move 3, pass",
+   "p2": "pass, move 2 2"
+  },
+  {
+   "p1": "move 1 2, pass",
+   "p2": "pass, move 3"
+  },
+  {
+   "p1": "move 1 -2, pass",
+   "p2": "pass, move 1 2"
+  }
+ ]
+}

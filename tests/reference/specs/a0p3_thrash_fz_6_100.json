@@ -1,0 +1,97 @@
+{
+ "name": "a0p3_thrash_fz_6_100",
+ "purpose": "Random differential battle 100 of run 6 (tools/reference/diff_driver.py random): team D against team E, the sets in a seeded random order, team preview to the end or to the cap, both sides answering every request with random choices (policy seed 661746067, tools/reference/ps_play.js) that the pinned Showdown accepted.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,017f6cd20504a94ae837210d27529047da9f6bf288ddac14082931249976f272",
+ "teams": [
+  "Arcanine (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 Atk / 32 Spe\nJolly Nature\n- Raging Fury\n- Thrash\n- Flare Blitz\n- Extreme Speed\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nScizor (M) @ Scizorite\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk\nAdamant Nature\n- Double Hit\n- U-turn\n- Bullet Punch\n- Swords Dance\n\nMeganium (F) @ Expert Belt\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 SpA\nModest Nature\n- Petal Dance\n- Swords Dance\n- Giga Drain\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower",
+  "Politoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nNinetales (F) @ Life Orb\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA\nModest Nature\n- Tail Slap\n- Flamethrower\n- Heat Wave\n- Protect\n\nLucario (M) @ Lucarionite\nAbility: Justified\nLevel: 50\nEVs: 32 Atk / 32 Spe\nJolly Nature\n- Bone Rush\n- Close Combat\n- Extreme Speed\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 2641",
+   "p2": "team 3456"
+  },
+  {
+   "p1": "move 2, move 2 1",
+   "p2": "move 3 2 mega, move 2 2"
+  },
+  {
+   "p1": "move 4 -2, move 4 -1",
+   "p2": "move 4, switch 4"
+  },
+  {
+   "p1": "move 2, move 4 -1",
+   "p2": "move 2 -2, move 3"
+  },
+  {
+   "p2": "pass, switch 4"
+  },
+  {
+   "p1": "move 4 1, switch 4",
+   "p2": "move 2 1, move 1 -1"
+  },
+  {
+   "p1": "move 2, move 4 2",
+   "p2": "move 4, move 4"
+  },
+  {
+   "p1": "move 2, move 2",
+   "p2": "move 3 -2, switch 3"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 3 1, move 1"
+  },
+  {
+   "p2": "pass, switch 3"
+  },
+  {
+   "p1": "move 1, move 3 1",
+   "p2": "move 1 2, move 3 2"
+  },
+  {
+   "p1": "pass, switch 4"
+  },
+  {
+   "p1": "move 4 1, move 4 1",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 3 -2, move 4 1",
+   "p2": "pass, move 3 1"
+  },
+  {
+   "p1": "move 1, move 4 1",
+   "p2": "pass, move 1 -1"
+  },
+  {
+   "p1": "move 4 -2, move 4 2",
+   "p2": "pass, move 2 -1"
+  },
+  {
+   "p1": "move 3 2, move 1 2",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 1, move 1 -1",
+   "p2": "pass, move 2 1"
+  },
+  {
+   "p1": "move 2, move 2 -1",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "switch 3, pass"
+  },
+  {
+   "p1": "move 3 2, move 4 2",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 2 -2 mega, move 2 1",
+   "p2": "pass, move 2 1"
+  }
+ ]
+}
