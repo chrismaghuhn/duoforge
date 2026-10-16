@@ -50,7 +50,8 @@ class MeterTest(unittest.TestCase):
 
     def battle(self, samples=cts_luck.SAMPLES, foe=None, name=BATTLE):
         log, own, true_foe, _ = self.battles[name]
-        # No environment patch here: restoring os.environ (putenv) while XLA's threads read it (getenv) crashed the process.
+        # No os.environ patch (#595): it races glibc's getenv in JAX's running XLA threads, and the search reads no
+        # arena variable (its foe model comes as an argument)
         live = live_search.load(self.path, foe_net=self.path, foe_net_sha256=pkmn_arena.sha256_of(self.path))
         self.addCleanup(live.close)
         live.searcher = cts.Capture(live.searcher)

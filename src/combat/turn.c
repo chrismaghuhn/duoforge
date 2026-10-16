@@ -7430,75 +7430,9 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
     return DUOFORGE_OK;
 }
 
-/* Step G66 (decision 0040, decision 0015 5cb): Stance Change, onModifyMove of data/abilities.ts:4523-4535, in the ModifyMove
- * stage (after the move's own ModifyMove and before the move line). A Status move other than King's Shield changes nothing;
- * King's Shield takes the Shield forme and any other move the Blade. The change is a TEMPORARY formeChange (no isPermanent):
- * the forme's stats (the HP stays), forme_now (0 = the sheet's Shield forme, else the Blade's id + 1) and the FORME event
- * with cause ABILITY, id2 = Stance Change + 1, printed as -formechange. The forme ends with the switch-out
- * (dfi_tail_clear_occupant). A transformed Aegislash is not modelled: Transform is unmarked (refused by the pool). */
-static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t move_id, const dfi_move_data *md)
-{
-    struct duoforge_battle *b = r->b;
-    dfi_member *m = dfi_at(b, user);
-    const uint32_t side = user / 2u;
-    if (m == NULL || m->species_id != DFI_FORME_AEGISLASH || !dfi_ability(b, m, DFI_ABILITY_STANCECHANGE)) {
-        return DUOFORGE_OK;
-    }
-    const bool king = move_id == DFI_MOVE_KINGSSHIELD;
-    if (md->category == DFI_CATEGORY_STATUS && !king) {
-        return DUOFORGE_OK;
-    }
-    const bool want_blade = !king;
-    const uint32_t idx = (uint32_t)(m - &b->sides[side].members[0]); /* wide-operands-reviewed: below DUOFORGE_MAX_ROSTER */
-    uint16_t *forme_slot = &b->tail.sides[side].forme_now[idx];
-    const bool blade_now = *forme_slot != 0u;
-    if (blade_now == want_blade) {
-        return DUOFORGE_OK; /* already in the forme that the move asks for: no line */
-    }
-    const uint32_t forme = want_blade ? DFI_FORME_AEGISLASHBLADE : DFI_FORME_AEGISLASH;
-    uint16_t stats[DFI_MEMBER_STAT_COUNT];
-    if (!dfi_closure_member_forme_stats(m, forme, stats)) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
-        m->stats[i] = stats[i];
-    }
-    *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
-    /* setSpecies -> setType(species.types, true) (sim/pokemon.ts:1387-1392): a type that Soak or Double Shock set ends, without
-     * a line. Both formes are Steel/Ghost. */
-    b->tail.sides[side].soak_type[idx] = 0u;
-    b->tail.sides[side].type2[idx] = 0u;
-    /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats, so a live Speed Swap ends here. */
-    b->tail.sides[user / 2u].positions[user % 2u].single_turn = (uint8_t)((uint32_t)b->tail.sides[user / 2u].positions[user % 2u].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
-    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
-    e.id = (uint16_t)forme;
-    e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
-    e.id2 = (uint16_t)(DFI_ABILITY_STANCECHANGE + 1u); /* wide-operands-reviewed: an ability id + 1, < 255 */
-    dfi_emit(r, &e);
-    return DUOFORGE_OK;
-}
+#include "combat/forms/stance_change.h"
 
-/* Mega Sol (step G59, data/abilities.ts:2558-2569): Pokemon#effectiveWeather (sim/pokemon.ts:2190-2198) reads the weather as sun for
- * the effects of a Move, a Weather or Mega Sol itself while the Mega Sol holder is the active Pokemon, whatever the field's weather
- * is. The moves that read the weather through it, and that the engine reads from the field: Solar Beam (its charge, sunnyday's
- * prepare test, and its onBasePower, data/moves.ts:17224-17258), Weather Ball (its type and power, :20700-20730), and Thunder and
- * Hurricane (their accuracy, :19447-19460 and :20861-20866). With the field in sun the two readings agree; otherwise the move is
- * refused (E_UNSUPPORTED), not modelled. The Mega Sol holder's legal moves of those kinds are the marked ones (Meganium's
- * Solar Beam and Weather Ball; Thunder and Hurricane are not in its learnset). Refused at the move's own use, after BeforeMove. */
-static bool dfi_mega_sol_refused(const dfi_run *r, uint32_t user, const dfi_move_data *md)
-{
-    if (!dfi_ability(r->b, dfi_at(r->b, user), DFI_ABILITY_MEGASOL)) {
-        return false;
-    }
-    const bool reads = md->special == DFI_SPECIAL_SOLAR_BEAM || md->special == DFI_SPECIAL_WEATHER_BALL ||
-                       md->special == DFI_SPECIAL_THUNDER || md->special == DFI_SPECIAL_HURRICANE;
-    if (dfi_weather_suppressed(r)) {
-        /* Step G79 (lead decision): with a Cloud Nine holder standing, the weather-reading moves of a Mega Sol user are
-         * refused, Electro Shot too: the -activate line of Mega Sol (sim/pokemon.ts:2193) is not modelled. */
-        return reads || md->special == DFI_SPECIAL_ELECTRO_SHOT;
-    }
-    return reads && r->b->weather != DFI_WEATHER_SUN;
-}
+#include "combat/abilities/mega_sol.h"
 
 /* step G78, Dragon Darts (decision 0043): getSmartTargets (sim/pokemon.ts:757-767), after the RedirectTarget event
  * (sim/pokemon.ts:829-834). The foe the user chose is hit first; its partner, the other standing slot of its side, second.
@@ -10592,56 +10526,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
     return DUOFORGE_OK;
 }
 
-/* runMegaEvo (sim/battle-actions.ts): the Mega forme with its stats and
- * ability, once per side; the opponent sees it; the new ability starts
- * (setAbility's Start event: Drought). */
-static duoforge_status dfi_run_mega(dfi_run *r, const dfi_queue_record *q)
-{
-    struct duoforge_battle *b = r->b;
-    const uint32_t flat = (uint32_t)q->side * 2u + (uint32_t)q->slot;
-    dfi_member *m = dfi_at(b, flat);
-    dfi_side *sd = &b->sides[q->side];
-    if (m == NULL || m->hp == 0u || dfi_pos(b, flat)->activation_id != q->activation_id || sd->mega_used != 0u) {
-        return DUOFORGE_OK;
-    }
-    if (!dfi_closure_member_mega_evolve(m)) {
-        return DUOFORGE_E_INVARIANT; /* the domain offers Mega only to a holder of its stone */
-    }
-    sd->mega_used = 1u;
-    /* Step K3 (decision 0015 5de): formeChange -> setSpecies rebuilds the stored stats (the swapped Speed is gone). */
-    b->tail.sides[q->side].positions[q->slot].single_turn = (uint8_t)((uint32_t)b->tail.sides[q->side].positions[q->slot].single_turn & ~(uint32_t)DFI_SINGLE_TURN_SPEED_SWAP); /* wide-operands-reviewed */
-    /* formeChange -> setSpecies -> setType(species.types, true): a type that Soak set ends (sim/pokemon.ts:1392,
-     * 1427-1434), without a line. */
-    b->tail.sides[q->side].soak_type[dfi_pos(b, flat)->occupant] = 0u;
-    /* The Mega forme's ability replaces one that Trace copied (formeChange -> setAbility, sim/pokemon.ts:1487). */
-    b->tail.sides[q->side].ability_now[dfi_pos(b, flat)->occupant] = 0u;
-    /* setAbility ends the old ability first (sim/pokemon.ts:1923, singleEvent End), and of the abilities that the engine
-     * models three have an onEnd (data/abilities.ts; the Champions mod has none): Unburden's removes its volatile
-     * (:5243-5245; a holder of its own Mega Stone may have it since a Knock Off, dfi_knock_off), Flash Fire's removes the
-     * flashfire volatile (:1351-1353; a Trace holder that copied Flash Fire has it after a Fire move hit it, shown as
-     * `-end|X|ability: Flash Fire|[silent]`), and Unnerve's (:5265-5267) clears the `unnerved` flag of its ability state, which the
-     * engine does not keep (the foes' berries follow the ability that the holder has). Nothing else that the engine keeps
-     * on a position belongs to an ability, and no ability of a Mega forme in the pool is Unburden or Flash Fire. */
-    {
-        dfi_active_slot *mega_pos = dfi_pos(b, flat);
-        mega_pos->flags = (uint8_t)((uint32_t)mega_pos->flags & ~((uint32_t)DFI_VOL_UNBURDEN | (uint32_t)DFI_VOL_FLASH_FIRE)); /* wide-operands-reviewed */
-    }
-    duoforge_event forme = dfi_event_make(DUOFORGE_EVENT_FORME, flat);
-    forme.id = (uint16_t)dfi_mega_of(m->species_id, m->item); /* [detailschange]: < DFI_POOL_FORME_COUNT */
-    dfi_emit(r, &forme);
-    duoforge_event mega = dfi_event_make(DUOFORGE_EVENT_MEGA, flat);
-    mega.id2 = m->item; /* [-mega] the stone, item + 1 */
-    dfi_emit(r, &mega);
-    if (dfi_has_entry(b, m)) {
-        const duoforge_status st = dfi_entry_ability(r, flat);
-        if (st != DUOFORGE_OK) {
-            return st;
-        }
-    }
-    /* AfterMega: White Herb's onAnyAfterMega (Team C;
-     * sim/battle-actions.ts:1914). */
-    return dfi_herb_event(r, flat);
-}
+#include "combat/forms/mega.h"
 
 /* ---------------------------------------------------------------- turn */
 
