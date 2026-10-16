@@ -24,6 +24,8 @@ duoforge_add_test(NAME duoforge.state.setup SOURCES flow/test_setup.c WHITEBOX T
 duoforge_add_test(NAME duoforge.state.identity SOURCES flow/test_identity.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.state.invariants SOURCES flow/test_invariants.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.state.singles SOURCES flow/test_singles.c WHITEBOX LIBS duoforge_batch TIER quick AREA flow)
+# The turn limit (decision 0015 entry 5dt): doubles tie when turn 1000 ends (sim/battle.ts:1839-1843); singles refusal at 101.
+duoforge_add_test(NAME duoforge.flow.turn_limit SOURCES flow/test_turn_limit.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.state.setup_sweep SOURCES flow/test_setup_sweep.c TIMEOUT 60 TIER quick AREA flow)
 
 duoforge_add_test(NAME duoforge.state.clone_equal SOURCES flow/test_clone_equal.c WHITEBOX TIER quick AREA flow)

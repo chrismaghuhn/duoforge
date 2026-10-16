@@ -1261,6 +1261,26 @@ HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
 OHKO_MOVES = {'Sheer Cold', 'Fissure', 'Guillotine', 'Horn Drill'}
 NOT_EVENTS = {'', 'split', 't:', 'gametype', 'player', 'teamsize', 'gen', 'tier', 'rule', 'clearpoke', 'poke',
               'teampreview', 'start', 'uhtml', 'uhtmlchange', '-hint', 'j', 'l', 'c', 'raw', 'inactive'}
+# The turn limit of every format (decision 0015 entry 5dt, sim/battle.ts:1836-1852): the warnings of the turns 500 to 1000
+# (`bigerror`, :1844-1851, N = 1000 - turn, "1 turn" or "N turns") and the limit's own line (`message`, :1840) carry no
+# state; the tie is the `|tie` line after the message (RESULT). Only these exact lines are no events: any other `bigerror`
+# or `message` line stays a protocol-line refusal.
+TURN_LIMIT_WARNING = re.compile(r"\|bigerror\|You will auto-tie if the battle doesn't end in (0|[1-9][0-9]{0,2}) (turns?) "
+                                r"\(on turn 1000\)\.")
+TURN_LIMIT_MESSAGE = '|message|It is turn 1000. You have hit the turn limit!'
+# The turns left that the pin warns about (sim/battle.ts:1844-1848): turns 500 to 900 by 100, 900 to 980 by 10, 990 to 1000: 24.
+TURN_LIMIT_LEFT = frozenset({500, 400, 300, 200, 100} | set(range(20, 100, 10)) | set(range(0, 11)))
+
+
+def turn_limit_line(line):
+    """True for the exact turn-limit lines of the pin (no event); False for everything else."""
+    if line == TURN_LIMIT_MESSAGE:
+        return True
+    m = TURN_LIMIT_WARNING.fullmatch(line)
+    if m is None:
+        return False
+    left = int(m.group(1))
+    return left in TURN_LIMIT_LEFT and m.group(2) == ('turn' if left == 1 else 'turns')
 
 
 def ev_pos(text):
@@ -1721,6 +1741,8 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         parts = out_line.split('|')
         kind = parts[1] if len(parts) > 1 else ''
         if kind in NOT_EVENTS or kind.startswith('t:'):
+            continue
+        if kind in ('bigerror', 'message') and turn_limit_line(line):
             continue
         attrs = [x for x in parts[2:] if x.startswith('[')]
         # A silent line is not an event, except the `-enditem` of an item that a move took (Trick, Switcheroo and Thief print
