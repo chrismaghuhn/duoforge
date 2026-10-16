@@ -2500,7 +2500,7 @@ class Library(unittest.TestCase):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
-                            done = done or (name in ('Charm', 'Fake Tears', 'Tickle') and after.startswith('|-unboost|'))  # Tickle: step G86
+                            done = done or (name in ('Charm', 'Fake Tears', 'Tickle', 'Tearful Look') and after.startswith('|-unboost|'))  # Tickle: step G86; Tearful Look: step A0 part 2 (decision 0015 entry 5co), two target drops (Attack and Special Attack -1)
                             # A stat drop of the target (Scary Face, Noble Roar, Eerie Impulse, Screech, Spicy Extract; their pin
                             # boosts are negative, data/moves.ts:15800, 12769, 4441, 15847, 17450), counted only as the move's own
                             # effect: the line directly after its |move| line, on the move's target or its user, and with no
