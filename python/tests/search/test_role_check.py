@@ -47,6 +47,20 @@ class Events(unittest.TestCase):
         self.assertEqual(role_check._first(e, 1, 0), 0)
         self.assertIsNone(role_check._first(e, 2, 3))
 
+    def test_who_fell_and_how(self):
+        hazard, other = 77, 78  # move ids: one of the hazards, one not
+        e = events(ev("MOVE", 2, other=0), ev("DAMAGE", 0, hp=0), ev("FAINT", 0),  # b by a hit
+                   ev("SWITCH", 1, hp=50), ev("DAMAGE", 1, hp=0, cause=C["DUOFORGE_CAUSE_MOVE"], id2=hazard),
+                   ev("FAINT", 1),  # our partner by a hazard on entry
+                   ev("DAMAGE", 2, hp=0, cause=C["DUOFORGE_CAUSE_MOVE"], id2=other), ev("FAINT", 2),  # x: a move cause
+                   ev("FAINT", 3))  # the foe's partner with no damage seen
+        standing = {0: 4, 1: 5, 2: 9, 3: 8}
+        got = role_check.fell_in(e, standing.get, {hazard}, 0, 4, 9)
+        self.assertEqual(got, [["b", "hit"], ["own_other", "hazard"], ["x", "other"], ["foe_other", "unseen"]])
+        self.assertEqual(role_check.fell_in(e, standing.get, {hazard}, 1, 9, 4),  # the other seat's view of it
+                         [["x", "hit"], ["foe_other", "hazard"], ["b", "other"], ["own_other", "unseen"]])
+        self.assertEqual(role_check.fell_in(events(ev("MOVE", 0, other=2)), standing.get, {hazard}, 0, 4, 9), [])
+
     def test_the_race(self):
         self.assertEqual(role_check.race(2, 3, "x"), "b")
         self.assertEqual(role_check.race(3, 2, "b"), "x")
@@ -159,6 +173,48 @@ class Probe(unittest.TestCase):
         _, need = role_check.setup_choices(self.turn_one(), [0], 0, [(ours[0], theirs[0])], first_pair)
         self.assertEqual(need.tolist(), [False])  # both active: no turn 1
 
+    def test_a_replacement_is_played_by_the_policy_through_the_engine(self):
+        # A vs B played by the first legal pairs until some environment stands at a replacement boundary
+        envs = 16
+        batch = self.turn_one(envs)
+        for _ in range(40):
+            kinds = [role_check.boundary(batch, e) for e in range(envs)]
+            if C["DUOFORGE_BOUNDARY_REPLACEMENT"] in kinds:
+                break
+            choices = np.zeros((envs, 2), _layout.FACTORED_CHOICE)
+            for e in range(envs):
+                if kinds[e] == C["DUOFORGE_BOUNDARY_TURN"]:
+                    for side in (0, 1):
+                        choices["slot"][e, side] = role_check.legal_pairs(batch, e, side)[0]
+                elif kinds[e] != C["DUOFORGE_BOUNDARY_TERMINAL"]:
+                    choices[e] = role_check.settle_choice(batch, e, first_pair)
+            batch.step_factored(choices)
+            batch.query()
+            batch.query_factored()
+        env = kinds.index(C["DUOFORGE_BOUNDARY_REPLACEMENT"])
+        choice = role_check.settle_choice(batch, env, first_pair)
+        for side in (0, 1):
+            if int(batch.requests[env, side]["requested"]):
+                self.assertEqual(tuple(int(v) for v in choice["slot"][side]),
+                                 role_check.legal_pairs(batch, env, side)[0])
+        got = privileged_step(batch, env, choice)
+        self.assertEqual(got["status"], 0)
+        # a pair in a world standing there plays the replacement first (the decision right after a faint)
+        b, x = role_check.living(batch, env, 0)[0], role_check.living(batch, env, 1)[0]
+        rng = {0: duoforge.search_seeds(1, 2, role_check.PROBE_SAMPLE)}
+
+        def advance(state, fell=None):
+            out, fells = {(b, x): [None]}, {(b, x): [fell]}
+            return role_check._advance(batch, env, 0, (b, x), state, 0, first_pair, rng, out, fells), out[(b, x)][0]
+        state = {"setup": False, "settles": 0}
+        ahead, cell = advance(state)
+        self.assertIsNone(cell)
+        self.assertEqual(ahead[0].tobytes(), choice.tobytes())
+        self.assertEqual((ahead[1], state), (role_check.REPLACE_SAMPLE, {"setup": False, "settles": 1}))
+        self.assertEqual(advance({"setup": True, "settles": role_check.REPLACE_ROUNDS}), (None, "replacement_chain"))
+        self.assertEqual(advance({"setup": False, "settles": 0}, [["own_other", "hit"], ["x", "hazard"]]),
+                         (None, "fell_in_setup"))
+
 
 
 class OnTheLog(unittest.TestCase):
@@ -177,11 +233,18 @@ class OnTheLog(unittest.TestCase):
         rows = role_check.battle(self.log, tables, net, live, FIXTURE["team"], NAME, self.prior, Counter(), pairs)
         tables_seen = [json.loads(line) for line in pairs.getvalue().splitlines()]
         self.assertTrue(tables_seen)
-        reasons = {"fainted", "not_active", "not_a_turn", "cannot_switch_in", "setup_refused", "step_refused"}
+        reasons = {"fainted", "not_active", "not_a_turn", "cannot_switch_in", "setup_refused", "step_refused",
+                   "fell_in_setup", "setup_ended", "replacement_chain", "replacement_refused"}
         probes = 0
         for t in tables_seen:
             self.assertEqual(len(t["worlds"]), live.searcher.searcher.s)
-            for got in t["worlds"]:
+            self.assertEqual(len(t["fell"]), live.searcher.searcher.s)
+            for got, fell in zip(t["worlds"], t["fell"]):
+                for who, how in fell or ():
+                    self.assertIn(who, ("b", "x", "own_other", "foe_other"))
+                    self.assertIn(how, ("hit", "hazard", "other", "unseen"))
+                if got == "fell_in_setup":
+                    self.assertTrue(any(who in ("b", "x") for who, _ in fell))
                 if isinstance(got, dict):
                     probes += 1
                     self.assertEqual(got["winner"], role_check.race(got["turns_b"], got["turns_x"], got["first"]))
@@ -190,6 +253,11 @@ class OnTheLog(unittest.TestCase):
         self.assertGreater(probes, 0)
         for r in rows:  # an own faint in the fixture's few turns is possible, not required
             self.assertIn(r["phase"], ("early", "middle", "endgame"))
+
+
+def privileged_step(batch, env, choice):
+    from duoforge import privileged
+    return privileged.step_events(batch, env, choice, rng=duoforge.search_seeds(1, 2, role_check.REPLACE_SAMPLE))
 
 
 def _closed():
