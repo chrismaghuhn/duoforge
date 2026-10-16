@@ -1,0 +1,12 @@
+# Prepared reference battle: the turn-1000 tie
+
+Not discovered by any test or tool (outside `tests/reference/specs`, `traces` and `battles`). The fix and its plan:
+`docs/research/expansion/turn1000-tie.md`.
+
+- `turn1000_tie.json`: the spec (plan mode; both sides switch both slots for 1000 turns).
+- `turn1000_tie.summary.json`: what its trace shows at the pin (warning lines, the last two steps, the final state) and
+  the trace's sha256. The trace itself (5.3 MB) is not committed; rebuild it:
+
+```sh
+node tools/reference/ps_trace.js <pinned checkout> tests/reference/prepared/turn1000_tie/turn1000_tie.json > <outside>/turn1000_tie.trace.json
+```
