@@ -1,0 +1,242 @@
+{
+ "comment": "Summary of the trace of turn1000_tie.json recorded against the pin (not committed: 5.3 MB; regenerate with tools/reference/ps_trace.js in about 1 s, it is deterministic and has no draw).",
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "harness": 14,
+ "trace_bytes": 5316034,
+ "trace_sha256": "3d1b50063693ec74eaba80ef9f14f5a008cc9b098927b62a556d5565c8a75e5e",
+ "steps": 1001,
+ "draws": 0,
+ "inputs": [
+  "{\"p1\": \"switch 3, switch 4\", \"p2\": \"switch 3, switch 4\"}",
+  "{\"p1\": \"team 1234\", \"p2\": \"team 1234\"}"
+ ],
+ "warning_lines": [
+  {
+   "step": 499,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 500 turns (on turn 1000).",
+   "turns_left": 500
+  },
+  {
+   "step": 599,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 400 turns (on turn 1000).",
+   "turns_left": 400
+  },
+  {
+   "step": 699,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 300 turns (on turn 1000).",
+   "turns_left": 300
+  },
+  {
+   "step": 799,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 200 turns (on turn 1000).",
+   "turns_left": 200
+  },
+  {
+   "step": 899,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 100 turns (on turn 1000).",
+   "turns_left": 100
+  },
+  {
+   "step": 909,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 90 turns (on turn 1000).",
+   "turns_left": 90
+  },
+  {
+   "step": 919,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 80 turns (on turn 1000).",
+   "turns_left": 80
+  },
+  {
+   "step": 929,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 70 turns (on turn 1000).",
+   "turns_left": 70
+  },
+  {
+   "step": 939,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 60 turns (on turn 1000).",
+   "turns_left": 60
+  },
+  {
+   "step": 949,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 50 turns (on turn 1000).",
+   "turns_left": 50
+  },
+  {
+   "step": 959,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 40 turns (on turn 1000).",
+   "turns_left": 40
+  },
+  {
+   "step": 969,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 30 turns (on turn 1000).",
+   "turns_left": 30
+  },
+  {
+   "step": 979,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 20 turns (on turn 1000).",
+   "turns_left": 20
+  },
+  {
+   "step": 989,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 10 turns (on turn 1000).",
+   "turns_left": 10
+  },
+  {
+   "step": 990,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 9 turns (on turn 1000).",
+   "turns_left": 9
+  },
+  {
+   "step": 991,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 8 turns (on turn 1000).",
+   "turns_left": 8
+  },
+  {
+   "step": 992,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 7 turns (on turn 1000).",
+   "turns_left": 7
+  },
+  {
+   "step": 993,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 6 turns (on turn 1000).",
+   "turns_left": 6
+  },
+  {
+   "step": 994,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 5 turns (on turn 1000).",
+   "turns_left": 5
+  },
+  {
+   "step": 995,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 4 turns (on turn 1000).",
+   "turns_left": 4
+  },
+  {
+   "step": 996,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 3 turns (on turn 1000).",
+   "turns_left": 3
+  },
+  {
+   "step": 997,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 2 turns (on turn 1000).",
+   "turns_left": 2
+  },
+  {
+   "step": 998,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 1 turn (on turn 1000).",
+   "turns_left": 1
+  },
+  {
+   "step": 999,
+   "line": "|bigerror|You will auto-tie if the battle doesn't end in 0 turns (on turn 1000).",
+   "turns_left": 0
+  }
+ ],
+ "step_999_log": [
+  "|split|p1",
+  "|switch|p1b: Archaludon|Archaludon, L50, M|166/166",
+  "|switch|p1b: Archaludon|Archaludon, L50, M|100/100",
+  "|split|p2",
+  "|switch|p2a: Sneasler|Sneasler, L50, M|156/156",
+  "|switch|p2a: Sneasler|Sneasler, L50, M|100/100",
+  "|split|p2",
+  "|switch|p2b: Raichu|Raichu, L50, F|136/136",
+  "|switch|p2b: Raichu|Raichu, L50, F|100/100",
+  "|split|p1",
+  "|switch|p1a: Milotic|Milotic, L50, F|171/171",
+  "|switch|p1a: Milotic|Milotic, L50, F|100/100",
+  "|upkeep",
+  "|bigerror|You will auto-tie if the battle doesn't end in 0 turns (on turn 1000).",
+  "|turn|1000"
+ ],
+ "step_1000_log": [
+  "|split|p2",
+  "|switch|p2a: Basculegion|Basculegion, L50, M|196/196",
+  "|switch|p2a: Basculegion|Basculegion, L50, M|100/100",
+  "|split|p2",
+  "|switch|p2b: Farigiraf|Farigiraf, L50, F|196/196",
+  "|switch|p2b: Farigiraf|Farigiraf, L50, F|100/100",
+  "|split|p1",
+  "|switch|p1b: Gholdengo|Gholdengo, L50|163/163",
+  "|switch|p1b: Gholdengo|Gholdengo, L50|100/100",
+  "|split|p1",
+  "|switch|p1a: Kingambit|Kingambit, L50, M|176/176",
+  "|switch|p1a: Kingambit|Kingambit, L50, M|100/100",
+  "|upkeep",
+  "|message|It is turn 1000. You have hit the turn limit!",
+  "|tie"
+ ],
+ "final_state": {
+  "turn": 1001,
+  "ended": true,
+  "winner": "",
+  "pp": [
+   [
+    [
+     8
+    ],
+    [
+     8
+    ],
+    [
+     8
+    ],
+    [
+     8
+    ]
+   ],
+   [
+    [
+     8
+    ],
+    [
+     8
+    ],
+    [
+     8
+    ],
+    [
+     8
+    ]
+   ]
+  ],
+  "hp": [
+   [
+    [
+     176,
+     176
+    ],
+    [
+     163,
+     163
+    ],
+    [
+     171,
+     171
+    ],
+    [
+     166,
+     166
+    ]
+   ],
+   [
+    [
+     196,
+     196
+    ],
+    [
+     196,
+     196
+    ],
+    [
+     156,
+     156
+    ],
+    [
+     136,
+     136
+    ]
+   ]
+  ]
+ }
+}
