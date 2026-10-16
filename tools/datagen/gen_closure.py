@@ -4197,8 +4197,11 @@ G63_ABILITY_FACTS = (
 # Issue #620 (decision 0015 entry 5dx, decision 0041): Skill Swap fails when either ability has the failskillswap flag
 # (sim/battle.ts:1316). The turn code reads the flag by id (turn.c dfi_fails_skillswap, one DFI_ABILITY_* per name below),
 # so the pool's abilities with the flag are exactly these; check_failskillswap reads the flag of every pool row from the pin
-# (the Champions entry's own flags where it has them, else the inherited base entry's) and fails on any other set.
+# (the Champions entry's own flags where it has them, else the inherited base entry's) and fails on any other set. It also
+# reads the DFI_ABILITY_* names of the body of dfi_fails_skillswap in FAILSKILLSWAP_SOURCE and fails when they are not this
+# list (the path moves with the function when the ability code leaves turn.c).
 FAILSKILLSWAP_ABILITIES = ('disguise', 'hungerswitch', 'illusion', 'stancechange', 'zerotohero')
+FAILSKILLSWAP_SOURCE = os.path.join('src', 'combat', 'turn.c')
 
 
 def ability_flags(abil_ts, champ_abil, aid):
@@ -4229,12 +4232,33 @@ def ability_flags(abil_ts, champ_abil, aid):
     return out
 
 
-def check_failskillswap(pool_abilities, abil_ts, champ_abil):
-    """The pool's abilities with the pin's failskillswap flag are FAILSKILLSWAP_ABILITIES, exactly (issue #620)."""
+def failskillswap_c_ids(c_text):
+    """The ability ids that the body of dfi_fails_skillswap names (DFI_ABILITY_HUNGERSWITCH -> 'hungerswitch'), in order."""
+    text = c_text.replace('\r\n', '\n')
+    a = text.find('\nstatic bool dfi_fails_skillswap(')
+    if a < 0:
+        fail('%s: no definition of dfi_fails_skillswap' % FAILSKILLSWAP_SOURCE)
+    b = text.find('\n}\n', a)
+    if b < 0:
+        fail('%s: the body of dfi_fails_skillswap is not closed' % FAILSKILLSWAP_SOURCE)
+    body = text[text.index('{', a):b]
+    ids = [name.lower() for name in re.findall(r'\bDFI_ABILITY_([A-Z0-9_]+)\b', body)]
+    if not ids:
+        fail('%s: dfi_fails_skillswap names no DFI_ABILITY_*' % FAILSKILLSWAP_SOURCE)
+    return [i.replace('_', '') for i in ids]
+
+
+def check_failskillswap(pool_abilities, abil_ts, champ_abil, c_text):
+    """The pool's abilities with the pin's failskillswap flag are FAILSKILLSWAP_ABILITIES, exactly, and so are the ids that
+    the turn code's dfi_fails_skillswap reads (c_text: the text of FAILSKILLSWAP_SOURCE; issue #620)."""
     found = sorted(aid for aid in pool_abilities if 'failskillswap' in ability_flags(abil_ts, champ_abil, aid))
     if found != sorted(FAILSKILLSWAP_ABILITIES):
         fail('the pool abilities with failskillswap are %s, not FAILSKILLSWAP_ABILITIES %s (turn.c dfi_fails_skillswap)'
              % (found, sorted(FAILSKILLSWAP_ABILITIES)))
+    c_ids = failskillswap_c_ids(c_text)
+    if len(set(c_ids)) != len(c_ids) or sorted(c_ids) != sorted(FAILSKILLSWAP_ABILITIES):
+        fail('%s: dfi_fails_skillswap reads %s, not FAILSKILLSWAP_ABILITIES %s'
+             % (FAILSKILLSWAP_SOURCE, c_ids, sorted(FAILSKILLSWAP_ABILITIES)))
 
 
 def check_i2_facts(abil_ts, champ_abil):
@@ -5342,7 +5366,8 @@ def build_pool(root, repo, dx):
         fail('the move rows are not the legal pool plus Struggle')
     if {i['id'] for i in items} != legal['items'] or {a['id'] for a in abilities} != legal['abilities']:
         fail('the item or ability rows are not the legal pool')
-    check_failskillswap([a['id'] for a in abilities], abil_ts, champ_abil)
+    with io.open(os.path.join(repo, FAILSKILLSWAP_SOURCE), encoding='utf-8') as fh:
+        check_failskillswap([a['id'] for a in abilities], abil_ts, champ_abil, fh.read())
 
     # ---- the formes: every selectable forme that is not a cosmetic copy, each followed by its Mega formes ----
     species = legal['species']

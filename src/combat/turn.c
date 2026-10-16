@@ -8652,9 +8652,9 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
 }
 
 /* Skill Swap (step G70, decision 0041; sim/battle.ts:1311-1345, data/moves.ts:16590-16606). The failures are the pin's: a
- * fainted holder or failskillswap on either ability (dfi_fails_skillswap), and they print -fail|user [still]. Before anything changes, the refusals: the Update handlers of the abilities that come in
- * act on a state the holder has (Limber on a paralysed holder, Thermal Exchange on a burned one, Oblivious on a taunted one).
- * Then the line, as two ABILITY events in the line's order with cause MOVE: id = the holder's new ability + 1, id2 = the
+ * fainted holder or failskillswap on either ability (dfi_fails_skillswap), and they print -fail|user [still]. Before anything
+ * changes, the refusals: the Update handlers of the abilities that come in act on a state the holder has (Limber on a paralysed
+ * holder, Thermal Exchange on a burned one, Oblivious on a taunted one). Then the line, as two ABILITY events in the line's order with cause MOVE: id = the holder's new ability + 1, id2 = the
  * move; the Ends of the old abilities (Flash Fire's and Unburden's volatiles go with no line); the swap of the tail's
  * ability_now, stored as 0 while it equals the sheet's; the Starts, the target's new ability first, then the user's. The
  * ally pair is the same (the line names no ability; the converter follows the pair). */

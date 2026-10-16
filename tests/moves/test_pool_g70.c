@@ -116,7 +116,9 @@ static void expect_decision(df_test *t, duoforge_battle *b, uint32_t user, uint3
     duoforge_battle snapshot;
     memcpy(&snapshot, b, sizeof snapshot);
     const uint32_t got = dfi_skill_swap_decision(b, user, target);
-    DF_CHECK_EQ_U64(t, got, want);
+    if (!DF_CHECK_EQ_U64(t, got, want)) {
+        fprintf(stderr, "  %s: decision %u, expected %u\n", what, (unsigned)got, (unsigned)want);
+    }
     if (memcmp(&snapshot, b, sizeof snapshot) != 0) {
         fprintf(stderr, "  %s: the decision changed the battle\n", what);
         DF_CHECK(t, 0);
@@ -314,7 +316,8 @@ static void check_abilities(df_test *t)
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_LIMBER] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_THERMALEXCHANGE] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_OBLIVIOUS] != 0u);
-    /* Stance Change has failskillswap (data/abilities.ts:4531): its row is the one the swap refuses, and only step G66 marks it */
+    /* Stance Change has failskillswap (data/abilities.ts:4531): a swap with its holder fails (-fail), as with the other pool
+     * abilities that have the flag (check_decisions; Illusion is the other marked one), and only step G66 marks it */
     DF_CHECK_EQ_U64(t, DFI_ABILITY_STANCECHANGE, 180u);
 }
 

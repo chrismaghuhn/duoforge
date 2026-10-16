@@ -2803,7 +2803,23 @@ class A0Part1Facts(unittest.TestCase):
         self.assertIn('item chesnaughtite: megaStone is not', str(cm.exception.code))
 
 
-# ---- issue #620: the pool abilities with failskillswap (Skill Swap fails on either side), read from the pin ----
+# ---- issue #620: the pool abilities with failskillswap (Skill Swap fails on either side), read from the pin, and the ids that
+# the turn code's dfi_fails_skillswap reads ----
+C_BODY = """/* the comment above */
+static bool dfi_fails_skillswap(const struct duoforge_battle *b, const dfi_member *m)
+{
+    return dfi_ability(b, m, DFI_ABILITY_DISGUISE) || dfi_ability(b, m, DFI_ABILITY_HUNGERSWITCH) ||
+           dfi_ability(b, m, DFI_ABILITY_ILLUSION) || dfi_ability(b, m, DFI_ABILITY_STANCECHANGE) ||
+           dfi_ability(b, m, DFI_ABILITY_ZEROTOHERO);
+}
+
+static bool dfi_next(void)
+{
+    return DFI_ABILITY_LIMBER != 0u;
+}
+"""
+
+
 class FailSkillSwap(unittest.TestCase):
     FLAGS = 'flags: { failroleplay: 1, noreceiver: 1, noentrain: 1, notrace: 1, failskillswap: 1 },'
 
@@ -2816,21 +2832,31 @@ class FailSkillSwap(unittest.TestCase):
     def pool(self, *more):
         return list(gen_closure.FAILSKILLSWAP_ABILITIES) + ['levitate', 'pressure'] + list(more)
 
-    def refused(self, pool, abil, champ):
+    def refused(self, pool, abil, champ, c_text=C_BODY):
         with self.assertRaises(SystemExit) as cm:
-            gen_closure.check_failskillswap(pool, abil, champ)
+            gen_closure.check_failskillswap(pool, abil, champ, c_text)
         return str(cm.exception.code)
 
     def test_the_list_is_the_pin_set(self):
         abil, champ = self.sources()
-        gen_closure.check_failskillswap(self.pool(), abil, champ)
+        gen_closure.check_failskillswap(self.pool(), abil, champ, C_BODY)
         self.assertEqual(gen_closure.ability_flags(abil, champ, 'levitate'), {'breakable'})
         self.assertEqual(gen_closure.ability_flags(abil, champ, 'pressure'), set())
+
+    def test_multi_line_flags_with_a_trailing_comma(self):
+        # Disguise's shape at the pin (data/abilities.ts:1009-1012): the flags over four lines, the last pair with a comma.
+        abil, champ = self.sources(entry('disguised', 'name: "Disguised",', 'flags: {',
+                                         '\tfailroleplay: 1, noreceiver: 1, noentrain: 1, notrace: 1, failskillswap: 1, '
+                                         'cantsuppress: 1,', '\tbreakable: 1, notransform: 1,', '},'))
+        self.assertEqual(gen_closure.ability_flags(abil, champ, 'disguised'),
+                         {'failroleplay', 'noreceiver', 'noentrain', 'notrace', 'failskillswap', 'cantsuppress', 'breakable',
+                          'notransform'})
+        self.assertIn('the pool abilities with failskillswap are', self.refused(self.pool('disguised'), abil, champ))
 
     def test_another_pool_ability_with_the_flag_is_refused(self):
         abil, champ = self.sources(entry('commander', 'name: "Commander",', self.FLAGS))
         self.assertIn('the pool abilities with failskillswap are', self.refused(self.pool('commander'), abil, champ))
-        gen_closure.check_failskillswap(self.pool(), abil, champ)  # not a pool row: no matter
+        gen_closure.check_failskillswap(self.pool(), abil, champ, C_BODY)  # not a pool row: no matter
 
     def test_a_listed_ability_without_the_flag_is_refused(self):
         abil, champ = self.sources()
@@ -2841,11 +2867,35 @@ class FailSkillSwap(unittest.TestCase):
     def test_a_champions_entry_with_its_own_flags_wins(self):
         abil, _ = self.sources()
         champ = TextSource('data/mods/champions/abilities.ts', entry('illusion', 'inherit: true,', 'flags: {},'))
-        self.refused(self.pool(), abil, champ)
+        self.assertIn("the pool abilities with failskillswap are ['disguise', 'hungerswitch', 'stancechange', 'zerotohero']",
+                      self.refused(self.pool(), abil, champ))
         champ = TextSource('data/mods/champions/abilities.ts', entry('illusion', 'inherit: true,', 'onStart() {', '},'))
-        gen_closure.check_failskillswap(self.pool(), abil, champ)
+        gen_closure.check_failskillswap(self.pool(), abil, champ, C_BODY)
         champ = TextSource('data/mods/champions/abilities.ts', entry('illusion', 'name: "Illusion",'))
         self.assertIn('neither inherits nor has flags', self.refused(self.pool(), abil, champ))
+
+    def test_the_c_body_names_the_list(self):
+        self.assertEqual(gen_closure.failskillswap_c_ids(C_BODY), list(gen_closure.FAILSKILLSWAP_ABILITIES))
+
+    def test_a_c_body_with_an_id_missing_is_refused(self):
+        abil, champ = self.sources()
+        missing = C_BODY.replace(' || dfi_ability(b, m, DFI_ABILITY_HUNGERSWITCH)', '')
+        self.assertNotEqual(missing, C_BODY)
+        self.assertIn("dfi_fails_skillswap reads ['disguise', 'illusion', 'stancechange', 'zerotohero']",
+                      self.refused(self.pool(), abil, champ, missing))
+
+    def test_a_c_body_with_another_or_a_repeated_id_is_refused(self):
+        abil, champ = self.sources()
+        extra = C_BODY.replace('DFI_ABILITY_ZEROTOHERO);', 'DFI_ABILITY_ZEROTOHERO) || dfi_ability(b, m, DFI_ABILITY_TRACE);')
+        self.assertIn('dfi_fails_skillswap reads', self.refused(self.pool(), abil, champ, extra))
+        twice = C_BODY.replace('DFI_ABILITY_ZEROTOHERO);',
+                               'DFI_ABILITY_ZEROTOHERO) || dfi_ability(b, m, DFI_ABILITY_ILLUSION);')
+        self.assertIn('dfi_fails_skillswap reads', self.refused(self.pool(), abil, champ, twice))
+
+    def test_a_source_without_the_function_is_refused(self):
+        abil, champ = self.sources()
+        self.assertIn('no definition of dfi_fails_skillswap',
+                      self.refused(self.pool(), abil, champ, C_BODY.replace('dfi_fails_skillswap', 'dfi_other')))
 
 
 if __name__ == '__main__':
