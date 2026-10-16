@@ -8652,16 +8652,21 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
 }
 
 /* Skill Swap (step G70, decision 0041; sim/battle.ts:1311-1345, data/moves.ts:16590-16606). The failures are the pin's: a
- * fainted holder or failskillswap on either ability (Stance Change, DFI_ABILITY_STANCECHANGE; no other marked ability has it),
- * and they print -fail|user [still]. Before anything changes, the refusals: the Update handlers of the abilities that come in
+ * fainted holder or failskillswap on either ability (dfi_fails_skillswap), and they print -fail|user [still]. Before anything changes, the refusals: the Update handlers of the abilities that come in
  * act on a state the holder has (Limber on a paralysed holder, Thermal Exchange on a burned one, Oblivious on a taunted one).
  * Then the line, as two ABILITY events in the line's order with cause MOVE: id = the holder's new ability + 1, id2 = the
  * move; the Ends of the old abilities (Flash Fire's and Unburden's volatiles go with no line); the swap of the tail's
  * ability_now, stored as 0 while it equals the sheet's; the Starts, the target's new ability first, then the user's. The
  * ally pair is the same (the line names no ability; the converter follows the pair). */
+/* failskillswap (sim/battle.ts:1316, the pin's ability flag), read from the holder's current ability: exactly the pool's abilities
+ * that have the flag, Disguise, Hunger Switch, Illusion (data/abilities.ts:2091; issue #620, decision 0015 entry 5dx), Stance
+ * Change and Zero to Hero. tools/datagen/gen_closure.py (FAILSKILLSWAP_ABILITIES, check_failskillswap) fails when the pin's set
+ * over the pool rows is another one. The disguise does not matter: the pin reads the holder's own ability. */
 static bool dfi_fails_skillswap(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return dfi_ability(b, m, DFI_ABILITY_STANCECHANGE);
+    return dfi_ability(b, m, DFI_ABILITY_DISGUISE) || dfi_ability(b, m, DFI_ABILITY_HUNGERSWITCH) ||
+           dfi_ability(b, m, DFI_ABILITY_ILLUSION) || dfi_ability(b, m, DFI_ABILITY_STANCECHANGE) ||
+           dfi_ability(b, m, DFI_ABILITY_ZEROTOHERO);
 }
 
 static bool dfi_skill_swap_update_due(struct duoforge_battle *b, uint32_t flat, uint32_t code)

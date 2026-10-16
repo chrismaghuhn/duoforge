@@ -4194,6 +4194,49 @@ G63_ABILITY_FACTS = (
 )
 
 
+# Issue #620 (decision 0015 entry 5dx, decision 0041): Skill Swap fails when either ability has the failskillswap flag
+# (sim/battle.ts:1316). The turn code reads the flag by id (turn.c dfi_fails_skillswap, one DFI_ABILITY_* per name below),
+# so the pool's abilities with the flag are exactly these; check_failskillswap reads the flag of every pool row from the pin
+# (the Champions entry's own flags where it has them, else the inherited base entry's) and fails on any other set.
+FAILSKILLSWAP_ABILITIES = ('disguise', 'hungerswitch', 'illusion', 'stancechange', 'zerotohero')
+
+
+def ability_flags(abil_ts, champ_abil, aid):
+    """The pinned flags of an ability: the Champions entry's flags field if it has one, else the base entry's (every
+    Champions ability entry inherits); an entry without a flags field has none."""
+    ce = champ_abil.entry(aid)
+    if ce is not None and 'flags' in fields(ce[2]):
+        e = ce
+    else:
+        if ce is not None and 'inherit' not in fields(ce[2]):
+            fail('ability %s: the champions entry neither inherits nor has flags' % aid)
+        e = abil_ts.entry(aid)
+        if e is None:
+            fail('ability %s not found' % aid)
+    f = fields(e[2]).get('flags')
+    if f is None:
+        return set()
+    m = re.match(r'^flags: \{(.*)\},$', norm('\n'.join(line.split('//', 1)[0] for line in f[1].split('\n'))))
+    if m is None:
+        fail('ability %s: unreadable flags %r' % (aid, f[1]))
+    pairs = [p.strip() for p in m.group(1).split(',') if p.strip()]
+    out = set()
+    for p in pairs:
+        pm = re.match(r'^(\w+): 1$', p)
+        if pm is None:
+            fail('ability %s: flag %r is not "name: 1"' % (aid, p))
+        out.add(pm.group(1))
+    return out
+
+
+def check_failskillswap(pool_abilities, abil_ts, champ_abil):
+    """The pool's abilities with the pin's failskillswap flag are FAILSKILLSWAP_ABILITIES, exactly (issue #620)."""
+    found = sorted(aid for aid in pool_abilities if 'failskillswap' in ability_flags(abil_ts, champ_abil, aid))
+    if found != sorted(FAILSKILLSWAP_ABILITIES):
+        fail('the pool abilities with failskillswap are %s, not FAILSKILLSWAP_ABILITIES %s (turn.c dfi_fails_skillswap)'
+             % (found, sorted(FAILSKILLSWAP_ABILITIES)))
+
+
 def check_i2_facts(abil_ts, champ_abil):
     """Step I2 (decision 0026): the Illusion texts that the turn code hard-codes (I2_ABILITY_FACTS) are in the pinned entry,
     whitespace aside, and the Champions mod has no entry of its own for it (an override would change what the engine reads)."""
@@ -5299,6 +5342,7 @@ def build_pool(root, repo, dx):
         fail('the move rows are not the legal pool plus Struggle')
     if {i['id'] for i in items} != legal['items'] or {a['id'] for a in abilities} != legal['abilities']:
         fail('the item or ability rows are not the legal pool')
+    check_failskillswap([a['id'] for a in abilities], abil_ts, champ_abil)
 
     # ---- the formes: every selectable forme that is not a cosmetic copy, each followed by its Mega formes ----
     species = legal['species']

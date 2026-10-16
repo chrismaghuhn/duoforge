@@ -2803,5 +2803,50 @@ class A0Part1Facts(unittest.TestCase):
         self.assertIn('item chesnaughtite: megaStone is not', str(cm.exception.code))
 
 
+# ---- issue #620: the pool abilities with failskillswap (Skill Swap fails on either side), read from the pin ----
+class FailSkillSwap(unittest.TestCase):
+    FLAGS = 'flags: { failroleplay: 1, noreceiver: 1, noentrain: 1, notrace: 1, failskillswap: 1 },'
+
+    def sources(self, extra='', champ=''):
+        text = '\n'.join([entry(aid, 'name: "%s",' % aid, self.FLAGS) for aid in gen_closure.FAILSKILLSWAP_ABILITIES] +
+                         [entry('levitate', 'name: "Levitate",', 'flags: { breakable: 1 }, // TODO check breakable'),
+                          entry('pressure', 'name: "Pressure",', 'onStart(pokemon) {', '},')] + ([extra] if extra else []))
+        return (TextSource('data/abilities.ts', text), TextSource('data/mods/champions/abilities.ts', champ))
+
+    def pool(self, *more):
+        return list(gen_closure.FAILSKILLSWAP_ABILITIES) + ['levitate', 'pressure'] + list(more)
+
+    def refused(self, pool, abil, champ):
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_failskillswap(pool, abil, champ)
+        return str(cm.exception.code)
+
+    def test_the_list_is_the_pin_set(self):
+        abil, champ = self.sources()
+        gen_closure.check_failskillswap(self.pool(), abil, champ)
+        self.assertEqual(gen_closure.ability_flags(abil, champ, 'levitate'), {'breakable'})
+        self.assertEqual(gen_closure.ability_flags(abil, champ, 'pressure'), set())
+
+    def test_another_pool_ability_with_the_flag_is_refused(self):
+        abil, champ = self.sources(entry('commander', 'name: "Commander",', self.FLAGS))
+        self.assertIn('the pool abilities with failskillswap are', self.refused(self.pool('commander'), abil, champ))
+        gen_closure.check_failskillswap(self.pool(), abil, champ)  # not a pool row: no matter
+
+    def test_a_listed_ability_without_the_flag_is_refused(self):
+        abil, champ = self.sources()
+        abil = TextSource('data/abilities.ts', '\n'.join(abil.lines).replace(
+            '\tillusion: {\n\t\tname: "illusion",\n\t\t' + self.FLAGS, '\tillusion: {\n\t\tname: "illusion",\n\t\tflags: {},'))
+        self.assertIn("'illusion'", self.refused(self.pool(), abil, champ))
+
+    def test_a_champions_entry_with_its_own_flags_wins(self):
+        abil, _ = self.sources()
+        champ = TextSource('data/mods/champions/abilities.ts', entry('illusion', 'inherit: true,', 'flags: {},'))
+        self.refused(self.pool(), abil, champ)
+        champ = TextSource('data/mods/champions/abilities.ts', entry('illusion', 'inherit: true,', 'onStart() {', '},'))
+        gen_closure.check_failskillswap(self.pool(), abil, champ)
+        champ = TextSource('data/mods/champions/abilities.ts', entry('illusion', 'name: "Illusion",'))
+        self.assertIn('neither inherits nor has flags', self.refused(self.pool(), abil, champ))
+
+
 if __name__ == '__main__':
     unittest.main()
