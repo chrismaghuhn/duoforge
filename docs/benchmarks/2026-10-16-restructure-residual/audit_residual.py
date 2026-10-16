@@ -19,7 +19,7 @@ phases = [('dfi_residual_collect', 24, 180, 0, 2), ('dfi_residual_order', 181, 2
           ('dfi_residual_late', 622, 661, 0, 1), ('dfi_residual_noorder', 662, 765, 1, 0)]
 rows, stops = [], 0
 for name, x, y, pre, post in phases:
-    s, e = body(N, 'static DFI_FORCE_INLINE duoforge_status ' + name + '(')
+    s, e = body(N, 'static DFI_ALWAYS_INLINE duoforge_status ' + name + '(')
     got = N[s + pre:e - post] if post else N[s + pre:e]
     want = R(x, y)
     if name == 'dfi_residual_order':

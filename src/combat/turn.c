@@ -18,7 +18,7 @@
 #include "combat/moves/special_handlers.h"
 
 #include "core/arith.h"
-#include "core/force_inline.h"
+#include "core/inline.h"
 #include "core/modifier.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
@@ -9271,16 +9271,16 @@ static duoforge_status dfi_curse_residual(dfi_run *r, uint32_t holder)
 }
 
 /* The phases of dfi_residual_events_run (restructure step 4, residual runner), in its order. Each is inlined into it
- * (DFI_FORCE_INLINE), so the cut changes no code. A phase that ends the residual early because the battle ended
+ * (DFI_ALWAYS_INLINE), so the cut changes no code. A phase that ends the residual early because the battle ended
  * sets *stop and returns DUOFORGE_OK, as the one function returned DUOFORGE_OK there. */
-static DFI_FORCE_INLINE duoforge_status dfi_residual_stop(bool *stop)
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_stop(bool *stop)
 {
     *stop = true;
     return DUOFORGE_OK;
 }
 
 /* Phase 1: the handlers of this residual, unsorted: the field, each side's conditions, each Pokemon's. */
-static DFI_FORCE_INLINE duoforge_status dfi_residual_collect(dfi_run *r, struct duoforge_battle *b,
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_collect(dfi_run *r, struct duoforge_battle *b,
                                                              dfi_residual_entry *list, uint32_t *count)
 {
     uint32_t n = 0u;
@@ -9445,7 +9445,7 @@ static DFI_FORCE_INLINE duoforge_status dfi_residual_collect(dfi_run *r, struct 
 }
 
 /* Phase 2: the sort with its draws, and the draws of the side conditions' ties. */
-static DFI_FORCE_INLINE duoforge_status dfi_residual_order(dfi_run *r, struct duoforge_battle *b, dfi_residual_entry *list,
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_order(dfi_run *r, struct duoforge_battle *b, dfi_residual_entry *list,
                                                            uint32_t n, uint32_t first[DFI_SIDE_KINDS], uint32_t *early_out,
                                                            uint32_t *sorted_out, uint32_t *herbs_from_out)
 {
@@ -9502,7 +9502,7 @@ static DFI_FORCE_INLINE duoforge_status dfi_residual_order(dfi_run *r, struct du
 }
 
 /* Phase 3: the handlers before the side conditions (orders 1 to 25), in the sorted order. */
-static DFI_FORCE_INLINE duoforge_status dfi_residual_early(dfi_run *r, struct duoforge_battle *b, const dfi_residual_entry *list,
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_early(dfi_run *r, struct duoforge_battle *b, const dfi_residual_entry *list,
                                                            uint32_t early, bool *stop)
 {
     duoforge_status st = DUOFORGE_OK;
@@ -9800,7 +9800,7 @@ static DFI_FORCE_INLINE duoforge_status dfi_residual_early(dfi_run *r, struct du
 
 /* Phase 4: the counts that go down silently, then the duration handlers of the side conditions, Trick Room, Gravity
  * and the terrain. */
-static DFI_FORCE_INLINE duoforge_status dfi_residual_durations(dfi_run *r, struct duoforge_battle *b,
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_durations(dfi_run *r, struct duoforge_battle *b,
                                                                const uint32_t first[DFI_SIDE_KINDS], bool *stop)
 {
     duoforge_status st = DUOFORGE_OK;
@@ -9914,7 +9914,7 @@ static DFI_FORCE_INLINE duoforge_status dfi_residual_durations(dfi_run *r, struc
 }
 
 /* Phase 5: Speed Boost and Moody (order 28), then White Herb (29). */
-static DFI_FORCE_INLINE duoforge_status dfi_residual_late(dfi_run *r, struct duoforge_battle *b, const dfi_residual_entry *list,
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_late(dfi_run *r, struct duoforge_battle *b, const dfi_residual_entry *list,
                                                           uint32_t herbs_from, uint32_t sorted, bool *stop)
 {
     /* White Herb's onResidual (order 29), each holder's check. The engine
@@ -9961,7 +9961,7 @@ static DFI_FORCE_INLINE duoforge_status dfi_residual_late(dfi_run *r, struct duo
 }
 
 /* Phase 6, the last: the duration handlers of the volatiles that have no order, in Speed order. */
-static DFI_FORCE_INLINE duoforge_status dfi_residual_noorder(dfi_run *r, struct duoforge_battle *b, dfi_noorder_snapshot *ps)
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_noorder(dfi_run *r, struct duoforge_battle *b, dfi_noorder_snapshot *ps)
 {
     duoforge_status st = DUOFORGE_OK;
     /* The duration handlers of the volatiles that have no order come last, in Speed order (comparePriority puts no order
