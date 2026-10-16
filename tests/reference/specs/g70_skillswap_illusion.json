@@ -1,0 +1,22 @@
+{
+  "name": "g70_skillswap_illusion",
+  "purpose": "Skill Swap at an Illusion holder (issue #620; decisions 0041 and 0026; decision 0015 entry 5dx): Zoroark (M) leads disguised as Gholdengo (the last brought member to its right). Turn 1 Gardevoir (F) aims Skill Swap at it while the disguise is up; Illusion has failskillswap (data/abilities.ts:2091), so the swap fails: -fail with [still] on the move line, no ability changes hands, the disguise stays. Turn 2 the faster Espeon's Dazzling Gleam breaks the disguise (Focus Sash holds Zoroark at 1 HP), and Gardevoir's Skill Swap at the shown Zoroark fails again.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000620",
+  "teams": [
+    "Zoroark (M) @ Focus Sash\nAbility: Illusion\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Shadow Ball\n- Sludge Bomb\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect",
+    "Gardevoir (F)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Skill Swap\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nEspeon (F)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nGyarados (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Dance\n- Earthquake\n- Crunch\n\nGengar (F)\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Shadow Ball\n- Dark Pulse\n- Focus Blast\n\nRillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Fake Out\n- Earthquake\n- Drum Beating\n\nPelipper (M)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nBold Nature\n- Hurricane\n- Helping Hand\n- Hydro Pump"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 3",
+      "move 1 2, move 3"
+    ],
+    "p2": [
+      "move 1 1, move 1",
+      "move 1 1, move 2"
+    ],
+    "max_steps": 3
+  }
+}

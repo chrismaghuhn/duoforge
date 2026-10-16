@@ -543,7 +543,8 @@ const dfi_support_manifest dfi_support = {
              * POSITION_EXT_SPEED_SWAPPED, and a live swap refuses the public record (PUBLIC_CAUSE_SPEED_SWAP). */
             [DFI_MOVE_SPEEDSWAP] = 1u,
             /* Step G70 (Skill Swap, decision 0041): the two holders swap their abilities (onHit, the ability events and the
-             * Start and End of the abilities that move; an ally swap is modelled, the Mega and the Illusion cases are named). */
+             * Start and End of the abilities that move; an ally swap is modelled, the Mega ally case is a named converter refusal;
+             * an Illusion holder on either side fails the move with the pin's -fail, its failskillswap: issue #620, entry 5dx). */
             [DFI_MOVE_SKILLSWAP] = 1u,
             /* Step G66 (decision 0015 5cb, decision 0040): King's Shield, the Protect variant with protect_kind 2: it passes Status
              * moves (checkMoveBypassesProtect with blockStatus false), and a contact move that it stops costs the attacker -1 Attack.
