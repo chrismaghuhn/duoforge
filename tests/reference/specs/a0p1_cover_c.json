@@ -1,0 +1,92 @@
+{
+  "name": "a0p1_cover_c",
+  "purpose": "A0 part 1 (decision 0015 entry 5ds, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Horn Leech with its drain, Bullet Seed with 2, 4 and 5 hits, Rock Blast with 3 hits. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,08877926cb9611621105a879af0bb3953f3d55f581d184092a154fb6d3f5a1a5",
+  "teams": [
+    "Torterra (M) @ Focus Sash\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Stone Edge\n- Earthquake\n- Leaf Storm\n\nBeedrill (M) @ Life Orb\nAbility: Swarm\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Pin Missile\n- U-turn\n- Bug Buzz\n- Brick Break\n\nBlaziken (M) @ Leftovers\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Blaze Kick\n- Knock Off\n- Stone Edge\n\nVenusaur (M) @ Muscle Band\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Bullet Seed\n- Sludge Bomb\n- Leech Seed\n- Giga Drain\n\nCharizard (M) @ Wise Glasses\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Air Slash\n- Solar Beam\n- Overheat\n\nTrevenant (M) @ Sitrus Berry\nAbility: Frisk\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Horn Leech\n- Shadow Claw\n- Earthquake\n- Phantom Force",
+    "Beedrill (M) @ Life Orb\nAbility: Swarm\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Pin Missile\n- U-turn\n- Bug Buzz\n- Brick Break\n\nBlaziken (M) @ Leftovers\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Blaze Kick\n- Knock Off\n- Stone Edge\n\nCharizard (M) @ Wise Glasses\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Air Slash\n- Solar Beam\n- Overheat\n\nVenusaur (M) @ Muscle Band\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Bullet Seed\n- Sludge Bomb\n- Leech Seed\n- Giga Drain\n\nTrevenant (M) @ Sitrus Berry\nAbility: Frisk\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Horn Leech\n- Shadow Claw\n- Earthquake\n- Phantom Force\n\nTorterra (M) @ Focus Sash\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Stone Edge\n- Earthquake\n- Leaf Storm"
+  ],
+  "choices": [
+    {
+      "p1": "team 4251",
+      "p2": "team 6435"
+    },
+    {
+      "p1": "move 1 2, move 4 1",
+      "p2": "move 1 1, switch 3"
+    },
+    {
+      "p1": "move 2 -2, move 1 2",
+      "p2": "move 4 2, switch 4"
+    },
+    {
+      "p1": "move 2 -2, move 4 1",
+      "p2": "move 1 -2, move 1 -1"
+    },
+    {
+      "p1": "move 1 1, move 2 -1",
+      "p2": "move 1 1, move 2 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 1, switch 3",
+      "p2": "move 3, switch 4"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 4 1, move 3 -1",
+      "p2": "move 1 2, move 2 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 3 -2, move 4 1",
+      "p2": "move 2 2, move 2 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 1, move 1 1",
+      "p2": "move 1 2, move 3 -1"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "move 1 2, move 1"
+    },
+    {
+      "p1": "move 4 1, move 3 2",
+      "p2": "move 3 -2, move 4 1"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 2 2, move 4 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4 1, move 1 -1",
+      "p2": "move 1 1, move 3 2"
+    },
+    {
+      "p1": "pass, move 2 2",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 4 2, move 4 1"
+    },
+    {
+      "p1": "pass, move 3 -1",
+      "p2": "move 1, move 3 1"
+    }
+  ]
+}

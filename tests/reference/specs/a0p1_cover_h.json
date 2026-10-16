@@ -1,0 +1,65 @@
+{
+  "name": "a0p1_cover_h",
+  "purpose": "A0 part 1 (decision 0015 entry 5ds, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Water Shuriken with 5 hits. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,685d528ce80c9b3d6e3df516a0d33043264b6bf9b4ea07e1d2d6c5b499073562",
+  "teams": [
+    "Greninja (M) @ Life Orb\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Water Shuriken\n- Gunk Shot\n- Hydro Pump\n- Spikes\n\nBeedrill (M) @ Muscle Band\nAbility: Swarm\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Pin Missile\n- U-turn\n- Bug Buzz\n- Brick Break\n\nAltaria (F) @ Altarianite\nAbility: Cloud Nine\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Moonblast\n- Dragon Dance\n- Roost\n- Earthquake\n\nTorterra (M) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Stone Edge\n- Earthquake\n- Leaf Storm\n\nBlaziken (M) @ Choice Scarf\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Blaze Kick\n- Knock Off\n- Stone Edge\n\nCharizard (M) @ Focus Sash\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Air Cutter\n- Solar Beam\n- Air Slash",
+    "Beedrill (M) @ Life Orb\nAbility: Swarm\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Pin Missile\n- U-turn\n- Bug Buzz\n- Brick Break\n\nTorterra (M) @ Focus Sash\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Stone Edge\n- Earthquake\n- Leaf Storm\n\nCharizard (M) @ Wise Glasses\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Air Slash\n- Solar Beam\n- Overheat\n\nVenusaur (M) @ Muscle Band\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Bullet Seed\n- Sludge Bomb\n- Leech Seed\n- Giga Drain\n\nTrevenant (M) @ Sitrus Berry\nAbility: Frisk\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Horn Leech\n- Shadow Claw\n- Earthquake\n- Phantom Force\n\nBlaziken (M) @ Leftovers\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Blaze Kick\n- Knock Off\n- Stone Edge"
+  ],
+  "choices": [
+    {
+      "p1": "team 1425",
+      "p2": "team 3216"
+    },
+    {
+      "p1": "move 1 -2, move 1 2",
+      "p2": "move 3 1, move 1 1"
+    },
+    {
+      "p1": "move 1 2, move 4 -1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 2, move 2 2",
+      "p2": "move 2 2, move 4 -1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 3 -2, move 4 2",
+      "p2": "switch 4, move 1 2"
+    },
+    {
+      "p1": "move 3 1, pass",
+      "p2": "move 2 -2, move 2 -1"
+    },
+    {
+      "p1": "move 3 2, pass",
+      "p2": "move 2 2, move 2 -1"
+    },
+    {
+      "p1": "move 3 2, pass",
+      "p2": "move 4 1, move 4 -1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 3 -2, pass",
+      "p2": "move 4 1, move 4 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 1, pass",
+      "p2": "move 4 2, move 4 2"
+    }
+  ]
+}

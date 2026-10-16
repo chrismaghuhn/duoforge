@@ -14,8 +14,8 @@
  *   - the marks and the handler columns: the four rows and the three stones are marked (support manifest), with the handler NONE
  *     (engine rows read by id, the stones mark only);
  *   - the stones that stay out, with their reason: Starminite (Starmie's abilities Illuminate, Natural Cure and Analytic are
- *     unmarked), Altarianite (Altaria's Natural Cure and Cloud Nine are unmarked), Sharpedonite (Strong Jaw is UNMODELLED: its bite
- *     flag has no pool column yet, deferred);
+ *     unmarked), Sharpedonite (Strong Jaw is UNMODELLED: its bite
+ *     flag has no pool column yet, deferred); Altarianite stayed out here too and is marked since A0 part 1 (5ds);
  *   - the Mega of each pair (dfi_mega_of) and the support of the pair (dfi_manifest_mega_of), and the legal base abilities of the
  *     two base formes that the battles use (Pure Power on Medicham, Unaware on Clefable, as hidden ability).
  */
@@ -48,7 +48,7 @@ static void check_marks(df_test *t)
     }
     /* the stones that stay out, and Strong Jaw, whose bite flag would need a pool column (deferred, not in this batch) */
     DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_STARMINITE], 0u);
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_ALTARIANITE], 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_ALTARIANITE] != 0u); /* marked since A0 part 1 (decision 0015 entry 5ds) */
     DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_SHARPEDONITE], 0u);
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_STRONGJAW], 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_STRONGJAW], DFI_HANDLER_UNMODELED);

@@ -319,14 +319,15 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DUOFORGE_CAUSE_RECHARGE, 18u);
     DF_CHECK_EQ_U64(&t, DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE, 15u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE)) != 0u);
-    /* The seven recharge moves of the pool are exactly the ones with the recharge bit; six are marked. */
+    /* The seven recharge moves of the pool are exactly the ones with the recharge bit; all seven are marked (Meteor Assault
+     * since A0 part 1, decision 0015 entry 5ds; six before). */
     {
         uint32_t flagged = 0u;
         for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
             const bool bit = (dfi_pool_move_flags2[id] & DFI_MOVE_FLAG2_RECHARGE) != 0u;
             flagged += bit ? 1u : 0u;
             if (bit) {
-                DF_CHECK(&t, (dfi_support.moves[id] != 0u) == (id != DFI_MOVE_METEORASSAULT));
+                DF_CHECK(&t, dfi_support.moves[id] != 0u);
                 DF_CHECK(&t, dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
             }
         }
