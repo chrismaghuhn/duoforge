@@ -9968,7 +9968,8 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             seq[seq_n] = flat;
             seq_n += 1u;
             had[flat] = ((uint32_t)pos->flags & ended_flags) != 0u || pos->charge_turns != 0u || pos->stall_turns != 0u ||
-                        b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
+                        b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u ||
+                        b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns != 0u;
         }
     }
     for (uint32_t i = 1u; i < seq_n; ++i) {
@@ -10024,14 +10025,19 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 }
             }
         }
-        /* lockedmove (step G56): an order-less callback in this Speed order, after the counters it shares a sub-order with. */
-        if (dfi_alive(b, flat) && b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns != 0u) {
+        /* lockedmove (step G56): an order-less callback in this Speed order, after the counters it shares a sub-order with.
+         * Every lock here was used this turn, so its duration (2 again at the use) does not run out and faintMessages follows
+         * the callback (issue 551): a faint point. A holder whose faint is only queued (Perish Song's perish0 earlier in this
+         * residual) still has the volatile, so its handler runs too (dfi_residual_holder_stands). */
+        const bool lock_point =
+            b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns != 0u && dfi_residual_holder_stands(r, flat);
+        if (lock_point) {
             st = dfi_residual_lock(r, flat);
             if (st != DUOFORGE_OK) {
                 return st;
             }
         }
-        if (keeps && r->faint_count != 0u) {
+        if ((keeps || lock_point) && r->faint_count != 0u) {
             dfi_residual_faints(r);
             if (r->ended) {
                 if (also_ends && !pair_here && dfi_alive(b, flat)) {
