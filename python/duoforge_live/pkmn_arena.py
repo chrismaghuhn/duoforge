@@ -12,9 +12,12 @@ logged, never written to a file, and every text the mode prints or logs passes t
 "/trn NAME,0,TOKEN" after |challstr|; the team (--team) goes with /utm after every login, so after every reconnect too.
 
 The server puts the bot in battles (no /accept); it plays every one, one at a time, with the request's rqid on every
-/choose. Under open team sheets (the OTS format) the tracker folds the foe's |showteam| (decision 0016 section 2: its
-items, abilities, moves and natures; its stat points stay hidden as in DuoForge's observation). Under closed team sheets
-(the CTS format, decision 0081) the battle is played over the particles of game.Game.closed_sheets: 16 drawn foe teams
+/choose. Battles come from challenges of other bots (llms.txt: no queue, /accept and /reject do nothing): each incoming
+challenge notice (a |pm| "/challenge FORMAT") is counted in the run log by its outcome only, never by name (CHALLENGES).
+
+Under open team sheets (the OTS format) the tracker folds the foe's |showteam| (decision 0016 section 2: its items,
+abilities, moves and natures; its stat points stay hidden as in DuoForge's observation). Under closed team sheets (the
+CTS format, decision 0081) the battle is played over the particles of game.Game.closed_sheets: 16 drawn foe teams
 from the pinned set table (cts.SetPrior.from_table), the search's world w built from particle w's record; the bot
 then never accepts open sheets. Its battle log keeps every batch the game was fed ("feed") and every choice it accepted
 ("accepted"), so the log draws the same particles again, and the particle tracker's counters go to the run log ("cts").
@@ -67,6 +70,10 @@ MAX_RETRIES = 16  # next-best choices after "[Invalid choice]" at one decision p
 _NAME = re.compile(r"^[A-Za-z0-9._-]+(?: [A-Za-z0-9._-]+)*$")  # llms.txt: 3-18 characters
 _CLOSE_STOP = 4001  # another connection logged in as the bot
 STABLE = 60.0  # seconds a logged-in connection must last to reset the backoff
+# The run log's challenge counts (RunLog.challenges): a notice to the bot in its --format (the server starts that battle
+# when both bots are free), in another format, an empty one (the challenger withdrew it), or one the arena sent in the
+# bot's own name (a site user's battle between this bot and another, llms.txt).
+CHALLENGES = ("received", "other_format", "withdrawn", "in_own_name")
 
 
 def _refuse(message):
@@ -200,11 +207,13 @@ class RunLog:
         self.formats = Counter()  # battles by format id
         self.search = Counter()  # the search's outcome causes over every decision it played
         self.cts = Counter()  # closed-sheet battles and their particle trackers' counters (redraws, levels, stops)
+        self.challenges = Counter()  # incoming challenge notices by outcome (CHALLENGES), never by name
 
     def as_dict(self):
         return {**self.head, "counts": dict(self.counts), "fallback_battles": dict(self.fallback_battles),
                 "fallback_decisions": dict(self.fallback_decisions), "closes": dict(self.closes),
-                "formats": dict(self.formats), "search_causes": dict(self.search), "cts": dict(self.cts)}
+                "formats": dict(self.formats), "search_causes": dict(self.search), "cts": dict(self.cts),
+                "challenges": dict(self.challenges)}
 
     def write(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -381,6 +390,8 @@ class ArenaBot(client.Bot):
             elif kind == "nametaken":
                 self.run_log.write()
                 raise SystemExit(redact(f"duoforge_live: the arena refused the login: {line}"))
+            elif kind == "pm" and len(parts) > 4:
+                self._challenge(parts[2], parts[3], "|".join(parts[4:]))
             elif kind == "popup":
                 text = "|".join(parts[2:])
                 self.run_log.counts["popups"] += 1
@@ -388,6 +399,25 @@ class ArenaBot(client.Bot):
                     self.run_log.write()
                     raise SystemExit(redact(f"duoforge_live: the arena rejected the team (--team): {text}"))
                 print(redact(f"duoforge_live: arena popup: {text}"), file=sys.stderr)
+
+    def _challenge(self, sender, recipient, text):
+        """Counts a challenge notice ("|pm| SENDER| RECIPIENT|/challenge FORMAT|..."; "/challenge" alone withdraws
+        one) by its outcome (CHALLENGES); any other PM is not counted. Nothing is sent: the bot cannot accept or
+        refuse."""
+        if not (text == "/challenge" or text.startswith("/challenge ") or text.startswith("/challenge|")):
+            return
+        me = toid(self.config.name)
+        fmt = text[len("/challenge"):].split("|")[0].strip()
+        if toid(sender) == me and toid(recipient) != me:
+            outcome = "in_own_name"
+        elif toid(recipient) != me:
+            return
+        elif not fmt:
+            outcome = "withdrawn"
+        else:
+            outcome = "received" if fmt == self.format else "other_format"
+        self.run_log.challenges[outcome] += 1
+        self.run_log.write()
 
     # ------------------------------------------------------------------ fallback
     def _mark(self, b, reason, detail=None):

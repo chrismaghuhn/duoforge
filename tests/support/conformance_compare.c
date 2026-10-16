@@ -110,7 +110,11 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                     continue;
                 }
                 const uint32_t status = df_conf_expected_status(e, &cb->members[s][m], s, viewer);
-                const uint32_t used = (cb->members[s][m].item != 0u && e->held == 0u) ? 1u : 0u;
+                /* The owner sees its item exact; the other player the item use it attributes: the true one unless an Illusion hid it
+                 * (held bit 1, decision 0026 section 4, issue 556). */
+                const bool gone_true = ((uint32_t)e->held & 1u) == 0u;
+                const bool gone = viewer == s ? gone_true : gone_true != (((uint32_t)e->held & 2u) != 0u);
+                const uint32_t used = (cb->members[s][m].item != 0u && gone) ? 1u : 0u;
                 /* The ability on the sheet, the Mega forme's once it evolved. */
                 const df_conf_member *set = &cb->members[s][m];
                 uint32_t ability = set->ability;
@@ -153,7 +157,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                           pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
                           pv->flash_fire == ((e->vols & 2u) != 0u ? 1u : 0u) &&
                           pv->charging == ((e->vols & 4u) != 0u ? 1u : 0u) &&
-                          pv->reserved == (((e->vols & 16u) != 0u && e->held == 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) |
+                          pv->reserved == (((e->vols & 16u) != 0u && (e->held & 1u) == 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) |
                                            ((e->vols & 32u) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u) |
                                            ((e->vols & 64u) != 0u ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u)) &&
                           (pv->protect_chain != 0u) == (e->stall != 0u);
@@ -275,9 +279,9 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
             const uint32_t now = b->tail.sides[s].item_now[m];
             const uint32_t held =
                 mem->item_consumed == 0u && now != DFI_TAIL_ITEM_NONE && (now != 0u || mem->item != 0u) ? 1u : 0u;
-            if (held != e->held) {
+            if (held != ((uint32_t)e->held & 1u)) { /* bit 0; bit 1 is the opponent's attribution (issue 556) */
                 fprintf(out, "  %s step %u: side %u member %u holds %u, reference %u\n", name, step, s, m, held,
-                        e->held);
+                        (uint32_t)e->held & 1u);
                 ++bad;
             }
             /* What the opponent knows: seen, and the last public HP display. */

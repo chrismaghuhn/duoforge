@@ -1,0 +1,129 @@
+{
+  "name": "fz556_glaive_rush_sub",
+  "purpose": "Baxcalibur's Glaive Rush breaks Toxtricity's Substitute (step 20): the null target counts for selfDrops, so the Glaive Rush volatile is set (-singlemove [silent]) and Scary Face hits Baxcalibur later without an accuracy roll (step 22). On main the volatile was missing and the engine stopped with E_INVARIANT at step 22 (issue 556, the cause of issue 518). A battle of the differential fuzzing of issue 396 (free random sets, fz_363_61), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,d39206d1b2487338708b6188a083cc9af6a4caf1bbbdc4564169a95c567b9e24",
+  "teams": [
+    "chandelure (F) @ absolite\nAbility: flamebody\nLevel: 50\nEVs: 5 HP / 10 Atk / 11 Def / 11 SpA / 14 SpD / 15 Spe\nRash Nature\n- memento\n- trailblaze\n- trickroom\n- haze\n\neelektross (F) @ scovillainite\nAbility: levitate\nLevel: 50\nEVs: 8 HP / 8 Atk / 14 Def / 13 SpA / 13 SpD / 10 Spe\nQuiet Nature\n- crunch\n- gigaimpact\n- electricterrain\n- hyperbeam\n\nbaxcalibur (M) @ silkscarf\nAbility: thermalexchange\nLevel: 50\nEVs: 16 HP / 6 Atk / 11 Def / 13 SpA / 11 SpD / 9 Spe\nDocile Nature\n- aerialace\n- zenheadbutt\n- hyperbeam\n- glaiverush\n\ngarbodor (F) @ scizorite\nAbility: weakarmor\nLevel: 50\nEVs: 5 HP / 8 Atk / 5 Def / 12 SpA / 7 SpD / 6 Spe\nRelaxed Nature\n- spikes\n- substitute\n- protect\n- seedbomb\n\ndragalge (M) @ swampertite\nAbility: adaptability\nLevel: 50\nEVs: 12 HP / 7 Atk / 15 Def / 9 SpA / 7 SpD / 16 Spe\nHasty Nature\n- irontail\n- haze\n- surf\n- snowscape\n\npincurchin (F) @ froslassite\nAbility: electricsurge\nLevel: 50\nEVs: 8 HP / 10 Atk / 3 Def / 6 SpA / 10 SpD / 5 Spe\nCalm Nature\n- curse\n- substitute\n- zingzap\n- toxicspikes",
+    "gourgeistsmall (M) @ grassyseed\nAbility: frisk\nLevel: 50\nEVs: 16 HP / 11 Atk / 7 Def / 15 SpA / 4 SpD / 13 Spe\nGentle Nature\n- phantomforce\n- imprison\n- protect\n- nastyplot\n\nleafeon (F) @ manectite\nAbility: leafguard\nLevel: 50\nEVs: 7 HP / 13 Atk / 9 Def / 10 SpA / 16 SpD / 11 Spe\nRash Nature\n- roar\n- leafstorm\n- doubleedge\n- covet\n\nscrafty (F) @ scraftinite\nAbility: intimidate\nLevel: 50\nEVs: 2 Def / 4 SpD / 4 Spe\nModest Nature\n- roar\n- dragonclaw\n- throatchop\n- headsmash\n\ntoxtricity (M) @ beedrillite\nAbility: punkrock\nLevel: 50\nEVs: 9 HP / 8 Atk / 10 Def / 8 SpA / 6 SpD / 8 Spe\nQuirky Nature\n- firepunch\n- substitute\n- toxic\n- toxicspikes\n\nserperior (M) @ whiteherb\nAbility: overgrow\nLevel: 50\nEVs: 18 HP / 9 Atk / 6 Def / 8 SpA / 13 SpD / 12 Spe\nCareful Nature\n- helpinghand\n- leafblade\n- leafstorm\n- glare\n\nannihilape (F) @ excadrite\nAbility: innerfocus\nLevel: 50\nEVs: 11 HP / 7 Atk / 11 Def / 9 SpA / 16 SpD / 12 Spe\nNaughty Nature\n- scaryface\n- stoneedge\n- stormthrow\n- stealthrock"
+  ],
+  "choices": [
+    {
+      "p1": "team 1543",
+      "p2": "team 1546"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 4, move 2 2"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 3, move 4 1"
+    },
+    {
+      "p1": "move 3, move 4",
+      "p2": "move 2, move 3 -1"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "move 1 2, move 4 -1"
+    },
+    {
+      "p1": "move 2 2, move 3",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 4 -2, switch 4",
+      "p2": "move 3, move 3 2"
+    },
+    {
+      "p1": "move 4 2, move 2 -1",
+      "p2": "move 1 2, move 1 -1"
+    },
+    {
+      "p1": "move 2, switch 4",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2, move 3 2",
+      "p2": "move 2, move 2 -1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 2, move 3 -1"
+    },
+    {
+      "p1": "move 4 -2, move 3 1",
+      "p2": "move 1 2, move 4 2"
+    },
+    {
+      "p1": "move 2, move 1 -1",
+      "p2": "move 1, move 3 2"
+    },
+    {
+      "p1": "move 1, move 3 1",
+      "p2": "move 1 1, move 3 1"
+    },
+    {
+      "p1": "move 2, move 3 -1",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p1": "pass, move 2 -1",
+      "p2": "move 2, move 2 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "pass, move 4 -1",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "pass, move 4 1",
+      "p2": "move 2, switch 4"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "pass, move 2 -1",
+      "p2": "move 1 1, move 1 2"
+    },
+    {
+      "p1": "pass, move 3 2",
+      "p2": "move 2, move 4"
+    },
+    {
+      "p1": "pass, move 1 1",
+      "p2": "move 4, move 1 2"
+    },
+    {
+      "p1": "pass, move 2 2",
+      "p2": "move 3 -2, move 2 2"
+    },
+    {
+      "p1": "pass, move 1 -1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "pass, move 2 -1",
+      "p2": "move 3 2, pass"
+    },
+    {
+      "p1": "pass, move 4 1",
+      "p2": "move 3 1, pass"
+    },
+    {
+      "p1": "pass, move 4 1",
+      "p2": "move 1 2, pass"
+    }
+  ]
+}

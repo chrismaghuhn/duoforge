@@ -1,0 +1,108 @@
+{
+  "name": "fz541_pressure_ally_switch",
+  "purpose": "Spiritomb (Pressure) uses Ally Switch with Victreebel (step 2), then Hippowdon's Hyper Beam hits Victreebel on Spiritomb's old slot: the foe's PP that player 0 can attribute counts its own Pressure holder's extra by where it stands now (decision 0030 section 1), so its own-side timeline follows the SWAP (dfi_own_event). On main it charged the holder that had stood there before and the views differed from step 2 (issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_159_24), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,81564fce85f572451848c9c3affa83c5c7a4d9cb41bd87ef37c7e23cf8b78acf",
+  "teams": [
+    "victreebel (F) @ silverpowder\nAbility: chlorophyll\nLevel: 50\nEVs: 13 HP / 4 Atk / 13 Def / 13 SpA / 11 SpD / 12 Spe\nSerious Nature\n- knockoff\n- sleeppowder\n- powerwhip\n- wrap\n\ngoodrahisui (F) @ gengarite\nAbility: shellarmor\nLevel: 50\nEVs: 9 HP / 12 Atk / 7 Def / 16 SpA / 9 SpD / 13 Spe\nTimid Nature\n- scaryface\n- dragoncheer\n- charm\n- sunnyday\n\ndelphox (F) @ delphoxite\nAbility: blaze\nLevel: 50\nEVs: 4 HP / 2 Atk / 4 Def / 1 SpA / 2 SpD / 4 Spe\nJolly Nature\n- psychic\n- calmmind\n- grassknot\n- shadowball\n\numbreon (M) @ chilanberry\nAbility: innerfocus\nLevel: 50\nEVs: 4 HP / 2 Atk / 1 Def / 2 SpD / 1 Spe\nMild Nature\n- curse\n- reflect\n- snarl\n- trailblaze\n\nblaziken (F) @ blazikenite\nAbility: speedboost\nLevel: 50\nEVs: 8 HP / 8 Atk / 8 Def / 17 SpA / 10 SpD / 15 Spe\nCalm Nature\n- assurance\n- aurasphere\n- temperflare\n- rockslide\n\nspiritomb (M)\nAbility: pressure\nLevel: 50\nEVs: 15 HP / 9 Atk / 5 Def / 16 SpA / 12 SpD / 9 Spe\nDocile Nature\n- calmmind\n- darkpulse\n- willowisp\n- allyswitch",
+    "hippowdon (M) @ ejectbutton\nAbility: sandstream\nLevel: 50\nEVs: 11 HP / 8 Atk / 12 Def / 15 SpA / 8 SpD / 12 Spe\nTimid Nature\n- crunch\n- hyperbeam\n- hardpress\n- curse\n\ndragapult (F) @ terrainextender\nAbility: cursedbody\nLevel: 50\nEVs: 9 HP / 9 Atk / 10 Def / 13 SpA / 11 SpD / 14 Spe\nBashful Nature\n- acrobatics\n- doubleedge\n- infestation\n- pounce\n\nmawile (M) @ mawilite\nAbility: intimidate\nLevel: 50\nEVs: 13 HP / 13 Atk / 13 Def / 9 SpA / 7 SpD / 11 Spe\nCalm Nature\n- grassknot\n- brutalswing\n- crunch\n- protect\n\nreuniclus (M) @ lumberry\nAbility: magicguard\nLevel: 50\nEVs: 2 HP / 6 Atk / 8 Def / 3 SpA / 5 SpD / 2 Spe\nDocile Nature\n- flashcannon\n- drainpunch\n- hammerarm\n- lightscreen\n\nscizor (F) @ lightclay\nAbility: swarm\nLevel: 50\nEVs: 11 HP / 13 Atk / 12 Def / 8 SpA / 11 SpD / 11 Spe\nImpish Nature\n- curse\n- lightscreen\n- bulletpunch\n- batonpass\n\nheliolisk (M) @ blazikenite\nAbility: sandveil\nLevel: 50\nEVs: 7 HP / 14 Atk / 11 Def / 11 SpA / 11 SpD / 12 Spe\nRash Nature\n- focusblast\n- quickattack\n- firepunch\n- protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1642",
+      "p2": "team 1243"
+    },
+    {
+      "p1": "move 1 2, move 3 2",
+      "p2": "move 2 2, move 4 2"
+    },
+    {
+      "p1": "move 4 -2, move 4",
+      "p2": "move 2 2, switch 4"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "move 1, move 4 mega"
+    },
+    {
+      "p1": "move 4, move 4 2",
+      "p2": "move 1 1, move 3 2"
+    },
+    {
+      "p1": "move 2 -2, switch 3",
+      "p2": "move 2 2, move 4"
+    },
+    {
+      "p1": "move 3 2, move 1",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 -2, move 3",
+      "p2": "switch 4, move 2"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "switch 3, move 2",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 -2, move 1",
+      "p2": "move 2 1, move 4"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 4, move 3 1"
+    },
+    {
+      "p1": "move 4, move 2",
+      "p2": "move 2 2, switch 3"
+    },
+    {
+      "p1": "move 2 -2, move 2",
+      "p2": "move 3 -2, move 3 2"
+    },
+    {
+      "p1": "move 3 -2, move 4 2",
+      "p2": "move 1 -2, move 3 1"
+    },
+    {
+      "p1": "move 3 -2, move 2",
+      "p2": "move 1 -2, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 4 2",
+      "p2": "switch 3, move 2 1"
+    },
+    {
+      "p1": "move 1 1, move 3",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 4, move 3 2"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 2, switch 3"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "pass, move 4 -1",
+      "p2": "move 2, move 2 2"
+    }
+  ]
+}

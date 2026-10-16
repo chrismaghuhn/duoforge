@@ -85,6 +85,7 @@ if(Python3_Interpreter_FOUND)
         include("${PROJECT_SOURCE_DIR}/tools/cloud/gcp_watch/tests.cmake")
     endif()
     include("${PROJECT_SOURCE_DIR}/tools/datagen/tests/tests.cmake")
+    include("${PROJECT_SOURCE_DIR}/tools/cloud/kaggle/tests.cmake")
 endif()
 
 include("${PROJECT_SOURCE_DIR}/tests/data/license.cmake")

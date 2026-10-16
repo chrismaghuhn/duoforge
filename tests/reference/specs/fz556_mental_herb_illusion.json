@@ -1,0 +1,59 @@
+{
+  "name": "fz556_mental_herb_illusion",
+  "purpose": "Zoroark, p2b, disguised as Ampharos, uses up its Mental Herb against Taunt (step 7): the -enditem carries the disguise's name, so the foe folds the use into Ampharos's row while Ampharos, on the bench, still holds its item (decision 0026 section 4); the break at step 8 gives the use to Zoroark's row. On main the knowledge invariant refused the disguise's row at step 7 (E_INVARIANT, issue 556). A battle of the differential fuzzing of issue 396 (free random sets, fz_354_32), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,c3d162d44acf4afa1e411a6f7206436e06956fc4c7da0252fe79e363de8f0cb0",
+  "teams": [
+    "beartic (F) @ cobaberry\nAbility: slushrush\nLevel: 50\nEVs: 7 HP / 9 Atk / 12 Def / 13 SpA / 12 SpD / 13 Spe\nJolly Nature\n- lowkick\n- shadowclaw\n- gigaimpact\n- hyperbeam\n\nspiritomb (M) @ lightclay\nAbility: infiltrator\nLevel: 50\nEVs: 10 HP / 10 Atk / 12 Def / 15 SpA / 11 SpD / 8 Spe\nSassy Nature\n- calmmind\n- foulplay\n- shadowball\n- substitute\n\naerodactyl (F) @ absolitez\nAbility: unnerve\nLevel: 50\nEVs: 6 HP / 5 Atk / 7 Def / 8 SpA / 5 SpD / 5 Spe\nModest Nature\n- tailwind\n- rockslide\n- hyperbeam\n- raindance\n\npangoro (F) @ fairyfeather\nAbility: scrappy\nLevel: 50\nEVs: 3 HP / 3 Atk / 3 Def / 1 SpA / 6 SpD / 3 Spe\nNaive Nature\n- hammerarm\n- shadowclaw\n- icepunch\n- circlethrow\n\ngarbodor (F) @ aggronite\nAbility: weakarmor\nLevel: 50\nEVs: 17 HP / 13 Atk / 6 Def / 7 SpA / 14 SpD / 9 Spe\nModest Nature\n- spikes\n- sludgebomb\n- bodypress\n- crosspoison\n\northworm (M) @ excadrite\nAbility: sandveil\nLevel: 50\nEVs: 11 HP / 11 Atk / 8 Def / 15 SpA / 13 SpD / 8 Spe\nModest Nature\n- stealthrock\n- earthpower\n- irondefense\n- rocktomb",
+    "toxtricitylowkey (F) @ airballoon\nAbility: punkrock\nLevel: 50\nEVs: 9 HP / 13 Atk / 13 Def / 12 SpA / 11 SpD / 8 Spe\nAdamant Nature\n- thunder\n- psychicnoise\n- discharge\n- nuzzle\n\nlycanrocmidnight (M) @ brightpowder\nAbility: noguard\nLevel: 50\nEVs: 8 HP / 17 Atk / 12 Def / 12 SpA / 11 SpD / 6 Spe\nMild Nature\n- taunt\n- sandstorm\n- swordsdance\n- trailblaze\n\nstunfisk (F) @ dragonfang\nAbility: sandveil\nLevel: 50\nEVs: 8 HP / 10 Atk / 14 Def / 18 SpA / 7 SpD / 9 Spe\nModest Nature\n- sludgebomb\n- electroweb\n- mudshot\n- earthquake\n\nampharos (M) @ aerodactylite\nAbility: static\nLevel: 50\nEVs: 13 HP / 6 Atk / 8 Def / 11 SpA / 7 SpD / 12 Spe\nMild Nature\n- discharge\n- agility\n- roar\n- stompingtantrum\n\nzoroark (F) @ mentalherb\nAbility: illusion\nLevel: 50\nEVs: 3 HP / 3 Def / 4 SpA / 3 SpD / 1 Spe\nSerious Nature\n- imprison\n- throatchop\n- megakick\n- foulplay\n\nmausholdfour @ meganiumite\nAbility: friendguard\nLevel: 50\nEVs: 11 HP / 11 Atk / 13 Def / 15 SpA / 9 SpD / 7 Spe\nNaive Nature\n- followme\n- thunderwave\n- uturn\n- agility"
+  ],
+  "choices": [
+    {
+      "p1": "team 5136",
+      "p2": "team 3524"
+    },
+    {
+      "p1": "move 1, move 2 -1",
+      "p2": "switch 3, move 2 2"
+    },
+    {
+      "p1": "move 2 2, move 1 1",
+      "p2": "switch 3, move 1"
+    },
+    {
+      "p1": "move 4 1, move 3 1",
+      "p2": "move 4, move 2 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 3, switch 4"
+    },
+    {
+      "p1": "move 3 -2, move 3 1",
+      "p2": "move 3, switch 4"
+    },
+    {
+      "p1": "move 2 1, move 1",
+      "p2": "move 1 -2, move 1"
+    },
+    {
+      "p1": "move 4 2, move 3 -1",
+      "p2": "move 1 2, move 4 1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 -2, move 1 2",
+      "p2": "move 4 -2, move 4 1"
+    },
+    {
+      "p1": "switch 4, move 3 1",
+      "p2": "move 4 1, pass"
+    }
+  ]
+}

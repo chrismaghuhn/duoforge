@@ -1,0 +1,5016 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "fz556_mental_herb_illusion.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,c3d162d44acf4afa1e411a6f7206436e06956fc4c7da0252fe79e363de8f0cb0",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Beartic, L50, F|",
+   "|poke|p1|Spiritomb, L50, M|",
+   "|poke|p1|Aerodactyl, L50, F|",
+   "|poke|p1|Pangoro, L50, F|",
+   "|poke|p1|Garbodor, L50, F|",
+   "|poke|p1|Orthworm, L50, M|",
+   "|poke|p2|Toxtricity-Low-Key, L50, F|",
+   "|poke|p2|Lycanroc-Midnight, L50, M|",
+   "|poke|p2|Stunfisk, L50, F|",
+   "|poke|p2|Ampharos, L50, M|",
+   "|poke|p2|Zoroark, L50, F|",
+   "|poke|p2|Maushold-Four, L50|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Beartic",
+       "set_species": "Beartic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "cobaberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        8,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Spiritomb",
+       "set_species": "Spiritomb",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 135,
+       "maxhp": 135,
+       "item": "lightclay",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Aerodactyl",
+       "set_species": "Aerodactyl",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 161,
+       "maxhp": 161,
+       "item": "absolitez",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        8,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Pangoro",
+       "set_species": "Pangoro",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 173,
+       "maxhp": 173,
+       "item": "fairyfeather",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Garbodor",
+       "set_species": "Garbodor",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "aggronite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        12,
+        12,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Orthworm",
+       "set_species": "Orthworm",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 156,
+       "maxhp": 156,
+       "item": "excadrite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        12,
+        16,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Toxtricity-Low-Key",
+       "set_species": "Toxtricity-Low-Key",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 159,
+       "maxhp": 159,
+       "item": "airballoon",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Lycanroc-Midnight",
+       "set_species": "Lycanroc-Midnight",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 168,
+       "maxhp": 168,
+       "item": "brightpowder",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        8,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Stunfisk",
+       "set_species": "Stunfisk",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 192,
+       "maxhp": 192,
+       "item": "dragonfang",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ampharos",
+       "set_species": "Ampharos",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 178,
+       "maxhp": 178,
+       "item": "aerodactylite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        20,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Zoroark",
+       "set_species": "Zoroark",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 138,
+       "maxhp": 138,
+       "item": "mentalherb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Maushold-Four",
+       "set_species": "Maushold-Four",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 160,
+       "maxhp": 160,
+       "item": "meganiumite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 5136",
+    "p2": "team 3524"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Garbodor|Garbodor, L50, F|172/172",
+    "|switch|p1a: Garbodor|Garbodor, L50, F|100/100",
+    "|split|p1",
+    "|switch|p1b: Beartic|Beartic, L50, F|177/177",
+    "|switch|p1b: Beartic|Beartic, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2a: Stunfisk|Stunfisk, L50, F|192/192",
+    "|switch|p2a: Stunfisk|Stunfisk, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2b: Ampharos|Ampharos, L50, M|138/138",
+    "|switch|p2b: Ampharos|Ampharos, L50, M|100/100",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 138,
+        "maxhp": 138,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 168,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 178,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 2 -1",
+    "p2": "switch 3, move 2 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 16
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 55
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Lycanroc|Lycanroc-Midnight, L50, M|168/168",
+    "|switch|p2a: Lycanroc|Lycanroc-Midnight, L50, M|100/100",
+    "|move|p2b: Ampharos|Throat Chop|p1b: Beartic",
+    "|split|p1",
+    "|-damage|p1b: Beartic|123/177",
+    "|-damage|p1b: Beartic|69/100",
+    "|-start|p1b: Beartic|Throat Chop|[silent]",
+    "|move|p1a: Garbodor|Spikes|p2b: Ampharos",
+    "|-sidestart|p2: p2|Spikes",
+    "|move|p1b: Beartic|Shadow Claw|p1a: Garbodor",
+    "|-crit|p1a: Garbodor",
+    "|split|p1",
+    "|-damage|p1a: Garbodor|110/172",
+    "|-damage|p1a: Garbodor|63/100",
+    "|-ability|p1a: Garbodor|Weak Armor|boost",
+    "|-unboost|p1a: Garbodor|def|1",
+    "|-boost|p1a: Garbodor|spe|2",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 123,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         15,
+         8,
+         8
+        ],
+        "volatiles": [
+         "throatchop"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 168,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 138,
+        "maxhp": 138,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 178,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 1 1",
+    "p2": "switch 3, move 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 53
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 29
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Stunfisk|Stunfisk, L50, F|192/192",
+    "|switch|p2a: Stunfisk|Stunfisk, L50, F|100/100",
+    "|split|p2",
+    "|-damage|p2a: Stunfisk|168/192|[from] Spikes",
+    "|-damage|p2a: Stunfisk|87/100|[from] Spikes",
+    "|move|p1a: Garbodor|Sludge Bomb|p2b: Ampharos",
+    "|split|p2",
+    "|-damage|p2b: Ampharos|77/138",
+    "|-damage|p2b: Ampharos|55/100",
+    "|replace|p2b: Zoroark|Zoroark, L50, F",
+    "|-end|p2b: Zoroark|Illusion",
+    "|move|p2b: Zoroark|Imprison|p2b: Zoroark",
+    "|-start|p2b: Zoroark|move: Imprison",
+    "|move|p1b: Beartic|Low Kick|p2a: Stunfisk",
+    "|split|p2",
+    "|-damage|p2a: Stunfisk|146/192",
+    "|-damage|p2a: Stunfisk|76/100",
+    "|-end|p1b: Beartic|Throat Chop|[silent]",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         11,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 123,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         15,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 146,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 138,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         15,
+         8,
+         16
+        ],
+        "volatiles": [
+         "imprison"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 168,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 178,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 1, move 3 1",
+    "p2": "move 4, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 99
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 38
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 36
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p1a: Garbodor|Cross Poison|p2a: Stunfisk",
+    "|-resisted|p2a: Stunfisk|1",
+    "|split|p2",
+    "|-damage|p2a: Stunfisk|123/192",
+    "|-damage|p2a: Stunfisk|64/100",
+    "|move|p2b: Zoroark|Throat Chop|p2a: Stunfisk",
+    "|split|p2",
+    "|-damage|p2a: Stunfisk|68/192",
+    "|-damage|p2a: Stunfisk|35/100",
+    "|-start|p2a: Stunfisk|Throat Chop|[silent]",
+    "|move|p1b: Beartic|Giga Impact|p2a: Stunfisk",
+    "|split|p2",
+    "|-damage|p2a: Stunfisk|0 fnt",
+    "|-damage|p2a: Stunfisk|0 fnt",
+    "|-mustrecharge|p1b: Beartic",
+    "|faint|p2a: Stunfisk",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 123,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         15,
+         7,
+         8
+        ],
+        "volatiles": [
+         "mustrecharge"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 138,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [
+         "imprison"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 168,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 178,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Lycanroc|Lycanroc-Midnight, L50, M|168/168",
+    "|switch|p2a: Lycanroc|Lycanroc-Midnight, L50, M|100/100",
+    "|split|p2",
+    "|-damage|p2a: Lycanroc|147/168|[from] Spikes",
+    "|-damage|p2a: Lycanroc|87/100|[from] Spikes",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 123,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         15,
+         7,
+         8
+        ],
+        "volatiles": [
+         "mustrecharge"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 147,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 138,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [
+         "imprison"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 178,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1",
+    "p2": "move 3, switch 4"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:undefined",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Ampharos|Ampharos, L50, M|178/178",
+    "|switch|p2b: Ampharos|Ampharos, L50, M|100/100",
+    "|split|p2",
+    "|-damage|p2b: Ampharos|156/178|[from] Spikes",
+    "|-damage|p2b: Ampharos|87/100|[from] Spikes",
+    "|move|p1a: Garbodor|Spikes|p2a: Lycanroc",
+    "|-sidestart|p2: p2|Spikes",
+    "|move|p2a: Lycanroc|Swords Dance|p2a: Lycanroc",
+    "|-boost|p2a: Lycanroc|atk|2",
+    "|cant|p1b: Beartic|recharge",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 123,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         15,
+         7,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        2
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 147,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 138,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 -2, move 3 1",
+    "p2": "move 3, switch 4"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 11
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Ampharos|Ampharos, L50, M|77/138",
+    "|switch|p2b: Ampharos|Ampharos, L50, M|55/100",
+    "|split|p2",
+    "|-damage|p2b: Ampharos|54/138|[from] Spikes",
+    "|-damage|p2b: Ampharos|39/100|[from] Spikes",
+    "|move|p1a: Garbodor|Body Press|p1b: Beartic",
+    "|-supereffective|p1b: Beartic|1",
+    "|split|p1",
+    "|-damage|p1b: Beartic|79/177",
+    "|-damage|p1b: Beartic|44/100",
+    "|move|p2a: Lycanroc|Swords Dance|p2a: Lycanroc",
+    "|-boost|p2a: Lycanroc|atk|2",
+    "|move|p1b: Beartic|Giga Impact|p2a: Lycanroc",
+    "|-resisted|p2a: Lycanroc|1",
+    "|split|p2",
+    "|-damage|p2a: Lycanroc|95/168",
+    "|-damage|p2a: Lycanroc|56/100",
+    "|-mustrecharge|p1b: Beartic",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 79,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         15,
+         6,
+         8
+        ],
+        "volatiles": [
+         "mustrecharge"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        2
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         4,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 54,
+        "maxhp": 138,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, move 1",
+    "p2": "move 1 -2, move 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 38
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:undefined",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|move|p1a: Garbodor|Sludge Bomb|p2a: Lycanroc",
+    "|-resisted|p2a: Lycanroc|1",
+    "|split|p2",
+    "|-damage|p2a: Lycanroc|71/168",
+    "|-damage|p2a: Lycanroc|42/100",
+    "|move|p2b: Ampharos|Imprison|p2b: Ampharos",
+    "|-start|p2b: Ampharos|move: Imprison",
+    "|move|p2a: Lycanroc|Taunt|p2b: Ampharos",
+    "|-start|p2b: Ampharos|move: Taunt",
+    "|-enditem|p2b: Ampharos|Mental Herb",
+    "|-end|p2b: Ampharos|move: Taunt",
+    "|cant|p1b: Beartic|recharge",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         10,
+         11,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 79,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         15,
+         6,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        2
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 71,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         4,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 54,
+        "maxhp": 138,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [
+         "imprison"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 2, move 3 -1",
+    "p2": "move 1 2, move 4 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 94
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 75
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 98
+    }
+   ],
+   "log": [
+    "|move|p1a: Garbodor|Cross Poison|p2b: Ampharos",
+    "|split|p2",
+    "|-damage|p2b: Ampharos|0 fnt",
+    "|-damage|p2b: Ampharos|0 fnt",
+    "|replace|p2b: Zoroark|Zoroark, L50, F",
+    "|-end|p2b: Zoroark|Illusion",
+    "|faint|p2b: Zoroark",
+    "|move|p2a: Lycanroc|Taunt|p1b: Beartic",
+    "|-start|p1b: Beartic|move: Taunt",
+    "|move|p1b: Beartic|Giga Impact|p1a: Garbodor|[miss]",
+    "|-miss|p1b: Beartic|p1a: Garbodor",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         10,
+         11,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 79,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         15,
+         5,
+         8
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        2
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 71,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         4,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         8,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 138,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Ampharos|Ampharos, L50, M|156/178",
+    "|switch|p2b: Ampharos|Ampharos, L50, M|87/100",
+    "|split|p2",
+    "|-damage|p2b: Ampharos|127/178|[from] Spikes",
+    "|-damage|p2b: Ampharos|71/100|[from] Spikes",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         10,
+         11,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 79,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         15,
+         5,
+         8
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        2
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 71,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         4,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         8,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 127,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 138,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, move 1 2",
+    "p2": "move 4 -2, move 4 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 57
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 39
+    },
+    {
+     "site": "STATIC",
+     "context": "DamagingHit",
+     "lo": 0,
+     "hi": 10,
+     "value": 3
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "STATIC",
+     "context": "DamagingHit",
+     "lo": 0,
+     "hi": 10,
+     "value": 9
+    }
+   ],
+   "log": [
+    "|move|p1a: Garbodor|Sludge Bomb|p1b: Beartic",
+    "|-crit|p1b: Beartic",
+    "|split|p1",
+    "|-damage|p1b: Beartic|13/177",
+    "|-damage|p1b: Beartic|7/100",
+    "|move|p2a: Lycanroc|Trailblaze|p2b: Ampharos",
+    "|split|p2",
+    "|-damage|p2b: Ampharos|26/178",
+    "|-damage|p2b: Ampharos|14/100",
+    "|-boost|p2a: Lycanroc|spe|1",
+    "|move|p1b: Beartic|Low Kick|p2b: Ampharos",
+    "|split|p2",
+    "|-damage|p2b: Ampharos|0 fnt",
+    "|-damage|p2b: Ampharos|0 fnt",
+    "|faint|p2b: Ampharos",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         9,
+         11,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 13,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         15,
+         5,
+         8
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        2
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 71,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         4,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         8,
+         18,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 138,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 4, move 3 1",
+    "p2": "move 4 1, pass"
+   },
+   "draws": [
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Orthworm|Orthworm, L50, M|156/156",
+    "|switch|p1a: Orthworm|Orthworm, L50, M|100/100",
+    "|move|p2a: Lycanroc|Trailblaze|p1a: Orthworm",
+    "|-resisted|p1a: Orthworm|1",
+    "|split|p1",
+    "|-damage|p1a: Orthworm|131/156",
+    "|-damage|p1a: Orthworm|83/100",
+    "|-boost|p2a: Lycanroc|spe|1",
+    "|move|p1b: Beartic|Giga Impact|p2a: Lycanroc",
+    "|-resisted|p2a: Lycanroc|1",
+    "|-crit|p2a: Lycanroc",
+    "|split|p2",
+    "|-damage|p2a: Lycanroc|0 fnt",
+    "|-damage|p2a: Lycanroc|0 fnt",
+    "|-mustrecharge|p1b: Beartic",
+    "|faint|p2a: Lycanroc",
+    "|win|p1"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": true,
+    "winner": "p1",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Orthworm",
+        "set_species": "Orthworm",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 156,
+        "item": "excadrite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beartic",
+        "set_species": "Beartic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 13,
+        "maxhp": 177,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         15,
+         4,
+         8
+        ],
+        "volatiles": [
+         "mustrecharge",
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aerodactyl",
+        "set_species": "Aerodactyl",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "absolitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Garbodor",
+        "set_species": "Garbodor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 110,
+        "maxhp": 172,
+        "item": "aggronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         9,
+         11,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        2
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Lycanroc-Midnight",
+        "set_species": "Lycanroc-Midnight",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 168,
+        "item": "brightpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         8,
+         18,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 178,
+        "item": "aerodactylite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Stunfisk",
+        "set_species": "Stunfisk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 192,
+        "item": "dragonfang",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Zoroark",
+        "set_species": "Zoroark",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 138,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         14,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,70 @@
+{
+  "name": "fz541_lock_epilogue_ally_switch",
+  "purpose": "Basculegion's Outrage lock (step 2) ends after Audino's Ally Switch moved it (step 3): the lock's countdown and the fatigue confusion belong to the Ally Switch user's queued action at its new slot; on main the engine ran the epilogue on the partner and stopped with E_INVARIANT at step 3 (issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_168_77), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,d326ca3c0f00dd73e85e7da159f461353fa711f5444df7000122a32ec536dd66",
+  "teams": [
+    "rillaboom (F) @ malamarite\nAbility: grassysurge\nLevel: 50\nEVs: 7 HP / 7 Atk / 10 Def / 16 SpA / 10 SpD / 16 Spe\nLonely Nature\n- leechseed\n- leafstorm\n- substitute\n- taunt\n\ngarchomp (M) @ meganiumite\nAbility: roughskin\nLevel: 50\nEVs: 3 HP / 3 Def / 1 SpA / 4 SpD / 5 Spe\nCareful Nature\n- stoneedge\n- brutalswing\n- stealthrock\n- mudshot\n\ndrampa (M) @ softsand\nAbility: cloudnine\nLevel: 50\nEVs: 14 HP / 7 Atk / 11 Def / 9 SpA / 12 SpD / 9 Spe\nCalm Nature\n- energyball\n- grassknot\n- substitute\n- blizzard\n\nweavile (F) @ floettite\nAbility: pressure\nLevel: 50\nEVs: 6 HP / 11 Atk / 9 Def / 6 SpA / 9 SpD / 10 Spe\nCareful Nature\n- iciclespear\n- substitute\n- shadowclaw\n- swordsdance\n\nbasculegion (M) @ lumberry\nAbility: swiftswim\nLevel: 50\nEVs: 14 HP / 10 Atk / 8 Def / 13 SpA / 8 SpD / 9 Spe\nRelaxed Nature\n- outrage\n- icebeam\n- headsmash\n- waterpulse\n\naudino (M) @ absolite\nAbility: regenerator\nLevel: 50\nEVs: 4 HP / 7 Atk / 8 Def / 6 SpA / 11 SpD / 3 Spe\nCareful Nature\n- substitute\n- stompingtantrum\n- allyswitch\n- icebeam",
+    "overqwil (F) @ galladite\nAbility: swiftswim\nLevel: 50\nEVs: 8 HP / 10 Atk / 13 Def / 9 SpA / 11 SpD / 15 Spe\nQuirky Nature\n- liquidation\n- sludgewave\n- scaryface\n- aquajet\n\nslurpuff (M) @ scolipite\nAbility: unburden\nLevel: 50\nEVs: 8 HP / 6 Atk / 12 Def / 16 SpA / 13 SpD / 11 Spe\nBold Nature\n- substitute\n- psychic\n- thief\n- raindance\n\nsylveon (F) @ mysticwater\nAbility: cutecharm\nLevel: 50\nEVs: 11 HP / 12 Atk / 12 Def / 9 SpA / 7 SpD / 15 Spe\nModest Nature\n- shadowball\n- alluringvoice\n- helpinghand\n- calmmind\n\naggron (F) @ yacheberry\nAbility: rockhead\nLevel: 50\nEVs: 9 HP / 12 Atk / 18 Def / 11 SpA / 6 SpD / 10 Spe\nBashful Nature\n- focusblast\n- shadowclaw\n- irondefense\n- surf\n\nindeedee (M) @ alakazite\nAbility: innerfocus\nLevel: 50\nEVs: 18 HP / 10 Atk / 8 Def / 13 SpA / 10 SpD / 7 Spe\nSerious Nature\n- trickroom\n- dazzlinggleam\n- playrough\n- expandingforce\n\npolteageist @ falinksite\nAbility: weakarmor\nLevel: 50\nEVs: 15 HP / 8 Atk / 8 Def / 11 SpA / 12 SpD / 12 Spe\nHardy Nature\n- curse\n- shellsmash\n- phantomforce\n- imprison"
+  ],
+  "choices": [
+    {
+      "p1": "team 6532",
+      "p2": "team 4315"
+    },
+    {
+      "p1": "move 2 -2, move 4 2",
+      "p2": "move 2 -2, move 2 2"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1 -2, move 1 -1"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p1": "move 3, move 3 2",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 -2, move 3 2",
+      "p2": "move 4, move 3 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 -2, move 4 2",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 1, move 4 1",
+      "p2": "move 4, move 1 2"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 1, move 3 2"
+    },
+    {
+      "p1": "move 1 2, move 4 1",
+      "p2": "move 4 -2, move 3 2"
+    },
+    {
+      "p1": "switch 3, move 4 2",
+      "p2": "move 3 1, pass"
+    },
+    {
+      "p1": "move 1 1, switch 3",
+      "p2": "move 1, pass"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "name": "fz541_notarget_two_turn",
+  "purpose": "After Mr. Mime's Ally Switch, Dragapult's Phantom Force aims at its own location and is [notarget] before TryMove (sim/battle-actions.ts:457-465), so it charges nothing; on main the engine charged and locked it (issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_410_72), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,9336a6951bb2feb7b50741bb4b83933548ecf8bcdcc1414c7e1095f78e4f098d",
+  "teams": [
+    "skarmory (M) @ smoothrock\nAbility: sturdy\nLevel: 50\nEVs: 11 HP / 10 Atk / 7 Def / 14 SpA / 8 SpD / 16 Spe\nHasty Nature\n- sandstorm\n- tailwind\n- roost\n- sandtomb\n\navalugghisui (F) @ absolite\nAbility: sturdy\nLevel: 50\nEVs: 11 HP / 10 Atk / 8 Def / 13 SpA / 8 SpD / 16 Spe\nModest Nature\n- blizzard\n- sandstorm\n- stoneedge\n- scaryface\n\ngarganacl (F) @ leek\nAbility: sturdy\nLevel: 50\nEVs: 9 HP / 16 Atk / 9 Def / 5 SpA / 12 SpD / 13 Spe\nBrave Nature\n- hyperbeam\n- stealthrock\n- helpinghand\n- sunnyday\n\ndragapult (F)\nAbility: clearbody\nLevel: 50\nEVs: 9 HP / 12 Atk / 11 Def / 10 SpA / 15 SpD / 9 Spe\nLonely Nature\n- curse\n- phantomforce\n- dragondance\n- dragoncheer\n\ninteleon (F) @ sablenite\nAbility: sniper\nLevel: 50\nEVs: 13 HP / 12 Atk / 11 Def / 6 SpA / 7 SpD / 17 Spe\nNaughty Nature\n- surf\n- taunt\n- flipturn\n- iceshard\n\nmrmime (F) @ choicescarf\nAbility: filter\nLevel: 50\nEVs: 13 HP / 8 Atk / 14 Def / 15 SpA / 7 SpD / 9 Spe\nAdamant Nature\n- fakeout\n- allyswitch\n- hyperbeam\n- thunderpunch",
+    "slowbro (F) @ mawilite\nAbility: regenerator\nLevel: 50\nEVs: 11 HP / 10 Atk / 13 Def / 8 SpA / 7 SpD / 17 Spe\nHardy Nature\n- raindance\n- snowscape\n- irontail\n- substitute\n\nsharpedo (F) @ scopelens\nAbility: speedboost\nLevel: 50\nEVs: 12 HP / 10 Atk / 5 Def / 16 SpA / 11 SpD / 12 Spe\nModest Nature\n- earthquake\n- ancientpower\n- screech\n- scald\n\noverqwil (M) @ babiriberry\nAbility: intimidate\nLevel: 50\nEVs: 14 HP / 9 Atk / 10 Def / 7 SpA / 7 SpD / 3 Spe\nSerious Nature\n- icywind\n- protect\n- aquajet\n- scaryface\n\ngarchomp (M) @ icyrock\nAbility: roughskin\nLevel: 50\nEVs: 1 Atk / 1 Def / 1 SpA / 1 SpD\nJolly Nature\n- sandtomb\n- stompingtantrum\n- flamethrower\n- brickbreak\n\npangoro (M) @ clefablite\nAbility: ironfist\nLevel: 50\nEVs: 10 HP / 9 Atk / 15 Def / 10 SpA / 12 SpD / 10 Spe\nQuirky Nature\n- dragonclaw\n- bodyslam\n- firepunch\n- gunkshot\n\nmawile (F) @ payapaberry\nAbility: hypercutter\nLevel: 50\nEVs: 15 HP / 9 Atk / 9 Def / 7 SpA / 12 SpD / 14 Spe\nQuirky Nature\n- poisonfang\n- rockslide\n- gigaimpact\n- knockoff"
+  ],
+  "choices": [
+    {
+      "p1": "team 4613",
+      "p2": "team 5264"
+    },
+    {
+      "p1": "move 4 -2, move 2",
+      "p2": "move 3 1, switch 3"
+    },
+    {
+      "p1": "move 2, move 2 -1",
+      "p2": "move 4 1, move 2"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 3 2, move 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 2 -2, move 1 1"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1 2, move 2"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 1 1, move 3 2"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2 -2, move 3 2"
+    },
+    {
+      "p1": "move 4 -2, pass",
+      "p2": "move 2 2, move 1"
+    },
+    {
+      "p1": "move 4 2, pass",
+      "p2": "move 3 2, move 1 -1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 4 2, move 3 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 4 2, pass",
+      "p2": "move 1 2, move 2 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2 1, move 4 -1"
+    }
+  ]
+}

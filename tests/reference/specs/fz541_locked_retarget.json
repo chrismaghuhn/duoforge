@@ -1,0 +1,121 @@
+{
+  "name": "fz541_locked_retarget",
+  "purpose": "Glimmora charges Solar Beam aimed at its partner's location (step 26), then Musharna's Ally Switch puts Glimmora on that location (step 27): validTargetLoc refuses the user's own location, so the locked turn draws a random foe (sim/battle.ts:2399-2431); on main the tape was not consumed exactly at step 27 (issue 541). A battle of the differential fuzzing of issue 396 (free random sets, fz_303_30), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,b51daa377ffe3c0eee0e399f18004bd987d631b7c2983e0061bd8f6fd061e26f",
+  "teams": [
+    "musharna (M) @ airballoon\nAbility: telepathy\nLevel: 50\nEVs: 18 HP / 6 Atk / 4 Def / 12 SpA / 10 SpD / 11 Spe\nSassy Nature\n- yawn\n- lightscreen\n- hypnosis\n- allyswitch\n\nbeedrill (F) @ beedrillite\nAbility: sniper\nLevel: 50\nEVs: 9 HP / 8 Atk / 15 Def / 8 SpA / 10 SpD / 16 Spe\nQuiet Nature\n- crosspoison\n- throatchop\n- endeavor\n- doubleedge\n\nscrafty (M) @ scraftinite\nAbility: moxie\nLevel: 50\nEVs: 10 HP / 10 Atk / 6 Def / 15 SpA / 12 SpD / 13 Spe\nGentle Nature\n- megakick\n- endeavor\n- protect\n- grassknot\n\nferaligatr (M) @ kasibberry\nAbility: torrent\nLevel: 50\nEVs: 6 HP / 17 Atk / 7 Def / 7 SpA / 12 SpD / 17 Spe\nImpish Nature\n- swordsdance\n- focusblast\n- faketears\n- doubleedge\n\nslowbrogalar (F) @ wiseglasses\nAbility: regenerator\nLevel: 50\nEVs: 9 HP / 9 Atk / 14 Def / 11 SpA / 14 SpD / 9 Spe\nTimid Nature\n- haze\n- calmmind\n- muddywater\n- mudshot\n\nglimmora (F)\nAbility: toxicdebris\nLevel: 50\nEVs: 8 HP / 15 Atk / 11 Def / 12 SpA / 8 SpD / 12 Spe\nQuiet Nature\n- spikyshield\n- solarbeam\n- toxic\n- stoneedge",
+    "overqwil (M) @ baxcalibrite\nAbility: swiftswim\nLevel: 50\nEVs: 16 HP / 12 Atk / 19 Def / 6 SpA / 4 SpD / 9 Spe\nJolly Nature\n- crunch\n- gunkshot\n- hyperbeam\n- haze\n\naegislash (M) @ roseliberry\nAbility: stancechange\nLevel: 50\nEVs: 4 HP / 1 Atk / 1 Def / 1 SpA / 4 SpD / 4 Spe\nImpish Nature\n- sacredsword\n- nightslash\n- destinybond\n- poltergeist\n\nexcadrill (F) @ excadrite\nAbility: sandforce\nLevel: 50\nEVs: 6 HP / 9 Atk / 12 Def / 6 SpA / 8 SpD / 6 Spe\nBashful Nature\n- substitute\n- fissure\n- sunnyday\n- metalsound\n\nvictreebel (F) @ payapaberry\nAbility: chlorophyll\nLevel: 50\nEVs: 5 HP / 2 Atk / 3 SpD / 1 Spe\nHardy Nature\n- strengthsap\n- tickle\n- toxicspikes\n- suckerpunch\n\nespathra (F) @ mysticwater\nAbility: frisk\nLevel: 50\nEVs: 9 HP / 14 Atk / 12 Def / 11 SpA / 13 SpD / 7 Spe\nQuiet Nature\n- pounce\n- bodyslam\n- mudslap\n- drillpeck\n\nvileplume (M) @ pinsirite\nAbility: chlorophyll\nLevel: 50\nEVs: 4 HP / 6 Atk / 6 Def / 8 SpA / 5 SpD / 8 Spe\nMild Nature\n- gigaimpact\n- sludgebomb\n- afteryou\n- sludgewave"
+  ],
+  "choices": [
+    {
+      "p1": "team 6412",
+      "p2": "team 1534"
+    },
+    {
+      "p1": "move 4 2, move 4 2",
+      "p2": "move 3 1, switch 3"
+    },
+    {
+      "p1": "move 4 -2, move 2 2",
+      "p2": "move 1, move 2 -1 mega"
+    },
+    {
+      "p1": "move 3 -2, move 4 -1",
+      "p2": "switch 4, move 3"
+    },
+    {
+      "p1": "move 2 -2, move 1",
+      "p2": "move 1 2, move 4 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 1, move 4 2",
+      "p2": "move 2 -2, move 4 2"
+    },
+    {
+      "p1": "move 2 1, move 1 2",
+      "p2": "move 4 -2, move 4 2"
+    },
+    {
+      "p1": "move 3 -2, move 1 1",
+      "p2": "move 1 -2, switch 3"
+    },
+    {
+      "p1": "move 1, move 3 -1 mega",
+      "p2": "move 3, move 1 1"
+    },
+    {
+      "p1": "move 3 -2, move 1 2",
+      "p2": "move 3, switch 4"
+    },
+    {
+      "p1": "switch 3, move 3 1",
+      "p2": "move 4 1, move 1 2"
+    },
+    {
+      "p1": "move 1 1, move 1 1",
+      "p2": "move 2 1, move 4"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "switch 3, move 4 2",
+      "p2": "move 3, move 2 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4 1, move 3 1",
+      "p2": "move 1, move 2 2"
+    },
+    {
+      "p1": "move 1, move 3 1",
+      "p2": "move 3, switch 4"
+    },
+    {
+      "p1": "move 4 1, move 3 -1",
+      "p2": "move 3, move 3 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 -2, move 1 1",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 3 -2, pass"
+    },
+    {
+      "p1": "move 4 2, move 2",
+      "p2": "move 3 -2, pass"
+    },
+    {
+      "p1": "move 4 2, move 1 1",
+      "p2": "move 4, pass"
+    },
+    {
+      "p1": "move 3 1, move 4",
+      "p2": "move 3 2, pass"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 1 2, move 2 -1",
+      "p2": "move 1 2, pass"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 4, pass"
+    }
+  ]
+}
