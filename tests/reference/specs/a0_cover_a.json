@@ -1,6 +1,6 @@
 {
   "name": "a0_cover_a",
-  "purpose": "A0 part 2 (decision 0015 entry 5co, the twelve entries): a PASS battle of the random differential campaign of run 35001 (diff_driver.py random, seed 35001, pairings DE and ED, teams D and E of the A0 part 2 branch, 600 battles, all PASS). It shows Aromatic Mist, Bite, Crabhammer, Crush Claw, Double Team, Dragon Rush, Sweet Kiss and Tearful Look used with their effects.",
+  "purpose": "A0 part 2 (decision 0015 entry 5dr, the twelve entries): a PASS battle of the random differential campaign of run 35001 (diff_driver.py random, seed 35001, pairings DE and ED, teams D and E of the A0 part 2 branch, 600 battles, all PASS). It shows Aromatic Mist, Bite, Crabhammer, Crush Claw, Double Team, Dragon Rush, Sweet Kiss and Tearful Look used with their effects.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,65bf9c1fe137972b172d6c23f55aeec3a2a88876ad65654b1c2c2f9f6298b232",
