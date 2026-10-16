@@ -2,7 +2,7 @@
 #define DUOFORGE_COMBAT_FLOW_SWITCH_H
 
 /* Private flow implementation (restructure step 4, flow): move and switch actions: running a move action, switching,
- * Revival Blessing, Baton Pass, Illusion. Split from src/combat/turn.c@4d4bebf8; included by turn.c where the code
+ * Revival Blessing, Baton Pass, Illusion. Split from src/combat/turn.c@c02189e7; included by turn.c where the code
  * stood, so its dependencies and the turn order are unchanged. */
 #include "combat/run_internal.h"
 

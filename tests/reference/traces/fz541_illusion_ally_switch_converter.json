@@ -1,0 +1,6951 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "fz541_illusion_ally_switch_converter.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,f57a98f22e6a644bdb8da981e299fd6330b6718246201c6b97a3f70de441d583",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Farigiraf, L50, F|",
+   "|poke|p1|Rotom, L50|",
+   "|poke|p1|Houndstone, L50, F|",
+   "|poke|p1|Charizard, L50, F|",
+   "|poke|p1|Zoroark, L50, F|",
+   "|poke|p1|Ampharos, L50, F|",
+   "|poke|p2|Conkeldurr, L50, F|",
+   "|poke|p2|Golurk, L50|",
+   "|poke|p2|Gallade, L50, M|",
+   "|poke|p2|Dragonite, L50, F|",
+   "|poke|p2|Serperior, L50, M|",
+   "|poke|p2|Delphox, L50, F|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Farigiraf",
+       "set_species": "Farigiraf",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 197,
+       "maxhp": 197,
+       "item": "nevermeltice",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Rotom",
+       "set_species": "Rotom",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 133,
+       "maxhp": 133,
+       "item": "hawluchanite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        20,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Houndstone",
+       "set_species": "Houndstone",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 150,
+       "maxhp": 150,
+       "item": "widelens",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 161,
+       "maxhp": 161,
+       "item": "silverpowder",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Zoroark",
+       "set_species": "Zoroark",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 148,
+       "maxhp": 148,
+       "item": "houndoominite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ampharos",
+       "set_species": "Ampharos",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "damprock",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        16,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Conkeldurr",
+       "set_species": "Conkeldurr",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 180,
+       "maxhp": 180,
+       "item": "blastoisinite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        16,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Golurk",
+       "set_species": "Golurk",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 174,
+       "maxhp": 174,
+       "item": "terrainextender",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        20,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gallade",
+       "set_species": "Gallade",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 154,
+       "maxhp": 154,
+       "item": "focussash",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        12,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Dragonite",
+       "set_species": "Dragonite",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "dragoninite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        12,
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Serperior",
+       "set_species": "Serperior",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 160,
+       "maxhp": 160,
+       "item": "charcoal",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        20,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Delphox",
+       "set_species": "Delphox",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 165,
+       "maxhp": 165,
+       "item": "kebiaberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 3142",
+    "p2": "team 5423"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Houndstone|Houndstone, L50, F|150/150",
+    "|switch|p1a: Houndstone|Houndstone, L50, F|100/100",
+    "|split|p1",
+    "|switch|p1b: Farigiraf|Farigiraf, L50, F|197/197",
+    "|switch|p1b: Farigiraf|Farigiraf, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2a: Serperior|Serperior, L50, M|160/160",
+    "|switch|p2a: Serperior|Serperior, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Dragonite|Dragonite, L50, F|172/172",
+    "|switch|p2b: Dragonite|Dragonite, L50, F|100/100",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 150,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 133,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 160,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite",
+        "set_species": "Dragonite",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 154,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, switch 3",
+    "p2": "move 1 -2, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 5
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 48
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Charizard|Charizard, L50, F|161/161",
+    "|switch|p1b: Charizard|Charizard, L50, F|100/100",
+    "|move|p1a: Houndstone|Ally Switch|p1a: Houndstone",
+    "|swap|p1a: Houndstone|1|[from] move: Ally Switch",
+    "|move|p2b: Dragonite|Aqua Jet|p1b: Houndstone",
+    "|split|p1",
+    "|-damage|p1b: Houndstone|126/150",
+    "|-damage|p1b: Houndstone|84/100",
+    "|move|p2a: Serperior|Giga Impact|p2b: Dragonite",
+    "|split|p2",
+    "|-damage|p2b: Dragonite|118/172",
+    "|-damage|p2b: Dragonite|68/100",
+    "|-mustrecharge|p2a: Serperior",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 126,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [
+         "allyswitch"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 133,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 160,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [
+         "mustrecharge"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Dragonite",
+        "set_species": "Dragonite",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 118,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 154,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 2, move 1 2",
+    "p2": "move 1, move 4 1 mega"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:undefined",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 96
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 67
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    }
+   ],
+   "log": [
+    "|detailschange|p2b: Dragonite|Dragonite-Mega, L50, F",
+    "|-mega|p2b: Dragonite|Dragonite|Dragoninite",
+    "|cant|p2a: Serperior|recharge",
+    "|move|p2b: Dragonite|Ice Spinner|p1a: Charizard",
+    "|split|p1",
+    "|-damage|p1a: Charizard|111/161",
+    "|-damage|p1a: Charizard|68/100",
+    "|move|p1a: Charizard|Hyper Beam|p2b: Dragonite|[miss]",
+    "|-miss|p1a: Charizard|p2b: Dragonite",
+    "|move|p1b: Houndstone|Thief|p2b: Dragonite",
+    "|split|p2",
+    "|-damage|p2b: Dragonite|95/172",
+    "|-damage|p2b: Dragonite|55/100",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 111,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 126,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 133,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 160,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         12,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 154,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1 -1",
+    "p2": "move 2 2, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:randomNormal",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 53
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "LOCK_TURNS",
+     "context": "Start",
+     "lo": 2,
+     "hi": 4,
+     "value": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 19
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 4
+    }
+   ],
+   "log": [
+    "|move|p2a: Serperior|Grassy Glide|p1b: Houndstone",
+    "|split|p1",
+    "|-damage|p1b: Houndstone|96/150",
+    "|-damage|p1b: Houndstone|64/100",
+    "|move|p2b: Dragonite|Outrage|p1b: Houndstone",
+    "|split|p1",
+    "|-damage|p1b: Houndstone|0 fnt",
+    "|-damage|p1b: Houndstone|0 fnt",
+    "|faint|p1b: Houndstone",
+    "|move|p1a: Charizard|Crunch|p2a: Serperior",
+    "|split|p2",
+    "|-damage|p2a: Serperior|131/160",
+    "|-damage|p2a: Serperior|81/100",
+    "|-unboost|p2a: Serperior|def|1",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 111,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 133,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         11,
+         8,
+         15
+        ],
+        "volatiles": [
+         "lockedmove"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 154,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Rotom|Rotom, L50|133/133",
+    "|switch|p1b: Rotom|Rotom, L50|100/100",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 111,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 133,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         11,
+         8,
+         15
+        ],
+        "volatiles": [
+         "lockedmove"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 154,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 1, move 2 -1",
+    "p2": "move 3 2, move 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:randomNormal",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 60
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "CONFUSION_TURNS",
+     "context": "Start",
+     "lo": 2,
+     "hi": 6,
+     "value": 5
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 64
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "DRAG",
+     "context": "",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p2a: Serperior|Taunt|p1b: Rotom",
+    "|-start|p1b: Rotom|move: Taunt",
+    "|move|p2b: Dragonite|Outrage|p1b: Rotom|[from] lockedmove",
+    "|split|p1",
+    "|-damage|p1b: Rotom|21/133",
+    "|-damage|p1b: Rotom|15/100",
+    "|-start|p2b: Dragonite|confusion|[fatigue]",
+    "|move|p1b: Rotom|Foul Play|p1a: Charizard",
+    "|split|p1",
+    "|-damage|p1a: Charizard|68/161",
+    "|-damage|p1a: Charizard|42/100",
+    "|move|p1a: Charizard|Roar|p2a: Serperior",
+    "|split|p2",
+    "|drag|p2a: Gallade|Gallade, L50, M|154/154",
+    "|drag|p2a: Gallade|Gallade, L50, M|100/100",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        0,
+        1,
+        0,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 68,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         7,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 21,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 154,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 5,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         11,
+         8,
+         15
+        ],
+        "volatiles": [
+         "confusion"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, move 2 2",
+    "p2": "move 3 2, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:randomNormal",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 100,
+     "value": 43
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 79
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "LOCK_TURNS",
+     "context": "Start",
+     "lo": 2,
+     "hi": 4,
+     "value": 3
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:any",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 78
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 2
+    }
+   ],
+   "log": [
+    "|-activate|p2b: Dragonite|confusion",
+    "|move|p2b: Dragonite|Outrage|p1b: Rotom",
+    "|split|p1",
+    "|-damage|p1b: Rotom|0 fnt",
+    "|-damage|p1b: Rotom|0 fnt",
+    "|faint|p1b: Rotom",
+    "|move|p2a: Gallade|Heal Pulse|p1a: Charizard",
+    "|split|p1",
+    "|-heal|p1a: Charizard|149/161",
+    "|-heal|p1a: Charizard|92/100",
+    "|move|p1a: Charizard|Body Slam|p2a: Gallade",
+    "|split|p2",
+    "|-damage|p2a: Gallade|115/154",
+    "|-damage|p2a: Gallade|74/100",
+    "|-status|p2a: Gallade|par",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 149,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         15,
+         7,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 115,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         11,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 4,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [
+         "confusion",
+         "lockedmove"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 3"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Farigiraf|Farigiraf, L50, F|197/197",
+    "|switch|p1b: Farigiraf|Farigiraf, L50, F|100/100",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 149,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         15,
+         7,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 197,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 115,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         11,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 4,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [
+         "confusion",
+         "lockedmove"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 2, move 2 2",
+    "p2": "move 3 2, move 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:randomNormal",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 100,
+     "value": 42
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 78
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:any",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 2
+    },
+    {
+     "site": "DRAG",
+     "context": "",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|-activate|p2b: Dragonite|confusion",
+    "|move|p2b: Dragonite|Outrage|p1b: Farigiraf|[from] lockedmove",
+    "|-crit|p1b: Farigiraf",
+    "|split|p1",
+    "|-damage|p1b: Farigiraf|0 fnt",
+    "|-damage|p1b: Farigiraf|0 fnt",
+    "|faint|p1b: Farigiraf",
+    "|move|p2a: Gallade|Heal Pulse|p1a: Charizard",
+    "|split|p1",
+    "|-heal|p1a: Charizard|161/161",
+    "|-heal|p1a: Charizard|100/100",
+    "|move|p1a: Charizard|Roar|p2b: Dragonite",
+    "|split|p2",
+    "|drag|p2b: Serperior|Serperior, L50, M|131/160",
+    "|drag|p2b: Serperior|Serperior, L50, M|81/100",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         15,
+         7,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 115,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         10,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         19,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 1, pass",
+    "p2": "move 3 2, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 61
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 23
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:any",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p2b: Serperior|Giga Impact|p1a: Charizard",
+    "|split|p1",
+    "|-damage|p1a: Charizard|99/161",
+    "|-damage|p1a: Charizard|61/100",
+    "|-mustrecharge|p2b: Serperior",
+    "|move|p1a: Charizard|Hyper Beam|p2a: Gallade",
+    "|split|p2",
+    "|-damage|p2a: Gallade|37/154 par",
+    "|-damage|p2a: Gallade|24/100 par",
+    "|-mustrecharge|p1a: Charizard",
+    "|move|p2a: Gallade|Heal Pulse|p1a: Charizard",
+    "|split|p1",
+    "|-heal|p1a: Charizard|161/161",
+    "|-heal|p1a: Charizard|100/100",
+    "|upkeep",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         15,
+         6,
+         18
+        ],
+        "volatiles": [
+         "mustrecharge"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 37,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         9,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         19,
+         19,
+         20
+        ],
+        "volatiles": [
+         "mustrecharge"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, pass",
+    "p2": "move 3 1, move 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:undefined",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:undefined",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|cant|p2b: Serperior|recharge",
+    "|cant|p1a: Charizard|recharge",
+    "|move|p2a: Gallade|Heal Pulse|p1a: Charizard",
+    "|-fail|p1a: Charizard|heal",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 161,
+        "item": "silverpowder",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         15,
+         6,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 37,
+        "maxhp": 154,
+        "item": "focussash",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 131,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         19,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2, pass",
+    "p2": "move 1 1, move 2 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 45
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 71
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 75
+    },
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 83
+    }
+   ],
+   "log": [
+    "|move|p2b: Serperior|Grassy Glide|p1a: Charizard",
+    "|-resisted|p1a: Charizard|2",
+    "|-crit|p1a: Charizard",
+    "|split|p1",
+    "|-damage|p1a: Charizard|149/161",
+    "|-damage|p1a: Charizard|92/100",
+    "|move|p1a: Charizard|Crunch|p2b: Serperior",
+    "|split|p2",
+    "|-damage|p2b: Serperior|102/160",
+    "|-damage|p2b: Serperior|63/100",
+    "|move|p2a: Gallade|Trick|p1a: Charizard",
+    "|-activate|p2a: Gallade|move: Trick|[of] p1a: Charizard",
+    "|-item|p1a: Charizard|Focus Sash|[from] move: Trick",
+    "|-item|p2a: Gallade|Silver Powder|[from] move: Trick",
+    "|upkeep",
+    "|turn|10"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 149,
+        "maxhp": 161,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         15,
+         6,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 37,
+        "maxhp": 154,
+        "item": "silverpowder",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         18,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 -2, pass",
+    "p2": "switch 3, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Golurk|Golurk, L50|174/174",
+    "|switch|p2a: Golurk|Golurk, L50|100/100",
+    "|move|p2b: Serperior|Grassy Glide|p2a: Golurk",
+    "|-supereffective|p2a: Golurk|1",
+    "|split|p2",
+    "|-damage|p2a: Golurk|108/174",
+    "|-damage|p2a: Golurk|62/100",
+    "|move|p1a: Charizard|Crunch|p1: Farigiraf|[notarget]",
+    "|-fail|p1a: Charizard",
+    "|upkeep",
+    "|turn|11"
+   ],
+   "state": {
+    "turn": 11,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 149,
+        "maxhp": 161,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         15,
+         6,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         17,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 37,
+        "maxhp": 154,
+        "item": "silverpowder",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 -2, pass",
+    "p2": "move 1 1, move 3 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 52
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 89
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 87
+    }
+   ],
+   "log": [
+    "|move|p2b: Serperior|Taunt|p2a: Golurk",
+    "|-start|p2a: Golurk|move: Taunt",
+    "|move|p2a: Golurk|Zen Headbutt|p1a: Charizard",
+    "|split|p1",
+    "|-damage|p1a: Charizard|109/161",
+    "|-damage|p1a: Charizard|67/100",
+    "|move|p1a: Charizard|Roar|p1: Farigiraf|[notarget]",
+    "|-fail|p1a: Charizard",
+    "|upkeep",
+    "|turn|12"
+   ],
+   "state": {
+    "turn": 12,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 109,
+        "maxhp": 161,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         15,
+         6,
+         17
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         12,
+         20,
+         16
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         17,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 37,
+        "maxhp": 154,
+        "item": "silverpowder",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, pass",
+    "p2": "move 4, switch 3"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 97
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Gallade|Gallade, L50, M|37/154 par",
+    "|switch|p2b: Gallade|Gallade, L50, M|24/100 par",
+    "|move|p1a: Charizard|Body Slam|p1: Farigiraf|[notarget]",
+    "|-fail|p1a: Charizard",
+    "|move|p2a: Golurk|Icy Wind|p1a: Charizard",
+    "|split|p1",
+    "|-damage|p1a: Charizard|91/161",
+    "|-damage|p1a: Charizard|56/100",
+    "|-unboost|p1a: Charizard|spe|1",
+    "|upkeep",
+    "|turn|13"
+   ],
+   "state": {
+    "turn": 13,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 91,
+        "maxhp": 161,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         14,
+         6,
+         17
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         12,
+         20,
+         15
+        ],
+        "volatiles": [
+         "taunt"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 37,
+        "maxhp": 154,
+        "item": "silverpowder",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         17,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 1, pass",
+    "p2": "move 1 2, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 23
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 12
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    },
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 7
+    },
+    {
+     "site": "DRAG",
+     "context": "",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p2a: Golurk|Zen Headbutt|p1a: Charizard",
+    "|split|p1",
+    "|-damage|p1a: Charizard|47/161",
+    "|-damage|p1a: Charizard|29/100",
+    "|move|p2b: Gallade|Substitute|p2b: Gallade",
+    "|-fail|p2b: Gallade|move: Substitute|[weak]",
+    "|move|p1a: Charizard|Roar|p2a: Golurk",
+    "|split|p2",
+    "|drag|p2a: Dragonite|Dragonite-Mega, L50, F|95/172",
+    "|drag|p2a: Dragonite|Dragonite-Mega, L50, F|55/100",
+    "|upkeep",
+    "|turn|14"
+   ],
+   "state": {
+    "turn": 14,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 47,
+        "maxhp": 161,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         14,
+         6,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 37,
+        "maxhp": 154,
+        "item": "silverpowder",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         11,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         17,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         12,
+         20,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, pass",
+    "p2": "move 4 2, move 4 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 38
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 12
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|move|p2a: Dragonite|Ice Spinner|p1a: Charizard",
+    "|split|p1",
+    "|-damage|p1a: Charizard|0 fnt",
+    "|-damage|p1a: Charizard|0 fnt",
+    "|faint|p1a: Charizard",
+    "|win|p2"
+   ],
+   "state": {
+    "turn": 14,
+    "ended": true,
+    "winner": "p2",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 161,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         14,
+         6,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Farigiraf",
+        "set_species": "Farigiraf",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 197,
+        "item": "nevermeltice",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rotom",
+        "set_species": "Rotom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 133,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         15,
+         20,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Houndstone",
+        "set_species": "Houndstone",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 150,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         16,
+         15,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Dragonite-Mega",
+        "set_species": "Dragonite",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 95,
+        "maxhp": 172,
+        "item": "dragoninite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         10,
+         8,
+         14
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gallade",
+        "set_species": "Gallade",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 37,
+        "maxhp": 154,
+        "item": "silverpowder",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         11,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Serperior",
+        "set_species": "Serperior",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 160,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         17,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golurk",
+        "set_species": "Golurk",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 174,
+        "item": "terrainextender",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         12,
+         20,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

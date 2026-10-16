@@ -366,6 +366,12 @@ class TrackerStopTest(unittest.TestCase):
         with self.assertRaises(lines.Stop) as caught:
             t._fold_event(other)
         self.assertEqual(caught.exception.reason, "leech-seed-drain-source")
+        # issue 541: an Ally Switch put the holder on its source's slot; the line names no source and it drains into itself
+        holder.leech_source = 4
+        t._fold_event(trace_to_c.ev_tuple(EV["DAMAGE"], 3, trace_to_c.NOPOS, CAUSE["LEECH_SEED"], hp=20, hp_kind=0))
+        holder.leech_source = 2
+        with self.assertRaises(lines.Stop):  # no [of] while the holder is not on the source's slot
+            t._fold_event(trace_to_c.ev_tuple(EV["DAMAGE"], 3, trace_to_c.NOPOS, CAUSE["LEECH_SEED"], hp=10, hp_kind=0))
         holder.reset()  # the occupant leaves or faints: the volatile goes with it
         self.assertEqual(holder.leech_source, 0)
         self.assertIn("leech_source", tracker._PASSED)  # Baton Pass copies it (no noCopy; dfi_pass_give)
@@ -1089,16 +1095,15 @@ class AllySwitchStateTest(unittest.TestCase):
         for name in tr._SWAP_MOVES:
             self.assertEqual((getattr(a, name), getattr(c, name)), values[name][::-1], name)
 
-    def test_the_slots_own_state_stays(self):
-        # Leech Seed's source slot (the drain goes to whoever stands there), the locked target (a slot location in the pin)
+    def test_the_seed_and_the_locked_target_move(self):
+        # issue 541: the seed is the seeded Pokemon's volatile and goes with it, its value (the source's slot) unchanged; the
+        # locked target goes with the locked action (Healing Wish's bit is the slot's own; a swap onto it is refused)
         a, c = self.at(0), self.at(1)
         a.leech_source, c.leech_source = 3, 0
         a.locked_target, c.locked_target = 2, 3
-        a.confused, c.confused = 1, 0  # a field that moves, for the contrast
         self.swap(0, 1)
-        self.assertEqual((a.leech_source, c.leech_source), (3, 0))
-        self.assertEqual((a.locked_target, c.locked_target), (2, 3))
-        self.assertEqual((a.confused, c.confused), (0, 1))
+        self.assertEqual((a.leech_source, c.leech_source), (0, 3))
+        self.assertEqual((a.locked_target, c.locked_target), (3, 2))
 
     def test_the_trap_source_of_every_position_follows_the_trapper(self):
         a, c, f0, f1 = self.at(0), self.at(1), self.at(2), self.at(3)
@@ -1147,7 +1152,7 @@ class AllySwitchStateTest(unittest.TestCase):
         a.leech_source, c.leech_source = 1, 2
         self.at(0).trap, self.at(0).trap_source = 1, 3  # our Pokemon at flat 0 is trapped by the foe at flat 2
         self.swap(2, 3)
-        self.assertEqual((a.taunt, c.taunt, a.leech_source, c.leech_source), (0, 3, 1, 2))
+        self.assertEqual((a.taunt, c.taunt, a.leech_source, c.leech_source), (0, 3, 2, 1))  # both go with their Pokemon
         self.assertEqual(self.at(0).trap_source, 4)
 
 

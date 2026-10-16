@@ -2,7 +2,7 @@
 #define DUOFORGE_COMBAT_FLOW_QUEUE_H
 
 /* Private flow implementation (restructure step 4, flow): the action queue: priority, Speed keys, sorting and the next
- * action. Split from src/combat/turn.c@4d4bebf8; included by turn.c where the code stood, so its dependencies and the
+ * action. Split from src/combat/turn.c@c02189e7; included by turn.c where the code stood, so its dependencies and the
  * turn order are unchanged. */
 #include "combat/run_internal.h"
 
@@ -227,9 +227,10 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
     uint32_t order = 0u;
     if (q->kind == DFI_Q_MOVE) {
         /* After You and Quash give a queued move its order (DFI_QRES_*, step G62); a plain move is class 200. */
-        order = q->reserve == DFI_QRES_PRIORITIZED   ? DFI_ORDER_PRIORITIZED
-                : q->reserve == DFI_QRES_QUASHED     ? DFI_ORDER_QUASHED
-                                                     : DFI_ORDER_MOVE;
+        const uint32_t cls = (uint32_t)q->reserve & DFI_QRES_ORDER_MASK;
+        order = cls == DFI_QRES_PRIORITIZED   ? DFI_ORDER_PRIORITIZED
+                : cls == DFI_QRES_QUASHED     ? DFI_ORDER_QUASHED
+                                              : DFI_ORDER_MOVE;
     } else if (q->kind == DFI_Q_SWITCH) {
         order = DFI_ORDER_SWITCH;
     } else if (q->kind == DFI_Q_SWITCH_IN) {

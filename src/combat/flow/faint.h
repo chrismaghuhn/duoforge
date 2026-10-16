@@ -2,10 +2,9 @@
 #define DUOFORGE_COMBAT_FLOW_FAINT_H
 
 /* Private flow implementation (restructure step 4, flow): win check and faint handling. Split from
- * src/combat/turn.c@4d4bebf8; included by turn.c where the code stood, so its dependencies and the turn order are
+ * src/combat/turn.c@c02189e7; included by turn.c where the code stood, so its dependencies and the turn order are
  * unchanged. */
 #include "combat/run_internal.h"
-
 
 /* checkWin (sim/battle.ts:404-415): a side with no Pokemon left loses; when
  * every side is out, the side whose Pokemon fainted last wins (generation 5

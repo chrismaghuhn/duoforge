@@ -284,31 +284,34 @@ class _Position:
 # list, so a field added to _Position has to be put on one of the two lists (AllySwitchStateTest). Everything in _SWAP_MOVES
 # belongs to the Pokemon and goes with it:
 #   - the slot record (dfi_active_slot): occupant, activation, stages, flags (protecting, flash_fire, flags, choice_slot,
-#     newly_switched), stall (chain, stall), confused, charge, locked_slot (locked_move), move_actions, flag (switch_flag);
+#     newly_switched), stall (chain, stall), confused, charge, locked_slot (locked_move) and locked_target, move_actions, flag
+#     (switch_flag);
 #   - the tail position (dfi_tail_pos), every volatile: substitute and the other tail fields the tracker does not fold are
 #     features that stop it at their lines, the folded ones are throat_chop, must_recharge, taunt, yawn, imprison, glaive_rush,
 #     rage_powder (the Follow Me flag), heal_block, attract and attract_from (the position's attract_source byte, see below),
 #     trap, trap_source, trap_move, trap_band and trap_elapsed (the partial trap), type_now and type2 (Soak and Double Shock,
-#     the roster member's soak_type and type2, which the record keys by occupant), disable_slot and disable_turns, encore_slot
-#     and encore_turns, cursed, perish, hits_taken, last_slot and last_move, result_now and result_last (move_result),
-#     ability_now (the occupant's), ally_level and ally_turns (the Ally Switch counter);
+#     the roster member's soak_type and type2, which the record keys by occupant), leech_source (the seed), disable_slot and
+#     disable_turns, encore_slot and encore_turns, cursed, perish, hits_taken, last_slot and last_move, result_now and
+#     result_last (move_result), ability_now (the occupant's), ally_level and ally_turns (the Ally Switch counter);
 #   - the position flags that ride on the Pokemon: STATS_RAISED (raised), LOWERED (lowered), HURT (hurt), CURSED (cursed);
 #     DRAGON_CHEER and DESTINY_BOND are features whose lines stop the tracker, so they are never up here;
 #   - the tracker's own scratch of the occupant's action and turn (confused_action, acted, move_queued, turn_done,
 #     guard_undo, unburden_unseen, fainted), which the engine keeps in the queue records and the run (they follow the Pokemon).
 _SWAP_MOVES = (
     "occupant", "activation", "stages", "protecting", "flash_fire", "flags", "choice_slot", "newly_switched", "chain", "stall",
-    "confused", "charge", "locked_slot", "move_actions", "flag", "speed_swapped",
+    "confused", "charge", "locked_slot", "locked_target", "move_actions", "flag", "speed_swapped", "leech_source",
     "throat_chop", "must_recharge", "taunt", "yawn", "imprison", "glaive_rush", "rage_powder", "heal_block", "attract",
     "attract_from", "trap", "trap_source", "trap_move", "trap_band", "trap_elapsed", "type_now", "type2", "disable_slot",
     "disable_turns", "encore_slot", "encore_turns", "cursed", "perish", "hits_taken", "last_slot", "last_move", "result_now",
     "result_last", "ability_now", "ally_level", "ally_turns", "raised", "lowered", "hurt",
     "confused_action", "acted", "move_queued", "turn_done", "guard_undo", "unburden_unseen", "fainted")
-# What stays at its position (the slot's, not the Pokemon's): leech_seed_source (the seed's sourceSlot is a slot, sim/pokemon.ts:
-# 2002: the drain goes to whoever stands there), Healing Wish's bit 0 (the slot condition; a swap onto a pending one is refused
-# before it gets here) and locked_target (a slot location in the pin). Requested slots and sealed commands are not _Position
-# fields: they belong to the request of the slot and the tracker keeps them by slot.
-_SWAP_SLOT = ("leech_source", "wish", "locked_target")
+# The seed (leech_source) is a volatile of the seeded Pokemon and goes with it; its value, the source's sourceSlot, is a slot and is
+# not relinked (sim/pokemon.ts:2002: the drain goes to whoever stands there, the holder itself when it stands there, issue 541).
+# locked_target goes with the Pokemon's locked action (issue 541, dfi_swap_position_state). What stays at its position (the slot's,
+# not the Pokemon's): Healing Wish's bit 0 (the slot condition; a swap onto a pending one is refused before it gets here).
+# Requested slots and sealed commands are not _Position fields: they belong to the request of the slot and the tracker keeps them
+# by slot.
+_SWAP_SLOT = ("wish",)
 
 
 class _Member:
@@ -1309,9 +1312,11 @@ class Tracker:
                     # be set with no line; an -enditem that follows shows the usual case (_unburden_unseen, record.py)
                     p.unburden_unseen = True
             if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["LEECH_SEED"]:
-                # the drain (dfi_leech_drain): `[of]` names the seed's source slot; any other holder or source is no case
-                # of the engine (a seed whose start the tracker did not see)
-                if self._at(pos).leech_source == 0 or e[2] != self._at(pos).leech_source - 1:
+                # the drain (dfi_leech_drain): `[of]` names the seed's source slot, or no `[of]` when an Ally Switch put the
+                # holder on that slot (it drains into itself, issue 541); any other holder or source is no case of the engine
+                # (a seed whose start the tracker did not see)
+                source = self._at(pos).leech_source - 1
+                if source < 0 or e[2] != (trace_to_c.NOPOS if source == pos else source):
                     raise lines.Stop("leech-seed-drain-source")
             if kind == EV["DAMAGE"] and hp != 0:
                 self._hurt(pos, e[3])

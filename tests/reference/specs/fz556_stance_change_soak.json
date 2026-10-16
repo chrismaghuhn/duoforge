@@ -1,0 +1,83 @@
+{
+  "name": "fz556_stance_change_soak",
+  "purpose": "Samurott Soaks Aegislash (step 2); Stance Change to the Blade forme (step 4) runs setSpecies, which resets the types to Steel/Ghost (sim/pokemon.ts:1392), so Meowscarada's Low Sweep into its Substitute is -immune (step 9). On main the engine kept the Water type, hit the Substitute and stopped with E_INVARIANT at step 9 (issue 556). A battle of the differential fuzzing of issue 396 (free random sets, fz_377_77), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,441331b2646550f1d84d6cf4c33105dd7dc1e94e99f456bed30df3aa3b357d62",
+  "teams": [
+    "oranguru (M) @ mentalherb\nAbility: innerfocus\nLevel: 50\nEVs: 13 HP / 7 Atk / 15 Def / 12 SpA / 13 SpD / 6 Spe\nNaive Nature\n- psychicnoise\n- thunder\n- expandingforce\n- energyball\n\naegislash (M) @ aerodactylite\nAbility: stancechange\nLevel: 50\nEVs: 16 HP / 14 Atk / 5 Def / 12 SpA / 11 SpD / 8 Spe\nBold Nature\n- gigaimpact\n- brickbreak\n- destinybond\n- substitute\n\nceruledge (F) @ charizarditey\nAbility: flashfire\nLevel: 50\nEVs: 12 HP / 7 Atk / 13 Def / 15 SpA / 4 SpD / 15 Spe\nJolly Nature\n- xscissor\n- dragonclaw\n- curse\n- allyswitch\n\nsquawkabilly (F) @ charcoal\nAbility: intimidate\nLevel: 50\nEVs: 10 HP / 14 Atk / 14 Def / 4 SpA / 11 SpD / 13 Spe\nHardy Nature\n- dualwingbeat\n- sunnyday\n- flatter\n- gigaimpact\n\nglalie (M) @ pyroarite\nAbility: moody\nLevel: 50\nEVs: 9 HP / 10 Atk / 15 Def / 12 SpA / 10 SpD / 10 Spe\nModest Nature\n- blizzard\n- shadowball\n- snowscape\n- taunt\n\nmeowscarada (F) @ airballoon\nAbility: overgrow\nLevel: 50\nEVs: 14 HP / 14 Atk / 8 Def / 9 SpA / 10 SpD / 11 Spe\nModest Nature\n- tripleaxel\n- lowsweep\n- shadowclaw\n- trick",
+    "gholdengo @ blastoisinite\nAbility: goodasgold\nLevel: 50\nEVs: 10 HP / 13 Atk / 7 Def / 12 SpA / 12 SpD / 12 Spe\nQuiet Nature\n- hyperbeam\n- lowkick\n- confuseray\n- powergem\n\ntaurospaldeacombat (M) @ choicescarf\nAbility: intimidate\nLevel: 50\nEVs: 7 HP / 15 Atk / 11 Def / 6 SpA / 17 SpD / 10 Spe\nSerious Nature\n- swagger\n- curse\n- bodyslam\n- doubleedge\n\nwyrdeer (M) @ fairyfeather\nAbility: intimidate\nLevel: 50\nEVs: 13 HP / 16 Atk / 10 Def / 8 SpA / 6 SpD / 13 Spe\nHardy Nature\n- thief\n- expandingforce\n- highhorsepower\n- raindance\n\narchaludon (M) @ blazikenite\nAbility: stamina\nLevel: 50\nEVs: 8 HP / 11 Atk / 9 Def / 10 SpA / 14 SpD / 14 Spe\nAdamant Nature\n- thunderwave\n- reflect\n- hyperbeam\n- snarl\n\nsamurotthisui (F)\nAbility: torrent\nLevel: 50\nEVs: 6 HP / 16 Atk / 10 Def / 14 SpA / 9 SpD / 11 Spe\nQuirky Nature\n- icebeam\n- drillrun\n- hydropump\n- soak\n\nchesnaught (M) @ scopelens\nAbility: bulletproof\nLevel: 50\nEVs: 10 HP / 16 Atk / 12 Def / 7 SpA / 13 SpD / 8 Spe\nImpish Nature\n- woodhammer\n- scaryface\n- ironhead\n- grassknot"
+  ],
+  "choices": [
+    {
+      "p1": "team 5263",
+      "p2": "team 5613"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 2 1, move 3 2"
+    },
+    {
+      "p1": "move 2 -2, move 2 -1",
+      "p2": "move 4 2, move 3 2"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "move 2 -2, move 3 -1"
+    },
+    {
+      "p1": "move 2 2, move 1 1",
+      "p2": "move 1 -2, move 2 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 4 2, move 1",
+      "p2": "move 2 -2, move 3 1"
+    },
+    {
+      "p1": "move 1, move 2 1",
+      "p2": "move 1 1, move 3 1"
+    },
+    {
+      "p1": "switch 3, pass",
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 2 -2, move 3 -1"
+    },
+    {
+      "p1": "move 3 2, move 4",
+      "p2": "move 1 -2, move 1 1"
+    },
+    {
+      "p1": "move 3 -2, move 1 2",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 2 1, move 2 1",
+      "p2": "move 2 -2, pass"
+    },
+    {
+      "p1": "move 4 -2, move 3",
+      "p2": "move 2 2, pass"
+    },
+    {
+      "p1": "move 3 1, move 4",
+      "p2": "move 4 2, pass"
+    },
+    {
+      "p1": "move 4 -2, move 1 1",
+      "p2": "move 3 2, pass"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "move 1 -2, pass"
+    }
+  ]
+}

@@ -1275,12 +1275,14 @@ def ev_tuple(kind, position=NOPOS, other=NOPOS, cause=0, ident=0, ident2=0, hp=0
 def leech_heal_source(log, i):
     """Step G84 (decision 0047): the silent heal at log[i] is the Leech Seed heal when the nearest preceding Leech Seed damage line
     of this step (within three lines) names, as [of], the Pokemon that the heal goes to: the source's slot. Returns that position
-    or None. A heal with no such damage before it is not a Leech Seed heal (it stays dropped, as every other silent line)."""
+    or None. A heal with no such damage before it is not a Leech Seed heal (it stays dropped, as every other silent line). A damage line
+    with no [of] drains into the holder itself: an Ally Switch put it on its source's slot (spreadDamage omits [of] when the source
+    is the target, sim/battle.ts:2155; issue 541)."""
     for j in range(i - 1, max(-1, i - 4), -1):
         p = log[j].split('|')
         if len(p) > 2 and p[1] == '-damage' and '[from] Leech Seed' in log[j]:
             of = [x for x in p if x.startswith('[of] ')]
-            return ev_pos(of[0][len('[of] '):]) if of else None
+            return ev_pos(of[0][len('[of] '):]) if of else ev_pos(p[2])
     return None
 
 
@@ -1403,7 +1405,7 @@ def status_map(state, roster_of):
     return out
 
 
-def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, win, spent, sst, uses):
+def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, win, spent, sst, uses, siu=None):
     """The foe's knowledge of PP and of the status while an Illusion is up (decision 0026 section 4, amended by I2) and the
     charge of every foe move (decision 0030 section 1).
 
@@ -1414,7 +1416,14 @@ def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, w
     move that is not on it is the holder's and stays pending, out of every row, until the break. The holder's row keeps what the
     foe knew before the disguise until the break. The break adds the pending uses and the disguise's counts above its snapshot to
     the holder, by move id, and restores the disguise's row. A switch-out without a break drops the pending uses and keeps both
-    rows where they are. win[side] is None or {'pos', 'h', 'd', 'name', 'frozen', 'snap', 'pending', 'snap_sst'}.
+    rows where they are. win[side] is None or {'pos', 'h', 'd', 'name', 'frozen', 'snap', 'pending', 'snap_sst', 'snap_iu'}.
+
+    `siu` maps (side, roster) to the item use (1 gone, 0 held) the foe attributes to the row, None for the true one (issue 556,
+    decision 0026 section 4: a consumed item while disguised appears under the disguise's name). An item line under the
+    disguise's name (`-enditem`, an item given by a move, Symbiosis) is the disguise's row's; the holder's row keeps what the foe
+    knew before the disguise; the break gives the holder the item use the disguise's row gained and restores the disguise's
+    row. A switch-out without a break keeps both rows, and no later line contradicts them until an item line about the member
+    itself (its true use from then on).
     """
     # PROVENANCE (decision 0026 section 4; the reference must stay an oracle): the foe's knowledge is derived ONLY from the protocol
     # lines of the trace (the move lines and the names they show, the switch, drag and replace lines), the open sheets of the
@@ -1423,6 +1432,24 @@ def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, w
     st_prev = status_map(prev_state, roster_of)
     if sst is None:
         sst = {}
+    if siu is None:
+        siu = {}
+    used_prev = {}
+    for s_ in range(2):
+        for p_ in prev_state['sides'][s_]['pokemon']:
+            used_prev[(s_, roster_of[s_][name_of(p_)])] = 0 if p_.get('item') else 1
+
+    def shown_used_of(key):
+        """The item use the foe attributes to a row (1 gone), or the true one at the start of the step."""
+        return siu[key] if siu.get(key) is not None else used_prev.get(key, 0)
+
+    def item_line(s, nm, value):
+        """An item line about the name `nm` of side s: the disguise's row under the disguise's name, else the member's own."""
+        w = win[s]
+        if w is not None and nm == w['name']:
+            siu[(s, w['d'])] = value
+        elif nm in roster_of[s]:
+            siu[(s, roster_of[s][nm])] = None
 
     def shown_status_of(key):
         """The status the foe shows for a row (STATUS name), or its true status when no line of the fold changed it."""
@@ -1478,6 +1505,9 @@ def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, w
                         # disguise's row shows the status of the switch line, the holder's status at its entry (0026 section 4).
                         win[s]['snap_sst'] = sst.get((s, r))
                         sst[(s, h)] = shown_status_of((s, h))
+                        # Item use (issue 556): the holder's row keeps what the foe knew; the disguise's row is snapshotted.
+                        win[s]['snap_iu'] = shown_used_of((s, r))
+                        siu[(s, h)] = shown_used_of((s, h))
                         opened = True
             if opened:
                 sst[(s, r)] = tok
@@ -1497,6 +1527,16 @@ def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, w
                 sst[(s, w['d'])] = value
             else:
                 sst[(s, roster_of[s][nm])] = None
+        elif len(parts) >= 3 and parts[1] == '-enditem' and len(parts[2]) > 3 and parts[2][2] in 'ab':
+            item_line(int(parts[2][1]) - 1, parts[2].split(': ', 1)[1], 1)
+        elif len(parts) >= 4 and parts[1] == '-item' and any(x.startswith('[from] move:') for x in parts[4:]):
+            item_line(int(parts[2][1]) - 1, parts[2].split(': ', 1)[1], 0)
+        elif len(parts) >= 5 and parts[1] == '-activate' and parts[3] == 'ability: Symbiosis':
+            # Symbiosis (step G69): the holder passes its item on, the user ([of]) holds it.
+            item_line(int(parts[2][1]) - 1, parts[2].split(': ', 1)[1], 1)
+            of = [x[len('[of] '):] for x in parts[4:] if x.startswith('[of] ')]
+            if of:
+                item_line(int(of[0][1]) - 1, of[0].split(': ', 1)[1], 0)
         elif len(parts) >= 4 and parts[1] == 'move':
             if '[from] lockedmove' in parts[5:]:
                 continue  # a locked turn is no PP use (no event either)
@@ -1532,6 +1572,10 @@ def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, w
             w = win[s]
             sst[(s, w['h'])] = shown_status_of((s, w['d']))
             sst[(s, w['d'])] = w['snap_sst']
+            # Item use (issue 556): the holder takes the use the disguise's row gained; the disguise's row is restored.
+            gained = shown_used_of((s, w['d'])) == 1 and w['snap_iu'] == 0
+            siu[(s, w['h'])] = 1 if (shown_used_of((s, w['h'])) == 1 or gained) else 0
+            siu[(s, w['d'])] = w['snap_iu']
             hr = count((s, w['h']))
             for j in range(4):
                 hr[j] += w['pending'][j]
@@ -1649,6 +1693,12 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
     caller that converts one line at a time (the live tracker) passes the lines it has folded since the last decision point.
     """
     ill = ill if ill is not None else {'side': [False, False], 'truth_at': {}, 'multi': {}, 'replace': {}, 'last_hp': {}, 'shown_at': {}}
+    # Ally Switch (issue 541): truth_at is the end of the step, and a swap line exchanges the two positions of its side. The lines
+    # before the step's swaps read the positions as they were (every swap undone here), and each swap line exchanges them again.
+    truth_at = dict(ill['truth_at'])
+    for s in range(2):
+        if sum(1 for x in log if x.startswith('|swap|p%d' % (s + 1))) % 2 == 1:
+            truth_at[(s, 0)], truth_at[(s, 1)] = truth_at.get((s, 1)), truth_at.get((s, 0))
     if rb_pending is None:
         rb_pending = {}
     out = []
@@ -1791,7 +1841,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # position's Pokemon after the step, which must be the only switch of that side in the step. Otherwise refuse.
             truth = name
             if viewer == side and ill['side'][side]:
-                tn = ill['truth_at'].get((side, pos % 2))
+                tn = truth_at.get((side, pos % 2))
                 if tn != name:
                     if tn is None or ill['multi'].get((side, pos % 2), 0) != 1:
                         raise ConversionError('illusion-owner-truth', 'trace_to_c: the entry of the owner %r cannot be told apart' % line,
@@ -1819,6 +1869,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             new_pos = (pos // 2) * 2 + int(args[1])
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['SWAP'], pos, new_pos, cause, 0, id2)
+            truth_at[(pos // 2, 0)], truth_at[(pos // 2, 1)] = truth_at.get((pos // 2, 1)), truth_at.get((pos // 2, 0))
         elif kind == 'move':
             pos = ev_pos(args[0])
             last_user = pos
@@ -1902,7 +1953,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # Illusion (decision 0026 section 9, Q1): the owner's exact HP is the true member's, so its maximum is the holder's
             # when the line names the disguise on the holder's position.
             if viewer == side and ill['side'][side]:
-                tn = ill['truth_at'].get((side, pos % 2))
+                tn = truth_at.get((side, pos % 2))
                 if tn is not None and tn != name and ill['shown_at'].get((side, pos % 2)) == name:
                     shown_max = tn
             if '[partiallytrapped]' in attrs and (kind != '-damage' or cause != CAUSE['MOVE'] or other != NOPOS):
@@ -2626,6 +2677,7 @@ def convert_battle(name, spec, trace, tables):
         for p in trace['start']['state']['sides'][s]['pokemon']:
             pp_start[(s, roster_of[s][name_of(p)])] = [int(x) for x in p['pp']] + [0] * (4 - len(p['pp']))
     ill_sst = {}  # (side, roster) -> the status name the foe shows (ill_pp_fold; None: the true status)
+    ill_siu = {}  # (side, roster) -> the item use the foe attributes (ill_pp_fold; None: the true one)
     ill_last_hp = {}
     ill_shown_at = {}
     # What each player has seen of the other side: the last public HP display
@@ -2732,7 +2784,7 @@ def convert_battle(name, spec, trace, tables):
             if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:
                 rb_pending.pop(int(line.split('|')[2][1]) - 1, None)
         uses = pressure.step(events)
-        ill_pp_fold(step['log'], state, new_state, roster_of, teams, tables, ill_key, ill_win, spent, ill_sst, uses)
+        ill_pp_fold(step['log'], state, new_state, roster_of, teams, tables, ill_key, ill_win, spent, ill_sst, uses, ill_siu)
         for s in range(2):
             w = ill_win[s]
             if w is not None and any(i is not None and i >= 0 and roster_of[s][name_of(new_state['sides'][s]['pokemon'][i])] == w['d']
@@ -2802,9 +2854,15 @@ def convert_battle(name, spec, trace, tables):
                         raise ConversionError('unknown-volatile', 'trace_to_c: %s without twoturnmove on %s' %
                                               (charge, name_of(p)), detail=charge)
                 vols = sum(bit for name, bit in COMPARED_VOLATILES if name in p['volatiles'])
+                # held: bit 0 the item is still held; bit 1 the foe attributes the other item use to the row (ill_pp_fold: an
+                # Illusion hid it, decision 0026 section 4, issue 556). Bit 1 is 0 outside an Illusion, so those rows are unchanged.
+                held = 1 if p['item'] else 0
+                iu = ill_siu.get((s, roster))
+                if iu is not None and iu != 1 - held:
+                    held |= 2
                 row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
-                            p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
+                            p.get('mega', 0), held, 1 if seen else 0, seen[0] if seen else 0,
                             seen[1] if seen else 0, vols, known_pp, shown_status))
             mons.append(tuple(row))
         cmds = []
@@ -2937,7 +2995,8 @@ class FoePressure:
         if kind == EV['SWAP']:
             # Ally Switch (step G80): the user and its ally exchange their slots, the occupants with them (sim/battle.ts:1588-1607)
             self.own_occ[v][slot], self.own_occ[v][other % 2] = self.own_occ[v][other % 2], self.own_occ[v][slot]
-        elif kind == EV['SWITCH']:
+        elif kind in (EV['SWITCH'], EV['DRAG']):
+            # a drag (step G46: Roar, Whirlwind, Dragon Tail) enters a member as a switch does (issue 541)
             self.own_occ[v][slot] = ident
             self.alive[v][ident] = hp != 0
             # A Mega that switches back in keeps its Mega ability, not the sheet's
@@ -3164,7 +3223,7 @@ TYPES = [
     '/* present, hp, pp (the true PP), stages (biased by 6), stall counter present, fainted,',
     ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the',
     ' * locked move slot (0xFF none) and its target, Mega forme, the item still',
-    ' * held, and what the opponent has seen: seen, HP percent and colour flag',
+    ' * held (bit 0; bit 1: the opponent attributes the other item use, an Illusion hid it, issue 556), and what the opponent has seen: seen, HP percent and colour flag',
     ' * of the last public display (DUOFORGE_HP_FLAG_*) */',
     'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
     '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',

@@ -1,0 +1,6169 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "fz556_prankster_curse_dark.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,438bbd179684e6d7eec1826228145e685ebb78f02b0e09e28f166f7f5eb83179",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Overqwil, L50, M|",
+   "|poke|p1|Houndoom, L50, F|",
+   "|poke|p1|Wigglytuff, L50, F|",
+   "|poke|p1|Banette, L50, M|",
+   "|poke|p1|Blaziken, L50, F|",
+   "|poke|p1|Swampert, L50, M|",
+   "|poke|p2|Gyarados, L50, M|",
+   "|poke|p2|Sharpedo, L50, M|",
+   "|poke|p2|Medicham, L50, M|",
+   "|poke|p2|Arbok, L50, M|",
+   "|poke|p2|Incineroar, L50, F|",
+   "|poke|p2|Salamence, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Overqwil",
+       "set_species": "Overqwil",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 165,
+       "maxhp": 165,
+       "item": "dragalgite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Houndoom",
+       "set_species": "Houndoom",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 166,
+       "maxhp": 166,
+       "item": "houndoominite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Wigglytuff",
+       "set_species": "Wigglytuff",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 219,
+       "maxhp": 219,
+       "item": "leek",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Banette",
+       "set_species": "Banette",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 146,
+       "maxhp": 146,
+       "item": "banettite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        16,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Blaziken",
+       "set_species": "Blaziken",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 162,
+       "maxhp": 162,
+       "item": "gengarite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        20,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Swampert",
+       "set_species": "Swampert",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 188,
+       "maxhp": 188,
+       "item": "spelltag",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Gyarados",
+       "set_species": "Gyarados",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Sharpedo",
+       "set_species": "Sharpedo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 160,
+       "maxhp": 160,
+       "item": "garchompitez",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        16,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Medicham",
+       "set_species": "Medicham",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 147,
+       "maxhp": 147,
+       "item": "tyranitarite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Arbok",
+       "set_species": "Arbok",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 139,
+       "maxhp": 139,
+       "item": "hawluchanite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        12,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Incineroar",
+       "set_species": "Incineroar",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 176,
+       "maxhp": 176,
+       "item": "slowbronite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        12,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Salamence",
+       "set_species": "Salamence",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "mentalherb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        16,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 4356",
+    "p2": "team 6254"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Banette|Banette, L50, M|146/146",
+    "|switch|p1a: Banette|Banette, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Wigglytuff|Wigglytuff, L50, F|219/219",
+    "|switch|p1b: Wigglytuff|Wigglytuff, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2a: Salamence|Salamence, L50, M|177/177",
+    "|switch|p2a: Salamence|Salamence, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Sharpedo|Sharpedo, L50, M|160/160",
+    "|switch|p2b: Sharpedo|Sharpedo, L50, M|100/100",
+    "|-item|p2a: Salamence|Mental Herb|[from] ability: Frisk|[of] p1a: Banette",
+    "|-item|p2b: Sharpedo|Garchompite Z|[from] ability: Frisk|[of] p1a: Banette",
+    "|-item|p2a: Salamence|Mental Herb|[from] ability: Frisk|[of] p1b: Wigglytuff",
+    "|-item|p2b: Sharpedo|Garchompite Z|[from] ability: Frisk|[of] p1b: Wigglytuff",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Banette",
+        "set_species": "Banette",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 146,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 219,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 160,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 176,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 2 mega, move 1 1",
+    "p2": "move 4 1, move 4 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 12
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 42
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 5
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 49
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 59
+    }
+   ],
+   "log": [
+    "|detailschange|p1a: Banette|Banette-Mega, L50, M",
+    "|-mega|p1a: Banette|Banette|Banettite",
+    "|move|p2a: Salamence|Dragon Claw|p1a: Banette",
+    "|split|p1",
+    "|-damage|p1a: Banette|74/146",
+    "|-damage|p1a: Banette|50/100g",
+    "|move|p2b: Sharpedo|Dark Pulse|p1b: Wigglytuff",
+    "|-resisted|p1b: Wigglytuff|1",
+    "|split|p1",
+    "|-damage|p1b: Wigglytuff|174/219",
+    "|-damage|p1b: Wigglytuff|79/100",
+    "|move|p1a: Banette|Shadow Ball|p2b: Sharpedo",
+    "|-resisted|p2b: Sharpedo|1",
+    "|split|p2",
+    "|-damage|p2b: Sharpedo|116/160",
+    "|-damage|p2b: Sharpedo|72/100",
+    "|cant|p1b: Wigglytuff|flinch",
+    "|-ability|p2b: Sharpedo|Speed Boost|boost",
+    "|-boost|p2b: Sharpedo|spe|1",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 74,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 116,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 176,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 2, move 1 -1",
+    "p2": "move 1 2, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 20
+    },
+    {
+     "site": "MULTIHIT_COUNT",
+     "context": "",
+     "lo": 0,
+     "hi": 20,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 65
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 12
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 69
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 24
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    }
+   ],
+   "log": [
+    "|move|p1a: Banette|Curse|p2b: Sharpedo",
+    "|-hint|Since gen 7, Dark is immune to Prankster moves.",
+    "|-immune|p2b: Sharpedo",
+    "|move|p2b: Sharpedo|Scale Shot|p1a: Banette",
+    "|split|p1",
+    "|-damage|p1a: Banette|57/146",
+    "|-damage|p1a: Banette|39/100",
+    "|split|p1",
+    "|-damage|p1a: Banette|42/146",
+    "|-damage|p1a: Banette|28/100",
+    "|split|p1",
+    "|-damage|p1a: Banette|27/146",
+    "|-damage|p1a: Banette|18/100",
+    "|split|p1",
+    "|-damage|p1a: Banette|13/146",
+    "|-damage|p1a: Banette|8/100",
+    "|-hitcount|p1a: Banette|4",
+    "|-unboost|p2b: Sharpedo|def|1",
+    "|-boost|p2b: Sharpedo|spe|1",
+    "|move|p2a: Salamence|Steel Wing|p1b: Wigglytuff",
+    "|-supereffective|p1b: Wigglytuff|1",
+    "|split|p1",
+    "|-damage|p1b: Wigglytuff|54/219",
+    "|-damage|p1b: Wigglytuff|24/100",
+    "|move|p1b: Wigglytuff|Ice Spinner|p1a: Banette",
+    "|split|p1",
+    "|-damage|p1a: Banette|0 fnt",
+    "|-damage|p1a: Banette|0 fnt",
+    "|faint|p1a: Banette",
+    "|-ability|p2b: Sharpedo|Speed Boost|boost",
+    "|-boost|p2b: Sharpedo|spe|1",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 54,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         20,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 116,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         3,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         20,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 176,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 4, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Swampert|Swampert, L50, M|188/188",
+    "|switch|p1a: Swampert|Swampert, L50, M|100/100",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 54,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         20,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 116,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         3,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         20,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 176,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, move 1 -1",
+    "p2": "move 2 2, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p2b: Sharpedo|Scale Shot|p1b: Wigglytuff",
+    "|-immune|p1b: Wigglytuff",
+    "|move|p2a: Salamence|Aerial Ace|p1b: Wigglytuff",
+    "|split|p1",
+    "|-damage|p1b: Wigglytuff|0 fnt",
+    "|-damage|p1b: Wigglytuff|0 fnt",
+    "|faint|p1b: Wigglytuff",
+    "|-ability|p2a: Salamence|Moxie|boost",
+    "|-boost|p2a: Salamence|atk|1",
+    "|move|p1a: Swampert|Stealth Rock|p2b: Sharpedo",
+    "|-sidestart|p2: p2|move: Stealth Rock",
+    "|-ability|p2b: Sharpedo|Speed Boost|boost",
+    "|-boost|p2b: Sharpedo|spe|1",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 116,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         4,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 176,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 3"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Blaziken|Blaziken, L50, F|162/162",
+    "|switch|p1b: Blaziken|Blaziken, L50, F|100/100",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 116,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         -1,
+         0,
+         0,
+         4,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 176,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, move 3",
+    "p2": "move 4 -2, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 54
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 61
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|move|p2b: Sharpedo|Thief|p2a: Salamence",
+    "|split|p2",
+    "|-damage|p2a: Salamence|125/177",
+    "|-damage|p2a: Salamence|70/100",
+    "|move|p2a: Salamence|Dragon Claw|p2b: Sharpedo",
+    "|split|p2",
+    "|-damage|p2b: Sharpedo|0 fnt",
+    "|-damage|p2b: Sharpedo|0 fnt",
+    "|faint|p2b: Sharpedo",
+    "|-ability|p2a: Salamence|Moxie|boost",
+    "|-boost|p2a: Salamence|atk|1",
+    "|move|p1b: Blaziken|Agility|p1b: Blaziken",
+    "|-boost|p1b: Blaziken|spe|2",
+    "|move|p1a: Swampert|Stealth Rock||[still]",
+    "|-fail|p1a: Swampert",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 125,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         16,
+         14
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 176,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 3"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Incineroar|Incineroar, L50, F|176/176",
+    "|switch|p2b: Incineroar|Incineroar, L50, F|100/100",
+    "|split|p2",
+    "|-damage|p2b: Incineroar|132/176|[from] Stealth Rock",
+    "|-damage|p2b: Incineroar|75/100|[from] Stealth Rock",
+    "|-ability|p2b: Incineroar|Intimidate|boost",
+    "|-unboost|p1a: Swampert|atk|1",
+    "|-unboost|p1b: Blaziken|atk|1",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 162,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 125,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         16,
+         14
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 132,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 139,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, move 4 2",
+    "p2": "move 4 2, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 12
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
+    },
+    {
+     "site": "DRAG",
+     "context": "",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|move|p2a: Salamence|Dragon Claw|p1b: Blaziken",
+    "|split|p1",
+    "|-damage|p1b: Blaziken|2/162",
+    "|-damage|p1b: Blaziken|1/100",
+    "|move|p1a: Swampert|Stealth Rock||[still]",
+    "|-fail|p1a: Swampert",
+    "|move|p2b: Incineroar|Throat Chop|p2a: Salamence",
+    "|split|p2",
+    "|-damage|p2a: Salamence|56/177",
+    "|-damage|p2a: Salamence|31/100",
+    "|-start|p2a: Salamence|Throat Chop|[silent]",
+    "|move|p1b: Blaziken|Roar|p2b: Incineroar",
+    "|split|p2",
+    "|drag|p2b: Arbok|Arbok, L50, M|139/139",
+    "|drag|p2b: Arbok|Arbok, L50, M|100/100",
+    "|split|p2",
+    "|-damage|p2b: Arbok|122/139|[from] Stealth Rock",
+    "|-damage|p2b: Arbok|87/100|[from] Stealth Rock",
+    "|-ability|p2b: Arbok|Intimidate|boost",
+    "|-unboost|p1a: Swampert|atk|1",
+    "|-unboost|p1b: Blaziken|atk|1",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         16,
+         17
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 2,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         20,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 56,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         16,
+         13
+        ],
+        "volatiles": [
+         "throatchop"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 122,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 132,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, move 1 2",
+    "p2": "move 3 -2, move 4 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 92
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 95
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 61
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 71
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 16
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 70
+    }
+   ],
+   "log": [
+    "|move|p1b: Blaziken|Shadow Claw|p2b: Arbok",
+    "|split|p2",
+    "|-damage|p2b: Arbok|98/139",
+    "|-damage|p2b: Arbok|70/100",
+    "|move|p2a: Salamence|Flamethrower|p2b: Arbok",
+    "|split|p2",
+    "|-damage|p2b: Arbok|43/139",
+    "|-damage|p2b: Arbok|30/100",
+    "|move|p2b: Arbok|Glare|p2a: Salamence",
+    "|-status|p2a: Salamence|par",
+    "|move|p1a: Swampert|Rock Tomb|p1b: Blaziken",
+    "|split|p1",
+    "|-damage|p1b: Blaziken|0 fnt",
+    "|-damage|p1b: Blaziken|0 fnt",
+    "|faint|p1b: Blaziken",
+    "|-end|p2a: Salamence|Throat Chop|[silent]",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         15,
+         16,
+         17
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         20,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 56,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         15,
+         13
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 43,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 132,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, pass",
+    "p2": "move 1 -2, switch 4"
+   },
+   "draws": [
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 10
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Incineroar|Incineroar, L50, F|132/176",
+    "|switch|p2b: Incineroar|Incineroar, L50, F|75/100",
+    "|split|p2",
+    "|-damage|p2b: Incineroar|88/176|[from] Stealth Rock",
+    "|-damage|p2b: Incineroar|50/100y|[from] Stealth Rock",
+    "|-ability|p2b: Incineroar|Intimidate|boost",
+    "|-unboost|p1a: Swampert|atk|1",
+    "|move|p1a: Swampert|Rock Tomb|p1: Blaziken|[notarget]",
+    "|-fail|p1a: Swampert",
+    "|move|p2a: Salamence|Steel Wing|p2b: Incineroar",
+    "|-resisted|p2b: Incineroar|1",
+    "|split|p2",
+    "|-damage|p2b: Incineroar|49/176",
+    "|-damage|p2b: Incineroar|27/100",
+    "|upkeep",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 188,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -3,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         16,
+         17
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         20,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 56,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         15,
+         13
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 49,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 43,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, pass",
+    "p2": "move 3 2, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 40
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 3
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 70
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 5
+    }
+   ],
+   "log": [
+    "|move|p1a: Swampert|Stealth Rock||[still]",
+    "|-fail|p1a: Swampert",
+    "|move|p2b: Incineroar|Endeavor|p1a: Swampert",
+    "|split|p1",
+    "|-damage|p1a: Swampert|49/188",
+    "|-damage|p1a: Swampert|26/100",
+    "|move|p2a: Salamence|Flamethrower|p1a: Swampert",
+    "|-resisted|p1a: Swampert|1",
+    "|split|p1",
+    "|-damage|p1a: Swampert|23/188",
+    "|-damage|p1a: Swampert|12/100",
+    "|-status|p1a: Swampert|brn",
+    "|split|p1",
+    "|-damage|p1a: Swampert|12/188 brn|[from] brn",
+    "|-damage|p1a: Swampert|6/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 12,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -3,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         20,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 56,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         14,
+         13
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 49,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 43,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, pass",
+    "p2": "move 2 -2, switch 4"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 53
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 66
+    },
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 7
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Arbok|Arbok, L50, M|43/139",
+    "|switch|p2b: Arbok|Arbok, L50, M|30/100",
+    "|split|p2",
+    "|-damage|p2b: Arbok|26/139|[from] Stealth Rock",
+    "|-damage|p2b: Arbok|18/100|[from] Stealth Rock",
+    "|-ability|p2b: Arbok|Intimidate|boost",
+    "|-unboost|p1a: Swampert|atk|1",
+    "|move|p1a: Swampert|Rock Tomb|p2a: Salamence",
+    "|-supereffective|p2a: Salamence|1",
+    "|split|p2",
+    "|-damage|p2a: Salamence|45/177 par",
+    "|-damage|p2a: Salamence|25/100 par",
+    "|-unboost|p2a: Salamence|spe|1",
+    "|move|p2a: Salamence|Aerial Ace|p2b: Arbok",
+    "|split|p2",
+    "|-damage|p2b: Arbok|0 fnt",
+    "|-damage|p2b: Arbok|0 fnt",
+    "|faint|p2b: Arbok",
+    "|-ability|p2a: Salamence|Moxie|boost",
+    "|-boost|p2a: Salamence|atk|1",
+    "|split|p1",
+    "|-damage|p1a: Swampert|1/188 brn|[from] brn",
+    "|-damage|p1a: Swampert|1/100 brn|[from] brn",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 1,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -4,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         20,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 45,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         3,
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         18,
+         14,
+         13
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 49,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Incineroar|Incineroar, L50, F|49/176",
+    "|switch|p2b: Incineroar|Incineroar, L50, F|27/100",
+    "|split|p2",
+    "|-damage|p2b: Incineroar|5/176|[from] Stealth Rock",
+    "|-damage|p2b: Incineroar|2/100|[from] Stealth Rock",
+    "|-ability|p2b: Incineroar|Intimidate|boost",
+    "|-unboost|p1a: Swampert|atk|1",
+    "|turn|10"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 1,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -5,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         20,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 45,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         3,
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         18,
+         14,
+         13
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 5,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, pass",
+    "p2": "move 1 2, move 2 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 92
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 28
+    }
+   ],
+   "log": [
+    "|move|p1a: Swampert|Stealth Rock||[still]",
+    "|-fail|p1a: Swampert",
+    "|move|p2b: Incineroar|Throat Chop|p1a: Swampert",
+    "|split|p1",
+    "|-damage|p1a: Swampert|0 fnt",
+    "|-damage|p1a: Swampert|0 fnt",
+    "|faint|p1a: Swampert",
+    "|win|p2"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": true,
+    "winner": "p2",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Swampert",
+        "set_species": "Swampert",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 188,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 162,
+        "item": "gengarite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         20,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Wigglytuff",
+        "set_species": "Wigglytuff",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 219,
+        "item": "leek",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Banette-Mega",
+        "set_species": "Banette",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 146,
+        "item": "banettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         16,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "stealthrock",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Salamence",
+        "set_species": "Salamence",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 45,
+        "maxhp": 177,
+        "item": "mentalherb",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         3,
+         0,
+         0,
+         0,
+         -1,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         18,
+         14,
+         13
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Incineroar",
+        "set_species": "Incineroar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 5,
+        "maxhp": 176,
+        "item": "slowbronite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         14,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 160,
+        "item": "garchompitez",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         19,
+         16,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Arbok",
+        "set_species": "Arbok",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 139,
+        "item": "hawluchanite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         20,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}
