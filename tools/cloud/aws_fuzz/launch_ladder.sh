@@ -4,7 +4,7 @@
 # no script of a lane starts, stops or changes anything on AWS.
 #
 # usage: launch_ladder.sh --campaign ID --commit SHA --bucket B [--max-hours H] [--sg-name NAME] [--i-have-owner-approval]
-#   --campaign  a ladder campaign: tools/cloud/aws_fuzz/campaigns/<id>/campaign.conf at the commit, kind=ladder
+#   --campaign  a ladder campaign: runs/fuzz/<id>/campaign.conf at the commit, kind=ladder
 #   --commit    the exact 40-digit sha of a commit on main; the box fetches and builds this commit
 #   --bucket    the private bucket: the networks are read from nets/<sha256>.npz (read-only for the box), the results go
 #               to fuzz/ladder/<campaign>/<commit12>-ladder-<launch time>/
@@ -56,11 +56,10 @@ df_check_commit_on_main "$commit" "$campaign"
 # --- the campaign at that commit: a valid ladder conf (the same check the box makes, ladder_conf.py)
 conf=$(mktemp)
 trap 'rm -f "$conf"' EXIT
-if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then
-    cp "$DF_DIR/campaigns/$campaign/campaign.conf" "$conf" 2> /dev/null || df_die "campaign '$campaign' has no campaign.conf"
+if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then  # the offline tests: the working copy's campaign
+    df_campaign_conf "$commit" "$campaign" > "$conf" || df_die "campaign '$campaign' has no campaign.conf"
 else
-    git -C "$DF_DIR" show "$commit:tools/cloud/aws_fuzz/campaigns/$campaign/campaign.conf" > "$conf" ||
-        df_die "cannot read campaign.conf of '$campaign' at $commit"
+    df_campaign_conf "$commit" "$campaign" > "$conf" || df_die "cannot read campaign.conf of '$campaign' at $commit"
 fi
 python3 "$DF_DIR/ladder_conf.py" check "$conf" || df_die "campaign '$campaign' is not a valid ladder campaign"
 # tr: a Windows Python ends its lines with CRLF

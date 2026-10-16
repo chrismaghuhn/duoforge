@@ -4,7 +4,7 @@ shutdown -h +@MAX_MINUTES@ "duoforge oracle watchdog: at most @MAX_MINUTES@ minu
 # launch_oracle.sh, which fills the @...@ placeholders with values it has validated. The first command above is the
 # watchdog: whatever happens below, the box is gone after @MAX_MINUTES@ minutes (shutdown behaviour terminate).
 #
-# One predeclared series of `python -m duoforge_search.preview_series`, as campaigns/<id>/campaign.conf at the exact
+# One predeclared series of `python -m duoforge_search.preview_series`, as runs/fuzz/<id>/campaign.conf at the exact
 # commit names it (oracle_conf.py builds the command line); the box pins as the ladder box does (ladder_user_data.sh):
 # the library at the commit (Release, duoforge_shared), Python from ladder_requirements.txt, XLA's AVX2, OpenBLAS's
 # Haswell kernel on one thread; 3 processes of 16 CPUs each (preview_series pins them itself, process i on CPUs 16i to
@@ -93,7 +93,7 @@ case $DF_RUN_ID in "${DF_COMMIT:0:12}-oracle-"*) ;; *) refuse wrong_run "run $DF
 case $DF_RESUME in yes | no) ;; *) refuse wrong_resume "resume is '$DF_RESUME', not yes or no" ;; esac
 TOOLS="$REPO/tools/cloud/aws_fuzz"
 . "$TOOLS/ladder_box_lib.sh"
-CONF="$TOOLS/campaigns/$DF_CAMPAIGN/campaign.conf"
+CONF="$REPO/runs/fuzz/$DF_CAMPAIGN/campaign.conf"
 [ -f "$CONF" ] || refuse no_campaign "no campaign.conf for $DF_CAMPAIGN at $DF_COMMIT"
 python3 "$TOOLS/oracle_conf.py" check "$CONF" 2>> "$LOG" || refuse bad_conf "the campaign.conf is not a valid oracle conf"
 
