@@ -53,7 +53,7 @@ def _define_type(name):
     return _layout.CONSTANTS[f"DUOFORGE_TYPE_{name}"]
 
 
-# The generated rows as duoforge_live.data read them before decision 0020 (src/data/*_tables.c): the reference of
+# The generated rows as duoforge_live.data read them before decision 0020 (src/data/formats/reg-mc/*_tables.c): the reference of
 # GeneratedRowsTest, which shows the library's data API answering the same for every row of both kinds.
 _ROW_KINDS = {"closure": ("closure_tables.h", "closure_tables.c", "DFI_", "dfi_closure_formes[DFI_FORME_COUNT] = {",
                           "dfi_closure_moves[DFI_MOVE_COUNT] = {", "dfi_closure_items[DFI_ITEM_COUNT] = {"),
@@ -71,8 +71,8 @@ def _generated_rows(kind):
     """(formes [(ability, base, mega)], moves [(pp_max, target class)], items [(holder, mega)]) of a kind's generated
     rows; None for a NONE symbol or the closure's 0xFF."""
     header_file, file, prefix, *starts = _ROW_KINDS[kind]
-    header = (data.ROOT / "src" / "data" / header_file).read_text(encoding="ascii")
-    source = (data.ROOT / "src" / "data" / file).read_text(encoding="ascii")
+    header = (data.ROOT / "src" / "data" / "formats" / "reg-mc" / header_file).read_text(encoding="ascii")
+    source = (data.ROOT / "src" / "data" / "formats" / "reg-mc" / file).read_text(encoding="ascii")
 
     def value(token):
         if token in ("DFI_CLOSURE_NONE", "DFI_FORME_NONE") or (kind == "closure" and token == "255u"):
@@ -140,7 +140,7 @@ class DataTest(unittest.TestCase):
     def setUpClass(cls):
         cls.pool = data.load(kind="pool")
         cls.closure = data.load()
-        cls.header = (data.ROOT / "src" / "data" / "pool_tables.h").read_text(encoding="ascii")
+        cls.header = (data.ROOT / "src" / "data" / "formats" / "reg-mc" / "pool_tables.h").read_text(encoding="ascii")
 
     def test_pool_counts(self):
         self.assertEqual(self.pool.counts["FORME"], _define(self.header, "DFI_POOL_FORME_COUNT"))

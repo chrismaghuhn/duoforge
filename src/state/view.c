@@ -13,8 +13,8 @@
 
 #include "codec/state_codec.h"
 #include "core/bytes.h"
-#include "data/closure_tables.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "rng/pcg32.h"
 #include "state/battle_internal.h"

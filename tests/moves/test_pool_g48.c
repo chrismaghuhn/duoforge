@@ -22,7 +22,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "combat/moves/multiaccuracy.h"
 #include "reference/conformance_pool.h"

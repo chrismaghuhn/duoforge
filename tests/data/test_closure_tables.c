@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include "core/sha256.h"
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 #include "data/formulas.h"
 #include "support/check.h"
 #include "support/fixtures.h"

@@ -5,7 +5,7 @@
 //
 // usage: node tools/datagen/pool_families.js <pinned checkout> <repo root>
 //
-// It reads the committed src/data/pool_tables.{h,c}, so it checks the columns
+// It reads the committed src/data/formats/reg-mc/pool_tables.{h,c}, so it checks the columns
 // that the engine reads, and calls the pinned handlers themselves (the Item
 // and Ability objects of the format's dex) with a probe for each of the 18
 // types:
@@ -2204,15 +2204,15 @@ function main() {
     }
     const root = path.resolve(args[0]);
     const repo = path.resolve(args[1]);
-    const header = readText(path.join(repo, 'src', 'data', 'pool_tables.h'));
-    const source = readText(path.join(repo, 'src', 'data', 'pool_tables.c'));
+    const header = readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.h'));
+    const source = readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.c'));
     const itemCount = defineOf(header, 'DFI_POOL_ITEM_COUNT');
     const abilityCount = defineOf(header, 'DFI_POOL_ABILITY_COUNT');
-    const extendedAbilities = defineOf(readText(path.join(repo, 'src', 'data', 'extended_tables.h')),
+    const extendedAbilities = defineOf(readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', 'extended_tables.h')),
         'DFI_EXT_ABILITY_COUNT');
     const itemRows = familyRows(source, 'ITEM', 'dfi_pool_item_family', itemCount);
     const abilityRows = familyRows(source, 'ABILITY', 'dfi_pool_ability_family', abilityCount);
-    const headers = ['closure_tables.h', 'extended_tables.h', 'pool_tables.h'].map((f) => readText(path.join(repo, 'src', 'data', f)));
+    const headers = ['closure_tables.h', 'extended_tables.h', 'pool_tables.h'].map((f) => readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', f)));
     const moveIds = definedIds(headers, 'MOVE');
     const abilityIds = definedIds(headers, 'ABILITY');
     const formeRowsList = formeRows(source, defineOf(header, 'DFI_POOL_FORME_COUNT'), defineOf(header, 'DFI_POOL_LEARN_BYTES'));
@@ -2277,7 +2277,7 @@ function main() {
     checkLegal(dex, TeamValidator.get(FORMAT_ID), itemRows, abilityRows, extendedAbilities);
     const legal = checkFormes(dex, TeamValidator.get(FORMAT_ID), formeRowsList, moveIds, abilityIds);
     const names = checkNames(dex, source, headers);
-    const extendedHeader = readText(path.join(repo, 'src', 'data', 'extended_tables.h'));
+    const extendedHeader = readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', 'extended_tables.h'));
     const unmodeled = checkHandlers(dex, source, header, {
         closure: headers[0], ext: headers[1], moveCount: defineOf(extendedHeader, 'DFI_EXT_MOVE_COUNT'),
         itemCount: defineOf(extendedHeader, 'DFI_EXT_ITEM_COUNT'), abilityCount: extendedAbilities,

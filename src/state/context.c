@@ -5,7 +5,7 @@
 #include "core/arith.h"
 #include "core/bytes.h"
 #include "core/sha256.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 static bool dfi_kind_is_team_c(uint32_t kind)
 {

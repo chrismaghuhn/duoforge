@@ -16,7 +16,7 @@
 #include <duoforge/duoforge.h>
 
 #include "core/sha256.h"
-#include "data/extended_tables.h"
+#include "data/formats/reg-mc/extended_tables.h"
 #include "data/support_manifest.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"

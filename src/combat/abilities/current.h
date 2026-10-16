@@ -1,7 +1,7 @@
 #ifndef DUOFORGE_COMBAT_ABILITIES_CURRENT_H
 #define DUOFORGE_COMBAT_ABILITIES_CURRENT_H
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/battle_internal.h"
 
 /* The family row of an ability code (1 + id, 0 for none); the row of no family

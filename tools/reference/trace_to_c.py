@@ -420,10 +420,10 @@ _RESIST_BERRIES = []
 
 def resist_berries():
     """The handler names (the item ids in lower case) of the RESIST_BERRY family of the generated pool tables
-    (src/data/pool_tables.c, dfi_pool_item_family): the items whose ModifyDamage modifier the engine models, one for all."""
+    (src/data/formats/reg-mc/pool_tables.c, dfi_pool_item_family): the items whose ModifyDamage modifier the engine models, one for all."""
     if not _RESIST_BERRIES:
         root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
-        source = read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.c'))
+        source = read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.c'))
         _RESIST_BERRIES.extend(sorted(m.lower() for m in re.findall(
             r'\[DFI_ITEM_(\w+)\] = \{DFI_ITEM_FAMILY_RESIST_BERRY,', source)))
         if not _RESIST_BERRIES:
@@ -3175,13 +3175,13 @@ def load_tables(root, team_c):
     """Name -> id tables: the closure's, or for the extended ids the pool
     tables (the closure ids, Team C's and the rows the expansion adds, decision
     0015: every closure and Team C name keeps its id)."""
-    header = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.h'))
-    source = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.c'))
+    header = read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'closure_tables.h'))
+    source = read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'closure_tables.c'))
     start = 'dfi_closure_formes[DFI_FORME_COUNT] = {'
     if team_c:
-        header += read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.h'))
-        header += read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.h'))
-        source = read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.c'))
+        header += read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'extended_tables.h'))
+        header += read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.h'))
+        source = read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.c'))
         start = 'dfi_pool_formes[DFI_POOL_FORME_COUNT] = {'
     tables = {k: ids(header, k) for k in ('FORME', 'MOVE', 'ITEM', 'ABILITY', 'NATURE')}
     a = source.index(start)

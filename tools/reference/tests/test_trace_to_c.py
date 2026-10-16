@@ -2539,8 +2539,8 @@ class Library(unittest.TestCase):
         Detect, the protection of its user: -singleturn) before the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
-        header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
-        ext_moves = int(re.search(r'#define DFI_EXT_MOVE_COUNT (\d+)u', read('src', 'data', 'extended_tables.h')).group(1))
+        header, source = read('src', 'data', 'formats', 'reg-mc', 'pool_tables.h'), read('src', 'data', 'formats', 'reg-mc', 'pool_tables.c')
+        ext_moves = int(re.search(r'#define DFI_EXT_MOVE_COUNT (\d+)u', read('src', 'data', 'formats', 'reg-mc', 'extended_tables.h')).group(1))
         array = source[source.index('dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {'):source.index('dfi_pool_items[')]
         names = re.findall(r'^    /\* (.+?) -- data/', array, re.M)
         ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(?!FLAG)(\w+) (\d+)u', header)}
@@ -2839,10 +2839,11 @@ class Cli(unittest.TestCase):
     def tree(self, tmp, names, mutate=None):
         """A small tree in `tmp`: the tables of src/data and some committed battles, one of them changed by
         `mutate(name, spec, trace)`."""
-        os.makedirs(os.path.join(tmp, 'src', 'data'))
+        os.makedirs(os.path.join(tmp, 'src', 'data', 'formats', 'reg-mc'))
         for fname in ('closure_tables.h', 'closure_tables.c', 'extended_tables.h', 'extended_tables.c',
                       'pool_tables.h', 'pool_tables.c'):
-            shutil.copy(os.path.join(ROOT, 'src', 'data', fname), os.path.join(tmp, 'src', 'data', fname))
+            shutil.copy(os.path.join(ROOT, 'src', 'data', 'formats', 'reg-mc', fname),
+                        os.path.join(tmp, 'src', 'data', 'formats', 'reg-mc', fname))
         for kind in ('specs', 'traces'):
             os.makedirs(os.path.join(tmp, 'tests', 'reference', kind))
         for name in names:

@@ -21,10 +21,10 @@ Readers:
 
 | Reader | What it reads |
 |---|---|
-| `tools/datagen/gen_format.py` | writes `src/data/format_tables.h` (`DFI_FORMAT_*`, with `_Static_assert`s against the public constants of the same value); `--check` compares; `--pin <checkout>` compares every quote with its pinned line and reads the value back |
+| `tools/datagen/gen_format.py` | writes `src/data/formats/reg-mc/format_tables.h` (`DFI_FORMAT_*`, with `_Static_assert`s against the public constants of the same value); `--check` compares; `--pin <checkout>` compares every quote with its pinned line and reads the value back |
 | `tools/datagen/gen_closure.py --pool` | the Showdown format id and the pool source (`load_format`: SHA-256, commit and format id of the pool's meta) |
 | `tools/datagen/pool_families.js` | the Showdown format id for the pinned validator |
-| C engine | `src/data/format_tables.h` through `formulas.h` (Stat Points), `context_internal.h` (brought count) and `turn.c` (level) |
+| C engine | `src/data/formats/reg-mc/format_tables.h` through `formulas.h` (Stat Points), `context_internal.h` (brought count) and `turn.c` (level) |
 
 Checks: `duoforge.data.format_regmc` (quick, no checkout: the definition, the generated header, the pool tables
 reproduced exactly from the definition, the named constants in code) and `duoforge.data.format_pin` (with
@@ -45,7 +45,7 @@ reproduced exactly from the definition, the named constants in code) and `duofor
 | Nickname Clause, Open Team Sheets | yes | not read by the engine |
 | Tera | disabled | no state; Tera Blast and Tera Starstorm are not in the pool |
 | Timer | VGC: 420 s, grace 90, 0 per turn, 55 max per turn, 90 first turn, auto choose, DC bank | not read by the engine; the live client waits on the server's timer lines |
-| Pool | 347 formes, 511 moves, 166 items, 215 abilities | `src/data/pool_tables.{h,c}` from `gen_closure.py --pool` |
+| Pool | 347 formes, 511 moves, 166 items, 215 abilities | `src/data/formats/reg-mc/pool_tables.{h,c}` from `gen_closure.py --pool` |
 
 Champions mechanics are not format facts: the stat formula (`+75` / `+20`, nature x1.1 / x0.9), the PP cap of 20,
 Mega Evolution and the Champions move and ability overrides belong to the mod and stay where they are.
