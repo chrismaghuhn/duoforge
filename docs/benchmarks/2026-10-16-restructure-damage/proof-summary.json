@@ -1,0 +1,176 @@
+{
+ "P1_inventory": {
+  "debug": {
+   "equal": true,
+   "names": 1548,
+   "sha256": "d1ea2f7d8fabf5f3858a19f53cec3b0f448f5831d10bce529dc3d6420871b0fa"
+  },
+  "ipo": {
+   "equal": true,
+   "names": 1548,
+   "sha256": "d1ea2f7d8fabf5f3858a19f53cec3b0f448f5831d10bce529dc3d6420871b0fa"
+  },
+  "noipo": {
+   "equal": true,
+   "names": 1548,
+   "sha256": "d1ea2f7d8fabf5f3858a19f53cec3b0f448f5831d10bce529dc3d6420871b0fa"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_selected_tests": {
+  "after-ipo": {
+   "names_sha256": "c4d71eb969f78f68fbd984d9ed47befe4b0a96e66b57efee6bb8f04295c27289",
+   "passed": 203,
+   "tests": 266
+  },
+  "after-noipo": {
+   "names_sha256": "9f0bcee8d6fa849918dc61911b548bab8b6ae53f532b215722bce25db3eb59d8",
+   "passed": 198,
+   "tests": 260
+  },
+  "before-ipo": {
+   "names_sha256": "c4d71eb969f78f68fbd984d9ed47befe4b0a96e66b57efee6bb8f04295c27289",
+   "passed": 203,
+   "tests": 266
+  },
+  "before-noipo": {
+   "names_sha256": "9f0bcee8d6fa849918dc61911b548bab8b6ae53f532b215722bce25db3eb59d8",
+   "passed": 198,
+   "tests": 260
+  }
+ },
+ "P2_reference": {
+  "checks": {
+   "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 14442 checks, 0 failures",
+   "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+   "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+   "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 27467 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+  },
+  "executions": 2720,
+  "ipo": {
+   "equal": true,
+   "sha256": "e91e512100a32ae386cda4ed39ee184de84d4fdff5222d65f3decf19fae63926"
+  },
+  "native_reports_equal": {
+   "debug": true,
+   "ipo": true,
+   "noipo": true
+  },
+  "noipo": {
+   "equal": true,
+   "sha256": "e91e512100a32ae386cda4ed39ee184de84d4fdff5222d65f3decf19fae63926"
+  },
+  "steps": 23440,
+  "stops": 8848,
+  "unique_battles": 1197,
+  "variants": 10
+ },
+ "P3_perft_pins_sha256": "84c744369b4fdc0705d4a2c7f4c08d5df2cbc78fb53ef2898bca3edb2192ddcb",
+ "P3_perft_pins_unchanged": true,
+ "P4_bench_sha256_unchanged": true,
+ "P5_fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "dd7912948f3f1cc310e90fc2e3dbd9918bf70b84905c808fa49cff97cffd918e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "dd7912948f3f1cc310e90fc2e3dbd9918bf70b84905c808fa49cff97cffd918e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "dd7912948f3f1cc310e90fc2e3dbd9918bf70b84905c808fa49cff97cffd918e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "P5_fingerprints_equal": true,
+ "P5_generated_unchanged": true,
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "30d5bdb3c2e1098942aa6be6e6ed0a30111b97b4",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "dc9ce14be8d8b608439f5edecac91d64dd3fda20",
+  "dirty": false,
+  "phase": "before"
+ },
+ "changed_files": [
+  "src/combat/mechanics/damage/attack.h",
+  "src/combat/mechanics/damage/base_damage.h",
+  "src/combat/mechanics/damage/base_power.h",
+  "src/combat/mechanics/damage/context.h",
+  "src/combat/mechanics/damage/crit.h",
+  "src/combat/mechanics/damage/modify_damage.h",
+  "src/combat/mechanics/damage/stats.h",
+  "src/combat/turn.c",
+  "src/core/inline.h"
+ ],
+ "object_identity": {
+  "debug": {
+   "compared": 283,
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "library_after": "779b9b67ee55c6d321c01306d96f592711aef81b6f5e81acc7e38a55bd178539",
+   "library_before": "d1e3c12e01e4456d74a62d1da9835bfb9f2e9ea3b8ab00a843f75ac3c6921e3a"
+  },
+  "ipo": {
+   "compared": 285,
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "library_after": "3f9d759e4090c36f95b193877603c798c8049648a4bfac9a5f583018383dda47",
+   "library_before": "f7768894a97a82a8605513f11b59f03fe993908f25dc64e74e2857afd386a6e1"
+  },
+  "noipo": {
+   "compared": 283,
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "library_after": "0280ab3094d8dd146e90b3ba5d25754b304113f24fc316fbac13d5382671f7b8",
+   "library_before": "cc486752df9769c575706d4263bccf88077b2c8299bc128489a4a3e8d8519a79"
+  }
+ }
+}
