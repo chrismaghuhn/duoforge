@@ -1,0 +1,210 @@
+{
+ "name": "cs_outrage_2",
+ "purpose": "Singles conformance (decision 0083): a random battle (tools/reference/diff_driver.py random, seed 86, its battle 464) kept for what its log shows: outrage.",
+ "data": "pool",
+ "format": "gen9championsou",
+ "seed": "sodium,4164096cf16ce2342eccd8c786838d981d871316fcda4548c2eab2f95cadddbe",
+ "teams": [
+  "Sneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Protect\n- Dire Claw\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Protect\n\nSinistcha @ Colbur Berry\nAbility: Hospitality\nLevel: 50\nEVs: 29 HP / 8 Def / 24 SpD / 5 Spe\nBold Nature\n- Matcha Gotcha\n- Shadow Ball\n- Protect\n- Rage Powder\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect\n\nDragapult (M) @ Kasib Berry\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 1 Def / 1 SpD / 32 Spe\nTimid Nature\n- Shadow Ball\n- Breaking Swipe\n- Light Screen\n- Reflect",
+  "Staraptor (F) @ Eject Button\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Whirlwind\n- Brave Bird\n- Protect\n\nMilotic (M) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 20 Def / 10 SpA / 2 SpD / 2 Spe\nModest Nature\n- Scald\n- Ice Beam\n- Recover\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGyarados (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect\n\nKingambit (M) @ Focus Sash\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n\nGarchomp (M) @ Black Glasses\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Outrage\n- Dragon Claw\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 5",
+   "p2": "team 2"
+  },
+  {
+   "p1": "move 4",
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 4 mega",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 3 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p2": "switch 6"
+  },
+  {
+   "p1": "move 4 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 1",
+   "p2": "switch 5"
+  },
+  {
+   "p1": "switch 6"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 3"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "switch 5"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 2"
+  },
+  {
+   "p1": "switch 5",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 2"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 2 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "move 1",
+   "p2": "move 1 1"
+  },
+  {
+   "p1": "switch 5"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 1"
+  },
+  {
+   "p1": "switch 4",
+   "p2": "move 1"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 1"
+  },
+  {
+   "p2": "switch 4"
+  },
+  {
+   "p1": "move 2",
+   "p2": "move 3"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 1 1",
+   "p2": "move 4"
+  },
+  {
+   "p1": "move 4",
+   "p2": "move 2 1"
+  },
+  {
+   "p1": "switch 4"
+  },
+  {
+   "p1": "move 3",
+   "p2": "move 2 1"
+  }
+ ]
+}

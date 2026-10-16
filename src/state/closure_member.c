@@ -50,7 +50,8 @@ const dfi_pivot_move *dfi_pivot_of_flag(uint32_t flag)
 
 dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
 {
-    const bool pool = data_kind == DUOFORGE_DATA_KIND_POOL || data_kind == DUOFORGE_DATA_KIND_POOL_DEV;
+    const bool pool = data_kind == DUOFORGE_DATA_KIND_POOL || data_kind == DUOFORGE_DATA_KIND_POOL_DEV ||
+                      data_kind == DUOFORGE_DATA_KIND_POOL_SINGLES_DEV;
     const bool team_c = data_kind == DUOFORGE_DATA_KIND_TEAM_C || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV;
     /* The values of Team C's mechanics are valid under the TEAM_C and POOL kinds (the pool has them all). */
     const bool extended = team_c || pool;
@@ -69,7 +70,7 @@ dfi_kind_limits dfi_kind_limits_of(uint32_t data_kind)
                                   : DFI_VOL_FLAGS_MAX;
     lim.pool_rules = pool;
     lim.dev = data_kind == DUOFORGE_DATA_KIND_CLOSURE_DEV || data_kind == DUOFORGE_DATA_KIND_TEAM_C_DEV ||
-              data_kind == DUOFORGE_DATA_KIND_POOL_DEV;
+              data_kind == DUOFORGE_DATA_KIND_POOL_DEV || data_kind == DUOFORGE_DATA_KIND_POOL_SINGLES_DEV;
     return lim;
 }
 

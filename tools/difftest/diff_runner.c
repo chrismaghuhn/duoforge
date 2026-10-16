@@ -129,6 +129,8 @@ static const char *kind_name(uint32_t data_kind)
         return "POOL";
     case DUOFORGE_DATA_KIND_POOL_DEV:
         return "POOL_DEV";
+    case DUOFORGE_DATA_KIND_POOL_SINGLES_DEV:
+        return "POOL_SINGLES_DEV";
     default:
         return "UNKNOWN";
     }
@@ -161,8 +163,10 @@ static void build_setup(const dfr_battle *b, duoforge_battle_setup *s)
     }
 }
 
-/* The decision bundle of a step: the commands the reference's players chose, as the conformance test builds it. */
-static void build_bundle(const duoforge_battle *battle, const df_conf_step *st, duoforge_decision_bundle *bd)
+/* The decision bundle of a step: the commands the reference's players chose, as the conformance test builds it. A team
+ * choice has `pick_count` picks: the brought count of the kind, or the lead alone in singles (decision 0083). */
+static void build_bundle(const duoforge_battle *battle, const df_conf_step *st, uint32_t pick_count,
+                         duoforge_decision_bundle *bd)
 {
     memset(bd, 0, sizeof *bd);
     bd->epoch = battle->request_epoch;
@@ -176,8 +180,8 @@ static void build_bundle(const duoforge_battle *battle, const df_conf_step *st, 
         r->side = (uint8_t)s;
         if (st->team) {
             r->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
-            r->pick_count = 4u;
-            for (uint32_t i = 0u; i < 4u; ++i) {
+            r->pick_count = (uint8_t)pick_count;
+            for (uint32_t i = 0u; i < pick_count && i < 6u; ++i) {
                 r->picks[i] = st->picks[s][i];
             }
         } else {
@@ -400,7 +404,7 @@ static outcome run_battle(const dfr_battle *b, duoforge_context *const contexts[
             break;
         }
         duoforge_decision_bundle bd;
-        build_bundle(battle, st, &bd);
+        build_bundle(battle, st, o.data_kind == DUOFORGE_DATA_KIND_POOL_SINGLES_DEV ? 1u : 4u, &bd);
         duoforge_step_result res;
         uint32_t used = 0xFFFFFFFFu;
         static duoforge_event ev_buf[2][DUOFORGE_MAX_EVENTS];
@@ -554,10 +558,32 @@ int main(int argc, char **argv)
             }
             break;
         }
-        /* The pool battles carry the extended ids (team_c) and name their kind. */
+        /* The pool battles carry the extended ids (team_c) and name their kind. A singles battle (decision 0083) runs
+         * under a POOL_SINGLES_DEV context that registers and brings exactly its member count. */
         const bool pool = battle.strict_kind == DUOFORGE_DATA_KIND_POOL || battle.strict_kind == DUOFORGE_DATA_KIND_POOL_DEV;
         const size_t kind = pool ? 2u : battle.team_c != 0u ? 1u : 0u;
-        const outcome o = run_battle(&battle, contexts[kind], configs[kind], stdout, views);
+        outcome o;
+        if (battle.strict_kind == DUOFORGE_DATA_KIND_POOL_SINGLES_DEV) {
+            const duoforge_context_config singles = {DUOFORGE_DATA_KIND_POOL_SINGLES_DEV, battle.member_count,
+                                                     battle.member_count, 0u, 0u, NULL};
+            const duoforge_context_config *const pair[2] = {&singles, &singles};
+            duoforge_context *ctx = NULL;
+            const duoforge_status cs = duoforge_context_create(&singles, &ctx);
+            if (cs != DUOFORGE_OK) {
+                memset(&o, 0, sizeof o);
+                o.data_kind = DUOFORGE_DATA_KIND_POOL_SINGLES_DEV;
+                char text[160];
+                (void)snprintf(text, sizeof text, "context: %s (%u members)", duoforge_status_name(cs),
+                               (unsigned)battle.member_count);
+                set_detail(&o, VERDICT_DIVERGENCE, text);
+            } else {
+                duoforge_context *const both[2] = {ctx, ctx};
+                o = run_battle(&battle, both, pair, stdout, views);
+            }
+            duoforge_context_destroy(ctx);
+        } else {
+            o = run_battle(&battle, contexts[kind], configs[kind], stdout, views);
+        }
         if (o.write_failed) {
             fprintf(stderr, "duoforge_diff_runner: cannot write %s\n", views_path);
             dfr_battle_free(&battle);

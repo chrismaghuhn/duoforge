@@ -21,6 +21,22 @@ duoforge_status dfi_apply_team_selection(const duoforge_context *ctx, struct duo
         return DUOFORGE_E_INVARIANT;
     }
     struct duoforge_battle tmp = *b;
+    dfi_team_picks full = *picks;
+    if (dfi_context_singles(ctx)) {
+        /* Singles (decision 0083): the choice names the lead; the bench follows in roster order (sim/side.ts chooseTeam
+         * fills a choice of leads only with the remaining positions in order). */
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            const uint32_t lead = picks->picks[s][0];
+            uint32_t k = 1u;
+            for (uint32_t r = 0u; r < brought_count && r < DUOFORGE_MAX_ROSTER; ++r) {
+                if (r != lead && k < DUOFORGE_MAX_ROSTER) {
+                    full.picks[s][k] = (uint8_t)r;
+                    k += 1u;
+                }
+            }
+        }
+        picks = &full;
+    }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         dfi_side *side = &tmp.sides[s];
         uint32_t mask = 0u;
@@ -45,7 +61,7 @@ duoforge_status dfi_apply_team_selection(const duoforge_context *ctx, struct duo
         }
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
-        for (uint32_t k = 0u; k < DUOFORGE_ACTIVE_PER_SIDE && k < brought_count; ++k) {
+        for (uint32_t k = 0u; k < dfi_context_active(ctx) && k < brought_count; ++k) {
             dfi_binding binding = {{0u, 0u}, 0u};
             const dfi_position_id pos = {(uint8_t)s, (uint8_t)k};
             const duoforge_status st = dfi_place(&tmp, pos, picks->picks[s][k], &binding);

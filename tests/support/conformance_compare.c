@@ -332,11 +332,12 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
              * PIVOT boundaries. */
             if (pos != NULL && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
                 /* Step G56: a lockedmove (Outrage) keeps its slot in locked_move too, but the reference has no locked slot for it
-                 * (its count is the tail's lock_turns; the lock is compared through the request and the move lines). */
-                const bool lockedmove = b->tail.sides[s].positions[pos - b->sides[s].positions].lock_turns != 0u;
+                 * (its count is the tail's lock_turns; the lock is compared through the request and the move lines). A Choice
+                 * item's lock on the same move does name the slot (trace_to_c: the choice slot, no target), so it is compared. */
+                const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
+                const bool lockedmove = b->tail.sides[s].positions[pos - b->sides[s].positions].lock_turns != 0u && choice == 0u;
                 const uint32_t lslot = pos->locked_move != 0u && !lockedmove ? (uint32_t)pos->locked_move - 1u : 0xFFu;
                 const uint32_t ltarget = pos->locked_move != 0u && !lockedmove ? pos->locked_target : 0u;
-                const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
                 const uint32_t unburden = ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u ? 16u : 0u;
                 const uint32_t helping = ((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u ? 32u : 0u;
                 /* Step G30: the bit of a Rage Powder user is not Follow Me's (its volatile is not compared here: the extension's

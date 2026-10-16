@@ -34,6 +34,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -52,7 +53,22 @@ PINS = ROOT / "tests" / "perft" / "pins.json"
 TEAMS = ROOT / "data" / "teams"
 
 C = _layout.CONSTANTS
-KINDS = {"CLOSURE": C["DUOFORGE_DATA_KIND_CLOSURE"], "POOL": C["DUOFORGE_DATA_KIND_POOL"]}
+
+
+def _header_kind(name):
+    """A DUOFORGE_DATA_KIND_* value read from include/duoforge/duoforge.h, for a kind that _layout.CONSTANTS does not
+    carry (POOL_SINGLES_DEV, decision 0083: the layout stays unchanged)."""
+    text = (ROOT / "include" / "duoforge" / "duoforge.h").read_text(encoding="utf-8")
+    m = re.search(r"^#define DUOFORGE_DATA_KIND_%s\s+(\d+)u" % name, text, re.M)
+    if m is None:
+        raise PerftError(f"DUOFORGE_DATA_KIND_{name} is not in duoforge.h")
+    return int(m.group(1))
+
+
+KINDS = {"CLOSURE": C["DUOFORGE_DATA_KIND_CLOSURE"], "POOL": C["DUOFORGE_DATA_KIND_POOL"],
+         "POOL_SINGLES_DEV": None}
+# The context of a kind beyond the certified profile (register 6, bring 4): singles brings every registered member.
+PROFILE = {"POOL_SINGLES_DEV": {"max_roster": 6, "brought_count": 6}}
 BOUNDARIES = {C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]: "TEAM_SELECTION", C["DUOFORGE_BOUNDARY_TURN"]: "TURN",
               C["DUOFORGE_BOUNDARY_REPLACEMENT"]: "REPLACEMENT", C["DUOFORGE_BOUNDARY_PIVOT"]: "PIVOT",
               C["DUOFORGE_BOUNDARY_TERMINAL"]: "TERMINAL"}
@@ -142,7 +158,8 @@ class Tree:
         self.spec = spec
         self.seed = int(spec["seed"])
         self.workers, self.chunk = workers, chunk
-        self.ctx = duoforge.Context(data_kind=KINDS[kind])
+        value = KINDS[kind] if KINDS[kind] is not None else _header_kind(kind)
+        self.ctx = duoforge.Context(data_kind=value, **PROFILE.get(kind, {}))
         self.setup, self.teams, self.setup_sha256 = setup_of(self.ctx, spec)
         self._levels = {}
         self._cursor = [self._batch(1), self._batch(1)]

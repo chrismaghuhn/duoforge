@@ -289,8 +289,11 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     out->charging = slot->charge_turns != 0u ? 1u : 0u;
     /* A lockedmove (step G56) is shown by the request alone (its one move is forced): no locked slot, as the reference has none.
      * Its owner's request shows whether it runs; the foe sees only the public last move, since the drawn count may end
-     * silently (dfi_maybe_lockedmove, view audit 2026-10-10). */
-    const bool lockedmove = s == viewer ? b->tail.sides[s].positions[p].lock_turns != 0u : dfi_maybe_lockedmove(b, s * 2u + p);
+     * silently (dfi_maybe_lockedmove, view audit 2026-10-10). A Choice item's lock on the same move still names its slot, as the
+     * reference's choice lock does (decision 0083). */
+    const bool choice = ((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u;
+    const bool lockedmove =
+        !choice && (s == viewer ? b->tail.sides[s].positions[p].lock_turns != 0u : dfi_maybe_lockedmove(b, s * 2u + p));
     const uint32_t locked_index =
         slot->locked_move != 0u && !lockedmove ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
     out->locked_slot = (uint8_t)locked_index; /* <= 0xFF */
@@ -419,6 +422,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
          * presence of the occupant's tail counters, never the counters. They are set by the -start lines and cleared
          * by the -end lines or when the occupant leaves (the tail is cleared then), as section 6.1 says; an empty
          * position has no tail. */
+        /* Step K4 (#475, decision 0015 5dl): the field view's Gravity turns, public (-fieldstart|move: Gravity, data/moves.ts:7773-7778). */
+        o.field.gravity_turns = battle->tail.gravity_turns;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
              * residual, so it is set only at a boundary inside a turn (a PIVOT), as decision 0018 section 3.3 says. */

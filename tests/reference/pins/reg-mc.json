@@ -1,5 +1,5 @@
 {
   "maintenance": "Hand-maintained lower bounds of the reference sets (restructure step 2 of docs/superpowers/plans/2026-10-11-repo-restructure.md: global sums are derived, not maintained). Every sum (battles, certified, fixture matches, tiebreak stops, tape and event rows) is derived from the battle files: by tests/reference/data.cmake at configure time and by tools/reference/format_pins.py. A set below its bound fails both. Raise a bound deliberately when a set grows; adding a battle needs no edit here.",
   "format": "reg-mc",
-  "minimum_battles": {"closure": 90, "team_c": 73, "pool": 1001}
+  "minimum_battles": {"closure": 90, "team_c": 73, "pool": 1012}
 }

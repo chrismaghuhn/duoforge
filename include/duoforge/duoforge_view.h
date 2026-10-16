@@ -75,7 +75,7 @@ typedef struct duoforge_public_state {
     uint32_t request_mask;
     uint32_t epoch;
     uint8_t foe_seen_mask; /* the foe members the player has seen in battle */
-    uint8_t foe_leads[2];  /* roster indices; DUOFORGE_VIEW_PICK_NONE before the leads are out */
+    uint8_t foe_leads[2];  /* roster indices; DUOFORGE_VIEW_PICK_NONE before the leads are out, and [1] in singles */
     uint8_t foe_pending_mask; /* positions with a queued MOVE */
     uint8_t queue_count;      /* canonical queue records */
     uint8_t reserved[3];   /* zero */
@@ -203,7 +203,8 @@ duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_p
    Python by duoforge._state_layout.VALUES, no public value). `events` are the events of the action as a player sees them (the converter's of the
    protocol lines, decision 0007), from its user's first line (a [cant], a confusion line, its [move], or a [move] Magic Bounce
    reflected for its holder) to the next action, the residual or the decision point; lines of other positions before that
-   first line are skipped. The live tracker keeps the record's move_result with it and holds no rule. A pure call, no heap.
+   first line are skipped. A [cant] Throat Chop of the move's target right after the move line belongs to the action: Magic
+   Bounce took the move and Throat Chop stopped the bounced run (issue 570). The live tracker keeps the record's move_result with it and holds no rule. A pure call, no heap.
    Checks: NULL (events with a count) -> E_NULL_ARGUMENT; user above 3 -> E_INVALID_ARGUMENT; a context of no POOL kind,
    events without the user's action, or an action the events do not determine (a move another one calls, a status move whose
    handler is not mapped, a reflected run the engine itself would refuse) -> E_UNSUPPORTED. Nothing is written on a refusal.

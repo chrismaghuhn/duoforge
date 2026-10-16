@@ -181,11 +181,14 @@ class ArenaTest(unittest.TestCase):
     # ------------------------------------------------------------------ login, team, token
     def test_the_url_is_the_allow_listed_arena_host(self):
         import urllib.parse
+        # the arena's address since its move on 2026-10-15 (llms.txt); the fake connection records it, nothing connects
+        self.assertEqual((pkmn_arena.URL, pkmn_arena.HOST), ("wss://vgc.bot/showdown/websocket", "vgc.bot"))
         url = urllib.parse.urlparse(pkmn_arena.URL)
         self.assertEqual((url.scheme, url.hostname, url.path, url.query), ("wss", pkmn_arena.HOST, "/showdown/websocket", ""))
         self.make(connections=[(LOGIN, 4001)])
         self.run_bot()
         self.assertEqual(self.connect.urls, [pkmn_arena.URL])
+        self.assertFalse(any(old in pkmn_arena.URL for old in pkmn_arena.OLD_HOSTS))
         self.assertFalse(client.official(pkmn_arena.URL))  # the official server's refusal is a separate check
 
     def test_login_with_trn_and_the_team_after_every_login(self):
@@ -1059,6 +1062,13 @@ class CommandLineTest(unittest.TestCase):
             stop, err = self.run_main(argv, ENV)
             self.assertEqual(stop.code, 2)
             self.assertIn("--server arena", err)
+
+    def test_the_showdown_mode_refuses_the_arenas_old_address(self):
+        # the arena moved to vgc.bot (2026-10-15): its old address is no Showdown server to fall back to either
+        stop, err = self.run_main(["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--server",
+                                   "wss://vgc.ellep.dev/showdown/websocket"], ENV)
+        self.assertEqual(stop.code, 2)
+        self.assertIn("vgc.ellep.dev was PKMN Arena's address before it moved to vgc.bot: use --server arena", err)
 
     def test_no_mode_echoes_a_token_on_the_command_line(self):
         for argv in (["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--password", TOKEN],

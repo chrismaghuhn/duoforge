@@ -14,7 +14,8 @@ static bool dfi_kind_is_team_c(uint32_t kind)
 
 static bool dfi_kind_is_pool(uint32_t kind)
 {
-    return kind == DUOFORGE_DATA_KIND_POOL || kind == DUOFORGE_DATA_KIND_POOL_DEV;
+    return kind == DUOFORGE_DATA_KIND_POOL || kind == DUOFORGE_DATA_KIND_POOL_DEV ||
+           kind == DUOFORGE_DATA_KIND_POOL_SINGLES_DEV;
 }
 
 static bool dfi_kind_is_combat(uint32_t kind)
@@ -31,6 +32,26 @@ bool dfi_context_is_closure(const struct duoforge_context *ctx)
 bool dfi_context_is_pool(const struct duoforge_context *ctx)
 {
     return dfi_kind_is_pool(ctx->data_kind);
+}
+
+bool dfi_kind_singles(uint32_t data_kind)
+{
+    return data_kind == DUOFORGE_DATA_KIND_POOL_SINGLES_DEV;
+}
+
+bool dfi_context_singles(const struct duoforge_context *ctx)
+{
+    return dfi_kind_singles(ctx->data_kind);
+}
+
+uint32_t dfi_context_active(const struct duoforge_context *ctx)
+{
+    return dfi_context_singles(ctx) ? 1u : DUOFORGE_ACTIVE_PER_SIDE;
+}
+
+uint32_t dfi_context_pick_count(const struct duoforge_context *ctx)
+{
+    return dfi_context_singles(ctx) ? 1u : ctx->brought_count;
 }
 
 bool dfi_kind_full_roster(uint32_t data_kind)
@@ -87,6 +108,9 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
     if (dfi_kind_full_roster(c.data_kind) &&
         (c.max_roster != DUOFORGE_MAX_ROSTER || c.brought_count != DFI_CLOSURE_BROUGHT_COUNT)) {
         return DUOFORGE_E_INVALID_ARGUMENT; /* the certified profile: register 6, bring 4 (decision 0010) */
+    }
+    if (dfi_kind_singles(c.data_kind) && c.brought_count != c.max_roster) {
+        return DUOFORGE_E_INVALID_ARGUMENT; /* singles brings every registered member (decision 0083) */
     }
     if (closure) {
         /* The generated tables are built in: no counts, no table. */
@@ -161,6 +185,15 @@ duoforge_status duoforge_context_create(const duoforge_context_config *config,
         return DUOFORGE_E_INVARIANT; /* unreachable: 63 bytes */
     }
     *out_context = p;
+    return DUOFORGE_OK;
+}
+
+duoforge_status duoforge_context_active_per_side(const duoforge_context *context, uint32_t *out_active)
+{
+    if (context == NULL || out_active == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    *out_active = dfi_context_active(context);
     return DUOFORGE_OK;
 }
 

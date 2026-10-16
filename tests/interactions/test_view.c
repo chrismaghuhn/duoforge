@@ -163,7 +163,10 @@ static void random_hypothesis(const duoforge_context *ctx, duoforge_battle *scra
             }
         }
     }
-    if (brought >= 2u) {
+    uint32_t active = 0u;
+    (void)duoforge_context_active_per_side(ctx, &active);
+    /* Singles (decision 0083): the bench follows the lead in roster order, so the pick order is fixed by the public lead. */
+    if (brought >= 2u && active == 2u) {
         uint8_t candidates[DUOFORGE_MAX_ROSTER];
         for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER; ++k) {
             candidates[k] = (uint8_t)k;
@@ -302,8 +305,11 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
          * the hypothesis. Every other byte must equal the true state; the foe's actives must equal the truth. */
         static struct duoforge_battle truth;
         const uint32_t foe = p ^ 1u;
-        DF_CHECK(t, dfi_party_entry(&world->tail, foe, 0u) == dfi_party_entry(&b->tail, foe, 0u));
-        DF_CHECK(t, dfi_party_entry(&world->tail, foe, 1u) == dfi_party_entry(&b->tail, foe, 1u));
+        uint32_t active = 0u;
+        DF_CHECK(t, duoforge_context_active_per_side(ctx, &active) == DUOFORGE_OK);
+        for (uint32_t k = 0u; k < active; ++k) { /* one active in singles (decision 0083): entry 1 is the bench */
+            DF_CHECK(t, dfi_party_entry(&world->tail, foe, k) == dfi_party_entry(&b->tail, foe, k));
+        }
         truth = *b;
         memcpy(truth.tail.party_order[foe], world->tail.party_order[foe], sizeof truth.tail.party_order[foe]);
         /* The silent flinch is not public (view audit 2026-10-10): the record drops it where it has no effect (no move left
@@ -560,8 +566,11 @@ static void mr_end_action(df_test *t, const duoforge_context *ctx, mr_track *tr,
     }
     for (uint32_t j = start; j < end; ++j) {
         const uint32_t h = ev[j].position;
-        if (ev[j].kind == DUOFORGE_EVENT_MOVE && ev[j].cause == DUOFORGE_CAUSE_ABILITY && h < DFI_POSITIONS_MR_TEST &&
-            !tr->fainted[h]) {
+        const bool bounced_cant = j > start && ev[j].kind == DUOFORGE_EVENT_CANT && ev[j].cause == DUOFORGE_CAUSE_MOVE &&
+                                  ev[j].id2 == DFI_MOVE_THROATCHOP && ev[j - 1u].kind == DUOFORGE_EVENT_MOVE &&
+                                  ev[j - 1u].position == pos && ev[j - 1u].other == h; /* issue 570: the stopped bounced run */
+        if (((ev[j].kind == DUOFORGE_EVENT_MOVE && ev[j].cause == DUOFORGE_CAUSE_ABILITY) || bounced_cant) &&
+            h < DFI_POSITIONS_MR_TEST && !tr->fainted[h]) {
             mr_set(t, ctx, tr, h, h, &ev[j], end - j);
         }
     }
@@ -610,7 +619,13 @@ static void mr_step(df_test *t, const duoforge_context *ctx, mr_track *tr, const
             }
             continue;
         }
-        const bool starts = pos < DFI_POSITIONS_MR_TEST &&
+        /* A Magic Bounce holder's [cant] Throat Chop right after the move line that targets it is the bounced run, inside the
+         * action (issue 570), not an action of its own. */
+        const bool bounce_cant = open && i > 0u && e->kind == DUOFORGE_EVENT_CANT && e->cause == DUOFORGE_CAUSE_MOVE &&
+                                 e->id2 == DFI_MOVE_THROATCHOP && ev[i - 1u].kind == DUOFORGE_EVENT_MOVE &&
+                                 ev[i - 1u].cause == DUOFORGE_CAUSE_NONE && ev[i - 1u].position == user &&
+                                 ev[i - 1u].other == pos && pos / 2u != user / 2u;
+        const bool starts = pos < DFI_POSITIONS_MR_TEST && !bounce_cant &&
                             ((e->kind == DUOFORGE_EVENT_MOVE && e->cause == DUOFORGE_CAUSE_NONE) ||
                              e->kind == DUOFORGE_EVENT_CONFUSED ||
                              (e->kind == DUOFORGE_EVENT_CANT && e->cause != DUOFORGE_CAUSE_ABILITY));
@@ -1726,6 +1741,12 @@ int main(void)
      * neutral() call in duoforge_public_queue_mask, as on main. */
     DF_CHECK(&t, masks_checked == 8u && masks_refused == 12u);
     DF_CHECK(&t, varied_picks > 0u && varied_commands == 0u);
+    /* Singles (decision 0083), after the pins above (its PIVOTs add to the mask counts): the same round trip, one position per
+     * side, the foe's bench order (past the lead) hidden. */
+    tally singles = {0};
+    play(&t, &df_config_pool_singles, "CABCCCAB", GAMES, 0x2026101500000004u, &singles);
+    printf("singles: %u states, %u views, %u unsupported\n", singles.states, singles.checked, singles.unsupported);
+    DF_CHECK(&t, singles.checked > 0u);
     corpus_move_results(&t);
     printf("move results: %u actions classified, %u refused, %u slots compared with the engine\n", mr_classified,
            mr_unclassified, mr_compared);

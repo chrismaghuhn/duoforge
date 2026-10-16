@@ -1,0 +1,22 @@
+{
+  "name": "o2_glaive_rush_substitute",
+  "purpose": "Glaive Rush into a Substitute (decision 0083 section 7): Raichu, p2a, sets up a Substitute at step 1 and Baxcalibur, p1a, breaks it with Glaive Rush; the null target still counts for selfDrops (data/mods/champions/scripts.ts:349-352, sim/battle-actions.ts:1317-1335), so the glaiverush volatile is set (-singlemove, silent). At step 2 Raichu's Thunderbolt hits Baxcalibur without an accuracy roll and with double damage (data/moves.ts:6659-6669). The engine did not set the volatile. The teams and the choices are written for this fixture (decision 0083 section 7); the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000002026",
+  "teams": [
+    "Baxcalibur (M) @ Sitrus Berry\nAbility: Thermal Exchange\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCareful Nature\n- Glaive Rush\n- Protect\n- Ice Shard\n- Icy Wind\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Low Kick\n- Swords Dance\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect",
+    "Raichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n- Substitute\n- Encore\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Ice Beam\n- Coil\n- Protect\n- Muddy Water\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 4",
+      "move 4, move 4"
+    ],
+    "p2": [
+      "move 3, move 2",
+      "move 1 1, move 2"
+    ],
+    "max_steps": 3
+  }
+}

@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "5d41dab82340b8f19b21011348f232d9d36d84d4046fd1d41c297e4846b556e6" /* the model fingerprint of the pool tables; changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite) and K3 (#473, entry 5de: Speed Swap) */
-#define FP_KPD_HEX "eeedfcc5178381ed5943e0744be2cfe151817acf4cd4e62d2403b8955a6dbd43" /* POOL_DEV: the same table hash, changed by steps K1, K2 and K3 */
+#define FP_KP_HEX "dd7912948f3f1cc310e90fc2e3dbd9918bf70b84905c808fa49cff97cffd918e" /* the model fingerprint of the pool tables; changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
+#define FP_KPD_HEX "7456fe2e83b08ced0f05ea17062fb66c39c372d881992014aecc0fa12ca3a5c4" /* POOL_DEV: the same table hash, changed by steps K1, K2, K3 and K4 */
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -305,9 +305,9 @@ int main(void)
         duoforge_context_destroy(out);
         out = NULL;
         c = df_config_pool_dev;
-        c.data_kind = DUOFORGE_DATA_KIND_POOL_DEV + 1u;
+        c.data_kind = DUOFORGE_DATA_KIND_POOL_SINGLES_DEV + 1u; /* 8 is POOL_SINGLES_DEV (decision 0083), 9 no kind */
         DF_CHECK(&t, duoforge_context_create(&c, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == NULL);
-        DF_CHECK_EQ_U64(&t, c.data_kind, 8u);
+        DF_CHECK_EQ_U64(&t, c.data_kind, 9u);
         c.data_kind = 0u;
         DF_CHECK(&t, duoforge_context_create(&c, &out) == DUOFORGE_E_INVALID_ARGUMENT && out == NULL);
     }
