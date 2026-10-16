@@ -1,0 +1,328 @@
+{
+ "P1_inventory": {
+  "debug": {
+   "equal": true,
+   "names": 1560,
+   "sha256": "8d3c12dfd0329c4c3a82c4186fdc65a834b76e2a619b4d5d228ab63299e11276"
+  },
+  "ipo": {
+   "equal": true,
+   "names": 1560,
+   "sha256": "8d3c12dfd0329c4c3a82c4186fdc65a834b76e2a619b4d5d228ab63299e11276"
+  },
+  "noipo": {
+   "equal": true,
+   "names": 1560,
+   "sha256": "8d3c12dfd0329c4c3a82c4186fdc65a834b76e2a619b4d5d228ab63299e11276"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_selected_tests": {
+  "after-ipo": 266,
+  "after-noipo": 260,
+  "before-ipo": 266,
+  "before-noipo": 260
+ },
+ "P2_reference": {
+  "executions": 2742,
+  "ipo": "a5af789871ac9164f2c6240db800a3e87b1852ed9c7e5391516653e14bd3c067",
+  "noipo": "a5af789871ac9164f2c6240db800a3e87b1852ed9c7e5391516653e14bd3c067",
+  "steps": 23788,
+  "stops": 8952,
+  "unique_battles": 1208
+ },
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "022331801cd5b1c0acefffa6abda89b549e76f17",
+  "dirty": false,
+  "phase": "after"
+ },
+ "audit": {
+  "new": "02233180",
+  "old": "cefc5f67",
+  "old_function_lines": 765,
+  "phases": [
+   {
+    "body_sha256": "ef4055eef4f7d924038fc1224b1bad6dd7ab04b1af67c5988b7a799b59fc8ee2",
+    "new_lines": [
+     9833,
+     9989
+    ],
+    "old_function_lines": [
+     24,
+     180
+    ],
+    "phase": "dfi_residual_collect",
+    "stop_returns": 0
+   },
+   {
+    "body_sha256": "c52fd41dfbbe81db1574e105016013702290cf3dd3d8983cab30d085a8d329d8",
+    "new_lines": [
+     10000,
+     10044
+    ],
+    "old_function_lines": [
+     181,
+     226
+    ],
+    "phase": "dfi_residual_order",
+    "stop_returns": 0
+   },
+   {
+    "body_sha256": "d5b0b4f19c031a3997f4683c5acba8542307f949cd32131ecfeb5f238fbe8696",
+    "new_lines": [
+     10056,
+     10344
+    ],
+    "old_function_lines": [
+     227,
+     515
+    ],
+    "phase": "dfi_residual_early",
+    "stop_returns": 6
+   },
+   {
+    "body_sha256": "0e6b69134b150b5be884f7e1a6182f164a2a0d698506ae10485bc9d9e6f5c4e3",
+    "new_lines": [
+     10354,
+     10459
+    ],
+    "old_function_lines": [
+     516,
+     621
+    ],
+    "phase": "dfi_residual_durations",
+    "stop_returns": 4
+   },
+   {
+    "body_sha256": "d806f6d90a8e70b29060fd985dda585f5031855468dac93a5846db7a4210c969",
+    "new_lines": [
+     10467,
+     10506
+    ],
+    "old_function_lines": [
+     622,
+     661
+    ],
+    "phase": "dfi_residual_late",
+    "stop_returns": 1
+   },
+   {
+    "body_sha256": "ca7cce5884108dc7364b958c1600446d26cb26ec0767ae3965189a95addc9ac1",
+    "new_lines": [
+     10514,
+     10617
+    ],
+    "old_function_lines": [
+     662,
+     765
+    ],
+    "phase": "dfi_residual_noorder",
+    "stop_returns": 0
+   }
+  ],
+  "stop_returns": 11
+ },
+ "before": {
+  "commit": "cefc5f677662d6d19c589c09fcc6e087b6368816",
+  "dirty": false,
+  "phase": "before"
+ },
+ "callgrind": {
+  "after-ipo": {
+   "inclusive_ir": {
+    "dfi_residual_events_run": 2858968073,
+    "dfi_residual_sort": 253096025,
+    "dfi_turn_run": 31798880581
+   },
+   "total_ir": 64773597644
+  },
+  "after-noipo": {
+   "inclusive_ir": {
+    "dfi_residual_events_run": 2907639072,
+    "dfi_residual_sort": 259115545,
+    "dfi_turn_run": 33033498511
+   },
+   "total_ir": 70882149781
+  },
+  "before-ipo": {
+   "inclusive_ir": {
+    "dfi_residual_events_run": 2791250631,
+    "dfi_residual_sort": 253096025,
+    "dfi_turn_run": 31733213330
+   },
+   "total_ir": 64721943699
+  },
+  "before-noipo": {
+   "inclusive_ir": {
+    "dfi_residual_events_run": 2856750585,
+    "dfi_residual_sort": 259115545,
+    "dfi_turn_run": 32982610024
+   },
+   "total_ir": 70831261343
+  },
+  "gate-ipo": true,
+  "gate-noipo": true,
+  "ratio-ipo": 1.0007980901383342,
+  "ratio-noipo": 1.0007184460227747
+ },
+ "changed_files": [
+  "src/combat/turn.c",
+  "src/core/force_inline.h"
+ ],
+ "fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "df5c0ef6ee517c9966adc8d0e241f45f30118779ad64722a3e7b2ad7ee50c476",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "df5c0ef6ee517c9966adc8d0e241f45f30118779ad64722a3e7b2ad7ee50c476",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "df5c0ef6ee517c9966adc8d0e241f45f30118779ad64722a3e7b2ad7ee50c476",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "native_reports": {
+  "debug": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 14812 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 27997 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  },
+  "ipo": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 14812 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 27997 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  },
+  "noipo": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 14812 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 27997 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  }
+ },
+ "object_identity": {
+  "bench_main": "bench/main.c.o embeds the commit (cmake/bench_revision.cmake)",
+  "debug": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "files": 283,
+   "shared_library_equal": false,
+   "shared_library_sha256_after": "5080030d2374bf9473335f4e9e49a9afdedd984333911c24da0ae3a659c5f69b",
+   "shared_library_sha256_before": "33aa5bdd3e3db9d6e17c32de6a2c0f19759eae101a1b186da3c2debd7ea1104c"
+  },
+  "debug_note": "as IPO off",
+  "ipo": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "files": 283,
+   "shared_library_equal": false,
+   "shared_library_sha256_after": "8999f0f2b6d6224485b3896bfcbb99a2ea7cfe80abe9b90d823a8b2d52f88a1e",
+   "shared_library_sha256_before": "d9f498062cca1d637b242ea7c78feed6978c72b62baed1f8b21ce6fa3df68ae6"
+  },
+  "ipo_note": "turn.c.o, libduoforge.a and the library differ: the residual runner is cut into phases (not byte-equal; the gate is callgrind)",
+  "noipo": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "files": 283,
+   "shared_library_equal": false,
+   "shared_library_sha256_after": "1761af323e98c9e4f9e21be07f7852cec902b4f2ec6c454437d372bbf94f96a0",
+   "shared_library_sha256_before": "1da1fdc12d0eee8cd5e90736048190cd49558d06e71a89106fc0ef7cc0d9b423"
+  }
+ },
+ "stack_usage_bytes": {
+  "02233180-ipo": {
+   "dfi_residual_events_run.constprop": 3056,
+   "dfi_residual_order_changes_outcome": 10544,
+   "dfi_residual_sort": 608,
+   "dfi_turn_run": 560
+  },
+  "02233180-noipo": {
+   "dfi_residual_events_run.constprop": 3056,
+   "dfi_residual_order_changes_outcome": 10544,
+   "dfi_residual_sort": 608,
+   "dfi_turn_run": 560
+  },
+  "cefc5f67-ipo": {
+   "dfi_residual_events_run.constprop": 3040,
+   "dfi_residual_order_changes_outcome": 10544,
+   "dfi_residual_sort": 608,
+   "dfi_turn_run": 560
+  },
+  "cefc5f67-noipo": {
+   "dfi_residual_events_run.constprop": 3040,
+   "dfi_residual_order_changes_outcome": 10544,
+   "dfi_residual_sort": 608,
+   "dfi_turn_run": 560
+  }
+ },
+ "stack_usage_note": "-fstack-usage; IPO off: the compile of turn.c; IPO on: the LTO link stage (libduoforge_shared.so.ltrans*.su)"
+}

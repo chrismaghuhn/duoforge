@@ -1,0 +1,70 @@
+{
+ "after-ipo": {
+  "inclusive_ir": {
+   "dfi_residual_events_run": 2858968073,
+   "dfi_residual_sort": 253096025,
+   "dfi_turn_run": 31798880581
+  },
+  "record": {
+   "battles": 4096,
+   "errors": 0,
+   "side_decisions": 131721,
+   "steps": 73337,
+   "truncations": 0,
+   "turns": 53625
+  },
+  "total_ir": 64773597644
+ },
+ "after-noipo": {
+  "inclusive_ir": {
+   "dfi_residual_events_run": 2907639072,
+   "dfi_residual_sort": 259115545,
+   "dfi_turn_run": 33033498511
+  },
+  "record": {
+   "battles": 4096,
+   "errors": 0,
+   "side_decisions": 131721,
+   "steps": 73337,
+   "truncations": 0,
+   "turns": 53625
+  },
+  "total_ir": 70882149781
+ },
+ "before-ipo": {
+  "inclusive_ir": {
+   "dfi_residual_events_run": 2791250631,
+   "dfi_residual_sort": 253096025,
+   "dfi_turn_run": 31733213330
+  },
+  "record": {
+   "battles": 4096,
+   "errors": 0,
+   "side_decisions": 131721,
+   "steps": 73337,
+   "truncations": 0,
+   "turns": 53625
+  },
+  "total_ir": 64721943699
+ },
+ "before-noipo": {
+  "inclusive_ir": {
+   "dfi_residual_events_run": 2856750585,
+   "dfi_residual_sort": 259115545,
+   "dfi_turn_run": 32982610024
+  },
+  "record": {
+   "battles": 4096,
+   "errors": 0,
+   "side_decisions": 131721,
+   "steps": 73337,
+   "truncations": 0,
+   "turns": 53625
+  },
+  "total_ir": 70831261343
+ },
+ "gate-ipo": true,
+ "gate-noipo": true,
+ "ratio-ipo": 1.0007980901383342,
+ "ratio-noipo": 1.0007184460227747
+}
