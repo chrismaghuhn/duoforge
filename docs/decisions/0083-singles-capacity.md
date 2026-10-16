@@ -84,12 +84,12 @@ of the gate campaign are legal. Team Preview brings 6 of 6, as the kind does (se
 
 **The Endless Battle Clause.** Showdown checks it in `nextTurn` (sim/battle.ts:1773, 1803-1903): nothing happens before
 turn 101 (:1836); from turn 101 on, a battle in which every Pokemon is stale ends in a tie or a loss (:1854-1903). The
-turn limit of every format ties at turn 1001 (:1839-1843). The engine models neither (no staleness, no turn limit). Under
+turn limit of every format ties at turn 1001 (:1839-1843). The engine does not model the staleness rule; the turn-limit tie is modelled for the doubles kinds since decision 0015 entry 5dt. Under
 the singles kind a step that would start turn 101 is therefore **refused by name**: `DUOFORGE_E_UNSUPPORTED` from
 `dfi_end_turn`, before any change (test: `duoforge.state.singles`, turn 100 refused and turn 99 accepted). In the reference
 battles the clause never acts: the campaigns stop after 100 steps (`--max-steps 100`, so no battle passes turn 100), and
 the longest battle of the set ends on turn 52. The doubles kinds keep their behaviour: their formats have no Endless
-Battle Clause, and their turn limit at 1001 is not modelled either, as before this step.
+Battle Clause, and their turn-limit tie is modelled since decision 0015 entry 5dt (#617).
 
 ## 7. Fixes found by the singles campaigns that apply to doubles too
 
