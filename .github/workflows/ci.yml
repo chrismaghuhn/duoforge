@@ -278,7 +278,9 @@ jobs:
     name: Windows / MSVC / ${{ matrix.arch }} / ${{ matrix.config }}
     if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: windows-latest
-    timeout-minutes: 20
+    # 20 minutes ran out on x64 Release (IPO build + serial ctest) once the
+    # suite grew past 1500 tests (2026-10-16: cancelled on #622, #624 and #625)
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
