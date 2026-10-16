@@ -1,4 +1,4 @@
-"""The play of a BC checkpoint on POOL teams (M11 BC spec section 10): python -m duoforge_learn.bc_eval.
+"""The play of a BC checkpoint on POOL teams (M11 BC spec section 10): python -m duoforge_eval.bc_eval.
 
 The checkpoint's greedy network plays a suite (suite.make_suite) of the team pool against the random baseline and
 against ScriptedPolicy (evaluate.play_suite, evaluate.scores), encoded with its own encoder and view-extension mask
@@ -13,11 +13,11 @@ import jax
 import duoforge
 from duoforge import _layout, teams
 
-from . import checkpoint, evaluate, policy, suite
+from duoforge_learn import checkpoint, evaluate, policy, suite
 
 
 def _parser():
-    p = argparse.ArgumentParser(prog="python -m duoforge_learn.bc_eval", description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(prog="python -m duoforge_eval.bc_eval", description=__doc__.splitlines()[0])
     p.add_argument("--checkpoint", required=True)
     p.add_argument("--teams", default=None, help="registry team ids, comma-separated (default: Teams A and B)")
     p.add_argument("--teams-root", default="data/teams")

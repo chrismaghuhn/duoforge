@@ -1,7 +1,7 @@
 """Write the P1 evaluation manifest (plan C5) for a run: the pool from the team registry and every checkpoint's
 file SHA-256, then expert_eval.make_manifest. Plays nothing; no battle rules here.
 
-python -m duoforge_search.eval_manifest --teams IDS --team-weights WS --teams-root ROOT --seed S
+python -m duoforge_eval.eval_manifest --teams IDS --team-weights WS --teams-root ROOT --seed S
     --first-game-id G --checkpoint NAME=PATH (one per expert_eval.CHECKPOINTS name) --out MANIFEST
 
 Exit 0 with the manifest written once (never overwritten) outside the repository; exit 2 with the cause for a
@@ -47,7 +47,7 @@ def _checkpoints(pairs):
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m duoforge_search.eval_manifest")
+    parser = argparse.ArgumentParser(prog="python -m duoforge_eval.eval_manifest")
     parser.add_argument("--teams", required=True, help="registry team ids, comma-separated")
     parser.add_argument("--team-weights", required=True, help="their sampling weights, comma-separated")
     parser.add_argument("--teams-root", required=True, help="the team registry")

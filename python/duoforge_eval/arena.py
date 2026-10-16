@@ -5,7 +5,7 @@ true-state oracle) or Honest (worlds from the player's public record). It has
 the Player interface; play_suite passes it the step, its seat in every game
 and the last-step flag.
 
-The measurement (main: python -m duoforge_search.arena): a checkpoint with
+The measurement (main: python -m duoforge_eval.arena): a checkpoint with
 the search, agents N (the Nash rule) and E (the expected value), against
 the same network without it (R) and optionally a panel of the run's earlier
 checkpoints, over the run's team suite; every configuration writes its games,
@@ -31,11 +31,12 @@ from collections import Counter
 import numpy as np
 
 import duoforge
-from duoforge import _layout
-from duoforge_learn import book_preview, evaluate, ladder, suite
+from duoforge import _layout, runs
+from duoforge_learn import book_preview, evaluate, suite
 from duoforge_learn.selfplay import choices_of
+from duoforge_search import lookahead, seeds
 
-from . import lookahead, seeds
+from . import ladder
 
 ARENA_SEED = 0x2026100300000222
 BOOTSTRAP_SEED = 0x2026100300000220
@@ -374,7 +375,7 @@ def _list(text, name, allowed=None):
 
 def main(argv=None):
     p = argparse.ArgumentParser(
-        prog="python -m duoforge_search.arena",
+        prog="python -m duoforge_eval.arena",
         description="The M12 arena (decisions 0022/0023): honest public-information search or the labeled oracle. A checkpoint with the "
                     "one-turn lookahead against the same network without it, over the run's team suite; "
                     f"{ORACLE}. Outputs in OUT: raw/<config>-games.csv (play_suite's records and the score), "
@@ -383,7 +384,8 @@ def main(argv=None):
                     "differences against R, the diagnostics and every condition a rerun needs). On the GPU "
                     "set XLA_FLAGS=--xla_gpu_deterministic_ops=true.")
     p.add_argument("--run-dir", required=True, help="the training run: its checkpoints, pool and ladder.json")
-    p.add_argument("--out", required=True, help="the output directory, outside the repository")
+    p.add_argument("--out", default=None,
+                   help="the output directory, outside the repository (default: $DUOFORGE_RUNS/eval/<date>-arena)")
     p.add_argument("--checkpoint", default=None,
                    help="params-<update>, a file of the run or a path (default: the best by RUN/ladder.json)")
     p.add_argument("--agents", default="N,E", help="N (Nash), E (expected value), X (the mix)")
@@ -430,7 +432,7 @@ def main(argv=None):
     if min(samples) < 1 or args.games < 1 or args.capacity < 1 or args.workers < 1 or args.max_steps < 1:
         raise SystemExit("samples, games, capacity, workers and max-steps must be positive")
     if args.search == "honest":  # every configuration of the grid against the LP size limit, before any game (#440)
-        from . import matrix
+        from duoforge_search import matrix
         for k, m in km:
             for s in samples:
                 try:
@@ -438,12 +440,15 @@ def main(argv=None):
                         matrix.check_bayes_size(k, m, s, f"--search honest at {k}x{m}, s={s}")
                 except ValueError as err:
                     raise SystemExit(str(err)) from None
+    if args.out is None:
+        args.out = str(runs.default_out("eval", "arena"))
     from duoforge_replay.dataset import refuse_repository
     try:
         refuse_repository(args.out)
     except ValueError:
         raise SystemExit(f"--out {args.out} is inside the repository: evaluation output is written outside it "
                          f"(AGENTS.md)") from None
+    manifest = runs.Manifest("eval", "duoforge_eval.arena", argv, seeds={"arena": ARENA_SEED})
 
     import importlib.metadata
 
@@ -455,7 +460,7 @@ def main(argv=None):
     pool, kind = ladder._pool_of(args.run_dir, refused=refused)
     spread = source_ids = table_info = None
     if args.search == "honest":
-        from . import honest
+        from duoforge_search import honest
         with duoforge.Context(data_kind=kind) as ctx:
             spread, source_ids, table_info = honest.spread_table(ctx)
     rows = suite.make_suite(len(pool.ids), ARENA_SEED, budget=args.games)
@@ -609,6 +614,7 @@ def main(argv=None):
     for name, out in summary.items():
         lo, hi = out["score_95"]
         print(f"{name:>28}  score {out['score']:.3f} [{lo:.3f}, {hi:.3f}]  Elo {out['elo']:7.1f}")
+    manifest.write(args.out)
     return 0
 
 

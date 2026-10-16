@@ -16,10 +16,11 @@ from pathlib import Path
 import numpy as np
 
 import duoforge
-from duoforge_learn import book_preview, evaluate, ladder, suite
+from duoforge import runs
+from duoforge_learn import book_preview, evaluate, suite
 from duoforge_replay.dataset import refuse_repository
 
-from . import arena
+from . import arena, ladder
 
 SEED = 0x2026100400000228
 PANEL = ("params-0", "params-3600", "params-11000")
@@ -125,7 +126,8 @@ def main(argv=None):
     p = argparse.ArgumentParser(description="Private paired preview-book A/B; no training/search. Default 2000 games per arm per opponent.")
     p.add_argument("--run-dir", required=True)
     p.add_argument("--checkpoint", required=True)
-    p.add_argument("--out", required=True, help="empty private output directory outside all repo worktrees")
+    p.add_argument("--out", default=None, help="empty private output directory outside all repo worktrees "
+                                             "(default: $DUOFORGE_RUNS/eval/<date>-book_ab)")
     p.add_argument("--games", type=int, default=2000)
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--max-steps", type=int, default=arena.MAX_STEPS)
@@ -148,7 +150,10 @@ def main(argv=None):
         selected_panel = panel_paths(panel, args.panel_run_dir)
     except ValueError as error:
         p.error(str(error))
+    if args.out is None:
+        args.out = str(runs.default_out("eval", "book_ab"))
     refuse_repository(args.out)
+    manifest = runs.Manifest("eval", "duoforge_eval.book_ab", argv, seeds={"seed": args.seed})
     evidence = book_preview.load_options(args)
     # Fail missing inputs before creating outputs or playing even one arm.
     paths = [str(Path(arena._checkpoint_path(args.run_dir, args.checkpoint)).resolve())] + selected_panel
@@ -195,6 +200,7 @@ def main(argv=None):
                   "xla_flags": os.environ.get("XLA_FLAGS", "")}
     Path(args.out, "summary.json").write_text(json.dumps(arena._finite({"conditions": conditions, "opponents": reports}),
                                                      indent=1, allow_nan=False) + "\n", encoding="utf-8")
+    manifest.write(args.out)
     print(f"Private A/B results: {Path(args.out, 'summary.json')}")
     return 0
 

@@ -563,13 +563,13 @@ def _report(result, pilot, control):
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """python -m duoforge_search.expert_eval --manifest M --pilot P --control C
+    """python -m duoforge_eval.expert_eval --manifest M --pilot P --control C
     --baseline B --out O. M: the evaluation manifest; P, C: the arms'
     ledgers; B: {"records": ..., "ledger": ...}, the evaluation games and
     their shared cost. Exit 2 with the cause for a bad manifest, pairing,
     compute match or path; exit 0 with a structured report otherwise, also
     for FAIL, INCONCLUSIVE or INCOMPLETE strength."""
-    parser = argparse.ArgumentParser(prog="python -m duoforge_search.expert_eval")
+    parser = argparse.ArgumentParser(prog="python -m duoforge_eval.expert_eval")
     for flag in ("--manifest", "--pilot", "--control", "--baseline", "--out"):
         parser.add_argument(flag, required=True)
     args = parser.parse_args(argv)

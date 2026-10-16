@@ -1,5 +1,5 @@
 """The stage 3 P1 evaluation games (decision 0024; P1 plan C5, Learner v2 side): the runner that plays M12's
-predeclared schedule and writes the records duoforge_search.expert_eval reads. expert_eval plays nothing; this
+predeclared schedule and writes the records duoforge_eval.expert_eval reads. expert_eval plays nothing; this
 module plays everything and decides nothing about the gate.
 
 - The games: expert_eval.make_eval_rows(pool, manifest), all 12288 of them (checked there against the manifest's
@@ -60,7 +60,7 @@ import numpy as np
 
 import duoforge
 
-from . import evaluate, suite
+from duoforge_learn import evaluate, suite
 
 MAX_STEPS = 1000  # play_suite's cut-off; a cut game is unfinished
 PHASE = "evaluate"
@@ -102,8 +102,8 @@ def load_checkpoints(paths, manifest):
     """{name: (params, config, sha256)} of every checkpoint the manifest pins, read in its own layout from the
     bytes that were hashed; ValueError for a missing or extra name, a SHA-256 the manifest does not pin for that
     name, or a file load_trained refuses."""
-    from duoforge_search import expert_eval
-    from . import checkpoint
+    from . import expert_eval
+    from duoforge_learn import checkpoint
     if set(paths) != set(expert_eval.CHECKPOINTS):
         raise ValueError(f"name exactly the checkpoints {expert_eval.CHECKPOINTS} (got {sorted(paths)})")
     out = {}
@@ -135,7 +135,7 @@ def make_players(loaded, context, ledger=None):
     """{name: evaluate.Player} of the loaded checkpoints under context, each reading its own encoder's rows.
     Checks that every network's ids name the same rows under context (as train --init does). With a ledger on a
     non-CPU device, each network pass is a device section."""
-    from . import checkpoint
+    from duoforge_learn import checkpoint
     on_gpu = ledger is not None and _platform() != "cpu"
     players = {}
     for name, (params, config, _) in loaded.items():
@@ -203,7 +203,7 @@ def play_rows(context, pool, rows, players, *, workers=1, max_steps=MAX_STEPS, t
     "refused"}. One play_suite call per call_groups entry: rows["arm"] against rows["opponent"] of players, seeded
     with the rows' seed, environment = pair, with tracker (an expert_eval.TrickRoomTracker, made for context when
     None) observing it. clock (a SmokeClock whose wrapped networks the players use) times every call."""
-    from duoforge_search import expert_eval
+    from . import expert_eval
     groups = call_groups(rows)  # refuses a malformed subset before any play
     if tracker is None:
         tracker = expert_eval.TrickRoomTracker(context)
@@ -368,7 +368,7 @@ def smoke_report(games, counts, seconds, *, jit_seconds, narrow_games_per_second
     estimate) + play_seconds (total games at the full-width rate). STOP for any cut-off or refused game (the smoke's
     and the warm call's: counts), a full-width rate below SMOKE_MIN_RATE (or none), or a forecast above
     SMOKE_MAX_FORECAST; else GO."""
-    from duoforge_search import expert_eval
+    from . import expert_eval
     total = expert_eval.GAMES if total is None else total
     full = full_games_per_second
     play = None if full is None else float(total / full)
@@ -397,7 +397,7 @@ def smoke_report(games, counts, seconds, *, jit_seconds, narrow_games_per_second
 
 def records_json(records):
     """records as JSON values in expert_eval's exact types: integers, strings, booleans, score a float or null."""
-    from duoforge_search import expert_eval
+    from . import expert_eval
     out = {}
     for name in expert_eval.RECORD_FIELDS:
         values = np.asarray(records[name]).tolist()
@@ -433,7 +433,7 @@ def _checkpoint_args(values):
 
 def _require_deterministic(jax):
     """ValueError on a GPU without deterministic XLA ops (the arena's requirement, spec section 6)."""
-    from duoforge_search import arena
+    from . import arena
     try:
         arena.require_deterministic_gpu(jax)
     except SystemExit as err:
@@ -441,14 +441,14 @@ def _require_deterministic(jax):
 
 
 def main(argv=None):
-    """python -m duoforge_learn.p1_eval --manifest M --checkpoint NAME=PATH (each of expert_eval.CHECKPOINTS)
+    """python -m duoforge_eval.p1_eval --manifest M --checkpoint NAME=PATH (each of expert_eval.CHECKPOINTS)
     --teams IDS [--team-weights W] [--teams-root R] --out O [--ledger L] [--workers N] [--smoke].
     Exit 2 with the cause for a refusal before play (paths inside the repository, an existing --out, a checkpoint
     hash, layout, data kind or ids, a pool or schedule that is not the manifest's, a GPU without deterministic ops);
     exit 0 after writing --out: the baseline file, or with --smoke the smoke report (its status GO or STOP). An
     error during play is a crash (exit 1) and writes no --out. Once the ledger exists it is saved in every case."""
-    from duoforge_search import expert_eval
-    parser = argparse.ArgumentParser(prog="python -m duoforge_learn.p1_eval",
+    from . import expert_eval
+    parser = argparse.ArgumentParser(prog="python -m duoforge_eval.p1_eval",
                                      description="Stage 3 P1 evaluation games (expert_eval's --baseline file).")
     parser.add_argument("--manifest", required=True, help="the evaluation manifest (expert_eval.EvalManifest)")
     parser.add_argument("--checkpoint", action="append", default=[], required=True,
@@ -464,7 +464,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         from duoforge_replay.dataset import refuse_repository
-        from . import ledger as ledger_mod
+        from duoforge_learn import ledger as ledger_mod
         refuse_repository(args.out)
         if os.path.exists(args.out):
             raise ValueError(f"{args.out} exists: the evaluation output is written once")
@@ -479,7 +479,7 @@ def main(argv=None):
         try:
             import jax
             from duoforge import teams
-            from .train import DATA_KINDS
+            from duoforge_learn.train import DATA_KINDS
             _require_deterministic(jax)
             manifest = expert_eval.EvalManifest(**_load_json(args.manifest))
             loaded = load_checkpoints(_checkpoint_args(args.checkpoint), manifest)

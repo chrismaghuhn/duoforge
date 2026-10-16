@@ -9,11 +9,13 @@ from pathlib import Path
 import numpy as np
 
 import duoforge
-from duoforge_learn import checkpoint, evaluate, ladder
+from duoforge import runs
+from duoforge_learn import checkpoint, evaluate
 from duoforge_learn.selfplay import TEAM
 from duoforge_replay.dataset import refuse_repository
+from duoforge_search import honest
 
-from . import arena, book_ab, honest
+from . import arena, book_ab, ladder
 
 
 class RawPreview(evaluate.Player):
@@ -152,7 +154,8 @@ def main(argv=None):
     parser.add_argument("--belief-root", help="explicit stated-spread registry for honest worlds")
     parser.add_argument("--panel-run-dir")
     parser.add_argument("--panel", default=",".join(book_ab.PANEL))
-    parser.add_argument("--out", required=True)
+    parser.add_argument("--out", default=None, help="empty private output directory (default: "
+                                                     "$DUOFORGE_RUNS/eval/<date>-preview_ab)")
     parser.add_argument("--games", type=int, default=2048)
     parser.add_argument("--panel-games", type=int, default=1024)
     parser.add_argument("--agents", default="N,E,X")
@@ -174,7 +177,11 @@ def main(argv=None):
         paths = [arena._checkpoint_path(args.run_dir, args.checkpoint)] + book_ab.panel_paths(panel_names, args.panel_run_dir)
     except ValueError as error:
         parser.error(str(error))
+    if args.out is None:
+        args.out = str(runs.default_out("eval", "preview_ab"))
     refuse_repository(args.out)
+    manifest = runs.Manifest("eval", "duoforge_eval.preview_ab", argv,
+                             seeds={"arena": arena.ARENA_SEED, "search": honest.lookahead.SEARCH_SEED})
     from duoforge_learn import policy
     import jax
     arena.require_deterministic_gpu(jax)
@@ -208,6 +215,7 @@ def main(argv=None):
                   "backend": jax.default_backend(), "jax": jax.__version__, "commit": arena._commit()}
     Path(args.out, "summary.json").write_text(json.dumps(arena._finite({"conditions": conditions, "configs": results}),
         indent=1, allow_nan=False), encoding="utf-8")
+    manifest.write(args.out)
     print("Private preview measurement completed")
     return 0
 

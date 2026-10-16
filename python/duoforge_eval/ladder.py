@@ -1,6 +1,6 @@
 """A round robin of checkpoints, rated by Bradley-Terry (decisions 0014, 0017).
 
-    python -m duoforge_learn.ladder RUN_DIR --pick 12 --envs 128 --workers 8
+    python -m duoforge_eval.ladder RUN_DIR --pick 12 --envs 128 --workers 8
 
 The baselines are beaten within a minute and the comparison with the
 previous checkpoint is noisy, so progress over a long run is measured here:
@@ -21,7 +21,7 @@ import sys
 
 import numpy as np
 
-from . import evaluate
+from duoforge_learn import evaluate
 
 
 def ratings(score, games, prior=0.5, iterations=2000):
@@ -78,7 +78,7 @@ LADDER_SEED = 0x2026100200000020
 def play_round_robin(context, pool, rows, players, workers, seed=LADDER_SEED):
     """{(i, j): records of player i (learner) against player j over the suite
     rows}, for every pair i < j of players (evaluate.Player)."""
-    from . import evaluate
+    from duoforge_learn import evaluate
     out = {}
     for i in range(len(players)):
         for j in range(i + 1, len(players)):
@@ -125,7 +125,7 @@ def team_matrix(context, pool, rows, player, workers, seed=LADDER_SEED):
     """(N, N): the side-0 team's score in the player's greedy self-play for
     every pairing (side-0 team a, side-1 team b), over both seat
     assignments of the suite."""
-    from . import evaluate
+    from duoforge_learn import evaluate
     rec = evaluate.play_suite(context, pool, rows, player, player, workers, seed)
     n = len(pool.ids)
     value = (rec["result"].astype(np.float64) + 1.0) / 2.0
@@ -146,7 +146,7 @@ def _pool_of(run_dir, teams_root=None, refused=None):
     import duoforge
     from duoforge import teams
 
-    from .checkpoint import load
+    from duoforge_learn.checkpoint import load
     found = _checkpoints(run_dir)
     if not found:
         raise SystemExit(f"no checkpoints in {run_dir}")
@@ -189,7 +189,7 @@ def _markdown(table, team_ids):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="python -m duoforge_learn.ladder",
+    p = argparse.ArgumentParser(prog="python -m duoforge_eval.ladder",
                                 description="Round robin of checkpoints over the evaluation suite.")
     p.add_argument("run_dirs", nargs="+")
     p.add_argument("--pick", type=int, default=6, help="checkpoints per run, spread evenly (with the last)")
@@ -199,7 +199,7 @@ def main(argv=None):
     p.add_argument("--teams-from", default=None, help="the run whose teams the suite uses (default: the first)")
     p.add_argument("--no-init", action="store_true", help="leave out the untrained network")
     p.add_argument("--out", default=None, help="directory for ladder.json and ladder.md (default: the first run)")
-    from . import book_preview
+    from duoforge_learn import book_preview
     book_preview.add_arguments(p)
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
     if args.book is not None:
@@ -209,15 +209,15 @@ def main(argv=None):
         if Path(args.out).resolve() in {Path(run_dir).resolve() for run_dir in args.run_dirs}:
             p.error("book --out must differ from every input run directory")
     evidence = book_preview.load_options(args)
-    from .train import refuse_in_repository
+    from duoforge_learn.train import refuse_in_repository
     refuse_in_repository(args.out or args.run_dirs[0])  # ladder.json names checkpoints of private runs
     import jax  # the ladder plays the policies
 
     import duoforge
     from duoforge import features
 
-    from . import evaluate, policy, suite
-    from .checkpoint import encoder_of, ext_supported_of, load, load_current, model_config
+    from duoforge_learn import evaluate, policy, suite
+    from duoforge_learn.checkpoint import encoder_of, ext_supported_of, load, load_current, model_config
 
     refused = []
     pool, kind = _pool_of(args.teams_from or args.run_dirs[0], refused=refused)
