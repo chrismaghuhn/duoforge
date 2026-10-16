@@ -7918,15 +7918,6 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 }
             }
         }
-        /* forceSwitch of a damaging move (Dragon Tail, Circle Throw; step G46): the forceSwitch step of spreadMoveHit runs
-         * after the damage is computed and before it is dealt (scripts.ts:392), so the target is still standing. */
-        if (!status_move && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u) {
-            for (uint32_t i = 0u; i < count; ++i) {
-                if (hit[i]) {
-                    dfi_drag_at_hit(r, user, targets[i]);
-                }
-            }
-        }
         /* spreadDamage, per target: the damage, then a drain heals the user by
          * round(dealt * drain) (sim/battle.ts:2170-2173). The HP actually lost
          * adds up to the move's total damage. */
@@ -8322,6 +8313,17 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 }
                 if (st != DUOFORGE_OK) {
                     return dfi_move_body_stop(stop, st);
+                }
+            }
+        }
+        /* forceSwitch of a damaging move (Dragon Tail, Circle Throw; step G46): step 6 of the Champions spreadMoveHit
+         * (data/mods/champions/scripts.ts:391), after the damage is dealt (step 2) and the secondaries (step 5), before the
+         * DamagingHit handlers (issue 545): a Guard Dog or Suction Cups line follows the damage, and a target the hit knocked
+         * out is not dragged (forceSwitch asks target.hp > 0). */
+        if (!status_move && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i]) {
+                    dfi_drag_at_hit(r, user, targets[i]);
                 }
             }
         }
