@@ -5566,6 +5566,13 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
             return hz;
         }
     }
+    /* Ice Spinner's onAfterSubDamage (data/moves.ts:9429-9433, issue 547): the terrain ends when the user has HP. */
+    if (md->special == DFI_SPECIAL_ICE_SPINNER && dfi_at(b, user)->hp != 0u) {
+        const duoforge_status ct = dfi_clear_terrain(r);
+        if (ct != DUOFORGE_OK) {
+            return ct;
+        }
+    }
     if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u && dfi_holds(r->b, dfi_at(r->b, target), DFI_ITEM_AIRBALLOON)) {
         dfi_use_item(r, target);
     }
@@ -8559,7 +8566,7 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
         /* AfterHit of Ice Spinner (step G86, data/moves.ts:9426-9428): clearTerrain for each damaged target, after the
          * DamagingHit handlers (issue 547: after Weak Armor's lines) and with no test of the user's HP (the Champions loop,
          * data/mods/champions/scripts.ts:411-414). With no terrain the clear does nothing and prints nothing
-         * (field.clearTerrain returns false). */
+         * (field.clearTerrain returns false). A hit on a Substitute ends it in dfi_substitute_takes (onAfterSubDamage). */
         if (md->special == DFI_SPECIAL_ICE_SPINNER) {
             for (uint32_t i = 0u; i < count; ++i) {
                 if (hit[i]) {
