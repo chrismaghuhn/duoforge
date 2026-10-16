@@ -1638,6 +1638,9 @@ int main(void)
              * (Protect's, step G13), Knock Off (step G16), Aurora Veil and Spiky Shield (step G20), Perish Song (step G26); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
                              id == DFI_MOVE_DESTINYBOND || id == DFI_MOVE_FINALGAMBIT || id == DFI_MOVE_PSYCHUP || id == DFI_MOVE_ALLYSWITCH || /* G76, G80 */
+                             id == DFI_MOVE_STOREDPOWER || id == DFI_MOVE_BULLETSEED || id == DFI_MOVE_ROCKBLAST || /* step A0 part 1: the
+                                                                                         special rows POWER_TRIP and MULTI_HIT_2_5 */
+                             id == DFI_MOVE_PINMISSILE || id == DFI_MOVE_WATERSHURIKEN || id == DFI_MOVE_HEATCRASH || /* A0 part 1: MULTI_HIT_2_5, HEAVY_SLAM */
                              id == DFI_MOVE_PSYCHICTERRAIN || /* G96 (decision 0065): the terrain setter, its own handler */
                              id == DFI_MOVE_SPEEDSWAP || /* step K3 (decision 0015 5de): Speed Swap, its own handler */
                              id == DFI_MOVE_STORMTHROW || id == DFI_MOVE_FLOWERTRICK || id == DFI_MOVE_FROSTBREATH || /* step C4: WILL_CRIT */
