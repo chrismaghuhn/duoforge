@@ -34,7 +34,7 @@ private sheet extract of the 2026-10-09 coverage run holds exactly these sheets 
 `games-*.jsonl`). The newer part 4 of 2026-10-05 adds about 14,400 Reg M-C sheet games (48,800 in all); it is not used
 here, so that the numbers stay comparable with 77.1 % / 81.9 %. 
 
-### 1.2 Rules (`tools/research/champions_coverage.py`)
+### 1.2 Rules (`tools/coverage/champions_coverage.py`; `tools/research/` until restructure step 8)
 
 Per side, per member of the packed sheet:
 
@@ -767,10 +767,10 @@ Private inputs stay outside the repository; outputs with per-game rows go to a d
 
 ```
 # library of the commit to measure (under the machine lock), then:
-DUOFORGE_LIBRARY=<build>/libduoforge_shared.so python3 tools/research/champions_coverage.py \
+DUOFORGE_LIBRARY=<build>/libduoforge_shared.so python3 tools/coverage/champions_coverage.py \
     --sheets <private sheet extract .jsonl> --out <private dir> [--package <python/ of that commit>]
 #   or --replays <parquet files or dirs> (needs pyarrow; adds turns, |move| uses and "brought" per token)
-python3 tools/research/champions_batches.py --games <private dir>/games.jsonl --batches <batches.json>
+python3 tools/coverage/champions_batches.py --games <private dir>/games.jsonl --batches <batches.json>
 python3 tools/datagen/classify_unsupported.py <pinned Showdown checkout> --out <file>
 ```
 
@@ -946,9 +946,9 @@ as on the headline set, in nearly the same order.
 
 ```
 python3 -m venv <private venv> && <private venv>/bin/pip install pyarrow numpy
-DUOFORGE_LIBRARY=<build>/libduoforge_shared.so <private venv>/bin/python tools/research/champions_coverage.py \
+DUOFORGE_LIBRARY=<build>/libduoforge_shared.so <private venv>/bin/python tools/coverage/champions_coverage.py \
     --replays <the replay parquet files> --out <private dir>
-python3 tools/research/champions_batches.py --games <private dir>/games.jsonl --batches <batches> --out <file>
+python3 tools/coverage/champions_batches.py --games <private dir>/games.jsonl --batches <batches> --out <file>
 ```
 The Smogon weights come from the public `chaos` files named above (a share per entry: the summed weight of the entry
 over all Pokémon divided by the summed ability weight, which counts each Pokémon slot once).
