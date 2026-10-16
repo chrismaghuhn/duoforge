@@ -401,8 +401,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_BIND] = 1u, [DFI_MOVE_WRAP] = 1u, [DFI_MOVE_FIRESPIN] = 1u,
             [DFI_MOVE_SANDTOMB] = 1u, [DFI_MOVE_INFESTATION] = 1u,
             /* Batch A0 part 3: Snap Trap, the sixth move of decision 0060's table (the Champions type Steel is merged by the
-             * generator; the earlier drop cited section 8, which does not name it). */
-            [DFI_MOVE_SNAPTRAP] = 1u,
+             * generator; the earlier drop cited section 8, which does not name it). UNMARKED again (lead decision, 2026-10-16):
+             * its only pool learner, Stunfisk-Galar, has the ability Mimicry, which is unmarked, so no pool battle reaches it.
+             * Its generator row and facts stay (tools/datagen/gen_closure.py, PARTIAL_TRAP). */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G84 (decision 0047): Leech Seed (the holder's volatile, the source's slot, the residual drain of order 8) and Curse
              * (a non-Ghost user's self boost; the Ghost Curse since step G84b, decision 0063). */
@@ -500,12 +501,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TROPKICK] = 1u,
             [DFI_MOVE_METEORMASH] = 1u,
             /* Step G56 (Outrage, decision 0015 item 5au): the lock (lockedmove; a random count of 2 or 3 uses, the
-             * confusion when it ends, the switch-out and the faint clear it). Batch A0 part 3 marks
-             * Thrash and Petal Dance: the same lock, the generator's G56 rows (SPECIAL_P, G56_LOCKED_MOVES) already read them. */
+             * confusion when it ends, the switch-out and the faint clear it). Batch A0 part 3 first marked Thrash, Petal Dance
+             * and Raging Fury (the same lock); they are UNMARKED again in that part (lead decision, 2026-10-16: a lock-family
+             * bug, issue #606, a bug on main for Outrage, fixed later in a core PR). Their generator rows stay. */
             [DFI_MOVE_OUTRAGE] = 1u,
-            [DFI_MOVE_THRASH] = 1u,
-            [DFI_MOVE_PETALDANCE] = 1u,
-            [DFI_MOVE_RAGINGFURY] = 1u, /* batch A0 part 3: the same lock, the G56 family (flags protect, mirror) */
             /* Step G54 (decision 0015 item 5at). Handlers: Icicle Spear and Scale Shot (2 to 5 hits, the Champions weighted count,
              * Scale Shot's self boost after the last hit), Quick Guard (Wide Guard's shape against the priority moves), Upper Hand
              * (Sucker Punch's queue read: a queued priority move), Heal Pulse (half of the target's HP) and Strength Sap (heals by

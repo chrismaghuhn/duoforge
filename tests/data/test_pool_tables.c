@@ -790,13 +790,16 @@ int main(void)
         DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][0] == 10u && dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][1] == 10u); /* data only */
         /* Batch A0 part 3: nine rows that the generator models through existing families (no core code): Thrash, Petal Dance
          * and Raging Fury (LOCKED_MOVE), Solar Blade (SOLAR_BEAM), Snap Trap (PARTIAL_TRAP, the Champions type Steel), Double Hit
-         * (MULTI_HIT_2) and Tail Slap and Bone Rush (MULTI_HIT_2_5, Bone Rush's Champions base power 30). Each is marked, has no
-         * unmodelled feature, and carries its family's handler and hit counts. */
+         * (MULTI_HIT_2) and Tail Slap and Bone Rush (MULTI_HIT_2_5, Bone Rush's Champions base power 30). Each row has no
+         * unmodelled feature and carries its family's handler and hit counts. Marks (lead decision, 2026-10-16): Solar Blade,
+         * Double Hit, Tail Slap and Bone Rush are marked; Thrash, Petal Dance, Raging Fury (issue #606) and Snap Trap (no
+         * pool learner reachable) are unmarked. */
         {
-            static const uint32_t a0_ids[9] = {DFI_MOVE_THRASH, DFI_MOVE_PETALDANCE, DFI_MOVE_RAGINGFURY, DFI_MOVE_SOLARBLADE,
-                                               DFI_MOVE_SNAPTRAP, DFI_MOVE_DOUBLEHIT, DFI_MOVE_TAILSLAP, DFI_MOVE_BONERUSH};
-            for (uint32_t i = 0u; i < 9u; ++i) {
-                DF_CHECK(&t, dfi_support.moves[a0_ids[i]] != 0u);
+            static const uint32_t a0_marked[4] = {DFI_MOVE_SOLARBLADE, DFI_MOVE_DOUBLEHIT, DFI_MOVE_TAILSLAP, DFI_MOVE_BONERUSH};
+            static const uint32_t a0_unmarked[4] = {DFI_MOVE_THRASH, DFI_MOVE_PETALDANCE, DFI_MOVE_RAGINGFURY, DFI_MOVE_SNAPTRAP};
+            for (uint32_t i = 0u; i < 4u; ++i) {
+                DF_CHECK(&t, dfi_support.moves[a0_marked[i]] != 0u);
+                DF_CHECK(&t, dfi_support.moves[a0_unmarked[i]] == 0u);
             }
         }
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RAGINGFURY].special, DFI_SPECIAL_LOCKED_MOVE);
@@ -1650,10 +1653,9 @@ int main(void)
                                                 DFI_MOVE_SPEEDSWAP,
                                                 /* step K4 (decision 0015 5dl): Gravity, the field (five turns, the 27.2 residual) */
                                                 DFI_MOVE_GRAVITY,
-                                                /* batch A0 part 3: Thrash, Petal Dance, Raging Fury (the lock), Solar Blade, Snap Trap,
-                                                 * Double Hit, Tail Slap, Bone Rush */
-                                                DFI_MOVE_THRASH, DFI_MOVE_PETALDANCE, DFI_MOVE_RAGINGFURY, DFI_MOVE_SOLARBLADE,
-                                                DFI_MOVE_SNAPTRAP, DFI_MOVE_DOUBLEHIT, DFI_MOVE_TAILSLAP, DFI_MOVE_BONERUSH};
+                                                /* batch A0 part 3: Solar Blade, Double Hit, Tail Slap, Bone Rush (Thrash, Petal Dance,
+                                                 * Raging Fury and Snap Trap are unmarked again) */
+                                                DFI_MOVE_SOLARBLADE, DFI_MOVE_DOUBLEHIT, DFI_MOVE_TAILSLAP, DFI_MOVE_BONERUSH};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1681,10 +1683,9 @@ int main(void)
                              id == DFI_MOVE_STEELBEAM || id == DFI_MOVE_THUNDERWAVE || /* step G68: the recoil and the type immunity */
                              id == DFI_MOVE_BATONPASS || /* step G74: the pivot and the copy of the volatiles (decision 0042) */
                              id == DFI_MOVE_RAGEPOWDER || id == DFI_MOVE_PSYCHICFANGS || id == DFI_MOVE_SOLARBEAM ||
-                             /* batch A0 part 3: the lock (LOCKED_MOVE), Solar Beam's handler (Solar Blade), the partial trap
-                              * (Snap Trap) and the multi-hit families (Double Hit, Tail Slap, Bone Rush): rows, not new code */
-                             id == DFI_MOVE_THRASH || id == DFI_MOVE_PETALDANCE || id == DFI_MOVE_RAGINGFURY ||
-                             id == DFI_MOVE_SOLARBLADE || id == DFI_MOVE_SNAPTRAP || id == DFI_MOVE_DOUBLEHIT ||
+                             /* batch A0 part 3: Solar Beam's handler (Solar Blade) and the multi-hit families (Double Hit, Tail Slap,
+                              * Bone Rush): rows, not new code */
+                             id == DFI_MOVE_SOLARBLADE || id == DFI_MOVE_DOUBLEHIT ||
                              id == DFI_MOVE_TAILSLAP || id == DFI_MOVE_BONERUSH ||
                              id == DFI_MOVE_STEELROLLER || id == DFI_MOVE_CLANGOROUSSOUL || id == DFI_MOVE_BRICKBREAK ||
                              id == DFI_MOVE_ERUPTION || id == DFI_MOVE_WATERSPOUT ||
@@ -1738,7 +1739,7 @@ int main(void)
          * DragOut and the drag-in. Skill Swap is marked (G70, decision 0041), and dfi_drag_blocked reads the holder's ability
          * at the drag-in (dfi_ability, the current one), so the re-check is correct, not equivalent. */
         DF_CHECK_EQ_U64(&t, dfi_support.moves[DFI_MOVE_SKILLSWAP] != 0u ? 1u : 0u, 1u);
-        DF_CHECK_EQ_U64(&t, marked_count, 302u); /* batch A0 part 3 (eight marks: Thrash, Petal Dance, Raging Fury, Solar Blade, Snap Trap, Double Hit, Tail Slap, Bone Rush) makes 302 */ /* K4 (#475, entry 5dl): Gravity makes 294 */ /* K3 (#473, entry 5de): Speed Swap makes 293 */ /* K1 (#476, entry 5dc): Temper Flare makes 292 (291 before) */ /* G96 (decision 0065): Psychic Terrain makes 291 */ /* C5 (decision 0015 5cy): Surf and Endeavor make 287 (285 before); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82 (decision 0045): Healing Wish marked (279 before); G92 (decision 0062): the nine marks make 279 (270 before); G84 (decision 0047): Leech Seed and Curse make 270 (268 before); batch 6 (5cq): Charge Beam and Wild Charge make 268 (266 before); step C4 (decision 0015 5ct): 15 more make 266 (251 before); step G86 (decision 0048): the seven of this batch make 251 (244 before); step C2 (decision 0015 5cp): 22 moves make 244 (222 before); step G94 (decision 0015 5cv): Baneful Bunker makes 222 (221 before); step C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); step G88 (decision 0046): Lash Out and Assurance make 203 (201 before); step G78: Dragon Darts makes 201 (200 before); step G76: Destiny Bond and Final Gambit make 200 (198 before); step G74: Baton Pass makes 198; step G72b:Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 makes 195; the Skill Swap of G70 makes 194 (193 with the four of G68: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer; 189 with the Phantom Force of G58; 188 of G64, G62 and G60) */ /* 187 of G64 and G62, the Substitute of G60 makes 188 */ /* step G64: Poltergeist, Beat Up, Bug Bite and Sheer Cold (decision 0015 item 5ca). Before: 180; seven more: step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing) */ /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
+        DF_CHECK_EQ_U64(&t, marked_count, 298u); /* batch A0 part 3 (lead decision 2026-10-16): four marks (Solar Blade, Double Hit, Tail Slap, Bone Rush) make 298; Thrash, Petal Dance, Raging Fury and Snap Trap were marked for 302 and are unmarked again (the lock family, issue #606; Snap Trap has no reachable pool learner) */ /* was: batch A0 part 3 (eight marks: Thrash, Petal Dance, Raging Fury, Solar Blade, Snap Trap, Double Hit, Tail Slap, Bone Rush) makes 302 */ /* K4 (#475, entry 5dl): Gravity makes 294 */ /* K3 (#473, entry 5de): Speed Swap makes 293 */ /* K1 (#476, entry 5dc): Temper Flare makes 292 (291 before) */ /* G96 (decision 0065): Psychic Terrain makes 291 */ /* C5 (decision 0015 5cy): Surf and Endeavor make 287 (285 before); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82 (decision 0045): Healing Wish marked (279 before); G92 (decision 0062): the nine marks make 279 (270 before); G84 (decision 0047): Leech Seed and Curse make 270 (268 before); batch 6 (5cq): Charge Beam and Wild Charge make 268 (266 before); step C4 (decision 0015 5ct): 15 more make 266 (251 before); step G86 (decision 0048): the seven of this batch make 251 (244 before); step C2 (decision 0015 5cp): 22 moves make 244 (222 before); step G94 (decision 0015 5cv): Baneful Bunker makes 222 (221 before); step C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); step G88 (decision 0046): Lash Out and Assurance make 203 (201 before); step G78: Dragon Darts makes 201 (200 before); step G76: Destiny Bond and Final Gambit make 200 (198 before); step G74: Baton Pass makes 198; step G72b:Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 makes 195; the Skill Swap of G70 makes 194 (193 with the four of G68: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer; 189 with the Phantom Force of G58; 188 of G64, G62 and G60) */ /* 187 of G64 and G62, the Substitute of G60 makes 188 */ /* step G64: Poltergeist, Beat Up, Bug Bite and Sheer Cold (decision 0015 item 5ca). Before: 180; seven more: step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing) */ /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
