@@ -11,8 +11,8 @@ pool source through load_format().
 
 A second definition, data/formats/champions-ou.json ([Gen 9 Champions] OU, singles; step O1 of
 docs/superpowers/specs/2026-10-15-gen9-ou-design.md), is checked the same way (its keys, its facts, its pool source and,
-with --pin, every quote). The engine does not read it yet, so it writes no header: --format champions-ou with no other
-option only checks.
+with --pin, every quote). The engine reads none of its values (the singles kind of decision 0083 plays the format on
+the Reg M-C pool tables), so it writes no header: --format champions-ou with no other option only checks.
 
 usage:
   python3 tools/datagen/gen_format.py                  # write src/data/format_tables.h
@@ -308,7 +308,7 @@ def main():
     if format_id != ENGINE_FORMAT:
         if args:
             sys.exit(__doc__)
-        print('%s: %d facts, pool %s (check ok; the engine does not read this format)' % (
+        print('%s: %d facts, pool %s (check ok; no header is generated from this format)' % (
             rel, len(fmt['facts']), fmt['pool']['source']))
         return
     if args not in ([], ['--check']):

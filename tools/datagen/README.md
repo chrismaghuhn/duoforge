@@ -4,6 +4,26 @@
 
 It is offline tooling. The generated files are committed, so building and testing DuoForge needs neither Python nor Showdown.
 
+## Layout (restructure step 5)
+
+`gen_closure.py` is the command (its options, `main()`); the generator itself is the package `tablegen/`, split by
+area. Each module imports from the ones above it only:
+
+| Module | Content |
+|---|---|
+| `tablegen/source.py` | the pin, the input hashes, `Source` (a pinned file read with its hash checked), the entry parsers and the pattern helpers |
+| `tablegen/species.py` | formes and Pokémon: the team sets, the forme and type chart parsers, the format's legal pool, learnsets, forme legality |
+| `tablegen/moves.py` | moves: the move parser, its key, flag, target and status tables, the special handlers and their pinned callbacks by step, the move and field-condition facts |
+| `tablegen/families.py` | what item and ability families share: the weather and terrain parameter codes, the family derivation, the handler ids, the rows the turn code implements by id |
+| `tablegen/items.py` | items: the item families, matchers and parameters, the item facts by step |
+| `tablegen/abilities.py` | abilities: the ability families, matchers and parameters, the ability facts by step |
+| `tablegen/rules.py` | the pin checks of steps that span several areas and the content batches (C1, C2, C4, C5, K2, A0, A0P1) |
+| `tablegen/tables.py` | the closure, Team C and pool builds and the width bounds of the pool |
+| `tablegen/output.py` | the canonical byte forms and the C writers |
+
+Every name of these modules is still readable as `gen_closure.<name>`, which the tests and `classify_unsupported.py`
+use. A new step adds its facts and checks to the module of its area, or to `rules.py` when they span areas.
+
 ## What it extracts
 
 - 16 formes (12 sets and 4 Mega formes): dex number, types, base stats, weight, the set's ability, gender rule, Mega link and stone, the set's item and moves.
@@ -45,7 +65,7 @@ python3 tools/datagen/gen_format.py --check            # compare only (duoforge.
 python3 tools/datagen/gen_format.py --pin <checkout>   # every fact against its pinned line (duoforge.data.format_pin)
 ```
 
-`data/formats/champions-ou.json` is a second definition, `[Gen 9 Champions] OU` (singles; step O1 of `docs/superpowers/specs/2026-10-15-gen9-ou-design.md`). The engine does not read it, so it writes no header; its pool source is `data/formats/pools/champions-ou.json`, made by `build_legal_pool.js --format gen9championsou`:
+`data/formats/champions-ou.json` is a second definition, `[Gen 9 Champions] OU` (singles; step O1 of `docs/superpowers/specs/2026-10-15-gen9-ou-design.md`). The engine reads none of its values (the singles kind of decision 0083 plays the format on the Reg M-C pool tables), so it writes no header; its pool source is `data/formats/pools/champions-ou.json`, made by `build_legal_pool.js --format gen9championsou`:
 
 ```sh
 python3 tools/datagen/gen_format.py --format champions-ou                  # check the definition and its pool source
