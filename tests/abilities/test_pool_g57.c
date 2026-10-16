@@ -42,6 +42,8 @@ static const char *const handled[] = {
     "scaryface", "eerieimpulse", "screech", "nobleroar", "spicyextract", /* step C4 (5ct): the target's boosts, the PRIMARY_TARGET path */
     "leechseed", /* step G84 (decision 0047): the seed bounces on the Yawn path (dfi_bounce_kind_ok) */
     "confuseray", "swagger", "flatter", /* primary confusion (step G92, decision 0062): the CONFUSE handler runs for the bounced move */
+    "sweetkiss", /* step A0 (batch A0 part 2): the primary confusion of Confuse Ray's kind (CONFUSE) */
+    "tearfullook", /* step A0 (batch A0 part 2): the target's two stat drops, the PRIMARY_TARGET path of Charm */
 };
 
 /* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses
@@ -104,7 +106,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
                                      in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 38u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1) */
+    DF_CHECK_EQ_U64(t, marked, 40u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1); Sweet Kiss and Tearful Look (step A0) */
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target

@@ -6,7 +6,7 @@
 #
 # usage: launch_oracle.sh --campaign ID --commit SHA --bucket B [--max-hours H] [--max-price USD] [--resume RUN_ID]
 #                         [--sg-name NAME] [--i-have-owner-approval]
-#   --campaign  a preview-oracle campaign: tools/cloud/aws_fuzz/campaigns/<id>/campaign.conf at the commit, kind=oracle
+#   --campaign  a preview-oracle campaign: runs/fuzz/<id>/campaign.conf at the commit, kind=oracle
 #   --commit    the exact 40-digit sha of a commit on main; the box fetches and builds this commit
 #   --bucket    the private bucket: the networks are read from nets/<sha256>.npz and the foe team from
 #               teams/<sha256>.txt (both read-only for the box), the results go to
@@ -73,11 +73,10 @@ df_check_commit_on_main "$commit" "$campaign"
 # --- the campaign at that commit: a valid preview-oracle conf (the same check the box makes, oracle_conf.py)
 conf=$(mktemp)
 trap 'rm -f "$conf"' EXIT
-if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then
-    cp "$DF_DIR/campaigns/$campaign/campaign.conf" "$conf" 2> /dev/null || df_die "campaign '$campaign' has no campaign.conf"
+if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then  # the offline tests: the working copy's campaign
+    df_campaign_conf "$commit" "$campaign" > "$conf" || df_die "campaign '$campaign' has no campaign.conf"
 else
-    git -C "$DF_DIR" show "$commit:tools/cloud/aws_fuzz/campaigns/$campaign/campaign.conf" > "$conf" ||
-        df_die "cannot read campaign.conf of '$campaign' at $commit"
+    df_campaign_conf "$commit" "$campaign" > "$conf" || df_die "cannot read campaign.conf of '$campaign' at $commit"
 fi
 python3 "$DF_DIR/oracle_conf.py" check "$conf" || df_die "campaign '$campaign' is not a valid preview-oracle campaign"
 # tr: a Windows Python ends its lines with CRLF
