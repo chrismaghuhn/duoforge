@@ -22,8 +22,13 @@ MOVED = {
     "duoforge_search.preview_ab": "duoforge_eval.preview_ab",
     "duoforge_search.expert_eval": "duoforge_eval.expert_eval",
     "duoforge_search.eval_manifest": "duoforge_eval.eval_manifest",
+    "duoforge_search.live_latency": "duoforge_eval.live_latency",
+    "duoforge_search.tickbench": "duoforge_eval.tickbench",
+    "duoforge_search.rowprobe": "duoforge_eval.rowprobe",
+    "duoforge_search.positions": "duoforge_eval.positions",
 }
 COMMANDS = {**MOVED, "duoforge_live.arena": "duoforge_eval.live_arena"}
+SCRIPTS = {"tools/perf/honest_breakdown.py": "duoforge_eval.honest_breakdown"}  # python SCRIPT, not python -m
 
 
 class ForwarderTest(unittest.TestCase):
@@ -62,6 +67,16 @@ class ForwarderTest(unittest.TestCase):
                 self.assertIn(f"{old} moved to {new}: run python -m {new}", run.stderr)
                 self.assertIn("usage:", run.stdout)
                 self.assertNotIn(f"python -m {old}", run.stdout)  # the help names the new command, if it names one
+
+    def test_every_old_script_runs_the_new_module(self):
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "python"), "PYTHONDONTWRITEBYTECODE": "1"}
+        for old, new in SCRIPTS.items():
+            with self.subTest(old=old):
+                run = subprocess.run([sys.executable, old, "--help"], cwd=ROOT, env=env, capture_output=True,
+                                     text=True, timeout=300)
+                self.assertEqual(run.returncode, 0, run.stderr)
+                self.assertIn(f"{old} moved to {new}: run python -m {new}", run.stderr)
+                self.assertIn(f"usage: python -m {new}", run.stdout)
 
     def test_an_old_command_line_runs_through_its_forwarder(self):
         # one real run of the old command line (the pilot's evaluation manifest, as tools/cloud/p1_pilot/run.sh calls

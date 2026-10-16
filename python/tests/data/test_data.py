@@ -103,13 +103,15 @@ class DataTest(unittest.TestCase):
         self.assertTrue(low["flags"] & c["DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE"])
         # lockedmove (step G56): the moves whose use locks the user for 2-3 turns; the live tracker hides a foe's locked
         # slot after one of them like the engine's observation (view audit 2026-10-10), so it reads this flag, not names.
-        for name, locked in (("outrage", True), ("thrash", True), ("petaldance", True), ("closecombat", False),
+        # Raging Fury: its generator row is a lockedmove since A0 part 3 (decision 0015 entry 5dr), though it stays unmarked (#606).
+        for name, locked in (("outrage", True), ("thrash", True), ("petaldance", True), ("ragingfury", True), ("closecombat", False),
                              ("earthquake", False)):
             flags = data.move_static(self.pool, data.find(self.pool, data.TABLE_MOVE, name))["flags"]
             self.assertEqual(bool(flags & c["DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE"]), locked, name)
         # the partial trap (step G90; #512 S1): the five pool moves the engine models as the volatile partiallytrapped
-        # carry the flag, Snap Trap not (decision 0060 section 8); the live tracker reads its trap lines by it
-        for name, trap in (("bind", True), ("wrap", True), ("firespin", True), ("sandtomb", True), ("snaptrap", False),
+        # carry the flag, and Snap Trap since its generator row became PARTIAL_TRAP in A0 part 3 (decision 0015 entry 5dr;
+        # it stays unmarked: its only pool learner has Mimicry); the live tracker reads its trap lines by it
+        for name, trap in (("bind", True), ("wrap", True), ("firespin", True), ("sandtomb", True), ("snaptrap", True),
                            ("infestation", True), ("closecombat", False), ("outrage", False)):
             flags = data.move_static(self.pool, data.find(self.pool, data.TABLE_MOVE, name))["flags"]
             self.assertEqual(bool(flags & c["DUOFORGE_MOVE_STATIC_FLAG_PARTIAL_TRAP"]), trap, name)

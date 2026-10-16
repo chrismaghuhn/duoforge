@@ -31,7 +31,7 @@ ALL = features.ENCODER5_FEATURES
 BIT = {name[len("DUOFORGE_VIEWEXT_FEATURE_"):]: v for name, v in C.items()
        if name.startswith("DUOFORGE_VIEWEXT_FEATURE_") and name != "DUOFORGE_VIEWEXT_FEATURE_COUNT"}
 BASE_BITS = ("WEATHER_SAND", "WEATHER_SNOW", "TERRAIN_ELECTRIC", "TERRAIN_MISTY", "AILMENT_TOX")
-CAMPAIGN = os.path.join("tools", "cloud", "aws_fuzz", "campaigns", "weather-sand-snow")
+CAMPAIGN = os.path.join("runs", "fuzz", "weather-sand-snow")
 _STATUS = ("NONE", "BURN", "FREEZE", "PARALYSIS", "SLEEP", "POISON")
 VOLATILES = ("substitute", "taunt", "imprison", "leech_seed", "yawn", "focus_energy", "dragon_cheer", "must_recharge",
              "partial_trap", "glaive_rush", "destiny_bond", "curse", "no_retreat", "salt_cure", "charge", "heal_block",

@@ -3,7 +3,8 @@
 #
 # usage: launch.sh --campaign ID --commit SHA --bucket B [--max-hours H] [--types t1,t2,...] [--sg-name NAME]
 #                  [--resume RUN_ID] [--i-have-owner-approval]
-#   --campaign  campaign id: the directory tools/cloud/aws_fuzz/campaigns/<id>/ at the commit
+#   --campaign  campaign id: the directory runs/fuzz/<id>/ at the commit (tools/cloud/aws_fuzz/campaigns/<id>/ before
+#               restructure step 8)
 #   --commit    the exact 40-digit sha of a commit on main; the box fetches and builds this commit
 #   --bucket    the results bucket (objects go under fuzz/<campaign>/)
 #   --max-hours the watchdog: the box powers itself off after this long (default 2, hard maximum 2)

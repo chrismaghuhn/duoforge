@@ -1,0 +1,44 @@
+{
+  "name": "a0_cover_d",
+  "purpose": "A0 part 2 (decision 0015 entry 5dr, the Crush Claw roll of the Def drop): a PASS battle of the random differential campaign of run 35001 (diff_driver.py random, seed 35001, pairing DE, teams D and E of the A0 part 2 branch, 600 battles, all PASS). Its Crush Claw hit (turn 5, Blaziken against Dragonite) rolls 88 on the secondary: no Def drop, because the chance is 50. A chance of 100 would drop Def there, so this battle is the one that shows the chance.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,132fc2d22b880111dbcf8425e9d08a8183ff644d84dbb9210f304104bff4e90a",
+  "teams": [
+    "Crabominable (M) @ Expert Belt\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Crabhammer\n- Ice Hammer\n- Close Combat\n- Earthquake\n\nTsareena (F) @ Sitrus Berry\nAbility: Leaf Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Aromatic Mist\n- Triple Axel\n- U-turn\n- Knock Off\n\nDragonite (M) @ Life Orb\nAbility: Multiscale\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Rush\n- Extreme Speed\n- Earthquake\n- Dragon Dance\n\nMachamp (M) @ Choice Scarf\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Cross Chop\n- Seismic Toss\n- Dynamic Punch\n- Ice Punch\n\nClefable (M) @ Leftovers\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Sweet Kiss\n- Moonblast\n- Ice Beam\n- Thunder Wave\n\nSalazzle (F) @ Focus Sash\nAbility: Oblivious\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Fire Lash\n- Sludge Bomb\n- Protect\n- Fire Blast",
+    "Gliscor (M) @ Light Clay\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Crabhammer\n- Earthquake\n- Knock Off\n- Protect\n\nGardevoir (F) @ Magnet\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Double Team\n- Moonblast\n- Psychic\n- Protect\n\nGyarados (M) @ Wide Lens\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Bite\n- Dragon Dance\n- Waterfall\n- Ice Fang\n\nBlaziken (M) @ Wise Glasses\nAbility: Speed Boost\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Crush Claw\n- Flare Blitz\n- Close Combat\n- Protect\n\nCharizard (M) @ Charcoal\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Inferno\n- Dragon Rush\n- Bite\n- Flamethrower\n\nFlorges (F) @ Rocky Helmet\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Tearful Look\n- Moonblast\n- Petal Blizzard\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5243",
+      "p2": "team 6342"
+    },
+    {
+      "p1": "move 2 1, move 2 2",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 3 2, switch 4",
+      "p2": "move 3, move 4 -1"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "move 1 2, move 4 -1"
+    },
+    {
+      "p2": "switch 4, switch 3"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 2 1, move 2 -1",
+      "p2": "move 2 -2, move 3 -1"
+    },
+    {
+      "p1": "move 4 1, move 2 1",
+      "p2": "pass, move 2 2"
+    }
+  ]
+}

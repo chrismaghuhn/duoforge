@@ -1,5 +1,9 @@
 {
-  "maintenance": "Hand-maintained lower bounds of the reference sets (restructure step 2 of docs/superpowers/plans/2026-10-11-repo-restructure.md: global sums are derived, not maintained). Every sum (battles, certified, fixture matches, tiebreak stops, tape and event rows) is derived from the battle files: by tests/reference/data.cmake at configure time and by tools/reference/format_pins.py. A set below its bound fails both. Raise a bound deliberately when a set grows; adding a battle needs no edit here.",
+  "maintenance": "Hand-maintained lower bounds of the reference sets (restructure step 2 of docs/superpowers/plans/2026-10-11-repo-restructure.md: global sums are derived, not maintained). Every sum (battles, certified, fixture matches, tiebreak stops, tape and event rows) is derived from the battle files: by tests/reference/data.cmake at configure time and by tools/reference/format_pins.py. A set below its bound fails both. Raise a bound deliberately when a set grows; adding a battle needs no edit here. Pool 1012 -> 1022 after A0 part 2 (three covering battles a0_cover_a/b/c, run 35001, pins captured 2026-10-16); 1022 -> 1023 for a0_cover_d (the Crush Claw roll of 88, run 35001 fz_35001_150, which catches the Crush Claw 50->100 mutant). 1023 -> 1045 at the A0 PR-1 integration (parts 2 and 3 on main 4fd2b8dc: main's 15 new pool battles, part 3's seven covering battles; measured 1045 files).",
   "format": "reg-mc",
-  "minimum_battles": {"closure": 90, "team_c": 73, "pool": 1012}
+  "minimum_battles": {
+    "closure": 90,
+    "team_c": 73,
+    "pool": 1045
+  }
 }

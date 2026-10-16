@@ -1,7 +1,7 @@
 """Issue #395 (lane B, step G87): an Attract source that faints in the battle's last action keeps its byte at TERMINAL, and the
 Update before a REPLACEMENT boundary clears it.
 
-The battles are the engine's own random play: the G71 Cute Charm teams (tools/cloud/aws_fuzz/campaigns/g71-triggers and g71-cute-charm),
+The battles are the engine's own random play: the G71 Cute Charm teams (runs/fuzz/g71-triggers and g71-cute-charm),
 9 pairs x 4 replicas, seed 9720000, the random factored choices of RandomPolicy. The three episodes below were found by that play; their
 choice sequences are stored here. Every run of the play must make the same choices (checked against the policy's own choices), and the
 stored choices are played for those episodes. No state bytes are stored.
@@ -22,7 +22,7 @@ from duoforge import Batch, Context, RandomPolicy, _layout, state_layout, teams
 from duoforge._lib import load_library
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
-CAMPAIGNS = os.path.join(ROOT, 'tools', 'cloud', 'aws_fuzz', 'campaigns')
+CAMPAIGNS = os.path.join(ROOT, 'runs', 'fuzz')
 TEAMS = {
     'G2': os.path.join(CAMPAIGNS, 'g71-triggers', 'G2.txt'),
     'H2': os.path.join(CAMPAIGNS, 'g71-triggers', 'H2.txt'),
