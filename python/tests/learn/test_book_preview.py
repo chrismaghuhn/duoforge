@@ -314,6 +314,7 @@ class BookPreviewTest(unittest.TestCase):
             self.assertEqual(recorded["path"], str(expected))
             self.assertEqual(recorded["sha256"], arena._sha256(expected))
         self.assertNotEqual(summary["conditions"]["candidate"]["sha256"], summary["conditions"]["panel"]["BC"]["sha256"])
+        self.assert_manifest(output, "duoforge_eval.book_ab")  # restructure step 8: one manifest per run
 
     def test_arena_preview_option_and_search_records_describe_the_played_choice(self):
         self.write_checkpoints()
@@ -334,6 +335,16 @@ class BookPreviewTest(unittest.TestCase):
         self.assertTrue(applied)
         self.assertTrue(all(row["choice"] != row["network_choice"] for row in applied))
         self.assertTrue(all(row["book"]["level"] == "exact_team" for row in applied))
+        self.assert_manifest(output, "duoforge_eval.arena")
+
+    def assert_manifest(self, output, tool):
+        """The run's manifest.json (duoforge.runs) names the tool and this checkout's commit."""
+        import subprocess
+        record = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(__file__).parent, capture_output=True, text=True,
+                              check=True).stdout.strip()
+        self.assertEqual((record["kind"], record["tool"], record["code"]["commit"]), ("eval", tool, head))
+        self.assertIn("--out", record["argv"])
 
 
 class BookABStatisticsTest(unittest.TestCase):
