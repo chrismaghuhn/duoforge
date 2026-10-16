@@ -48,7 +48,7 @@ class _Views:
         return sum(1 << k for k, p in enumerate(self._positions[side]) if p.occupant != ROSTER_NONE)
 
     def _foe_switch_slots(self, side, boundary):
-        """The foe positions asked to switch (src/combat/turn.c dfi_finish_turn, dfi_pivot): the flagged ones
+        """The foe positions asked to switch (src/combat/flow/turn.h dfi_finish_turn, dfi_pivot): the flagged ones
         (a faint at the end of the turn, Emergency Exit, Parting Shot); a fainted one and any at a PIVOT only
         while the foe has a reserve (brought, unseen or on the bench, standing)."""
         members = self._member(side)
