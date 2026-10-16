@@ -3033,13 +3033,15 @@
    ],
    "moved_area": null,
    "effort": "L",
-   "deps": [],
+   "deps": [
+    "the cant nopp line (turn.c:7567)"
+   ],
    "family": "move replay (Instruct)",
    "pin": "data/moves.ts:9650-9669; sim/battle-actions.ts:388",
    "engine_refs": "src/combat/turn.c:5717",
    "new_public_values": true,
    "basis": "read",
-   "notes": "The target reuses its last move at once with its lastMoveTargetLoc (prioritizeAction); long exclusion list (failinstruct, charge, recharge, Focus Punch volatile, 0 PP). Needs last-target state and a nested move action; Quash (turn.c:5717) only reorders. 93 games."
+   "notes": "The target reuses its last move at once with its lastMoveTargetLoc (prioritizeAction); long exclusion list (failinstruct, charge, recharge, Focus Punch volatile, 0 PP). Needs last-target state and a nested move action; Quash (turn.c:5717) only reorders. 93 games. Must add the `cant|X|nopp` line with it: turn.c:7567-7570 stops a move that has 0 PP when it runs but emits no line today (unreachable with marked moves; this move makes it reachable; pin sim/battle-actions.ts:282-283; section 11)."
   },
   {
    "token": "item:quickclaw",
@@ -6631,13 +6633,15 @@
    ],
    "moved_area": null,
    "effort": "M",
-   "deps": [],
+   "deps": [
+    "the cant nopp line (turn.c:7567)"
+   ],
    "family": "PP reduction (Eerie Spell, Spite)",
    "pin": "data/moves.ts:4467-4478",
    "engine_refs": "src/combat/turn.c:4915",
    "new_public_values": "maybe",
    "basis": "read",
-   "notes": "A 100% secondary takes 3 PP from the target's last move, shown as -activate|target|move: Eerie Spell|MOVE|n. The tail's last_move slot (Encore) gives the move; the PP amount in the event and the view's PP knowledge need care. Sound and bypasssub."
+   "notes": "A 100% secondary takes 3 PP from the target's last move, shown as -activate|target|move: Eerie Spell|MOVE|n. The tail's last_move slot (Encore) gives the move; the PP amount in the event and the view's PP knowledge need care. Sound and bypasssub. Must add the `cant|X|nopp` line with it: turn.c:7567-7570 stops a move that has 0 PP when it runs but emits no line today (unreachable with marked moves; this move makes it reachable; pin sim/battle-actions.ts:282-283; section 11)."
   },
   {
    "token": "move:fellstinger",
@@ -10508,13 +10512,15 @@
    ],
    "moved_area": null,
    "effort": "M",
-   "deps": [],
+   "deps": [
+    "the cant nopp line (turn.c:7567)"
+   ],
    "family": "PP reduction (Spite)",
    "pin": "data/moves.ts:17648-17656",
    "engine_refs": "src/combat/turn.c:7472 (dfi_run_move_body), src/combat/turn.c:6017 (dfi_pressure_extra PP deduction)",
    "new_public_values": "maybe",
    "basis": "read",
-   "notes": "Takes up to 4 PP from the target's last move with -activate move: Spite|Move|n; needs the last-move lookup (tail last_move exists) and an ACTIVATE shape carrying move and amount. 0 games."
+   "notes": "Takes up to 4 PP from the target's last move with -activate move: Spite|Move|n; needs the last-move lookup (tail last_move exists) and an ACTIVATE shape carrying move and amount. 0 games. Must add the `cant|X|nopp` line with it: turn.c:7567-7570 stops a move that has 0 PP when it runs but emits no line today (unreachable with marked moves; this move makes it reachable; pin sim/battle-actions.ts:282-283; section 11)."
   },
   {
    "token": "move:stuffcheeks",

@@ -31,6 +31,17 @@ DF_ORACLE_DEFAULT_MAX_HOURS=12
 DF_ORACLE_DEFAULT_PRICE_USD=2.00
 DF_ORACLE_PRICE_SANITY_USD=10.00 # a guard against a mistyped price only, not a decision
 
+# Decimals (prices, cost caps, rates) are printed by printf and awk after LC_NUMERIC: under a German locale they would
+# read 1,50, and the spot request must say MaxPrice=1.50. LC_ALL overrides LC_NUMERIC, so a set LC_ALL is handed to
+# every other category first; only the numbers change (tools/cloud/test_numeric_locale.py).
+if [ -n "${LC_ALL:-}" ]; then
+    for df_category in CTYPE COLLATE MESSAGES MONETARY TIME PAPER NAME ADDRESS TELEPHONE MEASUREMENT IDENTIFICATION; do
+        export "LC_$df_category=$LC_ALL"
+    done
+    unset df_category LC_ALL
+fi
+export LC_NUMERIC=C
+
 DF_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 DF_ROOT=$(cd "$DF_DIR/../../.." && pwd)  # the repository's work tree
 
