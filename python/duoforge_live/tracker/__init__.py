@@ -31,7 +31,8 @@ The package (restructure step 7) splits the former tracker.py by fold family: co
 tables), state (_Position, _Member), core (Tracker: input and the battle line), conditions, sheets, requests,
 events, fold_event (_fold_event), actions and views (the output), each family a mixin of Tracker. This module
 re-exports every name the former module had, so `from duoforge_live.tracker import X` and `tracker.X` keep
-working.
+working. Each submodule binds the constants it reads: to patch one in a test, patch it where it is read
+(or mutate the object); rebinding `tracker.X` reaches no submodule.
 """
 
 import collections

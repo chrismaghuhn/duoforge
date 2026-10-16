@@ -270,7 +270,8 @@ init += ("\nThe package (restructure step 7) splits the former tracker.py by fol
          "tables), state (_Position, _Member), core (Tracker: input and the battle line), conditions, sheets, requests,\n"
          "events, fold_event (_fold_event), actions and views (the output), each family a mixin of Tracker. This module\n"
          "re-exports every name the former module had, so `from duoforge_live.tracker import X` and `tracker.X` keep\n"
-         "working.\n\"\"\"\n")
+         "working. Each submodule binds the constants it reads: to patch one in a test, patch it where it is read\n"
+         "(or mutate the object); rebinding `tracker.X` reaches no submodule.\n\"\"\"\n")
 mods = [i for k, i in MODULE_IMPORTS.items() if k in old_names]
 std = sorted(i for i in mods if i.startswith("import ") and "numpy" not in i)
 blocks = ["".join(i + "\n" for i in std), "import numpy as np\n",

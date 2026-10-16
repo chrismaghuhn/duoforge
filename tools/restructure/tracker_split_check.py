@@ -134,8 +134,13 @@ def compare_class(a, b, where):
             same_function(fa, fb, f"{where}.{n}")
         elif not same_value(fa, fb):
             problems.append(f"{where}.{n}: value differs")
-    if [k.__name__ for k in a.__mro__[1:]] != ["object"] and a.__bases__ != b.__bases__:
-        pass
+    # the old classes have no base but object (and Exception); a member defined twice in the new MRO could shadow
+    defined = [n for k in b.__mro__ if k not in (object, Exception, BaseException) for n in vars(k)
+               if not n.startswith("__")]
+    if len(defined) != len(set(defined)):
+        problems.append(f"{where}: members defined in more than one class of the MRO")
+    if [k for k in a.__mro__ if k not in (a, object, Exception, BaseException)]:
+        problems.append(f"{where}: the former class has bases the check does not compare")
     if a.__name__ == "SheetContradiction" and not issubclass(b, Exception):
         problems.append("SheetContradiction is no Exception")
 
