@@ -105,8 +105,10 @@ class CodeTest(RepoFixture):
 
     def test_a_worktree_whose_gitdir_does_not_resolve(self):
         # #411: a worktree made under another path (a Windows path seen from WSL) names a gitdir git cannot open
-        dot_git = self.worktree / ".git"
-        dot_git.write_text("gitdir: C:/Dev/src/duoforge/.git/worktrees/lane\n", encoding="utf-8")
+        # Rewritten in place ('r+'): Git for Windows hides the .git file, and Windows refuses to create a hidden file anew
+        with open(self.worktree / ".git", "r+", encoding="utf-8", newline="\n") as dot_git:
+            dot_git.truncate(0)
+            dot_git.write("gitdir: C:/Dev/src/duoforge/.git/worktrees/lane\n")
         self.assertIsNone(runs._git(["rev-parse", "HEAD"], cwd=self.worktree))
         self.assertEqual(runs.code(self.worktree, environ={}), {"commit": self.head, "dirty": False})
 
