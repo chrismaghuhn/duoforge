@@ -649,12 +649,13 @@ const dfi_support_manifest dfi_support = {
             /* Step C5 (decision 0015 entry 5cy): Endeavor (the ENDEAVOR special, the Final Gambit damage path): damage = target HP
              * - user HP, immune when the user's HP is not below the target's (data/moves.ts:4784-4804). */
             [DFI_MOVE_ENDEAVOR] = 1u,
-            /* Step A0 (decision 0015, batch A0 part 1): ten moves whose rows the existing paths already run, checked by
+            /* Step A0 (decision 0015, batch A0 part 1): nine moves whose rows the existing paths already run, checked by
              * check_a0_facts (tools/datagen/gen_closure.py). Meteor Assault: recharge (Hyper Beam's path) and the Champions
              * basePower 170. Stored Power: POWER_TRIP (Power Trip's callback text). Bullet Seed, Rock Blast, Pin Missile and
              * Water Shuriken: MULTI_HIT_2_5 (Icicle Spear's path; Water Shuriken's Battle Bond callback is unreachable in the pool).
-             * Heat Crash: HEAVY_SLAM (its callbacks are Heavy Slam's text). Air Cutter, Horn Leech and Decorate: rows without an
-             * unmodelled feature. */
+             * Heat Crash: HEAVY_SLAM (its callbacks are Heavy Slam's text). Air Cutter and Horn Leech: rows without an
+             * unmodelled feature. Decorate is not marked: its only learner, Alcremie, has Sweet Veil and Aroma Veil, neither
+             * marked (their logic is not part of A0). */
             [DFI_MOVE_METEORASSAULT] = 1u,
             [DFI_MOVE_STOREDPOWER] = 1u,
             [DFI_MOVE_BULLETSEED] = 1u,
@@ -664,7 +665,6 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HEATCRASH] = 1u,
             [DFI_MOVE_AIRCUTTER] = 1u,
             [DFI_MOVE_HORNLEECH] = 1u,
-            [DFI_MOVE_DECORATE] = 1u,
         },
     .abilities =
         {
