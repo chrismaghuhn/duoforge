@@ -7,7 +7,7 @@ position, any neighbours and any padding at the pinned capacity. Bits are compar
 uint32); there is no tolerance. The result holds only under its reported conditions: CPU bits depend on the
 instruction set and XLA flags, GPU bits on the device and its flags.
 
-CLI (private, an owner window): python -m duoforge_search.rowprobe --checkpoint PATH --device cpu|gpu --out PATH
+CLI (private, an owner window): python -m duoforge_eval.rowprobe --checkpoint PATH --device cpu|gpu --out PATH
 """
 import argparse
 import hashlib
@@ -92,7 +92,7 @@ def row_independence(model, params, rows, capacity, seed, device="cpu"):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="python -m duoforge_search.rowprobe")
+    parser = argparse.ArgumentParser(prog="python -m duoforge_eval.rowprobe")
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--device", choices=("cpu", "gpu"), required=True)
     parser.add_argument("--out", required=True)

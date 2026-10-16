@@ -8,7 +8,7 @@ check, since damage rolls, critical hits and speed ties are sampled, not enumera
 enumeration). The claim holds with a critical hit too, and the sample must contain critical hits on the Pokemon the
 claim is about for that to mean anything.
 
-    python -m duoforge_search.positions --checkpoint P --out DIR
+    python -m duoforge_eval.positions --checkpoint P --out DIR
 
 plays every position with the checkpoint's raw policy and its honest search (and, for the positions an oracle
 answers, the true-state lookahead) and writes the hits to DIR, which must lie outside the repository: results per
@@ -251,7 +251,7 @@ def _endgame(b, seat, own, foe, expected, n, base, name):
     """Every pair ends the battle this step with one result in all samples. The game is a sure win: its value (the
     exact matrix game over win 1, tie 1/2, loss 0) is 1, and the expected answers are exactly the pure pairs that win
     against every foe pair."""
-    from . import matrix
+    from duoforge_search import matrix
     win = C["DUOFORGE_RESULT_SIDE_0"] if seat == 0 else C["DUOFORGE_RESULT_SIDE_1"]
     payoff, crits = [], 0
     for o, _ in own:
@@ -377,18 +377,23 @@ def play(ctx, position, model, params, encoder, ext, searcher=None, oracle=None)
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="python -m duoforge_search.positions", description=__doc__.split("\n")[0])
+    p = argparse.ArgumentParser(prog="python -m duoforge_eval.positions", description=__doc__.split("\n")[0])
     p.add_argument("--checkpoint", required=True, help="a format-2 checkpoint in its trained layout")
-    p.add_argument("--out", required=True, help="the private output directory (outside the repository)")
+    p.add_argument("--out", default=None, help="the private output directory, outside the repository "
+                                             "(default: $DUOFORGE_RUNS/bench/<date>-positions)")
     p.add_argument("--positions", default=str(ROOT))
     p.add_argument("--k", type=int, default=8)
     p.add_argument("--m", type=int, default=8)
     p.add_argument("--worlds", type=int, default=16)
     args = p.parse_args(argv)
+    from duoforge import runs
+    if args.out is None:
+        args.out = str(runs.default_out("bench", "positions"))
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
+    manifest = runs.Manifest("bench", "duoforge_eval.positions", argv)
     from duoforge_learn import checkpoint
-    from . import honest, lookahead
+    from duoforge_search import honest, lookahead
     params, config = checkpoint.load_trained(args.checkpoint)
     model = checkpoint.trained_model(config, params)
     encoder, ext = checkpoint.encoder_of(config), checkpoint.ext_supported_of(config)
@@ -410,6 +415,7 @@ def main(argv=None):
     out.mkdir(parents=True, exist_ok=True)
     report = {"checkpoint": str(args.checkpoint), "positions": rows, "hit_rates": rates}
     (out / "positions.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    manifest.write(out)
     return report
 
 

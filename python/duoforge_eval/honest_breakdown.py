@@ -1,9 +1,9 @@
 """Where the honest search's time per decision goes (issue #355): a reproducible measurement on this machine.
 
-python tools/perf/honest_breakdown.py --checkpoint P --out DIR [--games 8] [--capacities 16384,1024]
+python -m duoforge_eval.honest_breakdown --checkpoint P --out DIR [--games 8] [--capacities 16384,1024]
 
 Part 1 plays the search of #355 (X, K = M = 8, 16 worlds, mix 0.5; the live search until 2026-10-14) on engine batches of the reference setups,
-as duoforge_search.live_latency does, and sums the search's own cost fields per searched decision: public records,
+as duoforge_eval.live_latency does, and sums the search's own cost fields per searched decision: public records,
 world builds (from_view and the worlds' policy queries), the team head, the leaves (Batch.expand: clone, reseed,
 step and encode of every leaf, in C), the network (the root and world policy calls and the value calls) and the solve.
 It does so once per leaf capacity (the value call's padded rows).
@@ -216,16 +216,21 @@ def parts(ctx, checkpoint, capacity):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="python tools/perf/honest_breakdown.py", description=__doc__.split("\n")[0])
+    p = argparse.ArgumentParser(prog="python -m duoforge_eval.honest_breakdown", description=__doc__.split("\n")[0])
     p.add_argument("--checkpoint", required=True)
-    p.add_argument("--out", required=True)
+    p.add_argument("--out", default=None, help="the private output directory, outside the repository "
+                                             "(default: $DUOFORGE_RUNS/bench/<date>-honest_breakdown)")
     p.add_argument("--games", type=int, default=8)
     p.add_argument("--capacities", default="16384,1024")
     p.add_argument("--seed", type=int, default=0x2026101200000101)
     p.add_argument("--paired", action="store_true", help="also Part 3: both capacities on the same roots")
     args = p.parse_args(argv)
+    from duoforge import runs
+    if args.out is None:
+        args.out = str(runs.default_out("bench", "honest_breakdown"))
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
+    manifest = runs.Manifest("bench", "duoforge_eval.honest_breakdown", argv, seeds={"seed": args.seed})
     import duoforge
     from duoforge import _layout
     from duoforge_live import search as live_search
@@ -245,6 +250,7 @@ def main(argv=None):
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "breakdown.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    manifest.write(out)
     print(json.dumps(report, indent=2))
 
 

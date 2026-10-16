@@ -1,6 +1,6 @@
 """The live search's latency on this machine (plan 2026-10-10-live-honest-search, Task 4).
 
-python -m duoforge_search.live_latency --checkpoint P --out DIR [--games 16] [--max-steps 200] [--seed S]
+python -m duoforge_eval.live_latency --checkpoint P --out DIR [--games 16] [--max-steps 200] [--seed S]
 
 Plays games on engine batches of one environment over the reference setups: seat 0 decides through
 duoforge_live.search.LiveSearch over the batch's own parts (the request, observation, public record, causes and the
@@ -26,9 +26,10 @@ _KINDS = {"DUOFORGE_BOUNDARY_TEAM_SELECTION": "team_selection", "DUOFORGE_BOUNDA
 
 
 def _arguments(argv):
-    p = argparse.ArgumentParser(prog="python -m duoforge_search.live_latency", description=__doc__.split("\n")[0])
+    p = argparse.ArgumentParser(prog="python -m duoforge_eval.live_latency", description=__doc__.split("\n")[0])
     p.add_argument("--checkpoint", required=True, help="a format-2 checkpoint in its trained layout")
-    p.add_argument("--out", required=True, help="the private output directory (outside the repository)")
+    p.add_argument("--out", default=None, help="the private output directory, outside the repository "
+                                             "(default: $DUOFORGE_RUNS/bench/<date>-live_latency)")
     p.add_argument("--games", type=int, default=16)
     p.add_argument("--max-steps", type=int, default=200)
     p.add_argument("--seed", type=int, default=SEED)
@@ -49,8 +50,12 @@ def _quantiles(seconds):
 
 def main(argv=None):
     args = _arguments(argv)
+    from duoforge import runs
+    if args.out is None:
+        args.out = str(runs.default_out("bench", "live_latency"))
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
+    manifest = runs.Manifest("bench", "duoforge_eval.live_latency", argv, seeds={"seed": args.seed})
     if args.games < 1 or args.max_steps < 1:
         raise ValueError("a measurement needs at least one game and one step")
     import duoforge
@@ -134,6 +139,7 @@ def main(argv=None):
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "latency.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    manifest.write(out)
     return report
 
 

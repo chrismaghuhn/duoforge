@@ -6,7 +6,7 @@ per_root (label_decision), tick_nodedup (label_tick, every open leaf its own row
 dedup). Decisions are digested per path; counters, wall and CPU time are measured around the labeling only.
 No battle rules here; outputs stay private.
 
-CLI (an owner window): python -m duoforge_search.tickbench --checkpoint PATH --device cpu|gpu|split --out PATH
+CLI (an owner window): python -m duoforge_eval.tickbench --checkpoint PATH --device cpu|gpu|split --out PATH
 """
 import argparse
 import hashlib
@@ -68,8 +68,8 @@ class Counted:
 def run(make_search, make_roots, *, path, steps, config, manifest, seed, select=None, cpu_seconds=None):
     """One repetition of one path: {labels, targets, seconds, cpu_seconds, digest, tick counters}."""
     from duoforge_learn.ledger import cpu_seconds as process_cpu
-    from . import expert, lookahead
-    from .expert_data import DECISION_BOUNDARIES, DecisionKey, is_selected
+    from duoforge_search import expert, lookahead
+    from duoforge_search.expert_data import DECISION_BOUNDARIES, DecisionKey, is_selected
     cpu_seconds = cpu_seconds or process_cpu
     select = select or (lambda key: is_selected(key, manifest.seed))
     import duoforge
@@ -125,7 +125,7 @@ def run(make_search, make_roots, *, path, steps, config, manifest, seed, select=
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="python -m duoforge_search.tickbench")
+    parser = argparse.ArgumentParser(prog="python -m duoforge_eval.tickbench")
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--device", choices=("cpu", "gpu", "split"), required=True)
     parser.add_argument("--out", required=True)
@@ -147,8 +147,8 @@ def main(argv=None):
     import duoforge
     from duoforge import _layout, teams
     from duoforge_learn import checkpoint, policy
-    from . import expert, honest, lookahead
-    from .expert_data import DataManifest, KEY_VERSION
+    from duoforge_search import expert, honest, lookahead
+    from duoforge_search.expert_data import DataManifest, KEY_VERSION
     from .expert_eval import pool_sha256
     from duoforge import features
     with open(args.checkpoint, "rb") as f:
