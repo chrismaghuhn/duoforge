@@ -80,8 +80,8 @@ class SelfPlay:
     """A batch whose environments start a new episode when one ends, each
     with the pairing pairing.pairings draws for it (decision 0017): side-0
     and side-1 teams of the pool, by weight, a pure function of the seed,
-    the environment and the episode. The engine has no turn limit, and two
-    policies that only switch never end a battle, so an episode that
+    the environment and the episode. Two policies that only switch end a battle
+    only at the turn-1000 tie (decision 0015 entry 5dt), so an episode that
     reaches max_steps steps is cut off and scored by the reference's
     tiebreak (Batch.tiebreak: the most Pokemon left, then the HP percentage,
     then the total HP), so stalling while behind does not pay; a cut-off the
