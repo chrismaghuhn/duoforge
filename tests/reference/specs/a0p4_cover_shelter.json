@@ -1,0 +1,39 @@
+{
+  "name": "a0p4_cover_shelter",
+  "purpose": "A0 part 4 covering battle (entry 5co): Shelter is used in this random pool battle (run 4301, battle 1949, PASS in the campaign against the pinned Showdown). The choices are the ones recorded.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,73613b3970e0114299fba80657169593320f875b97be6493b80245c61c86c178",
+  "teams": [
+    "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect",
+    "Staraptor (F) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- U-turn\n- Protect\n\nPelipper (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Weather Ball\n- U-turn\n- Protect\n\nGoodra-Hisui (F) @ Expert Belt\nAbility: Shell Armor\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Shelter\n- Dragon Pulse\n- Sludge Bomb\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- U-turn\n\nAnnihilape (M) @ Choice Scarf\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn\n\nGolisopod (F) @ Leftovers\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Liquidation\n- Leech Life\n- U-turn\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 6251",
+      "p2": "team 3416"
+    },
+    {
+      "p1": "move 1 mega, move 2",
+      "p2": "move 3 -2, move 4 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 1, move 3 2",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p1": "move 3 2, move 1 1",
+      "p2": "move 3 -2, move 4"
+    }
+  ]
+}
