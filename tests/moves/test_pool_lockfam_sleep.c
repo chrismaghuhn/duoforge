@@ -1,7 +1,7 @@
 /*
- * duoforge.state.pool_lockfam_sleep (white-box). PREPARED for the fix of issue 606 (decision 0015 entry 5dv, design:
- * docs/research/expansion/lockfam-sleep.md); NOT registered in tests/moves/tests.cmake until the fix lands, because the
- * fatigue checks of the first scenario fail on main by design (main removes the lock silently).
+ * duoforge.state.pool_lockfam_sleep (white-box): the fix of issue 606 (decision 0015 entry 5dv, design:
+ * docs/research/expansion/lockfam-sleep.md). Before the fix the fatigue checks of the first scenario failed (the lock was
+ * removed silently).
  *
  * lockedmove at the pin (data/conditions.ts:253-285; Outrage here, Thrash, Petal Dance and Raging Fury share it):
  * duration 2, onRestart sets it to 2 again when trueDuration >= 2, onAfterMove removes the lock at duration 1, onEnd adds
@@ -29,6 +29,20 @@
  *   5. sleep_after_restarted_use: lock_turns 2, Arcanine first uses Outrage (restarted, duration 2), then Milotic puts it to
  *      sleep: the residual's countdown goes 2 -> 1 (no end), onResidual deletes the lock silently. No confusion although
  *      trueDuration is 1 by then: a fix that ended every sleeping holder's lock with onEnd would confuse here.
+ *
+ * The PIVOT pause (decision 0015 5dv, HS variant (b)): scenario 1 with a pivot of side 0 AFTER Arcanine's `cant` and before
+ * the residual, which then runs in the next call. The fact "this lock was not restarted this turn" is the state bit
+ * DFI_SINGLE_TURN_LOCK_UNUSED, so it survives the pause. Side 0 is team B with Politoed replaced by a Scizor (U-turn) and
+ * Grimmsnarl's Prankster by Frisk (its Parting Shot must come after Arcanine's turn); every side 0 Pokemon is slower than
+ * Arcanine. Three cases, one per pivot kind, each over the seeds 1..16:
+ *   6. pivot_uturn: Scizor's U-turn into Milotic;
+ *   7. pivot_parting_shot: Grimmsnarl's Parting Shot into Milotic;
+ *   8. pivot_emergency_exit: Grimmsnarl's Spirit Break into its ally Golisopod (Emergency Exit) at half its HP + 1.
+ * At the pause: the bit stands on Arcanine's position; the codec round trip (encode, create_decoded, equal, encode again) keeps
+ * it; the bit is hidden: the observation, its extension, the request and the factored domain of both players are byte-equal
+ * with and without it (so the observation digest, built from these and the public lines, cannot see it). The decoded battle
+ * then resumes with the first offered switch: the residual ends the lock with the fatigue confusion. The same battle with
+ * the bit cleared resumes WITHOUT it (the bit carries the fact; a codec that dropped it would lose the confusion).
  */
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +53,7 @@
 #include "data/extended_tables.h"
 #include "data/pool_tables.h"
 #include "state/battle_internal.h"
+#include "state/knowledge.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
@@ -302,11 +317,298 @@ static void run_scenario(df_test *t, const duoforge_context *ctx, const duoforge
     }
 }
 
+/* ---- the PIVOT pause (scenarios 6-8) ---- */
+
+enum { PIVOT_UTURN = 0, PIVOT_PARTING_SHOT = 1, PIVOT_EMERGENCY_EXIT = 2 };
+
+typedef struct pivot_case {
+    const char *name;
+    uint32_t kind;
+} pivot_case;
+
+/* Team B (side 0) for the pivots: Politoed -> Scizor @ no item, Technician, Adamant, 32 HP / 32 Atk, U-turn, Bug Bite, Swords
+ * Dance, Bullet Punch (fz_6_175's Scizor without its stone); Grimmsnarl's ability Frisk (no Prankster priority). */
+static uint32_t g_scizor, g_golisopod, g_grimmsnarl, g_farigiraf, g_archaludon;
+
+static bool make_pivot_setup(df_test *t, duoforge_battle_setup *s)
+{
+    if (!make_setup(t, s)) {
+        return false;
+    }
+    g_scizor = find_species(&s->sides[0], DFI_FORME_POLITOED);
+    g_golisopod = find_species(&s->sides[0], DFI_FORME_GOLISOPOD);
+    g_grimmsnarl = find_species(&s->sides[0], DFI_FORME_GRIMMSNARL);
+    g_farigiraf = find_species(&s->sides[0], DFI_FORME_FARIGIRAF);
+    g_archaludon = find_species(&s->sides[0], DFI_FORME_ARCHALUDON);
+    if (!DF_CHECK(t, g_scizor != UINT32_MAX && g_golisopod != UINT32_MAX && g_grimmsnarl != UINT32_MAX &&
+                         g_farigiraf != UINT32_MAX && g_archaludon != UINT32_MAX)) {
+        return false;
+    }
+    duoforge_member_setup *z = &s->sides[0].members[g_scizor];
+    memset(z, 0, sizeof *z);
+    z->species_id = DFI_FORME_SCIZOR;
+    z->gender = DUOFORGE_GENDER_MALE;
+    z->nature = DFI_NATURE_ADAMANT;
+    z->stat_points[0] = 32u;
+    z->stat_points[1] = 32u;
+    z->ability = 1u + DFI_ABILITY_TECHNICIAN;
+    z->item = 0u;
+    z->move_count = 4u;
+    z->moves[0].move_id = DFI_MOVE_UTURN;
+    z->moves[1].move_id = DFI_MOVE_BUGBITE;
+    z->moves[2].move_id = DFI_MOVE_SWORDSDANCE;
+    z->moves[3].move_id = DFI_MOVE_BULLETPUNCH;
+    s->sides[0].members[g_grimmsnarl].ability = 1u + DFI_ABILITY_FRISK;
+    return true;
+}
+
+/* The pivot battle of a case at its first TURN boundary: side 0 leads the pivot user and its partner, Farigiraf and Archaludon
+ * wait on the bench; side 1 leads Arcanine and Milotic. */
+static duoforge_battle *pivot_battle(df_test *t, const duoforge_context *ctx, const pivot_case *pc)
+{
+    duoforge_battle_setup s;
+    if (!make_pivot_setup(t, &s)) {
+        return NULL;
+    }
+    duoforge_battle *b = df_make_battle(ctx, &s);
+    if (!DF_CHECK(t, b != NULL)) {
+        return NULL;
+    }
+    const uint32_t lead0 = pc->kind == PIVOT_UTURN ? g_scizor : pc->kind == PIVOT_PARTING_SHOT ? g_grimmsnarl : g_golisopod;
+    const uint32_t lead1 = pc->kind == PIVOT_PARTING_SHOT ? g_scizor : g_grimmsnarl;
+    duoforge_decision_bundle bd;
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = b->request_epoch;
+    bd.response_mask = 3u;
+    const uint32_t picks[2][4] = {{lead0, lead1, g_farigiraf, g_archaludon},
+                                  {g_r.arcanine, g_r.milotic, g_r.other0, g_r.other1}};
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        duoforge_side_choice *c = &bd.responses[side];
+        c->epoch = b->request_epoch;
+        c->side = (uint8_t)side;
+        c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+        c->pick_count = 4u;
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            c->picks[i] = (uint8_t)picks[side][i];
+        }
+    }
+    duoforge_step_result res;
+    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TURN);
+    DF_CHECK_EQ_U64(t, b->sides[0].positions[0].occupant, lead0);
+    DF_CHECK_EQ_U64(t, b->sides[1].positions[0].occupant, g_r.arcanine);
+    return b;
+}
+
+/* The turn: side 0's pivot (slot 0) and its partner's move (slot 1); Arcanine's locked move; Milotic's Hypnosis on Arcanine. */
+static void pivot_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b, const pivot_case *pc)
+{
+    memset(bd, 0, sizeof *bd);
+    bd->epoch = b->request_epoch;
+    bd->response_mask = 3u;
+    duoforge_side_choice *c0 = &bd->responses[0];
+    c0->epoch = b->request_epoch;
+    c0->side = 0u;
+    c0->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+    c0->slots[0].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+    c0->slots[1].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+    if (pc->kind == PIVOT_UTURN) {
+        c0->slots[0].move_slot = 0u; /* Scizor: U-turn into Milotic */
+        c0->slots[0].target = (uint8_t)PARTNER;
+        c0->slots[1].move_slot = 1u; /* Grimmsnarl: Reflect */
+        c0->slots[1].target = (uint8_t)DUOFORGE_TARGET_NONE;
+    } else if (pc->kind == PIVOT_PARTING_SHOT) {
+        c0->slots[0].move_slot = 3u; /* Grimmsnarl: Parting Shot into Milotic */
+        c0->slots[0].target = (uint8_t)PARTNER;
+        c0->slots[1].move_slot = 2u; /* Scizor: Swords Dance */
+        c0->slots[1].target = (uint8_t)DUOFORGE_TARGET_NONE;
+    } else {
+        c0->slots[0].move_slot = 2u; /* Golisopod: Drill Run into Milotic */
+        c0->slots[0].target = (uint8_t)PARTNER;
+        c0->slots[1].move_slot = 0u; /* Grimmsnarl: Spirit Break into its ally Golisopod */
+        c0->slots[1].target = 0u;
+    }
+    duoforge_side_choice *c1 = &bd->responses[1];
+    c1->epoch = b->request_epoch;
+    c1->side = 1u;
+    c1->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+    c1->slots[0].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+    c1->slots[0].move_slot = 0u;
+    c1->slots[0].target = (uint8_t)DUOFORGE_TARGET_NONE;
+    c1->slots[1].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+    c1->slots[1].move_slot = (uint8_t)g_r.hypnosis;
+    c1->slots[1].target = (uint8_t)HOLDER;
+}
+
+/* Every byte a player's model-facing queries give: the observation, its POOL extension, the request and the factored domain. */
+static void same_views(df_test *t, const duoforge_context *ctx, const duoforge_battle *a, const duoforge_battle *c)
+{
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        static duoforge_observation oa, oc;
+        static duoforge_observation_ext ea, ec;
+        static duoforge_factored_domain fa, fc;
+        duoforge_request ra, rc;
+        memset(&oa, 0, sizeof oa);
+        memset(&oc, 0, sizeof oc);
+        memset(&ea, 0, sizeof ea);
+        memset(&ec, 0, sizeof ec);
+        memset(&ra, 0, sizeof ra);
+        memset(&rc, 0, sizeof rc);
+        memset(&fa, 0, sizeof fa);
+        memset(&fc, 0, sizeof fc);
+        DF_CHECK(t, duoforge_battle_observe(ctx, a, p, &oa) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_observe(ctx, c, p, &oc) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_observe_ext(ctx, a, p, &ea) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_observe_ext(ctx, c, p, &ec) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_request(ctx, a, p, &ra) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_request(ctx, c, p, &rc) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_factored(ctx, a, p, &fa) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_factored(ctx, c, p, &fc) == DUOFORGE_OK);
+        DF_CHECK(t, memcmp(&oa, &oc, sizeof oa) == 0);
+        DF_CHECK(t, memcmp(&ea, &ec, sizeof ea) == 0);
+        DF_CHECK(t, memcmp(&ra, &rc, sizeof ra) == 0);
+        DF_CHECK(t, memcmp(&fa, &fc, sizeof fa) == 0);
+    }
+}
+
+/* Answers the PIVOT request with each requested player's first candidate (a switch to a bench Pokemon) and runs the rest of the
+ * turn; returns the number of CONFUSION_START lines of the holder that the players saw (both must agree), or UINT32_MAX. */
+static uint32_t resume(df_test *t, const duoforge_context *ctx, duoforge_battle *b)
+{
+    duoforge_decision_bundle bd;
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = b->request_epoch;
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        duoforge_request rq;
+        if (!DF_CHECK(t, duoforge_battle_request(ctx, b, p, &rq) == DUOFORGE_OK)) {
+            return UINT32_MAX;
+        }
+        if (rq.requested == 0u) {
+            continue;
+        }
+        static duoforge_side_choice cands[DUOFORGE_MAX_CANDIDATES];
+        uint32_t n = 0u;
+        if (!DF_CHECK(t, duoforge_battle_candidates(ctx, b, p, cands, DUOFORGE_MAX_CANDIDATES, &n) == DUOFORGE_OK && n != 0u)) {
+            return UINT32_MAX;
+        }
+        bd.response_mask = (uint8_t)(bd.response_mask | (1u << p));
+        bd.responses[p] = cands[0];
+    }
+    duoforge_event_buffer buf[2] = {{g_ev[0], DUOFORGE_MAX_EVENTS, 0u}, {g_ev[1], DUOFORGE_MAX_EVENTS, 0u}};
+    duoforge_step_result res;
+    const duoforge_status st = duoforge_battle_step_events(ctx, b, &bd, &res, buf);
+    if (!DF_CHECK(t, st == DUOFORGE_OK)) {
+        fprintf(stderr, "  resume: status %d\n", (int)st);
+        return UINT32_MAX;
+    }
+    DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+    DF_CHECK(t, b->boundary_kind == DUOFORGE_BOUNDARY_TURN || b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT);
+    const uint32_t c0 = count_events(0u, buf[0].count, DUOFORGE_EVENT_CONFUSION_START, (uint8_t)HOLDER);
+    const uint32_t c1 = count_events(1u, buf[1].count, DUOFORGE_EVENT_CONFUSION_START, (uint8_t)HOLDER);
+    DF_CHECK_EQ_U64(t, c0, c1);
+    return c0;
+}
+
+static void run_pivot(df_test *t, const duoforge_context *ctx, const pivot_case *pc)
+{
+    const unsigned long failed_before = t->failures;
+    duoforge_battle *base = pivot_battle(t, ctx, pc);
+    if (base == NULL) {
+        return;
+    }
+    static const scenario fatigue = {"pivot", 1u, true, true, true, 0u, true, true};
+    for (uint64_t seed = 1u; seed <= SEEDS; ++seed) {
+        duoforge_battle *y = NULL;
+        if (!DF_CHECK(t, duoforge_battle_clone(ctx, base, &y) == DUOFORGE_OK && y != NULL)) {
+            break;
+        }
+        DF_CHECK(t, duoforge_battle_reseed(ctx, y, seed, 2u) == DUOFORGE_OK);
+        arrange(y, &fatigue);
+        if (pc->kind == PIVOT_EMERGENCY_EXIT) {
+            dfi_member *g = &y->sides[0].members[g_golisopod];
+            g->hp = (uint16_t)(g->hp_max / 2u + 1u); /* Emergency Exit at the next hit that does not knock it out */
+            dfi_knowledge *k = &y->sides[1].knowledge[g_golisopod]; /* what the foe was shown of it */
+            dfi_hp_display(g->hp, g->hp_max, &k->hp_percent, &k->hp_flag);
+        }
+        DF_CHECK(t, duoforge_battle_check(ctx, y) == DUOFORGE_OK);
+        duoforge_decision_bundle bd;
+        pivot_bundle(&bd, y, pc);
+        duoforge_event_buffer buf[2] = {{g_ev[0], DUOFORGE_MAX_EVENTS, 0u}, {g_ev[1], DUOFORGE_MAX_EVENTS, 0u}};
+        duoforge_step_result res;
+        const duoforge_status st = duoforge_battle_step_events(ctx, y, &bd, &res, buf);
+        if (!DF_CHECK(t, st == DUOFORGE_OK)) {
+            fprintf(stderr, "  %s seed %u: status %d\n", pc->name, (unsigned)seed, (int)st);
+            duoforge_battle_destroy(y);
+            continue;
+        }
+        /* the pause: Arcanine slept through its turn (cant slp), the lock stands with its unused bit, nothing confused yet */
+        DF_CHECK_EQ_U64(t, y->boundary_kind, DUOFORGE_BOUNDARY_PIVOT);
+        DF_CHECK(t, find_event(0u, buf[0].count, DUOFORGE_EVENT_CANT, (uint8_t)HOLDER, 0u) != UINT32_MAX);
+        DF_CHECK_EQ_U64(t, count_events(0u, buf[0].count, DUOFORGE_EVENT_CONFUSION_START, (uint8_t)HOLDER), 0u);
+        DF_CHECK_EQ_U64(t, y->sides[1].members[g_r.arcanine].status, DFI_STATUS_SLP);
+        DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[0].lock_turns, 1u);
+        DF_CHECK(t, (y->tail.sides[1].positions[0].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u);
+        DF_CHECK(t, duoforge_battle_check(ctx, y) == DUOFORGE_OK);
+        /* the codec round trip keeps the bit */
+        static uint8_t bytes[4096], again[4096];
+        size_t size = 0u, size2 = 0u;
+        duoforge_battle *dec = NULL;
+        bool equal = false;
+        DF_CHECK(t, duoforge_battle_encode(ctx, y, bytes, sizeof bytes, &size) == DUOFORGE_OK);
+        if (!DF_CHECK(t, duoforge_battle_create_decoded(ctx, bytes, size, &dec) == DUOFORGE_OK && dec != NULL)) {
+            duoforge_battle_destroy(y);
+            continue;
+        }
+        DF_CHECK(t, duoforge_battle_equal(ctx, y, dec, &equal) == DUOFORGE_OK && equal);
+        DF_CHECK(t, duoforge_battle_encode(ctx, dec, again, sizeof again, &size2) == DUOFORGE_OK && size2 == size &&
+                        memcmp(bytes, again, size) == 0);
+        DF_CHECK(t, (dec->tail.sides[1].positions[0].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u);
+        /* the bit is hidden: every model-facing byte of both players is the same without it */
+        duoforge_battle *cleared = NULL;
+        DF_CHECK(t, duoforge_battle_clone(ctx, dec, &cleared) == DUOFORGE_OK && cleared != NULL);
+        if (cleared != NULL) {
+            uint8_t *bits = &cleared->tail.sides[1].positions[0].single_turn;
+            *bits = (uint8_t)(*bits & ~DFI_SINGLE_TURN_LOCK_UNUSED);
+            DF_CHECK(t, duoforge_battle_check(ctx, cleared) == DUOFORGE_OK);
+            same_views(t, ctx, dec, cleared);
+        }
+        /* the decoded battle resumes: the residual ends the lock with the fatigue confusion (count 1) */
+        DF_CHECK_EQ_U64(t, resume(t, ctx, dec), 1u);
+        DF_CHECK_EQ_U64(t, dec->tail.sides[1].positions[0].lock_turns, 0u);
+        DF_CHECK_EQ_U64(t, dec->sides[1].positions[0].locked_move, 0u);
+        DF_CHECK_EQ_U64(t, dec->tail.sides[1].positions[0].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED, 0u);
+        DF_CHECK(t, dec->sides[1].positions[0].confusion_turns >= 2u && dec->sides[1].positions[0].confusion_turns <= 5u);
+        /* without the bit the same pause resumes into the silent removal: the bit is what carries the fact */
+        if (cleared != NULL) {
+            DF_CHECK_EQ_U64(t, resume(t, ctx, cleared), 0u);
+            DF_CHECK_EQ_U64(t, cleared->tail.sides[1].positions[0].lock_turns, 0u);
+            DF_CHECK_EQ_U64(t, cleared->sides[1].positions[0].confusion_turns, 0u);
+        }
+        duoforge_battle_destroy(cleared);
+        duoforge_battle_destroy(dec);
+        duoforge_battle_destroy(y);
+    }
+    duoforge_battle_destroy(base);
+    if (t->failures != failed_before) {
+        fprintf(stderr, "  scenario %s: %lu failed checks\n", pc->name, t->failures - failed_before);
+    } else {
+        fprintf(stderr, "  scenario %s: ok\n", pc->name);
+    }
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.state.pool_lockfam_sleep");
     duoforge_context *kp = df_make_context(&df_config_pool);
+    static const pivot_case pivots[] = {
+        {"pivot_uturn", PIVOT_UTURN},
+        {"pivot_parting_shot", PIVOT_PARTING_SHOT},
+        {"pivot_emergency_exit", PIVOT_EMERGENCY_EXIT},
+    };
+    for (size_t i = 0u; i < sizeof pivots / sizeof pivots[0]; ++i) {
+        run_pivot(&t, kp, &pivots[i]);
+    }
     duoforge_battle *base = turn_battle(&t, kp);
     if (base != NULL) {
         static const scenario sc[] = {
