@@ -787,6 +787,35 @@ int main(void)
         DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_TWINBEAM][0] == 2u && dfi_pool_move_static_hits[DFI_MOVE_TWINBEAM][1] == 2u);
         DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_TRIPLEAXEL][0] == 3u && dfi_pool_move_static_hits[DFI_MOVE_TRIPLEAXEL][1] == 3u);
         DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][0] == 10u && dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][1] == 10u); /* data only */
+        /* Batch A0 part 3: nine rows that the generator models through existing families (no core code): Thrash, Petal Dance
+         * and Raging Fury (LOCKED_MOVE), Solar Blade (SOLAR_BEAM), Snap Trap (PARTIAL_TRAP, the Champions type Steel), Double Hit
+         * (MULTI_HIT_2) and Tail Slap and Bone Rush (MULTI_HIT_2_5, Bone Rush's Champions base power 30). Each is marked, has no
+         * unmodelled feature, and carries its family's handler and hit counts. */
+        {
+            static const uint32_t a0_ids[9] = {DFI_MOVE_THRASH, DFI_MOVE_PETALDANCE, DFI_MOVE_RAGINGFURY, DFI_MOVE_SOLARBLADE,
+                                               DFI_MOVE_SNAPTRAP, DFI_MOVE_DOUBLEHIT, DFI_MOVE_TAILSLAP, DFI_MOVE_BONERUSH};
+            for (uint32_t i = 0u; i < 9u; ++i) {
+                DF_CHECK(&t, dfi_support.moves[a0_ids[i]] != 0u);
+            }
+        }
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_RAGINGFURY].special, DFI_SPECIAL_LOCKED_MOVE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_THRASH].special, DFI_SPECIAL_LOCKED_MOVE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PETALDANCE].special, DFI_SPECIAL_LOCKED_MOVE);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SOLARBLADE].special, DFI_SPECIAL_SOLAR_BEAM);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SNAPTRAP].special, DFI_SPECIAL_PARTIAL_TRAP);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_DOUBLEHIT].special, DFI_SPECIAL_MULTI_HIT_2);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TAILSLAP].special, DFI_SPECIAL_MULTI_HIT_2_5);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BONERUSH].special, DFI_SPECIAL_MULTI_HIT_2_5);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SNAPTRAP].type, DFI_TYPE_STEEL);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BONERUSH].base_power, 30u);
+        DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SOLARBLADE].base_power, 125u);
+        DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_DOUBLEHIT][0] == 2u && dfi_pool_move_static_hits[DFI_MOVE_DOUBLEHIT][1] == 2u);
+        DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_TAILSLAP][0] == 2u && dfi_pool_move_static_hits[DFI_MOVE_TAILSLAP][1] == 5u);
+        DF_CHECK(&t, dfi_pool_move_static_hits[DFI_MOVE_BONERUSH][0] == 2u && dfi_pool_move_static_hits[DFI_MOVE_BONERUSH][1] == 5u);
+        DF_CHECK(&t, dfi_pool_move_unmodeled[DFI_MOVE_RAGINGFURY] == NULL && dfi_pool_move_unmodeled[DFI_MOVE_THRASH] == NULL);
+        DF_CHECK(&t, dfi_pool_move_unmodeled[DFI_MOVE_PETALDANCE] == NULL && dfi_pool_move_unmodeled[DFI_MOVE_SOLARBLADE] == NULL);
+        DF_CHECK(&t, dfi_pool_move_unmodeled[DFI_MOVE_SNAPTRAP] == NULL && dfi_pool_move_unmodeled[DFI_MOVE_DOUBLEHIT] == NULL);
+        DF_CHECK(&t, dfi_pool_move_unmodeled[DFI_MOVE_TAILSLAP] == NULL && dfi_pool_move_unmodeled[DFI_MOVE_BONERUSH] == NULL);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_ERUPTION].special, DFI_SPECIAL_HP_POWER);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_WATERSPOUT].special, DFI_SPECIAL_HP_POWER);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_BODYPRESS].special, DFI_SPECIAL_BODY_PRESS);
