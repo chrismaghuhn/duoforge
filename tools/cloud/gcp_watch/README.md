@@ -2,7 +2,7 @@
 
 One spot VM that plays **one round of differential fuzz campaigns on the current head of `main` per boot**, uploads the
 results to a private bucket and powers itself off. It runs only when the owner's session starts it (no scheduler), so
-between rounds it costs a disk and nothing else. It reuses the campaigns of `tools/cloud/aws_fuzz/campaigns` and the
+between rounds it costs a disk and nothing else. It reuses the campaigns of `runs/fuzz` and the
 scheduler code `chunks.sh` (`campaign.conf` parser) of that directory; nothing else of the AWS tooling is needed.
 
 **Status: nothing here has been created.** `create.sh` without `--i-have-owner-approval` only prints the request. The
@@ -152,7 +152,7 @@ tools/cloud/gcp_watch/start.sh --bench <MAIN_SHA>,<PR_HEAD_SHA> --families copy,
 3. **Build only when the head changed** since the build in the cache: the pinned Pokemon Showdown (cached while the pin is
    unchanged) and the engine in Release (`duoforge_diff_runner`, incremental in `/opt/duoforge-watch/build`). The head
    of the last build is in `/opt/duoforge-watch/state/built-head`. A boot on an unchanged head rebuilds nothing.
-4. **The campaigns**: every `tools/cloud/aws_fuzz/campaigns/<id>/campaign.conf` of that head, in name order (the step
+4. **The campaigns**: every `runs/fuzz/<id>/campaign.conf` of that head (`tools/cloud/aws_fuzz/campaigns/` before restructure step 8), in name order (the step
    campaigns, `closure-mirror`, `team-c-mirror`, `registry-mix`; not the `throughput-*` sweeps and nothing with a
    `sweep` key). Each plays `RD_ROUND_BATTLES` battles (600; override with the environment of `round.sh`) of its pairings and teams with the
    diff driver (`--no-lock`, all vCPUs as workers) under a **fresh seed**: the base seed of the campaign, plus 10,000,000,

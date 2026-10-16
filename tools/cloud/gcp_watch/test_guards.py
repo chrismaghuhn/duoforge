@@ -511,11 +511,12 @@ class Round(unittest.TestCase):
         self.t = posix(self.tmp)
         # a small repository checkout: the real scheduler (chunks.sh), two campaigns, the fake driver
         repo = os.path.join(self.tmp, 'repo')
-        camps = os.path.join(repo, 'tools', 'cloud', 'aws_fuzz', 'campaigns')
+        camps = os.path.join(repo, 'runs', 'fuzz')  # the campaign definitions (restructure step 8)
         os.makedirs(os.path.join(camps, 'alpha'))
         os.makedirs(os.path.join(camps, 'throughput-sweep'))
         os.makedirs(os.path.join(camps, 'swept'))
         os.makedirs(os.path.join(repo, 'tools', 'reference'))
+        os.makedirs(os.path.join(repo, 'tools', 'cloud', 'aws_fuzz'))  # chunks.sh (the campaigns are in runs/fuzz)
         shutil.copy(os.path.join(ROOT, 'tools', 'cloud', 'aws_fuzz', 'chunks.sh'), os.path.join(repo, 'tools', 'cloud', 'aws_fuzz'))
         conf = 'pairings=AB,BA\nteams=A=A.txt PP_0123456789ABCDEF\nbase_seed=9300000\nchunks=2\nbench=0\n'
         wr(os.path.join(camps, 'alpha', 'campaign.conf'), conf)
@@ -587,7 +588,7 @@ class Round(unittest.TestCase):
         self.assertIn('--workers', argv)
         self.assertEqual([a for a in argv if a == '--team'].__len__(), 2)
         self.assertIn('PP_0123456789ABCDEF', argv)
-        self.assertTrue(any(a.replace('\\', '/').startswith('A=') and a.endswith('/campaigns/alpha/A.txt') for a in argv), argv)
+        self.assertTrue(any(a.replace('\\', '/').startswith('A=') and a.endswith('/runs/fuzz/alpha/A.txt') for a in argv), argv)
         objects = [o for o, _ in self.puts()]
         base = 'watch/%s/r1/alpha/' % SHA[:12]
         self.assertEqual(objects, [base + 'summary.json', base + 'run.json', base + 'cases.tgz', base + 'status.json'])

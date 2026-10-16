@@ -8,7 +8,7 @@ shutdown -h +@MAX_MINUTES@ "duoforge fuzz watchdog: at most @MAX_MINUTES@ minute
 # repository at the exact commit, the pinned Pokemon Showdown (npm ci, node build), the engine in Release and the
 # differential runner. With bench=1 in the campaign.conf it then measures the raw speed of the engine (bench_run.py:
 # the native batch benchmark on all vCPUs, bench.json to S3). Then it plays the chunks of the campaign
-# (campaigns/<id>/campaign.conf at that commit), as chunks.sh schedules them: a chunk is the random mode over
+# (runs/fuzz/<id>/campaign.conf at that commit), as chunks.sh schedules them: a chunk is the random mode over
 # chunk_battles battles of one seed (base seed + chunk index), several chunks are computed at the same time and the
 # upload of a finished one runs while the others compute; a done-manifest in S3, written after the upload, lets a
 # relaunch skip what is finished. A spot interruption notice uploads every chunk in flight; a rate under twice the
@@ -109,8 +109,8 @@ RUNNER=$(find "$REPO/build" -name duoforge_diff_runner -type f | head -n 1)
 # shellcheck source=chunks.sh
 . "$REPO/tools/cloud/aws_fuzz/chunks.sh"
 
-# --- the campaign: tools/cloud/aws_fuzz/campaigns/<id>/campaign.conf, key=value lines
-CAMP_DIR="$REPO/tools/cloud/aws_fuzz/campaigns/$DF_CAMPAIGN"
+# --- the campaign: runs/fuzz/<id>/campaign.conf, key=value lines
+CAMP_DIR="$REPO/runs/fuzz/$DF_CAMPAIGN"
 [ -f "$CAMP_DIR/campaign.conf" ] || fail "no campaign.conf for $DF_CAMPAIGN at $DF_COMMIT"
 campaign_conf_load "$CAMP_DIR/campaign.conf"
 VCPUS=$(nproc)

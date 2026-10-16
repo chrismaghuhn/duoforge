@@ -22,7 +22,7 @@ then the scripts are used with `check.sh`, which makes read-only and `--dry-run`
 | `chunks.sh` | the chunk scheduler the box sources: parallel chunks, background uploads, done-manifest, partial uploads |
 | `bench_run.py` | the raw engine benchmark of `bench=1`: `duoforge_bench` on all vCPUs, `bench.json` |
 | `collect.sh` | downloads a campaign and replays every kept case locally (`diff_driver.py corpus`) |
-| `campaigns/<id>/` | `campaign.conf` (pairings, teams, base seed, chunks, and optionally chunk_battles, parallel or sweep, bench) and the team pastes of a campaign |
+| `runs/fuzz/<id>/` | `campaign.conf` (pairings, teams, base seed, chunks, and optionally chunk_battles, parallel or sweep, bench) and the team pastes of a campaign; before restructure step 8 they were `tools/cloud/aws_fuzz/campaigns/<id>/`, and a launch of a commit from then reads them there |
 | `test_guards.py` | offline tests with a stub `aws` (CTest: `duoforge.cloud.aws_fuzz_guards`) |
 
 ## The rules every script follows
@@ -104,8 +104,8 @@ with warnings as errors and IPO, then the target `duoforge_diff_runner`.
 - **Parallel sweep** (`sweep=5,7,9` in the `campaign.conf`, instead of `parallel`): one launch measures several values of
   `parallel`, one **phase** each, played one after the other. Each phase has `chunks` chunks (so the campaign has
   `chunks` x the number of values; the seeds go on across the phases, no battle is played twice) and needs at least
-  `parallel` + 3 of them, better 3 x `parallel` (`campaigns/throughput-sweep` has 24 chunks of 1000 for 5, 7 and 9;
-  `campaigns/throughput-sweep-9-13` has 40 for 9, 11 and 13). Per phase the log gives two rates and the machine's busy
+  `parallel` + 3 of them, better 3 x `parallel` (`runs/fuzz/throughput-sweep` has 24 chunks of 1000 for 5, 7 and 9;
+  `runs/fuzz/throughput-sweep-9-13` has 40 for 9, 11 and 13). Per phase the log gives two rates and the machine's busy
   share. The **overall** rate is all the chunks over the whole phase: the ramp-up and the tail (the last wave of chunks
   is usually not full and runs with fewer neighbours) are in it. The **steady** rate is what the machine does with all
   `parallel` drivers busy: `parallel x chunk_battles` over the **median duration of the chunks that started before
@@ -357,7 +357,7 @@ each (all PASS under POOL, 2026-10-03) shows that the teams play.
 
 Not yet: the steps G15 and G16 (not merged when this was written) and AC1.
 
-A campaign is a directory `campaigns/<id>/` with `campaign.conf` (`pairings`, `teams`, `base_seed`, `chunks`: four
+A campaign is a directory `runs/fuzz/<id>/` with `campaign.conf` (`pairings`, `teams`, `base_seed`, `chunks`: four
 required `key=value` lines, and the optional `chunk_battles` (100 to 20000, default 2000), `parallel` (`auto` or 1 to 16)
 or `sweep` (1 to 6 values, not with `parallel`) and `bench` (0 or 1); see the existing ones) and the team pastes it names (`teams=D=sand.txt E=snow.txt`: a letter, a
 file of six sets with every gender stated, as `diff_driver.py random --team` takes them; or the id of a team of the
@@ -379,7 +379,7 @@ tests (against a stub `aws`).
 
 | File | Purpose |
 | --- | --- |
-| `campaigns/<id>/campaign.conf` | `kind=ladder`, one to three `arm=NAME step=S [previous=P] [h2h=0\|1]` lines, and for every arm `pairs`, `seed`, `workers` (8), `max_steps` and every network by its sha256 (`ladder_conf.py`'s docstring has the keys) |
+| `runs/fuzz/<id>/campaign.conf` | `kind=ladder`, one to three `arm=NAME step=S [previous=P] [h2h=0\|1]` lines, and for every arm `pairs`, `seed`, `workers` (8), `max_steps` and every network by its sha256 (`ladder_conf.py`'s docstring has the keys) |
 | `ladder_conf.py` | checks a ladder conf, lists its networks' sha256 and its arms, and builds each arm's command line (the launcher and the box use the same file) |
 | `launch_ladder.sh` | the guards of `launch.sh`; one instance type, `c7a.16xlarge`, for a whole series, no fallback; prints the request unless `--i-have-owner-approval` |
 | `ladder_user_data.sh` | the box script (run by the bootstrap): the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` (and `probes/`) checked read-only; the networks (and a probe campaign's inputs) by sha256; the pins; a probe campaign's pin variants; the arms side by side, each on CPUs of its own; the aggregates up |
@@ -471,7 +471,7 @@ uploads nothing: then only the instance's console output is left.
    `aws s3api get-public-access-block --bucket <BUCKET>` and `aws s3api get-bucket-encryption --bucket <BUCKET>` with
    the owner's profile). The owner makes the IAM change.
 2. **Upload the networks with their sha256.** For each sha256 the campaign names (`python3
-   tools/cloud/aws_fuzz/ladder_conf.py shas tools/cloud/aws_fuzz/campaigns/<id>/campaign.conf`):
+   tools/cloud/aws_fuzz/ladder_conf.py shas runs/fuzz/<id>/campaign.conf`):
    - check the local file: `sha256sum <file>` must print that sha256;
    - upload it as `nets/<sha256>.npz` with the owner's credentials (the user `pokeengine` has no S3 write permission):
      `aws s3 cp <file> s3://<BUCKET>/nets/<sha256>.npz --sse AES256`.
@@ -524,12 +524,12 @@ included. The lanes deliver the code, this guide and the tests (against a stub `
 
 | File | Purpose |
 | --- | --- |
-| `campaigns/<id>/campaign.conf` | `kind=oracle`, `plan`, `checkpoint` and `foe_net` (networks by sha256), `ours` (a registry id), `foe_team` (the foe team by sha256), `workers` (8), `max_steps` (`oracle_conf.py`'s docstring has the keys) |
+| `runs/fuzz/<id>/campaign.conf` | `kind=oracle`, `plan`, `checkpoint` and `foe_net` (networks by sha256), `ours` (a registry id), `foe_team` (the foe team by sha256), `workers` (8), `max_steps` (`oracle_conf.py`'s docstring has the keys) |
 | `oracle_conf.py` | checks an oracle conf, lists its networks' sha256, the foe team's sha256, our team's id and the workers, and builds the series' command line (the launcher and the box use the same file) |
 | `launch_oracle.sh` | the guards of `launch_ladder.sh`; the ladder's one type `c7a.16xlarge`, no fallback; `--max-hours` 1 to 12 (default 12), a price ceiling of $20 / hours; prints the request, the networks and the foe team's key (never its content) unless `--i-have-owner-approval` |
 | `oracle_user_data.sh` | the box: the watchdog first; the library at the commit, hashed; Python as pinned; `nets/` and `teams/` checked read-only; the networks and the foe team by sha256, our team against `data/teams/index.json`; the pins; the one series command; the aggregates up |
 | `upload_team.sh` | the only way the foe team reaches the bucket: checks the file's sha256, prints only the sha256 and the target key, and with `--i-have-owner-approval` makes one encrypted upload with the owner's profile |
-| `campaigns/preview-mixed/` | the campaign of #458: BC6 (`bda5de8e4e96...`) as checkpoint and foe network, our team A, the tournament sun team (`e1060cf46a8f...`, private), 8 workers, 1000 steps |
+| `runs/fuzz/preview-mixed/` | the campaign of #458: BC6 (`bda5de8e4e96...`) as checkpoint and foe network, our team A, the tournament sun team (`e1060cf46a8f...`, private), 8 workers, 1000 steps |
 
 The limits are the oracle's own and apart from each other (owner decision 2026-10-15, the defaults), limits and not
 expectations: at most **12 hours** (`--max-hours`, the watchdog `shutdown -h +<minutes>`) and at most **$2.00 per
@@ -584,7 +584,7 @@ series' own refusal). A failure without a refusal is `failed_in_<step>` (`packag
    `teams/*`) and nothing else on `teams/` (no `PutObject`, no `DeleteObject`, no `ListBucket` with that prefix). The
    user `pokeengine` has nothing on `teams/`. The owner makes the IAM change.
 2. **Upload the networks** as in the ladder's step 2 (`python3 tools/cloud/aws_fuzz/oracle_conf.py shas
-   tools/cloud/aws_fuzz/campaigns/preview-mixed/campaign.conf`; BC6 is already in `nets/`: check it is there).
+   runs/fuzz/preview-mixed/campaign.conf`; BC6 is already in `nets/`: check it is there).
 3. **Upload the team**, with the owner's profile (the user `pokeengine` has no S3 write permission), first without and
    then with the flag:
    `AWS_PROFILE=<the owner's profile> tools/cloud/aws_fuzz/upload_team.sh --file <the team file> --sha256 <foe_team of

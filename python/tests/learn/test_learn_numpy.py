@@ -423,7 +423,7 @@ class ExtSupportedTest(unittest.TestCase):
         from duoforge import teams
         sides = []
         for name in ("sand.txt", "snow.txt"):
-            with open(os.path.join("tools", "cloud", "aws_fuzz", "campaigns", "weather-sand-snow", name),
+            with open(os.path.join("runs", "fuzz", "weather-sand-snow", name),
                       encoding="utf-8") as f:
                 sides.append(teams.side_setup(ctx, teams.parse(f.read(), name), name))
         return teams.TeamPool.from_setups(("sand", "snow"), sides)

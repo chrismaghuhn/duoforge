@@ -343,6 +343,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_POISONPOWDER] = 1u,
             [DFI_MOVE_PSYCHICFANGS] = 1u,
             [DFI_MOVE_SOLARBEAM] = 1u,
+            [DFI_MOVE_SOLARBLADE] = 1u, /* batch A0 part 3: the Solar Beam handler (sun skip, the weather halving), physical, 125 */
             [DFI_MOVE_MATCHAGOTCHA] = 1u,
             [DFI_MOVE_GIGADRAIN] = 1u,
             [DFI_MOVE_ENERGYBALL] = 1u,
@@ -398,7 +399,11 @@ const dfi_support_manifest dfi_support = {
             /* Step G90 (decision 0060): the partial trap of six moves (the volatile partiallytrapped: the draw of its turns, the residual
              * damage with the Binding Band divisor, the trapped flag, the silent ends and the end line). */
             [DFI_MOVE_BIND] = 1u, [DFI_MOVE_WRAP] = 1u, [DFI_MOVE_FIRESPIN] = 1u,
-            [DFI_MOVE_SANDTOMB] = 1u, [DFI_MOVE_INFESTATION] = 1u, /* Snap Trap stays unmarked: decision 0060 section 8 */
+            [DFI_MOVE_SANDTOMB] = 1u, [DFI_MOVE_INFESTATION] = 1u,
+            /* Batch A0 part 3: Snap Trap, the sixth move of decision 0060's table (the Champions type Steel is merged by the
+             * generator; the earlier drop cited section 8, which does not name it). UNMARKED again (lead decision, 2026-10-16):
+             * its only pool learner, Stunfisk-Galar, has the ability Mimicry, which is unmarked, so no pool battle reaches it.
+             * Its generator row and facts stay (tools/datagen/gen_closure.py, PARTIAL_TRAP). */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G84 (decision 0047): Leech Seed (the holder's volatile, the source's slot, the residual drain of order 8) and Curse
              * (a non-Ghost user's self boost; the Ghost Curse since step G84b, decision 0063). */
@@ -433,6 +438,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DUALWINGBEAT] = 1u,
             [DFI_MOVE_TRIPLEAXEL] = 1u,
             [DFI_MOVE_TWINBEAM] = 1u,
+            [DFI_MOVE_DOUBLEHIT] = 1u, /* batch A0 part 3: two hits (multihit 2, the G33 family) */
             /* Step G48: Population Bomb (ten hits, multiaccuracy; accuracy 90, which the later-hit proof of G33 covers), Rage Fist
              * (its power is 50 + 50 per hit the user took, the tail's hits_taken), Stone Axe and Ceaseless Edge (a hazard on the
              * foe's side after a hit, the G37 add). Recorded as g48_*. */
@@ -495,8 +501,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TROPKICK] = 1u,
             [DFI_MOVE_METEORMASH] = 1u,
             /* Step G56 (Outrage, decision 0015 item 5au): the lock (lockedmove; a random count of 2 or 3 uses, the
-             * confusion when it ends, the switch-out and the faint clear it). Thrash and Petal Dance stay unmarked:
-             * no recorded battle yet. */
+             * confusion when it ends, the switch-out and the faint clear it). Batch A0 part 3 first marked Thrash, Petal Dance
+             * and Raging Fury (the same lock); they are UNMARKED again in that part (lead decision, 2026-10-16: a lock-family
+             * bug, issue #606, a bug on main for Outrage, fixed later in a core PR). Their generator rows stay. */
             [DFI_MOVE_OUTRAGE] = 1u,
             /* Step G54 (decision 0015 item 5at). Handlers: Icicle Spear and Scale Shot (2 to 5 hits, the Champions weighted count,
              * Scale Shot's self boost after the last hit), Quick Guard (Wide Guard's shape against the priority moves), Upper Hand
@@ -505,6 +512,8 @@ const dfi_support_manifest dfi_support = {
              * Haze came in with step G62 (decision 0031, the event -clearallboost). */
             [DFI_MOVE_ICICLESPEAR] = 1u,
             [DFI_MOVE_SCALESHOT] = 1u,
+            [DFI_MOVE_TAILSLAP] = 1u, /* batch A0 part 3: 2 to 5 hits, the same draw as Icicle Spear */
+            [DFI_MOVE_BONERUSH] = 1u, /* batch A0 part 3: 2 to 5 hits; Champions basePower 30 (the merged value) */
             [DFI_MOVE_QUICKGUARD] = 1u,
             [DFI_MOVE_UPPERHAND] = 1u,
             [DFI_MOVE_HEALPULSE] = 1u,
@@ -649,6 +658,23 @@ const dfi_support_manifest dfi_support = {
             /* Step C5 (decision 0015 entry 5cy): Endeavor (the ENDEAVOR special, the Final Gambit damage path): damage = target HP
              * - user HP, immune when the user's HP is not below the target's (data/moves.ts:4784-4804). */
             [DFI_MOVE_ENDEAVOR] = 1u,
+            /* Step A0 (batch A0 part 2): data-only moves through the existing paths: the generic columns and the boosts, status
+             * and secondaries they hold (the Champions overrides of Crabhammer, Crush Claw and Fire Lash as the pin merges them).
+             * Seismic Toss takes Night Shade's LEVEL_DAMAGE, Sweet Kiss Confuse Ray's CONFUSE (both generator rows, no code). Every
+             * field is read by check_a0_facts (gen_closure.py). Not marked: Toxic Thread (its primary status and its primary target
+             * boost are not both applied by the move body, see check_a0_facts). */
+            [DFI_MOVE_DRAGONRUSH] = 1u,
+            [DFI_MOVE_CRABHAMMER] = 1u,
+            [DFI_MOVE_BITE] = 1u,
+            [DFI_MOVE_CROSSCHOP] = 1u,
+            [DFI_MOVE_CRUSHCLAW] = 1u,
+            [DFI_MOVE_DOUBLETEAM] = 1u,
+            [DFI_MOVE_FIRELASH] = 1u,
+            [DFI_MOVE_INFERNO] = 1u,
+            [DFI_MOVE_SEISMICTOSS] = 1u,
+            [DFI_MOVE_SWEETKISS] = 1u,
+            [DFI_MOVE_TEARFULLOOK] = 1u,
+            [DFI_MOVE_AROMATICMIST] = 1u,
         },
     .abilities =
         {
