@@ -200,6 +200,9 @@ static duoforge_status dfi_terminal(dfi_run *r)
     return DUOFORGE_OK;
 }
 
+/* The turn limit: the battle ties when endTurn makes the turn counter pass it (sim/battle.ts:1839). */
+#define DFI_TURN_LIMIT 1000u
+
 static duoforge_status dfi_end_turn(dfi_run *r)
 {
     struct duoforge_battle *b = r->b;
@@ -211,15 +214,13 @@ static duoforge_status dfi_end_turn(dfi_run *r)
     }
     /* The Endless Battle Clause of the singles reference format ([Gen 9 Champions] OU, Standard AG,
      * data/mods/champions/rulesets.ts:2-8) is checked in nextTurn from turn 101 on (sim/battle.ts:1836, 1854-1903: the
-     * staleness of every Pokemon, then a tie or a loss), and the turn limit of every format ties at turn 1001 (:1839-1843).
-     * The engine models neither, so a singles battle that reaches turn 101 is refused here, by name of the rule, before any
-     * change (decision 0083 section 6). */
+     * staleness of every Pokemon, then a tie or a loss). The engine does not model it, so a singles battle that reaches
+     * turn 101 is refused here, by name of the rule, before any change (decision 0083 section 6). The turn limit of every
+     * format (below) is checked before the clause in the pin, but a singles battle never gets past turn 100 to reach it. */
     if (dfi_context_singles(r->ctx) && turn > 100u) {
         return DUOFORGE_E_UNSUPPORTED;
     }
     b->turn = (uint16_t)turn;
-    b->request_epoch = epoch;
-    b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TURN;
     /* endTurn: newlySwitched ends (sim/battle.ts:1673; Team C), and DisableMove runs for every active Pokemon
      * (sim/battle.ts:1691), where choicelock ends for a holder without its Choice item. */
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
@@ -237,6 +238,18 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         tp->move_result = (uint8_t)(((mr & DFI_MOVE_RESULT_VALUE_MASK) << DFI_MOVE_RESULT_LAST_SHIFT) | /* wide-operands-reviewed: <= 0x3F */
                                     ((mr & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) != 0u ? DFI_MOVE_RESULT_UNCLASSIFIED_LAST : 0u));
     }
+    /* The turn limit of every format (decision 0015 entry 5dt): endTurn raises the counter (sim/battle.ts:1624), runs the
+     * per-active updates above (:1665-1771), then maybeTriggerEndlessBattleClause (:1773) ties once the counter passes
+     * 1000 (:1839-1843: the |message| line and tie(); "not a part of Endless Battle Clause" :1838, so it comes before the
+     * clause's rule test :1854 and holds for Reg M-C too) and endTurn returns: no |turn| line, no request. The RESULT
+     * event is the |tie| line; the epoch advances once in dfi_terminal, as at every other end of a battle. The |message|
+     * line and the |bigerror| warnings of turns 500-1000 (:1844-1852) carry no state and are not events. */
+    if (turn > DFI_TURN_LIMIT) {
+        b->result = (uint8_t)DFI_RESULT_TIE;
+        return dfi_terminal(r);
+    }
+    b->request_epoch = epoch;
+    b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_TURN;
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);
     e.id = b->turn; /* [turn] */
     dfi_emit(r, &e);
