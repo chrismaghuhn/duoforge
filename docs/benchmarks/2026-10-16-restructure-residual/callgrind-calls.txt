@@ -1,0 +1,4 @@
+callgrind-after-ipo.out calls residual->dfi_event_make* 333307 all callers->dfi_event_make* 1229462 self residual 1659021299
+callgrind-after-noipo.out calls residual->dfi_event_make* 652613 all callers->dfi_event_make* 9568312 self residual 1656036733
+callgrind-before-ipo.out calls residual->dfi_event_make* 0 all callers->dfi_event_make* 253006 self residual 1591505240
+callgrind-before-noipo.out calls residual->dfi_event_make* 652613 all callers->dfi_event_make* 9568312 self residual 1605148246

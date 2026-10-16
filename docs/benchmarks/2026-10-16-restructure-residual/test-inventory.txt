@@ -76,6 +76,7 @@ duoforge.eval.tiles_concurrent
 duoforge.eval.tiles_full
 duoforge.eval.tiles_medium
 duoforge.eval.tiles_small
+duoforge.flow.turn_limit
 duoforge.lint.no_mutable_globals
 duoforge.lint.selftest
 duoforge.lint.sources
@@ -233,6 +234,16 @@ duoforge.reference.trace.a0_cover_a
 duoforge.reference.trace.a0_cover_b
 duoforge.reference.trace.a0_cover_c
 duoforge.reference.trace.a0_cover_d
+duoforge.reference.trace.a0p1_cover_a
+duoforge.reference.trace.a0p1_cover_b
+duoforge.reference.trace.a0p1_cover_c
+duoforge.reference.trace.a0p1_cover_d
+duoforge.reference.trace.a0p1_cover_e
+duoforge.reference.trace.a0p1_cover_f
+duoforge.reference.trace.a0p1_cover_g
+duoforge.reference.trace.a0p1_cover_h
+duoforge.reference.trace.a0p1_cover_i
+duoforge.reference.trace.a0p1_cover_j
 duoforge.reference.trace.a0p3_bonerush_fz_7_1
 duoforge.reference.trace.a0p3_bonerush_fz_7_107
 duoforge.reference.trace.a0p3_doublehit_fz_7_0
@@ -240,6 +251,10 @@ duoforge.reference.trace.a0p3_doublehit_fz_7_10
 duoforge.reference.trace.a0p3_solarblade_fz_8_577
 duoforge.reference.trace.a0p3_tailslap_fz_7_100
 duoforge.reference.trace.a0p3_tailslap_fz_7_106
+duoforge.reference.trace.a0p4_cover_bittermalice
+duoforge.reference.trace.a0p4_cover_mountaingale
+duoforge.reference.trace.a0p4_cover_nightdaze
+duoforge.reference.trace.a0p4_cover_shelter
 duoforge.reference.trace.ac1_trace_defiant
 duoforge.reference.trace.ac1_trace_drizzle
 duoforge.reference.trace.ac1_trace_intimidate
@@ -361,6 +376,12 @@ duoforge.reference.trace.fz541_notarget_two_turn
 duoforge.reference.trace.fz541_pressure_ally_switch
 duoforge.reference.trace.fz541_pressure_drag_converter
 duoforge.reference.trace.fz541_stalwart_original_target
+duoforge.reference.trace.fz543_bounce_leech_seed_grass
+duoforge.reference.trace.fz543_bounce_queenly_majesty
+duoforge.reference.trace.fz544_choice_outrage_slot
+duoforge.reference.trace.fz544_mega_pressure_converter
+duoforge.reference.trace.fz544_outrage_pressure
+duoforge.reference.trace.fz544_red_card_pressure
 duoforge.reference.trace.fz556_encore_curse
 duoforge.reference.trace.fz556_glaive_rush_sub
 duoforge.reference.trace.fz556_mental_herb_illusion
@@ -1551,6 +1572,7 @@ duoforge.state.setup_sweep
 duoforge.state.singles
 duoforge.state.team_c_setup
 duoforge.state.tiebreak
+duoforge.tools.coverage
 duoforge.unit.arith
 duoforge.unit.modifier
 duoforge.unit.sha256

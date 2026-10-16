@@ -1,9 +1,11 @@
 {
  "after-ipo": {
+  "binary": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofR3/after/bins-ipo/duoforge_bench",
+  "binary_sha256": "b642a84546a1934c87fcbebf93a094d570cc2581d623fea6a3924ac4129f4c2d",
   "inclusive_ir": {
-   "dfi_residual_events_run": 2858968073,
+   "dfi_residual_events_run.constprop.0": 2865144906,
    "dfi_residual_sort": 253096025,
-   "dfi_turn_run": 31798880581
+   "dfi_turn_run.constprop.0": 31884926723
   },
   "record": {
    "battles": 4096,
@@ -13,13 +15,24 @@
    "truncations": 0,
    "turns": 53625
   },
-  "total_ir": 64773597644
+  "residual_clones": [
+   "dfi_residual_events_run.constprop.0"
+  ],
+  "residual_self_ir_sum": 1659021299,
+  "self_ir": {
+   "dfi_residual_events_run.constprop.0": 1659021299,
+   "dfi_residual_sort": 248779700,
+   "dfi_turn_run.constprop.0": 1701352900
+  },
+  "total_ir": 64874335084
  },
  "after-noipo": {
+  "binary": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofR3/after/bins-noipo/duoforge_bench",
+  "binary_sha256": "fbd10081650081de6891d100a96f63e60e2bf74973923f9da18b2f8d21e40ffe",
   "inclusive_ir": {
-   "dfi_residual_events_run": 2907639072,
+   "dfi_residual_events_run.constprop.0": 2907639072,
    "dfi_residual_sort": 259115545,
-   "dfi_turn_run": 33033498511
+   "dfi_turn_run": 33118268898
   },
   "record": {
    "battles": 4096,
@@ -29,13 +42,24 @@
    "truncations": 0,
    "turns": 53625
   },
-  "total_ir": 70882149781
+  "residual_clones": [
+   "dfi_residual_events_run.constprop.0"
+  ],
+  "residual_self_ir_sum": 1656036733,
+  "self_ir": {
+   "dfi_residual_events_run.constprop.0": 1656036733,
+   "dfi_residual_sort": 247681070,
+   "dfi_turn_run": 1611342928
+  },
+  "total_ir": 70966132819
  },
  "before-ipo": {
+  "binary": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofR3/before/bins-ipo/duoforge_bench",
+  "binary_sha256": "3bb442d38e96423a939a1d179b670d775906087310fdf3a8bb60a2bf03cd8665",
   "inclusive_ir": {
-   "dfi_residual_events_run": 2791250631,
+   "dfi_residual_events_run.constprop.0": 2791711208,
    "dfi_residual_sort": 253096025,
-   "dfi_turn_run": 31733213330
+   "dfi_turn_run.constprop.0": 31800776839
   },
   "record": {
    "battles": 4096,
@@ -45,13 +69,24 @@
    "truncations": 0,
    "turns": 53625
   },
-  "total_ir": 64721943699
+  "residual_clones": [
+   "dfi_residual_events_run.constprop.0"
+  ],
+  "residual_self_ir_sum": 1591505240,
+  "self_ir": {
+   "dfi_residual_events_run.constprop.0": 1591505240,
+   "dfi_residual_sort": 248779700,
+   "dfi_turn_run.constprop.0": 1701352900
+  },
+  "total_ir": 64778086528
  },
  "before-noipo": {
+  "binary": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofR3/before/bins-noipo/duoforge_bench",
+  "binary_sha256": "84c30f64e3eb35a53826fee75b89b83ad712b9b48d79950ce6e4e45fb5e0c375",
   "inclusive_ir": {
-   "dfi_residual_events_run": 2856750585,
+   "dfi_residual_events_run.constprop.0": 2856750585,
    "dfi_residual_sort": 259115545,
-   "dfi_turn_run": 32982610024
+   "dfi_turn_run": 33067380411
   },
   "record": {
    "battles": 4096,
@@ -61,10 +96,25 @@
    "truncations": 0,
    "turns": 53625
   },
-  "total_ir": 70831261343
+  "residual_clones": [
+   "dfi_residual_events_run.constprop.0"
+  ],
+  "residual_self_ir_sum": 1605148246,
+  "self_ir": {
+   "dfi_residual_events_run.constprop.0": 1605148246,
+   "dfi_residual_sort": 247681070,
+   "dfi_turn_run": 1611342928
+  },
+  "total_ir": 70915244364
  },
  "gate-ipo": true,
  "gate-noipo": true,
- "ratio-ipo": 1.0007980901383342,
- "ratio-noipo": 1.0007184460227747
+ "ratio-ipo": 1.0014858196831484,
+ "ratio-noipo": 1.0007175954261511,
+ "residual-self-delta-ipo": 67516059,
+ "residual-self-delta-noipo": 50888487,
+ "residual-self-ratio-ipo": 1.0424227689002143,
+ "residual-self-ratio-noipo": 1.0317032941516855,
+ "total-delta-ipo": 96248556,
+ "total-delta-noipo": 50888455
 }
