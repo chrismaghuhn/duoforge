@@ -1681,6 +1681,11 @@ int main(void)
                              id == DFI_MOVE_STEELBEAM || id == DFI_MOVE_THUNDERWAVE || /* step G68: the recoil and the type immunity */
                              id == DFI_MOVE_BATONPASS || /* step G74: the pivot and the copy of the volatiles (decision 0042) */
                              id == DFI_MOVE_RAGEPOWDER || id == DFI_MOVE_PSYCHICFANGS || id == DFI_MOVE_SOLARBEAM ||
+                             /* batch A0 part 3: the lock (LOCKED_MOVE), Solar Beam's handler (Solar Blade), the partial trap
+                              * (Snap Trap) and the multi-hit families (Double Hit, Tail Slap, Bone Rush): rows, not new code */
+                             id == DFI_MOVE_THRASH || id == DFI_MOVE_PETALDANCE || id == DFI_MOVE_RAGINGFURY ||
+                             id == DFI_MOVE_SOLARBLADE || id == DFI_MOVE_SNAPTRAP || id == DFI_MOVE_DOUBLEHIT ||
+                             id == DFI_MOVE_TAILSLAP || id == DFI_MOVE_BONERUSH ||
                              id == DFI_MOVE_STEELROLLER || id == DFI_MOVE_CLANGOROUSSOUL || id == DFI_MOVE_BRICKBREAK ||
                              id == DFI_MOVE_ERUPTION || id == DFI_MOVE_WATERSPOUT ||
                              id == DFI_MOVE_BODYPRESS || id == DFI_MOVE_FOULPLAY || id == DFI_MOVE_PSYSHOCK ||
