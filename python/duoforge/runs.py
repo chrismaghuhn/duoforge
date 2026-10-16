@@ -68,7 +68,8 @@ def refuse_repository(path, root=ROOT):
 
 
 def default_out(kind, name, environ=None, today=None):
-    """$DUOFORGE_RUNS/<kind>/<date>-<name>: SystemExit when DUOFORGE_RUNS is not set (no silent fallback)."""
+    """$DUOFORGE_RUNS/<kind>/<date>-<name>: SystemExit when DUOFORGE_RUNS is not set (no silent fallback) or when that
+    directory already holds files (a second run of the day takes an explicit --out)."""
     if kind not in KINDS:
         raise ValueError(f"unknown run kind {kind!r} (one of {', '.join(KINDS)})")
     if not name or os.sep in name or "/" in name:
@@ -79,7 +80,10 @@ def default_out(kind, name, environ=None, today=None):
         raise SystemExit(f"no output directory: pass --out, or set {RUNS_ENV} to the private runs directory "
                          f"(outside the repository)")
     today = datetime.date.today() if today is None else today
-    return Path(base) / kind / f"{today.isoformat()}-{name}"
+    path = Path(base) / kind / f"{today.isoformat()}-{name}"
+    if path.is_dir() and any(path.iterdir()):  # a second run of the day: never mixed into the first one's outputs
+        raise SystemExit(f"the default output {path} already holds a run: pass --out with a new directory")
+    return path
 
 
 def out_dir(out, kind, name, environ=None, today=None, root=ROOT):

@@ -48,6 +48,17 @@ class OutputTest(RepoFixture):
         out = runs.default_out("eval", "arena", environ={runs.RUNS_ENV: "/private/runs"}, today=DAY)
         self.assertEqual(out, Path("/private/runs") / "eval" / "2026-10-16-arena")
 
+    def test_a_second_run_of_the_day_never_reuses_the_default(self):
+        base = Path(self.tmp.name, "private-runs")
+        environ = {runs.RUNS_ENV: str(base)}
+        first = runs.default_out("eval", "arena", environ=environ, today=DAY)
+        first.mkdir(parents=True)
+        self.assertEqual(runs.default_out("eval", "arena", environ=environ, today=DAY), first)  # created, still empty
+        (first / "summary.json").write_text("{}", encoding="utf-8")
+        with self.assertRaisesRegex(SystemExit, "already holds a run"):
+            runs.out_dir(None, "eval", "arena", environ=environ, today=DAY, root=self.main)
+        self.assertEqual(runs.out_dir(str(first), "eval", "arena", root=self.main), first)  # an explicit --out decides
+
     def test_no_default_without_duoforge_runs(self):
         with self.assertRaisesRegex(SystemExit, "DUOFORGE_RUNS"):
             runs.default_out("eval", "arena", environ={}, today=DAY)

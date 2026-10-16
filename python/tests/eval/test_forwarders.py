@@ -63,6 +63,32 @@ class ForwarderTest(unittest.TestCase):
                 self.assertIn("usage:", run.stdout)
                 self.assertNotIn(f"python -m {old}", run.stdout)  # the help names the new command, if it names one
 
+    def test_an_old_command_line_runs_through_its_forwarder(self):
+        # one real run of the old command line (the pilot's evaluation manifest, as tools/cloud/p1_pilot/run.sh calls
+        # it): the same file as the new command writes, outside the repository
+        import tempfile
+        from duoforge_eval import expert_eval
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "python"), "PYTHONDONTWRITEBYTECODE": "1"}
+        with tempfile.TemporaryDirectory() as tmp:
+            args = ["--teams", "A,B,C,LL_6A3CEAB783FD320299BCFBFF_89,LL_6A47CA1965724DB9DED3B322_79", "--team-weights",
+                    "1,2,1,1,3", "--teams-root", str(ROOT / "data" / "teams"),
+                    "--seed", "0x2026100900000301", "--first-game-id", "1000000000"]
+            for i, name in enumerate(expert_eval.CHECKPOINTS):
+                path = Path(tmp, f"{name}.npz")
+                path.write_bytes(f"checkpoint {i}".encode())
+                args += ["--checkpoint", f"{name}={path}"]
+            outputs, notices = {}, {}
+            for module in ("duoforge_search.eval_manifest", "duoforge_eval.eval_manifest"):
+                out = Path(tmp, f"{module}.json")
+                run = subprocess.run([sys.executable, "-m", module, *args, "--out", str(out)], cwd=ROOT, env=env,
+                                     capture_output=True, text=True, timeout=300)
+                self.assertEqual(run.returncode, 0, run.stderr)
+                outputs[module], notices[module] = out.read_bytes(), run.stderr
+            self.assertIn("duoforge_search.eval_manifest moved to duoforge_eval.eval_manifest",
+                          notices["duoforge_search.eval_manifest"])
+            self.assertNotIn("moved to", notices["duoforge_eval.eval_manifest"])
+            self.assertEqual(outputs["duoforge_search.eval_manifest"], outputs["duoforge_eval.eval_manifest"])
+
 
 if __name__ == "__main__":
     unittest.main()

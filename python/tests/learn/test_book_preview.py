@@ -337,6 +337,28 @@ class BookPreviewTest(unittest.TestCase):
         self.assertTrue(all(row["book"]["level"] == "exact_team" for row in applied))
         self.assert_manifest(output, "duoforge_eval.arena")
 
+    def test_arena_default_output_under_duoforge_runs_takes_one_run_a_day(self):
+        # Restructure step 8: without --out the run goes to $DUOFORGE_RUNS/eval/<date>-arena; a second run of the day
+        # stops before playing instead of mixing its outputs into the first one's
+        import datetime
+        from duoforge import runs
+        self.write_checkpoints()
+        self.evidence()
+        base = Path(self.tmp.name, "private-runs")
+        output = base / "eval" / f"{datetime.date.today().isoformat()}-arena"
+        argv = ["--run-dir", self.tmp.name, "--checkpoint", "params-0", "--book", str(self.path), "--agents", "N",
+                "--km", "1x1", "--s", "1", "--workers", "1", "--capacity", "1", "--max-steps", "1", "--resamples", "10"]
+        backend = SimpleNamespace(make=lambda config: PreviewModel())
+        fake_jax = SimpleNamespace(default_backend=lambda: "cpu", __version__="synthetic", devices=lambda: [])
+        with mock.patch.dict(sys.modules, {"duoforge_learn.policy": backend, "jax": fake_jax}), \
+                mock.patch.object(duoforge_learn, "policy", backend, create=True), \
+                mock.patch.dict("os.environ", {runs.RUNS_ENV: str(base)}), redirect_stdout(io.StringIO()):
+            self.assertEqual(arena.main(argv), 0)
+            self.assert_manifest(output, "duoforge_eval.arena")
+            self.assertTrue((output / "summary.json").is_file())
+            with self.assertRaisesRegex(SystemExit, "already holds a run"):
+                arena.main(argv)
+
     def assert_manifest(self, output, tool):
         """The run's manifest.json (duoforge.runs) names the tool and this checkout's commit."""
         import subprocess
@@ -344,7 +366,7 @@ class BookPreviewTest(unittest.TestCase):
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(__file__).parent, capture_output=True, text=True,
                               check=True).stdout.strip()
         self.assertEqual((record["kind"], record["tool"], record["code"]["commit"]), ("eval", tool, head))
-        self.assertIn("--out", record["argv"])
+        self.assertEqual(record["argv"][0], "--run-dir")  # the full arguments, as given
 
 
 class BookABStatisticsTest(unittest.TestCase):
