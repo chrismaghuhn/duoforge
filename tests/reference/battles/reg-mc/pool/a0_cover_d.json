@@ -22,5 +22,10 @@
       "stops": {}
     }
   },
-  "set": "pool"
+  "set": "pool",
+  "tiebreak": {
+    "entries": 8,
+    "rows": "    {0u, 0u, 1u, 3u, {6u, 6u}, {1155u, 1116u}, {0x4059000000000000ull, 0x4059000000000000ull}},\n    {1u, 0u, 1u, 3u, {4u, 4u}, {776u, 749u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},\n    {2u, 0u, 1u, 2u, {4u, 4u}, {755u, 661u}, {0x405035ab468a7037ull, 0x404d7f8e02544297ull}},\n    {3u, 0u, 1u, 2u, {4u, 4u}, {731u, 470u}, {0x404f6d722f4ed2e4ull, 0x40454ed063bdf646ull}},\n    {6u, 0u, 1u, 1u, {4u, 2u}, {703u, 293u}, {0x404e3aa45b76bacbull, 0x403ac30c30c30c31ull}},\n    {7u, 0u, 1u, 1u, {4u, 1u}, {522u, 13u}, {0x4046bf09812468adull, 0x3ff289cfa115728aull}},\n    {8u, 1u, 1u, 0u, {4u, 0u}, {503u, 0u}, {0x4045f252c53c8b27ull, 0x0000000000000000ull}},\n",
+    "stop_count": 7
+  }
 }
