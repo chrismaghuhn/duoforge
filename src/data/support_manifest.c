@@ -287,8 +287,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DETECT] = 1u,
             [DFI_MOVE_EXPANDINGFORCE] = 1u,
             [DFI_MOVE_POISONJAB] = 1u,
-            /* Step G17: the recharge moves (flags2 RECHARGE, mustrecharge): the user recharges after a hit. Meteor Assault is
-             * not marked: its only learner, Sirfetch'd, has no supported ability (Steadfast, Scrappy), so no setup can use it. */
+            /* Step G17: the recharge moves (flags2 RECHARGE, mustrecharge): the user recharges after a hit. Meteor Assault was
+             * left out here (its only learner, Sirfetch'd, had no supported ability then); it is marked in A0 part 1 below (5ds). */
             [DFI_MOVE_BLASTBURN] = 1u,
             [DFI_MOVE_FRENZYPLANT] = 1u,
             [DFI_MOVE_GIGAIMPACT] = 1u,
@@ -565,8 +565,8 @@ const dfi_support_manifest dfi_support = {
              * the existing paths only (the flags, the boosts, the status, the heal fraction of the pin, the target classes any and
              * allAdjacent, accuracy true). Not marked: Jet Punch (its only learner, Palafin, has no marked ability), Shift Gear
              * (its boosts are applied in the key order of the pin, spe then atk, data/moves.ts:16330-16347; the engine applies a
-             * boost in stat order except Shell Smash's special, so this needs a new order rule) and Shelter (its only learner,
-             * Goodra-Hisui, is refused by the converter: the switch identifier reads Goodra, not Goodra-Hisui). */
+             * boost in stat order except Shell Smash's special, so this needs a new order rule). Shelter is marked in step A0 part 4
+             * below (the converter's forme key, protocol_aliases, reads Goodra-Hisui's switch line). */
             [DFI_MOVE_SLACKOFF] = 1u,
             [DFI_MOVE_COTTONGUARD] = 1u,
             [DFI_MOVE_GLARE] = 1u,
@@ -590,9 +590,8 @@ const dfi_support_manifest dfi_support = {
              * Charge on allAdjacent), crit ratio 2 (Blaze Kick, Cross Poison), and the flags of the pin (punch, slicing, sound,
              * bypasssub, defrost, bullet, heal, distance, pulse). Not marked (decision 0015 entry 5cp): Fire Fang and Thunder Fang
              * (two secondaries; the only handler of two is Ice Fang's freeze and flinch, DFI_SPECIAL_ICE_FANG; a status-parameterised
-             * handler is a new special id), Horn Leech (no learner with a marked ability), Mountain Gale (its learner Avalugg-Hisui
-             * is refused by the converter, swap_partners KeyError), Bitter Malice and Night Daze (their only learners carry Illusion,
-             * whose duplicate-name gap is open). Every field of each entry is read by check_c2_facts (gen_closure.py); the Champions
+             * handler is a new special id), Horn Leech (no learner with a marked ability then; marked in A0 part 1, 5ds). Mountain Gale, Bitter Malice and Night Daze
+             * are marked in step A0 part 4 below. Every field of each entry is read by check_c2_facts (gen_closure.py); the Champions
              * base power overrides of Apple Acid, Mountain Gale and Night Daze are in the pool table already. */
             [DFI_MOVE_ZENHEADBUTT] = 1u,
             [DFI_MOVE_PYROBALL] = 1u,
@@ -616,6 +615,17 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_POUNCE] = 1u,
             [DFI_MOVE_MUDSLAP] = 1u,
             [DFI_MOVE_APPLEACID] = 1u,
+            /* Step A0 part 4 (decision 0015 entry 5ds; the rows are in the C1 and C2 facts of gen_closure.py): Mountain Gale, Bitter
+             * Malice and Night Daze, and Shelter (a C1 row, check_c2_facts with C1_PART4_FACTS). Bitter Malice and Night Daze have one
+             * learner each, Zoroark-Hisui and Zoroark, whose only ability is Illusion. A duplicate name (the disguise and its real
+             * member both on the field) is refused by the engine at the switch-in that makes it (turn.c dfi_switch_in; decision 0026
+             * section 4 as amended by I2, lead decision A), so no battle with the duplicate is played. Recorded teams take only marked
+             * abilities: Sturdy for Avalugg-Hisui (Strong Jaw and Ice Body are unmarked), Shell Armor for Goodra-Hisui (Sap Sipper and
+             * Gooey are unmarked). Shelter's switch identifier is read by the converter's forme key (protocol_aliases, trace_to_c.py). */
+            [DFI_MOVE_MOUNTAINGALE] = 1u,
+            [DFI_MOVE_BITTERMALICE] = 1u,
+            [DFI_MOVE_NIGHTDAZE] = 1u,
+            [DFI_MOVE_SHELTER] = 1u,
             /* Step C4 (cheap moves, decision 0015 entry 5ct), group b: the self-boost secondaries (secondary self boosts, the
              * SECONDARY_SELF role of G28; Psyshield Bash's basePower 90 is the Champions override). A Substitute-absorbed hit
              * of these needs sub-fixes-2 (H18) on main; campaigns keep Substitute users out until then. */
@@ -675,6 +685,22 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SWEETKISS] = 1u,
             [DFI_MOVE_TEARFULLOOK] = 1u,
             [DFI_MOVE_AROMATICMIST] = 1u,
+            /* Step A0 (decision 0015, batch A0 part 1): nine moves whose rows the existing paths already run, checked by
+             * check_a0p1_facts (tools/datagen/gen_closure.py). Meteor Assault: recharge (Hyper Beam's path) and the Champions
+             * basePower 170. Stored Power: POWER_TRIP (Power Trip's callback text). Bullet Seed, Rock Blast, Pin Missile and
+             * Water Shuriken: MULTI_HIT_2_5 (Icicle Spear's path; Water Shuriken's Battle Bond callback is unreachable in the pool).
+             * Heat Crash: HEAVY_SLAM (its callbacks are Heavy Slam's text). Air Cutter and Horn Leech: rows without an
+             * unmodelled feature. Decorate is not marked: its only learner, Alcremie, has Sweet Veil and Aroma Veil, neither
+             * marked (their logic is not part of A0). */
+            [DFI_MOVE_METEORASSAULT] = 1u,
+            [DFI_MOVE_STOREDPOWER] = 1u,
+            [DFI_MOVE_BULLETSEED] = 1u,
+            [DFI_MOVE_ROCKBLAST] = 1u,
+            [DFI_MOVE_PINMISSILE] = 1u,
+            [DFI_MOVE_WATERSHURIKEN] = 1u,
+            [DFI_MOVE_HEATCRASH] = 1u,
+            [DFI_MOVE_AIRCUTTER] = 1u,
+            [DFI_MOVE_HORNLEECH] = 1u,
         },
     .abilities =
         {
@@ -879,6 +905,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_PYROARITE] = 1u,
             [DFI_ITEM_SCOVILLAINITE] = 1u,
             [DFI_ITEM_MEGANIUMITE] = 1u,
+            /* Step A0 (decision 0015, batch A0 part 1): two Mega Stones through the generic Mega path, mark only (the Mega formes'
+             * abilities are marked: Chesnaught-Mega Bulletproof, Altaria-Mega Pixilate; the base Overgrow, Cloud Nine). Checked by
+             * check_a0p1_facts. */
+            [DFI_ITEM_CHESNAUGHTITE] = 1u,
+            [DFI_ITEM_ALTARIANITE] = 1u,
             /* step K2: Excadrite (Excadrill-Mega, Piercing Drill; the base formes' Sand Rush and Sand Force are marked) */
             [DFI_ITEM_EXCADRITE] = 1u,
             /* Mega batch 2: Swampertite (Swift Swim), Metagrossite (Tough Claws), Lucarionite Z (Aura Guard) and Froslassite

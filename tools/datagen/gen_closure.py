@@ -2467,6 +2467,14 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'iciclespear': ('MULTI_HIT_2_5', set()),                              # G54: 2 to 5 hits, a weighted draw (SITE_MULTIHIT_COUNT)
     'tailslap': ('MULTI_HIT_2_5', set()),                                 # A0 part 3: 2 to 5 hits, the same draw
     'bonerush': ('MULTI_HIT_2_5', set()),                                 # A0 part 3: the same draw; Champions basePower 30 (merged)
+    # Step A0 (decision 0015, batch A0 part 1): the moves whose one unmodelled feature a handler already runs. Each is checked by
+    # check_a0p1_facts (the pinned fields, the callbacks and their texts, the legal pool guards) before it is marked.
+    'storedpower': ('POWER_TRIP', {'basePowerCallback'}),                 # A0: 20 plus 20 per positive stage (Power Trip's text)
+    'bulletseed': ('MULTI_HIT_2_5', set()),                               # A0: 2 to 5 hits, the Champions sample (as Icicle Spear)
+    'rockblast': ('MULTI_HIT_2_5', set()),
+    'pinmissile': ('MULTI_HIT_2_5', set()),
+    'watershuriken': ('MULTI_HIT_2_5', {'basePowerCallback'}),            # A0: the Battle Bond callback, unreachable in the pool (checked)
+    'heatcrash': ('HEAVY_SLAM', {'basePowerCallback', 'onTryHit'}),       # A0: Heavy Slam's callbacks, text-equal (checked)
     'scaleshot': ('SCALE_SHOT', set()),                                   # G54: 2 to 5 hits, then the user's Defense -1 and Speed +1
     'quickguard': ('QUICK_GUARD', {'onTry', 'onHitSide'}),                # G54: a side condition against the priority moves of the foes
     'upperhand': ('UPPER_HAND', {'onTry'}),                               # G54: a priority move against a target that moves first with one
@@ -4635,6 +4643,13 @@ C2_FACTS = (
                       'type': 'Ice', 'flags': {'protect', 'mirror', 'metronome'},
                       'secondary': {'chance': 30, 'volatileStatus': 'flinch'}}),
 )
+# Step A0 part 4 (decision 0015 entry 5ds): the C1 row Shelter (a self Defense +2 Status move, data/moves.ts:16315-16329; its flags
+# snatch and metronome are ignored flags). Checked by check_c2_facts with `only=C1_PART4_FACTS`, the same field-by-field check: the
+# pin entry has exactly these fields and the Champions mod has no entry for it.
+C1_PART4_FACTS = (
+    ('shelter', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'self',
+                 'type': 'Steel', 'flags': {'snatch', 'metronome'}, 'boosts': {'def': 2}}),
+)
 _C2_TOKEN = re.compile(r"\s*(?:('[^']*'|\"[^\"]*\")|(-?\d+)|(true|false)\b|([A-Za-z_]\w*)|([{}\[\]:,]))")
 
 
@@ -5011,6 +5026,145 @@ def check_a0_facts(moves_ts, champ_moves, only=None):
                 fail('move %s: %s is %r in the pin, not %r' % (mid, key, got[key], want))
 
 
+# Step A0 (decision 0015, batch A0 part 1; the C1 model for data-only moves). The pinned fields of the ten moves below, read from
+# data/moves.ts at b2cb775 (Champions overrides merged as parse_move merges them). Every field of the pin entry must be listed
+# (A0P1_IGNORED_KEYS aside) with its value; a callback must be listed in A0P1_CALLBACKS and is checked by its text (A0P1_SAME_TEXT:
+# the donor move of the handler, whose callback the row runs). Meteor Assault's Champions basePower 170 is in A0P1_CHAMPION_OVERRIDES.
+A0P1_IGNORED_KEYS = {'num', 'name', 'zMove', 'maxMove', 'contestType', 'isNonstandard'}
+A0P1_CHAMPION_OVERRIDES = {'meteorassault': {'basePower': 170}}
+A0P1_FACTS = (
+    ('meteorassault', {'accuracy': 100, 'basePower': 170, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                       'type': 'Fighting', 'flags': {'recharge', 'protect', 'mirror', 'failinstruct'},
+                       'self': "self: { volatileStatus: 'mustrecharge', },"}),
+    ('watershuriken', {'accuracy': 100, 'basePower': 15, 'category': 'Special', 'pp': 20, 'priority': 1, 'target': 'normal',
+                       'type': 'Water', 'flags': {'protect', 'mirror', 'metronome'}, 'multihit': (2, 5)}),
+    ('rockblast', {'accuracy': 90, 'basePower': 25, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Rock', 'flags': {'protect', 'mirror', 'metronome', 'bullet'}, 'multihit': (2, 5)}),
+    ('bulletseed', {'accuracy': 100, 'basePower': 25, 'category': 'Physical', 'pp': 30, 'priority': 0, 'target': 'normal',
+                    'type': 'Grass', 'flags': {'protect', 'mirror', 'metronome', 'bullet'}, 'multihit': (2, 5)}),
+    ('pinmissile', {'accuracy': 95, 'basePower': 25, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                    'type': 'Bug', 'flags': {'protect', 'mirror', 'metronome'}, 'multihit': (2, 5)}),
+    ('storedpower', {'accuracy': 100, 'basePower': 20, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                     'type': 'Psychic', 'flags': {'protect', 'mirror', 'metronome'}}),
+    ('aircutter', {'accuracy': 95, 'basePower': 60, 'category': 'Special', 'pp': 25, 'priority': 0, 'target': 'allAdjacentFoes',
+                   'type': 'Flying', 'flags': {'protect', 'mirror', 'metronome', 'slicing', 'wind'}, 'critRatio': 2}),
+    ('hornleech', {'accuracy': 100, 'basePower': 75, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Grass', 'flags': {'contact', 'protect', 'mirror', 'heal', 'metronome'}, 'drain': (1, 2)}),
+    ('heatcrash', {'accuracy': 100, 'basePower': 0, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Fire', 'flags': {'contact', 'protect', 'mirror', 'nonsky', 'metronome', 'minimize'}}),
+    ('decorate', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 15, 'priority': 0, 'target': 'normal',
+                  'type': 'Fairy', 'flags': {'allyanim'}, 'boosts': {'atk': 2, 'spa': 2}}),
+)
+A0P1_CALLBACKS = {'storedpower': {'basePowerCallback'}, 'watershuriken': {'basePowerCallback'},
+                'heatcrash': {'basePowerCallback', 'onTryHit'}}
+# The callback of a moved handler must be the text of its donor move (the pinned callbacks of Power Trip and Heavy Slam).
+A0P1_SAME_TEXT = {('storedpower', 'basePowerCallback'): ('powertrip', 'basePowerCallback'),
+                ('heatcrash', 'basePowerCallback'): ('heavyslam', 'basePowerCallback'),
+                ('heatcrash', 'onTryHit'): ('heavyslam', 'onTryHit')}
+# Water Shuriken's callback adds 5 for Greninja-Ash with Battle Bond; the pool has neither, so it never runs (check_a0p1_pool).
+A0P1_WATERSHURIKEN_CALLBACK = "pokemon.species.name === 'Greninja-Ash' && pokemon.hasAbility('battlebond')"
+# The Mega Stones of the batch: the item, its base species and its Mega forme (data/items.ts and the legal pool).
+A0P1_STONES = {'chesnaughtite': ('Chesnaught', 'Chesnaught-Mega', ('chesnaught', 'chesnaughtmega')),
+             'altarianite': ('Altaria', 'Altaria-Mega', ('altaria', 'altariamega'))}
+
+
+def a0p1_value(key, text):
+    """The value of one pin field: a flag set, a boosts dict, a tuple of a multihit or drain array, the normalised text of a
+    block (self), or a scalar."""
+    if key == 'flags':
+        return set(re.findall(r'(\w+): 1\b', text))
+    if key == 'boosts':
+        return {name: int(val) for name, val in re.findall(r'(\w+): (-?\d+)', text)}
+    if key in ('multihit', 'drain'):
+        return tuple(int(x) for x in re.findall(r'\d+', text.split(':', 1)[1]))
+    if key == 'self':
+        return norm(text)
+    return scalar(text)
+
+
+def check_a0p1_pool(legal):
+    """The three facts of the legal pool that the A0 marks rest on: no Battle Bond and no Greninja-Ash (the Water Shuriken callback
+    is unreachable), no Loaded Dice (the multi-hit count of MULTI_HIT_2_5 is the Champions one), and each stone's Mega link."""
+    if 'battlebond' in legal['abilities'] or 'greninjaash' in legal['species']:
+        fail('A0: Battle Bond or Greninja-Ash is legal in the pool: the Water Shuriken callback would run')
+    if 'loadeddice' in legal['items']:
+        fail('A0: Loaded Dice is legal in the pool: the multi-hit count of MULTI_HIT_2_5 would differ')
+    for iid, (base, mega, link) in A0P1_STONES.items():
+        if legal['stones'].get(iid) != [link]:
+            fail('A0: %s is not the Mega Stone of %s in the legal pool' % (iid, link[1]))
+
+
+def check_a0p1_facts(moves_ts, champ_moves, items_ts, champ_items, legal, only=None):
+    """Step A0: each listed move has exactly the listed fields (nothing else but A0P1_IGNORED_KEYS) with its pinned value, its
+    callbacks are exactly A0P1_CALLBACKS with the donor texts of A0P1_SAME_TEXT, and its Champions entry is exactly A0P1_CHAMPION_OVERRIDES.
+    Each Mega Stone of A0P1_STONES has the pinned megaStone, itemUser and the standard onTakeItem, and a Champions entry of
+    `inherit` and `isNonstandard: null` only. The legal pool facts of check_a0p1_pool hold. `only`: a tuple of (move id, expected)."""
+    check_a0p1_pool(legal)
+    for mid, expected in (A0P1_FACTS if only is None else only):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        got = fields(e[2])
+        ce = champ_moves.entry(mid)
+        if mid in A0P1_CHAMPION_OVERRIDES:
+            if ce is None:
+                fail('move %s: the Champions override is missing' % mid)
+            cf = fields(ce[2])
+            if 'inherit' not in cf:
+                fail('move %s: the Champions override does not inherit' % mid)
+            for key, want in A0P1_CHAMPION_OVERRIDES[mid].items():
+                if key not in cf or a0p1_value(key, cf[key][1]) != want:
+                    fail('move %s: the Champions %s is not %r' % (mid, key, want))
+            got.update({k: v for k, v in cf.items() if k in A0P1_CHAMPION_OVERRIDES[mid]})
+        elif ce is not None:
+            fail('move %s: the Champions mod overrides it; the A0 facts must be read again' % mid)
+        callbacks = {k for k, (is_fn, _) in got.items() if is_fn}
+        if callbacks != A0P1_CALLBACKS.get(mid, set()):
+            fail('move %s: callbacks %s, not %s' % (mid, sorted(callbacks), sorted(A0P1_CALLBACKS.get(mid, set()))))
+        extra = sorted(k for k, (is_fn, _) in got.items() if not is_fn and k not in expected and k not in A0P1_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the A0 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            have = a0p1_value(key, got[key][1])
+            if have != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
+        for name in callbacks:
+            donor = A0P1_SAME_TEXT.get((mid, name))
+            if donor is not None:
+                dentry = moves_ts.entry(donor[0])
+                if dentry is None:
+                    fail('move %s: the donor %s is not found' % (mid, donor[0]))
+                dtext = fields(dentry[2]).get(donor[1])
+                if dtext is None or norm(got[name][1]) != norm(dtext[1]):
+                    fail('move %s: %s is not the text of %s' % (mid, name, donor[0]))
+            if mid == 'watershuriken' and A0P1_WATERSHURIKEN_CALLBACK not in norm(got[name][1]):
+                fail('move %s: the callback is not the Battle Bond one' % mid)
+    for iid, (base, mega, _link) in (A0P1_STONES.items() if only is None else ()):
+        e = items_ts.entry(iid)
+        if e is None:
+            fail('item %s not found' % iid)
+        got = fields(e[2])
+        if norm(got.get('megaStone', (0, ''))[1]) != norm('megaStone: { "%s": "%s" },' % (base, mega)):
+            fail('item %s: megaStone is not %s -> %s' % (iid, base, mega))
+        if norm(got.get('itemUser', (0, ''))[1]) != norm('itemUser: ["%s"],' % base):
+            fail('item %s: itemUser is not %s' % (iid, base))
+        if 'onTakeItem' not in got or not got['onTakeItem'][0] or \
+                norm(re.sub(r'//[^\n]*', '', got['onTakeItem'][1])) not in STONE_TAKE_ITEM:
+            fail('item %s: onTakeItem is not the standard Mega Stone text' % iid)
+        # gen is the generation of the item and isNonstandard the pin's tag (Future or Past); the Champions entry nulls the tag.
+        extra = sorted(set(got) - {'name', 'spritenum', 'megaStone', 'itemUser', 'onTakeItem', 'num', 'gen', 'isNonstandard'})
+        if extra:
+            fail('item %s: the pin has fields the A0 facts do not list: %s' % (iid, ', '.join(extra)))
+        ci = champ_items.entry(iid)
+        if ci is None:
+            fail('item %s: the Champions entry is missing' % iid)
+        cf = fields(ci[2])
+        if set(cf) - {'inherit', 'isNonstandard'} or norm(cf.get('isNonstandard', (0, ''))[1]) != 'isNonstandard: null,':
+            fail('item %s: the Champions entry is not inherit and isNonstandard null' % iid)
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -5029,6 +5183,7 @@ def build_pool(root, repo, dx):
     check_c5_facts(moves_ts, champ_moves)
     check_c1_facts(moves_ts, champ_moves)
     check_a0_facts(moves_ts, champ_moves)
+    check_a0p1_facts(moves_ts, champ_moves, items_ts, champ_items, legal)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
@@ -5057,6 +5212,7 @@ def build_pool(root, repo, dx):
     check_k2_facts(Source(root, 'sim/battle.ts', READER_INPUTS), Source(root, 'data/mods/champions/scripts.ts'), moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
+    check_c2_facts(moves_ts, champ_moves, only=C1_PART4_FACTS)  # step A0 part 4: Shelter (the C1 row)
     check_g86_facts(moves_ts)
     check_g92_facts(moves_ts)
     check_g90_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)

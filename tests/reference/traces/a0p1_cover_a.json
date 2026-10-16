@@ -1,0 +1,6242 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "a0p1_cover_a.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,06506425fd3230c1f47cb42c1dfb225b8f3088c91fa7d50215be61b082dc858b",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Chesnaught, L50, M|",
+   "|poke|p1|Gardevoir, L50, F|",
+   "|poke|p1|Dragonite, L50, M|",
+   "|poke|p1|Tyranitar, L50, M|",
+   "|poke|p1|Sirfetch’d, L50, M|",
+   "|poke|p1|Venusaur, L50, M|",
+   "|poke|p2|Blaziken, L50, M|",
+   "|poke|p2|Beedrill, L50, M|",
+   "|poke|p2|Greninja, L50, M|",
+   "|poke|p2|Altaria, L50, F|",
+   "|poke|p2|Charizard, L50, M|",
+   "|poke|p2|Torterra, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Chesnaught",
+       "set_species": "Chesnaught",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 195,
+       "maxhp": 195,
+       "item": "chesnaughtite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        12,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gardevoir",
+       "set_species": "Gardevoir",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 175,
+       "maxhp": 175,
+       "item": "wiseglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        12,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Dragonite",
+       "set_species": "Dragonite",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 198,
+       "maxhp": 198,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        12,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Tyranitar",
+       "set_species": "Tyranitar",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Sirfetch’d",
+       "set_species": "Sirfetch’d",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 169,
+       "maxhp": 169,
+       "item": "focussash",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Venusaur",
+       "set_species": "Venusaur",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 187,
+       "maxhp": 187,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        12,
+        12,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Blaziken",
+       "set_species": "Blaziken",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 187,
+       "maxhp": 187,
+       "item": "choicescarf",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Beedrill",
+       "set_species": "Beedrill",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "muscleband",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        12,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Greninja",
+       "set_species": "Greninja",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 179,
+       "maxhp": 179,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        8,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Altaria",
+       "set_species": "Altaria",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 182,
+       "maxhp": 182,
+       "item": "altarianite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        20,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Charizard",
+       "set_species": "Charizard",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 185,
+       "maxhp": 185,
+       "item": "focussash",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        12,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Torterra",
+       "set_species": "Torterra",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 2614",
+    "p2": "team 2315"
+   },
+   "draws": [
+    {
+     "site": "INSERT_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:runSwitch:p1a::0"
+     ]
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:S",
+      "P:p1a:0:S"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Gardevoir|Gardevoir, L50, F|175/175",
+    "|switch|p1a: Gardevoir|Gardevoir, L50, F|100/100",
+    "|split|p1",
+    "|switch|p1b: Venusaur|Venusaur, L50, M|187/187",
+    "|switch|p1b: Venusaur|Venusaur, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2a: Beedrill|Beedrill, L50, M|172/172",
+    "|switch|p2a: Beedrill|Beedrill, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Greninja|Greninja, L50, M|179/179",
+    "|switch|p2b: Greninja|Greninja, L50, M|100/100",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 175,
+        "maxhp": 175,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 195,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1 2",
+    "p2": "move 1 2, move 1 -1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:move:p1b:bulletseed",
+      "A:move:p1a:storedpower"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:move:p1a:storedpower",
+      "A:move:p1b:bulletseed"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 93
+    },
+    {
+     "site": "MULTIHIT_COUNT",
+     "context": "",
+     "lo": 0,
+     "hi": 20,
+     "value": 17
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p1b:bulletseed",
+      "A:move:p1a:storedpower"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 24
+    },
+    {
+     "site": "MULTIHIT_COUNT",
+     "context": "",
+     "lo": 0,
+     "hi": 20,
+     "value": 6
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 11
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 81
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 81
+    },
+    {
+     "site": "MULTIHIT_COUNT",
+     "context": "",
+     "lo": 0,
+     "hi": 20,
+     "value": 13
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p2b: Greninja|Water Shuriken|p2a: Beedrill",
+    "|split|p2",
+    "|-damage|p2a: Beedrill|155/172",
+    "|-damage|p2a: Beedrill|90/100",
+    "|split|p2",
+    "|-damage|p2a: Beedrill|139/172",
+    "|-damage|p2a: Beedrill|80/100",
+    "|split|p2",
+    "|-damage|p2a: Beedrill|126/172",
+    "|-damage|p2a: Beedrill|73/100",
+    "|split|p2",
+    "|-damage|p2a: Beedrill|110/172",
+    "|-damage|p2a: Beedrill|63/100",
+    "|split|p2",
+    "|-damage|p2a: Beedrill|94/172",
+    "|-damage|p2a: Beedrill|54/100",
+    "|-hitcount|p2a: Beedrill|5",
+    "|split|p2",
+    "|-damage|p2b: Greninja|162/179|[from] item: Life Orb",
+    "|-damage|p2b: Greninja|90/100|[from] item: Life Orb",
+    "|move|p1b: Venusaur|Bullet Seed|p2b: Greninja",
+    "|-supereffective|p2b: Greninja|1",
+    "|split|p2",
+    "|-damage|p2b: Greninja|126/179",
+    "|-damage|p2b: Greninja|70/100",
+    "|-supereffective|p2b: Greninja|1",
+    "|split|p2",
+    "|-damage|p2b: Greninja|88/179",
+    "|-damage|p2b: Greninja|49/100",
+    "|-hitcount|p2b: Greninja|2",
+    "|move|p1a: Gardevoir|Stored Power|p2a: Beedrill",
+    "|-supereffective|p2a: Beedrill|1",
+    "|split|p2",
+    "|-damage|p2a: Beedrill|52/172",
+    "|-damage|p2a: Beedrill|30/100",
+    "|move|p2a: Beedrill|Pin Missile|p1b: Venusaur",
+    "|split|p1",
+    "|-damage|p1b: Venusaur|157/187",
+    "|-damage|p1b: Venusaur|83/100",
+    "|split|p1",
+    "|-damage|p1b: Venusaur|130/187",
+    "|-damage|p1b: Venusaur|69/100",
+    "|split|p1",
+    "|-damage|p1b: Venusaur|102/187",
+    "|-damage|p1b: Venusaur|54/100",
+    "|-hitcount|p1b: Venusaur|3",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 175,
+        "maxhp": 175,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 187,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         12,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 195,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 52,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 88,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1 -1",
+    "p2": "move 2 -2, move 4"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1b:bulletseed",
+      "A:move:p1a:storedpower"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:move:p1b:bulletseed",
+      "A:move:p1a:storedpower"
+     ],
+     "start": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p1a:storedpower",
+      "A:move:p1b:bulletseed"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 71
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 66
+    },
+    {
+     "site": "MULTIHIT_COUNT",
+     "context": "",
+     "lo": 0,
+     "hi": 20,
+     "value": 11
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:1:sitrusberry"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|move|p2b: Greninja|Spikes|p1b: Venusaur",
+    "|-sidestart|p1: p1|Spikes",
+    "|move|p1a: Gardevoir|Stored Power|p2a: Beedrill",
+    "|-supereffective|p2a: Beedrill|1",
+    "|split|p2",
+    "|-damage|p2a: Beedrill|14/172",
+    "|-damage|p2a: Beedrill|8/100",
+    "|move|p1b: Venusaur|Bullet Seed|p1a: Gardevoir",
+    "|split|p1",
+    "|-damage|p1a: Gardevoir|154/175",
+    "|-damage|p1a: Gardevoir|88/100",
+    "|split|p1",
+    "|-damage|p1a: Gardevoir|133/175",
+    "|-damage|p1a: Gardevoir|76/100",
+    "|split|p1",
+    "|-damage|p1a: Gardevoir|112/175",
+    "|-damage|p1a: Gardevoir|64/100",
+    "|-hitcount|p1a: Gardevoir|3",
+    "|move|p2a: Beedrill|U-turn|p2b: Greninja",
+    "|-supereffective|p2b: Greninja|1",
+    "|split|p2",
+    "|-damage|p2b: Greninja|0 fnt",
+    "|-damage|p2b: Greninja|0 fnt",
+    "|faint|p2b: Greninja"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 112,
+        "maxhp": 175,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         12,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 187,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 195,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:1:-",
+      "P:p1b:1:-"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Blaziken|Blaziken, L50, M|187/187|[from] U-turn",
+    "|switch|p2a: Blaziken|Blaziken, L50, M|100/100|[from] U-turn",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 112,
+        "maxhp": 175,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         12,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 187,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 195,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 3"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:-",
+      "P:p1a:1:-"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Beedrill|Beedrill, L50, M|14/172",
+    "|switch|p2b: Beedrill|Beedrill, L50, M|8/100",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 112,
+        "maxhp": 175,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         12,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 102,
+        "maxhp": 187,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 195,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 4 1",
+    "p2": "move 3 2, switch 4"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p1b:gigadrain",
+      "A:move:p1a:trick"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:1:sitrusberry",
+      "P:p1a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:1:sitrusberry"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:1:-",
+      "P:p1b:1:-"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:1:sitrusberry"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:move:p1a:trick",
+      "A:move:p1b:gigadrain"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 89
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1b:gigadrain",
+      "A:move:p1a:trick"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 31
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 91
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Charizard|Charizard, L50, M|185/185",
+    "|switch|p2b: Charizard|Charizard, L50, M|100/100",
+    "|move|p2a: Blaziken|Knock Off|p1b: Venusaur",
+    "|split|p1",
+    "|-damage|p1b: Venusaur|51/187",
+    "|-damage|p1b: Venusaur|27/100",
+    "|-enditem|p1b: Venusaur|Sitrus Berry|[from] move: Knock Off|[of] p2a: Blaziken",
+    "|move|p1a: Gardevoir|Trick|p2b: Charizard",
+    "|-activate|p1a: Gardevoir|move: Trick|[of] p2b: Charizard",
+    "|-item|p2b: Charizard|Wise Glasses|[from] move: Trick",
+    "|-item|p1a: Gardevoir|Focus Sash|[from] move: Trick",
+    "|move|p1b: Venusaur|Giga Drain|p2a: Blaziken",
+    "|-resisted|p2a: Blaziken|1",
+    "|split|p2",
+    "|-damage|p2a: Blaziken|145/187",
+    "|-damage|p2a: Blaziken|77/100",
+    "|split|p1",
+    "|-heal|p1b: Venusaur|72/187|[from] drain|[of] p2a: Blaziken",
+    "|-heal|p1b: Venusaur|38/100|[from] drain|[of] p2a: Blaziken",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 112,
+        "maxhp": 175,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 72,
+        "maxhp": 187,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 195,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        0,
+        1,
+        0
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         19,
+         8
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 2
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 4, switch 3",
+    "p2": "move 3 2, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:switch:p1a:",
+      "A:switch:p1b:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p1b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 43
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 97
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Chesnaught|Chesnaught, L50, M|195/195",
+    "|switch|p1b: Chesnaught|Chesnaught, L50, M|100/100",
+    "|split|p1",
+    "|-damage|p1b: Chesnaught|171/195|[from] Spikes",
+    "|-damage|p1b: Chesnaught|87/100|[from] Spikes",
+    "|split|p1",
+    "|switch|p1a: Tyranitar|Tyranitar, L50, M|207/207",
+    "|switch|p1a: Tyranitar|Tyranitar, L50, M|100/100",
+    "|split|p1",
+    "|-damage|p1a: Tyranitar|182/207|[from] Spikes",
+    "|-damage|p1a: Tyranitar|87/100|[from] Spikes",
+    "|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar",
+    "|move|p2a: Blaziken|Knock Off|p1b: Chesnaught",
+    "|-resisted|p1b: Chesnaught|1",
+    "|split|p1",
+    "|-damage|p1b: Chesnaught|159/195",
+    "|-damage|p1b: Chesnaught|81/100",
+    "|move|p2b: Charizard|Heat Crash|p1a: Tyranitar",
+    "|-resisted|p1a: Tyranitar|1",
+    "|split|p1",
+    "|-damage|p1a: Tyranitar|171/207",
+    "|-damage|p1a: Tyranitar|82/100",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p2",
+    "|-damage|p2a: Blaziken|134/187|[from] Sandstorm",
+    "|-damage|p2a: Blaziken|71/100|[from] Sandstorm",
+    "|split|p2",
+    "|-damage|p2b: Charizard|174/185|[from] Sandstorm",
+    "|-damage|p2b: Charizard|94/100|[from] Sandstorm",
+    "|split|p1",
+    "|-damage|p1b: Chesnaught|147/195|[from] Sandstorm",
+    "|-damage|p1b: Chesnaught|75/100|[from] Sandstorm",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 4,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 207,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught",
+        "set_species": "Chesnaught",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 147,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 72,
+        "maxhp": 187,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 112,
+        "maxhp": 175,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        0,
+        1,
+        0
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 134,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         18,
+         8
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 2
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 174,
+        "maxhp": 185,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 -2, move 3 mega",
+    "p2": "move 3 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 29
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 76
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 56
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 8,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 9
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 83
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 45
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    }
+   ],
+   "log": [
+    "|detailschange|p1b: Chesnaught|Chesnaught-Mega, L50, M",
+    "|-mega|p1b: Chesnaught|Chesnaught|Chesnaughtite",
+    "|move|p2a: Blaziken|Knock Off|p1a: Tyranitar",
+    "|-resisted|p1a: Tyranitar|1",
+    "|split|p1",
+    "|-damage|p1a: Tyranitar|149/207",
+    "|-damage|p1a: Tyranitar|71/100",
+    "|-enditem|p1a: Tyranitar|Life Orb|[from] move: Knock Off|[of] p2a: Blaziken",
+    "|move|p2b: Charizard|Air Cutter|p1a: Tyranitar|[spread] p1a,p1b",
+    "|-resisted|p1a: Tyranitar|1",
+    "|-supereffective|p1b: Chesnaught|2",
+    "|split|p1",
+    "|-damage|p1a: Tyranitar|138/207",
+    "|-damage|p1a: Tyranitar|66/100",
+    "|split|p1",
+    "|-damage|p1b: Chesnaught|27/195",
+    "|-damage|p1b: Chesnaught|13/100",
+    "|move|p1a: Tyranitar|Knock Off|p1b: Chesnaught",
+    "|-resisted|p1b: Chesnaught|1",
+    "|split|p1",
+    "|-damage|p1b: Chesnaught|11/195",
+    "|-damage|p1b: Chesnaught|5/100",
+    "|move|p1b: Chesnaught|Earthquake|p2b: Charizard|[spread] p1a,p2a",
+    "|-immune|p2b: Charizard",
+    "|-supereffective|p1a: Tyranitar|1",
+    "|-supereffective|p2a: Blaziken|1",
+    "|split|p1",
+    "|-damage|p1a: Tyranitar|66/207",
+    "|-damage|p1a: Tyranitar|31/100",
+    "|split|p2",
+    "|-damage|p2a: Blaziken|22/187",
+    "|-damage|p2a: Blaziken|11/100",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p2",
+    "|-damage|p2a: Blaziken|11/187|[from] Sandstorm",
+    "|-damage|p2a: Blaziken|5/100|[from] Sandstorm",
+    "|split|p2",
+    "|-damage|p2b: Charizard|163/185|[from] Sandstorm",
+    "|-damage|p2b: Charizard|88/100|[from] Sandstorm",
+    "|split|p1",
+    "|-damage|p1b: Chesnaught|0 fnt|[from] Sandstorm",
+    "|-damage|p1b: Chesnaught|0 fnt|[from] Sandstorm",
+    "|faint|p1b: Chesnaught",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 3,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 66,
+        "maxhp": 207,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught-Mega",
+        "set_species": "Chesnaught",
+        "mega": 1,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         11,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 72,
+        "maxhp": 187,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 112,
+        "maxhp": 175,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 11,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         17,
+         8
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 2
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 163,
+        "maxhp": 185,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Gardevoir|Gardevoir, L50, F|112/175",
+    "|switch|p1b: Gardevoir|Gardevoir, L50, F|64/100",
+    "|split|p1",
+    "|-damage|p1b: Gardevoir|91/175|[from] Spikes",
+    "|-damage|p1b: Gardevoir|52/100|[from] Spikes",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 3,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 66,
+        "maxhp": 207,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 91,
+        "maxhp": 175,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 72,
+        "maxhp": 187,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught-Mega",
+        "set_species": "Chesnaught",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         11,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        0,
+        1,
+        0
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 11,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         17,
+         8
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 2
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 163,
+        "maxhp": 185,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4, move 2 -1",
+    "p2": "move 3 2, move 4 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 44
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 97
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 71
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 97
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 97
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 11
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|move|p2a: Blaziken|Knock Off|p1b: Gardevoir",
+    "|split|p1",
+    "|-damage|p1b: Gardevoir|27/175",
+    "|-damage|p1b: Gardevoir|15/100",
+    "|-enditem|p1b: Gardevoir|Focus Sash|[from] move: Knock Off|[of] p2a: Blaziken",
+    "|move|p2b: Charizard|Air Slash|p1b: Gardevoir|[miss]",
+    "|-miss|p2b: Charizard|p1b: Gardevoir",
+    "|move|p1b: Gardevoir|Trick||[still]",
+    "|-fail|p1b: Gardevoir",
+    "|move|p1a: Tyranitar|Earthquake|p2a: Blaziken|[spread] p1b,p2a",
+    "|-immune|p2b: Charizard",
+    "|-supereffective|p2a: Blaziken|1",
+    "|split|p1",
+    "|-damage|p1b: Gardevoir|0 fnt",
+    "|-damage|p1b: Gardevoir|0 fnt",
+    "|split|p2",
+    "|-damage|p2a: Blaziken|0 fnt",
+    "|-damage|p2a: Blaziken|0 fnt",
+    "|faint|p1b: Gardevoir",
+    "|faint|p2a: Blaziken",
+    "|-weather|Sandstorm|[upkeep]",
+    "|split|p2",
+    "|-damage|p2b: Charizard|152/185|[from] Sandstorm",
+    "|-damage|p2b: Charizard|82/100|[from] Sandstorm",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 2,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 66,
+        "maxhp": 207,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         10,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 72,
+        "maxhp": 187,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught-Mega",
+        "set_species": "Chesnaught",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         11,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 185,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         12,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 3",
+    "p2": "switch 4, pass"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:instaswitch:p1b:",
+      "A:instaswitch:p2a:"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Beedrill|Beedrill, L50, M|14/172",
+    "|switch|p2a: Beedrill|Beedrill, L50, M|8/100",
+    "|split|p1",
+    "|switch|p1b: Venusaur|Venusaur, L50, M|72/187",
+    "|switch|p1b: Venusaur|Venusaur, L50, M|38/100",
+    "|split|p1",
+    "|-damage|p1b: Venusaur|49/187|[from] Spikes",
+    "|-damage|p1b: Venusaur|26/100|[from] Spikes",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "sandstorm",
+    "weather_turns": 2,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 66,
+        "maxhp": 207,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         19,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 49,
+        "maxhp": 187,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         10,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught-Mega",
+        "set_species": "Chesnaught",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         11,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 14,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 185,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         12,
+         15
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 2 1",
+    "p2": "move 4 2, move 4 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 33
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 93
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 59
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 48
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
+    },
+    {
+     "site": "MULTIHIT_COUNT",
+     "context": "",
+     "lo": 0,
+     "hi": 20,
+     "value": 5
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 10
+    }
+   ],
+   "log": [
+    "|move|p2b: Charizard|Air Slash|p1a: Tyranitar",
+    "|-resisted|p1a: Tyranitar|1",
+    "|split|p1",
+    "|-damage|p1a: Tyranitar|47/207",
+    "|-damage|p1a: Tyranitar|22/100",
+    "|move|p1b: Venusaur|Sludge Bomb|p2a: Beedrill",
+    "|-resisted|p2a: Beedrill|1",
+    "|split|p2",
+    "|-damage|p2a: Beedrill|0 fnt",
+    "|-damage|p2a: Beedrill|0 fnt",
+    "|faint|p2a: Beedrill",
+    "|move|p1a: Tyranitar|Rock Blast|p2b: Charizard",
+    "|-supereffective|p2b: Charizard|2",
+    "|split|p2",
+    "|-damage|p2b: Charizard|44/185",
+    "|-damage|p2b: Charizard|23/100",
+    "|-supereffective|p2b: Charizard|2",
+    "|split|p2",
+    "|-damage|p2b: Charizard|0 fnt",
+    "|-damage|p2b: Charizard|0 fnt",
+    "|faint|p2b: Charizard",
+    "|-hitcount|p2: Charizard|2",
+    "|win|p1"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": true,
+    "winner": "p1",
+    "weather": "sandstorm",
+    "weather_turns": 2,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "spikes",
+        1
+       ]
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Tyranitar",
+        "set_species": "Tyranitar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 47,
+        "maxhp": 207,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         19,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Venusaur",
+        "set_species": "Venusaur",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 49,
+        "maxhp": 187,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 175,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         10,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chesnaught-Mega",
+        "set_species": "Chesnaught",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 195,
+        "item": "chesnaughtite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         11,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Beedrill",
+        "set_species": "Beedrill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 172,
+        "item": "muscleband",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Charizard",
+        "set_species": "Charizard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 185,
+        "item": "wiseglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         12,
+         14
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Greninja",
+        "set_species": "Greninja",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         8,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Blaziken",
+        "set_species": "Blaziken",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}
