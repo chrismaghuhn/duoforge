@@ -58,7 +58,7 @@ A wake that is observed clears the status and the counter; no hidden value remai
 
 - The engine keeps the remaining counter in `member.status_counter` (member block byte +28, as today), so `counter = S - c` holds in the engine state at all times.
 - New: **`sleep_cant`**, one byte per roster member in the POOL tail, the member block's reserved byte +9 (`DFI_ENC_TAIL_MEMBER_RESERVED_OFF`, the tail member block of 10 bytes at `DFI_ENC_TAIL_MEMBER_OFF` 80 per side; no tail revision bump, the same pattern as G90's position byte 32). Older decoders refuse a nonzero value through the reserved check, as before.
-- Written in `src/combat/turn.c`: `+1` at each `cant|X|slp` in `dfi_before_move`; `0` at the start of a sleep in `dfi_try_status` and at the status-clearing sites in `dfi_lum_cure`, `dfi_before_move`, `dfi_run_move_body`, `dfi_run_revive`, `dfi_wish_heal` and `dfi_check_fainted`. Function names are the source anchors; line offsets change when helpers move.
+- Written in `src/combat/turn.c` and `src/combat/flow/` (`dfi_run_revive` in `switch.h`, `dfi_check_fainted` in `turn.h`): `+1` at each `cant|X|slp` in `dfi_before_move`; `0` at the start of a sleep in `dfi_try_status` and at the status-clearing sites in `dfi_lum_cure`, `dfi_before_move`, `dfi_run_move_body`, `dfi_run_revive`, `dfi_wish_heal` and `dfi_check_fainted`. Function names are the source anchors; line offsets change when helpers move.
 - Invariant (POOL kinds only, `pool_rules` guard): `sleep_cant != 0` implies `status == SLP`; `sleep_cant <= 2`; a non-POOL state has zero. The law itself is not an invariant of the state (fixtures set counters directly); it is tested through the sweep and the recordings.
 
 ## 6. Public value (the view)

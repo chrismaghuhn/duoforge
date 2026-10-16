@@ -35,6 +35,24 @@ class RepoHygieneTest(unittest.TestCase):
         bad = [p for p in tracked.decode("utf-8").split("\0") if p and forbidden(p)]
         self.assertEqual(bad, [], "trained weights or run outputs are tracked (AGENTS.md: they stay private)")
 
+    def test_a_run_refuses_an_output_inside_the_repository(self):
+        # Restructure step 8 (plan "Runs"): every run writes outside the repository, its default under DUOFORGE_RUNS
+        from duoforge import runs
+        for out in (ROOT, ROOT / "runs" / "eval" / "x", ROOT / "python" / "out"):
+            with self.subTest(out=out), self.assertRaisesRegex(SystemExit, "inside the repository"):
+                runs.out_dir(str(out), "eval", "arena")
+        with self.assertRaisesRegex(SystemExit, "inside the repository"):
+            runs.out_dir(None, "eval", "arena", environ={runs.RUNS_ENV: str(ROOT)})
+
+    def test_every_eval_entry_point_refuses_the_repository(self):
+        # an entry point with --out checks it (duoforge.runs or the replay data's refuse_repository)
+        checks = ("refuse_repository(", "refuse_in_repository(", "runs.out_dir(")
+        tools = sorted((ROOT / "python" / "duoforge_eval").glob("*.py"))
+        self.assertTrue(tools)
+        unchecked = [f.name for f in tools if '"--out"' in (text := f.read_text(encoding="utf-8"))
+                     and not any(c in text for c in checks)]
+        self.assertEqual(unchecked, [], "an evaluation entry point takes --out without refusing the repository")
+
     def test_no_workflow_uploads_artifacts(self):
         uploads = [str(f.relative_to(ROOT)) for f in sorted((ROOT / ".github" / "workflows").glob("*.y*ml"))
                    if "upload-artifact" in f.read_text(encoding="utf-8")]

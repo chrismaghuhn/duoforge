@@ -83,6 +83,10 @@ if(Python3_Interpreter_FOUND)
         include("${PROJECT_SOURCE_DIR}/tools/cloud/aws_fuzz/tests.cmake")
         include("${PROJECT_SOURCE_DIR}/tools/cloud/p1_pilot/tests/tests.cmake")
         include("${PROJECT_SOURCE_DIR}/tools/cloud/gcp_watch/tests.cmake")
+        # The decimals of both launch script sets under a German locale (the owner's Ubuntu): glibc locales only.
+        if(NOT WIN32)
+            include("${PROJECT_SOURCE_DIR}/tools/cloud/tests.cmake")
+        endif()
     endif()
     include("${PROJECT_SOURCE_DIR}/tools/datagen/tests/tests.cmake")
     include("${PROJECT_SOURCE_DIR}/tools/cloud/kaggle/tests.cmake")
@@ -103,6 +107,7 @@ include("${PROJECT_SOURCE_DIR}/python/tests/search/tests.cmake")
 include("${PROJECT_SOURCE_DIR}/python/tests/live/tests.cmake")
 include("${PROJECT_SOURCE_DIR}/python/tests/replay/tests.cmake")
 include("${PROJECT_SOURCE_DIR}/python/tests/data/tests.cmake")
+include("${PROJECT_SOURCE_DIR}/python/tests/eval/tests.cmake")
 
 include("${PROJECT_SOURCE_DIR}/tools/reference/tests/random_teams.cmake")
 
