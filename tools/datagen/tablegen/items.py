@@ -1,8 +1,8 @@
 """Items: the item families (type boosters, resist berries and the rest), their matchers and parameters, the
 item facts by step and their checks.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@001a492e).
 """
 import re
 

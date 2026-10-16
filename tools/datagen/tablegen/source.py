@@ -1,8 +1,8 @@
 """The pinned Showdown inputs and the shared parsing helpers: the pin and the input hashes, Source (a pinned
 file read with its hash checked), the entry parsers, the id and name helpers and the pattern matchers.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@001a492e).
 """
 import hashlib
 import io
@@ -25,21 +25,65 @@ READER_INPUTS = {
     'data/mods/champions/conditions.ts': '851507309dde0b58807e33b17d8ce7e607dad70893546f67bad294ad70249005',
 }
 
-# sha256 of the input files at the pin, after CRLF -> LF normalisation.
-INPUTS = {
+# sha256 of the input files at the pin, after CRLF -> LF normalisation: the base data every rule set reads.
+BASE_INPUTS = {
     'data/pokedex.ts': '73048386b864be5aff093e9393acf32e8016299e9d7b76078bf5120b769e2fe0',
     'data/moves.ts': '6b44af2a393739e00fc444dc574eaa79659b68867777012b0f7ce4727a9b7734',
     'data/abilities.ts': '818edd100c8eb5bdf4d4ded8dd1b1ce9d394f87f40f7d9d53a5414276e84f82b',
     'data/items.ts': '75da206e2cb09868bb549360f38a144c2f50b24e1d189e03b485d550a4f6357a',
     'data/typechart.ts': '7b0eae126bdcf98edfd71cbe75af00b763f5f0d5db36024b6f3e7c5e4aea95ac',
     'data/natures.ts': '5cfefee4c23dd19f629deb9a67f75361226bd24fe34cefe9a13d30d985428416',
-    'data/mods/champions/moves.ts': '1d317da33d3e36d430a9cbe195c2ef9bb9a6fc2f3e0516ba2200da8a394080bc',
-    'data/mods/champions/items.ts': 'b39dafa66d136ebb1a8576367ced2c9f4519aa1c17d5d65c59b368ac15d7de77',
-    'data/mods/champions/abilities.ts': '86c3843d402f1ff7be276d8f2da08d6744b8a8822349560b300ddcfa9c1fbc52',
-    'data/mods/champions/formats-data.ts': 'a512b537a84574a324c250c6ff99ad60f0cf1e82420fdae60d4635eec8661e13',
-    'data/mods/champions/learnsets.ts': '826d302703358260a1c4967e2bf8edd15f1fe7e0f664c8ab14aff734906cc9d0',
-    'data/mods/champions/scripts.ts': 'a6cc11eeb525ad58dee9010dd0d42274a5b4dacb39ce8653f4888cbd2f4f459d',
 }
+
+# The rule sets (restructure step 5, the "rule set" of the Gen 9 design): what a format reads on top of the base data.
+# A format definition names one (data/formats/<id>.json, tables.rule_set). Each names its override files by role, their
+# pinned sha256 and the PP cap of its moves (None: no cap). champions is the Champions mod: its own move, item and
+# ability entries over the base ones, its formats data and learnsets, and init()'s PP cap of 20
+# (data/mods/champions/scripts.ts:3-9). A rule set without overrides (gen9, step O8 of the Gen 9 design) is added
+# with the code that reads the base data alone; until then any other name is refused.
+RULE_SETS = {
+    'champions': {
+        'files': {
+            'moves': 'data/mods/champions/moves.ts',
+            'items': 'data/mods/champions/items.ts',
+            'abilities': 'data/mods/champions/abilities.ts',
+            'formats_data': 'data/mods/champions/formats-data.ts',
+            'learnsets': 'data/mods/champions/learnsets.ts',
+            'scripts': 'data/mods/champions/scripts.ts',
+        },
+        'inputs': {
+            'data/mods/champions/moves.ts': '1d317da33d3e36d430a9cbe195c2ef9bb9a6fc2f3e0516ba2200da8a394080bc',
+            'data/mods/champions/items.ts': 'b39dafa66d136ebb1a8576367ced2c9f4519aa1c17d5d65c59b368ac15d7de77',
+            'data/mods/champions/abilities.ts': '86c3843d402f1ff7be276d8f2da08d6744b8a8822349560b300ddcfa9c1fbc52',
+            'data/mods/champions/formats-data.ts': 'a512b537a84574a324c250c6ff99ad60f0cf1e82420fdae60d4635eec8661e13',
+            'data/mods/champions/learnsets.ts': '826d302703358260a1c4967e2bf8edd15f1fe7e0f664c8ab14aff734906cc9d0',
+            'data/mods/champions/scripts.ts': 'a6cc11eeb525ad58dee9010dd0d42274a5b4dacb39ce8653f4888cbd2f4f459d',
+        },
+        'pp_cap': 20,
+    },
+}
+RULE_SET_ROLES = ('moves', 'items', 'abilities', 'formats_data', 'learnsets', 'scripts')
+
+
+def rule_set(name):
+    """The rule set of that name, checked: every role has a file, every file its pinned hash; an unknown name fails."""
+    if name not in RULE_SETS:
+        fail('rule set %r is not defined (known: %s)' % (name, ', '.join(sorted(RULE_SETS))))
+    rs = RULE_SETS[name]
+    if set(rs) != {'files', 'inputs', 'pp_cap'} or set(rs['files']) != set(RULE_SET_ROLES):
+        fail('rule set %s: it needs exactly the files %s, its inputs and its pp_cap' % (name, ', '.join(RULE_SET_ROLES)))
+    if set(rs['files'].values()) != set(rs['inputs']):
+        fail('rule set %s: every file needs its pinned sha256, and only those' % name)
+    if rs['pp_cap'] is not None and (type(rs['pp_cap']) is not int or rs['pp_cap'] < 1):
+        fail('rule set %s: pp_cap must be a positive int or None' % name)
+    return rs
+
+
+# Every pinned input by path, the base first (Source checks a file against it).
+INPUTS = dict(BASE_INPUTS)
+for _rs in RULE_SETS.values():
+    INPUTS.update(_rs['inputs'])
+del _rs
 
 TYPES = ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground',
          'Ice', 'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water']
@@ -174,9 +218,8 @@ class ReaderIndex:
 
     def __init__(self, root, loaded):
         self.lines = {rel: Source(root, rel, READER_INPUTS).lines for rel in READER_INPUTS}
-        for rel in ('data/abilities.ts', 'data/items.ts', 'data/moves.ts', 'data/mods/champions/abilities.ts',
-                    'data/mods/champions/items.ts', 'data/mods/champions/moves.ts', 'data/mods/champions/scripts.ts'):
-            self.lines[rel] = loaded[rel].lines
+        for rel, src in loaded.items():  # the base data files and the rule set's overrides and scripts
+            self.lines[rel] = src.lines
         self.index = {}
         for rel, lines in self.lines.items():
             for n, line in enumerate(lines, 1):

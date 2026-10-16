@@ -1,7 +1,7 @@
 """The table assembly: the closure, Team C and pool builds and the width bounds the pool has to fit.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@001a492e).
 """
 import io
 import os
@@ -9,8 +9,8 @@ import re
 
 from .source import fail, INPUTS, READER_INPUTS, ReaderIndex, Source, STATS, toid, TYPES
 from .species import (
-    BATTLE_ONLY_ROWS, FORMAT_ID, FORME_ABILITIES_MAX, forme_legal, IGNORED_TYPE_KEYS, IGNORED_TYPE_KEYS_C,
-    IGNORED_TYPE_KEYS_P, LEGAL_POOL, load_legal_pool, parse_forme, POWDER_IMMUNE_TYPES, SAND_IMMUNE_TYPES, SETS,
+    BATTLE_ONLY_ROWS, FORME_ABILITIES_MAX, forme_legal, IGNORED_TYPE_KEYS, IGNORED_TYPE_KEYS_C,
+    IGNORED_TYPE_KEYS_P, load_legal_pool, parse_forme, POWDER_IMMUNE_TYPES, SAND_IMMUNE_TYPES, SETS,
     SETS_C, SETS_G2, type_chart)
 from .moves import (
     check_g32_entries, check_g56_facts, check_g58_facts, check_g59_facts, check_g72b_facts, check_g76_facts,
@@ -30,19 +30,20 @@ from .rules import (
     check_g15_facts, check_g34_facts, check_g61_facts, check_k2_facts)
 
 
-def build(root, ext=False):
+def build(root, ts, ext=False):
     """The closure tables, or with ext the extended tables: the closure group
     is built completely first (items, abilities, formes with their Mega
-    abilities), then Team C, so every closure id keeps its value."""
+    abilities), then Team C, so every closure id keeps its value. The rule
+    set's override files are the table set's (ts, tablegen/formats.py)."""
     src = {rel: Source(root, rel) for rel in INPUTS}
-    dex, moves_ts, champ_moves = src['data/pokedex.ts'], src['data/moves.ts'], src['data/mods/champions/moves.ts']
-    items_ts, champ_items = src['data/items.ts'], src['data/mods/champions/items.ts']
-    abil_ts, champ_abil = src['data/abilities.ts'], src['data/mods/champions/abilities.ts']
-    formats, learn = src['data/mods/champions/formats-data.ts'], src['data/mods/champions/learnsets.ts']
+    dex, moves_ts, champ_moves = src['data/pokedex.ts'], src['data/moves.ts'], src[ts.file('moves')]
+    items_ts, champ_items = src['data/items.ts'], src[ts.file('items')]
+    abil_ts, champ_abil = src['data/abilities.ts'], src[ts.file('abilities')]
+    formats, learn = src[ts.file('formats_data')], src[ts.file('learnsets')]
     groups = (SETS, SETS_C) if ext else (SETS,)
     sets = [s for g in groups for s in g]
 
-    moves = [parse_move(m, moves_ts, champ_moves, ext) for m in (MOVES + MOVES_C if ext else MOVES)]
+    moves = [parse_move(m, moves_ts, champ_moves, ext, pp_cap=ts.pp_cap) for m in (MOVES + MOVES_C if ext else MOVES)]
     move_index = {m['id']: i for i, m in enumerate(moves)}
     items, item_index = [], {}
     abilities, ability_index = [], {}
@@ -144,10 +145,12 @@ BOUND_SOURCES = {
 }
 
 
-def check_bounds(d, repo):
+def check_bounds(d, repo, bounds):
     """The whole pool has to fit the widths that the state, the observation, the context and the tables give its ids
     (decision 0015 section 4.2). The widths are read from the sources that own them, so a field that becomes
-    narrower fails the generator here, never as a silent truncation at setup."""
+    narrower fails the generator here, never as a silent truncation at setup. bounds are the table set's own id bounds
+    (tables.bounds of data/formats/<id>.json): formes, moves, moves_per_forme, items and abilities; the pool has to fit
+    them, and they have to fit the engine's fields."""
     def read(key):
         with io.open(os.path.join(repo, BOUND_SOURCES[key]), encoding='utf-8') as fh:
             return fh.read().replace('\r\n', '\n')
@@ -193,16 +196,28 @@ def check_bounds(d, repo):
     m = re.search(r'#define DUOFORGE_DATA_MAX_FORME_MOVES\s+(\d+)u', api)
     if m is None or n['moves'] > int(m.group(1)):
         fail('bounds: %d moves exceed DUOFORGE_DATA_MAX_FORME_MOVES' % n['moves'])
+    if bounds['moves_per_forme'] > int(m.group(1)):
+        fail('bounds: moves_per_forme %d exceeds DUOFORGE_DATA_MAX_FORME_MOVES %s' % (bounds['moves_per_forme'],
+                                                                                    m.group(1)))
+    most = max((len(fl['moves']) for fl in d['forme_legal']), default=0)
+    if most > bounds['moves_per_forme']:
+        fail('bounds: a forme has %d legal moves, the bound moves_per_forme is %d' % (most, bounds['moves_per_forme']))
     m = re.search(r'#define DUOFORGE_DATA_MAX_FORME_ABILITIES\s+(\d+)u', api)
     if m is None or FORME_ABILITIES_MAX > int(m.group(1)):
         fail('bounds: a forme may have more legal abilities than DUOFORGE_DATA_MAX_FORME_ABILITIES')
     # The u8 row fields of the tables: ability, item and move ids (the none value 0xFF is not an id), and ids in the
-    # forme legal lists. Forme ids are u16 in the pool rows (0xFFFF is none).
-    if n['abilities'] > 254 or n['items'] > 254:
-        fail('bounds: the pool has %d abilities and %d items; a u8 id field holds at most 254 (0xFF is none)' % (
-            n['abilities'], n['items']))
-    if n['formes'] > 0xFFFE or n['moves'] > 0xFFFF:
-        fail('bounds: %d formes and %d moves exceed the u16 ids' % (n['formes'], n['moves']))
+    # forme legal lists. Forme ids are u16 in the pool rows (0xFFFF is none). The bounds of the table set say how many
+    # ids its fields hold (today 254 items and abilities, u8 with 0xFF as none); a bound past the u8 and u16 row fields
+    # fails until the generator writes wider rows.
+    if bounds['items'] > 254 or bounds['abilities'] > 254 or bounds['formes'] > 0xFFFE or bounds['moves'] > 0xFFFF:
+        fail('bounds: the table set\'s bounds %s exceed the row fields (254 items and abilities, 0xFFFE formes, '
+             '0xFFFF moves)' % bounds)
+    if n['abilities'] > bounds['abilities'] or n['items'] > bounds['items']:
+        fail('bounds: the pool has %d abilities and %d items; the table set holds at most %d and %d (0xFF is none)' % (
+            n['abilities'], n['items'], bounds['abilities'], bounds['items']))
+    if n['formes'] > bounds['formes'] or n['moves'] > bounds['moves']:
+        fail('bounds: %d formes and %d moves exceed the table set\'s %d and %d' % (
+            n['formes'], n['moves'], bounds['formes'], bounds['moves']))
     for fo in d['formes']:
         if any(v > 254 for v in fo['set_moves']) or fo['set_item'] > 254 and fo['set_item'] != 0xFF:
             fail('bounds: the set of %s does not fit the u8 fields of its row' % fo['id'])
@@ -212,7 +227,7 @@ def check_bounds(d, repo):
         fail('bounds: the learnable bitset is too short for %d moves' % n['moves'])
 
 
-def build_pool(root, repo, dx):
+def build_pool(root, repo, dx, ts):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
     ability and forme of the legal pool (data/formats/pools/reg-mc.json) in the file's order, then the
@@ -220,11 +235,11 @@ def build_pool(root, repo, dx):
     the prefix included. Cosmetic formes that the validator treats as their base forme are one row of the base forme
     plus a name alias."""
     dex, moves_ts = Source(root, 'data/pokedex.ts'), Source(root, 'data/moves.ts')
-    champ_moves = Source(root, 'data/mods/champions/moves.ts')
-    items_ts, champ_items = Source(root, 'data/items.ts'), Source(root, 'data/mods/champions/items.ts')
-    abil_ts, champ_abil = Source(root, 'data/abilities.ts'), Source(root, 'data/mods/champions/abilities.ts')
-    formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
-    legal = load_legal_pool(repo)
+    champ_moves = Source(root, ts.file('moves'))
+    items_ts, champ_items = Source(root, 'data/items.ts'), Source(root, ts.file('items'))
+    abil_ts, champ_abil = Source(root, 'data/abilities.ts'), Source(root, ts.file('abilities'))
+    formats, learn = Source(root, ts.file('formats_data')), Source(root, ts.file('learnsets'))
+    legal = load_legal_pool(repo, ts)
     check_g8_conditions(moves_ts)
     check_c4_facts(moves_ts, champ_moves)
     check_c5_facts(moves_ts, champ_moves)
@@ -256,7 +271,7 @@ def build_pool(root, repo, dx):
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
     check_g96_facts(moves_ts)
-    check_k2_facts(Source(root, 'sim/battle.ts', READER_INPUTS), Source(root, 'data/mods/champions/scripts.ts'), moves_ts)
+    check_k2_facts(Source(root, 'sim/battle.ts', READER_INPUTS), Source(root, ts.file('scripts')), moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
     check_c2_facts(moves_ts, champ_moves, only=C1_PART4_FACTS)  # step A0 part 4: Shelter (the C1 row)
@@ -301,13 +316,13 @@ def build_pool(root, repo, dx):
     n_steps = (len(items), len(abilities))
     # The second flags byte (step G8) of the prefix moves, read from the pin as the new rows are: the prefix rows
     # themselves (the CLOSURE and extended bytes) do not have it.
-    moves = [dict(m, flags2=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['flags2'],
-                  flags3=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['flags3'])
+    moves = [dict(m, flags2=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True, pp_cap=ts.pp_cap)['flags2'],
+                  flags3=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True, pp_cap=ts.pp_cap)['flags3'])
              for m in dx['moves']]
     for mid in G2_MOVES:
         if any(m['id'] == mid for m in moves):
             fail('pool move %s is already in the extended tables' % mid)
-        moves.append(parse_move(mid, moves_ts, champ_moves, pool=True))
+        moves.append(parse_move(mid, moves_ts, champ_moves, pool=True, pp_cap=ts.pp_cap))
     n_steps_moves = len(moves)
     move_index = {m['id']: i for i, m in enumerate(moves)}
     item_index = {it['id']: i for i, it in enumerate(items)}
@@ -328,7 +343,7 @@ def build_pool(root, repo, dx):
     # ---- the whole legal pool: every other move, item and ability, in the legal pool's order ----
     for mid in legal['move_order']:
         if mid not in move_index:
-            moves.append(parse_pool_move(mid, moves_ts, champ_moves))
+            moves.append(parse_pool_move(mid, moves_ts, champ_moves, pp_cap=ts.pp_cap))
             move_index[mid] = len(moves) - 1
     for iid in legal['item_order']:
         if iid not in item_index:
@@ -436,10 +451,10 @@ def build_pool(root, repo, dx):
             it['mega_forme'] = forme_index[it['stone'][1]]
     for it in items:
         if it['id'] not in legal['items']:
-            fail('item %s is not legal in %s (%s)' % (it['id'], FORMAT_ID, LEGAL_POOL))
+            fail('item %s is not legal in %s (%s)' % (it['id'], ts.showdown_format_id, ts.legal_pool))
     for ab in abilities:
         if ab['id'] not in legal['abilities']:
-            fail('ability %s is not legal in %s (%s)' % (ab['id'], FORMAT_ID, LEGAL_POOL))
+            fail('ability %s is not legal in %s (%s)' % (ab['id'], ts.showdown_format_id, ts.legal_pool))
     for members, rows, what in ((ITEM_MEMBERS, items, 'item'), (ABILITY_MEMBERS, abilities, 'ability')):
         for family, ids in members.items():
             if len(set(ids)) != len(ids) or any(i not in [r['id'] for r in rows] for i in ids):
@@ -465,9 +480,8 @@ def build_pool(root, repo, dx):
 
     # ---- what the tables model: the handler columns ----
     loaded = {'data/abilities.ts': abil_ts, 'data/items.ts': items_ts, 'data/moves.ts': moves_ts,
-              'data/mods/champions/abilities.ts': champ_abil, 'data/mods/champions/items.ts': champ_items,
-              'data/mods/champions/moves.ts': champ_moves, 'data/mods/champions/scripts.ts': Source(
-                  root, 'data/mods/champions/scripts.ts')}
+              ts.file('abilities'): champ_abil, ts.file('items'): champ_items,
+              ts.file('moves'): champ_moves, ts.file('scripts'): Source(root, ts.file('scripts'))}
     readers = ReaderIndex(root, loaded)
     n_ext_items, n_ext_abilities = len(dx['items']), len(dx['abilities'])
     for i, (it, col) in enumerate(zip(items, item_family)):
@@ -498,7 +512,7 @@ def build_pool(root, repo, dx):
     for fo in formes:
         fo.setdefault('unmodeled', [])
     legal_formes = forme_legal(formes, [m['id'] for m in moves], [a['id'] for a in abilities], learn,
-                               legal['species'], abil_ts, champ_abil)
+                               legal['species'], abil_ts, champ_abil, ts.learnset_bytes, ts.legal_pool)
     chart, immunity = type_chart(Source(root, 'data/typechart.ts'), STATUS_IMMUNITY_P, IGNORED_TYPE_KEYS_P)
     if chart != dx['chart'] or [v & ~SAND_IMMUNITY for v in immunity] != dx['immunity']:
         fail('the pool type chart and immunity bits are not the extended ones plus Sandstorm')
@@ -522,7 +536,7 @@ def build_pool(root, repo, dx):
     for flag, owner in INERT_FLAG_READS.items():
         if owner is not None and not moves[move_index[owner]]['unmodeled']:
             fail('the move %s is modelled, so the flag %s that a modelled row reads now matters' % (owner, flag))
-    check_bounds(d, repo)
+    check_bounds(d, repo, ts.bounds)
     return d
 
 

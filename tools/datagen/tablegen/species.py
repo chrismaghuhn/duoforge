@@ -1,15 +1,13 @@
 """Formes and Pokemon: the reference team sets, the forme and type chart parsers, the format's legal pool,
 the learnsets and the forme legality.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@001a492e).
 """
 import io
 import json
 import os
 import re
-
-import gen_format
 
 from .source import fail, fields, PIN, scalar, toid, TYPES
 
@@ -101,13 +99,7 @@ def type_chart(tc, status_immunity, ignored_type_keys):
 
 # ---- the POOL data kind (decision 0015): the extended tables plus the rows of the expansion ----
 # The closure and --team-c modes never read anything below, so their output stays byte-identical.
-# The format and its pool source come from the format definition data/formats/reg-mc.json (restructure step 10):
-# load_format checks its pool source's sha256, Showdown commit and format id.
-FORMAT = gen_format.load_format()
-if FORMAT['showdown_commit'] != PIN:
-    fail('%s is not at the pin %s' % (gen_format.FORMAT_FILE, PIN))
-FORMAT_ID = FORMAT['showdown_format_id']
-LEGAL_POOL = os.path.join(*FORMAT['pool']['source'].split('/'))
+# The format and its pool source come from the table set of --format (tablegen/formats.py; data/formats/<id>.json).
 
 # ---- Step G2 (docs/research/expansion/team-gaps.md, data/team_gaps.json "pool_rows"): every row that the 17 target
 # teams need, added at once and unmarked, after the rows of step P1. Their order is that of pool_rows. ----
@@ -134,20 +126,33 @@ BATTLE_ONLY_ROWS = ['aegislashblade']
 LEGAL_DESPITE_TAG = {'auraguard': 'Future'}
 
 
-def load_legal_pool(repo):
-    """The ids that TeamValidator accepted at the pin: data/formats/pools/reg-mc.json, the output of
-    build_legal_pool.js (its Showdown commit and format are checked), with the legal moves and abilities of every
-    species. duoforge.data.pool_families runs the pinned validator on the pool again."""
-    with io.open(os.path.join(repo, LEGAL_POOL), encoding='utf-8') as fh:
+def load_legal_pool(repo, ts):
+    """The ids that TeamValidator accepted at the pin: the table set's pool (data/formats/pools/<id>.json), the
+    output of build_legal_pool.js (its Showdown commit and format are checked against the pin and the definition),
+    with the legal moves and abilities of every species. duoforge.data.pool_families runs the pinned validator on the
+    pool again. The formes the definition excludes are taken out here, each refused by its reason; an excluded forme
+    that is not in the pool fails, so no entry goes stale, and so does one that another row of the pool needs (a Mega
+    forme of it or a cosmetic forme that copies it)."""
+    with io.open(os.path.join(repo, ts.legal_pool), encoding='utf-8') as fh:
         legal = json.load(fh)
-    if legal['meta']['showdown_commit'] != PIN or legal['meta']['format_id'] != FORMAT_ID:
-        fail('%s was not made at the pin for %s' % (LEGAL_POOL, FORMAT_ID))
+    if legal['meta']['showdown_commit'] != PIN or legal['meta']['format_id'] != ts.showdown_format_id:
+        fail('%s was not made at the pin for %s' % (ts.legal_pool, ts.showdown_format_id))
+    by_id = {sp['id']: sp for sp in legal['species']}
+    for fid, reason in ts.excluded.items():
+        if fid not in by_id:
+            fail('%s excludes %s, which is not a forme of %s' % (ts.definition, fid, ts.legal_pool))
+        needed = [sp['id'] for sp in legal['species'] if sp['id'] not in ts.excluded and (
+            sp.get('mechanically_identical_to') == fid or any(h.get('species') == fid for h in sp.get('holders', ())))]
+        if needed:
+            fail('%s excludes %s, which %s of the pool need' % (ts.definition, fid, ', '.join(needed)))
+        print('%s: %s excluded: %s' % (ts.format_id, fid, reason))
+    species = [sp for sp in legal['species'] if sp['id'] not in ts.excluded]
     return {'items': {i['id'] for i in legal['items']}, 'abilities': {a['id'] for a in legal['abilities']},
-            'species': {sp['id']: sp for sp in legal['species']},
+            'species': {sp['id']: sp for sp in species},
             # The pool in the file's own order (alphabetical by id for moves, items and abilities, the dex for
             # species): the order in which the whole-pool rows are appended after the rows of the steps.
             'move_order': [m['id'] for m in legal['moves']], 'item_order': [i['id'] for i in legal['items']],
-            'ability_order': [a['id'] for a in legal['abilities']], 'species_order': [sp['id'] for sp in legal['species']],
+            'ability_order': [a['id'] for a in legal['abilities']], 'species_order': [sp['id'] for sp in species],
             'stones': {i['id']: list(i['mega_stone'].items()) for i in legal['items'] if i['is_mega_stone']},
             'counts': legal['counts']}
 
@@ -204,19 +209,22 @@ def ability_released(abil_ts, champ_abil, aid):
             fail('ability %s is tagged %s' % (aid, scalar(f['isNonstandard'][1])))
 
 
-def forme_legal(formes, pool_moves, pool_abilities, learn, legal_species, abil_ts, champ_abil):
+def forme_legal(formes, pool_moves, pool_abilities, learn, legal_species, abil_ts, champ_abil, learnset_bytes, pool_name):
     """Per forme: the pool moves it learns (a bitset over pool_moves, bit i of byte i / 8) and its legal abilities (ids
     over pool_abilities, in the pokedex's slot order). The abilities are the declared ones that the validator allows
     in Champions, cut to the pool; a base forme must keep its set's ability, a Mega forme exactly its own, and an ability
     that the pin does not release fails (Lucario-Mega-Z's Aura Guard). The moves are the learnset's, and they must be
-    exactly the pool moves that the validator accepts for the species. A Mega forme is never set up: no moves."""
-    nbytes = (len(pool_moves) + 7) // 8
+    exactly the pool moves that the validator accepts for the species. A Mega forme is never set up: no moves.
+    learnset_bytes is the table set's width of the bitset; fewer bits than pool moves fail (nothing is rounded up)."""
+    if learnset_bytes * 8 < len(pool_moves):
+        fail('learnset_bytes %d holds %d moves, the pool has %d' % (learnset_bytes, learnset_bytes * 8, len(pool_moves)))
+    nbytes = learnset_bytes
     ability_index = {a: i for i, a in enumerate(pool_abilities)}
     out = []
     for fo in formes:
         rec = legal_species.get(fo['id'])
         if rec is None:
-            fail('%s is not a species of %s' % (fo['id'], LEGAL_POOL))
+            fail('%s is not a species of %s' % (fo['id'], pool_name))
         abilities = []
         for aid in fo['abilities']:
             if aid in rec['abilities_legal']:

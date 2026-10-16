@@ -1,8 +1,8 @@
 """Abilities: the ability families (-ate, pinch, weather and terrain setters), their matchers and
 parameters, the ability facts by step and their checks.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@001a492e).
 """
 import re
 

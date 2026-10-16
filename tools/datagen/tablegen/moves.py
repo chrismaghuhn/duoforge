@@ -1,12 +1,12 @@
 """Moves: the move parser and its key, flag, target and status tables, the special handlers and their pinned
 callbacks by step, the move and field-condition facts and their checks.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@001a492e).
 """
 import re
 
-from .source import CATEGORIES, fail, fields, norm, scalar, TYPES
+from .source import CATEGORIES, fail, fields, norm, RULE_SETS, scalar, TYPES
 from .species import G59_POKEMON_FACTS, TAGS_PAST_UNOBTAINABLE
 
 # Move ids 0..35 in the order of decision 0005 (fixture table T1); Struggle is 36.
@@ -122,7 +122,7 @@ def modelled(table, key, mid, what, unmodeled=None):
     return table[key]
 
 
-def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
+def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None, pp_cap=RULE_SETS['champions']['pp_cap']):
     """ext: the extended tables' encodings (decision 0009); the closure mode
     keeps exactly the closure's. pool: the pool tables' encodings (decision
     0015), which are the extended ones plus the named handlers of G2_HANDLERS:
@@ -342,7 +342,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             bad('move %s: %s is %r, not a flag' % (mid, key, value), 'field %s %s' % (key, value))
     acc = get('accuracy')
     pp_base = get('pp')
-    pp_capped = min(pp_base, 20)  # champions init(): data/mods/champions/scripts.ts:3-9
+    pp_capped = pp_base if pp_cap is None else min(pp_base, pp_cap)  # the rule set's cap: champions init(), scripts.ts:3-9
     if flags & EXTRA_FLAG_BITS['noPPBoosts']:
         pp_max = pp_capped
     else:
@@ -1827,13 +1827,13 @@ def prefix_flag_reads(srcs, dx):
     return reads
 
 
-def parse_pool_move(mid, moves_ts, champ_moves):
+def parse_pool_move(mid, moves_ts, champ_moves, pp_cap=RULE_SETS['champions']['pp_cap']):
     """A move of the whole pool that no step has handled: parsed in the lenient mode. Everything that the tables
     model is encoded as parse_move encodes it; a move with any unmodelled feature gets the UNMODELED handler, its effect
     columns neutral (a refused row claims nothing beyond its plain data: type, category, power, accuracy, PP,
     priority, target class, crit ratio, flags, recoil and drain), and the list of its features."""
     features = []
-    rec = parse_move(mid, moves_ts, champ_moves, pool=True, unmodeled=features)
+    rec = parse_move(mid, moves_ts, champ_moves, pool=True, unmodeled=features, pp_cap=pp_cap)
     rec['unmodeled'] = sorted(set(features))
     if rec['unmodeled']:
         rec.update(sec_chance=0, sec_kind=0, sec_param=0, boost_role=0, boosts=[0] * 7, primary_status=0,
