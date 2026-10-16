@@ -1,0 +1,92 @@
+{
+ "ctest_reference_diff": {
+  "failed": 0,
+  "passed": 8,
+  "tests": [
+   "diff_replay",
+   "diff_random_smoke",
+   "diff_domain_smoke",
+   "diff_team_smoke",
+   "diff_pool_smoke",
+   "diff_wide_guard_smoke",
+   "diff_random",
+   "diff_corpus"
+  ]
+ },
+ "diff_corpus": {
+  "battles": 64,
+  "buckets": {
+   "DIVERGENCE": 0,
+   "ORACLE_GAP": 0,
+   "PASS": 64,
+   "REF_ERROR": 0,
+   "UNSUPPORTED": 0
+  },
+  "git_head": "6ae1d27b6de89ba8dc8e02386e5467bf59df0b9d",
+  "mode": "corpus",
+  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc"
+ },
+ "diff_random_seed_1016": {
+  "battles": 400,
+  "buckets": {
+   "CAP": 0,
+   "DIVERGENCE": 0,
+   "ORACLE_GAP": 0,
+   "PASS": 400,
+   "REF_ERROR": 0,
+   "UNSUPPORTED": 0
+  },
+  "domain": {
+   "agreed": 1277,
+   "rate": 0.1,
+   "request_changed": 0,
+   "samples": 1277
+  },
+  "git_head": "6ae1d27b6de89ba8dc8e02386e5467bf59df0b9d",
+  "harness": 14,
+  "library_version": "0.45.0",
+  "node": "v22.22.0",
+  "pairings": [
+   "DE",
+   "ED",
+   "DF",
+   "FD",
+   "EF",
+   "FE",
+   "DA",
+   "AE"
+  ],
+  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+  "policy": {
+   "max_steps": 300,
+   "mega_weight": 0.5,
+   "switch_weight": 0.1
+  },
+  "seed": 1016
+ },
+ "diff_replay": {
+  "battles": 1208,
+  "buckets": {
+   "DIVERGENCE": 0,
+   "ORACLE_GAP": 0,
+   "PASS": 1208,
+   "REF_ERROR": 0,
+   "UNSUPPORTED": 0
+  },
+  "git_head": "6ae1d27b6de89ba8dc8e02386e5467bf59df0b9d",
+  "mode": "replay",
+  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc"
+ },
+ "first_proof_head_30d5bdb": {
+  "ctest_reference_diff": "8/8",
+  "diff_corpus": "64/64 PASS",
+  "diff_random_seed_1016": "400/400 PASS, 1277/1277 domain samples",
+  "diff_replay": "1197/1197 PASS"
+ },
+ "teams": {
+  "A": "registry A",
+  "D": "tests/reference/teams/team_g34.txt",
+  "E": "tests/reference/teams/team_g34b.txt",
+  "F": "tests/reference/teams/team_aurora_veil.txt"
+ }
+}
