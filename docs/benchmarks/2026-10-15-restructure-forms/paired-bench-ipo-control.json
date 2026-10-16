@@ -1,0 +1,3295 @@
+{
+  "binaries": {
+    "after": {
+      "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+      "dirty": false,
+      "path": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofF/before/bins-ipo/duoforge_bench",
+      "sha256": "27a08c5ea3e0fca79ff4fff5b2b8af8a9605b7f1269305134827975a82b30d52"
+    },
+    "before": {
+      "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+      "dirty": false,
+      "path": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofF/before/bins-ipo/duoforge_bench",
+      "sha256": "27a08c5ea3e0fca79ff4fff5b2b8af8a9605b7f1269305134827975a82b30d52"
+    }
+  },
+  "choices": [
+    {
+      "choices": 65833,
+      "leads": [
+        1378,
+        1321,
+        1329,
+        1359,
+        1382,
+        1423
+      ],
+      "megas": 3369,
+      "move_uses": {
+        "0": 1534,
+        "1": 1545,
+        "10": 5579,
+        "11": 3370,
+        "12": 3410,
+        "13": 3354,
+        "14": 1106,
+        "15": 2055,
+        "16": 2072,
+        "17": 1035,
+        "18": 3194,
+        "19": 1071,
+        "2": 918,
+        "20": 5148,
+        "21": 2313,
+        "22": 2308,
+        "23": 2339,
+        "24": 3229,
+        "25": 5380,
+        "26": 1208,
+        "27": 2949,
+        "28": 2861,
+        "29": 942,
+        "3": 1570,
+        "30": 914,
+        "31": 2609,
+        "32": 2713,
+        "33": 903,
+        "34": 898,
+        "35": 2638,
+        "4": 2112,
+        "5": 2108,
+        "6": 707,
+        "7": 8048,
+        "8": 1909,
+        "9": 1114
+      },
+      "moves": 87178,
+      "passes": 10883,
+      "replacements": 8388,
+      "side": 0,
+      "slot_commands": 115896,
+      "struggles": 15,
+      "switches": 9447,
+      "target_ally": 22321,
+      "target_foe": 44987,
+      "target_none": 19870,
+      "team_selections": 4096
+    },
+    {
+      "choices": 65888,
+      "leads": [
+        1342,
+        1383,
+        1385,
+        1305,
+        1381,
+        1396
+      ],
+      "megas": 3395,
+      "move_uses": {
+        "0": 1467,
+        "1": 1461,
+        "10": 5703,
+        "11": 3472,
+        "12": 3232,
+        "13": 3263,
+        "14": 1089,
+        "15": 2158,
+        "16": 2066,
+        "17": 1058,
+        "18": 3139,
+        "19": 1049,
+        "2": 900,
+        "20": 4974,
+        "21": 2311,
+        "22": 2314,
+        "23": 2337,
+        "24": 3494,
+        "25": 5443,
+        "26": 1243,
+        "27": 2917,
+        "28": 2911,
+        "29": 923,
+        "3": 1460,
+        "30": 871,
+        "31": 2824,
+        "32": 2670,
+        "33": 929,
+        "34": 850,
+        "35": 2648,
+        "4": 2130,
+        "5": 2165,
+        "6": 716,
+        "7": 8203,
+        "8": 1865,
+        "9": 1138
+      },
+      "moves": 87410,
+      "passes": 10633,
+      "replacements": 8454,
+      "side": 1,
+      "slot_commands": 115931,
+      "struggles": 17,
+      "switches": 9434,
+      "target_ally": 22557,
+      "target_foe": 44902,
+      "target_none": 19951,
+      "team_selections": 4096
+    }
+  ],
+  "elapsed_seconds": 2167.53293132782,
+  "manifests": {
+    "after": {
+      "affinity": "none",
+      "battle_seed": 7001,
+      "battles_per_pairing": 1024,
+      "build_type": "Release",
+      "c_flags": "-O3 -DNDEBUG",
+      "compiler": "GNU 13.3.0",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz; logical processors 4",
+      "dirty": false,
+      "engine": "duoforge 0.45.0",
+      "ipo": true,
+      "max_steps": 128,
+      "os": "linux",
+      "pairings": [
+        "A-B",
+        "B-A",
+        "A-A",
+        "B-B"
+      ],
+      "policy": "uniform random over candidates (splitmix64)",
+      "policy_seed": 20261001,
+      "repetitions": 3,
+      "revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+      "started_utc": "2026-10-15T23:37:49Z",
+      "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+      "warmup": 2,
+      "workers": 1,
+      "workload": "closure-pairings-v1"
+    },
+    "before": {
+      "affinity": "none",
+      "battle_seed": 7001,
+      "battles_per_pairing": 1024,
+      "build_type": "Release",
+      "c_flags": "-O3 -DNDEBUG",
+      "compiler": "GNU 13.3.0",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz; logical processors 4",
+      "dirty": false,
+      "engine": "duoforge 0.45.0",
+      "ipo": true,
+      "max_steps": 128,
+      "os": "linux",
+      "pairings": [
+        "A-B",
+        "B-A",
+        "A-A",
+        "B-B"
+      ],
+      "policy": "uniform random over candidates (splitmix64)",
+      "policy_seed": 20261001,
+      "repetitions": 3,
+      "revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+      "started_utc": "2026-10-15T23:37:41Z",
+      "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+      "warmup": 2,
+      "workers": 1,
+      "workload": "closure-pairings-v1"
+    }
+  },
+  "protocol": {
+    "battles_per_pairing": 1024,
+    "bootstrap": "20000 paired-resample medians, seed 20261012, percentile 95% CI",
+    "cgroup_cpu_max": "n/a (no cpu.max)",
+    "cpu_affinity": [
+      3
+    ],
+    "ipo": "on",
+    "numeric_gate": "median after/before time <=1.02; baseline spread and identical-binary control spread reported separately",
+    "order": "rotate the four change/control/mode pairs through four positions each round; AB odd rounds / BA even rounds; all samples retained",
+    "repetitions": 3,
+    "rounds": 32,
+    "warmup": 2
+  },
+  "record": {
+    "battles": 4096,
+    "errors": 0,
+    "side_decisions": 131721,
+    "steps": 73337,
+    "truncations": 0,
+    "turns": 53625
+  },
+  "rounds": [
+    {
+      "comparison_position": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              585881929,
+              603864217,
+              598366269
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 599998691,
+            "wall_ns": [
+              594948236,
+              608182721,
+              599998691
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              590472417,
+              599933867,
+              538095640
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 591701310,
+            "wall_ns": [
+              591701310,
+              609634502,
+              548179724
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              579332730,
+              583295724,
+              599578684
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 592886573,
+            "wall_ns": [
+              592886573,
+              590584893,
+              608181487
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              549115042,
+              527943840,
+              546541372
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 549998367,
+            "wall_ns": [
+              549998367,
+              529809927,
+              550899099
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 1,
+      "time_ratios": {
+        "events": 1.011995748131068,
+        "plain": 1.0758237578549028
+      }
+    },
+    {
+      "comparison_position": 0,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              596219843,
+              607552259,
+              585862812
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 606844978,
+            "wall_ns": [
+              606844978,
+              618148710,
+              591939543
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              545454461,
+              569876002,
+              593492530
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 578438447,
+            "wall_ns": [
+              563849153,
+              578438447,
+              600496608
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              556975690,
+              553809288,
+              575589824
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 557242376,
+            "wall_ns": [
+              557242376,
+              554381428,
+              575661686
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              577553740,
+              561148183,
+              549807511
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 565882793,
+            "wall_ns": [
+              585123612,
+              565882793,
+              551490745
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 2,
+      "time_ratios": {
+        "events": 1.0890144112083824,
+        "plain": 1.0221877288995427
+      }
+    },
+    {
+      "comparison_position": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              575809731,
+              545497010,
+              570786419
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 583085531,
+            "wall_ns": [
+              583085531,
+              552122194,
+              593482151
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              557466986,
+              568209028,
+              617316290
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 572348587,
+            "wall_ns": [
+              560212396,
+              572348587,
+              628389520
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              565006768,
+              598879754,
+              609082924
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 614176367,
+            "wall_ns": [
+              568042885,
+              614176367,
+              622683964
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              627882180,
+              580591115,
+              557500145
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 581617570,
+            "wall_ns": [
+              636209473,
+              581617570,
+              560397883
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 3,
+      "time_ratios": {
+        "events": 0.949378000081856,
+        "plain": 0.9840634405181398
+      }
+    },
+    {
+      "comparison_position": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              596888430,
+              614190583,
+              561104479
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 608559228,
+            "wall_ns": [
+              608559228,
+              620393234,
+              566063057
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              568630193,
+              532692974,
+              534777892
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 536472474,
+            "wall_ns": [
+              575608779,
+              533921298,
+              536472474
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              565892956,
+              558165047,
+              547461198
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 562107302,
+            "wall_ns": [
+              565989346,
+              562107302,
+              551581027
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              544138715,
+              556682991,
+              610578011
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 559618641,
+            "wall_ns": [
+              552513774,
+              559618641,
+              628821968
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 4,
+      "time_ratios": {
+        "events": 1.0826388944507965,
+        "plain": 0.9586393924286736
+      }
+    },
+    {
+      "comparison_position": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              565384905,
+              595281184,
+              611068775
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 601721190,
+            "wall_ns": [
+              565864907,
+              601721190,
+              626464996
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              556035508,
+              527810184,
+              552720032
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 555008825,
+            "wall_ns": [
+              567320520,
+              528122930,
+              555008825
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              565235481,
+              574378343,
+              574170968
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 578644035,
+            "wall_ns": [
+              567749151,
+              578644035,
+              581075052
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              553951255,
+              579266699,
+              603748316
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 591442553,
+            "wall_ns": [
+              562144406,
+              591442553,
+              614025850
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 5,
+      "time_ratios": {
+        "events": 1.0398814359159514,
+        "plain": 0.9383985345403445
+      }
+    },
+    {
+      "comparison_position": 0,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              573285417,
+              577323618,
+              558703361
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 575467339,
+            "wall_ns": [
+              575467339,
+              578321214,
+              568714735
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              577272899,
+              589653921,
+              580167153
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 580189763,
+            "wall_ns": [
+              577420488,
+              589735649,
+              580189763
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              597698240,
+              576571728,
+              538358291
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 576715212,
+            "wall_ns": [
+              608949791,
+              576715212,
+              538539168
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              534750212,
+              532088646,
+              565452219
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 541219798,
+            "wall_ns": [
+              541219798,
+              534009923,
+              567528825
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 6,
+      "time_ratios": {
+        "events": 0.9978362405325282,
+        "plain": 1.072003953188719
+      }
+    },
+    {
+      "comparison_position": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              626770082,
+              597778736,
+              572542399
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 602389951,
+            "wall_ns": [
+              630664473,
+              602389951,
+              572597888
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              563198442,
+              545110021,
+              554034690
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 554504642,
+            "wall_ns": [
+              563717910,
+              546625703,
+              554504642
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              612291620,
+              621334042,
+              584169346
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 613300244,
+            "wall_ns": [
+              613300244,
+              623165076,
+              585177516
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              568296940,
+              601889772,
+              552618682
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 580323720,
+            "wall_ns": [
+              580323720,
+              607353148,
+              552752383
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 7,
+      "time_ratios": {
+        "events": 0.9822105190618512,
+        "plain": 0.955509180289925
+      }
+    },
+    {
+      "comparison_position": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              586994654,
+              562560886,
+              566209387
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 567829737,
+            "wall_ns": [
+              589059364,
+              562823696,
+              567829737
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              542867744,
+              560107789,
+              554411064
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 555346833,
+            "wall_ns": [
+              547526061,
+              563983548,
+              555346833
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              658576778,
+              621032544,
+              594478605
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 622514145,
+            "wall_ns": [
+              661687316,
+              622514145,
+              595357969
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              562800452,
+              537834819,
+              561716159
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 564676278,
+            "wall_ns": [
+              564676278,
+              543703627,
+              566926110
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 8,
+      "time_ratios": {
+        "events": 0.9121555575255241,
+        "plain": 0.9834782416696456
+      }
+    },
+    {
+      "comparison_position": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              591923588,
+              575418444,
+              562748133
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 575483566,
+            "wall_ns": [
+              592356251,
+              575483566,
+              563074092
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              544916381,
+              551837093,
+              554140051
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 551966281,
+            "wall_ns": [
+              545006680,
+              551966281,
+              554286921
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              566696843,
+              568444377,
+              624807605
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 577979195,
+            "wall_ns": [
+              568992745,
+              577979195,
+              628660834
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              544886011,
+              554233994,
+              543277015
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 550663741,
+            "wall_ns": [
+              546988621,
+              558126397,
+              550663741
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 9,
+      "time_ratios": {
+        "events": 0.9956821473478816,
+        "plain": 1.0023653999764621
+      }
+    },
+    {
+      "comparison_position": 0,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              588602962,
+              584453045,
+              569652782
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 597282384,
+            "wall_ns": [
+              597282384,
+              599447848,
+              569776520
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              602822526,
+              614822622,
+              626199266
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 623830846,
+            "wall_ns": [
+              606356536,
+              623830846,
+              634870229
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              559026835,
+              556721211,
+              559587494
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 559415393,
+            "wall_ns": [
+              559415393,
+              556905315,
+              559758542
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              561035812,
+              553290867,
+              586711167
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 565230273,
+            "wall_ns": [
+              565230273,
+              555492154,
+              594768005
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 10,
+      "time_ratios": {
+        "events": 1.0676902914611075,
+        "plain": 1.1036755740080468
+      }
+    },
+    {
+      "comparison_position": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              546992243,
+              566849858,
+              558202123
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 565060586,
+            "wall_ns": [
+              565060586,
+              583656397,
+              561314792
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              636067705,
+              566655004,
+              601109835
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 613411050,
+            "wall_ns": [
+              638860216,
+              570379334,
+              613411050
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              624562817,
+              624110194,
+              600802265
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 627593140,
+            "wall_ns": [
+              627593140,
+              633088779,
+              603032646
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              618667751,
+              551837740,
+              523323068
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 566541899,
+            "wall_ns": [
+              624170243,
+              566541899,
+              525665052
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 11,
+      "time_ratios": {
+        "events": 0.9003613168875619,
+        "plain": 1.0827284814816494
+      }
+    },
+    {
+      "comparison_position": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              606211515,
+              614024653,
+              582428221
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 607023967,
+            "wall_ns": [
+              607023967,
+              657174730,
+              583144939
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              554998508,
+              578255639,
+              571483736
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 577237260,
+            "wall_ns": [
+              562250738,
+              587995326,
+              577237260
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              574343525,
+              599713261,
+              604604939
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 604573176,
+            "wall_ns": [
+              580236461,
+              604573176,
+              614730996
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              550730546,
+              562647432,
+              603911483
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 568712541,
+            "wall_ns": [
+              550918130,
+              568712541,
+              630001855
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 12,
+      "time_ratios": {
+        "events": 1.0040537541149526,
+        "plain": 1.0149895041614705
+      }
+    },
+    {
+      "comparison_position": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              550839188,
+              546187684,
+              592102446
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 550992449,
+            "wall_ns": [
+              550992449,
+              546612825,
+              593013392
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              578325897,
+              558791637,
+              527498602
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 559264834,
+            "wall_ns": [
+              590176993,
+              559264834,
+              528028815
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              564138975,
+              540083785,
+              604832835
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 565115066,
+            "wall_ns": [
+              565115066,
+              541287682,
+              606499340
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              517594006,
+              536199278,
+              538078478
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 537118653,
+            "wall_ns": [
+              517691610,
+              537118653,
+              538496191
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 13,
+      "time_ratios": {
+        "events": 0.9750093072195672,
+        "plain": 1.0412314502136644
+      }
+    },
+    {
+      "comparison_position": 0,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              542221359,
+              561482195,
+              546535539
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 546560990,
+            "wall_ns": [
+              542500780,
+              561920781,
+              546560990
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              620669288,
+              559535684,
+              610223024
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 612887924,
+            "wall_ns": [
+              623022308,
+              561237353,
+              612887924
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              649671683,
+              562119280,
+              616639584
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 622108545,
+            "wall_ns": [
+              652247965,
+              564021985,
+              622108545
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              572128653,
+              565502250,
+              571257220
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 571368072,
+            "wall_ns": [
+              572881565,
+              565689903,
+              571368072
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 14,
+      "time_ratios": {
+        "events": 0.8785621004450277,
+        "plain": 1.07266743459197
+      }
+    },
+    {
+      "comparison_position": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              583197972,
+              600361727,
+              565610156
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 600867798,
+            "wall_ns": [
+              589105545,
+              600867798,
+              608080915
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              597107033,
+              630947895,
+              579708672
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 602861457,
+            "wall_ns": [
+              602861457,
+              631482143,
+              583761513
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              618630771,
+              566677401,
+              587835612
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 592526473,
+            "wall_ns": [
+              635144738,
+              569902612,
+              592526473
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              602303818,
+              622078150,
+              645839457
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 631554250,
+            "wall_ns": [
+              607577265,
+              631554250,
+              648354981
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 15,
+      "time_ratios": {
+        "events": 1.0140775566664006,
+        "plain": 0.9545679678349088
+      }
+    },
+    {
+      "comparison_position": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              554495232,
+              685884424,
+              646220941
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 663584238,
+            "wall_ns": [
+              564667071,
+              688169785,
+              663584238
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              563484322,
+              562546153,
+              581806624
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 566268849,
+            "wall_ns": [
+              563718176,
+              566268849,
+              582950744
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              607339826,
+              681115082,
+              602658372
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 613143027,
+            "wall_ns": [
+              613143027,
+              695039895,
+              605425223
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              568123757,
+              561110399,
+              545458084
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 563659180,
+            "wall_ns": [
+              573739933,
+              563659180,
+              548261584
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 16,
+      "time_ratios": {
+        "events": 1.0822666307513924,
+        "plain": 1.0046298704830816
+      }
+    },
+    {
+      "comparison_position": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              596240283,
+              598488889,
+              544073442
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 600003752,
+            "wall_ns": [
+              609175916,
+              600003752,
+              546391372
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              604369974,
+              565616799,
+              634356515
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 607006137,
+            "wall_ns": [
+              607006137,
+              569377921,
+              639903710
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              579705728,
+              592463648,
+              579268606
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 585570501,
+            "wall_ns": [
+              580107837,
+              592597192,
+              585570501
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              533036593,
+              519185247,
+              552280067
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 533251994,
+            "wall_ns": [
+              533251994,
+              519318610,
+              556628321
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 17,
+      "time_ratios": {
+        "events": 1.024648186640809,
+        "plain": 1.1383101119730648
+      }
+    },
+    {
+      "comparison_position": 0,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              625949055,
+              599367507,
+              588770096
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 600964279,
+            "wall_ns": [
+              627551167,
+              600964279,
+              594846370
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              542214482,
+              557208457,
+              535922564
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 542408229,
+            "wall_ns": [
+              542408229,
+              557370018,
+              536084574
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              635092318,
+              614577276,
+              560365438
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 620047612,
+            "wall_ns": [
+              649850735,
+              620047612,
+              563751128
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              566556660,
+              536333147,
+              586208701
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 567380271,
+            "wall_ns": [
+              567380271,
+              536664477,
+              588307889
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 18,
+      "time_ratios": {
+        "events": 0.969222794136009,
+        "plain": 0.9559871160906122
+      }
+    },
+    {
+      "comparison_position": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              564140050,
+              563761157,
+              569674576
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 569049853,
+            "wall_ns": [
+              566129955,
+              569049853,
+              570404734
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              529984009,
+              550325268,
+              532872514
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 533551820,
+            "wall_ns": [
+              530463795,
+              550655859,
+              533551820
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              606075232,
+              564468115,
+              548292170
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 568369840,
+            "wall_ns": [
+              651222534,
+              568369840,
+              548345141
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              564583719,
+              578937949,
+              579306367
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 585023053,
+            "wall_ns": [
+              567193589,
+              585023053,
+              586862035
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 19,
+      "time_ratios": {
+        "events": 1.0011964269603046,
+        "plain": 0.9120184533993057
+      }
+    },
+    {
+      "comparison_position": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              582307809,
+              568264865,
+              547823823
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 580697012,
+            "wall_ns": [
+              590437168,
+              580697012,
+              550032828
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              562451558,
+              529911484,
+              576973404
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 566185205,
+            "wall_ns": [
+              566185205,
+              529993465,
+              580432414
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              579104033,
+              567950960,
+              541498084
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 572482437,
+            "wall_ns": [
+              590013066,
+              572482437,
+              542419402
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              574538959,
+              585022187,
+              530233966
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 591298205,
+            "wall_ns": [
+              617565410,
+              591298205,
+              530317922
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 20,
+      "time_ratios": {
+        "events": 1.014349042816138,
+        "plain": 0.9575290440802201
+      }
+    },
+    {
+      "comparison_position": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              570758826,
+              628010810,
+              554697591
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 571285480,
+            "wall_ns": [
+              571285480,
+              631030578,
+              555121227
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              588829652,
+              545319864,
+              561311025
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 561345099,
+            "wall_ns": [
+              589164014,
+              545826467,
+              561345099
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              649905732,
+              581788549,
+              575878849
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 584530931,
+            "wall_ns": [
+              653351155,
+              584530931,
+              581309970
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              555625566,
+              532795513,
+              545637251
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 545726866,
+            "wall_ns": [
+              560523292,
+              538065465,
+              545726866
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 21,
+      "time_ratios": {
+        "events": 0.9773400340383356,
+        "plain": 1.0286191389375359
+      }
+    },
+    {
+      "comparison_position": 0,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              612235737,
+              603531271,
+              576082424
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 609077808,
+            "wall_ns": [
+              620155213,
+              609077808,
+              577152029
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              548721219,
+              562093810,
+              562993545
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 564613717,
+            "wall_ns": [
+              548798880,
+              568248924,
+              564613717
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              585920893,
+              589272155,
+              704088062
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 591113785,
+            "wall_ns": [
+              586551358,
+              591113785,
+              704994381
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              565186138,
+              565433863,
+              589897531
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 572475666,
+            "wall_ns": [
+              572475666,
+              566234133,
+              593921610
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 22,
+      "time_ratios": {
+        "events": 1.030390127004059,
+        "plain": 0.986266754262355
+      }
+    },
+    {
+      "comparison_position": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              542201200,
+              537074196,
+              653830135
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 542747718,
+            "wall_ns": [
+              542747718,
+              538118547,
+              654261431
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              542017698,
+              613641873,
+              528585082
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 545423105,
+            "wall_ns": [
+              545423105,
+              618416779,
+              529192445
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              605162185,
+              557924037,
+              608654308
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 609116153,
+            "wall_ns": [
+              620525881,
+              560404671,
+              609116153
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              586234391,
+              611001823,
+              535186074
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 589221124,
+            "wall_ns": [
+              589221124,
+              616542480,
+              536266397
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 23,
+      "time_ratios": {
+        "events": 0.8910414135742022,
+        "plain": 0.9256679415994596
+      }
+    },
+    {
+      "comparison_position": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              620463191,
+              586283236,
+              602593823
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 607810601,
+            "wall_ns": [
+              622715398,
+              594426400,
+              607810601
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              557313412,
+              539257530,
+              529587729
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 542219356,
+            "wall_ns": [
+              558261871,
+              542219356,
+              530446949
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              587098504,
+              648510282,
+              584990559
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 591807459,
+            "wall_ns": [
+              591807459,
+              652535113,
+              588819348
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              552310937,
+              600386928,
+              640526093
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 618071477,
+            "wall_ns": [
+              553764065,
+              618071477,
+              653458594
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 24,
+      "time_ratios": {
+        "events": 1.0270411292670105,
+        "plain": 0.8772761341970162
+      }
+    },
+    {
+      "comparison_position": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              592931187,
+              745763396,
+              756474256
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 765030474,
+            "wall_ns": [
+              595633507,
+              765030474,
+              765899521
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              598204979,
+              645303733,
+              578054654
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 607670403,
+            "wall_ns": [
+              607670403,
+              651783708,
+              579385992
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              581268692,
+              609695707,
+              585583404
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 588866276,
+            "wall_ns": [
+              586956566,
+              638223153,
+              588866276
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              543025498,
+              562874123,
+              564017809
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 564039794,
+            "wall_ns": [
+              543958140,
+              564039794,
+              565659838
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 25,
+      "time_ratios": {
+        "events": 1.2991582387713438,
+        "plain": 1.0773537779853881
+      }
+    },
+    {
+      "comparison_position": 0,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              565920801,
+              590027625,
+              586710329
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 587370490,
+            "wall_ns": [
+              566859381,
+              590799186,
+              587370490
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              551570250,
+              566427523,
+              597805596
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 573965410,
+            "wall_ns": [
+              552036124,
+              573965410,
+              607473766
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              574673179,
+              573925401,
+              557915768
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 574093326,
+            "wall_ns": [
+              574746755,
+              574093326,
+              558086874
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              591834016,
+              534597978,
+              554239026
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 560577952,
+            "wall_ns": [
+              593738746,
+              540686144,
+              560577952
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 26,
+      "time_ratios": {
+        "events": 1.0231271875123662,
+        "plain": 1.02388152789855
+      }
+    },
+    {
+      "comparison_position": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              549365272,
+              548218068,
+              555200719
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 549611331,
+            "wall_ns": [
+              549611331,
+              548729592,
+              555311913
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              576601595,
+              546418047,
+              551076727
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 562213617,
+            "wall_ns": [
+              581029560,
+              547413172,
+              562213617
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              597653686,
+              568223186,
+              598573702
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 601728876,
+            "wall_ns": [
+              618857920,
+              575199399,
+              601728876
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              539795069,
+              532019581,
+              562495757
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 541750621,
+            "wall_ns": [
+              541750621,
+              534096003,
+              564638215
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 27,
+      "time_ratios": {
+        "events": 0.9133869969039012,
+        "plain": 1.0377719843905817
+      }
+    },
+    {
+      "comparison_position": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              625547534,
+              613019560,
+              604044618
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 622610250,
+            "wall_ns": [
+              644482786,
+              622610250,
+              606968877
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              557522995,
+              646418084,
+              605879823
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 613764806,
+            "wall_ns": [
+              558620858,
+              659219193,
+              613764806
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              614099774,
+              572242078,
+              653847745
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 618138451,
+            "wall_ns": [
+              618138451,
+              574465463,
+              661080668
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              591787131,
+              575555681,
+              582932248
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 584201615,
+            "wall_ns": [
+              614999953,
+              582742658,
+              584201615
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 28,
+      "time_ratios": {
+        "events": 1.0072343000063588,
+        "plain": 1.0506044321702193
+      }
+    },
+    {
+      "comparison_position": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              599655116,
+              606945500,
+              619777903
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 619560246,
+            "wall_ns": [
+              603912677,
+              619560246,
+              620730647
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              652998089,
+              638183376,
+              607031280
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 652662190,
+            "wall_ns": [
+              654779374,
+              652662190,
+              611382016
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              672175882,
+              650571399,
+              562764373
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 654178260,
+            "wall_ns": [
+              681695802,
+              654178260,
+              563714415
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              544508973,
+              546917740,
+              555590553
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 547930753,
+            "wall_ns": [
+              545951140,
+              547930753,
+              558164699
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 29,
+      "time_ratios": {
+        "events": 0.9470816807638945,
+        "plain": 1.191139913988365
+      }
+    },
+    {
+      "comparison_position": 0,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              549804225,
+              554724234,
+              546848846
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 558290840,
+            "wall_ns": [
+              550282523,
+              560058989,
+              558290840
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              562005092,
+              604794213,
+              544105696
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 566385077,
+            "wall_ns": [
+              566385077,
+              611892652,
+              545005553
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              570632296,
+              600155149,
+              573545428
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 573774321,
+            "wall_ns": [
+              571802058,
+              602680846,
+              573774321
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              553227041,
+              545379997,
+              624722316
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 556754358,
+            "wall_ns": [
+              556754358,
+              552300536,
+              639773732
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 30,
+      "time_ratios": {
+        "events": 0.9730146846359128,
+        "plain": 1.0172979678768854
+      }
+    },
+    {
+      "comparison_position": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              623716928,
+              609037404,
+              602171980
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 610896444,
+            "wall_ns": [
+              624224415,
+              610896444,
+              603686523
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              606271089,
+              597948799,
+              539048086
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 617122947,
+            "wall_ns": [
+              617122947,
+              624396245,
+              541461277
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              539996907,
+              553862452,
+              548805347
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 549080660,
+            "wall_ns": [
+              540638951,
+              554030464,
+              549080660
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              588736828,
+              583345102,
+              561841897
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 589870878,
+            "wall_ns": [
+              589870878,
+              608900499,
+              564180885
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 31,
+      "time_ratios": {
+        "events": 1.1125805159482398,
+        "plain": 1.046200058379556
+      }
+    },
+    {
+      "comparison_position": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "profiles": {
+        "after": {
+          "events": {
+            "cpu_ns": [
+              634989950,
+              575248741,
+              627296016
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 627804263,
+            "wall_ns": [
+              645980115,
+              576808098,
+              627804263
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              637261172,
+              561669271,
+              591383444
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 596415350,
+            "wall_ns": [
+              653097906,
+              563880979,
+              596415350
+            ]
+          }
+        },
+        "before": {
+          "events": {
+            "cpu_ns": [
+              550973753,
+              560220439,
+              542637679
+            ],
+            "disturbed": 0,
+            "errors": 0,
+            "median_wall_ns": 551189921,
+            "wall_ns": [
+              551189921,
+              561128821,
+              548115272
+            ]
+          },
+          "plain": {
+            "cpu_ns": [
+              560553743,
+              625823550,
+              643324646
+            ],
+            "disturbed": 1,
+            "errors": 0,
+            "median_wall_ns": 651527496,
+            "wall_ns": [
+              651527496,
+              629535538,
+              655520818
+            ]
+          }
+        }
+      },
+      "provenance": {
+        "after": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        },
+        "before": {
+          "commit": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "compiled_revision": "342770b35837a5dc82b11134bd7ec62abb0105d4",
+          "dirty": false
+        }
+      },
+      "round": 32,
+      "time_ratios": {
+        "events": 1.138998082296211,
+        "plain": 0.9154108670188802
+      }
+    }
+  ],
+  "summaries": {
+    "events": {
+      "after_median_ms": 600.0012215,
+      "after_sample_ms": [
+        599.998691,
+        606.844978,
+        583.085531,
+        608.559228,
+        601.72119,
+        575.467339,
+        602.389951,
+        567.829737,
+        575.483566,
+        597.282384,
+        565.060586,
+        607.023967,
+        550.992449,
+        546.56099,
+        600.867798,
+        663.584238,
+        600.003752,
+        600.964279,
+        569.049853,
+        580.697012,
+        571.28548,
+        609.077808,
+        542.747718,
+        607.810601,
+        765.030474,
+        587.37049,
+        549.611331,
+        622.61025,
+        619.560246,
+        558.29084,
+        610.896444,
+        627.804263
+      ],
+      "baseline_median_ms": 589.9900305,
+      "baseline_relative_spread": [
+        0.9306609122440078,
+        1.1087954476885011
+      ],
+      "baseline_sample_ms": [
+        592.886573,
+        557.242376,
+        614.176367,
+        562.107302,
+        578.644035,
+        576.715212,
+        613.300244,
+        622.514145,
+        577.979195,
+        559.415393,
+        627.59314,
+        604.573176,
+        565.115066,
+        622.108545,
+        592.526473,
+        613.143027,
+        585.570501,
+        620.047612,
+        568.36984,
+        572.482437,
+        584.530931,
+        591.113785,
+        609.116153,
+        591.807459,
+        588.866276,
+        574.093326,
+        601.728876,
+        618.138451,
+        654.17826,
+        573.774321,
+        549.08066,
+        551.189921
+      ],
+      "change_percent": 0.5644027060655699,
+      "disturbed_repetitions": {
+        "after": 0,
+        "before": 0
+      },
+      "median_loss_at_most_2_percent": true,
+      "median_throughput_ratio": 0.9943876491991382,
+      "median_time_ratio": 1.0056440270606557,
+      "paired_bootstrap_95ci": [
+        0.9786099131407092,
+        1.024648186640809
+      ],
+      "ratio_range": [
+        0.8785621004450277,
+        1.2991582387713438
+      ],
+      "within_baseline_spread": true
+    },
+    "plain": {
+      "after_median_ms": 569.366832,
+      "after_sample_ms": [
+        591.70131,
+        578.438447,
+        572.348587,
+        536.472474,
+        555.008825,
+        580.189763,
+        554.504642,
+        555.346833,
+        551.966281,
+        623.830846,
+        613.41105,
+        577.23726,
+        559.264834,
+        612.887924,
+        602.861457,
+        566.268849,
+        607.006137,
+        542.408229,
+        533.55182,
+        566.185205,
+        561.345099,
+        564.613717,
+        545.423105,
+        542.219356,
+        607.670403,
+        573.96541,
+        562.213617,
+        613.764806,
+        652.66219,
+        566.385077,
+        617.122947,
+        596.41535
+      ],
+      "baseline_median_ms": 566.212346,
+      "baseline_relative_spread": [
+        0.9417880019168638,
+        1.1506769511521742
+      ],
+      "baseline_sample_ms": [
+        549.998367,
+        565.882793,
+        581.61757,
+        559.618641,
+        591.442553,
+        541.219798,
+        580.32372,
+        564.676278,
+        550.663741,
+        565.230273,
+        566.541899,
+        568.712541,
+        537.118653,
+        571.368072,
+        631.55425,
+        563.65918,
+        533.251994,
+        567.380271,
+        585.023053,
+        591.298205,
+        545.726866,
+        572.475666,
+        589.221124,
+        618.071477,
+        564.039794,
+        560.577952,
+        541.750621,
+        584.201615,
+        547.930753,
+        556.754358,
+        589.870878,
+        651.527496
+      ],
+      "change_percent": 1.6143736019178068,
+      "disturbed_repetitions": {
+        "after": 0,
+        "before": 1
+      },
+      "median_loss_at_most_2_percent": true,
+      "median_throughput_ratio": 0.9841127436533512,
+      "median_time_ratio": 1.016143736019178,
+      "paired_bootstrap_95ci": [
+        0.9834782416696456,
+        1.0412314502136644
+      ],
+      "ratio_range": [
+        0.8772761341970162,
+        1.191139913988365
+      ],
+      "within_baseline_spread": true
+    }
+  }
+}
