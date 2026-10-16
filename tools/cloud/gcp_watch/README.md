@@ -2,7 +2,7 @@
 
 One spot VM that plays **one round of differential fuzz campaigns on the current head of `main` per boot**, uploads the
 results to a private bucket and powers itself off. It runs only when the owner's session starts it (no scheduler), so
-between rounds it costs a disk and nothing else. It reuses the campaigns of `tools/cloud/aws_fuzz/campaigns` and the
+between rounds it costs a disk and nothing else. It reuses the campaigns of `runs/fuzz` and the
 scheduler code `chunks.sh` (`campaign.conf` parser) of that directory; nothing else of the AWS tooling is needed.
 
 **Status: nothing here has been created.** `create.sh` without `--i-have-owner-approval` only prints the request. The

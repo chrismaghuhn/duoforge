@@ -33,10 +33,10 @@ runs/
 # the top-level runs/ holds the definitions of named runs (restructure step 8), never their outputs
 !/runs/
 /runs/**
-!/runs/*/
-!/runs/*/*/
-!/runs/*/*/campaign*.conf
-!/runs/*/*/*.txt
+!/runs/fuzz/
+!/runs/fuzz/*/
+!/runs/fuzz/*/campaign*.conf
+!/runs/fuzz/*/*.txt
 !/runs/README.md
 checkpoints/
 league/

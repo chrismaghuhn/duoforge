@@ -56,7 +56,7 @@ df_check_commit_on_main "$commit" "$campaign"
 # --- the campaign at that commit: a valid ladder conf (the same check the box makes, ladder_conf.py)
 conf=$(mktemp)
 trap 'rm -f "$conf"' EXIT
-if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then
+if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then  # the offline tests: the working copy's campaign
     df_campaign_conf "$commit" "$campaign" > "$conf" || df_die "campaign '$campaign' has no campaign.conf"
 else
     df_campaign_conf "$commit" "$campaign" > "$conf" || df_die "cannot read campaign.conf of '$campaign' at $commit"

@@ -3,6 +3,7 @@
 AGENTS.md: weights, checkpoints, league snapshots and run directories are private. This test fails if any tracked
 file looks like one, and if a workflow uploads CI artifacts (adding an upload needs the owner's decision).
 """
+import re
 import subprocess
 import unittest
 from pathlib import Path, PurePosixPath
@@ -15,12 +16,13 @@ RUN_STEMS = {"best", "latest"}
 
 
 def run_definition(p):
-    """runs/<kind>/<id>/campaign*.conf and its team texts (*.txt), and runs/README.md: the definitions of named runs
-    that the top-level runs/ holds (restructure step 8, HauptSession 2026-10-16). Their outputs never: a run's results,
-    a deeper directory or any other file under runs/ stays forbidden."""
+    """runs/fuzz/<id>/campaign*.conf and its team texts (*.txt), and runs/README.md: the definitions of named runs
+    that the top-level runs/ holds (restructure step 8, HauptSession 2026-10-16; fuzz campaigns are the only kind so
+    far). Their outputs never: a run's results, a deeper directory or any other file under runs/ stays forbidden, and
+    test_every_campaign_text_is_named_by_its_campaign keeps a stray *.txt out."""
     if p.parts == ("runs", "README.md"):
         return True
-    return (len(p.parts) == 4 and p.parts[0] == "runs"
+    return (len(p.parts) == 4 and p.parts[:2] == ("runs", "fuzz")
             and (p.name.startswith("campaign") and p.suffix == ".conf" or p.suffix == ".txt"))
 
 
@@ -51,8 +53,22 @@ class RepoHygieneTest(unittest.TestCase):
                      "runs/fuzz/g10-moves/out/campaign.conf", "runs/fuzz/g10-moves/2026-10-16/D.txt",
                      "runs/fuzz/campaign.conf", "runs/campaign.conf", "runs/fuzz/g10-moves/cases.tgz",
                      "runs/fuzz/g10-moves/params.npz", "runs/fuzz/g10-moves/best.txt", "runs/eval/x/games.jsonl",
+                     "runs/oracle/x/round.txt", "runs/oracle/x/campaign.conf",
                      "x/runs/fuzz/a/campaign.conf", "python/runs/fuzz/a/D.txt"):
             self.assertTrue(forbidden(path), path)
+
+    def test_every_campaign_text_is_named_by_its_campaign(self):
+        # a *.txt under runs/fuzz/<id>/ is a team of that campaign, named in one of its campaign*.conf: an output that
+        # happens to end in .txt (a round log, a report) is not a definition
+        tracked = subprocess.run(["git", "ls-files", "-z", "runs"], cwd=ROOT, capture_output=True, check=True).stdout
+        texts = [PurePosixPath(p) for p in tracked.decode("utf-8").split("\0") if p.endswith(".txt")]
+        self.assertTrue(texts)
+        stray = []
+        for text in texts:
+            confs = " ".join(c.read_text(encoding="utf-8") for c in (ROOT / text.parent).glob("campaign*.conf"))
+            if text.name not in re.split(r"[\s=,:]+", confs):  # teams=A=A.txt PP_..., foe_team=..., ...
+                stray.append(str(text))
+        self.assertEqual(stray, [], "a text under runs/fuzz/ that no campaign.conf of its directory names")
 
     def test_no_tracked_weights_or_run_outputs(self):
         tracked = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, capture_output=True, check=True).stdout
