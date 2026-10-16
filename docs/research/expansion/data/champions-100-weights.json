@@ -6464,7 +6464,7 @@
    "pin": "sim/battle-actions.ts:278-291 (deductPP before the move; locked moves use none), :467-484 (pressureTargets, DeductPP per target), sim/pokemon.ts:888-901 (deductPP, clamp at 0, used flag), data/abilities.ts:3437-3449 (Pressure onDeductPP 1 per foe)",
    "engine": "src/combat/turn.c:7561-7572 (deductPP, lockedmove skip), :7770-7781 and :6004-6040 (dfi_pressure_extra: targets after redirection, field moves and MUST_PRESSURE count every standing foe)",
    "evidence": "recorded: g53_single_target, g53_spread_protect, g53_expanding_force, g53_field_trick_room, g53_mustpressure (Imprison), g53_pressure_ally, g53_fainted_holder, g53_trace_pressure, g53_mega_pressure, g78_pressure2, o2_pressure_after_mega; g27_disable_pp",
-   "gap": "latent only: the `cant|X|nopp` path (turn.c:7567-7570) sets the false result but emits no line. No marked move can bring a chosen move to 0 PP before it runs (the request never offers a 0-PP move; Pressure drains after use), so it is unreachable today; Spite, Eerie Spell and Instruct (gaps in B6/C) make it reachable and must add the line. Snatch is not in the pool.",
+   "gap": "latent only: the `cant|X|nopp` path (turn.c:7567-7570) sets the false result but emits no line. No marked move can bring a chosen move to 0 PP before it runs (the request never offers a 0-PP move; Pressure drains after use), so it is unreachable today; Spite, Eerie Spell and Instruct (gaps in B6/C) make it reachable and must add the line. Snatch is not in the pool. HS 2026-10-16: the line is added together with Spite, Eerie Spell or Instruct (noted in their gap entries).",
    "area": "flow",
    "core": [
     "move_body"

@@ -540,7 +540,7 @@ family and dependencies. "(not in Champions OU)" marks the nine gaps outside the
 | `move:ficklebeam` | 24 | 4 | 118 | move | damage | M | maybe | random power doubling (Fickle Beam) — needs: new draw site |
 | `move:tidyup` | 24 | 4 | 119 | move | move_body | M | no | hazard/substitute clear (Tidy Up, Rapid Spin, Defog) — needs: Substitute (decision 0032) |
 | `move:dive` | 16 | 6 | 126 | move | move_body, damage, residual | M | maybe | two-turn semi-invulnerable (Fly, Bounce, Dig, Dive, Phantom Force) — needs: semi-invulnerable family generalised from Phantom Force |
-| `move:eeriespell` | 16 | 2 | 134 | move | move_body | M | maybe | PP reduction (Eerie Spell, Spite) |
+| `move:eeriespell` | 16 | 2 | 134 | move | move_body | M | maybe | PP reduction (Eerie Spell, Spite) — **with it: the `cant nopp` line** (turn.c:7567, section 11) |
 | `move:fellstinger` | 16 | 11 | 106 | move | move_body | M | no | after-hit self boost on KO (Fell Stinger, Moxie) |
 | `ability:effectspore` | 13 | 0 | 127 | ability | move_body | M | maybe | contact status retaliation (Static, Flame Body, Effect Spore) |
 | `move:shellsidearm` | 13 | 0 | 208 | move | move_body, damage | M | maybe | category by stats (Shell Side Arm) |
@@ -566,7 +566,7 @@ family and dependencies. "(not in Champions OU)" marks the nine gaps outside the
 | `move:axekick` | 0 | 0 | – | move | move_body, damage | M | no | crash damage (Axe Kick, High Jump Kick, Supercell Slam) |
 | `move:corrosivegas` | 0 | 0 | – | move | move_body | M | no | item removal (Knock Off, Corrosive Gas) |
 | `move:electrify` | 0 | 0 | – | move | move_body, damage | M | maybe | type-forcing volatile (Electrify, Ion Deluge) — needs: one-turn volatile bit (single_turn has free bits) |
-| `move:spite` | 0 | 0 | – | move | move_body | M | maybe | PP reduction (Spite) |
+| `move:spite` | 0 | 0 | – | move | move_body | M | maybe | PP reduction (Spite) — **with it: the `cant nopp` line** (turn.c:7567, section 11) |
 
 ### B7: Flow and residual hooks (M): Supreme Overlord, entry abilities, priority tiers, cures
 
@@ -640,7 +640,7 @@ family and dependencies. "(not in Champions OU)" marks the nine gaps outside the
 |---|--:|--:|--:|---|---|:-:|:-:|---|
 | `move:transform` | 114 | 1 | 124 | forme | move_body, flow | L | yes | transformed state (Transform, Imposter) — needs: decision 0028 transformed state (not built) |
 | `ability:imposter` | 101 | 0 | 125 | forme | flow, move_body, damage | L | yes | Transform (Transform, Imposter) — needs: move:transform (transformInto: no engine state yet) |
-| `move:instruct` | 93 | 40 | 13 | move | flow, move_body | L | yes | move replay (Instruct) |
+| `move:instruct` | 93 | 40 | 13 | move | flow, move_body | L | yes | move replay (Instruct) — **with it: the `cant nopp` line** (turn.c:7567, section 11) |
 | `move:noretreat` | 50 | 22 | 57 | move | move_body, flow | L | yes | trap volatile (Mean Look, Jaw Lock, Octolock, No Retreat, Ingrain) — needs: move:meanlook |
 | `move:octolock` | 48 | 16 | 60 | move | move_body, residual, flow | L | yes | trap volatile (Mean Look, Jaw Lock, Octolock, No Retreat, Ingrain) — needs: move:meanlook |
 | `move:futuresight` | 38 | 11 | 76 | move | move_body, residual, damage | L | yes | delayed slot attack (Future Sight) |
