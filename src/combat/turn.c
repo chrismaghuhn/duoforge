@@ -1030,6 +1030,13 @@ static uint32_t dfi_type_mod(const struct duoforge_battle *b, const dfi_member *
     }
     uint32_t types[2];
     dfi_types_of(b, target, types);
+    /* Iron Ball (issue 548, data/items.ts:3056-3060): its onEffectiveness returns 0 for every type of a holder that has the
+     * Flying type, the other type included, so a Ground move is neutral against a Flying dual type (Corviknight: not super
+     * effective through Steel). Not under Gravity; Ingrain and Smack Down are unmarked rows. */
+    if (move_type == DFI_TYPE_GROUND && b->tail.gravity_turns == 0u && dfi_holds(b, target, DFI_ITEM_IRONBALL) &&
+        (types[0] == DFI_TYPE_FLYING || types[1] == DFI_TYPE_FLYING)) {
+        return mod;
+    }
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t t = types[i];
         if (t >= DFI_TYPE_COUNT) {
