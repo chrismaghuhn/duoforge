@@ -599,17 +599,20 @@ static uint32_t switches_of(const dfi_events *events, uint32_t reserve)
     return n;
 }
 
-/* Issue 602 (decision 0026 section 4, amended by I2, lead decision A: the duplicate name). White-box: i2_illusion_break at step 1, made
- * into the double replacement of the campaign's fz_4301_17 (step 4): both actives of side 0 fainted (the two brought members that are
- * neither Zoroark, roster 0, nor Gholdengo, roster 3), Zoroark and Gholdengo on the bench in that party order, no name shown. Both
- * positions are replaced in one step:
- *   - Zoroark (the faster) enters first, disguised as Gholdengo, the last standing member to its right; Gholdengo entering second, into
- *     either position, would show its name twice: refused E_UNSUPPORTED at its switch-in, before its SWITCH event. The old check
- *     compared with the shown name, which the fold writes only at the end of the step, so it let this through (E_INVARIANT at the end).
- *   - Gholdengo first (Zoroark made the slower), then Zoroark: its disguise would be the other active, refused at Zoroark's switch-in.
- * Negative controls, the legal single switch-ins: Zoroark alone into a fainted position (its disguise stays on the bench), Gholdengo
- * alone next to a Zoroark whose disguise is broken (i2_illusion_break replayed through its step 1, the break), and Gholdengo into Zoroark's own position (its unbroken
- * switch-out, the live control of check_faint_clear). */
+/* Issue 602 (decision 0026 section 4, amended by I2, lead decision A: the duplicate name). White-box: i2_illusion_break at team start,
+ * made into the double replacement of the campaign's fz_4301_17 (its step 4): both actives of side 0 fainted (the two brought members
+ * that are neither Zoroark, roster 0, nor Gholdengo, roster 3), Zoroark and Gholdengo on the bench in that party order, no name shown.
+ * Both positions are replaced in one step. The two switches run in the order of the speed of the fainted members they replace (the
+ * action's Pokemon, dfi_key_of), set here, so each order is pinned:
+ *   - Zoroark first, disguised as Gholdengo (the last standing member to its right), then Gholdengo into the other position, which
+ *     would show its name twice: refused E_UNSUPPORTED at Gholdengo's switch-in, before its SWITCH event. The old check compared with
+ *     the shown name, which the fold writes only at the end of the step, so it let this through (E_INVARIANT at the end of the step).
+ *     Pinned for both position pairs.
+ *   - Gholdengo first, then Zoroark: its disguise would be the other active, refused at Zoroark's switch-in (the check before this fix).
+ * Negative controls, the legal switch-ins: Gholdengo first into position 0, then Zoroark into position 1 (the bench to its right holds
+ * only fainted members: no disguise, in one step); Zoroark alone into a fainted position (its disguise stays on the bench); Gholdengo
+ * alone next to a Zoroark whose disguise is broken (i2_illusion_break replayed through its step 1, the break); and Gholdengo into the
+ * disguised Zoroark's own position (its unbroken switch-out). */
 static void check_double_replacement(df_test *t, const duoforge_context *ctx)
 {
     duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
@@ -624,8 +627,7 @@ static void check_double_replacement(df_test *t, const duoforge_context *ctx)
             others[n_others++] = m;
         }
     }
-    if (!DF_CHECK(t, n_others == 2u && ((uint32_t)sd->brought_mask >> 3u & 1u) != 0u &&
-                         sd->members[0].stats[4] > sd->members[3].stats[4])) {
+    if (!DF_CHECK(t, n_others == 2u && ((uint32_t)sd->brought_mask >> 3u & 1u) != 0u)) {
         duoforge_battle_destroy(b);
         return;
     }
@@ -640,31 +642,40 @@ static void check_double_replacement(df_test *t, const duoforge_context *ctx)
     b->tail.sides[0].positions[0].ability_state = 0u;
     b->tail.sides[0].positions[1].ability_state = 0u;
     memset(&b->tail.sides[0].illusion, 0, sizeof b->tail.sides[0].illusion);
+    struct duoforge_battle first0 = *b; /* position 0 is replaced first */
+    first0.sides[0].members[others[0]].stats[4] = 200u;
+    first0.sides[0].members[others[1]].stats[4] = 100u;
+    struct duoforge_battle first1 = *b; /* position 1 is replaced first */
+    first1.sides[0].members[others[0]].stats[4] = 100u;
+    first1.sides[0].members[others[1]].stats[4] = 200u;
+    duoforge_battle_destroy(b);
 
     dfi_events ev;
-    const uint32_t holder_first[2] = {0u, 3u};
-    DF_CHECK_EQ_U64(t, replacement_switches(ctx, b, 3u, holder_first, &ev), DUOFORGE_E_UNSUPPORTED);
-    DF_CHECK_EQ_U64(t, switches_of(&ev, 0u), 1u); /* Zoroark entered, disguised as Gholdengo (roster 3 + 1) */
+    const uint32_t zoroark_a[2] = {0u, 3u}; /* Zoroark into position 0, Gholdengo into position 1 */
+    const uint32_t zoroark_b[2] = {3u, 0u}; /* Gholdengo into position 0, Zoroark into position 1 */
+    DF_CHECK_EQ_U64(t, replacement_switches(ctx, &first0, 3u, zoroark_a, &ev), DUOFORGE_E_UNSUPPORTED);
     DF_CHECK(t, ev.count != 0u && ev.rec[0].kind == DUOFORGE_EVENT_SWITCH && ev.rec[0].id == 0u && ev.rec[0].reserved[0] == 4u);
+    DF_CHECK_EQ_U64(t, switches_of(&ev, 0u), 1u); /* Zoroark entered, disguised as Gholdengo (roster 3 + 1) */
     DF_CHECK_EQ_U64(t, switches_of(&ev, 3u), 0u); /* refused before Gholdengo's SWITCH */
-    const uint32_t holder_first_swapped[2] = {3u, 0u};
-    DF_CHECK_EQ_U64(t, replacement_switches(ctx, b, 3u, holder_first_swapped, &ev), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, replacement_switches(ctx, &first1, 3u, zoroark_b, &ev), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, ev.count != 0u && ev.rec[0].kind == DUOFORGE_EVENT_SWITCH && ev.rec[0].id == 0u && ev.rec[0].reserved[0] == 4u);
     DF_CHECK_EQ_U64(t, switches_of(&ev, 0u), 1u);
     DF_CHECK_EQ_U64(t, switches_of(&ev, 3u), 0u);
+    DF_CHECK_EQ_U64(t, replacement_switches(ctx, &first1, 3u, zoroark_a, &ev), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, switches_of(&ev, 3u), 1u); /* Gholdengo entered first */
+    DF_CHECK_EQ_U64(t, switches_of(&ev, 0u), 0u); /* refused at Zoroark's switch-in */
 
-    struct duoforge_battle slow = *b; /* Zoroark the slower: Gholdengo enters first, Zoroark's disguise would be the other active */
-    slow.sides[0].members[0].stats[4] = 1u;
-    DF_CHECK_EQ_U64(t, replacement_switches(ctx, &slow, 3u, holder_first, &ev), DUOFORGE_E_UNSUPPORTED);
+    /* Negative control: Gholdengo first into position 0, Zoroark into position 1 with only fainted members to its right: no disguise,
+     * one name on the field. */
+    DF_CHECK_EQ_U64(t, replacement_switches(ctx, &first0, 3u, zoroark_b, &ev), DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, switches_of(&ev, 3u), 1u);
-    DF_CHECK_EQ_U64(t, switches_of(&ev, 0u), 0u);
-
-    /* Negative control: Zoroark alone into position 0, the other fainted member standing again on position 1: the disguise is
-     * Gholdengo on the bench, one name on the field. */
-    struct duoforge_battle single = *b;
-    single.sides[0].members[others[1]].hp = single.sides[0].members[others[1]].hp_max;
-    DF_CHECK_EQ_U64(t, replacement_switches(ctx, &single, 1u, holder_first, &ev), DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, switches_of(&ev, 0u), 1u);
-    duoforge_battle_destroy(b);
+    /* Negative control: Zoroark alone into position 0, the member on position 1 standing again: the disguise is Gholdengo on the
+     * bench. */
+    struct duoforge_battle single = first0;
+    single.sides[0].members[others[1]].hp = single.sides[0].members[others[1]].hp_max;
+    DF_CHECK_EQ_U64(t, replacement_switches(ctx, &single, 1u, zoroark_a, &ev), DUOFORGE_OK);
+    DF_CHECK(t, ev.count != 0u && ev.rec[0].kind == DUOFORGE_EVENT_SWITCH && ev.rec[0].id == 0u && ev.rec[0].reserved[0] == 4u);
 
     /* Negative control: the disguise broken (i2_illusion_break through its step 1, Moonblast: Zoroark on position 0 under its own
      * name), Gholdengo into position 1 shows no name twice. */
