@@ -25,6 +25,8 @@ import textwrap
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
+CAMPAIGNS = os.path.join(ROOT, 'runs', 'fuzz')  # the campaign definitions (restructure step 8; before: HERE/campaigns)
 sys.path.insert(0, HERE)
 BASH = os.environ.get('DUOFORGE_BASH') or shutil.which('bash')
 ACCOUNT = '%012d' % 7  # a made-up account id, built here so that no number of that shape is in the repository
@@ -111,9 +113,9 @@ json.dump({'results': [entry], 'errors': 0}, open(out, 'w'))
 
 
 def fuzz_campaigns():
-    """The fuzz campaigns of campaigns/: every directory but a ladder (kind=ladder, #484) or preview-oracle campaign's
+    """The fuzz campaigns of runs/fuzz/: every directory but a ladder (kind=ladder, #484) or preview-oracle campaign's
     (kind=oracle, #458), each tested apart."""
-    base = os.path.join(HERE, 'campaigns')
+    base = CAMPAIGNS
     names = []
     for name in sorted(os.listdir(base)):
         with open(os.path.join(base, name, 'campaign.conf'), encoding='utf-8') as f:
@@ -283,14 +285,17 @@ class Guards(unittest.TestCase):
         self.assertIn('commit ' + SHA, r.stderr)
         self.assertEqual(self.real_launches(), [])
 
-    def fresh_repo(self):
-        """A repository of its own in the temporary directory: the tool in it, one commit, origin/main at that commit.
-        What runs git on the tool's directory runs it here, never in the checkout that the tests happen to be in (a
-        worktree whose .git file points to another system's path is no repository for this bash). Returns (the tool's
-        directory in it, the sha)."""
+    def fresh_repo(self, campaigns_before_runs=False):
+        """A repository of its own in the temporary directory: the tool and the campaigns in it, one commit, origin/main
+        at that commit. What runs git on the tool's directory runs it here, never in the checkout that the tests happen
+        to be in (a worktree whose .git file points to another system's path is no repository for this bash). With
+        campaigns_before_runs the campaigns lie where a commit from before restructure step 8 has them
+        (tools/cloud/aws_fuzz/campaigns/). Returns (the tool's directory in it, the sha)."""
         repo = os.path.join(self.tmp, 'repo')
         shutil.copytree(HERE, os.path.join(repo, 'tools', 'cloud', 'aws_fuzz'),
                         ignore=shutil.ignore_patterns('__pycache__'))
+        shutil.copytree(CAMPAIGNS, os.path.join(repo, 'tools', 'cloud', 'aws_fuzz', 'campaigns') if campaigns_before_runs
+                        else os.path.join(repo, 'runs', 'fuzz'))
         git = ['git', '-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
         subprocess.run(git + ['init', '-q'], check=True, capture_output=True)
         subprocess.run(git + ['add', '-A'], check=True, capture_output=True)
@@ -342,7 +347,23 @@ class Guards(unittest.TestCase):
         r = subprocess.run([BASH, posix(os.path.join(tool, 'launch.sh')), '--campaign', 'no-such-campaign', '--commit',
                             sha, '--bucket', 'my-fuzz-bucket'], env=env, capture_output=True, text=True, timeout=120)
         self.assertEqual(r.returncode, 2)
-        self.assertIn('has no tools/cloud/aws_fuzz/campaigns/no-such-campaign/campaign.conf', r.stderr)
+        self.assertIn('has no runs/fuzz/no-such-campaign/campaign.conf', r.stderr)
+
+    def test_a_commit_from_before_the_move_is_launched_from_its_old_campaign_path(self):
+        # restructure step 8: the campaigns moved to runs/fuzz/; a commit from before that has them in
+        # tools/cloud/aws_fuzz/campaigns/, and a launch of it reads them there (its box runs that commit's own box script)
+        tool, sha = self.fresh_repo(campaigns_before_runs=True)
+        env = dict(self.env, DUOFORGE_FUZZ_NO_GIT_CHECK='')
+        r = subprocess.run([BASH, posix(os.path.join(tool, 'launch.sh')), '--campaign', 'weather-sand-snow', '--commit',
+                            sha, '--bucket', 'my-fuzz-bucket'], env=env, capture_output=True, text=True, timeout=120)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('nothing was launched', r.stdout)
+        self.assertIn('run id        %s-1000-9300000-' % sha[:12], r.stdout)  # chunk_battles and base_seed of its conf
+        self.assertEqual(self.real_launches(), [])
+        r = subprocess.run([BASH, posix(os.path.join(tool, 'launch.sh')), '--campaign', 'no-such-campaign', '--commit',
+                            sha, '--bucket', 'my-fuzz-bucket'], env=env, capture_output=True, text=True, timeout=120)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn('nor tools/cloud/aws_fuzz/campaigns/no-such-campaign/, before the move', r.stderr)
 
     def test_an_unknown_argument_and_a_missing_value_are_refused(self):
         self.assertEqual(self.run_script('launch.sh', '--nope').returncode, 2)
@@ -688,8 +709,8 @@ esac
     def test_the_campaigns_of_the_repository_load_and_plan(self):
         for name in fuzz_campaigns():
             with self.subTest(campaign=name):
-                r = self.chunks_eval('campaign_conf_load "%s/campaigns/%s/campaign.conf"; campaign_plan 64; echo ${PHASES[*]}'
-                                     % (posix(HERE), name))
+                r = self.chunks_eval('campaign_conf_load "%s/%s/campaign.conf"; campaign_plan 64; echo ${PHASES[*]}'
+                                     % (posix(CAMPAIGNS), name))
                 self.assertEqual(r.returncode, 0, r.stderr)
                 self.assertRegex(r.stdout.strip(), r'^[0-9]+( [0-9]+)*$')
 
@@ -1107,7 +1128,7 @@ esac
                     self.assertIsNone(re.search(r'\b(AKIA|ASIA)[0-9A-Z]{12,}', text), 'an access key id')
 
     def test_the_campaigns_are_well_formed(self):
-        base = os.path.join(HERE, 'campaigns')
+        base = CAMPAIGNS
         found = fuzz_campaigns()
         self.assertTrue({'closure-mirror', 'team-c-mirror', 'weather-sand-snow'} <= set(found))
         for name in found:
@@ -1143,7 +1164,7 @@ esac
     def read_conf(self, name):
         """(the key=value lines as a dict, the comment lines) of a campaign.conf."""
         keys, comments = {}, []
-        with open(os.path.join(HERE, 'campaigns', name, 'campaign.conf'), encoding='utf-8') as f:
+        with open(os.path.join(CAMPAIGNS, name, 'campaign.conf'), encoding='utf-8') as f:
             for line in f:
                 line = line.rstrip('\n')
                 if line.startswith('#'):
@@ -1176,7 +1197,7 @@ esac
                 for team in keys['teams'].split():
                     m = re.match(r'^([A-Z])=(.+)$', team)
                     if m:
-                        path = os.path.join(HERE, 'campaigns', name, m.group(2))
+                        path = os.path.join(CAMPAIGNS, name, m.group(2))
                         self.assertTrue(os.path.isfile(path), path)
                         with open(path, encoding='utf-8') as f:
                             paste = f.read().strip().split('\n\n')
@@ -1451,18 +1472,18 @@ class LadderLaunch(unittest.TestCase):
         with self.assertRaisesRegex(ladder_conf.ConfError, 'missing key'):
             ladder_conf.parse(good.replace('pairs=8\n', ''))
         for name, arms in (('ladder-equal-2e', ['main']), ('ladder-equal-2e-beside', ['main', 'beside0', 'beside1'])):
-            with open(os.path.join(HERE, 'campaigns', name, 'campaign.conf'), encoding='utf-8') as f:
+            with open(os.path.join(CAMPAIGNS, name, 'campaign.conf'), encoding='utf-8') as f:
                 conf = ladder_conf.parse(f.read())
             self.assertEqual([a['name'] for a in conf['arms']], arms)
             self.assertEqual(conf['arms'][0]['step'], '2e')  # the arm compared, alone and beside others
 
     def test_the_conf_tool_prints_each_answer_and_refuses_a_bad_call(self):
-        conf = posix(os.path.join(HERE, 'campaigns', 'ladder-equal-2e-beside', 'campaign.conf'))
+        conf = posix(os.path.join(CAMPAIGNS, 'ladder-equal-2e-beside', 'campaign.conf'))
         tool = os.path.join(HERE, 'ladder_conf.py')
         run = lambda *a: subprocess.run([sys.executable, tool, *a], env=self.env, capture_output=True, text=True)
         self.assertEqual(run('workers', conf).stdout.split(), ['8'])
         self.assertEqual(run('probe', conf).stdout.split(), [])  # no probe campaign
-        probe_conf = os.path.join(HERE, 'campaigns', 'ladder-probe-2e', 'campaign.conf')
+        probe_conf = os.path.join(CAMPAIGNS, 'ladder-probe-2e', 'campaign.conf')
         with open(probe_conf, encoding='utf-8') as f:
             keys = dict(l.split('=', 1) for l in f.read().splitlines() if l.startswith('probe_'))
         self.assertEqual(run('probe', posix(probe_conf)).stdout.split(), [keys['probe_inputs'], keys['probe_sha256']])
@@ -1866,7 +1887,7 @@ class OracleLaunch(unittest.TestCase):
 
     def test_the_campaign_preview_mixed_is_an_oracle_conf_and_no_fuzz_campaign(self):
         import oracle_conf
-        with open(os.path.join(HERE, 'campaigns', 'preview-mixed', 'campaign.conf'), encoding='utf-8') as f:
+        with open(os.path.join(CAMPAIGNS, 'preview-mixed', 'campaign.conf'), encoding='utf-8') as f:
             text = f.read()
         conf = oracle_conf.parse(text)
         self.assertEqual(conf, {'kind': 'oracle', 'plan': 'preview-mixed-2026-10-14', 'checkpoint': BC6, 'foe_net': BC6,
@@ -1877,7 +1898,7 @@ class OracleLaunch(unittest.TestCase):
 
     def test_the_oracle_files_name_the_foe_by_its_description_only(self):
         for name in ('launch_oracle.sh', 'oracle_user_data.sh', 'upload_team.sh', 'README.md', 'lib.sh',
-                     os.path.join('campaigns', 'preview-mixed', 'campaign.conf')):
+                     os.path.join(CAMPAIGNS, 'preview-mixed', 'campaign.conf')):
             with open(os.path.join(HERE, name), encoding='utf-8') as f:
                 text = f.read()
             with self.subTest(file=name):
