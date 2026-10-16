@@ -4,7 +4,7 @@ shutdown -h +@MAX_MINUTES@ "duoforge ladder watchdog: at most @MAX_MINUTES@ minu
 # which fills the @...@ placeholders with values it has validated. The first command above is the watchdog: whatever
 # happens below, the box is gone after @MAX_MINUTES@ minutes (the instance-initiated shutdown behaviour is terminate).
 #
-# Up to three ladder arms side by side, as campaigns/<id>/campaign.conf at the exact commit names them (ladder_conf.py
+# Up to three ladder arms side by side, as runs/fuzz/<id>/campaign.conf at the exact commit names them (ladder_conf.py
 # builds each arm's command line):
 # - the public repository at the commit and its library (Release, the target duoforge_shared, as the search lane's
 #   local builds do);
@@ -95,7 +95,7 @@ git -C "$REPO" checkout -q --detach FETCH_HEAD
 case $DF_RUN_ID in "${DF_COMMIT:0:12}-ladder-"*) ;; *) refuse wrong_run "run $DF_RUN_ID is not of $DF_COMMIT" ;; esac
 TOOLS="$REPO/tools/cloud/aws_fuzz"
 . "$TOOLS/ladder_box_lib.sh"
-CONF="$TOOLS/campaigns/$DF_CAMPAIGN/campaign.conf"
+CONF="$REPO/runs/fuzz/$DF_CAMPAIGN/campaign.conf"
 [ -f "$CONF" ] || refuse no_campaign "no campaign.conf for $DF_CAMPAIGN at $DF_COMMIT"
 python3 "$TOOLS/ladder_conf.py" check "$CONF" 2>> "$LOG" || refuse bad_conf "the campaign.conf is not a valid ladder conf"
 

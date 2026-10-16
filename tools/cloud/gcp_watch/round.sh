@@ -4,7 +4,7 @@
 # and sourced by the offline tests (RD_SOURCE_ONLY=1) with stand-ins for the network, the build and the driver.
 #
 # A round is: the head of main (given by startup.sh), a rebuild only when it differs from the head that the cached
-# build on the disk was made from, then every step campaign of tools/cloud/aws_fuzz/campaigns (and registry-mix) once with
+# build on the disk was made from, then every step campaign of runs/fuzz (and registry-mix) once with
 # fresh seeds, a short differential run each, uploaded to gs://<bucket>/watch/<commit12>/<round>/<campaign>/, and then the
 # VM powers itself off. A spot preemption ends the round early (the next boot plays a new, complete round: nothing of
 # a half round is resumed, and what a campaign had uploaded stays). The hard limit of a boot is the shutdown that
@@ -81,11 +81,11 @@ rd_gcs_put() { # file object
 
 # ---------------------------------------------------------------------------------------------- what a round plays
 
-# The campaigns of the round, one name per line, in order: every campaigns/<id>/campaign.conf of the checkout except the
+# The campaigns of the round, one name per line, in order: every runs/fuzz/<id>/campaign.conf of the checkout except the
 # throughput sweeps (they measure the machine, they do not test the engine) and anything with a `sweep` key.
 rd_campaigns() { # repo
     local dir name
-    for dir in "$1"/tools/cloud/aws_fuzz/campaigns/*/; do
+    for dir in "$1"/runs/fuzz/*/; do
         name=$(basename "$dir")
         [ -f "$dir/campaign.conf" ] || continue
         case $name in throughput-*) continue ;; esac
@@ -185,7 +185,7 @@ rd_build_engine() {
 # Plays one campaign: RD_ROUND_BATTLES battles of the campaign's pairings and teams under a fresh seed, with a hard cap,
 # then uploads summary.json, run.json, the kept cases (cases.tgz, only when there are some) and status.json.
 rd_run_campaign() { # name
-    local name=$1 dir=$RD_REPO/tools/cloud/aws_fuzz/campaigns/$1 out seed start rc=0 status team
+    local name=$1 dir=$RD_REPO/runs/fuzz/$1 out seed start rc=0 status team
     # shellcheck source=../aws_fuzz/chunks.sh
     . "$RD_REPO/tools/cloud/aws_fuzz/chunks.sh"
     campaign_conf_load "$dir/campaign.conf"

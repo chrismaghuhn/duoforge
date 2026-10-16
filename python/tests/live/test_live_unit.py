@@ -391,7 +391,7 @@ class TrackerStopTest(unittest.TestCase):
             self.assertEqual(caught.exception.reason, f"line:{line.split('|')[1]} Throat Chop")
 
     def test_baton_pass_gives_the_copied_volatiles(self):
-        # dfi_pass_give (src/combat/turn.c): Throat Chop's, Perish Song's, Taunt's and Heal Block's counters go to the
+        # dfi_pass_give (src/combat/flow/switch.h): Throat Chop's, Perish Song's, Taunt's and Heal Block's counters go to the
         # entering member; Encore, Disable, Yawn, Imprison, Glaive Rush (noCopy), the recharge and a changed type stay
         # with the leaver (decision 0042)
         from duoforge_live.data import trace_to_c

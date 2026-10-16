@@ -40,7 +40,7 @@ The engine stores a slot's Pokemon state in `dfi_active_slot` (`src/state/battle
 | `trap_source` (flat position + 1 of another Pokemon) | the source is a Pokemon object (`data/conditions.ts:235`) | **relinked**: a swapped source gets its new flat position in the trapped Pokemon's field |
 | `leech_seed_source` (flat position + 1 of another Pokemon) | the drain reads `getAtSlot(sourceSlot)` (`data/moves.ts:10218`), a slot | **stays with the slot** (section 10; the row above was wrong for Leech Seed) |
 | `attract_source[a]`, `[c]` (pool tail, G71) | the source is the Pokemon that attracts; its position is derived from its member code at view time (G87, `dfi_attract_source_flat`, `src/state/observation.c`) | **the two entries of the swapped pair are exchanged** with the Pokemon; no relink (section 10) |
-| `party_order` entries 0 and 1 (the two actives) | `side.pokemon[0]`, `[1]` (`sim/battle.ts:1598-1599`) | **swapped** (the template is `dfi_party_switch`, `src/combat/turn.c (dfi_party_switch)`) |
+| `party_order` entries 0 and 1 (the two actives) | `side.pokemon[0]`, `[1]` (`sim/battle.ts:1598-1599`) | **swapped** (the template is `dfi_party_switch`, `src/combat/flow/switch.h (dfi_party_switch)`) |
 | queue records of the two Pokemon (`slot`, `activation_id`) | the action holds the Pokemon (`action.pokemon`) | **the record's slot follows the Pokemon** (`activation_id` binds it); the target does not change |
 | Revival Blessing slot condition | slot (`sim/side.ts:932-965`, `sim/pokemon.ts:1183`) | stays; not reachable (a fainted partner refuses the swap) |
 | Future Sight (reserved `future_sight`, not used) | slot target | out of scope for G80 |

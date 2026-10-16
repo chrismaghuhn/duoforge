@@ -1704,6 +1704,11 @@ class LiveLatency(unittest.TestCase):
                                "--k", "2", "--m", "2", "--worlds", "2", "--no-foe-net"])
             with open(os.path.join(out, "latency.json"), encoding="utf-8") as f:
                 report = json.load(f)
+            with open(os.path.join(out, "manifest.json"), encoding="utf-8") as f:  # restructure step 8: the run's manifest
+                manifest = json.load(f)
+        self.assertEqual((manifest["kind"], manifest["tool"]), ("bench", "duoforge_eval.live_latency"))
+        self.assertEqual(manifest["seeds"], {"seed": live_latency.SEED})
+        self.assertRegex(manifest["code"]["commit"], "^[0-9a-f]{40}$")
         self.assertEqual(report["games"], 1)
         self.assertEqual(report["runtime"], "jax-cpu")
         self.assertGreater(report["warmup"]["load_seconds"], 0.0)
@@ -1781,6 +1786,10 @@ class PositionsTool(unittest.TestCase):
                 positions.main(["--checkpoint", path, "--out", inside])
             report = positions.main(["--checkpoint", path, "--out", os.path.join(tmp, "out"), "--k", "2", "--m", "2",
                                      "--worlds", "2"])
+            with open(os.path.join(tmp, "out", "manifest.json"), encoding="utf-8") as f:  # restructure step 8
+                manifest = json.load(f)
+        self.assertEqual((manifest["kind"], manifest["tool"]), ("bench", "duoforge_eval.positions"))
+        self.assertIn("--worlds", manifest["argv"])
         all_positions = positions.load_all()
         self.assertEqual([r["name"] for r in report["positions"]], [p.name for p in all_positions])
         for row, position in zip(report["positions"], all_positions):

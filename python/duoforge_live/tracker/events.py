@@ -182,7 +182,7 @@ class _EventFolds:
         from .. import record
         events = action["events"]
         # The user may have moved during its own action (Ally Switch): the activation id belongs to the Pokemon, so the slot that
-        # now holds it gets the result (src/combat/turn.c dfi_run_move). Another occupant at every slot, or the user fainted:
+        # now holds it gets the result (src/combat/flow/switch.h dfi_run_move). Another occupant at every slot, or the user fainted:
         # the faint's clearing comes after the result
         side = action["pos"] // 2
         for p in self._positions[side]:

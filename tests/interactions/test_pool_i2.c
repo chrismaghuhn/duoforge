@@ -702,7 +702,7 @@ static void check_illusion_invariant(df_test *t, const duoforge_context *ctx)
 
 /* The instaswitch of a disguised holder (decision 0025 item 10 with decision 0026 section 4): the revived holder goes back into its own
  * position, and a disguise would be decided at that switch-in. The reference has no line for a revive under a disguise, so the
- * switch is refused E_UNSUPPORTED before any change and before any event (the explicit refusal of turn.c dfi_switch_in). White-box:
+ * switch is refused E_UNSUPPORTED before any change and before any event (the explicit refusal of flow/switch.h dfi_switch_in). White-box:
  * i2_illusion_break at step 1 (Zoroark, the holder, active at position 0 and disguised as roster 3, the name shown). The queue of a
  * copy holds the instaswitch of the holder into position 0. Negative control: the same instaswitch with no bench member to the right
  * standing (no disguise decided) is not refused for this reason. */

@@ -118,7 +118,7 @@ _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORG
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
             trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
-# The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
+# The folded _Position fields that Baton Pass gives the entering member (src/combat/flow/switch.h dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
 _PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source", "cursed",
            # the partial trap has no noCopy in the pin (pokemon.ts copyVolatileFrom): dfi_pass_give copies its turns, source, move,

@@ -333,7 +333,7 @@ def _position(t, s, pre, p, side, k, own):
         s.put(pre + "locked_move", p.choice_slot + 1)
     s.put(pre + "move_actions", min(p.move_actions, 255))
     # switch_flag: a PIVOT shows why a position must switch; a REPLACEMENT carries no flags (its request names the
-    # positions, src/combat/turn.c dfi_finish_turn), a pass keeps a flag only while its side can still answer, which asks
+    # positions, src/combat/flow/turn.h dfi_finish_turn), a pass keeps a flag only while its side can still answer, which asks
     # it again (dfi_pivot_pending: a PIVOT), and a TURN follows only when no flag is left
     if t.boundary() == PIVOT and t._requested(side, PIVOT)[1] >> k & 1:
         if not p.flag:

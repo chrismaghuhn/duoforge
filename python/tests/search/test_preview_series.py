@@ -435,7 +435,7 @@ class SeriesTest(unittest.TestCase):
         for name, fixed in conf_tool.PLANS.items():
             for key, value in fixed.items():
                 self.assertEqual(series.PLANS[name][key], value, (name, key))
-        with open(ROOT / "tools" / "cloud" / "aws_fuzz" / "campaigns" / "preview-mixed" / "campaign.conf",
+        with open(ROOT / "runs" / "fuzz" / "preview-mixed" / "campaign.conf",
                   encoding="utf-8") as f:
             conf = conf_tool.parse(f.read())
         argv = conf_tool.argv(conf, "/n", "/t", "/o") + ["--parallel", "3", "--cpus-per-process", "16",
