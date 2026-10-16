@@ -102,9 +102,10 @@ POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 347, 51
 POOL_AEGISLASH_FORME = 244              # DFI_FORME_AEGISLASH (src/data/pool_tables.h)
 POOL_AEGISLASH_BLADE_FORME = 346        # DFI_FORME_AEGISLASHBLADE: the last pool row (step G66, decision 0040)
 # The pool moves whose effect is a lockedmove (DFI_SPECIAL_LOCKED_MOVE in src/data/pool_tables.c, step G56): Outrage, Petal
-# Dance and Thrash. A running lock (the tail's lock_turns) has one of them as its occupant's last used move.
+# Dance, Thrash and (since A0 part 3, decision 0015 entry 5dr; unmarked) Raging Fury, as src/state/invariants.c accepts every
+# LOCKED_MOVE row. A running lock (the tail's lock_turns) has one of them as its occupant's last used move.
 POOL_MOVE_OUTRAGE = 326                 # DFI_MOVE_OUTRAGE
-POOL_LOCKEDMOVE_MOVES = (POOL_MOVE_OUTRAGE, 334, 467)  # DFI_MOVE_OUTRAGE, DFI_MOVE_PETALDANCE, DFI_MOVE_THRASH
+POOL_LOCKEDMOVE_MOVES = (POOL_MOVE_OUTRAGE, 334, 366, 467)  # DFI_MOVE_OUTRAGE, DFI_MOVE_PETALDANCE, DFI_MOVE_RAGINGFURY, DFI_MOVE_THRASH
 # The byte fields of a position's tail in their encoded order (offset 0 to 21), then two u16: substitute_hp at 22 and
 # trap_move at 24, then (rev 3) protect_kind at 26, (rev 4) move_result, single_turn, hits_taken, ability_state and lock_turns
 # at 27 to 31 and 4 reserved bytes.

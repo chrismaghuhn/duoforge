@@ -2366,6 +2366,34 @@ class A0Facts(unittest.TestCase):
             gen_closure.check_a0_facts(base, champ)
         self.assertIn('move crabhammer: the Champions mod entry is not the override', str(cm.exception.code))
 
+    def base_with(self, edits):
+        """The base pin text with `edits` = {move: {field: value or None (drop the field)}} applied."""
+        out = []
+        for mid, fields in gen_closure.A0_FACTS:
+            fields = dict(fields)
+            for key, value in edits.get(mid, {}).items():
+                if value is None:
+                    fields.pop(key)
+                else:
+                    fields[key] = value
+            out.append(self.render(mid, fields))
+        return TextSource('data/moves.ts', '\n'.join(out))
+
+    def test_the_champions_overrides_replace_the_base_values(self):
+        # The base pin entries carry the values before the Champions mod (data/moves.ts at b2cb775: Crabhammer accuracy 90,
+        # Fire Lash basePower 80, Crush Claw without slicing); the facts hold only after the override is merged.
+        base = self.base_with({'crabhammer': {'accuracy': 90}, 'firelash': {'basePower': 80},
+                               'crushclaw': {'flags': {'contact', 'protect', 'mirror', 'metronome'}}})
+        gen_closure.check_a0_facts(base, self.sources()[1])
+
+    def test_an_unlisted_or_missing_field_is_refused(self):
+        for edits, message in (({'bite': {'drain': [1, 2]}}, 'move bite: the pin has fields the A0 facts do not list: drain'),
+                               ({'crabhammer': {'critRatio': None}}, 'move crabhammer: the pin has no critRatio')):
+            with self.subTest(message=message):
+                with self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_a0_facts(self.base_with(edits), self.sources()[1])
+                self.assertIn(message, str(cm.exception.code))
+
 
 class MoveHandlerTables(unittest.TestCase):
     """The step-4 tables retain frozen phase semantics and fail closed on drift."""
