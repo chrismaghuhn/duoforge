@@ -564,6 +564,34 @@ class Refusals(unittest.TestCase):
         self.control('c11_follow_me_rod', mutate, 'unknown-volatile',
                      'trace_to_c: electroshot without twoturnmove on Archaludon', 'electroshot')
 
+    def test_solar_blade_volatile_is_a_charge_volatile_like_solar_beams(self):
+        """Batch A0 part 3 (lead decision 2026-10-16): Solar Blade's charge volatile is `solarblade`, added by twoturnmove's
+        onStart as `solarbeam` is (data/moves.ts:17260-17295, data/conditions.ts twoturnmove). Without twoturnmove it is the
+        same refusal as the others of its kind; without this entry in the converter it is an unknown volatile, a different
+        message, so this control fails until the fix is in."""
+        def mutate(spec, trace):
+            mon = trace['steps'][0]['state']['sides'][1]['pokemon'][1]
+            self.assertNotIn('twoturnmove', mon['volatiles'])
+            mon['volatiles'] = sorted(mon['volatiles'] + ['solarblade'])
+        self.control('c11_follow_me_rod', mutate, 'unknown-volatile',
+                     'trace_to_c: solarblade without twoturnmove on Archaludon', 'solarblade')
+
+    def test_solar_blade_lock_converts_like_an_electro_shot_lock(self):
+        """With `solarblade` in place of `electroshot` on every charge state of d02 (the same two-turn lock, the same
+        twoturnmove), the battle converts to the same data: the volatile is read as the lock, not as an unknown volatile."""
+        name = 'd02_electro_shot_lock_emergency_exit'
+        spec, trace = battle(name)
+        original = convert(name, copy.deepcopy(spec), copy.deepcopy(trace))
+        swapped, n = copy.deepcopy(trace), 0
+        for step in swapped['steps']:
+            for side in step['state']['sides']:
+                for mon in side['pokemon']:
+                    if 'electroshot' in mon['volatiles']:
+                        mon['volatiles'] = ['solarblade' if v == 'electroshot' else v for v in mon['volatiles']]
+                        n += 1
+        self.assertGreater(n, 0)
+        self.assertEqual(convert(name, spec, swapped), original)
+
     def test_a_lockedmove_lock_needs_its_move_in_the_set_and_its_slot(self):
         """Issue 516: the slot of a lockedmove lock is that of the user's last move line in its set. A move the set does
         not have, a lock without its slot given to convert_choice, and another hard lock with a single request row (its
@@ -2482,7 +2510,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 294)  # K4 (#475, entry 5dl): Gravity is marked, makes 294; K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
+        self.assertEqual(len(marked), 298)  # A0 part 3 (lead decision 2026-10-16): four marks (Solar Blade, Double Hit, Tail Slap, Bone Rush) make 298 (Thrash, Petal Dance, Raging Fury, Snap Trap unmarked again; 302 with them); K4 (#475, entry 5dl): Gravity is marked, makes 294; K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

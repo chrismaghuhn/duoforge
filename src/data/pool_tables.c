@@ -936,8 +936,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {5u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 37u},
     /* Body Slam -- data/moves.ts:1585-1601 */
     {12u, 0u, 85u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Bone Rush -- data/moves.ts:1674-1689, data/mods/champions/moves.ts:89-92  [unmodelled: field multihit] */
-    {10u, 0u, 30u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Bone Rush -- data/moves.ts:1674-1689, data/mods/champions/moves.ts:89-92 */
+    {10u, 0u, 30u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 76u},
     /* Boomburst -- data/moves.ts:1690-1702 */
     {12u, 1u, 140u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bounce -- data/moves.ts:1703-1747  [unmodelled: callback onTryMove; condition block; flag gravity] */
@@ -1036,8 +1036,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {3u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Dive -- data/moves.ts:3747-3794  [unmodelled: callback onTryMove; condition block] */
     {17u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* Double Hit -- data/moves.ts:3893-3908  [unmodelled: field multihit] */
-    {12u, 0u, 35u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Double Hit -- data/moves.ts:3893-3908 */
+    {12u, 0u, 35u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 53u},
     /* Double Shock -- data/moves.ts:3945-3969, data/mods/champions/moves.ts:256-259 */
     {3u, 0u, 120u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
     /* Double Team -- data/moves.ts:3985-4001 */
@@ -1434,8 +1434,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {0u, 2u, 0u, 0u, 20u, 20u, 10u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 33u},
     /* Raging Bull -- data/moves.ts:14633-14663  [unmodelled: callback onModifyType; callback onTryHit] */
     {12u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* Raging Fury -- data/moves.ts:14664-14678  [unmodelled: self effect] */
-    {6u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Raging Fury -- data/moves.ts:14664-14678 */
+    {6u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 74u},
     /* Rain Dance -- data/moves.ts:14679-14693 */
     {17u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 40u},
     /* Rapid Spin -- data/moves.ts:14694-14746  [unmodelled: callback onAfterHit; callback onAfterSubDamage] */
@@ -1534,8 +1534,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {15u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Smart Strike -- data/moves.ts:17000-17012 */
     {16u, 0u, 70u, 0u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Snap Trap -- data/moves.ts:17071-17084, data/mods/champions/moves.ts:919-923  [unmodelled: primary volatile partiallytrapped] */
-    {16u, 0u, 35u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Snap Trap -- data/moves.ts:17071-17084, data/mods/champions/moves.ts:919-923 */
+    {16u, 0u, 35u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 116u},
     /* Snipe Shot -- data/moves.ts:17138-17151, data/mods/champions/moves.ts:924-927  [unmodelled: field tracksTarget] */
     {17u, 1u, 85u, 100u, 15u, 16u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Snore -- data/moves.ts:17152-17172  [unmodelled: callback onTry; field sleepUsable] */
@@ -1544,8 +1544,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {11u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 23u},
     /* Solar Beam -- data/moves.ts:17224-17259 */
     {9u, 1u, 120u, 100u, 10u, 12u, 8u, 1u, 1u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 35u},
-    /* Solar Blade -- data/moves.ts:17260-17295  [unmodelled: callback onBasePower; callback onTryMove] */
-    {9u, 0u, 125u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Solar Blade -- data/moves.ts:17260-17295 */
+    {9u, 0u, 125u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 35u},
     /* Sparkling Aria -- data/moves.ts:17357-17388  [unmodelled: callback onAfterMove; secondary volatile sparklingaria] */
     {17u, 1u, 90u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Speed Swap -- data/moves.ts:17430-17449 */
@@ -1620,8 +1620,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {9u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
     /* Syrup Bomb -- data/moves.ts:18761-18795, data/mods/champions/moves.ts:1005-1008  [unmodelled: condition block; secondary volatile syrupbomb] */
     {9u, 1u, 60u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
-    /* Tail Slap -- data/moves.ts:18842-18857  [unmodelled: field multihit] */
-    {12u, 0u, 25u, 85u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 122u},
+    /* Tail Slap -- data/moves.ts:18842-18857 */
+    {12u, 0u, 25u, 85u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 76u},
     /* Taunt -- data/moves.ts:18974-19016 */
     {1u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 61u},
     /* Tearful Look -- data/moves.ts:19017-19034 */
@@ -6827,7 +6827,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BEAKBLAST] = "callback onAfterMove; callback priorityChargeCallback; condition block",
     [DFI_MOVE_BELCH] = "callback onTry",
     [DFI_MOVE_BLOCK] = "callback onHit",
-    [DFI_MOVE_BONERUSH] = "field multihit",
     [DFI_MOVE_BOUNCE] = "callback onTryMove; condition block; flag gravity",
     [DFI_MOVE_BULLETSEED] = "field multihit",
     [DFI_MOVE_BURNINGJEALOUSY] = "secondary",
@@ -6844,7 +6843,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DEFOG] = "callback onHit",
     [DFI_MOVE_DIG] = "callback onTryMove; condition block",
     [DFI_MOVE_DIVE] = "callback onTryMove; condition block",
-    [DFI_MOVE_DOUBLEHIT] = "field multihit",
     [DFI_MOVE_EERIESPELL] = "secondary",
     [DFI_MOVE_ELECTRIFY] = "callback onTryHit; condition block; primary volatile electrify",
     [DFI_MOVE_ELECTROBALL] = "callback basePowerCallback",
@@ -6907,7 +6905,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_POWERSWAP] = "callback onHit",
     [DFI_MOVE_POWERTRICK] = "condition block; primary volatile powertrick",
     [DFI_MOVE_RAGINGBULL] = "callback onModifyType; callback onTryHit",
-    [DFI_MOVE_RAGINGFURY] = "self effect",
     [DFI_MOVE_RAPIDSPIN] = "callback onAfterHit; callback onAfterSubDamage",
     [DFI_MOVE_RECYCLE] = "callback onHit",
     [DFI_MOVE_REFLECTTYPE] = "callback onHit",
@@ -6926,10 +6923,8 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SKYATTACK] = "callback onTryMove",
     [DFI_MOVE_SLEEPTALK] = "callback onHit; callback onTry; field callsMove; field sleepUsable",
     [DFI_MOVE_SMACKDOWN] = "condition block; primary volatile smackdown",
-    [DFI_MOVE_SNAPTRAP] = "primary volatile partiallytrapped",
     [DFI_MOVE_SNIPESHOT] = "field tracksTarget",
     [DFI_MOVE_SNORE] = "callback onTry; field sleepUsable",
-    [DFI_MOVE_SOLARBLADE] = "callback onBasePower; callback onTryMove",
     [DFI_MOVE_SPARKLINGARIA] = "callback onAfterMove; secondary volatile sparklingaria",
     [DFI_MOVE_SPIRITSHACKLE] = "secondary",
     [DFI_MOVE_SPITE] = "callback onHit",
@@ -6944,7 +6939,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SWEETSCENT] = "primary boosts on a non-self target",
     [DFI_MOVE_SYNTHESIS] = "callback onHit",
     [DFI_MOVE_SYRUPBOMB] = "condition block; secondary volatile syrupbomb",
-    [DFI_MOVE_TAILSLAP] = "field multihit",
     [DFI_MOVE_TEATIME] = "callback onHitField",
     [DFI_MOVE_THUNDERFANG] = "field secondaries",
     [DFI_MOVE_TIDYUP] = "callback onHit",
@@ -7076,10 +7070,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x08u, 0x60u, 0x30u, 0x7du, 0x87u, 0x27u, 0x3bu, 0x00u,
-    0xadu, 0xf7u, 0x6au, 0xa8u, 0xcbu, 0x35u, 0x20u, 0x9cu,
-    0x55u, 0x7eu, 0xd4u, 0x4du, 0x5au, 0x44u, 0xd1u, 0x77u,
-    0xceu, 0x83u, 0x95u, 0x2cu, 0xdeu, 0x79u, 0xc5u, 0x15u,
+    0x79u, 0xaeu, 0xebu, 0x70u, 0x5eu, 0x73u, 0x67u, 0x8eu,
+    0x05u, 0x00u, 0xa6u, 0xc7u, 0x38u, 0x77u, 0x52u, 0xabu,
+    0xd0u, 0x02u, 0x77u, 0x5cu, 0x50u, 0xeau, 0xb9u, 0xa9u,
+    0x8du, 0x38u, 0x25u, 0x99u, 0x78u, 0x20u, 0x5cu, 0xd0u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
