@@ -11,6 +11,17 @@ import numpy as np
 
 _NEG = -1e30  # outside a label set: finite, so a row of the other kind (all outside) gives no NaN gradient
 
+# The run state a --resume continues from (_save_state: before the first epoch, after every epoch, and once more
+# marked finished when bc.npz and bc-run.json are written): the parameters, the best epoch's parameters, the
+# optimizer state's leaves and a JSON "meta" entry, in one file that a fully written temporary file replaces, so the
+# state on disk is always one whole epoch's.
+STATE = "bc-state.npz"
+STATE_VERSION = 1
+# Options a resume may give otherwise: where the run reads and writes, never what it measures. The datasets' content
+# is compared instead of their paths (_dataset_key), and whether the rows sit in a memmap cache (bc_data.batches takes
+# a memmap batch in another row order) is part of the run's measure (train, _check_measure).
+_RESUME_FREE = ("data", "out", "cache", "resume")
+
 
 def as_batch(rows):
     """The arrays of bc_data.Rows the loss reads, as JAX arrays."""
@@ -68,6 +79,9 @@ def _parser():
                         "a bot the players split never trained on)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--cache", default=None, help="a directory (outside the repository) for the encoded rows")
+    p.add_argument("--resume", action="store_true",
+                   help=f"continue the run in --out from its state ({STATE}, written after every epoch): the same "
+                        "options, datasets and machine; the run ends as it would have ended uninterrupted")
     return p
 
 
@@ -195,21 +209,128 @@ def _validate(params, net, rows, index, size, value_coef):
             "val_top1_exact": hits / exact if exact else None, "val_rows": len(index)}
 
 
-def train(args):
-    """Trains, writes bc.npz (the best validation epoch), bc-log.jsonl and bc-run.json; returns the best metrics."""
+def _plain(value):
+    """value as JSON reads it back (tuples become lists): what a state compares and stores."""
     import json
+    return json.loads(json.dumps(value))
+
+
+def _run_args(args):
+    """The options bc-run.json records: every option but --resume (a resumed run records its first launch's)."""
+    return _plain({k: v for k, v in vars(args).items() if k != "resume"})
+
+
+def _environment():
+    """What a bit-identical continuation needs unchanged besides the options and the rows: the versions of JAX, jaxlib,
+    NumPy and optax, and the devices JAX computes on."""
+    from importlib import metadata
+    device = jax.devices()[0]
+    return {**{name: metadata.version(name) for name in ("jax", "jaxlib", "numpy", "optax")},
+            "platform": device.platform, "device_kind": device.device_kind, "devices": jax.device_count()}
+
+
+def _save_state(out, state):
+    """Writes a run state (dict: params, best_params, opt_leaves and the JSON meta) to out/STATE: a temporary file,
+    flushed to the disk, replaces it, so an interrupted write leaves the previous complete state."""
+    import json
+    import os
+    from duoforge_replay import dataset
+    from . import checkpoint
+    arrays = {f"params{k}": v for k, v in checkpoint.flatten(state["params"]).items()}
+    if state["best_params"] is not None:
+        arrays |= {f"best_params{k}": v for k, v in checkpoint.flatten(state["best_params"]).items()}
+    arrays |= {f"opt[{i}]": np.asarray(v) for i, v in enumerate(state["opt_leaves"])}
+    arrays["meta"] = np.array(json.dumps(state["meta"]))
+    tmp = out / "bc-state.tmp.npz"
+    with open(tmp, "wb") as f:
+        np.savez(f, **arrays)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, out / STATE)
+    dataset.fsync_dir(out)
+
+
+def _load_state(path):
+    """(meta, params, best_params, opt_leaves) of a state _save_state wrote."""
+    import json
+    from . import checkpoint
+    with np.load(path) as npz:
+        meta = json.loads(str(npz["meta"]))
+        params = checkpoint.unflatten({k[len("params"):]: npz[k] for k in npz.files if k.startswith("params[")},
+                                      path)
+        best = {k[len("best_params"):]: npz[k] for k in npz.files if k.startswith("best_params[")}
+        best_params = checkpoint.unflatten(best, path) if best else None
+        n = sum(1 for k in npz.files if k.startswith("opt["))
+        opt_leaves = [npz[f"opt[{i}]"] for i in range(n)]
+    return meta, params, best_params, opt_leaves
+
+
+def _resume_state(out, args):
+    """The state of the run in `out` for a --resume of it with `args`: SystemExit when there is none, when the run
+    finished, or when an option that changes the measurement differs from the run's (any option outside
+    _RESUME_FREE). The datasets, the library and the machine are checked once the rows are read (_check_measure)."""
+    path = out / STATE
+    if not path.is_file():
+        raise SystemExit(f"--resume: {out} holds no BC run state ({STATE}): there is no run to continue")
+    meta, params, best_params, opt_leaves = _load_state(path)
+    if meta.get("version") != STATE_VERSION:
+        raise SystemExit(f"--resume: {path} is a state of version {meta.get('version')!r}; this trainer continues "
+                         f"version {STATE_VERSION} only")
+    if meta["finished"]:
+        raise SystemExit(f"--resume: the run in {out} finished after epoch {meta['epoch']} (bc.npz and bc-run.json "
+                         "are written): there is nothing to continue")
+    old, new = meta["measure"]["args"], _plain(_measured_args(args))
+    for name in sorted(set(old) | set(new)):
+        if name not in old or name not in new or old[name] != new[name]:
+            raise SystemExit(f"--resume: the run in {out} was started with {name} {old.get(name, '(none)')!r}, this "
+                             f"call gives {new.get(name, '(none)')!r}: a resume cannot change what the run measures")
+    return meta, params, best_params, opt_leaves
+
+
+def _measured_args(args):
+    return {k: v for k, v in vars(args).items() if k not in _RESUME_FREE}
+
+
+def _check_measure(out, saved, measure):
+    """SystemExit naming the first entry of the run's measure (the datasets' content, the library, the rows, the model,
+    the machine) that a --resume finds otherwise."""
+    for key in sorted(set(saved) | set(measure)):
+        old, new = saved.get(key), measure.get(key)
+        if isinstance(old, dict) and isinstance(new, dict):
+            for sub in sorted(set(old) | set(new)):
+                if old.get(sub) != new.get(sub):
+                    raise SystemExit(f"--resume: the run in {out} trained with {key} {sub} {old.get(sub)!r}, this "
+                                     f"call has {new.get(sub)!r}: the continuation would not be the same run")
+        elif old != new:
+            raise SystemExit(f"--resume: the run in {out} trained with {key} {old!r}, this call has {new!r}: the "
+                             "continuation would not be the same run")
+
+
+def train(args):
+    """Trains, writes bc.npz (the best validation epoch), bc-log.jsonl and bc-run.json; returns the best metrics.
+
+    After every epoch the run state (STATE) is written; --resume continues a cut run from it, and the run ends as an
+    uninterrupted one would: the same epochs, bc.npz bit for bit, the same log records and bc-run.json (apart from
+    the seconds and the launches)."""
+    import json
+    import sys
     import time
     from pathlib import Path
     import duoforge
     import optax
     from duoforge import _layout, features
     from duoforge_replay import dataset
-    from . import bc_data, checkpoint, policy, ppo
+    from . import bc_data, checkpoint, policy, ppo, runstate
     out = Path(args.out)
     dataset.refuse_repository(out)
     if args.cache is not None:
         dataset.refuse_repository(args.cache)
-    if out.exists() and any(out.iterdir()):
+    resume = getattr(args, "resume", False)
+    saved = _resume_state(out, args) if resume else None
+    if not resume and (out / STATE).exists():
+        raise SystemExit(f"{out} holds the state of a BC run ({STATE}): continue it with --resume, or give a fresh "
+                         "--out")
+    if not resume and out.exists() and any(out.iterdir()):
         raise SystemExit(f"{out} is not empty: a BC run writes into a fresh directory")
     format_weights = _format_weights(args.format_weight)
     source_weights = _source_weights(args.source_weight)
@@ -233,10 +354,30 @@ def train(args):
     dims = {k: getattr(args, k) for k in ("embed", "member", "position", "hidden", "layers", "option")
             if getattr(args, k) is not None}
     model_cfg = policy.v2_config(args.preset, **dims)
+    datasets = _dataset_key(dirs)
+    measure = _plain({"args": _measured_args(args), "datasets": datasets, "fingerprint": fingerprint,
+                      "encoder": features.ENCODER, "features": list(features.FEATURE_NAMES), "ext_supported": mask,
+                      "model": model_cfg, "rows": len(rows), "train_rows": len(train_index),
+                      "val_rows": len(val_index), "memmap": isinstance(rows.obs, np.memmap),
+                      "environment": _environment()})
     net = policy.make(model_cfg)
-    params = net.init(jax.random.PRNGKey(args.seed))
     tx = ppo.optimizer(args.learning_rate)
-    opt_state = tx.init(params)
+    if saved is None:
+        params = net.init(jax.random.PRNGKey(args.seed))
+        opt_state = tx.init(params)
+        best_params = None
+        meta = {"version": STATE_VERSION, "epoch": 0, "records": [], "best": None, "best_epoch": 0, "waited": 0,
+                "stopped": False, "finished": False, "args": _run_args(args), "measure": measure, "launches": []}
+    else:
+        meta, params, best_params, opt_leaves = saved
+        _check_measure(out, meta["measure"], measure)
+        try:
+            opt_state = runstate.restore_opt(tx, params, opt_leaves)
+        except ValueError as err:
+            raise SystemExit(f"--resume: {out / STATE}: {err}") from None
+        print(json.dumps({"resume": str(out), "after_epoch": meta["epoch"]}), file=sys.stderr, flush=True)
+    meta["launches"].append({"after_epoch": meta["epoch"], "out": str(out), "data": list(args.data),
+                             "cache": args.cache})
     value_coef = args.value_coef
 
     @jax.jit
@@ -247,9 +388,22 @@ def train(args):
         return optax.apply_updates(params, updates), opt_state, m
 
     out.mkdir(parents=True, exist_ok=True)
-    best, best_params, best_epoch, waited = None, None, 0, 0
+    best, best_epoch, waited = meta["best"], meta["best_epoch"], meta["waited"]
+
+    def state():
+        return {"meta": meta, "params": jax.device_get(params), "best_params": best_params,
+                "opt_leaves": jax.device_get(jax.tree_util.tree_leaves(opt_state))}
+
+    if saved is None:
+        _save_state(out, state())  # epoch 0: a run cut inside its first epoch can be resumed too
     with open(out / "bc-log.jsonl", "w", encoding="utf-8") as log:
-        for epoch in range(1, args.epochs + 1):
+        # A resumed run's log starts with the records of its state (a line a cut launch wrote after its last state is
+        # dropped: that epoch runs again); a new run's state has none.
+        for record in meta["records"]:
+            log.write(json.dumps(record) + chr(10))
+        log.flush()
+        last = meta["epoch"] if meta["stopped"] else args.epochs  # a state of the stopping epoch trains no more
+        for epoch in range(meta["epoch"] + 1, last + 1):
             start = time.monotonic()
             nll = wsum = 0.0
             for chunk in bc_data.batches(rows, train_index, args.batch, np.random.default_rng(args.seed + epoch)):
@@ -262,18 +416,23 @@ def train(args):
             log.write(json.dumps(record) + chr(10))
             log.flush()
             print(json.dumps(record), flush=True)
+            stop = False
             if best is None or record["val_nll"] < best["val_nll"]:
                 best, best_params, best_epoch, waited = record, jax.device_get(params), epoch, 0
             else:
                 waited += 1
-                if waited >= args.patience:
-                    break
+                stop = waited >= args.patience
+            meta["records"].append(record)
+            meta.update(epoch=epoch, best=best, best_epoch=best_epoch, waited=waited, stopped=stop)
+            _save_state(out, state())
+            if stop:
+                break
     config = {"model": model_cfg, "encoder": features.ENCODER, "ext_supported": mask,
               "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
               "data": {"kind": "pool", "fingerprint": fingerprint}, "teams": [], "update": 0,
               "decisions": int(len(train_index)), "ids": ids,
               "train": {"seed": args.seed, "bc": {
-                  "datasets": _dataset_key(dirs), "format_weights": format_weights, "source_weights": source_weights,
+                  "datasets": datasets, "format_weights": format_weights, "source_weights": source_weights,
                   "pick_hypotheses_weight": args.pick_hypotheses_weight,
                   "split": {"players": "players bucket 0/20 (the acting player's rows)",
                             "test-players": "only test players' own rows; val: their bucket 0/20 of h // 20"}.get(
@@ -282,9 +441,11 @@ def train(args):
                   "best_epoch": best_epoch, "value_coef": value_coef, "learning_rate": args.learning_rate,
                   "batch": args.batch, "patience": args.patience}}}
     checkpoint.save(str(out / "bc.npz"), best_params, config)
-    run = {"args": vars(args), "rows": len(rows), "train_rows": len(train_index), "val_rows": len(val_index),
-           "best": best}
+    run = {"args": meta["args"], "rows": len(rows), "train_rows": len(train_index), "val_rows": len(val_index),
+           "best": best, "launches": meta["launches"]}
     (out / "bc-run.json").write_text(json.dumps(run, indent=1) + chr(10), encoding="utf-8")
+    meta["finished"] = True  # last: a run cut before this point writes bc.npz and bc-run.json again on --resume
+    _save_state(out, state())
     return best
 
 

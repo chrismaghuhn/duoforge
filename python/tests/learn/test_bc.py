@@ -468,6 +468,159 @@ class TrainerTest(unittest.TestCase):
         self.assertEqual(outs[0], outs[1])
 
 
+class _Cut(Exception):
+    """A launch cut off (a session's time limit) in the middle of a run."""
+
+
+class ResumeTest(unittest.TestCase):
+    """bc.main --resume (issue #458): a run cut off after an epoch and resumed ends exactly as the uninterrupted run,
+    on the same machine: bc.npz bit for bit, the same best epoch, log records and bc-run.json apart from the seconds
+    and the launches."""
+
+    @classmethod
+    def setUpClass(cls):
+        import tempfile
+        from pathlib import Path
+        from . import test_bc_numpy as fixture
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_bc_resume_"))
+        cls.data = fixture.build_fixture(cls.tmp, natures=fixture.split_variants(3, 1))
+
+    @classmethod
+    def tearDownClass(cls):
+        import shutil
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def run_bc(self, name, *extra, data=None):
+        from duoforge_learn import bc
+        out = self.tmp / name
+        bc.main(["--data", str(data or self.data), "--out", str(out), "--preset", "S", "--batch", "8", "--seed", "5",
+                 *extra])
+        return out
+
+    def run_cut(self, name, after, *extra):
+        """run_bc cut off right before the state of epoch after + 1 is written (that epoch's log line is)."""
+        from unittest import mock
+        from duoforge_learn import bc
+        real = bc._save_state
+
+        def cut(out, state):
+            if state["meta"]["epoch"] > after:
+                raise _Cut(after)
+            real(out, state)
+
+        with mock.patch.object(bc, "_save_state", cut), self.assertRaises(_Cut):
+            self.run_bc(name, *extra)
+        return self.tmp / name
+
+    def log(self, out):
+        import json
+        return [json.loads(line) for line in (out / "bc-log.jsonl").read_text(encoding="utf-8").splitlines()]
+
+    def outcome(self, out):
+        """(the bc.npz arrays as bytes, its config, the log records, bc-run.json, the launches' first epochs), the
+        timing fields and the output path left out."""
+        import json
+        with np.load(out / "bc.npz") as z:
+            arrays = {k: (z[k].dtype.str, z[k].shape, z[k].tobytes()) for k in z.files if k != "config"}
+            config = json.loads(str(z["config"]))
+        log = self.log(out)
+        for record in log:
+            del record["seconds"]
+        run = json.loads((out / "bc-run.json").read_text(encoding="utf-8"))
+        del run["best"]["seconds"], run["args"]["out"]
+        launches = [launch["after_epoch"] for launch in run.pop("launches")]
+        return arrays, config, log, run, launches
+
+    def assert_same_run(self, straight, resumed, launches):
+        a, b = self.outcome(straight), self.outcome(resumed)
+        self.assertEqual(a[0].keys(), b[0].keys())
+        for key in a[0]:
+            self.assertEqual(a[0][key], b[0][key], key)  # dtype, shape and bytes
+        self.assertEqual(a[1], b[1])  # the config, best_epoch included
+        self.assertEqual(a[2], b[2])
+        self.assertEqual(a[3], b[3])
+        self.assertEqual((a[4], b[4]), ([0], launches))
+
+    def test_a_cut_run_resumed_twice_ends_as_the_uninterrupted_run(self):
+        from duoforge_learn import bc
+        opts = ("--epochs", "3", "--patience", "3")
+        straight = self.run_bc("straight", *opts)
+        out = self.run_cut("cut", 1, *opts)
+        self.assertEqual([r["epoch"] for r in self.log(out)], [1, 2])  # epoch 2's line, but no state of it
+        self.assertEqual(bc._load_state(out / bc.STATE)[0]["epoch"], 1)
+        self.assertFalse((out / "bc.npz").exists())
+        self.run_cut("cut", 2, *opts, "--resume")
+        self.run_bc("cut", *opts, "--resume")
+        self.assertEqual([r["epoch"] for r in self.log(out)], [1, 2, 3])
+        self.assert_same_run(straight, out, [0, 1, 2])
+
+    def test_resume_keeps_the_best_epoch_of_the_state_and_its_patience(self):
+        # a constant validation NLL: epoch 1 stays the best and the run stops after epoch 2 (patience 1), so bc.npz
+        # holds parameters only the state carries over; a run cut right before its outputs trains no more epochs
+        from unittest import mock
+        from duoforge_learn import bc, checkpoint
+        real = bc._validate
+
+        def flat(*args, **kwargs):
+            return {**real(*args, **kwargs), "val_nll": 1.0}
+
+        opts = ("--epochs", "4", "--patience", "1")
+        with mock.patch.object(bc, "_validate", flat):
+            straight = self.run_bc("flat-straight", *opts)
+            cut = self.run_cut("flat-cut", 1, *opts)
+            self.run_bc("flat-cut", *opts, "--resume")
+            with mock.patch.object(checkpoint, "save", side_effect=_Cut()), self.assertRaises(_Cut):
+                self.run_bc("flat-end", *opts)
+            meta = bc._load_state(self.tmp / "flat-end" / bc.STATE)[0]
+            self.assertEqual((meta["epoch"], meta["stopped"], meta["finished"]), (2, True, False))
+            end = self.run_bc("flat-end", *opts, "--resume")
+        self.assertEqual([r["epoch"] for r in self.log(straight)], [1, 2])
+        self.assertEqual(checkpoint.load(straight / "bc.npz")[1]["train"]["bc"]["best_epoch"], 1)
+        self.assert_same_run(straight, cut, [0, 1])
+        self.assert_same_run(straight, end, [0, 2])
+
+    def test_resume_refusals(self):
+        import json
+        import shutil
+        from unittest import mock
+        from . import test_bc_numpy as fixture
+        from duoforge_learn import bc
+        opts = ("--epochs", "2", "--patience", "2")
+        out = self.run_cut("refused", 0, *opts)
+
+        def refused(*extra, data=None, name="refused"):
+            with self.assertRaises(SystemExit) as caught:
+                self.run_bc(name, *opts, *extra, data=data)
+            return str(caught.exception)
+
+        self.assertIn("no BC run state", refused("--resume", name="never-started"))
+        self.assertFalse((self.tmp / "never-started").exists())
+        self.assertIn("continue it with --resume", refused())  # a state is never overwritten by a new run
+        for flag, value, name in (("--seed", "6", "seed"), ("--batch", "16", "batch"),
+                                  ("--learning-rate", "0.001", "learning_rate"), ("--value-coef", "0.5", "value_coef"),
+                                  ("--epochs", "3", "epochs"), ("--patience", "1", "patience"),
+                                  ("--preset", "M", "preset"), ("--hidden", "32", "hidden"),
+                                  ("--weights", "uniform", "weights"), ("--split", "players", "split"),
+                                  ("--format-weight", "gen9championsvgc2026regmc=2", "format_weight"),
+                                  ("--source-weight", "sheet=2", "source_weight"),
+                                  ("--pick-hypotheses-weight", "0.5", "pick_hypotheses_weight")):
+            self.assertIn(f"started with {name} ", refused("--resume", flag, value))
+        other = fixture.build_fixture(self.tmp, natures=fixture.split_variants(2, 1), name="other-data")
+        self.assertIn("datasets", refused("--resume", data=other))
+        self.assertIn("memmap", refused("--resume", "--cache", str(self.tmp / "cache")))  # rows read in another order
+        real = bc._environment
+        with mock.patch.object(bc, "_environment", lambda: {**real(), "device_kind": "another device"}):
+            self.assertIn("device_kind", refused("--resume"))
+        self.assertEqual(bc._load_state(out / bc.STATE)[0]["epoch"], 0)  # no refusal touched the state
+        # the same datasets at another path continue the run, which then is finished
+        moved = self.tmp / "moved-data"
+        shutil.copytree(self.data, moved)
+        self.run_bc("refused", *opts, "--resume", data=moved)
+        launches = json.loads((out / "bc-run.json").read_text(encoding="utf-8"))["launches"]
+        self.assertEqual([launch["data"] for launch in launches], [[str(self.data)], [str(moved)]])
+        self.assertIn("finished", refused("--resume"))
+
+
 class EvalTest(unittest.TestCase):
     def test_bc_eval_smoke(self):
         import io
