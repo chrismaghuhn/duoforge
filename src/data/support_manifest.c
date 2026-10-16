@@ -615,7 +615,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_POUNCE] = 1u,
             [DFI_MOVE_MUDSLAP] = 1u,
             [DFI_MOVE_APPLEACID] = 1u,
-            /* Step A0 part 4 (decision 0015 entry 5co; the rows are in the C1 and C2 facts of gen_closure.py): Mountain Gale, Bitter
+            /* Step A0 part 4 (decision 0015 entry 5ds; the rows are in the C1 and C2 facts of gen_closure.py): Mountain Gale, Bitter
              * Malice and Night Daze, and Shelter (a C1 row, check_c2_facts with C1_PART4_FACTS). Bitter Malice and Night Daze have one
              * learner each, Zoroark-Hisui and Zoroark, whose only ability is Illusion. A duplicate name (the disguise and its real
              * member both on the field) is refused by the engine at the switch-in that makes it (turn.c dfi_switch_in; decision 0026

@@ -4643,7 +4643,7 @@ C2_FACTS = (
                       'type': 'Ice', 'flags': {'protect', 'mirror', 'metronome'},
                       'secondary': {'chance': 30, 'volatileStatus': 'flinch'}}),
 )
-# Step A0 part 4 (decision 0015 entry 5co): the C1 row Shelter (a self Defense +2 Status move, data/moves.ts:16315-16329; its flags
+# Step A0 part 4 (decision 0015 entry 5ds): the C1 row Shelter (a self Defense +2 Status move, data/moves.ts:16315-16329; its flags
 # snatch and metronome are ignored flags). Checked by check_c2_facts with `only=C1_PART4_FACTS`, the same field-by-field check: the
 # pin entry has exactly these fields and the Champions mod has no entry for it.
 C1_PART4_FACTS = (

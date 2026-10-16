@@ -1,6 +1,6 @@
 {
   "name": "a0p1_cover_j",
-  "purpose": "A0 part 1 (decision 0015 entry 5co, batch A0): a PASS battle of the pool campaign of run 34002 (diff_driver.py random, teams D, E and F; Gardevoir of team D with Calm Mind in place of Trick), a covering battle that shows Stored Power used at a positive stage (Gardevoir at +1 Special Attack and +1 Special Defense from Calm Mind), so that its base power of 20 plus 20 per positive stage is checked. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "purpose": "A0 part 1 (decision 0015 entry 5ds, batch A0): a PASS battle of the pool campaign of run 34002 (diff_driver.py random, teams D, E and F; Gardevoir of team D with Calm Mind in place of Trick), a covering battle that shows Stored Power used at a positive stage (Gardevoir at +1 Special Attack and +1 Special Defense from Calm Mind), so that its base power of 20 plus 20 per positive stage is checked. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,b468618e124010e004ad1d9602402b9a388a24395d0599ca5e6a8326846f65a9",

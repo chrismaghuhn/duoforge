@@ -1,6 +1,6 @@
 {
   "name": "a0p1_cover_b",
-  "purpose": "A0 part 1 (decision 0015 entry 5co, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Meteor Assault with damage, Altaria Mega Evolution with Altarianite, Rock Blast with 2 and 4 hits. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "purpose": "A0 part 1 (decision 0015 entry 5ds, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Meteor Assault with damage, Altaria Mega Evolution with Altarianite, Rock Blast with 2 and 4 hits. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,6ead225bf36c42c8c2cc6a19fcf6797179a5d9203c1444bedb963aa8baf1b2e3",

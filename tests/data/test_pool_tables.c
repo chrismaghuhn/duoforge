@@ -1623,7 +1623,7 @@ int main(void)
                                                 DFI_MOVE_DYNAMICPUNCH, DFI_MOVE_MUDSHOT, 
                                                 DFI_MOVE_CROSSPOISON, DFI_MOVE_POUNCE, DFI_MOVE_MUDSLAP,
                                                 DFI_MOVE_APPLEACID,
-                                                /* step A0 part 4 (decision 0015 entry 5co): Mountain Gale, Bitter Malice, Night Daze, Shelter */
+                                                /* step A0 part 4 (decision 0015 entry 5ds): Mountain Gale, Bitter Malice, Night Daze, Shelter */
                                                 DFI_MOVE_MOUNTAINGALE, DFI_MOVE_BITTERMALICE, DFI_MOVE_NIGHTDAZE, DFI_MOVE_SHELTER,
                                                 /* step G86: Body Slam, Razor Shell and Tickle (data rows), Heavy Slam, Hard Press, Ice Spinner and Belly Drum (handlers; decision 0048) */
                                                 DFI_MOVE_BODYSLAM, DFI_MOVE_RAZORSHELL, DFI_MOVE_TICKLE, DFI_MOVE_HEAVYSLAM,

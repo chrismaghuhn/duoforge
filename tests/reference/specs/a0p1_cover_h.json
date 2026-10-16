@@ -1,6 +1,6 @@
 {
   "name": "a0p1_cover_h",
-  "purpose": "A0 part 1 (decision 0015 entry 5co, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Water Shuriken with 5 hits. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "purpose": "A0 part 1 (decision 0015 entry 5ds, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Water Shuriken with 5 hits. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,685d528ce80c9b3d6e3df516a0d33043264b6bf9b4ea07e1d2d6c5b499073562",

@@ -1,6 +1,6 @@
 {
   "name": "a0p1_cover_i",
-  "purpose": "A0 part 1 (decision 0015 entry 5co, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Knock Off hitting a Chesnaught holding Chesnaughtite and an Altaria holding Altarianite, both stones kept (the Mega Stone of its own species is not taken), so that the stone of each species is checked. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "purpose": "A0 part 1 (decision 0015 entry 5ds, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Knock Off hitting a Chesnaught holding Chesnaughtite and an Altaria holding Altarianite, both stones kept (the Mega Stone of its own species is not taken). It does not exercise the stones' mega_base column: that column is read only by the stone refusal of Trick, Switcheroo, Thief and Symbiosis, which no campaign battle reaches (corrects the message of commit 9471537a). The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,46e2afddd2f9f1d170d9b187e0205f0891a9e4c3d4643d0a09f5640974d3fef6",
