@@ -296,6 +296,7 @@ def main():
     out = Path(args.out).resolve()
     if ROOT in out.parents or out == ROOT:
         sys.exit(f"{out}: the output holds per-game rows and must be outside the repository")
+    runs.refuse_repository(out, ROOT)  # also the main checkout and every other worktree of this repository
     manifest = runs.Manifest("coverage", "tools/coverage/champions_coverage.py", None, root=ROOT)
     out.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, args.package)
@@ -399,7 +400,13 @@ def main():
         lines.append(f"{i:3d}. {o['token']:<45s} + {o['gain']:5d}  -> {o['playable']:6d} ({100 * o['share']:5.1f}%)"
                      f"  [in {o['in_games']} games]")
     (out / "report.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    manifest.write(out, package=str(Path(args.package).resolve()))  # the duoforge package the measurement imported
+    package = Path(args.package).resolve()  # what the measurement imported, when --package names another commit's
+    try:
+        package_code = runs.code(package.parent, environ={})
+    except SystemExit:
+        package_code = None  # a package outside git: its path and the library name it
+    manifest.write(out, package={"path": str(package), "code": package_code},
+                   library=os.environ.get("DUOFORGE_LIBRARY"))
     print("\n".join(lines[:4]))
 
 

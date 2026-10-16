@@ -77,6 +77,10 @@ class OutputTest(unittest.TestCase):
         r = run(TOOL / "champions_coverage.py", "--sheets", "none.jsonl")
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("DUOFORGE_RUNS", r.stderr)
+        r = run(TOOL / "champions_coverage.py", "--sheets", "none.jsonl", env={"DUOFORGE_RUNS": str(ROOT / "runs-x")})
+        self.assertNotEqual(r.returncode, 0)  # a default inside the repository is refused like an explicit --out
+        self.assertIn("must be outside the repository", r.stderr)
+        self.assertFalse((ROOT / "runs-x").exists())
         with tempfile.TemporaryDirectory() as tmp:  # a default that already holds a run is not reused
             import datetime
             taken = Path(tmp, "coverage", f"{datetime.date.today().isoformat()}-champions_coverage")

@@ -11,7 +11,7 @@ NEW = Path(__file__).resolve().parent.parent / "coverage" / "champions_coverage.
 
 if __name__ == "__main__":
     print(f"tools/research/champions_coverage.py moved to tools/coverage/champions_coverage.py: run python3 tools/coverage/champions_coverage.py "
-          f"(this forwarder will be removed)", file=sys.stderr, flush=True)
+          "(this forwarder will be removed)", file=sys.stderr, flush=True)
     sys.argv[0] = str(NEW)
     sys.path[0] = str(NEW.parent)  # as python3 tools/coverage/champions_coverage.py would have it
     runpy.run_path(str(NEW), run_name="__main__")
