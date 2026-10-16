@@ -21,27 +21,27 @@
   "profiles": {
     "ipo": {
       "before": {
-        "ir_total": 3665076652,
+        "ir_total": 3665075139,
         "ir_dfi_get_damage_inclusive": 122940020
       },
       "after": {
-        "ir_total": 3666400650,
+        "ir_total": 3666399066,
         "ir_dfi_get_damage_inclusive": 123804095
       },
-      "ir_total_ratio": 1.0003612470149232,
+      "ir_total_ratio": 1.0003612277920069,
       "ir_dfi_get_damage_inclusive_ratio": 1.0070284273583168,
       "pass": true
     },
     "noipo": {
       "before": {
-        "ir_total": 3989268235,
+        "ir_total": 3989266566,
         "ir_dfi_get_damage_inclusive": 140904050
       },
       "after": {
-        "ir_total": 3990256068,
+        "ir_total": 3990254428,
         "ir_dfi_get_damage_inclusive": 141891895
       },
-      "ir_total_ratio": 1.0002476226069066,
+      "ir_total_ratio": 1.0002476299800118,
       "ir_dfi_get_damage_inclusive_ratio": 1.0070107637076435,
       "pass": true
     }

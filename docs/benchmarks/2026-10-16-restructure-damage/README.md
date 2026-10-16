@@ -1,7 +1,9 @@
 # Restructure 4: damage (dfi_get_damage phase cut) — proof
 
-Clean main **`dc9ce14b`** (#610 merged) against the clean branch head **`30d5bdb`** (`chris/sweet-cannon-0ey5x0`), both
-**dirty=false**. Same source and build paths in both phases, three profiles: Release with IPO (`-flto=auto
+Merged head proof: clean main **`cefc5f67`** against the clean branch head **`6ae1d27b`** (`chris/sweet-cannon-0ey5x0`,
+main merged, never rebased), both **dirty=false**. First proof: clean main **`dc9ce14b`** against clean **`30d5bdb`**, with
+the same results (counts of that main: 1548 test names, 1197 battles, P2 SHA `e91e5121…3926`; the same objects differ,
+only `dfi_get_damage` changes, callgrind +0.036 % / +0.025 %). Same source and build paths in both phases, three profiles: Release with IPO (`-flto=auto
 -ffat-lto-objects`), Release without IPO, and Debug. Machine as in [machine.json](machine.json) (cloud VM, Xeon @ 2.10GHz,
 4 vCPU, GCC 13.3.0, Python 3.13, Node 22.22, Showdown `b2cb775b`).
 
@@ -52,17 +54,17 @@ Fang, Endeavor, OHKO, Night Shade), the six phase calls and the final damage.
    about 11 % of 2^31. The refusal itself is covered by `tests/mechanics/test_modifier.c:111`.
 3. **Code evidence:** below (the library is not byte-equal; the cut's code differs only inside `dfi_get_damage`).
 
-## P1–P6 (head `30d5bdb`)
+## P1–P6 (merged head `6ae1d27b`)
 
-- **P1:** 1548 names, identical in all three profiles, every test's properties unchanged. Selected runs: 266 IPO and
-  260 no-IPO before and after, 0 failed, the same 63 skipped in both phases by the proof's configuration
-  (`DUOFORGE_PYTHON` was empty). Those 63 were then run on the head's own libraries (byte-equal to the proof's) with
-  `DUOFORGE_PYTHON=python3`: **62 passed** in both profiles, including `duoforge.python.layout`, `state_layout`, `perft`,
-  `bench`, `live`, and the `duoforge.eval.*` oracles; `duoforge.python.evaluator_quick` stays skipped (needs JAX,
-  `DUOFORGE_LEARN_PYTHON`; the hosted CI runs it).
-- **P2:** 10 variants, 2720 executions, **1197 unique battles**, 23440 steps, 8848 stops; result bytes equal before and
-  after, with and without IPO, canonical SHA `e91e512100a32ae386cda4ed39ee184de84d4fdff5222d65f3decf19fae63926` (the same as
-  the flow proof's) ([per-battle-digests.tsv](per-battle-digests.tsv)). The ten native reference runners' reports
+- **P1:** the sorted inventory is identical before and after in every profile (1560 names in both Release profiles,
+  1559 in Debug), every test's properties unchanged. Selected runs: 266 IPO and 260 no-IPO before and after, 0 failed,
+  one skipped in both phases: `duoforge.python.evaluator_quick` (needs JAX, `DUOFORGE_LEARN_PYTHON`; the hosted CI runs
+  it). The Python tests, `duoforge.python.layout`, `state_layout`, `perft`, `bench`, `live` and the `duoforge.eval.*`
+  oracles included, ran in both phases (`DUOFORGE_PYTHON=python3`). (In the first proof `DUOFORGE_PYTHON` was empty, the
+  same 63 were skipped in both phases and then run on that head's libraries: 62 passed, the same one skipped.)
+- **P2:** 10 variants, 2742 executions, **1208 unique battles**, 23788 steps, 8952 stops; result bytes equal before and
+  after, with and without IPO, canonical SHA `a5af789871ac9164f2c6240db800a3e87b1852ed9c7e5391516653e14bd3c067`
+  ([per-battle-digests.tsv](per-battle-digests.tsv)). The ten native reference runners' reports
   (checks, per-battle digests over states, requests, events, RNG use and stops) are byte-equal in all three profiles.
 - **P3:** `duoforge.python.perft` passes in both profiles; `tests/perft/pins.json` unchanged.
 - **P4:** `duoforge.python.bench` passes in both profiles; `BENCH_SHA256` unchanged (no file under `python/` changed).
@@ -78,9 +80,9 @@ All counts and hashes: [proof-summary.json](proof-summary.json); scripts: [proof
 
 | Profile | `libduoforge_shared.so` before | after | objects compared | differing |
 |---|---|---|---:|---|
-| IPO on | `f7768894…` | `3f9d759e…` | 285 | `turn.c.o` ×2, `libduoforge.a`, the library, `bench/main.c.o` |
-| IPO off | `cc486752…` | `0280ab30…` | 283 | the same |
-| Debug | `d1e3c12e…` | `779b9b67…` | 283 | the same |
+| IPO on | `d9f49806…` | `4cdb6475…` | 285 | `turn.c.o` ×2, `libduoforge.a`, the library, `bench/main.c.o` |
+| IPO off | `1da1fdc1…` | `51bafacb…` | 283 | the same |
+| Debug | `33aa5bdd…` | `cb3b69f2…` | 283 | the same |
 
 Every other object is byte-equal. In the libraries, [fn_diff.py](fn_diff.py) compares the disassembly function by
 function (RIP displacements and annotations normalised): **only `dfi_get_damage` differs** (IPO: `.lto_priv.0`, 1 of
@@ -97,11 +99,12 @@ binaries, equal records ([callgrind-gate.json](callgrind-gate.json), [callgrind_
 
 | Profile | Ir before | Ir after | ratio | `dfi_get_damage` inclusive Ir before → after | ratio | limit |
 |---|---:|---:|---:|---|---:|---|
-| IPO on | 3,665,076,652 | 3,666,400,650 | **1.00036** (+0.036 %) | 122,940,020 → 123,804,095 | 1.0070 | ≤ 1.010 met |
-| IPO off | 3,989,268,235 | 3,990,256,068 | **1.00025** (+0.025 %) | 140,904,050 → 141,891,895 | 1.0070 | ≤ 1.010 met |
+| IPO on | 3,665,075,139 | 3,666,399,066 | **1.00036** (+0.036 %) | 122,940,020 → 123,804,095 | 1.0070 | ≤ 1.010 met |
+| IPO off | 3,989,266,566 | 3,990,254,428 | **1.00025** (+0.025 %) | 140,904,050 → 141,891,895 | 1.0070 | ≤ 1.010 met |
 
-Stack frame (`-fstack-usage`, Release; with IPO the ltrans units of the shared-library link; these builds link
-byte-equal libraries to the proof's) ([stack-usage.json](stack-usage.json)):
+Stack frame (`-fstack-usage`, Release; with IPO the ltrans units of the shared-library link; measured on the first proof's
+commits, whose stack-usage builds link byte-equal libraries to that proof's; on the merged head the prologues and the
+instruction counts of `dfi_get_damage` are the same) ([stack-usage.json](stack-usage.json)):
 
 | Function | IPO on | IPO off |
 |---|---|---|
@@ -111,24 +114,26 @@ byte-equal libraries to the proof's) ([stack-usage.json](stack-usage.json)):
 The 16 extra bytes are part of the 64-byte context that stays in the frame (prologue `sub $0x148,%rsp` → `$0x158` with
 IPO, `$0x138` → `$0x148` without).
 
-## Differential fuzzing against Showdown (head `30d5bdb`, IPO build)
+## Differential fuzzing against Showdown (merged head `6ae1d27b`, IPO build)
 
 | Run | Battles | Result |
 |---|---:|---|
-| `duoforge.reference.diff_replay` (every recorded battle through worker, converter and runner) | 1197 | 1197 PASS, 0 DIVERGENCE |
+| `duoforge.reference.diff_replay` (every recorded battle through worker, converter and runner) | 1208 | 1208 PASS, 0 DIVERGENCE |
 | `duoforge.reference.diff_corpus` | 64 | 64 PASS |
 | `diff_random_smoke`, `diff_domain_smoke`, `diff_team_smoke`, `diff_pool_smoke`, `diff_wide_guard_smoke`, `diff_random` | — | 6 of 6 pass |
 | `diff_driver.py random`, seed 1016, damage-chain teams `team_g34` (D), `team_g34b` (E), `team_aurora_veil` (F), registry A; pairings DE,ED,DF,FD,EF,FE,DA,AE; domain rate 0.1 | 400 | **400 PASS**, 0 DIVERGENCE, 0 UNSUPPORTED, 0 ORACLE_GAP; 1277 of 1277 domain samples agreed |
 
 The pinned checkout was built with `npm ci --ignore-scripts --omit=dev && node build` and checked first with
 `ps_trace.js --check` on `g54_sing_a` and `ac1_trace_drizzle` (both pass); nothing in it is changed
-([fuzz-summary.json](fuzz-summary.json)).
+([fuzz-summary.json](fuzz-summary.json)). The first proof's head `30d5bdb` gave the same: 1197/1197 replay, 64/64 corpus,
+400/400 in the seed-1016 campaign.
 
 ## Paired bench (report only, no gate)
 
 The fixed protocol of the forms and flow proofs ([paired_bench.py](paired_bench.py)): 32 rounds, Latin rotation of change
 and same-binary control in both IPO modes, AB/BA alternating, 1024 battles × 3 repetitions after 2 warm-ups, pinned to
-CPU 3, 20000-draw paired bootstrap; the proof's own before and after bench binaries. Ratios are after/before time:
+CPU 3, 20000-draw paired bootstrap; the first proof's before and after bench binaries (`dc9ce14b` / `30d5bdb`; the merge
+changes only data tables, the same in both phases). Ratios are after/before time:
 **above 1 = slower**. The old tolerance (control-adjusted median ≤ 1.02 and 95 % CI upper bound < 1.05) is shown for
 reference only; under the gate rule of 2026-10-16 the gate is callgrind above.
 

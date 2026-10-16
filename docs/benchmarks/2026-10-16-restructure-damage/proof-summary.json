@@ -2,40 +2,40 @@
  "P1_inventory": {
   "debug": {
    "equal": true,
-   "names": 1548,
-   "sha256": "d1ea2f7d8fabf5f3858a19f53cec3b0f448f5831d10bce529dc3d6420871b0fa"
+   "names": 1559,
+   "sha256": "d5137afbbbb750ccb820242e9b147945c3bf26d38217acf4ddf3c3f16a635447"
   },
   "ipo": {
    "equal": true,
-   "names": 1548,
-   "sha256": "d1ea2f7d8fabf5f3858a19f53cec3b0f448f5831d10bce529dc3d6420871b0fa"
+   "names": 1560,
+   "sha256": "8d3c12dfd0329c4c3a82c4186fdc65a834b76e2a619b4d5d228ab63299e11276"
   },
   "noipo": {
    "equal": true,
-   "names": 1548,
-   "sha256": "d1ea2f7d8fabf5f3858a19f53cec3b0f448f5831d10bce529dc3d6420871b0fa"
+   "names": 1560,
+   "sha256": "8d3c12dfd0329c4c3a82c4186fdc65a834b76e2a619b4d5d228ab63299e11276"
   }
  },
  "P1_properties_equal": true,
  "P1_selected_tests": {
   "after-ipo": {
    "names_sha256": "c4d71eb969f78f68fbd984d9ed47befe4b0a96e66b57efee6bb8f04295c27289",
-   "passed": 203,
+   "passed": 265,
    "tests": 266
   },
   "after-noipo": {
    "names_sha256": "9f0bcee8d6fa849918dc61911b548bab8b6ae53f532b215722bce25db3eb59d8",
-   "passed": 198,
+   "passed": 259,
    "tests": 260
   },
   "before-ipo": {
    "names_sha256": "c4d71eb969f78f68fbd984d9ed47befe4b0a96e66b57efee6bb8f04295c27289",
-   "passed": 203,
+   "passed": 265,
    "tests": 266
   },
   "before-noipo": {
    "names_sha256": "9f0bcee8d6fa849918dc61911b548bab8b6ae53f532b215722bce25db3eb59d8",
-   "passed": 198,
+   "passed": 259,
    "tests": 260
   }
  },
@@ -43,19 +43,19 @@
   "checks": {
    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
-   "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 14442 checks, 0 failures",
+   "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 14812 checks, 0 failures",
    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
-   "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 27467 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 27997 checks, 0 failures",
    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
   },
-  "executions": 2720,
+  "executions": 2742,
   "ipo": {
    "equal": true,
-   "sha256": "e91e512100a32ae386cda4ed39ee184de84d4fdff5222d65f3decf19fae63926"
+   "sha256": "a5af789871ac9164f2c6240db800a3e87b1852ed9c7e5391516653e14bd3c067"
   },
   "native_reports_equal": {
    "debug": true,
@@ -64,11 +64,11 @@
   },
   "noipo": {
    "equal": true,
-   "sha256": "e91e512100a32ae386cda4ed39ee184de84d4fdff5222d65f3decf19fae63926"
+   "sha256": "a5af789871ac9164f2c6240db800a3e87b1852ed9c7e5391516653e14bd3c067"
   },
-  "steps": 23440,
-  "stops": 8848,
-  "unique_battles": 1197,
+  "steps": 23788,
+  "stops": 8952,
+  "unique_battles": 1208,
   "variants": 10
  },
  "P3_perft_pins_sha256": "84c744369b4fdc0705d4a2c7f4c08d5df2cbc78fb53ef2898bca3edb2192ddcb",
@@ -77,17 +77,17 @@
  "P5_fingerprints": {
   "debug": {
    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
-   "POOL": "dd7912948f3f1cc310e90fc2e3dbd9918bf70b84905c808fa49cff97cffd918e",
+   "POOL": "df5c0ef6ee517c9966adc8d0e241f45f30118779ad64722a3e7b2ad7ee50c476",
    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
   },
   "ipo": {
    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
-   "POOL": "dd7912948f3f1cc310e90fc2e3dbd9918bf70b84905c808fa49cff97cffd918e",
+   "POOL": "df5c0ef6ee517c9966adc8d0e241f45f30118779ad64722a3e7b2ad7ee50c476",
    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
   },
   "noipo": {
    "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
-   "POOL": "dd7912948f3f1cc310e90fc2e3dbd9918bf70b84905c808fa49cff97cffd918e",
+   "POOL": "df5c0ef6ee517c9966adc8d0e241f45f30118779ad64722a3e7b2ad7ee50c476",
    "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
   }
  },
@@ -115,16 +115,34 @@
   }
  },
  "after": {
-  "commit": "30d5bdb3c2e1098942aa6be6e6ed0a30111b97b4",
+  "commit": "6ae1d27b6de89ba8dc8e02386e5467bf59df0b9d",
   "dirty": false,
   "phase": "after"
  },
  "before": {
-  "commit": "dc9ce14be8d8b608439f5edecac91d64dd3fda20",
+  "commit": "cefc5f677662d6d19c589c09fcc6e087b6368816",
   "dirty": false,
   "phase": "before"
  },
  "changed_files": [
+  "docs/benchmarks/2026-10-16-restructure-damage/README.md",
+  "docs/benchmarks/2026-10-16-restructure-damage/callgrind-gate.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/callgrind_gate.py",
+  "docs/benchmarks/2026-10-16-restructure-damage/fn_diff.py",
+  "docs/benchmarks/2026-10-16-restructure-damage/fuzz-summary.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/machine.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/paired-bench-ipo-change.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/paired-bench-ipo-control.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/paired-bench-noipo-change.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/paired-bench-noipo-control.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/paired_bench.py",
+  "docs/benchmarks/2026-10-16-restructure-damage/per-battle-digests.tsv",
+  "docs/benchmarks/2026-10-16-restructure-damage/proof-summary.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/proofs.py",
+  "docs/benchmarks/2026-10-16-restructure-damage/stack-usage.json",
+  "docs/benchmarks/2026-10-16-restructure-damage/summarize.py",
+  "docs/benchmarks/2026-10-16-restructure-damage/test-inventory.txt",
+  "docs/benchmarks/2026-10-16-restructure-damage/verify_lines.py",
   "src/combat/mechanics/damage/attack.h",
   "src/combat/mechanics/damage/base_damage.h",
   "src/combat/mechanics/damage/base_power.h",
@@ -145,8 +163,8 @@
     "libduoforge.a",
     "libduoforge_shared.so"
    ],
-   "library_after": "779b9b67ee55c6d321c01306d96f592711aef81b6f5e81acc7e38a55bd178539",
-   "library_before": "d1e3c12e01e4456d74a62d1da9835bfb9f2e9ea3b8ab00a843f75ac3c6921e3a"
+   "library_after": "cb3b69f2dd63cf2614bcf48ab7f94588fe9f7695aa7d5ac0db5c77b6cc77003e",
+   "library_before": "33aa5bdd3e3db9d6e17c32de6a2c0f19759eae101a1b186da3c2debd7ea1104c"
   },
   "ipo": {
    "compared": 285,
@@ -157,8 +175,8 @@
     "libduoforge.a",
     "libduoforge_shared.so"
    ],
-   "library_after": "3f9d759e4090c36f95b193877603c798c8049648a4bfac9a5f583018383dda47",
-   "library_before": "f7768894a97a82a8605513f11b59f03fe993908f25dc64e74e2857afd386a6e1"
+   "library_after": "4cdb64759b2a08b408466002430eba08164c56fdcbf2b25537512c1549f727b7",
+   "library_before": "d9f498062cca1d637b242ea7c78feed6978c72b62baed1f8b21ce6fa3df68ae6"
   },
   "noipo": {
    "compared": 283,
@@ -169,8 +187,8 @@
     "libduoforge.a",
     "libduoforge_shared.so"
    ],
-   "library_after": "0280ab3094d8dd146e90b3ba5d25754b304113f24fc316fbac13d5382671f7b8",
-   "library_before": "cc486752df9769c575706d4263bccf88077b2c8299bc128489a4a3e8d8519a79"
+   "library_after": "51bafacb147aaecc5cff431b23d82694a114d7f7a4557574cbe9db4354263e4a",
+   "library_before": "1da1fdc12d0eee8cd5e90736048190cd49558d06e71a89106fc0ef7cc0d9b423"
   }
  }
 }
