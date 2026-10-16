@@ -126,4 +126,22 @@ The pinned checkout was built with `npm ci --ignore-scripts --omit=dev && node b
 
 ## Paired bench (report only, no gate)
 
-Running; the table follows in the next commit.
+The fixed protocol of the forms and flow proofs ([paired_bench.py](paired_bench.py)): 32 rounds, Latin rotation of change
+and same-binary control in both IPO modes, AB/BA alternating, 1024 battles × 3 repetitions after 2 warm-ups, pinned to
+CPU 3, 20000-draw paired bootstrap; the proof's own before and after bench binaries. Ratios are after/before time:
+**above 1 = slower**. The old tolerance (control-adjusted median ≤ 1.02 and 95 % CI upper bound < 1.05) is shown for
+reference only; under the gate rule of 2026-10-16 the gate is callgrind above.
+
+| Profile | Workload | Raw median (95 % CI) | Same-binary control (95 % CI) | Adjusted median (95 % CI) | Old tolerance |
+|---|---|---|---|---|---|
+| IPO on | plain | 1.0156 (+1.56 %; 0.9796–1.0494) | 0.9973 (0.9668–1.0194) | 1.0143 (+1.43 %; 0.9837–1.0812) | missed (upper bound) |
+| IPO on | events | 0.9761 (−2.39 %; 0.9465–1.0028) | 1.0033 (0.9815–1.0216) | 0.9828 (−1.72 %; 0.9422–1.0064) | met |
+| IPO off | plain | 1.0103 (+1.03 %; 0.9760–1.0357) | 0.9971 (0.9709–1.0332) | 1.0185 (+1.85 %; 0.9765–1.0556) | missed (upper bound) |
+| IPO off | events | 0.9613 (−3.87 %; 0.9325–0.9874) | 0.9831 (0.9652–1.0151) | 0.9887 (−1.13 %; 0.9500–1.0415) | met |
+
+Unlike the forms proof, the before and after binaries here are **not** instruction-identical (only `dfi_get_damage`
+differs, see gate (a)), so these ratios are not noise by construction. Observations, not a verdict: every adjusted CI
+contains 1; plain and events run the same engine code (events also records the event stream) and move in opposite
+directions (+1.4 % / +1.9 % against −1.7 % / −1.1 %); the executed instructions of the same workload grow by 0.03 %. Two
+repetitions were flagged disturbed (IPO), none without IPO; the run took 38 minutes on the shared cloud VM. All samples:
+`paired-bench-{ipo,noipo}-{change,control}.json`.
