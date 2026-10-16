@@ -952,3 +952,22 @@ python3 tools/research/champions_batches.py --games <private dir>/games.jsonl --
 ```
 The Smogon weights come from the public `chaos` files named above (a share per entry: the summed weight of the entry
 over all Pokémon divided by the summed ability weight, which counts each Pokémon slot once).
+
+## 11. Long games: mechanics no usage statistic shows
+
+PP, Struggle, the Toxic counter and the turn limits never show up as a blocker of a team sheet; they matter in long
+games (singles, self-play stalls). Read against the pin (Champions mod first) and the engine at `4d4bebf8`; the
+entries with all citations are `long_game_mechanics` in `data/champions-100-weights.json`.
+
+| mechanic | status | evidence | what is left | area / core / effort / batch |
+|---|---|---|---|---|
+| PP use and Pressure (spread, several Pressure foes, redirection, Imprison's mustpressure, field moves, locked turns) | supported | 11 recorded `g53_*`/`g78`/`o2` Pressure battles, `g27_disable_pp`; pin `battle-actions.ts:278-291, 467-484`; engine `turn.c:6004-6040, 7561-7581` | latent: the `cant nopp` path (`turn.c:7567`) emits no line; unreachable today, reachable once Spite, Eerie Spell or Instruct land; Snatch is not in the pool | move_body, S, with B6 |
+| Struggle (0 PP on all moves or none selectable; typeless; `-activate`; recoil round(maxHP/4), direct damage) | supported | 70 recorded battles contain a Struggle (`s2_struggle`, `s2_typeless_struggle`, `s3_struggle_end`, `g4_rock_head_struggle`, `g67_mg_struggle`, ...); `request.c:124-269`, `turn.c:562, 7606, 9293-9296` | – | – |
+| Toxic counter (stage +1 to 15, reset on switch-in, Baton Pass, Natural Cure) | supported | `g36_toxic_*`, `g47_toxic_reset`, `g47_switch_tox_tie`; `test_pool_g36.c`; invariant caps 15 (`invariants.c:1010`); no battle reaches stage 15 | engine clears the stage when the Pokemon leaves, the pin when it comes back (same value whenever read); Baton Pass passes no status; Natural Cure (A2) must clear it with the status | flow, S, A2 |
+| Turn limit: a tie when the turn passes 1000, every format (not the Endless Battle Clause); warnings from turn 500 | **missing in doubles**; singles refuses turn 101 by name | pin `battle.ts:1624, 1834-1852`; engine `turn.c:11797-11813`; no battle passes turn 100 | a doubles battle past turn 1000 plays on where the reference ties: a silent divergence. Real VGC games never reach it (server timer), self-play can. End as a tie (RESULT_TIE exists) or refuse by name | flow, S, A2 (or as a fix before) |
+| Endless Battle Clause: staleness from turn 101, berry-cycling loser (Champions OU only; Reg M-C's Flat Rules lack it) | partial: singles refuses turn 101 | `rulesets.ts:2-8` vs `formats.ts:288-299`; `battle.ts:1803-1903`; `pokemon.ts:41-45, 1787-1797, 1868-1879`; test `duoforge.state.singles` | staleness bits per member, position and item; the loser rule from the sheets; reachable only through Trick/Switcheroo/Symbiosis, Skill Swap/Entrainment, and the Recycle/Harvest/Pickup gaps. A cheaper exact step: refuse at 101 only when some Pokemon could be stale | flow (+ move_body), M, B7, singles only |
+| Restoration loops: Leppa Berry, Recycle, Harvest, Pickup, Rest/Sleep Talk, Wish | gaps (section 5) | replay games: Leppa 83, Wish 111, Rest 67, Harvest 33, Recycle 3 | each needs its gap row; Recycle/Harvest/Pickup make the clause's staleness reachable | B8 / B10 / C |
+| VGC Timer, timeout tiebreak, harness step caps | not simulator rules | `rulesets.ts:778-786`; `duoforge_battle_tiebreak`; `recipes.py` max_steps | – | – |
+
+The one item to act on is the doubles turn limit: today a self-play battle past turn 1000 diverges silently.
+Everything else is supported, refused by name, or waits on its own gap row.

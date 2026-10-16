@@ -6455,5 +6455,136 @@
    "smogon_ou_1630": 0.02,
    "smogon_ou_1760": 0.03
   }
+ ],
+ "long_game_mechanics": [
+  {
+   "id": "pp-and-pressure",
+   "mechanic": "PP use (deductPP) and Pressure, incl. spread moves, several Pressure foes, redirection, mustpressure (Imprison), field moves, a locked turn",
+   "status": "supported",
+   "pin": "sim/battle-actions.ts:278-291 (deductPP before the move; locked moves use none), :467-484 (pressureTargets, DeductPP per target), sim/pokemon.ts:888-901 (deductPP, clamp at 0, used flag), data/abilities.ts:3437-3449 (Pressure onDeductPP 1 per foe)",
+   "engine": "src/combat/turn.c:7561-7572 (deductPP, lockedmove skip), :7770-7781 and :6004-6040 (dfi_pressure_extra: targets after redirection, field moves and MUST_PRESSURE count every standing foe)",
+   "evidence": "recorded: g53_single_target, g53_spread_protect, g53_expanding_force, g53_field_trick_room, g53_mustpressure (Imprison), g53_pressure_ally, g53_fainted_holder, g53_trace_pressure, g53_mega_pressure, g78_pressure2, o2_pressure_after_mega; g27_disable_pp",
+   "gap": "latent only: the `cant|X|nopp` path (turn.c:7567-7570) sets the false result but emits no line. No marked move can bring a chosen move to 0 PP before it runs (the request never offers a 0-PP move; Pressure drains after use), so it is unreachable today; Spite, Eerie Spell and Instruct (gaps in B6/C) make it reachable and must add the line. Snatch is not in the pool.",
+   "area": "flow",
+   "core": [
+    "move_body"
+   ],
+   "effort": "S",
+   "batch": "with Spite / Eerie Spell (B6)",
+   "deps": [
+    "move:spite",
+    "move:eeriespell",
+    "move:instruct"
+   ]
+  },
+  {
+   "id": "struggle",
+   "mechanic": "Struggle: offered when no move is selectable (0 PP on all, Disable, Taunt, Imprison, Encore, Choice lock), typeless, -activate line, recoil Math.round(baseMaxhp/4) as direct damage, no PP, never Encored",
+   "status": "supported",
+   "pin": "data/moves.ts:18211-18232 (Struggle: typeless via onModifyMove, -activate, struggleRecoil), sim/battle-actions.ts:1381-1389 (recoil = clampIntRange(round(baseMaxhp/4), 1), directDamage 'strugglerecoil')",
+   "engine": "src/state/request.c:124-269 (Struggle when no move is selectable), src/combat/turn.c:562 (typeless), :7606 (-activate), :9293-9296 (recoil (hp_max+2)/4, at least 1), :2164 (directDamage class)",
+   "evidence": "recorded: s2_struggle, s2_typeless_struggle, s3_struggle_end, s16_struggle_mega, g4_rock_head_struggle, g67_mg_struggle (Magic Guard), g67_struggle_sub_balloon, g38_imprison_struggle, g09_encore_struggle, c05_focus_blast_struggle (70 recorded battles contain a Struggle)",
+   "gap": null,
+   "area": "move",
+   "core": [],
+   "effort": null,
+   "batch": null,
+   "deps": []
+  },
+  {
+   "id": "toxic-counter",
+   "mechanic": "Toxic counter: stage 0 at the status start, +1 per residual up to 15, damage max(1, floor(baseMaxhp/16)) x stage, back to 0 when the Pokemon switches in; Baton Pass does not pass status; Natural Cure",
+   "status": "supported (Natural Cure is a gap)",
+   "pin": "data/conditions.ts:138-161 (tox: onStart stage 0, onSwitchIn stage 0, residual order 9, cap 15); no Champions override (data/mods/champions/conditions.ts); data/mods/champions/abilities.ts:49-58 (Natural Cure: silent cure on switch-out)",
+   "engine": "src/combat/turn.c:11266-11277 (stage then damage), :2446-2448 (start), :2519-2520 (cure clears the stage), src/state/identity.c:73-79 (cleared when the occupant leaves: the pin clears it at the next switch-in, the same value whenever it is read), :9936-9944 (tox's onSwitchIn counts in the switch-in order: speed-tie draw), src/state/invariants.c:1010-1013 (stage <= 15, only on a badly poisoned member on the field)",
+   "evidence": "recorded: g36_toxic_a, g36_toxic_burn, g36_toxic_mirror_a/b, g47_toxic_reset, g47_switch_tox_tie, g37_toxic_spikes; tests/mechanics/test_pool_g36.c (stage = number of tox damage lines), tests/data/test_pool_tail.c m_toxic_16 (stage 16 refused). No recorded battle reaches stage 15 (needs 15 residuals on the field); the cap is checked by the invariant only.",
+   "gap": "Natural Cure (ability:naturalcure, A2) must clear the stage with the status (the cureStatus path already does). Baton Pass: the stage belongs to the passer's member and is cleared when it leaves; nothing to pass.",
+   "area": "ability",
+   "core": [
+    "flow"
+   ],
+   "effort": "S",
+   "batch": "A2 (Natural Cure)",
+   "deps": [
+    "ability:naturalcure"
+   ]
+  },
+  {
+   "id": "turn-limit",
+   "mechanic": "Turn limit: every format ties when the turn counter passes 1000 (not a part of the Endless Battle Clause); warning lines from turn 500",
+   "status": "missing in doubles (partial in singles: refused by name)",
+   "pin": "sim/battle.ts:1624 (endTurn: turn++), :1773 then :1834-1843 (turn > 1000: message and tie, before the clause's rule check, so Reg M-C too), :1844-1852 (bigerror warnings at 500, 600, ... 900, every 10 from 900, every turn from 990: protocol only)",
+   "engine": "src/combat/turn.c:11797-11813 (dfi_end_turn: only the singles kind refuses turn 101; the doubles kinds go on to UINT16_MAX and then E_EXHAUSTED); duoforge.h:659-663 (RESULT_TIE exists)",
+   "evidence": "none: no recorded battle passes turn 100. Real Reg M-C games never get near (the VGC timer, a server rule, ends them), but self-play can (endless switching uses no PP).",
+   "gap": "A doubles battle reaching turn 1001 is played on where the reference ties: a silent divergence, against the rule that unsupported cases fail explicitly. Fix: at turn > 1000 end the battle as a tie (TERMINAL, RESULT_TIE, the RESULT event), or refuse by name as singles does at 101. The warning lines need no state; the converter must accept them.",
+   "area": "flow",
+   "core": [
+    "flow"
+   ],
+   "effort": "S",
+   "batch": "A2 (one clause in dfi_end_turn; or before, as a fix)",
+   "deps": []
+  },
+  {
+   "id": "endless-battle-clause",
+   "mechanic": "Endless Battle Clause (Champions OU only: Standard AG; Reg M-C's Flat Rules do not include it): from turn 101, when every active Pokemon of both sides is stale, one side externally, and no side can switch to a non-stale Pokemon, the side whose sheets carry a restorative berry and Harvest/Pickup/Recycle loses (else a tie)",
+   "status": "partial: singles refuses turn 101 by name; Reg M-C not affected",
+   "pin": "data/mods/champions/rulesets.ts:2-8 (Standard AG has the clause), config/formats.ts:288-299 (Reg M-C: Flat Rules, no clause), sim/battle.ts:1803-1903 (maybeTriggerEndlessBattleClause), :1763-1768 (staleness per side), sim/pokemon.ts:41-45 (RESTORATIVE_BERRIES), :1787-1797 (eat: pendingStaleness becomes staleness), :1868-1879 (setItem: Trick/Switcheroo by a foe external, any other internal), sim/battle.ts:1339-1340 (Skill Swap: volatileStaleness), data/moves.ts:4881 (Entrainment)",
+   "engine": "src/combat/turn.c:11806-11813 (singles: turn 101 refused), :3284-3285 (pendingStaleness not modelled)",
+   "evidence": "test duoforge.state.singles (turn 100 refused, 99 accepted; decision 0083 section 6)",
+   "gap": "Staleness is set only by eating a restorative berry received through setItem (Trick, Switcheroo, Symbiosis; Recycle, Harvest, Pickup are gaps) or by Skill Swap / Entrainment from a foe. Modelling needs a staleness bit per member (internal/external), a volatile one per position and the pending one per item, plus the loser rule from the sheets (its `berry` flag is overwritten per Pokemon, not OR'ed: the pin's exact code). Cheaper and exact: keep refusing, but only when some Pokemon could be stale (then most singles games pass turn 100).",
+   "area": "flow",
+   "core": [
+    "flow",
+    "move_body"
+   ],
+   "effort": "M",
+   "batch": "B7 (flow); singles only, after the certified singles kind",
+   "deps": [
+    "turn-limit",
+    "move:recycle",
+    "ability:harvest",
+    "ability:pickup"
+   ]
+  },
+  {
+   "id": "berry-loops",
+   "mechanic": "Long-game restoration: Leppa Berry (PP), Recycle, Harvest, Pickup (berry loops), Rest and Sleep Talk, Wish and Leftovers stalls",
+   "status": "gaps (listed in section 5); Leftovers, Sitrus, Protect stalls supported",
+   "pin": "data/items.ts:3352 (Leppa Berry), data/moves.ts:14821 (Recycle), data/abilities.ts:1800 (Harvest), :3262 (Pickup), data/moves.ts:14957 (Rest), :16866 (Sleep Talk)",
+   "engine": "see the gap rows: item:leppaberry (B8), move:recycle (C), ability:harvest (B8), ability:pickup (C), move:rest / move:sleeptalk (B10), move:wish (B10)",
+   "evidence": "replay games: Leppa 83, Rest 67, Wish 111, Harvest 33, Recycle 3, Pickup 0 (section 5)",
+   "gap": "Each loop needs its own gap first; with Recycle/Harvest/Pickup in, the staleness of the clause above becomes reachable in singles.",
+   "area": "item",
+   "core": [
+    "flow",
+    "residual",
+    "move_body"
+   ],
+   "effort": "M",
+   "batch": "B8 / B10 / C",
+   "deps": [
+    "item:leppaberry",
+    "move:recycle",
+    "ability:harvest",
+    "ability:pickup",
+    "move:rest",
+    "move:sleeptalk"
+   ]
+  },
+  {
+   "id": "not-sim-rules",
+   "mechanic": "Server and harness limits that are not simulator rules",
+   "status": "out of scope",
+   "pin": "data/rulesets.ts:778-786 (VGC Timer: server timer, Timeout Auto Choose; not a sim rule), Battle.tiebreak (sim/battle.ts:1467-1508) is what the server uses on a timer loss",
+   "engine": "include/duoforge/duoforge.h:664-678 (duoforge_battle_tiebreak), python/duoforge/recipes.py:191-216 (max_steps truncation of the harness)",
+   "evidence": null,
+   "gap": null,
+   "area": "flow",
+   "core": [],
+   "effort": null,
+   "batch": null,
+   "deps": []
+  }
  ]
 }
