@@ -1,0 +1,1411 @@
+{
+ "limit": 1.01,
+ "profiles": {
+  "ipo": {
+   "code_diff": {
+    "clones": {
+     "dfi_accuracy_targets": {
+      "after": [
+       "dfi_accuracy_targets.lto_priv.0"
+      ],
+      "before": [
+       "dfi_accuracy_targets.lto_priv.0"
+      ]
+     },
+     "dfi_add_volatile": {
+      "after": [
+       "dfi_add_volatile.lto_priv.0"
+      ],
+      "before": [
+       "dfi_add_volatile.lto_priv.0"
+      ]
+     },
+     "dfi_announce_faints": {
+      "after": [
+       "dfi_announce_faints.lto_priv.0"
+      ],
+      "before": [
+       "dfi_announce_faints.lto_priv.0"
+      ]
+     },
+     "dfi_attract_update": {
+      "after": [
+       "dfi_attract_update"
+      ],
+      "before": [
+       "dfi_attract_update"
+      ]
+     },
+     "dfi_battle_step_observed": {
+      "after": [
+       "dfi_battle_step_observed.constprop.0"
+      ],
+      "before": [
+       "dfi_battle_step_observed.constprop.0"
+      ]
+     },
+     "dfi_before_move": {
+      "after": [
+       "dfi_before_move.lto_priv.0",
+       "dfi_before_move.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_before_move.lto_priv.0",
+       "dfi_before_move.lto_priv.0.cold"
+      ]
+     },
+     "dfi_boost": {
+      "after": [
+       "dfi_boost.isra.0",
+       "dfi_boost.isra.0.cold"
+      ],
+      "before": [
+       "dfi_boost.isra.0",
+       "dfi_boost.isra.0.cold"
+      ]
+     },
+     "dfi_bounce": {
+      "after": [
+       "dfi_bounce.lto_priv.0"
+      ],
+      "before": [
+       "dfi_bounce.lto_priv.0"
+      ]
+     },
+     "dfi_bug_bite": {
+      "after": [
+       "dfi_bug_bite.lto_priv.0"
+      ],
+      "before": [
+       "dfi_bug_bite.lto_priv.0"
+      ]
+     },
+     "dfi_double_shock_try": {
+      "after": [
+       "dfi_double_shock_try.lto_priv.0"
+      ],
+      "before": [
+       "dfi_double_shock_try.lto_priv.0"
+      ]
+     },
+     "dfi_emit_item_left": {
+      "after": [],
+      "before": [
+       "dfi_emit_item_left.lto_priv.0"
+      ]
+     },
+     "dfi_emit_item_received": {
+      "after": [],
+      "before": [
+       "dfi_emit_item_received.lto_priv.0"
+      ]
+     },
+     "dfi_emit_plain": {
+      "after": [
+       "dfi_emit_plain.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_ev": {
+      "after": [
+       "dfi_ev.constprop.0",
+       "dfi_ev.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_event_make": {
+      "after": [],
+      "before": [
+       "dfi_event_make"
+      ]
+     },
+     "dfi_events_push": {
+      "after": [
+       "dfi_events_push"
+      ],
+      "before": []
+     },
+     "dfi_finish_turn": {
+      "after": [
+       "dfi_finish_turn"
+      ],
+      "before": []
+     },
+     "dfi_get_damage": {
+      "after": [
+       "dfi_get_damage.lto_priv.0"
+      ],
+      "before": [
+       "dfi_get_damage.lto_priv.0"
+      ]
+     },
+     "dfi_hazard_move": {
+      "after": [
+       "dfi_hazard_move.isra.0"
+      ],
+      "before": [
+       "dfi_hazard_move.isra.0"
+      ]
+     },
+     "dfi_lum_berry": {
+      "after": [
+       "dfi_lum_berry.lto_priv.0"
+      ],
+      "before": [
+       "dfi_lum_berry.lto_priv.0"
+      ]
+     },
+     "dfi_lum_cure": {
+      "after": [
+       "dfi_lum_cure",
+       "dfi_lum_cure.cold"
+      ],
+      "before": [
+       "dfi_lum_cure.lto_priv.0",
+       "dfi_lum_cure.lto_priv.0.cold"
+      ]
+     },
+     "dfi_no_target_or_try": {
+      "after": [
+       "dfi_no_target_or_try.isra.0"
+      ],
+      "before": [
+       "dfi_no_target_or_try.isra.0"
+      ]
+     },
+     "dfi_process_faints": {
+      "after": [
+       "dfi_process_faints.lto_priv.0",
+       "dfi_process_faints.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_process_faints.lto_priv.0",
+       "dfi_process_faints.lto_priv.0.cold"
+      ]
+     },
+     "dfi_protect_targets": {
+      "after": [
+       "dfi_protect_targets.lto_priv.0"
+      ],
+      "before": [
+       "dfi_protect_targets.lto_priv.0"
+      ]
+     },
+     "dfi_queue_choices": {
+      "after": [
+       "dfi_queue_choices"
+      ],
+      "before": []
+     },
+     "dfi_residual_events_run": {
+      "after": [
+       "dfi_residual_events_run.constprop.0",
+       "dfi_residual_events_run.constprop.0.cold"
+      ],
+      "before": [
+       "dfi_residual_events_run.constprop.0",
+       "dfi_residual_events_run.constprop.0.cold"
+      ]
+     },
+     "dfi_run_heal_fraction": {
+      "after": [
+       "dfi_run_heal_fraction.lto_priv.0"
+      ],
+      "before": [
+       "dfi_run_heal_fraction.lto_priv.0"
+      ]
+     },
+     "dfi_run_move_body": {
+      "after": [
+       "dfi_run_move_body.lto_priv.0",
+       "dfi_run_move_body.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_run_move_body.lto_priv.0",
+       "dfi_run_move_body.lto_priv.0.cold"
+      ]
+     },
+     "dfi_run_protect": {
+      "after": [
+       "dfi_run_protect.lto_priv.0"
+      ],
+      "before": [
+       "dfi_run_protect.lto_priv.0"
+      ]
+     },
+     "dfi_skill_swap": {
+      "after": [
+       "dfi_skill_swap.lto_priv.0",
+       "dfi_skill_swap.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_skill_swap.lto_priv.0",
+       "dfi_skill_swap.lto_priv.0.cold"
+      ]
+     },
+     "dfi_status_effects": {
+      "after": [
+       "dfi_status_effects.lto_priv.0",
+       "dfi_status_effects.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_status_effects.lto_priv.0",
+       "dfi_status_effects.lto_priv.0.cold"
+      ]
+     },
+     "dfi_switch_in": {
+      "after": [
+       "dfi_switch_in.constprop.0",
+       "dfi_switch_in.constprop.0.cold"
+      ],
+      "before": [
+       "dfi_switch_in.constprop.0",
+       "dfi_switch_in.constprop.0.cold"
+      ]
+     },
+     "dfi_try_hit_abilities": {
+      "after": [
+       "dfi_try_hit_abilities.lto_priv.0"
+      ],
+      "before": [
+       "dfi_try_hit_abilities.lto_priv.0"
+      ]
+     },
+     "dfi_try_status": {
+      "after": [
+       "dfi_try_status.lto_priv.0"
+      ],
+      "before": [
+       "dfi_try_status.lto_priv.0"
+      ]
+     },
+     "dfi_turn_run": {
+      "after": [],
+      "before": [
+       "dfi_turn_run.constprop.0"
+      ]
+     },
+     "dfi_update": {
+      "after": [
+       "dfi_update.lto_priv.0",
+       "dfi_update.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_update.lto_priv.0",
+       "dfi_update.lto_priv.0.cold"
+      ]
+     },
+     "dfi_volatile_end": {
+      "after": [
+       "dfi_volatile_end"
+      ],
+      "before": []
+     }
+    },
+    "differing_groups": [
+     "dfi_accuracy_targets",
+     "dfi_add_volatile",
+     "dfi_announce_faints",
+     "dfi_attract_update",
+     "dfi_battle_step_observed",
+     "dfi_before_move",
+     "dfi_boost",
+     "dfi_bounce",
+     "dfi_bug_bite",
+     "dfi_double_shock_try",
+     "dfi_emit_item_left",
+     "dfi_emit_item_received",
+     "dfi_emit_plain",
+     "dfi_ev",
+     "dfi_event_make",
+     "dfi_events_push",
+     "dfi_finish_turn",
+     "dfi_get_damage",
+     "dfi_hazard_move",
+     "dfi_lum_berry",
+     "dfi_lum_cure",
+     "dfi_no_target_or_try",
+     "dfi_process_faints",
+     "dfi_protect_targets",
+     "dfi_queue_choices",
+     "dfi_residual_events_run",
+     "dfi_run_heal_fraction",
+     "dfi_run_move_body",
+     "dfi_run_protect",
+     "dfi_skill_swap",
+     "dfi_status_effects",
+     "dfi_switch_in",
+     "dfi_try_hit_abilities",
+     "dfi_try_status",
+     "dfi_turn_run",
+     "dfi_update",
+     "dfi_volatile_end"
+    ],
+    "functions": [
+     225,
+     228
+    ],
+    "groups": 218,
+    "instructions": {
+     "dfi_accuracy_targets": [
+      1149,
+      1154
+     ],
+     "dfi_add_volatile": [
+      158,
+      127
+     ],
+     "dfi_announce_faints": [
+      247,
+      233
+     ],
+     "dfi_attract_update": [
+      243,
+      243
+     ],
+     "dfi_battle_step_observed": [
+      1306,
+      3652
+     ],
+     "dfi_before_move": [
+      1088,
+      1049
+     ],
+     "dfi_boost": [
+      3275,
+      3275
+     ],
+     "dfi_bounce": [
+      1034,
+      1034
+     ],
+     "dfi_bug_bite": [
+      331,
+      331
+     ],
+     "dfi_double_shock_try": [
+      144,
+      156
+     ],
+     "dfi_emit_item_left": [
+      44,
+      0
+     ],
+     "dfi_emit_item_received": [
+      44,
+      0
+     ],
+     "dfi_emit_plain": [
+      0,
+      127
+     ],
+     "dfi_ev": [
+      0,
+      56
+     ],
+     "dfi_event_make": [
+      23,
+      0
+     ],
+     "dfi_events_push": [
+      0,
+      17
+     ],
+     "dfi_finish_turn": [
+      0,
+      561
+     ],
+     "dfi_get_damage": [
+      5067,
+      5057
+     ],
+     "dfi_hazard_move": [
+      117,
+      117
+     ],
+     "dfi_lum_berry": [
+      216,
+      216
+     ],
+     "dfi_lum_cure": [
+      160,
+      126
+     ],
+     "dfi_no_target_or_try": [
+      71,
+      59
+     ],
+     "dfi_process_faints": [
+      241,
+      208
+     ],
+     "dfi_protect_targets": [
+      395,
+      361
+     ],
+     "dfi_queue_choices": [
+      0,
+      669
+     ],
+     "dfi_residual_events_run": [
+      4320,
+      4334
+     ],
+     "dfi_run_heal_fraction": [
+      532,
+      472
+     ],
+     "dfi_run_move_body": [
+      8828,
+      8779
+     ],
+     "dfi_run_protect": [
+      262,
+      231
+     ],
+     "dfi_skill_swap": [
+      559,
+      559
+     ],
+     "dfi_status_effects": [
+      2903,
+      2942
+     ],
+     "dfi_switch_in": [
+      1818,
+      1818
+     ],
+     "dfi_try_hit_abilities": [
+      1162,
+      1064
+     ],
+     "dfi_try_status": [
+      863,
+      869
+     ],
+     "dfi_turn_run": [
+      4041,
+      0
+     ],
+     "dfi_update": [
+      896,
+      762
+     ],
+     "dfi_volatile_end": [
+      0,
+      39
+     ]
+    },
+    "rename_only": [
+     "dfi_bug_bite",
+     "dfi_lum_berry"
+    ]
+   },
+   "exclusive_delta_top": [
+    [
+     "dfi_turn_run",
+     -82186935
+    ],
+    [
+     "dfi_battle_step_observed",
+     48173422
+    ],
+    [
+     "dfi_queue_choices",
+     17627645
+    ],
+    [
+     "dfi_finish_turn",
+     12873485
+    ],
+    [
+     "dfi_emit",
+     -2810780
+    ],
+    [
+     "dfi_emit_plain",
+     2147250
+    ],
+    [
+     "dfi_run_move_body",
+     -1853115
+    ],
+    [
+     "dfi_run_protect",
+     -236080
+    ],
+    [
+     "dfi_event_make",
+     -179025
+    ],
+    [
+     "__memcpy_avx_unaligned_erms",
+     -152755
+    ]
+   ],
+   "functions": {
+    "dfi_event_make": {
+     "clones": [
+      [
+       "dfi_event_make"
+      ],
+      []
+     ],
+     "exclusive": [
+      179025,
+      0
+     ],
+     "inclusive": [
+      179025,
+      0
+     ]
+    },
+    "dfi_get_damage": {
+     "clones": [
+      [
+       "dfi_get_damage.lto_priv.0"
+      ],
+      [
+       "dfi_get_damage.lto_priv.0"
+      ]
+     ],
+     "exclusive": [
+      88453170,
+      88431705
+     ],
+     "inclusive": [
+      123332500,
+      123344425
+     ]
+    },
+    "dfi_residual_events_run": {
+     "clones": [
+      [
+       "dfi_residual_events_run.constprop.0"
+      ],
+      [
+       "dfi_residual_events_run.constprop.0"
+      ]
+     ],
+     "exclusive": [
+      80285200,
+      80292105
+     ],
+     "inclusive": [
+      138673600,
+      138681755
+     ]
+    }
+   },
+   "ir_total": [
+    3671455937,
+    3664684030
+   ],
+   "ir_total_ratio": 0.9981555254601439,
+   "pass": true
+  },
+  "noipo": {
+   "code_diff": {
+    "clones": {
+     "dfi_accuracy_targets": {
+      "after": [
+       "dfi_accuracy_targets"
+      ],
+      "before": [
+       "dfi_accuracy_targets"
+      ]
+     },
+     "dfi_add_hazard": {
+      "after": [
+       "dfi_add_hazard"
+      ],
+      "before": [
+       "dfi_add_hazard"
+      ]
+     },
+     "dfi_add_volatile": {
+      "after": [
+       "dfi_add_volatile"
+      ],
+      "before": [
+       "dfi_add_volatile"
+      ]
+     },
+     "dfi_announce_faints": {
+      "after": [
+       "dfi_announce_faints"
+      ],
+      "before": [
+       "dfi_announce_faints"
+      ]
+     },
+     "dfi_attract_update": {
+      "after": [
+       "dfi_attract_update"
+      ],
+      "before": [
+       "dfi_attract_update"
+      ]
+     },
+     "dfi_battle_step_observed": {
+      "after": [
+       "dfi_battle_step_observed"
+      ],
+      "before": [
+       "dfi_battle_step_observed"
+      ]
+     },
+     "dfi_before_move": {
+      "after": [
+       "dfi_before_move",
+       "dfi_before_move.cold"
+      ],
+      "before": [
+       "dfi_before_move",
+       "dfi_before_move.cold"
+      ]
+     },
+     "dfi_boost": {
+      "after": [
+       "dfi_boost.isra.0",
+       "dfi_boost.isra.0.cold"
+      ],
+      "before": [
+       "dfi_boost.isra.0",
+       "dfi_boost.isra.0.cold"
+      ]
+     },
+     "dfi_bounce": {
+      "after": [
+       "dfi_bounce"
+      ],
+      "before": [
+       "dfi_bounce"
+      ]
+     },
+     "dfi_bug_bite": {
+      "after": [
+       "dfi_bug_bite"
+      ],
+      "before": []
+     },
+     "dfi_clear_terrain": {
+      "after": [
+       "dfi_clear_terrain"
+      ],
+      "before": [
+       "dfi_clear_terrain"
+      ]
+     },
+     "dfi_cute_charm": {
+      "after": [
+       "dfi_cute_charm.isra.0"
+      ],
+      "before": [
+       "dfi_cute_charm.isra.0"
+      ]
+     },
+     "dfi_deal": {
+      "after": [
+       "dfi_deal"
+      ],
+      "before": [
+       "dfi_deal"
+      ]
+     },
+     "dfi_disable_start": {
+      "after": [
+       "dfi_disable_start"
+      ],
+      "before": [
+       "dfi_disable_start"
+      ]
+     },
+     "dfi_drag_blocked": {
+      "after": [
+       "dfi_drag_blocked"
+      ],
+      "before": [
+       "dfi_drag_blocked"
+      ]
+     },
+     "dfi_emergency_exit": {
+      "after": [
+       "dfi_emergency_exit"
+      ],
+      "before": [
+       "dfi_emergency_exit"
+      ]
+     },
+     "dfi_entry_ability": {
+      "after": [
+       "dfi_entry_ability",
+       "dfi_entry_ability.cold"
+      ],
+      "before": [
+       "dfi_entry_ability",
+       "dfi_entry_ability.cold"
+      ]
+     },
+     "dfi_ev": {
+      "after": [
+       "dfi_ev",
+       "dfi_ev.constprop.0"
+      ],
+      "before": []
+     },
+     "dfi_fail_line": {
+      "after": [
+       "dfi_fail_line"
+      ],
+      "before": [
+       "dfi_fail_line"
+      ]
+     },
+     "dfi_flower_veil_block": {
+      "after": [
+       "dfi_flower_veil_block"
+      ],
+      "before": []
+     },
+     "dfi_get_damage": {
+      "after": [
+       "dfi_get_damage"
+      ],
+      "before": [
+       "dfi_get_damage"
+      ]
+     },
+     "dfi_heal": {
+      "after": [
+       "dfi_heal"
+      ],
+      "before": [
+       "dfi_heal"
+      ]
+     },
+     "dfi_hospitality": {
+      "after": [
+       "dfi_hospitality"
+      ],
+      "before": [
+       "dfi_hospitality"
+      ]
+     },
+     "dfi_immune": {
+      "after": [
+       "dfi_immune"
+      ],
+      "before": [
+       "dfi_immune"
+      ]
+     },
+     "dfi_item_start_shown": {
+      "after": [
+       "dfi_item_start_shown"
+      ],
+      "before": [
+       "dfi_item_start_shown"
+      ]
+     },
+     "dfi_lum_cure": {
+      "after": [
+       "dfi_lum_cure",
+       "dfi_lum_cure.cold"
+      ],
+      "before": [
+       "dfi_lum_cure",
+       "dfi_lum_cure.cold"
+      ]
+     },
+     "dfi_no_target_or_try": {
+      "after": [
+       "dfi_no_target_or_try.isra.0"
+      ],
+      "before": [
+       "dfi_no_target_or_try.isra.0"
+      ]
+     },
+     "dfi_process_faints": {
+      "after": [
+       "dfi_process_faints",
+       "dfi_process_faints.cold"
+      ],
+      "before": [
+       "dfi_process_faints",
+       "dfi_process_faints.cold"
+      ]
+     },
+     "dfi_protect_targets": {
+      "after": [
+       "dfi_protect_targets"
+      ],
+      "before": [
+       "dfi_protect_targets"
+      ]
+     },
+     "dfi_residual_events_run": {
+      "after": [
+       "dfi_residual_events_run.constprop.0",
+       "dfi_residual_events_run.constprop.0.cold"
+      ],
+      "before": [
+       "dfi_residual_events_run.constprop.0",
+       "dfi_residual_events_run.constprop.0.cold"
+      ]
+     },
+     "dfi_resist_berry_hit": {
+      "after": [
+       "dfi_resist_berry_hit"
+      ],
+      "before": [
+       "dfi_resist_berry_hit"
+      ]
+     },
+     "dfi_run_curse": {
+      "after": [
+       "dfi_run_curse",
+       "dfi_run_curse.cold"
+      ],
+      "before": [
+       "dfi_run_curse",
+       "dfi_run_curse.cold"
+      ]
+     },
+     "dfi_run_entries": {
+      "after": [
+       "dfi_run_entries"
+      ],
+      "before": [
+       "dfi_run_entries"
+      ]
+     },
+     "dfi_run_follow_me": {
+      "after": [
+       "dfi_run_follow_me"
+      ],
+      "before": [
+       "dfi_run_follow_me"
+      ]
+     },
+     "dfi_run_heal_fraction": {
+      "after": [
+       "dfi_run_heal_fraction"
+      ],
+      "before": [
+       "dfi_run_heal_fraction"
+      ]
+     },
+     "dfi_run_move_body": {
+      "after": [
+       "dfi_run_move_body.constprop.0",
+       "dfi_run_move_body.constprop.0.cold"
+      ],
+      "before": [
+       "dfi_run_move_body.constprop.0",
+       "dfi_run_move_body.constprop.0.cold"
+      ]
+     },
+     "dfi_run_protect": {
+      "after": [
+       "dfi_run_protect"
+      ],
+      "before": [
+       "dfi_run_protect"
+      ]
+     },
+     "dfi_status_effects": {
+      "after": [
+       "dfi_status_effects",
+       "dfi_status_effects.cold"
+      ],
+      "before": [
+       "dfi_status_effects",
+       "dfi_status_effects.cold"
+      ]
+     },
+     "dfi_sturdy_saves": {
+      "after": [
+       "dfi_sturdy_saves.isra.0"
+      ],
+      "before": [
+       "dfi_sturdy_saves.isra.0"
+      ]
+     },
+     "dfi_substitute_takes": {
+      "after": [
+       "dfi_substitute_takes"
+      ],
+      "before": [
+       "dfi_substitute_takes"
+      ]
+     },
+     "dfi_switch_in": {
+      "after": [
+       "dfi_switch_in.constprop.0",
+       "dfi_switch_in.constprop.0.cold"
+      ],
+      "before": [
+       "dfi_switch_in.constprop.0",
+       "dfi_switch_in.constprop.0.cold"
+      ]
+     },
+     "dfi_symbiosis": {
+      "after": [
+       "dfi_symbiosis"
+      ],
+      "before": [
+       "dfi_symbiosis"
+      ]
+     },
+     "dfi_terminal": {
+      "after": [
+       "dfi_terminal"
+      ],
+      "before": [
+       "dfi_terminal"
+      ]
+     },
+     "dfi_thief": {
+      "after": [
+       "dfi_thief"
+      ],
+      "before": [
+       "dfi_thief"
+      ]
+     },
+     "dfi_toxic_debris": {
+      "after": [
+       "dfi_toxic_debris.isra.0"
+      ],
+      "before": [
+       "dfi_toxic_debris.isra.0"
+      ]
+     },
+     "dfi_try_hit_abilities": {
+      "after": [
+       "dfi_try_hit_abilities"
+      ],
+      "before": [
+       "dfi_try_hit_abilities"
+      ]
+     },
+     "dfi_try_status": {
+      "after": [
+       "dfi_try_status"
+      ],
+      "before": [
+       "dfi_try_status"
+      ]
+     },
+     "dfi_turn_run": {
+      "after": [
+       "dfi_turn_run"
+      ],
+      "before": [
+       "dfi_turn_run"
+      ]
+     },
+     "dfi_update": {
+      "after": [
+       "dfi_update",
+       "dfi_update.cold"
+      ],
+      "before": [
+       "dfi_update",
+       "dfi_update.cold"
+      ]
+     },
+     "dfi_use_item_core": {
+      "after": [
+       "dfi_use_item_core"
+      ],
+      "before": [
+       "dfi_use_item_core"
+      ]
+     }
+    },
+    "differing_groups": [
+     "dfi_accuracy_targets",
+     "dfi_add_hazard",
+     "dfi_add_volatile",
+     "dfi_announce_faints",
+     "dfi_attract_update",
+     "dfi_battle_step_observed",
+     "dfi_before_move",
+     "dfi_boost",
+     "dfi_bounce",
+     "dfi_bug_bite",
+     "dfi_clear_terrain",
+     "dfi_cute_charm",
+     "dfi_deal",
+     "dfi_disable_start",
+     "dfi_drag_blocked",
+     "dfi_emergency_exit",
+     "dfi_entry_ability",
+     "dfi_ev",
+     "dfi_fail_line",
+     "dfi_flower_veil_block",
+     "dfi_get_damage",
+     "dfi_heal",
+     "dfi_hospitality",
+     "dfi_immune",
+     "dfi_item_start_shown",
+     "dfi_lum_cure",
+     "dfi_no_target_or_try",
+     "dfi_process_faints",
+     "dfi_protect_targets",
+     "dfi_residual_events_run",
+     "dfi_resist_berry_hit",
+     "dfi_run_curse",
+     "dfi_run_entries",
+     "dfi_run_follow_me",
+     "dfi_run_heal_fraction",
+     "dfi_run_move_body",
+     "dfi_run_protect",
+     "dfi_status_effects",
+     "dfi_sturdy_saves",
+     "dfi_substitute_takes",
+     "dfi_switch_in",
+     "dfi_symbiosis",
+     "dfi_terminal",
+     "dfi_thief",
+     "dfi_toxic_debris",
+     "dfi_try_hit_abilities",
+     "dfi_try_status",
+     "dfi_turn_run",
+     "dfi_update",
+     "dfi_use_item_core"
+    ],
+    "functions": [
+     442,
+     446
+    ],
+    "groups": 429,
+    "instructions": {
+     "dfi_accuracy_targets": [
+      1209,
+      1173
+     ],
+     "dfi_add_hazard": [
+      97,
+      97
+     ],
+     "dfi_add_volatile": [
+      140,
+      146
+     ],
+     "dfi_announce_faints": [
+      190,
+      209
+     ],
+     "dfi_attract_update": [
+      220,
+      221
+     ],
+     "dfi_battle_step_observed": [
+      778,
+      771
+     ],
+     "dfi_before_move": [
+      930,
+      997
+     ],
+     "dfi_boost": [
+      3038,
+      3214
+     ],
+     "dfi_bounce": [
+      991,
+      992
+     ],
+     "dfi_bug_bite": [
+      0,
+      322
+     ],
+     "dfi_clear_terrain": [
+      54,
+      57
+     ],
+     "dfi_cute_charm": [
+      224,
+      226
+     ],
+     "dfi_deal": [
+      227,
+      220
+     ],
+     "dfi_disable_start": [
+      332,
+      356
+     ],
+     "dfi_drag_blocked": [
+      136,
+      139
+     ],
+     "dfi_emergency_exit": [
+      200,
+      203
+     ],
+     "dfi_entry_ability": [
+      1102,
+      1126
+     ],
+     "dfi_ev": [
+      0,
+      52
+     ],
+     "dfi_fail_line": [
+      46,
+      52
+     ],
+     "dfi_flower_veil_block": [
+      0,
+      47
+     ],
+     "dfi_get_damage": [
+      4759,
+      4868
+     ],
+     "dfi_heal": [
+      108,
+      113
+     ],
+     "dfi_hospitality": [
+      108,
+      112
+     ],
+     "dfi_immune": [
+      48,
+      48
+     ],
+     "dfi_item_start_shown": [
+      108,
+      112
+     ],
+     "dfi_lum_cure": [
+      134,
+      139
+     ],
+     "dfi_no_target_or_try": [
+      57,
+      58
+     ],
+     "dfi_process_faints": [
+      231,
+      231
+     ],
+     "dfi_protect_targets": [
+      346,
+      385
+     ],
+     "dfi_residual_events_run": [
+      4260,
+      4304
+     ],
+     "dfi_resist_berry_hit": [
+      76,
+      80
+     ],
+     "dfi_run_curse": [
+      412,
+      405
+     ],
+     "dfi_run_entries": [
+      2152,
+      2183
+     ],
+     "dfi_run_follow_me": [
+      86,
+      86
+     ],
+     "dfi_run_heal_fraction": [
+      486,
+      502
+     ],
+     "dfi_run_move_body": [
+      9686,
+      9576
+     ],
+     "dfi_run_protect": [
+      249,
+      255
+     ],
+     "dfi_status_effects": [
+      4524,
+      4448
+     ],
+     "dfi_sturdy_saves": [
+      123,
+      125
+     ],
+     "dfi_substitute_takes": [
+      491,
+      484
+     ],
+     "dfi_switch_in": [
+      1713,
+      1719
+     ],
+     "dfi_symbiosis": [
+      399,
+      403
+     ],
+     "dfi_terminal": [
+      194,
+      200
+     ],
+     "dfi_thief": [
+      473,
+      484
+     ],
+     "dfi_toxic_debris": [
+      126,
+      130
+     ],
+     "dfi_try_hit_abilities": [
+      1301,
+      1133
+     ],
+     "dfi_try_status": [
+      924,
+      859
+     ],
+     "dfi_turn_run": [
+      3789,
+      3827
+     ],
+     "dfi_update": [
+      825,
+      847
+     ],
+     "dfi_use_item_core": [
+      215,
+      208
+     ]
+    },
+    "rename_only": []
+   },
+   "exclusive_delta_top": [
+    [
+     "dfi_event_make",
+     -9668610
+    ],
+    [
+     "dfi_attract_update",
+     -1044510
+    ],
+    [
+     "dfi_turn_run",
+     1039300
+    ],
+    [
+     "dfi_get_damage",
+     938730
+    ],
+    [
+     "dfi_boost",
+     777985
+    ],
+    [
+     "dfi_deal",
+     -432570
+    ],
+    [
+     "dfi_protect_targets",
+     -407730
+    ],
+    [
+     "dfi_process_faints",
+     317645
+    ],
+    [
+     "dfi_try_hit_abilities",
+     -288255
+    ],
+    [
+     "dfi_switch_in",
+     234540
+    ]
+   ],
+   "functions": {
+    "dfi_event_make": {
+     "clones": [
+      [
+       "dfi_event_make"
+      ],
+      []
+     ],
+     "exclusive": [
+      9668610,
+      0
+     ],
+     "inclusive": [
+      9668610,
+      0
+     ]
+    },
+    "dfi_get_damage": {
+     "clones": [
+      [
+       "dfi_get_damage"
+      ],
+      [
+       "dfi_get_damage"
+      ]
+     ],
+     "exclusive": [
+      86964055,
+      87902785
+     ],
+     "inclusive": [
+      141891895,
+      142188025
+     ]
+    },
+    "dfi_residual_events_run": {
+     "clones": [
+      [
+       "dfi_residual_events_run.constprop.0"
+      ],
+      [
+       "dfi_residual_events_run.constprop.0"
+      ]
+     ],
+     "exclusive": [
+      80104440,
+      80181560
+     ],
+     "inclusive": [
+      141037850,
+      140271300
+     ]
+    }
+   },
+   "ir_total": [
+    3995691933,
+    3987796602
+   ],
+   "ir_total_ratio": 0.9980240391070209,
+   "pass": true
+  }
+ },
+ "workload": [
+  "--battles",
+  "128",
+  "--repetitions",
+  "1",
+  "--warmup",
+  "0",
+  "--max-steps",
+  "128",
+  "--policy-seed",
+  "20261001",
+  "--battle-seed",
+  "7001",
+  "--families",
+  "step,events",
+  "--workers",
+  "1"
+ ]
+}
