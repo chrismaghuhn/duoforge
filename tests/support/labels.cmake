@@ -1,7 +1,7 @@
 # Exactly one tier and one owner area; remaining labels are dependency/CI selectors.
 function(duoforge_label_test _name _tier _area)
     set(_tiers quick full reference slow)
-    set(_areas flow mechanics items abilities moves forms data interactions engine learn search live replay tools bench certify)
+    set(_areas flow mechanics items abilities moves forms data interactions engine learn search live replay eval tools bench certify)
     if(NOT _tier IN_LIST _tiers OR NOT _area IN_LIST _areas)
         message(FATAL_ERROR "${_name}: invalid test tier/area ${_tier}/${_area}")
     endif()

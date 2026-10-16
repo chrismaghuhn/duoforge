@@ -103,6 +103,7 @@ include("${PROJECT_SOURCE_DIR}/python/tests/search/tests.cmake")
 include("${PROJECT_SOURCE_DIR}/python/tests/live/tests.cmake")
 include("${PROJECT_SOURCE_DIR}/python/tests/replay/tests.cmake")
 include("${PROJECT_SOURCE_DIR}/python/tests/data/tests.cmake")
+include("${PROJECT_SOURCE_DIR}/python/tests/eval/tests.cmake")
 
 include("${PROJECT_SOURCE_DIR}/tools/reference/tests/random_teams.cmake")
 
