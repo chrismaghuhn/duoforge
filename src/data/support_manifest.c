@@ -495,9 +495,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TROPKICK] = 1u,
             [DFI_MOVE_METEORMASH] = 1u,
             /* Step G56 (Outrage, decision 0015 item 5au): the lock (lockedmove; a random count of 2 or 3 uses, the
-             * confusion when it ends, the switch-out and the faint clear it). Thrash and Petal Dance stay unmarked:
-             * no recorded battle yet. */
+             * confusion when it ends, the switch-out and the faint clear it). Batch A0 part 3 marks
+             * Thrash and Petal Dance: the same lock, the generator's G56 rows (SPECIAL_P, G56_LOCKED_MOVES) already read them. */
             [DFI_MOVE_OUTRAGE] = 1u,
+            [DFI_MOVE_THRASH] = 1u,
+            [DFI_MOVE_PETALDANCE] = 1u,
             /* Step G54 (decision 0015 item 5at). Handlers: Icicle Spear and Scale Shot (2 to 5 hits, the Champions weighted count,
              * Scale Shot's self boost after the last hit), Quick Guard (Wide Guard's shape against the priority moves), Upper Hand
              * (Sucker Punch's queue read: a queued priority move), Heal Pulse (half of the target's HP) and Strength Sap (heals by
