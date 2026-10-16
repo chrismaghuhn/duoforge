@@ -9,9 +9,11 @@
  */
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <duoforge/duoforge.h>
 
+#include "core/inline.h"
 #include "state/battle_internal.h"
 
 struct dfi_observation_digest;
@@ -23,8 +25,18 @@ typedef struct dfi_events {
     bool overflow; /* more than DUOFORGE_MAX_EVENTS: the step fails with E_INVARIANT */
 } dfi_events;
 
-/* A record of `kind` about `position`; other NO_POSITION, everything else 0. */
-duoforge_event dfi_event_make(uint32_t kind, uint32_t position);
+/* A record of `kind` about `position`; other NO_POSITION, everything else 0. An inline definition, forced into every
+ * caller: after the phase cuts of step 4 the LTO link stopped inlining it from events.c. events.c holds its one external
+ * definition (C99 inline), so the symbol and the library's exports stay as they were. */
+DFI_ALWAYS_INLINE duoforge_event dfi_event_make(uint32_t kind, uint32_t position)
+{
+    duoforge_event e;
+    memset(&e, 0, sizeof e);
+    e.kind = (uint8_t)kind;         /* <= DUOFORGE_EVENT_ITEM_START */
+    e.position = (uint8_t)position; /* < 4 or DUOFORGE_NO_POSITION */
+    e.other = (uint8_t)DUOFORGE_NO_POSITION;
+    return e;
+}
 
 /* Appends a record; past the profile bound it only sets `overflow`. */
 void dfi_events_push(dfi_events *events, const duoforge_event *e);
