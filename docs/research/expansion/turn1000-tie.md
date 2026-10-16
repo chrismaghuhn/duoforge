@@ -1,9 +1,11 @@
 # The turn-1000 tie in doubles: prepared fix (design, test, reference battle)
 
-Status: **prepared, no engine code.** Found by the C0 inventory (`champions-100.md` section 11 on `chris/c0-weights`).
+Status: **fixed** (decision 0015 entry 5dt, branch `chris/turn1000-tie-fix`, after the flow PR #610: the code is in
+`dfi_end_turn`, `src/combat/flow/turn.h`). Found by the C0 inventory (`champions-100.md` section 11 on `chris/c0-weights`).
 HS decision 2026-10-16: a real bug (silent divergence), fixed in its own small PR right after the flow PR
-(`restructure/4-flow`) is merged; behaviour exactly as Showdown (a tie, no refusal). This branch holds the reference
-battle, the boundary test and this design; the code waits for the HS's signal.
+(`restructure/4-flow`) is merged; behaviour exactly as Showdown (a tie, no refusal). Sections 2 to 5 below are the plan as
+written before the fix (main `c02189e7`, before the flow moved to `src/combat/flow/`); the reference battle stays a prepared,
+regenerated battle checked by its summary (HS: the 5.3 MB trace is not committed).
 
 ## 1. The rule at the pin (`b2cb775b`)
 
