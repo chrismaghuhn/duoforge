@@ -4616,6 +4616,13 @@ C2_FACTS = (
                       'type': 'Ice', 'flags': {'protect', 'mirror', 'metronome'},
                       'secondary': {'chance': 30, 'volatileStatus': 'flinch'}}),
 )
+# Step A0 part 4 (decision 0015 entry 5co): the C1 row Shelter (a self Defense +2 Status move, data/moves.ts:16315-16329; its flags
+# snatch and metronome are ignored flags). Checked by check_c2_facts with `only=C1_PART4_FACTS`, the same field-by-field check: the
+# pin entry has exactly these fields and the Champions mod has no entry for it.
+C1_PART4_FACTS = (
+    ('shelter', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'self',
+                 'type': 'Steel', 'flags': {'snatch', 'metronome'}, 'boosts': {'def': 2}}),
+)
 _C2_TOKEN = re.compile(r"\s*(?:('[^']*'|\"[^\"]*\")|(-?\d+)|(true|false)\b|([A-Za-z_]\w*)|([{}\[\]:,]))")
 
 
@@ -4883,6 +4890,7 @@ def build_pool(root, repo, dx):
     check_k2_facts(Source(root, 'sim/battle.ts', READER_INPUTS), Source(root, 'data/mods/champions/scripts.ts'), moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
+    check_c2_facts(moves_ts, champ_moves, only=C1_PART4_FACTS)  # step A0 part 4: Shelter (the C1 row)
     check_g86_facts(moves_ts)
     check_g92_facts(moves_ts)
     check_g90_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)

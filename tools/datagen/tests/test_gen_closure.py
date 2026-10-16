@@ -2201,6 +2201,39 @@ class CheapMoveFactsC2(unittest.TestCase):
         with self.assertRaises(SystemExit):
             gen_closure.c2_literal('{ flags: { protect: 1 }, basePower: 1 + 2 }')
         self.assertEqual(gen_closure.c2_literal('{ a: [1, -2,], b: { c: true, }, }'), {'a': [1, -2], 'b': {'c': True}})
+
+
+class C1Part4Facts(unittest.TestCase):
+    """Step A0 part 4: the C1 row Shelter (gen_closure.C1_PART4_FACTS) is the pinned entry, field by field, through the same
+    reader as the C2 rows (the helpers of CheapMoveFactsC2); a wrong boost fails, and the Champions mod must not override it."""
+
+    @staticmethod
+    def render(mid, exp, change=None):
+        return CheapMoveFactsC2.render(mid, exp, change=change)
+
+    @staticmethod
+    def no_champions():
+        return TextSource('data/mods/champions/moves.ts', '')
+
+    def test_the_pin_fact_of_shelter_is_accepted(self):
+        moves = TextSource('data/moves.ts', self.render('shelter', dict(gen_closure.C1_PART4_FACTS)['shelter']))
+        gen_closure.check_c2_facts(moves, self.no_champions(), only=gen_closure.C1_PART4_FACTS)
+
+    def test_a_wrong_boost_of_shelter_fails(self):
+        exp = dict(gen_closure.C1_PART4_FACTS)['shelter']
+        moves = TextSource('data/moves.ts', self.render('shelter', exp, change=('boosts', {'def': 1})))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c2_facts(moves, self.no_champions(), only=(('shelter', exp),))
+        self.assertIn('move shelter: boosts is', str(cm.exception.code))
+
+    def test_a_champions_override_of_shelter_fails(self):
+        exp = dict(gen_closure.C1_PART4_FACTS)['shelter']
+        moves = TextSource('data/moves.ts', self.render('shelter', exp))
+        champ = TextSource('data/mods/champions/moves.ts', '\tshelter: {\n\t\tinherit: true,\n\t\tbasePower: 1,\n\t},')
+        with self.assertRaises(SystemExit):
+            gen_closure.check_c2_facts(moves, champ, only=(('shelter', exp),))
+
+
 class C4Facts(unittest.TestCase):
     """Step C4: the pinned fields of the twelve data-only moves, rendered as the pin writes them (no checkout needed)."""
 
