@@ -1,0 +1,26 @@
+{
+ "context_bytes_lp64": 64,
+ "flag": "-fstack-usage (Release; IPO: the ltrans units of the shared library link)",
+ "function": "dfi_get_damage",
+ "ipo": {
+  "after_bytes": 400,
+  "before_bytes": 384,
+  "kind": "static"
+ },
+ "noipo": {
+  "after_bytes": 400,
+  "before_bytes": 384,
+  "kind": "dynamic,bounded"
+ },
+ "phases": "no entry of their own: every dfi_damage_* phase is inlined (no symbol, no .su row)",
+ "prologue_sub_rsp": {
+  "ipo": [
+   "0x148",
+   "0x158"
+  ],
+  "noipo": [
+   "0x138",
+   "0x148"
+  ]
+ }
+}
