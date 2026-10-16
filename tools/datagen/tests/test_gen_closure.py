@@ -1141,7 +1141,8 @@ class PoolMoves(unittest.TestCase):
                                                                 'iciclespear', 'scaleshot', 'quickguard', 'upperhand', 'healpulse', 'strengthsap', 'beatup', 'bugbite', 'poltergeist', 'sheercold',
                                                                 'haze', 'afteryou', 'quash', 'phantomforce',
                                                                 'steelbeam', 'thunderwave', 'skillswap', 'destinybond', 'finalgambit',
-                                                                'heavyslam', 'hardpress', 'icespinner', 'bellydrum', 'healingwish'})  # G86 (decision 0015 5cn); G82 (decision 0045)
+                                                                'heavyslam', 'hardpress', 'icespinner', 'bellydrum', 'healingwish',
+                                                                'seismictoss', 'sweetkiss'})  # G86 (decision 0015 5cn); G82 (decision 0045); A0 (batch A0 part 2)
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)

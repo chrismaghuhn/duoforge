@@ -2506,6 +2506,9 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'horndrill': ('OHKO', set()),
     'memento': ('MEMENTO', set()),                                        # G92: target atk and spa -2, then the user faints
     'nightshade': ('LEVEL_DAMAGE', set()),                                # G92: damage 'level' (the user's level, no crit draw)
+    # Step A0 (batch A0 part 2): the same handlers, owning the same pinned lines (damage 'level', volatileStatus 'confusion').
+    'seismictoss': ('LEVEL_DAMAGE', set()),                               # A0: damage 'level' (the user's level, no crit draw)
+    'sweetkiss': ('CONFUSE', set()),                                      # A0: the primary confusion of Confuse Ray's kind (reflectable)
     # G90 (decision 0060): the six moves that apply the volatile partiallytrapped (G2_OWNED_FIELDS owns the volatileStatus line)
     'bind': ('PARTIAL_TRAP', set()), 'wrap': ('PARTIAL_TRAP', set()), 'firespin': ('PARTIAL_TRAP', set()),
     'sandtomb': ('PARTIAL_TRAP', set()), 'infestation': ('PARTIAL_TRAP', set()),  # Snap Trap is dropped (decision 0060 section 8)
