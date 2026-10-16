@@ -1786,6 +1786,10 @@ class PositionsTool(unittest.TestCase):
                 positions.main(["--checkpoint", path, "--out", inside])
             report = positions.main(["--checkpoint", path, "--out", os.path.join(tmp, "out"), "--k", "2", "--m", "2",
                                      "--worlds", "2"])
+            with open(os.path.join(tmp, "out", "manifest.json"), encoding="utf-8") as f:  # restructure step 8
+                manifest = json.load(f)
+        self.assertEqual((manifest["kind"], manifest["tool"]), ("bench", "duoforge_eval.positions"))
+        self.assertIn("--worlds", manifest["argv"])
         all_positions = positions.load_all()
         self.assertEqual([r["name"] for r in report["positions"]], [p.name for p in all_positions])
         for row, position in zip(report["positions"], all_positions):
