@@ -240,6 +240,8 @@ class Refusals(unittest.TestCase):
         bad = ["|bigerror|You will auto-tie if the battle doesn't end in 1 turns (on turn 1000).",
                "|bigerror|You will auto-tie if the battle doesn't end in 2 turn (on turn 1000).",
                "|bigerror|You will auto-tie if the battle doesn't end in 501 turns (on turn 1000).",
+               "|bigerror|You will auto-tie if the battle doesn't end in 499 turns (on turn 1000).",
+               "|bigerror|You will auto-tie if the battle doesn't end in 15 turns (on turn 1000).",
                "|bigerror|You will auto-tie if the battle doesn't end in 05 turns (on turn 1000).",
                "|bigerror|You will auto-tie if the battle doesn't end in 5 turns (on turn 999).",
                '|bigerror|Something else',

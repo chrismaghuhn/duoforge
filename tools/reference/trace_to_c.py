@@ -1268,6 +1268,8 @@ NOT_EVENTS = {'', 'split', 't:', 'gametype', 'player', 'teamsize', 'gen', 'tier'
 TURN_LIMIT_WARNING = re.compile(r"\|bigerror\|You will auto-tie if the battle doesn't end in (0|[1-9][0-9]{0,2}) (turns?) "
                                 r"\(on turn 1000\)\.")
 TURN_LIMIT_MESSAGE = '|message|It is turn 1000. You have hit the turn limit!'
+# The turns left that the pin warns about (sim/battle.ts:1844-1848): turns 500 to 900 by 100, 900 to 980 by 10, 990 to 1000: 24.
+TURN_LIMIT_LEFT = frozenset({500, 400, 300, 200, 100} | set(range(20, 100, 10)) | set(range(0, 11)))
 
 
 def turn_limit_line(line):
@@ -1278,7 +1280,7 @@ def turn_limit_line(line):
     if m is None:
         return False
     left = int(m.group(1))
-    return left <= 500 and m.group(2) == ('turn' if left == 1 else 'turns')
+    return left in TURN_LIMIT_LEFT and m.group(2) == ('turn' if left == 1 else 'turns')
 
 
 def ev_pos(text):

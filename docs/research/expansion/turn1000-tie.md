@@ -15,7 +15,7 @@ regenerated battle checked by its summary (HS: the 5.3 MB trace is not committed
 - There: `if (this.turn <= 100) return;` (`:1836`), then **`if (this.turn > 1000)`** the line
   `|message|It is turn 1000. You have hit the turn limit!` and `this.tie()` (`:1839-1843`); "the turn limit is not a
   part of Endless Battle Clause" (`:1838`). The clause's own rule test comes later (`:1854`), so the limit applies to
-  every format: Reg M-C (Flat Rules, no clause, `config/formats.ts:288-299`) as well as Champions OU.
+  every format: Reg M-C (Flat Rules, no clause, `config/formats.ts:288-293`) as well as Champions OU.
 - `endTurn` returns at once: no `|turn|1001` line, no request. The state's turn is 1001, `ended` true, `winner` ''.
 - Before that, `|bigerror|You will auto-tie if the battle doesn't end in N turns (on turn 1000).` is printed at turns
   500, 600, 700, 800, 900, every 10 turns from 900 and every turn from 990 (`:1844-1852`): 24 lines, protocol only,

@@ -121,6 +121,12 @@ static void check_doubles(df_test *t, const duoforge_context_config *config, con
         DF_CHECK(t, late.boundary_kind == DUOFORGE_BOUNDARY_TERMINAL && res.boundary_kind == DUOFORGE_BOUNDARY_TERMINAL);
         DF_CHECK_EQ_U64(t, late.request_mask, 0u);
         DF_CHECK_EQ_U64(t, late.turn, DF_TURN_LIMIT + 1u);
+        DF_CHECK_EQ_U64(t, late.request_epoch, b->request_epoch + 1u); /* one advance: dfi_terminal's, not the TURN one too */
+        for (uint32_t flat = 0u; flat < 2u * DUOFORGE_ACTIVE_PER_SIDE; ++flat) {
+            /* the end-of-turn updates run before the limit check (sim/battle.ts:1665-1771, then :1839) */
+            const dfi_active_slot *pos = &late.sides[flat / DUOFORGE_ACTIVE_PER_SIDE].positions[flat % DUOFORGE_ACTIVE_PER_SIDE];
+            DF_CHECK_EQ_U64(t, (uint32_t)pos->flags & DFI_VOL_NEWLY_SWITCHED, 0u);
+        }
         uint32_t result = 0u;
         DF_CHECK(t, duoforge_battle_result(ctx, &late, &result) == DUOFORGE_OK);
         DF_CHECK_EQ_U64(t, result, DUOFORGE_RESULT_TIE);
