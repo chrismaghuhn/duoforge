@@ -2058,6 +2058,9 @@ G33_FACTS = (
                     'multihit: 3,', 'multiaccuracy: true,', 'target: "normal",', 'type: "Ice",']),
     ('twinbeam', ['accuracy: 100,', 'basePower: 40,', 'category: "Special",', 'priority: 0,',
                   'flags: { protect: 1, mirror: 1 },', 'multihit: 2,', 'target: "normal",', 'type: "Psychic",']),
+    ('doublehit', ['accuracy: 90,', 'basePower: 35,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'multihit: 2,', 'target: "normal",',
+                   'type: "Normal",']),
 )
 G33_ENTRY_FACTS = (
     ('ability', 'mirrorarmor', False,
@@ -2395,6 +2398,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'outrage': ('LOCKED_MOVE', set()),                                    # G56: a two-to-three turn lock, then confusion
     'thrash': ('LOCKED_MOVE', set()),                                     # G56: the same lock as Outrage
     'petaldance': ('LOCKED_MOVE', set()),                                 # G56: the same lock as Outrage
+    'ragingfury': ('LOCKED_MOVE', set()),                                 # A0 part 3: the same lock as Outrage (flags protect, mirror)
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
@@ -2432,6 +2436,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'ragepowder': ('RAGE_POWDER', {'onTry'}),                              # G30: Follow Me for the foes that are not powder immune
     'psychicfangs': ('PSYCHIC_FANGS', {'onTryHit'}),                       # G30: the screens go before the hit
     'solarbeam': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),             # G30: a two-turn move that sun skips, x0.5 in rain, sand, snow
+    'solarblade': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),           # A0 part 3: the same two callbacks (SOLAR_BEAM_CALLBACKS), physical, 125
     'steelroller': ('STEEL_ROLLER', {'onTry', 'onHit', 'onAfterSubDamage'}),  # G34: fails without a terrain and ends it
     'clangoroussoul': ('CLANGOROUS_SOUL', {'onTry', 'onTryHit', 'onHit'}),    # G34: a third of the HP for five boosts
     'brickbreak': ('BRICK_BREAK', {'onTryHit'}),
@@ -2450,6 +2455,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'risingvoltage': ('RISING_VOLTAGE', {'basePowerCallback'}),           # G25: doubled at a grounded target in Electric Terrain
     'terrainpulse': ('TERRAIN_PULSE', {'onModifyType', 'onModifyMove'}),  # G25: the terrain's type, doubled for a grounded user
     'dualwingbeat': ('MULTI_HIT_2', set()),                               # G33: two hits
+    'doublehit': ('MULTI_HIT_2', set()),                                  # A0 part 3: two hits (the fixed count 2)
     'twinbeam': ('MULTI_HIT_2', set()),
     'tripleaxel': ('TRIPLE_AXEL', {'basePowerCallback'}),                 # G33: three hits, a check for each, 20 x the hit
     'sacredsword': ('DARKEST_LARIAT', set()),                             # G39: Darkest Lariat's ignoreDefensive and ignoreEvasion
@@ -2459,6 +2465,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'icefang': ('ICE_FANG', set()),                                       # G44: a 10 percent freeze, then a 10 percent flinch (G2_OWNED_FIELDS)
     'triattack': ('TRI_ATTACK', set()),
     'iciclespear': ('MULTI_HIT_2_5', set()),                              # G54: 2 to 5 hits, a weighted draw (SITE_MULTIHIT_COUNT)
+    'tailslap': ('MULTI_HIT_2_5', set()),                                 # A0 part 3: 2 to 5 hits, the same draw
+    'bonerush': ('MULTI_HIT_2_5', set()),                                 # A0 part 3: the same draw; Champions basePower 30 (merged)
     'scaleshot': ('SCALE_SHOT', set()),                                   # G54: 2 to 5 hits, then the user's Defense -1 and Speed +1
     'quickguard': ('QUICK_GUARD', {'onTry', 'onHitSide'}),                # G54: a side condition against the priority moves of the foes
     'upperhand': ('UPPER_HAND', {'onTry'}),                               # G54: a priority move against a target that moves first with one
@@ -2508,7 +2516,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'nightshade': ('LEVEL_DAMAGE', set()),                                # G92: damage 'level' (the user's level, no crit draw)
     # G90 (decision 0060): the six moves that apply the volatile partiallytrapped (G2_OWNED_FIELDS owns the volatileStatus line)
     'bind': ('PARTIAL_TRAP', set()), 'wrap': ('PARTIAL_TRAP', set()), 'firespin': ('PARTIAL_TRAP', set()),
-    'sandtomb': ('PARTIAL_TRAP', set()), 'infestation': ('PARTIAL_TRAP', set()),  # Snap Trap is dropped (decision 0060 section 8)
+    'sandtomb': ('PARTIAL_TRAP', set()), 'infestation': ('PARTIAL_TRAP', set()),
+    'snaptrap': ('PARTIAL_TRAP', set()),  # A0 part 3: the sixth move of decision 0060's table (the Champions type Steel is merged)
     'psychicterrain': ('PSYCHIC_TERRAIN', set()),                         # G96: sets the Psychic Terrain (5 turns, 8 with Terrain Extender)
     'speedswap': ('SPEED_SWAP', {'onHit'}),                               # K3 (decision 0015 5de): swaps the two Speed stats (stored, not staged)
 })
@@ -2532,7 +2541,7 @@ G44_HANDLERS = ['POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK']
 # and its count a random(2, 4) drawn in onStart; the countdown runs in onResidual; onAfterMove removes it at duration 1;
 # onEnd adds confusion unless the count is above 1. The turn code runs these; the facts below are read from the pin.
 G56_HANDLERS = ['LOCKED_MOVE']
-G56_LOCKED_MOVES = ('outrage', 'thrash', 'petaldance')
+G56_LOCKED_MOVES = ('outrage', 'thrash', 'petaldance', 'ragingfury')
 LOCKED_MOVE_CONDITION_FACTS = (
     'duration: 2,',
     'this.effectState.trueDuration = this.random(2, 4);',
@@ -2549,6 +2558,7 @@ LOCKED_MOVE_MOVE_FACTS = {
     'outrage': ('basePower: 120,', 'accuracy: 100,', 'category: "Physical",', 'target: "randomNormal",', 'type: "Dragon",'),
     'thrash': ('basePower: 120,', 'accuracy: 100,', 'category: "Physical",', 'target: "randomNormal",', 'type: "Normal",'),
     'petaldance': ('basePower: 120,', 'accuracy: 100,', 'category: "Special",', 'target: "randomNormal",', 'type: "Grass",'),
+    'ragingfury': ('basePower: 120,', 'accuracy: 100,', 'category: "Physical",', 'target: "randomNormal",', 'type: "Fire",'),
 }
 G44_FACTS = (
     ('powertrip', ['accuracy: 100,', 'basePower: 20,',
@@ -2697,7 +2707,7 @@ G78_HANDLERS = ['DRAGON_DARTS']
 # volatile (data/conditions.ts:222-258: the duration draw random(5, 7) or 8 with a Grip Claw, the Binding Band divisor, the
 # residual at order 13, the end line, the trapped flag of the source) is what the turn code reads; the moves are plain hits.
 G90_HANDLERS = ['PARTIAL_TRAP']
-G90_MOVES = ('bind', 'wrap', 'firespin', 'sandtomb', 'infestation')
+G90_MOVES = ('bind', 'wrap', 'firespin', 'sandtomb', 'infestation', 'snaptrap')
 G90_MOVE_FACTS = ("volatileStatus: 'partiallytrapped',", 'target: "normal",')
 G90_CONDITION_FACTS = (
     'durationCallback(target, source) {', "if (source?.hasItem('gripclaw')) return 8;", 'return this.random(5, 7);',
@@ -2810,6 +2820,12 @@ G58_FACTS = (
 G54_FACTS = (
     ('iciclespear', ['accuracy: 100,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
                      'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",', 'type: "Ice",']),
+    ('tailslap', ['accuracy: 85,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                  'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",',
+                  'type: "Normal",']),
+    ('bonerush', ['accuracy: 90,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                  'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",',
+                  'type: "Ground",']),
     ('scaleshot', ['accuracy: 90,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],',
                    'selfBoost: { boosts: { def: -1, spe: 1, }, },', 'target: "normal",', 'type: "Dragon",']),
