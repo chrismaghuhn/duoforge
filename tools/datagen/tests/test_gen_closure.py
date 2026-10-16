@@ -2478,9 +2478,6 @@ class BulletFlag(unittest.TestCase):
         self.assertEqual(marked, self.PIN_BULLET_POOL_MOVES)
 
 
-if __name__ == '__main__':
-    unittest.main()
-
 
 POWER_CALLBACK = ("\t\tbasePowerCallback(pokemon, target, move) {\n\t\t\tconst bp = move.basePower + 20 * pokemon.positiveBoosts();\n"
                   "\t\t\tthis.debug(`BP: ${bp}`);\n\t\t\treturn bp;\n\t\t},")
@@ -2675,3 +2672,7 @@ class CheapMoveFacts(unittest.TestCase):
         with self.assertRaises(SystemExit) as cm:
             gen_closure.check_c1_facts(TextSource('data/moves.ts', self.render(mid, exp)), champ, only=((mid, exp),))
         self.assertIn('the Champions mod overrides it', str(cm.exception.code))
+
+
+if __name__ == '__main__':
+    unittest.main()
