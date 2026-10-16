@@ -53,6 +53,7 @@
 #include "data/extended_tables.h"
 #include "data/pool_tables.h"
 #include "state/battle_internal.h"
+#include "state/invariants.h"
 #include "state/knowledge.h"
 #include "support/check.h"
 #include "support/fixtures.h"
@@ -572,6 +573,65 @@ static void run_pivot(df_test *t, const duoforge_context *ctx, const pivot_case 
             DF_CHECK(t, duoforge_battle_check(ctx, cleared) == DUOFORGE_OK);
             same_views(t, ctx, dec, cleared);
         }
+        /* the bit's use is behind it: a queued move of the marked position is a broken state (the same record is valid without
+         * the bit) */
+        {
+            duoforge_battle *q = NULL;
+            DF_CHECK(t, duoforge_battle_clone(ctx, dec, &q) == DUOFORGE_OK && q != NULL);
+            if (q != NULL && DF_CHECK(t, q->queue_len < DFI_QUEUE_CAPACITY)) {
+                for (uint32_t k = q->queue_len; k > 0u; --k) {
+                    q->queue[k] = q->queue[k - 1u];
+                }
+                dfi_queue_record mv;
+                memset(&mv, 0, sizeof mv);
+                mv.activation_id = q->sides[1].positions[0].activation_id;
+                mv.kind = (uint8_t)DFI_Q_MOVE;
+                mv.side = 1u;
+                mv.slot = 0u;
+                mv.move_slot = 0u;
+                mv.target = (uint8_t)DUOFORGE_TARGET_NONE;
+                q->queue[0] = mv;
+                q->queue_len = (uint8_t)(q->queue_len + 1u);
+                dfi_invariant inv = DFI_INV_NONE;
+                DF_CHECK(t, dfi_state_check(ctx, q, &inv) == DUOFORGE_E_INVARIANT);
+                DF_CHECK_EQ_U64(t, inv, DFI_INV_TAIL_POSITION);
+                uint8_t *qbits = &q->tail.sides[1].positions[0].single_turn;
+                *qbits = (uint8_t)(*qbits & ~DFI_SINGLE_TURN_LOCK_UNUSED);
+                DF_CHECK(t, dfi_state_check(ctx, q, NULL) == DUOFORGE_OK);
+            }
+            duoforge_battle_destroy(q);
+        }
+        /* the bit follows its Pokemon on a swap of the two positions (Ally Switch moves the tail position whole) */
+        {
+            duoforge_battle *w = NULL;
+            DF_CHECK(t, duoforge_battle_clone(ctx, dec, &w) == DUOFORGE_OK && w != NULL);
+            if (w != NULL) {
+                dfi_swap_position_state(w, 1u, 0u, 1u);
+                DF_CHECK_EQ_U64(t, w->tail.sides[1].positions[0].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED, 0u);
+                DF_CHECK(t, (w->tail.sides[1].positions[1].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u);
+                DF_CHECK_EQ_U64(t, w->tail.sides[1].positions[1].lock_turns, 1u);
+            }
+            duoforge_battle_destroy(w);
+        }
+        /* cured after its `cant` (no marked move or ability cures within the turn yet, so white-box at the pause): the bit is
+         * read, not the status, and the countdown still ends the lock with the fatigue (the one behaviour change against main,
+         * which kept an awake holder's lock) */
+        {
+            duoforge_battle *cu = NULL;
+            DF_CHECK(t, duoforge_battle_clone(ctx, dec, &cu) == DUOFORGE_OK && cu != NULL);
+            if (cu != NULL) {
+                dfi_member *am = &cu->sides[1].members[g_r.arcanine];
+                am->status = 0u;
+                am->status_counter = 0u;
+                cu->tail.sides[1].sleep_cant[g_r.arcanine] = 0u;
+                DF_CHECK(t, duoforge_battle_check(ctx, cu) == DUOFORGE_OK);
+                DF_CHECK_EQ_U64(t, resume(t, ctx, cu), 1u);
+                DF_CHECK_EQ_U64(t, cu->tail.sides[1].positions[0].lock_turns, 0u);
+                DF_CHECK_EQ_U64(t, cu->sides[1].positions[0].locked_move, 0u);
+                DF_CHECK(t, cu->sides[1].positions[0].confusion_turns >= 2u && cu->sides[1].positions[0].confusion_turns <= 5u);
+            }
+            duoforge_battle_destroy(cu);
+        }
         /* the decoded battle resumes: the residual ends the lock with the fatigue confusion (count 1) */
         DF_CHECK_EQ_U64(t, resume(t, ctx, dec), 1u);
         DF_CHECK_EQ_U64(t, dec->tail.sides[1].positions[0].lock_turns, 0u);
@@ -596,6 +656,277 @@ static void run_pivot(df_test *t, const duoforge_context *ctx, const pivot_case 
     }
 }
 
+/* ---- phase 6 of the residual with two lock holders (scenarios 9-11) ----
+ * Side 1 leads two lock holders: position 2 (slot 0) and position 3 (slot 1), both Jolly 32 Atk / 32 Spe, no item, Outrage and
+ * Protect. Side 0 leads Politoed (Protect replaced by Hypnosis; Speed and accuracy +6: it puts position 2 to sleep before it moves)
+ * and Farigiraf (Psychic into its ally Politoed, last); Grimmsnarl and Archaludon wait on the bench. No side 0 lead is a Fairy, so the restarted
+ * holder's Outrage always hits (a Fairy's immunity would leave its lock unrestarted).
+ *   9. phase6_restarted_faint_point: Arcanine (2, count 1, put to sleep: marked) and a faster Garchomp (3, count 2: its use restarts
+ *      the lock). Both side 0 leads have Perish 1 and side 0's bench has fainted: the residual's Perish ends queue their faints
+ *      (an end is no faint point), and the first faint point is Garchomp's lockedmove onResidual in phase 6 (sim/battle.ts:565-566).
+ *      The battle ends there, side 1 wins, and Arcanine's countdown never runs: no fatigue line, its lock and its bit stand at
+ *      TERMINAL (where the invariant allows the bit; the codec round trip keeps it).
+ *  10. phase6_equal_speed_refused: as 9 with Kangaskhan (2, marked) and Annihilape (3, restarted), whose Speeds are equal (both
+ *      base 90): which of the two handlers runs first is the shuffle, so whether the fatigue came before the battle's end is not
+ *      known: E_UNSUPPORTED, the battle unchanged.
+ *  11. phase6_both_marked: Arcanine and Garchomp, both asleep at the start (white-box, as duoforge.state.pool_g56) with count 1, no
+ *      Perish: both `cant`, both marked, both end with the fatigue in the residual, both bits cleared. */
+static uint32_t g_p6_holder0, g_p6_holder1, g_p6_politoed, g_p6_farigiraf, g_p6_bench0, g_p6_bench1;
+
+static void p6_member(duoforge_member_setup *m, uint32_t species, uint32_t gender, uint32_t ability)
+{
+    memset(m, 0, sizeof *m);
+    m->species_id = species;
+    m->gender = gender;
+    m->nature = DFI_NATURE_JOLLY;
+    m->stat_points[1] = 32u;
+    m->stat_points[5] = 32u;
+    m->ability = 1u + ability;
+    m->item = 0u;
+    m->move_count = 2u;
+    m->moves[0].move_id = DFI_MOVE_OUTRAGE;
+    m->moves[1].move_id = DFI_MOVE_PROTECT;
+}
+
+static duoforge_battle *p6_battle(df_test *t, const duoforge_context *ctx, uint32_t sp0, uint32_t g0, uint32_t ab0, uint32_t sp1,
+                                  uint32_t g1, uint32_t ab1)
+{
+    duoforge_battle_setup s;
+    if (!DF_CHECK(t, duoforge_reference_setup(1u, &s) == DUOFORGE_OK)) {
+        return NULL;
+    }
+    g_p6_holder0 = find_species(&s.sides[1], DFI_FORME_CERULEDGE);
+    g_p6_holder1 = find_species(&s.sides[1], DFI_FORME_MILOTIC);
+    g_p6_politoed = find_species(&s.sides[0], DFI_FORME_POLITOED);
+    g_p6_farigiraf = find_species(&s.sides[0], DFI_FORME_FARIGIRAF);
+    g_p6_bench0 = find_species(&s.sides[0], DFI_FORME_GRIMMSNARL);
+    g_p6_bench1 = find_species(&s.sides[0], DFI_FORME_ARCHALUDON);
+    if (!DF_CHECK(t, g_p6_holder0 != UINT32_MAX && g_p6_holder1 != UINT32_MAX && g_p6_politoed != UINT32_MAX &&
+                         g_p6_farigiraf != UINT32_MAX && g_p6_bench0 != UINT32_MAX && g_p6_bench1 != UINT32_MAX)) {
+        return NULL;
+    }
+    p6_member(&s.sides[1].members[g_p6_holder0], sp0, g0, ab0);
+    p6_member(&s.sides[1].members[g_p6_holder1], sp1, g1, ab1);
+    duoforge_member_setup *pol = &s.sides[0].members[g_p6_politoed];
+    const uint32_t protect_slot = find_move(pol, DFI_MOVE_PROTECT);
+    if (!DF_CHECK(t, protect_slot != UINT32_MAX)) {
+        return NULL;
+    }
+    pol->moves[protect_slot].move_id = DFI_MOVE_HYPNOSIS;
+    duoforge_battle *b = df_make_battle(ctx, &s);
+    if (!DF_CHECK(t, b != NULL)) {
+        return NULL;
+    }
+    uint32_t others[2] = {UINT32_MAX, UINT32_MAX};
+    for (uint32_t m = 0u, k = 0u; m < s.sides[1].member_count && k < 2u; ++m) {
+        if (m != g_p6_holder0 && m != g_p6_holder1) {
+            others[k++] = m;
+        }
+    }
+    duoforge_decision_bundle bd;
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = b->request_epoch;
+    bd.response_mask = 3u;
+    const uint32_t picks[2][4] = {{g_p6_politoed, g_p6_farigiraf, g_p6_bench0, g_p6_bench1},
+                                  {g_p6_holder0, g_p6_holder1, others[0], others[1]}};
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        duoforge_side_choice *c = &bd.responses[side];
+        c->epoch = b->request_epoch;
+        c->side = (uint8_t)side;
+        c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+        c->pick_count = 4u;
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            c->picks[i] = (uint8_t)picks[side][i];
+        }
+    }
+    duoforge_step_result res;
+    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TURN);
+    DF_CHECK_EQ_U64(t, b->sides[1].positions[0].occupant, g_p6_holder0);
+    DF_CHECK_EQ_U64(t, b->sides[1].positions[1].occupant, g_p6_holder1);
+    return b;
+}
+
+/* The locks (Outrage in slot 0, used last), Politoed's +6 Speed and accuracy; with `perish` side 0's leads at Perish 1 and its bench
+ * fainted; with `both_asleep` both holders asleep (three turns). */
+static void p6_arrange(duoforge_battle *y, uint32_t count0, uint32_t count1, bool perish, bool both_asleep)
+{
+    const uint32_t counts[2] = {count0, count1};
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        y->tail.sides[1].positions[p].lock_turns = (uint8_t)counts[p];
+        y->sides[1].positions[p].locked_move = 1u;
+        y->tail.sides[1].positions[p].last_move = 1u;
+    }
+    y->sides[0].positions[0].stages[4] = (uint8_t)(DFI_STAGE_NEUTRAL + 6u);
+    y->sides[0].positions[0].stages[5] = (uint8_t)(DFI_STAGE_NEUTRAL + 6u);
+    if (perish) {
+        y->tail.sides[0].positions[0].perish = 1u;
+        y->tail.sides[0].positions[1].perish = 1u;
+        y->sides[0].members[g_p6_bench0].hp = 0u;
+        y->sides[0].members[g_p6_bench1].hp = 0u;
+    }
+    if (both_asleep) {
+        for (uint32_t p = 0u; p < 2u; ++p) {
+            dfi_member *h = &y->sides[1].members[y->sides[1].positions[p].occupant];
+            h->status = (uint8_t)DFI_STATUS_SLP;
+            h->status_counter = 3u;
+        }
+    }
+}
+
+static void p6_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
+{
+    memset(bd, 0, sizeof *bd);
+    bd->epoch = b->request_epoch;
+    bd->response_mask = 3u;
+    duoforge_side_choice *c0 = &bd->responses[0];
+    c0->epoch = b->request_epoch;
+    c0->side = 0u;
+    c0->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+    c0->slots[0].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+    c0->slots[0].move_slot = 3u; /* Politoed: Hypnosis (Protect's slot) into position 2 */
+    c0->slots[0].target = (uint8_t)HOLDER;
+    c0->slots[1].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+    c0->slots[1].move_slot = 0u; /* Farigiraf: Psychic into its ally Politoed (it moves last; a hit on a holder could knock it out) */
+    c0->slots[1].target = 0u;
+    duoforge_side_choice *c1 = &bd->responses[1];
+    c1->epoch = b->request_epoch;
+    c1->side = 1u;
+    c1->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+    for (uint32_t k = 0u; k < 2u; ++k) {
+        c1->slots[k].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+        c1->slots[k].move_slot = 0u;
+        c1->slots[k].target = (uint8_t)DUOFORGE_TARGET_NONE;
+    }
+}
+
+static void run_phase6(df_test *t, const duoforge_context *ctx)
+{
+    /* 9: the restarted holder's faint point ends the battle before the marked holder's countdown */
+    {
+        const unsigned long failed_before = t->failures;
+        duoforge_battle *base = p6_battle(t, ctx, DFI_FORME_ARCANINE, DUOFORGE_GENDER_MALE, DFI_ABILITY_INTIMIDATE, DFI_FORME_GARCHOMP,
+                                          DUOFORGE_GENDER_FEMALE, DFI_ABILITY_ROUGHSKIN);
+        if (base != NULL) {
+            DF_CHECK(t, base->sides[1].members[g_p6_holder1].stats[DFI_STAT_SPE - 1u] >
+                            base->sides[1].members[g_p6_holder0].stats[DFI_STAT_SPE - 1u]); /* Garchomp is faster */
+            for (uint64_t seed = 1u; seed <= SEEDS; ++seed) {
+                duoforge_battle *y = NULL;
+                if (!DF_CHECK(t, duoforge_battle_clone(ctx, base, &y) == DUOFORGE_OK && y != NULL)) {
+                    break;
+                }
+                DF_CHECK(t, duoforge_battle_reseed(ctx, y, seed, 2u) == DUOFORGE_OK);
+                p6_arrange(y, 1u, 2u, true, false);
+                DF_CHECK(t, duoforge_battle_check(ctx, y) == DUOFORGE_OK);
+                duoforge_decision_bundle bd;
+                p6_bundle(&bd, y);
+                duoforge_event_buffer buf[2] = {{g_ev[0], DUOFORGE_MAX_EVENTS, 0u}, {g_ev[1], DUOFORGE_MAX_EVENTS, 0u}};
+                duoforge_step_result res;
+                const duoforge_status st = duoforge_battle_step_events(ctx, y, &bd, &res, buf);
+                if (DF_CHECK(t, st == DUOFORGE_OK)) {
+                    uint32_t result = 0u;
+                    DF_CHECK_EQ_U64(t, y->boundary_kind, DUOFORGE_BOUNDARY_TERMINAL);
+                    DF_CHECK(t, duoforge_battle_result(ctx, y, &result) == DUOFORGE_OK && result == DUOFORGE_RESULT_SIDE_1);
+                    DF_CHECK(t, find_event(0u, buf[0].count, DUOFORGE_EVENT_CANT, (uint8_t)HOLDER, 0u) != UINT32_MAX);
+                    DF_CHECK_EQ_U64(t, count_events(0u, buf[0].count, DUOFORGE_EVENT_CONFUSION_START, (uint8_t)HOLDER), 0u);
+                    DF_CHECK_EQ_U64(t, count_events(1u, buf[1].count, DUOFORGE_EVENT_CONFUSION_START, (uint8_t)HOLDER), 0u);
+                    DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[0].lock_turns, 1u);
+                    DF_CHECK(t, (y->tail.sides[1].positions[0].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u);
+                    DF_CHECK_EQ_U64(t, y->sides[1].positions[0].confusion_turns, 0u);
+                    DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[1].lock_turns, 1u); /* restarted: counted down at its use */
+                    DF_CHECK(t, duoforge_battle_check(ctx, y) == DUOFORGE_OK);
+                    /* the bit at TERMINAL survives the codec round trip */
+                    static uint8_t tb[4096];
+                    size_t tn = 0u;
+                    duoforge_battle *td = NULL;
+                    bool equal = false;
+                    DF_CHECK(t, duoforge_battle_encode(ctx, y, tb, sizeof tb, &tn) == DUOFORGE_OK);
+                    DF_CHECK(t, duoforge_battle_create_decoded(ctx, tb, tn, &td) == DUOFORGE_OK && td != NULL);
+                    DF_CHECK(t, td != NULL && duoforge_battle_equal(ctx, y, td, &equal) == DUOFORGE_OK && equal);
+                    duoforge_battle_destroy(td);
+                } else {
+                    fprintf(stderr, "  phase6_restarted_faint_point seed %u: status %d\n", (unsigned)seed, (int)st);
+                }
+                duoforge_battle_destroy(y);
+            }
+            duoforge_battle_destroy(base);
+        }
+        fprintf(stderr, "  scenario phase6_restarted_faint_point: %s\n", t->failures == failed_before ? "ok" : "FAILED");
+    }
+    /* 10: equal Speeds at the battle-ending faint point: refused */
+    {
+        const unsigned long failed_before = t->failures;
+        duoforge_battle *base = p6_battle(t, ctx, DFI_FORME_KANGASKHAN, DUOFORGE_GENDER_FEMALE, DFI_ABILITY_INNERFOCUS,
+                                          DFI_FORME_ANNIHILAPE, DUOFORGE_GENDER_MALE, DFI_ABILITY_INNERFOCUS);
+        if (base != NULL) {
+            DF_CHECK_EQ_U64(t, base->sides[1].members[g_p6_holder0].stats[DFI_STAT_SPE - 1u],
+                            base->sides[1].members[g_p6_holder1].stats[DFI_STAT_SPE - 1u]);
+            for (uint64_t seed = 1u; seed <= SEEDS; ++seed) {
+                duoforge_battle *y = NULL;
+                if (!DF_CHECK(t, duoforge_battle_clone(ctx, base, &y) == DUOFORGE_OK && y != NULL)) {
+                    break;
+                }
+                DF_CHECK(t, duoforge_battle_reseed(ctx, y, seed, 2u) == DUOFORGE_OK);
+                p6_arrange(y, 1u, 2u, true, false);
+                DF_CHECK(t, duoforge_battle_check(ctx, y) == DUOFORGE_OK);
+                static uint8_t before[4096], after[4096];
+                size_t nb = 0u, na = 0u;
+                DF_CHECK(t, duoforge_battle_encode(ctx, y, before, sizeof before, &nb) == DUOFORGE_OK);
+                duoforge_decision_bundle bd;
+                p6_bundle(&bd, y);
+                duoforge_step_result res;
+                const duoforge_status st = duoforge_battle_step(ctx, y, &bd, &res);
+                if (!DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED)) {
+                    fprintf(stderr, "  phase6_equal_speed_refused seed %u: status %d\n", (unsigned)seed, (int)st);
+                }
+                DF_CHECK(t, duoforge_battle_encode(ctx, y, after, sizeof after, &na) == DUOFORGE_OK && na == nb &&
+                                memcmp(before, after, nb) == 0); /* a refused step leaves the battle unchanged */
+                duoforge_battle_destroy(y);
+            }
+            duoforge_battle_destroy(base);
+        }
+        fprintf(stderr, "  scenario phase6_equal_speed_refused: %s\n", t->failures == failed_before ? "ok" : "FAILED");
+    }
+    /* 11: both positions marked in one turn */
+    {
+        const unsigned long failed_before = t->failures;
+        duoforge_battle *base = p6_battle(t, ctx, DFI_FORME_ARCANINE, DUOFORGE_GENDER_MALE, DFI_ABILITY_INTIMIDATE, DFI_FORME_GARCHOMP,
+                                          DUOFORGE_GENDER_FEMALE, DFI_ABILITY_ROUGHSKIN);
+        if (base != NULL) {
+            for (uint64_t seed = 1u; seed <= SEEDS; ++seed) {
+                duoforge_battle *y = NULL;
+                if (!DF_CHECK(t, duoforge_battle_clone(ctx, base, &y) == DUOFORGE_OK && y != NULL)) {
+                    break;
+                }
+                DF_CHECK(t, duoforge_battle_reseed(ctx, y, seed, 2u) == DUOFORGE_OK);
+                p6_arrange(y, 1u, 1u, false, true);
+                DF_CHECK(t, duoforge_battle_check(ctx, y) == DUOFORGE_OK);
+                duoforge_decision_bundle bd;
+                p6_bundle(&bd, y);
+                duoforge_event_buffer buf[2] = {{g_ev[0], DUOFORGE_MAX_EVENTS, 0u}, {g_ev[1], DUOFORGE_MAX_EVENTS, 0u}};
+                duoforge_step_result res;
+                const duoforge_status st = duoforge_battle_step_events(ctx, y, &bd, &res, buf);
+                if (DF_CHECK(t, st == DUOFORGE_OK)) {
+                    DF_CHECK_EQ_U64(t, y->boundary_kind, DUOFORGE_BOUNDARY_TURN);
+                    for (uint32_t p = 0u; p < 2u; ++p) {
+                        const uint8_t flat = (uint8_t)(HOLDER + p);
+                        DF_CHECK(t, find_event(0u, buf[0].count, DUOFORGE_EVENT_CANT, flat, 0u) != UINT32_MAX);
+                        DF_CHECK_EQ_U64(t, count_events(0u, buf[0].count, DUOFORGE_EVENT_CONFUSION_START, flat), 1u);
+                        DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[p].lock_turns, 0u);
+                        DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[p].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED, 0u);
+                        DF_CHECK(t, y->sides[1].positions[p].confusion_turns >= 2u && y->sides[1].positions[p].confusion_turns <= 5u);
+                    }
+                } else {
+                    fprintf(stderr, "  phase6_both_marked seed %u: status %d\n", (unsigned)seed, (int)st);
+                }
+                duoforge_battle_destroy(y);
+            }
+            duoforge_battle_destroy(base);
+        }
+        fprintf(stderr, "  scenario phase6_both_marked: %s\n", t->failures == failed_before ? "ok" : "FAILED");
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -609,6 +940,7 @@ int main(void)
     for (size_t i = 0u; i < sizeof pivots / sizeof pivots[0]; ++i) {
         run_pivot(&t, kp, &pivots[i]);
     }
+    run_phase6(&t, kp);
     duoforge_battle *base = turn_battle(&t, kp);
     if (base != NULL) {
         static const scenario sc[] = {

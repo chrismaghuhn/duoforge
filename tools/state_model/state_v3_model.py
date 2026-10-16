@@ -1161,6 +1161,11 @@ def check_tail(ctx, st):
             # stands only at a PIVOT pause or at the end of the battle
             if tp['single_turn'] & SINGLE_TURN_LOCK_UNUSED and st['boundary'] not in (PIVOT, TERMINAL):
                 return 'TAIL_POSITION'
+            # ... and its use is behind it: the rest of the turn holds no move of that position
+            if tp['single_turn'] & SINGLE_TURN_LOCK_UNUSED and any(
+                    st['queue'][q]['kind'] == Q_MOVE and st['queue'][q]['side'] == s and st['queue'][q]['slot'] == p
+                    for q in range(min(st['queue_len'], QUEUE_CAP))):
+                return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
             ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]
             t2, mf, sc = ts['type2'][m], ts['member_flags'][m], ts['sleep_cant'][m]

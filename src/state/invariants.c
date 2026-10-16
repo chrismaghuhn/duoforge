@@ -977,10 +977,17 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             }
             /* Issue 606 (decision 0015 5dv): the unused-lock bit lives from a stopped use to the residual of the same turn, so
              * it stands only at a PIVOT pause between the two or at the end of the battle; every other boundary is after a
-             * residual (TURN, REPLACEMENT) or before any turn (TEAM_SELECTION). */
-            if ((tp->single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u && b->boundary_kind != DUOFORGE_BOUNDARY_PIVOT &&
-                b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
-                return DFI_INV_TAIL_POSITION;
+             * residual (TURN, REPLACEMENT) or before any turn (TEAM_SELECTION). Its use is behind it: the rest of the turn
+             * holds no move of that position. */
+            if ((tp->single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u) {
+                if (b->boundary_kind != DUOFORGE_BOUNDARY_PIVOT && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
+                    return DFI_INV_TAIL_POSITION;
+                }
+                for (uint32_t q = 0u; q < b->queue_len && q < DFI_QUEUE_CAPACITY; ++q) {
+                    if (b->queue[q].kind == DFI_Q_MOVE && (uint32_t)b->queue[q].side == s && (uint32_t)b->queue[q].slot == p) {
+                        return DFI_INV_TAIL_POSITION;
+                    }
+                }
             }
         }
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {

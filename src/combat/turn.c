@@ -9999,8 +9999,12 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_residual_noorder(dfi_run *r, struct
         if (pos->occupant != DFI_OCCUPANT_NONE) {
             seq[seq_n] = flat;
             seq_n += 1u;
+            /* A lockedmove (issue 606, decision 0015 5dv) is one of these handlers too: its end (a marked lock: the fatigue line
+             * and its draw), its onResidual (a sleeping holder's delete) and the faint point after that onResidual all depend on
+             * whether it ran before a battle-ending faint point of an equal-Speed Pokemon. */
             had[flat] = ((uint32_t)pos->flags & ended_flags) != 0u || pos->charge_turns != 0u || pos->stall_turns != 0u ||
-                        b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
+                        b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u ||
+                        b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns != 0u;
         }
     }
     for (uint32_t i = 1u; i < seq_n; ++i) {
@@ -10056,18 +10060,27 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_residual_noorder(dfi_run *r, struct
                 }
             }
         }
-        /* lockedmove (step G56): an order-less callback in this Speed order, after the counters it shares a sub-order with. */
-        if (dfi_alive(b, flat) && b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns != 0u) {
+        /* lockedmove (step G56): an order-less callback in this Speed order, after the counters it shares a sub-order with. A
+         * marked lock ends in its duration phase (no faint point: sim/battle.ts:515-522 `continue`s); any other lock's
+         * onResidual runs and the faintMessages after it is a faint point (sim/battle.ts:565-566), as a counter that keeps
+         * (issue 606, decision 0015 5dv). */
+        const dfi_tail_pos *ltp = &b->tail.sides[flat / 2u].positions[flat % 2u];
+        const bool lock_here = dfi_alive(b, flat) && ltp->lock_turns != 0u;
+        const bool lock_point = lock_here && ((uint32_t)ltp->single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) == 0u;
+        if (lock_here) {
             st = dfi_residual_lock(r, flat);
             if (st != DUOFORGE_OK) {
                 return st;
             }
         }
-        if (keeps && r->faint_count != 0u) {
+        if ((keeps || lock_point) && r->faint_count != 0u) {
             dfi_residual_faints(r);
             if (r->ended) {
                 if (also_ends && !pair_here && dfi_alive(b, flat)) {
                     return DUOFORGE_E_UNSUPPORTED; /* its own other handler: before or after the faint point */
+                }
+                if (lock_here && keeps && dfi_alive(b, flat)) {
+                    return DUOFORGE_E_UNSUPPORTED; /* its lock's handler and a counter that keeps: which faint point came first */
                 }
                 for (uint32_t j = 0u; j < seq_n; ++j) {
                     if (j != i && had[seq[j]] && dfi_alive(b, seq[j]) && r->speed_seen[seq[j]] == r->speed_seen[flat]) {
