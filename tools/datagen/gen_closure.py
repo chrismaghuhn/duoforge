@@ -2058,6 +2058,9 @@ G33_FACTS = (
                     'multihit: 3,', 'multiaccuracy: true,', 'target: "normal",', 'type: "Ice",']),
     ('twinbeam', ['accuracy: 100,', 'basePower: 40,', 'category: "Special",', 'priority: 0,',
                   'flags: { protect: 1, mirror: 1 },', 'multihit: 2,', 'target: "normal",', 'type: "Psychic",']),
+    ('doublehit', ['accuracy: 90,', 'basePower: 35,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'multihit: 2,', 'target: "normal",',
+                   'type: "Normal",']),
 )
 G33_ENTRY_FACTS = (
     ('ability', 'mirrorarmor', False,
@@ -2395,6 +2398,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'outrage': ('LOCKED_MOVE', set()),                                    # G56: a two-to-three turn lock, then confusion
     'thrash': ('LOCKED_MOVE', set()),                                     # G56: the same lock as Outrage
     'petaldance': ('LOCKED_MOVE', set()),                                 # G56: the same lock as Outrage
+    'ragingfury': ('LOCKED_MOVE', set()),                                 # A0 part 3: the same lock as Outrage (flags protect, mirror)
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
@@ -2432,6 +2436,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'ragepowder': ('RAGE_POWDER', {'onTry'}),                              # G30: Follow Me for the foes that are not powder immune
     'psychicfangs': ('PSYCHIC_FANGS', {'onTryHit'}),                       # G30: the screens go before the hit
     'solarbeam': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),             # G30: a two-turn move that sun skips, x0.5 in rain, sand, snow
+    'solarblade': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),           # A0 part 3: the same two callbacks (SOLAR_BEAM_CALLBACKS), physical, 125
     'steelroller': ('STEEL_ROLLER', {'onTry', 'onHit', 'onAfterSubDamage'}),  # G34: fails without a terrain and ends it
     'clangoroussoul': ('CLANGOROUS_SOUL', {'onTry', 'onTryHit', 'onHit'}),    # G34: a third of the HP for five boosts
     'brickbreak': ('BRICK_BREAK', {'onTryHit'}),
@@ -2450,6 +2455,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'risingvoltage': ('RISING_VOLTAGE', {'basePowerCallback'}),           # G25: doubled at a grounded target in Electric Terrain
     'terrainpulse': ('TERRAIN_PULSE', {'onModifyType', 'onModifyMove'}),  # G25: the terrain's type, doubled for a grounded user
     'dualwingbeat': ('MULTI_HIT_2', set()),                               # G33: two hits
+    'doublehit': ('MULTI_HIT_2', set()),                                  # A0 part 3: two hits (the fixed count 2)
     'twinbeam': ('MULTI_HIT_2', set()),
     'tripleaxel': ('TRIPLE_AXEL', {'basePowerCallback'}),                 # G33: three hits, a check for each, 20 x the hit
     'sacredsword': ('DARKEST_LARIAT', set()),                             # G39: Darkest Lariat's ignoreDefensive and ignoreEvasion
@@ -2459,6 +2465,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'icefang': ('ICE_FANG', set()),                                       # G44: a 10 percent freeze, then a 10 percent flinch (G2_OWNED_FIELDS)
     'triattack': ('TRI_ATTACK', set()),
     'iciclespear': ('MULTI_HIT_2_5', set()),                              # G54: 2 to 5 hits, a weighted draw (SITE_MULTIHIT_COUNT)
+    'tailslap': ('MULTI_HIT_2_5', set()),                                 # A0 part 3: 2 to 5 hits, the same draw
+    'bonerush': ('MULTI_HIT_2_5', set()),                                 # A0 part 3: the same draw; Champions basePower 30 (merged)
     'scaleshot': ('SCALE_SHOT', set()),                                   # G54: 2 to 5 hits, then the user's Defense -1 and Speed +1
     'quickguard': ('QUICK_GUARD', {'onTry', 'onHitSide'}),                # G54: a side condition against the priority moves of the foes
     'upperhand': ('UPPER_HAND', {'onTry'}),                               # G54: a priority move against a target that moves first with one
@@ -2506,9 +2514,13 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'horndrill': ('OHKO', set()),
     'memento': ('MEMENTO', set()),                                        # G92: target atk and spa -2, then the user faints
     'nightshade': ('LEVEL_DAMAGE', set()),                                # G92: damage 'level' (the user's level, no crit draw)
+    # Step A0 (batch A0 part 2): the same handlers, owning the same pinned lines (damage 'level', volatileStatus 'confusion').
+    'seismictoss': ('LEVEL_DAMAGE', set()),                               # A0: damage 'level' (the user's level, no crit draw)
+    'sweetkiss': ('CONFUSE', set()),                                      # A0: the primary confusion of Confuse Ray's kind (reflectable)
     # G90 (decision 0060): the six moves that apply the volatile partiallytrapped (G2_OWNED_FIELDS owns the volatileStatus line)
     'bind': ('PARTIAL_TRAP', set()), 'wrap': ('PARTIAL_TRAP', set()), 'firespin': ('PARTIAL_TRAP', set()),
-    'sandtomb': ('PARTIAL_TRAP', set()), 'infestation': ('PARTIAL_TRAP', set()),  # Snap Trap is dropped (decision 0060 section 8)
+    'sandtomb': ('PARTIAL_TRAP', set()), 'infestation': ('PARTIAL_TRAP', set()),
+    'snaptrap': ('PARTIAL_TRAP', set()),  # A0 part 3: the sixth move of decision 0060's table (the Champions type Steel is merged)
     'psychicterrain': ('PSYCHIC_TERRAIN', set()),                         # G96: sets the Psychic Terrain (5 turns, 8 with Terrain Extender)
     'speedswap': ('SPEED_SWAP', {'onHit'}),                               # K3 (decision 0015 5de): swaps the two Speed stats (stored, not staged)
 })
@@ -2532,7 +2544,7 @@ G44_HANDLERS = ['POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK']
 # and its count a random(2, 4) drawn in onStart; the countdown runs in onResidual; onAfterMove removes it at duration 1;
 # onEnd adds confusion unless the count is above 1. The turn code runs these; the facts below are read from the pin.
 G56_HANDLERS = ['LOCKED_MOVE']
-G56_LOCKED_MOVES = ('outrage', 'thrash', 'petaldance')
+G56_LOCKED_MOVES = ('outrage', 'thrash', 'petaldance', 'ragingfury')
 LOCKED_MOVE_CONDITION_FACTS = (
     'duration: 2,',
     'this.effectState.trueDuration = this.random(2, 4);',
@@ -2549,6 +2561,7 @@ LOCKED_MOVE_MOVE_FACTS = {
     'outrage': ('basePower: 120,', 'accuracy: 100,', 'category: "Physical",', 'target: "randomNormal",', 'type: "Dragon",'),
     'thrash': ('basePower: 120,', 'accuracy: 100,', 'category: "Physical",', 'target: "randomNormal",', 'type: "Normal",'),
     'petaldance': ('basePower: 120,', 'accuracy: 100,', 'category: "Special",', 'target: "randomNormal",', 'type: "Grass",'),
+    'ragingfury': ('basePower: 120,', 'accuracy: 100,', 'category: "Physical",', 'target: "randomNormal",', 'type: "Fire",'),
 }
 G44_FACTS = (
     ('powertrip', ['accuracy: 100,', 'basePower: 20,',
@@ -2697,7 +2710,7 @@ G78_HANDLERS = ['DRAGON_DARTS']
 # volatile (data/conditions.ts:222-258: the duration draw random(5, 7) or 8 with a Grip Claw, the Binding Band divisor, the
 # residual at order 13, the end line, the trapped flag of the source) is what the turn code reads; the moves are plain hits.
 G90_HANDLERS = ['PARTIAL_TRAP']
-G90_MOVES = ('bind', 'wrap', 'firespin', 'sandtomb', 'infestation')
+G90_MOVES = ('bind', 'wrap', 'firespin', 'sandtomb', 'infestation', 'snaptrap')
 G90_MOVE_FACTS = ("volatileStatus: 'partiallytrapped',", 'target: "normal",')
 G90_CONDITION_FACTS = (
     'durationCallback(target, source) {', "if (source?.hasItem('gripclaw')) return 8;", 'return this.random(5, 7);',
@@ -2810,6 +2823,12 @@ G58_FACTS = (
 G54_FACTS = (
     ('iciclespear', ['accuracy: 100,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
                      'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",', 'type: "Ice",']),
+    ('tailslap', ['accuracy: 85,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                  'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",',
+                  'type: "Normal",']),
+    ('bonerush', ['accuracy: 90,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                  'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",',
+                  'type: "Ground",']),
     ('scaleshot', ['accuracy: 90,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],',
                    'selfBoost: { boosts: { def: -1, spe: 1, }, },', 'target: "normal",', 'type: "Dragon",']),
@@ -4924,6 +4943,74 @@ def check_c1_facts(moves_ts, champ_moves, only=None):
                 fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
 
 
+# Step A0 (decision 0015, lane A batch A0, part 2): the pinned fields of the data-only moves of the batch, read from data/moves.ts
+# at b2cb775 with the Champions override merged the way parse_move merges it (inherit true: the listed fields replace the base's).
+# Every field of the merged entry must be listed (A0_IGNORED_KEYS aside) with its value, and the Champions mod overrides exactly
+# the fields of A0_CHAMPIONS_OVERRIDES and nothing else. Toxic Thread is not in the batch: its primary status and its primary
+# target boost are not both applied by the move body (turn.c, the PRIMARY_TARGET branch continues before the primary status).
+A0_IGNORED_KEYS = {'num', 'name', 'contestType', 'zMove', 'maxMove', 'isNonstandard'}
+A0_CHAMPIONS_OVERRIDES = {
+    'crabhammer': {'accuracy': 95},
+    'crushclaw': {'flags': {'contact', 'protect', 'mirror', 'metronome', 'slicing'}},
+    'firelash': {'basePower': 90},
+}
+A0_FACTS = (
+    ('dragonrush', {'accuracy': 75, 'basePower': 100, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                    'type': 'Dragon', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'minimize'},
+                    'secondary': {'chance': 20, 'volatileStatus': 'flinch'}}),
+    ('crabhammer', {'accuracy': 95, 'basePower': 100, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                    'type': 'Water', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'critRatio': 2}),
+    ('bite', {'accuracy': 100, 'basePower': 60, 'category': 'Physical', 'pp': 25, 'priority': 0, 'target': 'normal',
+              'type': 'Dark', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'bite'},
+              'secondary': {'chance': 30, 'volatileStatus': 'flinch'}}),
+    ('crosschop', {'accuracy': 80, 'basePower': 100, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                   'type': 'Fighting', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'critRatio': 2}),
+    ('crushclaw', {'accuracy': 95, 'basePower': 75, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Normal', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'slicing'},
+                   'secondary': {'chance': 50, 'boosts': {'def': -1}}}),
+    ('doubleteam', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 15, 'priority': 0, 'target': 'self',
+                    'type': 'Normal', 'flags': {'snatch', 'metronome'}, 'boosts': {'evasion': 1}}),
+    ('firelash', {'accuracy': 100, 'basePower': 90, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal',
+                  'type': 'Fire', 'flags': {'contact', 'protect', 'mirror', 'metronome'},
+                  'secondary': {'chance': 100, 'boosts': {'def': -1}}}),
+    ('inferno', {'accuracy': 50, 'basePower': 100, 'category': 'Special', 'pp': 5, 'priority': 0, 'target': 'normal',
+                 'type': 'Fire', 'flags': {'protect', 'mirror', 'metronome'}, 'secondary': {'chance': 100, 'status': 'brn'}}),
+    ('seismictoss', {'accuracy': 100, 'basePower': 0, 'damage': 'level', 'category': 'Physical', 'pp': 20, 'priority': 0,
+                     'target': 'normal', 'type': 'Fighting', 'flags': {'contact', 'protect', 'mirror', 'nonsky', 'metronome'}}),
+    ('sweetkiss', {'accuracy': 75, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Fairy', 'flags': {'protect', 'reflectable', 'mirror', 'metronome'}, 'volatileStatus': 'confusion'}),
+    ('tearfullook', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'normal',
+                     'type': 'Normal', 'flags': {'reflectable', 'mirror', 'metronome'}, 'boosts': {'atk': -1, 'spa': -1}}),
+    ('aromaticmist', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'adjacentAlly',
+                      'type': 'Fairy', 'flags': {'bypasssub', 'metronome'}, 'boosts': {'spd': 1}}),
+)
+
+
+def check_a0_facts(moves_ts, champ_moves, only=None):
+    """Step A0: each listed move has exactly the listed fields of its merged entry (nothing else but A0_IGNORED_KEYS), each with
+    its pinned value; the Champions mod overrides it only as A0_CHAMPIONS_OVERRIDES says. `only`: a tuple of (move id, expected)
+    for the tests."""
+    for mid, expected in (A0_FACTS if only is None else only):
+        got = c2_entry_value(moves_ts, mid)
+        if got is None:
+            fail('move %s not found' % mid)
+        champ = c2_entry_value(champ_moves, mid)
+        if mid in A0_CHAMPIONS_OVERRIDES:
+            if champ != dict({'inherit': True}, **A0_CHAMPIONS_OVERRIDES[mid]):
+                fail('move %s: the Champions mod entry is not the override %r' % (mid, A0_CHAMPIONS_OVERRIDES[mid]))
+            got.update(A0_CHAMPIONS_OVERRIDES[mid])
+        elif champ is not None:
+            fail('move %s: the Champions mod overrides it; the A0 facts must be read again' % mid)
+        extra = sorted(set(got) - set(expected) - A0_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the A0 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            if got[key] != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, got[key], want))
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -4941,6 +5028,7 @@ def build_pool(root, repo, dx):
     check_c4_facts(moves_ts, champ_moves)
     check_c5_facts(moves_ts, champ_moves)
     check_c1_facts(moves_ts, champ_moves)
+    check_a0_facts(moves_ts, champ_moves)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)

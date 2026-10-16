@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "dd7912948f3f1cc310e90fc2e3dbd9918bf70b84905c808fa49cff97cffd918e" /* the model fingerprint of the pool tables; changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
-#define FP_KPD_HEX "7456fe2e83b08ced0f05ea17062fb66c39c372d881992014aecc0fa12ca3a5c4" /* POOL_DEV: the same table hash, changed by steps K1, K2, K3 and K4 */
+#define FP_KP_HEX "df5c0ef6ee517c9966adc8d0e241f45f30118779ad64722a3e7b2ad7ee50c476" /* A0 PR-1 (parts 2 and 3, table hash d14de900; measured in Release and Debug, equal to tools/state_model/state_v3_model.py; previous a2e950c5...); the model fingerprint of the pool tables; batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade, Snap Trap, the eight marks; previous dd791294...); changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
+#define FP_KPD_HEX "950bd25af9a0f5e7ea6a5fe6a2b4e4fc1b18d048a09c0155f15c715f4ec78fc1" /* A0 PR-1 (as FP_KP_HEX; previous 9b569bbb...); POOL_DEV: the same table hash, changed by steps K1, K2, K3, K4 and batch A0 part 3 (previous 7456fe2e...) */
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
