@@ -103,6 +103,16 @@ class FormatTest(unittest.TestCase):
                     self.assertIn(f"--format-prefix {prefix}: no format definition", r.stderr)
                     self.assertFalse(out.exists())
 
+    def test_the_format_prefix_and_the_data_kind_agree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp, "singles")
+            r = run(TOOL / "champions_coverage.py", "--sheets", "none.jsonl", "--out", str(out), "--data-kind", "8")
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn("is the format reg-mc, but --data-kind 8 plays champions-ou", r.stderr)
+            r = run(TOOL / "champions_coverage.py", "--sheets", "none.jsonl", "--out", str(out), "--data-kind", "1")
+            self.assertIn("--data-kind 1: DUOFORGE_DATA_KIND_SYNTHETIC plays no format", r.stderr)
+            self.assertFalse(out.exists())
+
 
 class ForwarderTest(unittest.TestCase):
     def test_the_old_paths_run_the_moved_tools(self):

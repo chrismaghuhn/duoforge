@@ -301,10 +301,18 @@ def main():
     runs.refuse_repository(out, ROOT)  # also the main checkout and every other worktree of this repository
     manifest = runs.Manifest("coverage", "tools/coverage/champions_coverage.py", None, root=ROOT)
     formats = _runs("formats")
-    try:  # the format of --format-prefix, exactly (a replay format with a suffix such as bo3 is not guessed)
-        manifest.set_format(formats.by_showdown_id(args.format_prefix))
+    try:  # the format of --format-prefix, exactly (a replay format with a suffix such as bo3 is not guessed) ...
+        named = formats.by_showdown_id(args.format_prefix)
     except formats.FormatError as error:
         sys.exit(f"--format-prefix {args.format_prefix}: {error}")
+    try:  # ... and the format of the data kind the measurement reads: both the same, or the run says which is wrong
+        played = formats.of_data_kind(args.data_kind)
+    except formats.FormatError as error:
+        sys.exit(f"--data-kind {args.data_kind}: {error}")
+    if named != played:
+        sys.exit(f"--format-prefix {args.format_prefix} is the format {named['id']}, but --data-kind {args.data_kind} "
+                 f"plays {played['id']}")
+    manifest.set_format(named)
     out.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, args.package)
     lib = Library(args.data_kind, args.singles)

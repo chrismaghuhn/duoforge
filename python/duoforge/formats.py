@@ -13,10 +13,12 @@ This module imports nothing but the standard library, so that a tool may load it
 tools/coverage/champions_coverage.py does when --package names another commit's duoforge package).
 """
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 FORMATS = ROOT / "data" / "formats"
+HEADER = ROOT / "include" / "duoforge" / "duoforge.h"  # the data kinds' names and values (the generated layout lacks some)
 
 # The format of each data kind (the DUOFORGE_DATA_KIND_* constants of include/duoforge/duoforge.h), by constant name.
 # A TRANSITIONAL table (HauptSession, 2026-10-16): the engine and the definitions do not name the format of a data kind
@@ -72,9 +74,16 @@ def by_showdown_id(showdown_format_id):
     return record(found[0])
 
 
-def of_data_kind(kind, constants):
-    """The format of a data kind (its DUOFORGE_DATA_KIND_* value); constants: the layout's constants by name
-    (duoforge._layout.CONSTANTS)."""
+def data_kinds():
+    """The DUOFORGE_DATA_KIND_* constants of the public header, by name."""
+    text = HEADER.read_text(encoding="utf-8")
+    return {m.group(1): int(m.group(2)) for m in re.finditer(r"#define (DUOFORGE_DATA_KIND_\w+)\s+(\d+)u", text)}
+
+
+def of_data_kind(kind, constants=None):
+    """The format of a data kind (its DUOFORGE_DATA_KIND_* value); constants: the kinds by name, the public header's
+    (data_kinds) unless given."""
+    constants = data_kinds() if constants is None else constants
     names = [n for n, v in constants.items() if n.startswith("DUOFORGE_DATA_KIND_") and v == kind]
     if len(names) != 1:
         raise FormatError(f"data kind {kind!r} is no DUOFORGE_DATA_KIND_* constant")

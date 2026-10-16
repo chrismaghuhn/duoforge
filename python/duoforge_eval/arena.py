@@ -458,7 +458,7 @@ def main(argv=None):
     require_deterministic_gpu(jax)
     refused = []  # the engine's filter (#558): a refused team is left out, named in conditions.pool
     pool, kind = ladder._pool_of(args.run_dir, refused=refused)
-    manifest.set_format(formats.of_data_kind(kind, _layout.CONSTANTS))
+    manifest.set_format(formats.of_data_kind(kind))
     spread = source_ids = table_info = None
     if args.search == "honest":
         from duoforge_search import honest
