@@ -10174,9 +10174,10 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_residual_noorder(dfi_run *r, struct
         /* lockedmove (step G56): an order-less callback in this Speed order, after the counters it shares a sub-order with. A
          * marked lock ends in its duration phase (no faint point: sim/battle.ts:515-522 `continue`s); any other lock's
          * onResidual runs and the faintMessages after it is a faint point (sim/battle.ts:565-566), as a counter that keeps
-         * (issue 606, decision 0015 5dv). */
+         * (issue 606, decision 0015 5dv). A holder whose faint is only queued (Perish Song's perish0 earlier in this residual,
+         * issue 551) still has the volatile, so its handler runs too (dfi_residual_holder_stands). */
         const dfi_tail_pos *ltp = &b->tail.sides[flat / 2u].positions[flat % 2u];
-        const bool lock_here = dfi_alive(b, flat) && ltp->lock_turns != 0u;
+        const bool lock_here = ltp->lock_turns != 0u && dfi_residual_holder_stands(r, flat);
         const bool lock_point = lock_here && ((uint32_t)ltp->single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) == 0u;
         if (lock_here) {
             st = dfi_residual_lock(r, flat);
