@@ -2151,7 +2151,7 @@ function checkHandlers(dex, source, header, extended) {
                 bad(what + ' ' + row.id + ' is modelled but its pinned entry has ' + callbacks.join(', '));
             }
             // The queue sorts every action by a priority and a Speed that an ability or an item can change, and for a
-            // fainted holder none of them counts (src/combat/turn.c, dfi_move_priority and dfi_speed_key). The engine
+            // fainted holder none of them counts (src/combat/flow/queue.h, dfi_move_priority and dfi_speed_key). The engine
             // reads exactly two such effects, so a modelled row that has another is a mechanic nobody looked at.
             if (!unmodeled) {
                 expect(what + ' ' + row.id + ' priority and Speed callbacks of a modelled row', orderCallbacks(raw),

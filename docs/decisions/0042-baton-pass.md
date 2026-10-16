@@ -84,17 +84,17 @@ The engine keeps the volatile state in `dfi_active_slot` (`src/state/battle_inte
 
 ## 3. The pivot and the switch
 
-**3.1 Flag and table.** Baton Pass needs one new internal flag `DFI_SWITCH_BATON_PASS` (value 8, after `DFI_SWITCH_REVIVE_BLESSING` 7, `battle_internal.h:81-91`) and one row in `dfi_pivot_moves` (`src/state/closure_member.c:23-28`, `DFI_PIVOT_MOVE_COUNT` 4 to 5, `closure_member.h:63`). The flag is internal (not a public value): it is the switch flag of the leaver, read at the switch executor (`src/combat/turn.c (dfi_switch_in)`) exactly as `DFI_SWITCH_UTURN` is. **This is the only code-level value; it does not need the lead's approval**, but I list it so the lead sees it.
+**3.1 Flag and table.** Baton Pass needs one new internal flag `DFI_SWITCH_BATON_PASS` (value 8, after `DFI_SWITCH_REVIVE_BLESSING` 7, `battle_internal.h:81-91`) and one row in `dfi_pivot_moves` (`src/state/closure_member.c:23-28`, `DFI_PIVOT_MOVE_COUNT` 4 to 5, `closure_member.h:63`). The flag is internal (not a public value): it is the switch flag of the leaver, read at the switch executor (`src/combat/flow/switch.h (dfi_switch_in)`) exactly as `DFI_SWITCH_UTURN` is. **This is the only code-level value; it does not need the lead's approval**, but I list it so the lead sees it.
 
 **3.2 Boundary.** The user's side is requested at a PIVOT with `slot_mask` = the user's position, as for U-turn and Revival Blessing (0025 item 7). The foe is not requested. The request is made only when the pass did not fail (3.5).
 
 **3.3 The pass itself is a status move.** Its own `-fail` is public (3.5). Its PP is spent as for any move.
 
-**3.4 BeforeSwitchOut is skipped** (`skipBeforeSwitchOutEventFlag`, 1110). In our engine the pivot's `BeforeSwitchOut` runs at the boundary request (`src/combat/turn.c` (`dfi_switch_in`) and the request path). For a pass that event is **not run**. The only `BeforeSwitchOut` handler in the pool's neighbourhood is Pursuit's foe-side handler (`data/moves.ts:14398`) and dynamax (`conditions.ts:780-782`); Pursuit is not marked (no `dfi_pursuit` in the manifest), so no interaction arises in the pool. Refusal: if Pursuit is ever marked, a pass must not trigger it; the note goes into the Pursuit row.
+**3.4 BeforeSwitchOut is skipped** (`skipBeforeSwitchOutEventFlag`, 1110). In our engine the pivot's `BeforeSwitchOut` runs at the boundary request (`src/combat/flow/switch.h` (`dfi_switch_in`) and the request path). For a pass that event is **not run**. The only `BeforeSwitchOut` handler in the pool's neighbourhood is Pursuit's foe-side handler (`data/moves.ts:14398`) and dynamax (`conditions.ts:780-782`); Pursuit is not marked (no `dfi_pursuit` in the manifest), so no interaction arises in the pool. Refusal: if Pursuit is ever marked, a pass must not trigger it; the note goes into the Pursuit row.
 
 **3.5 Failure.** `canSwitch(side)` false (no living reserve, or the reserve is empty) or the user is `commanded`: the pass prints `-fail|user` with `[still]`, and no request is made. The engine's existing FAIL event (position = user, cause none) carries this, plus the `[still]` on the move line through the existing `attrLastMove` path. A `commanded` user is unreachable in the pool (no `commanding` is marked); the engine refuses if it sees one.
 
-**3.6 The switch line and the event.** `|switch|POKE|DETAILS|HP|[from] move: Baton Pass`. The existing `DUOFORGE_EVENT_SWITCH` (`duoforge.h:991`) with **cause MOVE and id2 = Baton Pass** (the move id, as for U-turn and Parting Shot: `src/combat/turn.c (dfi_switch_in)`). No new event, no new cause.
+**3.6 The switch line and the event.** `|switch|POKE|DETAILS|HP|[from] move: Baton Pass`. The existing `DUOFORGE_EVENT_SWITCH` (`duoforge.h:991`) with **cause MOVE and id2 = Baton Pass** (the move id, as for U-turn and Parting Shot: `src/combat/flow/switch.h (dfi_switch_in)`). No new event, no new cause.
 
 ## 4. What each side sees
 
@@ -147,7 +147,7 @@ The engine keeps the volatile state in `dfi_active_slot` (`src/state/battle_inte
 
 ## 8. The engine change (phase 2)
 
-- `src/combat/turn.c`: the BATON_PASS flag at the switch executor (`dfi_switch_in`): the copy between the SwitchOut/End step and `dfi_vacate`: the copy list of section 2.A, the resets of 2.B, the slot-bound fields of 2.D untouched, no `BeforeSwitchOut`; the event as 3.6.
+- `src/combat/flow/switch.h`: the BATON_PASS flag at the switch executor (`dfi_switch_in`): the copy between the SwitchOut/End step and `dfi_vacate`: the copy list of section 2.A, the resets of 2.B, the slot-bound fields of 2.D untouched, no `BeforeSwitchOut`; the event as 3.6.
 - The move row: a handler id for Baton Pass (new, in the closure), `selfSwitch: 'copyvolatile'` accepted only for it (`tools/datagen/gen_closure.py:462-468`, which now refuses any non-boolean selfSwitch; `tools/datagen/pool_families.js:1622`, `ENGINE_PIVOTS`), a pool table row with its flags (metronome), the pivot row, and the `DFI_PIVOT_MOVE_COUNT` change.
 - `src/state/invariants.c`: the bound of 5.3 (option A or B).
 - `src/state/view.c`: no change, if the presence test already covers the receiver (5.2). To check in phase 2 by a C test.

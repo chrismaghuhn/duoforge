@@ -146,7 +146,7 @@ _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORG
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
             trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
-# The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
+# The folded _Position fields that Baton Pass gives the entering member (src/combat/flow/switch.h dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
 _PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source", "cursed",
            # the partial trap has no noCopy in the pin (pokemon.ts copyVolatileFrom): dfi_pass_give copies its turns, source, move,
@@ -1016,7 +1016,7 @@ class Tracker:
         from . import record
         events = action["events"]
         # The user may have moved during its own action (Ally Switch): the activation id belongs to the Pokemon, so the slot that
-        # now holds it gets the result (src/combat/turn.c dfi_run_move). Another occupant at every slot, or the user fainted:
+        # now holds it gets the result (src/combat/flow/switch.h dfi_run_move). Another occupant at every slot, or the user fainted:
         # the faint's clearing comes after the result
         side = action["pos"] // 2
         for p in self._positions[side]:
@@ -1746,7 +1746,7 @@ class Tracker:
         return sum(1 << k for k, p in enumerate(self._positions[side]) if p.occupant != ROSTER_NONE)
 
     def _foe_switch_slots(self, side, boundary):
-        """The foe positions asked to switch (src/combat/turn.c dfi_finish_turn, dfi_pivot): the flagged ones
+        """The foe positions asked to switch (src/combat/flow/turn.h dfi_finish_turn, dfi_pivot): the flagged ones
         (a faint at the end of the turn, Emergency Exit, Parting Shot); a fainted one and any at a PIVOT only
         while the foe has a reserve (brought, unseen or on the bench, standing)."""
         members = self._member(side)

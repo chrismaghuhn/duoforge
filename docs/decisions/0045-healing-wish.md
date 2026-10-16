@@ -77,7 +77,7 @@ an empty slot.
 **Baton Pass / U-turn.** The slot condition belongs to the position. A pivot out does not remove it, and the next
 entrant at that slot is healed if hurt or statused. Baton Pass's copied volatiles do not include side conditions.
 
-**Request flow.** The end-of-turn replacement is a `REPLACEMENT` boundary (C: `dfi_finish_turn`, `src/combat/turn.c (dfi_finish_turn)`),
+**Request flow.** The end-of-turn replacement is a `REPLACEMENT` boundary (C: `dfi_finish_turn`, `src/combat/flow/turn.h (dfi_finish_turn)`),
 the mid-turn one a `PIVOT`. Both already exist; no new boundary.
 
 ## 2. State
