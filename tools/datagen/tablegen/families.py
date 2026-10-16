@@ -2,7 +2,7 @@
 derivation from one strict pattern, the handler ids and the rows the turn code implements by id.
 
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
-gen_closure.py@001a492e).
+gen_closure.py@8800b625).
 """
 
 from .source import fail, fields, NoMatch

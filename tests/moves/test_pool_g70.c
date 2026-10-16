@@ -8,7 +8,8 @@
  *   - flags3 bit 2 (DFI_MOVE_FLAG3_BYPASSSUB): Skill Swap has flags.bypasssub in the pin (data/moves.ts:16598), so it is set;
  *   - the abilities that the swap moves are marked (no new ability row of this step): Trace, Synchronize, Intimidate, Pressure,
  *     Drizzle, Flash Fire, Cursed Body, Contrary, Levitate and Hospitality are supported, and Stance Change (its failskillswap,
- *     decision 0041) is the one that the swap fails on, marked only by step G66.
+ *     decision 0041) is the one that the swap fails on, marked only by step G66; issue #620 (decision 0015 entry 5dx) adds the
+ *     other pool abilities with failskillswap: Illusion (marked by I2), Disguise, Hunger Switch and Zero to Hero.
  * The engine's behaviour (the two ability events, the Start and End of the abilities that move, the ability copies, the Trace
  * draw, Hospitality, the Update refusals) is pinned by the recorded battles tests/reference/traces/g70_skillswap_*.json,
  * replayed by duoforge.reference.conformance_pool_data.
@@ -115,7 +116,9 @@ static void expect_decision(df_test *t, duoforge_battle *b, uint32_t user, uint3
     duoforge_battle snapshot;
     memcpy(&snapshot, b, sizeof snapshot);
     const uint32_t got = dfi_skill_swap_decision(b, user, target);
-    DF_CHECK_EQ_U64(t, got, want);
+    if (!DF_CHECK_EQ_U64(t, got, want)) {
+        fprintf(stderr, "  %s: decision %u, expected %u\n", what, (unsigned)got, (unsigned)want);
+    }
     if (memcmp(&snapshot, b, sizeof snapshot) != 0) {
         fprintf(stderr, "  %s: the decision changed the battle\n", what);
         DF_CHECK(t, 0);
@@ -251,6 +254,28 @@ static void check_decisions(df_test *t, const duoforge_context *ctx)
     set_ability_now(b, 0u, DFI_ABILITY_TRACE);
     set_ability_now(b, 1u, DFI_ABILITY_STANCECHANGE);
     expect_decision(t, b, 0u, 1u, DFI_SKILL_SWAP_FAILS, "Stance Change on the target");
+    /* Issue #620 (decision 0015 entry 5dx): every pool ability with the pin's failskillswap (gen_closure.py
+     * FAILSKILLSWAP_ABILITIES, checked against the pin) fails the move on either side: Illusion (marked, data/abilities.ts:2091)
+     * and the unmarked Disguise, Hunger Switch and Zero to Hero; the swap of two flagless abilities on the same state proceeds. */
+    {
+        static const uint32_t fss[] = {DFI_ABILITY_DISGUISE, DFI_ABILITY_HUNGERSWITCH, DFI_ABILITY_ILLUSION,
+                                       DFI_ABILITY_STANCECHANGE, DFI_ABILITY_ZEROTOHERO};
+        static const char *const names[] = {"Disguise", "Hunger Switch", "Illusion", "Stance Change", "Zero to Hero"};
+        for (size_t k = 0u; k < sizeof fss / sizeof fss[0]; ++k) {
+            char what[64];
+            set_ability_now(b, 0u, fss[k]);
+            set_ability_now(b, 1u, DFI_ABILITY_SYNCHRONIZE);
+            (void)snprintf(what, sizeof what, "%s on the user", names[k]);
+            expect_decision(t, b, 0u, 1u, DFI_SKILL_SWAP_FAILS, what);
+            set_ability_now(b, 0u, DFI_ABILITY_TRACE);
+            set_ability_now(b, 1u, fss[k]);
+            (void)snprintf(what, sizeof what, "%s on the target", names[k]);
+            expect_decision(t, b, 0u, 1u, DFI_SKILL_SWAP_FAILS, what);
+        }
+        set_ability_now(b, 0u, DFI_ABILITY_TRACE);
+        set_ability_now(b, 1u, DFI_ABILITY_SYNCHRONIZE);
+        expect_decision(t, b, 0u, 1u, DFI_SKILL_SWAP_PROCEED, "two flagless abilities");
+    }
     /* a fainted target fails the move too */
     set_ability_now(b, 1u, DFI_ABILITY_SYNCHRONIZE);
     b->sides[0].members[b->sides[0].positions[1].occupant].hp = 0u;
@@ -291,7 +316,8 @@ static void check_abilities(df_test *t)
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_LIMBER] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_THERMALEXCHANGE] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_OBLIVIOUS] != 0u);
-    /* Stance Change has failskillswap (data/abilities.ts:4531): its row is the one the swap refuses, and only step G66 marks it */
+    /* Stance Change has failskillswap (data/abilities.ts:4531): a swap with its holder fails (-fail), as with the other pool
+     * abilities that have the flag (check_decisions; Illusion is the other marked one), and only step G66 marks it */
     DF_CHECK_EQ_U64(t, DFI_ABILITY_STANCECHANGE, 180u);
 }
 

@@ -293,6 +293,48 @@ bool dfi_illusion_lead_disguise(const struct duoforge_battle *b, uint32_t side, 
     return dfi_illusion_disguise(b, side, dfi_party_word(&b->tail, side), slot, roster);
 }
 
+/* Illusion (decision 0026 section 4; issue 619): the name that the foe's fold shows for `side` at this point of the step, + 1 (0 for
+ * none), in *out. The fold (src/combat/events.c) writes illusion.shown only at the end of the step, so the tail holds the name as the
+ * previous step left it: a name set or ended earlier in this step is read from the step's own SWITCH, DRAG and ILLUSION_END events of
+ * the side, in order, as the fold applies them: a disguised entry shows its disguise (reserved[0]), an entry of the shown name's real
+ * member ends the name, and the break ends it. A faint keeps it. Without the step's events (no buffer, or one past its bound) the name
+ * cannot be known: E_INVARIANT, never the tail's name in their place (every step runs with the staged buffer of request.c). */
+static duoforge_status dfi_illusion_shown_now(const dfi_run *r, uint32_t side, uint32_t *out)
+{
+    const dfi_events *ev = r->events;
+    if (ev == NULL || ev->overflow || ev->count > DUOFORGE_MAX_EVENTS) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    uint32_t shown = r->b->tail.sides[side].illusion.shown;
+    for (uint32_t i = 0u; i < ev->count; ++i) {
+        const duoforge_event *e = &ev->rec[i];
+        if (e->position >= 2u * DUOFORGE_ACTIVE_PER_SIDE || (uint32_t)e->position / 2u != side) {
+            continue;
+        }
+        if (e->kind == DUOFORGE_EVENT_ILLUSION_END) {
+            shown = 0u;
+        } else if (e->kind == DUOFORGE_EVENT_SWITCH || e->kind == DUOFORGE_EVENT_DRAG) {
+            if (e->reserved[0] != 0u) {
+                shown = e->reserved[0];
+            } else if (shown != 0u && shown - 1u == (uint32_t)e->id) {
+                shown = 0u;
+            }
+        }
+    }
+    *out = shown;
+    return DUOFORGE_OK;
+}
+
+/* The position `p` of the side shows the name (given that a name is shown): its holder's disguise is up, or the holder stands there
+ * fainted under it (dfi_illusion_shown_occupant with the step's name). */
+static bool dfi_illusion_shows_name(const dfi_side *sd, const dfi_tail_side *ts, uint32_t p)
+{
+    const uint32_t occ = sd->positions[p].occupant;
+    return occ < DUOFORGE_MAX_ROSTER && occ < sd->member_count &&
+           (dfi_illusion_disguise_up(sd, ts, p) ||
+            (sd->members[occ].ability == DFI_ABILITY_ILLUSION + 1u && sd->members[occ].hp == 0u));
+}
+
 static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, uint32_t reserve, bool drag,
                                      bool insta, uint32_t *activation)
 {
@@ -340,22 +382,34 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
         (uint32_t)b->tail.sides[side].positions[1u - slot].ability_state - 1u == reserve) {
         return DUOFORGE_E_UNSUPPORTED;
     }
+    /* The shown name of the side as the fold has it at this point of the step (issue 619): the checks below read it, not
+     * illusion.shown, which holds the name as the previous step's fold left it. A holder that entered disguised earlier in this step
+     * and fainted without a hit (its disguise dropped with the faint) keeps that name on its fainted position, and the name's real
+     * member dragged in later in the step is refused by the checks below (lead decision B, the faint-held name); a second entry of the
+     * holder in one step compares with the name of its first; a name that a break or the name's own member ended earlier in this
+     * step no longer refuses anything. */
+    uint32_t shown = 0u;
+    if (pool_rules) {
+        const duoforge_status ss = dfi_illusion_shown_now(r, side, &shown);
+        if (ss != DUOFORGE_OK) {
+            return ss;
+        }
+    }
     /* Illusion, one shown name per side (amended by I2, decision 0026 section 3): while a name is still shown on the bench, the
      * holder may enter only disguised as that same name. Any other entry of the holder would need a second name, which the single
      * state cannot hold: refused before any change. */
     /* The shown name's own member entering while the holder stands disguised as it on the other position: two positions would show one
      * name (the fold ends the name on that member's line, and the holder's disguise would outlive it). Refused before any change; the
      * member's entry in its own position (the unbroken switch-out of the holder) is not this case. */
-    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u) {
+    if (pool_rules && shown != 0u && reserve == shown - 1u) {
         for (uint32_t other = 0u; other < DUOFORGE_ACTIVE_PER_SIDE; ++other) {
-            if (other != slot && dfi_illusion_shown_occupant(sd, &b->tail.sides[side], other) != sd->positions[other].occupant) {
+            if (other != slot && dfi_illusion_shows_name(sd, &b->tail.sides[side], other)) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }
     }
-    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve != (uint32_t)b->tail.sides[side].illusion.shown - 1u &&
-        dfi_ability(b, &sd->members[reserve], DFI_ABILITY_ILLUSION) &&
-        (!disguised || disguise != (uint32_t)b->tail.sides[side].illusion.shown - 1u)) {
+    if (pool_rules && shown != 0u && reserve != shown - 1u && dfi_ability(b, &sd->members[reserve], DFI_ABILITY_ILLUSION) &&
+        (!disguised || disguise != shown - 1u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
     /* A holder fainted under its shown name (decision 0026 section 4, amended by I2, lead decision B): the faint of a disguised holder
@@ -363,7 +417,7 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
      * another member on its position). The real disguise member (the name's member) entering while that holder stands fainted, on
      * the field or on the bench, would clear the name, and the view would read the holder's true fainted state. Refused before any
      * change (option B, no deduction). */
-    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u) {
+    if (pool_rules && shown != 0u && reserve == shown - 1u) {
         for (uint32_t m = 0u; m < sd->member_count; ++m) {
             if (m != reserve && sd->members[m].ability == DFI_ABILITY_ILLUSION + 1u && sd->members[m].hp == 0u &&
                 ((uint32_t)sd->brought_mask >> m & 1u) != 0u) {

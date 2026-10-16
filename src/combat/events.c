@@ -19,15 +19,8 @@ _Static_assert(offsetof(duoforge_event, hp) == 8u, "event layout: hp");
 _Static_assert(offsetof(duoforge_event, hp_kind) == 12u, "event layout: hp kind");
 _Static_assert(offsetof(duoforge_event, reserved) == 18u, "event layout: reserved");
 
-duoforge_event dfi_event_make(uint32_t kind, uint32_t position)
-{
-    duoforge_event e;
-    memset(&e, 0, sizeof e);
-    e.kind = (uint8_t)kind;         /* <= DUOFORGE_EVENT_ITEM_START */
-    e.position = (uint8_t)position; /* < 4 or DUOFORGE_NO_POSITION */
-    e.other = (uint8_t)DUOFORGE_NO_POSITION;
-    return e;
-}
+/* The one external definition of the inline dfi_event_make (events.h). */
+extern duoforge_event dfi_event_make(uint32_t kind, uint32_t position);
 
 void dfi_events_push(dfi_events *events, const duoforge_event *e)
 {

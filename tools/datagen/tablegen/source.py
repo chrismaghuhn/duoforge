@@ -2,7 +2,7 @@
 file read with its hash checked), the entry parsers, the id and name helpers and the pattern matchers.
 
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
-gen_closure.py@001a492e).
+gen_closure.py@8800b625).
 """
 import hashlib
 import io

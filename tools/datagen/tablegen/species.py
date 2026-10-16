@@ -2,7 +2,7 @@
 the learnsets and the forme legality.
 
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
-gen_closure.py@001a492e).
+gen_closure.py@8800b625).
 """
 import io
 import json

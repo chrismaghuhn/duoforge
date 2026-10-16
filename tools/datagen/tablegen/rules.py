@@ -2,22 +2,23 @@
 the content batches (C1, C2, C4, C5, K2, A0, A0P1).
 
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
-gen_closure.py@001a492e).
+gen_closure.py@8800b625).
 """
 import re
 
 from .source import fail, fields, norm, READER_INPUTS, scalar, Source
 from .moves import (
-    EXPANDING_FORCE_FACTS, G59_INHERIT_ONLY, G61_DRAGONIZE_FACTS, G61_GATE_FACTS, G77_INHERIT_ONLY,
+    ability_flags, EXPANDING_FORCE_FACTS, G59_INHERIT_ONLY, G61_DRAGONIZE_FACTS, G61_GATE_FACTS, G77_INHERIT_ONLY,
     PSYCHIC_TERRAIN_FACTS)
 from .items import (
     G34_ITEM_FACTS, G46_ITEM_FACTS, G47_ITEM_FACTS, G67_ITEM_FACTS, G75_ITEM_FACTS, G77_ITEM_FACTS, G83_ITEM_FACTS,
     SEED_PAIRS, STONE_TAKE_ITEM)
 from .abilities import (
-    G34_ABILITY_FACTS, G35_ABILITY_FACTS, G39_ABILITY_FACTS, G41_ABILITY_FACTS, G45_ABILITY_FACTS, G46_ABILITY_FACTS,
-    G47_ABILITY_FACTS, G51_ABILITY_FACTS, G53_ABILITY_FACTS, G59_ABILITY_FACTS, G61_ABILITY_FACTS, G63_ABILITY_FACTS,
-    G65_ABILITY_FACTS, G67_ABILITY_FACTS, G69_ABILITY_FACTS, G71_ABILITY_FACTS, G73_ABILITY_FACTS, G75_ABILITY_FACTS,
-    G77_ABILITY_FACTS, G79_ABILITY_FACTS, G81_ABILITY_FACTS, G83_ABILITY_FACTS, K2_ABILITY_FACTS, MEGA2_ABILITY_FACTS)
+    FAILSKILLSWAP_ABILITIES, failskillswap_c_ids, FAILSKILLSWAP_SOURCE, G34_ABILITY_FACTS, G35_ABILITY_FACTS,
+    G39_ABILITY_FACTS, G41_ABILITY_FACTS, G45_ABILITY_FACTS, G46_ABILITY_FACTS, G47_ABILITY_FACTS, G51_ABILITY_FACTS,
+    G53_ABILITY_FACTS, G59_ABILITY_FACTS, G61_ABILITY_FACTS, G63_ABILITY_FACTS, G65_ABILITY_FACTS, G67_ABILITY_FACTS,
+    G69_ABILITY_FACTS, G71_ABILITY_FACTS, G73_ABILITY_FACTS, G75_ABILITY_FACTS, G77_ABILITY_FACTS, G79_ABILITY_FACTS,
+    G81_ABILITY_FACTS, G83_ABILITY_FACTS, K2_ABILITY_FACTS, MEGA2_ABILITY_FACTS)
 
 K2_INHERIT_ONLY = ('piercingdrill',)
 K2_BATTLE_FACTS = (
@@ -135,6 +136,19 @@ def check_g61_facts(root, abil_ts, champ_abil):
     start = champ_src.find('afterMoveSecondaryEvent(targets, pokemon, move) {')
     if start < 0 or 'hasSheerForce' in champ_src[start:start + 260]:
         fail('champions afterMoveSecondaryEvent: not the ungated form (Sheer Force must not gate it)')
+
+
+def check_failskillswap(pool_abilities, abil_ts, champ_abil, c_text):
+    """The pool's abilities with the pin's failskillswap flag are FAILSKILLSWAP_ABILITIES, exactly, and so are the ids that
+    the turn code's dfi_fails_skillswap reads (c_text: the text of FAILSKILLSWAP_SOURCE; issue #620)."""
+    found = sorted(aid for aid in pool_abilities if 'failskillswap' in ability_flags(abil_ts, champ_abil, aid))
+    if found != sorted(FAILSKILLSWAP_ABILITIES):
+        fail('the pool abilities with failskillswap are %s, not FAILSKILLSWAP_ABILITIES %s (turn.c dfi_fails_skillswap)'
+             % (found, sorted(FAILSKILLSWAP_ABILITIES)))
+    c_ids = failskillswap_c_ids(c_text)
+    if len(set(c_ids)) != len(c_ids) or sorted(c_ids) != sorted(FAILSKILLSWAP_ABILITIES):
+        fail('%s: dfi_fails_skillswap reads %s, not FAILSKILLSWAP_ABILITIES %s'
+             % (FAILSKILLSWAP_SOURCE, c_ids, sorted(FAILSKILLSWAP_ABILITIES)))
 
 
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):

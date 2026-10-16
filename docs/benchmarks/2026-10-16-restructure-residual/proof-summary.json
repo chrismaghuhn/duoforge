@@ -1,0 +1,392 @@
+{
+ "P1_inventory": {
+  "debug": {
+   "equal": true,
+   "names": 1582,
+   "sha256": "1a51a67b857dc495d0e86344de72c0a69a03ea33bb00cb03af610c973dba29ed"
+  },
+  "ipo": {
+   "equal": true,
+   "names": 1582,
+   "sha256": "1a51a67b857dc495d0e86344de72c0a69a03ea33bb00cb03af610c973dba29ed"
+  },
+  "noipo": {
+   "equal": true,
+   "names": 1582,
+   "sha256": "1a51a67b857dc495d0e86344de72c0a69a03ea33bb00cb03af610c973dba29ed"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_selected_tests": {
+  "after-ipo": 268,
+  "after-noipo": 262,
+  "before-ipo": 268,
+  "before-noipo": 262
+ },
+ "P2_reference": {
+  "executions": 2782,
+  "ipo": "54eed6aabb7212e01db7c860b37337a4bcab744f8ce53a942b1a22f5c3ee0427",
+  "noipo": "54eed6aabb7212e01db7c860b37337a4bcab744f8ce53a942b1a22f5c3ee0427",
+  "steps": 24314,
+  "stops": 9120,
+  "unique_battles": 1228
+ },
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "708adff5fe2e5e15ce1266b3af8e59ee942c8f01",
+  "dirty": false,
+  "phase": "after"
+ },
+ "audit": {
+  "new": "HEAD",
+  "old": "001a492e",
+  "old_function_lines": 765,
+  "phases": [
+   {
+    "body_sha256": "ef4055eef4f7d924038fc1224b1bad6dd7ab04b1af67c5988b7a799b59fc8ee2",
+    "new_lines": [
+     9286,
+     9442
+    ],
+    "old_function_lines": [
+     24,
+     180
+    ],
+    "phase": "dfi_residual_collect",
+    "stop_returns": 0
+   },
+   {
+    "body_sha256": "c52fd41dfbbe81db1574e105016013702290cf3dd3d8983cab30d085a8d329d8",
+    "new_lines": [
+     9453,
+     9497
+    ],
+    "old_function_lines": [
+     181,
+     226
+    ],
+    "phase": "dfi_residual_order",
+    "stop_returns": 0
+   },
+   {
+    "body_sha256": "d5b0b4f19c031a3997f4683c5acba8542307f949cd32131ecfeb5f238fbe8696",
+    "new_lines": [
+     9509,
+     9797
+    ],
+    "old_function_lines": [
+     227,
+     515
+    ],
+    "phase": "dfi_residual_early",
+    "stop_returns": 6
+   },
+   {
+    "body_sha256": "0e6b69134b150b5be884f7e1a6182f164a2a0d698506ae10485bc9d9e6f5c4e3",
+    "new_lines": [
+     9807,
+     9912
+    ],
+    "old_function_lines": [
+     516,
+     621
+    ],
+    "phase": "dfi_residual_durations",
+    "stop_returns": 4
+   },
+   {
+    "body_sha256": "d806f6d90a8e70b29060fd985dda585f5031855468dac93a5846db7a4210c969",
+    "new_lines": [
+     9920,
+     9959
+    ],
+    "old_function_lines": [
+     622,
+     661
+    ],
+    "phase": "dfi_residual_late",
+    "stop_returns": 1
+   },
+   {
+    "body_sha256": "ca7cce5884108dc7364b958c1600446d26cb26ec0767ae3965189a95addc9ac1",
+    "new_lines": [
+     9967,
+     10070
+    ],
+    "old_function_lines": [
+     662,
+     765
+    ],
+    "phase": "dfi_residual_noorder",
+    "stop_returns": 0
+   }
+  ],
+  "stop_returns": 11
+ },
+ "before": {
+  "commit": "001a492e58e25705a23c793eba0e9359407dab1e",
+  "dirty": false,
+  "phase": "before"
+ },
+ "callgrind": {
+  "after-ipo": {
+   "binary": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofR3/after/bins-ipo/duoforge_bench",
+   "binary_sha256": "b642a84546a1934c87fcbebf93a094d570cc2581d623fea6a3924ac4129f4c2d",
+   "inclusive_ir": {
+    "dfi_residual_events_run.constprop.0": 2865144906,
+    "dfi_residual_sort": 253096025,
+    "dfi_turn_run.constprop.0": 31884926723
+   },
+   "residual_clones": [
+    "dfi_residual_events_run.constprop.0"
+   ],
+   "residual_self_ir_sum": 1659021299,
+   "self_ir": {
+    "dfi_residual_events_run.constprop.0": 1659021299,
+    "dfi_residual_sort": 248779700,
+    "dfi_turn_run.constprop.0": 1701352900
+   },
+   "total_ir": 64874335084
+  },
+  "after-noipo": {
+   "binary": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofR3/after/bins-noipo/duoforge_bench",
+   "binary_sha256": "fbd10081650081de6891d100a96f63e60e2bf74973923f9da18b2f8d21e40ffe",
+   "inclusive_ir": {
+    "dfi_residual_events_run.constprop.0": 2907639072,
+    "dfi_residual_sort": 259115545,
+    "dfi_turn_run": 33118268898
+   },
+   "residual_clones": [
+    "dfi_residual_events_run.constprop.0"
+   ],
+   "residual_self_ir_sum": 1656036733,
+   "self_ir": {
+    "dfi_residual_events_run.constprop.0": 1656036733,
+    "dfi_residual_sort": 247681070,
+    "dfi_turn_run": 1611342928
+   },
+   "total_ir": 70966132819
+  },
+  "before-ipo": {
+   "binary": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofR3/before/bins-ipo/duoforge_bench",
+   "binary_sha256": "3bb442d38e96423a939a1d179b670d775906087310fdf3a8bb60a2bf03cd8665",
+   "inclusive_ir": {
+    "dfi_residual_events_run.constprop.0": 2791711208,
+    "dfi_residual_sort": 253096025,
+    "dfi_turn_run.constprop.0": 31800776839
+   },
+   "residual_clones": [
+    "dfi_residual_events_run.constprop.0"
+   ],
+   "residual_self_ir_sum": 1591505240,
+   "self_ir": {
+    "dfi_residual_events_run.constprop.0": 1591505240,
+    "dfi_residual_sort": 248779700,
+    "dfi_turn_run.constprop.0": 1701352900
+   },
+   "total_ir": 64778086528
+  },
+  "before-noipo": {
+   "binary": "/tmp/claude-0/-home-user-duoforge/6108577b-e964-591d-bca4-7195716a72cf/scratchpad/proofR3/before/bins-noipo/duoforge_bench",
+   "binary_sha256": "84c30f64e3eb35a53826fee75b89b83ad712b9b48d79950ce6e4e45fb5e0c375",
+   "inclusive_ir": {
+    "dfi_residual_events_run.constprop.0": 2856750585,
+    "dfi_residual_sort": 259115545,
+    "dfi_turn_run": 33067380411
+   },
+   "residual_clones": [
+    "dfi_residual_events_run.constprop.0"
+   ],
+   "residual_self_ir_sum": 1605148246,
+   "self_ir": {
+    "dfi_residual_events_run.constprop.0": 1605148246,
+    "dfi_residual_sort": 247681070,
+    "dfi_turn_run": 1611342928
+   },
+   "total_ir": 70915244364
+  },
+  "gate-ipo": true,
+  "gate-noipo": true,
+  "ratio-ipo": 1.0014858196831484,
+  "ratio-noipo": 1.0007175954261511,
+  "residual-self-delta-ipo": 67516059,
+  "residual-self-delta-noipo": 50888487,
+  "residual-self-ratio-ipo": 1.0424227689002143,
+  "residual-self-ratio-noipo": 1.0317032941516855,
+  "total-delta-ipo": 96248556,
+  "total-delta-noipo": 50888455
+ },
+ "changed_files": [
+  "docs/benchmarks/2026-10-16-restructure-residual/README.md",
+  "docs/benchmarks/2026-10-16-restructure-residual/audit_residual.py",
+  "docs/benchmarks/2026-10-16-restructure-residual/callgrind.json",
+  "docs/benchmarks/2026-10-16-restructure-residual/callgrind_gate.py",
+  "docs/benchmarks/2026-10-16-restructure-residual/machine.json",
+  "docs/benchmarks/2026-10-16-restructure-residual/paired-bench-ipo-change.json",
+  "docs/benchmarks/2026-10-16-restructure-residual/paired-bench-ipo-control.json",
+  "docs/benchmarks/2026-10-16-restructure-residual/paired-bench-noipo-change.json",
+  "docs/benchmarks/2026-10-16-restructure-residual/paired-bench-noipo-control.json",
+  "docs/benchmarks/2026-10-16-restructure-residual/paired_bench.py",
+  "docs/benchmarks/2026-10-16-restructure-residual/per-battle-digests.tsv",
+  "docs/benchmarks/2026-10-16-restructure-residual/proof-summary.json",
+  "docs/benchmarks/2026-10-16-restructure-residual/proofs.py",
+  "docs/benchmarks/2026-10-16-restructure-residual/residual-audit.json",
+  "docs/benchmarks/2026-10-16-restructure-residual/test-inventory.txt",
+  "src/combat/turn.c"
+ ],
+ "fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "f294fc70b1fb2c3431af169d7f201f5798b29b4483f25d5cdbfde9798e79c74e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "f294fc70b1fb2c3431af169d7f201f5798b29b4483f25d5cdbfde9798e79c74e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "f294fc70b1fb2c3431af169d7f201f5798b29b4483f25d5cdbfde9798e79c74e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "native_reports": {
+  "debug": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15378 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 28844 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  },
+  "ipo": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15378 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 28844 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  },
+  "noipo": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15378 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 28844 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  }
+ },
+ "object_identity": {
+  "bench_main": "bench/main.c.o embeds the commit (cmake/bench_revision.cmake)",
+  "debug": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "files": 284,
+   "shared_library_equal": false,
+   "shared_library_sha256_after": "d181d6cd48408b9ee1b2fb4ca9c9bcdde3f05a4bb48cb5c64eec1aa488d29148",
+   "shared_library_sha256_before": "9b65b8b97682e3f7398775eb9f79ca72f65c82f91d164228a75fc3cf9e56ca85"
+  },
+  "debug_note": "as IPO off",
+  "ipo": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "files": 284,
+   "shared_library_equal": false,
+   "shared_library_sha256_after": "e330fe66614e2fa9e2df9bc907e6fa254b7a57967f766370564c08ca58473ce6",
+   "shared_library_sha256_before": "9ea808a5328bd458f17dddc9260561e00160afea7aa1c6e6dc24c26bb8d03f73"
+  },
+  "ipo_note": "turn.c.o, libduoforge.a and the library differ: the residual runner is cut into phases (not byte-equal; the gate is callgrind)",
+  "noipo": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "files": 284,
+   "shared_library_equal": false,
+   "shared_library_sha256_after": "ccf2e15558517b0e9f59b323ba5b720af0b9e2a5c9233bdb9bb858900ddd248a",
+   "shared_library_sha256_before": "9ddceac9644c827682f8ee549e20f44baa505f9196cff7a366907198a742743d"
+  }
+ },
+ "stack_usage_bytes": {
+  "001a492e-ipo": {
+   "dfi_residual_events_run.constprop": 3040,
+   "dfi_residual_order_changes_outcome": 10544,
+   "dfi_residual_sort": 608,
+   "dfi_turn_run": 560
+  },
+  "001a492e-noipo": {
+   "dfi_residual_events_run.constprop": 3040,
+   "dfi_residual_order_changes_outcome": 10544,
+   "dfi_residual_sort": 608,
+   "dfi_turn_run": 560
+  },
+  "708adff5-ipo": {
+   "dfi_residual_events_run.constprop": 3056,
+   "dfi_residual_order_changes_outcome": 10544,
+   "dfi_residual_sort": 608,
+   "dfi_turn_run": 560
+  },
+  "708adff5-noipo": {
+   "dfi_residual_events_run.constprop": 3056,
+   "dfi_residual_order_changes_outcome": 10544,
+   "dfi_residual_sort": 608,
+   "dfi_turn_run": 560
+  }
+ },
+ "stack_usage_note": "-fstack-usage; IPO off: the compile of turn.c; IPO on: the LTO link stage (libduoforge_shared.so.ltrans*.su)"
+}

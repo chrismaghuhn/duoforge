@@ -18,6 +18,7 @@
 #include "combat/moves/special_handlers.h"
 
 #include "core/arith.h"
+#include "core/inline.h"
 #include "core/modifier.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
@@ -8652,16 +8653,21 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
 }
 
 /* Skill Swap (step G70, decision 0041; sim/battle.ts:1311-1345, data/moves.ts:16590-16606). The failures are the pin's: a
- * fainted holder or failskillswap on either ability (Stance Change, DFI_ABILITY_STANCECHANGE; no other marked ability has it),
- * and they print -fail|user [still]. Before anything changes, the refusals: the Update handlers of the abilities that come in
- * act on a state the holder has (Limber on a paralysed holder, Thermal Exchange on a burned one, Oblivious on a taunted one).
- * Then the line, as two ABILITY events in the line's order with cause MOVE: id = the holder's new ability + 1, id2 = the
+ * fainted holder or failskillswap on either ability (dfi_fails_skillswap), and they print -fail|user [still]. Before anything
+ * changes, the refusals: the Update handlers of the abilities that come in act on a state the holder has (Limber on a paralysed
+ * holder, Thermal Exchange on a burned one, Oblivious on a taunted one). Then the line, as two ABILITY events in the line's order with cause MOVE: id = the holder's new ability + 1, id2 = the
  * move; the Ends of the old abilities (Flash Fire's and Unburden's volatiles go with no line); the swap of the tail's
  * ability_now, stored as 0 while it equals the sheet's; the Starts, the target's new ability first, then the user's. The
  * ally pair is the same (the line names no ability; the converter follows the pair). */
+/* failskillswap (sim/battle.ts:1316, the pin's ability flag), read from the holder's current ability: exactly the pool's abilities
+ * that have the flag, Disguise, Hunger Switch, Illusion (data/abilities.ts:2091; issue #620, decision 0015 entry 5dx), Stance
+ * Change and Zero to Hero. tools/datagen/gen_closure.py (FAILSKILLSWAP_ABILITIES, check_failskillswap) fails when the pin's set
+ * over the pool rows is another one. The disguise does not matter: the pin reads the holder's own ability. */
 static bool dfi_fails_skillswap(const struct duoforge_battle *b, const dfi_member *m)
 {
-    return dfi_ability(b, m, DFI_ABILITY_STANCECHANGE);
+    return dfi_ability(b, m, DFI_ABILITY_DISGUISE) || dfi_ability(b, m, DFI_ABILITY_HUNGERSWITCH) ||
+           dfi_ability(b, m, DFI_ABILITY_ILLUSION) || dfi_ability(b, m, DFI_ABILITY_STANCECHANGE) ||
+           dfi_ability(b, m, DFI_ABILITY_ZEROTOHERO);
 }
 
 static bool dfi_skill_swap_update_due(struct duoforge_battle *b, uint32_t flat, uint32_t code)
@@ -9269,29 +9275,19 @@ static duoforge_status dfi_curse_residual(dfi_run *r, uint32_t holder)
     return dfi_deal(r, holder, amount, DUOFORGE_CAUSE_CURSE, 0u, DUOFORGE_NO_POSITION, DFI_DMG_CONDITION);
 }
 
-static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot *ps)
+/* The phases of dfi_residual_events_run (restructure step 4, residual runner), in its order. Each is inlined into it
+ * (DFI_ALWAYS_INLINE), so the cut changes no code. A phase that ends the residual early because the battle ended
+ * sets *stop and returns DUOFORGE_OK, as the one function returned DUOFORGE_OK there. */
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_stop(bool *stop)
 {
-    struct duoforge_battle *b = r->b;
-    duoforge_status st = dfi_update_speeds(r);
-    if (st != DUOFORGE_OK) {
-        return st;
-    }
-    {
-        const uint32_t protect_and_friends = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
-        ps->ended_at = DFI_POSITIONS;
-        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-            const dfi_active_slot *pos = dfi_pos(b, flat);
-            const bool recharge = b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
-            ps->key[flat] = r->speed_seen[flat];
-            ps->had[flat] = pos->occupant != DFI_OCCUPANT_NONE &&
-                            (((uint32_t)pos->flags & protect_and_friends) != 0u || pos->charge_turns != 0u ||
-                             pos->stall_turns != 0u || recharge);
-            ps->pair[flat] = pos->occupant != DFI_OCCUPANT_NONE && dfi_alive(b, flat) &&
-                             ((uint32_t)pos->flags & protect_and_friends) == DFI_VOL_PROTECT && pos->stall_level != 0u &&
-                             pos->stall_turns != 0u && pos->charge_turns == 0u && !recharge;
-        }
-    }
-    dfi_residual_entry list[DFI_RES_MAX];
+    *stop = true;
+    return DUOFORGE_OK;
+}
+
+/* Phase 1: the handlers of this residual, unsorted: the field, each side's conditions, each Pokemon's. */
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_collect(dfi_run *r, struct duoforge_battle *b,
+                                                             dfi_residual_entry *list, uint32_t *count)
+{
     uint32_t n = 0u;
     if (b->trick_room_turns != 0u) {
         list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, 0u, 27u, 0u, 1u, false};
@@ -9449,6 +9445,16 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             n += 1u;
         }
     }
+    *count = n;
+    return DUOFORGE_OK;
+}
+
+/* Phase 2: the sort with its draws, and the draws of the side conditions' ties. */
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_order(dfi_run *r, struct duoforge_battle *b, dfi_residual_entry *list,
+                                                           uint32_t n, uint32_t first[DFI_SIDE_KINDS], uint32_t *early_out,
+                                                           uint32_t *sorted_out, uint32_t *herbs_from_out)
+{
+    duoforge_status st = DUOFORGE_OK;
     /* The order in which a Pokemon's volatiles were added is not stored: the engine lists them in one fixed order, which
      * is the reference's or changes nothing except in the cases of dfi_residual_order_ambiguous (combat/
      * residual_order.h); those it refuses. */
@@ -9479,7 +9485,6 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
      * ties; the shuffle decides the order of the two end lines when both
      * run out now: only then a draw (decision 0007 section 6). `first`: the
      * side whose line comes first, per kind. */
-    uint32_t first[DFI_SIDE_KINDS] = {0u, 0u, 0u, 0u};
     for (uint32_t k = 0u; k < DFI_SIDE_KINDS; ++k) {
         const uint8_t *t0 = dfi_side_turns(b, 0u, k);
         const uint8_t *t1 = dfi_side_turns(b, 1u, k);
@@ -9495,6 +9500,17 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
     if (st != DUOFORGE_OK) {
         return st;
     }
+    *early_out = early;
+    *sorted_out = sorted;
+    *herbs_from_out = herbs_from;
+    return DUOFORGE_OK;
+}
+
+/* Phase 3: the handlers before the side conditions (orders 1 to 25), in the sorted order. */
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_early(dfi_run *r, struct duoforge_battle *b, const dfi_residual_entry *list,
+                                                           uint32_t early, bool *stop)
+{
+    duoforge_status st = DUOFORGE_OK;
     for (uint32_t i = 0u; i < early; ++i) {
         const dfi_residual_entry *e = &list[i];
         if (e->kind == DFI_RES_WEATHER) {
@@ -9539,7 +9555,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 }
                 dfi_process_faints(r); /* fieldEvent: faintMessages after each handler (sim/battle.ts:569-570) */
                 if (r->ended) {
-                    return DUOFORGE_OK;
+                    return dfi_residual_stop(stop);
                 }
             }
             continue;
@@ -9588,7 +9604,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             dfi_process_faints(r);
             if (r->ended) {
-                return DUOFORGE_OK;
+                return dfi_residual_stop(stop);
             }
             continue;
         }
@@ -9621,7 +9637,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             dfi_process_faints(r);
             if (r->ended) {
-                return DUOFORGE_OK;
+                return dfi_residual_stop(stop);
             }
             continue;
         }
@@ -9740,7 +9756,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             dfi_process_faints(r);
             if (r->ended) {
-                return DUOFORGE_OK;
+                return dfi_residual_stop(stop);
             }
             continue;
         }
@@ -9751,7 +9767,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             dfi_process_faints(r);
             if (r->ended) {
-                return DUOFORGE_OK;
+                return dfi_residual_stop(stop);
             }
             continue;
         }
@@ -9781,9 +9797,18 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         }
         dfi_process_faints(r);
         if (r->ended) {
-            return DUOFORGE_OK;
+            return dfi_residual_stop(stop);
         }
     }
+    return DUOFORGE_OK;
+}
+
+/* Phase 4: the counts that go down silently, then the duration handlers of the side conditions, Trick Room, Gravity
+ * and the terrain. */
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_durations(dfi_run *r, struct duoforge_battle *b,
+                                                               const uint32_t first[DFI_SIDE_KINDS], bool *stop)
+{
+    duoforge_status st = DUOFORGE_OK;
     /* Throat Chop's count (order 22) goes down here: its end is silent, so nothing shows where it comes. Heal Block, Yawn
      * and Taunt end in the sorted list above, at their own orders. */
     {
@@ -9838,7 +9863,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                     if (j == 0u && *dfi_side_turns(b, s ^ 1u, k) != 0u) {
                         return DUOFORGE_E_UNSUPPORTED;
                     }
-                    return DUOFORGE_OK;
+                    return dfi_residual_stop(stop);
                 }
             }
         }
@@ -9852,7 +9877,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         } else {
             dfi_residual_faints(r);
             if (r->ended) {
-                return DUOFORGE_OK;
+                return dfi_residual_stop(stop);
             }
         }
     }
@@ -9867,7 +9892,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         } else {
             dfi_residual_faints(r);
             if (r->ended) {
-                return DUOFORGE_OK;
+                return dfi_residual_stop(stop);
             }
         }
     }
@@ -9886,10 +9911,17 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         } else {
             dfi_residual_faints(r);
             if (r->ended) {
-                return DUOFORGE_OK;
+                return dfi_residual_stop(stop);
             }
         }
     }
+    return DUOFORGE_OK;
+}
+
+/* Phase 5: Speed Boost and Moody (order 28), then White Herb (29). */
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_late(dfi_run *r, struct duoforge_battle *b, const dfi_residual_entry *list,
+                                                          uint32_t herbs_from, uint32_t sorted, bool *stop)
+{
     /* White Herb's onResidual (order 29), each holder's check. The engine
      * keeps the side conditions without their kinds, so the start order of
      * the shuffle above can differ from the reference's: two holders due in
@@ -9926,10 +9958,17 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             dfi_residual_faints(r); /* a callback: faintMessages follows it */
             if (r->ended) {
-                return DUOFORGE_OK;
+                return dfi_residual_stop(stop);
             }
         }
     }
+    return DUOFORGE_OK;
+}
+
+/* Phase 6, the last: the duration handlers of the volatiles that have no order, in Speed order. */
+static DFI_ALWAYS_INLINE duoforge_status dfi_residual_noorder(dfi_run *r, struct duoforge_battle *b, dfi_noorder_snapshot *ps)
+{
+    duoforge_status st = DUOFORGE_OK;
     /* The duration handlers of the volatiles that have no order come last, in Speed order (comparePriority puts no order
      * after every order): Protect, flinch, Helping Hand and Follow Me (duration 1) end at once, the stall counter and a
      * charge (2) end on their second residual, mustrecharge (2) lasts through the one of the turn that set it. Any that
@@ -10034,6 +10073,58 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         }
     }
     return DUOFORGE_OK;
+}
+
+static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot *ps)
+{
+    struct duoforge_battle *b = r->b;
+    duoforge_status st = dfi_update_speeds(r);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    {
+        const uint32_t protect_and_friends = DFI_VOL_PROTECT | DFI_VOL_FLINCH | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
+        ps->ended_at = DFI_POSITIONS;
+        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+            const dfi_active_slot *pos = dfi_pos(b, flat);
+            const bool recharge = b->tail.sides[flat / 2u].positions[flat % 2u].must_recharge != 0u;
+            ps->key[flat] = r->speed_seen[flat];
+            ps->had[flat] = pos->occupant != DFI_OCCUPANT_NONE &&
+                            (((uint32_t)pos->flags & protect_and_friends) != 0u || pos->charge_turns != 0u ||
+                             pos->stall_turns != 0u || recharge);
+            ps->pair[flat] = pos->occupant != DFI_OCCUPANT_NONE && dfi_alive(b, flat) &&
+                             ((uint32_t)pos->flags & protect_and_friends) == DFI_VOL_PROTECT && pos->stall_level != 0u &&
+                             pos->stall_turns != 0u && pos->charge_turns == 0u && !recharge;
+        }
+    }
+    dfi_residual_entry list[DFI_RES_MAX];
+    uint32_t n = 0u;
+    st = dfi_residual_collect(r, b, list, &n);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    uint32_t first[DFI_SIDE_KINDS] = {0u, 0u, 0u, 0u};
+    uint32_t early = 0u;
+    uint32_t sorted = 0u;
+    uint32_t herbs_from = 0u;
+    st = dfi_residual_order(r, b, list, n, first, &early, &sorted, &herbs_from);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    bool stop = false;
+    st = dfi_residual_early(r, b, list, early, &stop);
+    if (st != DUOFORGE_OK || stop) {
+        return st;
+    }
+    st = dfi_residual_durations(r, b, first, &stop);
+    if (st != DUOFORGE_OK || stop) {
+        return st;
+    }
+    st = dfi_residual_late(r, b, list, herbs_from, sorted, &stop);
+    if (st != DUOFORGE_OK || stop) {
+        return st;
+    }
+    return dfi_residual_noorder(r, b, ps);
 }
 
 /* The residual's tie between the two no-order handlers of one Pokemon, Protect's volatile and its stall counter (equal

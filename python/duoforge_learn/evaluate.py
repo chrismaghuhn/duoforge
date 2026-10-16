@@ -5,8 +5,8 @@ environment (e % 4) and the learner's seat with e // 4 % 2, so both seats
 of all four pairings are covered. The learner plays its most likely
 action; the opponent is the random or the scripted baseline, or another
 set of parameters (an earlier checkpoint), which also plays its most likely
-action. A tie counts half. The engine has no turn limit, and two policies
-that only switch never end a battle: an episode still running after
+action. A tie counts half. Two policies that only switch end a battle
+only at the turn-1000 tie (decision 0015 entry 5dt): an episode still running after
 max_steps steps counts as a tie and is reported as unfinished. Each set of
 parameters plays on the inputs of its encoder version
 (checkpoint.encoder_of, features.as_encoder).

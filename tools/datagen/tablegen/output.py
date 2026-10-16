@@ -1,7 +1,7 @@
 """The output: the canonical byte forms and the C writers of the closure, extended and pool tables.
 
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
-gen_closure.py@001a492e).
+gen_closure.py@8800b625).
 """
 import hashlib
 import re
