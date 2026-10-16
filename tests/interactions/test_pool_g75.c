@@ -48,7 +48,7 @@ static void check_marks(df_test *t)
     }
     /* the stones that stay out, and Strong Jaw, whose bite flag would need a pool column (deferred, not in this batch) */
     DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_STARMINITE], 0u);
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_ALTARIANITE], 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_ALTARIANITE] != 0u); /* marked since A0 part 1 (decision 0015 entry 5ds) */
     DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_SHARPEDONITE], 0u);
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_STRONGJAW], 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_STRONGJAW], DFI_HANDLER_UNMODELED);
