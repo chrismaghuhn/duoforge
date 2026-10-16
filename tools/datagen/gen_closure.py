@@ -4839,6 +4839,74 @@ def check_c5_facts(moves_ts, champ_moves, only=None):
                 fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
 
 
+# Step A0 (decision 0015, lane A batch A0, part 2): the pinned fields of the data-only moves of the batch, read from data/moves.ts
+# at b2cb775 with the Champions override merged the way parse_move merges it (inherit true: the listed fields replace the base's).
+# Every field of the merged entry must be listed (A0_IGNORED_KEYS aside) with its value, and the Champions mod overrides exactly
+# the fields of A0_CHAMPIONS_OVERRIDES and nothing else. Toxic Thread is not in the batch: its primary status and its primary
+# target boost are not both applied by the move body (turn.c, the PRIMARY_TARGET branch continues before the primary status).
+A0_IGNORED_KEYS = {'num', 'name', 'contestType', 'zMove', 'maxMove', 'isNonstandard'}
+A0_CHAMPIONS_OVERRIDES = {
+    'crabhammer': {'accuracy': 95},
+    'crushclaw': {'flags': {'contact', 'protect', 'mirror', 'metronome', 'slicing'}},
+    'firelash': {'basePower': 90},
+}
+A0_FACTS = (
+    ('dragonrush', {'accuracy': 75, 'basePower': 100, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                    'type': 'Dragon', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'minimize'},
+                    'secondary': {'chance': 20, 'volatileStatus': 'flinch'}}),
+    ('crabhammer', {'accuracy': 95, 'basePower': 100, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                    'type': 'Water', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'critRatio': 2}),
+    ('bite', {'accuracy': 100, 'basePower': 60, 'category': 'Physical', 'pp': 25, 'priority': 0, 'target': 'normal',
+              'type': 'Dark', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'bite'},
+              'secondary': {'chance': 30, 'volatileStatus': 'flinch'}}),
+    ('crosschop', {'accuracy': 80, 'basePower': 100, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                   'type': 'Fighting', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'critRatio': 2}),
+    ('crushclaw', {'accuracy': 95, 'basePower': 75, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Normal', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'slicing'},
+                   'secondary': {'chance': 50, 'boosts': {'def': -1}}}),
+    ('doubleteam', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 15, 'priority': 0, 'target': 'self',
+                    'type': 'Normal', 'flags': {'snatch', 'metronome'}, 'boosts': {'evasion': 1}}),
+    ('firelash', {'accuracy': 100, 'basePower': 90, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal',
+                  'type': 'Fire', 'flags': {'contact', 'protect', 'mirror', 'metronome'},
+                  'secondary': {'chance': 100, 'boosts': {'def': -1}}}),
+    ('inferno', {'accuracy': 50, 'basePower': 100, 'category': 'Special', 'pp': 5, 'priority': 0, 'target': 'normal',
+                 'type': 'Fire', 'flags': {'protect', 'mirror', 'metronome'}, 'secondary': {'chance': 100, 'status': 'brn'}}),
+    ('seismictoss', {'accuracy': 100, 'basePower': 0, 'damage': 'level', 'category': 'Physical', 'pp': 20, 'priority': 0,
+                     'target': 'normal', 'type': 'Fighting', 'flags': {'contact', 'protect', 'mirror', 'nonsky', 'metronome'}}),
+    ('sweetkiss', {'accuracy': 75, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Fairy', 'flags': {'protect', 'reflectable', 'mirror', 'metronome'}, 'volatileStatus': 'confusion'}),
+    ('tearfullook', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'normal',
+                     'type': 'Normal', 'flags': {'reflectable', 'mirror', 'metronome'}, 'boosts': {'atk': -1, 'spa': -1}}),
+    ('aromaticmist', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'adjacentAlly',
+                      'type': 'Fairy', 'flags': {'bypasssub', 'metronome'}, 'boosts': {'spd': 1}}),
+)
+
+
+def check_a0_facts(moves_ts, champ_moves, only=None):
+    """Step A0: each listed move has exactly the listed fields of its merged entry (nothing else but A0_IGNORED_KEYS), each with
+    its pinned value; the Champions mod overrides it only as A0_CHAMPIONS_OVERRIDES says. `only`: a tuple of (move id, expected)
+    for the tests."""
+    for mid, expected in (A0_FACTS if only is None else only):
+        got = c2_entry_value(moves_ts, mid)
+        if got is None:
+            fail('move %s not found' % mid)
+        champ = c2_entry_value(champ_moves, mid)
+        if mid in A0_CHAMPIONS_OVERRIDES:
+            if champ != dict({'inherit': True}, **A0_CHAMPIONS_OVERRIDES[mid]):
+                fail('move %s: the Champions mod entry is not the override %r' % (mid, A0_CHAMPIONS_OVERRIDES[mid]))
+            got.update(A0_CHAMPIONS_OVERRIDES[mid])
+        elif champ is not None:
+            fail('move %s: the Champions mod overrides it; the A0 facts must be read again' % mid)
+        extra = sorted(set(got) - set(expected) - A0_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the A0 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            if got[key] != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, got[key], want))
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -4855,6 +4923,7 @@ def build_pool(root, repo, dx):
     check_g8_conditions(moves_ts)
     check_c4_facts(moves_ts, champ_moves)
     check_c5_facts(moves_ts, champ_moves)
+    check_a0_facts(moves_ts, champ_moves)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
