@@ -1,9 +1,11 @@
 # A lock holder put to sleep before its locked turn (issue 606): prepared fix
 
-Status: **prepared, no engine code.** HS decision 2026-10-16: the fix waits until the restructure lane's
-residual-runner piece is merged; this branch (`chris/lockfam-sleep-prep`) holds the reference battles, the boundary
-test, this design and a draft of decision 0015 entry 5dv (reserved; section 8). Nothing here changes `src/` or
-`include/`, and nothing new is registered.
+Status: **fixed on `chris/lockfam-sleep-fix` (decision 0015 entry 5dv).** The HS chose option (b) of section 3.4: a
+persistent state bit, `DFI_SINGLE_TURN_LOCK_UNUSED` (bit 3 of the tail's `single_turn` byte; `position_flags` has no free
+bit any more), internal and hidden, so a PIVOT pause keeps it and no pivot refusal is added. The fix sits on the
+residual runner of restructure step 4 (#621): the lock's handler in the no-order phase of `dfi_residual_events_run`
+has the pin's two phases. The text below is the preparation (`chris/lockfam-sleep-prep`, 935f909c) as it was; its
+line numbers are those of main `dc9ce14b`; the decision entry is the record of what was done.
 
 ## 1. The rule at the pin (`b2cb775b`)
 
