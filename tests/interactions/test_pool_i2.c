@@ -695,13 +695,15 @@ static void check_double_replacement(df_test *t, const duoforge_context *ctx)
     }
 }
 
-/* Issue 619: one turn of the state built by check_faint_drag, on a copy with the generator seeded by `seed`, the way request.c runs a
- * step: dfi_turn_run, then (when `full`) the knowledge fold and the state invariants. Side 0: Milotic (position 0) uses Scald on the
- * foe's Primarina, which holds Red Card, and Primarina (position 1) switches to Zoroark. Side 1: Primarina uses Calm Mind, Staraptor
- * Brave Bird on position 1 when `hit`, Protect otherwise. `events` gets the step's events (a caller may put earlier ones in first:
- * `keep`). */
-static duoforge_status faint_drag_turn(const duoforge_context *ctx, const duoforge_battle *b, uint64_t seed, bool hit, bool full,
-                                       bool keep, dfi_events *events)
+/* Issue 619: one turn of the state built by check_faint_drag, on a copy with the generator seeded by `seed`, with the calls request.c
+ * makes for a step: dfi_turn_run, then (when `full`) the overflow check, the knowledge fold and dfi_state_check_since against the
+ * start (which passed dfi_state_check). Side 1: Primarina uses Calm Mind; Staraptor uses Brave Bird on position 1 when `hit`, on
+ * position 0 when `held`, Protect otherwise. Side 0, by default: Milotic (position 0) uses Scald on the foe's Primarina, which holds
+ * Red Card, and Primarina (position 1) switches to Zoroark. When `held` (Zoroark already on position 0, disguised from the step's
+ * start): Zoroark uses Shadow Ball on Staraptor (a Normal type: no effect) and Milotic (position 1) uses Scald on the Red Card holder.
+ * `events` gets the step's events (a caller may put earlier ones in first: `keep`); NULL runs the turn without a buffer. */
+static duoforge_status faint_drag_turn(const duoforge_context *ctx, const duoforge_battle *b, uint64_t seed, bool hit, bool held,
+                                       bool full, bool keep, dfi_events *events)
 {
     struct duoforge_battle tmp = *b;
     dfi_rng_seed(&tmp.rng, seed, 54u);
@@ -709,38 +711,47 @@ static duoforge_status faint_drag_turn(const duoforge_context *ctx, const duofor
     memset(responses, 0, sizeof responses);
     responses[0].side = 0u;
     responses[0].kind = DUOFORGE_CHOICE_SLOTS;
-    responses[0].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 1u, 2u, 0u, 0u, {0u, 0u, 0u}}; /* Scald -> p2a */
-    responses[0].slots[1] = (duoforge_slot_command){DUOFORGE_SLOT_SWITCH, 0u, 0u, 0u, 0u, {0u, 0u, 0u}}; /* Zoroark */
+    if (held) {
+        responses[0].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 0u, 3u, 0u, 0u, {0u, 0u, 0u}}; /* Shadow Ball -> p2b */
+        responses[0].slots[1] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 1u, 2u, 0u, 0u, {0u, 0u, 0u}}; /* Scald -> p2a */
+    } else {
+        responses[0].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 1u, 2u, 0u, 0u, {0u, 0u, 0u}};   /* Scald -> p2a */
+        responses[0].slots[1] = (duoforge_slot_command){DUOFORGE_SLOT_SWITCH, 0u, 0u, 0u, 0u, {0u, 0u, 0u}}; /* Zoroark */
+    }
     responses[1].side = 1u;
     responses[1].kind = DUOFORGE_CHOICE_SLOTS;
     responses[1].slots[0] = (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 2u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}}; /* Calm Mind */
-    responses[1].slots[1] = hit ? (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 2u, 1u, 0u, 0u, {0u, 0u, 0u}}   /* Brave Bird -> p1b */
-                                : (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 3u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}}; /* Protect */
-    if (!keep) {
+    const uint8_t bird_target = (uint8_t)(held ? 0u : 1u);
+    responses[1].slots[1] = hit || held ? (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 2u, bird_target, 0u, 0u, {0u, 0u, 0u}} /* Brave Bird */
+                                        : (duoforge_slot_command){DUOFORGE_SLOT_MOVE, 3u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}}; /* Protect */
+    if (!keep && events != NULL) {
         memset(events, 0, sizeof *events);
     }
     dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
     const duoforge_status st = dfi_turn_run(ctx, &tmp, responses, &draws, events);
-    if (st != DUOFORGE_OK || !full) {
+    if (st != DUOFORGE_OK || !full || events == NULL) {
         return st;
+    }
+    if (events->overflow) {
+        return DUOFORGE_E_INVARIANT; /* past the profile bound (request.c) */
     }
     if (!dfi_events_fold_knowledge(b, &tmp, events, 0u)) {
         fprintf(stderr, "  faint_drag_turn seed %llu: the fold failed\n", (unsigned long long)seed);
         return DUOFORGE_E_INVARIANT;
     }
     dfi_invariant first = DFI_INV_NONE;
-    if (dfi_state_check(ctx, &tmp, &first) != DUOFORGE_OK) {
+    if (dfi_state_check_since(ctx, &tmp, b, &first) != DUOFORGE_OK) {
         fprintf(stderr, "  faint_drag_turn seed %llu: invariant %u\n", (unsigned long long)seed, (unsigned)first);
         return DUOFORGE_E_INVARIANT;
     }
     return DUOFORGE_OK;
 }
 
-/* The roster index that the Red Card drag of `events` brings into position 0 of side 0, DUOFORGE_MAX_ROSTER for none. */
-static uint32_t dragged_in(const dfi_events *events)
+/* The roster index that the Red Card drag of `events` brings into position `flat` of side 0, DUOFORGE_MAX_ROSTER for none. */
+static uint32_t dragged_in(const dfi_events *events, uint32_t flat)
 {
     for (uint32_t i = 0u; i < events->count; ++i) {
-        if (events->rec[i].kind == DUOFORGE_EVENT_DRAG && events->rec[i].position == 0u) {
+        if (events->rec[i].kind == DUOFORGE_EVENT_DRAG && events->rec[i].position == flat) {
             return events->rec[i].id;
         }
     }
@@ -807,6 +818,12 @@ static void check_faint_drag(df_test *t, const duoforge_context *ctx)
     rocks.tail.sides[0].stealth_rock = 1u;
     rocks.tail.sides[0].hazard_order = 0u; /* slot 0: DFI_HAZARD_STEALTH_ROCK */
     duoforge_battle_destroy(b);
+    struct duoforge_battle bare = rocks;
+    bare.tail.sides[0].stealth_rock = 0u;
+    if (!DF_CHECK_EQ_U64(t, dfi_state_check(ctx, &rocks, NULL), DUOFORGE_OK) ||
+        !DF_CHECK_EQ_U64(t, dfi_state_check(ctx, &bare, NULL), DUOFORGE_OK)) {
+        return;
+    }
 
     /* The seeds: the first whose drag brings Gholdengo (roster 3) and Primarina (roster 2), in the control without Illusion. */
     dfi_events ev;
@@ -819,10 +836,10 @@ static void check_faint_drag(df_test *t, const duoforge_context *ctx)
         }
         control.sides[0].members[0].ability = 0u;
         for (uint64_t s = 1u; s < 64u && (seed_g[hit] == 0u || (hit == 0u && seed_p == 0u)); ++s) {
-            if (faint_drag_turn(ctx, &control, s, hit != 0u, false, false, &ev) != DUOFORGE_OK) {
+            if (faint_drag_turn(ctx, &control, s, hit != 0u, false, false, false, &ev) != DUOFORGE_OK) {
                 continue;
             }
-            const uint32_t in = dragged_in(&ev);
+            const uint32_t in = dragged_in(&ev, 0u);
             if (in == 3u && seed_g[hit] == 0u) {
                 seed_g[hit] = s;
             } else if (in == 2u && hit == 0u && seed_p == 0u) {
@@ -835,25 +852,32 @@ static void check_faint_drag(df_test *t, const duoforge_context *ctx)
     }
 
     /* Refused: Gholdengo dragged in next to the holder fainted under its name. */
-    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &rocks, seed_g[0], false, true, false, &ev), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &rocks, seed_g[0], false, false, true, false, &ev), DUOFORGE_E_UNSUPPORTED);
     DF_CHECK(t, ev.count != 0u && ev.rec[0].kind == DUOFORGE_EVENT_SWITCH && ev.rec[0].position == 1u && ev.rec[0].id == 0u &&
                     ev.rec[0].reserved[0] == 4u); /* Zoroark entered, disguised as Gholdengo */
     DF_CHECK_EQ_U64(t, events_of(&ev, DUOFORGE_EVENT_FAINT, 1u), 1u);        /* and fainted under the name */
     DF_CHECK_EQ_U64(t, events_of(&ev, DUOFORGE_EVENT_ILLUSION_END, 1u), 0u); /* without a break */
-    DF_CHECK_EQ_U64(t, dragged_in(&ev), DUOFORGE_MAX_ROSTER);                /* refused before Gholdengo's DRAG */
+    DF_CHECK_EQ_U64(t, dragged_in(&ev, 0u), DUOFORGE_MAX_ROSTER);                /* refused before Gholdengo's DRAG */
+    /* The refusal point: the turn ran to the drag. Zoroark's SWITCH, Stealth Rock's DAMAGE and the FAINT on position 1, Staraptor's
+     * Protect, Milotic's Scald on position 2 (resisted, its DAMAGE) and the Red Card's ITEM_END; nothing after. */
+    if (DF_CHECK_EQ_U64(t, ev.count, 9u)) {
+        DF_CHECK(t, ev.rec[1].kind == DUOFORGE_EVENT_DAMAGE && ev.rec[1].position == 1u && ev.rec[2].kind == DUOFORGE_EVENT_FAINT &&
+                        ev.rec[2].position == 1u);
+        DF_CHECK(t, ev.rec[5].kind == DUOFORGE_EVENT_MOVE && ev.rec[5].position == 0u && ev.rec[5].other == 2u &&
+                        ev.rec[7].kind == DUOFORGE_EVENT_DAMAGE && ev.rec[7].position == 2u);
+        DF_CHECK(t, ev.rec[8].kind == DUOFORGE_EVENT_ITEM_END && ev.rec[8].position == 2u && ev.rec[8].id2 == DFI_ITEM_REDCARD + 1u);
+    }
 
     /* Not refused: Primarina dragged in instead. */
-    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &rocks, seed_p, false, true, false, &ev), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &rocks, seed_p, false, false, true, false, &ev), DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, events_of(&ev, DUOFORGE_EVENT_FAINT, 1u), 1u);
-    DF_CHECK_EQ_U64(t, dragged_in(&ev), 2u);
+    DF_CHECK_EQ_U64(t, dragged_in(&ev, 0u), 2u);
 
     /* Not refused: the holder knocked out by a hit, which breaks the disguise first; Gholdengo dragged in then shows no name twice. */
-    struct duoforge_battle bare = rocks;
-    bare.tail.sides[0].stealth_rock = 0u;
-    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &bare, seed_g[1], true, true, false, &ev), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &bare, seed_g[1], true, false, true, false, &ev), DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, events_of(&ev, DUOFORGE_EVENT_ILLUSION_END, 1u), 1u);
     DF_CHECK_EQ_U64(t, events_of(&ev, DUOFORGE_EVENT_FAINT, 1u), 1u);
-    DF_CHECK_EQ_U64(t, dragged_in(&ev), 3u);
+    DF_CHECK_EQ_U64(t, dragged_in(&ev, 0u), 3u);
 
     /* The variant of two entries in one step (synthetic events): a name set earlier in the step is the shown name of the one-name
      * check. A SWITCH of Zoroark disguised as Milotic (roster 1 + 1) is put in front of the step's events; Zoroark's switch-in
@@ -864,9 +888,84 @@ static void check_faint_drag(df_test *t, const duoforge_context *ctx)
     ev.rec[0].id = 0u;
     ev.rec[0].reserved[0] = 2u;
     ev.count = 1u;
-    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &bare, seed_g[1], false, false, true, &ev), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &bare, seed_g[1], false, false, false, true, &ev), DUOFORGE_E_UNSUPPORTED);
     DF_CHECK_EQ_U64(t, ev.count, 1u);
-    DF_CHECK(t, faint_drag_turn(ctx, &bare, seed_g[1], false, false, false, &ev) != DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, faint_drag_turn(ctx, &bare, seed_g[1], false, false, false, false, &ev) != DUOFORGE_E_UNSUPPORTED);
+
+    /* No silent fallback: under pool rules the step's name needs the step's events. Without a buffer, or with one past its bound, the
+     * switch-in answers E_INVARIANT before any change, never the start's name in their place. The legal turn of seed_p (Primarina
+     * dragged in) is the control: with a buffer it runs. */
+    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &rocks, seed_p, false, false, false, false, &ev), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &rocks, seed_p, false, false, false, false, NULL), DUOFORGE_E_INVARIANT);
+    memset(&ev, 0, sizeof ev);
+    ev.overflow = true;
+    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &rocks, seed_p, false, false, false, true, &ev), DUOFORGE_E_INVARIANT);
+    DF_CHECK_EQ_U64(t, ev.count, 0u); /* refused at Zoroark's switch-in, the first action, before its SWITCH event */
+}
+
+/* Issue 619, the second change of outcome: a name shown from the step's start that a break ends earlier in the step no longer refuses
+ * its real member. White-box: i2_illusion_break at team start (Zoroark on position 0 disguised as Gholdengo, illusion.shown 4 from the
+ * team step's fold, Milotic on position 1, Primarina and Gholdengo on the bench in that order), Zoroark at 1 HP, Red Card on the foe's
+ * Primarina. The turn (faint_drag_turn, `held`): Staraptor's Brave Bird knocks Zoroark out, a hit, so the disguise breaks first
+ * (ILLUSION_END, then FAINT: the fold clears the name), and Milotic's Scald on the Red Card holder drags a bench member into position 1.
+ * Gholdengo dragged in next to the fainted, broken holder shows no name twice: DUOFORGE_OK, with the fold and the invariants. The checks
+ * that read illusion.shown (the name as the team step's fold left it) refused it E_UNSUPPORTED. The seed is the first whose drag brings
+ * Gholdengo in a control without Illusion, as in check_faint_drag. */
+static void check_break_then_drag(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    if (!DF_CHECK(t, b->tail.sides[0].illusion.shown == 4u && b->tail.sides[0].positions[0].ability_state == 4u &&
+                         b->sides[0].positions[0].occupant == 0u && b->sides[0].positions[1].occupant == 1u &&
+                         b->sides[1].positions[0].occupant == 0u && b->sides[1].positions[1].occupant == 1u)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    dfi_party_put(&b->tail, 0u, 2u, 3u); /* Primarina */
+    dfi_party_put(&b->tail, 0u, 3u, 4u); /* Gholdengo, the disguise, to its right */
+    b->sides[0].members[0].hp = 1u;
+    uint8_t pct = 0u;
+    uint8_t flag = 0u;
+    dfi_hp_display(1u, b->sides[0].members[0].hp_max, &pct, &flag);
+    b->sides[1].knowledge[3].hp_percent = pct; /* the foe sees the holder's HP on the name's row, and the override mirrors it */
+    b->sides[1].knowledge[3].hp_flag = flag;
+    b->tail.sides[0].illusion.override[0] = pct;
+    b->tail.sides[0].illusion.override[1] = flag;
+    b->sides[1].members[0].item = DFI_ITEM_REDCARD + 1u;
+    struct duoforge_battle held = *b;
+    duoforge_battle_destroy(b);
+    dfi_invariant held_first = DFI_INV_NONE;
+    if (!DF_CHECK_EQ_U64(t, dfi_state_check(ctx, &held, &held_first), DUOFORGE_OK)) {
+        fprintf(stderr, "  check_break_then_drag: invariant %u\n", (unsigned)held_first);
+        return;
+    }
+    dfi_events ev;
+    uint64_t seed = 0u;
+    struct duoforge_battle control = held;
+    control.sides[0].members[0].ability = 0u;
+    for (uint64_t s = 1u; s < 64u && seed == 0u; ++s) {
+        if (faint_drag_turn(ctx, &control, s, false, true, false, false, &ev) == DUOFORGE_OK && dragged_in(&ev, 1u) == 3u) {
+            seed = s;
+        }
+    }
+    if (!DF_CHECK(t, seed != 0u)) {
+        return;
+    }
+    DF_CHECK_EQ_U64(t, faint_drag_turn(ctx, &held, seed, false, true, true, false, &ev), DUOFORGE_OK);
+    uint32_t end_at = DUOFORGE_MAX_EVENTS;
+    uint32_t faint_at = DUOFORGE_MAX_EVENTS;
+    for (uint32_t i = 0u; i < ev.count; ++i) {
+        if (ev.rec[i].position == 0u && ev.rec[i].kind == DUOFORGE_EVENT_ILLUSION_END && end_at == DUOFORGE_MAX_EVENTS) {
+            end_at = i;
+        }
+        if (ev.rec[i].position == 0u && ev.rec[i].kind == DUOFORGE_EVENT_FAINT && faint_at == DUOFORGE_MAX_EVENTS) {
+            faint_at = i;
+        }
+    }
+    DF_CHECK(t, end_at < faint_at && faint_at < ev.count); /* the break before the faint */
+    DF_CHECK_EQ_U64(t, dragged_in(&ev, 1u), 3u);         /* the real Gholdengo dragged in, not refused */
 }
 
 /* The fold writes the status the lines show on the name (decision 0026 section 4, amended by I2): a STATUS line of the disguised holder
@@ -1081,6 +1180,7 @@ int main(void)
     check_faint_clear(&t, ctx);
     check_double_replacement(&t, ctx);
     check_faint_drag(&t, ctx);
+    check_break_then_drag(&t, ctx);
     check_insta_disguise(&t, ctx);
     check_fold_status_line(&t, ctx);
     check_fold_switch_status(&t, ctx);

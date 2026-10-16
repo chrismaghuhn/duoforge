@@ -294,14 +294,19 @@ bool dfi_illusion_lead_disguise(const struct duoforge_battle *b, uint32_t side, 
 }
 
 /* Illusion (decision 0026 section 4; issue 619): the name that the foe's fold shows for `side` at this point of the step, + 1 (0 for
- * none). The fold (src/combat/events.c) writes illusion.shown only at the end of the step, so a name set or ended earlier in this step
- * is read from the step's own SWITCH, DRAG and ILLUSION_END events of the side, in order, as the fold applies them: a disguised entry
- * shows its disguise (reserved[0]), an entry of the shown name's real member ends the name, and the break ends it. A faint keeps it. */
-static uint32_t dfi_illusion_shown_now(const dfi_run *r, uint32_t side)
+ * none), in *out. The fold (src/combat/events.c) writes illusion.shown only at the end of the step, so the tail holds the name as the
+ * previous step left it: a name set or ended earlier in this step is read from the step's own SWITCH, DRAG and ILLUSION_END events of
+ * the side, in order, as the fold applies them: a disguised entry shows its disguise (reserved[0]), an entry of the shown name's real
+ * member ends the name, and the break ends it. A faint keeps it. Without the step's events (no buffer, or one past its bound) the name
+ * cannot be known: E_INVARIANT, never the tail's name in their place (every step runs with the staged buffer of request.c). */
+static duoforge_status dfi_illusion_shown_now(const dfi_run *r, uint32_t side, uint32_t *out)
 {
-    uint32_t shown = r->b->tail.sides[side].illusion.shown;
     const dfi_events *ev = r->events;
-    for (uint32_t i = 0u; ev != NULL && i < ev->count && i < DUOFORGE_MAX_EVENTS; ++i) {
+    if (ev == NULL || ev->overflow || ev->count > DUOFORGE_MAX_EVENTS) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    uint32_t shown = r->b->tail.sides[side].illusion.shown;
+    for (uint32_t i = 0u; i < ev->count; ++i) {
         const duoforge_event *e = &ev->rec[i];
         if (e->position >= 2u * DUOFORGE_ACTIVE_PER_SIDE || (uint32_t)e->position / 2u != side) {
             continue;
@@ -316,7 +321,8 @@ static uint32_t dfi_illusion_shown_now(const dfi_run *r, uint32_t side)
             }
         }
     }
-    return shown;
+    *out = shown;
+    return DUOFORGE_OK;
 }
 
 /* The position `p` of the side shows the name (given that a name is shown): its holder's disguise is up, or the holder stands there
@@ -377,11 +383,18 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
         return DUOFORGE_E_UNSUPPORTED;
     }
     /* The shown name of the side as the fold has it at this point of the step (issue 619): the checks below read it, not
-     * illusion.shown, which the fold writes only at the end of the step. A holder that entered disguised earlier in this step and
-     * fainted without a hit (its disguise dropped with the faint) keeps that name on its fainted position, and the name's real member
-     * dragged in later in the step is refused by the checks below (lead decision B, the faint-held name); a second entry of the
-     * holder in one step compares with the name of its first. */
-    const uint32_t shown = pool_rules ? dfi_illusion_shown_now(r, side) : 0u;
+     * illusion.shown, which holds the name as the previous step's fold left it. A holder that entered disguised earlier in this step
+     * and fainted without a hit (its disguise dropped with the faint) keeps that name on its fainted position, and the name's real
+     * member dragged in later in the step is refused by the checks below (lead decision B, the faint-held name); a second entry of the
+     * holder in one step compares with the name of its first; a name that a break or the name's own member ended earlier in this
+     * step no longer refuses anything. */
+    uint32_t shown = 0u;
+    if (pool_rules) {
+        const duoforge_status ss = dfi_illusion_shown_now(r, side, &shown);
+        if (ss != DUOFORGE_OK) {
+            return ss;
+        }
+    }
     /* Illusion, one shown name per side (amended by I2, decision 0026 section 3): while a name is still shown on the bench, the
      * holder may enter only disguised as that same name. Any other entry of the holder would need a second name, which the single
      * state cannot hold: refused before any change. */
