@@ -22,6 +22,17 @@ DF_DEFAULT_CHUNK_BATTLES=2000 # campaign.conf: chunk_battles
 # at 56% busy, 7 drivers 239 at 64%, 9 drivers 274 at 70%: still rising, so 7 vCPUs per driver (9 drivers on 64).
 DF_VCPUS_PER_DRIVER=7
 
+# Decimals (prices, cost caps, rates) are printed by printf and awk after LC_NUMERIC: under a German locale they would
+# read 1,50, and the spot request must say MaxPrice=1.50. LC_ALL overrides LC_NUMERIC, so a set LC_ALL is handed to
+# every other category first; only the numbers change (tools/cloud/test_numeric_locale.py).
+if [ -n "${LC_ALL:-}" ]; then
+    for df_category in CTYPE COLLATE MESSAGES MONETARY TIME PAPER NAME ADDRESS TELEPHONE MEASUREMENT IDENTIFICATION; do
+        export "LC_$df_category=$LC_ALL"
+    done
+    unset df_category LC_ALL
+fi
+export LC_NUMERIC=C
+
 # --- the campaign.conf: key=value lines (pairings, teams, base_seed and chunks are required)
 campaign_conf_load() { # file; sets PAIRINGS TEAMS BASE_SEED CHUNKS CHUNK_BATTLES PARALLEL_CONF SWEEP BENCH
     local key value parallel_set=no
