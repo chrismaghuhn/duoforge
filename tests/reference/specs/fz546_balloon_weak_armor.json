@@ -1,0 +1,55 @@
+{
+  "name": "fz546_balloon_weak_armor",
+  "purpose": "Lycanroc's Rock Slide hits Polteageist, which has Weak Armor and holds an Air Balloon; the ability's DamagingHit lines come before the balloon's -enditem (the holder's ability before its item, sim/battle.ts:1117-1130); on main the engine popped the balloon first (issue 546). A battle of the differential fuzzing of issue 396 (free random sets, fz_332_41), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,25468afe8fd51e80609177c543e402bff116f1ee68a72176eb8404682b891b23",
+  "teams": [
+    "sirfetchd (F) @ silverpowder\nAbility: scrappy\nLevel: 50\nEVs: 10 HP / 13 Atk / 13 Def / 11 SpA / 9 SpD / 10 Spe\nCalm Nature\n- curse\n- brutalswing\n- dualwingbeat\n- assurance\n\ngolurk @ raichunitey\nAbility: ironfist\nLevel: 50\nEVs: 10 HP / 11 Atk / 8 Def / 20 SpA / 11 SpD / 6 Spe\nImpish Nature\n- knockoff\n- bodypress\n- highhorsepower\n- sandstorm\n\nkleavor (F) @ cameruptite\nAbility: sharpness\nLevel: 50\nEVs: 8 HP / 12 Atk / 11 Def / 9 SpA / 10 SpD / 16 Spe\nNaughty Nature\n- quickattack\n- sandstorm\n- lunge\n- closecombat\n\nnoivern (M) @ malamarite\nAbility: infiltrator\nLevel: 50\nEVs: 8 HP / 12 Atk / 11 Def / 5 SpA / 7 SpD / 6 Spe\nModest Nature\n- scaryface\n- protect\n- shadowball\n- breakingswipe\n\ntrevenant (M) @ silkscarf\nAbility: frisk\nLevel: 50\nEVs: 15 HP / 7 Atk / 16 Def / 10 SpA / 5 SpD / 13 Spe\nGentle Nature\n- sunnyday\n- poltergeist\n- energyball\n- woodhammer\n\npolteageist @ airballoon\nAbility: weakarmor\nLevel: 50\nLax Nature\n- skillswap\n- trick\n- phantomforce\n- shellsmash",
+    "volcarona (F) @ habanberry\nAbility: swarm\nLevel: 50\nEVs: 1 HP / 2 Def / 1 SpD\nHardy Nature\n- skittersmack\n- flamethrower\n- whirlwind\n- lunge\n\nsneasler (M) @ dragalgite\nAbility: unburden\nLevel: 50\nEVs: 1 SpD\nBold Nature\n- xscissor\n- quickguard\n- rockslide\n- firepunch\n\ntaurospaldeacombat (M) @ sceptilite\nAbility: intimidate\nLevel: 50\nEVs: 12 HP / 12 Atk / 12 Def / 9 SpA / 13 SpD / 8 Spe\nRelaxed Nature\n- lashout\n- protect\n- rockslide\n- doubleedge\n\nrhyperior (M) @ glimmoranite\nAbility: lightningrod\nLevel: 50\nEVs: 5 HP / 4 Atk / 4 Def / 4 SpA / 2 SpD / 5 Spe\nRash Nature\n- crunch\n- firepunch\n- megahorn\n- mudshot\n\nmamoswine (F) @ aggronite\nAbility: oblivious\nLevel: 50\nEVs: 14 HP / 8 Atk / 17 Def / 10 SpA / 6 SpD / 11 Spe\nCareful Nature\n- icywind\n- scaryface\n- bodypress\n- heavyslam\n\nlycanroc (F) @ rindoberry\nAbility: keeneye\nLevel: 50\nEVs: 12 HP / 7 Atk / 23 Def / 12 SpA / 9 SpD / 3 Spe\nHardy Nature\n- doubleedge\n- rocktomb\n- irontail\n- rockslide"
+  ],
+  "choices": [
+    {
+      "p1": "team 1362",
+      "p2": "team 3126"
+    },
+    {
+      "p1": "move 1, move 4 2",
+      "p2": "move 1 2, move 1 1"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1 -2, move 2 1"
+    },
+    {
+      "p1": "move 2, move 1 2",
+      "p2": "move 1 1, switch 4"
+    },
+    {
+      "p1": "switch 4, move 4 -1",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 2 -2, move 1 -1",
+      "p2": "move 1 2, move 2 -1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 2, switch 3",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 1, move 3 2",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 1 1, move 2 -1"
+    }
+  ]
+}
