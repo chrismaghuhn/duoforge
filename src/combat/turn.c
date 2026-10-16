@@ -7648,21 +7648,6 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
             }
         }
-        /* Ice Spinner (step G86, data/moves.ts:9417-9434): clearTerrain after a hit that landed (AfterHit, which runs only
-         * while the user still stands, sim/battle-actions.ts:1123) or was absorbed by a Substitute (onAfterSubDamage, if the
-         * source has HP). No onTry: with no terrain the clear does nothing and prints nothing (field.clearTerrain returns false). */
-        if (md->special == DFI_SPECIAL_ICE_SPINNER && dfi_at(b, user)->hp > 0u) {
-            bool any_hit = false;
-            for (uint32_t i = 0u; i < count; ++i) {
-                any_hit = any_hit || hit[i];
-            }
-            if (any_hit) {
-                st = dfi_clear_terrain(r);
-                if (st != DUOFORGE_OK) {
-                    return st;
-                }
-            }
-        }
         /* onHit of Bug Bite (step G64; data/moves.ts:1920-1930): runMoveEffects runs it right after the damage of the hit and before
          * the self effects, the selfSwitch, the secondaries and the DamagingHit handlers (sim/battle-actions.ts:1085-1086, 1096,
          * 1099, 1119-1121). For each target that took damage, in order (hit[] is false for a target that a Substitute absorbed, and
@@ -8207,6 +8192,20 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (hit[i]) {
                     bool added = false;
                     st = dfi_add_hazard(r, (1u - side), kind, &added);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
+            }
+        }
+        /* AfterHit of Ice Spinner (step G86, data/moves.ts:9426-9428): clearTerrain for each damaged target, after the
+         * DamagingHit handlers (issue 547: after Weak Armor's lines) and with no test of the user's HP (the Champions loop,
+         * data/mods/champions/scripts.ts:411-414). With no terrain the clear does nothing and prints nothing
+         * (field.clearTerrain returns false). */
+        if (md->special == DFI_SPECIAL_ICE_SPINNER) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i]) {
+                    st = dfi_clear_terrain(r);
                     if (st != DUOFORGE_OK) {
                         return st;
                     }
