@@ -331,6 +331,15 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
             return DUOFORGE_E_UNSUPPORTED;
         }
     }
+    /* The duplicate name (decision 0026 section 4, amended by I2, lead decision A; issue 602): the real member of the disguise that
+     * the holder on the other position shows, entering, would put the disguise and its real member on the field together. The
+     * holder's disguise is read from its position (ability_state, written at the holder's switch-in or, for a lead, at team start), not from the shown name
+     * (illusion.shown, which the fold writes at the end of the step): a replacement of both positions in one step that brings the
+     * holder first and its disguise member second is refused here, at the switch-in that makes the duplicate, before any change. */
+    if (pool_rules && dfi_illusion_disguise_up(sd, &b->tail.sides[side], 1u - slot) &&
+        (uint32_t)b->tail.sides[side].positions[1u - slot].ability_state - 1u == reserve) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     /* Illusion, one shown name per side (amended by I2, decision 0026 section 3): while a name is still shown on the bench, the
      * holder may enter only disguised as that same name. Any other entry of the holder would need a second name, which the single
      * state cannot hold: refused before any change. */
