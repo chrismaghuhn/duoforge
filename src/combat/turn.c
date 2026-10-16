@@ -6909,7 +6909,10 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_try_move(dfi_run *r, cons
      * move's target: every class that `single` admits is not 'scripted' (DFI_TARGET_CLASS_SCRIPTED is not among them), so
      * the holder's gate is the whole of Stalwart here. */
     const bool stalwart = m != NULL && dfi_ability(b, m, DFI_ABILITY_STALWART);
-    const bool single = count <= 1u && !stalwart && (target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
+    /* A Curse of a user that is not a Ghost now (issue 550): its onModifyMove sets move.target = 'self' before getMoveTargets
+     * (data/moves.ts:3276-3281), so no RedirectTarget handler takes it (validTarget of self); it hits the user (dfi_curse_targets). */
+    const bool curse_self = md->special == DFI_SPECIAL_CURSE && m != NULL && !dfi_has_type(b, m, DFI_TYPE_GHOST);
+    const bool single = count <= 1u && !stalwart && !curse_self && (target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
                                                      target_class == DUOFORGE_TARGET_CLASS_ANY ||
                                                      target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE ||
                                                      target_class == DFI_TARGET_CLASS_RANDOM_NORMAL);
