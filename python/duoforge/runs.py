@@ -7,7 +7,7 @@ coverage measurements, fuzz campaigns, cloud runs. Their outputs never land in a
 - out_dir(): the run's output directory, --out or the default $DUOFORGE_RUNS/<kind>/<date>-<name>/; a directory
   inside a work tree of this repository is refused, and so is a missing default (no silent fallback).
 - Manifest: manifest.json of one run: the code (commit and dirty flag), the full arguments, the seeds, the machine,
-  start and end.
+  start and end; for evaluation and coverage runs also the format (duoforge.formats.record), which a run must name.
 
 This module imports nothing of the learn, search or eval packages: every run tool may use it.
 """
@@ -23,6 +23,7 @@ RUNS_ENV = "DUOFORGE_RUNS"
 KINDS = ("train", "eval", "bench", "coverage", "fuzz", "cloud")
 MANIFEST = "manifest.json"
 MANIFEST_VERSION = 1
+FORMAT_KINDS = ("eval", "coverage")  # plan "Format axis": their manifests name the format (duoforge.formats)
 ROOT = Path(__file__).resolve().parents[2]  # the work tree this code runs from
 
 
@@ -145,9 +146,10 @@ def _now():
 
 
 class Manifest:
-    """The manifest of one run: start() when it begins, write(out) when its outputs are written.
+    """The manifest of one run: made when it begins, write(out) when its outputs are written.
 
-    tool: the module that runs (its python -m name); argv: the full arguments; seeds: the seeds by name."""
+    tool: the module that runs (its python -m name); argv: the full arguments; seeds: the seeds by name. A run of
+    FORMAT_KINDS names its format (set_format, as soon as it knows it): its manifest is never written without one."""
 
     def __init__(self, kind, tool, argv, seeds=None, root=ROOT, environ=None):
         if kind not in KINDS:
@@ -157,8 +159,17 @@ class Manifest:
                        "seeds": dict(seeds or {}), "code": code(root, environ), "machine": machine(),
                        "start": _now(), "end": None}
 
+    def set_format(self, record):
+        """The format the run plays: {"id", "showdown_format_id"} (duoforge.formats.record and its lookups)."""
+        if not isinstance(record, dict) or set(record) != {"id", "showdown_format_id"}:
+            raise ValueError(f"a format record is {{'id', 'showdown_format_id'}} (got {record!r})")
+        self.record["format"] = dict(record)
+
     def write(self, out, **extra):
         """Writes OUT/manifest.json with the end time (and extra fields); returns its path."""
+        if self.record["kind"] in FORMAT_KINDS and "format" not in self.record:
+            raise RuntimeError(f"a {self.record['kind']} run names its format (Manifest.set_format) before its manifest "
+                               f"is written")
         self.record["end"] = _now()
         self.record.update(extra)
         path = Path(out) / MANIFEST

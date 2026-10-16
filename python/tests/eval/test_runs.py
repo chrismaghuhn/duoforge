@@ -127,6 +127,7 @@ class ManifestTest(RepoFixture):
         out = Path(self.tmp.name, "out", "run")
         manifest = runs.Manifest("eval", "duoforge_eval.arena", ["--games", 4], seeds={"arena": 7}, root=self.main,
                                  environ={})
+        manifest.set_format({"id": "reg-mc", "showdown_format_id": "gen9championsvgc2026regmc"})
         path = manifest.write(out, games=4)
         self.assertEqual(path, out / "manifest.json")
         self.assertEqual(sorted(p.name for p in out.iterdir()), ["manifest.json"])  # no temporary file is left
@@ -137,9 +138,25 @@ class ManifestTest(RepoFixture):
         self.assertEqual(record["code"], {"commit": self.head, "dirty": False})
         self.assertLessEqual(record["start"], record["end"])
         self.assertEqual(set(record["machine"]), {"host", "system", "release", "machine", "processors", "python"})
+        self.assertEqual(record["format"], {"id": "reg-mc", "showdown_format_id": "gen9championsvgc2026regmc"})
+
+    def test_an_evaluation_or_coverage_run_names_its_format(self):
+        # plan "Format axis": never a manifest of such a run without its format, and only a format record
+        for kind in runs.FORMAT_KINDS:
+            out = Path(self.tmp.name, kind)
+            manifest = runs.Manifest(kind, "t", [], root=self.main, environ={})
+            with self.subTest(kind=kind), self.assertRaisesRegex(RuntimeError, "names its format"):
+                manifest.write(out)
+            self.assertFalse(out.exists())
+            for bad in ({"id": "reg-mc"}, "reg-mc", {"id": "reg-mc", "showdown_format_id": "x", "extra": 1}):
+                with self.subTest(kind=kind, record=bad), self.assertRaises(ValueError):
+                    manifest.set_format(bad)
+        bench = Path(self.tmp.name, "bench")
+        runs.Manifest("bench", "t", [], root=self.main, environ={}).write(bench)  # a benchmark need not name one
+        self.assertNotIn("format", json.loads((bench / "manifest.json").read_text(encoding="utf-8")))
 
     def test_the_manifest_names_this_repositorys_commit(self):
-        record = runs.Manifest("eval", "t", []).record
+        record = runs.Manifest("bench", "t", []).record
         self.assertEqual(record["code"]["commit"], git(ROOT, "rev-parse", "HEAD"))
 
     def test_an_unknown_kind_is_refused(self):

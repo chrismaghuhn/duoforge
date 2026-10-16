@@ -31,7 +31,7 @@ from collections import Counter
 import numpy as np
 
 import duoforge
-from duoforge import _layout, runs
+from duoforge import _layout, formats, runs
 from duoforge_learn import book_preview, evaluate, suite
 from duoforge_learn.selfplay import choices_of
 from duoforge_search import lookahead, seeds
@@ -458,6 +458,7 @@ def main(argv=None):
     require_deterministic_gpu(jax)
     refused = []  # the engine's filter (#558): a refused team is left out, named in conditions.pool
     pool, kind = ladder._pool_of(args.run_dir, refused=refused)
+    manifest.set_format(formats.of_data_kind(kind, _layout.CONSTANTS))
     spread = source_ids = table_info = None
     if args.search == "honest":
         from duoforge_search import honest

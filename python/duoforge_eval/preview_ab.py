@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 
 import duoforge
-from duoforge import runs
+from duoforge import _layout, formats, runs
 from duoforge_learn import checkpoint, evaluate
 from duoforge_learn.selfplay import TEAM
 from duoforge_replay.dataset import refuse_repository
@@ -197,6 +197,7 @@ def main(argv=None):
         fingerprints[name] = arena._sha256(path)
     refused = []  # the engine's filter (#558): a refused team is left out, named in conditions.pool
     pool, kind = ladder._pool_of(args.run_dir, args.teams_root, refused=refused)
+    manifest.set_format(formats.of_data_kind(kind, _layout.CONSTANTS))
     with duoforge.Context(data_kind=kind) as context:
         for config in configs:
             if config.get("format") == 2:

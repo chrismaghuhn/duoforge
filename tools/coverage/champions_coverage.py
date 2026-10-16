@@ -265,11 +265,13 @@ def greedy(game_sets, limit):
     return order
 
 
-def _runs():
-    """This checkout's duoforge/runs.py, loaded as a file of its own: --package may name an older commit's duoforge
-    package, which the measurement imports later and which may have no runs module (runs.py imports nothing of it)."""
+def _runs(name="runs"):
+    """This checkout's duoforge/<name>.py (runs, formats), loaded as a file of its own: --package may name an older
+    commit's duoforge package, which the measurement imports later and which may have no such module (both import
+    nothing of it)."""
     import importlib.util
-    spec = importlib.util.spec_from_file_location("duoforge_runs_of_this_checkout", ROOT / "python" / "duoforge" / "runs.py")
+    spec = importlib.util.spec_from_file_location(f"duoforge_{name}_of_this_checkout",
+                                                  ROOT / "python" / "duoforge" / f"{name}.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -298,6 +300,11 @@ def main():
         sys.exit(f"{out}: the output holds per-game rows and must be outside the repository")
     runs.refuse_repository(out, ROOT)  # also the main checkout and every other worktree of this repository
     manifest = runs.Manifest("coverage", "tools/coverage/champions_coverage.py", None, root=ROOT)
+    formats = _runs("formats")
+    try:  # the format of --format-prefix, exactly (a replay format with a suffix such as bo3 is not guessed)
+        manifest.set_format(formats.by_showdown_id(args.format_prefix))
+    except formats.FormatError as error:
+        sys.exit(f"--format-prefix {args.format_prefix}: {error}")
     out.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, args.package)
     lib = Library(args.data_kind, args.singles)

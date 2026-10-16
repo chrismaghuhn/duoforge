@@ -91,6 +91,19 @@ class OutputTest(unittest.TestCase):
         self.assertIn("already holds a run", r.stderr)
 
 
+class FormatTest(unittest.TestCase):
+    def test_the_format_prefix_names_a_known_format_exactly(self):
+        with tempfile.TemporaryDirectory() as tmp:  # refused before anything is read or written
+            for prefix in ("gen9championsvgc2026regmcbo3", "gen9ou"):
+                with self.subTest(prefix=prefix):
+                    out = Path(tmp, prefix)
+                    r = run(TOOL / "champions_coverage.py", "--sheets", "none.jsonl", "--out", str(out),
+                            "--format-prefix", prefix)
+                    self.assertNotEqual(r.returncode, 0)
+                    self.assertIn(f"--format-prefix {prefix}: no format definition", r.stderr)
+                    self.assertFalse(out.exists())
+
+
 class ForwarderTest(unittest.TestCase):
     def test_the_old_paths_run_the_moved_tools(self):
         for name in ("champions_coverage", "champions_batches"):

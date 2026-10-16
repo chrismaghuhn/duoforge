@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 
 import duoforge
-from duoforge import runs
+from duoforge import _layout, formats, runs
 from duoforge_learn import book_preview, evaluate, suite
 from duoforge_replay.dataset import refuse_repository
 
@@ -177,6 +177,7 @@ def main(argv=None):
         configs.append(config)
     refused = []  # the engine's filter (#558): a refused team is left out, named in conditions.pool
     pool, kind = ladder._pool_of(args.run_dir, refused=refused)
+    manifest.set_format(formats.of_data_kind(kind, _layout.CONSTANTS))
     rows = paired_rows(len(pool.ids), args.games, args.seed)
     with duoforge.Context(data_kind=kind) as context:
         for config in configs:

@@ -366,6 +366,7 @@ class BookPreviewTest(unittest.TestCase):
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(__file__).parent, capture_output=True, text=True,
                               check=True).stdout.strip()
         self.assertEqual((record["kind"], record["tool"], record["code"]["commit"]), ("eval", tool, head))
+        self.assertEqual(record["format"], {"id": "reg-mc", "showdown_format_id": "gen9championsvgc2026regmc"})
         self.assertEqual(record["argv"][0], "--run-dir")  # the full arguments, as given
 
 

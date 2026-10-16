@@ -14,9 +14,9 @@ import subprocess
 import time
 from pathlib import Path
 
-from duoforge import runs
-from duoforge_live.arena import (_ready, check_host, draw_pairs, evaluate, playable, pool_ids, provenance, run_lane,
-                                 schedule, server_command)
+from duoforge import formats, runs
+from duoforge_live.arena import (FORMAT, _ready, check_host, draw_pairs, evaluate, playable, pool_ids, provenance,
+                                 run_lane, schedule, server_command)
 
 
 def main(argv=None):
@@ -52,6 +52,7 @@ def main(argv=None):
     refuse_repository(args.out)
     code = provenance()  # before anything is loaded or played: a result without its commit is refused
     manifest = runs.Manifest("eval", "duoforge_eval.live_arena", argv, seeds={"pairs": args.seed})
+    manifest.set_format(formats.by_showdown_id(FORMAT))  # the server's format, as the bots challenge with it
     from duoforge_learn import checkpoint
     from duoforge_live import client, data, policy
     out = Path(args.out)
