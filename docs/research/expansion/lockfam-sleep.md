@@ -158,7 +158,16 @@ TIER quick AREA moves)` in `tests/moves/tests.cmake`). Five scenarios, each over
 5. `sleep_after_restarted_use`: `lock_turns` 2, used, then put to sleep: silent delete, no confusion.
 
 **Results** (scratch copies of main `dc9ce14b` built under the machine lock, the test registered only there):
-RESULTS_PLACEHOLDER
+
+| build | `pool_lockfam_sleep` | `pool_g56` | prefix | whole battle |
+|---|---|---|---|---|
+| main `dc9ce14b` | 1624 checks, **48 failures**, all in scenario 1 (32 missing CONFUSION_START, 16 `confusion_turns` 0: 16 seeds x 2 players + 16 seeds); scenarios 2-5 pass | 576 checks, 0 failures | **DIVERGENCE** step 2, tape 4 of 5 | **DIVERGENCE** step 2, tape 4 of 5 |
+| main + prototype (option (a), not committed) | 1752 checks, 0 failures | 576 checks, 0 failures | PASS (3 steps) | PASS (14 steps) |
+
+The prototype build also ran `ctest -R 'duoforge\.(state|data|reference)\.'` (with the test registered there): 143
+tests, 142 passed, 1 skipped (`duoforge.reference.battle_pins`, no env), among them `conformance_pool_data` and
+`corpus`. The prototype is the sketch of section 3 (a): the run-scoped mask, its swap, the two-phase
+`dfi_residual_lock` and the pivot refusal (19 added and 2 changed lines in `run_internal.h`, `flow/turn.h`, `turn.c`).
 
 **The mutant** of the fix PR: the silent removal back in the duration phase (`dfi_lock_remove` instead of
 `dfi_lock_end` for a set bit). It must turn scenario 1 and both prepared battles red (DIVERGENCE at step 2), and
