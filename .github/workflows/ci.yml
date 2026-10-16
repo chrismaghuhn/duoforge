@@ -198,6 +198,12 @@ jobs:
           -DDUOFORGE_PS_REFERENCE_DIR="$GITHUB_WORKSPACE/pokemon-showdown"
       - name: Build
         run: cmake --build build --parallel 4
+      - name: German locale (duoforge.cloud.numeric_locale)
+        # The owner's machine runs de_DE.UTF-8, where printf and awk print 1,50; the runner has only C.UTF-8 and
+        # en_US.UTF-8. ci-no-skip below turns a missing locale into a failure.
+        run: |
+          sudo locale-gen de_DE.UTF-8
+          locale -a | grep -qx 'de_DE.utf8'
       - name: Test
         run: |
           set -o pipefail
