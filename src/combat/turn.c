@@ -8463,11 +8463,6 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 return dfi_move_body_stop(stop, st);
             }
             dfi_gooey(r, user, targets[i], md);
-            /* Air Balloon (step G67, data/items.ts:197-202, onDamagingHit): a damaging hit uses it up (-enditem with no [from]).
-             * Indirect damage does not pop it: every indirect path goes through dfi_deal, which never calls this. */
-            if (dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
-                dfi_use_item(r, targets[i]);
-            }
             /* Cursed Body (POOL data): the target's own onDamagingHit, after Thermal Exchange's place and before the attacker's
              * Poison Touch; the target is standing here (a holder that is down rolls too: see above). Two holders hit by one
              * spread move: DamagingHit is sorted by compareLeftToRightOrder (sim/battle.ts:789-790 and :421-426: order, then
@@ -8519,6 +8514,13 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
             st = dfi_cute_charm(r, user, targets[i], md);
             if (st != DUOFORGE_OK) {
                 return dfi_move_body_stop(stop, st);
+            }
+            /* Air Balloon (step G67, data/items.ts:197-202, onDamagingHit): a damaging hit uses it up (-enditem with no [from]).
+             * Indirect damage does not pop it: every indirect path goes through dfi_deal, which never calls this. The holder's
+             * unordered handlers are collected ability before item (sim/battle.ts:1117-1130) and the sort is stable, so it comes
+             * after the target's own ability handlers above (issue 546: Weak Armor's lines, then -enditem). */
+            if (dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+                dfi_use_item(r, targets[i]);
             }
             /* The attacker's Poison Touch comes after the target's own handlers (its onSourceDamagingHit is appended
              * after them, sim/battle.ts:1035-1063, and the sort is stable). */
