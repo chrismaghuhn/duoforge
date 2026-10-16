@@ -1,0 +1,83 @@
+{
+  "name": "fz547_ice_spinner_substitute",
+  "purpose": "Wigglytuff's Ice Spinner hits Rotom's Substitute in Electric Terrain; the move's onAfterSubDamage ends the terrain (data/moves.ts:9429-9433); on main the engine left it (issue 547). A battle of the differential fuzzing of issue 396 (free random sets, fz_250_45), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,abaa7ccc0bd2aed49945247548ad9d699e1698cb027f587cc066bf6681256268",
+  "teams": [
+    "vanilluxe (M) @ chilanberry\nAbility: weakarmor\nLevel: 50\nEVs: 11 HP / 10 Atk / 13 Def / 4 SpA / 11 SpD / 17 Spe\nSerious Nature\n- taunt\n- icespinner\n- sheercold\n- allyswitch\n\nexcadrill (M) @ excadrite\nAbility: sandforce\nLevel: 50\nEVs: 2 HP / 1 Atk / 6 Def / 1 SpA / 6 Spe\nQuirky Nature\n- curse\n- sandstorm\n- irondefense\n- drillrun\n\nwigglytuff (F) @ pidgeotite\nAbility: cutecharm\nLevel: 50\nEVs: 14 HP / 14 Atk / 11 Def / 11 SpA / 9 SpD / 7 Spe\nHardy Nature\n- icespinner\n- shadowball\n- reflect\n- sing\n\nmeowsticf (F) @ meowsticite\nAbility: infiltrator\nLevel: 50\nEVs: 10 HP / 8 Atk / 11 Def / 13 SpA / 12 SpD / 12 Spe\nLonely Nature\n- substitute\n- energyball\n- skillswap\n- fakeout\n\nabsol (M) @ absolite\nAbility: superluck\nLevel: 50\nEVs: 4 HP / 3 Atk / 2 Def / 1 SpA / 4 Spe\nBashful Nature\n- icebeam\n- phantomforce\n- quickattack\n- snarl\n\nlycanroc (M) @ kebiaberry\nAbility: sandrush\nLevel: 50\nEVs: 12 HP / 13 Atk / 11 Def / 12 SpA / 6 SpD / 12 Spe\nSerious Nature\n- roar\n- trailblaze\n- stompingtantrum\n- irontail",
+    "crabominable (M) @ crabominite\nAbility: ironfist\nLevel: 50\nEVs: 13 HP / 12 Atk / 11 Def / 13 SpA / 6 SpD / 11 Spe\nCareful Nature\n- bodyslam\n- snowscape\n- endeavor\n- brutalswing\n\naraquanid (F) @ damprock\nAbility: waterbubble\nLevel: 50\nEVs: 13 HP / 11 Atk / 6 Def / 8 SpA / 13 SpD / 13 Spe\nCalm Nature\n- protect\n- gigaimpact\n- bugbuzz\n- soak\n\npawmot (M) @ blazikenite\nAbility: ironfist\nLevel: 50\nEVs: 4 HP / 14 Atk / 5 Def / 6 SpA / 12 SpD / 4 Spe\nAdamant Nature\n- brickbreak\n- protect\n- doubleedge\n- focusblast\n\nzoroarkhisui (F) @ baxcalibrite\nAbility: illusion\nLevel: 50\nEVs: 14 HP / 9 Atk / 11 Def / 10 SpA / 13 SpD / 9 Spe\nHardy Nature\n- psychic\n- throatchop\n- megakick\n- grassknot\n\nrotomwash @ skarmorite\nAbility: levitate\nLevel: 50\nEVs: 17 HP / 12 Atk / 13 Def / 5 SpA / 8 SpD / 11 Spe\nBrave Nature\n- electricterrain\n- substitute\n- hypervoice\n- protect\n\nsalazzle (F) @ meganiumite\nAbility: oblivious\nLevel: 50\nEVs: 11 HP / 7 Atk / 10 Def / 12 SpA / 13 SpD / 13 Spe\nBold Nature\n- agility\n- trailblaze\n- temperflare\n- flamethrower"
+  ],
+  "choices": [
+    {
+      "p1": "team 5463",
+      "p2": "team 2563"
+    },
+    {
+      "p1": "move 4, move 3 2",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 4 mega, switch 3",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 3 2, move 3 1",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "move 4, move 4 -1",
+      "p2": "move 3 2, move 3"
+    },
+    {
+      "p1": "move 4, switch 4",
+      "p2": "move 4 -2, move 3"
+    },
+    {
+      "p1": "move 2 2, move 1 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 2, move 3",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 2 2",
+      "p2": "move 3 -2, move 3 2"
+    },
+    {
+      "p1": "move 4 -2, switch 3",
+      "p2": "move 3 -2, move 4 -1"
+    },
+    {
+      "p1": "move 4 -2, move 2 -1",
+      "p2": "move 4 1, move 3 2"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 -2, move 3 -1",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 2 -2, move 2 2",
+      "p2": "move 1, move 4 -1"
+    },
+    {
+      "p1": "move 4 2, move 3 -1",
+      "p2": "move 3 1, move 3 1"
+    },
+    {
+      "p1": "pass, move 3 1",
+      "p2": "move 3 1, move 1"
+    }
+  ]
+}
