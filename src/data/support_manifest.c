@@ -287,8 +287,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DETECT] = 1u,
             [DFI_MOVE_EXPANDINGFORCE] = 1u,
             [DFI_MOVE_POISONJAB] = 1u,
-            /* Step G17: the recharge moves (flags2 RECHARGE, mustrecharge): the user recharges after a hit. Meteor Assault is
-             * not marked: its only learner, Sirfetch'd, has no supported ability (Steadfast, Scrappy), so no setup can use it. */
+            /* Step G17: the recharge moves (flags2 RECHARGE, mustrecharge): the user recharges after a hit. Meteor Assault was
+             * left out here (its only learner, Sirfetch'd, had no supported ability then); it is marked in A0 part 1 below (5ds). */
             [DFI_MOVE_BLASTBURN] = 1u,
             [DFI_MOVE_FRENZYPLANT] = 1u,
             [DFI_MOVE_GIGAIMPACT] = 1u,
@@ -590,7 +590,7 @@ const dfi_support_manifest dfi_support = {
              * Charge on allAdjacent), crit ratio 2 (Blaze Kick, Cross Poison), and the flags of the pin (punch, slicing, sound,
              * bypasssub, defrost, bullet, heal, distance, pulse). Not marked (decision 0015 entry 5cp): Fire Fang and Thunder Fang
              * (two secondaries; the only handler of two is Ice Fang's freeze and flinch, DFI_SPECIAL_ICE_FANG; a status-parameterised
-             * handler is a new special id), Horn Leech (no learner with a marked ability). Mountain Gale, Bitter Malice and Night Daze
+             * handler is a new special id), Horn Leech (no learner with a marked ability then; marked in A0 part 1, 5ds). Mountain Gale, Bitter Malice and Night Daze
              * are marked in step A0 part 4 below. Every field of each entry is read by check_c2_facts (gen_closure.py); the Champions
              * base power overrides of Apple Acid, Mountain Gale and Night Daze are in the pool table already. */
             [DFI_MOVE_ZENHEADBUTT] = 1u,
@@ -907,7 +907,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MEGANIUMITE] = 1u,
             /* Step A0 (decision 0015, batch A0 part 1): two Mega Stones through the generic Mega path, mark only (the Mega formes'
              * abilities are marked: Chesnaught-Mega Bulletproof, Altaria-Mega Pixilate; the base Overgrow, Cloud Nine). Checked by
-             * check_a0_facts. */
+             * check_a0p1_facts. */
             [DFI_ITEM_CHESNAUGHTITE] = 1u,
             [DFI_ITEM_ALTARIANITE] = 1u,
             /* step K2: Excadrite (Excadrill-Mega, Piercing Drill; the base formes' Sand Rush and Sand Force are marked) */

@@ -1126,7 +1126,6 @@ class PoolMoves(unittest.TestCase):
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
                         set(gen_closure.G2_MOVES) | {'ragingfury', 'doublehit', 'tailslap', 'bonerush', 'solarblade', 'snaptrap'} |
-                        {'storedpower', 'bulletseed', 'rockblast', 'pinmissile', 'watershuriken', 'heatcrash'} |
                         {'storedpower', 'bulletseed', 'rockblast', 'pinmissile', 'watershuriken', 'heatcrash'} | {'outrage', 'thrash', 'petaldance','sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
                                                                 'substitute', 'kingsshield', 'banefulbunker', 'psychicterrain', 'speedswap', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts', 'psychup', 'allyswitch', 'bind', 'wrap', 'firespin', 'sandtomb', 'snaptrap', 'infestation', 'lashout', 'assurance', 'leechseed', 'curse',
                                                                 'substitute', 'kingsshield', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts',
