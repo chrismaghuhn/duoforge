@@ -1125,7 +1125,8 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'outrage', 'thrash', 'petaldance', 'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
+                        set(gen_closure.G2_MOVES) | {'storedpower', 'bulletseed', 'rockblast', 'pinmissile', 'watershuriken', 'heatcrash'} |
+                        {'outrage', 'thrash', 'petaldance', 'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
                                                                 'substitute', 'kingsshield', 'banefulbunker', 'psychicterrain', 'speedswap', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts', 'psychup', 'allyswitch', 'bind', 'wrap', 'firespin', 'sandtomb', 'snaptrap', 'infestation', 'lashout', 'assurance', 'leechseed', 'curse',
                                                                 'substitute', 'kingsshield', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts',
                                                                 'confuseray', 'swagger', 'flatter', 'teeterdance', 'fissure', 'guillotine', 'horndrill', 'memento', 'nightshade',
@@ -2479,3 +2480,121 @@ class BulletFlag(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+POWER_CALLBACK = ("\t\tbasePowerCallback(pokemon, target, move) {\n\t\t\tconst bp = move.basePower + 20 * pokemon.positiveBoosts();\n"
+                  "\t\t\tthis.debug(`BP: ${bp}`);\n\t\t\treturn bp;\n\t\t},")
+HEAVY_CALLBACK = ("\t\tbasePowerCallback(pokemon, target) {\n\t\t\tconst targetWeight = target.getWeight();\n"
+                  "\t\t\tif (pokemon.getWeight() >= targetWeight * 5) { bp = 120; }\n\t\t\treturn bp;\n\t\t},")
+ON_TRY_HIT = ("\t\tonTryHit(target, pokemon, move) {\n\t\t\tif (target.volatiles['dynamax']) {\n"
+              "\t\t\t\treturn null;\n\t\t\t}\n\t\t},")
+WATER_CALLBACK = ("\t\tbasePowerCallback(pokemon, target, move) {\n\t\t\tif (pokemon.species.name === 'Greninja-Ash' && "
+                  "pokemon.hasAbility('battlebond') &&\n\t\t\t\t!pokemon.transformed) {\n\t\t\t\treturn move.basePower + 5;\n"
+                  "\t\t\t}\n\t\t\treturn move.basePower;\n\t\t},")
+A0_CALLBACK_TEXT = {'storedpower': {'basePowerCallback': POWER_CALLBACK},
+                    'watershuriken': {'basePowerCallback': WATER_CALLBACK},
+                    'heatcrash': {'basePowerCallback': HEAVY_CALLBACK, 'onTryHit': ON_TRY_HIT}}
+A0_CHAMP_TEXT = '\n'.join(['\tmeteorassault: {', '\t\tinherit: true,', '\t\tbasePower: 170,', '\t\tisNonstandard: null,', '\t},'])
+A0_ITEMS_TEXT = '\n'.join([
+    '\tchesnaughtite: {', '\t\tname: "Chesnaughtite",', '\t\tspritenum: 558,',
+    '\t\tmegaStone: { "Chesnaught": "Chesnaught-Mega" },', '\t\titemUser: ["Chesnaught"],',
+    '\t\tonTakeItem(item, source) {', '\t\t\treturn !item.megaStone?.[source.baseSpecies.baseSpecies];', '\t\t},',
+    '\t\tnum: 2575,', '\t\tgen: 9,', '\t\tisNonstandard: "Future",', '\t},',
+    '\taltarianite: {', '\t\tname: "Altarianite",', '\t\tspritenum: 615,',
+    '\t\tmegaStone: { "Altaria": "Altaria-Mega" },', '\t\titemUser: ["Altaria"],',
+    '\t\tonTakeItem(item, source) {', '\t\t\treturn !item.megaStone?.[source.baseSpecies.baseSpecies];', '\t\t},',
+    '\t\tnum: 755,', '\t\tgen: 6,', '\t\tisNonstandard: "Past",', '\t},'])
+A0_CHAMP_ITEMS_TEXT = '\n'.join(['\tchesnaughtite: {', '\t\tinherit: true,', '\t\tisNonstandard: null,', '\t},',
+                                 '\taltarianite: {', '\t\tinherit: true,', '\t\tisNonstandard: null,', '\t},'])
+
+
+class A0Facts(unittest.TestCase):
+    """Step A0 (decision 0015, batch A0 part 1): the pinned fields of the ten moves, their callbacks and the two Mega Stones,
+    rendered as the pin writes them (no checkout needed)."""
+
+    def render(self, mid, fields, callbacks):
+        lines = ['\t%s: {' % mid] + [text for text in callbacks.values()]
+        for key, want in fields.items():
+            if key == 'flags':
+                lines.append('\t\tflags: { %s },' % ' '.join('%s: 1,' % f for f in sorted(want)))
+            elif key == 'boosts':
+                lines.append('\t\tboosts: { %s },' % ' '.join('%s: %d,' % kv for kv in want.items()))
+            elif key in ('multihit', 'drain'):
+                lines.append('\t\t%s: [%d, %d],' % (key, want[0], want[1]))
+            elif key == 'self':
+                lines.append('\t\t' + want)
+            elif isinstance(want, bool):
+                lines.append('\t\t%s: %s,' % (key, 'true' if want else 'false'))
+            elif isinstance(want, int):
+                lines.append('\t\t%s: %d,' % (key, want))
+            else:
+                lines.append('\t\t%s: "%s",' % (key, want))
+        lines.append('\t},')
+        return '\n'.join(lines)
+
+    def legal(self, abilities=(), items=(), stones=None):
+        if stones is None:
+            stones = {'chesnaughtite': [('chesnaught', 'chesnaughtmega')], 'altarianite': [('altaria', 'altariamega')]}
+        return {'abilities': set(abilities), 'items': set(items) | {'chesnaughtite', 'altarianite'},
+                'species': {'chesnaught': {}, 'altaria': {}}, 'stones': stones}
+
+    def sources(self, change=None, heatcrash_on_try_hit=None):
+        """The pin texts. `change` = (move, field, value) replaces one value of the pin; `heatcrash_on_try_hit` replaces the
+        text of Heat Crash's onTryHit."""
+        out = []
+        for mid, fields in gen_closure.A0_FACTS:
+            fields = dict(fields)
+            if change is not None and change[0] == mid:
+                fields[change[1]] = change[2]
+            callbacks = dict(A0_CALLBACK_TEXT.get(mid, {}))
+            if mid == 'heatcrash' and heatcrash_on_try_hit is not None:
+                callbacks['onTryHit'] = heatcrash_on_try_hit
+            out.append(self.render(mid, fields, callbacks))
+        out.append('\tpowertrip: {\n%s\n\t},' % POWER_CALLBACK)
+        out.append('\theavyslam: {\n%s\n%s\n\t},' % (HEAVY_CALLBACK, ON_TRY_HIT))
+        return (TextSource('data/moves.ts', '\n'.join(out)), TextSource('data/mods/champions/moves.ts', A0_CHAMP_TEXT),
+                TextSource('data/items.ts', A0_ITEMS_TEXT), TextSource('data/mods/champions/items.ts', A0_CHAMP_ITEMS_TEXT))
+
+    def check(self, change=None, heatcrash_on_try_hit=None, legal=None):
+        base, champ, items, champ_items = self.sources(change, heatcrash_on_try_hit)
+        gen_closure.check_a0_facts(base, champ, items, champ_items, legal or self.legal())
+
+    def test_the_pinned_facts_are_accepted(self):
+        self.check()
+
+    def test_a_changed_value_is_refused(self):
+        for mid, key, value in (('aircutter', 'critRatio', 1), ('storedpower', 'basePower', 25),
+                                ('decorate', 'boosts', {'atk': 2, 'spa': 1}), ('rockblast', 'multihit', (2, 3))):
+            with self.subTest(move=mid, field=key), self.assertRaises(SystemExit) as cm:
+                self.check((mid, key, value))
+            self.assertIn('move %s' % mid, str(cm.exception.code))
+
+    def test_a_callback_that_differs_from_its_donor_is_refused(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.check(heatcrash_on_try_hit="\t\tonTryHit(target, pokemon, move) {\n\t\t\treturn null;\n\t\t},")
+        self.assertIn('move heatcrash: onTryHit is not the text of heavyslam', str(cm.exception.code))
+
+    def test_a_champions_override_outside_the_list_is_refused(self):
+        base, champ, items, champ_items = self.sources()
+        champ = TextSource('data/mods/champions/moves.ts', A0_CHAMP_TEXT + '\n\thornleech: {\n\t\tinherit: true,\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a0_facts(base, champ, items, champ_items, self.legal())
+        self.assertIn('move hornleech: the Champions mod overrides it', str(cm.exception.code))
+
+    def test_the_pool_guards_are_checked(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.check(legal=self.legal(abilities={'battlebond'}))
+        self.assertIn('Battle Bond or Greninja-Ash is legal', str(cm.exception.code))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a0_pool(self.legal(items={'loadeddice'}))
+        self.assertIn('Loaded Dice is legal', str(cm.exception.code))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a0_pool(self.legal(stones={'chesnaughtite': [('chesnaught', 'chesnaughtmega')], 'altarianite': []}))
+        self.assertIn('altarianite is not the Mega Stone', str(cm.exception.code))
+
+    def test_a_stone_with_another_mega_link_is_refused(self):
+        base, champ, items, champ_items = self.sources()
+        items = TextSource('data/items.ts', '\n'.join(items.lines).replace('"Chesnaught-Mega"', '"Chesnaught-Mega2"'))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a0_facts(base, champ, items, champ_items, self.legal())
+        self.assertIn('item chesnaughtite: megaStone is not', str(cm.exception.code))

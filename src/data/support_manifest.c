@@ -649,6 +649,22 @@ const dfi_support_manifest dfi_support = {
             /* Step C5 (decision 0015 entry 5cy): Endeavor (the ENDEAVOR special, the Final Gambit damage path): damage = target HP
              * - user HP, immune when the user's HP is not below the target's (data/moves.ts:4784-4804). */
             [DFI_MOVE_ENDEAVOR] = 1u,
+            /* Step A0 (decision 0015, batch A0 part 1): ten moves whose rows the existing paths already run, checked by
+             * check_a0_facts (tools/datagen/gen_closure.py). Meteor Assault: recharge (Hyper Beam's path) and the Champions
+             * basePower 170. Stored Power: POWER_TRIP (Power Trip's callback text). Bullet Seed, Rock Blast, Pin Missile and
+             * Water Shuriken: MULTI_HIT_2_5 (Icicle Spear's path; Water Shuriken's Battle Bond callback is unreachable in the pool).
+             * Heat Crash: HEAVY_SLAM (its callbacks are Heavy Slam's text). Air Cutter, Horn Leech and Decorate: rows without an
+             * unmodelled feature. */
+            [DFI_MOVE_METEORASSAULT] = 1u,
+            [DFI_MOVE_STOREDPOWER] = 1u,
+            [DFI_MOVE_BULLETSEED] = 1u,
+            [DFI_MOVE_ROCKBLAST] = 1u,
+            [DFI_MOVE_PINMISSILE] = 1u,
+            [DFI_MOVE_WATERSHURIKEN] = 1u,
+            [DFI_MOVE_HEATCRASH] = 1u,
+            [DFI_MOVE_AIRCUTTER] = 1u,
+            [DFI_MOVE_HORNLEECH] = 1u,
+            [DFI_MOVE_DECORATE] = 1u,
         },
     .abilities =
         {
@@ -853,6 +869,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_PYROARITE] = 1u,
             [DFI_ITEM_SCOVILLAINITE] = 1u,
             [DFI_ITEM_MEGANIUMITE] = 1u,
+            /* Step A0 (decision 0015, batch A0 part 1): two Mega Stones through the generic Mega path, mark only (the Mega formes'
+             * abilities are marked: Chesnaught-Mega Bulletproof, Altaria-Mega Pixilate; the base Overgrow, Cloud Nine). Checked by
+             * check_a0_facts. */
+            [DFI_ITEM_CHESNAUGHTITE] = 1u,
+            [DFI_ITEM_ALTARIANITE] = 1u,
             /* step K2: Excadrite (Excadrill-Mega, Piercing Drill; the base formes' Sand Rush and Sand Force are marked) */
             [DFI_ITEM_EXCADRITE] = 1u,
             /* Mega batch 2: Swampertite (Swift Swim), Metagrossite (Tough Claws), Lucarionite Z (Aura Guard) and Froslassite

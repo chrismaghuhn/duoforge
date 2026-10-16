@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "0860307d87273b00adf76aa8cb35209c557ed44d5a44d177ce83952cde79c515" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G88), of step K1 (Temper Flare, entry 5dc), of step K2 (Piercing Drill, Excadrite), of step K3 (Speed Swap, entry 5de) and of step K4 (Gravity: pseudo weather 2, entry 5dl) */
+#define POOL_HASH_HEX "6284c98d827f86aa2f897b6294832dc7039f73bfa051995781037ca1c4d7c08a" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G88), of step K1 (Temper Flare, entry 5dc), of step K2 (Piercing Drill, Excadrite), of step K3 (Speed Swap, entry 5de), of step K4 (Gravity: pseudo weather 2, entry 5dl) and of batch A0 part 1: the special column of Stored Power (POWER_TRIP), Bullet Seed, Rock Blast, Pin Missile and Water Shuriken (MULTI_HIT_2_5), and Heat Crash (HEAVY_SLAM) names its handler now (it was UNMODELED, 122); no other byte changed */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
