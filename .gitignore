@@ -30,6 +30,14 @@ __pycache__/
 *.ckpt
 *.safetensors
 runs/
+# the top-level runs/ holds the definitions of named runs (restructure step 8), never their outputs
+!/runs/
+/runs/**
+!/runs/fuzz/
+!/runs/fuzz/*/
+!/runs/fuzz/*/campaign*.conf
+!/runs/fuzz/*/*.txt
+!/runs/README.md
 checkpoints/
 league/
 best.*

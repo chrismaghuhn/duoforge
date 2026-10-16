@@ -1125,7 +1125,7 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'outrage', 'thrash', 'petaldance', 'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
+                        set(gen_closure.G2_MOVES) | {'ragingfury', 'doublehit', 'tailslap', 'bonerush', 'solarblade', 'snaptrap'} | {'outrage', 'thrash', 'petaldance','sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
                                                                 'substitute', 'kingsshield', 'banefulbunker', 'psychicterrain', 'speedswap', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts', 'psychup', 'allyswitch', 'bind', 'wrap', 'firespin', 'sandtomb', 'snaptrap', 'infestation', 'lashout', 'assurance', 'leechseed', 'curse',
                                                                 'substitute', 'kingsshield', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts',
                                                                 'confuseray', 'swagger', 'flatter', 'teeterdance', 'fissure', 'guillotine', 'horndrill', 'memento', 'nightshade',
@@ -1141,7 +1141,8 @@ class PoolMoves(unittest.TestCase):
                                                                 'iciclespear', 'scaleshot', 'quickguard', 'upperhand', 'healpulse', 'strengthsap', 'beatup', 'bugbite', 'poltergeist', 'sheercold',
                                                                 'haze', 'afteryou', 'quash', 'phantomforce',
                                                                 'steelbeam', 'thunderwave', 'skillswap', 'destinybond', 'finalgambit',
-                                                                'heavyslam', 'hardpress', 'icespinner', 'bellydrum', 'healingwish'})  # G86 (decision 0015 5cn); G82 (decision 0045)
+                                                                'heavyslam', 'hardpress', 'icespinner', 'bellydrum', 'healingwish',
+                                                                'seismictoss', 'sweetkiss'})  # G86 (decision 0015 5cn); G82 (decision 0045); A0 (batch A0 part 2)
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -2298,6 +2299,100 @@ class C5Facts(unittest.TestCase):
         with self.assertRaises(SystemExit) as cm:
             gen_closure.check_c5_facts(base, champ)
         self.assertIn('move surf: the Champions mod overrides it', str(cm.exception.code))
+
+
+class A0Facts(unittest.TestCase):
+    """Step A0 (decision 0015, batch A0 part 2): the pinned fields of the twelve data-only moves, rendered as the pin writes them
+    (no checkout needed)."""
+
+    def value_text(self, want):
+        if isinstance(want, dict):
+            return '{ %s }' % ' '.join('%s: %s,' % (k, self.value_text(v)) for k, v in want.items())
+        if isinstance(want, bool):
+            return 'true' if want else 'false'
+        if isinstance(want, int):
+            return str(want)
+        return "'%s'" % want
+
+    def render(self, mid, fields):
+        lines = ['\t%s: {' % mid]
+        for key, want in fields.items():
+            if key == 'flags':
+                lines.append('\t\tflags: { %s },' % ' '.join('%s: 1,' % f for f in sorted(want)))
+            else:
+                lines.append('\t\t%s: %s,' % (key, self.value_text(want)))
+        lines.append('\t},')
+        return '\n'.join(lines)
+
+    def sources(self, change=None, champ_text=None):
+        """The pin text of every fact; `change` = (move, field, value) replaces one value of the base entry."""
+        out = []
+        for mid, fields in gen_closure.A0_FACTS:
+            fields = dict(fields)
+            if change is not None and change[0] == mid:
+                fields[change[1]] = change[2]
+            out.append(self.render(mid, fields))
+        if champ_text is None:
+            champ_text = '\n'.join(['\tcrabhammer: {', '\t\tinherit: true,', '\t\taccuracy: 95,', '\t},',
+                                    '\tcrushclaw: {', '\t\tinherit: true,',
+                                    '\t\tflags: { contact: 1, protect: 1, mirror: 1, metronome: 1, slicing: 1 },', '\t},',
+                                    '\tfirelash: {', '\t\tinherit: true,', '\t\tbasePower: 90,', '\t},'])
+        return TextSource('data/moves.ts', '\n'.join(out)), TextSource('data/mods/champions/moves.ts', champ_text)
+
+    def test_the_pinned_facts_are_accepted(self):
+        gen_closure.check_a0_facts(*self.sources())
+
+    def test_a_changed_value_is_refused(self):
+        for mid, key, value in (('dragonrush', 'basePower', 95), ('crabhammer', 'critRatio', 1),
+                                ('firelash', 'secondary', {'chance': 100, 'boosts': {'def': -2}}),
+                                ('bite', 'secondary', {'chance': 30, 'status': 'par'}),
+                                ('seismictoss', 'damage', 'user'), ('sweetkiss', 'volatileStatus', 'flinch'),
+                                ('aromaticmist', 'target', 'adjacentAllyOrSelf')):
+            with self.subTest(move=mid, field=key):
+                with self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_a0_facts(*self.sources((mid, key, value)))
+                self.assertIn('move %s' % mid, str(cm.exception.code))
+
+    def test_an_unlisted_champions_override_is_refused(self):
+        base, _ = self.sources()
+        champ = TextSource('data/mods/champions/moves.ts', '\tdragonrush: {\n\t\tinherit: true,\n\t\tbasePower: 110,\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a0_facts(base, champ)
+        self.assertIn('move dragonrush: the Champions mod overrides it', str(cm.exception.code))
+
+    def test_a_changed_champions_override_is_refused(self):
+        base, champ = self.sources(champ_text='\tcrabhammer: {\n\t\tinherit: true,\n\t\taccuracy: 90,\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a0_facts(base, champ)
+        self.assertIn('move crabhammer: the Champions mod entry is not the override', str(cm.exception.code))
+
+    def base_with(self, edits):
+        """The base pin text with `edits` = {move: {field: value or None (drop the field)}} applied."""
+        out = []
+        for mid, fields in gen_closure.A0_FACTS:
+            fields = dict(fields)
+            for key, value in edits.get(mid, {}).items():
+                if value is None:
+                    fields.pop(key)
+                else:
+                    fields[key] = value
+            out.append(self.render(mid, fields))
+        return TextSource('data/moves.ts', '\n'.join(out))
+
+    def test_the_champions_overrides_replace_the_base_values(self):
+        # The base pin entries carry the values before the Champions mod (data/moves.ts at b2cb775: Crabhammer accuracy 90,
+        # Fire Lash basePower 80, Crush Claw without slicing); the facts hold only after the override is merged.
+        base = self.base_with({'crabhammer': {'accuracy': 90}, 'firelash': {'basePower': 80},
+                               'crushclaw': {'flags': {'contact', 'protect', 'mirror', 'metronome'}}})
+        gen_closure.check_a0_facts(base, self.sources()[1])
+
+    def test_an_unlisted_or_missing_field_is_refused(self):
+        for edits, message in (({'bite': {'drain': [1, 2]}}, 'move bite: the pin has fields the A0 facts do not list: drain'),
+                               ({'crabhammer': {'critRatio': None}}, 'move crabhammer: the pin has no critRatio')):
+            with self.subTest(message=message):
+                with self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_a0_facts(self.base_with(edits), self.sources()[1])
+                self.assertIn(message, str(cm.exception.code))
 
 
 class MoveHandlerTables(unittest.TestCase):

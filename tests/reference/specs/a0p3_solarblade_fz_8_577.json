@@ -1,0 +1,54 @@
+{
+ "name": "a0p3_solarblade_fz_8_577",
+ "purpose": "Random differential battle 577 of run 8 (tools/reference/diff_driver.py random): team R against team S, the sets in a seeded random order, team preview to the end or to the cap, both sides answering every request with random choices (policy seed 1923294353, tools/reference/ps_play.js) that the pinned Showdown accepted.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,3183f020e4ec9f5249062a09f9698962934d6a182a159799eb986116d85f92c6",
+ "teams": [
+  "Incineroar (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Fake Out\n- Flare Blitz\n- Protect\n- Parting Shot\n\nTyranitar (M) @ Smooth Rock\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Stone Edge\n- Crunch\n- Protect\n- Earthquake\n\nGarchomp (M) @ Lum Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Earthquake\n- Dragon Claw\n- Protect\n- Swords Dance\n\nAbomasnow (M) @ Icy Rock\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Blizzard\n- Wood Hammer\n- Protect\n- Ice Shard\n\nNinetales-Alola (F) @ Light Clay\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Blizzard\n- Moonblast\n- Protect\n- Aurora Veil\n\nPelipper (M) @ Damp Rock\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Surf\n- Protect\n- Tailwind",
+  "Sceptile (M) @ Life Orb\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Solar Blade\n- Leaf Blade\n- Protect\n- Dragon Pulse\n\nTorkoal (M) @ Charcoal\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Eruption\n- Protect\n- Fire Blast\n- Yawn\n\nGallade (M) @ Focus Sash\nAbility: Justified\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Solar Blade\n- Close Combat\n- Protect\n- Swords Dance\n\nMeganium (F) @ Leftovers\nAbility: Leaf Guard\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Solar Blade\n- Seed Bomb\n- Protect\n- Earthquake\n\nTsareena (F) @ Expert Belt\nAbility: Queenly Majesty\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Solar Blade\n- Play Rough\n- Protect\n- Trop Kick\n\nRillaboom (M) @ Choice Scarf\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Solar Blade\n- Grassy Glide\n- Wood Hammer\n- Fake Out"
+ ],
+ "choices": [
+  {
+   "p1": "team 6452",
+   "p2": "team 4362"
+  },
+  {
+   "p1": "move 4, move 1",
+   "p2": "move 2 2, move 4"
+  },
+  {
+   "p1": "move 1 -2, move 1",
+   "p2": "move 1 2, move 4"
+  },
+  {
+   "p1": "pass, switch 4"
+  },
+  {
+   "p1": "move 2, move 3",
+   "p2": "move 1, move 3"
+  },
+  {
+   "p1": "move 2, move 2 1",
+   "p2": "move 1 2, move 2 1"
+  },
+  {
+   "p1": "switch 3, pass"
+  },
+  {
+   "p1": "move 2 -2, move 4",
+   "p2": "move 1, move 1 1"
+  },
+  {
+   "p1": "move 1, pass",
+   "p2": "move 1 -2, move 1"
+  },
+  {
+   "p2": "switch 4, switch 3"
+  },
+  {
+   "p1": "move 4, pass",
+   "p2": "move 4 1, move 1 1"
+  }
+ ]
+}

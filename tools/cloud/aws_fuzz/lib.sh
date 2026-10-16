@@ -43,6 +43,38 @@ fi
 export LC_NUMERIC=C
 
 DF_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+DF_ROOT=$(cd "$DF_DIR/../../.." && pwd)  # the repository's work tree
+
+# The campaign definitions, runs/fuzz/<id>/ (restructure step 8: runs/ holds the definitions of named runs). A commit
+# from before that move has them in tools/cloud/aws_fuzz/campaigns/<id>/ (DF_CAMPAIGNS_BEFORE_RUNS): a launch of such
+# a commit reads them there, and its box runs that commit's own box script, which knows that path.
+DF_CAMPAIGNS=runs/fuzz
+DF_CAMPAIGNS_BEFORE_RUNS=tools/cloud/aws_fuzz/campaigns
+
+# The repository path of the campaign's campaign.conf at the commit: runs/fuzz/<id>/campaign.conf, or for a commit from
+# before the move tools/cloud/aws_fuzz/campaigns/<id>/campaign.conf; status 1 when the commit has neither.
+df_campaign_conf_path() { # commit campaign
+    local dir
+    for dir in "$DF_CAMPAIGNS" "$DF_CAMPAIGNS_BEFORE_RUNS"; do
+        if git -C "$DF_DIR" cat-file -e "$1:$dir/$2/campaign.conf" 2> /dev/null; then
+            printf '%s\n' "$dir/$2/campaign.conf"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# The campaign's campaign.conf: the working copy's for the offline tests (DUOFORGE_FUZZ_NO_GIT_CHECK=1), else the
+# commit's (df_campaign_conf_path). Status 1 when there is none.
+df_campaign_conf() { # commit campaign
+    if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then
+        cat "$DF_ROOT/$DF_CAMPAIGNS/$2/campaign.conf" 2> /dev/null
+    else
+        local path
+        path=$(df_campaign_conf_path "$1" "$2") || return 1
+        git -C "$DF_DIR" show "$1:$path"
+    fi
+}
 
 df_die() {
     printf 'aws_fuzz: %s\n' "$*" >&2
@@ -114,8 +146,8 @@ df_check_commit_on_main() { # commit campaign
     git -C "$DF_DIR" rev-parse --verify --quiet origin/main > /dev/null ||
         df_die "no origin/main here to check the commit against: fetch origin first"
     git -C "$DF_DIR" merge-base --is-ancestor "$1" origin/main || df_die "commit $1 is not on origin/main"
-    git -C "$DF_DIR" cat-file -e "$1:tools/cloud/aws_fuzz/campaigns/$2/campaign.conf" 2> /dev/null ||
-        df_die "campaign '$2' has no tools/cloud/aws_fuzz/campaigns/$2/campaign.conf at commit $1"
+    df_campaign_conf_path "$1" "$2" > /dev/null ||
+        df_die "campaign '$2' has no $DF_CAMPAIGNS/$2/campaign.conf at commit $1 (nor $DF_CAMPAIGNS_BEFORE_RUNS/$2/, before the move)"
 }
 
 # ---------------------------------------------------------------------------------------------- AWS lookups
@@ -180,11 +212,7 @@ df_valid_oracle_run_id() { [[ $1 =~ $DF_ORACLE_RUN_ID_RE ]]; }
 # tests, which say so with DUOFORGE_FUZZ_NO_GIT_CHECK=1), or the default.
 df_conf_value() { # commit campaign key default
     local text
-    if [ "${DUOFORGE_FUZZ_NO_GIT_CHECK:-}" = 1 ]; then
-        text=$(cat "$DF_DIR/campaigns/$2/campaign.conf") || return 1
-    else
-        text=$(git -C "$DF_DIR" show "$1:tools/cloud/aws_fuzz/campaigns/$2/campaign.conf") || return 1
-    fi
+    text=$(df_campaign_conf "$1" "$2") || return 1
     local value
     value=$(printf '%s\n' "$text" | sed -n "s/^$3=//p" | head -n 1)
     printf '%s' "${value:-$4}"
