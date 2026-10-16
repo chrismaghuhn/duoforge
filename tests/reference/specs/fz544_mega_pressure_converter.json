@@ -1,0 +1,50 @@
+{
+  "name": "fz544_mega_pressure_converter",
+  "purpose": "Absol, Mega Evolved into Absol-Mega-Z (Sharpness) in step 1, comes back in step 7; Toxapex's Toxic Spikes (mustpressure) costs no extra PP, and the converter took the sheet's Pressure for the re-entering Mega (trace_to_c.py FoePressure, issue 544). A battle of the differential fuzzing of issue 396 (free random sets, fz_308_16), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,a7317d24b69ef4683186812019efbb139f30cf464da43d590d7c7b59d42c267c",
+  "teams": [
+    "absol (M) @ absolitez\nAbility: pressure\nLevel: 50\nEVs: 5 HP / 9 Atk / 11 Def / 12 SpA / 10 SpD / 7 Spe\nMild Nature\n- irontail\n- nightslash\n- assurance\n- doubleedge\n\npinsir (M) @ pinsirite\nAbility: moxie\nLevel: 50\nEVs: 16 HP / 13 Atk / 9 Def / 10 SpA / 9 SpD / 9 Spe\nBrave Nature\n- helpinghand\n- aerialace\n- guillotine\n- stealthrock\n\nrampardos (M) @ clefablite\nAbility: sheerforce\nLevel: 50\nEVs: 11 HP / 11 Atk / 12 Def / 10 SpA / 10 SpD / 12 Spe\nCalm Nature\n- icebeam\n- raindance\n- stompingtantrum\n- zenheadbutt\n\nsylveon (M) @ banettite\nAbility: pixilate\nLevel: 50\nEVs: 6 HP / 15 Atk / 8 Def / 11 SpA / 14 SpD / 12 Spe\nRash Nature\n- lightscreen\n- gigaimpact\n- moonblast\n- quickattack\n\ndragapult (M) @ raichunitex\nAbility: clearbody\nLevel: 50\nEVs: 13 HP / 10 Atk / 4 Def / 14 SpA / 11 SpD / 5 Spe\nSassy Nature\n- flamethrower\n- dragonclaw\n- bodyslam\n- pounce\n\ngarchomp (M) @ garchompite\nAbility: sandveil\nLevel: 50\nEVs: 12 HP / 17 Atk / 8 Def / 12 SpA / 7 SpD / 10 Spe\nDocile Nature\n- scorchingsands\n- raindance\n- sandstorm\n- dragontail",
+    "toxapex (M) @ pyroarite\nAbility: regenerator\nLevel: 50\nEVs: 5 HP / 9 Atk / 10 Def / 6 SpA / 7 SpD / 8 Spe\nSassy Nature\n- pounce\n- toxicspikes\n- gigaimpact\n- icespinner\n\ntaurospaldeacombat (M) @ mistyseed\nAbility: angerpoint\nLevel: 50\nEVs: 5 HP / 12 Atk / 10 Def / 8 SpA / 15 SpD / 16 Spe\nNaughty Nature\n- outrage\n- sunnyday\n- doubleedge\n- curse\n\nkleavor (M) @ expertbelt\nAbility: sharpness\nLevel: 50\nEVs: 10 HP / 10 Atk / 15 Def / 9 SpA / 6 SpD / 10 Spe\nImpish Nature\n- bugbite\n- skittersmack\n- brickbreak\n- quickattack\n\ngourgeistlarge (F) @ silkscarf\nAbility: frisk\nLevel: 50\nEVs: 11 HP / 10 Atk / 14 Def / 16 SpA / 6 SpD / 9 Spe\nImpish Nature\n- curse\n- trickroom\n- rockslide\n- gigaimpact\n\npawmot (F) @ grassyseed\nAbility: ironfist\nLevel: 50\nEVs: 12 HP / 8 Atk / 9 Def / 10 SpA / 9 SpD / 18 Spe\nMild Nature\n- voltswitch\n- firepunch\n- seedbomb\n- batonpass\n\nkangaskhan (F) @ occaberry\nAbility: innerfocus\nLevel: 50\nEVs: 10 HP / 12 Atk / 9 Def / 11 SpA / 15 SpD / 9 Spe\nAdamant Nature\n- terrainpulse\n- dynamicpunch\n- hydropump\n- circlethrow"
+  ],
+  "choices": [
+    {
+      "p1": "team 1325",
+      "p2": "team 6312"
+    },
+    {
+      "p1": "move 2 -2 mega, move 1 1",
+      "p2": "move 1 -2, move 2 -1"
+    },
+    {
+      "p1": "move 4 2, move 2",
+      "p2": "move 3 -2, move 3 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 1, move 2",
+      "p2": "move 3 2, move 3 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "switch 3, move 1 2",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p1": "switch 3, move 2 -1",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4 1, move 2 -1",
+      "p2": "move 1, move 2"
+    }
+  ]
+}

@@ -4720,8 +4720,15 @@ static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
     if (!dfi_kind_limits_of(r->ctx->data_kind).pool_rules || tail->must_recharge == 0u || m == NULL) {
         return DUOFORGE_E_INVARIANT; /* nothing but a recharging POOL occupant is offered this action */
     }
-    /* getTarget('recharge', no location) has no target class and takes getRandomTarget: a random foe (one draw with two
-     * foes standing), before OverrideAction and BeforeMove; it decides nothing. */
+    /* Stalwart (issue 542): getTarget returns the action's original target, with no draw, while it is active (sim/battle.ts:
+     * 2437-2447). That target is getAtLoc of the recharge action's location, the Pokemon's lastMoveTargetLoc (sim/side.ts:
+     * 675-689, sim/battle-queue.ts:263-273, sim/pokemon.ts:913), which the state does not keep: whether runMove draws is not
+     * known, so the turn is refused rather than guessed. */
+    if (dfi_ability(b, m, DFI_ABILITY_STALWART)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* getTarget('recharge', the stored location) has no target class and takes getRandomTarget: a random foe (one draw with
+     * two foes standing), before OverrideAction and BeforeMove; it decides nothing. */
     uint32_t ignored = 0u;
     duoforge_status st = dfi_resolve_target(r, user, DUOFORGE_TARGET_CLASS_NORMAL, &ignored);
     if (st != DUOFORGE_OK) {
@@ -6169,16 +6176,25 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
             return DUOFORGE_E_UNSUPPORTED;
         }
     }
-    /* A Prankster-boosted original move gives the bounced move its priority (useMoveInner, battle-actions.ts:411). Psychic
-     * Terrain then stops it at a grounded source, and an Armor Tail holder on the source's side stops it: both not modelled. */
+    /* The original move's priority is the bounced move's (useMoveInner, battle-actions.ts:409-412: the activeMove's, a
+     * Prankster boost or a move's own, Baby-Doll Eyes). Psychic Terrain then stops it at a grounded source: not modelled. An
+     * Armor Tail or Queenly Majesty holder on the source's side stops it in TryMove (onFoeTryMove, data/abilities.ts:3716-3734;
+     * issue 543), after the move line: [still], then cant|holder|ability|move|[of] the bouncer, and the bounced move is false. */
+    uint32_t shield_flat = DFI_POSITIONS;
+    uint32_t shield = 0u;
     if (dfi_move_priority(b, um, md) > DFI_PRIORITY_BIAS) {
         if (b->terrain == DFI_TERRAIN_PSYCHIC) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const bool exempt = md->target_class == DFI_TARGET_CLASS_FOE_SIDE || md->target_class == DUOFORGE_TARGET_CLASS_ALL;
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE && !exempt && shield == 0u; ++slot) {
             const uint32_t flat = (user / 2u) * 2u + slot;
-            if (dfi_alive(b, flat) && dfi_ability(b, dfi_at(b, flat), DFI_ABILITY_ARMORTAIL)) {
-                return DUOFORGE_E_UNSUPPORTED;
+            const dfi_member *sm = dfi_at(b, flat);
+            if (dfi_alive(b, flat)) {
+                shield = dfi_ability(b, sm, DFI_ABILITY_ARMORTAIL)        ? 1u + DFI_ABILITY_ARMORTAIL
+                         : dfi_ability(b, sm, DFI_ABILITY_QUEENLYMAJESTY) ? 1u + DFI_ABILITY_QUEENLYMAJESTY
+                                                                         : 0u;
+                shield_flat = flat;
             }
         }
     }
@@ -6229,7 +6245,13 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
     bool hit[DFI_POSITIONS] = {false, false, false, false};
     bool guarded[DFI_POSITIONS] = {false, false, false, false};
     const uint32_t count = 1u;
-    if (md->side_condition >= DUOFORGE_SIDE_STEALTH_ROCK) {
+    if (shield != 0u) {
+        dfi_still(r);
+        r->mres |= DFI_MRES_FALSE; /* onFoeTryMove returns false */
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, shield_flat, DUOFORGE_CAUSE_ABILITY, shield, holder);
+        e.id = (uint16_t)move_id;
+        dfi_emit(r, &e);
+    } else if (md->side_condition >= DUOFORGE_SIDE_STEALTH_ROCK) {
         st = dfi_hazard_move(r, holder, md); /* TryHitSide: no Protect, no accuracy */
     } else {
         st = dfi_protect_targets(r, holder, targets, count, guarded, dfi_no_inv_miss, false, hit, md);
@@ -6251,6 +6273,13 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
             }
             /* hitStepTryImmunity: the natural powder immunity of a Grass source (the bouncer is not the target). */
             if (powder_move && hit[0] && dfi_powder_natural_immune(b, dfi_at(b, user))) {
+                hit[0] = false;
+                dfi_immune(r, user, 0u);
+                r->mres |= DFI_MRES_FALSE;
+            }
+            /* hitStepTryImmunity: Leech Seed's onTryImmunity refuses a Grass source (data/moves.ts:10202-10231), before the
+             * accuracy step, so no accuracy draw (issue 543), as in the move body. */
+            if (md->special == DFI_SPECIAL_LEECH_SEED && hit[0] && dfi_has_type(b, dfi_at(b, user), DFI_TYPE_GRASS)) {
                 hit[0] = false;
                 dfi_immune(r, user, 0u);
                 r->mres |= DFI_MRES_FALSE;
@@ -6688,9 +6717,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                              md->special == DFI_SPECIAL_PHANTOM_FORCE;
     /* Pressure (step G53, dfi_pressure_extra): after the move's own PP and the redirection, before TryMove (the pin's order,
      * sim/battle-actions.ts:473-484). The extra comes off the user's slot as deductPP does, clamped at 0. A locked turn has
-     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP). The state is exact
-     * whatever the move line shows; what the viewer can attribute is the view's business (the fold in events.c). */
-    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
+     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP), the turn of a lockedmove
+     * (Outrage) included (issue 544). The state is exact whatever the move line shows; what the viewer can attribute is the
+     * view's business (the fold in events.c). */
+    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked && !lock_move) {
         const uint32_t extra = dfi_pressure_extra(b, user, target_class, move_id, targets, count);
         if (extra != 0u) {
             dfi_move_slot *pressed = &m->moves[q->move_slot];

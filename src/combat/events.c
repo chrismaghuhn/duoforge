@@ -260,6 +260,7 @@ static void dfi_own_event(dfi_own_pressure *o, const struct duoforge_battle *aft
     const uint32_t m = o->occupant[slot];
     switch (e->kind) {
     case DUOFORGE_EVENT_SWITCH:
+    case DUOFORGE_EVENT_DRAG: /* a member dragged in (Roar, Red Card, Dragon Tail) enters as a switch does (issue 544) */
         /* a member that enters has its sheet's ability (the copy of Trace is cleared when it leaves) */
         if (e->id < DUOFORGE_MAX_ROSTER) {
             o->occupant[slot] = e->id;
