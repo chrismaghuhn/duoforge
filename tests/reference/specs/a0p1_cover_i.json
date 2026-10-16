@@ -1,0 +1,48 @@
+{
+  "name": "a0p1_cover_i",
+  "purpose": "A0 part 1 (decision 0015 entry 5co, batch A0): a PASS battle of the pool campaign of run 34001 (diff_driver.py random, teams D, E and F), a covering battle that shows Knock Off hitting a Chesnaught holding Chesnaughtite and an Altaria holding Altarianite, both stones kept (the Mega Stone of its own species is not taken), so that the stone of each species is checked. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,46e2afddd2f9f1d170d9b187e0205f0891a9e4c3d4643d0a09f5640974d3fef6",
+  "teams": [
+    "Beedrill (M) @ Muscle Band\nAbility: Swarm\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Pin Missile\n- U-turn\n- Bug Buzz\n- Brick Break\n\nCharizard (M) @ Focus Sash\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Air Cutter\n- Solar Beam\n- Air Slash\n\nBlaziken (M) @ Choice Scarf\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Heat Crash\n- Blaze Kick\n- Knock Off\n- Stone Edge\n\nAltaria (F) @ Altarianite\nAbility: Cloud Nine\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Moonblast\n- Dragon Dance\n- Roost\n- Earthquake\n\nTorterra (M) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Stone Edge\n- Earthquake\n- Leaf Storm\n\nGreninja (M) @ Life Orb\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Water Shuriken\n- Gunk Shot\n- Hydro Pump\n- Spikes",
+    "Gardevoir (F) @ Wise Glasses\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Stored Power\n- Trick\n- Dazzling Gleam\n- Thunderbolt\n\nTyranitar (M) @ Life Orb\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Stone Edge\n- Knock Off\n- Earthquake\n\nDragonite (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Air Cutter\n- Dragon Dance\n- Earthquake\n- Fire Punch\n\nChesnaught (M) @ Chesnaughtite\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Pin Missile\n- Seed Bomb\n- Earthquake\n- Hammer Arm\n\nVenusaur (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Bullet Seed\n- Sludge Bomb\n- Leech Seed\n- Giga Drain\n\nSirfetch'd (M) @ Focus Sash\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Meteor Assault\n- Leaf Blade\n- Poison Jab\n- Night Slash"
+  ],
+  "choices": [
+    {
+      "p1": "team 4163",
+      "p2": "team 2143"
+    },
+    {
+      "p1": "switch 3, move 3 1",
+      "p2": "move 2 1, move 1 -1"
+    },
+    {
+      "p1": "move 2 -2, move 3 2",
+      "p2": "move 2 1, move 4 1"
+    },
+    {
+      "p1": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 1 2, move 3 1",
+      "p2": "switch 3, move 3"
+    },
+    {
+      "p1": "move 3, move 3 -1",
+      "p2": "move 2 1 mega, move 2 1"
+    },
+    {
+      "p1": "move 2, move 3 -1",
+      "p2": "move 4 -2, move 4 1"
+    },
+    {
+      "p1": "move 2, move 3 -1",
+      "p2": "switch 3, move 2 1"
+    },
+    {
+      "p1": "move 3 mega, move 3 -1",
+      "p2": "move 1 2, move 1 1"
+    }
+  ]
+}
