@@ -190,13 +190,13 @@ _SHOWTEAM = re.compile(r"^\|showteam\|(p[12])\|(.*)$")
 
 
 def log_facts(log):
-    """(sheets {p1, p2}, turns, move uses Counter(move id), sent out {side: set of species ids})."""
+    """(sheets {p1, p2: set of sheet texts}, turns, move uses Counter(move id), sent out {side: set of species ids})."""
     sheets, uses, sent, turns = {}, collections.Counter(), {"p1": set(), "p2": set()}, 0
     for line in log.split("\n"):
         if line.startswith("|showteam|"):
             m = _SHOWTEAM.match(line)
             if m:
-                sheets[m.group(1)] = m.group(2)
+                sheets.setdefault(m.group(1), set()).add(m.group(2))
         elif line.startswith("|move|"):
             m = _MOVE.match(line)
             if m:
@@ -219,24 +219,26 @@ def sent_out(species, sent_side):
 
 
 def read_games(args):
-    """Yields (format id, [sheet p1, sheet p2], facts or None)."""
+    """Yields (game id, format id, [sheet p1, sheet p2], facts or None)."""
     if args.sheets:
         with open(args.sheets, encoding="utf-8") as f:
             for line in f:
                 row = json.loads(line)
                 if not row["format"].startswith(args.format_prefix):
                     continue
-                yield row["format"], row["sheets"], None
+                yield row["id"], row["format"], row["sheets"], None
         return
     sys.path.insert(0, str(ROOT / "python"))
     from duoforge_replay import source
-    for _rid, fmt, log in source.games(args.replays, args.format_prefix):
+    for rid, fmt, log in source.games(args.replays, args.format_prefix):
         if not fmt.startswith(args.format_prefix):
             continue
         sheets, turns, uses, sent = log_facts(log)
-        if log.count("\n|showteam|") + log.startswith("|showteam|") != 2 or set(sheets) != {"p1", "p2"}:
+        # one sheet text per side; a log that shows a side's sheet twice with the same text counts (25 Bo1 games of
+        # the 2026-10-02 set print each sheet twice; the old extraction took them)
+        if set(sheets) != {"p1", "p2"} or any(len(v) != 1 for v in sheets.values()):
             continue
-        yield fmt, [sheets["p1"], sheets["p2"]], (turns, uses, sent)
+        yield rid, fmt, [next(iter(sheets["p1"])), next(iter(sheets["p2"]))], (turns, uses, sent)
 
 
 def greedy(game_sets, limit):
@@ -298,7 +300,7 @@ def main():
     moves_all = 0
     turns_playable = 0
     with open(out / "games.jsonl", "w", encoding="utf-8") as gfile:
-        for fmt, sheets, facts in read_games(args):
+        for gid, fmt, sheets, facts in read_games(args):
             n_games += 1
             formats[fmt] += 1
             sides = []
@@ -345,7 +347,10 @@ def main():
                 for t in game:
                     if t.startswith("move:"):
                         tok[t]["move_uses"] += uses.get(t[5:], 0)
-            gfile.write(json.dumps({"b": sides}) + "\n")
+            row = {"id": gid, "b": sides}
+            if facts is not None:
+                row["t"] = facts[0]  # the game's turns, for champions_batches.py's turn weights
+            gfile.write(json.dumps(row) + "\n")  # private: stays in --out
     playable = sum(1 for g in game_sets if not g)
     sole = collections.Counter(next(iter(g)) for g in game_sets if len(g) == 1)
     order = greedy(game_sets, args.greedy)

@@ -777,3 +777,178 @@ python3 tools/datagen/classify_unsupported.py <pinned Showdown checkout> --out <
 The per-gap classification fields (area, core, effort, dependencies, pin, engine references, notes) were written by
 reading, not by a tool; they are in `data/champions-100.json`.
 
+
+## 10. Addendum: turn, move-use and brought weights; the newer replay set; singles weights
+
+Added on 2026-10-16 after the owner approved two downloads (pyarrow and NumPy from PyPI into a private virtual
+environment; the four public Smogon `chaos` files of `gen9championsou` 2026-09). Same commit (`4d4bebf8`), same method;
+the headline number of section 0 is unchanged. Data: [`data/champions-100-weights.json`](data/champions-100-weights.json).
+
+### 10.1 The replay logs read directly
+
+`champions_coverage.py --replays` now reads the parquet files itself. On the 2026-10-02 files it yields the same
+34,430 games in the same order, and every side's blockers are identical to the sheet-extract run of section 1. One
+detail of the old extraction was found on the way: 25 Bo1 games print each side's sheet twice (four `|showteam|`
+lines, two identical texts per side); the old extraction took them, so the reader takes a game when each side shows
+exactly one distinct sheet text.
+
+| | 2026-10-02 set (the headline set) | 2026-10-05 set (part 4 refreshed) |
+|---|--:|--:|
+| games (open sheets on both sides) | 34,430 | 48,835 |
+| games, both sides playable | 28,373 (82.4 %) | 39,786 (81.5 %) |
+| team sides playable | 62,361 (90.6 %) | 87,830 (89.9 %) |
+| distinct team sheets playable | 48,593 / 54,270 (89.5 %) | 66,174 / 74,610 (88.7 %) |
+| turns (last `|turn|` of each game) | 237,170 | 341,545 |
+| turns in games with both sides playable | 196,704 (82.9 %) | 279,900 (82.0 %) |
+| `|move|` lines | 674,083 | 973,635 |
+| blocker tokens | 281 | 297 |
+
+The 2026-10-05 set holds every game of the headline set plus 14,405 newer ones (2,568
+Bo1 + 46,267 Bo3; the scan of 2026-10-10 counted 48,800 with exactly two sheet lines, the
+other 35 are the twice-printed sheets). It is a second column, not the headline. Of its 16 extra blocker tokens, 7
+are illegal names (unknown formes or items, e.g. Ogerpon-Hearthflame, Black Sludge) and 9 are pool gaps already listed
+in section 5 that the older games never used: `move:reflecttype` (6), `move:toxicthread` (4), `item:rawstberry` (4), `move:aromaticmist` (3), `ability:pickup` (3), `ability:shedskin` (2), `ability:longreach` (2), `move:seismictoss` (1), `move:doubleteam` (1). No token outside the gap list appears.
+
+Turn weighting barely changes the picture: blocked games are not shorter or longer than the rest (82.9 % of turns vs
+82.4 % of games). Moves the engine does not support are 1,739 of the
+674,083 `|move|` lines (0.26 %): a blocked game is blocked by a sheet entry that is
+rarely used, which is what makes the long tail cheap to play around and expensive to finish.
+
+**Brought.** In Reg M-C a side brings four of six; a token counts as "brought" on a side when a member carrying it
+was sent out (`|switch|` or `|drag|` of its species). Over all gaps, 57.5 % of the sides that carry a gap sent its
+holder out. The figure undercounts Illusion holders, which enter under another name (Bitter Malice: 7 of 192 sides,
+its only learners are Illusion holders, yet 101 `|move|` lines).
+
+### 10.2 Batches with turn weights and the newer set
+
+| batch | alone: turns | cumulative turns | alone: games (newer set) | cumulative games (newer set) | Smogon OU 1760: summed share of its entries |
+|---|--:|--:|--:|--:|--:|
+| **A0** Marks and generator rows (no turn.c code) | +3,352 | 200,056 (84.4 %) | +762 | 40,548 (83.0 %) | 0.49 % |
+| **A1** Damage chain: one more member of an existing modifier/base-power branch | +1,589 | 201,803 (85.1 %) | +379 | 40,973 (83.9 %) | 2.15 % |
+| **A2** One clause on an existing move-body, entry or residual hook | +4,775 | 207,332 (87.4 %) | +1038 | 42,226 (86.5 %) | 5.95 % |
+| **P** Paused lane A branches (finish after re-sync) | +2,082 | 209,936 (88.5 %) | +414 | 42,738 (87.5 %) | 0.37 % |
+| **B1** Protean / Libero (+ Mega Greninja, Mimicry's type storage) | +1,224 | 211,735 (89.3 %) | +275 | 43,142 (88.3 %) | 2.18 % |
+| **B2** Item steal: Pickpocket, Magician | +1,204 | 213,136 (89.9 %) | +226 | 43,410 (88.9 %) | 0.01 % |
+| **B3** Mold Breaker (+ Mega Gyarados, Ampharos, Emboar; Gigaton Hammer) | +2,640 | 216,307 (91.2 %) | +495 | 44,018 (90.1 %) | 3.06 % |
+| **B4** Forme abilities: Zero to Hero, Disguise, Hunger Switch, Forecast | +1,290 | 218,007 (91.9 %) | +267 | 44,379 (90.9 %) | 0.06 % |
+| **B5** Mega abilities: Berserk, Eelevate, Innards Out/Aftermath, Healer/Hydration, Strong Jaw, Parental Bond | +1,401 | 219,769 (92.7 %) | +316 | 44,804 (91.8 %) | 0.12 % |
+| **B6** Common move-body mechanics (M): crash, removal, pivots, self-KO, absorb, veils | +2,725 | 225,491 (95.1 %) | +646 | 46,183 (94.6 %) | 22.18 % |
+| **B7** Flow and residual hooks (M): Supreme Overlord, entry abilities, priority tiers, cures | +675 | 226,785 (95.6 %) | +148 | 46,471 (95.2 %) | 2.09 % |
+| **B8** Berries and held items (M) | +1,341 | 229,087 (96.6 %) | +237 | 46,946 (96.1 %) | 0.76 % |
+| **B9** Ability change and copy (Skill Swap machinery) | +643 | 230,562 (97.2 %) | +148 | 47,265 (96.8 %) | 0.10 % |
+| **B10** HP, heal and sleep (Pain Split, Wish, Rest, Sleep Talk, ...) | +786 | 232,881 (98.2 %) | +190 | 47,786 (97.9 %) | 3.70 % |
+| **C** New state or engine concepts (L): Transform/Imposter, Instruct, Future Sight, traps, rooms, stockpile, ... | +1,466 | 237,063 (100.0 %) | +354 | 48,808 (99.9 %) | 3.46 % |
+
+The order of section 4 holds on both sets and with turns. The last column is a singles weight (section 10.4): the
+sum of the batch entries' shares of team slots, so an entry on many Pokémon counts once per slot.
+
+### 10.3 The gaps with the most turns
+
+Turns of the games that contain the gap; sides that carry it and sides that sent its holder out; `|move|` lines of
+the move (both sides) in those games; Smogon Reg M-C shares of team slots (Bo1 ladder 1760, Bo3 ladder 1760). All
+per-gap values for all 310 gaps are in the data file.
+
+| gap | batch | turns | games | sides / brought | move uses | Reg M-C 1760 | Reg M-C Bo3 1760 |
+|---|---|--:|--:|--:|--:|--:|--:|
+| `ability:protean` | B1 | 2,096 | 350 | 352 / 206 | – | 0.12 % | 0.01 % |
+| `ability:moldbreaker` | B3 | 1,633 | 223 | 223 / 95 | – | 0.13 % | 0.03 % |
+| `item:starminite` | A2 | 1,509 | 243 | 243 / 126 | – | 0.05 % | 0.02 % |
+| `move:gigatonhammer` | B3 | 1,469 | 189 | 189 / 87 | 77 | 0.05 % | 0.01 % |
+| `item:gyaradosite` | B3 | 1,410 | 202 | 202 / 103 | – | 0.04 % | 0.01 % |
+| `ability:zerotohero` | B4 | 1,409 | 218 | 221 / 128 | – | 0.07 % | 0.02 % |
+| `move:meteorassault` | A0 | 1,402 | 234 | 234 / 139 | 70 | 0.06 % | 0.03 % |
+| `ability:naturalcure` | A2 | 1,312 | 202 | 202 / 100 | – | 0.02 % | 0.01 % |
+| `move:focusenergy` | P | 1,294 | 190 | 190 / 122 | 57 | 0.05 % | 0.02 % |
+| `move:jetpunch` | B4 | 1,240 | 184 | 187 / 108 | 72 | 0.06 % | 0.02 % |
+| `move:bittermalice` | A0 | 1,221 | 192 | 192 / 7 | 101 | 0.04 % | 0.00 % |
+| `move:snipeshot` | A2 | 1,141 | 168 | 168 / 103 | 102 | 0.04 % | 0.01 % |
+| `move:highjumpkick` | B6 | 1,137 | 179 | 179 / 119 | 45 | 0.06 % | 0.00 % |
+| `ability:libero` | B1 | 1,035 | 160 | 160 / 107 | – | 0.02 % | 0.00 % |
+| `item:ampharosite` | B3 | 938 | 131 | 131 / 68 | – | 0.04 % | 0.00 % |
+| `item:greninjite` | B1 | 925 | 155 | 155 / 85 | – | 0.02 % | 0.01 % |
+| `ability:pickpocket` | B2 | 888 | 136 | 136 / 97 | – | 0.05 % | 0.03 % |
+| `ability:supremeoverlord` | B7 | 805 | 114 | 114 / 66 | – | 0.02 % | 0.00 % |
+| `ability:magician` | B2 | 798 | 111 | 111 / 61 | – | 0.01 % | 0.00 % |
+| `ability:disguise` | B4 | 776 | 107 | 107 / 77 | – | 0.05 % | 0.01 % |
+| `item:kangaskhanite` | B5 | 770 | 124 | 124 / 75 | – | 0.04 % | 0.09 % |
+| `move:transform` | C | 756 | 114 | 114 / 51 | 3 | 0.02 % | 0.01 % |
+| `move:payback` | P | 754 | 123 | 123 / 69 | 24 | 0.03 % | 0.03 % |
+| `move:hex` | A1 | 717 | 112 | 112 / 64 | 22 | 0.02 % | 0.00 % |
+| `ability:imposter` | C | 692 | 101 | 101 / 47 | – | 0.02 % | 0.01 % |
+| `move:painsplit` | B10 | 686 | 87 | 87 / 62 | 30 | 0.04 % | 0.00 % |
+
+(Mega rows are left out of this table: their stone's row carries the same games.)
+
+### 10.4 Champions singles weighted by Smogon
+
+Source: Smogon `chaos` statistics 2026-09 of `gen9championsou`, 145,642 battles, cutoffs 0, 1500, 1630 and
+1760 (<https://www.smogon.com/stats/2026-09/chaos/gen9championsou-0.json>, <https://www.smogon.com/stats/2026-09/chaos/gen9championsou-1500.json>, <https://www.smogon.com/stats/2026-09/chaos/gen9championsou-1630.json>, <https://www.smogon.com/stats/2026-09/chaos/gen9championsou-1760.json>). The raw files stay in the
+private dataset directory. Shares are % of team slots (Pokémon) carrying the entry, rounded to two decimals. Per-entry
+public Smogon shares are written here by the HauptSession's decision of 2026-10-16 (source, month, format and cutoff
+named; only the values that weight the gaps; no copy of the statistics files); this supersedes the per-entry rule
+of section 1.4 for public Smogon shares. Replay values stay counts without ids.
+
+Usage-weighted coverage on main (share of team slots on supported entries; the content lane's measure):
+
+| cutoff | moves | abilities | items |
+|---|--:|--:|--:|
+| Champions OU 0 | 91.13 % | 87.38 % | 97.54 % |
+| Champions OU 1500 | 91.00 % | 88.27 % | 98.01 % |
+| Champions OU 1630 | 90.86 % | 89.62 % | 98.45 % |
+| Champions OU 1760 | 90.76 % | 91.14 % | 98.93 % |
+| Reg M-C 1760 (for comparison) | 99.56 % | 98.82 % | 99.52 % |
+| Reg M-C Bo3 1760 | 99.91 % | 99.69 % | 99.80 % |
+
+The values at 0 and 1760 agree with the OU design's section 5.4 (measured at f6b924a), and every species in the OU
+statistics is a row of the tables. Singles needs other gaps than doubles. The largest singles gaps at 1760:
+
+| gap | batch | effort | OU 0 | OU 1760 | Reg M-C games (doubles) |
+|---|---|:-:|--:|--:|--:|
+| `move:defog` | B6 | M | 5.94 % | 7.21 % | 24 |
+| `move:rapidspin` | B6 | M | 4.00 % | 4.71 % | 11 |
+| `move:mortalspin` | B6 | M | 2.27 % | 3.72 % | 77 |
+| `move:chillyreception` | B6 | M | 2.70 % | 2.99 % | 69 |
+| `ability:moldbreaker` | B3 | L | 2.33 % | 2.92 % | 223 |
+| `move:moonlight` | A2 | M | 1.26 % | 2.38 % | 44 |
+| `move:painsplit` | B10 | M | 1.49 % | 2.17 % | 87 |
+| `ability:supremeoverlord` | B7 | M | 2.27 % | 1.81 % | 114 |
+| `move:hex` | A1 | S | 1.51 % | 1.70 % | 112 |
+| `move:futuresight` | C | L | 2.06 % | 1.63 % | 38 |
+| `move:firefang` | A2 | S | 0.93 % | 1.27 % | 62 |
+| `move:synthesis` | A2 | M | 0.82 % | 1.26 % | 65 |
+| `move:courtchange` | B6 | M | 0.87 % | 1.13 % | 4 |
+| `ability:libero` | B1 | M | 1.05 % | 1.07 % | 160 |
+| `ability:protean` | B1 | M | 2.06 % | 1.01 % | 350 |
+| `move:wish` | B10 | L | 1.02 % | 1.00 % | 111 |
+| `move:transform` | C | L | 0.91 % | 0.74 % | 114 |
+| `ability:imposter` | C | L | 0.90 % | 0.74 % | 101 |
+| `move:endure` | B6 | M | 0.38 % | 0.74 % | 38 |
+| `move:sparklingaria` | B6 | M | 0.43 % | 0.66 % | 11 |
+| `move:rest` | B10 | L | 0.81 % | 0.51 % | 67 |
+| `move:highjumpkick` | B6 | M | 0.76 % | 0.45 % | 179 |
+| `item:chestoberry` | B8 | M | 0.52 % | 0.38 % | 75 |
+| `move:morningsun` | A2 | S | 0.43 % | 0.31 % | 15 |
+| `move:triplearrows` | B6 | M | 0.18 % | 0.28 % | 35 |
+
+**For singles the order changes.** Hazard removal and the pivot (Defog, Rapid Spin, Mortal Spin, Court Change,
+Chilly Reception) carry most of B6's singles weight (22 % of team slots summed at 1760, against 0.5 % in Reg M-C), and
+the healing moves (Moonlight, Synthesis, Pain Split, Wish) weigh far more than in doubles. A singles-first plan
+would take A2's heals, a hazard-removal family helper out of B6 (Rapid Spin, Defog, Mortal Spin, Court Change, Tidy
+Up; they share one removal helper) and B3 Mold Breaker right after A0. That needs the certified singles kind of the
+OU lane first; today only `POOL_SINGLES_DEV` plays singles.
+
+### 10.5 Greedy order on the newer set
+
+The first twelve steps on the 2026-10-05 set (48,835 games): 1. `move:meteorassault` +204; 2. `ability:protean` +163; 3. `move:payback` +117; 4. `ability:pickpocket` +117; 5. `ability:magician` +112; 6. `move:bittermalice` +110; 7. `ability:disguise` +114; 8. `ability:electromorphosis` +102; 9. `move:focusenergy` +98; 10. `move:snipeshot` +131; 11. `item:altarianite` +99; 12. `move:hex` +89. The top five are the same mechanics
+as on the headline set, in nearly the same order.
+
+### 10.6 Reproduce
+
+```
+python3 -m venv <private venv> && <private venv>/bin/pip install pyarrow numpy
+DUOFORGE_LIBRARY=<build>/libduoforge_shared.so <private venv>/bin/python tools/research/champions_coverage.py \
+    --replays <the replay parquet files> --out <private dir>
+python3 tools/research/champions_batches.py --games <private dir>/games.jsonl --batches <batches> --out <file>
+```
+The Smogon weights come from the public `chaos` files named above (a share per entry: the summed weight of the entry
+over all Pokémon divided by the summed ability weight, which counts each Pokémon slot once).
