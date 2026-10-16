@@ -1,0 +1,75 @@
+{
+  "name": "fz544_red_card_pressure",
+  "purpose": "Absol's Red Card drags Krookodile in for the Pressure holder Absol (step 4); Typhlosion's Stomping Tantrum on Krookodile then costs no extra PP, and on main the owner's view still charged it for Absol (issue 544). A battle of the differential fuzzing of issue 396 (free random sets, fz_356_30), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,83a2342304acc2ef8ab22626ca8be5b3e2509bdc3282a46fd1af55f88b7810c1",
+  "teams": [
+    "typhlosion (F) @ mentalherb\nAbility: flashfire\nLevel: 50\nEVs: 13 HP / 14 Atk / 5 Def / 13 SpA / 9 SpD / 12 Spe\nBashful Nature\n- shadowball\n- stompingtantrum\n- firepunch\n- flamethrower\n\nempoleon (F) @ brightpowder\nAbility: competitive\nLevel: 50\nEVs: 14 HP / 11 Atk / 8 Def / 10 SpA / 8 SpD / 15 Spe\nImpish Nature\n- featherdance\n- knockoff\n- agility\n- metalsound\n\navalugghisui (M)\nAbility: sturdy\nLevel: 50\nEVs: 7 HP / 8 Atk / 15 Def / 9 SpA / 15 SpD / 12 Spe\nRash Nature\n- scaryface\n- earthquake\n- rocktomb\n- hardpress\n\nsceptile (M) @ sceptilite\nAbility: unburden\nLevel: 50\nEVs: 18 HP / 11 Atk / 10 Def / 13 SpA / 9 SpD / 5 Spe\nMild Nature\n- aerialace\n- doubleedge\n- quickattack\n- dragonpulse\n\nmanectric (F) @ aggronite\nAbility: static\nLevel: 50\nEVs: 8 HP / 12 Atk / 17 Def / 10 SpA / 9 SpD / 10 Spe\nDocile Nature\n- thief\n- eerieimpulse\n- chargebeam\n- scaryface\n\npikachu (F) @ charizarditey\nAbility: static\nLevel: 50\nEVs: 14 HP / 5 Atk / 11 Def / 16 SpA / 13 SpD / 7 Spe\nSassy Nature\n- raindance\n- eerieimpulse\n- agility\n- zapcannon",
+    "sableye (F) @ sablenite\nAbility: keeneye\nLevel: 50\nEVs: 3 HP / 8 Atk / 10 Def / 5 SpA / 5 SpD / 4 Spe\nRash Nature\n- zenheadbutt\n- lowkick\n- willowisp\n- aerialace\n\nkrookodile (F) @ scizorite\nAbility: intimidate\nLevel: 50\nEVs: 11 HP / 16 Atk / 7 Def / 7 SpA / 12 SpD / 13 Spe\nBrave Nature\n- outrage\n- fissure\n- sandtomb\n- rockslide\n\nsandaconda (F) @ redcard\nAbility: sandveil\nLevel: 50\nEVs: 8 HP / 11 Atk / 8 Def / 13 SpA / 15 SpD / 11 Spe\nMild Nature\n- substitute\n- stealthrock\n- brutalswing\n- gigaimpact\n\nabsol (F) @ excadrite\nAbility: pressure\nLevel: 50\nEVs: 7 HP / 14 Atk / 12 Def / 12 SpA / 12 SpD / 9 Spe\nMild Nature\n- shadowsneak\n- thunderbolt\n- bodyslam\n- icebeam\n\nhawlucha (M) @ choicescarf\nAbility: unburden\nLevel: 50\nEVs: 10 HP / 10 Atk / 13 Def / 14 SpA / 7 SpD / 12 Spe\nAdamant Nature\n- bodypress\n- bravebird\n- megakick\n- brickbreak\n\nwhimsicott (F) @ widelens\nAbility: chlorophyll\nLevel: 50\nEVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 9 SpD / 9 Spe\nModest Nature\n- sunnyday\n- moonblast\n- lightscreen\n- grassyglide"
+  ],
+  "choices": [
+    {
+      "p1": "team 1643",
+      "p2": "team 5423"
+    },
+    {
+      "p1": "move 4 1, move 1",
+      "p2": "move 2 -2, move 2 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 -2, switch 3",
+      "p2": "switch 4, move 2 -1"
+    },
+    {
+      "p1": "move 2 2, move 2 2",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 3 1, move 1 2",
+      "p2": "switch 4, move 1"
+    },
+    {
+      "p1": "move 2 2, move 1 1 mega",
+      "p2": "move 2 2, move 1"
+    },
+    {
+      "p1": "pass, switch 4",
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 -2, move 2",
+      "p2": "move 1, move 2 2"
+    },
+    {
+      "p1": "move 4 1, move 3 2",
+      "p2": "move 1, move 3 2"
+    },
+    {
+      "p1": "move 2 2, move 4 -1",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "move 2 2, move 1 -1",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "pass, move 2",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "pass, move 3 1",
+      "p2": "move 1, pass"
+    }
+  ]
+}

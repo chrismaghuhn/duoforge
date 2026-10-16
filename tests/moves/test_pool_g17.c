@@ -392,6 +392,34 @@ int main(void)
         }
     }
 
+    /* Stalwart (issue 542): a recharging Pokemon with it aims the recharge at its original target, getAtLoc of its
+     * lastMoveTargetLoc, with no draw while that target is active (sim/battle.ts:2437-2447). The state does not keep that
+     * location, so the recharge turn is refused, not played with a draw (g17_hyper_beam after step 1, Raichu given Stalwart). */
+    {
+        duoforge_battle *b = replay(&t, kp, "g17_hyper_beam", 2u);
+        const df_conf_battle *cb = find("g17_hyper_beam");
+        if (b != NULL && cb != NULL) {
+            const uint32_t member = b->sides[0].positions[0].occupant;
+            DF_CHECK(&t, member < DUOFORGE_MAX_ROSTER && b->tail.sides[0].positions[0].must_recharge == 1u);
+            duoforge_decision_bundle bd;
+            bundle_of(&cb->steps[2], b, &bd);
+            duoforge_step_result res;
+            duoforge_battle *plain = NULL;
+            DF_CHECK_EQ_U64(&t, duoforge_battle_clone(kp, b, &plain), DUOFORGE_OK);
+            DF_CHECK(&t, plain != NULL && duoforge_battle_step(kp, plain, &bd, &res) == DUOFORGE_OK); /* without it: played */
+            if (member < DUOFORGE_MAX_ROSTER) {
+                b->tail.sides[0].ability_now[member] = (uint16_t)(DFI_ABILITY_STALWART + 1u);
+                DF_CHECK_EQ_U64(&t, duoforge_battle_step(kp, b, &bd, &res), DUOFORGE_E_UNSUPPORTED);
+            }
+            if (plain != NULL) {
+                duoforge_battle_destroy(plain);
+            }
+        }
+        if (b != NULL) {
+            duoforge_battle_destroy(b);
+        }
+    }
+
     duoforge_context_destroy(kd);
     duoforge_context_destroy(kp);
     return df_test_end(&t);

@@ -1,0 +1,71 @@
+{
+  "name": "fz544_choice_outrage_slot",
+  "purpose": "A Choice-locked Outrage user starts its lock (step 11): the reference keeps the Choice lock's slot as the locked slot, and on main the engine's view hid it under the lockedmove (issue 544). A battle of the differential fuzzing of issue 396 (free random sets, fz_117_58), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,b6be2c03965c1a29a01bb64096d5649d9973c89f6d52b59be1cacf1d371588c1",
+  "teams": [
+    "gholdengo @ leek\nAbility: goodasgold\nLevel: 50\nEVs: 11 HP / 8 Atk / 15 Def / 9 SpA / 4 SpD / 19 Spe\nJolly Nature\n- lowkick\n- psyshock\n- trick\n- shadowball\n\nsalamence (F) @ choicescarf\nAbility: intimidate\nLevel: 50\nEVs: 7 HP / 7 Atk / 10 Def / 18 SpA / 11 SpD / 13 Spe\nMild Nature\n- outrage\n- psychicfangs\n- dragonpulse\n- dracometeor\n\nhoundstone (M) @ feraligite\nAbility: sandrush\nLevel: 50\nEVs: 13 HP / 16 Atk / 5 Def / 14 SpA / 7 SpD / 11 Spe\nNaughty Nature\n- raindance\n- nightshade\n- yawn\n- gigaimpact\n\nappletun (F) @ clefablite\nAbility: thickfat\nLevel: 50\nEVs: 9 HP / 11 Atk / 12 Def / 13 SpA / 11 SpD / 10 Spe\nTimid Nature\n- amnesia\n- superpower\n- substitute\n- protect\n\ndiggersby (M) @ nevermeltice\nAbility: hugepower\nLevel: 50\nEVs: 9 HP / 12 Atk / 10 Def / 9 SpA / 10 SpD / 16 Spe\nHasty Nature\n- swordsdance\n- sandtomb\n- rocktomb\n- sandstorm\n\nklefki (F) @ rockyhelmet\nAbility: prankster\nLevel: 50\nEVs: 10 HP / 9 Atk / 16 Def / 7 SpA / 8 SpD / 16 Spe\nLonely Nature\n- dazzlinggleam\n- sandstorm\n- psychup\n- raindance",
+    "appletun (F) @ delphoxite\nAbility: thickfat\nLevel: 50\nEVs: 6 HP / 8 Atk / 8 Def / 8 SpA / 7 SpD / 14 Spe\nJolly Nature\n- leechseed\n- superpower\n- pounce\n- appleacid\n\nkangaskhan (F) @ mysticwater\nAbility: scrappy\nLevel: 50\nEVs: 7 HP / 9 Atk / 7 Def / 5 SpA / 9 SpD / 7 Spe\nCalm Nature\n- drainpunch\n- lowkick\n- solarbeam\n- hydropump\n\npolteageist @ mawilite\nAbility: cursedbody\nLevel: 50\nEVs: 5 HP / 8 Atk / 5 Def / 7 SpA / 5 SpD / 5 Spe\nJolly Nature\n- skillswap\n- gigaimpact\n- memento\n- strengthsap\n\nqwilfish (F) @ twistedspoon\nAbility: intimidate\nLevel: 50\nEVs: 2 HP / 3 Atk / 1 SpA / 4 SpD / 2 Spe\nNaughty Nature\n- throatchop\n- gunkshot\n- icywind\n- liquidation\n\nmeowsticf (F) @ scopelens\nAbility: competitive\nLevel: 50\nEVs: 19 HP / 10 Atk / 13 Def / 4 SpA / 10 SpD / 10 Spe\nGentle Nature\n- fakeout\n- psychicnoise\n- energyball\n- yawn\n\nsandaconda (M) @ terrainextender\nAbility: sandveil\nLevel: 50\nEVs: 9 HP / 13 Atk / 14 Def / 14 SpA / 9 SpD / 7 Spe\nQuirky Nature\n- scorchingsands\n- hurricane\n- stealthrock\n- rockslide"
+  ],
+  "choices": [
+    {
+      "p1": "team 1524",
+      "p2": "team 1235"
+    },
+    {
+      "p1": "switch 4, move 1",
+      "p2": "move 1 1, move 1 1"
+    },
+    {
+      "p1": "move 1, switch 4",
+      "p2": "move 3 2, move 1 -1"
+    },
+    {
+      "p1": "switch 4, move 4 1",
+      "p2": "move 3 2, move 4 2"
+    },
+    {
+      "p1": "move 1, switch 4",
+      "p2": "move 4 2, move 3 -1"
+    },
+    {
+      "p1": "move 3 2, move 2 1",
+      "p2": "move 4 2, move 1"
+    },
+    {
+      "p1": "move 1, switch 3",
+      "p2": "move 2 2, move 4 -1"
+    },
+    {
+      "p1": "move 2 -2, switch 3",
+      "p2": "move 1 -2, move 4 -1"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 4 2, move 4 1"
+    },
+    {
+      "p1": "move 3 -2, move 3",
+      "p2": "move 4 2, switch 3"
+    },
+    {
+      "p1": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 1, move 3 2",
+      "p2": "move 4 1, move 2 -1"
+    },
+    {
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 1, move 1 1",
+      "p2": "move 1 -2, move 4 -1"
+    },
+    {
+      "p1": "move 1, move 2 -1",
+      "p2": "pass, move 2 2"
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "name": "fz544_outrage_pressure",
+  "purpose": "Hydrapple's locked Outrage (step 2) hits Weavile, which came in with Pressure: a lockedmove turn charges no PP and no Pressure extra (sim/battle-actions.ts:289, 473-484); on main the engine took the extra (issue 544). A battle of the differential fuzzing of issue 396 (free random sets, fz_178_90), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,414a40acee3bda8c065b29c77343fbf7f9a0c7478ad3724a04147dceeb8bf55b",
+  "teams": [
+    "hydrapple (M) @ softsand\nAbility: stickyhold\nLevel: 50\nEVs: 6 HP / 7 Atk / 3 Def / 5 SpA / 7 SpD / 6 Spe\nBrave Nature\n- bugbite\n- doubleedge\n- grassyglide\n- bodypress\n\nweavile (F) @ scolipite\nAbility: pressure\nLevel: 50\nEVs: 19 HP / 5 Atk / 14 Def / 11 SpA / 8 SpD / 9 Spe\nCalm Nature\n- icespinner\n- hyperbeam\n- snarl\n- brickbreak\n\nleafeon (M) @ steelixite\nAbility: chlorophyll\nLevel: 50\nEVs: 6 HP / 3 Atk / 7 Def / 8 SpA / 12 SpD / 7 Spe\nQuiet Nature\n- calmmind\n- leafblade\n- doubleedge\n- solarbeam\n\nnoivern (F) @ rindoberry\nAbility: telepathy\nLevel: 50\nEVs: 7 HP / 4 Atk / 3 Def / 5 SpA / 5 SpD / 5 Spe\nHardy Nature\n- acrobatics\n- boomburst\n- roost\n- screech\n\ncharizard (M) @ habanberry\nAbility: blaze\nLevel: 50\nEVs: 12 HP / 6 Atk / 12 Def / 12 SpA / 11 SpD / 13 Spe\nHasty Nature\n- fireblast\n- brutalswing\n- dragonpulse\n- sandstorm\n\nthievul (F) @ excadrite\nAbility: unburden\nLevel: 50\nEVs: 6 HP / 11 Atk / 10 Def / 13 SpA / 13 SpD / 13 Spe\nJolly Nature\n- screech\n- trailblaze\n- quickguard\n- icefang",
+    "hydrapple (F) @ metalcoat\nAbility: regenerator\nLevel: 50\nEVs: 14 HP / 11 Atk / 12 Def / 12 SpA / 8 SpD / 9 Spe\nCalm Nature\n- outrage\n- dracometeor\n- curse\n- leafstorm\n\ndrampa (M) @ redcard\nAbility: cloudnine\nLevel: 50\nEVs: 12 HP / 13 Atk / 13 Def / 11 SpA / 8 SpD / 9 Spe\nGentle Nature\n- hyperbeam\n- thunder\n- thunderbolt\n- raindance\n\nperrserker (M) @ tangaberry\nAbility: battlearmor\nLevel: 50\nEVs: 1 HP / 2 Atk / 2 Def / 1 SpA / 2 SpD / 1 Spe\nCalm Nature\n- hyperbeam\n- bulkup\n- faketears\n- swordsdance\n\nemolga (F) @ blackglasses\nAbility: static\nLevel: 50\nEVs: 15 HP / 11 Atk / 2 Def / 16 SpA / 8 SpD / 9 Spe\nTimid Nature\n- agility\n- covet\n- nuzzle\n- batonpass\n\narbok (M) @ heatrock\nAbility: unnerve\nLevel: 50\nEVs: 12 HP / 7 Atk / 16 Def / 10 SpA / 13 SpD / 8 Spe\nTimid Nature\n- stompingtantrum\n- lashout\n- psychicfangs\n- leechlife\n\ntauros (M) @ froslassite\nAbility: angerpoint\nLevel: 50\nEVs: 10 HP / 18 Atk / 10 Def / 12 SpA / 12 SpD / 4 Spe\nTimid Nature\n- smartstrike\n- bodyslam\n- blizzard\n- solarbeam"
+  ],
+  "choices": [
+    {
+      "p1": "team 4512",
+      "p2": "team 5126"
+    },
+    {
+      "p1": "move 1 1, move 1 1",
+      "p2": "move 2 2, move 1"
+    },
+    {
+      "p1": "switch 4, move 4",
+      "p2": "move 3 1, move 1"
+    },
+    {
+      "p1": "move 1 -2, move 1 2",
+      "p2": "move 3 2, move 3"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 -2, move 2",
+      "p2": "move 4 2, move 3"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 2, move 1 -1",
+      "p2": "switch 3, move 2 -1"
+    },
+    {
+      "p1": "switch 3, pass",
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 2, move 4 2",
+      "p2": "move 4 -2, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 4 -2, move 1 1",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "move 1 2, move 3",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "pass, move 3",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "pass, move 2",
+      "p2": "move 1 2, pass"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "pass, move 1 -1",
+      "p2": "move 1 1, pass"
+    },
+    {
+      "p1": "pass, move 3",
+      "p2": "move 1 2, pass"
+    },
+    {
+      "p1": "pass, move 4 -1",
+      "p2": "move 2 2, pass"
+    },
+    {
+      "p1": "pass, move 3",
+      "p2": "move 4 -2, pass"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "pass, move 4 1",
+      "p2": "move 1 2, pass"
+    },
+    {
+      "p1": "pass, move 4 2",
+      "p2": "move 4 2, pass"
+    },
+    {
+      "p1": "pass, move 3",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "pass, move 2",
+      "p2": "move 4 -2, pass"
+    }
+  ]
+}

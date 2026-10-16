@@ -1,0 +1,7213 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "fz543_bounce_leech_seed_grass.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,78202ad53f4a6c93e484fc51892a79ef46e6c8b8312b1d44f2100199c943b81e",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Golisopod, L50, M|",
+   "|poke|p1|Delphox, L50, F|",
+   "|poke|p1|Meowscarada, L50, F|",
+   "|poke|p1|Trevenant, L50, F|",
+   "|poke|p1|Sandaconda, L50, F|",
+   "|poke|p1|Aggron, L50, M|",
+   "|poke|p2|Reuniclus, L50, M|",
+   "|poke|p2|Banette, L50, M|",
+   "|poke|p2|Glalie, L50, M|",
+   "|poke|p2|Espeon, L50, F|",
+   "|poke|p2|Sylveon, L50, M|",
+   "|poke|p2|Flareon, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Golisopod",
+       "set_species": "Golisopod",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 158,
+       "maxhp": 158,
+       "item": "",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        20,
+        20,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Delphox",
+       "set_species": "Delphox",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 159,
+       "maxhp": 159,
+       "item": "delphoxite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        12,
+        12,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Meowscarada",
+       "set_species": "Meowscarada",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 151,
+       "maxhp": 151,
+       "item": "cobaberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Trevenant",
+       "set_species": "Trevenant",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 171,
+       "maxhp": 171,
+       "item": "spelltag",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Sandaconda",
+       "set_species": "Sandaconda",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 160,
+       "maxhp": 160,
+       "item": "hardstone",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        12,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Aggron",
+       "set_species": "Aggron",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 152,
+       "maxhp": 152,
+       "item": "chopleberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        12,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Reuniclus",
+       "set_species": "Reuniclus",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 185,
+       "maxhp": 185,
+       "item": "chopleberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        20,
+        12,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Banette",
+       "set_species": "Banette",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 153,
+       "maxhp": 153,
+       "item": "banettite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        20,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Glalie",
+       "set_species": "Glalie",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 169,
+       "maxhp": 169,
+       "item": "rindoberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Espeon",
+       "set_species": "Espeon",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 155,
+       "maxhp": 155,
+       "item": "scolipite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        12,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Sylveon",
+       "set_species": "Sylveon",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 180,
+       "maxhp": 180,
+       "item": "cobaberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        16,
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Flareon",
+       "set_species": "Flareon",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 153,
+       "maxhp": 153,
+       "item": "widelens",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        16,
+        20,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 4362",
+    "p2": "team 1436"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Trevenant|Trevenant, L50, F|171/171",
+    "|switch|p1a: Trevenant|Trevenant, L50, F|100/100",
+    "|split|p1",
+    "|switch|p1b: Meowscarada|Meowscarada, L50, F|151/151",
+    "|switch|p1b: Meowscarada|Meowscarada, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2a: Reuniclus|Reuniclus, L50, M|185/185",
+    "|switch|p2a: Reuniclus|Reuniclus, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Espeon|Espeon, L50, F|155/155",
+    "|switch|p2b: Espeon|Espeon, L50, F|100/100",
+    "|-item|p2a: Reuniclus|Chople Berry|[from] ability: Frisk|[of] p1a: Trevenant",
+    "|-item|p2b: Espeon|Scolipite|[from] ability: Frisk|[of] p1a: Trevenant",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox",
+        "set_species": "Delphox",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 155,
+        "maxhp": 155,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 169,
+        "maxhp": 169,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 2, move 4 1",
+    "p2": "switch 4, move 2"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Flareon|Flareon, L50, M|153/153",
+    "|switch|p2a: Flareon|Flareon, L50, M|100/100",
+    "|move|p2b: Espeon|Psychic Terrain|p2b: Espeon",
+    "|-fieldstart|move: Psychic Terrain",
+    "|move|p1b: Meowscarada|Skill Swap|p2a: Flareon",
+    "|-activate|p1b: Meowscarada|Skill Swap|Flash Fire|Overgrow|[of] p2a: Flareon",
+    "|move|p1a: Trevenant|Leech Seed|p2b: Espeon",
+    "|move|p2b: Espeon|Leech Seed|p1a: Trevenant|[from] ability: Magic Bounce",
+    "|-immune|p1a: Trevenant",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 4,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox",
+        "set_species": "Delphox",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 155,
+        "maxhp": 155,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         11,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 169,
+        "maxhp": 169,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 1, move 4 2",
+    "p2": "switch 3, move 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 22
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Glalie|Glalie, L50, M|169/169",
+    "|switch|p2a: Glalie|Glalie, L50, M|100/100",
+    "|move|p2b: Espeon|Psychic Terrain||[still]",
+    "|-fail|p2b: Espeon",
+    "|move|p1b: Meowscarada|Skill Swap|p2b: Espeon",
+    "|-activate|p1b: Meowscarada|Skill Swap|Magic Bounce|Flash Fire|[of] p2b: Espeon",
+    "|move|p1a: Trevenant|Leech Seed|p2a: Glalie",
+    "|-start|p2a: Glalie|move: Leech Seed",
+    "|split|p2",
+    "|-damage|p2a: Glalie|148/169|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2a: Glalie|87/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox",
+        "set_species": "Delphox",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 148,
+        "maxhp": 169,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         12
+        ],
+        "volatiles": [
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 155,
+        "maxhp": 155,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         10,
+         12,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 2, switch 4",
+    "p2": "move 4 -2, move 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 78
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 87
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Delphox|Delphox, L50, F|159/159",
+    "|switch|p1b: Delphox|Delphox, L50, F|100/100",
+    "|move|p2b: Espeon|Psychic Terrain||[still]",
+    "|-fail|p2b: Espeon",
+    "|move|p2a: Glalie|Switcheroo|p2b: Espeon",
+    "|-activate|p2a: Glalie|move: Trick|[of] p2b: Espeon",
+    "|-item|p2b: Espeon|Rindo Berry|[from] move: Switcheroo",
+    "|-item|p2a: Glalie|Scolipite|[from] move: Switcheroo",
+    "|move|p1a: Trevenant|Leech Seed|p2b: Espeon",
+    "|-start|p2b: Espeon|move: Leech Seed",
+    "|split|p2",
+    "|-damage|p2b: Espeon|136/155|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Espeon|87/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p2",
+    "|-damage|p2a: Glalie|127/169|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2a: Glalie|75/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 2,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox",
+        "set_species": "Delphox",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 127,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         11
+        ],
+        "volatiles": [
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 136,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         9,
+         12,
+         12
+        ],
+        "volatiles": [
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 -2, move 1 mega",
+    "p2": "switch 3, move 4 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 86
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 45
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 6
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 55
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Flareon|Flareon, L50, M|153/153",
+    "|switch|p2a: Flareon|Flareon, L50, M|100/100",
+    "|detailschange|p1b: Delphox|Delphox-Mega, L50, F",
+    "|-mega|p1b: Delphox|Delphox|Delphoxite",
+    "|move|p1b: Delphox|Agility|p1b: Delphox",
+    "|-boost|p1b: Delphox|spe|2",
+    "|move|p2b: Espeon|Draining Kiss|p1a: Trevenant",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|140/171",
+    "|-damage|p1a: Trevenant|81/100",
+    "|split|p2",
+    "|-heal|p2b: Espeon|155/155|[from] drain|[of] p1a: Trevenant",
+    "|-heal|p2b: Espeon|100/100|[from] drain|[of] p1a: Trevenant",
+    "|move|p1a: Trevenant|Psychic|p1b: Delphox",
+    "|-resisted|p1b: Delphox|1",
+    "|split|p1",
+    "|-damage|p1b: Delphox|145/159",
+    "|-damage|p1b: Delphox|91/100",
+    "|split|p2",
+    "|-damage|p2b: Espeon|136/155|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Espeon|87/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|159/171|[silent]",
+    "|-heal|p1a: Trevenant|92/100|[silent]",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 1,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         12,
+         20,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 145,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         12,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 136,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         9,
+         12,
+         11
+        ],
+        "volatiles": [
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 127,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 -2, move 4",
+    "p2": "move 2, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 11
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 62
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 72
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 79
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 96
+    }
+   ],
+   "log": [
+    "|move|p1b: Delphox|Light Screen|p1b: Delphox",
+    "|-sidestart|p1: p1|move: Light Screen",
+    "|move|p2b: Espeon|Weather Ball|p1a: Trevenant",
+    "|-immune|p1a: Trevenant",
+    "|move|p2a: Flareon|Lava Plume|p1b: Delphox|[spread] p1a,p1b",
+    "|-start|p2b: Espeon|ability: Flash Fire",
+    "|-supereffective|p1a: Trevenant|1",
+    "|-resisted|p1b: Delphox|1",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|99/171",
+    "|-damage|p1a: Trevenant|57/100",
+    "|split|p1",
+    "|-damage|p1b: Delphox|136/159",
+    "|-damage|p1b: Delphox|85/100",
+    "|move|p1a: Trevenant|Psychic|p1b: Delphox",
+    "|-resisted|p1b: Delphox|1",
+    "|split|p1",
+    "|-damage|p1b: Delphox|127/159",
+    "|-damage|p1b: Delphox|79/100",
+    "|split|p2",
+    "|-damage|p2b: Espeon|117/155|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Espeon|75/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|118/171|[silent]",
+    "|-heal|p1a: Trevenant|69/100|[silent]",
+    "|-fieldend|move: Psychic Terrain",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       4
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 118,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         12,
+         20,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 127,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         2,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         12,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         15,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 117,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         9,
+         12,
+         11
+        ],
+        "volatiles": [
+         "flashfire",
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 127,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, move 1",
+    "p2": "move 2, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 72
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 28
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 75
+    },
+    {
+     "site": "CONFUSION_TURNS",
+     "context": "Start",
+     "lo": 2,
+     "hi": 6,
+     "value": 2
+    }
+   ],
+   "log": [
+    "|move|p1b: Delphox|Agility|p1b: Delphox",
+    "|-boost|p1b: Delphox|spe|2",
+    "|move|p2b: Espeon|Psychic Terrain|p2b: Espeon",
+    "|-fieldstart|move: Psychic Terrain",
+    "|move|p2a: Flareon|Lava Plume|p1a: Trevenant|[spread] p1a,p1b",
+    "|-immune|p2b: Espeon|[from] ability: Flash Fire",
+    "|-supereffective|p1a: Trevenant|1",
+    "|-resisted|p1b: Delphox|1",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|65/171",
+    "|-damage|p1a: Trevenant|38/100",
+    "|split|p1",
+    "|-damage|p1b: Delphox|119/159",
+    "|-damage|p1b: Delphox|74/100",
+    "|move|p1a: Trevenant|Confuse Ray|p1b: Delphox",
+    "|-start|p1b: Delphox|confusion",
+    "|split|p2",
+    "|-damage|p2b: Espeon|98/155|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Espeon|63/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|84/171|[silent]",
+    "|-heal|p1a: Trevenant|49/100|[silent]",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 4,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       3
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 84,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         20,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 119,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 2,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         4,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         19
+        ],
+        "volatiles": [
+         "confusion"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 98,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         12,
+         11
+        ],
+        "volatiles": [
+         "flashfire",
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 127,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 -2, move 4",
+    "p2": "move 3 2, move 2"
+   },
+   "draws": [
+    {
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 100,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 25
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 98
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
+    }
+   ],
+   "log": [
+    "|-activate|p1b: Delphox|confusion",
+    "|split|p1",
+    "|-damage|p1b: Delphox|102/159|[from] confusion",
+    "|-damage|p1b: Delphox|64/100|[from] confusion",
+    "|move|p2b: Espeon|Psychic Terrain||[still]",
+    "|-fail|p2b: Espeon",
+    "|move|p2a: Flareon|Fake Tears|p1b: Delphox",
+    "|-unboost|p1b: Delphox|spd|2",
+    "|move|p1a: Trevenant|Grassy Glide|p1b: Delphox",
+    "|-resisted|p1b: Delphox|1",
+    "|split|p1",
+    "|-damage|p1b: Delphox|77/159",
+    "|-damage|p1b: Delphox|48/100",
+    "|split|p2",
+    "|-damage|p2b: Espeon|79/155|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Espeon|50/100g|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|103/171|[silent]",
+    "|-heal|p1a: Trevenant|60/100|[silent]",
+    "|upkeep",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       2
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 103,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         19,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 1,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -2,
+         4,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         12,
+         12,
+         19
+        ],
+        "volatiles": [
+         "confusion"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 79,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7,
+         12,
+         11
+        ],
+        "volatiles": [
+         "flashfire",
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 127,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 1, move 2",
+    "p2": "move 4, move 4 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 21
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    }
+   ],
+   "log": [
+    "|-end|p1b: Delphox|confusion",
+    "|move|p1b: Delphox|Psychic Terrain||[still]",
+    "|-fail|p1b: Delphox",
+    "|move|p2b: Espeon|Draining Kiss|p1a: Trevenant",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|81/171",
+    "|-damage|p1a: Trevenant|47/100",
+    "|split|p2",
+    "|-heal|p2b: Espeon|96/155|[from] drain|[of] p1a: Trevenant",
+    "|-heal|p2b: Espeon|61/100|[from] drain|[of] p1a: Trevenant",
+    "|move|p2a: Flareon|Baton Pass|p2a: Flareon"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       2
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 81,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         19,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -2,
+         4,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 96,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7,
+         12,
+         10
+        ],
+        "volatiles": [
+         "flashfire",
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 127,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 36
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Glalie|Glalie, L50, M|127/169|[from] Baton Pass",
+    "|switch|p2a: Glalie|Glalie, L50, M|75/100|[from] Baton Pass",
+    "|move|p1a: Trevenant|Grassy Glide|p2a: Glalie",
+    "|split|p2",
+    "|-damage|p2a: Glalie|75/169",
+    "|-damage|p2a: Glalie|44/100",
+    "|split|p2",
+    "|-damage|p2b: Espeon|77/155|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Espeon|49/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|100/171|[silent]",
+    "|-heal|p1a: Trevenant|58/100|[silent]",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 2,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       1
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 100,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         18,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -2,
+         4,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 75,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         7,
+         12,
+         10
+        ],
+        "volatiles": [
+         "flashfire",
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3 2, switch 3",
+    "p2": "move 4 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 9
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 72
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Aggron|Aggron, L50, M|152/152",
+    "|switch|p1b: Aggron|Aggron, L50, M|100/100",
+    "|move|p2b: Espeon|Psychic Terrain||[still]",
+    "|-fail|p2b: Espeon",
+    "|move|p2a: Glalie|Switcheroo|p1a: Trevenant",
+    "|-activate|p2a: Glalie|move: Trick|[of] p1a: Trevenant",
+    "|-item|p1a: Trevenant|Scolipite|[from] move: Switcheroo",
+    "|-item|p2a: Glalie|Spell Tag|[from] move: Switcheroo",
+    "|move|p1a: Trevenant|Grassy Glide|p2b: Espeon",
+    "|split|p2",
+    "|-damage|p2b: Espeon|14/155",
+    "|-damage|p2b: Espeon|9/100",
+    "|split|p2",
+    "|-damage|p2b: Espeon|0 fnt|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Espeon|0 fnt|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|114/171|[silent]",
+    "|-heal|p1a: Trevenant|66/100|[silent]",
+    "|faint|p2b: Espeon",
+    "|-sideend|p1: p1|move: Light Screen",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 1,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 114,
+        "maxhp": 171,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         17,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 75,
+        "maxhp": 169,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6,
+         12,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 3"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Flareon|Flareon, L50, M|153/153",
+    "|switch|p2b: Flareon|Flareon, L50, M|100/100",
+    "|turn|10"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 1,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 114,
+        "maxhp": 171,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         17,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 75,
+        "maxhp": 169,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         16,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 153,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         19,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6,
+         12,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 2, move 3 2",
+    "p2": "move 2 2, move 3 2"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 82
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 69
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 93
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 15
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 63
+    }
+   ],
+   "log": [
+    "|move|p2a: Glalie|Disable||[still]",
+    "|-fail|p2a: Glalie",
+    "|move|p2b: Flareon|Fake Tears|p1b: Aggron",
+    "|-unboost|p1b: Aggron|spd|2",
+    "|move|p1a: Trevenant|Leech Seed|p2b: Flareon",
+    "|-start|p2b: Flareon|move: Leech Seed",
+    "|move|p1b: Aggron|Earth Power|p2b: Flareon",
+    "|-supereffective|p2b: Flareon|1",
+    "|split|p2",
+    "|-damage|p2b: Flareon|111/153",
+    "|-damage|p2b: Flareon|72/100",
+    "|split|p2",
+    "|-damage|p2b: Flareon|92/153|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Flareon|60/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|133/171|[silent]",
+    "|-heal|p1a: Trevenant|77/100|[silent]",
+    "|-fieldend|move: Psychic Terrain",
+    "|upkeep",
+    "|turn|11"
+   ],
+   "state": {
+    "turn": 11,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 133,
+        "maxhp": 171,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         17,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         -2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         11,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 75,
+        "maxhp": 169,
+        "item": "spelltag",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         19,
+         16,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 92,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         18,
+         19
+        ],
+        "volatiles": [
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6,
+         12,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 -2, move 3 -1",
+    "p2": "move 4 1, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 32
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 5
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 66
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 75
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 18
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 12
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 49
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 36
+    }
+   ],
+   "log": [
+    "|move|p2a: Glalie|Switcheroo|p1a: Trevenant",
+    "|-activate|p2a: Glalie|move: Trick|[of] p1a: Trevenant",
+    "|-item|p1a: Trevenant|Spell Tag|[from] move: Switcheroo",
+    "|-item|p2a: Glalie|Scolipite|[from] move: Switcheroo",
+    "|move|p2b: Flareon|Lava Plume|p1b: Aggron|[spread] p2a,p1a,p1b",
+    "|-supereffective|p2a: Glalie|1",
+    "|-supereffective|p1a: Trevenant|1",
+    "|-crit|p1b: Aggron",
+    "|split|p2",
+    "|-damage|p2a: Glalie|0 fnt",
+    "|-damage|p2a: Glalie|0 fnt",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|53/171",
+    "|-damage|p1a: Trevenant|30/100",
+    "|-ability|p1b: Aggron|Sturdy",
+    "|split|p1",
+    "|-damage|p1b: Aggron|1/152",
+    "|-damage|p1b: Aggron|1/100",
+    "|-status|p1a: Trevenant|brn",
+    "|-status|p1b: Aggron|brn",
+    "|faint|p2a: Glalie",
+    "|move|p1a: Trevenant|Leech Seed|p1b: Aggron",
+    "|-start|p1b: Aggron|move: Leech Seed",
+    "|move|p1b: Aggron|Earth Power|p1a: Trevenant",
+    "|-resisted|p1a: Trevenant|1",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|39/171 brn",
+    "|-damage|p1a: Trevenant|22/100 brn",
+    "|split|p2",
+    "|-damage|p2b: Flareon|73/153|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2b: Flareon|47/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|58/171 brn|[silent]",
+    "|-heal|p1a: Trevenant|33/100 brn|[silent]",
+    "|split|p1",
+    "|-damage|p1b: Aggron|0 fnt|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p1b: Aggron|0 fnt|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|59/171 brn|[silent]",
+    "|-heal|p1a: Trevenant|34/100 brn|[silent]",
+    "|faint|p1b: Aggron",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|49/171 brn|[from] brn",
+    "|-damage|p1a: Trevenant|28/100 brn|[from] brn",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 11,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 49,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         17,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         10,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         19,
+         16,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 73,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         18,
+         19
+        ],
+        "volatiles": [
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6,
+         12,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "pass, switch 4",
+    "p2": "switch 4, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Reuniclus|Reuniclus, L50, M|185/185",
+    "|switch|p2a: Reuniclus|Reuniclus, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Meowscarada|Meowscarada, L50, F|151/151",
+    "|switch|p1b: Meowscarada|Meowscarada, L50, F|100/100",
+    "|turn|12"
+   ],
+   "state": {
+    "turn": 12,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 49,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         11,
+         17,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         10,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 185,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 73,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         18,
+         19
+        ],
+        "volatiles": [
+         "leechseed"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6,
+         12,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         19,
+         16,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, move 2 2",
+    "p2": "move 4 1, move 4"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 33
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 97
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 45
+    },
+    {
+     "site": "CONFUSION_TURNS",
+     "context": "Start",
+     "lo": 2,
+     "hi": 6,
+     "value": 3
+    },
+    {
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 100,
+     "value": 12
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    }
+   ],
+   "log": [
+    "|move|p1b: Meowscarada|Throat Chop|p2b: Flareon",
+    "|split|p2",
+    "|-damage|p2b: Flareon|0 fnt",
+    "|-damage|p2b: Flareon|0 fnt",
+    "|faint|p2b: Flareon",
+    "|move|p1a: Trevenant|Confuse Ray|p2a: Reuniclus",
+    "|-start|p2a: Reuniclus|confusion",
+    "|-activate|p2a: Reuniclus|confusion",
+    "|split|p2",
+    "|-damage|p2a: Reuniclus|171/185|[from] confusion",
+    "|-damage|p2a: Reuniclus|92/100|[from] confusion",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|39/171 brn|[from] brn",
+    "|-damage|p1a: Trevenant|22/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|13"
+   ],
+   "state": {
+    "turn": 13,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 39,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         10,
+         17,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         15,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         10,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 2,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         20,
+         12,
+         16
+        ],
+        "volatiles": [
+         "confusion"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         18,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6,
+         12,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         19,
+         16,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 4 2, move 2 2",
+    "p2": "move 2, pass"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 53
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 24
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 19
+    },
+    {
+     "site": "CONFUSION_HIT",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 100,
+     "value": 86
+    }
+   ],
+   "log": [
+    "|move|p1b: Meowscarada|Throat Chop|p2a: Reuniclus",
+    "|-supereffective|p2a: Reuniclus|1",
+    "|split|p2",
+    "|-damage|p2a: Reuniclus|25/185",
+    "|-damage|p2a: Reuniclus|13/100",
+    "|-start|p2a: Reuniclus|Throat Chop|[silent]",
+    "|move|p1a: Trevenant|Leech Seed|p2a: Reuniclus",
+    "|-start|p2a: Reuniclus|move: Leech Seed",
+    "|-activate|p2a: Reuniclus|confusion",
+    "|move|p2a: Reuniclus|Reflect|p2a: Reuniclus",
+    "|-sidestart|p2: p2|Reflect",
+    "|split|p2",
+    "|-damage|p2a: Reuniclus|2/185|[from] Leech Seed|[of] p1a: Trevenant",
+    "|-damage|p2a: Reuniclus|1/100|[from] Leech Seed|[of] p1a: Trevenant",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|62/171 brn|[silent]",
+    "|-heal|p1a: Trevenant|36/100 brn|[silent]",
+    "|split|p1",
+    "|-damage|p1a: Trevenant|52/171 brn|[from] brn",
+    "|-damage|p1a: Trevenant|30/100 brn|[from] brn",
+    "|upkeep",
+    "|turn|14"
+   ],
+   "state": {
+    "turn": 14,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 52,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         10,
+         17,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         14,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         10,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       4,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 2,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 1,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [
+         "confusion",
+         "leechseed",
+         "throatchop"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         18,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6,
+         12,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         19,
+         16,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 3, move 2 1",
+    "p2": "move 3, pass"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 47
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 88
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Delphox|Delphox-Mega, L50, F|77/159",
+    "|switch|p1a: Delphox|Delphox-Mega, L50, F|48/100",
+    "|move|p1b: Meowscarada|Throat Chop|p2a: Reuniclus",
+    "|-supereffective|p2a: Reuniclus|1",
+    "|split|p2",
+    "|-damage|p2a: Reuniclus|0 fnt",
+    "|-damage|p2a: Reuniclus|0 fnt",
+    "|faint|p2a: Reuniclus",
+    "|win|p1"
+   ],
+   "state": {
+    "turn": 14,
+    "ended": true,
+    "winner": "p1",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Delphox-Mega",
+        "set_species": "Delphox",
+        "mega": 1,
+        "switch_flag": 0,
+        "hp": 77,
+        "maxhp": 159,
+        "item": "delphoxite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         11,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Meowscarada",
+        "set_species": "Meowscarada",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 151,
+        "maxhp": 151,
+        "item": "cobaberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Trevenant",
+        "set_species": "Trevenant",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 52,
+        "maxhp": 171,
+        "item": "spelltag",
+        "status": "brn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
+         10,
+         17,
+         6
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 152,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         10,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       4,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 185,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         19,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Flareon",
+        "set_species": "Flareon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 153,
+        "item": "widelens",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         13,
+         18,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Espeon",
+        "set_species": "Espeon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 155,
+        "item": "rindoberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         6,
+         12,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 169,
+        "item": "scolipite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         19,
+         16,
+         9
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}
