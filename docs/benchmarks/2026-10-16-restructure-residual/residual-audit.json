@@ -1,0 +1,86 @@
+{
+ "old": "001a492e",
+ "new": "HEAD",
+ "old_function_lines": 765,
+ "stop_returns": 11,
+ "phases": [
+  {
+   "phase": "dfi_residual_collect",
+   "old_function_lines": [
+    24,
+    180
+   ],
+   "new_lines": [
+    9286,
+    9442
+   ],
+   "stop_returns": 0,
+   "body_sha256": "ef4055eef4f7d924038fc1224b1bad6dd7ab04b1af67c5988b7a799b59fc8ee2"
+  },
+  {
+   "phase": "dfi_residual_order",
+   "old_function_lines": [
+    181,
+    226
+   ],
+   "new_lines": [
+    9453,
+    9497
+   ],
+   "stop_returns": 0,
+   "body_sha256": "c52fd41dfbbe81db1574e105016013702290cf3dd3d8983cab30d085a8d329d8"
+  },
+  {
+   "phase": "dfi_residual_early",
+   "old_function_lines": [
+    227,
+    515
+   ],
+   "new_lines": [
+    9509,
+    9797
+   ],
+   "stop_returns": 6,
+   "body_sha256": "d5b0b4f19c031a3997f4683c5acba8542307f949cd32131ecfeb5f238fbe8696"
+  },
+  {
+   "phase": "dfi_residual_durations",
+   "old_function_lines": [
+    516,
+    621
+   ],
+   "new_lines": [
+    9807,
+    9912
+   ],
+   "stop_returns": 4,
+   "body_sha256": "0e6b69134b150b5be884f7e1a6182f164a2a0d698506ae10485bc9d9e6f5c4e3"
+  },
+  {
+   "phase": "dfi_residual_late",
+   "old_function_lines": [
+    622,
+    661
+   ],
+   "new_lines": [
+    9920,
+    9959
+   ],
+   "stop_returns": 1,
+   "body_sha256": "d806f6d90a8e70b29060fd985dda585f5031855468dac93a5846db7a4210c969"
+  },
+  {
+   "phase": "dfi_residual_noorder",
+   "old_function_lines": [
+    662,
+    765
+   ],
+   "new_lines": [
+    9967,
+    10070
+   ],
+   "stop_returns": 0,
+   "body_sha256": "ca7cce5884108dc7364b958c1600446d26cb26ec0767ae3965189a95addc9ac1"
+  }
+ ]
+}

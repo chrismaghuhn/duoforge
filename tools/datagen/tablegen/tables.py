@@ -1,7 +1,7 @@
 """The table assembly: the closure, Team C and pool builds and the width bounds the pool has to fit.
 
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+statement is unchanged from gen_closure.py@8800b625).
 """
 import io
 import os
@@ -24,10 +24,10 @@ from .items import (
     ITEM_MATCHERS, ITEM_MEMBERS, item_param, POOL_ITEMS)
 from .abilities import (
     ABILITY_FAMILIES, ABILITY_MATCHERS, ABILITY_MEMBERS, ability_param, check_g30_facts, check_g37_facts,
-    check_g57_facts, check_i2_facts, G2_ABILITIES, INERT_ABILITY_KEYS, POOL_ABILITIES)
+    check_g57_facts, check_i2_facts, FAILSKILLSWAP_SOURCE, G2_ABILITIES, INERT_ABILITY_KEYS, POOL_ABILITIES)
 from .rules import (
     C1_PART4_FACTS, check_a0_facts, check_a0p1_facts, check_c1_facts, check_c2_facts, check_c4_facts, check_c5_facts,
-    check_g15_facts, check_g34_facts, check_g61_facts, check_k2_facts)
+    check_failskillswap, check_g15_facts, check_g34_facts, check_g61_facts, check_k2_facts)
 
 
 def build(root, ext=False):
@@ -346,6 +346,8 @@ def build_pool(root, repo, dx):
         fail('the move rows are not the legal pool plus Struggle')
     if {i['id'] for i in items} != legal['items'] or {a['id'] for a in abilities} != legal['abilities']:
         fail('the item or ability rows are not the legal pool')
+    with io.open(os.path.join(repo, FAILSKILLSWAP_SOURCE), encoding='utf-8') as fh:
+        check_failskillswap([a['id'] for a in abilities], abil_ts, champ_abil, fh.read())
 
     # ---- the formes: every selectable forme that is not a cosmetic copy, each followed by its Mega formes ----
     species = legal['species']

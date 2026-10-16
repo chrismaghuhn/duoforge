@@ -2,8 +2,9 @@
 parameters, the ability facts by step and their checks.
 
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+statement is unchanged from gen_closure.py@8800b625).
 """
+import os
 import re
 
 from .source import fail, field_is, field_match, NoMatch, norm, scalar, shape, TYPES
@@ -529,6 +530,32 @@ G63_ABILITY_FACTS = (
                   "move.tracksTarget = move.target !== 'scripted';",
                   '},')),
 )
+
+
+# Issue #620 (decision 0015 entry 5dx, decision 0041): Skill Swap fails when either ability has the failskillswap flag
+# (sim/battle.ts:1316). The turn code reads the flag by id (turn.c dfi_fails_skillswap, one DFI_ABILITY_* per name below),
+# so the pool's abilities with the flag are exactly these; check_failskillswap reads the flag of every pool row from the pin
+# (the Champions entry's own flags where it has them, else the inherited base entry's) and fails on any other set. It also
+# reads the DFI_ABILITY_* names of the body of dfi_fails_skillswap in FAILSKILLSWAP_SOURCE and fails when they are not this
+# list (the path moves with the function when the ability code leaves turn.c).
+FAILSKILLSWAP_ABILITIES = ('disguise', 'hungerswitch', 'illusion', 'stancechange', 'zerotohero')
+FAILSKILLSWAP_SOURCE = os.path.join('src', 'combat', 'turn.c')
+
+
+def failskillswap_c_ids(c_text):
+    """The ability ids that the body of dfi_fails_skillswap names (DFI_ABILITY_HUNGERSWITCH -> 'hungerswitch'), in order."""
+    text = c_text.replace('\r\n', '\n')
+    a = text.find('\nstatic bool dfi_fails_skillswap(')
+    if a < 0:
+        fail('%s: no definition of dfi_fails_skillswap' % FAILSKILLSWAP_SOURCE)
+    b = text.find('\n}\n', a)
+    if b < 0:
+        fail('%s: the body of dfi_fails_skillswap is not closed' % FAILSKILLSWAP_SOURCE)
+    body = text[text.index('{', a):b]
+    ids = [name.lower() for name in re.findall(r'\bDFI_ABILITY_([A-Z0-9_]+)\b', body)]
+    if not ids:
+        fail('%s: dfi_fails_skillswap names no DFI_ABILITY_*' % FAILSKILLSWAP_SOURCE)
+    return [i.replace('_', '') for i in ids]
 
 
 def check_i2_facts(abil_ts, champ_abil):

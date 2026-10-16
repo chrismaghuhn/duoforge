@@ -150,3 +150,34 @@ contains 1; plain and events run the same engine code (events also records the e
 directions (+1.4 % / +1.9 % against −1.7 % / −1.1 %); the executed instructions of the same workload grow by 0.03 %. Two
 repetitions were flagged disturbed (IPO), none without IPO; the run took 38 minutes on the shared cloud VM. All samples:
 `paired-bench-{ipo,noipo}-{change,control}.json`.
+
+## Addendum (2026-10-16, after the merge): the measured binary and the IPO Ir
+
+The review found that with IPO the total grows by 1,323,927 Ir while `dfi_get_damage` inclusive grows by only 864,075.
+Two gaps in this proof's tools caused it, both fixed in `tools/restructure/` (`fn_diff.py`, `callgrind_gate.py`, with
+an offline test, `duoforge.tools.restructure`):
+
+- **The code comparison used the shared library, the measurement the bench executable.** `duoforge_bench` links the
+  engine statically and, with IPO, runs its own LTO link, which inlines differently. On the measured executables of the
+  merged-head proof (`cefc5f67` / `6ae1d27b`), `tools/restructure/fn_diff.py` finds, by clone group:
+  - IPO on: `dfi_get_damage` (5058 → 5062 instructions), `dfi_residual_events_run` (4335 → 4329), `dfi_turn_run`
+    (4181 → 4174), `dfi_lum_cure` (158 → 160; its clones are now `dfi_lum_cure.lto_priv.0[.cold]`), and
+    `dfi_bug_bite` and `dfi_lum_berry` (clone names only: they call the renamed `dfi_lum_cure`);
+  - IPO off: `dfi_get_damage` only (4765 → 4759), as in the library.
+- **The callgrind script read one `callgrind_annotate` line for the function.** The new gate parses the callgrind
+  output itself, sums every clone of a function (exclusive, and inclusive without counting calls between its clones
+  twice) and lists the functions whose own Ir moved most. On the same callgrind outputs (`--analyse`):
+
+| IPO on | Exclusive Ir delta |
+|---|---:|
+| `dfi_event_make` (now called out of line from `dfi_get_damage` 28,215×, `dfi_residual_events_run` 18,245×, `dfi_turn_run` 2,455×; before only from `dfi_run_move_body` and `dfi_battle_step_observed`, unchanged) | +1,027,215 |
+| `dfi_get_damage` (own code) | +271,560 |
+| `dfi_residual_events_run` | +72,815 |
+| `dfi_turn_run` | −47,640 |
+| total (the rest is ±19 in libc) | **+1,323,927** |
+
+`dfi_get_damage` inclusive, +864,075, is its own +271,560 plus its new calls of `dfi_event_make`, +592,515; the other
+459,852 are the new out-of-line calls from the two flow functions and their own code. Without IPO the total's +987,862
+is `dfi_get_damage`'s own +987,845. So the cut moved the bench's LTO inlining of the event constructor at three call
+sites; it changes no rule, no event and no draw (P2 and the fuzz results above stand). The gate verdict is unchanged:
++0.036 % with IPO and +0.025 % without, against the limit of +1.0 %.

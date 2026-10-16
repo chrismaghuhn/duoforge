@@ -2,7 +2,7 @@
 callbacks by step, the move and field-condition facts and their checks.
 
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@001a492e).
+statement is unchanged from gen_closure.py@8800b625).
 """
 import re
 
@@ -2100,6 +2100,36 @@ G61_GATE_FACTS = (
     ('sim/battle-actions.ts', "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce'))) {"),
     ('data/mods/champions/scripts.ts', "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce'))) {"),
 )
+
+
+def ability_flags(abil_ts, champ_abil, aid):
+    """The pinned flags of an ability: the Champions entry's flags field if it has one, else the base entry's (every
+    Champions ability entry inherits); an entry without a flags field has none."""
+    ce = champ_abil.entry(aid)
+    if ce is not None and 'flags' in fields(ce[2]):
+        e = ce
+    else:
+        if ce is not None and 'inherit' not in fields(ce[2]):
+            fail('ability %s: the champions entry neither inherits nor has flags' % aid)
+        e = abil_ts.entry(aid)
+        if e is None:
+            fail('ability %s not found' % aid)
+    f = fields(e[2]).get('flags')
+    if f is None:
+        return set()
+    m = re.match(r'^flags: \{(.*)\},$', norm('\n'.join(line.split('//', 1)[0] for line in f[1].split('\n'))))
+    if m is None:
+        fail('ability %s: unreadable flags %r' % (aid, f[1]))
+    pairs = [p.strip() for p in m.group(1).split(',') if p.strip()]
+    out = set()
+    for p in pairs:
+        pm = re.match(r'^(\w+): 1$', p)
+        if pm is None:
+            fail('ability %s: flag %r is not "name: 1"' % (aid, p))
+        out.add(pm.group(1))
+    return out
+
+
 G77_INHERIT_ONLY = ('leek',)
 G59_SUNNY_FACTS = (
     "if (defender.effectiveWeather() !== 'sunnyday') return;",
