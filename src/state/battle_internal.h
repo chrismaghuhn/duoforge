@@ -300,9 +300,18 @@ typedef struct dfi_side {
 #define DFI_SINGLE_TURN_ROOST 2u
 /* Step K3 (decision 0015 5de): the occupant's Speed was swapped (Speed Swap) and the swap is still live. A presence bit, not a
  * one-turn volatile: it ends at a switch-out, a faint, a Mega Evolution and a forme change (the stats are rebuilt there), and it
- * is NOT cleared at the residual: it persists across turns, so never clear it together with the byte. The swapped values live in the member's stats[SPE]. Bits 3-7 are free and zero. */
+ * is NOT cleared at the residual: it persists across turns, so never clear it together with the byte. The swapped values live in the member's stats[SPE]. */
 #define DFI_SINGLE_TURN_SPEED_SWAP 4u
-#define DFI_TAIL_SINGLE_TURN_MASK 7u    /* bits 3-7 are free and zero */
+/* Issue 606 (decision 0015 5dv): the occupant's lockedmove was not restarted this turn: its move was stopped before its use
+ * (with the refusals of step G56 only a sleep, `cant|X|slp`), so the lock's duration reaches 0 in this turn's residual,
+ * which ends it with onEnd before its onResidual could run (sim/battle.ts:515-522, data/conditions.ts:253-285). Set at the
+ * stopped use, read and cleared by the residual's lock handler (dfi_residual_lock); a removal of the lock clears it too.
+ * It lives in the state, not in the run, so that a PIVOT pause between the `cant` and the residual (U-turn, Parting Shot,
+ * Emergency Exit) keeps it; it moves with the occupant on a swap (the tail position moves whole) and ends with it. An
+ * internal bit (no public value, hidden from the observation): set only with a running lock and only at a PIVOT or TERMINAL
+ * boundary. */
+#define DFI_SINGLE_TURN_LOCK_UNUSED 8u
+#define DFI_TAIL_SINGLE_TURN_MASK 15u   /* bits 4-7 are free and zero */
 #define DFI_TAIL_HITS_TAKEN_MAX 6u      /* Rage Fist: power 50 + 50 * n is capped at 350 */
 #define DFI_TAIL_ABILITY_STATE_MAX 6u   /* Supreme Overlord 0-5 fallen allies, Protean 0/1, Illusion roster index + 1 */
 #define DFI_TAIL_LOCK_TURNS_MAX 3u      /* lockedmove (Outrage, Thrash, Petal Dance): 2 or 3 turns */

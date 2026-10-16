@@ -344,8 +344,10 @@ int main(void)
         duoforge_battle_destroy(h);
     }
 
-    /* A sleeping holder: the sleep stops its move (not a refusal), and the residual deletes its lock silently (lockedmove's
-     * onResidual, data/conditions.ts:260-262): no lock and no locked move after the turn. */
+    /* A sleeping holder: the sleep stops its move (not a refusal), so its lock is not restarted this turn and the residual's
+     * countdown ends it with onEnd (sim/battle.ts:515-522; issue 606, decision 0015 5dv); with this count of 2 onEnd adds no
+     * confusion (data/conditions.ts:278-281). No lock and no locked move after the turn. The count 1 case (the fatigue) is
+     * duoforge.state.pool_lockfam_sleep. */
     {
         duoforge_battle *sl = NULL;
         DF_CHECK(&t, duoforge_battle_clone(kp, base, &sl) == DUOFORGE_OK && sl != NULL);

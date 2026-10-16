@@ -893,7 +893,8 @@ MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
 MUT(m_move_result_high, p0->move_result = 0x40u) /* bits 6-7 are zero (step G42: bits 4 and 5 are the unclassified bits) */
 MUT(m_unclass_now_with_result, p0->move_result = 0x11u) /* unclassified this turn, but this turn is TRUE */
 MUT(m_unclass_last_with_result, p0->move_result = 0x28u) /* unclassified last turn, but last turn is FALSE */
-MUT(m_single_turn_bit3, p0->single_turn = 8u) /* bit 3 is undefined (bit 2 is Speed Swap, step K3) */
+MUT(m_single_turn_bit4, p0->single_turn = 16u) /* bit 4 is undefined (bit 2 is Speed Swap, step K3; bit 3 the unused lock, 5dv) */
+MUT(m_lock_unused_no_lock, p0->single_turn = DFI_SINGLE_TURN_LOCK_UNUSED) /* issue 606 (5dv): the unused-lock bit without a lock */
 /* step K3 (decision 0015 5de): the presence bit of a live Speed Swap ends with its occupant, so it is refused at an empty position */
 MUT(m_speed_swap_empty, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = (uint8_t)(y->sides[0].requested_slots & ~1u), p0->single_turn = DFI_SINGLE_TURN_SPEED_SWAP)
 MUT(m_rage_no_follow_me, p0->single_turn = DFI_SINGLE_TURN_RAGE_POWDER) /* the Follow Me flag is down */
@@ -912,6 +913,12 @@ MUT(m_lock_no_move, lock_outrage_lead(y, 0u, EXAMPLE_LOCK_SLOT, 2u)) /* Outrage 
 MUT(m_lock_last_none, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, 0u, 2u)) /* no last used move */
 MUT(m_lock_last_other, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, 1u, 2u)) /* Dragon Pulse (slot 1) used last */
 MUT(m_lock_last_struggle, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, DFI_TAIL_MOVE_MAX, 2u)) /* Struggle used last */
+/* issue 606 (decision 0015 5dv): the unused-lock bit of a valid lock, at the example's TURN boundary: it stands only at a PIVOT
+ * pause or at the end of the battle (the PIVOT case is duoforge.state.pool_lockfam_sleep's codec round trip) */
+MUT(m_lock_unused_at_turn, {
+    lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, EXAMPLE_LOCK_SLOT, 1u);
+    y->tail.sides[1].positions[0].single_turn = (uint8_t)DFI_SINGLE_TURN_LOCK_UNUSED;
+})
 MUT(m_lock_not_lockedmove, { /* the old example's lock: Rillaboom's Wood Hammer (slot 1) is in the slot and used last */
     y->sides[0].positions[0].locked_move = 1u;
     p0->last_move = 1u;
@@ -1172,7 +1179,10 @@ static const tail_case cases[] = {
     {"a move result above its two nibbles and its two unclassified bits", DFI_INV_TAIL_POSITION, false, m_move_result_high},
     {"an unclassified this-turn bit with a this-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_now_with_result},
     {"an unclassified last-turn bit with a last-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_last_with_result},
-    {"a single-turn bit that is not defined (bit 3)", DFI_INV_TAIL_POSITION, false, m_single_turn_bit3},
+    {"a single-turn bit that is not defined (bit 4)", DFI_INV_TAIL_POSITION, false, m_single_turn_bit4},
+    {"the unused-lock bit without a running lock (issue 606, decision 0015 5dv)", DFI_INV_TAIL_POSITION, false, m_lock_unused_no_lock},
+    {"the unused-lock bit of a running lock at a TURN boundary (it ends in the residual of its turn: 5dv)", DFI_INV_TAIL_POSITION, false,
+     m_lock_unused_at_turn},
     {"a Speed Swap bit at an empty position", DFI_INV_TAIL_POSITION, false, m_speed_swap_empty},
     {"Rage Powder's marker without the Follow Me flag", DFI_INV_TAIL_POSITION, false, m_rage_no_follow_me},
     {"hits taken above 6", DFI_INV_TAIL_POSITION, false, m_hits_taken7},

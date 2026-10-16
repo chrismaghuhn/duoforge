@@ -2089,12 +2089,15 @@ static void dfi_choice_lock_ends(struct duoforge_battle *b, uint32_t flat)
 }
 
 /* lockedmove (step G56, data/conditions.ts:253-285): the volatile is removed, and onEnd adds confusion when the count is 1 or
- * less (trueDuration > 1 returns). dfi_lock_remove is the silent removal (a faint, a switch, a sleep at the countdown: the
- * pin's clearVolatile and its onResidual delete, which have no onEnd). The locked move is the choice lock's or the charge's
- * too, so it is cleared only when neither holds. */
+ * less (trueDuration > 1 returns). dfi_lock_remove is the silent removal (a faint, a switch, the onResidual delete of a holder
+ * put to sleep after its restarted use: the pin's clearVolatile and that delete have no onEnd). The locked move is the choice
+ * lock's or the charge's too, so it is cleared only when neither holds. The unused-lock bit (issue 606, decision 0015 5dv)
+ * goes with the lock. */
 static void dfi_lock_remove(struct duoforge_battle *b, uint32_t flat)
 {
-    b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns = 0u;
+    dfi_tail_pos *lt = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    lt->lock_turns = 0u;
+    lt->single_turn = (uint8_t)((uint32_t)lt->single_turn & ~(uint32_t)DFI_SINGLE_TURN_LOCK_UNUSED); /* wide-operands-reviewed: a byte mask */
     dfi_active_slot *pos = dfi_pos(b, flat);
     if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u && pos->charge_turns == 0u) {
         pos->locked_move = 0u;
@@ -9190,14 +9193,24 @@ static duoforge_status dfi_moody(dfi_run *r, uint32_t flat)
     return DUOFORGE_OK;
 }
 
-/* lockedmove's onResidual (step G56, data/conditions.ts:253-285): its count goes down for a lock used this turn (done at
- * the use, see the AfterMove block), and a lock whose holder is asleep is deleted silently (no end, no confusion). A lock
- * not used this turn and not asleep (a flinch, a full paralysis or a freeze that stopped its move) is refused where that
- * happens (dfi_lock_skipped), so every lock that stands here was used this turn. */
+/* lockedmove's handler in the Residual event (step G56; issue 606, decision 0015 5dv; data/conditions.ts:253-285), in the
+ * pin's two phases of one handler (sim/battle.ts:515-522):
+ *   - the duration phase: a lock that was not restarted this turn (DFI_SINGLE_TURN_LOCK_UNUSED: its holder's move was stopped
+ *     before its use, which with the refusals of the stopped use is only a sleep) is at duration 1 here, so its countdown
+ *     reaches 0 and ends it with onEnd (dfi_lock_end: confusion when the count is 1 or less), and its onResidual does not run;
+ *   - the callback phase, onResidual: otherwise the lock was restarted by its use this turn (the duration goes 2 -> 1, no
+ *     end), its count went down at the use (the AfterMove block), and a holder that is asleep now (put to sleep after its
+ *     use) loses the lock silently (the delete, no end, no confusion).
+ * A lock not used this turn whose holder is not asleep (a flinch, a full paralysis, a freeze, a confusion self-hit) is still
+ * refused where its move is stopped. The bit is read, not the status: a holder cured after its `cant` line is ended too. */
 static duoforge_status dfi_residual_lock(dfi_run *r, uint32_t flat)
 {
-    if (r->b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns == 0u) {
+    dfi_tail_pos *lt = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (lt->lock_turns == 0u) {
         return DUOFORGE_OK;
+    }
+    if (((uint32_t)lt->single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u) {
+        return dfi_lock_end(r, flat); /* dfi_lock_remove clears the bit */
     }
     const dfi_member *lm = dfi_at(r->b, flat);
     if (lm != NULL && lm->status == DFI_STATUS_SLP) {
