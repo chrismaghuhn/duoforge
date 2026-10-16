@@ -215,6 +215,43 @@ class Refusals(unittest.TestCase):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
 
+    def test_the_turn_limit_lines_are_no_events_and_only_the_exact_ones(self):
+        """Decision 0015 entry 5dt (sim/battle.ts:1836-1852): the turn-limit warnings (`bigerror`, from 500 turns left to 0,
+        "1 turn") and the limit's own message carry no state: inserted into a committed battle they change nothing of its
+        conversion. Any other bigerror or message line, or a warning with another count or plural, stays refused."""
+        # The pin's warning turns and texts (:1844-1851): every 100 turns from 500, every 10 from 900, every turn from 990.
+        warnings = []
+        for turn in range(101, 1001):
+            if (turn >= 500 and turn % 100 == 0) or (turn >= 900 and turn % 10 == 0) or turn >= 990:
+                left = 1000 - turn
+                text = '1 turn' if left == 1 else '%d turns' % left
+                warnings.append("|bigerror|You will auto-tie if the battle doesn't end in %s (on turn 1000)." % text)
+        self.assertEqual(len(warnings), 24)  # the 24 lines of tests/reference/prepared/turn1000_tie/turn1000_tie.summary.json
+        message = '|message|It is turn 1000. You have hit the turn limit!'
+        for line in warnings + [message]:
+            self.assertTrue(trace_to_c.turn_limit_line(line), line)
+        name = 's2_turn_core_1'
+        spec, trace = battle(name)
+        want = convert(name, spec, trace)
+        for line in (warnings[0], warnings[-2], warnings[-1], message):
+            spec, trace = battle(name)
+            trace['steps'][1]['log'].insert(len(trace['steps'][1]['log']) - 1, line)
+            self.assertEqual(convert(name, spec, trace), want, line)
+        bad = ["|bigerror|You will auto-tie if the battle doesn't end in 1 turns (on turn 1000).",
+               "|bigerror|You will auto-tie if the battle doesn't end in 2 turn (on turn 1000).",
+               "|bigerror|You will auto-tie if the battle doesn't end in 501 turns (on turn 1000).",
+               "|bigerror|You will auto-tie if the battle doesn't end in 499 turns (on turn 1000).",
+               "|bigerror|You will auto-tie if the battle doesn't end in 15 turns (on turn 1000).",
+               "|bigerror|You will auto-tie if the battle doesn't end in 05 turns (on turn 1000).",
+               "|bigerror|You will auto-tie if the battle doesn't end in 5 turns (on turn 999).",
+               '|bigerror|Something else',
+               '|message|It is turn 999. You have hit the turn limit!',
+               '|message|It is turn 1000. You have hit the turn limit!|x']
+        for line in bad:
+            self.assertFalse(trace_to_c.turn_limit_line(line), line)
+            self.control(name, lambda spec, trace, line=line: trace['steps'][1]['log'].append(line),
+                         'protocol-line', 'trace_to_c: unknown protocol line %r' % line, line.split('|')[1])
+
     def test_a_swap_line_that_is_not_an_ally_switch_swap_is_refused(self):
         """Step G80 (decision 0044): `|swap|` maps only as Ally Switch's own line: the user's slot and the other slot of its
         side, with `[from] move: Ally Switch`. A swap without that attribute, or to a slot that is not 0 or 1, is refused."""
@@ -2510,7 +2547,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 310)  # A0 PR-1 (parts 2 and 3): 294 + 12 + 4 = 310; A0 part 3 (lead decision 2026-10-16): four marks (Solar Blade, Double Hit, Tail Slap, Bone Rush) make 298 (Thrash, Petal Dance, Raging Fury, Snap Trap unmarked again; 302 with them); K4 (#475, entry 5dl): Gravity is marked, makes 294; K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
+        self.assertEqual(len(marked), 323)  # A0 PR-2 (part 4, four moves): 319 + 4 = 323; A0 PR-2 (part 1, nine moves): 310 + 9 = 319; A0 PR-1 (parts 2 and 3): 294 + 12 + 4 = 310; A0 part 3 (lead decision 2026-10-16): four marks (Solar Blade, Double Hit, Tail Slap, Bone Rush) make 298 (Thrash, Petal Dance, Raging Fury, Snap Trap unmarked again; 302 with them); K4 (#475, entry 5dl): Gravity is marked, makes 294; K1 (#476, entry 5dc): Temper Flare makes 292; K3 (#473, entry 5de): Speed Swap makes 293; G96 (decision 0065): Psychic Terrain makes 291 (290 on main); G90 (decision 0060): the five partial-trap moves make 285 (280 before, Healing Wish in); G82: Healing Wish marked (279 before); G92: the nine marks make 279 (270 before)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

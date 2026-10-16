@@ -319,14 +319,15 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DUOFORGE_CAUSE_RECHARGE, 18u);
     DF_CHECK_EQ_U64(&t, DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE, 15u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_MUST_RECHARGE)) != 0u);
-    /* The seven recharge moves of the pool are exactly the ones with the recharge bit; six are marked. */
+    /* The seven recharge moves of the pool are exactly the ones with the recharge bit; all seven are marked (Meteor Assault
+     * since A0 part 1, decision 0015 entry 5ds; six before). */
     {
         uint32_t flagged = 0u;
         for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
             const bool bit = (dfi_pool_move_flags2[id] & DFI_MOVE_FLAG2_RECHARGE) != 0u;
             flagged += bit ? 1u : 0u;
             if (bit) {
-                DF_CHECK(&t, (dfi_support.moves[id] != 0u) == (id != DFI_MOVE_METEORASSAULT));
+                DF_CHECK(&t, dfi_support.moves[id] != 0u);
                 DF_CHECK(&t, dfi_pool_moves[id].special == DFI_SPECIAL_NONE);
             }
         }
@@ -388,6 +389,34 @@ int main(void)
                 DF_CHECK(&t, duoforge_battle_step(kp, b, &bd, &res) != DUOFORGE_OK);
                 DF_CHECK(&t, b->tail.sides[0].positions[0].must_recharge == 1u);
             }
+            duoforge_battle_destroy(b);
+        }
+    }
+
+    /* Stalwart (issue 542): a recharging Pokemon with it aims the recharge at its original target, getAtLoc of its
+     * lastMoveTargetLoc, with no draw while that target is active (sim/battle.ts:2437-2447). The state does not keep that
+     * location, so the recharge turn is refused, not played with a draw (g17_hyper_beam after step 1, Raichu given Stalwart). */
+    {
+        duoforge_battle *b = replay(&t, kp, "g17_hyper_beam", 2u);
+        const df_conf_battle *cb = find("g17_hyper_beam");
+        if (b != NULL && cb != NULL) {
+            const uint32_t member = b->sides[0].positions[0].occupant;
+            DF_CHECK(&t, member < DUOFORGE_MAX_ROSTER && b->tail.sides[0].positions[0].must_recharge == 1u);
+            duoforge_decision_bundle bd;
+            bundle_of(&cb->steps[2], b, &bd);
+            duoforge_step_result res;
+            duoforge_battle *plain = NULL;
+            DF_CHECK_EQ_U64(&t, duoforge_battle_clone(kp, b, &plain), DUOFORGE_OK);
+            DF_CHECK(&t, plain != NULL && duoforge_battle_step(kp, plain, &bd, &res) == DUOFORGE_OK); /* without it: played */
+            if (member < DUOFORGE_MAX_ROSTER) {
+                b->tail.sides[0].ability_now[member] = (uint16_t)(DFI_ABILITY_STALWART + 1u);
+                DF_CHECK_EQ_U64(&t, duoforge_battle_step(kp, b, &bd, &res), DUOFORGE_E_UNSUPPORTED);
+            }
+            if (plain != NULL) {
+                duoforge_battle_destroy(plain);
+            }
+        }
+        if (b != NULL) {
             duoforge_battle_destroy(b);
         }
     }

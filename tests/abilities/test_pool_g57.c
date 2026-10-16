@@ -293,6 +293,10 @@ static duoforge_battle *start(df_test *t, const duoforge_context *ctx, const df_
 
 /* One turn with the given slot commands (side 0 then side 1, two slots each). `bounces` counts the Magic Bounce move lines
  * (cause ABILITY, id2 = Magic Bounce + 1) of both players' events. */
+/* The events of the last turn() (player 0's copy first), for the tests that read the lines themselves. */
+static duoforge_event g57_events[2][64];
+static uint32_t g57_event_count;
+
 static duoforge_status turn(const duoforge_context *ctx, duoforge_battle *b, duoforge_slot_command cmd[2][2], uint32_t *bounces)
 {
     duoforge_decision_bundle bd;
@@ -307,10 +311,11 @@ static duoforge_status turn(const duoforge_context *ctx, duoforge_battle *b, duo
             bd.responses[s].slots[k] = cmd[s][k];
         }
     }
-    static duoforge_event ev[2][64];
+    duoforge_event (*ev)[64] = g57_events;
     duoforge_event_buffer buf[2] = {{ev[0], 64u, 0u}, {ev[1], 64u, 0u}};
     duoforge_step_result res;
     const duoforge_status st = duoforge_battle_step_events(ctx, b, &bd, &res, buf);
+    g57_event_count = buf[0].count;
     *bounces = 0u;
     /* The public events are the same in both players' buffers: one player's copy counts each line once. */
     for (uint32_t p = 0u; p < 1u; ++p) {
@@ -362,8 +367,10 @@ static void test_follow_me_on_the_source_side_is_refused(df_test *t)
 }
 
 /* Armor Tail on the source's side with a Prankster-boosted original move: Sableye (Prankster) Taunts Espeon, and the bounced copy has
- * the boosted priority; the Armor Tail holder of the source's side (Farigiraf, position 1) stops it: refused (E_UNSUPPORTED). */
-static void test_armor_tail_with_a_prankster_copy_is_refused(df_test *t)
+ * the boosted priority (sim/battle-actions.ts:409-412); the Armor Tail holder of the source's side (Farigiraf, position 1) stops it
+ * in TryMove (issue 543): the bounced line gets [still], then cant|Farigiraf|ability: Armor Tail|Taunt|[of] Espeon. Before issue 543
+ * the engine refused this turn. */
+static void test_armor_tail_stops_a_prankster_copy(df_test *t)
 {
     const df_conf_battle *cb = must_find(t, "g57_mb_taunt");
     if (cb == NULL) {
@@ -380,7 +387,23 @@ static void test_armor_tail_with_a_prankster_copy_is_refused(df_test *t)
     if (b != NULL) {
         duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(0, DUOFORGE_TARGET_NONE)}, {slot(0, 0), slot(0, DUOFORGE_TARGET_NONE)}};
         uint32_t bounces = 0u;
-        DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, bounces, 1u);
+        uint32_t still = 0u;
+        uint32_t cant = 0u;
+        for (uint32_t i = 0u; i < g57_event_count; ++i) {
+            const duoforge_event *e = &g57_events[0][i];
+            if (e->kind == DUOFORGE_EVENT_MOVE && e->cause == DUOFORGE_CAUSE_ABILITY && e->id2 == DFI_ABILITY_MAGICBOUNCE + 1u) {
+                still += (e->flags & DUOFORGE_EVENT_FLAG_STILL) != 0u && e->other == DUOFORGE_NO_POSITION ? 1u : 0u;
+                const duoforge_event *n = i + 1u < g57_event_count ? &g57_events[0][i + 1u] : NULL;
+                cant += n != NULL && n->kind == DUOFORGE_EVENT_CANT && n->position == 1u && n->cause == DUOFORGE_CAUSE_ABILITY &&
+                                n->id2 == DFI_ABILITY_ARMORTAIL + 1u && n->id == DFI_MOVE_TAUNT && n->other == 2u
+                            ? 1u
+                            : 0u;
+            }
+        }
+        DF_CHECK_EQ_U64(t, still, 1u);
+        DF_CHECK_EQ_U64(t, cant, 1u);
         duoforge_battle_destroy(b);
     }
     duoforge_context_destroy(ctx);
@@ -564,7 +587,7 @@ int main(void)
     test_mega_stones(&t);
     test_two_holders_of_a_hazard_are_refused(&t);
     test_follow_me_on_the_source_side_is_refused(&t);
-    test_armor_tail_with_a_prankster_copy_is_refused(&t);
+    test_armor_tail_stops_a_prankster_copy(&t);
     test_psychic_terrain_with_a_prankster_copy_stops_the_original(&t);
     test_a_taunt_is_bounced_once(&t);
     test_a_protecting_holder_is_not_bounced(&t);

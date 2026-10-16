@@ -1093,10 +1093,16 @@ static uint32_t dfi_level_of(const dfi_member *m)
 
 
 
+#include "combat/mechanics/damage/crit.h"
+#include "combat/mechanics/damage/stats.h"
+#include "combat/mechanics/damage/base_power.h"
+#include "combat/mechanics/damage/attack.h"
+#include "combat/mechanics/damage/base_damage.h"
+#include "combat/mechanics/damage/modify_damage.h"
+
 static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md,
                                       uint32_t move_type, bool spread, uint32_t *out, bool *crit_out)
 {
-    static const uint32_t crit_mult[5] = {0u, 24u, 8u, 2u, 1u};
     const dfi_member *a = dfi_at(r->b, user);
     const dfi_member *d = dfi_at(r->b, target);
     /* The critical hit of this hit (the caller's Anger Point test, step G77): false unless the roll below made it one; a move
@@ -1145,616 +1151,33 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     const dfi_active_slot *ap = dfi_pos(r->b, user);
     const dfi_active_slot *dp = dfi_pos(r->b, target);
-    bool crit = false;
-    /* ModifyCritRatio (sim/battle-actions.ts:1624): the attacker's Dragon Cheer stage and Super Luck (step G65,
-     * data/abilities.ts:4703-4711, onModifyCritRatio of the user, not breakable: +1) added to the move's ratio, then the
-     * clamp to 0..4 for gen 9 (sim/battle-actions.ts:1623-1633). */
-    /* Step G75: Scope Lens (data/items.ts:5554-5565, onModifyCritRatio +1) is the holder's item, one more term of the same sum. */
-    /* Leek (step G77, data/items.ts:3322-3337, onModifyCritRatio of the user: +2 when its base species is Farfetch'd or
-     * Sirfetch'd; the pool has no other forme of either, and the item's itemUser list is not checked by the sim for it,
-     * only for Z-moves, so the holder's species decides). */
-    const bool leek_crit = dfi_holds(r->b, a, DFI_ITEM_LEEK) &&
-                           (a->species_id == DFI_FORME_FARFETCHD || a->species_id == DFI_FORME_SIRFETCHD);
-    uint32_t ratio = (uint32_t)md->crit_ratio + dfi_dragon_cheer_stage(r->b, user) +
-                     (dfi_ability(r->b, a, DFI_ABILITY_SUPERLUCK) ? 1u : 0u) +
-                     (dfi_holds(r->b, a, DFI_ITEM_SCOPELENS) ? 1u : 0u) + (leek_crit ? 2u : 0u);
-    if (ratio > 4u) {
-        ratio = 4u;
-    }
-    if (md->special == DFI_SPECIAL_WILL_CRIT) {
-        /* willCrit (step C4, decision 0015 entry 5ct; Storm Throw, Flower Trick, Frost Breath): moveHit.crit = willCrit, so the
-         * critical hit is certain and no roll is drawn (sim/battle-actions.ts:1638-1643). The CriticalHit event below still
-         * runs (Shell Armor). The ratio above is read and clamped as the pin reads it; it has no draw here. */
-        crit = true;
-    } else if (ratio > 0u) {
-        const duoforge_status st = dfi_draw_chance(r->draws, DFI_SITE_CRIT, 1u, crit_mult[ratio], &crit);
-        if (st != DUOFORGE_OK) {
-            return st;
-        }
-    }
-    /* Shell Armor (step G63, data/abilities.ts:4222-4228, onCriticalHit false): the target's CriticalHit event runs after the
-     * roll (sim/battle-actions.ts:1640-1646), so the draw above is taken and the hit is then not a critical one: no crit
-     * modifier and no [-crit] line. Breakable; Mold Breaker is not marked. */
-    /* Battle Armor (step G75, data/abilities.ts:355-361, the same onCriticalHit false as Shell Armor, breakable): the same cancel. */
-    if (crit && (dfi_ability(r->b, d, DFI_ABILITY_SHELLARMOR) || dfi_ability(r->b, d, DFI_ABILITY_BATTLEARMOR))) {
-        crit = false;
-    }
-    const bool physical = md->category == DFI_CATEGORY_PHYSICAL;
-    uint32_t atk_index = physical ? DFI_STAGE_ATK : DFI_STAGE_SPA;
-    uint32_t def_index = physical ? DFI_STAGE_DEF : DFI_STAGE_SPD;
-    /* Step G32, getDamage (sim/battle-actions.ts:1671-1676): Body Press attacks with the user's Defense
-     * (overrideOffensiveStat), Foul Play with the Attack of the target and its stages (overrideOffensivePokemon), Psyshock
-     * hits the Defense stat with a special move (overrideDefensiveStat). The category stays the move's: the ModifyAtk and
-     * ModifySpA events of the user, the weather's ModifyDef and ModifySpD of the stat that is hit, burn and the screens
-     * read it. */
-    const dfi_member *astat = a;
-    const dfi_active_slot *apos = ap;
-    if (md->special == DFI_SPECIAL_BODY_PRESS) {
-        atk_index = DFI_STAGE_DEF;
-    } else if (md->special == DFI_SPECIAL_FOUL_PLAY) {
-        astat = d;
-        apos = dp;
-    } else if (md->special == DFI_SPECIAL_PSYSHOCK) {
-        def_index = DFI_STAGE_DEF;
-    }
-    uint32_t atk_stage = apos->stages[atk_index];
-    uint32_t def_stage = dp->stages[def_index];
-    if (crit) {
-        /* A critical hit ignores negative offensive and positive defensive stages. */
-        if (atk_stage < DFI_BIAS6) {
-            atk_stage = DFI_BIAS6;
-        }
-        if (def_stage > DFI_BIAS6) {
-            def_stage = DFI_BIAS6;
-        }
-    }
-    /* Darkest Lariat (Team C): ignoreDefensive, the target's Defense stage in
-     * both directions (sim/battle-actions.ts:1691-1700). */
-    if (md->special == DFI_SPECIAL_DARKEST_LARIAT) {
-        def_stage = DFI_BIAS6;
-    }
-    /* Unaware (step G65, data/abilities.ts:5214-5234, onAnyModifyBoost, breakable): the stat stages that the handler zeroes
-     * follow whose stat is READ, not whose stage it is. Each handler returns for its own holder (`unawareUser === pokemon`),
-     * so a self-hit (a confusion hit, user = target) is not touched. When the target holds it, the user's attack-side read
-     * is zeroed (atk, def, spa, accuracy of the user): the Attack, Defense or Special Attack stage of the user, and the
-     * Foul Play case, whose read is the target's own Attack stage (overrideOffensivePokemon) at the user's statUser.
-     * When the user holds it, the target's defence-side read is zeroed (def, spd, evasion of the target), so Psyshock's
-     * Defense too. The two holders of one hit may both apply; each zeroes only its own side's reads. Mold Breaker is not
-     * marked, so no Unaware is ignored (no Mold Breaker row is modelled). */
-    /* The pin's Unaware reads activeTarget (data/abilities.ts:5218, :5223): the attacker-side stages are zeroed when the holder
-     * is the activeTarget, and the defender-side stages when the holder is the user and the activeTarget is the defender.
-     * activeTarget is the hit target, except in a Substitute hit of a spread move, where it is the last target that reached
-     * hitStepAccuracy (sim/battle-actions.ts:693, :1138-1146). Single hits are unchanged: the activeTarget is the target. */
-    const uint32_t pin_active = r->sub_hit ? r->sub_active : target;
-    if (pin_active != user && dfi_ability(r->b, dfi_at(r->b, pin_active), DFI_ABILITY_UNAWARE)) {
-        atk_stage = DFI_BIAS6;
-    }
-    if (pin_active == target && user != target && dfi_ability(r->b, a, DFI_ABILITY_UNAWARE)) {
-        def_stage = DFI_BIAS6;
-    }
-    uint32_t attack = 0u;
-    uint32_t defense = 0u;
-    uint32_t damage = 0u;
-    if (!dfi_stage_stat(astat->stats[atk_index], atk_stage, &attack) ||
-        !dfi_stage_stat(d->stats[def_index], def_stage, &defense)) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    /* ModifyDef and ModifySpD (sim/battle-actions.ts:1707-1709) of the weather conditions, priority 10, so the first
-     * handler: Sandstorm's onModifySpD gives a Rock type 1.5x its Special Defense, Snowscape's onModifyDef an Ice
-     * type 1.5x its Defense (data/conditions.ts:640-645 and 706-711; this.modify(x, 1.5) is 6144/4096). */
-    /* Marvel Scale (step G65, data/abilities.ts:2534-2545, onModifyDefPriority 6, breakable): x1.5 on the holder's Defense while
-     * it has a status, in the ModifyDef event (sim/battle-actions.ts:1707). Psyshock's Defense is in that event too (its
-     * overrideDefensiveStat is 'def'), a special hit's Special Defense is not. runEvent applies the product of all the
-     * handlers' chainModify once (sim/battle.ts:2382), so the weather's 1.5 and this one are one chained modifier. */
-    /* Both handlers read the defender's effectiveWeather with the weather condition as the effect (sim/pokemon.ts:2190-2198):
-     * while a Mega Sol holder is the active Pokemon that is sun, so a Mega Sol user's hit gets neither boost (issue 521;
-     * the pin excludes Electro Shot by the effect's id, and the effect here is the weather, so no move is excluded). */
-    const uint32_t def_weather = dfi_move_weather(r, a, true);
-    uint32_t dchain = 4096u;
-    bool dok = true;
-    if (def_weather == DFI_WEATHER_SAND && def_index == DFI_STAGE_SPD && dfi_has_type(r->b, d, DFI_TYPE_ROCK)) {
-        dok = dfi_chain_modify(dchain, 6144u, &dchain);
-    } else if (def_weather == DFI_WEATHER_SNOW && def_index == DFI_STAGE_DEF && dfi_has_type(r->b, d, DFI_TYPE_ICE)) {
-        dok = dfi_chain_modify(dchain, 6144u, &dchain);
-    }
-    if (def_index == DFI_STAGE_DEF && d->status != DFI_STATUS_NONE && dfi_ability(r->b, d, DFI_ABILITY_MARVELSCALE)) {
-        dok = dok && dfi_chain_modify(dchain, 6144u, &dchain);
-    }
-    if (!dok) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    if (dchain != 4096u) {
-        defense = dfi_modify(defense, dchain);
-    }
-    /* BasePower (after the critical hit roll), one chained modifier: Mystic
-     * Water (Water) and Miracle Seed (Grass) 4915/4096, Grassy Terrain
-     * 5325/4096 for a grounded user's Grass move. */
-    /* Weather Ball doubles in rain or sun (onModifyMove); Grass Knot's and
-     * Low Kick's power follow the target's weight (basePowerCallback). */
-    uint32_t power = md->base_power;
-    if (md->special == DFI_SPECIAL_WEATHER_BALL && dfi_move_weather(r, a, true) != DFI_WEATHER_NONE) {
-        power *= 2u;
-    } else if (md->special == DFI_SPECIAL_ACROBATICS) {
-        /* Acrobatics' basePowerCallback (step G28, data/moves.ts:117-141): doubled while the user holds no item (the item it
-         * holds now: one that was eaten, knocked off or used up is gone). */
-        if (dfi_item_code(r->b, a) == 0u) {
-            power *= 2u;
-        }
-    } else if (md->special == DFI_SPECIAL_STOMPING_TANTRUM) {
-        /* basePowerCallback of Stomping Tantrum (data/moves.ts:18054-18058) and of Temper Flare (data/moves.ts:19189-19195,
-         * the same code, step K1, #476): x2 when the user's last move result is FALSE (strictly; null is not a failure). An
-         * unclassified last result is refused, never guessed (step G42). */
-        const uint32_t last_res = r->b->tail.sides[user / 2u].positions[user % 2u].move_result;
-        if ((last_res & DFI_MOVE_RESULT_UNCLASSIFIED_LAST) != 0u) {
-            return DUOFORGE_E_UNSUPPORTED;
-        }
-        if (((last_res >> DFI_MOVE_RESULT_LAST_SHIFT) & 3u) == DFI_MOVE_RESULT_FALSE) {
-            power *= 2u;
-        }
-    } else if (md->special == DFI_SPECIAL_HP_POWER) {
-        /* Eruption and Water Spout (step G32, data/moves.ts:4888-4905, :20661-20678): basePower 150 x the user's HP / its
-         * maximum HP, the engine takes the integer part and at least 1 (clampIntRange in getDamage). */
-        power = (uint32_t)md->base_power * (uint32_t)a->hp / (uint32_t)a->hp_max; /* wide-operands-reviewed: hp <= hp_max */
-        power = power < 1u ? 1u : power;
-    } else if (md->special == DFI_SPECIAL_TRIPLE_AXEL) {
-        /* Triple Axel's basePowerCallback (step G33, data/moves.ts:20005-20023): 20 x move.hit. */
-        power = 20u * r->hit_index;
-    } else if (md->special == DFI_SPECIAL_BEAT_UP) {
-        /* Beat Up's basePowerCallback (step G64): the power of the hit (dfi_beat_up_hits). */
-        power = r->beat_up_bp[r->hit_index - 1u];
-    } else if (md->special == DFI_SPECIAL_POWER_TRIP) {
-        /* Power Trip's basePowerCallback (step G44, data/moves.ts:13851-13859): 20 + 20 x the user's positiveBoosts(), the sum
-         * of its positive stages (Pokemon.positiveBoosts, sim/pokemon.ts:1201-1208). A stage is stored biased by 6. */
-        const uint32_t positive = dfi_power_trip_positive_stages(ap->stages);
-        power = (uint32_t)md->base_power + 20u * positive;
-    } else if (md->special == DFI_SPECIAL_ASSURANCE) {
-        /* Assurance's basePowerCallback (step G88, data/moves.ts:648-653): doubled when the target was hurt this turn (the
-         * HURT_THIS_TURN bit, decision 0046). */
-        if (dfi_pos_flag(r->b, target, DFI_POSFLAG_HURT)) {
-            power *= 2u;
-        }
-    } else if (md->special == DFI_SPECIAL_LASH_OUT) {
-        /* Lash Out's onBasePower (step G88, data/moves.ts:10055-10059): chainModify(2) when the user's stat fell this turn
-         * (LOWERED_THIS_TURN, decision 0046). */
-        if (dfi_pos_flag(r->b, user, DFI_POSFLAG_LOWERED)) {
-            power *= 2u;
-        }
-    } else if (md->special == DFI_SPECIAL_RAGE_FIST) {
-        /* Rage Fist's basePowerCallback (step G48, data/moves.ts:14583-14596): 50 + 50 x the user's timesAttacked, at most 350.
-         * timesAttacked counts the damaging hits the user took since it came in (the Champions loop, scripts.ts:565, and the
-         * reset in clearVolatile, scripts.ts:123-170): tail rev 4 hits_taken, saturating at DFI_TAIL_HITS_TAKEN_MAX (6, which
-         * already gives 350). */
-        const uint32_t taken = r->b->tail.sides[user / 2u].positions[user % 2u].hits_taken;
-        power = 50u + 50u * taken;
-        power = power > 350u ? 350u : power;
-    } else if (md->special == DFI_SPECIAL_RISING_VOLTAGE) {
-        /* Rising Voltage's basePowerCallback (step G25, data/moves.ts:15137-15162): doubled while Electric Terrain is up
-         * and the target is grounded (whoever the user is). */
-        if (r->b->terrain == DFI_TERRAIN_ELECTRIC && dfi_grounded(r->b, d)) {
-            power *= 2u;
-        }
-    } else if (md->special == DFI_SPECIAL_TERRAIN_PULSE) {
-        /* Terrain Pulse's onModifyMove (step G25, data/moves.ts:19265-19311): doubled in any terrain for a grounded user. */
-        if (r->b->terrain != DFI_TERRAIN_NONE && dfi_grounded(r->b, a)) {
-            power *= 2u;
-        }
-    } else if (md->special == DFI_SPECIAL_HEAVY_SLAM) {
-        /* Heavy Slam's basePowerCallback (step G86, data/moves.ts:8533-8552): the user's weight against the target's. */
-        power = dfi_heavy_slam_power(dfi_forme_of(a)->weight_hg, dfi_forme_of(d)->weight_hg);
-    } else if (md->special == DFI_SPECIAL_HARD_PRESS) {
-        /* Hard Press's basePowerCallback (step G86, data/moves.ts:8137-8150): the target's current HP (not the user's). */
-        power = dfi_hard_press_power(d->hp, d->hp_max);
-    } else if (dfi_move_power_by_weight(md)) {
-        power = dfi_weight_power(dfi_forme_of(d)->weight_hg);
-    } else if (md->special == DFI_SPECIAL_LAST_RESPECTS) {
-        /* Last Respects (Team C): 50 + 50 per fainted member of the user's
-         * side (basePowerCallback, data/moves.ts:10091-10105). side.totalFainted
-         * is derived: every faint is processed before the next action starts
-         * (decision 0009 section 4.1); after a Revival Blessing it is not. */
-        if (dfi_revival_spent(r->b, user / 2u)) {
-            return DUOFORGE_E_UNSUPPORTED;
-        }
-        power = 50u + 50u * dfi_fainted_members(r->b, user / 2u);
-    }
-    uint32_t bp_chain = 4096u;
-    bool ok = true;
-    const uint32_t bp_move = (uint32_t)(md - dfi_pool_moves); /* wide-operands-reviewed: a pointer into the move table, below DFI_POOL_MOVE_COUNT */
-    const uint32_t bp_flags2 = bp_move != DFI_MOVE_STRUGGLE ? (uint32_t)dfi_pool_move_flags2[bp_move] : 0u;
-    /* Technician (step G34, data/abilities.ts:4916-4930): onBasePower at priority 30, the first handler, so the chain is
-     * still 4096 when it judges `this.modify(basePower, this.event.modifier)`: the move's own power after its callback.
-     * 1.5 for 60 or less. */
-    if (dfi_ability(r->b, a, DFI_ABILITY_TECHNICIAN) && power <= 60u) {
-        ok = dfi_chain_modify(bp_chain, 6144u, &bp_chain);
-    }
-    ok = dfi_ate_base_power(r->b, a, md, move_type, ok, &bp_chain);
-    /* Rivalry (step G83, data/abilities.ts:3881-3898, onBasePowerPriority 24, after Technician's 30 and before Iron Fist's 23): the
-     * attacker and the defender both have a gender (male or female): chainModify(1.25) for the same gender, chainModify(0.75)
-     * for the other one, and nothing when either is genderless. Its holder is the attacker, and the rival is the defender. */
-    if (dfi_ability(r->b, a, DFI_ABILITY_RIVALRY) && dfi_gender_known(a->gender) && dfi_gender_known(d->gender)) {
-        ok = ok && dfi_chain_modify(bp_chain, a->gender == d->gender ? 5120u : 3072u, &bp_chain);
-    }
-    /* Iron Fist (step G34, data/abilities.ts:2236-2248, priority 23 like the -ate abilities, which it never meets: one
-     * ability): the punch flag, 4915/4096. */
-    if ((bp_flags2 & DFI_MOVE_FLAG2_PUNCH) != 0u && dfi_ability(r->b, a, DFI_ABILITY_IRONFIST)) {
-        ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
-    }
-    /* Reckless (step G65, data/abilities.ts:3799-3811, onBasePowerPriority 23, not breakable): chainModify([4915, 4096]) for a move
-     * with a recoil of the move data (`move.recoil`, numerator and denominator). Struggle is no such move (its struggleRecoil
-     * is a flag, moves.ts:18228), and the crash moves (hasCrashDamage: Axe Kick, High Jump Kick, Supercell Slam) are not modelled:
-     * the generator refuses a modelled crash move while this row has no clause for it (pool_families.js checkG65). The priority
-     * 23 slot is the one of the -ate abilities and Iron Fist, which the holder cannot have together with it. */
-    if (md->recoil[1] != 0u && dfi_ability(r->b, a, DFI_ABILITY_RECKLESS)) {
-        ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
-    }
-    if (dfi_ability(r->b, a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
-        ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
-    }
-    /* Sand Force (step G63, data/abilities.ts:3956-3973, onBasePowerPriority 21, the same priority as Tough Claws; a holder has
-     * one ability): chainModify([5325, 4096]) for a Rock, Ground or Steel move of its holder while the effective weather is
-     * Sandstorm, the field's weather (dfi_field_weather: Cloud Nine suppresses it, step G79; Air Lock is not in the pool). The
-     * type is move_type (the attack's type, after the -ate change), which is what the pin's move.type is for these moves. */
-    if (dfi_ability(r->b, a, DFI_ABILITY_SANDFORCE) && dfi_field_weather(r) == DFI_WEATHER_SAND &&
-        (move_type == DFI_TYPE_ROCK || move_type == DFI_TYPE_GROUND || move_type == DFI_TYPE_STEEL)) {
-        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
-    }
-    /* Sheer Force (step G61, data/abilities.ts:4214-4215, onBasePowerPriority 21 like Tough Claws, which it never meets: one
-     * ability): chainModify([5325, 4096]) for a move it stripped and for Electro Shot (hasSheerForceBoost). */
-    if (dfi_sf_boosts(r->b, a, md)) {
-        ok = ok && dfi_chain_modify(bp_chain, DFI_SHEER_FORCE_MODIFIER, &bp_chain);
-    }
-    ok = dfi_fairy_aura_base_power(r->b, user, target, move_type, ok, &bp_chain);
-    /* Sharpness (step G34, data/abilities.ts:4174-4186, priority 19: after Fairy Aura's 20, before the items' 15): the slicing
-     * flag, x1.5. */
-    if ((bp_flags2 & DFI_MOVE_FLAG2_SLICING) != 0u && dfi_ability(r->b, a, DFI_ABILITY_SHARPNESS)) {
-        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
-    }
-    /* Mega Launcher (step G59, data/abilities.ts:2546-2556, onBasePowerPriority 19, the same slot as Sharpness, which it never
-     * meets: one ability): chainModify(1.5) for a pulse move of its holder (the public static flag PULSE of the pool row,
-     * engine column dfi_pool_move_flags3, bit DFI_MOVE_FLAG3_PULSE, which equals the public static PULSE flag of every row; no
-     * pulse move is a Struggle). Breakable: no; the Champions mod has no entry. */
-    if (bp_move != DFI_MOVE_STRUGGLE && dfi_ability(r->b, a, DFI_ABILITY_MEGALAUNCHER) &&
-        (dfi_pool_move_flags3[bp_move] & DFI_MOVE_FLAG3_PULSE) != 0u) {
-        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
-    }
-    /* Muscle Band and Wise Glasses (step G49, data/items.ts:4239-4251 and :7754-7766, onBasePowerPriority 16: after
-     * Sharpness's 19 and before the type boosters' 15): 4505/4096 for a Physical move (Muscle Band) or a Special move (Wise
-     * Glasses) of its holder. The item the holder has now (dfi_item_code); the move's category is the table's, which is the
-     * pinned one for every marked move (no marked move changes its category at the pin). */
-    {
-        const uint32_t held_now = dfi_item_code(r->b, a);
-        if ((held_now == 1u + DFI_ITEM_MUSCLEBAND && md->category == DFI_CATEGORY_PHYSICAL) ||
-            (held_now == 1u + DFI_ITEM_WISEGLASSES && md->category == DFI_CATEGORY_SPECIAL)) {
-            ok = ok && dfi_chain_modify(bp_chain, 4505u, &bp_chain);
-        }
-    }
-    ok = dfi_type_booster_base_power(r->b, a, move_type, ok, &bp_chain);
-    /* Helping Hand's volatile (Team C): chainModify(1.5) at
-     * onBasePowerPriority 10, after the items (15) and before Grassy Terrain
-     * (6) (data/moves.ts:8590-8597). */
-    if (((uint32_t)dfi_pos(r->b, user)->flags & DFI_VOL_HELPING_HAND) != 0u) {
-        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
-    }
-    /* Punk Rock (step G45, data/abilities.ts:3589-3602, onBasePowerPriority 7: after Helping Hand's 10 and the items' 15, before
-     * the terrains' 6): chainModify([5325, 4096]) for a sound move of the holder (breakable; Mold Breaker is not marked). */
-    if (dfi_ability(r->b, a, DFI_ABILITY_PUNKROCK) && md->special != DFI_SPECIAL_STRUGGLE &&
-        (dfi_pool_move_flags2[(uint32_t)(md - dfi_pool_moves)] & DFI_MOVE_FLAG2_SOUND) != 0u) { /* wide-operands-reviewed: a pointer into the move table */
-        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
-    }
-    if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, a)) {
-        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
-    }
-    /* Grassy Terrain's other half (step G28, data/moves.ts:7694-7698): Earthquake (and Bulldoze and Magnitude, which are not
-     * marked) at a grounded target is chainModify(0.5), the first branch of the same handler (priority 6); a Ground move is
-     * not a Grass move, so the two never both apply. */
-    if (md == &dfi_pool_moves[DFI_MOVE_EARTHQUAKE] && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, d) &&
-        !dfi_semi_invulnerable(r, target)) { /* data/moves.ts:7695 (weakenedMoves: Earthquake is the marked one) */
-        ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
-    }
-    /* Psychic Terrain (Team C): 5325/4096 for a grounded user's Psychic move
-     * (onBasePowerPriority 6, like Grassy Terrain's, which cannot be up at
-     * the same time). */
-    if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(r->b, a) &&
-        !dfi_semi_invulnerable(r, user)) { /* data/moves.ts:14132 */
-        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
-    }
-    /* Electric Terrain (step G25, data/moves.ts:4520-4527): 5325/4096 for a grounded user's Electric move, the same
-     * handler slot (priority 6). Misty Terrain (:12175-12181): chainModify(0.5), 2048/4096, for a Dragon move at a grounded
-     * target. */
-    /* The attacker's boost: a semi-invulnerable user gets none (data/moves.ts:4533, :14132; no pool move reads it while the user is
-     * semi-invulnerable, the predicate keeps the reading of the pin). */
-    if (move_type == DFI_TYPE_ELECTRIC && r->b->terrain == DFI_TERRAIN_ELECTRIC && dfi_grounded(r->b, a) &&
-        !dfi_semi_invulnerable(r, user)) {
-        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
-    }
-    if (move_type == DFI_TYPE_DRAGON && r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, d) &&
-        !dfi_semi_invulnerable(r, target)) { /* data/moves.ts:12186 */
-        ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
-    }
-    /* Expanding Force's own onBasePower (step G15, data/moves.ts:4952-4957): chainModify(1.5) for a grounded user in
-     * Psychic Terrain. runEvent puts the move's handler first and sorts by priority: its priority is 0, so it runs
-     * after the terrain's (6), Helping Hand's (10) and the items' (15), and the chain rounds once at the end. */
-    if (md->special == DFI_SPECIAL_EXPANDING_FORCE && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(r->b, a)) {
-        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
-    }
-    /* Knock Off's onBasePower (data/moves.ts:9959-9984, priority 0, so after every handler above): 1.5x while its
-     * target holds an item that can be taken (Sticky Hold does not matter here: only the item's own TakeItem is asked). */
-    if (md->special == DFI_SPECIAL_KNOCK_OFF && dfi_item_takeable(r->b, d)) {
-        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
-    }
-    /* Solar Beam's onBasePower (step G30, data/moves.ts:17245-17251, priority 0 like Knock Off's, after every handler
-     * above): chainModify(0.5) in rain, Sandstorm or Snow; Utility Umbrella and Mega Sol are not marked. */
-    const uint32_t bp_weather = dfi_move_weather(r, a, md->special == DFI_SPECIAL_SOLAR_BEAM);
-    if (md->special == DFI_SPECIAL_SOLAR_BEAM &&
-        (bp_weather == DFI_WEATHER_RAIN || bp_weather == DFI_WEATHER_SAND || bp_weather == DFI_WEATHER_SNOW)) {
-        ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
-    }
-    const uint32_t base_power = bp_chain == 4096u ? power : dfi_modify(power, bp_chain);
-    /* ModifyAtk / ModifySpA, one chained modifier: a pinch ability (the
-     * PINCH family: Blaze, Overgrow, Torrent and Swarm, decision 0015) for a
-     * move of its type at a third of the HP or less, Flash Fire's boost for
-     * Fire moves once it took one; 1.5 each. */
-    uint32_t atk_chain = 4096u;
-    ok = dfi_pinch_attack(r->b, a, move_type, ok, &atk_chain);
-    if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FLASHFIRE) &&
-        ((uint32_t)ap->flags & DFI_VOL_FLASH_FIRE) != 0u) {
-        ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
-    }
-    /* Solar Power (step G39, data/abilities.ts:4396-4413, onModifySpA priority 5): x1.5 for the Special Attack stat in sun
-     * (Desolate Land is not a weather of the state). It is the holder's one ability, so it never meets a pinch ability or
-     * Flash Fire, the other chained ability modifiers. */
-    if (atk_index == DFI_STAGE_SPA && dfi_field_weather(r) == DFI_WEATHER_SUN && dfi_ability(r->b, a, DFI_ABILITY_SOLARPOWER)) {
-        ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
-    }
-    /* The three step-G59 abilities of the Attack and Special Attack events, all dyadic (8192, 6144, 2048 out of 4096), so
-     * their order and the one rounding of the chain give the same value in every order. The events follow the move's
-     * CATEGORY, not the stat that the move uses (sim/battle-actions.ts:1694-1697: `Modify` + Atk or SpA of the category), so
-     * Body Press's Defense is multiplied by Huge Power in the ModifyAtk event and Foul Play's Attack by the user's
-     * abilities, the user being the event's holder (the source of the runEvent call; `source`, sim/battle-actions.ts:1697).
-     *   Huge Power (data/abilities.ts:1886-1896, onModifyAtkPriority 5): x2 for a physical move of its holder.
-     *   Fire Mane (data/abilities.ts:1295-1310, onModifyAtkPriority 5 and onModifySpAPriority 5): x1.5 for a Fire move of its
-     *     holder, either category; the Champions mod inherits it (Future tag dropped).
-     *   Thick Fat (data/abilities.ts:5014-5030, onSourceModifyAtkPriority 6 and onSourceModifySpAPriority 5, breakable: no
-     *     Mold Breaker is marked): x0.5 for an Ice or Fire move against its holder (the target, the `source` of the
-     *     event), either category. */
-    /* Pure Power (step G75, data/abilities.ts:3608-3617, as Huge Power: onModifyAtk x2 for a physical move of its holder). */
-    if (physical && (dfi_ability(r->b, a, DFI_ABILITY_HUGEPOWER) || dfi_ability(r->b, a, DFI_ABILITY_PUREPOWER))) {
-        ok = ok && dfi_chain_modify(atk_chain, 8192u, &atk_chain);
-    }
-    if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FIREMANE)) {
-        ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
-    }
-    if ((move_type == DFI_TYPE_ICE || move_type == DFI_TYPE_FIRE) && dfi_ability(r->b, d, DFI_ABILITY_THICKFAT)) {
-        ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
-    }
-    /* Water Bubble (step G65, data/abilities.ts:5377-5417, breakable, Mold Breaker not marked): onModifyAtk and onModifySpA of
-     * the holder, x2 for its Water moves of either category (priority 0; every factor of this chain is dyadic, so their order does not change the value);
-     * onSourceModifyAtk and onSourceModifySpA of the target (priority 5), x0.5 for a Fire move against its holder, either
-     * category, as Thick Fat. The two are the holder's one ability, so they never meet a Thick Fat. */
-    if (move_type == DFI_TYPE_WATER && dfi_ability(r->b, a, DFI_ABILITY_WATERBUBBLE)) {
-        ok = ok && dfi_chain_modify(atk_chain, 8192u, &atk_chain);
-    }
-    if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, d, DFI_ABILITY_WATERBUBBLE)) {
-        ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
-    }
-    if (!ok) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    if (atk_chain != 4096u) {
-        attack = dfi_modify(attack, atk_chain);
-    }
-    if (!dfi_base_damage(DFI_LEVEL, base_power, attack, defense, &damage)) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    damage += 2u;
-    if (spread) {
-        damage = dfi_modify(damage, 3072u); /* 0.75 */
-    }
-    /* WeatherModifyDamage: rain and sun boost their type by half and halve
-     * the other (data/conditions.ts raindance, sunnyday). */
-    const uint32_t weather = dfi_field_weather(r);
-    if (dfi_ability(r->b, a, DFI_ABILITY_MEGASOL)) {
-        /* Mega Sol (step G59, data/abilities.ts:2558-2569, onWeatherModifyDamagePriority 1): the holder's own handler, first
-         * of the event (the field's handlers are priority 0, and it returns the damage: a fast exit), calls sunnyday's
-         * onWeatherModifyDamage with the holder's moves as sun: Fire x1.5 and Water x0.5 (data/conditions.ts:556-578), whatever
-         * the field's weather is (the field's raindance and the rest do not run). Hydro Steam is not marked. */
-        if (move_type == DFI_TYPE_FIRE) {
-            damage = dfi_modify(damage, 6144u);
-        } else if (move_type == DFI_TYPE_WATER) {
-            damage = dfi_modify(damage, 2048u);
-        }
-    } else if ((weather == DFI_WEATHER_RAIN && move_type == DFI_TYPE_WATER) ||
-               (weather == DFI_WEATHER_SUN && move_type == DFI_TYPE_FIRE)) {
-        damage = dfi_modify(damage, 6144u);
-    } else if ((weather == DFI_WEATHER_RAIN && move_type == DFI_TYPE_FIRE) ||
-               (weather == DFI_WEATHER_SUN && move_type == DFI_TYPE_WATER)) {
-        damage = dfi_modify(damage, 2048u);
-    }
-    if (crit) {
-        damage = dfi_crit_damage(damage);
-    }
-    uint32_t roll = 0u;
-    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_DAMAGE_ROLL, 0u, 16u, &roll);
+    dfi_damage_ctx ctx = {a, d, ap, dp, spread, false, false, false, 0u, 0u, 0u, 0u, 0u, 0u};
+    duoforge_status st = dfi_damage_crit(r, user, target, md, move_type, &ctx);
     if (st != DUOFORGE_OK) {
         return st;
     }
-    if (!dfi_randomize(damage, roll, &damage)) {
-        return DUOFORGE_E_INVARIANT;
+    st = dfi_damage_stats(r, user, target, md, move_type, &ctx);
+    if (st != DUOFORGE_OK) {
+        return st;
     }
-    uint32_t mod = DFI_BIAS6; /* neutral for Struggle's typeless hit */
-    if (move_type < DFI_TYPE_COUNT) {
-        /* STAB 1.5; Adaptability 2 (Team C, data/abilities.ts:43-56; no Tera) */
-        const uint32_t stab = !dfi_has_type(r->b, a, move_type) ? 4096u
-                              : dfi_ability(r->b, a, DFI_ABILITY_ADAPTABILITY) ? 8192u
-                                                                         : 6144u;
-        damage = dfi_modify(damage, stab);
-        mod = dfi_type_mod(r->b, d, move_type, md);
-        if (!dfi_type_damage(damage, mod, &damage)) {
-            return DUOFORGE_E_INVARIANT;
-        }
-        /* -supereffective or -resisted with min(|typeMod|, 2) (the
-         * Champions modifyDamage, data/mods/champions/scripts.ts:269-279) */
-        if (mod != DFI_BIAS6) {
-            const uint32_t by = mod > DFI_BIAS6 ? mod - DFI_BIAS6 : DFI_BIAS6 - mod;
-            duoforge_event e =
-                dfi_event_make(mod > DFI_BIAS6 ? DUOFORGE_EVENT_SUPER_EFFECTIVE : DUOFORGE_EVENT_RESISTED, target);
-            e.amount = (uint8_t)(by > 2u ? 2u : by); /* wide-operands-reviewed: <= 2 */
-            dfi_emit(r, &e);
-        }
+    st = dfi_damage_base_power(r, user, target, md, move_type, &ctx);
+    if (st != DUOFORGE_OK) {
+        return st;
     }
-    if (crit) {
-        dfi_emit_plain(r, DUOFORGE_EVENT_CRIT, target); /* [-crit] */
+    st = dfi_damage_attack(r, user, target, md, move_type, &ctx);
+    if (st != DUOFORGE_OK) {
+        return st;
     }
-    /* A burned attacker's physical moves, Struggle included, do half
-     * (modifyDamage, sim/battle-actions.ts:1816-1820). */
-    if (physical && a->status == DFI_STATUS_BRN) {
-        damage = dfi_modify(damage, 2048u);
+    st = dfi_damage_base(r, user, target, md, move_type, &ctx);
+    if (st != DUOFORGE_OK) {
+        return st;
     }
-    /* ModifyDamage, one chained modifier: the attacker's Life Orb 5324/4096;
-     * the target's Chople Berry (Team C, data/items.ts:1030-1053), which it
-     * eats inside the calculation of a super-effective Fighting hit
-     * ([-enditem] [eat], then [weaken]) for 2048/4096; then Reflect
-     * (physical) or Light Screen (special) on the target's side, not against
-     * a critical hit and not on the user itself, 2732/4096 in doubles.
-     * The reference orders the handlers by speed: the held items by their
-     * holders' speed, a screen as a side condition at 0 (comparePriority), so
-     * last, or first under Trick Room, where speeds are negative. Every order
-     * of these modifiers chains to the same value (checked below), so the
-     * order and a speed tie between the holders decide nothing (its shuffle
-     * draw is dropped, decision 0009 section 10.5). */
-    const dfi_side *ds = &r->b->sides[target / 2u];
-    uint32_t chain = 4096u;
-    uint32_t mods = 0u; /* the ModifyDamage modifiers in the chain */
-    uint32_t mlist[DFI_MODIFY_DAMAGE_MAX] = {0u}; /* and their values, for the commutation test below */
-    if (dfi_holds(r->b, a, DFI_ITEM_LIFEORB)) {
-        ok = dfi_chain_modify(chain, 5324u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 5324u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
+    st = dfi_damage_modify(r, user, target, md, move_type, &ctx);
+    if (st != DUOFORGE_OK) {
+        return st;
     }
-    /* Expert Belt's onModifyDamage (step G28, data/items.ts:1901-1914): 4915/4096 when the hit is super effective
-     * (typeMod > 0: the combined type effectiveness above the neutral one). */
-    if (dfi_holds(r->b, a, DFI_ITEM_EXPERTBELT) && mod > DFI_BIAS6) {
-        ok = ok && dfi_chain_modify(chain, 4915u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 4915u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    /* A resist berry (the RESIST_BERRY family: Chople Berry and the sixteen
-     * others, decision 0015; combat/items/families.h) is eaten by a super
-     * effective hit of its type, the Normal berry by any Normal hit. */
-    const uint32_t berry_item = dfi_item_code(r->b, d);
-    if (dfi_resist_berry_applies(berry_item, move_type, mod) && !dfi_unnerved(r->b, target) && !r->sub_hit) {
-        const duoforge_status berry_status =
-            dfi_resist_berry_hit(r, target, berry_item, &ok, &chain, mlist, &mods, dfi_use_item);
-        if (berry_status != DUOFORGE_OK) {
-            return berry_status;
-        }
-    }
-    /* Aurora Veil (step G20, data/moves.ts:846-860) weakens both categories by the same 2732/4096 and returns without an
-     * effect when the target's side has the screen of the move's category (so the two never multiply): the test is one
-     * 2732 for a screen of the category or Aurora Veil. A critical hit and `infiltrates` skip all three: the move's
-     * own `infiltrates` field is not modelled (the generator refuses it), and Infiltrator (step G39, data/abilities.ts:
-     * 2131-2139, onModifyMove) sets it on every move of its holder. */
-    if (!crit && target != user && !dfi_ability(r->b, a, DFI_ABILITY_INFILTRATOR) &&
-        ((physical && ds->reflect_turns != 0u) ||
-         (md->category == DFI_CATEGORY_SPECIAL && ds->light_screen_turns != 0u) ||
-         r->b->tail.sides[target / 2u].aurora_veil_turns != 0u)) {
-        /* `this.activePerHalf > 1 ? chainModify([2732, 4096]) : chainModify(0.5)` (data/moves.ts:859-860, 10337-10338 and
-         * 14864-14865): 2048/4096 in singles (decision 0083). */
-        const uint32_t screen = dfi_context_singles(r->ctx) ? 2048u : 2732u;
-        ok = ok && dfi_chain_modify(chain, screen, &chain);
-        if (!dfi_mods_push(mlist, &mods, screen)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    /* Glaive Rush's onSourceModifyDamage on the target (data/moves.ts:6647-6678): chainModify(2). With a Life Orb attacker,
-     * a resist berry and a screen all in the chain the four modifiers do not commute (3552 or 3551 by their order, the
-     * handlers' speeds and a tie draw), a case that this build does not model. */
-    if (r->b->tail.sides[target / 2u].positions[target % 2u].glaive_rush != 0u) {
-        ok = ok && dfi_chain_modify(chain, 8192u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 8192u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    /* Solid Rock and Multiscale (step G34, data/abilities.ts:4414-4425 and 2760-2771, onSourceModifyDamage of the target,
-     * both breakable and Mold Breaker is not marked): x0.75 on a super effective hit (typeMod > 0), x0.5 at full HP.
-     * Filter (step G63, data/abilities.ts:1283-1294) is the same callback with the same text: x0.75 on typeMod > 0. */
-    if ((dfi_ability(r->b, d, DFI_ABILITY_SOLIDROCK) || dfi_ability(r->b, d, DFI_ABILITY_FILTER)) && mod > DFI_BIAS6) {
-        ok = ok && dfi_chain_modify(chain, 3072u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 3072u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    if (dfi_ability(r->b, d, DFI_ABILITY_MULTISCALE) && d->hp >= d->hp_max) {
-        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 2048u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    /* Aura Guard (Mega batch 2, data/abilities.ts:310-319, onSourceModifyDamage of the target, breakable and Mold Breaker is
-     * not marked; the Champions mod has no entry): x0.5 (chainModify(0.5) = 2048/4096) on a move with the contact flag, like
-     * the contact half of Fluffy. It is the target's one ability, so with Solid Rock and Multiscale a hit has at most one of
-     * the three. */
-    if (dfi_ability(r->b, d, DFI_ABILITY_AURAGUARD) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
-        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 2048u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    /* Punk Rock's onSourceModifyDamage (step G45, data/abilities.ts:3597-3602, breakable): chainModify(0.5) on a sound move
-     * against the holder. It is the target's one ability, so with Solid Rock, Multiscale and Aura Guard a hit has at most one. */
-    if (dfi_ability(r->b, d, DFI_ABILITY_PUNKROCK) && md->special != DFI_SPECIAL_STRUGGLE &&
-        (dfi_pool_move_flags2[(uint32_t)(md - dfi_pool_moves)] & DFI_MOVE_FLAG2_SOUND) != 0u) { /* wide-operands-reviewed: a pointer into the move table */
-        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 2048u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    /* Friend Guard (step G35, data/abilities.ts:1533-1540, onAnyModifyDamage, breakable and Mold Breaker is not marked): the
-     * target's partner, when it stands and holds the ability, weakens every hit on the target by x0.75 (3072/4096). The handler
-     * is any Pokemon's, so the attacker's own partner is a holder too when it is the one hit (a spread move on an ally), and the
-     * holder itself is not weakened (target !== holder). A fainted holder does not run (runEvent skips the fainted). */
-    const dfi_member *partner = dfi_at(r->b, target ^ 1u);
-    if (partner != NULL && partner->hp != 0u && dfi_ability(r->b, partner, DFI_ABILITY_FRIENDGUARD)) {
-        ok = ok && dfi_chain_modify(chain, 3072u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 3072u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    /* Sniper (step G77, data/abilities.ts:4358-4369, onModifyDamage of the attacker, not breakable): chainModify(1.5) = 6144/4096
-     * on a critical hit. The Champions modifyDamage runs its ModifyDamage event once, at its end (scripts.ts:296; the base game
-     * at sim/battle-actions.ts:1826), so Sniper is one more factor of the same chain as Life Orb and the rest, applied once. */
-    if (crit && dfi_ability(r->b, a, DFI_ABILITY_SNIPER)) {
-        ok = ok && dfi_chain_modify(chain, 6144u, &chain);
-        if (!dfi_mods_push(mlist, &mods, 6144u)) {
-            return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
-        }
-    }
-    /* The handlers have no order and priority 0, so runEvent sorts them by their holders' speed, then by subOrder (a screen, a
-     * side condition, has no speed and is last); this build does not compute that order (a follow-up, combat/damage_chain.h), so
-     * the modifiers must chain to one value in every order. Pairs and triples of Life Orb, Expert Belt, a resist berry, a screen,
-     * Solid Rock, Multiscale and Friend Guard do (checked by dfi_mods_commute at its own test, tests/test_pool_g34.c, and here for
-     * every hit); the combinations that do not (Glaive Rush's x2 with three others, an Expert Belt with a berry and Glaive Rush, a
-     * Solid Rock with them) are E_UNSUPPORTED. */
-    if (mods >= 3u && !dfi_mods_commute(mlist, mods)) {
-        return DUOFORGE_E_UNSUPPORTED;
-    }
-    if (!ok) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    if (chain != 4096u) {
-        damage = dfi_modify(damage, chain);
-    }
-    /* Step K2 (Piercing Drill, data/mods/champions/scripts.ts, the bypassProtect block after ModifyDamage): x0.25 of the hit that
-     * passed a protection, then the holder's [-ability] (the attacker, Piercing Drill is an Ability effect) and [-zbroken] on the
-     * target. Both lines print in this getDamage, after the critical and effectiveness lines above. */
-    if (((r->protect_bypass >> target) & 1u) != 0u) {
-        damage = dfi_modify(damage, DFI_PIERCING_DRILL_BYPASS_MOD);
-        const duoforge_event ab =
-            dfi_ev(DUOFORGE_EVENT_ABILITY, user, DUOFORGE_CAUSE_NONE, 1u + DFI_ABILITY_PIERCINGDRILL, DUOFORGE_NO_POSITION);
-        dfi_emit(r, &ab); /* [-ability] attacker|Piercing Drill */
-        dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT_BROKEN, target); /* [-zbroken] target (decision 0015 5dd, kind 51 from the HS register, chrismaghuhn/duoforge#478) */
-    }
+    const uint32_t damage = ctx.damage;
+    const bool crit = ctx.crit;
     *out = dfi_final_damage(damage);
     *crit_out = crit; /* the roll's result after the Shell Armor test: the critical hit the holder's Anger Point reads (step G77) */
     return DUOFORGE_OK;
@@ -5298,8 +4721,15 @@ static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
     if (!dfi_kind_limits_of(r->ctx->data_kind).pool_rules || tail->must_recharge == 0u || m == NULL) {
         return DUOFORGE_E_INVARIANT; /* nothing but a recharging POOL occupant is offered this action */
     }
-    /* getTarget('recharge', no location) has no target class and takes getRandomTarget: a random foe (one draw with two
-     * foes standing), before OverrideAction and BeforeMove; it decides nothing. */
+    /* Stalwart (issue 542): getTarget returns the action's original target, with no draw, while it is active (sim/battle.ts:
+     * 2437-2447). That target is getAtLoc of the recharge action's location, the Pokemon's lastMoveTargetLoc (sim/side.ts:
+     * 675-689, sim/battle-queue.ts:263-273, sim/pokemon.ts:913), which the state does not keep: whether runMove draws is not
+     * known, so the turn is refused rather than guessed. */
+    if (dfi_ability(b, m, DFI_ABILITY_STALWART)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* getTarget('recharge', the stored location) has no target class and takes getRandomTarget: a random foe (one draw with
+     * two foes standing), before OverrideAction and BeforeMove; it decides nothing. */
     uint32_t ignored = 0u;
     duoforge_status st = dfi_resolve_target(r, user, DUOFORGE_TARGET_CLASS_NORMAL, &ignored);
     if (st != DUOFORGE_OK) {
@@ -6747,16 +6177,25 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
             return DUOFORGE_E_UNSUPPORTED;
         }
     }
-    /* A Prankster-boosted original move gives the bounced move its priority (useMoveInner, battle-actions.ts:411). Psychic
-     * Terrain then stops it at a grounded source, and an Armor Tail holder on the source's side stops it: both not modelled. */
+    /* The original move's priority is the bounced move's (useMoveInner, battle-actions.ts:409-412: the activeMove's, a
+     * Prankster boost or a move's own, Baby-Doll Eyes). Psychic Terrain then stops it at a grounded source: not modelled. An
+     * Armor Tail or Queenly Majesty holder on the source's side stops it in TryMove (onFoeTryMove, data/abilities.ts:3716-3734;
+     * issue 543), after the move line: [still], then cant|holder|ability|move|[of] the bouncer, and the bounced move is false. */
+    uint32_t shield_flat = DFI_POSITIONS;
+    uint32_t shield = 0u;
     if (dfi_move_priority(b, um, md) > DFI_PRIORITY_BIAS) {
         if (b->terrain == DFI_TERRAIN_PSYCHIC) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const bool exempt = md->target_class == DFI_TARGET_CLASS_FOE_SIDE || md->target_class == DUOFORGE_TARGET_CLASS_ALL;
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE && !exempt && shield == 0u; ++slot) {
             const uint32_t flat = (user / 2u) * 2u + slot;
-            if (dfi_alive(b, flat) && dfi_ability(b, dfi_at(b, flat), DFI_ABILITY_ARMORTAIL)) {
-                return DUOFORGE_E_UNSUPPORTED;
+            const dfi_member *sm = dfi_at(b, flat);
+            if (dfi_alive(b, flat)) {
+                shield = dfi_ability(b, sm, DFI_ABILITY_ARMORTAIL)        ? 1u + DFI_ABILITY_ARMORTAIL
+                         : dfi_ability(b, sm, DFI_ABILITY_QUEENLYMAJESTY) ? 1u + DFI_ABILITY_QUEENLYMAJESTY
+                                                                         : 0u;
+                shield_flat = flat;
             }
         }
     }
@@ -6807,7 +6246,13 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
     bool hit[DFI_POSITIONS] = {false, false, false, false};
     bool guarded[DFI_POSITIONS] = {false, false, false, false};
     const uint32_t count = 1u;
-    if (md->side_condition >= DUOFORGE_SIDE_STEALTH_ROCK) {
+    if (shield != 0u) {
+        dfi_still(r);
+        r->mres |= DFI_MRES_FALSE; /* onFoeTryMove returns false */
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, shield_flat, DUOFORGE_CAUSE_ABILITY, shield, holder);
+        e.id = (uint16_t)move_id;
+        dfi_emit(r, &e);
+    } else if (md->side_condition >= DUOFORGE_SIDE_STEALTH_ROCK) {
         st = dfi_hazard_move(r, holder, md); /* TryHitSide: no Protect, no accuracy */
     } else {
         st = dfi_protect_targets(r, holder, targets, count, guarded, dfi_no_inv_miss, false, hit, md);
@@ -6829,6 +6274,13 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
             }
             /* hitStepTryImmunity: the natural powder immunity of a Grass source (the bouncer is not the target). */
             if (powder_move && hit[0] && dfi_powder_natural_immune(b, dfi_at(b, user))) {
+                hit[0] = false;
+                dfi_immune(r, user, 0u);
+                r->mres |= DFI_MRES_FALSE;
+            }
+            /* hitStepTryImmunity: Leech Seed's onTryImmunity refuses a Grass source (data/moves.ts:10202-10231), before the
+             * accuracy step, so no accuracy draw (issue 543), as in the move body. */
+            if (md->special == DFI_SPECIAL_LEECH_SEED && hit[0] && dfi_has_type(b, dfi_at(b, user), DFI_TYPE_GRASS)) {
                 hit[0] = false;
                 dfi_immune(r, user, 0u);
                 r->mres |= DFI_MRES_FALSE;
@@ -7266,9 +6718,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                              md->special == DFI_SPECIAL_PHANTOM_FORCE;
     /* Pressure (step G53, dfi_pressure_extra): after the move's own PP and the redirection, before TryMove (the pin's order,
      * sim/battle-actions.ts:473-484). The extra comes off the user's slot as deductPP does, clamped at 0. A locked turn has
-     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP). The state is exact
-     * whatever the move line shows; what the viewer can attribute is the view's business (the fold in events.c). */
-    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
+     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP), the turn of a lockedmove
+     * (Outrage) included (issue 544). The state is exact whatever the move line shows; what the viewer can attribute is the
+     * view's business (the fold in events.c). */
+    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked && !lock_move) {
         const uint32_t extra = dfi_pressure_extra(b, user, target_class, move_id, targets, count);
         if (extra != 0u) {
             dfi_move_slot *pressed = &m->moves[q->move_slot];
