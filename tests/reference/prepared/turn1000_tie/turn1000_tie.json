@@ -1,0 +1,20 @@
+{
+  "name": "turn1000_tie",
+  "purpose": "The turn limit of every format (sim/battle.ts:1834-1843, before the Endless Battle Clause's rule check, so Reg M-C too): both sides switch both slots every turn (no PP, no damage, no draw: eight distinct Speeds), the warning lines appear from turn 500 (:1844-1852), and the battle ends as a tie when endTurn makes the turn 1001 (:1624, 1839-1842) without a |turn|1001 line.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000001000",
+  "teams": [
+    "Kingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nGholdengo\nAbility: Good as Gold\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nArchaludon (M)\nAbility: Stamina\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nRillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect",
+    "Basculegion (M)\nAbility: Adaptability\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nFarigiraf (F)\nAbility: Armor Tail\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nSneasler (M)\nAbility: Unburden\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nRaichu (F)\nAbility: Lightning Rod\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 1 HP\nHardy Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "switch 3, switch 4"
+    ],
+    "p2": [
+      "switch 3, switch 4"
+    ],
+    "max_steps": 1010
+  }
+}
