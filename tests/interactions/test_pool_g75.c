@@ -13,8 +13,8 @@
  * they do not show by themselves:
  *   - the marks and the handler columns: the four rows and the three stones are marked (support manifest), with the handler NONE
  *     (engine rows read by id, the stones mark only);
- *   - the stones that stay out, with their reason: Starminite (Starmie's abilities Illuminate, Natural Cure and Analytic are
- *     unmarked), Sharpedonite (Strong Jaw is UNMODELLED: its bite
+ *   - the stones that stay out, with their reason: Starminite (Starmie's abilities Illuminate, Natural Cure and Analytic were
+ *     unmarked; Analytic is marked since batch A1b, decision 0015 entry 5dz, and the stone is a separate entry, still unmarked), Sharpedonite (Strong Jaw is UNMODELLED: its bite
  *     flag has no pool column yet, deferred); Altarianite stayed out here too and is marked since A0 part 1 (5ds);
  *   - the Mega of each pair (dfi_mega_of) and the support of the pair (dfi_manifest_mega_of), and the legal base abilities of the
  *     two base formes that the battles use (Pure Power on Medicham, Unaware on Clefable, as hidden ability).

@@ -230,17 +230,20 @@ static void check_view(df_test *t, const duoforge_context *ctx)
 }
 
 /* What the step marks and what it leaves out: the sources of the terrains' effects that the engine does not model are
- * unmarked rows, so no battle holds one. Surge Surfer (Speed x2 in Electric Terrain), Mimicry (the type of the terrain),
- * Seed Sower and Grass Pelt (Grassy Terrain), Terrain Extender (eight turns), Ice Spinner (it clears the terrain) and Misty
+ * unmarked rows, so no battle holds one. Surge Surfer (Speed x2 in Electric Terrain), Mimicry (the type of the terrain) and
+ * Seed Sower (Grassy Terrain) are; Grass Pelt (Defense x1.5 in Grassy Terrain) is a marked engine row since batch A1b (decision
+ * 0015 entry 5dz, the ModifyDef chain). Terrain Extender (eight turns), Ice Spinner (it clears the terrain) and Misty
  * Explosion (x1.5 in Misty Terrain) read the terrain by a callback of their own. Steel Roller, which clears it too, is a
  * handler since step G34, and since step G25 it ends all four terrains (its battles: g34_steel_roller*, g25_steel_roller_terrains). */
 static void check_marks(df_test *t)
 {
-    static const uint32_t abilities[] = {DFI_ABILITY_SURGESURFER, DFI_ABILITY_MIMICRY, DFI_ABILITY_SEEDSOWER, DFI_ABILITY_GRASSPELT};
+    static const uint32_t abilities[] = {DFI_ABILITY_SURGESURFER, DFI_ABILITY_MIMICRY, DFI_ABILITY_SEEDSOWER};
     for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
         DF_CHECK_EQ_U64(t, dfi_support.abilities[abilities[i]], 0u);
         DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[abilities[i]], DFI_HANDLER_UNMODELED);
     }
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_GRASSPELT] != 0u); /* batch A1b (decision 0015 5dz): an engine row */
+    DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_GRASSPELT], DFI_HANDLER_NONE);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_TERRAINEXTENDER] != 0u); /* step G55 marks Terrain Extender (8 turns) */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELROLLER] != 0u && dfi_pool_moves[DFI_MOVE_STEELROLLER].special == DFI_SPECIAL_STEEL_ROLLER);
     /* Ice Spinner is marked by step G86 (decision 0048): its terrain clear after a hit is the handler below. */

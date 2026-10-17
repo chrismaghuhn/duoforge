@@ -432,10 +432,14 @@ def resist_berries():
 
 
 def modify_damage_values():
-    """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name."""
+    """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name.
+    A handler whose factor depends on the hit has a tuple of the factors it can give (Fluffy, batch A1b)."""
     values = {'lifeorb': 5324, 'expertbelt': 4915, 'reflect': 2732, 'lightscreen': 2732, 'auroraveil': 2732, 'glaiverush': 8192,
               'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072, 'auraguard': 2048,
-              'sniper': 6144}  # Sniper (step G77): x1.5 on a critical hit, the attacker's ability (data/abilities.ts:4358-4369)
+              'sniper': 6144,  # Sniper (step G77): x1.5 on a critical hit, the attacker's ability (data/abilities.ts:4358-4369)
+              # Fluffy (batch A1b, data/abilities.ts:1458-1469): x2 for a Fire move without contact, x0.5 for a contact move that is
+              # not Fire; a Fire contact move is chainModify(1), no factor (a subset without it covers that hit)
+              'fluffy': (8192, 2048)}
     values.update({berry: 2048 for berry in resist_berries()})
     return values
 
@@ -454,16 +458,19 @@ def modifiers_commute(mods):
 
 def modifier_subsets(kinds, values):
     """The modifier lists that one hit can have from the handlers `kinds`: any subset with one screen at most, one of Life Orb and
-    Expert Belt, and one of Solid Rock, Multiscale and Aura Guard (Mega batch 2)."""
+    Expert Belt, and one of Solid Rock, Multiscale, Aura Guard (Mega batch 2) and Fluffy (batch A1b); a handler with several
+    factors (a tuple of `values`) gives one list per factor."""
     import itertools
     # A screen is not applied to a critical hit (turn.c, the `!crit` test), and Sniper is only on one: they never meet (step G77).
-    exclusive = (('reflect', 'lightscreen', 'auroraveil', 'sniper'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale', 'auraguard'))
+    exclusive = (('reflect', 'lightscreen', 'auroraveil', 'sniper'), ('lifeorb', 'expertbelt'),
+                 ('solidrock', 'multiscale', 'auraguard', 'fluffy'))
     out = []
     for r in range(1, len(kinds) + 1):
         for sub in itertools.combinations(kinds, r):
             if any(sum(1 for k in sub if k in group) > 1 for group in exclusive):
                 continue
-            out.append([values[k] for k in sub])
+            for mods in itertools.product(*[values[k] if isinstance(values[k], tuple) else (values[k],) for k in sub]):
+                out.append(list(mods))
     return out
 
 

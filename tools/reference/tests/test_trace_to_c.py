@@ -3334,6 +3334,34 @@ class SniperChain(unittest.TestCase):
         self.assertTrue(trace_to_c.modifiers_commute([5324, 6144, 2048]))
 
 
+class FluffyChain(unittest.TestCase):
+    """NAMED RULE FLUFFY-CHAIN (batch A1b, decision 0015 5dz): Fluffy is the target's one ability in the ModifyDamage chain with
+    two factors (x2 for a Fire move without contact, x0.5 for a contact move that is not Fire); every subset of a tie is checked
+    with each factor, and a group that does not commute with either is refused."""
+
+    def tie(self, group):
+        return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'event:ModifyDamage', 'group': group}, {})
+
+    def test_fluffy_has_both_factors_and_is_one_target_ability(self):
+        values = trace_to_c.modify_damage_values()
+        self.assertEqual(values['fluffy'], (8192, 2048))
+        self.assertEqual(sorted(trace_to_c.modifier_subsets(['fluffy', 'lifeorb'], values)),
+                         [[2048], [2048, 5324], [5324], [8192], [8192, 5324]])
+        # exclusive with the other target abilities: no subset holds Fluffy and Multiscale
+        self.assertEqual(sorted(trace_to_c.modifier_subsets(['fluffy', 'multiscale'], values)), [[2048], [2048], [8192]])
+
+    def test_ties_that_commute_and_ties_that_do_not(self):
+        same = 'ModifyDamage modifiers whose every order chains to the same value'
+        for group in (['H:fluffy:p1a:cb', 'H:lifeorb:p2a:cb'], ['H:fluffy:p1a:cb', 'H:friendguard:p1b:cb']):
+            with self.subTest(group=group):
+                self.assertEqual(self.tie(group), same)
+        # Expert Belt (4915) with Fluffy's 0.5 and Friend Guard (3072): 4915, 2048 and 3072 chain to two values by their order
+        self.assertFalse(trace_to_c.modifiers_commute([4915, 2048, 3072]))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            self.tie(['H:expertbelt:p2a:cb', 'H:fluffy:p1a:cb', 'H:friendguard:p1b:cb'])
+        self.assertEqual(cm.exception.rule, 'modifydamage-tie')
+
+
 class Forme(unittest.TestCase):
     """The forme key (lead decision 2026-10-11): a switch line names a forme by its base species in the identifier
     (`|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|`), and the roster key stays the team species. One case each for the
