@@ -601,6 +601,19 @@ class AttractFoldTest(unittest.TestCase):
         other = trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 0, 2, trace_to_c.CAUSE["MOVE"], 0, 41)
         self.assertFalse(t._pre_action([other], 0))
 
+    def test_natural_cures_switch_out_line_is_no_pre_action(self):
+        # A2a (decision 0015 entry 5dy): Natural Cure's [silent] -curestatus at the switch-out is CURE_STATUS with cause ABILITY and no
+        # [msg]; _pre_action reads the cause and the flag, so it is not taken for a wake-up or a thaw before an action
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._attract, t._struggle = 40, 900
+        cure = trace_to_c.ev_tuple(trace_to_c.EV["CURE_STATUS"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["ABILITY"], 0, 123,
+                                   detail=trace_to_c.AILMENT["tox"])
+        self.assertFalse(t._pre_action([cure], 0))
+        thaw = trace_to_c.ev_tuple(trace_to_c.EV["CURE_STATUS"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["NONE"], 0, 0,
+                                   detail=trace_to_c.AILMENT["frz"], flags=trace_to_c.FLAG["MESSAGE"])
+        self.assertTrue(t._pre_action([thaw], 0))
+
     def test_the_record_writes_the_attract_sources_by_flat_position(self):
         from duoforge_live import record
         t = self.tracker()

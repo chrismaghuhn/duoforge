@@ -578,7 +578,9 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
      * Intimidate would make to Attack (boost.atk is set: a change the cap already took to 0 is not) is deleted, and
      * -fail|holder|unboost|atk|[from] ability: Inner Focus|[of] holder shows. The Pokemon is no Grass type of a side
      * with Flower Veil, whose own TryBoost handler would race this one by Speed: no Inner Focus holder of the pool is
-     * a Grass type (tools/datagen/pool_families.js checkG22). Breakable, like Flower Veil. */
+     * a Grass type (tools/datagen/pool_families.js checkG22). Breakable, like Flower Veil. The same holds for Scrappy and
+     * Oblivious below, as forme facts only: Skill Swap (step G70) can still give one of the three to a Grass type next to a
+     * Flower Veil holder; that composition is not refused here (decision 0015 entry 5dy, a follow-up). */
     /* Scrappy (step G39, data/abilities.ts:4079-4098) has the same onTryBoost for Intimidate, with the same line (its other
      * half, the immunity of Ghost types to Normal and Fighting moves, is in dfi_get_damage's caller). */
     /* Oblivious (step G47, data/abilities.ts:3026-3031): the same onTryBoost for Intimidate's Attack drop, with the same line
@@ -597,8 +599,9 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
     /* Hyper Cutter (step G39, data/abilities.ts:1940-1954, onTryBoost of the target itself, breakable): an Attack drop that
      * another Pokemon causes is deleted after Contrary and the cap (boost.atk is then set and negative), and the line
      * -fail|holder|unboost|atk|[from] ability: Hyper Cutter|[of] holder shows unless the effect is a move's secondary
-     * (effect.secondaries). Like Clear Body it never meets a Flower Veil holder's handler: no forme of the pool with it is a
-     * Grass type (tests/test_pool_g39.c). */
+     * (effect.secondaries). No forme of the pool with it is a Grass type (tests/test_pool_g39.c), so as a forme it never meets
+     * a Flower Veil holder's handler; Skill Swap (step G70) can still give it to a Grass type next to a Flower Veil holder, and
+     * that composition is not refused here (decision 0015 entry 5dy, a follow-up). */
     if (source != flat && source != DFI_POSITIONS && boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] < DFI_BIAS6 &&
         dfi_ability(r->b, m, DFI_ABILITY_HYPERCUTTER)) {
         veil[DFI_STAGE_ATK] = true;
@@ -619,8 +622,8 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
      * cannot occur for these stats in the pool: the pin's negative Attack, Defense and accuracy boosts without a source are the
      * Max moves (Max Phantasm, data/moves.ts:11350, and its neighbour at :11484), isNonstandard "Past" and not in Champions.
      * Neither holder can meet another TryBoost of the
-     * same stat: a holder has one ability, and Flower Veil reads a Grass type, which no forme with either ability is
-     * (tests/test_pool_g51.c).
+     * same stat as a forme: a holder has one ability, and Flower Veil reads a Grass type, which no forme with either ability is
+     * (tests/test_pool_g51.c). Skill Swap (step G70) can still give the ability to a Grass type next to a Flower Veil holder; that composition is not refused here (decision 0015 entry 5dy, a follow-up).
      * Illuminate (A2a, decision 0015 entry 5dy; data/abilities.ts:2037-2054) has Keen Eye's two callbacks word for word, its
      * own name in the line aside (tools/datagen gen_closure.py checks both texts), so it is the same branch with its own id.
      * An Illuminate holder that is a Grass type next to a Flower Veil holder (Skill Swap can make one; no pool forme with
@@ -651,8 +654,9 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
     /* Clear Body (step G30, data/abilities.ts:523-542, onTryBoost of the target itself): every drop that another Pokemon
      * causes is deleted, and the line shows unless the effect is a move's secondary (effect.secondaries) or Octolock
      * (not in the pool). Like Flower Veil it sees the drop after Contrary and the cap. A Grass type that has Clear Body
-     * and stands next to a Flower Veil holder would need the two handlers' order: no forme of the pool is both
-     * (tests/test_pool_g30.c checks it, and that nothing that Trace could copy it onto is Grass).
+     * and stands next to a Flower Veil holder would need the two handlers' order: no forme of the pool is both, and nothing
+     * that Trace could copy it onto is Grass (tests/test_pool_g30.c checks both), but Skill Swap (step G70) can give it to a
+     * Grass type; that composition is not refused for Clear Body here (decision 0015 entry 5dy, a follow-up).
      * White Smoke (A2a, decision 0015 entry 5dy; data/abilities.ts:5473-5487) has Clear Body's callback word for word, its own
      * name in the line aside (gen_closure.py checks both texts): the same branch with its own id. Its only pool holder,
      * Torkoal, is no Grass type; a Grass holder made by Skill Swap next to a Flower Veil holder would have two TryBoost
@@ -682,7 +686,7 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
      * bounced is not bounced again). A source that has fainted loses the drop silently. The holder's own stat lines
      * follow for what is left. Breakable (Mold Breaker would ignore it): no forme of the pool that has Mold Breaker is
      * marked. A Flower Veil holder's TryBoost handler would race this one by Speed on a Grass type that has Mirror Armor:
-     * no forme of the pool is (tools/datagen/pool_families.js checkG33). */
+     * no forme of the pool is (tools/datagen/pool_families.js checkG33). Skill Swap (step G70) can still give the ability to a Grass type next to a Flower Veil holder; that composition is not refused here (decision 0015 entry 5dy, a follow-up). */
     bool mirror[DFI_STAT_STAGE_COUNT] = {false, false, false, false, false, false, false};
     if (source != flat && source != DFI_POSITIONS && dfi_ability(r->b, m, DFI_ABILITY_MIRRORARMOR) &&
         !(effect.cause == DUOFORGE_CAUSE_ABILITY && effect.id2 == 1u + DFI_ABILITY_MIRRORARMOR)) {
@@ -4566,6 +4570,19 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
 static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t den, bool still, uint32_t user,
                                              uint32_t move_id, const uint32_t *targets, uint32_t count)
 {
+    /* A heal move reaches its targets through trySpreadMoveHit, so a target other than the user runs its TryHit abilities first
+     * (data/abilities.ts onTryHit: `target !== source`). The heal path here does not run dfi_try_hit_abilities: a Water heal move
+     * (Life Dew, allies) at an ally with Water Absorb (A2a, decision 0015 entry 5dy) would heal through the ability (`-heal ...
+     * [from] ability: Water Absorb|[of] user`, or -immune at full HP) instead of the move. Not modelled: refused before anything
+     * changes (E_UNSUPPORTED). Dry Skin and Storm Drain are not marked; no other marked absorber takes a heal move's type (Heal
+     * Pulse is Psychic). */
+    for (uint32_t i = 0u; i < count; ++i) {
+        const dfi_member *tm = dfi_at(r->b, targets[i]);
+        if (targets[i] != user && tm != NULL && tm->hp != 0u && dfi_ability(r->b, tm, DFI_ABILITY_WATERABSORB) &&
+            dfi_move_type_now(r, dfi_at(r->b, user), &dfi_pool_moves[move_id]) == DFI_TYPE_WATER) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
     bool did = false;
     bool full_hp_fail = false; /* Heal Pulse (!still) at full HP: its onHit's NOT_FAIL, see the tail */
     /* moveHit's heal, once per target in the order of the list (sim/battle-actions.ts:1201-1222; Life Dew, step G32, heals

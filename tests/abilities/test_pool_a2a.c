@@ -15,6 +15,11 @@
  *      ability changed, Sylveon's Yawn slot holding Mud-Slap, which it learns), and a multi-accuracy move's later hit at a
  *      confused Tangled Feet holder (a2a_cover_c with Gardevoir's Will-O-Wisp slot holding Triple Axel, which it learns):
  *      E_UNSUPPORTED (r->deferred resp. the later-hit refusal), the battle unchanged; the controls play.
+ *   5. Life Dew (a Water heal move of the user and its ally) at an ally with Water Absorb: the heal path does not run the TryHit
+ *      abilities, so it is refused before anything changes (g32_life_dew step 3 with Kingambit's ability changed); the user's own
+ *      Water Absorb is not asked (target === source) and the control plays.
+ *   6. Natural Cure's CURE_STATUS has cause ABILITY and id2 Natural Cure + 1 (a2a_cover_b step 2), and the observation digest's
+ *      line schema accepts it.
  *   4. Tangled Feet's 2048 and Compound Eyes' 5325 (both priority -1) give the same chain in both orders, from 4096 and from
  *      Gravity's 6840 (the accuracy chain applies them in one fixed order).
  */
@@ -30,6 +35,7 @@
 #include "reference/conformance_pool.h"
 #include "rng/draw.h"
 #include "state/battle_internal.h"
+#include "state/observation_digest.h"
 #include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
@@ -428,6 +434,87 @@ static void check_tangled_feet_later_hit(df_test *t, const duoforge_context *ctx
     duoforge_battle_destroy(b);
 }
 
+/* 5. Life Dew at an ally with Water Absorb (g32_life_dew step 3: Milotic's Life Dew heals Milotic and Kingambit). */
+static void check_life_dew(df_test *t, const duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("g32_life_dew");
+    if (!DF_CHECK(t, cb != NULL && cb->step_count > 3u)) {
+        return;
+    }
+    duoforge_battle *b = replay(t, ctx, cb, 3u);
+    if (b == NULL) {
+        return;
+    }
+    const uint32_t milotic = member_of(b, 0u, DFI_FORME_MILOTIC);
+    const uint32_t ally = member_of(b, 0u, DFI_FORME_KINGAMBIT);
+    if (!DF_CHECK(t, milotic < DUOFORGE_MAX_ROSTER && ally < DUOFORGE_MAX_ROSTER)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    const df_conf_step *st = &cb->steps[3];
+    duoforge_decision_bundle bd;
+    bundle_of(st, b, &bd);
+    for (uint32_t variant = 0u; variant < 3u; ++variant) {
+        duoforge_battle *x = NULL;
+        if (!DF_CHECK(t, duoforge_battle_clone(ctx, b, &x) == DUOFORGE_OK)) {
+            continue;
+        }
+        if (variant == 1u) {
+            x->tail.sides[0].ability_now[ally] = (uint16_t)AB(WATERABSORB); /* the ally: refused */
+        } else if (variant == 2u) {
+            x->tail.sides[0].ability_now[milotic] = (uint16_t)AB(WATERABSORB); /* the user itself: not asked */
+        }
+        DF_CHECK(t, duoforge_battle_check(ctx, x) == DUOFORGE_OK);
+        duoforge_battle *before = NULL;
+        DF_CHECK(t, duoforge_battle_clone(ctx, x, &before) == DUOFORGE_OK);
+        duoforge_step_result res;
+        uint32_t used = 0u;
+        const duoforge_status s = dfi_battle_step_tape(ctx, x, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+        if (variant == 1u) {
+            DF_CHECK(t, s == DUOFORGE_E_UNSUPPORTED);
+            bool equal = false;
+            DF_CHECK(t, before != NULL && duoforge_battle_equal(ctx, x, before, &equal) == DUOFORGE_OK && equal);
+        } else {
+            DF_CHECK(t, s == DUOFORGE_OK);
+            DF_CHECK_EQ_U64(t, used, st->tape_len);
+        }
+        duoforge_battle_destroy(before);
+        duoforge_battle_destroy(x);
+    }
+    duoforge_battle_destroy(b);
+}
+
+/* 6. Natural Cure's event (a2a_cover_b step 2: Pawmot, badly poisoned, switches out) and the digest's line schema. */
+static void check_natural_cure_event(df_test *t, const duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("a2a_cover_b");
+    if (!DF_CHECK(t, cb != NULL && cb->step_count > 2u)) {
+        return;
+    }
+    duoforge_battle *b = replay(t, ctx, cb, 2u);
+    if (b == NULL) {
+        return;
+    }
+    static a2a_run run;
+    run_step(ctx, b, &cb->steps[2], &run);
+    DF_CHECK(t, run.status == DUOFORGE_OK);
+    uint32_t found = 0u;
+    for (uint32_t i = 0u; i < run.count; ++i) {
+        const duoforge_event *e = &run.events[i];
+        if (e->kind == DUOFORGE_EVENT_CURE_STATUS && e->cause == DUOFORGE_CAUSE_ABILITY) {
+            found += 1u;
+            DF_CHECK_EQ_U64(t, e->id2, AB(NATURALCURE));
+            DF_CHECK_EQ_U64(t, e->detail, DUOFORGE_AILMENT_TOX);
+            DF_CHECK_EQ_U64(t, e->flags, 0u); /* [silent]: no [msg] */
+            uint8_t line[64];
+            uint32_t size = 0u;
+            DF_CHECK(t, dfi_observation_line_encode(e, NULL, line, (uint32_t)sizeof line, &size) == DUOFORGE_OK);
+        }
+    }
+    DF_CHECK_EQ_U64(t, found, 1u);
+    duoforge_battle_destroy(b);
+}
+
 /* 4. The priority -1 accuracy group: Tangled Feet's 2048 and Compound Eyes' 5325 in both orders. */
 static void check_dyadic_order(df_test *t)
 {
@@ -455,6 +542,8 @@ int main(void)
         check_flower_veil_refusals(&t, kp);
         check_illuminate_flower_veil(&t, kp);
         check_tangled_feet_later_hit(&t, kp);
+        check_life_dew(&t, kp);
+        check_natural_cure_event(&t, kp);
         duoforge_context_destroy(kp);
     }
     return df_test_end(&t);
