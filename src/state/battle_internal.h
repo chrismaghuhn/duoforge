@@ -295,14 +295,25 @@ typedef struct dfi_side {
 #define DFI_TAIL_MOVE_RESULT_MASK 0x3Fu /* bits 6-7 are zero */
 /* single_turn: one-turn volatiles that the position's flags byte (full) cannot hold; both end in the residual of the turn, on
  * switch-out and on faint (ROOST); the bits of the other volatiles held here are listed below. RAGE_POWDER belongs to the Follow Me
- * flag (the move that set it also sets that flag). Bit 2 (Speed Swap) is not one of them: it persists across turns (see below). */
+ * flag (the move that set it also sets that flag). Bit 2 (Speed Swap) is not one of them: it persists across turns (see below).
+ * Bit 3 (LOCK_UNUSED, issue 606) is no volatile either: a mark of the occupant's lockedmove from a sleep-stopped use to the
+ * residual of the same turn, which clears it (see below). */
 #define DFI_SINGLE_TURN_RAGE_POWDER 1u
 #define DFI_SINGLE_TURN_ROOST 2u
 /* Step K3 (decision 0015 5de): the occupant's Speed was swapped (Speed Swap) and the swap is still live. A presence bit, not a
  * one-turn volatile: it ends at a switch-out, a faint, a Mega Evolution and a forme change (the stats are rebuilt there), and it
- * is NOT cleared at the residual: it persists across turns, so never clear it together with the byte. The swapped values live in the member's stats[SPE]. Bits 3-7 are free and zero. */
+ * is NOT cleared at the residual: it persists across turns, so never clear it together with the byte. The swapped values live in the member's stats[SPE]. */
 #define DFI_SINGLE_TURN_SPEED_SWAP 4u
-#define DFI_TAIL_SINGLE_TURN_MASK 7u    /* bits 3-7 are free and zero */
+/* Issue 606 (decision 0015 5dv): the occupant's lockedmove was not restarted this turn: its move was stopped before its use
+ * (with the refusals of step G56 only a sleep, `cant|X|slp`), so the lock's duration reaches 0 in this turn's residual,
+ * which ends it with onEnd before its onResidual could run (sim/battle.ts:515-522, data/conditions.ts:253-285). Set at the
+ * stopped use, read and cleared by the residual's lock handler (dfi_residual_lock); a removal of the lock clears it too.
+ * It lives in the state, not in the run, so that a PIVOT pause between the `cant` and the residual (U-turn, Parting Shot,
+ * Emergency Exit) keeps it; it moves with the occupant on a swap (the tail position moves whole) and ends with it. An
+ * internal bit (no public value, hidden from the observation): set only with a running lock and only at a PIVOT or TERMINAL
+ * boundary. */
+#define DFI_SINGLE_TURN_LOCK_UNUSED 8u
+#define DFI_TAIL_SINGLE_TURN_MASK 15u   /* bits 4-7 are free and zero */
 #define DFI_TAIL_HITS_TAKEN_MAX 6u      /* Rage Fist: power 50 + 50 * n is capped at 350 */
 #define DFI_TAIL_ABILITY_STATE_MAX 6u   /* Supreme Overlord 0-5 fallen allies, Protean 0/1, Illusion roster index + 1 */
 #define DFI_TAIL_LOCK_TURNS_MAX 3u      /* lockedmove (Outrage, Thrash, Petal Dance): 2 or 3 turns */
@@ -396,7 +407,7 @@ typedef struct dfi_tail_pos {
     uint8_t protect_kind;      /* tail rev 3 (step G20): which Protect variant the DFI_VOL_PROTECT volatile is, DFI_PROTECT_*;
                                 * nonzero only while the volatile is up (it ends with it, in the residual) */
     uint8_t move_result;       /* tail rev 4: this turn's and last turn's result of the occupant's move, DFI_MOVE_RESULT_* in two bits each */
-    uint8_t single_turn;       /* tail rev 4: DFI_SINGLE_TURN_* bits of the one-turn volatiles that the flags byte has no room for, and the persistent Speed Swap bit (2) */
+    uint8_t single_turn;       /* tail rev 4: DFI_SINGLE_TURN_* bits of the one-turn volatiles that the flags byte has no room for, the persistent Speed Swap bit (2) and the unused-lock bit (3, 0015 5dv) */
     uint8_t hits_taken;        /* tail rev 4: damaging hits the occupant has taken since it came in, 0..DFI_TAIL_HITS_TAKEN_MAX (Rage Fist) */
     uint8_t ability_state;     /* tail rev 4: the state of the occupant's current ability, 0..DFI_TAIL_ABILITY_STATE_MAX (its meaning goes with the ability) */
     uint8_t lock_turns;        /* tail rev 4: the turns that a lockedmove volatile has left, 0..DFI_TAIL_LOCK_TURNS_MAX */

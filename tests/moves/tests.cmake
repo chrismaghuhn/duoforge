@@ -46,6 +46,7 @@ duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES moves/test_pool_g44.c WHI
 duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES moves/test_pool_g54.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 # Step G56: lockedmove (Outrage, Thrash, Petal Dance): the count, its refusals and the information safety of its length.
 duoforge_add_test(NAME duoforge.state.pool_g56 SOURCES moves/test_pool_g56.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA moves)
+duoforge_add_test(NAME duoforge.state.pool_lockfam_sleep SOURCES moves/test_pool_lockfam_sleep.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g64 SOURCES moves/test_pool_g64.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g68 SOURCES moves/test_pool_g68.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES moves/test_pool_g62.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)

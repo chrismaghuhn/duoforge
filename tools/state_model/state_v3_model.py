@@ -76,9 +76,11 @@ TAIL_MOVE_RESULT_MASK = 0x3F        # rev 4: two bits this turn, two bits last t
                                     # bit 4 unclassified this turn, bit 5 unclassified last turn (step G42); bits 6-7 zero
 UNCLASSIFIED_NOW = 0x10
 UNCLASSIFIED_LAST = 0x20
-TAIL_SINGLE_TURN_MASK = 7           # rev 4: bit 0 RAGE_POWDER (needs the Follow Me flag), bit 1 ROOST; step K3 (decision 0015 5de): bit 2 SPEED_SWAP
+TAIL_SINGLE_TURN_MASK = 15          # rev 4: bit 0 RAGE_POWDER (needs the Follow Me flag), bit 1 ROOST; step K3 (decision 0015 5de): bit 2 SPEED_SWAP; issue 606 (5dv): bit 3 LOCK_UNUSED
 SINGLE_TURN_RAGE_POWDER = 1
 SINGLE_TURN_SPEED_SWAP = 4              # step K3 (decision 0015 5de): the occupant's Speed was swapped and is live
+SINGLE_TURN_LOCK_UNUSED = 8             # issue 606 (decision 0015 5dv): the lock was not restarted this turn (a sleep stopped its use);
+                                        # only with a running lock, only at a PIVOT or TERMINAL boundary
 TAIL_HITS_TAKEN_MAX = 6
 TAIL_ABILITY_STATE_MAX = 6
 TAIL_LOCK_TURNS_MAX = 3
@@ -1061,7 +1063,8 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0, locked_move=0):
     if not (tp['move_result'] & ~TAIL_MOVE_RESULT_MASK == 0 and tp['single_turn'] & ~TAIL_SINGLE_TURN_MASK == 0
             and (tp['single_turn'] & SINGLE_TURN_RAGE_POWDER == 0 or slot_flags & VOL_FOLLOW_ME)
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX
-            and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
+            and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX
+            and (tp['single_turn'] & SINGLE_TURN_LOCK_UNUSED == 0 or tp['lock_turns'] != 0)):  # issue 606 (5dv)
         return False
     # Step G56 (view audit 2026-10-10): a running lockedmove's move is the occupant's last used one, a move of the occupant whose
     # effect is a lockedmove (none, Struggle or another move with a lock is a broken state). The other half of the lock is its
@@ -1153,6 +1156,15 @@ def check_tail(ctx, st):
             # target's next residual; it is legal at the TURN and REPLACEMENT boundaries.
             if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags'], substitute_cap(sd),
                                   sd['pos'][p]['locked_move']):
+                return 'TAIL_POSITION'
+            # issue 606 (decision 0015 5dv): the unused-lock bit lives from a stopped use to the residual of that turn, so it
+            # stands only at a PIVOT pause or at the end of the battle
+            if tp['single_turn'] & SINGLE_TURN_LOCK_UNUSED and st['boundary'] not in (PIVOT, TERMINAL):
+                return 'TAIL_POSITION'
+            # ... and its use is behind it: the rest of the turn holds no move of that position
+            if tp['single_turn'] & SINGLE_TURN_LOCK_UNUSED and any(
+                    st['queue'][q]['kind'] == Q_MOVE and st['queue'][q]['side'] == s and st['queue'][q]['slot'] == p
+                    for q in range(min(st['queue_len'], QUEUE_CAP))):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
             ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]
