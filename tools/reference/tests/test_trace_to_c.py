@@ -2640,6 +2640,48 @@ class Library(unittest.TestCase):
         plain = trace_to_c.step_events(['|-fail|p2a: Dragonite|heal'], 0, roster, maxhp, tables)[0]
         self.assertEqual((plain[0], plain[3], plain[11]), (trace_to_c.EV['FAIL'], 0, 0))
 
+    def test_a2a_lines_and_ties(self):
+        """A2a (decision 0015 entry 5dy): Illuminate's -fail line names `accuracy` as Keen Eye's does (a FAIL with the ability
+        as its cause; another stat or ability is refused); Natural Cure's [silent] -curestatus at the switch-out is kept as
+        CURE_STATUS with the ability as its cause (another [silent] -curestatus stays dropped); Poison Point's roll is the site
+        26; Ice Body's onWeather is a handler of its holder alone and only in snow (Snowscape), like Rain Dish's in rain."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Starmie': 0}, {'Starmie': 0}]
+        maxhp = [{'Starmie': 100}] * 2
+        line = '|-fail|p2a: Starmie|unboost|accuracy|[from] ability: Illuminate|[of] p2a: Starmie'
+        e = trace_to_c.step_events([line], 0, roster, maxhp, tables)[0]
+        self.assertEqual((e[0], e[1], e[2], e[3], e[5]),
+                         (trace_to_c.EV['FAIL'], 2, 2, trace_to_c.CAUSE['ABILITY'],
+                          tables['ABILITY'][trace_to_c.key('Illuminate')] + 1))
+        for bad in ('|-fail|p2a: Starmie|unboost|def|[from] ability: Illuminate|[of] p2a: Starmie',
+                    '|-fail|p2a: Starmie|unboost|accuracy|[from] ability: Big Pecks|[of] p2a: Starmie'):
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+            self.assertEqual(ctx.exception.rule, 'fail-line')
+        cure = '|-curestatus|p1a: Starmie|tox|[from] ability: Natural Cure|[silent]'
+        e = trace_to_c.step_events([cure], 0, roster, maxhp, tables)
+        self.assertEqual(len(e), 1)
+        self.assertEqual((e[0][0], e[0][1], e[0][3], e[0][5], e[0][11]),
+                         (trace_to_c.EV['CURE_STATUS'], 0, trace_to_c.CAUSE['ABILITY'],
+                          tables['ABILITY'][trace_to_c.key('Natural Cure')] + 1, trace_to_c.AILMENT['tox']))
+        self.assertEqual(trace_to_c.step_events(['|-curestatus|p1a: Starmie|tox|[silent]'], 0, roster, maxhp, tables), [])
+        self.assertEqual(trace_to_c.SITES['POISON_POINT'], 26)
+
+        def tie(*handlers):
+            return {'site': 'SPEED_TIE', 'context': 'each:Weather',
+                    'group': ['P:p%d%s:%d:%s' % (1 + i // 2, 'ab'[i % 2], len(h.split('+')) if h else 0, h)
+                              for i, h in enumerate(handlers)]}
+        two = tie('icebody', '', 'icebody')
+        snow, rain = {'weather': 'snowscape'}, {'weather': 'raindance'}
+        self.assertIsNone(trace_to_c.drop_reason(two, snow, snow, []))
+        self.assertEqual(trace_to_c.drop_reason(two, rain, rain, []), 'each-event tie with at most one holder')
+        self.assertEqual(trace_to_c.drop_reason(tie('icebody', '', ''), snow, snow, []),
+                         'each-event tie with at most one holder')
+        sand = {'weather': 'sandstorm'}
+        group = ['P:p1a:2:sandstorm+icebody', 'P:p1b:1:sandstorm', 'P:p2a:1:sandstorm']
+        log = ['|-damage|p1a: X|90/100|[from] Sandstorm', '|-damage|p1b: Y|90/100|[from] Sandstorm']
+        self.assertIsNone(trace_to_c.drop_reason(dict(two, group=group), sand, sand, log))
+
     def test_every_ability_marked_by_g22_shows_its_effect_in_a_pool_battle(self):
         """The six abilities of step G22 are used in committed pool battles that show what the engine reads, from the
         protocol lines alone: the Speed abilities as an order of the move lines that the weather turns around (the same
