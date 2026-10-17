@@ -1128,7 +1128,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_UNBOOST         17u /* [-unboost] as BOOST */
 #define DUOFORGE_EVENT_STATUS          18u /* [-status] position, detail: DUOFORGE_AILMENT_* */
 #define DUOFORGE_EVENT_CURE_STATUS     19u /* [-curestatus] position, detail: the ailment that ended; cause MOVE
-                                              + id2 when a defrost move thaws its user (Team C) */
+                                              + id2 when a defrost move thaws its user (Team C); cause ABILITY + id2
+                                              (Natural Cure + 1) for Natural Cure's cure at the switch-out (POOL kinds,
+                                              decision 0015 entry 5dy) */
 #define DUOFORGE_EVENT_CONFUSION_START 20u /* [-start confusion] position */
 #define DUOFORGE_EVENT_CONFUSION_END   21u /* [-end confusion] position */
 #define DUOFORGE_EVENT_CONFUSED        22u /* [-activate confusion] position: it is confused as it tries to act */

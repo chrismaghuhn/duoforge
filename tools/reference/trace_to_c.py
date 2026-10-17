@@ -145,6 +145,7 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'MOODY': 23,  # 23: step G73, Moody's samples (DFI_SITE_MOODY), one site for both draws
          'CUTE_CHARM': 24,  # 24: step G71, Cute Charm's roll (DFI_SITE_CUTE_CHARM), randomChance(3, 10)
          'ATTRACT': 25,  # 25: step G71, Attract's roll before the move (DFI_SITE_ATTRACT), randomChance(1, 2)
+         'POISON_POINT': 26,  # 26: A2a (decision 0015 5dy, HS grant), Poison Point's roll (DFI_SITE_POISON_POINT), randomChance(3, 10)
          'PARTIAL_TRAP_TURNS': 32,  # 32: step G90, the partial trap's turns (DFI_SITE_PARTIAL_TRAP_TURNS)
          'ALLY_SWITCH': 33}  # 33: step G80, Ally Switch's consecutive-use roll (DFI_SITE_ALLY_SWITCH)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
@@ -569,8 +570,9 @@ def each_tie_reason(ctx, group, placed):
     # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
     # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
     # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
-    # Power's onWeather (step G39, data/abilities.ts:4396-4413) is the same for the sun (SunnyDay).
-    for ability, weather in (('raindish', 'raindance'), ('solarpower', 'sunnyday')):
+    # Power's onWeather (step G39, data/abilities.ts:4396-4413) is the same for the sun (SunnyDay), and Ice Body's (A2a,
+    # data/abilities.ts:1955-1968) for snow (Snowscape; Hail is not in the format).
+    for ability, weather in (('raindish', 'raindance'), ('solarpower', 'sunnyday'), ('icebody', 'snowscape')):
         if ctx == 'each:Weather' and any(ability in g.split(':', 3)[3].split('+') for g in group) \
                 and placed['weather'] != weather:
             inert = inert | {ability}
@@ -606,8 +608,9 @@ def drop_reason(d, state, after=None, log=None):
         # only between two Pokemon that take the damage (the engine draws then, among the tied group); a group with
         # at most one damaged Pokemon shows no order. Any other handler of the event is not modelled. (Under another
         # weather no Pokemon has a Weather handler: the general rule below drops the tie.)
-        # A Rain Dish holder (step G35) has its own onWeather under every weather, which does nothing outside rain.
-        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in ('raindish', 'solarpower')))
+        # A Rain Dish holder (step G35) has its own onWeather under every weather, which does nothing outside rain; so do Solar
+        # Power's (step G39) outside sun and Ice Body's (A2a) outside snow.
+        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in ('raindish', 'solarpower', 'icebody')))
         if ids != ['sandstorm']:
             raise ConversionError('weather-tie-handlers', 'trace_to_c: Weather tie with handlers %s: %s' % (ids, group),
                                   detail='+'.join(ids))
@@ -810,7 +813,7 @@ def drop_reason(d, state, after=None, log=None):
 
 
 # The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish', 'solarpower', 'limber',
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish', 'solarpower', 'icebody', 'limber',
                            'lumberry', 'mentalherb'))
 
 
@@ -1750,8 +1753,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         # Regenerator's heal (step G39, the Champions mod) is the one [silent] line that shows: no client prints a message, but the line
         # carries the holder's new HP, which the opponent's display of the member follows.
         leech_src = leech_heal_source(list(lead) + log, len(lead) + i) if kind == '-heal' and '[silent]' in attrs else None
+        # Natural Cure's cure at the switch-out (A2a, decision 0015 5dy, the Champions mod) is the same kind of line: the member's
+        # status, which the opponent's display follows.
         if '[silent]' in attrs and not ((kind == '-enditem' and any(a.startswith('[from] move: ') for a in attrs)) or
                                         (kind == '-heal' and '[from] ability: Regenerator' in attrs) or
+                                        (kind == '-curestatus' and '[from] ability: Natural Cure' in attrs) or
                                         (leech_src is not None and ev_pos(parts[2]) == leech_src)):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
@@ -2038,12 +2044,12 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
             # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
             # Clear Body's line has no stat (the next branch); anything else is refused, never mapped.
-            # Keen Eye (step G51) names `accuracy` and Big Pecks `def`: each stat only with its own ability, the id checked, so
-            # a drop named for another stat is refused.
+            # Keen Eye (step G51) and Illuminate (A2a) name `accuracy` and Big Pecks `def`: each stat only with its own abilities,
+            # the id checked, so a drop named for another stat is refused.
             cause, id2, other = ev_cause(attrs, tables)
-            named = {'atk': None, 'accuracy': 'Keen Eye', 'def': 'Big Pecks'}
+            named = {'atk': None, 'accuracy': ('Keen Eye', 'Illuminate'), 'def': ('Big Pecks',)}
             if args[2] not in named or cause != CAUSE['ABILITY'] or other == NOPOS or \
-                    (named[args[2]] is not None and id2 != tables['ABILITY'][key(named[args[2]])] + 1):
+                    (named[args[2]] is not None and id2 not in [tables['ABILITY'][key(n)] + 1 for n in named[args[2]]]):
                 raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
         elif kind == '-fail' and len(args) == 2 and args[1] == 'move: Substitute' and attrs in ([], ['[weak]']):

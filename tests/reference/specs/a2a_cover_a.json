@@ -1,0 +1,59 @@
+{
+  "name": "a2a_cover_a",
+  "purpose": "A2a (decision 0015 entry 5dy, fourteen abilities at existing hooks): a PASS battle of the random differential campaign of run 52002 (diff_driver.py random, seed 52002, battle fz_52002_581, teams of the A2a branch, all content marked, every battle of the run PASS). It shows Illuminate (Muddy Water and Mud-Slap drops deleted), White Smoke (its -fail line and silent drops), Purifying Salt (statuses and Yawn refused), Gooey and Poison Point (rolls).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,6fa703491c5ce98b9d569214e9ebcf3f049dabc502f963a6605be56066581c4b",
+  "teams": [
+    "Pawmot (F) @ Sitrus Berry\nAbility: Natural Cure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Wild Charge\n- Close Combat\n- Electric Terrain\n- Sweet Kiss\n\nGlimmora (F) @ Focus Sash\nAbility: Corrosion\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Toxic\n- Sludge Wave\n- Power Gem\n- Confuse Ray\n\nDragalge (F) @ Rocky Helmet\nAbility: Poison Point\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Sludge Bomb\n- Dragon Pulse\n- Muddy Water\n- Snowscape\n\nAvalugg (M) @ Mental Herb\nAbility: Ice Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Icicle Crash\n- Snowscape\n- Body Press\n- Rock Slide\n\nWatchog (M) @ Silk Scarf\nAbility: Illuminate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Hypnosis\n- Crunch\n- Confuse Ray\n- Screech\n\nGoodra-Hisui (M) @ Leftovers\nAbility: Gooey\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Iron Head\n- Dragon Claw\n- Breaking Swipe\n- Body Press",
+    "Goodra (F) @ Rocky Helmet\nAbility: Gooey\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Breaking Swipe\n- Muddy Water\n- Toxic\n- Thunderbolt\n\nOrthworm (M) @ Leftovers\nAbility: Earth Eater\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Earthquake\n- Iron Head\n- Mud-Slap\n- Protect\n\nEmolga (M) @ Focus Sash\nAbility: Motor Drive\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Discharge\n- Electroweb\n- Thunder Wave\n- Double Team\n\nVaporeon (F) @ Mystic Water\nAbility: Water Absorb\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Muddy Water\n- Surf\n- Yawn\n- Mud-Slap\n\nTorkoal (M) @ Charcoal\nAbility: White Smoke\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nQuiet Nature\n- Heat Wave\n- Earthquake\n- Will-O-Wisp\n- Yawn\n\nGarganacl (F) @ Sitrus Berry\nAbility: Purifying Salt\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Earthquake\n- Rock Slide\n- Dynamic Punch\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5364",
+      "p2": "team 6154"
+    },
+    {
+      "p1": "switch 4, move 1 -1",
+      "p2": "move 3 1, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "move 2, move 4 -1"
+    },
+    {
+      "p1": "move 4 2, move 4",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p1": "switch 3, move 3",
+      "p2": "move 2, move 3 1"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 3 1, move 4 -1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 1, pass",
+      "p2": "move 3 -2, move 3 2"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "move 3 1, switch 4"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "move 1, move 4 2"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 2, move 1"
+    }
+  ]
+}
