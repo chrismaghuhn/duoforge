@@ -38,14 +38,17 @@ static void test_mega_abilities_are_engine_rows(df_test *t)
 }
 
 /* The base abilities that stay unmarked: Megas stay reachable through their marked base abilities (decision 0015 5bj).
- * Steelix's Sheer Force is no longer one of them: step G61 (decision 0015 5bi) made it an engine row (tests/test_pool_g61.c). */
+ * Steelix's Sheer Force is no longer one of them: step G61 (decision 0015 5bi) made it an engine row (tests/test_pool_g61.c);
+ * nor is Poison Point (Dragalge's): A2a (decision 0015 entry 5dy) made it one. */
 static void test_unmarked_base_abilities_stay_unmodelled(df_test *t)
 {
-    static const uint32_t bases[] = {DFI_ABILITY_OWNTEMPO, DFI_ABILITY_POISONPOINT, DFI_ABILITY_HEAVYMETAL, DFI_ABILITY_GUTS};
+    static const uint32_t bases[] = {DFI_ABILITY_OWNTEMPO, DFI_ABILITY_HEAVYMETAL, DFI_ABILITY_GUTS};
     for (size_t i = 0u; i < sizeof bases / sizeof bases[0]; ++i) {
         DF_CHECK_EQ_U64(t, dfi_support.abilities[bases[i]], 0u);
         DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[bases[i]], DFI_HANDLER_UNMODELED);
     }
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_POISONPOINT] != 0u);
+    DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_POISONPOINT], DFI_HANDLER_NONE);
 }
 
 /* The six stones are marked, Heracronite is not, and each stone takes its base forme to its Mega (the manifest and the tables). */

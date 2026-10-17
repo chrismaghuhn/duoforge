@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "d6eee672f8f26a6e414426670e40311e289d4384a0a3a571783a33dad8e2b5e4" /* A0 PR-2 (part 1 on main cefc5f67, regenerated); A0 PR-1 (parts 2 and 3 on main 4fd2b8dc, regenerated); batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade and Snap Trap; previous 0860307d...): the canonical hash of the rows of the lane A batch(G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G88), of step K1 (Temper Flare, entry 5dc), of step K2 (Piercing Drill, Excadrite), of step K3 (Speed Swap, entry 5de) and of step K4 (Gravity: pseudo weather 2, entry 5dl) */
+#define POOL_HASH_HEX "e4aeeb21c9ae572c352acb8590c4937e69b413f888b262b66c30324a5011573d" /* A2a (decision 0015 entry 5dy: the fourteen engine rows change the handler column; measured, previous d6eee672...); A0 PR-2 (part 1 on main cefc5f67, regenerated); A0 PR-1 (parts 2 and 3 on main 4fd2b8dc, regenerated); batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade and Snap Trap; previous 0860307d...): the canonical hash of the rows of the lane A batch(G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G88), of step K1 (Temper Flare, entry 5dc), of step K2 (Piercing Drill, Excadrite), of step K3 (Speed Swap, entry 5de) and of step K4 (Gravity: pseudo weather 2, entry 5dl) */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -1471,7 +1471,13 @@ int main(void)
                                  * and Skill Swap, dfi_boost of Anger Point, the ModifyDamage chain of Sniper) */
                                 id == DFI_ABILITY_MAGMAARMOR || id == DFI_ABILITY_ANGERPOINT || id == DFI_ABILITY_SNIPER ||
                                 /* step K2: Piercing Drill, by id (the bypass of a contact move, dfi_piercing_drill_passes) */
-                                id == DFI_ABILITY_PIERCINGDRILL;
+                                id == DFI_ABILITY_PIERCINGDRILL ||
+                                /* A2a (decision 0015 entry 5dy): one clause each at an existing hook, by id */
+                                id == DFI_ABILITY_ILLUMINATE || id == DFI_ABILITY_WHITESMOKE || id == DFI_ABILITY_WATERABSORB ||
+                                id == DFI_ABILITY_EARTHEATER || id == DFI_ABILITY_MOTORDRIVE || id == DFI_ABILITY_ICEBODY ||
+                                id == DFI_ABILITY_SURGESURFER || id == DFI_ABILITY_QUICKFEET || id == DFI_ABILITY_CORROSION ||
+                                id == DFI_ABILITY_PURIFYINGSALT || id == DFI_ABILITY_GOOEY || id == DFI_ABILITY_POISONPOINT ||
+                                id == DFI_ABILITY_TANGLEDFEET || id == DFI_ABILITY_NATURALCURE;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine || ate) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER
