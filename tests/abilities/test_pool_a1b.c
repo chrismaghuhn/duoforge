@@ -158,6 +158,8 @@ static const a1b_case cases[] = {
      1u, DFI_FORME_WATCHOG, true},
     {"Steely Spirit: the holder's Close Combat (not Steel)", "fz_5102_1368", 9u, 0u, DFI_FORME_PERRSERKER, TAKE_ABILITY, 1u,
      DFI_FORME_RILLABOOM, false},
+    {"Steely Spirit: Pikachu's Iron Tail beside the fainted holder", "fz_5102_38", 8u, 0u, DFI_FORME_PERRSERKER, TAKE_ABILITY, 1u,
+     DFI_FORME_WATCHOG, false},
     {"Plus: Toxtricity's Overdrive (special) beside Ampharos (Plus)", "fz_5102_873", 2u, 1u, DFI_FORME_TOXTRICITY, TAKE_ABILITY, 0u,
      DFI_FORME_SINISTCHA, true},
     {"Minus: Manectric's Flamethrower (special) beside Toxtricity (Plus)", "fz_5102_1368", 3u, 0u, DFI_FORME_MANECTRIC,
