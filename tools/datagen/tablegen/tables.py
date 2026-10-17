@@ -26,7 +26,7 @@ from .abilities import (
     ABILITY_FAMILIES, ABILITY_MATCHERS, ABILITY_MEMBERS, ability_param, check_g30_facts, check_g37_facts,
     check_g57_facts, check_i2_facts, FAILSKILLSWAP_SOURCE, G2_ABILITIES, INERT_ABILITY_KEYS, POOL_ABILITIES)
 from .rules import (
-    C1_PART4_FACTS, check_a0_facts, check_a0p1_facts, check_a1b_facts, check_c1_facts, check_c2_facts, check_c4_facts, check_c5_facts,
+    C1_PART4_FACTS, check_a0_facts, check_a0p1_facts, check_a1b_facts, check_c1_facts, check_contact_flag, check_c2_facts, check_c4_facts, check_c5_facts,
     check_failskillswap, check_g15_facts, check_g34_facts, check_g61_facts, check_k2_facts)
 
 
@@ -239,8 +239,10 @@ def build_pool(root, repo, dx):
                     dict({rel: Source(root, rel, READER_INPUTS) for rel in ('sim/battle-queue.ts', 'sim/battle.ts',
                                                                             'sim/battle-actions.ts', 'sim/side.ts',
                                                                             'sim/pokemon.ts', 'sim/field.ts',
-                                                                            'data/conditions.ts')},
-                         **{'data/moves.ts': moves_ts}))
+                                                                            'data/conditions.ts',
+                                                                            'data/mods/champions/conditions.ts')},
+                         **{'data/moves.ts': moves_ts, 'data/mods/champions/moves.ts': champ_moves,
+                            'data/mods/champions/scripts.ts': Source(root, 'data/mods/champions/scripts.ts')}))
     check_g61_facts(root, abil_ts, champ_abil)
     check_g49_facts(items_ts, champ_items)
     check_g59_facts(abil_ts, champ_abil, Source(root, 'sim/pokemon.ts', READER_INPUTS),
@@ -501,6 +503,7 @@ def build_pool(root, repo, dx):
         else:
             feats = entry_features(abil_ts, champ_abil, ab['id'], INERT_ABILITY_KEYS, readers=readers)
         ab['unmodeled'] = sorted(set(feats))
+    check_contact_flag(items, abilities, repo)  # batch A1b review: the static contact flag's readers
     for m in moves:
         m.setdefault('unmodeled', [])
     for fo in formes:

@@ -2901,21 +2901,33 @@ class FailSkillSwap(unittest.TestCase):
 
 class FactsA1b(unittest.TestCase):
     """Batch A1b (decision 0015 5dz): the nine abilities and Light Ball are engine rows whose callbacks are exactly A1B_CALLBACKS and
-    whose pinned texts are demanded whole (check_a1b_facts), with the pin lines the clauses rely on (A1B_PIN_FACTS); a
-    Champions entry, another callback and an onTryTerrain handler are refused."""
+    whose pinned texts are demanded whole (check_a1b_facts), with the pin lines the clauses rely on (A1B_PIN_FACTS), each in its
+    anchored method or entry and in order; a Champions entry, another callback, an onTryTerrain handler, a Champions TryTerrain
+    handler, brn condition or pinned method are refused."""
 
-    def sources(self, skip=(None, None), extra_ability='', champ_abil='', champ_items='', pin_skip=(None, None),
-                try_terrain=None):
+    def sources(self, skip=(None, None), extra_ability='', champ_abil='', champ_items='', pin_skip=(None, None, None),
+                try_terrain=None, champ_extra=None):
         abilities = [entry(aid, *[f for i, f in enumerate(facts) if (aid, i) != skip])
                      for aid, facts in gen_closure.A1B_ABILITY_FACTS]
         items = [entry(iid, *[f for i, f in enumerate(facts) if (iid, i) != skip])
                  for iid, facts in gen_closure.A1B_ITEM_FACTS]
-        pins = {}
-        for rel, facts in gen_closure.A1B_PIN_FACTS:
-            pins[rel] = TextSource(rel, '\n'.join(f for i, f in enumerate(facts) if (rel, i) != pin_skip))
-        pins['data/moves.ts'] = TextSource('data/moves.ts', '')
+        texts = {}
+        for rel, anchor, facts in gen_closure.A1B_PIN_FACTS:
+            kept = [f for i, f in enumerate(facts) if (rel, anchor, i) != pin_skip]
+            if anchor.startswith('entry:'):
+                block = entry(anchor[len('entry:'):], *kept)
+            else:
+                block = '\n'.join(['\t' + anchor] + ['\t\t' + f for f in kept] + ['\t}'])
+            texts.setdefault(rel, []).append(block)
+        texts.setdefault('data/moves.ts', [])
+        for rel in gen_closure.A1B_CHAMPIONS_SOURCES:
+            texts.setdefault(rel, [])
         if try_terrain is not None:
-            pins[try_terrain] = TextSource(try_terrain, '\n'.join(pins[try_terrain].lines + ['\t\tonTryTerrain() {},']))
+            texts[try_terrain].append('\t\tonTryTerrain() {},')
+        if champ_extra is not None:
+            texts[champ_extra[0]].append(champ_extra[1])
+        pins = {rel: TextSource(rel, '\n'.join(blocks)) for rel, blocks in texts.items()
+                if rel not in ('data/mods/champions/abilities.ts', 'data/mods/champions/items.ts')}
         return (TextSource('data/abilities.ts', '\n'.join(abilities) + extra_ability),
                 TextSource('data/mods/champions/abilities.ts', champ_abil),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', champ_items), pins)
@@ -2935,20 +2947,38 @@ class FactsA1b(unittest.TestCase):
         for rid, facts in gen_closure.A1B_ABILITY_FACTS + gen_closure.A1B_ITEM_FACTS:
             for i in range(len(facts)):
                 with self.subTest(entry=rid, fact=facts[i]):
-                    # a dropped text is missing, a dropped callback line changes the callbacks, and a dropped brace leaves an
-                    # entry that does not parse: each is a refusal that names the entry
+                    # a dropped text is missing and a dropped callback line changes the callbacks: a refusal naming the entry
                     message = self.refused((rid, i))
                     self.assertIn(rid, message)
-                    self.assertTrue(any(k in message for k in ('the entry no longer has', 'callbacks', 'is not closed',
-                                                                 'does not end at a line')), message)
-        for rel, facts in gen_closure.A1B_PIN_FACTS:
+                    self.assertTrue(any(k in message for k in ('the entry no longer has', 'callbacks')), message)
+        for rel, anchor, facts in gen_closure.A1B_PIN_FACTS:
             for i in range(len(facts)):
-                with self.subTest(pin=rel, fact=facts[i]):
-                    self.assertIn('%s: the pin no longer has' % rel, self.refused(pin_skip=(rel, i)))
+                with self.subTest(pin=rel, anchor=anchor, fact=facts[i]):
+                    self.assertIn('%s: the pin no longer has' % rel, self.refused(pin_skip=(rel, anchor, i)))
+
+    def test_a_fact_is_demanded_in_its_anchor_and_order(self):
+        # spreadDamage's second clamp (after the Damage event) is the one Heatproof's halving needs: a file with the first clamp only
+        # is refused, though the clamp's text is there.
+        facts = dict(((rel, anchor), f) for rel, anchor, f in gen_closure.A1B_PIN_FACTS)[('sim/battle.ts', 'spreadDamage(')]
+        self.assertEqual(facts[0], facts[2])
+        self.assertIn('sim/battle.ts: the pin no longer has', self.refused(pin_skip=('sim/battle.ts', 'spreadDamage(', 2)))
+        # the brn residual's order is read in the brn entry: the same text in another entry does not count
+        abil, champ, items, champ_items, pins = self.sources(pin_skip=('data/conditions.ts', 'entry:brn', 0))
+        pins['data/conditions.ts'] = TextSource('data/conditions.ts', '\n'.join(pins['data/conditions.ts'].lines) + '\n' +
+                                                entry('par', 'onResidualOrder: 10,'))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a1b_facts(abil, champ, items, champ_items, pins)
+        self.assertIn('within entry:brn', str(cm.exception.code))
+        # an anchor that is not there, or twice
+        abil, champ, items, champ_items, pins = self.sources()
+        pins['sim/field.ts'] = TextSource('sim/field.ts', '\n'.join(pins['sim/field.ts'].lines * 2))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a1b_facts(abil, champ, items, champ_items, pins)
+        self.assertIn('is found 2 times, not once', str(cm.exception.code))
 
     def test_another_callback_is_refused(self):
         abil, champ, items, champ_items, pins = self.sources()
-        text = '\n'.join(abil.lines).replace('\t\tonModifyDef(def) {', '\t\tonModifySpD(spd) {\n\t\t},\n\t\tonModifyDef(def) {', 1)
+        text = '\n'.join(abil.lines).replace('\t\tonModifyDef(def) {', '\t\tonModifySpD(spd) {},\n\t\tonModifyDef(def) {', 1)
         with self.assertRaises(SystemExit) as cm:
             gen_closure.check_a1b_facts(TextSource('data/abilities.ts', text), champ, items, champ_items, pins)
         self.assertIn("ability furcoat: callbacks ['onModifyDef', 'onModifySpD'], not ['onModifyDef']", str(cm.exception.code))
@@ -2968,11 +2998,65 @@ class FactsA1b(unittest.TestCase):
         self.assertEqual(gen_closure.A1B_NO_TRY_TERRAIN,
                          ('data/abilities.ts', 'data/items.ts', 'data/moves.ts', 'data/conditions.ts'))
 
+    def test_the_champions_mod_may_not_change_what_the_clauses_read(self):
+        for rel in ('data/mods/champions/moves.ts', 'data/mods/champions/conditions.ts', 'data/mods/champions/scripts.ts'):
+            with self.subTest(source=rel):
+                self.assertIn('%s: a TryTerrain handler' % rel,
+                              self.refused(champ_extra=(rel, '\t\tonTryTerrain() {},')))
+        self.assertIn('a TryTerrain handler', self.refused(champ_abil=entry('probe', 'onTryTerrain() {},')))
+        self.assertIn('data/mods/champions/conditions.ts: a brn condition',
+                      self.refused(champ_extra=('data/mods/champions/conditions.ts', entry('brn', 'inherit: true,'))))
+        self.assertIn('data/mods/champions/scripts.ts: the Champions mod defines spreadDamage',
+                      self.refused(champ_extra=('data/mods/champions/scripts.ts', '\t\tspreadDamage(damage, targetArray) {')))
+        # a call of a pinned method is no definition
+        gen_closure.check_a1b_facts(*self.sources(champ_extra=('data/mods/champions/scripts.ts',
+                                                               '\t\t\tconst d = this.getDamage(source, target, move);')))
+
     def test_the_rows_of_the_batch(self):
         for aid, _ in gen_closure.A1B_ABILITY_FACTS:
             self.assertIn(aid, gen_closure.ENGINE_ROWS['abilities'])
         self.assertIn('lightball', gen_closure.ENGINE_ROWS['items'])
         self.assertEqual(set(gen_closure.A1B_CALLBACKS), {aid for aid, _ in gen_closure.A1B_ABILITY_FACTS} | {'lightball'})
+
+
+class ContactFlagGuard(unittest.TestCase):
+    """Batch A1b review (L3): Fluffy, Tough Claws, Aura Guard and the other readers of the static contact flag stay right only while
+    nothing changes the flag or its effects in a battle: a modelled Long Reach or a Punching Glove or Protective Pads row fails the
+    build, and the message names the readers."""
+
+    REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+    def rows(self, longreach_modelled=False, items=()):
+        abilities = [{'id': 'longreach', 'unmodeled': [] if longreach_modelled else ['callback onModifyMove']},
+                     {'id': 'fluffy', 'unmodeled': []}]
+        return [{'id': 'lifeorb'}] + [{'id': i} for i in items], abilities
+
+    def test_the_pool_as_it_is_passes(self):
+        gen_closure.check_contact_flag(*self.rows(), self.REPO)
+
+    def test_the_readers_are_found_in_the_turn_code(self):
+        readers = gen_closure.contact_flag_readers(self.REPO)
+        for path in ('src/combat/mechanics/damage/modify_damage.h', 'src/combat/mechanics/damage/base_power.h'):
+            self.assertTrue(any(r.startswith(path + ':') for r in readers), readers)
+        self.assertEqual(sum(1 for r in readers if r.startswith('src/combat/mechanics/damage/modify_damage.h:')), 2)
+
+    def test_a_modelled_long_reach_is_refused_with_the_readers(self):
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_contact_flag(*self.rows(longreach_modelled=True), self.REPO)
+        message = str(cm.exception.code)
+        self.assertIn('ability longreach is a modelled row', message)
+        for name in ('Fluffy', 'Tough Claws', 'Aura Guard', 'src/combat/mechanics/damage/modify_damage.h:',
+                     'src/combat/mechanics/damage/base_power.h:'):
+            self.assertIn(name, message)
+
+    def test_punching_glove_and_protective_pads_are_refused(self):
+        for item in gen_closure.CONTACT_FLAG_CHANGERS['items']:
+            with self.subTest(item=item), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_contact_flag(*self.rows(items=(item,)), self.REPO)
+            self.assertIn('item %s is a pool row' % item, str(cm.exception.code))
+            self.assertIn('Fluffy, Tough Claws, Aura Guard', str(cm.exception.code))
+        self.assertEqual(gen_closure.CONTACT_FLAG_CHANGERS, {'abilities': ('longreach',),
+                                                            'items': ('punchingglove', 'protectivepads')})
 
 
 if __name__ == '__main__':

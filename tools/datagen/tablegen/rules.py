@@ -4,6 +4,7 @@ the content batches (C1, C2, C4, C5, K2, A0, A0P1).
 Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
 statement is unchanged from gen_closure.py@8800b625).
 """
+import os
 import re
 
 from .source import fail, fields, norm, READER_INPUTS, scalar, Source
@@ -858,43 +859,71 @@ A1B_CALLBACKS = {
     'fluffy': {'onSourceModifyDamage'}, 'heatproof': {'onSourceModifyAtk', 'onSourceModifySpA', 'onDamage'},
     'lightball': {'onModifyAtk', 'onModifySpA'},
 }
+# Each pin fact is anchored to its place: (file, anchor, facts in order). An anchor `entry:<id>` is that top-level entry of a data
+# file; any other anchor is the start of a class method (one tab of indent, `anchor` at the start of its line, exactly one such line),
+# whose window ends at its closing `\t}`. The facts must stand in the window in this order, whitespace aside, so a fact that the file
+# has twice (spreadDamage's two clamps) is demanded where the clause needs it.
 A1B_PIN_FACTS = (
-    ('sim/battle-queue.ts', ('willMove(pokemon: Pokemon) {',
-                             'if (pokemon.fainted) return null;',
-                             'for (const action of this.list) {',
-                             "if (action.choice === 'move' && action.pokemon === pokemon) {",
-                             'return action;')),
-    ('sim/battle.ts', ('getAllActive(includeFainted?: boolean) {',
-                       'if (pokemon && (includeFainted || !pokemon.fainted)) {',
-                       'pokemon.newlySwitched = false;',
-                       'if (pokemon.fainted) continue;',
-                       'pokemon.activeTurns++;',
-                       'for (const allyActive of target.alliesAndSelf()) {',
-                       'handlers.push(...this.findPokemonEventHandlers(allyActive, `onAlly${eventName}`));',
-                       'if (targetDamage !== 0) targetDamage = this.clampIntRange(targetDamage, 1);',
-                       "targetDamage = this.runEvent('Damage', target, source, effect, targetDamage, true);")),
-    ('sim/battle-actions.ts', ('pokemon.activeTurns = 0;',
-                               "attack = this.battle.runEvent('Modify' + statTable[attackStat], source, target, move, attack);",
-                               "defense = this.battle.runEvent('Modify' + statTable[defenseStat], target, source, move, defense);")),
-    ('sim/side.ts', ('allies(all?: boolean) {',
-                     'let allies = this.activeTeam().filter(ally => ally);',
-                     'if (!all) allies = allies.filter(ally => !!ally.hp);')),
-    ('sim/pokemon.ts', ('alliesAndSelf(): Pokemon[] { return this.side.allies(); }',
-                        'allies(): Pokemon[] { return this.side.allies().filter(ally => ally !== this); }')),
-    ('sim/field.ts', ('effectiveTerrain(target?: Pokemon | Side | Battle) {',
-                      'if (this.battle.event && !target) target = this.battle.event.target;',
-                      "return this.battle.runEvent('TryTerrain', target) ? this.terrain : '';")),
-    ('data/conditions.ts', ('onResidualOrder: 10,',
-                            'onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 16); },')),
+    ('sim/battle-queue.ts', 'willMove(pokemon: Pokemon) {',
+     ('if (pokemon.fainted) return null;', 'for (const action of this.list) {',
+      "if (action.choice === 'move' && action.pokemon === pokemon) {", 'return action;')),
+    ('sim/battle.ts', 'getAllActive(includeFainted?: boolean) {',
+     ('if (pokemon && (includeFainted || !pokemon.fainted)) {',)),
+    ('sim/battle.ts', 'endTurn() {',
+     ('pokemon.newlySwitched = false;', 'if (pokemon.fainted) continue;', 'pokemon.activeTurns++;')),
+    ('sim/battle.ts', 'findEventHandlers(',
+     ('for (const allyActive of target.alliesAndSelf()) {',
+      'handlers.push(...this.findPokemonEventHandlers(allyActive, `onAlly${eventName}`));')),
+    ('sim/battle.ts', 'spreadDamage(',
+     ('if (targetDamage !== 0) targetDamage = this.clampIntRange(targetDamage, 1);',
+      "targetDamage = this.runEvent('Damage', target, source, effect, targetDamage, true);",
+      'if (targetDamage !== 0) targetDamage = this.clampIntRange(targetDamage, 1);')),
+    ('sim/battle-actions.ts', 'switchIn(', ('pokemon.activeTurns = 0;',)),
+    ('sim/battle-actions.ts', 'getDamage(',
+     ("attack = this.battle.runEvent('Modify' + statTable[attackStat], source, target, move, attack);",
+      "defense = this.battle.runEvent('Modify' + statTable[defenseStat], target, source, move, defense);")),
+    ('sim/side.ts', 'allies(all?: boolean) {',
+     ('let allies = this.activeTeam().filter(ally => ally);', 'if (!all) allies = allies.filter(ally => !!ally.hp);')),
+    ('sim/pokemon.ts', 'alliesAndSelf(): Pokemon[] {', ('return this.side.allies();',)),
+    ('sim/pokemon.ts', 'allies(): Pokemon[] {', ('return this.side.allies().filter(ally => ally !== this);',)),
+    ('sim/field.ts', 'effectiveTerrain(target?: Pokemon | Side | Battle) {',
+     ('if (this.battle.event && !target) target = this.battle.event.target;',
+      "return this.battle.runEvent('TryTerrain', target) ? this.terrain : '';")),
+    ('sim/field.ts', 'isTerrain(', ('const ourTerrain = this.effectiveTerrain(target);',)),
+    ('data/conditions.ts', 'entry:brn',
+     ('onResidualOrder: 10,', 'onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 16); },')),
 )
 A1B_NO_TRY_TERRAIN = ('data/abilities.ts', 'data/items.ts', 'data/moves.ts', 'data/conditions.ts')
+# The Champions mod must not change what the clauses read: no TryTerrain handler, no brn condition of its own, and no method of its
+# scripts that replaces one of the anchored methods (data/mods/champions/scripts.ts overrides modifyDamage, which is not one).
+A1B_CHAMPIONS_SOURCES = ('data/mods/champions/abilities.ts', 'data/mods/champions/items.ts', 'data/mods/champions/moves.ts',
+                         'data/mods/champions/conditions.ts', 'data/mods/champions/scripts.ts')
+A1B_PINNED_METHODS = ('willMove', 'getAllActive', 'endTurn', 'findEventHandlers', 'spreadDamage', 'switchIn', 'getDamage',
+                      'allies', 'alliesAndSelf', 'effectiveTerrain', 'isTerrain')
+
+
+def a1b_window(src, anchor):
+    """The lines of `anchor` in `src` (see A1B_PIN_FACTS); fails unless it is there exactly once and closed."""
+    if anchor.startswith('entry:'):
+        e = src.entry(anchor[len('entry:'):])
+        if e is None:
+            fail('%s: the entry %s is not found' % (src.rel, anchor[len('entry:'):]))
+        return e[2]
+    starts = [i for i, line in enumerate(src.lines) if line.startswith('\t' + anchor) and not line.startswith('\t\t')]
+    if len(starts) != 1:
+        fail('%s: the method "%s" is found %d times, not once' % (src.rel, anchor, len(starts)))
+    for j in range(starts[0] + 1, len(src.lines)):
+        if src.lines[j] == '\t}':
+            return src.lines[starts[0]:j + 1]
+    fail('%s: the method "%s" is not closed' % (src.rel, anchor))
 
 
 def check_a1b_facts(abil_ts, champ_abil, items_ts, champ_items, pins):
     """Batch A1b: each entry of A1B_ABILITY_FACTS and A1B_ITEM_FACTS has exactly the callbacks of A1B_CALLBACKS and every fact,
-    whitespace aside, and the Champions mod has no entry for it. `pins` maps each file of A1B_PIN_FACTS and A1B_NO_TRY_TERRAIN
-    that is not one of the four entry sources to its Source: its text must hold every fact, and none of A1B_NO_TRY_TERRAIN has
-    an onTryTerrain handler (so Grass Pelt's field.isTerrain is the field's terrain)."""
+    whitespace aside, and the Champions mod has no entry for it. `pins` maps every other file that A1B_PIN_FACTS,
+    A1B_NO_TRY_TERRAIN and A1B_CHAMPIONS_SOURCES name to its Source: each pin fact stands in its anchored window in order, none of
+    A1B_NO_TRY_TERRAIN has an onTryTerrain handler (so Grass Pelt's field.isTerrain is the field's terrain), and the Champions
+    sources have no TryTerrain handler, no brn condition and no method named in A1B_PINNED_METHODS."""
     for kind, facts_by_id, src, champ in (('ability', A1B_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', A1B_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
@@ -910,12 +939,70 @@ def check_a1b_facts(abil_ts, champ_abil, items_ts, champ_items, pins):
             for fact in facts:
                 if norm(fact) not in text:
                     fail('%s %s: the entry no longer has "%s"' % (kind, rid, fact))
-    sources = dict(pins, **{'data/abilities.ts': abil_ts, 'data/items.ts': items_ts})
-    for rel, facts in A1B_PIN_FACTS:
-        text = norm(chr(10).join(sources[rel].lines))
+    sources = dict(pins, **{'data/abilities.ts': abil_ts, 'data/items.ts': items_ts,
+                            'data/mods/champions/abilities.ts': champ_abil, 'data/mods/champions/items.ts': champ_items})
+    for rel, anchor, facts in A1B_PIN_FACTS:
+        text = norm(chr(10).join(a1b_window(sources[rel], anchor)))
+        at = 0
         for fact in facts:
-            if norm(fact) not in text:
-                fail('%s: the pin no longer has "%s"' % (rel, fact))
+            k = text.find(norm(fact), at)
+            if k < 0:
+                fail('%s: the pin no longer has "%s" (in order, within %s)' % (rel, fact, anchor))
+            at = k + len(norm(fact))
     for rel in A1B_NO_TRY_TERRAIN:
         if any('onTryTerrain' in line for line in sources[rel].lines):
             fail('%s: an onTryTerrain handler, which Grass Pelt\'s terrain read does not model' % rel)
+    method = re.compile(r'^\s+(%s)\s*\([^;]*\{\s*$' % '|'.join(A1B_PINNED_METHODS))
+    for rel in A1B_CHAMPIONS_SOURCES:
+        src = sources[rel]
+        if any('TryTerrain' in line for line in src.lines):
+            fail('%s: a TryTerrain handler, which Grass Pelt\'s terrain read does not model' % rel)
+        if rel.endswith('conditions.ts') and src.entry('brn') is not None:
+            fail('%s: a brn condition of the Champions mod, which the burn residual and Heatproof\'s halving do not model' % rel)
+        for line in src.lines:
+            m = method.match(line)
+            if m is not None:
+                fail('%s: the Champions mod defines %s, a method whose pinned lines batch A1b reads' % (rel, m.group(1)))
+
+
+# Batch A1b review (L3): Fluffy, Tough Claws and Aura Guard read the move's static contact flag (DFI_MOVE_FLAG_CONTACT of the
+# pool row, src/combat/mechanics/damage/), as do the other contact readers of the turn code. At the pin Fluffy reads
+# move.flags['contact'] after onModifyMove, where Long Reach (onModifyMove deletes the flag) and Punching Glove (for punch moves)
+# change it, and Protective Pads takes the contact effects away (checkMoveMakesContact). None of the three is played: Long Reach is
+# an UNMODELED pool row, and Punching Glove and Protective Pads are not in the pool. The build fails, naming the readers, as soon as
+# one of them would reach a battle while these readers use the static flag.
+CONTACT_FLAG_CHANGERS = {'abilities': ('longreach',), 'items': ('punchingglove', 'protectivepads')}
+CONTACT_FLAG_DAMAGE_READERS = ('Fluffy', 'Tough Claws', 'Aura Guard')
+
+
+def contact_flag_readers(repo):
+    """The lines of src/combat that read the static contact flag (DFI_MOVE_FLAG_CONTACT), as 'path:line', sorted."""
+    out = []
+    base = os.path.join(repo, 'src', 'combat')
+    for dirpath, _dirs, files in os.walk(base):
+        for name in files:
+            if not name.endswith(('.c', '.h')) or 'generated' in dirpath:
+                continue
+            path = os.path.join(dirpath, name)
+            rel = os.path.relpath(path, repo).replace(os.sep, '/')
+            with open(path, encoding='utf-8') as fh:
+                for i, line in enumerate(fh):
+                    if 'DFI_MOVE_FLAG_CONTACT' in line and '#define' not in line:
+                        out.append('%s:%d' % (rel, i + 1))
+    return sorted(out)
+
+
+def check_contact_flag(items, abilities, repo):
+    """No row that changes the contact flag or its effects is played while the readers use the static flag: Long Reach stays
+    an UNMODELED row (a marked row must be modelled, duoforge.data.pool_tables), and Punching Glove and Protective Pads are no pool
+    rows. `items` and `abilities` are the pool rows (with their `unmodeled` feature lists)."""
+    readers = contact_flag_readers(repo)
+    named = '%s (the damage chains) and every reader of the static contact flag: %s' % (
+        ', '.join(CONTACT_FLAG_DAMAGE_READERS), ', '.join(readers) or 'none found')
+    for it in items:
+        if it['id'] in CONTACT_FLAG_CHANGERS['items']:
+            fail('item %s is a pool row: it changes the contact flag or its effects, which %s read unchanged' % (it['id'], named))
+    for ab in abilities:
+        if ab['id'] in CONTACT_FLAG_CHANGERS['abilities'] and not ab['unmodeled']:
+            fail('ability %s is a modelled row: its onModifyMove deletes the contact flag, which %s read unchanged' % (
+                ab['id'], named))

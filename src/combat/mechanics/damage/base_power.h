@@ -151,7 +151,7 @@ dfi_damage_base_power(dfi_run *r, uint32_t user, uint32_t target, const dfi_move
         }
     }
     if (dfi_ability(r->b, a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
-        ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
+        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21; an earlier overflow stays (A1b review) */
     }
     /* Sand Force (step G63, data/abilities.ts:3956-3973, onBasePowerPriority 21, the same priority as Tough Claws; a holder has
      * one ability): chainModify([5325, 4096]) for a Rock, Ground or Steel move of its holder while the effective weather is

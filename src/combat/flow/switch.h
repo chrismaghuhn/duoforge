@@ -490,8 +490,8 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
         /* the disguise: its roster index + 1 (tail rev 4, ability_state, cleared with the occupant or by the break) */
         b->tail.sides[side].positions[slot].ability_state = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
     }
-    /* newlySwitched until the end of the turn (Team C: only Helping Hand
-     * reads it). */
+    /* newlySwitched until the end of the turn (Team C: Helping Hand reads it; under POOL also Taunt's duration, Speed Boost and
+     * Stakeout, as activeTurns 0, decision 0015 5dz). */
     dfi_active_slot *entered = dfi_pos(b, side * 2u + slot);
     const uint32_t newly = dfi_kind_limits_of(r->ctx->data_kind).vol_flags_mask & DFI_VOL_NEWLY_SWITCHED;
     entered->flags = (uint8_t)((uint32_t)entered->flags | newly); /* wide-operands-reviewed: < 256 */
