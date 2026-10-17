@@ -4,6 +4,14 @@ add_test(NAME duoforge.data.gen_closure_refusals
 duoforge_label_test(duoforge.data.gen_closure_refusals quick tools)
 set_tests_properties(duoforge.data.gen_closure_refusals PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+# The table set of a format (restructure step 5): the tables section of data/formats/<id>.json, the rule sets, the
+# excluded formes, the widths, the bounds and the writer's names, played through with a made-up second format (no
+# checkout needed; the whole-pool build of that format is duoforge.data.table_sets_pinned).
+add_test(NAME duoforge.data.table_sets
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_table_sets.py")
+duoforge_label_test(duoforge.data.table_sets quick tools)
+set_tests_properties(duoforge.data.table_sets PROPERTIES TIMEOUT 60
+    ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 # Every Python test script CTest runs keeps unittest.main() last, so no TestCase is left unrun (issue #457).
 add_test(NAME duoforge.data.test_main_last
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_main_last.py")

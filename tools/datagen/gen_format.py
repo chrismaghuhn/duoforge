@@ -5,6 +5,10 @@ data/formats/reg-mc.json holds the facts of Reg M-C: the format id, the rules, l
 Point limits, the clauses, the timer and the pool source (data/formats/pools/reg-mc.json, the output of
 the pinned TeamValidator). Every fact quotes the line of the pinned Showdown checkout it comes from.
 
+A definition may have a tables section (restructure step 5): what gen_closure.py --pool --format <id> builds for the
+format (its rule set, the writer's names, the learnset bytes, the id bounds and the excluded formes); check_tables
+checks its shape.
+
 This tool writes src/data/formats/reg-mc/format_tables.h: the facts the C engine uses, as named constants (DFI_FORMAT_*), with
 _Static_asserts against the public constants that hold the same values. gen_closure.py reads the format id and the
 pool source through load_format().
@@ -35,6 +39,12 @@ HEADER = os.path.join('src', 'data', 'formats', 'reg-mc', 'format_tables.h')
 TOP_KEYS = {'comment', 'id', 'showdown_commit', 'showdown_format_id', 'facts', 'engine', 'pool'}
 ENGINE_KEYS = {'comment', 'active_per_side'}
 POOL_KEYS = {'source', 'sha256', 'made_by'}
+# The tables section (restructure step 5, agreed with the OU lane): what gen_closure.py --pool --format <id> builds for
+# the format. Optional: a definition without it builds no tables, and gen_closure.py refuses such a format by name.
+TABLES_KEYS = {'comment', 'rule_set', 'symbol_prefix', 'include_guard', 'stem', 'learnset_bytes', 'bounds',
+               'excluded_formes'}
+BOUND_KEYS = {'formes', 'moves', 'moves_per_forme', 'items', 'abilities'}
+EXCLUDED_KEYS = {'id', 'reason'}
 
 
 def fail(message):
@@ -184,14 +194,57 @@ def format_file(format_id):
     return os.path.join('data', 'formats', format_id + '.json')
 
 
+def check_keys(rel, what, got, want):
+    """Exactly the keys `want`: a missing or an unknown key fails by name, nothing gets a default."""
+    if type(got) is not dict:
+        fail('%s: %s is not an object' % (rel, what))
+    missing, unknown = sorted(want - set(got)), sorted(set(got) - want)
+    if missing or unknown:
+        fail('%s: %s: missing %s, unknown %s' % (rel, what, missing or 'none', unknown or 'none'))
+
+
+def check_tables(tables, rel):
+    """The tables section of a definition, checked by shape (gen_closure.py checks the rule set and the pool)."""
+    check_keys(rel, 'tables', tables, TABLES_KEYS)
+    for key in ('comment', 'rule_set', 'symbol_prefix', 'include_guard', 'stem'):
+        if type(tables[key]) is not str or not tables[key]:
+            fail('%s: tables.%s must be a non-empty string' % (rel, key))
+    if not re.fullmatch(r'[a-z][a-z0-9]*', tables['symbol_prefix']):
+        fail('%s: tables.symbol_prefix %r is not a lower-case C name part' % (rel, tables['symbol_prefix']))
+    if not re.fullmatch(r'DUOFORGE_[A-Z0-9_]+_H', tables['include_guard']):
+        fail('%s: tables.include_guard %r is not DUOFORGE_..._H' % (rel, tables['include_guard']))
+    if not re.fullmatch(r'[a-z][a-z0-9_]*', tables['stem']):
+        fail('%s: tables.stem %r is not a file name stem' % (rel, tables['stem']))
+    if type(tables['learnset_bytes']) is not int or tables['learnset_bytes'] < 1:
+        fail('%s: tables.learnset_bytes must be a positive int' % rel)
+    check_keys(rel, 'tables.bounds', tables['bounds'], BOUND_KEYS)
+    for key, value in tables['bounds'].items():
+        if type(value) is not int or value < 1:
+            fail('%s: tables.bounds.%s must be a positive int' % (rel, key))
+    if type(tables['excluded_formes']) is not list:
+        fail('%s: tables.excluded_formes is not a list' % rel)
+    seen = set()
+    for i, e in enumerate(tables['excluded_formes']):
+        check_keys(rel, 'tables.excluded_formes[%d]' % i, e, EXCLUDED_KEYS)
+        if type(e['id']) is not str or not re.fullmatch(r'[a-z0-9]+', e['id']):
+            fail('%s: tables.excluded_formes[%d].id %r is not a Showdown id' % (rel, i, e['id']))
+        if type(e['reason']) is not str or not e['reason'].strip():
+            fail('%s: tables.excluded_formes[%d] (%s) has no reason' % (rel, i, e['id']))
+        if e['id'] in seen:
+            fail('%s: tables.excluded_formes names %s twice' % (rel, e['id']))
+        seen.add(e['id'])
+
+
 def load_format(repo=REPO, format_id=ENGINE_FORMAT):
     """The format definition, checked: its id, its keys, the facts' shapes and the pool source (its sha256 and the
     Showdown commit and format id of its meta)."""
     rel = format_file(format_id)
     with io.open(os.path.join(repo, rel), encoding='utf-8') as fh:
         fmt = json.load(fh)
-    if set(fmt) != TOP_KEYS or set(fmt['engine']) != ENGINE_KEYS or set(fmt['pool']) != POOL_KEYS:
+    if set(fmt) - {'tables'} != TOP_KEYS or set(fmt['engine']) != ENGINE_KEYS or set(fmt['pool']) != POOL_KEYS:
         fail('%s: unexpected keys' % rel)
+    if 'tables' in fmt:
+        check_tables(fmt['tables'], rel)
     if fmt['id'] != format_id:
         fail('%s: id %r is not %r' % (rel, fmt['id'], format_id))
     if set(fmt['facts']) != FACTS[format_id]:

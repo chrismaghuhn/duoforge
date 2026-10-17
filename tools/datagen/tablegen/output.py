@@ -1,7 +1,7 @@
 """The output: the canonical byte forms and the C writers of the closure, extended and pool tables.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@8800b625).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@8800b625).
 """
 import hashlib
 import re
@@ -795,7 +795,26 @@ def feature_summary(d):
     return out
 
 
-def render_pool(dp, dx):
+def table_set_names(text, ts):
+    """The names of the table set in the writer's text (restructure step 5): the symbol prefix (dfi_<prefix>_*,
+    DFI_<PREFIX>_*), the include guard, the header's path (data/formats/<id>/<stem>.h) and the pool source. Every dfi_pool_ and DFI_POOL_ name
+    of the pool writer is a symbol of the set itself (its tables, types, counts and static helpers). For reg-mc
+    (pool, DUOFORGE_DATA_POOL_TABLES_H, pool_tables, data/formats/pools/reg-mc.json) the text is unchanged. A set that
+    excludes formes names them with their reasons right after the guard."""
+    text = text.replace('DUOFORGE_DATA_POOL_TABLES_H', ts.include_guard)
+    text = text.replace('"data/formats/reg-mc/pool_tables.h"', '"data/formats/%s/%s.h"' % (ts.format_id, ts.stem))
+    text = text.replace('data/formats/pools/reg-mc.json', ts.legal_pool.replace('\\', '/'))
+    text = re.sub(r'\bdfi_pool_', 'dfi_%s_' % ts.symbol_prefix, text)
+    text = re.sub(r'\bDFI_POOL_', 'DFI_%s_' % ts.symbol_prefix.upper(), text)
+    if ts.excluded and text.startswith('#ifndef '):
+        head, rest = text.split('\n', 2)[:2], text.split('\n', 2)[2]
+        note = ['/* Formes of the pool that these tables leave out (tables.excluded_formes of %s):' % ts.definition]
+        note += [' *   %s: %s' % (fid, reason) for fid, reason in ts.excluded.items()]
+        text = '\n'.join(head + note + [' */', rest])
+    return text
+
+
+def render_pool(dp, dx, ts):
     check_names(dp)
     can = canonical_pool(dp)
     digest = hashlib.sha256(can).hexdigest()
@@ -1077,7 +1096,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
        defines('DFI_MOVE', dp['moves'], nx['moves']), len(dp['moves']), new_special, new_targets,
        defines('DFI_ABILITY', dp['abilities'], nx['abilities']), len(dp['abilities']),
        defines('DFI_ITEM', dp['items'], nx['items']), len(dp['items']),
-       (len(dp['moves']) + 7) // 8, FORME_ABILITIES_MAX, len(dp['aliases']), len(can))
+       ts.learnset_bytes, FORME_ABILITIES_MAX, len(dp['aliases']), len(can))
 
     def arr(vals):
         return '{' + ', '.join('%du' % v for v in vals) + '}'
@@ -1414,4 +1433,4 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     return n;
 }
 ''']
-    return h, '\n'.join(c), digest, len(can)
+    return table_set_names(h, ts), table_set_names('\n'.join(c), ts), digest, len(can)
