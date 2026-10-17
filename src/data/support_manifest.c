@@ -841,6 +841,17 @@ const dfi_support_manifest dfi_support = {
             /* step G79 (decision 0015 5br): Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562,
              * sim/field.ts:106-116); Altaria and Drampa; an engine row */
             [DFI_ABILITY_CLOUDNINE] = 1u,
+            /* Batch A1b (decision 0015 5dz): one member of an existing damage chain each (src/combat/mechanics/damage/), the pinned
+             * texts checked by check_a1b_facts (tools/datagen/tablegen/rules.py). */
+            [DFI_ABILITY_FURCOAT] = 1u,      /* Persian-Alola and Furfrou: Defense x2 (ModifyDef) */
+            [DFI_ABILITY_GRASSPELT] = 1u,    /* Gogoat: Defense x1.5 in Grassy Terrain (ModifyDef) */
+            [DFI_ABILITY_STEELYSPIRIT] = 1u, /* Perrserker: a Steel move of the holder or its partner x1.5 (BasePower, priority 22) */
+            [DFI_ABILITY_PLUS] = 1u,         /* Ampharos, Dedenne and Toxtricity: Special Attack x1.5 beside a Plus or Minus partner */
+            [DFI_ABILITY_MINUS] = 1u,        /* Manectric and Toxtricity-Low-Key: as Plus */
+            [DFI_ABILITY_STAKEOUT] = 1u,     /* Thievul and Mabosstiff: x2 against a target that came in this turn (ModifyAtk/SpA) */
+            [DFI_ABILITY_ANALYTIC] = 1u,     /* Starmie and Watchog: x5325/4096 when no other active Pokemon still moves (BasePower) */
+            [DFI_ABILITY_FLUFFY] = 1u,       /* Houndstone: Fire x2, contact x0.5, one ModifyDamage factor */
+            [DFI_ABILITY_HEATPROOF] = 1u,    /* Sinistcha: Fire x0.5 (ModifyAtk/SpA) and half the burn damage (residual) */
         },
     .items =
         {
@@ -1002,6 +1013,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_SCOPELENS] = 1u,  /* step G75: +1 to the holder's critical ratio (data/items.ts:5554-5565) */
             [DFI_ITEM_MEDICHAMITE] = 1u, /* step G75: Medicham-Mega (Pure Power), the stone of 5p (data/items.ts:3865-3876) */
             [DFI_ITEM_CLEFABLITE] = 1u,  /* step G75: Clefable-Mega (Magic Bounce), Clefable with its hidden Unaware (data/items.ts:1088-1099) */
+            [DFI_ITEM_LIGHTBALL] = 1u,   /* batch A1b (decision 0015 5dz): Attack and Special Attack x2 for a Pikachu holder (data/items.ts:3421-3443) */
         },    /* The POOL player-view extension (decision 0018): a bit is set by the step that implements the feature and
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in

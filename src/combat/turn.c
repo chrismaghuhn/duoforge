@@ -1091,6 +1091,8 @@ static uint32_t dfi_level_of(const dfi_member *m)
     return DFI_LEVEL;
 }
 
+/* queue.willMove, defined with the queue helpers below; Analytic's BasePower reads it (batch A1b). */
+static const dfi_queue_record *dfi_will_move(struct duoforge_battle *b, uint32_t flat);
 
 
 #include "combat/mechanics/damage/crit.h"
@@ -10040,6 +10042,12 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_residual_early(dfi_run *r, struct d
         const bool poison = e->kind == DFI_RES_POISON;
         uint32_t damage = (uint32_t)m->hp_max / (poison ? 8u : 16u);
         damage = damage == 0u ? 1u : damage;
+        /* Heatproof's onDamage (batch A1b, data/abilities.ts:1848-1852): `damage / 2` for the brn effect, inside spreadDamage's
+         * Damage event between its two clampIntRange(.., 1) (sim/battle.ts:2112-2127): the halved value is floored, at least 1. */
+        if (!poison && dfi_ability(b, m, DFI_ABILITY_HEATPROOF)) {
+            damage /= 2u;
+            damage = damage == 0u ? 1u : damage;
+        }
         if (poison && m->status == DFI_STATUS_TOX) {
             /* tox (data/conditions.ts:138-161): the stage goes up first (to 15 at most), then the damage is
              * clampIntRange(baseMaxhp / 16, 1) * stage; the stage is the tail's, zero at the status's start and after a

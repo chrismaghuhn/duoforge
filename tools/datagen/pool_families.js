@@ -353,6 +353,11 @@ const ENGINE_STAT_MODIFIERS = {
     waterbubble: {onModifyAtk: {Water: 2}, onModifySpA: {Water: 2}},
     // Step G75: Pure Power, x2 Attack for every move in the ModifyAtk chain (data/abilities.ts:3608-3617, as Huge Power).
     purepower: {onModifyAtk: ALL_TYPES_X(2)},
+    // Batch A1b: Stakeout, x2 in both events against a defender whose activeTurns is 0; the probe's defender has no activeTurns
+    // field, so every type fires (A1B_PROBES below checks the defender that has been in for a turn). Plus and Minus need
+    // pokemon.allies(), which the probe's Pokemon does not have: their onModifySpA throws there (no stat modifier), and
+    // A1B_PROBES gives them a partner.
+    stakeout: {onModifyAtk: ALL_TYPES_X(2), onModifySpA: ALL_TYPES_X(2)},
 };
 
 // What an entry ability sets for a source Pokemon.
@@ -582,6 +587,9 @@ function checkItems(dex, rows, unmodeled) {
             if (!unmodeled.has(row.id)) {
                 // Step G75: Scope Lens adds one to the holder's critical ratio (data/items.ts:5554-5565); the ratio is
                 // clamped by the caller, so the probe checks the raw term only.
+                if (row.id === 'lightball') {
+                    checkLightBall(item); // batch A1b
+                }
                 if (row.id === 'scopelens') {
                     expect('scopelens critical ratio 1 to 2', call(item.onModifyCritRatio, battle(item), [1]), 2);
                     expect('scopelens critical ratio 0 to 1', call(item.onModifyCritRatio, battle(item), [0]), 1);
@@ -1628,6 +1636,97 @@ const G77_PROBES = {
     },
 };
 
+// Batch A1b (decision 0015 5dz): the callbacks of the nine abilities and Light Ball, called on the pinned handlers with the
+// inputs the engine's clauses read (src/combat/mechanics/damage/ and the burn residual of src/combat/turn.c): the factor and the
+// priority of each, and the cases where it does nothing.
+const A1B_PROBES = {
+    furcoat(ability) {
+        expect('furcoat onModifyDefPriority', ability.onModifyDefPriority, 6);
+        expect('furcoat breakable', ability.flags.breakable, 1);
+        expect('furcoat Defense', call(ability.onModifyDef, battle(ability), [100]), {chain: 2});
+    },
+    grasspelt(ability) {
+        expect('grasspelt onModifyDefPriority', ability.onModifyDefPriority, 6);
+        expect('grasspelt breakable', ability.flags.breakable, 1);
+        const terrain = (t) => battle(ability, {field: {isTerrain: (id) => id === t}});
+        expect('grasspelt Defense in Grassy Terrain', call(ability.onModifyDef, terrain('grassyterrain'), [{}]), {chain: 1.5});
+        expect('grasspelt Defense in Psychic Terrain', call(ability.onModifyDef, terrain('psychicterrain'), [{}]), undefined);
+        expect('grasspelt Defense without terrain', call(ability.onModifyDef, terrain(''), [{}]), undefined);
+    },
+    steelyspirit(ability) {
+        expect('steelyspirit onAllyBasePowerPriority', ability.onAllyBasePowerPriority, 22);
+        expect('steelyspirit flags', ability.flags, {});
+        const fired = TYPES.filter((t) => call(ability.onAllyBasePower, battle(ability), [100, {}, {}, moveOf(t)]) !== undefined);
+        expect('steelyspirit boosted types', fired, ['Steel']);
+        expect('steelyspirit Steel move', call(ability.onAllyBasePower, battle(ability), [100, {}, {}, moveOf('Steel')]), {chain: 1.5});
+    },
+    plus(ability) { A1B_PLUS_MINUS(ability, 'plus'); },
+    minus(ability) { A1B_PLUS_MINUS(ability, 'minus'); },
+    stakeout(ability) {
+        expect('stakeout priorities', [ability.onModifyAtkPriority, ability.onModifySpAPriority], [5, 5]);
+        expect('stakeout flags', ability.flags, {});
+        for (const callback of ['onModifyAtk', 'onModifySpA']) {
+            expect('stakeout ' + callback + ' against a defender that came in this turn',
+                call(ability[callback], battle(ability), [100, {}, {activeTurns: 0}, moveOf('Dark')]), {chain: 2});
+            expect('stakeout ' + callback + ' against a defender that has been in for a turn',
+                call(ability[callback], battle(ability), [100, {}, {activeTurns: 1}, moveOf('Dark')]), undefined);
+        }
+    },
+    analytic(ability) {
+        expect('analytic onBasePowerPriority', ability.onBasePowerPriority, 21);
+        expect('analytic flags', ability.flags, {});
+        const user = {id: 'user'};
+        const run = (others, willMove) => call(ability.onBasePower, battle(ability, {
+            getAllActive: () => [user, ...others], queue: {willMove: (p) => willMove.includes(p)}}), [100, user]);
+        const a = {id: 'a'};
+        const b = {id: 'b'};
+        expect('analytic last to move', run([a, b], []), {chain: [5325, 4096]});
+        expect('analytic before another', run([a, b], [b]), undefined);
+        expect('analytic alone', run([], []), {chain: [5325, 4096]});
+        expect('analytic ignores its own action', run([a], [user]), {chain: [5325, 4096]});
+    },
+    fluffy(ability) {
+        expect('fluffy breakable', ability.flags.breakable, 1);
+        const hit = (type, contact) => call(ability.onSourceModifyDamage, battle(ability),
+            [100, {}, {}, moveOf(type, {flags: contact ? {contact: 1} : {}})]);
+        expect('fluffy Fire without contact', hit('Fire', false), {chain: 2});
+        expect('fluffy contact, not Fire', hit('Normal', true), {chain: 0.5});
+        expect('fluffy Fire with contact', hit('Fire', true), {chain: 1});
+        expect('fluffy neither', hit('Water', false), {chain: 1});
+    },
+    heatproof(ability) {
+        expect('heatproof priorities', [ability.onSourceModifyAtkPriority, ability.onSourceModifySpAPriority], [6, 5]);
+        expect('heatproof breakable', ability.flags.breakable, 1);
+        for (const callback of ['onSourceModifyAtk', 'onSourceModifySpA']) {
+            const fired = TYPES.filter((t) => call(ability[callback], battle(ability), [100, {}, {}, moveOf(t)]) !== undefined);
+            expect('heatproof ' + callback + ' types', fired, ['Fire']);
+            expect('heatproof ' + callback + ' of a Fire move', call(ability[callback], battle(ability), [100, {}, {}, moveOf('Fire')]), {chain: 0.5});
+        }
+        expect('heatproof burn damage 13', call(ability.onDamage, battle(ability), [13, {}, null, {id: 'brn'}]), 6.5);
+        expect('heatproof poison damage', call(ability.onDamage, battle(ability), [13, {}, null, {id: 'psn'}]), undefined);
+        expect('heatproof move damage', call(ability.onDamage, battle(ability), [13, {}, {}, {id: 'flamethrower', effectType: 'Move'}]), undefined);
+    },
+};
+function A1B_PLUS_MINUS(ability, id) {
+    expect(id + ' onModifySpAPriority', ability.onModifySpAPriority, 5);
+    expect(id + ' flags', ability.flags, {});
+    const holder = (allies) => ({allies: () => allies});
+    const ally = (abilityId) => ({hasAbility: (list) => list.includes(abilityId)});
+    expect(id + ' beside Plus', call(ability.onModifySpA, battle(ability), [100, holder([ally('plus')])]), {chain: 1.5});
+    expect(id + ' beside Minus', call(ability.onModifySpA, battle(ability), [100, holder([ally('minus')])]), {chain: 1.5});
+    expect(id + ' beside another ability', call(ability.onModifySpA, battle(ability), [100, holder([ally('static')])]), undefined);
+    expect(id + ' without a partner', call(ability.onModifySpA, battle(ability), [100, holder([])]), undefined);
+    expect(id + ' has no onModifyAtk', ability.onModifyAtk, undefined);
+}
+function checkLightBall(item) {
+    expect('lightball priorities', [item.onModifyAtkPriority, item.onModifySpAPriority], [1, 1]);
+    const holder = (name) => ({baseSpecies: {baseSpecies: name}});
+    for (const callback of ['onModifyAtk', 'onModifySpA']) {
+        expect('lightball ' + callback + ' of Pikachu', call(item[callback], battle(item), [100, holder('Pikachu')]), {chain: 2});
+        expect('lightball ' + callback + ' of Raichu', call(item[callback], battle(item), [100, holder('Raichu')]), undefined);
+    }
+}
+
 // Step G65 (Reckless's crash clause): a modelled move with hasCrashDamage needs the clause, which the engine does not have.
 function checkG65(dex, moveNames, unmodeledMoves) {
     for (const id of moveNames) {
@@ -1686,6 +1785,9 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (G77_PROBES[row.id] !== undefined) {
                     G77_PROBES[row.id](ability);
+                }
+                if (A1B_PROBES[row.id] !== undefined) {
+                    A1B_PROBES[row.id](ability);
                 }
             }
             continue;
@@ -1850,14 +1952,15 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek'],
+const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek', 'lightball'],
     abilities: ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
         'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
-        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill']};
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill',
+        'furcoat', 'grasspelt', 'steelyspirit', 'plus', 'minus', 'stakeout', 'analytic', 'fluffy', 'heatproof']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.

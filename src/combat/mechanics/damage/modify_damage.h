@@ -125,6 +125,22 @@ dfi_damage_modify(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_dat
             return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
         }
     }
+    /* Fluffy (batch A1b, data/abilities.ts:1458-1469, onSourceModifyDamage of the target, breakable and Mold Breaker is not marked):
+     * one chainModify of mod, where mod starts at 1, doubles for a Fire move (move_type) and halves for a move with the contact
+     * flag: x2 (8192/4096) for a Fire move without contact, x0.5 (2048/4096) for a contact move that is not Fire, and for a Fire
+     * contact move chainModify(1), which leaves the modifier as it is (((m * 4096) + 2048) >> 12 is m), so no factor. It is the
+     * target's one ability, so with Solid Rock, Multiscale, Aura Guard and Punk Rock a hit has at most one. */
+    if (dfi_ability(r->b, d, DFI_ABILITY_FLUFFY)) {
+        const bool fluffy_fire = move_type == DFI_TYPE_FIRE;
+        const bool fluffy_contact = (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u;
+        if (fluffy_fire != fluffy_contact) {
+            const uint32_t fluffy = fluffy_fire ? 8192u : 2048u;
+            ok = ok && dfi_chain_modify(chain, fluffy, &chain);
+            if (!dfi_mods_push(mlist, &mods, fluffy)) {
+                return DUOFORGE_E_UNSUPPORTED; /* more modifiers than the list holds: refused, never written past it */
+            }
+        }
+    }
     /* Friend Guard (step G35, data/abilities.ts:1533-1540, onAnyModifyDamage, breakable and Mold Breaker is not marked): the
      * target's partner, when it stands and holds the ability, weakens every hit on the target by x0.75 (3072/4096). The handler
      * is any Pokemon's, so the attacker's own partner is a holder too when it is the one hit (a spread move on an ally), and the

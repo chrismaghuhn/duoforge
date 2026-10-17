@@ -13,8 +13,6 @@ static DFI_ALWAYS_INLINE duoforge_status
 dfi_damage_attack(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md, uint32_t move_type,
                   dfi_damage_ctx *c)
 {
-    (void)user;
-    (void)target;
     (void)md;
     const dfi_member *a = c->a;
     const dfi_member *d = c->d;
@@ -69,6 +67,34 @@ dfi_damage_attack(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_dat
     }
     if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, d, DFI_ABILITY_WATERBUBBLE)) {
         ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
+    }
+    /* Batch A1b, four more members of this chain. Each is the holder's one ability or its one item, and every product of the chain
+     * stays exact (at most one 1.5 of the attacker's ability, the rest powers of two), so their priorities (5 and 6, Light Ball's
+     * 1) and the holders' Speeds do not change the value.
+     *   Plus and Minus (data/abilities.ts:3317-3330 and 2643-2656, onModifySpAPriority 5): x1.5 in the ModifySpA event (a special
+     *     move) when one of pokemon.allies() (sim/pokemon.ts:720-722, sim/side.ts:390-396: the partner with HP) has Plus or Minus.
+     *   Stakeout (data/abilities.ts:4476-4495, onModifyAtkPriority 5 and onModifySpAPriority 5): x2 in either event while the
+     *     defender's activeTurns is 0: from its switch-in (sim/battle-actions.ts:137) to the end of the turn (sim/battle.ts:1765),
+     *     the state's NEWLY_SWITCHED flag of its position (as Speed Boost reads it).
+     *   Heatproof (data/abilities.ts:1833-1857, onSourceModifyAtkPriority 6 and onSourceModifySpAPriority 5, breakable: no Mold
+     *     Breaker is marked): x0.5 for a Fire move against its holder, either category, as Thick Fat and Water Bubble.
+     *   Light Ball (data/items.ts:3421-3443, onModifyAtkPriority 1 and onModifySpAPriority 1): x2 in either event for a holder
+     *     whose baseSpecies is Pikachu (the member's base forme; the pool has no other Pikachu forme). */
+    if (!physical && (dfi_ability(r->b, a, DFI_ABILITY_PLUS) || dfi_ability(r->b, a, DFI_ABILITY_MINUS))) {
+        const dfi_member *pm_ally = dfi_at(r->b, user ^ 1u);
+        if (pm_ally != NULL && pm_ally->hp != 0u &&
+            (dfi_ability(r->b, pm_ally, DFI_ABILITY_PLUS) || dfi_ability(r->b, pm_ally, DFI_ABILITY_MINUS))) {
+            ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
+        }
+    }
+    if (dfi_ability(r->b, a, DFI_ABILITY_STAKEOUT) && ((uint32_t)dfi_pos(r->b, target)->flags & DFI_VOL_NEWLY_SWITCHED) != 0u) {
+        ok = ok && dfi_chain_modify(atk_chain, 8192u, &atk_chain);
+    }
+    if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, d, DFI_ABILITY_HEATPROOF)) {
+        ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
+    }
+    if (dfi_holds(r->b, a, DFI_ITEM_LIGHTBALL) && a->species_id == DFI_FORME_PIKACHU) {
+        ok = ok && dfi_chain_modify(atk_chain, 8192u, &atk_chain);
     }
     if (!ok) {
         return DUOFORGE_E_INVARIANT;

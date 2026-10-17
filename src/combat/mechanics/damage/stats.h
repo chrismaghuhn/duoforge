@@ -100,6 +100,18 @@ dfi_damage_stats(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data
     if (def_index == DFI_STAGE_DEF && d->status != DFI_STATUS_NONE && dfi_ability(r->b, d, DFI_ABILITY_MARVELSCALE)) {
         dok = dok && dfi_chain_modify(dchain, 6144u, &dchain);
     }
+    /* Fur Coat (batch A1b, data/abilities.ts:1578-1587, onModifyDefPriority 6, breakable, Mold Breaker not marked): chainModify(2)
+     * on the holder's Defense, always. Grass Pelt (:1697-1706, onModifyDefPriority 6, breakable): chainModify(1.5) while the
+     * terrain is Grassy Terrain (field.isTerrain without a target reads the event's target, the holder; no pool handler has
+     * onTryTerrain, sim/field.ts:169-180), grounded or not. Both are the holder's one ability, beside Marvel Scale's slot
+     * (same priority 6), and every product of this chain is exact (1.5 x 1.5 = 9216/4096, a power of two otherwise), so the
+     * order of the handlers (the weather's priority 10 first) does not change the value. */
+    if (def_index == DFI_STAGE_DEF && dfi_ability(r->b, d, DFI_ABILITY_FURCOAT)) {
+        dok = dok && dfi_chain_modify(dchain, 8192u, &dchain);
+    }
+    if (def_index == DFI_STAGE_DEF && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_ability(r->b, d, DFI_ABILITY_GRASSPELT)) {
+        dok = dok && dfi_chain_modify(dchain, 6144u, &dchain);
+    }
     if (!dok) {
         return DUOFORGE_E_INVARIANT;
     }

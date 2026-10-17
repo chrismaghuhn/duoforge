@@ -1460,7 +1460,7 @@ class ItemAbilityFeatures(unittest.TestCase):
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
         self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt',
                                                            'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb',
-                                                           'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek'],
+                                                           'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek', 'lightball'],
                                                    'abilities': ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
@@ -1474,7 +1474,8 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
                                                                  'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                                                                  'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
-                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill']})
+                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill',
+                                                                 'furcoat', 'grasspelt', 'steelyspirit', 'plus', 'minus', 'stakeout', 'analytic', 'fluffy', 'heatproof']})
 
 
 class Bounds(unittest.TestCase):
@@ -2896,6 +2897,82 @@ class FailSkillSwap(unittest.TestCase):
         abil, champ = self.sources()
         self.assertIn('no definition of dfi_fails_skillswap',
                       self.refused(self.pool(), abil, champ, C_BODY.replace('dfi_fails_skillswap', 'dfi_other')))
+
+
+class FactsA1b(unittest.TestCase):
+    """Batch A1b (decision 0015 5dz): the nine abilities and Light Ball are engine rows whose callbacks are exactly A1B_CALLBACKS and
+    whose pinned texts are demanded whole (check_a1b_facts), with the pin lines the clauses rely on (A1B_PIN_FACTS); a
+    Champions entry, another callback and an onTryTerrain handler are refused."""
+
+    def sources(self, skip=(None, None), extra_ability='', champ_abil='', champ_items='', pin_skip=(None, None),
+                try_terrain=None):
+        abilities = [entry(aid, *[f for i, f in enumerate(facts) if (aid, i) != skip])
+                     for aid, facts in gen_closure.A1B_ABILITY_FACTS]
+        items = [entry(iid, *[f for i, f in enumerate(facts) if (iid, i) != skip])
+                 for iid, facts in gen_closure.A1B_ITEM_FACTS]
+        pins = {}
+        for rel, facts in gen_closure.A1B_PIN_FACTS:
+            pins[rel] = TextSource(rel, '\n'.join(f for i, f in enumerate(facts) if (rel, i) != pin_skip))
+        pins['data/moves.ts'] = TextSource('data/moves.ts', '')
+        if try_terrain is not None:
+            pins[try_terrain] = TextSource(try_terrain, '\n'.join(pins[try_terrain].lines + ['\t\tonTryTerrain() {},']))
+        return (TextSource('data/abilities.ts', '\n'.join(abilities) + extra_ability),
+                TextSource('data/mods/champions/abilities.ts', champ_abil),
+                TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', champ_items), pins)
+
+    def refused(self, *args, **kwargs):
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a1b_facts(*self.sources(*args, **kwargs))
+        return str(cm.exception.code)
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_a1b_facts(*self.sources())
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([aid for aid, _ in gen_closure.A1B_ABILITY_FACTS],
+                         ['furcoat', 'grasspelt', 'steelyspirit', 'plus', 'minus', 'stakeout', 'analytic', 'fluffy', 'heatproof'])
+        self.assertEqual([iid for iid, _ in gen_closure.A1B_ITEM_FACTS], ['lightball'])
+        for rid, facts in gen_closure.A1B_ABILITY_FACTS + gen_closure.A1B_ITEM_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(entry=rid, fact=facts[i]):
+                    # a dropped text is missing, a dropped callback line changes the callbacks, and a dropped brace leaves an
+                    # entry that does not parse: each is a refusal that names the entry
+                    message = self.refused((rid, i))
+                    self.assertIn(rid, message)
+                    self.assertTrue(any(k in message for k in ('the entry no longer has', 'callbacks', 'is not closed',
+                                                                 'does not end at a line')), message)
+        for rel, facts in gen_closure.A1B_PIN_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(pin=rel, fact=facts[i]):
+                    self.assertIn('%s: the pin no longer has' % rel, self.refused(pin_skip=(rel, i)))
+
+    def test_another_callback_is_refused(self):
+        abil, champ, items, champ_items, pins = self.sources()
+        text = '\n'.join(abil.lines).replace('\t\tonModifyDef(def) {', '\t\tonModifySpD(spd) {\n\t\t},\n\t\tonModifyDef(def) {', 1)
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a1b_facts(TextSource('data/abilities.ts', text), champ, items, champ_items, pins)
+        self.assertIn("ability furcoat: callbacks ['onModifyDef', 'onModifySpD'], not ['onModifyDef']", str(cm.exception.code))
+
+    def test_a_champions_entry_is_refused(self):
+        self.assertIn('ability fluffy: the champions mod overrides the entry',
+                      self.refused(champ_abil=entry('fluffy', 'inherit: true,', 'isNonstandard: null,')))
+        self.assertIn('item lightball: the champions mod overrides the entry',
+                      self.refused(champ_items=entry('lightball', 'inherit: true,')))
+
+    def test_an_on_try_terrain_handler_is_refused(self):
+        self.assertIn('data/abilities.ts: an onTryTerrain handler',
+                      self.refused(extra_ability='\n' + entry('probe', 'onTryTerrain() {},')))
+        for rel in ('data/moves.ts', 'data/conditions.ts'):
+            with self.subTest(source=rel):
+                self.assertIn('%s: an onTryTerrain handler' % rel, self.refused(try_terrain=rel))
+        self.assertEqual(gen_closure.A1B_NO_TRY_TERRAIN,
+                         ('data/abilities.ts', 'data/items.ts', 'data/moves.ts', 'data/conditions.ts'))
+
+    def test_the_rows_of_the_batch(self):
+        for aid, _ in gen_closure.A1B_ABILITY_FACTS:
+            self.assertIn(aid, gen_closure.ENGINE_ROWS['abilities'])
+        self.assertIn('lightball', gen_closure.ENGINE_ROWS['items'])
+        self.assertEqual(set(gen_closure.A1B_CALLBACKS), {aid for aid, _ in gen_closure.A1B_ABILITY_FACTS} | {'lightball'})
 
 
 if __name__ == '__main__':

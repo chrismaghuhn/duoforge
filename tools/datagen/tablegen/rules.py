@@ -794,3 +794,128 @@ def check_a0p1_facts(moves_ts, champ_moves, items_ts, champ_items, legal, only=N
         cf = fields(ci[2])
         if set(cf) - {'inherit', 'isNonstandard'} or norm(cf.get('isNonstandard', (0, ''))[1]) != 'isNonstandard: null,':
             fail('item %s: the Champions entry is not inherit and isNonstandard null' % iid)
+
+
+# Batch A1b (decision 0015 entry 5dz): nine abilities and one item, each one member of an existing damage chain (Heatproof also
+# a clause of the burn residual), engine rows (ENGINE_ROWS) that the damage phases of src/combat/mechanics/damage/ and the
+# residual read by id. Each entry's callbacks are exactly A1B_CALLBACKS and their pinned texts are demanded whole, whitespace
+# aside; no Champions entry overrides one. The pin lines that the clauses rely on (A1B_PIN_FACTS) are demanded too:
+# queue.willMove and getAllActive (Analytic), the allies of a side and the onAlly handlers (Plus, Minus, Steely Spirit),
+# activeTurns and newlySwitched (Stakeout), the stat events of getDamage, the terrain read (Grass Pelt, with no onTryTerrain
+# handler in the data), and the burn residual through spreadDamage's Damage event (Heatproof).
+A1B_ABILITY_FACTS = (
+    ('furcoat', ('onModifyDefPriority: 6,',
+                 'onModifyDef(def) { return this.chainModify(2); },',
+                 'flags: { breakable: 1 },')),
+    ('grasspelt', ('onModifyDefPriority: 6,',
+                   "onModifyDef(pokemon) { if (this.field.isTerrain('grassyterrain')) return this.chainModify(1.5); },",
+                   'flags: { breakable: 1 },')),
+    ('steelyspirit', ('onAllyBasePowerPriority: 22,',
+                      "onAllyBasePower(basePower, attacker, defender, move) { if (move.type === 'Steel') { "
+                      "this.debug('Steely Spirit boost'); return this.chainModify(1.5); } },",
+                      'flags: {},')),
+    ('plus', ('onModifySpAPriority: 5,',
+              "onModifySpA(spa, pokemon) { for (const allyActive of pokemon.allies()) { "
+              "if (allyActive.hasAbility(['minus', 'plus'])) { return this.chainModify(1.5); } } },",
+              'flags: {},')),
+    ('minus', ('onModifySpAPriority: 5,',
+               "onModifySpA(spa, pokemon) { for (const allyActive of pokemon.allies()) { "
+               "if (allyActive.hasAbility(['minus', 'plus'])) { return this.chainModify(1.5); } } },",
+               'flags: {},')),
+    ('stakeout', ('onModifyAtkPriority: 5,',
+                  "onModifyAtk(atk, attacker, defender) { if (!defender.activeTurns) { this.debug('Stakeout boost'); "
+                  "return this.chainModify(2); } },",
+                  'onModifySpAPriority: 5,',
+                  "onModifySpA(atk, attacker, defender) { if (!defender.activeTurns) { this.debug('Stakeout boost'); "
+                  "return this.chainModify(2); } },",
+                  'flags: {},')),
+    ('analytic', ('onBasePowerPriority: 21,',
+                  'onBasePower(basePower, pokemon) { let boosted = true; for (const target of this.getAllActive()) { '
+                  'if (target === pokemon) continue; if (this.queue.willMove(target)) { boosted = false; break; } } '
+                  "if (boosted) { this.debug('Analytic boost'); return this.chainModify([5325, 4096]); } },",
+                  'flags: {},')),
+    ('fluffy', ("onSourceModifyDamage(damage, source, target, move) { let mod = 1; if (move.type === 'Fire') mod *= 2; "
+                "if (move.flags['contact']) mod /= 2; return this.chainModify(mod); },",
+                'flags: { breakable: 1 },')),
+    ('heatproof', ('onSourceModifyAtkPriority: 6,',
+                   "onSourceModifyAtk(atk, attacker, defender, move) { if (move.type === 'Fire') { "
+                   "this.debug('Heatproof Atk weaken'); return this.chainModify(0.5); } },",
+                   'onSourceModifySpAPriority: 5,',
+                   "onSourceModifySpA(atk, attacker, defender, move) { if (move.type === 'Fire') { "
+                   "this.debug('Heatproof SpA weaken'); return this.chainModify(0.5); } },",
+                   "onDamage(damage, target, source, effect) { if (effect && effect.id === 'brn') { return damage / 2; } },",
+                   'flags: { breakable: 1 },')),
+)
+A1B_ITEM_FACTS = (
+    ('lightball', ('onModifyAtkPriority: 1,',
+                   "onModifyAtk(atk, pokemon) { if (pokemon.baseSpecies.baseSpecies === 'Pikachu') { return this.chainModify(2); } },",
+                   'onModifySpAPriority: 1,',
+                   "onModifySpA(spa, pokemon) { if (pokemon.baseSpecies.baseSpecies === 'Pikachu') { return this.chainModify(2); } },")),
+)
+A1B_CALLBACKS = {
+    'furcoat': {'onModifyDef'}, 'grasspelt': {'onModifyDef'}, 'steelyspirit': {'onAllyBasePower'},
+    'plus': {'onModifySpA'}, 'minus': {'onModifySpA'}, 'stakeout': {'onModifyAtk', 'onModifySpA'}, 'analytic': {'onBasePower'},
+    'fluffy': {'onSourceModifyDamage'}, 'heatproof': {'onSourceModifyAtk', 'onSourceModifySpA', 'onDamage'},
+    'lightball': {'onModifyAtk', 'onModifySpA'},
+}
+A1B_PIN_FACTS = (
+    ('sim/battle-queue.ts', ('willMove(pokemon: Pokemon) {',
+                             'if (pokemon.fainted) return null;',
+                             'for (const action of this.list) {',
+                             "if (action.choice === 'move' && action.pokemon === pokemon) {",
+                             'return action;')),
+    ('sim/battle.ts', ('getAllActive(includeFainted?: boolean) {',
+                       'if (pokemon && (includeFainted || !pokemon.fainted)) {',
+                       'pokemon.newlySwitched = false;',
+                       'if (pokemon.fainted) continue;',
+                       'pokemon.activeTurns++;',
+                       'for (const allyActive of target.alliesAndSelf()) {',
+                       'handlers.push(...this.findPokemonEventHandlers(allyActive, `onAlly${eventName}`));',
+                       'if (targetDamage !== 0) targetDamage = this.clampIntRange(targetDamage, 1);',
+                       "targetDamage = this.runEvent('Damage', target, source, effect, targetDamage, true);")),
+    ('sim/battle-actions.ts', ('pokemon.activeTurns = 0;',
+                               "attack = this.battle.runEvent('Modify' + statTable[attackStat], source, target, move, attack);",
+                               "defense = this.battle.runEvent('Modify' + statTable[defenseStat], target, source, move, defense);")),
+    ('sim/side.ts', ('allies(all?: boolean) {',
+                     'let allies = this.activeTeam().filter(ally => ally);',
+                     'if (!all) allies = allies.filter(ally => !!ally.hp);')),
+    ('sim/pokemon.ts', ('alliesAndSelf(): Pokemon[] { return this.side.allies(); }',
+                        'allies(): Pokemon[] { return this.side.allies().filter(ally => ally !== this); }')),
+    ('sim/field.ts', ('effectiveTerrain(target?: Pokemon | Side | Battle) {',
+                      'if (this.battle.event && !target) target = this.battle.event.target;',
+                      "return this.battle.runEvent('TryTerrain', target) ? this.terrain : '';")),
+    ('data/conditions.ts', ('onResidualOrder: 10,',
+                            'onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 16); },')),
+)
+A1B_NO_TRY_TERRAIN = ('data/abilities.ts', 'data/items.ts', 'data/moves.ts', 'data/conditions.ts')
+
+
+def check_a1b_facts(abil_ts, champ_abil, items_ts, champ_items, pins):
+    """Batch A1b: each entry of A1B_ABILITY_FACTS and A1B_ITEM_FACTS has exactly the callbacks of A1B_CALLBACKS and every fact,
+    whitespace aside, and the Champions mod has no entry for it. `pins` maps each file of A1B_PIN_FACTS and A1B_NO_TRY_TERRAIN
+    that is not one of the four entry sources to its Source: its text must hold every fact, and none of A1B_NO_TRY_TERRAIN has
+    an onTryTerrain handler (so Grass Pelt's field.isTerrain is the field's terrain)."""
+    for kind, facts_by_id, src, champ in (('ability', A1B_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', A1B_ITEM_FACTS, items_ts, champ_items)):
+        for rid, facts in facts_by_id:
+            e = src.entry(rid)
+            if e is None:
+                fail('%s %s not found' % (kind, rid))
+            if champ.entry(rid) is not None:
+                fail('%s %s: the champions mod overrides the entry' % (kind, rid))
+            callbacks = {k for k, (is_fn, _) in fields(e[2]).items() if is_fn}
+            if callbacks != A1B_CALLBACKS[rid]:
+                fail('%s %s: callbacks %s, not %s' % (kind, rid, sorted(callbacks), sorted(A1B_CALLBACKS[rid])))
+            text = norm(chr(10).join(e[2]))
+            for fact in facts:
+                if norm(fact) not in text:
+                    fail('%s %s: the entry no longer has "%s"' % (kind, rid, fact))
+    sources = dict(pins, **{'data/abilities.ts': abil_ts, 'data/items.ts': items_ts})
+    for rel, facts in A1B_PIN_FACTS:
+        text = norm(chr(10).join(sources[rel].lines))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('%s: the pin no longer has "%s"' % (rel, fact))
+    for rel in A1B_NO_TRY_TERRAIN:
+        if any('onTryTerrain' in line for line in sources[rel].lines):
+            fail('%s: an onTryTerrain handler, which Grass Pelt\'s terrain read does not model' % rel)

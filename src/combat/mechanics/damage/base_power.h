@@ -135,6 +135,21 @@ dfi_damage_base_power(dfi_run *r, uint32_t user, uint32_t target, const dfi_move
     if (md->recoil[1] != 0u && dfi_ability(r->b, a, DFI_ABILITY_RECKLESS)) {
         ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
     }
+    /* Steely Spirit (batch A1b, data/abilities.ts:4589-4601, onAllyBasePowerPriority 22: after the priority 23 slot of Iron
+     * Fist, Reckless and the -ate abilities, before Tough Claws' 21): chainModify(1.5) for a Steel move (move_type, the move's
+     * type after any change) of any holder among the attacker's alliesAndSelf (sim/battle.ts:1056-1057: the BasePower event's
+     * target is the attacker, sim/pokemon.ts:716-718 and sim/side.ts:390-396: the active Pokemon of its side with HP, so a
+     * fainted partner, or one whose faint is still queued, has no handler). Each holder is one handler at the same priority:
+     * the attacker and its partner both holding it (a Trace copy) chain 1.5 twice, an exact 9216/4096 whatever their order. */
+    if (move_type == DFI_TYPE_STEEL) {
+        const dfi_member *steely_ally = dfi_at(r->b, user ^ 1u);
+        if (dfi_ability(r->b, a, DFI_ABILITY_STEELYSPIRIT)) {
+            ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
+        }
+        if (steely_ally != NULL && steely_ally->hp != 0u && dfi_ability(r->b, steely_ally, DFI_ABILITY_STEELYSPIRIT)) {
+            ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
+        }
+    }
     if (dfi_ability(r->b, a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
     }
@@ -150,6 +165,34 @@ dfi_damage_base_power(dfi_run *r, uint32_t user, uint32_t target, const dfi_move
      * ability): chainModify([5325, 4096]) for a move it stripped and for Electro Shot (hasSheerForceBoost). */
     if (dfi_sf_boosts(r->b, a, md)) {
         ok = ok && dfi_chain_modify(bp_chain, DFI_SHEER_FORCE_MODIFIER, &bp_chain);
+    }
+    /* Analytic (batch A1b, data/abilities.ts:110-130, onBasePowerPriority 21 like Tough Claws, Sand Force and Sheer Force, which
+     * it never meets: one ability): chainModify([5325, 4096]) unless another active Pokemon still has a move action in the queue.
+     * The pin loops over getAllActive() (sim/battle.ts:1365-1375: every Pokemon in a position that is not `fainted`) and asks
+     * queue.willMove (sim/battle-queue.ts:324-332, dfi_will_move). A Pokemon at 0 HP whose faint is processed is `fainted` and
+     * skipped. One at 0 HP whose faint is still queued (faintMessages not run yet: only a later hit of the same move can see it)
+     * is not `fainted` there, and whether its action is still queued is not modelled: when it alone would decide (no standing
+     * Pokemon will move), the hit is refused (E_UNSUPPORTED). */
+    if (dfi_ability(r->b, a, DFI_ABILITY_ANALYTIC)) {
+        bool analytic = true;
+        bool undecided = false;
+        for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+            const dfi_member *other = flat == user ? NULL : dfi_at(r->b, flat);
+            if (other == NULL) {
+                continue;
+            }
+            if (other->hp == 0u) {
+                undecided = undecided || dfi_faint_pending(r, flat);
+            } else if (dfi_will_move(r->b, flat) != NULL) {
+                analytic = false;
+            }
+        }
+        if (analytic && undecided) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (analytic) {
+            ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+        }
     }
     ok = dfi_fairy_aura_base_power(r->b, user, target, move_type, ok, &bp_chain);
     /* Sharpness (step G34, data/abilities.ts:4174-4186, priority 19: after Fairy Aura's 20, before the items' 15): the slicing

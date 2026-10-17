@@ -15,9 +15,10 @@
  * The modifiers (out of 4096): Life Orb 5324, Expert Belt 4915, a resist berry 2048, a screen or Aurora Veil 2732, Glaive
  * Rush's volatile 8192, Solid Rock 3072, Multiscale 2048, (step G35) Friend Guard 3072, the ability of the target's partner, and
  * (Mega batch 2) Aura Guard 2048, a contact hit on its holder, (step G45) Punk Rock 2048, a sound move on its holder, and
- * (step G77) Sniper 6144, a critical hit by its holder. The maximum for one hit, enumerated: the attacker has one item (Life
- * Orb or Expert Belt) and one ability (Sniper, crit only); the target has one ability (Solid Rock, Multiscale, Aura Guard
- * or Punk Rock: one of the four), one berry and Glaive Rush's volatile; its partner has Friend Guard; and one screen or
+ * (step G77) Sniper 6144, a critical hit by its holder, and (batch A1b) Fluffy 8192 (a Fire move without contact) or 2048 (a
+ * contact move that is not Fire) on its holder. The maximum for one hit, enumerated: the attacker has one item (Life
+ * Orb or Expert Belt) and one ability (Sniper, crit only); the target has one ability (Solid Rock, Multiscale, Aura Guard,
+ * Punk Rock or Fluffy: one of the five), one berry and Glaive Rush's volatile; its partner has Friend Guard; and one screen or
  * Aurora Veil counts only when the hit is not critical (turn.c, the `!crit` test of the screen modifier). A critical hit
  * therefore has at most 2 + 1 + 1 + 1 + 1 = 6 modifiers (Sniper, no screen), and a hit that is not critical has at most
  * 1 + 1 + 1 + 1 + 1 + 1 = 6 (the screen, no Sniper). So six is the bound, and it is what the list is sized to: no hit
