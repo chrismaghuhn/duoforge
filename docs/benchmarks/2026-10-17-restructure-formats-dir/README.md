@@ -48,5 +48,12 @@ hashes.
   pass; the generated files differ only in the include line named above; context fingerprints equal in all profiles.
 - **P6:** `include/` diff empty; 249 exports and the layouts byte-equal in all three profiles.
 
+**Full suite, after the proof:** the proof's selection does not run `duoforge.data.format_pool_reg_mc` and
+`format_pool_champions_ou`, and a first full run found them red: `docs/research/expansion/tools/build_legal_pool.js`
+(which they run) read the headers by their old path. `b31f028f` points it and `tg_verify_teams.js` at the new folder
+(two path lines each; the pinned validator makes both committed pools again, byte for byte). The whole CTest suite of
+`b31f028f` then passes locally without IPO, **1585 of 1585**; 27 are skipped by this machine's configuration (the
+`DUOFORGE_LEARN_PYTHON`/JAX tests and the German-locale check), which the hosted CI runs.
+
 All counts and hashes: [proof-summary.json](proof-summary.json). The library is byte-equal, so behaviour cannot
 change; no differential fuzz run is needed for this step.
