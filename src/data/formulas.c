@@ -1,7 +1,7 @@
 #include "data/formulas.h"
 
 #include "core/arith.h"
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 
 bool dfi_champions_stat(uint32_t stat, uint32_t base, uint32_t stat_points, uint32_t nature, uint16_t *out)
 {

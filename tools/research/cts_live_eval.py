@@ -28,7 +28,7 @@ appearance. The file holds the opponents' ids, so it never enters the repository
 cts.ParticleTracker as the bot played it (its batches as fed and its accepted choices, cts.SEED, the room as the key;
 the own team is the registry team its first request matches). At every decision point but the team preview it counts
 whether the engine refuses a particle's record (engine-refuses-record) and which unmodelled content each refused
-particle holds (src/data/pool_tables.c: a move, item or ability marked [unmodelled], or a Mega Stone whose Mega's ability
+particle holds (src/data/formats/reg-mc/pool_tables.c: a move, item or ability marked [unmodelled], or a Mega Stone whose Mega's ability
 is). The result: the points, the refused ones, the share without a refusal (where the search can run), and per content
 the points it occurs in and those it alone explains; with the commit and dirty state of the tool and of the engine code
 that ran (the checkout duoforge_live is imported from).
@@ -452,9 +452,9 @@ def replay_all(directory, bot, root, labels=None, since=None, code=None, details
     tables = data.load(kind="pool")
     prior = cts.SetPrior.from_table(tables)
     engine_root = Path(cts.__file__).resolve().parents[2]
-    names = unmodelled((engine_root / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
+    names = unmodelled((engine_root / "src" / "data" / "formats" / "reg-mc" / "pool_tables.c").read_text(encoding="utf-8"))
     if not names:
-        raise SystemExit("no [unmodelled] marker found in src/data/pool_tables.c: its format changed")
+        raise SystemExit("no [unmodelled] marker found in src/data/formats/reg-mc/pool_tables.c: its format changed")
     library = os.environ.get("DUOFORGE_LIBRARY")
     points, refused, unexplained, skipped, stopped = 0, 0, 0, collections.Counter(), collections.Counter()
     per = collections.defaultdict(lambda: {"battles": 0, "points": 0, "refused": 0})

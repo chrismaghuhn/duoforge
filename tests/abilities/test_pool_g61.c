@@ -19,8 +19,8 @@
 
 #include "combat/sheer_force.h"
 #include "core/modifier.h"
-#include "data/closure_tables.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "support/check.h"
 

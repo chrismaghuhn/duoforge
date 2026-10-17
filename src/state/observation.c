@@ -19,9 +19,9 @@
 #include <string.h>
 
 #include "core/arith.h"
-#include "data/closure_tables.h"
-#include "data/extended_tables.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
+#include "data/formats/reg-mc/extended_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"

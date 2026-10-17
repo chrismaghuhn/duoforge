@@ -2585,7 +2585,7 @@ class BulletFlag(unittest.TestCase):
     def committed_table(name):
         # the body of a pool table in pool_tables.c, or with name None the move count of pool_tables.h
         root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        with open(os.path.join(root, 'src', 'data', 'pool_tables.%s' % ('h' if name is None else 'c')), encoding='utf-8') as f:
+        with open(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.%s' % ('h' if name is None else 'c')), encoding='utf-8') as f:
             text = f.read()
         if name is None:
             return int(re.search(r'#define DFI_POOL_MOVE_COUNT (\d+)u', text).group(1))

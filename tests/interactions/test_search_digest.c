@@ -6,7 +6,7 @@
 #include "batch/batch_each.h"
 #include "state/request.h"
 #include "state/observation_digest.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"

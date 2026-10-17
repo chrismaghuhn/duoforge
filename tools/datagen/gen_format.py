@@ -9,7 +9,7 @@ A definition may have a tables section (restructure step 5): what gen_closure.py
 format (its rule set, the writer's names, the learnset bytes, the id bounds and the excluded formes); check_tables
 checks its shape.
 
-This tool writes src/data/format_tables.h: the facts the C engine uses, as named constants (DFI_FORMAT_*), with
+This tool writes src/data/formats/reg-mc/format_tables.h: the facts the C engine uses, as named constants (DFI_FORMAT_*), with
 _Static_asserts against the public constants that hold the same values. gen_closure.py reads the format id and the
 pool source through load_format().
 
@@ -19,7 +19,7 @@ with --pin, every quote). The engine reads none of its values (the singles kind 
 the Reg M-C pool tables), so it writes no header: --format champions-ou with no other option only checks.
 
 usage:
-  python3 tools/datagen/gen_format.py                  # write src/data/format_tables.h
+  python3 tools/datagen/gen_format.py                  # write src/data/formats/reg-mc/format_tables.h
   python3 tools/datagen/gen_format.py --check          # compare only
   python3 tools/datagen/gen_format.py --pin <checkout> # compare every quote with the pinned checkout
   python3 tools/datagen/gen_format.py --format champions-ou [--pin <checkout>]  # check the second definition
@@ -34,7 +34,7 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FORMAT_FILE = os.path.join('data', 'formats', 'reg-mc.json')
 ENGINE_FORMAT = 'reg-mc'  # the one format the engine plays; only its definition writes the header
-HEADER = os.path.join('src', 'data', 'format_tables.h')
+HEADER = os.path.join('src', 'data', 'formats', 'reg-mc', 'format_tables.h')
 
 TOP_KEYS = {'comment', 'id', 'showdown_commit', 'showdown_format_id', 'facts', 'engine', 'pool'}
 ENGINE_KEYS = {'comment', 'active_per_side'}

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Generates src/data/closure_tables.{h,c}: the immutable data of the two
+"""Generates src/data/formats/reg-mc/closure_tables.{h,c}: the immutable data of the two
 reference teams (decision 0004) read from the pinned Pokemon Showdown
 checkout (decision 0006 section 2).
 
 usage: python3 tools/datagen/gen_closure.py <pinned checkout> [--team-c | --pool [--format <id>]] [--check]
 
-  --team-c  write src/data/extended_tables.{h,c} instead: the closure tables
+  --team-c  write src/data/formats/reg-mc/extended_tables.{h,c} instead: the closure tables
             followed by Team C (docs/decisions/0009). The closure ids stay an
             exact prefix; the generator checks that before it writes.
-  --pool    write src/data/pool_tables.{h,c} instead: the extended tables as
+  --pool    write src/data/formats/reg-mc/pool_tables.{h,c} instead: the extended tables as
             the prefix, then the rows of the content expansion, with the
             family columns of every item and ability and the moves and
             abilities that each forme may have (docs/decisions/0015). Both
@@ -82,8 +82,9 @@ def main():
     else:
         h, c, digest, size = render(d)
         stem = 'closure_tables'
-    outs = ((os.path.join(repo, 'src', 'data', stem + '.h'), h),
-            (os.path.join(repo, 'src', 'data', stem + '.c'), c))
+    # src/data/formats/<id>/ holds the tables of a format (restructure step 5); the closure and Team C tables are reg-mc's.
+    outs = ((os.path.join(repo, 'src', 'data', 'formats', ts.format_id, stem + '.h'), h),
+            (os.path.join(repo, 'src', 'data', 'formats', ts.format_id, stem + '.c'), c))
     for path, text in outs:
         if check:
             have = io.open(path, 'rb').read().replace(b'\r\n', b'\n')

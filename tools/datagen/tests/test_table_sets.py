@@ -191,7 +191,7 @@ class WriterNames(unittest.TestCase):
     def committed(self):
         out = []
         for ext in ('h', 'c'):
-            with io.open(os.path.join(ROOT, 'src', 'data', 'pool_tables.' + ext), encoding='ascii') as fh:
+            with io.open(os.path.join(ROOT, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.' + ext), encoding='ascii') as fh:
                 out.append(fh.read().replace('\r\n', '\n'))
         return out
 
@@ -207,7 +207,7 @@ class WriterNames(unittest.TestCase):
             self.assertIsNone(re.search(r'\b(dfi_pool_|DFI_POOL_|DUOFORGE_DATA_POOL_TABLES_H)', text))
         self.assertTrue(h.startswith('#ifndef DUOFORGE_DATA_DUMMY_TABLES_H\n#define DUOFORGE_DATA_DUMMY_TABLES_H\n'))
         self.assertIn(' *   smeargle: Sketch is not modelled\n', h)
-        self.assertIn('#include "data/dummy_tables.h"', c)
+        self.assertIn('#include "data/formats/dummy/dummy_tables.h"', c)
         self.assertIn('extern const dfi_dummy_forme_data dfi_dummy_formes[DFI_DUMMY_FORME_COUNT];', h)
 
 
@@ -236,7 +236,7 @@ class PinnedDummyFormat(unittest.TestCase):
         del dc
 
     def test_reg_mc_is_the_committed_header(self):
-        with io.open(os.path.join(ROOT, 'src', 'data', 'pool_tables.h'), encoding='ascii') as fh:
+        with io.open(os.path.join(ROOT, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.h'), encoding='ascii') as fh:
             self.assertEqual(self.h_reg, fh.read().replace('\r\n', '\n'))
 
     def test_the_excluded_forme_has_no_row(self):
