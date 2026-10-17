@@ -17,7 +17,8 @@
  * one step, the holder of the clause (in a position before it) loses it just before that step (its ability now is Keen Eye, which
  * acts on no hit, or its item is gone), and the step is played with the same tape. Stakeout's flag cannot be given to an old target
  * that way (the invariant clears NEWLY_SWITCHED at every TURN boundary), so a hit at a new target and one at an old target stand
- * for it. A case
+ * for it, and a fainted holder's ability cannot be changed either (a tail value of a fainted member is invalid): Steely Spirit beside a
+ * fainted Perrserker is the covering battle fz_5102_38's (its Iron Tail at step 8, replayed by conformance_pool_data). A case
  * where the clause applies must end with other HP than the recording; a neighbour (the same holder in a hit the clause does not
  * touch) with the same HP. Every case is first played unchanged and must equal the recording. The checked Pokemon takes one hit in
  * the step (and only fixed residual heals or damage), so the comparison is of that hit. The cases were found in the traces by a
@@ -158,8 +159,6 @@ static const a1b_case cases[] = {
      1u, DFI_FORME_WATCHOG, true},
     {"Steely Spirit: the holder's Close Combat (not Steel)", "fz_5102_1368", 9u, 0u, DFI_FORME_PERRSERKER, TAKE_ABILITY, 1u,
      DFI_FORME_RILLABOOM, false},
-    {"Steely Spirit: Pikachu's Iron Tail beside the fainted holder", "fz_5102_38", 8u, 0u, DFI_FORME_PERRSERKER, TAKE_ABILITY, 1u,
-     DFI_FORME_WATCHOG, false},
     {"Plus: Toxtricity's Overdrive (special) beside Ampharos (Plus)", "fz_5102_873", 2u, 1u, DFI_FORME_TOXTRICITY, TAKE_ABILITY, 0u,
      DFI_FORME_SINISTCHA, true},
     {"Minus: Manectric's Flamethrower (special) beside Toxtricity (Plus)", "fz_5102_1368", 3u, 0u, DFI_FORME_MANECTRIC,
