@@ -1,0 +1,48 @@
+{
+ "name": "fz_5102_341",
+ "purpose": "Random differential battle 341 of run 5102 (tools/reference/diff_driver.py random): team F against team E, the sets in a seeded random order, team preview to the end or to the cap, both sides answering every request with random choices (policy seed 1738045189, tools/reference/ps_play.js) that the pinned Showdown accepted.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,ece9252113ed85407f511ef303ba5b866cf2c7f86b78fff27723f4df98e8bec0",
+ "teams": [
+  "Starmie @ Life Orb\nAbility: Analytic\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nQuiet Nature\n- Flash Cannon\n- Scald\n- Psychic\n- Ice Beam\n\nSinistcha @ Leftovers\nAbility: Heatproof\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nModest Nature\n- Shadow Ball\n- Energy Ball\n- Matcha Gotcha\n- Protect\n\nWatchog (M) @ Focus Sash\nAbility: Analytic\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nBrave Nature\n- Fire Punch\n- Flamethrower\n- Crunch\n- Thunder Punch\n\nCharizard (F) @ Light Ball\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Flamethrower\n- Heat Wave\n- Air Slash\n- Flare Blitz\n\nThievul (M) @ Black Glasses\nAbility: Stakeout\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Dark Pulse\n- Knock Off\n- Foul Play\n- Snarl\n\nMabosstiff (F) @ Muscle Band\nAbility: Stakeout\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Crunch\n- Play Rough\n- Psychic Fangs\n- Wild Charge",
+  "Arcanine (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Flare Blitz\n- Heat Wave\n- Will-O-Wisp\n- Extreme Speed\n\nRillaboom (M) @ Grassy Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- U-turn\n\nFurfrou (M) @ Choice Scarf\nAbility: Fur Coat\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- U-turn\n- Crunch\n- Wild Charge\n- Psychic Fangs\n\nGogoat (M) @ Miracle Seed\nAbility: Grass Pelt\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Horn Leech\n- Leaf Blade\n- Zen Headbutt\n- Play Rough\n\nHoundstone (F) @ Rocky Helmet\nAbility: Fluffy\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Shadow Sneak\n- Crunch\n- Will-O-Wisp\n- Play Rough\n\nPersian-Alola (F) @ Black Glasses\nAbility: Fur Coat\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Knock Off\n- Foul Play\n- Dark Pulse\n- U-turn"
+ ],
+ "choices": [
+  {
+   "p1": "team 2514",
+   "p2": "team 1462"
+  },
+  {
+   "p1": "move 2 2, move 1 2",
+   "p2": "move 2, move 3 1"
+  },
+  {
+   "p1": "move 3, move 4",
+   "p2": "move 3 1, switch 4"
+  },
+  {
+   "p1": "move 3, move 4",
+   "p2": "move 2, move 1 2"
+  },
+  {
+   "p1": "pass, switch 3",
+   "p2": "switch 3, pass"
+  },
+  {
+   "p1": "move 2 1, switch 4",
+   "p2": "move 3 2, move 2 1"
+  },
+  {
+   "p1": "switch 4, move 2",
+   "p2": "switch 4, move 2 2"
+  },
+  {
+   "p2": "switch 4, pass"
+  },
+  {
+   "p1": "move 1 -2, move 2",
+   "p2": "move 4 -2, pass"
+  }
+ ]
+}

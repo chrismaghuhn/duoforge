@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "d6eee672f8f26a6e414426670e40311e289d4384a0a3a571783a33dad8e2b5e4" /* A0 PR-2 (part 1 on main cefc5f67, regenerated); A0 PR-1 (parts 2 and 3 on main 4fd2b8dc, regenerated); batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade and Snap Trap; previous 0860307d...): the canonical hash of the rows of the lane A batch(G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G88), of step K1 (Temper Flare, entry 5dc), of step K2 (Piercing Drill, Excadrite), of step K3 (Speed Swap, entry 5de) and of step K4 (Gravity: pseudo weather 2, entry 5dl) */
+#define POOL_HASH_HEX "610b1146ba5a60aed1a7ece3fd0922005e43b8b2f882e357259ae4f7b1962807" /* batch A1b (nine abilities and Light Ball made engine rows, decision 0015 5dz; previous d6eee672...); A0 PR-2 (part 1 on main cefc5f67, regenerated); A0 PR-1 (parts 2 and 3 on main 4fd2b8dc, regenerated); batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade and Snap Trap; previous 0860307d...): the canonical hash of the rows of the lane A batch(G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G88), of step K1 (Temper Flare, entry 5dc), of step K2 (Piercing Drill, Excadrite), of step K3 (Speed Swap, entry 5de) and of step K4 (Gravity: pseudo weather 2, entry 5dl) */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -1357,7 +1357,9 @@ int main(void)
                                /* step K2: Excadrite (Excadrill-Mega, Piercing Drill), mark only */
                                id == DFI_ITEM_EXCADRITE ||
                                /* step A0 part 1: the two Mega Stones of the batch (Chesnaught, Altaria), mark only */
-                               id == DFI_ITEM_CHESNAUGHTITE || id == DFI_ITEM_ALTARIANITE;
+                               id == DFI_ITEM_CHESNAUGHTITE || id == DFI_ITEM_ALTARIANITE ||
+                               /* batch A1b (decision 0015 5dz): Light Ball, an engine row (the ModifyAtk/SpA chain of a Pikachu) */
+                               id == DFI_ITEM_LIGHTBALL;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -1471,7 +1473,13 @@ int main(void)
                                  * and Skill Swap, dfi_boost of Anger Point, the ModifyDamage chain of Sniper) */
                                 id == DFI_ABILITY_MAGMAARMOR || id == DFI_ABILITY_ANGERPOINT || id == DFI_ABILITY_SNIPER ||
                                 /* step K2: Piercing Drill, by id (the bypass of a contact move, dfi_piercing_drill_passes) */
-                                id == DFI_ABILITY_PIERCINGDRILL;
+                                id == DFI_ABILITY_PIERCINGDRILL ||
+                                /* batch A1b (decision 0015 5dz), by id in the damage phases (src/combat/mechanics/damage/): Fur Coat
+                                 * and Grass Pelt (ModifyDef), Steely Spirit and Analytic (BasePower), Plus, Minus, Stakeout and
+                                 * Heatproof (ModifyAtk/SpA; Heatproof's burn halving in the residual), Fluffy (ModifyDamage) */
+                                id == DFI_ABILITY_FURCOAT || id == DFI_ABILITY_GRASSPELT || id == DFI_ABILITY_STEELYSPIRIT ||
+                                id == DFI_ABILITY_PLUS || id == DFI_ABILITY_MINUS || id == DFI_ABILITY_STAKEOUT ||
+                                id == DFI_ABILITY_ANALYTIC || id == DFI_ABILITY_FLUFFY || id == DFI_ABILITY_HEATPROOF;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine || ate) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER

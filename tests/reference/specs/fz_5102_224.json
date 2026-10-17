@@ -1,0 +1,42 @@
+{
+ "name": "fz_5102_224",
+ "purpose": "Random differential battle 224 of run 5102 (tools/reference/diff_driver.py random): team D against team F, the sets in a seeded random order, team preview to the end or to the cap, both sides answering every request with random choices (policy seed 659557399, tools/reference/ps_play.js) that the pinned Showdown accepted.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,3679f657d5f1fdff93bdff36538fda5bd0ede5cf6c2b5998b73c237802c96bae",
+ "teams": [
+  "Toxtricity (M) @ Expert Belt\nAbility: Plus\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Overdrive\n- Sludge Bomb\n- Fire Punch\n- Boomburst\n\nPerrserker (M) @ Metal Coat\nAbility: Steely Spirit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Iron Head\n- Heavy Slam\n- Crunch\n- Close Combat\n\nDedenne (F) @ Sitrus Berry\nAbility: Plus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Def\nModest Nature\n- Thunderbolt\n- Dazzling Gleam\n- Grass Knot\n- U-turn\n\nPikachu (M) @ Light Ball\nAbility: Static\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nHasty Nature\n- Volt Tackle\n- Thunderbolt\n- Iron Tail\n- Surf\n\nManectric (M) @ Wise Glasses\nAbility: Minus\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Flamethrower\n- Overheat\n- Volt Switch\n\nAmpharos (F) @ Magnet\nAbility: Plus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Thunderbolt\n- Dazzling Gleam\n- Power Gem\n- Thunder Punch",
+  "Thievul (M) @ Black Glasses\nAbility: Stakeout\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Dark Pulse\n- Knock Off\n- Foul Play\n- Snarl\n\nSinistcha @ Leftovers\nAbility: Heatproof\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nModest Nature\n- Shadow Ball\n- Energy Ball\n- Matcha Gotcha\n- Protect\n\nMabosstiff (F) @ Muscle Band\nAbility: Stakeout\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Crunch\n- Play Rough\n- Psychic Fangs\n- Wild Charge\n\nWatchog (M) @ Focus Sash\nAbility: Analytic\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nBrave Nature\n- Fire Punch\n- Flamethrower\n- Crunch\n- Thunder Punch\n\nCharizard (F) @ Light Ball\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Flamethrower\n- Heat Wave\n- Air Slash\n- Flare Blitz\n\nStarmie @ Life Orb\nAbility: Analytic\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nQuiet Nature\n- Flash Cannon\n- Scald\n- Psychic\n- Ice Beam"
+ ],
+ "choices": [
+  {
+   "p1": "team 4213",
+   "p2": "team 3541"
+  },
+  {
+   "p1": "move 3 1, move 4 2",
+   "p2": "switch 3, switch 4"
+  },
+  {
+   "p2": "pass, switch 3"
+  },
+  {
+   "p1": "move 1 -2, move 2 -1",
+   "p2": "switch 4, move 4 2"
+  },
+  {
+   "p1": "switch 3, switch 4"
+  },
+  {
+   "p1": "move 4, move 2",
+   "p2": "move 1 1, switch 4"
+  },
+  {
+   "p2": "switch 4, pass"
+  },
+  {
+   "p1": "move 1, move 2",
+   "p2": "move 4 2, pass"
+  }
+ ]
+}
