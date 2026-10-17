@@ -28,7 +28,7 @@ written as `<HS: ...>` placeholders: only the HS assigns them.
 - **Format:** Reg M-C, doubles, team preview 4 of 6, level 50, Stat Points, Champions mechanics (`docs/architecture/formats.md`
   on the step 10 branch). The context takes a `data_kind` (SYNTHETIC, CLOSURE, TEAM_C, POOL and their DEV variants,
   `include/duoforge/duoforge.h:112-131`), `max_roster` and `brought_count`; there is no format id in the C API.
-- **Pool:** 347 formes, 511 moves, 166 items, 215 abilities (`src/data/pool_tables.h`). Marked in
+- **Pool:** 347 formes, 511 moves, 166 items, 215 abilities (`src/data/formats/reg-mc/pool_tables.h`). Marked in
   `src/data/support_manifest.c`: 341 moves, 126 abilities, 133 items. Setup refuses anything unmarked.
 - **Mod:** `tools/datagen/gen_closure.py` hashes and merges `data/mods/champions/*` (`gen_closure.py:45-61`,
   `:692-695`). At the pin the Champions mod overrides 65 moves, 9 abilities, the conditions `par`, `slp` and `frz`, the
@@ -196,7 +196,7 @@ them under Gen 9 semantics in O9. Boots is OU-only and comes with the OU tables 
   supported entries ÷ the summed share of all entries; empty moves and "nothing" items are excluded. Species: usage
   share of formes that are rows of the pool (aliases included).
 - **Supported** = marked in `src/data/support_manifest.c` (moves, abilities, items) at f6b924a; species = a row of
-  `src/data/pool_tables.c`. `classify_unsupported.py` is not on main yet (branch `content/classify-unmodelled`), so the
+  `src/data/formats/reg-mc/pool_tables.c`. `classify_unsupported.py` is not on main yet (branch `content/classify-unmodelled`), so the
   committed tables are read directly.
 - The raw files and the script stay outside the repository. Only shares are reported here.
 

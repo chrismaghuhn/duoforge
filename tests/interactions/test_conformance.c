@@ -29,22 +29,22 @@
 #include <string.h>
 
 #if defined(DF_CONFORMANCE_POOL_DATA)
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
 #elif defined(DF_CONFORMANCE_TEAM_C)
-#include "data/extended_tables.h"
+#include "data/formats/reg-mc/extended_tables.h"
 #include "reference/conformance_team_c.h"
 #include "support/team_c.h"
 #define DF_CONF_FORMES dfi_ext_formes
 #else
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 #include "reference/conformance.h"
 #define DF_CONF_FORMES dfi_closure_formes
 #endif
 #ifdef DF_CONFORMANCE_POOL
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "support/pool.h"
 #undef DF_CONF_FORMES
 #define DF_CONF_FORMES dfi_pool_formes

@@ -7,17 +7,17 @@ set_tests_properties(duoforge.data.static_unread PROPERTIES TIMEOUT 30)
 # wrote; regenerate and update these hashes together.
 foreach(_gen IN ITEMS
         "closure_tables.h=18e2999c683958c41d6f9c1b1ad9610c37f00e0a0431628439f75b70a7169c7f"
-        "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
-        "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
-        "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=4003f3cec150b48c7215a4469ec17ed0edc2a3940204fedd77a1cbeb2b847f0b"
-        "pool_tables.c=67810cc0ce35daa19629ac17d158cf1752a64f0d6d3acc2ee613dc7008013e15")
+        "closure_tables.c=494378dcf41d6c708809465dc5e999dfa669592a900ffefc64ce2ced5db54b28"
+        "extended_tables.h=d246ade9a3c62b8050d00f04f438de46bfba90ef47f65662eeeb2bc2725d8e66"
+        "extended_tables.c=bd1d776674195523cae1018762519bc55f96671889224c0df9820054bd0a398d"
+        "pool_tables.h=52f87d545f3a152e1d799d5c9c40cdb7825eeadfa8472f3e3bd466aa3c43d89d"
+        "pool_tables.c=bce57525fe2ffd9372f499928a5d8ace76a0f92cbdb36e1021af803fa14343cb")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
     add_test(NAME duoforge.provenance.${_file}
         COMMAND "${CMAKE_COMMAND}"
-            "-DFILE=${PROJECT_SOURCE_DIR}/src/data/${_file}"
+            "-DFILE=${PROJECT_SOURCE_DIR}/src/data/formats/reg-mc/${_file}"
             -DEXPECTED=${_expected}
             -P "${PROJECT_SOURCE_DIR}/cmake/checks/file_sha256.cmake")
     duoforge_label_test(duoforge.provenance.${_file} quick data)

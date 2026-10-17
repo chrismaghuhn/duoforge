@@ -33,7 +33,7 @@ its own PR; the next step starts after the previous PR is merged.
 | `tests/test_pool_tables.c` | 27 | 18 |
 | `tests/test_conformance.c` | 29 | 17 |
 | `tests/reference/tiebreak_ref.h` (generated) | 29 | 17 |
-| `src/data/pool_tables.c` (generated) | 26 | 17 |
+| `src/data/formats/reg-mc/pool_tables.c` (generated) | 26 | 17 |
 | `tests/test_tiebreak.c` | 29 | 16 |
 | `tests/test_pool_setup.c` | 26 | 16 |
 | `tools/state_model/state_v3_model.py` | 28 | 15 |
