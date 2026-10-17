@@ -1,0 +1,32 @@
+{
+ "name": "fz_5102_757",
+ "purpose": "Random differential battle 757 of run 5102 (tools/reference/diff_driver.py random): team E against team D, the sets in a seeded random order, team preview to the end or to the cap, both sides answering every request with random choices (policy seed 3871443993, tools/reference/ps_play.js) that the pinned Showdown accepted.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,fdab77e4384efe1b3738aaf1e13c0cc990edb9953d5bf1225f5827ec3017baba",
+ "teams": [
+  "Arcanine (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Flare Blitz\n- Heat Wave\n- Will-O-Wisp\n- Extreme Speed\n\nRillaboom (M) @ Grassy Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- U-turn\n\nFurfrou (M) @ Choice Scarf\nAbility: Fur Coat\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- U-turn\n- Crunch\n- Wild Charge\n- Psychic Fangs\n\nPersian-Alola (F) @ Black Glasses\nAbility: Fur Coat\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Knock Off\n- Foul Play\n- Dark Pulse\n- U-turn\n\nGogoat (M) @ Miracle Seed\nAbility: Grass Pelt\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Horn Leech\n- Leaf Blade\n- Zen Headbutt\n- Play Rough\n\nHoundstone (F) @ Rocky Helmet\nAbility: Fluffy\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Shadow Sneak\n- Crunch\n- Will-O-Wisp\n- Play Rough",
+  "Ampharos (F) @ Magnet\nAbility: Plus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Thunderbolt\n- Dazzling Gleam\n- Power Gem\n- Thunder Punch\n\nPikachu (M) @ Light Ball\nAbility: Static\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nHasty Nature\n- Volt Tackle\n- Thunderbolt\n- Iron Tail\n- Surf\n\nPerrserker (M) @ Metal Coat\nAbility: Steely Spirit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Iron Head\n- Heavy Slam\n- Crunch\n- Close Combat\n\nDedenne (F) @ Sitrus Berry\nAbility: Plus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Def\nModest Nature\n- Thunderbolt\n- Dazzling Gleam\n- Grass Knot\n- U-turn\n\nToxtricity (M) @ Expert Belt\nAbility: Plus\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Overdrive\n- Sludge Bomb\n- Fire Punch\n- Boomburst\n\nManectric (M) @ Wise Glasses\nAbility: Minus\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Flamethrower\n- Overheat\n- Volt Switch"
+ ],
+ "choices": [
+  {
+   "p1": "team 2546",
+   "p2": "team 5613"
+  },
+  {
+   "p1": "move 2 -2, switch 4",
+   "p2": "move 2 2, move 2 2"
+  },
+  {
+   "p1": "switch 4, switch 3"
+  },
+  {
+   "p1": "move 1 2, move 3 -1",
+   "p2": "switch 3, move 2 1"
+  },
+  {
+   "p1": "pass, move 2 2",
+   "p2": "move 2, move 2 -1"
+  }
+ ]
+}

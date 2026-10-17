@@ -42,3 +42,8 @@ duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES abilities/test_pool_g81.c
 
 # Step K2 (decision 0015 5dd, #474): Piercing Drill and Excadrite (the marks, the stone link, the -zbroken event kind, the 0.25 rounding).
 duoforge_add_test(NAME duoforge.state.pool_k2 SOURCES abilities/test_pool_k2.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+
+# Batch A1b (decision 0015 5dz): Fur Coat, Grass Pelt, Steely Spirit, Plus, Minus, Stakeout, Analytic, Fluffy, Heatproof and Light
+# Ball, one damage chain member each: the marks, and each clause taken away before a hit of the covering battles fz_5102_* (the HP
+# differs where the pin applies it, and not in its neighbour cases; white-box).
+duoforge_add_test(NAME duoforge.state.pool_a1b SOURCES abilities/test_pool_a1b.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
