@@ -1760,7 +1760,7 @@ int main(void)
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
-     * Trace itself (dfi_trace in src/combat/turn.c), which is right while no other ability with the flag is marked: the
+     * Trace itself (dfi_trace in src/combat/abilities/entry.h), which is right while no other ability with the flag is marked: the
      * nine abilities of the pinned data with the flag (tools/datagen/pool_families.js checks the list against the pin)
      * are unmarked but Trace and Illusion. Illusion is marked by step I2 (decision 0026, amended by I2): Trace may not copy a
      * disguised holder's name (dfi_trace excludes DFI_ABILITY_ILLUSION), so the expectation is {Trace, Illusion}, with that reason. */

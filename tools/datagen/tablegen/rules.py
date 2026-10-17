@@ -143,7 +143,7 @@ def check_failskillswap(pool_abilities, abil_ts, champ_abil, c_text):
     the turn code's dfi_fails_skillswap reads (c_text: the text of FAILSKILLSWAP_SOURCE; issue #620)."""
     found = sorted(aid for aid in pool_abilities if 'failskillswap' in ability_flags(abil_ts, champ_abil, aid))
     if found != sorted(FAILSKILLSWAP_ABILITIES):
-        fail('the pool abilities with failskillswap are %s, not FAILSKILLSWAP_ABILITIES %s (turn.c dfi_fails_skillswap)'
+        fail('the pool abilities with failskillswap are %s, not FAILSKILLSWAP_ABILITIES %s (src/combat/abilities/skill_swap.h dfi_fails_skillswap)'
              % (found, sorted(FAILSKILLSWAP_ABILITIES)))
     c_ids = failskillswap_c_ids(c_text)
     if len(set(c_ids)) != len(c_ids) or sorted(c_ids) != sorted(FAILSKILLSWAP_ABILITIES):
