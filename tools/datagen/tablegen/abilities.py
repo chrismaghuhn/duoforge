@@ -533,13 +533,13 @@ G63_ABILITY_FACTS = (
 
 
 # Issue #620 (decision 0015 entry 5dx, decision 0041): Skill Swap fails when either ability has the failskillswap flag
-# (sim/battle.ts:1316). The turn code reads the flag by id (turn.c dfi_fails_skillswap, one DFI_ABILITY_* per name below),
+# (sim/battle.ts:1316). The turn code reads the flag by id (abilities/skill_swap.h dfi_fails_skillswap, one DFI_ABILITY_* per name below),
 # so the pool's abilities with the flag are exactly these; check_failskillswap reads the flag of every pool row from the pin
 # (the Champions entry's own flags where it has them, else the inherited base entry's) and fails on any other set. It also
 # reads the DFI_ABILITY_* names of the body of dfi_fails_skillswap in FAILSKILLSWAP_SOURCE and fails when they are not this
 # list (the path moves with the function when the ability code leaves turn.c).
 FAILSKILLSWAP_ABILITIES = ('disguise', 'hungerswitch', 'illusion', 'stancechange', 'zerotohero')
-FAILSKILLSWAP_SOURCE = os.path.join('src', 'combat', 'turn.c')
+FAILSKILLSWAP_SOURCE = os.path.join('src', 'combat', 'abilities', 'skill_swap.h')
 
 
 def failskillswap_c_ids(c_text):
