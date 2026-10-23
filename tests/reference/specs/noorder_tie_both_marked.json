@@ -1,0 +1,25 @@
+{
+ "name": "noorder_tie_both_marked",
+ "purpose": "Issues 630 and 633 (residual no-order tie, docs/mechanics/flow/5ga-residual-noorder-tie.md): Garchomp and Salamence, one Speed (122), lock themselves into Outrage; the next turn Gengar's and Milotic's Hypnosis put both to sleep before their locked turn, so both locks end in the residual with the fatigue. The two lockedmoves are a no-order group of two callbacks, drawn in both residuals; the second draw puts Garchomp's fatigue line and confusion draw before Salamence's, the order of the pin's shuffle, which main never drew.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0a86bf5e860b7b9d464bf5106c0047c602d1fa1723a6831b29296b04eea6c383",
+ "teams": [
+  "Gengar (M) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hypnosis\n- Protect\n- Shadow Ball\n- Sludge Bomb\n\nMilotic (F) @ Light Clay\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nFarigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Weather Ball\n- Muddy Water\n- Ice Beam\n- Protect\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect",
+  "Garchomp (M) @ Expert Belt\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 SpD\nModest Nature\n- Outrage\n- Protect\n- Earthquake\n- Dragon Claw\n\nSalamence (F) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nModest Nature\n- Outrage\n- Protect\n- Dragon Claw\n- Flamethrower\n\nArcanine (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 Atk / 32 Spe\nJolly Nature\n- Outrage\n- Wild Charge\n- Flare Blitz\n- Extreme Speed\n\nScizor (M) @ Scizorite\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk\nAdamant Nature\n- Bug Bite\n- U-turn\n- Bullet Punch\n- Swords Dance\n\nMeganium (F) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 SpA\nModest Nature\n- Energy Ball\n- Swords Dance\n- Giga Drain\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower"
+ ],
+ "choices": [
+  {
+   "p1": "team 1234",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 4 2, move 2",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 1 1, move 4 2",
+   "p2": "move 1, move 1"
+  }
+ ]
+}

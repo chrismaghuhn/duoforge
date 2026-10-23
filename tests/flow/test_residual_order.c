@@ -36,6 +36,7 @@
 #define MAX_MONS 4u
 #define MAX_VOL 4u
 #define TRIALS 40000u
+#define LOCK_TRIALS 10000u /* the lists with lockedmoves (issues 630 and 633) */
 
 typedef struct rng {
     uint64_t s;
@@ -86,7 +87,11 @@ static void model_sort(dfi_residual_entry *list, uint32_t n, const uint32_t *val
                 list[next[i]] = e;
             }
         }
-        if (list[sorted].callback) {
+        uint32_t calls = 0u;
+        for (uint32_t i = sorted; i < sorted + count; ++i) {
+            calls += list[i].callback ? 1u : 0u;
+        }
+        if (calls >= 2u) { /* the engine's rule (dfi_residual_sort): the same as the first entry's kind for a group of one kind */
             for (uint32_t start = sorted; start + 1u < sorted + count; ++start) {
                 const uint32_t lo = start - sorted;
                 g_ranges[used] = count - lo;
@@ -175,6 +180,39 @@ static void random_shape(rng *g, shape *s, bool grassy, bool weather)
     }
 }
 
+/* A list with lockedmoves (issues 630 and 633): per Pokemon maybe a lock, the counters of the turn, maybe Perish Song or
+ * Encore, maybe Leftovers; the speeds tie often, so the no-order groups often hold two locks (a drawn group). */
+static void random_lock_shape(rng *g, shape *s)
+{
+    memset(s, 0, sizeof *s);
+    s->mons = 2u + rng_next(g) % (MAX_MONS - 1u);
+    static const uint32_t speeds[3] = {80u, 120u, 120u};
+    for (uint32_t flat = 0u; flat < s->mons; ++flat) {
+        const uint32_t speed = speeds[rng_next(g) % 3u];
+        if (rng_next(g) % 4u == 0u) {
+            push(s, DFI_RES_BURN, flat, 10u, speed, 0u, true);
+        }
+        s->vol_start[flat] = s->n;
+        if (rng_next(g) % 3u == 0u) {
+            push(s, DFI_RES_ENCORE, flat, 16u, speed, 2u, true);
+        }
+        if (rng_next(g) % 4u == 0u) {
+            push(s, DFI_RES_PERISH, flat, 24u, speed, 2u, true);
+        }
+        if (rng_next(g) % 3u != 0u) {
+            push(s, DFI_RES_LOCK, flat, DFI_RES_NO_ORDER, speed, 2u, true);
+        }
+        const uint32_t counters = rng_next(g) % 3u;
+        for (uint32_t k = 0u; k < counters; ++k) {
+            push(s, DFI_RES_DURATION, flat, DFI_RES_NO_ORDER, speed, 2u, false);
+        }
+        s->vol_len[flat] = s->n - s->vol_start[flat];
+        if (rng_next(g) % 3u == 0u) {
+            push(s, DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true);
+        }
+    }
+}
+
 /* Reorders every Pokemon's volatile region randomly (Fisher-Yates over the region). */
 static void scramble(rng *g, shape *s)
 {
@@ -225,7 +263,7 @@ static uint32_t arrangements(const shape *s)
         const uint32_t len = s->vol_len[m];
         bool distinct = false;
         for (uint32_t i = 1u; i < len; ++i) {
-            distinct = distinct || v[i].order != v[0].order || v[i].sub_order != v[0].sub_order;
+            distinct = distinct || dfi_residual_distinct(&v[i], &v[0]);
         }
         if (!distinct) {
             continue;
@@ -237,7 +275,7 @@ static uint32_t arrangements(const shape *s)
         for (uint32_t i = 0u; i < len; ++i) { /* divide by the factorial of each group of equal entries */
             uint32_t same = 0u;
             for (uint32_t j = 0u; j <= i; ++j) {
-                same += (v[j].order == v[i].order && v[j].sub_order == v[i].sub_order) ? 1u : 0u;
+                same += (v[j].order == v[i].order && v[j].sub_order == v[i].sub_order && v[j].kind == v[i].kind) ? 1u : 0u;
             }
             perms /= same;
         }
@@ -320,7 +358,7 @@ static bool differs_somewhere(rng *g, const shape *base, bool *tried_all)
 }
 
 /* The trials [first, end). */
-static void test_random_lists(df_test *t, uint32_t first, uint32_t end)
+static void test_random_lists(df_test *t, uint32_t first, uint32_t end, bool locks)
 {
     unsigned long may_matter = 0u;
     unsigned long refused = 0u;
@@ -330,7 +368,12 @@ static void test_random_lists(df_test *t, uint32_t first, uint32_t end)
     for (uint32_t trial = first; trial < end; ++trial) {
         rng g = trial_rng(trial);
         shape base;
-        random_shape(&g, &base, rng_next(&g) % 4u == 0u, rng_next(&g) % 4u == 0u);
+        if (locks) {
+            g = trial_rng(trial + 0x40000000u); /* a generator of its own: the lists without locks stay the same */
+            random_lock_shape(&g, &base);
+        } else {
+            random_shape(&g, &base, rng_next(&g) % 4u == 0u, rng_next(&g) % 4u == 0u);
+        }
         const bool may = dfi_residual_order_may_matter(base.list, base.n);
         const bool amb = dfi_residual_order_ambiguous(base.list, base.n);
         DF_CHECK(t, !amb || may); /* the exact test only narrows the cheap one */
@@ -338,7 +381,7 @@ static void test_random_lists(df_test *t, uint32_t first, uint32_t end)
         for (uint32_t m = 0u; m < base.mons; ++m) {
             for (uint32_t i = 1u; i < base.vol_len[m]; ++i) {
                 const dfi_residual_entry *a = &base.list[base.vol_start[m]];
-                multi = multi || a[i].order != a[0].order || a[i].sub_order != a[0].sub_order;
+                multi = multi || dfi_residual_distinct(&a[i], &a[0]);
             }
         }
         may_matter += may ? 1u : 0u;
@@ -359,6 +402,10 @@ static void test_random_lists(df_test *t, uint32_t first, uint32_t end)
     /* The brute force is not vacuous: lists that the cheap test flags exist, the exact test clears some of them and
      * refuses others, and unrefused lists with volatiles of two keys (which the argument says are fine) are many. The
      * bounds hold for every shard of 10000 trials or more (about a quarter of them is flagged by the cheap test). */
+    fprintf(stderr, "  %s lists [%u, %u): %lu flagged, %lu refused, %lu cleared by the exact test, %lu unrefused with two keys, "
+                    "%lu refused without a difference found\n",
+            locks ? "lock" : "plain", (unsigned)first, (unsigned)end, may_matter, refused, cleared_by_exact, unrefused_multi,
+            refused_but_no_difference);
     DF_CHECK(t, may_matter > 100u);
     DF_CHECK(t, refused > 10u);
     DF_CHECK(t, cleared_by_exact > 10u);
@@ -379,6 +426,7 @@ static dfi_residual_entry ent(uint32_t kind, uint32_t flat, uint32_t order, uint
 #define PERISH(f) ent(DFI_RES_PERISH, (f), 24u, 2u, true)
 #define LEFT(f) ent(DFI_RES_LEFTOVERS, (f), 5u, 4u, true)
 #define HERB(f) ent(DFI_RES_WHITE_HERB, (f), 29u, 8u, true)
+#define LOCK(f) ent(DFI_RES_LOCK, (f), DFI_RES_NO_ORDER, 2u, true)
 
 static void test_examples(df_test *t)
 {
@@ -445,6 +493,24 @@ static void test_examples(df_test *t)
         const dfi_residual_entry l[] = {PERISH(0), COUNTER(1), COUNTER(1), ENCORE(1), PERISH(1)};
         DF_CHECK(t, dfi_residual_order_may_matter(l, 5u));
         DF_CHECK(t, dfi_residual_order_ambiguous(l, 5u));
+    }
+    /* Two lockedmoves of one Speed (issue 630): a drawn no-order group of two callbacks, each holder with its lock only. */
+    {
+        const dfi_residual_entry l[] = {LOCK(0), LOCK(1)};
+        DF_CHECK(t, !dfi_residual_order_may_matter(l, 2u));
+        DF_CHECK(t, !dfi_residual_order_ambiguous(l, 2u));
+    }
+    /* One holder also has a counter of the turn (a flinch, or a Helping Hand it got before a fresh lock): which of its two
+     * entries stood first decides where the shuffle puts the locks, and the state does not hold it. Refused. */
+    {
+        const dfi_residual_entry l[] = {LOCK(0), COUNTER(0), LOCK(1)};
+        DF_CHECK(t, dfi_residual_order_may_matter(l, 3u));
+        DF_CHECK(t, dfi_residual_order_ambiguous(l, 3u));
+    }
+    /* A lock and a counter on one holder with no second lock of its Speed: nothing draws, the order shows nowhere. */
+    {
+        const dfi_residual_entry l[] = {LOCK(0), COUNTER(0), COUNTER(1)};
+        DF_CHECK(t, !dfi_residual_order_ambiguous(l, 3u));
     }
     DF_CHECK_EQ_U64(t, dfi_residual_compare(&(dfi_residual_entry){DFI_RES_PERISH, 0u, 24u, 100u, 2u, true},
                                             &(dfi_residual_entry){DFI_RES_PERISH, 1u, 24u, 100u, 2u, true}),
@@ -535,6 +601,8 @@ int main(int argc, char **argv)
     test_examples(&t);
     test_kinds_and_sites_have_names(&t);
     test_random_lists(&t, (uint32_t)((uint64_t)TRIALS * shard / count),
-                      (uint32_t)((uint64_t)TRIALS * (shard + 1u) / count));
+                      (uint32_t)((uint64_t)TRIALS * (shard + 1u) / count), false);
+    test_random_lists(&t, (uint32_t)((uint64_t)LOCK_TRIALS * shard / count),
+                      (uint32_t)((uint64_t)LOCK_TRIALS * (shard + 1u) / count), true);
     return df_test_end(&t);
 }

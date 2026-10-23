@@ -148,10 +148,19 @@ static inline bool dfi_residual_is_counter(const dfi_residual_entry *e)
 {
     return e->kind == DFI_RES_DURATION && e->order == DFI_RES_NO_ORDER;
 }
+/* Not Perish Song: its count line is a callback every turn, so a cast of this turn may come after or before a Protect of this turn.
+ * Not a lockedmove either (issue 633): its entry is a callback whether it ends now or not, and a lock started this turn is younger
+ * than a Helping Hand that its holder got before it moved, so either order of a lock and a counter is possible. */
 static inline bool dfi_residual_is_old_ending(const dfi_residual_entry *e)
 {
-    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE ||
-                           e->kind == DFI_RES_LOCK); /* not Perish Song: its count line is a callback every turn, so a cast of this turn may come after or before a Protect of this turn */
+    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE);
+}
+
+/* Two volatile entries of one Pokemon whose order can show: two sort keys, or one key held by a lockedmove and a counter (no order,
+ * sub-order 2 both; issue 630: in a drawn no-order group the shuffle's result depends on which of the two stood first). */
+static inline bool dfi_residual_distinct(const dfi_residual_entry *a, const dfi_residual_entry *b)
+{
+    return a->order != b->order || a->sub_order != b->sub_order || (a->kind == DFI_RES_LOCK) != (b->kind == DFI_RES_LOCK);
 }
 static inline bool dfi_residual_arrangement_possible(const dfi_residual_entry *seg, uint32_t len)
 {
@@ -183,7 +192,7 @@ static inline bool dfi_residual_order_may_matter(const dfi_residual_entry *list,
             if (j == i || !dfi_residual_is_volatile(&list[j]) || list[j].flat != list[i].flat) {
                 continue;
             }
-            distinct = distinct || list[j].order != list[i].order || list[j].sub_order != list[i].sub_order;
+            distinct = distinct || dfi_residual_distinct(&list[j], &list[i]);
             earliest = list[j].order < earliest ? list[j].order : earliest;
         }
         if (!distinct) {
@@ -330,7 +339,7 @@ static inline bool dfi_residual_order_changes_outcome(const dfi_residual_entry *
         uint32_t j = i + 1u;
         bool distinct = false;
         while (j < n && dfi_residual_is_volatile(&list[j]) && list[j].flat == list[i].flat) {
-            distinct = distinct || list[j].order != list[i].order || list[j].sub_order != list[i].sub_order;
+            distinct = distinct || dfi_residual_distinct(&list[j], &list[i]);
             j += 1u;
         }
         for (uint32_t k = 0u; k < n; ++k) { /* a volatile of this Pokemon outside the run: not a layout the engine builds */

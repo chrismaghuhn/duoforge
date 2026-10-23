@@ -667,8 +667,11 @@ static void run_pivot(df_test *t, const duoforge_context *ctx, const pivot_case 
  *      The battle ends there, side 1 wins, and Arcanine's countdown never runs: no fatigue line, its lock and its bit stand at
  *      TERMINAL (where the invariant allows the bit; the codec round trip keeps it).
  *  10. phase6_equal_speed_refused: as 9 with Kangaskhan (2, marked) and Annihilape (3, restarted), whose Speeds are equal (both
- *      base 90): which of the two handlers runs first is the shuffle, so whether the fatigue came before the battle's end is not
- *      known: E_UNSUPPORTED, the battle unchanged.
+ *      base 90). The name is kept from #632, when this was refused; since issues 630 and 633 (docs/mechanics/flow/5ga-residual-
+ *      noorder-tie.md) the two lockedmoves are a no-order group of two callbacks, shuffled by one SPEED_TIE draw in phase 2: when
+ *      Kangaskhan's handler comes first its lock ends with the fatigue (and its confusion draw) before Annihilape's faint point
+ *      ends the battle, else the battle ends first and Kangaskhan's lock and bit stand at TERMINAL. Both orders occur over the
+ *      seeds.
  *  11. phase6_both_marked: Arcanine and Garchomp, both asleep at the start (white-box, as duoforge.state.pool_g56) with count 1, no
  *      Perish: both `cant`, both marked, both end with the fatigue in the residual, both bits cleared. */
 static uint32_t g_p6_holder0, g_p6_holder1, g_p6_politoed, g_p6_farigiraf, g_p6_bench0, g_p6_bench1;
@@ -853,9 +856,11 @@ static void run_phase6(df_test *t, const duoforge_context *ctx)
         }
         fprintf(stderr, "  scenario phase6_restarted_faint_point: %s\n", t->failures == failed_before ? "ok" : "FAILED");
     }
-    /* 10: equal Speeds at the battle-ending faint point: refused */
+    /* 10: equal Speeds at the battle-ending faint point: the drawn order decides whether the fatigue came first */
     {
         const unsigned long failed_before = t->failures;
+        uint32_t fatigue_first = 0u;
+        uint32_t end_first = 0u;
         duoforge_battle *base = p6_battle(t, ctx, DFI_FORME_KANGASKHAN, DUOFORGE_GENDER_FEMALE, DFI_ABILITY_INNERFOCUS,
                                           DFI_FORME_ANNIHILAPE, DUOFORGE_GENDER_MALE, DFI_ABILITY_INNERFOCUS);
         if (base != NULL) {
@@ -869,23 +874,46 @@ static void run_phase6(df_test *t, const duoforge_context *ctx)
                 DF_CHECK(t, duoforge_battle_reseed(ctx, y, seed, 2u) == DUOFORGE_OK);
                 p6_arrange(y, 1u, 2u, true, false);
                 DF_CHECK(t, duoforge_battle_check(ctx, y) == DUOFORGE_OK);
-                static uint8_t before[4096], after[4096];
-                size_t nb = 0u, na = 0u;
-                DF_CHECK(t, duoforge_battle_encode(ctx, y, before, sizeof before, &nb) == DUOFORGE_OK);
                 duoforge_decision_bundle bd;
                 p6_bundle(&bd, y);
+                duoforge_event_buffer buf[2] = {{g_ev[0], DUOFORGE_MAX_EVENTS, 0u}, {g_ev[1], DUOFORGE_MAX_EVENTS, 0u}};
                 duoforge_step_result res;
-                const duoforge_status st = duoforge_battle_step(ctx, y, &bd, &res);
-                if (!DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED)) {
+                const duoforge_status st = duoforge_battle_step_events(ctx, y, &bd, &res, buf);
+                if (DF_CHECK(t, st == DUOFORGE_OK)) {
+                    uint32_t result = 0u;
+                    DF_CHECK_EQ_U64(t, y->boundary_kind, DUOFORGE_BOUNDARY_TERMINAL);
+                    DF_CHECK(t, duoforge_battle_result(ctx, y, &result) == DUOFORGE_OK && result == DUOFORGE_RESULT_SIDE_1);
+                    DF_CHECK(t, find_event(0u, buf[0].count, DUOFORGE_EVENT_CANT, (uint8_t)HOLDER, 0u) != UINT32_MAX);
+                    DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[1].lock_turns, 1u); /* restarted: counted down at its use */
+                    const uint32_t fatigue = count_events(0u, buf[0].count, DUOFORGE_EVENT_CONFUSION_START, (uint8_t)HOLDER);
+                    DF_CHECK_EQ_U64(t, count_events(1u, buf[1].count, DUOFORGE_EVENT_CONFUSION_START, (uint8_t)HOLDER), fatigue);
+                    if (fatigue == 1u) {
+                        /* Kangaskhan's handler first: its lock ended with the fatigue, the faint point came after it */
+                        fatigue_first += 1u;
+                        DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[0].lock_turns, 0u);
+                        DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[0].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED, 0u);
+                        DF_CHECK(t, y->sides[1].positions[0].confusion_turns >= 2u && y->sides[1].positions[0].confusion_turns <= 5u);
+                        const uint32_t conf = find_event(0u, buf[0].count, DUOFORGE_EVENT_CONFUSION_START, (uint8_t)HOLDER, 0u);
+                        const uint32_t faint = find_event(0u, buf[0].count, DUOFORGE_EVENT_FAINT, 0u, 0u);
+                        DF_CHECK(t, conf != UINT32_MAX && faint != UINT32_MAX && conf < faint);
+                    } else if (DF_CHECK_EQ_U64(t, fatigue, 0u)) {
+                        /* Annihilape's faint point first: the battle ended before Kangaskhan's countdown, as in scenario 9 */
+                        end_first += 1u;
+                        DF_CHECK_EQ_U64(t, y->tail.sides[1].positions[0].lock_turns, 1u);
+                        DF_CHECK(t, (y->tail.sides[1].positions[0].single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u);
+                        DF_CHECK_EQ_U64(t, y->sides[1].positions[0].confusion_turns, 0u);
+                    }
+                    DF_CHECK(t, duoforge_battle_check(ctx, y) == DUOFORGE_OK);
+                } else {
                     fprintf(stderr, "  phase6_equal_speed_refused seed %u: status %d\n", (unsigned)seed, (int)st);
                 }
-                DF_CHECK(t, duoforge_battle_encode(ctx, y, after, sizeof after, &na) == DUOFORGE_OK && na == nb &&
-                                memcmp(before, after, nb) == 0); /* a refused step leaves the battle unchanged */
                 duoforge_battle_destroy(y);
             }
             duoforge_battle_destroy(base);
         }
-        fprintf(stderr, "  scenario phase6_equal_speed_refused: %s\n", t->failures == failed_before ? "ok" : "FAILED");
+        DF_CHECK(t, fatigue_first != 0u && end_first != 0u); /* the shuffle decides: both orders occur */
+        fprintf(stderr, "  scenario phase6_equal_speed_refused (played, %u fatigue first, %u battle end first): %s\n",
+                (unsigned)fatigue_first, (unsigned)end_first, t->failures == failed_before ? "ok" : "FAILED");
     }
     /* 11: both positions marked in one turn */
     {

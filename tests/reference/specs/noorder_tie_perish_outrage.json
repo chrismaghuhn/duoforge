@@ -1,0 +1,44 @@
+{
+ "name": "noorder_tie_perish_outrage",
+ "purpose": "Issue 633 (residual no-order tie, docs/mechanics/flow/5ga-residual-noorder-tie.md): Politoed's Perish Song ends both of side 1's last Pokemon in the residual while Garchomp and Salamence, one Speed (122), hold fresh Outrage locks. The perish ends queue the faints, the first lockedmove onResidual of the drawn no-order group is the faint point that ends the battle; main refused it (an equal-Speed neighbour at a battle end).",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,020d87ca1be5d8169586ae1ab8a17a50eac38208c3de0bf3c6a2410e9e12a2dd",
+ "teams": [
+  "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Perish Song\n- Muddy Water\n- Helping Hand\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nArchaludon (M) @ Leftovers\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect",
+  "Arcanine (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 Atk / 32 Spe\nJolly Nature\n- Outrage\n- Wild Charge\n- Flare Blitz\n- Extreme Speed\n\nScizor (M) @ Scizorite\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk\nAdamant Nature\n- Bug Bite\n- U-turn\n- Bullet Punch\n- Swords Dance\n\nGarchomp (M) @ Expert Belt\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 SpD\nModest Nature\n- Outrage\n- Protect\n- Earthquake\n- Dragon Claw\n\nSalamence (F) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nModest Nature\n- Outrage\n- Protect\n- Dragon Claw\n- Flamethrower\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nMeganium (F) @ Miracle Seed\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 SpA\nModest Nature\n- Energy Ball\n- Swords Dance\n- Giga Drain\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 2435",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 2 2, move 1 2",
+   "p2": "move 2 1, move 3 2"
+  },
+  {
+   "p1": "move 2 2, move 1 2",
+   "p2": "move 2 1, move 3 2"
+  },
+  {
+   "p1": "switch 3, switch 4"
+  },
+  {
+   "p1": "move 1, move 4",
+   "p2": "move 4 2, move 4"
+  },
+  {
+   "p1": "move 4, move 3",
+   "p2": "switch 3, switch 4"
+  },
+  {
+   "p1": "move 3 -2, move 3",
+   "p2": "move 4 2, move 3 2"
+  },
+  {
+   "p1": "move 3 -2, move 3",
+   "p2": "move 1, move 1"
+  }
+ ]
+}

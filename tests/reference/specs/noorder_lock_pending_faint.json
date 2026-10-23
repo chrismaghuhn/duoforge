@@ -1,0 +1,60 @@
+{
+ "name": "noorder_lock_pending_faint",
+ "purpose": "Issue 633 (docs/mechanics/flow/5ga-residual-noorder-tie.md): random battle 44 of the fuzz run 6631 (synthetic lock-family team D against itself), cut after the step that main got wrong. In step 11 Perish Song ends three Pokemon in the residual, among them the Salamence that holds an Outrage lock; its faint is queued, not shown, so the pin still runs its lockedmove onResidual and the faint point after it shows the three faints before the upkeep line. Main skipped the handler of a holder at 0 HP and showed the faints after the upkeep (DIVERGENCE of the events).",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,99909e4b4a95aac0ba25401b91622f708903a5e8d0d16b4acbee5ac299e6dbe6",
+ "teams": [
+  "Archaludon (M) @ Sitrus Berry\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nMilotic (F) @ Light Clay\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Perish Song\n- Muddy Water\n- Helping Hand\n- Protect\n\nGengar (M) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hypnosis\n- Perish Song\n- Shadow Ball\n- Sludge Bomb\n\nGarchomp (M) @ Expert Belt\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 SpD\nModest Nature\n- Outrage\n- Protect\n- Earthquake\n- Dragon Claw\n\nSalamence (F) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nModest Nature\n- Outrage\n- Protect\n- Dragon Claw\n- Flamethrower",
+  "Salamence (F) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nModest Nature\n- Outrage\n- Protect\n- Dragon Claw\n- Flamethrower\n\nArchaludon (M) @ Sitrus Berry\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 1 Def / 24 SpD / 9 Spe\nBold Nature\n- Dragon Pulse\n- Electro Shot\n- Snarl\n- Protect\n\nMilotic (F) @ Light Clay\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nGengar (M) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hypnosis\n- Perish Song\n- Shadow Ball\n- Sludge Bomb\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Perish Song\n- Muddy Water\n- Helping Hand\n- Protect\n\nGarchomp (M) @ Expert Belt\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 SpD\nModest Nature\n- Outrage\n- Protect\n- Earthquake\n- Dragon Claw"
+ ],
+ "choices": [
+  {
+   "p1": "team 6142",
+   "p2": "team 3421"
+  },
+  {
+   "p1": "move 2, move 3",
+   "p2": "move 2, move 3 2"
+  },
+  {
+   "p1": "move 4 1, move 2 1",
+   "p2": "move 4 1, move 2"
+  },
+  {
+   "p1": "move 3 -2, move 1",
+   "p2": "move 4 2, move 2"
+  },
+  {
+   "p1": "switch 3, move 1 1",
+   "p2": "move 1, move 2"
+  },
+  {
+   "p1": "move 3 2, move 4",
+   "p2": "switch 4, move 4 1"
+  },
+  {
+   "p1": "pass, switch 3",
+   "p2": "pass, switch 3"
+  },
+  {
+   "p1": "move 2, switch 4",
+   "p2": "move 1, move 2 1"
+  },
+  {
+   "p1": "move 4 1, move 4 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "switch 4, pass"
+  },
+  {
+   "p1": "move 2, move 4 -1",
+   "p2": "move 1, move 4"
+  },
+  {
+   "p1": "move 2, move 3 2",
+   "p2": "move 1, move 3"
+  }
+ ]
+}
