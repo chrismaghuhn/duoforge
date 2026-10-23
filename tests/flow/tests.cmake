@@ -20,6 +20,8 @@ endforeach()
 
 # The refusals of the residual's no-order phase around the equal-Speed tie (issues 630, 633; docs/mechanics/flow/5ga).
 duoforge_add_test(NAME duoforge.flow.residual_noorder_tie SOURCES flow/test_residual_noorder_tie.c WHITEBOX TIMEOUT 60 TIER quick AREA flow)
+# The residual's unsorted handler list, entry by entry: the field's and the sides' entries of PR 661 (issue 664).
+duoforge_add_test(NAME duoforge.flow.residual_collect SOURCES flow/test_residual_collect.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.rng.kat SOURCES flow/test_rng_kat.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.rng.contract SOURCES flow/test_rng_contract.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.state.setup SOURCES flow/test_setup.c WHITEBOX TIER quick AREA flow)
