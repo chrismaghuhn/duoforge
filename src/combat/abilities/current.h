@@ -1,6 +1,7 @@
 #ifndef DUOFORGE_COMBAT_ABILITIES_CURRENT_H
 #define DUOFORGE_COMBAT_ABILITIES_CURRENT_H
 
+#include "core/inline.h"
 #include "data/pool_tables.h"
 #include "state/battle_internal.h"
 
@@ -24,7 +25,7 @@ static inline dfi_ability_family dfi_ability_family_for(uint32_t ability)
  * unless something changed it). Every rule of the turn code reads the ability through this, never through
  * dfi_member.ability, which is the sheet's (and the Mega forme's) ability. `m` is a member of `b`; no heap, one tail
  * read for a member that is found on a side. */
-static inline uint32_t dfi_ability_code(const struct duoforge_battle *b, const dfi_member *m)
+static DFI_ALWAYS_INLINE uint32_t dfi_ability_code(const struct duoforge_battle *b, const dfi_member *m)
 {
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         const dfi_member *first = &b->sides[s].members[0];
@@ -43,7 +44,7 @@ static inline dfi_ability_family dfi_ability_family_now(const struct duoforge_ba
 }
 
 /* The member's ability is `id` (abilities are stored as 1 + id). */
-static inline bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
+static DFI_ALWAYS_INLINE bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
 {
     return m != NULL && dfi_ability_code(b, m) == 1u + id;
 }
