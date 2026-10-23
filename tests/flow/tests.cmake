@@ -48,7 +48,7 @@ duoforge_add_test(NAME duoforge.request.query_checks SOURCES flow/test_query_che
 duoforge_add_test(NAME duoforge.request.candidates_digest SOURCES flow/test_candidates_digest.c TIMEOUT 120 TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.request.factored SOURCES flow/test_factored.c TIMEOUT 120 TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.combat.turn SOURCES flow/test_turn.c WHITEBOX TIMEOUT 120 TIER quick AREA flow)
-duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES flow/test_pool_g46_party.c WHITEBOX TIMEOUT 120 TIER quick AREA flow)
+duoforge_add_test(NAME duoforge.flow.party_order SOURCES flow/test_party_order.c WHITEBOX TIMEOUT 120 TIER quick AREA flow)
 # The queued action of a fainted Pokemon: no ability and no item of it counts for its priority and Speed (d04 to d06).
 duoforge_add_test(NAME duoforge.state.pool_fainted_holder SOURCES flow/test_pool_fainted_holder.c WHITEBOX TIMEOUT 60 TIER quick AREA flow)
 

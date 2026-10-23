@@ -1083,10 +1083,10 @@ class Library(unittest.TestCase):
     def test_the_weather_rows_of_the_view_are_what_the_weather_lines_say(self):
         """Decision 0018 section 6.1, weather values Sand and Snow: a -weather line that names a weather sets it for 5
         turns, each [upkeep] line is a turn gone, -weather|none ends it. The rows of the C test (weather_rows in
-        tests/test_pool_weather.c: the weather and the turns left after each step of the nine weather battles, for
+        tests/mechanics/test_sand_snow_weather.c: the weather and the turns left after each step of the nine weather battles, for
         both players) must be exactly what these lines give for the committed traces, so that the engine's view is
         checked against the protocol and not against itself."""
-        source = open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_weather.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'mechanics/test_sand_snow_weather.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(w\d_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
@@ -1119,10 +1119,10 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1, terrain values Electric and Misty (step G25): a -fieldstart line that names a terrain sets
         it for 5 turns (the replaced terrain ends without a line), each |upkeep line with a terrain up is one turn gone, a
         -fieldend line ends it (Misty Terrain's has no "move: " in it). The rows of the C test (terrain_rows in
-        tests/test_pool_terrain.c: the terrain and the turns left after each step of the seven battles, for both players)
+        tests/mechanics/test_electric_misty_terrain.c: the terrain and the turns left after each step of the seven battles, for both players)
         must be exactly what these lines give for the committed traces, so that the engine's view is checked against the
         protocol and not against itself."""
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_terrain.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_electric_misty_terrain.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g25_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
@@ -1305,14 +1305,14 @@ class Library(unittest.TestCase):
     def test_wide_guard_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Wide Guard: the side of the user has the guard from the
         `|-singleturn|X|Wide Guard` line until the next `|upkeep|` (a second Wide Guard of the same side prints no
-        line and changes nothing). The rows of the C test (guard_rows in tests/test_pool_g7.c: the guard flag of each
+        line and changes nothing). The rows of the C test (guard_rows in tests/mechanics/test_wide_guard.c: the guard flag of each
         side after each step of the G7 battles, as a mask over the sides) must be exactly what these lines give for the
         committed traces, so a guard is live at a mid-turn (pivot) boundary and never at a turn boundary, and the
         engine's flag and view extension are checked against the protocol and not against themselves. Every
         `-activate|X|move: Wide Guard` is at a side whose guard is up, and every `-singleturn` Wide Guard comes
         from a move line of Wide Guard."""
         names = ('g7_wide_guard_a', 'g7_wide_guard_b', 'g7_wide_guard_ally', 'g7_wide_guard_pivot')
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g7.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_wide_guard.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g7_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
@@ -1346,12 +1346,12 @@ class Library(unittest.TestCase):
         """Decision 0015 section 7 for the Protect variant of tail rev 3: a position has protect_kind 1 from the
         `|-singleturn|X|move: Protect` line that follows its `|move|X|Spiky Shield|` line until the next `|upkeep|` or until
         its occupant leaves or faints (Protect and Detect print `-singleturn|X|Protect`: the variant 0). The rows of the C
-        test (kind_rows in tests/test_pool_g20_protect.c: protect_kind of the four positions, side * 2 + slot, after each
+        test (kind_rows in tests/mechanics/test_spiky_shield.c: protect_kind of the four positions, side * 2 + slot, after each
         step of the G20 Spiky Shield battles) must be exactly what these lines give for the committed traces, so the
         variant is live at a boundary inside a turn (a pivot) and never at a turn boundary. Every contact move that a
         Spiky Shield stops is followed by `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, a move without contact by
         nothing of the kind."""
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g20_protect.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_spiky_shield.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g20_spiky\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1403,11 +1403,11 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Disable: a position has the slot of the move named by `|-start|X|Disable|MOVE` (the
         slot of MOVE in the member's set, the spec's team text: the order of its `- Move` lines, from 1) until the
         `|-end|X|Disable` line or until its occupant leaves (`|switch|` at the position) or faints. The rows of the C test
-        (slot_rows in tests/test_pool_g27.c: the barred slot of the four positions, side * 2 + slot, after each step of the G27
+        (slot_rows in tests/interactions/test_cursed_body_disable.c: the barred slot of the four positions, side * 2 + slot, after each step of the G27
         battles) must be exactly what these lines give for the committed traces. Every `cant|X|Disable|MOVE` is of the barred
         move, a `-start` with [from] ability: Cursed Body comes after a hit at a holder of that ability, and the next move
         line of a barred position is never of its barred move."""
-        with open(os.path.join(ROOT, 'tests', 'interactions/test_pool_g27.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'interactions/test_cursed_body_disable.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g27_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1485,12 +1485,12 @@ class Library(unittest.TestCase):
         """Decision 0015 section 7 for the toxic stage (step G36): the occupant of a position is badly poisoned from the
         `|-status|X|tox` line until it faints (the status stays through a switch-out), and its stage (the tail's toxic_stage)
         is the number of `|-damage|X|HP tox|[from] psn` events since that line or since it last switched in (the stage
-        starts again: tox's onSwitchIn), at most 15. The rows of the C test (rows in tests/test_pool_g36.c: bit 8 the status,
+        starts again: tox's onSwitchIn), at most 15. The rows of the C test (rows in tests/mechanics/test_toxic.c: bit 8 the status,
         the low byte the stage, of the four positions after each step) must be exactly that for the committed traces. The
         residual damage of tox names psn as its source, so no new cause exists, and the HP field carries the status tox."""
         self.assertEqual(trace_to_c.STATUS['tox'], 6)
         self.assertEqual(trace_to_c.AILMENT['tox'], 6)
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g36.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_toxic.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g36_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1601,7 +1601,7 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for the four entry hazards (step G37): a side has Stealth Rock or Sticky Web from its
         `|-sidestart|pN: X|move: ...` line, a layer of Spikes (`|-sidestart|pN: X|Spikes`, no `move: ` in its name) or of
         Toxic Spikes with each such line, and Toxic Spikes no more from the `|-sideend|pN: X|move: Toxic Spikes|[of] Y` line
-        of a grounded Poison type that absorbed them. The rows of the C test (hazard_rows in tests/test_pool_g37.c: stealth
+        of a grounded Poison type that absorbed them. The rows of the C test (hazard_rows in tests/mechanics/test_entry_hazards.c: stealth
         rock, spikes, toxic spikes and sticky web of side 0, then of side 1, after each step of the G37 battles) must be
         exactly what these lines give for the committed traces, and what the reference's own state (the key `hazards` of the
         harness, in creation order) holds: the engine's tail and view are checked against the game and not against
@@ -1612,7 +1612,7 @@ class Library(unittest.TestCase):
         names_ = ('stealthrock', 'spikes', 'toxicspikes', 'stickyweb')
         lines_of = {'move: Stealth Rock': 0, 'Spikes': 1, 'move: Spikes': 1, 'move: Toxic Spikes': 2, 'move: Sticky Web': 3}
         most = (1, 3, 2, 1)
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g37.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_entry_hazards.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g37_\w+)", (\d+)u, \{((?:\d+u(?:, )?){10})\}\}', source):
@@ -1658,12 +1658,12 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
         line (5 turns, 8 when the user of the move holds Light Clay: the sheet, which is the spec's team text) and its turns
         left count down at every `|upkeep|` line until the `-sideend` line of the screen ends it (at the residual where
-        one turn is left). The rows of the C test (veil_rows in tests/test_pool_g20.c: the turns left of each side after
+        one turn is left). The rows of the C test (veil_rows in tests/mechanics/test_aurora_veil.c: the turns left of each side after
         each step of the G20 battles) must be exactly what these lines give for the committed traces, so the engine's
         tail and view extension are checked against the protocol and not against themselves. Every `-sidestart` comes from
         a move line of Aurora Veil of that side, and a `-sideend` comes with one turn left; a failed Aurora Veil (`-fail`
         after the move line) leaves the rows alone."""
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g20.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_aurora_veil.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g20_\w+)", (\d+)u, \{(\d+)u, (\d+)u\}\}', source):

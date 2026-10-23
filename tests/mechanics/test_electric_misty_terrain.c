@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_terrain (white-box): the step of Electric Terrain and Misty Terrain (Electric Surge, the two terrain
+ * duoforge.mechanics.electric_misty_terrain (white-box): the step of Electric Terrain and Misty Terrain (Electric Surge, the two terrain
  * moves, Electric Seed and Misty Seed, Rising Voltage, Terrain Pulse, step G25) and the terrain values Electric and Misty of
  * the POOL kinds in the player view (decision 0018, supported bits 5 and 32).
  *
@@ -339,7 +339,7 @@ static void check_state(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_terrain");
+    df_test_begin(&t, "duoforge.mechanics.electric_misty_terrain");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     check_view(&t, kp);

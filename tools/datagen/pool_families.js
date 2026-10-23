@@ -785,7 +785,7 @@ function checkG22(dex, formes, itemIds, abilityIds) {
             id === 'sandrush' ? ['onImmunity', 'onModifySpe'] : ['onModifySpe']);
     }
     // Utility Umbrella (which makes effectiveWeather ignore sun and rain) is not in the pool, and the only ability of the
-    // pool that suppresses the weather (Cloud Nine; Air Lock has no row) stays unmarked (tests/test_pool_weather.c).
+    // pool that suppresses the weather (Cloud Nine; Air Lock has no row) stays unmarked (tests/mechanics/test_sand_snow_weather.c).
     expect('Utility Umbrella is an item of the pool', itemIds.has('utilityumbrella'), false);
     expect('abilities of the pool that suppress the weather',
         [...abilityIds].filter((id) => dex.data.Abilities[id] && dex.data.Abilities[id].suppressWeather).sort(), ['cloudnine']);

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g47 (white-box): step G47 of the content expansion, the status and volatile cures: Synchronize and Oblivious
+ * duoforge.interactions.status_cures (white-box): step G47 of the content expansion, the status and volatile cures: Synchronize and Oblivious
  * (abilities) and Lum Berry and Mental Herb (items). No public value, no new state, no new draw site.
  *
  *   - Synchronize (data/abilities.ts:4857-4871): a psn, tox, brn or par that another Pokemon gave the holder is passed back to that
@@ -291,7 +291,7 @@ static void check_marks(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g47");
+    df_test_begin(&t, "duoforge.interactions.status_cures");
     check_marks(&t);
     duoforge_context *ctx = df_make_context(&df_config_pool);
     check_synchronize(&t, ctx);

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_weather (white-box): the step of Sandstorm and Snowscape (Sand Stream, Snow Warning, the two
+ * duoforge.mechanics.sand_snow_weather (white-box): the step of Sandstorm and Snowscape (Sand Stream, Snow Warning, the two
  * weather moves) and the weather values of the POOL kinds in the player view (decision 0018, supported bits 0 and 1).
  *
  * The ten recorded battles of the step (w1_sand_stream to w8_sand_soak under "data": "pool") are replayed
@@ -373,7 +373,7 @@ static void check_state(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_weather");
+    df_test_begin(&t, "duoforge.mechanics.sand_snow_weather");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     check_view(&t, kp);

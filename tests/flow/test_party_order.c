@@ -147,7 +147,7 @@ static void check_battle(df_test *t, const duoforge_context *ctx, const df_party
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g46_party");
+    df_test_begin(&t, "duoforge.flow.party_order");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     for (size_t i = 0; i < sizeof party_battles / sizeof party_battles[0]; ++i) {
         check_battle(&t, ctx, &party_battles[i]);

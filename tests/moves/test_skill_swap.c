@@ -29,7 +29,7 @@
 #include "support/fixtures.h"
 #include "support/pool.h"
 
-/* The setup of a recorded battle (as tests/test_pool_g47.c builds it), the step of a recorded battle and the battle after its
+/* The setup of a recorded battle (as tests/interactions/test_status_cures.c builds it), the step of a recorded battle and the battle after its
  * first `steps` steps (step 0 is the team step, which places the leads). */
 static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
 {

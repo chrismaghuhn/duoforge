@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g20 (white-box): step G20 of the content expansion, Aurora Veil, in the POOL state tail
+ * duoforge.mechanics.aurora_veil (white-box): step G20 of the content expansion, Aurora Veil, in the POOL state tail
  * (decision 0015 section 7, aurora_veil_turns of each side) and in the POOL view extension (decision 0018).
  *
  * The recorded battles (g20_aurora_veil_* under "data": "pool") are replayed through the step with the reference's draws,
@@ -156,7 +156,7 @@ static const char *const names[] = {"g20_aurora_veil_a", "g20_aurora_veil_clay",
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g20");
+    df_test_begin(&t, "duoforge.mechanics.aurora_veil");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t compared = 0u;
     uint32_t live = 0u;

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g20_protect (white-box): step G20, Spiky Shield, in the POOL state tail rev 3 (decision 0015 section 7: the
+ * duoforge.mechanics.spiky_shield (white-box): step G20, Spiky Shield, in the POOL state tail rev 3 (decision 0015 section 7: the
  * protect_kind of a position; the schema is 0x0503 since rev 5).
  *
  * The recorded battles (g20_spiky_shield_* under "data": "pool") are replayed through the step with the reference's draws,
@@ -124,7 +124,7 @@ static const char *const names[] = {"g20_spiky_shield_a", "g20_spiky_shield_ko",
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g20_protect");
+    df_test_begin(&t, "duoforge.mechanics.spiky_shield");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t compared = 0u;
     uint32_t live = 0u;

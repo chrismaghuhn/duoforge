@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g52 (white-box): Revival Blessing's REVIVE event and the information boundary (decision 0025 items 6
+ * duoforge.interactions.revival_blessing_view (white-box): Revival Blessing's REVIVE event and the information boundary (decision 0025 items 6
  * to 10; decision 0007). The owner's copy of a REVIVE keeps the member's exact HP; the foe's copy is a percentage with
  * hp_max 100 and hp_flag, like the HEAL and SWITCH lines, and never carries the exact value.
  */
@@ -64,7 +64,7 @@ static void test_projection(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g52");
+    df_test_begin(&t, "duoforge.interactions.revival_blessing_view");
     test_projection(&t);
     return df_test_end(&t);
 }

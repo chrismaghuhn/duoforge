@@ -1022,18 +1022,18 @@ const dfi_support_manifest dfi_support = {
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
      * duoforge.moves.throat_chop_heal_block_view). Step G11: the type change of Soak (bit 9: TYPE_CHANGED and type_now of the position, public,
      * verified against the four g11 battles in duoforge.moves.soak). Step G7: Wide Guard (bit 17: guard_flags, public,
-     * verified in duoforge.state.pool_g7). Step G9: Encore (bit 7: encore_slot of the position, public, verified against
+     * verified in duoforge.mechanics.wide_guard). Step G9: Encore (bit 7: encore_slot of the position, public, verified against
      * the g09_encore battles step by step in duoforge.moves.encore). Step G17: the recharge (bit 15: MUST_RECHARGE of the
      * position's volatiles, public, verified against the g17 battles step by step in duoforge.moves.recharge). Step G19: Glaive Rush (bit 20:
      * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.moves.glaive_rush_tail_view). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
-     * in duoforge.state.pool_g20). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
+     * in duoforge.mechanics.aurora_veil). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
      * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
      * announced, 3 to 1, verified against the g26 battles step by step in duoforge.moves.perish_song). */
     /* Step G38: Imprison (bit 12: IMPRISON of the position's volatiles, bit 2, public, verified against the g38 battles in
      * duoforge.moves.imprison). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
-     * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
+     * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.mechanics.sand_snow_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
      * duoforge.abilities.trace). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
      * ability), so the bit is exact: a zero is "no change". */

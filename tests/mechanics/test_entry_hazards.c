@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g37 (white-box): step G37 of the content expansion, the entry hazards (Stealth Rock, Spikes, Toxic Spikes,
+ * duoforge.mechanics.entry_hazards (white-box): step G37 of the content expansion, the entry hazards (Stealth Rock, Spikes, Toxic Spikes,
  * Sticky Web), in the POOL state tail (decision 0015 section 7: stealth_rock, spikes, toxic_spikes and sticky_web of each side, rev 3
  * as it is) and in the POOL view extension (decision 0018: the four fields of the side, supported bits 13, 30, 8 and 33).
  *
@@ -209,7 +209,7 @@ static const char *const names[] = {"g37_exit", "g37_flower_veil", "g37_hazard_f
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g37");
+    df_test_begin(&t, "duoforge.mechanics.entry_hazards");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t compared = 0u;
     uint32_t kinds_seen[4] = {0u, 0u, 0u, 0u};
