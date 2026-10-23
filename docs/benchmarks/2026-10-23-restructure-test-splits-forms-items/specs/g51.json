@@ -1,0 +1,48 @@
+{
+ "source": "forms/test_pool_g51.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "conf_setup": "df_conf_build_setup",
+   "conf_bundle": "df_conf_bundle_of",
+   "conf_find": "df_conf_find",
+   "conf_replay": "df_conf_replay_quiet",
+   "conf_step_events": "df_conf_step_events"
+  }
+ },
+ "parts": [
+  {
+   "file": "forms/test_mega_stones.c",
+   "calls": [
+    "check_marks",
+    "check_pairs",
+    "check_setups",
+    "check_api"
+   ],
+   "header": "(this file's section of the stones)"
+  },
+  {
+   "file": "abilities/test_keen_eye.c",
+   "main_body": [
+    "    check_no_grass_holder(&t);",
+    "    duoforge_context *ctx = df_make_context(&df_config_pool);",
+    "    if (DF_CHECK(&t, ctx != NULL)) {",
+    "        check_keen_eye_evasion(&t, ctx);",
+    "        duoforge_context_destroy(ctx);",
+    "    }"
+   ],
+   "header": "step G51 of the content expansion (Mega batch 4, decision 0015 entry 5bc), Keen Eye, an engine row (dfi_accuracy_check) that\nthe recorded battle g51_keen_eye exercises:\n\n  - no forme of the pool with Keen Eye or Big Pecks as a legal ability is a Grass type (Flower Veil, a Grass type's\n    TryBoost, would race them by Speed, and dfi_boost assumes none exists);\n  - the Keen Eye holder's ignoreEvasion: in g51_keen_eye the Pidgeot (Keen Eye, no stone) uses Hurricane (accuracy 70) on the\n    foe Milotic in step 2 and the reference's accuracy draw is 31; with the foe's evasion stage raised by six by hand (the chance\n    would fall to 23.3 and the draw would miss) the hit stands only if the Keen Eye user ignores the evasion, and the tape of\n    the step still fits.\n\nSplit by subject from the test of step G51 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_regenerator_pivot.c",
+   "main_body": [
+    "    duoforge_context *ctx = df_make_context(&df_config_pool);",
+    "    if (DF_CHECK(&t, ctx != NULL)) {",
+    "        check_regenerator_pivot(&t, ctx);",
+    "        duoforge_context_destroy(ctx);",
+    "    }"
+   ],
+   "header": "step G51 of the content expansion (decision 0015 entry 5bc; the fix of the G39 Regenerator row), Regenerator on a PIVOT\nswitch-out: in g51_dragalgite Dragalge-Mega uses Flip Turn at step 2 and leaves at step 3 (the answer to the PIVOT, `switch 3`);\nRegenerator heals it by a third before the switch, and the opponent's knowledge of its HP shows the healed percent.\n\nSplit by subject from the test of step G51 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

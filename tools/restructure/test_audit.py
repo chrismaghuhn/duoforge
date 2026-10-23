@@ -89,8 +89,9 @@ def check(root):
                 if r[key] in seen:
                     problems.append('%s: %s %s is in two rows' % (where, key, r[key]))
                 seen.add(r[key])
+        merge_targets = {x['new_file'] for x in rows if x['action'] == 'merge'}
         if r['action'] in ('rename', 'part') and r['new_file'] != '-':
-            if r['new_file'] in seen_new:
+            if r['new_file'] in seen_new and not (r['action'] == 'part' and r['new_file'] in merge_targets):
                 problems.append('%s: the new file %s is in two rows' % (where, r['new_file']))
             seen_new[r['new_file']] = where
         if r['action'] == 'split':

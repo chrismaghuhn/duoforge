@@ -280,7 +280,7 @@ static void check_view(df_test *t, const duoforge_context *ctx)
  * so do the ones that break an ability (Inner Focus is breakable): no battle holds any of them. Cloud Nine was unmarked until
  * step G79, which marks it (its suppression is checked in tests/abilities/test_cloud_nine.c, and the check below pins the mark). Mega Sol makes
  * Pokemon#effectiveWeather sunny for its holder's moves; step G59 marks it (its two weather-reading moves are refused off sun,
- * tests/test_pool_g59.c). The pinned-data side of this list is checked by tools/datagen/pool_families.js. */
+ * tests/abilities/test_mega_sol.c). The pinned-data side of this list is checked by tools/datagen/pool_families.js. */
 static void check_unmodelled_sources(df_test *t)
 {
     static const uint32_t abilities[] = {DFI_ABILITY_MOLDBREAKER}; /* Magic Guard (G67) and Cloud Nine (G79) are engine rows */

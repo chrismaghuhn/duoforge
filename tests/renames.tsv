@@ -19,11 +19,11 @@ abilities/test_pool_g79.c	duoforge.state.pool_g79	rename	abilities/test_cloud_ni
 abilities/test_pool_g81.c	duoforge.state.pool_g81	rename	abilities/test_frisk.c	duoforge.abilities.frisk	done	G81: Frisk and ITEM_SHOWN
 abilities/test_pool_k2.c	duoforge.state.pool_k2	rename	abilities/test_piercing_drill.c	duoforge.abilities.piercing_drill	done	K2: Piercing Drill
 flow/test_pool_g46_party.c	duoforge.state.pool_g46_party	rename	flow/test_party_order.c	duoforge.flow.party_order	planned	G46: the party order after switches
-forms/test_pool_g43.c	duoforge.state.pool_g43	merge	forms/test_mega_stones.c	duoforge.forms.mega_stones	planned	G43: Mega batch 3, stones with no new rule
-forms/test_pool_g51.c	duoforge.state.pool_g51	merge	forms/test_mega_stones.c	duoforge.forms.mega_stones	planned	G51: Mega batch 4, stones with no new rule
-forms/test_pool_g59.c	duoforge.state.pool_g59	split	-	-	planned	G59: six Mega abilities and their stones
+forms/test_pool_g43.c	duoforge.state.pool_g43	merge	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	G43: Mega batch 3, stones with no new rule
+forms/test_pool_g51.c	duoforge.state.pool_g51	split	-	-	done	G51: Mega batch 4, stones with no new rule
+forms/test_pool_g59.c	duoforge.state.pool_g59	split	-	-	done	G59: six Mega abilities and their stones
 forms/test_pool_g66.c	duoforge.state.pool_g66	rename	forms/test_stance_change.c	duoforge.forms.stance_change	done	G66: Aegislash, Stance Change and King's Shield
-forms/test_pool_mega2.c	duoforge.state.pool_mega2	split	-	-	planned	Mega batch 2: four stones and Aura Guard
+forms/test_pool_mega2.c	duoforge.state.pool_mega2	split	-	-	done	Mega batch 2: four stones and Aura Guard
 interactions/test_pool_g27.c	duoforge.state.pool_g27	rename	interactions/test_cursed_body_disable.c	duoforge.interactions.cursed_body_disable	planned	G27: Cursed Body and Disable
 interactions/test_pool_g30.c	duoforge.state.pool_g30	split	-	-	planned	G30: Rage Powder, the powder immunity and a batch of rows
 interactions/test_pool_g33.c	duoforge.state.pool_g33	split	-	-	planned	G33: the multi-hit moves and Mirror Armor
@@ -40,7 +40,7 @@ interactions/test_pool_i2.c	duoforge.state.pool_i2	rename	interactions/test_illu
 interactions/test_pool_k4_draws.c	duoforge.state.pool_k4_draws	rename	interactions/test_gravity_accuracy_draws.c	duoforge.interactions.gravity_accuracy_draws	planned	K4: Gravity's accuracy rule with changed draws
 items/test_pool_g16.c	duoforge.state.pool_g16	rename	items/test_knock_off.c	duoforge.items.knock_off	done	G16: Knock Off
 items/test_pool_g29.c	duoforge.state.pool_g29	rename	items/test_item_transfer.c	duoforge.items.item_transfer	done	G29: Trick, Switcheroo, Thief, Covet
-items/test_pool_g49.c	duoforge.state.pool_g49	split	-	-	planned	G49: Muscle Band, Wise Glasses, Bright Powder
+items/test_pool_g49.c	duoforge.state.pool_g49	split	-	-	done	G49: Muscle Band, Wise Glasses, Bright Powder
 items/test_pool_g55.c	duoforge.state.pool_g55	rename	items/test_duration_items.c	duoforge.items.duration_items	done	G55: the rocks and Terrain Extender
 mechanics/test_pool_g20.c	duoforge.state.pool_g20	rename	mechanics/test_aurora_veil.c	duoforge.mechanics.aurora_veil	planned	G20: Aurora Veil
 mechanics/test_pool_g20_protect.c	duoforge.state.pool_g20_protect	rename	mechanics/test_spiky_shield.c	duoforge.mechanics.spiky_shield	planned	G20: Spiky Shield
@@ -104,3 +104,13 @@ abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_flower_vei
 abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_tangled_feet.c	duoforge.abilities.tangled_feet	done	A2a: tangled feet
 abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_life_dew_water_absorb.c	duoforge.abilities.life_dew_water_absorb	done	A2a: life dew water absorb
 abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_natural_cure.c	duoforge.abilities.natural_cure	done	A2a: natural cure
+forms/test_pool_g51.c	duoforge.state.pool_g51	part	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	G51: mega stones
+forms/test_pool_g51.c	duoforge.state.pool_g51	part	abilities/test_keen_eye.c	duoforge.abilities.keen_eye	done	G51: keen eye
+forms/test_pool_g51.c	duoforge.state.pool_g51	part	abilities/test_regenerator_pivot.c	duoforge.abilities.regenerator_pivot	done	G51: regenerator pivot
+forms/test_pool_g59.c	duoforge.state.pool_g59	part	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	G59: mega stones
+forms/test_pool_g59.c	duoforge.state.pool_g59	part	abilities/test_mega_launcher.c	duoforge.abilities.mega_launcher	done	G59: mega launcher
+forms/test_pool_g59.c	duoforge.state.pool_g59	part	abilities/test_mega_sol.c	duoforge.abilities.mega_sol	done	G59: mega sol
+forms/test_pool_mega2.c	duoforge.state.pool_mega2	part	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	Mega batch 2: mega stones
+forms/test_pool_mega2.c	duoforge.state.pool_mega2	part	abilities/test_aura_guard.c	duoforge.abilities.aura_guard	done	Mega batch 2: aura guard
+items/test_pool_g49.c	duoforge.state.pool_g49	part	items/test_power_and_accuracy_items.c	duoforge.items.power_and_accuracy_items	done	G49: power and accuracy items
+items/test_pool_g49.c	duoforge.state.pool_g49	part	items/test_bright_powder.c	duoforge.items.bright_powder	done	G49: bright powder

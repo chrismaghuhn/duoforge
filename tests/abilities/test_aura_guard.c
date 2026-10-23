@@ -1,20 +1,16 @@
 /*
- * duoforge.state.pool_mega2 (white-box): the Mega batch 2 of the content expansion: Swampertite (Swift Swim), Metagrossite
- * (Tough Claws), Froslassite (Snow Warning, base Cursed Body) and Lucarionite Z with its Mega ability Aura Guard, a contact hit on its holder halved in the ModifyDamage
- * chain.
+ * duoforge.abilities.aura_guard (white-box): Mega batch 2 of the content expansion (decision 0015 entry 5ag), Aura Guard
+ * (Lucarionite Z's Mega ability, a contact hit on its holder halved in the ModifyDamage chain):
  *
- * The recorded battles (mb2_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data with the
- * reference's draws, which compares everything that the reference shows. Here are the facts that it does not show:
- *
- *   - the marks, the Mega of each stone and its support, and that Aura Guard is an engine row (no handler of its own);
  *   - the ModifyDamage chain with Aura Guard as the ninth modifier: `dfi_mods_commute` against a brute force over all orders
- *     for every subset that one hit can have (191 subsets, 113 of them commute, the 78 that do not are refused by the
- *     engine, E_UNSUPPORTED), where Aura Guard is exclusive with Solid Rock and Multiscale (the target's one ability);
- *   - the engine's refusal itself: in mb2_aura_guard_chain the Close Combat of a Life Orb Annihilape hits Lucario-Mega-Z
- *     (Aura Guard) behind a Reflect, super effective, and is played (Life Orb, Reflect and Aura Guard commute). With an
- *     Expert Belt in place of the Life Orb and a Friend Guard on the Reflect user, the four modifiers 4915, 2732, 2048 and
- *     3072 chain to different values by their order, and the hit is refused (E_UNSUPPORTED); with the Life Orb and the
- *     Friend Guard it is played again. Without Aura Guard in the chain's list the refusal would not happen.
+ *     for every subset that one hit can have (191 subsets, 113 of them commute, the 78 that do not are refused by the engine,
+ *     E_UNSUPPORTED), where Aura Guard is exclusive with Solid Rock and Multiscale (the target's one ability);
+ *   - the engine's refusal itself: in mb2_aura_guard_chain the Close Combat of a Life Orb Annihilape hits Lucario-Mega-Z behind a
+ *     Reflect, super effective, and is played; with an Expert Belt in place of the Life Orb and a Friend Guard on the Reflect
+ *     user, the four modifiers chain to different values by their order and the hit is refused; with the Life Orb and the Friend
+ *     Guard it is played again. Without Aura Guard in the chain's list the refusal would not happen.
+ *
+ * Split by subject from the test of step Mega batch 2 (restructure step 6e; tests/renames.tsv maps the old name).
  */
 #include <stdio.h>
 #include <string.h>
@@ -32,8 +28,14 @@
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
+#define CC_STEP 2u          /* the step of Annihilape's Close Combat at Lucario-Mega-Z in mb2_aura_guard_chain */
+#define LUCARIO_SIDE 0u
+#define GRIMMSNARL_ROSTER 1u /* Lucario's partner, the Reflect user (the second member of the first team) */
+#define ANNIHILAPE_SIDE 1u
+#define ANNIHILAPE_ROSTER 0u
 
 enum { LO, EB, BERRY, SCREEN, GLAIVE, SR, MS, FG, AG, KINDS };
+
 static const uint32_t values[KINDS] = {5324u, 4915u, 2048u, 2732u, 8192u, 3072u, 2048u, 3072u, 2048u};
 
 /* The reference computation, independent of dfi_mods_commute: every permutation by recursion. */
@@ -112,53 +114,6 @@ static void check_chain(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_MODIFY_DAMAGE_MAX, 6u);
 }
 
-static void check_facts(df_test *t)
-{
-    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_AURAGUARD] != 0u);
-    DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_AURAGUARD], DFI_HANDLER_NONE); /* an engine row: read by id */
-    DF_CHECK_EQ_U64(t, dfi_pool_ability_family[DFI_ABILITY_AURAGUARD].family, DFI_ABILITY_FAMILY_NONE);
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_SWAMPERTITE] != 0u);
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_METAGROSSITE] != 0u);
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_LUCARIONITEZ] != 0u);
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_FROSLASSITE] != 0u);
-    DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_FROSLASSITE], DFI_HANDLER_NONE);
-    DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_SWAMPERTITE], DFI_HANDLER_NONE);
-    DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_METAGROSSITE], DFI_HANDLER_NONE);
-    DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_LUCARIONITEZ], DFI_HANDLER_NONE);
-
-    /* the Mega of each pair, its ability, and the support of the pair (the Mega ability is marked) */
-    static const struct {
-        uint32_t base, item, mega, ability;
-    } pairs[] = {
-        {DFI_FORME_SWAMPERT, DFI_ITEM_SWAMPERTITE, DFI_FORME_SWAMPERTMEGA, DFI_ABILITY_SWIFTSWIM},
-        {DFI_FORME_METAGROSS, DFI_ITEM_METAGROSSITE, DFI_FORME_METAGROSSMEGA, DFI_ABILITY_TOUGHCLAWS},
-        {DFI_FORME_LUCARIO, DFI_ITEM_LUCARIONITEZ, DFI_FORME_LUCARIOMEGAZ, DFI_ABILITY_AURAGUARD},
-        {DFI_FORME_FROSLASS, DFI_ITEM_FROSLASSITE, DFI_FORME_FROSLASSMEGA, DFI_ABILITY_SNOWWARNING},
-    };
-    for (size_t i = 0u; i < sizeof pairs / sizeof pairs[0]; ++i) {
-        const uint32_t mega = dfi_mega_of(pairs[i].base, 1u + pairs[i].item);
-        DF_CHECK_EQ_U64(t, mega, pairs[i].mega);
-        DF_CHECK_EQ_U64(t, dfi_pool_formes[mega].ability, pairs[i].ability);
-        DF_CHECK(t, dfi_manifest_mega_of(&dfi_support, pairs[i].base, 1u + pairs[i].item));
-        DF_CHECK(t, dfi_support.abilities[pairs[i].ability] != 0u);
-    }
-    /* Lucario's other stone is another Mega (Adaptability), not Lucario-Mega-Z, and the Z stone is no stone of another forme */
-    DF_CHECK(t, dfi_mega_of(DFI_FORME_LUCARIO, 1u + DFI_ITEM_LUCARIONITE) != DFI_FORME_LUCARIOMEGAZ);
-    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_METAGROSS, 1u + DFI_ITEM_LUCARIONITEZ), DFI_FORME_NONE);
-    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_SWAMPERT, 1u + DFI_ITEM_METAGROSSITE), DFI_FORME_NONE);
-    /* the base abilities that the four need are marked: Torrent, Clear Body, Inner Focus and Cursed Body (step G27) */
-    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_TORRENT] != 0u);
-    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_CLEARBODY] != 0u);
-    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_INNERFOCUS] != 0u);
-    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_CURSEDBODY] != 0u);
-    /* Aura Guard is the Mega ability of Lucario-Mega-Z alone among the pool's formes' abilities that are marked here */
-    uint32_t holders = 0u;
-    for (uint32_t forme = 0u; forme < DFI_POOL_FORME_COUNT; ++forme) {
-        holders += dfi_pool_formes[forme].ability == DFI_ABILITY_AURAGUARD ? 1u : 0u;
-    }
-    DF_CHECK_EQ_U64(t, holders, 1u);
-}
-
 /* ---- the engine's refusal of a ModifyDamage chain that does not commute, with Aura Guard in it */
 static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
 {
@@ -224,12 +179,6 @@ static const df_conf_battle *find(const char *name)
     return NULL;
 }
 
-#define CC_STEP 2u          /* the step of Annihilape's Close Combat at Lucario-Mega-Z in mb2_aura_guard_chain */
-#define LUCARIO_SIDE 0u
-#define GRIMMSNARL_ROSTER 1u /* Lucario's partner, the Reflect user (the second member of the first team) */
-#define ANNIHILAPE_SIDE 1u
-#define ANNIHILAPE_ROSTER 0u
-
 enum { AS_RECORDED, WITH_FRIEND_GUARD, WITH_BELT_AND_FRIEND_GUARD };
 
 /* Plays the steps before the Close Combat as recorded, changes the state as `variant` says, and returns the status of the
@@ -285,8 +234,7 @@ static void check_refusal(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_mega2");
-    check_facts(&t);
+    df_test_begin(&t, "duoforge.abilities.aura_guard");
     check_chain(&t);
     check_refusal(&t);
     return df_test_end(&t);

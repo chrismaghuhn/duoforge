@@ -1,0 +1,15 @@
+{
+ "source": "forms/test_pool_g43.c",
+ "parts": [
+  {
+   "file": "forms/test_mega_stones.c",
+   "calls": [
+    "check_marks",
+    "check_pairs",
+    "check_setups",
+    "check_api"
+   ],
+   "header": "(this file's section of the stones)"
+  }
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "source": "forms/test_pool_mega2.c",
+ "parts": [
+  {
+   "file": "forms/test_mega_stones.c",
+   "calls": [
+    "check_facts"
+   ],
+   "header": "(this file's section of the stones)"
+  },
+  {
+   "file": "abilities/test_aura_guard.c",
+   "calls": [
+    "check_chain",
+    "check_refusal"
+   ],
+   "header": "Mega batch 2 of the content expansion (decision 0015 entry 5ag), Aura Guard (Lucarionite Z's Mega ability, a contact hit on\nits holder halved in the ModifyDamage chain):\n\n  - the ModifyDamage chain with Aura Guard as the ninth modifier: `dfi_mods_commute` against a brute force over all orders\n    for every subset that one hit can have (191 subsets, 113 of them commute, the 78 that do not are refused by the engine,\n    E_UNSUPPORTED), where Aura Guard is exclusive with Solid Rock and Multiscale (the target's one ability);\n  - the engine's refusal itself: in mb2_aura_guard_chain the Close Combat of a Life Orb Annihilape hits Lucario-Mega-Z behind a\n    Reflect, super effective, and is played; with an Expert Belt in place of the Life Orb and a Friend Guard on the Reflect\n    user, the four modifiers chain to different values by their order and the hit is refused; with the Life Orb and the Friend\n    Guard it is played again. Without Aura Guard in the chain's list the refusal would not happen.\n\nSplit by subject from the test of step Mega batch 2 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

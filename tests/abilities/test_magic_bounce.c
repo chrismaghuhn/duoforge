@@ -130,24 +130,6 @@ static void test_magic_bounce_row(df_test *t)
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MAGICBOUNCE] != 0u);
 }
 
-/* Absolite and Sablenite are marked; Clefablite was unmarked by G57 (its Mega ability, Magic Bounce, passed the forme gate but its
- * base's abilities were not), and is marked since step G75 (Clefable's hidden Unaware, marked by G65). Starminite stays unmarked
- * (Starmie's abilities are not marked), so an unmarked stone is still refused. Absol has two Mega pairs, and each stone takes it to
- * its own Mega (dfi_mega_of: the stone is 1 + its id, the base's own link first). */
-static void test_mega_stones(df_test *t)
-{
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_ABSOLITE] != 0u);
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_SABLENITE] != 0u);
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_CLEFABLITE] != 0u); /* marked since step G75 */
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_STARMINITE] == 0u); /* still unmarked: an unmarked stone is refused */
-    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_ABSOL, DFI_ITEM_ABSOLITE + 1u), DFI_FORME_ABSOLMEGA);
-    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_ABSOL, DFI_ITEM_ABSOLITEZ + 1u), DFI_FORME_ABSOLMEGAZ);
-    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_SABLEYE, DFI_ITEM_SABLENITE + 1u), DFI_FORME_SABLEYEMEGA);
-    DF_CHECK(t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_SABLEYE, DFI_ITEM_SABLENITE + 1u));
-    DF_CHECK(t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_ABSOL, DFI_ITEM_ABSOLITE + 1u));
-    DF_CHECK(t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_CLEFABLE, DFI_ITEM_CLEFABLITE + 1u));
-}
-
 static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
 {
     memset(s, 0, sizeof *s);
@@ -295,6 +277,7 @@ static duoforge_battle *start(df_test *t, const duoforge_context *ctx, const df_
  * (cause ABILITY, id2 = Magic Bounce + 1) of both players' events. */
 /* The events of the last turn() (player 0's copy first), for the tests that read the lines themselves. */
 static duoforge_event g57_events[2][64];
+
 static uint32_t g57_event_count;
 
 static duoforge_status turn(const duoforge_context *ctx, duoforge_battle *b, duoforge_slot_command cmd[2][2], uint32_t *bounces)
@@ -584,7 +567,6 @@ int main(void)
     test_marked_reflectable_moves_are_the_handled_list(&t);
     test_marked_reflectable_moves_are_not_spread(&t);
     test_magic_bounce_row(&t);
-    test_mega_stones(&t);
     test_two_holders_of_a_hazard_are_refused(&t);
     test_follow_me_on_the_source_side_is_refused(&t);
     test_armor_tail_stops_a_prankster_copy(&t);

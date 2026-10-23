@@ -1,0 +1,26 @@
+{
+ "source": "forms/test_pool_g59.c",
+ "parts": [
+  {
+   "file": "forms/test_mega_stones.c",
+   "calls": [
+    "check_facts"
+   ],
+   "header": "(this file's section of the stones)"
+  },
+  {
+   "file": "abilities/test_mega_launcher.c",
+   "calls": [
+    "check_pulse"
+   ],
+   "header": "step G59 of the content expansion (decision 0015 entry 5bh), the public static flag PULSE that Mega Launcher reads (pulse\nmoves x1.5, BasePower priority 19): the pulse moves of the pool carry it, the others do not.\n\nSplit by subject from the test of step G59 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_mega_sol.c",
+   "calls": [
+    "check_mega_sol"
+   ],
+   "header": "step G59 of the content expansion (decision 0015 entry 5bh), Mega Sol's refusal (dfi_mega_sol_refused): the recorded\nMeganium-Mega battle g59_mega_sol is played in sun, and the same battle with the field's weather changed to rain is refused\n(E_UNSUPPORTED) at Solar Beam and at Weather Ball, its two weather-reading moves, and played as recorded when the weather is\nnot changed.\n\nSplit by subject from the test of step G59 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

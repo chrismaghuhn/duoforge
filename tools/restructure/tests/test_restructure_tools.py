@@ -358,6 +358,38 @@ class SplitTest(unittest.TestCase):
         self.assertIn('    df_pair p = {x};', out['moves/test_one.c'])
         self.assertNotIn('typedef struct pair', out['moves/test_one.c'])
 
+    def test_merge_keeps_each_section_and_renames_what_collides(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / 'tests/moves').mkdir(parents=True)
+        a = SOURCE.replace('pool_g999', 'pool_g998')
+        b = SOURCE.replace('pool_g999', 'pool_g997').replace('return 2u * x;', 'return x + x;').replace(
+            '/* the second subject */\nstatic void check_two(df_test *t)\n{\n    DF_CHECK(t, twice(2u) == 4u);\n}\n\n', '').replace(
+            '    check_two(&t);\n', '')
+        (root / 'tests/moves/test_pool_g998.c').write_text(a, encoding='utf-8')
+        (root / 'tests/moves/test_pool_g997.c').write_text(b, encoding='utf-8')
+        one = {'source': 'moves/test_pool_g998.c', 'parts': [{'file': 'moves/test_both.c', 'calls': ['check_one', 'check_two'], 'header': 's'}]}
+        two = {'source': 'moves/test_pool_g997.c', 'parts': [{'file': 'moves/test_both.c', 'calls': ['check_one'], 'header': 's'}]}
+        ctest, text = split_test.merge(root, {'file': 'moves/test_both.c', 'header': 'both',
+                                              'sections': [{'spec': one, 'prefix': 'first_'}, {'spec': two, 'prefix': 'second_'}]})
+        self.assertEqual(ctest, 'duoforge.moves.both')
+        for name in ('first_twice', 'second_twice', 'first_check_one', 'second_check_one'):
+            self.assertIn('static ', text)
+            self.assertRegex(text, r'\b%s\(' % name)
+        self.assertIn('static void check_two(df_test *t)', text)  # only the first section has it: no prefix
+        self.assertIn('    { /* first */\n        first_check_one(&t);\n        check_two(&t);\n    }\n    { /* second */\n        second_check_one(&t);\n    }\n',
+                      text)
+        self.assertEqual(text.count('df_test_begin(&t, "duoforge.moves.both");'), 1)
+        same = {'source': 'moves/test_pool_g998.c', 'parts': [{'file': 'moves/test_both.c', 'calls': ['check_one', 'check_two'], 'header': 's'}]}
+        three = dict(two, source='moves/test_pool_g996.c')
+        (root / 'tests/moves/test_pool_g996.c').write_text(a.replace('pool_g998', 'pool_g996').replace(
+            '/* the second subject */\nstatic void check_two(df_test *t)\n{\n    DF_CHECK(t, twice(2u) == 4u);\n}\n\n', '').replace(
+            '    check_two(&t);\n', ''), encoding='utf-8')
+        _, text = split_test.merge(root, {'file': 'moves/test_both.c', 'header': 'both',
+                                          'sections': [{'spec': same, 'prefix': 'first_'}, {'spec': three, 'prefix': 'third_'}]})
+        self.assertEqual(text.count('static unsigned twice(unsigned x)'), 1)  # the same helper in both: kept once, not renamed
+
     def test_parts_of_a_split_in_the_table(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

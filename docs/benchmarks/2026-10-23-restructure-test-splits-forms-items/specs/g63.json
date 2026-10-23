@@ -1,0 +1,12 @@
+{
+ "source": "forms/test_mega_stones.c",
+ "parts": [
+  {
+   "file": "forms/test_mega_stones.c",
+   "calls": [
+    "test_mega_stones_g63"
+   ],
+   "header": "(this file's section of the stones)"
+  }
+ ]
+}

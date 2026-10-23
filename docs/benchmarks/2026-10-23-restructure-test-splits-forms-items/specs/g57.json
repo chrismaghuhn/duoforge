@@ -1,0 +1,31 @@
+{
+ "source": "abilities/test_magic_bounce.c",
+ "parts": [
+  {
+   "file": "abilities/test_magic_bounce.c",
+   "calls": [
+    "test_reflect_column_matches_the_dex",
+    "test_marked_reflectable_moves_are_the_handled_list",
+    "test_marked_reflectable_moves_are_not_spread",
+    "test_magic_bounce_row",
+    "test_two_holders_of_a_hazard_are_refused",
+    "test_follow_me_on_the_source_side_is_refused",
+    "test_armor_tail_stops_a_prankster_copy",
+    "test_psychic_terrain_with_a_prankster_copy_stops_the_original",
+    "test_a_taunt_is_bounced_once",
+    "test_a_protecting_holder_is_not_bounced",
+    "test_a_bounce_is_no_move_action_of_the_bouncer",
+    "test_unmodelled_bounces_are_refused",
+    "test_ghost_curse_executes"
+   ],
+   "keep_header": true
+  },
+  {
+   "file": "forms/test_mega_stones.c",
+   "calls": [
+    "test_mega_stones"
+   ],
+   "header": "(this file's section of the stones)"
+  }
+ ]
+}
