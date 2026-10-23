@@ -9,7 +9,7 @@ duoforge_label_test(duoforge.data.pool_families reference tools)
 set_tests_properties(duoforge.data.pool_families PROPERTIES TIMEOUT 600)
 # The pool source of each format definition, made again by the pinned TeamValidator
 # (docs/research/expansion/tools/build_legal_pool.js) and compared with the committed file.
-foreach(_format reg-mc champions-ou)
+foreach(_format reg-mc champions-ou gen9ou)
     string(REPLACE "-" "_" _name "${_format}")
     add_test(NAME duoforge.data.format_pool_${_name}
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/check_format_pool.py"

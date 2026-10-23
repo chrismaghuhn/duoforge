@@ -120,7 +120,7 @@ if (CHAMPIONS) {
   });
 } else {
   Object.assign(rules, {
-    evs: { note: 'gen9 mod: set.evs holds EVs', total_limit: ruleTable.evLimit, per_stat_max: 252, ivs: '0 to 31' },
+    evs: { note: 'gen9 mod: set.evs holds EVs (sim/team-validator.ts refuses more than 255 in a stat)', total_limit: ruleTable.evLimit, per_stat_max: 255, ivs: '0 to 31' },
     min_source_gen: ruleTable.minSourceGen,
     clauses_team_level: ['Species Clause', 'Nickname Clause'],
     terastallization: ruleTable.has('terastalclause') ? 'disabled by Terastal Clause' : 'enabled (every set has a Tera type)',

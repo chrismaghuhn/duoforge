@@ -39,8 +39,8 @@ BASE_INPUTS = {
 # A format definition names one (data/formats/<id>.json, tables.rule_set). Each names its override files by role, their
 # pinned sha256 and the PP cap of its moves (None: no cap). champions is the Champions mod: its own move, item and
 # ability entries over the base ones, its formats data and learnsets, and init()'s PP cap of 20
-# (data/mods/champions/scripts.ts:3-9). A rule set without overrides (gen9, step O8 of the Gen 9 design) is added
-# with the code that reads the base data alone; until then any other name is refused.
+# (data/mods/champions/scripts.ts:3-9). A rule set without overrides (gen9, step O8 of the Gen 9 design) needs the code
+# that reads the base data alone; until then RULE_SETS_REFUSED names it with its reason and any other name is refused.
 RULE_SETS = {
     'champions': {
         'files': {
@@ -63,10 +63,19 @@ RULE_SETS = {
     },
 }
 RULE_SET_ROLES = ('moves', 'items', 'abilities', 'formats_data', 'learnsets', 'scripts')
+# Rule sets that a definition may name but no table set builds yet, each with its reason (HS decision 2026-10-23, O8):
+# gen9 is the base data alone (no override files, no PP cap), but the pool build of the tables is an extension of the
+# Reg M-C tables (the closure, Team C and G2 rows as the prefix, the flat "9M" Champions learnsets, the Champions fact
+# checks), so a Gen 9 table set needs a standalone build of its own.
+RULE_SETS_REFUSED = {
+    'gen9': 'standalone table sets come with the Gen 9 design (the base data alone, without the Reg M-C prefix)',
+}
 
 
 def rule_set(name):
     """The rule set of that name, checked: every role has a file, every file its pinned hash; an unknown name fails."""
+    if name in RULE_SETS_REFUSED:
+        fail('rule set %s is refused: %s' % (name, RULE_SETS_REFUSED[name]))
     if name not in RULE_SETS:
         fail('rule set %r is not defined (known: %s)' % (name, ', '.join(sorted(RULE_SETS))))
     rs = RULE_SETS[name]
