@@ -459,7 +459,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_STEELROLLER] = 1u,
             [DFI_MOVE_CLANGOROUSSOUL] = 1u,
             [DFI_MOVE_BRICKBREAK] = 1u,
-            /* Step G38: Imprison (the foes may not use the moves it knows; duoforge.state.pool_g38). */
+            /* Step G38: Imprison (the foes may not use the moves it knows; duoforge.moves.imprison). */
             [DFI_MOVE_IMPRISON] = 1u,
             [DFI_MOVE_FIERYDANCE] = 1u,
             [DFI_MOVE_PSYCHOCUT] = 1u,
@@ -1021,17 +1021,17 @@ const dfi_support_manifest dfi_support = {
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
      * duoforge.state.pool_g8). Step G11: the type change of Soak (bit 9: TYPE_CHANGED and type_now of the position, public,
-     * verified against the four g11 battles in duoforge.state.pool_g11). Step G7: Wide Guard (bit 17: guard_flags, public,
+     * verified against the four g11 battles in duoforge.moves.soak). Step G7: Wide Guard (bit 17: guard_flags, public,
      * verified in duoforge.state.pool_g7). Step G9: Encore (bit 7: encore_slot of the position, public, verified against
-     * the g09_encore battles step by step in duoforge.state.pool_g9). Step G17: the recharge (bit 15: MUST_RECHARGE of the
-     * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). Step G19: Glaive Rush (bit 20:
+     * the g09_encore battles step by step in duoforge.moves.encore). Step G17: the recharge (bit 15: MUST_RECHARGE of the
+     * position's volatiles, public, verified against the g17 battles step by step in duoforge.moves.recharge). Step G19: Glaive Rush (bit 20:
      * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.state.pool_g19). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
      * in duoforge.state.pool_g20). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
      * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
-     * announced, 3 to 1, verified against the g26 battles step by step in duoforge.state.pool_g26). */
+     * announced, 3 to 1, verified against the g26 battles step by step in duoforge.moves.perish_song). */
     /* Step G38: Imprison (bit 12: IMPRISON of the position's volatiles, bit 2, public, verified against the g38 battles in
-     * duoforge.state.pool_g38). */
+     * duoforge.moves.imprison). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
@@ -1097,6 +1097,6 @@ const dfi_support_manifest dfi_support = {
                          /* Step K4 (#475, decision 0015 5dl): Gravity, gravity_turns of the field view (encoder 5 column, encode.c). */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_GRAVITY) |
                          /* Step G87 (decision 0080): Attract's source position (volatiles2 bits 12-13), public, verified against the
-                          * recorded pool battles and the from_view worlds of tests/test_pool_g87.c. */
+                          * recorded pool battles and the from_view worlds of tests/moves/test_attract_source_view.c. */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE)
 };

@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 import callgrind_gate  # noqa: E402
 import fn_diff  # noqa: E402
 import rename_tests  # noqa: E402
+import split_test  # noqa: E402
 import test_audit  # noqa: E402
 
 # A callgrind file in the tool's own format (positions: line, events: Ir, name compression): main calls the two clones
@@ -103,11 +104,11 @@ class Tools(unittest.TestCase):
 
 
 HEADER = test_audit.COLUMNS
-ROW = 'moves/test_pool_g62.c\tduoforge.state.pool_g62\trename\tmoves/test_haze.c\tduoforge.moves.haze\t%s\tG62: Haze'
+ROW = 'moves/test_pool_g999.c\tduoforge.state.pool_g999\trename\tmoves/test_probe.c\tduoforge.moves.probe\t%s\tG999: Probe'
 
 
 class RenameTable(unittest.TestCase):
-    """test_audit --check on a small git tree: one historical test (G62) planned, then done."""
+    """test_audit --check on a small git tree: one historical test (G999) planned, then done."""
 
     def tree(self, tmp, state, files, table_rows=None, cmake=None):
         root = Path(tmp)
@@ -124,73 +125,73 @@ class RenameTable(unittest.TestCase):
         subprocess.run(['git', 'add', '-A'], cwd=root, check=True)
         return root
 
-    PLANNED = 'duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES moves/test_pool_g62.c TIER quick AREA moves)\n'
-    DONE = 'duoforge_add_test(NAME duoforge.moves.haze SOURCES moves/test_haze.c TIER quick AREA moves)\n'
+    PLANNED = 'duoforge_add_test(NAME duoforge.state.pool_g999 SOURCES moves/test_pool_g999.c TIER quick AREA moves)\n'
+    DONE = 'duoforge_add_test(NAME duoforge.moves.probe SOURCES moves/test_probe.c TIER quick AREA moves)\n'
 
     def test_planned_row_matches_the_tree(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g62.c': '/* G62 */\n'}, cmake=self.PLANNED)
+            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g999.c': '/* G999 */\n'}, cmake=self.PLANNED)
             self.assertEqual(test_audit.check(root), [])
 
     def test_a_historical_file_without_a_row_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             cmake = self.PLANNED + 'duoforge_add_test(NAME duoforge.state.pool_k9 SOURCES moves/test_pool_k9.c)\n'
-            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g62.c': '', 'tests/moves/test_pool_k9.c': ''}, cmake=cmake)
+            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g999.c': '', 'tests/moves/test_pool_k9.c': ''}, cmake=cmake)
             self.assertEqual(test_audit.check(root), ['moves/test_pool_k9.c: a historical name without a row in tests/renames.tsv'])
 
     def test_done_row_needs_the_new_registration_and_no_old_name_in_living_files(self):
         with tempfile.TemporaryDirectory() as tmp:
-            files = {'tests/moves/test_haze.c': '/* duoforge.moves.haze, was G62 */\n',
-                     'tools/x.py': 'NAME = "duoforge.state.pool_g62"\n',
-                     'docs/history/old.md': 'duoforge.state.pool_g62 in tests/moves/test_pool_g62.c\n',
-                     'docs/benchmarks/b/README.md': 'test_pool_g62.c\n'}
+            files = {'tests/moves/test_probe.c': '/* duoforge.moves.probe, was G999 */\n',
+                     'tools/x.py': 'NAME = "duoforge.state.pool_g999"\n',
+                     'docs/history/old.md': 'duoforge.state.pool_g999 in tests/moves/test_pool_g999.c\n',
+                     'docs/benchmarks/b/README.md': 'test_pool_g999.c\n'}
             root = self.tree(tmp, 'done', files, cmake=self.DONE)
-            self.assertEqual(test_audit.check(root), ['tools/x.py: still names duoforge.state.pool_g62 (renamed, see tests/renames.tsv)'])
-            (root / 'tools' / 'x.py').write_text('NAME = "duoforge.moves.haze"  # pool_g620 is another name\n', encoding='utf-8')
+            self.assertEqual(test_audit.check(root), ['tools/x.py: still names duoforge.state.pool_g999 (renamed, see tests/renames.tsv)'])
+            (root / 'tools' / 'x.py').write_text('NAME = "duoforge.moves.probe"  # pool_g9990 is another name\n', encoding='utf-8')
             self.assertEqual(test_audit.check(root), [])
 
     def test_done_row_with_the_old_file_left_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = self.tree(tmp, 'done', {'tests/moves/test_haze.c': '', 'tests/moves/test_pool_g62.c': ''}, cmake=self.DONE)
-            self.assertIn('moves/test_pool_g62.c: done, but the old file still exists', test_audit.check(root))
+            root = self.tree(tmp, 'done', {'tests/moves/test_probe.c': '', 'tests/moves/test_pool_g999.c': ''}, cmake=self.DONE)
+            self.assertIn('moves/test_pool_g999.c: done, but the old file still exists', test_audit.check(root))
 
     def test_new_names_must_be_behaviour_names_of_the_area(self):
-        bad = [ROW.replace('moves/test_haze.c\tduoforge.moves.haze', 'moves/test_haze_g62.c\tduoforge.moves.haze_g62') % 'planned',
-               ROW.replace('duoforge.moves.haze', 'duoforge.state.haze') % 'planned']
+        bad = [ROW.replace('moves/test_probe.c\tduoforge.moves.probe', 'moves/test_probe_g62.c\tduoforge.moves.probe_g62') % 'planned',
+               ROW.replace('duoforge.moves.probe', 'duoforge.state.haze') % 'planned']
         for row in bad:
             with self.subTest(row=row), tempfile.TemporaryDirectory() as tmp:
-                root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g62.c': ''}, table_rows=[row], cmake=self.PLANNED)
+                root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g999.c': ''}, table_rows=[row], cmake=self.PLANNED)
                 problems = test_audit.check(root)
                 self.assertEqual(len(problems), 1, problems)
                 self.assertIn('is not tests/<area>/test_<behaviour>.c', problems[0])
 
     def test_a_split_names_no_new_file_and_rows_are_unique(self):
-        split = 'moves/test_pool_g62.c\tduoforge.state.pool_g62\tsplit\tmoves/test_haze.c\tduoforge.moves.haze\tplanned\tG62'
+        split = 'moves/test_pool_g999.c\tduoforge.state.pool_g999\tsplit\tmoves/test_probe.c\tduoforge.moves.probe\tplanned\tG999'
         with tempfile.TemporaryDirectory() as tmp:
-            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g62.c': ''}, table_rows=[split, ROW % 'planned'],
+            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g999.c': ''}, table_rows=[split, ROW % 'planned'],
                              cmake=self.PLANNED)
             problems = test_audit.check(root)
-            self.assertIn('moves/test_pool_g62.c: a split names its new files in rows of their own (step 6e), not here', problems)
-            self.assertIn('moves/test_pool_g62.c: old_file moves/test_pool_g62.c is in two rows', problems)
+            self.assertIn('moves/test_pool_g999.c: a split names its new files in rows of their own (step 6e), not here', problems)
+            self.assertIn('moves/test_pool_g999.c: old_file moves/test_pool_g999.c is in two rows', problems)
 
     def test_the_committed_table_holds(self):
         self.assertEqual(test_audit.check(Path(__file__).resolve().parents[3]), [])
 
 
 class RenameRun(unittest.TestCase):
-    """rename_tests mv and names on a small git tree: one planned rename (G62 to Haze) of the moves area."""
+    """rename_tests mv and names on a small git tree: one planned rename (G999 to Probe) of the moves area."""
 
     def test_mv_then_names_leaves_no_old_name_and_marks_the_row_done(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             files = {
-                'tests/moves/test_pool_g62.c': '/* duoforge.state.pool_g62 (white-box): step G62, Haze. */\n'
-                                               'df_test_begin(&t, "duoforge.state.pool_g62");\n',
-                'tests/moves/tests.cmake': 'duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES moves/test_pool_g62.c TIER quick AREA moves)\n',
-                'tools/x.py': 'OLD = ("tests/test_pool_g62.c", "tests/moves/test_pool_g62.c", "duoforge.state.pool_g62")\n'
-                              'OTHER = "duoforge.state.pool_g620"\n',
-                'docs/mechanics/moves/5az-haze.md': '- Tests: duoforge.state.pool_g62\n',
-                'docs/history/old.md': 'duoforge.state.pool_g62 in tests/test_pool_g62.c\n',
+                'tests/moves/test_pool_g999.c': '/* duoforge.state.pool_g999 (white-box): step G999, Probe. */\n'
+                                               'df_test_begin(&t, "duoforge.state.pool_g999");\n',
+                'tests/moves/tests.cmake': 'duoforge_add_test(NAME duoforge.state.pool_g999 SOURCES moves/test_pool_g999.c TIER quick AREA moves)\n',
+                'tools/x.py': 'OLD = ("tests/test_pool_g999.c", "tests/moves/test_pool_g999.c", "duoforge.state.pool_g999")\n'
+                              'OTHER = "duoforge.state.pool_g9990"\n',
+                'docs/mechanics/moves/5zz-probe.md': '- Tests: duoforge.state.pool_g999\n',
+                'docs/history/old.md': 'duoforge.state.pool_g999 in tests/test_pool_g999.c\n',
                 'tests/renames.tsv': '\t'.join(test_audit.COLUMNS) + '\n' + ROW % 'planned' + '\n',
             }
             for name, text in files.items():
@@ -202,20 +203,194 @@ class RenameRun(unittest.TestCase):
                 stdout, sys.stdout = sys.stdout, sink
                 try:
                     self.assertEqual(rename_tests.main(['mv', '--areas', 'moves', '--root', str(root)]), 0)
-                    self.assertTrue((root / 'tests/moves/test_haze.c').exists())
-                    self.assertFalse((root / 'tests/moves/test_pool_g62.c').exists())
+                    self.assertTrue((root / 'tests/moves/test_probe.c').exists())
+                    self.assertFalse((root / 'tests/moves/test_pool_g999.c').exists())
                     self.assertEqual(rename_tests.main(['names', '--areas', 'moves', '--root', str(root)]), 0)
                 finally:
                     sys.stdout = stdout
             self.assertEqual((root / 'tools/x.py').read_text(encoding='utf-8'),
-                             'OLD = ("tests/moves/test_haze.c", "tests/moves/test_haze.c", "duoforge.moves.haze")\n'
-                             'OTHER = "duoforge.state.pool_g620"\n')
-            self.assertIn('df_test_begin(&t, "duoforge.moves.haze");', (root / 'tests/moves/test_haze.c').read_text(encoding='utf-8'))
-            self.assertIn('NAME duoforge.moves.haze SOURCES moves/test_haze.c', (root / 'tests/moves/tests.cmake').read_text(encoding='utf-8'))
-            self.assertEqual((root / 'docs/mechanics/moves/5az-haze.md').read_text(encoding='utf-8'), '- Tests: duoforge.moves.haze\n')
+                             'OLD = ("tests/moves/test_probe.c", "tests/moves/test_probe.c", "duoforge.moves.probe")\n'
+                             'OTHER = "duoforge.state.pool_g9990"\n')
+            self.assertIn('df_test_begin(&t, "duoforge.moves.probe");', (root / 'tests/moves/test_probe.c').read_text(encoding='utf-8'))
+            self.assertIn('NAME duoforge.moves.probe SOURCES moves/test_probe.c', (root / 'tests/moves/tests.cmake').read_text(encoding='utf-8'))
+            self.assertEqual((root / 'docs/mechanics/moves/5zz-probe.md').read_text(encoding='utf-8'), '- Tests: duoforge.moves.probe\n')
             self.assertEqual((root / 'docs/history/old.md').read_text(encoding='utf-8'), files['docs/history/old.md'])  # frozen
             self.assertEqual(test_audit.read_table(root)[0]['state'], 'done')
             self.assertEqual(test_audit.check(root), [])
+
+
+SOURCE = """/*
+ * duoforge.state.pool_g999 (white-box): two subjects.
+ */
+#include <stdio.h>
+
+#include "support/check.h"
+
+/* shared by both checks */
+static unsigned twice(unsigned x)
+{
+    return 2u * x;
+}
+
+/* the first subject */
+static void check_one(df_test *t)
+{
+    DF_CHECK(t, twice(1u) == 2u);
+}
+
+/* the second subject */
+static void check_two(df_test *t)
+{
+    DF_CHECK(t, twice(2u) == 4u);
+}
+
+int main(void)
+{
+    df_test t;
+    df_test_begin(&t, "duoforge.state.pool_g999");
+    check_one(&t);
+    check_two(&t);
+    return df_test_end(&t);
+}
+"""
+
+
+class SplitTest(unittest.TestCase):
+    """split_test on a small C test of two subjects: what each part gets, and what is refused."""
+
+    def run_split(self, spec, source=SOURCE, header=None):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / 'tests/moves').mkdir(parents=True)
+        (root / 'tests/moves/test_pool_g999.c').write_text(source, encoding='utf-8')
+        if header is not None:
+            (root / 'tests/support').mkdir()
+            (root / 'tests/support/h.h').write_text(header, encoding='utf-8')
+        spec = dict({'source': 'moves/test_pool_g999.c'}, **spec)
+        try:
+            _, parts = split_test.split(root, spec)
+        except split_test.Refused as e:
+            return str(e)
+        return {f: text for f, _, text in parts}
+
+    TWO = [{'file': 'moves/test_one.c', 'calls': ['check_one'], 'header': 'one'},
+           {'file': 'moves/test_two.c', 'calls': ['check_two'], 'header': 'two'}]
+
+    def test_each_part_gets_its_check_the_shared_helper_and_its_name(self):
+        out = self.run_split({'parts': self.TWO})
+        one, two = out['moves/test_one.c'], out['moves/test_two.c']
+        self.assertIn('df_test_begin(&t, "duoforge.moves.one");', one)
+        self.assertIn('static unsigned twice(unsigned x)', one)
+        self.assertIn('static unsigned twice(unsigned x)', two)
+        self.assertIn('check_one(&t);', one)
+        self.assertNotIn('check_two', one)
+        self.assertNotIn('check_one', two)
+        self.assertTrue(one.startswith('/*\n * duoforge.moves.one (white-box): one\n */\n#include <stdio.h>\n'))
+
+    def test_every_check_lands_exactly_once(self):
+        self.assertIn('not placed: calls [\'check_two\']', self.run_split({'parts': self.TWO[:1]}))
+        twice = [self.TWO[0], dict(self.TWO[1], calls=['check_one'])]
+        self.assertIn('the call of check_one is in moves/test_one.c already', self.run_split({'parts': twice}))
+        self.assertIn('no call of check_three', self.run_split({'parts': [self.TWO[0], dict(self.TWO[1], calls=['check_three'])]}))
+
+    def test_a_support_helper_must_be_the_sources_copy(self):
+        same = '/* h */\nstatic inline unsigned df_twice(unsigned x)\n{\n    return 2u * x; /* a comment is no difference */\n}\n'
+        out = self.run_split({'parts': self.TWO, 'support': {'header': 'support/h.h', 'items': {'twice': 'df_twice'}}},
+                             header=same)
+        self.assertNotIn('static unsigned twice', out['moves/test_one.c'])
+        self.assertIn('DF_CHECK(t, df_twice(1u) == 2u);', out['moves/test_one.c'])
+        self.assertIn('#include "support/h.h"', out['moves/test_one.c'])
+        other = same.replace('2u * x', 'x + x')
+        self.assertIn('is not the source\'s twice',
+                      self.run_split({'parts': self.TWO, 'support': {'header': 'support/h.h', 'items': {'twice': 'df_twice'}}},
+                                     header=other))
+
+    LOOP = SOURCE.replace("""    check_one(&t);
+    check_two(&t);
+""", """    unsigned k0 = 0u; /* a context */
+    for (unsigned k = 0u; k < 2u; ++k) {
+        check_one(&t);
+        check_two(&t);
+    }
+    (void)k0;
+""")
+
+    def test_main_blocks_and_shared_blocks(self):
+        src = SOURCE.replace('    check_one(&t);\n', '    unsigned c = 1u; /* shared */\n    check_one(&t);\n    (void)c;\n')
+        out = self.run_split({'shared_blocks': [0], 'parts': [
+            {'file': 'moves/test_one.c', 'calls': ['check_one'], 'main_blocks': [0, 2], 'header': 'one'},
+            {'file': 'moves/test_two.c', 'calls': ['check_two'], 'main_blocks': [0], 'header': 'two'}]}, source=src)
+        self.assertIn('unsigned c = 1u; /* shared */', out['moves/test_one.c'])
+        self.assertIn('unsigned c = 1u; /* shared */', out['moves/test_two.c'])
+        self.assertIn('(void)c;', out['moves/test_one.c'])
+        self.assertIn('main blocks [2]', self.run_split({'shared_blocks': [0], 'parts': [
+            {'file': 'moves/test_one.c', 'calls': ['check_one'], 'main_blocks': [0], 'header': 'one'},
+            {'file': 'moves/test_two.c', 'calls': ['check_two'], 'main_blocks': [0], 'header': 'two'}]}, source=src))
+
+    def test_a_main_written_out_keeps_every_call_and_every_line(self):
+        def body(call):
+            return ['    unsigned k0 = 0u;', '    for (unsigned k = 0u; k < 2u; ++k) {', '        %s(&t);' % call, '    }',
+                    '    (void)k0;']
+        good = [{'file': 'moves/test_one.c', 'main_body': body('check_one'), 'header': 'one'},
+                {'file': 'moves/test_two.c', 'main_body': body('check_two'), 'header': 'two'}]
+        out = self.run_split({'parts': good}, source=self.LOOP)
+        self.assertIn('    for (unsigned k = 0u; k < 2u; ++k) {\n        check_one(&t);\n    }', out['moves/test_one.c'])
+        no_loop = [dict(good[0], main_body=['    check_one(&t);']), dict(good[1], main_body=['    check_two(&t);'])]
+        self.assertIn('lines of the source main in no part', self.run_split({'parts': no_loop}, source=self.LOOP))
+        twice = [dict(good[0], main_body=body('check_one') + ['    check_one(&t);']), good[1]]
+        self.assertIn('the parts make the calls', self.run_split({'parts': twice}, source=self.LOOP))
+
+    def test_line_comments_stay_and_conditionals_are_refused(self):
+        src = SOURCE.replace('/* the first subject */', '// the first subject')
+        self.assertIn('// the first subject\nstatic void check_one', self.run_split({'parts': self.TWO}, source=src)['moves/test_one.c'])
+        guarded = SOURCE.replace('/* the second subject */\n', '#if 1\n/* the second subject */\n').replace(
+            'DF_CHECK(t, twice(2u) == 4u);\n}\n', 'DF_CHECK(t, twice(2u) == 4u);\n}\n#endif\n')
+        self.assertIn('a preprocessor conditional', self.run_split({'parts': self.TWO}, source=guarded))
+
+    def test_a_support_type_is_renamed_in_code_not_in_comments(self):
+        src = SOURCE.replace('/* shared by both checks */\nstatic unsigned twice(unsigned x)\n{\n    return 2u * x;\n}\n',
+                             '/* shared by both checks; a pair is a word here */\ntypedef struct pair {\n    unsigned x;\n} pair;\n\n'
+                             'static unsigned twice(unsigned x)\n{\n    pair p = {x};\n    return 2u * p.x;\n}\n')
+        header = '/* h */\ntypedef struct df_pair {\n    unsigned x;\n} df_pair;\n'
+        out = self.run_split({'parts': self.TWO, 'support': {'header': 'support/h.h', 'items': {'pair': 'df_pair'}}},
+                             source=src, header=header)
+        self.assertIn('    df_pair p = {x};', out['moves/test_one.c'])
+        self.assertNotIn('typedef struct pair', out['moves/test_one.c'])
+
+    def test_parts_of_a_split_in_the_table(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cmake = ''.join('duoforge_add_test(NAME duoforge.moves.%s SOURCES moves/test_%s.c)\n' % (n, n) for n in ('one', 'two'))
+            split = 'moves/test_pool_g999.c\tduoforge.state.pool_g999\tsplit\t-\t-\tdone\tG999'
+            part = 'moves/test_pool_g999.c\tduoforge.state.pool_g999\tpart\tmoves/test_%s.c\tduoforge.moves.%s\tdone\tG999: %s'
+            files = {'tests/moves/test_one.c': '', 'tests/moves/test_two.c': '', 'tests/moves/tests.cmake': cmake}
+            for name, text in files.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_text(text, encoding='utf-8')
+            def table(*rows):
+                (root / 'tests/renames.tsv').write_text('\t'.join(test_audit.COLUMNS) + '\n' + ''.join(r + '\n' for r in rows),
+                                                       encoding='utf-8')
+                subprocess.run(['git', 'init', '-q'], cwd=root, check=True)
+                subprocess.run(['git', 'add', '-A'], cwd=root, check=True)
+                return test_audit.check(root)
+            self.assertEqual(table(split, part % ('one', 'one', 'one'), part % ('two', 'two', 'two')), [])
+            self.assertEqual(table(split, part % ('one', 'one', 'one')),
+                             ['moves/test_pool_g999.c: a split is done with 1 part row(s); a single subject is a rename'])
+            self.assertIn('moves/test_pool_g999.c: a part row whose source has no split row of the same CTest name',
+                          table(part % ('one', 'one', 'one')))
+            planned = split.replace('\tdone\t', '\tplanned\t')
+            self.assertIn('moves/test_pool_g999.c: a part row while its split is planned (the old test would still run beside it)',
+                          table(planned, part % ('one', 'one', 'one'), part % ('two', 'two', 'two')))
+            self.assertIn('moves/test_pool_g999.c: the new file moves/test_one.c is in two rows',
+                          table(split, part % ('one', 'one', 'one'), part % ('one', 'one', 'one')))
+            self.assertIn('moves/test_pool_g999.c: a part row is written when its file is (state done)',
+                          table(split, part % ('one', 'one', 'one'), (part % ('two', 'two', 'two')).replace('\tdone\t', '\tplanned\t')))
+            (root / 'tests/items').mkdir()
+            (root / 'tests/items/tests.cmake').write_text(cmake, encoding='utf-8')
+            (root / 'tests/moves/tests.cmake').write_text('', encoding='utf-8')
+            self.assertIn('moves/test_pool_g999.c: part moves/test_one.c is registered outside tests/moves/tests.cmake',
+                          table(split, part % ('one', 'one', 'one'), part % ('two', 'two', 'two')))
 
 
 if __name__ == '__main__':

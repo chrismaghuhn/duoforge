@@ -1875,7 +1875,7 @@ class Library(unittest.TestCase):
     def test_imprison_rows_are_what_the_protocol_lines_say(self):
         """Decision 0015 step G38: a position stands with Imprison from the `|-start|X|move: Imprison` line (data/moves.ts:
         9501, onStart) until its occupant leaves (a switch, a drag, a replace or a faint: sim/pokemon.ts:1508 clearVolatile;
-        the volatile has no end line). The rows of the C test (rows in tests/test_pool_g38.c: per step the positions that
+        the volatile has no end line). The rows of the C test (rows in tests/moves/test_imprison.c: per step the positions that
         stand with it as a mask over side * 2 + slot, the number of start lines, the number of `cant|X|move: Imprison|Move`
         lines) must be exactly what these lines give for the committed traces, so the engine's tail, events and extension
         are checked against the protocol and not against itself. Also: the converter reads the start line as VOLATILE_START
@@ -1885,7 +1885,7 @@ class Library(unittest.TestCase):
         Struggle of a request with none left."""
         names = ('g38_imprison_mask', 'g38_imprison_struggle', 'g38_imprison_cant', 'g38_imprison_encore', 'g38_imprison_choice',
                  'g38_imprison_end', 'g38_imprison_pair', 'g38_imprison_struggle_b')
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g38.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_imprison.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g38_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
@@ -1938,12 +1938,12 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Soak: a position is Soaked from the `|-start|X|typechange|Water` line until the
         occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: setSpecies resets the
         types, sim/pokemon.ts:1392; the research table had OUT only). The rows of the C test (rows in
-        tests/test_pool_g11.c: the Soaked positions after each step of the G11 battles, as masks over side * 2 + slot)
+        tests/moves/test_soak.c: the Soaked positions after each step of the G11 battles, as masks over side * 2 + slot)
         must be exactly what these lines give for the committed traces, so the engine's tail and extension are checked
         against the protocol and not against itself. Also: the converter reads the line as TYPE_CHANGE (the type in the
         detail, cause MOVE with Soak), and refuses one that is not a single type of the table."""
         names = ('g11_soak', 'g11_soak_mega', 'g11_soak_stab', 'g11_soak_electro')
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g11.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_soak.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g11_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
             rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
@@ -1986,13 +1986,13 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Encore: a position is Encored from the `|-start|X|Encore` line, to the slot of the
         occupant's last `|move|` line on its open sheet (its set's move order), until the matching `|-end|X|Encore` or
         until the occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (rows in
-        tests/test_pool_g9.c: the slot + 1 of each position after each step of the g09 battles) must be exactly what
+        tests/moves/test_encore.c: the slot + 1 of each position after each step of the g09 battles) must be exactly what
         these lines give for the committed traces and specs, so the engine's tail and extension are checked against the
         protocol and not against itself. Also: the converter reads both lines as VOLATILE_START and VOLATILE_END with
         the Encore detail."""
         names = ('g09_encore_lock', 'g09_encore_fail', 'g09_encore_late', 'g09_encore_switch', 'g09_encore_struggle',
                  'g09_encore_tie_a', 'g09_encore_tie_b', 'g09_encore_encore')
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g9.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_encore.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g09_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
             rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
@@ -2113,14 +2113,14 @@ class Library(unittest.TestCase):
     def test_recharge_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for the recharge (step G17): a position must recharge from the `|-mustrecharge|X`
         line until the `|cant|X|recharge` line or until the occupant leaves (`|switch|`, `|drag|`, `|replace|`,
-        `|faint|`); Encore as for step G9. The rows of the C test (rows in tests/test_pool_g17.c: per position after each
+        `|faint|`); Encore as for step G9. The rows of the C test (rows in tests/moves/test_recharge.c: per position after each
         step, the recharge flag and the Encored slot + 1) must be exactly what these lines give for the committed traces
         and specs, so the engine's tail, requests and extension are checked against the protocol and not against
         themselves. Every `cant|X|recharge` has the `-mustrecharge` before it, and the line comes only after a move
         line of a recharge move that is not a miss or a block."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g17_'))
         self.assertGreaterEqual(len(names), 9)
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g17.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_recharge.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g17_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}',
                              source):
@@ -2290,7 +2290,7 @@ class Library(unittest.TestCase):
         `amount` (3, 2, 1, and 0 from onEnd, which a `faint` line follows); `-fieldactivate|move: Perish Song` is an ACTIVATE
         of the move with no position; the cast's own `-start|X|perish3|[silent]` is not shown and never converts. Anything
         else is refused. Decision 0018 section 6.1: the view's `perish` is the last count a position was told, cleared by a
-        faint, a switch or a drag: the rows of the C test (rows in tests/test_pool_g26.c: the count of each position after
+        faint, a switch or a drag: the rows of the C test (rows in tests/moves/test_perish_song.c: the count of each position after
         each step) must be exactly what the committed traces say, so the engine's tail and extension are checked against the
         protocol and not against themselves. After a `perish0` line every position that showed it has a `faint` line in the
         same step, and the win of g26_perish_end goes to the side of the last `faint`."""
@@ -2313,7 +2313,7 @@ class Library(unittest.TestCase):
         self.assertEqual(ctx.exception.rule, 'fieldactivate-line')
         names = ('g26_perish_song', 'g26_perish_recast', 'g26_perish_end', 'g26_perish_survivor_a',
                  'g26_perish_survivor_b', 'g26_perish_soundproof')
-        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g26.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_perish_song.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g26_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):

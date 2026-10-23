@@ -670,7 +670,7 @@ function checkFocusSash(dex, root) {
 // The four moves of step G10 against the pinned data: Low Kick's weight table is Grass Knot's (the engine shares
 // one), First Impression has Fake Out's first-turn rule, Scald thaws its target and Recover heals half.
 // Step G9, Encore: the pinned facts that the engine hard-codes (decision 0015, item 5e): the condition's duration and
-// residual order, the failencore flag of the moves a gated member can have (the list in tests/test_pool_g9.c is the pin's
+// residual order, the failencore flag of the moves a gated member can have (the list in tests/moves/test_encore.c is the pin's
 // whole list), and the behaviour of onStart (the Champions version, with the replacement of the queued action),
 // onResidual and onDisableMove, called with stand-ins for the battle and the target.
 function checkEncore(dex, repo) {
@@ -679,7 +679,7 @@ function checkEncore(dex, repo) {
     expect('encore duration and residual order', [c.duration, c.onResidualOrder], [3, 16]);
     expect('encore flags, accuracy, target, pp', [move.flags.failencore, move.flags.bypasssub, move.flags.protect,
         move.accuracy, move.target, move.pp], [1, 1, 1, 100, 'normal', 5]);
-    const text = readText(path.join(repo, 'tests', 'moves/test_pool_g9.c'));
+    const text = readText(path.join(repo, 'tests', 'moves/test_encore.c'));
     const listed = (text.match(/failencore:begin \*\/([\s\S]*?)\/\* failencore:end/) || ['', ''])[1].match(/"[a-z]+"/g) || [];
     expect('failencore moves', dex.moves.all().filter((m) => m.flags.failencore).map((m) => m.id).sort(),
         listed.map((x) => x.slice(1, -1)));

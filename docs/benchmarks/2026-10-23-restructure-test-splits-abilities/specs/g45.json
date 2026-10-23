@@ -1,0 +1,80 @@
+{
+ "source": "abilities/test_pool_g45.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "bundle_of": "df_conf_bundle_of",
+   "find": "df_conf_find",
+   "replay": "df_conf_replay_by_name"
+  }
+ },
+ "shared_blocks": [
+  1,
+  7
+ ],
+ "parts": [
+  {
+   "file": "abilities/test_simple_ability_rows.c",
+   "calls": [
+    "check_marks"
+   ],
+   "header": "step G45 of the content expansion (decision 0015 entry 5ba), six abilities of the simple kind as one batch:\nSteadfast, Moxie, Weak Armor, Telepathy, Volt Absorb and Punk Rock are engine rows (ENGINE_ROWS) that src/combat/turn.c\nreads by id, marked in src/data/support_manifest.c with handler NONE. Breakable: Telepathy, Volt Absorb and Punk Rock are; no\nmarked ability ignores that flag (the Mold Breaker family is unmarked, Teravolt, Turboblaze and Mycelium Might are not in the\npool, and a move with ignoreAbility is UNMODELED). Punk Rock has no check of its own: g45_punk_rock, Hyper Voice in both\ndirections, is checked by the conformance comparison of its damage lines (the ability shows no line).\n\nSplit by subject from the test of step G45 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_steadfast.c",
+   "calls": [
+    "check_steadfast"
+   ],
+   "main_blocks": [
+    1,
+    7
+   ],
+   "header": "step G45 of the content expansion (decision 0015 entry 5ba), Steadfast: replays g45_steadfast to the turn where\nthe flinch of Machamp (a Fake Out in the first turn) raises its Speed stage by 1.\n\nSplit by subject from the test of step G45 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_moxie.c",
+   "calls": [
+    "check_moxie"
+   ],
+   "main_blocks": [
+    1,
+    7
+   ],
+   "header": "step G45 of the content expansion (decision 0015 entry 5ba), Moxie: replays g45_moxie_double, where Krookodile's\nEarthquake knocks out two foes at once and its Attack stage rises by 2 (the number of faints).\n\nSplit by subject from the test of step G45 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_weak_armor.c",
+   "calls": [
+    "check_weak_armor"
+   ],
+   "main_blocks": [
+    1,
+    7
+   ],
+   "header": "step G45 of the content expansion (decision 0015 entry 5ba), Weak Armor: replays g45_weak_armor, where one Physical\nhit (Garchomp's Earthquake) lowers Ceruledge's Defense stage by 1 and raises its Speed stage by 2.\n\nSplit by subject from the test of step G45 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_telepathy.c",
+   "calls": [
+    "check_telepathy"
+   ],
+   "main_blocks": [
+    1,
+    7
+   ],
+   "header": "step G45 of the content expansion (decision 0015 entry 5ba), Telepathy: replays g45_telepathy, where the Earthquake\nof Garchomp does not reach Medicham (its ally, Telepathy): Medicham keeps its HP.\n\nSplit by subject from the test of step G45 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_volt_absorb.c",
+   "calls": [
+    "check_volt_absorb"
+   ],
+   "main_blocks": [
+    1,
+    7
+   ],
+   "header": "step G45 of the content expansion (decision 0015 entry 5ba), Volt Absorb: replays g45_volt_absorb, where a\nThunderbolt at full HP is absorbed (no heal, Jolteon stays full) and, after an Earthquake, the next Thunderbolt heals Jolteon\nby a quarter of its maximum HP.\n\nSplit by subject from the test of step G45 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

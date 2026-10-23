@@ -12,6 +12,8 @@ split, merge), the new file and CTest name, and the state (planned or done). The
   `tests/<area>/test_<behaviour>.c` with the CTest name `duoforge.<area>.<behaviour>` and no step number in it;
 - every test file of the tree whose name carries a step number has its row, so a new historical name cannot appear;
 - a planned row's old file exists and is registered under its old CTest name (tests/<area>/tests.cmake);
+- a part row (step 6e: one of the files a split makes) has the split row of its source, is done and registered under its
+  new name; a split is done with two parts or more, its old file gone;
 - a done row's new file exists and is registered under its new CTest name, its old file is gone, and neither the old
   CTest name nor the old file name is left in a living file: every tracked file but this table and the frozen records
   under docs/ (history, benchmarks, research, decisions, superpowers), which keep the old names (the table is their
@@ -25,7 +27,7 @@ import sys
 from pathlib import Path
 
 COLUMNS = ['old_file', 'old_ctest', 'action', 'new_file', 'new_ctest', 'state', 'subject']
-ACTIONS = ('rename', 'split', 'merge')
+ACTIONS = ('rename', 'split', 'merge', 'part')
 STATES = ('planned', 'done')
 # A content-expansion step in a file name: _g62, _g72b, _k3, _i2, _ac1, _a2a, _mega2 (followed by the end or by _).
 STEP = re.compile(r'_(?:g\d+[a-z]?|k\d+|i\d+|ac\d+|a\d+a|mega\d+)(?=_|$)')
@@ -33,10 +35,10 @@ FROZEN = ('docs/history/', 'docs/benchmarks/', 'docs/research/', 'docs/decisions
 TABLE = 'tests/renames.tsv'
 
 
-def registrations(root):
-    """{source under tests/: [CTest names]} from every tests/<area>/tests.cmake."""
+def registrations(root, area='*'):
+    """{source under tests/: [CTest names]} from every tests/<area>/tests.cmake (or the one of `area`)."""
     reg = {}
-    for f in sorted((root / 'tests').glob('*/tests.cmake')):
+    for f in sorted((root / 'tests').glob('%s/tests.cmake' % area)):
         for m in re.finditer(r'duoforge_add_test\(NAME (\S+) SOURCES ([^\s)]+)', f.read_text(encoding='utf-8')):
             reg.setdefault(m.group(2), []).append(m.group(1))
     return reg
@@ -65,15 +67,32 @@ def check(root):
     problems = []
     rows = read_table(root)
     reg = registrations(root)
-    seen_files, seen_names = set(), set()
+    seen_files, seen_names, seen_new = set(), set(), {}
+    sources = {r['old_file']: r for r in rows if r['action'] != 'part'}
+    parts_of = {}
     for r in rows:
         where = r['old_file']
         if r['action'] not in ACTIONS or r['state'] not in STATES:
             problems.append('%s: action %r, state %r' % (where, r['action'], r['state']))
-        for key, seen in (('old_file', seen_files), ('old_ctest', seen_names)):
-            if r[key] in seen:
-                problems.append('%s: %s %s is in two rows' % (where, key, r[key]))
-            seen.add(r[key])
+        if r['action'] == 'part':
+            # A part of a split (step 6e): its source has a split row, the part is done when written.
+            parts_of.setdefault(where, []).append(r)
+            src = sources.get(where)
+            if src is None or src['action'] != 'split' or src['old_ctest'] != r['old_ctest']:
+                problems.append('%s: a part row whose source has no split row of the same CTest name' % where)
+            elif src['state'] != 'done':
+                problems.append('%s: a part row while its split is planned (the old test would still run beside it)' % where)
+            if r['state'] != 'done':
+                problems.append('%s: a part row is written when its file is (state done)' % where)
+        else:
+            for key, seen in (('old_file', seen_files), ('old_ctest', seen_names)):
+                if r[key] in seen:
+                    problems.append('%s: %s %s is in two rows' % (where, key, r[key]))
+                seen.add(r[key])
+        if r['action'] in ('rename', 'part') and r['new_file'] != '-':
+            if r['new_file'] in seen_new:
+                problems.append('%s: the new file %s is in two rows' % (where, r['new_file']))
+            seen_new[r['new_file']] = where
         if r['action'] == 'split':
             if r['new_file'] != '-' or r['new_ctest'] != '-':
                 problems.append('%s: a split names its new files in rows of their own (step 6e), not here' % where)
@@ -83,6 +102,13 @@ def check(root):
                 problems.append('%s: new name %s / %s is not tests/<area>/test_<behaviour>.c with duoforge.<area>.<behaviour>'
                                 % (where, r['new_file'], r['new_ctest']))
         old_exists = (root / 'tests' / r['old_file']).exists()
+        if r['action'] == 'part':
+            if r['new_ctest'] not in reg.get(r['new_file'], []):
+                problems.append('%s: part %s is not registered as %s' % (where, r['new_file'], r['new_ctest']))
+            elif r['new_file'] not in registrations(root, r['new_file'].split('/')[0]):
+                problems.append('%s: part %s is registered outside tests/%s/tests.cmake'
+                                % (where, r['new_file'], r['new_file'].split('/')[0]))
+            continue
         if r['state'] == 'planned':
             if not old_exists:
                 problems.append('%s: planned, but the file is gone' % where)
@@ -93,10 +119,13 @@ def check(root):
                 problems.append('%s: done, but the old file still exists' % where)
             if r['action'] != 'split' and r['new_ctest'] not in reg.get(r['new_file'], []):
                 problems.append('%s: done, but %s is not registered as %s' % (where, r['new_file'], r['new_ctest']))
+    for src, r in sources.items():
+        if r['action'] == 'split' and r['state'] == 'done' and len(parts_of.get(src, [])) < 2:
+            problems.append('%s: a split is done with %d part row(s); a single subject is a rename' % (src, len(parts_of.get(src, []))))
     for src in reg:
         if STEP.search(Path(src).stem) and src not in seen_files:
             problems.append('%s: a historical name without a row in %s' % (src, TABLE))
-    done = [r for r in rows if r['state'] == 'done']
+    done = [r for r in rows if r['state'] == 'done' and r['action'] != 'part']
     if done:
         # One pass per file: every old CTest name and every old file name in one alternation (a pattern per name and file
         # took a minute over the tree), longest first so that no name hides a longer one.

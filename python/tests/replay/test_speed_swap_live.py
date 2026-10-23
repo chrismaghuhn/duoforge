@@ -16,7 +16,7 @@ from duoforge_live import record
 from python.tests.live.test_live import Reference, record_kind
 
 # k3_aegislash_swap_end is not here: its Stance Change is a FORME_CHANGE line, which the tracker stops at (a named stop, as
-# for the Aegislash battles of the pool); its refusal and its end are checked by the engine in duoforge.state.pool_k3.
+# for the Aegislash battles of the pool); its refusal and its end are checked by the engine in duoforge.moves.speed_swap.
 SPEED_SWAP_BATTLES = ("k3_speed_swap_basic", "k3_speed_swap_switch", "k3_speed_swap_mega", "k3_speed_swap_mega_end")
 
 
