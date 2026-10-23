@@ -1,0 +1,9 @@
+<a id="5au"></a>
+
+# 5au. G56, Part 1: the TryMove order audit (no engine change; citations of the pin).
+
+- Area: moves
+- Step: G56
+- Tests: -
+
+5au. **G56, Part 1: the TryMove order audit (no engine change; citations of the pin).** The pinned `useMoveInner` (`sim/battle-actions.ts:467-523`) takes the targets from `getMoveTargets` (467), runs `TryMove` (`singleEvent` 486, `runEvent` 488) and returns on a failure; only then does the no-target path run (`!targets.length` at 510-514: `[notarget]`, and `-fail` for gen 5 and later; the missing-target branch at 461-465 is before `getMoveTargets`). `Try` (the `onTry` gate) runs in `trySpreadMoveHit` (`sim/battle-actions.ts:590`) and in `tryMoveHit` (826), and `TryHit` (`onTryHit`) in `trySpreadMoveHit` (644), so both are reached only with targets left. The Champions mod overrides `spreadMoveHit` (`data/mods/champions/scripts.ts:314`), whose `TryHit` runs only with a target. Consequence for the marked moves: the only `onTryMove` gates among them are Electro Shot and Solar Beam (charge moves, handled before the no-target path in the engine: `src/combat/turn.c`, the charge branch before `dfi_no_target`), and Double Shock (its `onTryMove` gate runs before the no-target path; fixed in #277). Every marked `onTry`, `onTryHit` and `onTryMove` gate of the other moves (Fake Out, First Impression, Sucker Punch, Steel Roller, Grass Knot, Low Kick, Helping Hand, Follow Me, Wide Guard, Aurora Veil, Rage Powder, Psychic Fangs, Yawn, Disable, Trick, Switcheroo, Clangorous Soul, Brick Break) runs after the no-target path, as the engine has it. The Armor Tail check is the one shared `TryMove`-class gate on main, before `dfi_no_target` (`turn.c`). A committed battle for a no-target `onTry` move was looked for (a plan search of 2000 trials for Sucker Punch with `[notarget]`) and not found, so the audit has no regression battle yet.
