@@ -1,12 +1,16 @@
-"""tools/restructure: fn_diff's normalisation and clone groups, callgrind_gate's parser and clone sums, offline."""
+"""tools/restructure: fn_diff's normalisation and clone groups, callgrind_gate's parser and clone sums, and the rules of
+test_audit's rename table, offline."""
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 import callgrind_gate  # noqa: E402
 import fn_diff  # noqa: E402
+import test_audit  # noqa: E402
 
 # A callgrind file in the tool's own format (positions: line, events: Ir, name compression): main calls the two clones
 # of f, the .part clone of f is called from f itself, and f.lto_priv.0 calls g. Self Ir: main 5, f 20 + 30 + 7, g 40.
@@ -95,6 +99,81 @@ class Tools(unittest.TestCase):
                 f.write(CALLGRIND.replace('summary: 102', 'summary: 103'))
             with self.assertRaises(AssertionError):
                 callgrind_gate.parse(path)
+
+
+HEADER = test_audit.COLUMNS
+ROW = 'moves/test_pool_g62.c\tduoforge.state.pool_g62\trename\tmoves/test_haze.c\tduoforge.moves.haze\t%s\tG62: Haze'
+
+
+class RenameTable(unittest.TestCase):
+    """test_audit --check on a small git tree: one historical test (G62) planned, then done."""
+
+    def tree(self, tmp, state, files, table_rows=None, cmake=None):
+        root = Path(tmp)
+        for name, text in files.items():
+            (root / name).parent.mkdir(parents=True, exist_ok=True)
+            (root / name).write_text(text, encoding='utf-8', newline='\n')
+        rows = table_rows if table_rows is not None else [ROW % state]
+        (root / 'tests').mkdir(exist_ok=True)
+        (root / 'tests' / 'renames.tsv').write_text('# comment\n' + '\t'.join(HEADER) + '\n' + ''.join(r + '\n' for r in rows),
+                                                   encoding='utf-8', newline='\n')
+        (root / 'tests' / 'moves').mkdir(exist_ok=True)
+        (root / 'tests' / 'moves' / 'tests.cmake').write_text(cmake, encoding='utf-8', newline='\n')
+        subprocess.run(['git', 'init', '-q'], cwd=root, check=True)
+        subprocess.run(['git', 'add', '-A'], cwd=root, check=True)
+        return root
+
+    PLANNED = 'duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES moves/test_pool_g62.c TIER quick AREA moves)\n'
+    DONE = 'duoforge_add_test(NAME duoforge.moves.haze SOURCES moves/test_haze.c TIER quick AREA moves)\n'
+
+    def test_planned_row_matches_the_tree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g62.c': '/* G62 */\n'}, cmake=self.PLANNED)
+            self.assertEqual(test_audit.check(root), [])
+
+    def test_a_historical_file_without_a_row_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cmake = self.PLANNED + 'duoforge_add_test(NAME duoforge.state.pool_k9 SOURCES moves/test_pool_k9.c)\n'
+            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g62.c': '', 'tests/moves/test_pool_k9.c': ''}, cmake=cmake)
+            self.assertEqual(test_audit.check(root), ['moves/test_pool_k9.c: a historical name without a row in tests/renames.tsv'])
+
+    def test_done_row_needs_the_new_registration_and_no_old_name_in_living_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            files = {'tests/moves/test_haze.c': '/* duoforge.moves.haze, was G62 */\n',
+                     'tools/x.py': 'NAME = "duoforge.state.pool_g62"\n',
+                     'docs/history/old.md': 'duoforge.state.pool_g62 in tests/moves/test_pool_g62.c\n',
+                     'docs/benchmarks/b/README.md': 'test_pool_g62.c\n'}
+            root = self.tree(tmp, 'done', files, cmake=self.DONE)
+            self.assertEqual(test_audit.check(root), ['tools/x.py: still names duoforge.state.pool_g62 (renamed, see tests/renames.tsv)'])
+            (root / 'tools' / 'x.py').write_text('NAME = "duoforge.moves.haze"  # pool_g620 is another name\n', encoding='utf-8')
+            self.assertEqual(test_audit.check(root), [])
+
+    def test_done_row_with_the_old_file_left_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.tree(tmp, 'done', {'tests/moves/test_haze.c': '', 'tests/moves/test_pool_g62.c': ''}, cmake=self.DONE)
+            self.assertIn('moves/test_pool_g62.c: done, but the old file still exists', test_audit.check(root))
+
+    def test_new_names_must_be_behaviour_names_of_the_area(self):
+        bad = [ROW.replace('moves/test_haze.c\tduoforge.moves.haze', 'moves/test_haze_g62.c\tduoforge.moves.haze_g62') % 'planned',
+               ROW.replace('duoforge.moves.haze', 'duoforge.state.haze') % 'planned']
+        for row in bad:
+            with self.subTest(row=row), tempfile.TemporaryDirectory() as tmp:
+                root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g62.c': ''}, table_rows=[row], cmake=self.PLANNED)
+                problems = test_audit.check(root)
+                self.assertEqual(len(problems), 1, problems)
+                self.assertIn('is not tests/<area>/test_<behaviour>.c', problems[0])
+
+    def test_a_split_names_no_new_file_and_rows_are_unique(self):
+        split = 'moves/test_pool_g62.c\tduoforge.state.pool_g62\tsplit\tmoves/test_haze.c\tduoforge.moves.haze\tplanned\tG62'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.tree(tmp, 'planned', {'tests/moves/test_pool_g62.c': ''}, table_rows=[split, ROW % 'planned'],
+                             cmake=self.PLANNED)
+            problems = test_audit.check(root)
+            self.assertIn('moves/test_pool_g62.c: a split names its new files in rows of their own (step 6e), not here', problems)
+            self.assertIn('moves/test_pool_g62.c: old_file moves/test_pool_g62.c is in two rows', problems)
+
+    def test_the_committed_table_holds(self):
+        self.assertEqual(test_audit.check(Path(__file__).resolve().parents[3]), [])
 
 
 if __name__ == '__main__':
