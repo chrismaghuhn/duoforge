@@ -1,0 +1,30 @@
+{
+ "file": "forms/test_mega_stones.c",
+ "header": "the Mega Stones and the Megas they lead to, one section per batch of the content expansion. Each section checks its batch's\nstones as one set: the stone is a marked item (handler NONE), it takes its base forme to its Mega (dfi_mega_of, the support of\nthe pair in the manifest), and, where the batch says so, the Mega and base abilities are marked and legal, the setup with the\nstone is accepted and evolves once into that forme, and the public API reports the pair as supported. The behaviour of the\nMegas is in the recorded battles of each batch (conformance_pool_data) and in the abilities' own tests.\n\nThe sections, from the tests of their steps (restructure step 6e; tests/renames.tsv maps the old names): Mega batch 2\n(Swampertite, Metagrossite, Froslassite, Lucarionite Z), Mega batch 3 (G43: ten stones with no new rule), Mega batch 4 (G51:\nten stones with no new rule, and Keen Eye and Big Pecks marked for Pidgeot), the Magic Bounce stones (G57: Absolite, Sablenite,\nClefablite; Starminite unmarked), the six new Mega abilities and their stones (G59), and the simple Mega abilities' stones (G63).",
+ "sections": [
+  {
+   "spec": "docs/benchmarks/2026-10-23-restructure-test-splits-forms-items/specs/mega2.json",
+   "prefix": "stones_batch2_"
+  },
+  {
+   "spec": "docs/benchmarks/2026-10-23-restructure-test-splits-forms-items/specs/g43.json",
+   "prefix": "stones_batch3_"
+  },
+  {
+   "spec": "docs/benchmarks/2026-10-23-restructure-test-splits-forms-items/specs/g51.json",
+   "prefix": "stones_batch4_"
+  },
+  {
+   "spec": "docs/benchmarks/2026-10-23-restructure-test-splits-forms-items/specs/g57.json",
+   "prefix": "magic_bounce_stones_"
+  },
+  {
+   "spec": "docs/benchmarks/2026-10-23-restructure-test-splits-forms-items/specs/g59.json",
+   "prefix": "new_mega_abilities_"
+  },
+  {
+   "spec": "docs/benchmarks/2026-10-23-restructure-test-splits-forms-items/specs/g63.json",
+   "prefix": "simple_mega_abilities_"
+  }
+ ]
+}
