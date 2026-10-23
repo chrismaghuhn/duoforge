@@ -144,11 +144,22 @@ jobs:
   # the learner's JAX test (CPU) and the reference tests against the pinned
   # Showdown (data regeneration, arithmetic, every committed battle trace, the
   # worker and the differential tools).
+  #
+  # The tests run in three parallel shards by CTest label (the learner's JAX tests alone took about 13 minutes each
+  # and the single job about 53). Each shard checks that its tests all ran once and none was skipped, and that the
+  # three selections cover every test exactly once; no artifact is uploaded.
   linux-full:
-    name: Linux / gcc / Release / Python, JAX, reference
+    name: Linux / gcc / Release / Python, JAX, reference (${{ matrix.shard }})
     if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { shard: learn, include: "^learn$", exclude: "" }
+          - { shard: slow, include: "^slow$", exclude: "^learn$" }
+          - { shard: rest, include: "", exclude: "^(learn|slow)$" }
     env:
       CC: gcc
       CXX: g++
@@ -204,19 +215,37 @@ jobs:
         run: |
           sudo locale-gen de_DE.UTF-8
           locale -a | grep -qx 'de_DE.utf8'
-      - name: Test
+      - name: Test (${{ matrix.shard }})
         run: |
           set -o pipefail
-          ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 2>&1 | tee ctest.log
-      - name: No Python or reference test skipped
-        # These tests report themselves skipped when their interpreter or
-        # checkout is missing; in this job that is a broken setup, not a pass.
+          sel=()
+          if [ -n "${{ matrix.include }}" ]; then sel+=(-L "${{ matrix.include }}"); fi
+          if [ -n "${{ matrix.exclude }}" ]; then sel+=(-LE "${{ matrix.exclude }}"); fi
+          ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 "${sel[@]}" 2>&1 \
+            | tee ctest.log
+      - name: No Python or reference test skipped, the shards cover every test once
+        # These tests report themselves skipped when their interpreter or checkout is missing; in this job that is a
+        # broken setup, not a pass. The partition check needs only the inventory, so no shard log leaves the runner.
         run: |
           ctest --test-dir build --show-only=json-v1 > "$RUNNER_TEMP/ctest-inventory.json"
           python tools/ci/check_ctest_labels.py \
             --inventory "$RUNNER_TEMP/ctest-inventory.json" --log ctest.log \
             --no-skip-label ci-no-skip --present-label ci-linux-proof \
-            --present-count 25 --nonempty-label ci-ps-trace
+            --present-count 25 --nonempty-label ci-ps-trace \
+            --shard-include "${{ matrix.include }}" --shard-exclude "${{ matrix.exclude }}" \
+            --partition 'learn:^learn$:' 'slow:^slow$:^learn$' 'rest::^(learn|slow)$'
+
+  linux-full-gate:
+    name: Linux / gcc / Release / Python, JAX, reference
+    # One check under the old job name: green only when every shard is green (each shard checks its own tests and
+    # the partition).
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
+    needs: linux-full
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Shard results
+        run: test "${{ needs.linux-full.result }}" = success
 
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan
@@ -283,11 +312,12 @@ jobs:
     timeout-minutes: 40
     strategy:
       fail-fast: false
+      # Pull requests run x64 Release only (the strictest MSVC build: /W4 /WX, IPO, the export link test); x64 Debug
+      # and Win32 Release run on every push to main and in the nightly run (owner, 2026-10-23).
       matrix:
-        include:
-          - { arch: x64, config: Release, bits: 64 }
-          - { arch: x64, config: Debug, bits: 64 }
-          - { arch: Win32, config: Release, bits: 32 }
+        include: ${{ fromJSON(github.event_name == 'pull_request'
+          && '[{"arch":"x64","config":"Release","bits":64}]'
+          || '[{"arch":"x64","config":"Release","bits":64},{"arch":"x64","config":"Debug","bits":64},{"arch":"Win32","config":"Release","bits":32}]') }}
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
@@ -396,7 +426,8 @@ jobs:
 
   windows-gcc-release-ipo:
     name: Windows / gcc / Release / IPO
-    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
+    # Not on pull requests: every push to main and the nightly run (owner, 2026-10-23).
+    if: github.event_name != 'pull_request' && inputs.profile != 'quick'
     runs-on: windows-latest
     timeout-minutes: 35
     defaults:
@@ -430,7 +461,8 @@ jobs:
 
   windows-clang:
     name: Windows / clang / Release
-    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
+    # Not on pull requests: every push to main and the nightly run (owner, 2026-10-23).
+    if: github.event_name != 'pull_request' && inputs.profile != 'quick'
     runs-on: windows-latest
     timeout-minutes: 20
     defaults:
