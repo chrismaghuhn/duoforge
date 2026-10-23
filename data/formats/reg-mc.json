@@ -64,5 +64,15 @@
   "source": "data/formats/pools/reg-mc.json",
   "sha256": "b6351b56ea8ea20cb9d1944ff41fe443d9d8f763dd9506ddd3f9921be50353e2",
   "made_by": "docs/research/expansion/tools/build_legal_pool.js: the pinned TeamValidator for showdown_format_id at showdown_commit (its meta names both)"
+ },
+ "tables": {
+  "comment": "What tools/datagen/gen_closure.py --pool --format reg-mc builds (restructure step 5): the Champions rule set (its override files, their pinned hashes and the PP cap of 20 live in tools/datagen/tablegen/source.py), the symbols dfi_pool_* and DFI_POOL_* of src/data/formats/reg-mc/pool_tables.{h,c}, 64 learnset bytes (one bit per pool move: 511 moves), and the id bounds of the engine fields today (formes below 0xFFFF and moves up to 0xFFFF as u16 ids; items and abilities 254, u8 with 0xFF as none; 512 legal moves per forme, DUOFORGE_DATA_MAX_FORME_MOVES). Every value is required; nothing is excluded from the pool.",
+  "rule_set": "champions",
+  "symbol_prefix": "pool",
+  "include_guard": "DUOFORGE_DATA_POOL_TABLES_H",
+  "stem": "pool_tables",
+  "learnset_bytes": 64,
+  "bounds": {"formes": 65534, "moves": 65535, "moves_per_forme": 512, "items": 254, "abilities": 254},
+  "excluded_formes": []
  }
 }

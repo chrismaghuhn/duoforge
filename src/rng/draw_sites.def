@@ -1,0 +1,38 @@
+/*
+ * The draw sites, one line per site: DFI_DRAW_SITE(NAME, id, "name"), in id order (restructure step 5c). An X-macro file
+ * without an include guard: src/rng/draw.h includes it with its own DFI_DRAW_SITE to check every DFI_SITE_<NAME> against its
+ * id at build time (_Static_assert) and to make dfi_site_name, whose switch rejects two sites with one id (a duplicate case
+ * value is a compile error on every compiler).
+ *
+ * The ids are recorded in fixtures and traces (tools/reference/trace_to_c.py): a line here never changes its id. A new site
+ * takes a free id from the HS register (gaps are fine), gets its line here and its #define in draw.h, and DFI_SITE_COUNT stays
+ * above every id. Free: 27-31.
+ */
+DFI_DRAW_SITE(SPEED_TIE, 1u, "speed-tie")
+DFI_DRAW_SITE(ACCURACY, 2u, "accuracy")
+DFI_DRAW_SITE(CRIT, 3u, "crit")
+DFI_DRAW_SITE(DAMAGE_ROLL, 4u, "damage-roll")
+DFI_DRAW_SITE(SECONDARY, 5u, "secondary")
+DFI_DRAW_SITE(STALL, 6u, "stall")
+DFI_DRAW_SITE(SLEEP_TURNS, 7u, "sleep-turns")
+DFI_DRAW_SITE(FREEZE_THAW, 8u, "freeze-thaw")
+DFI_DRAW_SITE(FULL_PARALYSIS, 9u, "full-paralysis")
+DFI_DRAW_SITE(CONFUSION_TURNS, 10u, "confusion-turns")
+DFI_DRAW_SITE(CONFUSION_HIT, 11u, "confusion-hit")
+DFI_DRAW_SITE(RANDOM_TARGET, 12u, "random-target")
+DFI_DRAW_SITE(STATUS_PICK, 13u, "status-pick")
+DFI_DRAW_SITE(INSERT_TIE, 14u, "insert-tie")
+DFI_DRAW_SITE(TRACE, 15u, "trace")
+DFI_DRAW_SITE(POISON_TOUCH, 16u, "poison-touch")
+DFI_DRAW_SITE(CURSED_BODY, 17u, "cursed-body")
+DFI_DRAW_SITE(FLAME_BODY, 18u, "flame-body")
+DFI_DRAW_SITE(STATIC, 19u, "static")
+DFI_DRAW_SITE(DRAG, 20u, "drag")
+DFI_DRAW_SITE(LOCK_TURNS, 21u, "lock-turns")
+DFI_DRAW_SITE(MULTIHIT_COUNT, 22u, "multihit-count")
+DFI_DRAW_SITE(MOODY, 23u, "moody")
+DFI_DRAW_SITE(CUTE_CHARM, 24u, "cute-charm")
+DFI_DRAW_SITE(ATTRACT, 25u, "attract")
+DFI_DRAW_SITE(POISON_POINT, 26u, "poison-point")
+DFI_DRAW_SITE(PARTIAL_TRAP_TURNS, 32u, "partial-trap-turns")
+DFI_DRAW_SITE(ALLY_SWITCH, 33u, "ally-switch")

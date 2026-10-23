@@ -1,0 +1,30 @@
+/*
+ * The residual kinds, one line per kind: DFI_RES_KIND(NAME, number, "name"), in number order (restructure step 5c). An X-macro
+ * file without an include guard: src/combat/residual_order.h includes it with its own DFI_RES_KIND to check every
+ * DFI_RES_<NAME> against its number at build time (_Static_assert) and to make dfi_res_kind_name, whose switch rejects two kinds
+ * with one number (a duplicate case value is a compile error on every compiler).
+ *
+ * A line here never changes its number. A new kind takes a free number from the HS register, gets its line here and its
+ * #define in residual_order.h. 20-24 are lane B's (HS froze them); free from 27.
+ */
+DFI_RES_KIND(WEATHER, 1u, "weather")
+DFI_RES_KIND(TERRAIN_END, 2u, "terrain-end")
+DFI_RES_KIND(BURN, 3u, "burn")
+DFI_RES_KIND(DURATION, 4u, "duration")
+DFI_RES_KIND(GRASSY, 5u, "grassy")
+DFI_RES_KIND(FIELD_END, 6u, "field-end")
+DFI_RES_KIND(LEFTOVERS, 7u, "leftovers")
+DFI_RES_KIND(POISON, 8u, "poison")
+DFI_RES_KIND(WHITE_HERB, 9u, "white-herb")
+DFI_RES_KIND(ENCORE, 10u, "encore")
+DFI_RES_KIND(SPEED_BOOST, 11u, "speed-boost")
+DFI_RES_KIND(HEAL_BLOCK, 12u, "heal-block")
+DFI_RES_KIND(YAWN, 13u, "yawn")
+DFI_RES_KIND(DISABLE, 14u, "disable")
+DFI_RES_KIND(PERISH, 15u, "perish")
+DFI_RES_KIND(TAUNT, 16u, "taunt")
+DFI_RES_KIND(LOCK, 17u, "lockedmove")
+DFI_RES_KIND(MOODY, 18u, "moody")
+DFI_RES_KIND(LEECH, 19u, "leech")
+DFI_RES_KIND(PARTIAL_TRAP, 25u, "partial-trap")
+DFI_RES_KIND(CURSE, 26u, "curse")

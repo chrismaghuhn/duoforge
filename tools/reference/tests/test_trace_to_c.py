@@ -1464,6 +1464,14 @@ class Library(unittest.TestCase):
         self.assertEqual(rows, derived)
         self.assertTrue(any(any(v) for v in derived.values()) and cursed > 0 and cants > 0)
 
+    def test_sites_are_the_draw_site_definitions(self):
+        """The converter's site numbers are the engine's: SITES holds exactly the lines of src/rng/draw_sites.def (restructure
+        step 5c), the frozen record that draw.h checks its DFI_SITE_* against at build time."""
+        with io.open(os.path.join(ROOT, 'src', 'rng', 'draw_sites.def'), encoding='utf-8') as fh:
+            lines = re.findall(r'^DFI_DRAW_SITE\(([A-Z0-9_]+), (\d+)u, "[a-z-]+"\)$', fh.read(), re.M)
+        self.assertEqual(len(lines), len({name for name, _ in lines}))
+        self.assertEqual(trace_to_c.SITES, {name: int(value) for name, value in lines})
+
     def test_cursed_body_is_a_draw_site_of_its_own(self):
         """Cursed Body's randomChance(3, 10) (step G27) is a draw of the site CURSED_BODY, random(10), that ps_trace.js names
         by the effect and the event it runs in; the new public values are the numbers of the header."""
