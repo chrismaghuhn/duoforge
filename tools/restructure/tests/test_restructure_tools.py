@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 import callgrind_gate  # noqa: E402
 import fn_diff  # noqa: E402
 import rename_tests  # noqa: E402
+import split_test  # noqa: E402
 import test_audit  # noqa: E402
 
 # A callgrind file in the tool's own format (positions: line, events: Ir, name compression): main calls the two clones
@@ -216,6 +217,116 @@ class RenameRun(unittest.TestCase):
             self.assertEqual((root / 'docs/history/old.md').read_text(encoding='utf-8'), files['docs/history/old.md'])  # frozen
             self.assertEqual(test_audit.read_table(root)[0]['state'], 'done')
             self.assertEqual(test_audit.check(root), [])
+
+
+SOURCE = """/*
+ * duoforge.state.pool_g999 (white-box): two subjects.
+ */
+#include <stdio.h>
+
+#include "support/check.h"
+
+/* shared by both checks */
+static unsigned twice(unsigned x)
+{
+    return 2u * x;
+}
+
+/* the first subject */
+static void check_one(df_test *t)
+{
+    DF_CHECK(t, twice(1u) == 2u);
+}
+
+/* the second subject */
+static void check_two(df_test *t)
+{
+    DF_CHECK(t, twice(2u) == 4u);
+}
+
+int main(void)
+{
+    df_test t;
+    df_test_begin(&t, "duoforge.state.pool_g999");
+    check_one(&t);
+    check_two(&t);
+    return df_test_end(&t);
+}
+"""
+
+
+class SplitTest(unittest.TestCase):
+    """split_test on a small C test of two subjects: what each part gets, and what is refused."""
+
+    def run_split(self, spec, source=SOURCE, header=None):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / 'tests/moves').mkdir(parents=True)
+        (root / 'tests/moves/test_pool_g999.c').write_text(source, encoding='utf-8')
+        if header is not None:
+            (root / 'tests/support').mkdir()
+            (root / 'tests/support/h.h').write_text(header, encoding='utf-8')
+        spec = dict({'source': 'moves/test_pool_g999.c'}, **spec)
+        try:
+            _, parts = split_test.split(root, spec)
+        except split_test.Refused as e:
+            return str(e)
+        return {f: text for f, _, text in parts}
+
+    TWO = [{'file': 'moves/test_one.c', 'calls': ['check_one'], 'header': 'one'},
+           {'file': 'moves/test_two.c', 'calls': ['check_two'], 'header': 'two'}]
+
+    def test_each_part_gets_its_check_the_shared_helper_and_its_name(self):
+        out = self.run_split({'parts': self.TWO})
+        one, two = out['moves/test_one.c'], out['moves/test_two.c']
+        self.assertIn('df_test_begin(&t, "duoforge.moves.one");', one)
+        self.assertIn('static unsigned twice(unsigned x)', one)
+        self.assertIn('static unsigned twice(unsigned x)', two)
+        self.assertIn('check_one(&t);', one)
+        self.assertNotIn('check_two', one)
+        self.assertNotIn('check_one', two)
+        self.assertTrue(one.startswith('/*\n * duoforge.moves.one (white-box): one\n */\n#include <stdio.h>\n'))
+
+    def test_every_check_lands_exactly_once(self):
+        self.assertIn('not placed: calls [\'check_two\']', self.run_split({'parts': self.TWO[:1]}))
+        twice = [self.TWO[0], dict(self.TWO[1], calls=['check_one'])]
+        self.assertIn('the call of check_one is in moves/test_one.c already', self.run_split({'parts': twice}))
+        self.assertIn('no call of check_three', self.run_split({'parts': [self.TWO[0], dict(self.TWO[1], calls=['check_three'])]}))
+
+    def test_a_support_helper_must_be_the_sources_copy(self):
+        same = '/* h */\nstatic inline unsigned df_twice(unsigned x)\n{\n    return 2u * x; /* a comment is no difference */\n}\n'
+        out = self.run_split({'parts': self.TWO, 'support': {'header': 'support/h.h', 'items': {'twice': 'df_twice'}}},
+                             header=same)
+        self.assertNotIn('static unsigned twice', out['moves/test_one.c'])
+        self.assertIn('DF_CHECK(t, df_twice(1u) == 2u);', out['moves/test_one.c'])
+        self.assertIn('#include "support/h.h"', out['moves/test_one.c'])
+        other = same.replace('2u * x', 'x + x')
+        self.assertIn('is not the source\'s twice',
+                      self.run_split({'parts': self.TWO, 'support': {'header': 'support/h.h', 'items': {'twice': 'df_twice'}}},
+                                     header=other))
+
+    def test_parts_of_a_split_in_the_table(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cmake = ''.join('duoforge_add_test(NAME duoforge.moves.%s SOURCES moves/test_%s.c)\n' % (n, n) for n in ('one', 'two'))
+            split = 'moves/test_pool_g999.c\tduoforge.state.pool_g999\tsplit\t-\t-\tdone\tG999'
+            part = 'moves/test_pool_g999.c\tduoforge.state.pool_g999\tpart\tmoves/test_%s.c\tduoforge.moves.%s\tdone\tG999: %s'
+            files = {'tests/moves/test_one.c': '', 'tests/moves/test_two.c': '', 'tests/moves/tests.cmake': cmake}
+            for name, text in files.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_text(text, encoding='utf-8')
+            def table(*rows):
+                (root / 'tests/renames.tsv').write_text('\t'.join(test_audit.COLUMNS) + '\n' + ''.join(r + '\n' for r in rows),
+                                                       encoding='utf-8')
+                subprocess.run(['git', 'init', '-q'], cwd=root, check=True)
+                subprocess.run(['git', 'add', '-A'], cwd=root, check=True)
+                return test_audit.check(root)
+            self.assertEqual(table(split, part % ('one', 'one', 'one'), part % ('two', 'two', 'two')), [])
+            self.assertEqual(table(split, part % ('one', 'one', 'one')),
+                             ['moves/test_pool_g999.c: a split is done with 1 part row(s); a single subject is a rename'])
+            self.assertIn('moves/test_pool_g999.c: a part row whose source has no split row of the same CTest name',
+                          table(part % ('one', 'one', 'one')))
 
 
 if __name__ == '__main__':
