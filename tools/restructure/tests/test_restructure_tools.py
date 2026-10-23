@@ -1,5 +1,7 @@
 """tools/restructure: fn_diff's normalisation and clone groups, callgrind_gate's parser and clone sums, and the rules of
 test_audit's rename table, offline."""
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -474,6 +476,14 @@ class SplitTest(unittest.TestCase):
         # a kept define of several lines directly above a dropped one keeps its body (its continuation is no comment)
         cont = '#include <x.h>\n\n#define A(x) \\\n    ((x) + 1)\n#define B 2\n'
         self.assertEqual(split_test.drop_unused_defines(cont, {'A'}), '#include <x.h>\n\n#define A(x) \\\n    ((x) + 1)\n')
+        # a block comment goes whole or not at all (a middle line without a star), a // run goes whole
+        half = '#include <x.h>\n\n/* a comment\n   over two lines\n * and more */\n#define B 2\n#define C 3\n'
+        self.assertEqual(split_test.drop_unused_defines(half, set()), '#include <x.h>\n')
+        tail = '#include <x.h>\n\n/* one */ int x;\n * not a comment */\n#define B 2\n#define K 1\n'
+        self.assertEqual(split_test.drop_unused_defines(tail, {'K'}), '#include <x.h>\n\n/* one */ int x;\n * not a comment */\n#define K 1\n')
+        slashes = '#include <x.h>\n\n// two\n// lines\n#define B 2\n#define K 1\n'
+        self.assertEqual(split_test.drop_unused_defines(slashes, {'K'}), '#include <x.h>\n\n// two\n// lines\n#define K 1\n')
+        self.assertEqual(split_test.drop_unused_defines(slashes, set()), '#include <x.h>\n')
         # a define at the end of the preamble goes with its blank line above, so the blank before the first item is single
         end = '#include <x.h>\n\n#define B 2\n'
         self.assertEqual(split_test.drop_unused_defines(end, set()), '#include <x.h>\n')
@@ -505,6 +515,12 @@ class SplitTest(unittest.TestCase):
         (root / 'specs/one.json').write_text(json.dumps({'source': 'moves/test_pool_g999.c', 'parts': [
             {'file': 'moves/test_both.c', 'calls': ['check_one', 'check_two'], 'header': 's'}]}), encoding='utf-8')
         self.assertEqual(split_test.merge(root, mspec, spec_base=root)[0], 'duoforge.moves.both')
+        # a merge spec in no repository (no tools/restructure above it) is refused, not read against --root
+        (root / 'both.merge.json').write_text(json.dumps(mspec), encoding='utf-8')
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(split_test.main([str(root / 'both.merge.json'), '--merge', '--root', str(root)]), 2)
+        self.assertIn('in no repository', err.getvalue())
 
     def test_parts_of_a_split_in_the_table(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -205,6 +205,27 @@ def needed_macros(macros, code):
     return need
 
 
+def comment_above(lines, i, drop):
+    """The first line of the whole comment directly above line i: a run of // lines, or one /* ... */ block whose last line
+    ends with */ and whose first opens it; i itself when there is none (or only part of one), so that a removal never cuts
+    a comment in half. A line that continues a define (the one before it ends with a backslash) is no comment."""
+    def free(k):
+        return k >= 0 and not drop[k] and not (k > 0 and lines[k - 1].endswith('\\'))
+    k = i - 1
+    if free(k) and lines[k].lstrip().startswith('//'):
+        while free(k - 1) and lines[k - 1].lstrip().startswith('//'):
+            k -= 1
+        return k
+    if free(k) and lines[k].rstrip().endswith('*/'):
+        start = k
+        while free(start) and '/*' not in lines[start]:
+            start -= 1
+        block = '\n'.join(lines[start:k + 1]).strip() if start >= 0 else ''
+        if free(start) and block.startswith('/*') and block.count('/*') == 1 and block.count('*/') == 1:
+            return start
+    return i
+
+
 def drop_unused_defines(preamble, keep):
     """The preamble without the #define lines whose names are not in `keep`, each with the comment lines directly above it
     (no blank line between, comment lines only) when it is the only define that comment stands over; every other line
@@ -232,11 +253,7 @@ def drop_unused_defines(preamble, keep):
             for k in range(i, j + 1):
                 drop[k] = True
             # the comment lines directly above, when the next line after this define is no other define of the group
-            above = i - 1
-            # (comment lines only: never the continuation of a define above, nor any other code)
-            while above >= 0 and not drop[above] and lines[above].strip().startswith(('/*', '*', '//')) and \
-                    not (above > 0 and lines[above - 1].endswith('\\')):
-                above -= 1
+            above = comment_above(lines, i, drop) - 1
             group_has_kept = any(re.match(r'#define (\w+)', lines[k]) and re.match(r'#define (\w+)', lines[k]).group(1) in keep
                                  for k in range(above + 1, len(lines)) if k > j and lines[k].startswith('#define')
                                  and all(lines[x].strip() for x in range(j + 1, k)))
