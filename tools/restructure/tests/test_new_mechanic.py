@@ -55,8 +55,8 @@ class NewMechanic(unittest.TestCase):
 
     def test_a_scaffold_writes_the_test_its_registration_the_doc_and_the_numbers(self):
         code, out, err = self.run_tool('moves', 'unit_scaffold_case', '--id', '5zz', '--title', 'Unit scaffold case',
-                                       '--step', 'X1', '--draw-site', 'DUMMY_ROLL=%d' % self.site,
-                                       '--residual-kind', 'DUMMY=%d' % self.kind)
+                                       '--step', 'X1', '--draw-site', 'UNIT_SCAFFOLD_ROLL=%d' % self.site,
+                                       '--residual-kind', 'UNIT_SCAFFOLD=%d' % self.kind)
         self.assertEqual((code, err), (0, ''))
         test = (self.root / 'tests/moves/test_unit_scaffold_case.c').read_text(encoding='utf-8')
         self.assertIn('df_test_begin(&t, "duoforge.moves.unit_scaffold_case");', test)
@@ -75,17 +75,17 @@ class NewMechanic(unittest.TestCase):
         sites = (self.root / 'src/rng/draw_sites.def').read_text(encoding='utf-8')
         values = [int(v) for v in re.findall(r'^DFI_DRAW_SITE\([A-Z0-9_]+, (\d+)u,', sites, re.M)]
         self.assertEqual(values, sorted(values))  # the new line in id order
-        self.assertIn('DFI_DRAW_SITE(DUMMY_ROLL, %du, "dummy-roll")' % self.site, sites)
+        self.assertIn('DFI_DRAW_SITE(UNIT_SCAFFOLD_ROLL, %du, "unit-scaffold-roll")' % self.site, sites)
         self.assertRegex((self.root / 'src/rng/draw.h').read_text(encoding='utf-8'),
-                         r'#define DFI_SITE_DUMMY_ROLL %du /\*[^\n]*\*/\n#define DFI_SITE_COUNT ' % self.site)
+                         r'#define DFI_SITE_UNIT_SCAFFOLD_ROLL %du /\*[^\n]*\*/\n#define DFI_SITE_COUNT ' % self.site)
         kinds = (self.root / 'src/combat/residual_kinds.def').read_text(encoding='utf-8')
-        self.assertTrue(kinds.endswith('DFI_RES_KIND(DUMMY, %du, "dummy")\n' % self.kind))
-        self.assertIn('#define DFI_RES_DUMMY %du' % self.kind, (self.root / 'src/combat/residual_order.h').read_text(encoding='utf-8'))
+        self.assertTrue(kinds.endswith('DFI_RES_KIND(UNIT_SCAFFOLD, %du, "unit-scaffold")\n' % self.kind))
+        self.assertIn('#define DFI_RES_UNIT_SCAFFOLD %du' % self.kind, (self.root / 'src/combat/residual_order.h').read_text(encoding='utf-8'))
         trace = (self.root / 'tools/reference/trace_to_c.py').read_text(encoding='utf-8')
         sites_src = trace[trace.index('\nSITES = {'):]
         sites_src = sites_src[:sites_src.index('}') + 1]
         table = ast.literal_eval(sites_src.strip().split('=', 1)[1].strip())  # the dict literal (comments are tokens, not values)
-        self.assertEqual(table['DUMMY_ROLL'], self.site)
+        self.assertEqual(table['UNIT_SCAFFOLD_ROLL'], self.site)
         self.assertEqual(table, {n: int(v) for n, v in re.findall(r'^DFI_DRAW_SITE\(([A-Z0-9_]+), (\d+)u,', sites, re.M)})
         self.assertEqual(sorted(out.split('\n')[:-1]), sorted('writes ' + p for p in [
             'docs/mechanics/moves/5zz-unit-scaffold-case.md', 'src/combat/residual_kinds.def',
