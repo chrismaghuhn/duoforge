@@ -41,25 +41,26 @@ def do_mv(root, chosen):
 
 
 def replacements(chosen):
-    """(pattern, new) pairs: the CTest name, then the file name with its tests/<area>/ prefix, its <area>/ prefix, alone."""
-    out = []
+    """One pattern and its table: the CTest name, the file name with its tests/<area>/ prefix, its <area>/ prefix and the
+    flat tests/ of before restructure step 1 (all to the new path), then the file name with any other prefix or alone.
+    Longest first, so that a path is replaced whole before its file name could be."""
+    table = {}
     for r in chosen:
-        out.append((re.compile(r'(?<![\w.])%s(?![\w])' % re.escape(r['old_ctest'])), r['new_ctest']))
         old_name, new_name = Path(r['old_file']).name, Path(r['new_file']).name
-        # tests/<area>/<file>, <area>/<file>, the flat tests/<file> of before restructure step 1 (all to the new path), then
-        # the file name with any other prefix or alone.
-        for old, new in (('tests/' + r['old_file'], 'tests/' + r['new_file']), (r['old_file'], r['new_file']),
-                         ('tests/' + old_name, 'tests/' + r['new_file'])):
-            out.append((re.compile(r'(?<![\w/])%s(?![\w])' % re.escape(old)), new))
-        out.append((re.compile(r'(?<![\w])%s(?![\w])' % re.escape(old_name)), new_name))
-    return out
+        table[r['old_ctest']] = r['new_ctest']
+        table['tests/' + r['old_file']] = 'tests/' + r['new_file']
+        table[r['old_file']] = r['new_file']
+        table['tests/' + old_name] = 'tests/' + r['new_file']
+        table[old_name] = new_name
+    pattern = re.compile(r'(?<![\w])(?:%s)(?![\w])' % '|'.join(re.escape(o) for o in sorted(table, key=len, reverse=True)))
+    return pattern, table
 
 
 def do_names(root, rows, chosen):
     for r in chosen:
         if not (root / 'tests' / r['new_file']).exists():
             raise SystemExit('rename_tests: run mv first (%s is missing)' % r['new_file'])
-    pairs = replacements(chosen)
+    pattern, table_of = replacements(chosen)
     changed = []
     for name in test_audit.living_files(root):
         path = root / name
@@ -68,9 +69,7 @@ def do_names(root, rows, chosen):
             text = raw.decode('utf-8')
         except (UnicodeDecodeError, OSError):
             continue
-        new = text
-        for pattern, repl in pairs:
-            new = pattern.sub(repl, new)
+        new = pattern.sub(lambda m: table_of[m.group(0)], text)
         if new != text:
             path.write_bytes(new.encode('utf-8'))  # the bytes as they were, line ends included
             changed.append(name)

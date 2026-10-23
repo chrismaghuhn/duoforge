@@ -98,18 +98,18 @@ def check(root):
             problems.append('%s: a historical name without a row in %s' % (src, TABLE))
     done = [r for r in rows if r['state'] == 'done']
     if done:
-        patterns = []
-        for r in done:
-            patterns.append((re.compile(r'(?<![\w.])%s(?![\w])' % re.escape(r['old_ctest'])), r['old_ctest']))
-            patterns.append((re.compile(r'(?<![\w])%s(?![\w])' % re.escape(Path(r['old_file']).name)), r['old_file']))
+        # One pass per file: every old CTest name and every old file name in one alternation (a pattern per name and file
+        # took a minute over the tree), longest first so that no name hides a longer one.
+        olds = {r['old_ctest']: r['old_ctest'] for r in done}
+        olds.update({Path(r['old_file']).name: r['old_file'] for r in done})
+        pattern = re.compile(r'(?<![\w])(?:%s)(?![\w])' % '|'.join(re.escape(o) for o in sorted(olds, key=len, reverse=True)))
         for name in living_files(root):
             try:
                 text = (root / name).read_text(encoding='utf-8')
             except (UnicodeDecodeError, OSError):
                 continue
-            for pattern, old in patterns:
-                if pattern.search(text):
-                    problems.append('%s: still names %s (renamed, see %s)' % (name, old, TABLE))
+            for old in sorted({olds[m.group(0)] for m in pattern.finditer(text)}):
+                problems.append('%s: still names %s (renamed, see %s)' % (name, old, TABLE))
     return problems
 
 

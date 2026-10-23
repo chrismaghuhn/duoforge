@@ -41,7 +41,7 @@ def renames():
             out[r['old_ctest']] = r['new_ctest']
     return out
 RENAMES = renames()
-exe = lambda n: n.replace('.', '_')
+exe_of = lambda n: n.replace('.', '_')
 
 for mode in ('ipo', 'noipo', 'debug'):
     build = root / 'build' / mode
@@ -66,7 +66,7 @@ for mode in ('ipo', 'noipo', 'debug'):
         mapped = {}
         for n, t in b.items():  # the before tests under their new names, with the new executable
             if n in RENAMES:
-                t = dict(t, name=RENAMES[n], command=[c.replace(exe(n), exe(RENAMES[n])) if i == 0 else c
+                t = dict(t, name=RENAMES[n], command=[c.replace(exe_of(n), exe_of(RENAMES[n])) if i == 0 else c
                                                       for i, c in enumerate(t['command'])])
             mapped[t['name']] = t
         prior_old_names = set(b)
