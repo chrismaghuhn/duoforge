@@ -1,6 +1,6 @@
 """Values that C tests pin and the independent state model (state_v3_model.py) derives, compared without a build.
 
-PoolTableHash: tests/test_pool_tables.c recomputes the SHA-256 of the pool canonical bytes from src/data/pool_tables.c and
+PoolTableHash: tests/test_pool_tables.c recomputes the SHA-256 of the pool canonical bytes from src/data/formats/reg-mc/pool_tables.c and
 compares it with POOL_HASH_HEX; the state model builds the POOL and POOL_DEV context bytes, and so the fingerprints that
 tests/test_pool_setup.c pins, from its own POOL_TABLE_HASH. A step that regenerates the tables and repins POOL_HASH_HEX must
 carry the same value into the model, or the model's fingerprints go stale without any test noticing (seen 2026-10-09: steps

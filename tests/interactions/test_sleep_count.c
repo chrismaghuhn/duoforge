@@ -18,7 +18,7 @@
 #include <duoforge/duoforge_view.h>
 
 #include "codec/state_codec.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
 #include "support/check.h"

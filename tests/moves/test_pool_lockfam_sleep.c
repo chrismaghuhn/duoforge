@@ -49,9 +49,9 @@
 
 #include <duoforge/duoforge.h>
 
-#include "data/closure_tables.h"
-#include "data/extended_tables.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
+#include "data/formats/reg-mc/extended_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/battle_internal.h"
 #include "state/invariants.h"
 #include "state/knowledge.h"

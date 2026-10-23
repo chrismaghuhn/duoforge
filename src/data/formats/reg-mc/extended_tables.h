@@ -17,7 +17,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 
 /* ---- Team C formes (appended; base formes are selectable) ---- */
 #define DFI_FORME_SNEASLER 16u

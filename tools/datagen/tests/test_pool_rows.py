@@ -2,7 +2,7 @@
 """The generated pool tables against data/formats/pools/reg-mc.json (decision 0015 section 4.2).
 
 gen_closure.py --pool writes a row for every forme, move, item and ability of the legal pool of the format. This test
-reads the committed src/data/pool_tables.{h,c} and the committed output of the pinned TeamValidator and checks, with
+reads the committed src/data/formats/reg-mc/pool_tables.{h,c} and the committed output of the pinned TeamValidator and checks, with
 code of its own and without a checkout, that:
   - the tables have exactly the legal ids (the moves plus Struggle), the formes of the legal pool without its 29
     cosmetic copies, and a name alias for each of those;
@@ -39,8 +39,8 @@ def read(rel):
         return fh.read().decode('ascii').replace('\r\n', '\n')
 
 
-HEADER = read('src/data/pool_tables.h')
-SOURCE = read('src/data/pool_tables.c')
+HEADER = read('src/data/formats/reg-mc/pool_tables.h')
+SOURCE = read('src/data/formats/reg-mc/pool_tables.c')
 LEGAL = json.load(open(os.path.join(ROOT, 'data', 'formats', 'pools', 'reg-mc.json'), encoding='utf-8'))
 
 

@@ -7,13 +7,13 @@ data/teams_pending/** text eol=lf
 # names its generator in its first lines; the JSON data names it in tests/reference and tools/reference/README.md.
 # duoforge.python.generated_marks checks both directions.
 src/combat/generated/move_handlers.h linguist-generated=true
-src/data/closure_tables.h linguist-generated=true
-src/data/closure_tables.c linguist-generated=true
-src/data/extended_tables.h linguist-generated=true
-src/data/extended_tables.c linguist-generated=true
-src/data/pool_tables.h linguist-generated=true
-src/data/pool_tables.c linguist-generated=true
-src/data/format_tables.h linguist-generated=true
+src/data/formats/reg-mc/closure_tables.h linguist-generated=true
+src/data/formats/reg-mc/closure_tables.c linguist-generated=true
+src/data/formats/reg-mc/extended_tables.h linguist-generated=true
+src/data/formats/reg-mc/extended_tables.c linguist-generated=true
+src/data/formats/reg-mc/pool_tables.h linguist-generated=true
+src/data/formats/reg-mc/pool_tables.c linguist-generated=true
+src/data/formats/reg-mc/format_tables.h linguist-generated=true
 python/duoforge/_state_layout.py linguist-generated=true
 python/duoforge/_view_layout.py linguist-generated=true
 tests/data/pcg32_kat_vectors.h linguist-generated=true
