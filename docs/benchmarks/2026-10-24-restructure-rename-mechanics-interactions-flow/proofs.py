@@ -1,4 +1,5 @@
-"""Restructure step 6e (mixed tests split by subject and merged, tests/renames.tsv): P1-P6 and object identity, one phase (before|after) per run.
+"""Restructure step 6 (tests named by behaviour, split by subject and merged, tests/renames.tsv; 6e and 6d): P1-P6 and
+object identity, one phase (before|after) per run.
 
 Usage: PHASE=before|after OUT=<dir outside the repo> [PY=<python with numpy>] [NODE_DIR=<dir of node 22>] python proofs.py
 Builds build/ipo, build/noipo and build/debug of the checked-out commit (same source and build paths in both phases, so object
