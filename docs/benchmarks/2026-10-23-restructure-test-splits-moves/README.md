@@ -41,7 +41,7 @@ G76 and G80 holds the facts of both moves of its step (handler ids, marks, view 
 | G19 (5k) | `moves.glaive_rush_tail_view` | 867 | One loop over every step of every g19 battle (Coaching's included) reads the tail's glaive_rush and both viewers' extension; Coaching's mark and boost role are two facts of the same rows. |
 | G31 (5ai) | `moves.taunt_yawn_tail_view` | 1870 | One loop over every step reads Taunt's and Yawn's tail turns and their view bits together, against one row table of both. |
 | G42 (5as) | `moves.move_result_roost` | 830 | One loop over every boundary position reads the move result and the Roost bit; the Stomping Tantrum refusal is the same move result's unclassified bit. |
-| G64 (5ca) | `moves.moves_batch_2_rows` | 24 | The handler numbers, the marks and the pins of the four rows: three checks over all rows of the batch. |
+| G64 (5ca) | `moves.moves_batch_2_rows` | 24 | The handler numbers and the marks of the four rows, and the pins of Poltergeist (the row the turn code plays): one batch's facts. |
 | G68 (5cc) | `moves.moves_batch_4_rows` | 23 | The same for the four rows of batch 4. |
 
 `tests/renames.tsv`: their rows are renames (`git mv` alone in `a7d20580`, the names in the next commit); the table's
@@ -56,8 +56,8 @@ action changed from split to rename for these five.
 | G72b, G76, G80 | 66, 44, 85 | 69, 47, 88: `start()` (3) is in two parts of each |
 
 The helpers that one part's checks need go with it; the copies are the source's own, unchanged. A shared header for the
-scripted-battle helpers of G72b, G76 and G80 (`start`, `finish`, `setup_from`, `team_bundle`, `turn_bundle`, the same in
-all three) would be a step of its own.
+scripted-battle helpers of G72b, G76 and G80 (`start`, `finish`, `setup_from` and `team_bundle` the same in all three, `turn_bundle` the
+same but for its command type) would be a step of its own.
 
 **Shared helpers.** `tests/support/conformance_replay.h` gains `df_conf_replay_checked`: G8's `replay`, character for
 character with the header's renamed calls (the replay by name, then the state check), which three G8 parts use.
@@ -97,7 +97,9 @@ header as well.
   parts that include `tests/support/conformance_replay.h` and call a helper below the new function (its lines moved, so
   the `__LINE__` of their checks did). With IPO also `turn.c.o` and `support_manifest.c.o` (their comment lines; the
   shared library is still equal, `libduoforge.a` holds the objects) and test objects compiled again with new random
-  `.gnu.lto_*` suffixes. [proof-summary.json](proof-summary.json) (`object_identity`) lists them.
+  `.gnu.lto_*` suffixes, CMake's own LTO probe objects (`_CMakeLTOTest-C`) among them. The before build tree also
+  held objects of the parts from an earlier run (the comparison takes every object the before tree has), so some
+  parts are listed too; the libraries are what the gate compares. [proof-summary.json](proof-summary.json) (`object_identity`) lists them.
 - **Executed checks:** each source's equal to the sum of its parts' (or its family's), in both release profiles; the
   proof script asserts it group by group (the tables above).
 - **P1:** 1647 names in all three profiles; every test's properties equal under the renames and splits (the parts keep
