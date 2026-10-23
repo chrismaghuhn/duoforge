@@ -16,7 +16,7 @@ result = {'commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ro
 for mode, ipo in (('ipo', 'ON'), ('noipo', 'OFF')):
     build = root / 'build' / f'su-{mode}'
     subprocess.run(['cmake', '-S', str(root), '-B', str(build), '-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release',
-                    f'-DDUOFORGE_ENABLE_IPO={ipo}', '-DBUILD_TESTING=OFF', '-DCMAKE_C_FLAGS=-fstack-usage'],
+                    f'-DDUOFORGE_ENABLE_IPO={ipo}', '-DBUILD_TESTING=ON', '-DCMAKE_C_FLAGS=-fstack-usage'],
                    check=True, stdout=subprocess.DEVNULL)
     for su in build.rglob('*.su'):
         su.unlink()  # every frame below comes from this build
