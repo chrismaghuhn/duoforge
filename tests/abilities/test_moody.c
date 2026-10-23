@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g73 (white-box): step G73 of the content expansion (decision 0015, item 5bo), Moody, POOL build.
+ * duoforge.abilities.moody (white-box): step G73 of the content expansion (decision 0015, item 5bo), Moody, POOL build.
  *
  * Moody (data/abilities.ts:2701-2734) is an engine row read by id in combat/turn.c (dfi_moody):
  *   - the residual entry of order 28, sub-order 2, the key of Speed Boost (DFI_RES_MOODY, a callback);
@@ -65,7 +65,7 @@ static void check_battles_present(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g73");
+    df_test_begin(&t, "duoforge.abilities.moody");
     check_facts(&t);
     check_battles_present(&t);
     return df_test_end(&t);

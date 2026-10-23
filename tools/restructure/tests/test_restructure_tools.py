@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 import callgrind_gate  # noqa: E402
 import fn_diff  # noqa: E402
+import rename_tests  # noqa: E402
 import test_audit  # noqa: E402
 
 # A callgrind file in the tool's own format (positions: line, events: Ir, name compression): main calls the two clones
@@ -174,6 +175,47 @@ class RenameTable(unittest.TestCase):
 
     def test_the_committed_table_holds(self):
         self.assertEqual(test_audit.check(Path(__file__).resolve().parents[3]), [])
+
+
+class RenameRun(unittest.TestCase):
+    """rename_tests mv and names on a small git tree: one planned rename (G62 to Haze) of the moves area."""
+
+    def test_mv_then_names_leaves_no_old_name_and_marks_the_row_done(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = {
+                'tests/moves/test_pool_g62.c': '/* duoforge.state.pool_g62 (white-box): step G62, Haze. */\n'
+                                               'df_test_begin(&t, "duoforge.state.pool_g62");\n',
+                'tests/moves/tests.cmake': 'duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES moves/test_pool_g62.c TIER quick AREA moves)\n',
+                'tools/x.py': 'OLD = ("tests/test_pool_g62.c", "tests/moves/test_pool_g62.c", "duoforge.state.pool_g62")\n'
+                              'OTHER = "duoforge.state.pool_g620"\n',
+                'docs/mechanics/moves/5az-haze.md': '- Tests: duoforge.state.pool_g62\n',
+                'docs/history/old.md': 'duoforge.state.pool_g62 in tests/test_pool_g62.c\n',
+                'tests/renames.tsv': '\t'.join(test_audit.COLUMNS) + '\n' + ROW % 'planned' + '\n',
+            }
+            for name, text in files.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_text(text, encoding='utf-8', newline='\n')
+            subprocess.run(['git', 'init', '-q'], cwd=root, check=True)
+            subprocess.run(['git', 'add', '-A'], cwd=root, check=True)
+            with open(os.devnull, 'w') as sink:
+                stdout, sys.stdout = sys.stdout, sink
+                try:
+                    self.assertEqual(rename_tests.main(['mv', '--areas', 'moves', '--root', str(root)]), 0)
+                    self.assertTrue((root / 'tests/moves/test_haze.c').exists())
+                    self.assertFalse((root / 'tests/moves/test_pool_g62.c').exists())
+                    self.assertEqual(rename_tests.main(['names', '--areas', 'moves', '--root', str(root)]), 0)
+                finally:
+                    sys.stdout = stdout
+            self.assertEqual((root / 'tools/x.py').read_text(encoding='utf-8'),
+                             'OLD = ("tests/moves/test_haze.c", "tests/moves/test_haze.c", "duoforge.moves.haze")\n'
+                             'OTHER = "duoforge.state.pool_g620"\n')
+            self.assertIn('df_test_begin(&t, "duoforge.moves.haze");', (root / 'tests/moves/test_haze.c').read_text(encoding='utf-8'))
+            self.assertIn('NAME duoforge.moves.haze SOURCES moves/test_haze.c', (root / 'tests/moves/tests.cmake').read_text(encoding='utf-8'))
+            self.assertEqual((root / 'docs/mechanics/moves/5az-haze.md').read_text(encoding='utf-8'), '- Tests: duoforge.moves.haze\n')
+            self.assertEqual((root / 'docs/history/old.md').read_text(encoding='utf-8'), files['docs/history/old.md'])  # frozen
+            self.assertEqual(test_audit.read_table(root)[0]['state'], 'done')
+            self.assertEqual(test_audit.check(root), [])
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g55 (white-box): step G55 of the content expansion, the rock items Damp Rock, Heat Rock, Smooth Rock and
+ * duoforge.items.duration_items (white-box): step G55 of the content expansion, the rock items Damp Rock, Heat Rock, Smooth Rock and
  * Icy Rock and Terrain Extender (decision 0015, item 5bf). A weather or a terrain that its setter starts lasts 8 turns while the
  * setter holds the item that lengthens it, else 5 (data/conditions.ts durationCallback: source?.hasItem; data/moves.ts terrains).
  * The setter is the Pokemon that uses the move, or the holder of the ability (Field.setWeather and setTerrain pass it as the
@@ -205,7 +205,7 @@ static void check_recorded(df_test *t, duoforge_context *ctx, const struct g55_e
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g55");
+    df_test_begin(&t, "duoforge.items.duration_items");
     check_facts(&t);
     check_constants(&t);
     check_bounds(&t);

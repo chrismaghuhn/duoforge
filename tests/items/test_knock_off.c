@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g16 (white-box): step G16 of the content expansion, Knock Off, in the POOL tail's item_now (decision
+ * duoforge.items.knock_off (white-box): step G16 of the content expansion, Knock Off, in the POOL tail's item_now (decision
  * 0015 section 7), in the ITEM_END event with the cause ITEM_TAKEN, in what reads the held item and in the view
  * extension (decision 0018: item_now of the member, DUOFORGE_ITEM_NOW_NONE, bit 11).
  *
@@ -321,7 +321,7 @@ static void check_invariants(df_test *t, const duoforge_context *ctx)
         /* The same Pokemon with its item back: since step G29 the volatile may stand with an item held (a Trick, Thief or Covet
          * that took the item and gave another back, or failed after the TakeItem handlers ran: data/moves.ts:19865-19911,
          * sim/pokemon.ts:1851-1866), and no state tells that from this one, so the check no longer refuses it under the POOL kinds
-         * (tests/test_pool_g29.c check_kind_rules runs the same state under TEAM_C_DEV, where it is still refused). */
+         * (tests/items/test_item_transfer.c check_kind_rules runs the same state under TEAM_C_DEV, where it is still refused). */
         b->tail.sides[1].item_now[pos->occupant] = 0u;
         DF_CHECK(t, check_of(ctx, b) == DFI_INV_KNOWLEDGE); /* the foe saw the item go: a fact, as the Scarf case below says */
         b->sides[0].knowledge[pos->occupant].revealed =
@@ -414,7 +414,7 @@ static void check_invariants(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g16");
+    df_test_begin(&t, "duoforge.items.knock_off");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     duoforge_context *kd = df_make_context(&df_config_pool_dev);
@@ -430,7 +430,7 @@ int main(void)
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_KNOCKOFF] != 0u && dfi_support.abilities[DFI_ABILITY_STICKYHOLD] != 0u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE)) != 0u);
     /* Trick, Switcheroo, Thief and Covet were unmarked here (item_now was 0 or 255 only); step G29 marks them (the item that a
-     * move gave is item_now too: tests/test_pool_g29.c). */
+     * move gave is item_now too: tests/items/test_item_transfer.c). */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_TRICK] != 0u && dfi_support.moves[DFI_MOVE_SWITCHEROO] != 0u &&
                      dfi_support.moves[DFI_MOVE_THIEF] != 0u && dfi_support.moves[DFI_MOVE_COVET] != 0u);
 

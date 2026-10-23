@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g41 (white-box): step G41 of the content expansion, Shadow Tag (and Gengarite, the stone of the only forme
+ * duoforge.abilities.shadow_tag (white-box): step G41 of the content expansion, Shadow Tag (and Gengarite, the stone of the only forme
  * that has it).
  *
  * Shadow Tag (data/abilities.ts:4156-4173) traps every adjacent foe that is not a holder itself and not a Ghost type: at the TURN
@@ -269,7 +269,7 @@ static void check_marks(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g41");
+    df_test_begin(&t, "duoforge.abilities.shadow_tag");
     check_marks(&t);
     check_domain(&t);
     return df_test_end(&t);

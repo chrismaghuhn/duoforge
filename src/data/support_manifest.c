@@ -387,7 +387,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ASSURANCE] = 1u,
             /* Step G86 (decision 0015 5cn, batch 6). Data rows: Body Slam (paralysis at 30 percent; its minimize flag is inert, Minimize is
              * unmarked), Razor Shell (Defense -1 at 50 percent; slicing, Sharpness), Tickle (Attack and Defense -1; reflectable, Magic
-             * Bounce's list in tests/test_pool_g57.c). Handlers: Heavy Slam (weight ratio, user and target), Hard Press (the target's HP),
+             * Bounce's list in tests/abilities/test_magic_bounce.c). Handlers: Heavy Slam (weight ratio, user and target), Hard Press (the target's HP),
              * Ice Spinner (the terrain clears after a hit), Belly Drum (half the HP for +6 Attack). */
             [DFI_MOVE_BODYSLAM] = 1u,
             [DFI_MOVE_RAZORSHELL] = 1u,
@@ -1035,7 +1035,7 @@ const dfi_support_manifest dfi_support = {
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
-     * duoforge.state.pool_ac1). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
+     * duoforge.abilities.trace). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
      * ability), so the bit is exact: a zero is "no change". */
     /* Step G42: Roost (bit 40: the ROOST volatile of the position, public: the -singleturn line of Roost, set at its heal and
      * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact

@@ -3,7 +3,7 @@
 
 /*
  * Sheer Force (step G61, data/abilities.ts:4202-4221) as two predicates on the holder's ability and the move's data, so that
- * the white-box test tests/test_pool_g61.c can run them on every move of the pool. Internal header: no public value, no state.
+ * the white-box test tests/abilities/test_sheer_force.c can run them on every move of the pool. Internal header: no public value, no state.
  *
  * The pinned onModifyMove deletes a move's secondaries and self effects, and sets hasSheerForce, only when the move has
  * secondaries and is not hasSheerForceBoost. The engine's secondary columns of a move are sec_chance (the chance of its

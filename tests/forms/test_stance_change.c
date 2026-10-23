@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g66 (white-box): step G66, Aegislash (decision 0015 5cb, decision 0040): King's Shield as protect_kind 2,
+ * duoforge.forms.stance_change (white-box): step G66, Aegislash (decision 0015 5cb, decision 0040): King's Shield as protect_kind 2,
  * the battle-only Aegislash-Blade row, Stance Change's marks, the codec round trip of protect_kind 2, the strict stats rule of
  * a temporary forme (the Blade's stats only for an Aegislash on the Blade forme, the sheet's stats in every other case), and the
  * public refusal of a position in a temporary forme (DUOFORGE_PUBLIC_CAUSE_TEMP_FORME).
@@ -74,7 +74,7 @@ static duoforge_battle *turn_battle_of(df_test *t, const duoforge_context *ctx, 
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g66");
+    df_test_begin(&t, "duoforge.forms.stance_change");
 
     /* The constants: protect_kind 2 is King's Shield (the tail's maximum), the Blade is the last pool forme. */
     DF_CHECK_EQ_U64(&t, DFI_PROTECT_KINGS_SHIELD, 2u);

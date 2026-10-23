@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g69 (white-box): step G69 of the content expansion, Symbiosis (decision 0015 5bm).
+ * duoforge.abilities.symbiosis (white-box): step G69 of the content expansion, Symbiosis (decision 0015 5bm).
  *
  * Symbiosis (data/abilities.ts:4837-4856, onAllyAfterUseItem): when its ally uses up its item (a berry eaten, a Focus Sash or an
  * Eject Button, a Red Card used), the holder passes the item it holds to that ally, which has none. The pass changes item_now of
@@ -247,7 +247,7 @@ static void check_seed_refusal(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g69");
+    df_test_begin(&t, "duoforge.abilities.symbiosis");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     if (DF_CHECK(&t, ctx != NULL)) {
         check_sitrus(&t, ctx);
