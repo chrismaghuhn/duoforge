@@ -125,7 +125,7 @@ static void check_pins(df_test *t)
 
 static void check_unmarked(df_test *t)
 {
-    /* Scale Shot was left out of this step (its hit count is a draw of its own); step G54 marks it (test_pool_g54.c) */
+    /* Scale Shot was left out of this step (its hit count is a draw of its own); step G54 marks it (test_moves_batch_rows.c) */
     /* Thunder can hit through Fly (a semi-invulnerable target): Fly is not marked, so no battle has that case */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FLY] == 0u);
 }
