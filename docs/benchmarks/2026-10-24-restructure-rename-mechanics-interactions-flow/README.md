@@ -3,13 +3,14 @@
 Clean main **`38508650`** (#668) against the clean branch head **`ddd9cf72`**, both **dirty=false**. Same source and build
 paths in both phases, three profiles: Release with IPO, Release without IPO, and Debug, configured with `DUOFORGE_PYTHON`,
 `DUOFORGE_LEARN_PYTHON`, `DUOFORGE_PS_REFERENCE_DIR` and `DUOFORGE_NODE`. Machine: [machine.json](machine.json).
-Scripts: [proofs.py](proofs.py), [summarize.py](summarize.py) (those of 6e-3).
+Scripts: [proofs.py](proofs.py), [summarize.py](summarize.py) (those of 6e-3, the docstring of `proofs.py` updated).
 
 ## The renames
 
 The 14 planned rename rows of `tests/renames.tsv` in `tests/mechanics`, `tests/interactions` and `tests/flow`, carried out
 by `tools/restructure/rename_tests.py`: `mv` (`git mv` alone, a 100 % rename, in `3f590f20`), then `names`. Each test
-executes the same checks under its new name, in both release profiles (the proof script asserts it test by test):
+executes the same checks under its new name, in both release profiles (the run passed each rename as a group of one, `SPLIT_GROUPS` with delta 0, so `proofs.py` asserted it test by
+test):
 
 | Old CTest | New CTest | Executed checks |
 |---|---|---:|
