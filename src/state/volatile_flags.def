@@ -1,0 +1,14 @@
+/*
+ * The bits of a position's volatile flags (dfi_position.flags), one line per bit: DFI_VOL_FLAG(NAME, bit), in bit order
+ * (restructure step 5c). An X-macro file without an include guard: src/state/battle_internal.h includes it with its own
+ * DFI_VOL_FLAG to check every DFI_VOL_<NAME> against its bit (_Static_assert) and that the bits are pairwise disjoint. The
+ * bits are part of the canonical state encoding: a line here never changes its bit.
+ */
+DFI_VOL_FLAG(FLINCH, 0x01u)
+DFI_VOL_FLAG(PROTECT, 0x02u)
+DFI_VOL_FLAG(FLASH_FIRE, 0x04u)
+DFI_VOL_FLAG(FOLLOW_ME, 0x08u)
+DFI_VOL_FLAG(HELPING_HAND, 0x10u)
+DFI_VOL_FLAG(UNBURDEN, 0x20u)
+DFI_VOL_FLAG(CHOICE_LOCK, 0x40u)
+DFI_VOL_FLAG(NEWLY_SWITCHED, 0x80u)

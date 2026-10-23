@@ -35,8 +35,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* The residual kinds (one number per kind). A new kind needs its case in dfi_res_kind_name; the switch rejects duplicate values
- * on build (a duplicate case value is an error on every compiler), so two kinds with one number cannot build. */
+/* The residual kinds (one number per kind). A new kind needs its line in residual_kinds.def, which checks the number and makes
+ * its case in dfi_res_kind_name; the switch rejects duplicate values on build (a duplicate case value is an error on every
+ * compiler), so two kinds with one number cannot build. */
 #define DFI_RES_WEATHER 1u
 #define DFI_RES_TERRAIN_END 2u
 #define DFI_RES_BURN 3u
@@ -72,53 +73,24 @@
 #define DFI_RES_MOODY 18u /* Moody's onResidual: order 28, sub-order 2 (step G73; the same key as Speed Boost), a callback that draws */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
-/* The name of a residual kind, for the tests and the debug paths. The switch is the build-time guard: every kind has its case, and
- * a duplicate value of two kinds is a duplicate case value, a compile error (every translation unit that includes this header). */
+/* Build-time guard (restructure step 5c): every DFI_RES_<NAME> kind has the number of its line in residual_kinds.def, the frozen
+ * record of the kinds. */
+#define DFI_RES_KIND(name, value, text) \
+    _Static_assert(DFI_RES_##name == (value), "DFI_RES_" #name " keeps its number in residual_kinds.def");
+#include "combat/residual_kinds.def"
+#undef DFI_RES_KIND
+
+/* The name of a residual kind, for the tests and the debug paths: one case per line of residual_kinds.def. The switch is the
+ * build-time guard against two kinds with one number: a duplicate case value is a compile error (every translation unit that
+ * includes this header). */
 static inline const char *dfi_res_kind_name(uint32_t kind)
 {
     switch (kind) {
-    case DFI_RES_WEATHER:
-        return "weather";
-    case DFI_RES_TERRAIN_END:
-        return "terrain-end";
-    case DFI_RES_BURN:
-        return "burn";
-    case DFI_RES_DURATION:
-        return "duration";
-    case DFI_RES_GRASSY:
-        return "grassy";
-    case DFI_RES_FIELD_END:
-        return "field-end";
-    case DFI_RES_LEFTOVERS:
-        return "leftovers";
-    case DFI_RES_POISON:
-        return "poison";
-    case DFI_RES_LEECH:
-        return "leech";
-    case DFI_RES_WHITE_HERB:
-        return "white-herb";
-    case DFI_RES_ENCORE:
-        return "encore";
-    case DFI_RES_SPEED_BOOST:
-        return "speed-boost";
-    case DFI_RES_HEAL_BLOCK:
-        return "heal-block";
-    case DFI_RES_YAWN:
-        return "yawn";
-    case DFI_RES_DISABLE:
-        return "disable";
-    case DFI_RES_PERISH:
-        return "perish";
-    case DFI_RES_TAUNT:
-        return "taunt";
-    case DFI_RES_LOCK:
-        return "lockedmove";
-    case DFI_RES_MOODY:
-        return "moody";
-    case DFI_RES_CURSE:
-        return "curse";
-    case DFI_RES_PARTIAL_TRAP:
-        return "partial-trap";
+#define DFI_RES_KIND(name, value, text) \
+    case DFI_RES_##name:            \
+        return text;
+#include "combat/residual_kinds.def"
+#undef DFI_RES_KIND
     default:
         return NULL;
     }
