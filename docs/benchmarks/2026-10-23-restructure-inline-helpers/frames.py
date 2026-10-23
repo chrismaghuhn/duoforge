@@ -19,8 +19,9 @@ for mode, ipo in (('ipo', 'ON'), ('noipo', 'OFF')):
                     f'-DDUOFORGE_ENABLE_IPO={ipo}', '-DBUILD_TESTING=ON', '-DCMAKE_C_FLAGS=-fstack-usage'],
                    check=True, stdout=subprocess.DEVNULL)
     for su in build.rglob('*.su'):
-        su.unlink()  # every frame below comes from this build
-    subprocess.run(['cmake', '--build', str(build), '--parallel', jobs, '--target', 'duoforge_shared', 'duoforge_bench'],
+        su.unlink()  # every frame below comes from this build, which compiles every source again (--clean-first)
+    subprocess.run(['cmake', '--build', str(build), '--clean-first', '--parallel', jobs, '--target', 'duoforge_shared',
+                    'duoforge_bench'],
                    check=True, stdout=subprocess.DEVNULL)
     frames = {}
     for su in sorted(build.rglob('*.su')):
