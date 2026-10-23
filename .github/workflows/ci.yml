@@ -326,11 +326,12 @@ jobs:
     timeout-minutes: 40
     strategy:
       fail-fast: false
+      # Pull requests run x64 Release only (the strictest MSVC build: /W4 /WX, IPO, the export link test); x64 Debug
+      # and Win32 Release run on every push to main and in the nightly run (owner, 2026-10-23).
       matrix:
-        include:
-          - { arch: x64, config: Release, bits: 64 }
-          - { arch: x64, config: Debug, bits: 64 }
-          - { arch: Win32, config: Release, bits: 32 }
+        include: ${{ fromJSON(github.event_name == 'pull_request'
+          && '[{"arch":"x64","config":"Release","bits":64}]'
+          || '[{"arch":"x64","config":"Release","bits":64},{"arch":"x64","config":"Debug","bits":64},{"arch":"Win32","config":"Release","bits":32}]') }}
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
@@ -439,7 +440,8 @@ jobs:
 
   windows-gcc-release-ipo:
     name: Windows / gcc / Release / IPO
-    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
+    # Not on pull requests: every push to main and the nightly run (owner, 2026-10-23).
+    if: github.event_name != 'pull_request' && inputs.profile != 'quick'
     runs-on: windows-latest
     timeout-minutes: 35
     defaults:
@@ -473,7 +475,8 @@ jobs:
 
   windows-clang:
     name: Windows / clang / Release
-    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
+    # Not on pull requests: every push to main and the nightly run (owner, 2026-10-23).
+    if: github.event_name != 'pull_request' && inputs.profile != 'quick'
     runs-on: windows-latest
     timeout-minutes: 20
     defaults:
