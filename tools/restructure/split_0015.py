@@ -230,12 +230,13 @@ def main():
     for e in entries:
         p = root / "docs" / "mechanics" / e["file"]
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(mechanic_file(e), encoding="utf-8", newline="\n")
+        with open(p, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(mechanic_file(e))
         print("%s\t0015:%d\t%s" % (e["id"], e["line"], e["file"]))
-    (root / "docs" / "support" / "README.template.md").write_text(readme_template(readme), encoding="utf-8",
-                                                                   newline="\n")
-    (root / "docs" / "decisions" / "0015-content-expansion-pool.md").write_text(
-        new_0015(keep, entries), encoding="utf-8", newline="\n")
+    for rel, text in (("docs/support/README.template.md", readme_template(readme)),
+                      ("docs/decisions/0015-content-expansion-pool.md", new_0015(keep, entries))):
+        with open(root / rel, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(text)
 
 
 if __name__ == "__main__":

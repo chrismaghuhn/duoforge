@@ -4,12 +4,12 @@
     git show <base>:docs/support/README.md > OLD_README.md
     python3 tools/restructure/split_0015_check.py OLD.md OLD_README.md <repo root>
 
-1. Every entry of the old 0015 is the body of exactly one mechanic file, byte for byte (the file's header and its
-   "## Support" section aside), and no mechanic file holds anything else.
+1. Every entry of the old 0015 is the body of exactly the mechanic file whose anchor is its id, byte for byte (the
+   file's header and its "## Support" section aside), and no mechanic file holds anything else.
 2. The non-blank lines of the old 0015 outside the entries are the non-blank lines of the new 0015 outside its
    section 4.3, in the same order, but for the batch 8 note, which moved into section 4.3.
 3. Every line that the old support README held is in the generated README, but for the one exact duplicate (removed).
-Prints the counts; exits 1 on the first difference.
+Prints the counts; exits 1 on the first difference. It holds at the split's commit: a later entry file has no old entry.
 """
 import re
 import sys
@@ -60,11 +60,26 @@ def main():
     root = Path(sys.argv[3])
     entries, rest = old_parts(old)
     files = sorted(p for p in (root / "docs" / "mechanics").glob("*/*.md"))
-    bodies = Counter(body_of(p.read_text(encoding="utf-8")) for p in files)
-    if Counter(entries) != bodies:
-        fail("entries %d, mechanic bodies %d, differing %d" % (
-            len(entries), len(files), sum(((Counter(entries) - bodies) + (bodies - Counter(entries))).values())))
-    print("1. %d entries = %d mechanic file bodies, byte for byte" % (len(entries), len(files)))
+    by_anchor = {}
+    for p in files:
+        text = p.read_text(encoding="utf-8")
+        anchor = re.match(r'<a id="([^"]+)"></a>\n', text).group(1)
+        if anchor in by_anchor or not p.name.startswith(anchor + "-"):
+            fail("anchor %s of %s" % (anchor, p.name))
+        by_anchor[anchor] = body_of(text)
+    old = {}
+    for e in entries:
+        ident = ENTRY.match(e).group(1)
+        if ident == "5dl" and "issue 556" in e.split("\n", 1)[0]:
+            ident = "5dl-556"
+        if ident in old:
+            fail("old id %s twice" % ident)
+        old[ident] = e
+    if old != by_anchor:
+        differ = sorted(k for k in set(old) | set(by_anchor) if old.get(k) != by_anchor.get(k))
+        fail("entries %d, mechanic files %d, differing ids %s" % (len(old), len(by_anchor), differ[:10]))
+    print("1. %d entries = the bodies of the %d mechanic files with their id as anchor, byte for byte"
+          % (len(old), len(files)))
 
     new = (root / "docs" / "decisions" / "0015-content-expansion-pool.md").read_text(encoding="utf-8").splitlines()
     a = new.index("### 4.3 The entries: moved to docs/mechanics (restructure step 11)")

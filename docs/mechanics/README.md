@@ -32,8 +32,11 @@ paragraph "**<title> (step <code>, decision 0015 entry <id>)**: ...">
 - The first line is the anchor and nothing else; the id is the file name's prefix.
 - `Tests:` is the only place that names the step's CTest names (restructure step 6 renames tests by script from
   `tests/renames.tsv` and rewrites this line); the text may refer to it.
-- `## Support` is optional. Its lines are copied into `docs/support/README.md` in id order (table rows into the table,
-  other lines as paragraphs); a step without a support line leaves the section out.
+- `## Support` is optional (a step without a support line leaves it out, never empty). Each table row and each
+  paragraph (lines up to a blank line) is copied into `docs/support/README.md` in id order: table rows into the table,
+  paragraphs after it.
+- `--check` enforces this header: the anchor alone on line 1, the heading on line 3, one `Area` line naming the folder,
+  one `Step` and one `Tests` line, and the entry text starting once with `<id>. **`.
 
 [TEMPLATE.md](TEMPLATE.md) is a copy to start from.
 
@@ -48,7 +51,7 @@ paragraph "**<title> (step <code>, decision 0015 entry <id>)**: ...">
    again on the merged tree.
 4. `python3 tools/docs/mechanics_docs.py --check` (CTests `duoforge.docs.support_readme` and
    `duoforge.docs.mechanics_ids`): the README is up to date, every id is in one file, every table row resolves, and
-   every id that a line naming 0015 cites anywhere in the repository exists.
+   every id that a line naming 0015 cites anywhere in the repository exists (the id and "0015" on the same line).
 
 ## Converting an entry written in the old format
 

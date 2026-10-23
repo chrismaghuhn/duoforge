@@ -40,7 +40,10 @@ ID = re.compile(r"^5[a-z]{1,2}$")
 # is 5dl-556. No other suffixed id is allowed.
 SPECIAL_IDS = {"5dl-556"}
 ANCHOR = re.compile(r'^<a id="([^"]+)"></a>$')
-CITED = re.compile(r"\b5[a-z]{1,2}\b")
+CITES_0015 = re.compile(r"(?<![\w.])0015(?!\w)")
+CITED = re.compile(r"(?<![\w-])5[a-z]{1,2}(?![\w])")
+NOT_IDS = {"5th", "5ms", "5px", "5kb", "5mb", "5gb"}  # units and ordinals, never entry ids
+BODY = re.compile(r"^(5[a-z]{1,2})\. \*\*")
 ROW = re.compile(r"^\| (5[a-z]{1,2}(?:-[0-9]+)?) \| [^|]* \| (?:[^|]|\\\|)* \| (.*) \|$")
 LINK = re.compile(r"^\[[^\]]+\]\(\.\./mechanics/([^)#]+)#([^)]+)\)$")
 
@@ -64,18 +67,52 @@ def mechanic_files():
 
 
 def parse_mechanic(path):
+    """(id, problems, support blocks). A support block is one table row or one paragraph (consecutive lines)."""
     lines = read(path.relative_to(ROOT)).splitlines()
     m = ANCHOR.match(lines[0]) if lines else None
     ident = m.group(1) if m else None
+    problems = []
+    if ident is None:
+        return None, ["the first line is not the entry's anchor <a id=\"<id>\"></a>"], []
     anchors = sum(1 for l in lines if ANCHOR.match(l))
+    if anchors != 1:
+        problems.append("%d anchors, want 1" % anchors)
+    if len(lines) < 3 or lines[1] != "" or not lines[2].startswith("# %s. " % ident):
+        problems.append("line 3 is not the heading '# %s. <title>'" % ident)
+    for key, want in (("Area", path.parent.name), ("Step", None), ("Tests", None)):
+        found = [l for l in lines if l.startswith("- %s: " % key)]
+        if len(found) != 1:
+            problems.append("%d '- %s: ' lines, want 1" % (len(found), key))
+        elif want is not None and found[0] != "- %s: %s" % (key, want):
+            problems.append("'%s' does not name its folder %s" % (found[0], want))
+    body = [BODY.match(l).group(1) for l in lines if BODY.match(l)]
+    if len(body) != 1 or body[0] != ident.split("-")[0]:
+        problems.append("the entry text must start once with '%s. **' (found %s)" % (ident.split("-")[0], body))
+    heads = [l for l in lines if l.startswith("## ")]
+    if any(h.rstrip() == "## Support" and h != "## Support" for h in heads) or heads.count("## Support") > 1:
+        problems.append("the support heading must be exactly '## Support', once")
     support = []
     if "## Support" in lines:
         k = lines.index("## Support") + 1
+        para = []
         while k < len(lines) and not lines[k].startswith("#"):
-            if lines[k].strip():
-                support.append(lines[k])
+            line = lines[k]
+            if line.startswith("|"):
+                if para:
+                    support.append("\n".join(para))
+                    para = []
+                support.append(line)
+            elif line.strip():
+                para.append(line)
+            elif para:
+                support.append("\n".join(para))
+                para = []
             k += 1
-    return ident, anchors, support
+        if para:
+            support.append("\n".join(para))
+        if not support:
+            problems.append("an empty '## Support' section; leave it out")
+    return ident, problems, support
 
 
 def manifest_section():
@@ -111,8 +148,8 @@ def generate():
     files, _ = mechanic_files()
     rows, paras = [], []
     for path in sorted(files, key=lambda p: id_key(parse_mechanic(p)[0] or "")):
-        for line in parse_mechanic(path)[2]:
-            (rows if line.startswith("|") else paras).append(line)
+        for block in parse_mechanic(path)[2]:
+            (rows if block.startswith("|") else paras).append(block)
     out = [GENERATED]
     for line in read(TEMPLATE).splitlines():
         if line == PH_ROWS:
@@ -137,7 +174,7 @@ def tracked_text():
             continue
         try:
             yield rel, (ROOT / rel).read_text(encoding="utf-8")
-        except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
+        except (UnicodeDecodeError, OSError):
             continue
 
 
@@ -149,14 +186,12 @@ def check_ids():
     where = {}
     for p in files:
         rel = p.relative_to(ROOT / MECHANICS).as_posix()
-        ident, anchors, _ = parse_mechanic(p)
+        ident, problems, _ = parse_mechanic(p)
+        errors += ["%s: %s" % (rel, e) for e in problems]
         if ident is None:
-            errors.append("%s: the first line is not the entry's anchor <a id=\"<id>\"></a>" % rel)
             continue
         if not (ID.match(ident) or ident in SPECIAL_IDS):
             errors.append("%s: %r is not an entry id" % (rel, ident))
-        if anchors != 1:
-            errors.append("%s: %d anchors, want 1" % (rel, anchors))
         if not p.name.startswith(ident + "-"):
             errors.append("%s: the file name does not start with its id %s-" % (rel, ident))
         if ident in where:
@@ -172,7 +207,9 @@ def check_ids():
         if ident in table or ident in no_entry:
             errors.append("0015 table: id %s twice" % ident)
         link = LINK.match(target)
-        if link:
+        if not link and "../mechanics/" in target:
+            errors.append("0015 table: row %s has a malformed link %r" % (ident, target))
+        elif link:
             table[ident] = link.group(1)
             if where.get(link.group(2)) != link.group(1):
                 errors.append("0015 table: %s -> %s#%s does not resolve" % (ident, link.group(1), link.group(2)))
@@ -190,9 +227,11 @@ def check_ids():
     cited = 0
     for rel, text in tracked_text():
         for n, line in enumerate(text.splitlines(), 1):
-            if "0015" not in line:
+            if not CITES_0015.search(line):
                 continue
             for ident in CITED.findall(line):
+                if ident in NOT_IDS:
+                    continue
                 cited += 1
                 if ident not in known:
                     errors.append("%s:%d cites 0015 entry %s, which resolves to no file and no table row"
@@ -209,12 +248,14 @@ def main(argv=None):
     g.add_argument("--check-ids", action="store_true", help="only the entry ids")
     a = ap.parse_args(argv)
     if a.write:
-        (ROOT / README).write_text(generate(), encoding="utf-8", newline="\n")
+        with open(ROOT / README, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(generate())
         print("wrote %s" % README.as_posix())
         return 0
     errors = []
     if a.check or a.check_readme:
-        if (ROOT / README).read_text(encoding="utf-8") != generate():
+        path = ROOT / README
+        if not path.is_file() or path.read_text(encoding="utf-8") != generate():
             errors.append("%s is not what the generator makes; run python3 tools/docs/mechanics_docs.py --write"
                           % README.as_posix())
         else:
