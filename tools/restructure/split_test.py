@@ -209,7 +209,7 @@ def comment_state(lines):
     """Per line, whether it starts inside a block comment, or None when the preamble's comments are not plain: a /* inside
     a block comment, a // line that ends with a backslash (its next line is comment too), or a string or character literal
     not closed on its line. Outside a comment a literal is skipped, its escapes included, so that a /*, */ or // in it is
-    no comment."""
+    no comment. C17 is assumed (CMakeLists.txt): C23's digit separators (1'000) would be read as a character literal."""
     inside, state = False, []
     for l in lines:
         state.append(inside)
