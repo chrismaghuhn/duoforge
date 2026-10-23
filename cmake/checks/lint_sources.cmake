@@ -120,6 +120,7 @@ endforeach()
 # case in the name switch. A number without a line would have no frozen record and no name.
 # file(STRINGS) cannot split a CRLF working copy into lines, so the defines are matched on the whole text (no group).
 function(_duoforge_lint_number_space header def prefix macro others)
+    set(_space_findings 0 PARENT_SCOPE)
     if(NOT EXISTS "${ROOT}/${header}" OR NOT EXISTS "${ROOT}/${def}")
         return()
     endif()
