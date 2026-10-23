@@ -23,7 +23,7 @@ Plan item "numbers from one definition" (step 5) for the three headers that hold
 - **What the definition file is.** It is the frozen record: each line's value is checked against the constant at build time (`_Static_assert`).
 - **Two places by design.** A renumbering needs both lines changed and shows in review. A new member is two lines: its `#define` and its line in the `.def` file.
 
-- `cmake/checks/lint_sources.cmake`: the site-case rule becomes a rule for all four spaces. Every `#define` of a space must have its line in the definition file, except the named constants that are not members (`DFI_SITE_COUNT`; `DFI_RES_NO_ORDER` and the model bounds; `DFI_VOL_FLAGS_MAX`; the Dragon Cheer shift and max and `DFI_POSFLAG_VALID_MASK`).
+- `cmake/checks/lint_sources.cmake`: the site-case rule becomes a rule for all four spaces. Every `#define` of a space must have its line in the definition file, except the named constants that are not members (`DFI_SITE_COUNT`; `DFI_RES_NO_ORDER` and the model bounds; `DFI_VOL_FLAGS_MAX`; the Dragon Cheer shift and max and `DFI_POSFLAG_VALID_MASK`). `lint_selftest.cmake` has two cases for the rule: a member without its line gives one finding and a listed non-member none, and the tree is clean once the line exists. With the rule's regex broken, the self-test fails.
 - `tools/reference/tests/test_trace_to_c.py`: the converter's `SITES` must be exactly the lines of `draw_sites.def`.
 - Not in this step: `turn.c`, the generated Python layouts (`_state_layout.py` is made by the C dump and is unchanged), the HS number register.
 
