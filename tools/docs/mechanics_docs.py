@@ -41,7 +41,7 @@ ID = re.compile(r"^5[a-z]{1,2}$")
 SPECIAL_IDS = {"5dl-556"}
 ANCHOR = re.compile(r'^<a id="([^"]+)"></a>$')
 CITES_0015 = re.compile(r"(?<![\w.])0015(?!\w)")
-CITED = re.compile(r"(?<![\w-])5[a-z]{1,2}(?![\w])")
+CITED = re.compile(r"(?<![\w-])5[a-z]{1,2}(?![\w]|-5[a-z])")  # a range "5ea-5ez" (a number block) cites no entry
 NOT_IDS = {"5th", "5ms", "5px", "5kb", "5mb", "5gb"}  # units and ordinals, never entry ids
 BODY = re.compile(r"^(5[a-z]{1,2})\. \*\*")
 ROW = re.compile(r"^\| (5[a-z]{1,2}(?:-[0-9]+)?) \| [^|]* \| (?:[^|]|\\\|)* \| (.*) \|$")
