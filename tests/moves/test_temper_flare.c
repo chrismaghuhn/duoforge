@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_k1 (white-box): step K1 (#476, decision 0015 entry 5dc), Temper Flare. Its basePowerCallback is the
+ * duoforge.moves.temper_flare (white-box): step K1 (#476, decision 0015 entry 5dc), Temper Flare. Its basePowerCallback is the
  * one of Stomping Tantrum (the special DFI_SPECIAL_STOMPING_TANTRUM): base power x2 when the user's last move result is
  * FALSE, strictly (null is no failure). The four recorded battles (k1_temper_flare_* under "data": "pool") are replayed
  * through the step with the reference's draws; duoforge.reference.conformance_pool compares the damage of each hit (the
@@ -128,7 +128,7 @@ static const char *const names[] = {"k1_temper_flare_plain", "k1_temper_flare_do
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_k1");
+    df_test_begin(&t, "duoforge.moves.temper_flare");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t steps_run = 0u;
     uint32_t false_last = 0u;

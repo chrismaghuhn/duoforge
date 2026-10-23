@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g82 (white-box): Healing Wish (decision 0045, step G82). Position bit 0 is the slot's wish: the occupant's
+ * duoforge.moves.healing_wish (white-box): Healing Wish (decision 0045, step G82). Position bit 0 is the slot's wish: the occupant's
  * clear (a switch-out, a replacement's entry) keeps it and ends the other bits with the occupant; the heal of the entrant is a HEAL
  * event with cause MOVE and the move id, which the foe sees as a percentage like every heal (decision 0007); the view bit and its
  * feature are the manifest's and the public values of the header (0x00400000, feature 43, a lane's feature above the tiers: the
@@ -302,7 +302,7 @@ static void test_r2_view(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g82");
+    df_test_begin(&t, "duoforge.moves.healing_wish");
     test_heal_projection(&t);
     test_wish_kept_by_occupant_clear(&t);
     test_public_values(&t);

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g92 (white-box): step G92 of the content expansion (decision 0015 5cu, decision 0062).
+ * duoforge.moves.confusion_moves (white-box): step G92 of the content expansion (decision 0015 5cu, decision 0062).
  *
  * The branches are replayed by duoforge.reference.conformance_pool_data against the recorded battles g92_* (under "data": "pool"):
  * Confuse Ray into a foe (-start) and again on the confused foe (silent), Misty Terrain's -activate for a primary confusion,
@@ -58,7 +58,7 @@ static void test_handler_ids(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g92");
+    df_test_begin(&t, "duoforge.moves.confusion_moves");
     test_marks(&t);
     test_handler_ids(&t);
     return df_test_end(&t);

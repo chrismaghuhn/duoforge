@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g78 (white-box): step G78 of the content expansion (decision 0015 5ch, decision 0043), Dragon Darts.
+ * duoforge.moves.dragon_darts (white-box): step G78 of the content expansion (decision 0015 5ch, decision 0043), Dragon Darts.
  *
  * The branches are replayed by duoforge.reference.conformance_pool_data against the recorded battles g78_* (under "data": "pool"):
  * the split (both foes hit, -anim before the second hit), the chosen target stopped by Protect (silent, the partner takes both
@@ -393,7 +393,7 @@ static void test_refuse_red_card(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g78");
+    df_test_begin(&t, "duoforge.moves.dragon_darts");
     test_row(&t);
     test_split(&t);
     test_protect_t(&t);

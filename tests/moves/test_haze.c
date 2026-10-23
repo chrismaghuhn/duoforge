@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g62 (white-box): step G62 of the content expansion (decision 0015 entry 5az, decision 0031), in the POOL
+ * duoforge.moves.haze (white-box): step G62 of the content expansion (decision 0015 entry 5az, decision 0031), in the POOL
  * build: Haze. Its hit prints `-clearallboost` (the public event DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, 47) and clears the seven
  * boosts of every standing active Pokemon (getAllActive(), so a fainted one is skipped), and nothing else: the volatiles stay.
  * The recorded battles (g62_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data, which compares
@@ -60,7 +60,7 @@ static void check_values(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g62");
+    df_test_begin(&t, "duoforge.moves.haze");
     check_mark(&t);
     check_pins(&t);
     check_values(&t);

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g74 (white-box): step G74 of the content expansion, Baton Pass (decision 0042).
+ * duoforge.moves.baton_pass (white-box): step G74 of the content expansion, Baton Pass (decision 0042).
  *
  * What this test pins, and where the rest of the evidence is:
  *   - the marks: Baton Pass is supported and its pivot row is DFI_SWITCH_BATON_PASS; Shed Tail, Transform and the Imposter
@@ -344,7 +344,7 @@ static void check_passer_refusals(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g74");
+    df_test_begin(&t, "duoforge.moves.baton_pass");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     DF_CHECK(&t, ctx != NULL);
     check_marks(&t);

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g60 (white-box): step G60 of the content expansion, Substitute (decision 0032).
+ * duoforge.moves.substitute (white-box): step G60 of the content expansion, Substitute (decision 0032).
  *
  * What this test pins, and where the rest of the evidence is:
  *   - the approved public values (VOLATILE_SUBSTITUTE 9, FAIL_SUBSTITUTE_EXISTS 1, FAIL_SUBSTITUTE_WEAK 2, the public cause
@@ -264,7 +264,7 @@ static void check_observation_bit(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g60");
+    df_test_begin(&t, "duoforge.moves.substitute");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     DF_CHECK(&t, ctx != NULL);
     check_values_and_marks(&t);

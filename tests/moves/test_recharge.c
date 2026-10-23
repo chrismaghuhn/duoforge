@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g17 (white-box): step G17 of the content expansion, the recharge moves (Hyper Beam, Giga Impact,
+ * duoforge.moves.recharge (white-box): step G17 of the content expansion, the recharge moves (Hyper Beam, Giga Impact,
  * Blast Burn, Frenzy Plant, Hydro Cannon, Meteor Assault, Rock Wrecker), in the POOL state tail (must_recharge of a
  * position, decision 0015 section 7), in the request (the one candidate MOVE with DUOFORGE_MOVE_SLOT_RECHARGE), in the
  * queue (the recharge action) and in the view extension (decision 0018: the MUST_RECHARGE bit of the position's
@@ -308,7 +308,7 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g17");
+    df_test_begin(&t, "duoforge.moves.recharge");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     duoforge_context *kd = df_make_context(&df_config_pool_dev);

@@ -1221,7 +1221,7 @@ IGNORED_VOLATILES = {
     'taunt': 'the moves of the requests, the cant lines and the start and end lines',
     # Step G90 (decision 0060): the partial trap's turns are not a field of the record (a drawn counter, hidden from both viewers):
     # the residual damage lines, the end line and the trapped request (no switch option) show it; the source and the band are read
-    # by duoforge.state.pool_g90 after every step, and the presence bit of the view by its own test.
+    # by duoforge.moves.partial_trap after every step, and the presence bit of the view by its own test.
     'partiallytrapped': 'the residual damage lines, the end line and the trapped request; the turns are hidden',
     'yawn': 'the start line and the sleep that it brings',
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the

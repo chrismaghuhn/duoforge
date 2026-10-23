@@ -275,7 +275,7 @@ int main(void)
                 exp.supported = dfi_support.view_ext_features;
                 for (uint32_t flat = 0u; flat < 4u; ++flat) {
                     exp.sides[flat / 2u].positions[flat % 2u].disable_slot = (uint8_t)want[flat];
-                    /* Encore's slot (step G9, checked by duoforge.state.pool_g9) is in the battle that has both. */
+                    /* Encore's slot (step G9, checked by duoforge.moves.encore) is in the battle that has both. */
                     exp.sides[flat / 2u].positions[flat % 2u].encore_slot =
                         b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot;
                     /* Heal Block's bit (step G8, checked by duoforge.state.pool_g8) is in the battle that has it end with a Disable. */

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g11 (white-box): step G11 of the content expansion, Soak, in the POOL state tail (the soak type
+ * duoforge.moves.soak (white-box): step G11 of the content expansion, Soak, in the POOL state tail (the soak type
  * of the occupant, decision 0015 section 7), in what reads the types, in the event and in the view extension
  * (decision 0018: type_now and TYPE_CHANGED, bit 9).
  *
@@ -286,7 +286,7 @@ static void check_event(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g11");
+    df_test_begin(&t, "duoforge.moves.soak");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     duoforge_context *kd = df_make_context(&df_config_pool_dev);

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g26 (white-box): step G26 of the content expansion, Perish Song: the perish counter of the POOL
+ * duoforge.moves.perish_song (white-box): step G26 of the content expansion, Perish Song: the perish counter of the POOL
  * state tail (perish of a position, decision 0015 section 7: the duration, 4 from the cast, counted down by the residual
  * handler of order 24) and the view extension (decision 0018: the `perish` field of the position, the count that the game
  * announced, supported bit 4).
@@ -456,7 +456,7 @@ static void check_no_order_faint_point(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g26");
+    df_test_begin(&t, "duoforge.moves.perish_song");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     duoforge_context *kd = df_make_context(&df_config_pool_dev);

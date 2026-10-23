@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g9 (white-box): step G9 of the content expansion, Encore, in the POOL state tail (last_move,
+ * duoforge.moves.encore (white-box): step G9 of the content expansion, Encore, in the POOL state tail (last_move,
  * encore_slot and encore_turns of a position, decision 0015 section 7), in the queue (Champions' replacement of the
  * target's queued action), in the request (every slot but the Encored one is disabled), in the residual (order 16, the
  * -end line) and in the view extension (decision 0018: encore_slot, supported bit 7).
@@ -331,7 +331,7 @@ static bool is_failencore_name(const char *name)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g9");
+    df_test_begin(&t, "duoforge.moves.encore");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     duoforge_context *kd = df_make_context(&df_config_pool_dev);

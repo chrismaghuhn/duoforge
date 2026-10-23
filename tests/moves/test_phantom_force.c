@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g58 (white-box): step G58 of the content expansion (decision 0015 item 5ax), Phantom Force.
+ * duoforge.moves.phantom_force (white-box): step G58 of the content expansion (decision 0015 item 5ax), Phantom Force.
  *
  * The behaviour is replayed by duoforge.reference.conformance_pool_data: nineteen recorded battles (g58_* under "data": "pool")
  * cover the charge turn, the locked turn, the miss of a second charging user, No Guard on the target and the user, a Poison-type
@@ -167,7 +167,7 @@ static void test_spiky_break_reset_at_mid_turn(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g58");
+    df_test_begin(&t, "duoforge.moves.phantom_force");
     test_row(&t);
     test_spiky_break_reset_at_mid_turn(&t);
     return df_test_end(&t);

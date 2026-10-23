@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g87 (white-box): step G87 of the content expansion (decision 0080): Attract's source is public. The observation
+ * duoforge.moves.attract_source_view (white-box): step G87 of the content expansion (decision 0080): Attract's source is public. The observation
  * carries the source's flat position in volatiles2 bits 12 and 13 (for both players), a from-view world copies the source byte of the
  * view, and an inconsistent byte in a view is refused (E_MALFORMED). The corpus test replays every recorded pool battle, and at every
  * decision point with an infatuated occupant it builds both players' views into worlds and compares them with the engine.
@@ -489,7 +489,7 @@ static void test_fainted_source(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g87");
+    df_test_begin(&t, "duoforge.moves.attract_source_view");
     test_observation_bits(&t);
     test_from_view(&t);
     test_pair_invariant(&t);
