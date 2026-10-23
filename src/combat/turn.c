@@ -9186,6 +9186,7 @@ typedef struct dfi_noorder_snapshot {
     uint32_t key[DFI_POSITIONS];
     uint32_t ended_at;
     uint32_t drawn_slowest; /* the Speed key of the slowest no-order group drawn in phase 2, UINT32_MAX when none was */
+    uint32_t draws_after_order; /* the draw count at the end of phase 2 (dfi_draws.log_len) */
 } dfi_noorder_snapshot;
 
 static duoforge_status dfi_residual_events(dfi_run *r);
@@ -10355,19 +10356,6 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
     if (st != DUOFORGE_OK) {
         return st;
     }
-    bool stop = false;
-    st = dfi_residual_early(r, b, list, early, &stop);
-    if (st != DUOFORGE_OK || stop) {
-        return st;
-    }
-    st = dfi_residual_durations(r, b, first, &stop);
-    if (st != DUOFORGE_OK || stop) {
-        return st;
-    }
-    st = dfi_residual_late(r, b, list, herbs_from, sorted, &stop);
-    if (st != DUOFORGE_OK || stop) {
-        return st;
-    }
     /* The slowest drawn no-order group: a lone Protect / stall pair of a faster Pokemon draws before it in the reference. */
     for (uint32_t i = sorted; i < n; ++i) {
         if (list[i].order != DFI_RES_NO_ORDER || !list[i].callback) {
@@ -10380,6 +10368,20 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         if (calls >= 2u && list[i].speed < ps->drawn_slowest) {
             ps->drawn_slowest = list[i].speed;
         }
+    }
+    ps->draws_after_order = r->draws->log_len;
+    bool stop = false;
+    st = dfi_residual_early(r, b, list, early, &stop);
+    if (st != DUOFORGE_OK || stop) {
+        return st;
+    }
+    st = dfi_residual_durations(r, b, first, &stop);
+    if (st != DUOFORGE_OK || stop) {
+        return st;
+    }
+    st = dfi_residual_late(r, b, list, herbs_from, sorted, &stop);
+    if (st != DUOFORGE_OK || stop) {
+        return st;
     }
     return dfi_residual_noorder(r, b, list, sorted, n, ps);
 }
@@ -10426,6 +10428,12 @@ static duoforge_status dfi_residual_pair_draws(dfi_run *r, const dfi_noorder_sna
         if (ps->key[flat] > ps->drawn_slowest) {
             return DUOFORGE_E_UNSUPPORTED; /* the reference draws this pair before a slower group that phase 2 drew: the tape's order */
         }
+        if (i == 0u && r->draws->log_len != ps->draws_after_order) {
+            /* The reference draws the pair in its sort, before every handler of the residual; a handler of this residual
+             * drew already (a fatigue's confusion, a sleep's turns), so the engine's draw would come after it: the tape's
+             * order (issue 633). */
+            return DUOFORGE_E_UNSUPPORTED;
+        }
         uint32_t v = 0u;
         const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SPEED_TIE, 0u, 2u, &v);
         if (st != DUOFORGE_OK) {
@@ -10442,7 +10450,7 @@ static duoforge_status dfi_residual_pair_draws(dfi_run *r, const dfi_noorder_sna
 
 static duoforge_status dfi_residual_events(dfi_run *r)
 {
-    dfi_noorder_snapshot ps = {{false}, {false}, {0u}, DFI_POSITIONS, UINT32_MAX};
+    dfi_noorder_snapshot ps = {{false}, {false}, {0u}, DFI_POSITIONS, UINT32_MAX, 0u};
     const duoforge_status st = dfi_residual_events_run(r, &ps);
     if (st != DUOFORGE_OK || !r->ended) {
         return st;
