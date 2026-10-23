@@ -123,7 +123,7 @@ static void check_pins(df_test *t)
 /* The rows that stay out of this build (the step's drops and the guards): no mark, and no battle can reach them. */
 static void check_unmarked(df_test *t)
 {
-    /* Haze was unmarked here until step G62 (decision 0031) marked it; its check is in duoforge.state.pool_g62 */
+    /* Haze was unmarked here until step G62 (decision 0031) marked it; its check is in duoforge.moves.haze */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELBEAM] != 0u); /* marked by step G68 (decision 0015 item 5cc): the drop of G54 is no longer dropped */
     /* Final Gambit was dropped by G54 and is marked by step G76 (decision 0015 5cg): its check is in duoforge.state.pool_g76 */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FINALGAMBIT] != 0u);

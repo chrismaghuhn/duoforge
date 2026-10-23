@@ -3774,7 +3774,7 @@ static const dfi_queue_record *dfi_will_move(struct duoforge_battle *b, uint32_t
 }
 
 /* The failencore flag (data/moves.ts flags.failencore): Struggle and Encore itself are the only moves with it that a
- * marked member can have (duoforge.state.pool_g9 checks the predicate over every pool move against the pinned flag). */
+ * marked member can have (duoforge.moves.encore checks the predicate over every pool move against the pinned flag). */
 static bool dfi_fails_encore(uint32_t move_id)
 {
     return move_id == DFI_MOVE_STRUGGLE || move_id == DFI_MOVE_ENCORE;

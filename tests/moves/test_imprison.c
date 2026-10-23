@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g38 (white-box): step G38 of the content expansion, Imprison, in the POOL tail's `imprison` flag of each
+ * duoforge.moves.imprison (white-box): step G38 of the content expansion, Imprison, in the POOL tail's `imprison` flag of each
  * position (decision 0015 section 7), in the events (VOLATILE_START with the detail DUOFORGE_VOLATILE_IMPRISON for
  * `-start|X|move: Imprison`, CANT with the cause DUOFORGE_CAUSE_IMPRISON and the stopped move in id for
  * `cant|X|move: Imprison|Move`) and in the view extension (decision 0018: bit 2 IMPRISON of the position's volatiles, supported
@@ -249,7 +249,7 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g38");
+    df_test_begin(&t, "duoforge.moves.imprison");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     duoforge_context *kd = df_make_context(&df_config_pool_dev);

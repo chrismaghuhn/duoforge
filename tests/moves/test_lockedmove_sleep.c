@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_lockfam_sleep (white-box): the fix of issue 606 (decision 0015 entry 5dv, design:
+ * duoforge.moves.lockedmove_sleep (white-box): the fix of issue 606 (decision 0015 entry 5dv, design:
  * docs/research/expansion/lockfam-sleep.md). Before the fix the fatigue checks of the first scenario failed (the lock was
  * removed silently).
  *
@@ -15,7 +15,7 @@
  * in slot 0 (the set of the lane A campaign battle fz_6_175, marked on main). Arcanine leads at position 2 (side 1 slot 0)
  * beside Milotic (Hypnosis); side 0 leads Charizard and Grimmsnarl and switches both to Farigiraf and Archaludon, so the
  * Outrage always hits a target (no Fairy, no Protect) and its use restarts the lock when the count allows it. The lock is
- * set white-box at the turn boundary (lock_turns, the locked move, the last move), as duoforge.state.pool_g56 does. Every
+ * set white-box at the turn boundary (lock_turns, the locked move, the last move), as duoforge.moves.outrage_lock does. Every
  * scenario runs for the seeds 1..16 (the outcome does not depend on the draws: Milotic's accuracy is +6, so Hypnosis hits).
  *
  *   1. countdown_sleep_fatigue: lock_turns 1, Milotic at Speed +6 puts Arcanine to sleep before it moves (cant slp): the
@@ -669,7 +669,7 @@ static void run_pivot(df_test *t, const duoforge_context *ctx, const pivot_case 
  *  10. phase6_equal_speed_refused: as 9 with Kangaskhan (2, marked) and Annihilape (3, restarted), whose Speeds are equal (both
  *      base 90): which of the two handlers runs first is the shuffle, so whether the fatigue came before the battle's end is not
  *      known: E_UNSUPPORTED, the battle unchanged.
- *  11. phase6_both_marked: Arcanine and Garchomp, both asleep at the start (white-box, as duoforge.state.pool_g56) with count 1, no
+ *  11. phase6_both_marked: Arcanine and Garchomp, both asleep at the start (white-box, as duoforge.moves.outrage_lock) with count 1, no
  *      Perish: both `cant`, both marked, both end with the fatigue in the residual, both bits cleared. */
 static uint32_t g_p6_holder0, g_p6_holder1, g_p6_politoed, g_p6_farigiraf, g_p6_bench0, g_p6_bench1;
 
@@ -930,7 +930,7 @@ static void run_phase6(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_lockfam_sleep");
+    df_test_begin(&t, "duoforge.moves.lockedmove_sleep");
     duoforge_context *kp = df_make_context(&df_config_pool);
     static const pivot_case pivots[] = {
         {"pivot_uturn", PIVOT_UTURN},

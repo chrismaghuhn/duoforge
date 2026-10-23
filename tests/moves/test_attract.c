@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g71 (white-box): step G71 of the content expansion (decision 0034, decision 0015 5bn), the state and the
+ * duoforge.moves.attract (white-box): step G71 of the content expansion (decision 0034, decision 0015 5bn), the state and the
  * public side of Attract. The volatile's draws (Cute Charm's 3/10 and Attract's 1/2) wait for their draw sites (G73 owns site 23),
  * so this file tests the parts that need no draw: the constants, the Attract source bytes of the rev 5 reserve (1341 + flat), the
  * state check that refuses every invalid source, the public bit (POSITION_EXT_ATTRACT, for both players, no source), the refusal of
@@ -561,7 +561,7 @@ static void test_oblivious_cure_at_update(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g71");
+    df_test_begin(&t, "duoforge.moves.attract");
     test_rule_zero_is_none(&t);
     test_rule_bad_index(&t);
     test_rule_holder_standing(&t);
