@@ -9,7 +9,7 @@
  */
 #include <stdint.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 static inline uint32_t dfi_multihit_count(uint32_t pick)
 {

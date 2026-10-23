@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 /* Hard Press's basePowerCallback (step G86, data/moves.ts:8137-8150): bp = floor(floor((100 * (100 * floor(hp * 4096 / maxhp))
  * + 2048 - 1) / 4096) / 100) || 1, on the target's current HP. The integer forms are exact here (hp * 4096 and the sums fit). */

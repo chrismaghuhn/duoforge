@@ -1,5 +1,5 @@
 {
- "comment": "The format definition of Reg M-C (restructure step 10, docs/architecture/formats.md). Hand-written. Every value names the line of the pinned Showdown checkout it comes from; tools/datagen/gen_format.py --pin <checkout> compares each quote with its line and reads the value back from it. tools/datagen/gen_format.py writes src/data/format_tables.h from this file; gen_closure.py reads the format id and the pool source from it.",
+ "comment": "The format definition of Reg M-C (restructure step 10, docs/architecture/formats.md). Hand-written. Every value names the line of the pinned Showdown checkout it comes from; tools/datagen/gen_format.py --pin <checkout> compares each quote with its line and reads the value back from it. tools/datagen/gen_format.py writes src/data/formats/reg-mc/format_tables.h from this file; gen_closure.py reads the format id and the pool source from it.",
  "id": "reg-mc",
  "showdown_commit": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "showdown_format_id": "gen9championsvgc2026regmc",
@@ -57,7 +57,7 @@
    "pin": ["data/rulesets.ts", 785, "'Timeout Auto Choose', 'DC Timer Bank',"]}
  },
  "engine": {
-  "comment": "The facts the C engine uses, as named constants of src/data/format_tables.h (DFI_FORMAT_<NAME>). active_per_side is the position count of game_type doubles.",
+  "comment": "The facts the C engine uses, as named constants of src/data/formats/reg-mc/format_tables.h (DFI_FORMAT_<NAME>). active_per_side is the position count of game_type doubles.",
   "active_per_side": 2
  },
  "pool": {

@@ -14,7 +14,7 @@
 #include <duoforge/duoforge.h>
 
 #include "data/formulas.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
 #include "support/check.h"

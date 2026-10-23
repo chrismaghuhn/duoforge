@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 #include "state/battle_internal.h"
 #include "support/check.h"
 #include "support/fixtures.h"

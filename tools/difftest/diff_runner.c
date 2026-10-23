@@ -88,8 +88,8 @@
 
 #include <duoforge/duoforge_view.h>
 
-#include "data/closure_tables.h"
-#include "data/extended_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
+#include "data/formats/reg-mc/extended_tables.h"
 #include "domain.h"
 #include "records.h"
 #include "state/battle_internal.h"

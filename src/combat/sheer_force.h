@@ -17,8 +17,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "data/closure_tables.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 /* chainModify([5325, 4096]) of data/abilities.ts:4214-4215, the base power of a move that Sheer Force strips and of Electro Shot. */
 #define DFI_SHEER_FORCE_MODIFIER 5325u

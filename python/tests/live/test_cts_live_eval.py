@@ -270,7 +270,7 @@ class ReplayTest(unittest.TestCase):
                 done = t.epoch
                 records.append({"accepted": fixture["inputs"][done - 1]})
                 t.accepted(fixture["inputs"][done - 1])
-        names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
+        names = ev.unmodelled((data.ROOT / "src" / "data" / "formats" / "reg-mc" / "pool_tables.c").read_text(encoding="utf-8"))
         out = ev.replay(records, tables, cts.SetPrior.from_table(tables), fixture["team"], "battle-test-1", names)
         self.assertEqual(out["points"], 3)  # turns 1 to 3 (the team preview is not a searched decision)
         self.assertEqual(out["refused"], [])
@@ -316,7 +316,7 @@ class ReplayTest(unittest.TestCase):
                                   "moves": ["Flare Blitz"]}, names, tables), set())
 
     def test_the_real_tables_name_the_known_unmodelled_content(self):
-        names = ev.unmodelled((data.ROOT / "src" / "data" / "pool_tables.c").read_text(encoding="utf-8"))
+        names = ev.unmodelled((data.ROOT / "src" / "data" / "formats" / "reg-mc" / "pool_tables.c").read_text(encoding="utf-8"))
         self.assertIn("wish", names, sorted(names)[:10])  # an unmodelled move
         self.assertNotIn("gravity", names)  # modelled by #475 (entry 5dl: the field, five turns, the 27.2 residual)
         self.assertNotIn("speedswap", names)  # modelled by #473 (the stored-Speed swap)

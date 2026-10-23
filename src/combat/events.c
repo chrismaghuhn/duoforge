@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/knowledge.h"
 #include "state/observation_digest.h"
 
