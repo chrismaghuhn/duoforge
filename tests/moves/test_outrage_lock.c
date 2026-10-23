@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g56 (white-box): step G56 of the content expansion (decision 0015 item 5au), Outrage as a lockedmove.
+ * duoforge.moves.outrage_lock (white-box): step G56 of the content expansion (decision 0015 item 5au), Outrage as a lockedmove.
  *
  * The recorded battles (g56_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data. What they do not
  * show is the refusal: a locked user whose move is stopped before its use (a flinch, a freeze, a full paralysis) keeps its lock
@@ -270,7 +270,7 @@ static void test_lock_length_information_safety(df_test *t, const duoforge_conte
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g56");
+    df_test_begin(&t, "duoforge.moves.outrage_lock");
     duoforge_context *kp = df_make_context(&df_config_pool);
 
     /* A lock with nothing that stops its use: the step carries on, and the count goes down (a hit or a miss alike). */
@@ -347,7 +347,7 @@ int main(void)
     /* A sleeping holder: the sleep stops its move (not a refusal), so its lock is not restarted this turn and the residual's
      * countdown ends it with onEnd (sim/battle.ts:515-522; issue 606, decision 0015 5dv); with this count of 2 onEnd adds no
      * confusion (data/conditions.ts:278-281). No lock and no locked move after the turn. The count 1 case (the fatigue) is
-     * duoforge.state.pool_lockfam_sleep. */
+     * duoforge.moves.lockedmove_sleep. */
     {
         duoforge_battle *sl = NULL;
         DF_CHECK(&t, duoforge_battle_clone(kp, base, &sl) == DUOFORGE_OK && sl != NULL);

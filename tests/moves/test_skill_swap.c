@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g70 (white-box): step G70 of the content expansion, Skill Swap (decision 0041).
+ * duoforge.moves.skill_swap (white-box): step G70 of the content expansion, Skill Swap (decision 0041).
  *
  * What this test pins, and where the rest of the evidence is:
  *   - the row: Skill Swap is marked (its handler is SKILL_SWAP, id 93 after the Steel Beam and Thunder Wave of G68 at 91 and 92,
@@ -324,7 +324,7 @@ static void check_abilities(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g70");
+    df_test_begin(&t, "duoforge.moves.skill_swap");
     check_row(&t);
     check_bypass(&t);
     check_abilities(&t);

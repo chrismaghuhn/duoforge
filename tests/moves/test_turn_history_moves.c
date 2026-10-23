@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g88 (white-box): step G88 of the content expansion (decision 0046), Lash Out and Assurance, with the
+ * duoforge.moves.turn_history_moves (white-box): step G88 of the content expansion (decision 0046), Lash Out and Assurance, with the
  * turn-history position flags of tail rev 5 (LOWERED_THIS_TURN bit 5, HURT_THIS_TURN bit 6) and the PIVOT refusal of the
  * public record with DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY (64).
  *
@@ -266,7 +266,7 @@ static void test_lo_turn1_refusal(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g88");
+    df_test_begin(&t, "duoforge.moves.turn_history_moves");
     test_row(&t);
     test_lo_turn1_refusal(&t);
     test_lo_intimidate(&t);

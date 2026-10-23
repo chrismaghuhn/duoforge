@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_k3 (white-box): step K3 of the content expansion, Speed Swap (#473, decision 0015 5de).
+ * duoforge.moves.speed_swap (white-box): step K3 of the content expansion, Speed Swap (#473, decision 0015 5de).
  *
  * What this test pins, and where the rest of the evidence is:
  *   - the swap exchanges the two stored Speeds (dfi_member.stats[SPE]) and sets the presence bit (single_turn bit
@@ -550,7 +550,7 @@ static void check_end_of_refusal(df_test *t, const duoforge_context *ctx, const 
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_k3");
+    df_test_begin(&t, "duoforge.moves.speed_swap");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     DF_CHECK(&t, ctx != NULL);
     if (ctx != NULL) {

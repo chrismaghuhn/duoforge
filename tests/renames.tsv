@@ -50,41 +50,41 @@ mechanics/test_pool_g7.c	duoforge.state.pool_g7	rename	mechanics/test_wide_guard
 mechanics/test_pool_g72.c	duoforge.state.pool_g72	rename	mechanics/test_yawn_exemptions.c	duoforge.mechanics.yawn_exemptions	planned	G72: the Yawn rules' evidence gap
 mechanics/test_pool_terrain.c	duoforge.state.pool_terrain	rename	mechanics/test_electric_misty_terrain.c	duoforge.mechanics.electric_misty_terrain	planned	G25: Electric and Misty Terrain
 mechanics/test_pool_weather.c	duoforge.state.pool_weather	rename	mechanics/test_sand_snow_weather.c	duoforge.mechanics.sand_snow_weather	planned	Sandstorm and Snowscape
-moves/test_pool_g11.c	duoforge.state.pool_g11	rename	moves/test_soak.c	duoforge.moves.soak	planned	G11: Soak
-moves/test_pool_g17.c	duoforge.state.pool_g17	rename	moves/test_recharge.c	duoforge.moves.recharge	planned	G17: the recharge moves
+moves/test_pool_g11.c	duoforge.state.pool_g11	rename	moves/test_soak.c	duoforge.moves.soak	done	G11: Soak
+moves/test_pool_g17.c	duoforge.state.pool_g17	rename	moves/test_recharge.c	duoforge.moves.recharge	done	G17: the recharge moves
 moves/test_pool_g19.c	duoforge.state.pool_g19	split	-	-	planned	G19: Coaching and Glaive Rush
-moves/test_pool_g26.c	duoforge.state.pool_g26	rename	moves/test_perish_song.c	duoforge.moves.perish_song	planned	G26: Perish Song
+moves/test_pool_g26.c	duoforge.state.pool_g26	rename	moves/test_perish_song.c	duoforge.moves.perish_song	done	G26: Perish Song
 moves/test_pool_g31.c	duoforge.state.pool_g31	split	-	-	planned	G31: Taunt and Yawn
-moves/test_pool_g38.c	duoforge.state.pool_g38	rename	moves/test_imprison.c	duoforge.moves.imprison	planned	G38: Imprison
+moves/test_pool_g38.c	duoforge.state.pool_g38	rename	moves/test_imprison.c	duoforge.moves.imprison	done	G38: Imprison
 moves/test_pool_g42.c	duoforge.state.pool_g42	split	-	-	planned	G42: Roost and Stomping Tantrum
 moves/test_pool_g44.c	duoforge.state.pool_g44	split	-	-	planned	G44: Thunder, Power Trip, Ice Fang and another simple move
 moves/test_pool_g48.c	duoforge.state.pool_g48	split	-	-	planned	G48: Rage Fist, Stone Axe, Ceaseless Edge and the other rev 4 moves
-moves/test_pool_g50.c	duoforge.state.pool_g50	rename	moves/test_double_shock.c	duoforge.moves.double_shock	planned	G50: Double Shock
+moves/test_pool_g50.c	duoforge.state.pool_g50	rename	moves/test_double_shock.c	duoforge.moves.double_shock	done	G50: Double Shock
 moves/test_pool_g54.c	duoforge.state.pool_g54	split	-	-	planned	G54: the moves batch (Icicle Spear, Scale Shot, Quick Guard, ...)
-moves/test_pool_g56.c	duoforge.state.pool_g56	rename	moves/test_outrage_lock.c	duoforge.moves.outrage_lock	planned	G56: Outrage as a lockedmove
-moves/test_pool_g58.c	duoforge.state.pool_g58	rename	moves/test_phantom_force.c	duoforge.moves.phantom_force	planned	G58: Phantom Force
-moves/test_pool_g60.c	duoforge.state.pool_g60	rename	moves/test_substitute.c	duoforge.moves.substitute	planned	G60: Substitute
-moves/test_pool_g62.c	duoforge.state.pool_g62	rename	moves/test_haze.c	duoforge.moves.haze	planned	G62: Haze
+moves/test_pool_g56.c	duoforge.state.pool_g56	rename	moves/test_outrage_lock.c	duoforge.moves.outrage_lock	done	G56: Outrage as a lockedmove
+moves/test_pool_g58.c	duoforge.state.pool_g58	rename	moves/test_phantom_force.c	duoforge.moves.phantom_force	done	G58: Phantom Force
+moves/test_pool_g60.c	duoforge.state.pool_g60	rename	moves/test_substitute.c	duoforge.moves.substitute	done	G60: Substitute
+moves/test_pool_g62.c	duoforge.state.pool_g62	rename	moves/test_haze.c	duoforge.moves.haze	done	G62: Haze
 moves/test_pool_g64.c	duoforge.state.pool_g64	split	-	-	planned	G64: Beat Up, Bug Bite, Poltergeist, Sheer Cold
 moves/test_pool_g68.c	duoforge.state.pool_g68	split	-	-	planned	G68: Steel Beam and Thunder Wave
-moves/test_pool_g70.c	duoforge.state.pool_g70	rename	moves/test_skill_swap.c	duoforge.moves.skill_swap	planned	G70: Skill Swap
-moves/test_pool_g71.c	duoforge.state.pool_g71	rename	moves/test_attract.c	duoforge.moves.attract	planned	G71: Attract
+moves/test_pool_g70.c	duoforge.state.pool_g70	rename	moves/test_skill_swap.c	duoforge.moves.skill_swap	done	G70: Skill Swap
+moves/test_pool_g71.c	duoforge.state.pool_g71	rename	moves/test_attract.c	duoforge.moves.attract	done	G71: Attract
 moves/test_pool_g72b.c	duoforge.state.pool_g72b	split	-	-	planned	G72b: Alluring Voice and Dragon Cheer
-moves/test_pool_g74.c	duoforge.state.pool_g74	rename	moves/test_baton_pass.c	duoforge.moves.baton_pass	planned	G74: Baton Pass
+moves/test_pool_g74.c	duoforge.state.pool_g74	rename	moves/test_baton_pass.c	duoforge.moves.baton_pass	done	G74: Baton Pass
 moves/test_pool_g76.c	duoforge.state.pool_g76	split	-	-	planned	G76: Destiny Bond and Final Gambit
-moves/test_pool_g78.c	duoforge.state.pool_g78	rename	moves/test_dragon_darts.c	duoforge.moves.dragon_darts	planned	G78: Dragon Darts
+moves/test_pool_g78.c	duoforge.state.pool_g78	rename	moves/test_dragon_darts.c	duoforge.moves.dragon_darts	done	G78: Dragon Darts
 moves/test_pool_g8.c	duoforge.state.pool_g8	split	-	-	planned	G8: Throat Chop and Psychic Noise's Heal Block
 moves/test_pool_g80.c	duoforge.state.pool_g80	split	-	-	planned	G80: Psych Up, Howl, Ally Switch
-moves/test_pool_g82.c	duoforge.state.pool_g82	rename	moves/test_healing_wish.c	duoforge.moves.healing_wish	planned	G82: Healing Wish
+moves/test_pool_g82.c	duoforge.state.pool_g82	rename	moves/test_healing_wish.c	duoforge.moves.healing_wish	done	G82: Healing Wish
 moves/test_pool_g86.c	duoforge.state.pool_g86	split	-	-	planned	G86: Heavy Slam, Hard Press, Ice Spinner, Belly Drum
-moves/test_pool_g87.c	duoforge.state.pool_g87	rename	moves/test_attract_source_view.c	duoforge.moves.attract_source_view	planned	G87: Attract's public source
-moves/test_pool_g88.c	duoforge.state.pool_g88	rename	moves/test_turn_history_moves.c	duoforge.moves.turn_history_moves	planned	G88: Lash Out and Assurance (the turn-history flags)
-moves/test_pool_g9.c	duoforge.state.pool_g9	rename	moves/test_encore.c	duoforge.moves.encore	planned	G9: Encore
-moves/test_pool_g90.c	duoforge.state.pool_g90	rename	moves/test_partial_trap.c	duoforge.moves.partial_trap	planned	G90: the partial trap
-moves/test_pool_g92.c	duoforge.state.pool_g92	rename	moves/test_confusion_moves.c	duoforge.moves.confusion_moves	planned	G92: Confuse Ray, Swagger, Teeter Dance
-moves/test_pool_k1.c	duoforge.state.pool_k1	rename	moves/test_temper_flare.c	duoforge.moves.temper_flare	planned	K1: Temper Flare
-moves/test_pool_k3.c	duoforge.state.pool_k3	rename	moves/test_speed_swap.c	duoforge.moves.speed_swap	planned	K3: Speed Swap
-moves/test_pool_lockfam_sleep.c	duoforge.state.pool_lockfam_sleep	rename	moves/test_lockedmove_sleep.c	duoforge.moves.lockedmove_sleep	planned	issue 606: a lockedmove holder asleep
+moves/test_pool_g87.c	duoforge.state.pool_g87	rename	moves/test_attract_source_view.c	duoforge.moves.attract_source_view	done	G87: Attract's public source
+moves/test_pool_g88.c	duoforge.state.pool_g88	rename	moves/test_turn_history_moves.c	duoforge.moves.turn_history_moves	done	G88: Lash Out and Assurance (the turn-history flags)
+moves/test_pool_g9.c	duoforge.state.pool_g9	rename	moves/test_encore.c	duoforge.moves.encore	done	G9: Encore
+moves/test_pool_g90.c	duoforge.state.pool_g90	rename	moves/test_partial_trap.c	duoforge.moves.partial_trap	done	G90: the partial trap
+moves/test_pool_g92.c	duoforge.state.pool_g92	rename	moves/test_confusion_moves.c	duoforge.moves.confusion_moves	done	G92: Confuse Ray, Swagger, Teeter Dance
+moves/test_pool_k1.c	duoforge.state.pool_k1	rename	moves/test_temper_flare.c	duoforge.moves.temper_flare	done	K1: Temper Flare
+moves/test_pool_k3.c	duoforge.state.pool_k3	rename	moves/test_speed_swap.c	duoforge.moves.speed_swap	done	K3: Speed Swap
+moves/test_pool_lockfam_sleep.c	duoforge.state.pool_lockfam_sleep	rename	moves/test_lockedmove_sleep.c	duoforge.moves.lockedmove_sleep	done	issue 606: a lockedmove holder asleep
 abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_simple_ability_rows.c	duoforge.abilities.simple_ability_rows	done	G45: simple ability rows
 abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_steadfast.c	duoforge.abilities.steadfast	done	G45: steadfast
 abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_moxie.c	duoforge.abilities.moxie	done	G45: moxie

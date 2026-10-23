@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g50 (white-box): step G50 of the content expansion, Double Shock (decision 0025, items 1, 2 and 5).
+ * duoforge.moves.double_shock (white-box): step G50 of the content expansion, Double Shock (decision 0025, items 1, 2 and 5).
  *
  * Double Shock fails without the Electric type (-fail and [still], data/moves.ts:3954-3959), and after a hit its self effect
  * sets the first type to ??? (soak_type DFI_TAIL_TYPE2_TYPELESS) with the second type in type2; the event is TYPE_CHANGE with
@@ -276,7 +276,7 @@ static void check_view_and_codec(df_test *t, duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g50");
+    df_test_begin(&t, "duoforge.moves.double_shock");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t compared = 0u;
     uint32_t typeless_seen = 0u;

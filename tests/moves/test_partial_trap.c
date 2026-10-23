@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g90 (white-box): step G90 of the content expansion (decision 0015 5cs, decision 0060), the partial trap of
+ * duoforge.moves.partial_trap (white-box): step G90 of the content expansion (decision 0015 5cs, decision 0060), the partial trap of
  * Bind, Wrap, Fire Spin, Sand Tomb, Snap Trap and Infestation.
  *
  * The battles are replayed by duoforge.reference.conformance_pool_data against the recorded battles g90_* (under "data": "pool"):
@@ -681,7 +681,7 @@ static void test_pass_copies_elapsed(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g90");
+    df_test_begin(&t, "duoforge.moves.partial_trap");
     test_row(&t);
     test_wrap_band(&t);
     test_source_leaves(&t);
