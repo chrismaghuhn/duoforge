@@ -54,7 +54,7 @@
 #define DFI_SITE_ATTRACT 25u       /* Attract (POOL data, step G71, decision 0034): randomChance(1, 2) at BeforeMove priority 2, random(2) < 1 */
 #define DFI_SITE_POISON_POINT 26u  /* Poison Point (POOL data, A2a, decision 0015 entry 5dy; HS grant): randomChance(3, 10), random(10) < 3 */
 #define DFI_SITE_ALLY_SWITCH 33u /* Ally Switch's consecutive use (POOL data, step G80, decision 0044): randomChance(1, 3^level), random(3^level) == 0 */
-#define DFI_SITE_COUNT 34u /* gaps are fine: dfi_draw checks site < COUNT (HS ranges: sites 24-31: 24 G71, 25 G71, 26 A2a, 27-31 unused; 32 G90, 33 G80) */
+#define DFI_SITE_COUNT 34u /* gaps are fine: dfi_draw checks site < COUNT; the free ids and who hands them out: docs/process/NUMBERS.md */
 
 /* Build-time guard (restructure step 5c): every DFI_SITE_<NAME> has the id of its line in draw_sites.def, the frozen record of
  * the ids, and every id is below DFI_SITE_COUNT. */

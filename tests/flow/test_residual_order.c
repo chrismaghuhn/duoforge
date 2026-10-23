@@ -478,11 +478,13 @@ static bool parse_shard_arg(const char *text, uint32_t limit, uint32_t *out)
 /* Every residual kind and every draw site of the definition files (src/combat/residual_kinds.def, src/rng/draw_sites.def;
  * restructure step 5c) has its name, and every other value up to 255 has none: the free ones, the lane ranges not yet used,
  * 0 and the count. The lists come from the definition files, so a new kind or site (tools/new_mechanic.py, restructure
- * step 12) needs no edit here; the frozen values are the headers' _Static_asserts, the duplicate guard their switches. */
+ * step 12) needs no edit here; the frozen values are the headers' _Static_asserts, the duplicate guard their switches. The
+ * values of restructure step 5c stay named (the floor below): a line of a definition file is never removed. */
 static void test_kinds_and_sites_have_names(df_test *t)
 {
     bool kind_defined[256] = {false};
 #define DFI_RES_KIND(name, value, text)                                                                     \
+    _Static_assert((value) < 256u, "residual kind " #name " fits the table of this test");                     \
     DF_CHECK(t, dfi_res_kind_name(DFI_RES_##name) != NULL && strcmp(dfi_res_kind_name(DFI_RES_##name), text) == 0); \
     kind_defined[(value)] = true;
 #include "combat/residual_kinds.def"
@@ -494,6 +496,7 @@ static void test_kinds_and_sites_have_names(df_test *t)
     }
     bool site_defined[256] = {false};
 #define DFI_DRAW_SITE(name, value, text)                                                               \
+    _Static_assert((value) < 256u, "draw site " #name " fits the table of this test");                    \
     DF_CHECK(t, dfi_site_name(DFI_SITE_##name) != NULL && strcmp(dfi_site_name(DFI_SITE_##name), text) == 0); \
     site_defined[(value)] = true;
 #include "rng/draw_sites.def"
@@ -503,7 +506,19 @@ static void test_kinds_and_sites_have_names(df_test *t)
             DF_CHECK(t, dfi_site_name(s) == NULL);
         }
     }
+    _Static_assert(DFI_SITE_COUNT < 256u, "the count fits the table of this test");
     DF_CHECK(t, !site_defined[DFI_SITE_COUNT]);
+    /* The floor: every kind and site of restructure step 5c (kinds 1-19, 25, 26; sites 1-26, 32, 33) is still defined. */
+    for (uint32_t k = 1u; k <= 26u; ++k) {
+        if (k <= 19u || k >= 25u) {
+            DF_CHECK(t, kind_defined[k]);
+        }
+    }
+    for (uint32_t s = 1u; s <= 33u; ++s) {
+        if (s <= 26u || s >= 32u) {
+            DF_CHECK(t, site_defined[s]);
+        }
+    }
 }
 
 int main(int argc, char **argv)

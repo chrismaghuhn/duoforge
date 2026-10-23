@@ -15,7 +15,7 @@ import new_mechanic  # noqa: E402
 
 FILES = ['tests/moves/tests.cmake', 'tests/abilities/tests.cmake', 'tests/interactions/tests.cmake',
          'docs/mechanics/TEMPLATE.md', 'src/rng/draw.h', 'src/rng/draw_sites.def', 'src/combat/residual_order.h',
-         'src/combat/residual_kinds.def', 'tools/reference/trace_to_c.py']
+         'src/combat/residual_kinds.def', 'tools/reference/trace_to_c.py', 'docs/decisions/0015-content-expansion-pool.md']
 # A fixed block row, so that the cases do not follow the HS's current blocks.
 NUMBERS = '| Family | Owner |\n|---|---|\n| Decision 0015 entry ids | Content: 5ea-5ez; Fuzz: 5fa-5fm; HS: the rest | notes |\n'
 
@@ -35,7 +35,14 @@ class NewMechanic(unittest.TestCase):
         used = {int(v) for v in re.findall(r'^DFI_DRAW_SITE\([A-Z0-9_]+, (\d+)u,', sites, re.M)}
         self.count = int(re.search(r'^#define DFI_SITE_COUNT (\d+)u', (self.root / 'src/rng/draw.h').read_text(encoding='utf-8'),
                                    re.M).group(1))
-        self.site = min(v for v in range(1, self.count) if v not in used)
+        free = [v for v in range(1, self.count) if v not in used]
+        if not free:  # every id below the count is taken: the copy's count goes up by one (the HS's change in the real tree)
+            draw = self.root / 'src/rng/draw.h'
+            draw.write_text(draw.read_text(encoding='utf-8').replace('#define DFI_SITE_COUNT %du' % self.count,
+                                                                     '#define DFI_SITE_COUNT %du' % (self.count + 1)),
+                            encoding='utf-8', newline='\n')
+            free, self.count = [self.count], self.count + 1
+        self.site = free[0]
         kinds = (self.root / 'src/combat/residual_kinds.def').read_text(encoding='utf-8')
         self.kind = max(int(v) for v in re.findall(r'^DFI_RES_KIND\([A-Z0-9_]+, (\d+)u,', kinds, re.M)) + 1
 
@@ -61,7 +68,8 @@ class NewMechanic(unittest.TestCase):
         test = (self.root / 'tests/moves/test_unit_scaffold_case.c').read_text(encoding='utf-8')
         self.assertIn('df_test_begin(&t, "duoforge.moves.unit_scaffold_case");', test)
         self.assertIn('const bool mechanic_checks_written = false;', test)  # it fails until it is filled in
-        self.assertIn('mechanic_checks_written && "scaffold of 5zz: write the mechanic\'s checks"', test)
+        self.assertIn('fputs("scaffold of 5zz: write the mechanic\'s checks\\n", stderr);', test)
+        self.assertIn('DF_CHECK(t, mechanic_checks_written);', test)
         cmake = (self.root / 'tests/moves/tests.cmake').read_text(encoding='utf-8')
         self.assertTrue(cmake.endswith('duoforge_add_test(NAME duoforge.moves.unit_scaffold_case SOURCES moves/test_unit_scaffold_case.c '
                                        'WHITEBOX TIMEOUT 60 TIER quick AREA moves)\n'))
@@ -121,6 +129,17 @@ class NewMechanic(unittest.TestCase):
             (('moves', 'probe', '--draw-site', 'new=%d' % self.site), 'NAME=NUMBER'),
             (('moves', 'probe', '--residual-kind', 'CURSE=%d' % self.kind), 'taken'),
             (('moves', 'probe', '--residual-kind', 'NEW=19'), 'taken'),
+            (('moves', 'probe', '--draw-site', 'ROLL_2=%d' % self.site), 'no digits'),
+            (('moves', 'probe', '--draw-site', 'ROLL__X=%d' % self.site), 'single _'),
+            (('moves', 'probe', '--residual-kind', 'BIG=256'), 'must lie in 1..255'),
+            (('moves', 'probe', '--residual-kind', 'ZERO=0'), 'must lie in 1..255'),
+            (('moves', 'probe', '--id', '5aaa'), 'one or two letters'),
+            (('moves', 'probe', '--id', '5ck'), 'frozen table of decision 0015'),
+            (('moves', 'probe', '--id', '5a'), 'frozen table of decision 0015'),
+            (('moves', 'probe', '--title', 'ends */ early'), 'without */'),
+            (('moves', 'probe', '--title', 'two\nlines'), 'one line'),
+            (('moves', 'probe', '--title', 'a | b'), 'without */ or |'),
+            (('moves', 'probe', '--step', ''), 'one line'),
         ]
         for args, reason in cases:
             with self.subTest(args=args):
@@ -128,11 +147,39 @@ class NewMechanic(unittest.TestCase):
                 if '--id' not in full:
                     full += ['--id', '5zz']
                 before = self.snapshot()
-                code, _, err = self.run_tool(*full, '--title', 'X')
+                if '--title' not in full:
+                    full += ['--title', 'X']
+                code, _, err = self.run_tool(*full)
                 self.assertEqual(code, 2)
                 self.assertIn(reason, err)
                 self.assertIn('nothing written', err)
                 self.assertEqual(self.snapshot(), before)
+
+    def test_free_text_with_regex_characters_is_written_as_it_is(self):
+        code, _, err = self.run_tool('moves', 'probe', '--id', '5zz', '--title', r'Probe \d (1) [x]', '--step', r'G\1')
+        self.assertEqual((code, err), (0, ''))
+        doc = next((self.root / 'docs/mechanics/moves').glob('5zz-*.md')).read_text(encoding='utf-8')
+        self.assertIn('- Step: G\\1\n', doc)
+        self.assertIn('# 5zz. G\\1, Probe \\d (1) [x]\n', doc)
+
+    def test_a_failed_write_restores_every_file(self):
+        real_write = new_mechanic.write
+        calls = []
+
+        def failing(path, text):
+            calls.append(path)
+            if len(calls) == 3:
+                raise PermissionError('locked')
+            real_write(path, text)
+        before = self.snapshot()
+        new_mechanic.write = failing
+        try:
+            code, _, err = self.run_tool('moves', 'probe', '--id', '5zz', '--title', 'X', '--draw-site', 'PROBE=%d' % self.site)
+        finally:
+            new_mechanic.write = real_write
+        self.assertEqual(code, 1)
+        self.assertIn('were restored', err)
+        self.assertEqual(self.snapshot(), before)
 
     def test_a_lane_id_inside_its_block_is_taken(self):
         code, _, err = self.run_tool('moves', 'probe', '--id', '5ec', '--lane', 'Content', '--title', 'X', '--dry-run')

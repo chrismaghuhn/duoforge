@@ -14,7 +14,8 @@ Writes, and changes nothing that runs:
   of --lane, read from the row "Decision 0015 entry ids", or one that has its file or anchor already);
 - for each --draw-site NAME=ID: the line DFI_DRAW_SITE(NAME, IDu, "name") of src/rng/draw_sites.def, the #define
   DFI_SITE_NAME of src/rng/draw.h and the entry of tools/reference/trace_to_c.py's SITES (restructure step 5c), with an id
-  that the HS gave out (NUMBERS.md) and that is free and below DFI_SITE_COUNT;
+  that is free and below DFI_SITE_COUNT; the HS hands out sites and kinds one at a time (NUMBERS.md), and the tool takes
+  the given value on that trust (it checks only that the value is free and in range, 1..255);
 - for each --residual-kind NAME=NUMBER: the line DFI_RES_KIND(NAME, NUMBERu, "name") of src/combat/residual_kinds.def and
   the #define DFI_RES_NAME of src/combat/residual_order.h, with a free number.
 
@@ -28,9 +29,14 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'docs'))
+import mechanics_docs  # noqa: E402  (the entry id rules of restructure step 11: ID, ROW, id_key)
+
 TEST_AREAS = ('abilities', 'items', 'moves', 'mechanics', 'forms', 'flow', 'interactions')
 DOC_AREAS = ('flow', 'mechanics', 'items', 'abilities', 'moves', 'forms', 'field')
 STEP = re.compile(r'(?:^|_)(?:g\d+[a-z]?|k\d+|i\d+|ac\d+|a\d+a|mega\d+)(?=_|$)')  # as tools/restructure/test_audit.py
+# The name switches and the test of the names index the values with a byte (tests/flow/test_residual_order.c).
+VALUE_LIMIT = 256
 
 
 class Refused(Exception):
@@ -61,6 +67,7 @@ def test_source(area, behaviour, name, doc, entry):
  * that the recorded reference battles cannot show by themselves (marks, pinned rows, public values, refusals).
  */
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <duoforge/duoforge.h>
 
@@ -71,7 +78,10 @@ def test_source(area, behaviour, name, doc, entry):
 static void check_placeholder(df_test *t)
 {{
     const bool mechanic_checks_written = false;
-    DF_CHECK(t, mechanic_checks_written && "scaffold of {entry}: write the mechanic's checks");
+    if (!mechanic_checks_written) {{
+        fputs("scaffold of {entry}: write the mechanic's checks\\n", stderr);
+    }}
+    DF_CHECK(t, mechanic_checks_written);
 }}
 
 int main(void)
@@ -88,9 +98,9 @@ def doc_text(template, entry, title, area, step, tests):
     t = template
     t = t.replace('<a id="<id>"></a>', '<a id="%s"></a>' % entry)
     t = t.replace('# <id>. <step code>, <title>', '# %s. %s, %s' % (entry, step, title) if step != '-' else '# %s. %s' % (entry, title))
-    t = re.sub(r'^- Area: .*$', '- Area: %s' % area, t, count=1, flags=re.M)
-    t = re.sub(r'^- Step: .*$', '- Step: %s' % step, t, count=1, flags=re.M)
-    t = re.sub(r'^- Tests: .*$', '- Tests: %s' % tests, t, count=1, flags=re.M)
+    t = re.sub(r'^- Area: .*$', lambda _: '- Area: %s' % area, t, count=1, flags=re.M)
+    t = re.sub(r'^- Step: .*$', lambda _: '- Step: %s' % step, t, count=1, flags=re.M)
+    t = re.sub(r'^- Tests: .*$', lambda _: '- Tests: %s' % tests, t, count=1, flags=re.M)
     t = t.replace('<id>. **<step code>, <title>**', '%s. **%s**' % (entry, '%s, %s' % (step, title) if step != '-' else title))
     # The optional ## Support section is left out (TEMPLATE.md: delete it when the step has none); a step that has a support
     # line adds it and runs tools/docs/mechanics_docs.py --write (docs/mechanics/README.md).
@@ -102,8 +112,8 @@ def doc_text(template, entry, title, area, step, tests):
 
 
 def id_key(entry):
-    """The order of the entry ids: shorter first, then by letter (5z < 5aa < 5ea < 5ez < 5fa)."""
-    return (len(entry), entry)
+    """The order of the entry ids: shorter first, then by letter (5z < 5aa < 5ea < 5ez < 5fa), as mechanics_docs orders them."""
+    return mechanics_docs.id_key(entry)
 
 
 def lane_blocks(numbers):
@@ -138,9 +148,12 @@ def check_id(entry, lane, numbers):
 def parse_pairs(values, what):
     out = []
     for v in values:
-        m = re.fullmatch(r'([A-Z][A-Z0-9_]*)=(\d+)', v)
-        if not m:
-            raise Refused('%s %r is not NAME=NUMBER (NAME in capitals)' % (what, v))
+        m = re.fullmatch(r'([A-Z](?:[A-Z_]*[A-Z])?)=(\d+)', v)
+        if not m or '__' in m.group(1):
+            raise Refused('%s %r is not NAME=NUMBER (NAME in capitals and single _, no digits: its label is lowercase with -)'
+                          % (what, v))
+        if not 0 < int(m.group(2)) < VALUE_LIMIT:
+            raise Refused('%s %r: the value must lie in 1..%d' % (what, v, VALUE_LIMIT - 1))
         out.append((m.group(1), int(m.group(2))))
     return out
 
@@ -148,7 +161,7 @@ def parse_pairs(values, what):
 def insert_def_line(text, macro, name, value, label):
     """The definition file with the new line in value order (after the last line of a smaller value)."""
     lines = text.split('\n')
-    pattern = re.compile(r'^%s\(([A-Z0-9_]+), (\d+)u, "[a-z0-9-]+"\)$' % macro)
+    pattern = re.compile(r'^%s\(([A-Z0-9_]+), (\d+)u, "[a-z-]+"\)$' % macro)
     at = None
     for i, line in enumerate(lines):
         m = pattern.match(line)
@@ -169,9 +182,10 @@ def insert_define(text, prefix, name, value, comment, before):
     """The header with `#define <prefix><name> <value>u` before the line that starts with `before`."""
     if re.search(r'^#define %s%s\b' % (prefix, name), text, re.M):
         raise Refused('%s%s is already defined' % (prefix, name))
-    if re.search(r'^#define %s[A-Z0-9_]+ %du\b' % (prefix, value), text, re.M):
-        raise Refused('%s value %d is taken' % (prefix, value))
-    at = text.index(before)
+    at = text.find('\n' + before)
+    if at < 0:
+        raise Refused('the line %r is not in the header' % before)
+    at += 1
     return text[:at] + '#define %s%s %du /* %s */\n' % (prefix, name, value, comment) + text[at:]
 
 
@@ -185,8 +199,12 @@ def plan(args):
     doc_area = args.doc_area or area
     if doc_area not in DOC_AREAS:
         raise Refused('documentation area %r: one of %s (--doc-area)' % (doc_area, ', '.join(DOC_AREAS)))
-    if not re.fullmatch(r'5[a-z]{1,3}', args.id):
-        raise Refused('entry id %r: 5 and one to three letters, from the lane block of docs/process/NUMBERS.md' % args.id)
+    if not mechanics_docs.ID.match(args.id):
+        raise Refused('entry id %r: 5 and one or two letters (tools/docs/mechanics_docs.py), from the lane block of '
+                      'docs/process/NUMBERS.md' % args.id)
+    for what, text in (('--title', args.title), ('--step', args.step)):
+        if not text.strip() or re.search(r'[\x00-\x1f\x7f]', text) or '*/' in text or '|' in text:
+            raise Refused('%s %r: one line of text, without */ or |' % (what, text))
     name = 'duoforge.%s.%s' % (area, behaviour)
     test_rel = 'tests/%s/test_%s.c' % (area, behaviour)
     doc_rel = 'docs/mechanics/%s/%s-%s.md' % (doc_area, args.id, slug_of(args.title))
@@ -203,6 +221,10 @@ def plan(args):
             '<a id="%s"></a>' % args.id in read(f) for f in mechanics.glob('*/*.md')):
         raise Refused('entry id %s has its file or anchor already' % args.id)
     check_id(args.id, args.lane, read(root / 'docs' / 'process' / 'NUMBERS.md'))
+    for line in read(root / mechanics_docs.DECISION).split('\n'):
+        m = mechanics_docs.ROW.match(line)
+        if m and m.group(1).split('-')[0] == args.id:
+            raise Refused('entry id %s is a row of the frozen table of decision 0015 (an entry or a no-entry row)' % args.id)
     writes[test_rel] = test_source(area, behaviour, name, doc_rel, args.id)
     line = ('# %s (%s): %s. Scaffolded by tools/new_mechanic.py.\n'
             'duoforge_add_test(NAME %s SOURCES %s/test_%s.c WHITEBOX TIMEOUT 60 TIER quick AREA %s)\n'
@@ -213,7 +235,10 @@ def plan(args):
     if sites:
         draw_h, draw_def, trace = 'src/rng/draw.h', 'src/rng/draw_sites.def', 'tools/reference/trace_to_c.py'
         h, d, tr = read(root / draw_h), read(root / draw_def), read(root / trace)
-        count = int(re.search(r'^#define DFI_SITE_COUNT (\d+)u', h, re.M).group(1))
+        m = re.search(r'^#define DFI_SITE_COUNT (\d+)u', h, re.M)
+        if not m:
+            raise Refused('%s has no DFI_SITE_COUNT' % draw_h)
+        count = int(m.group(1))
         for site, value in sites:
             if not 0 < value < count:
                 raise Refused('draw site %s=%d: outside 1..%d (DFI_SITE_COUNT %d; raising it is the HS\'s change)'
@@ -231,8 +256,6 @@ def plan(args):
         res_h, res_def = 'src/combat/residual_order.h', 'src/combat/residual_kinds.def'
         h, d = read(root / res_h), read(root / res_def)
         for kind, value in kinds:
-            if not 0 < value < 0xFFFFFFFF:
-                raise Refused('residual kind %s=%d: out of range' % (kind, value))
             d = insert_def_line(d, 'DFI_RES_KIND', kind, value, kind.lower().replace('_', '-'))
             h = insert_define(h, 'DFI_RES_', kind, value, '%s (%s): scaffolded, describe the handler' % (args.title, args.id),
                               '#define DFI_RES_NO_ORDER ')
@@ -259,10 +282,27 @@ def main(argv):
     except Refused as e:
         print('new_mechanic: refused: %s (nothing written)' % e, file=sys.stderr)
         return 2
-    for rel in sorted(writes):
-        print('%s %s' % ('would write' if args.dry_run else 'writes', rel))
-        if not args.dry_run:
+    if args.dry_run:
+        for rel in sorted(writes):
+            print('would write %s' % rel)
+        return 0
+    old = {rel: (root / rel).read_bytes() if (root / rel).exists() else None for rel in writes}
+    done = []
+    try:
+        for rel in sorted(writes):
             write(root / rel, writes[rel])
+            done.append(rel)
+    except OSError as e:
+        for rel in done:  # all or nothing: the files written so far get their old bytes again, the new ones go
+            if old[rel] is None:
+                (root / rel).unlink()
+            else:
+                (root / rel).write_bytes(old[rel])
+        print('new_mechanic: failed while writing (%s); the %d files written before were restored' % (e, len(done)),
+              file=sys.stderr)
+        return 1
+    for rel in done:
+        print('writes %s' % rel)
     return 0
 
 
