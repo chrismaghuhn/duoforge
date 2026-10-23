@@ -1,0 +1,108 @@
+{
+  "name": "a2a_cover_b",
+  "purpose": "A2a (decision 0015 entry 5dy, fourteen abilities at existing hooks): a PASS battle of the random differential campaign of run 52002 (diff_driver.py random, seed 52002, battle fz_52002_120, teams of the A2a branch, all content marked, every battle of the run PASS). It shows Ice Body (snow heals), Motor Drive (Speed +1), Water Absorb (-immune at full HP) and Natural Cure (a tox cured at the switch-out).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,3c216ec4b901efb376e791b3bd08633ae0f3ac27e15508f1504bb9c96f1b389e",
+  "teams": [
+    "Emolga (F) @ Sitrus Berry\nAbility: Motor Drive\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Discharge\n- Thunderbolt\n- U-turn\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Water Absorb\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Surf\n- Muddy Water\n- Hypnosis\n- Icy Wind\n\nVaporeon (M) @ Life Orb\nAbility: Water Absorb\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Surf\n- Scald\n- Yawn\n- Shadow Ball\n\nJolteon (M) @ Magnet\nAbility: Quick Feet\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Discharge\n- Shadow Ball\n- Yawn\n- Mud-Slap\n\nPawmot (M) @ Expert Belt\nAbility: Natural Cure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Discharge\n- Thunder Wave\n- Close Combat\n- Nuzzle\n\nAraquanid (F) @ Leftovers\nAbility: Water Absorb\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Surf\n- Liquidation\n- Leech Life\n- Protect",
+    "Pawmot (F) @ Sitrus Berry\nAbility: Natural Cure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Wild Charge\n- Close Combat\n- Electric Terrain\n- Sweet Kiss\n\nAvalugg (M) @ Mental Herb\nAbility: Ice Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Icicle Crash\n- Snowscape\n- Body Press\n- Rock Slide\n\nGlimmora (F) @ Focus Sash\nAbility: Corrosion\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Toxic\n- Sludge Wave\n- Power Gem\n- Confuse Ray\n\nGoodra-Hisui (M) @ Leftovers\nAbility: Gooey\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Iron Head\n- Dragon Claw\n- Breaking Swipe\n- Body Press\n\nDragalge (F) @ Rocky Helmet\nAbility: Poison Point\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Sludge Bomb\n- Dragon Pulse\n- Muddy Water\n- Snowscape\n\nWatchog (M) @ Silk Scarf\nAbility: Illuminate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Hypnosis\n- Crunch\n- Confuse Ray\n- Screech"
+  ],
+  "choices": [
+    {
+      "p1": "team 3621",
+      "p2": "team 1362"
+    },
+    {
+      "p1": "move 3 2, move 4",
+      "p2": "move 2 2, move 1 -1"
+    },
+    {
+      "p1": "move 3 1, move 1",
+      "p2": "switch 3, move 4 -1"
+    },
+    {
+      "p1": "move 4 2, switch 4",
+      "p2": "move 1 2, move 2"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "move 1 -2, move 2"
+    },
+    {
+      "p1": "move 3 2, move 4",
+      "p2": "move 1 2, move 4 2"
+    },
+    {
+      "p1": "move 2, switch 4",
+      "p2": "move 1 2, move 4 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 1, move 1",
+      "p2": "move 1 -2, move 4"
+    },
+    {
+      "p1": "move 3 -2, move 4",
+      "p2": "move 2 -2, move 2"
+    },
+    {
+      "p1": "move 3 2, move 1",
+      "p2": "move 4 -2, move 2"
+    },
+    {
+      "p1": "switch 4, switch 3",
+      "p2": "move 1 1, move 4"
+    },
+    {
+      "p1": "move 2 1, switch 3",
+      "p2": "switch 3, move 2"
+    },
+    {
+      "p1": "move 3 2, move 1",
+      "p2": "move 1 1, move 3 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 1, move 2 2",
+      "p2": "move 4 2, move 1 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 1, move 1",
+      "p2": "move 1 2, switch 3"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 2 2, move 4 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 3 2, move 2 1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4, pass"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1 1, pass"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 1 2, pass"
+    }
+  ]
+}

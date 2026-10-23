@@ -23,7 +23,7 @@ from .items import (
     check_g28_items, check_g49_facts, check_g55_items, entry_features, G2_ITEMS, INERT_ITEM_KEYS, ITEM_FAMILIES,
     ITEM_MATCHERS, ITEM_MEMBERS, item_param, POOL_ITEMS)
 from .abilities import (
-    ABILITY_FAMILIES, ABILITY_MATCHERS, ABILITY_MEMBERS, ability_param, check_g30_facts, check_g37_facts,
+    ABILITY_FAMILIES, ABILITY_MATCHERS, ABILITY_MEMBERS, ability_param, check_a2a_facts, check_g30_facts, check_g37_facts,
     check_g57_facts, check_i2_facts, FAILSKILLSWAP_SOURCE, G2_ABILITIES, INERT_ABILITY_KEYS, POOL_ABILITIES)
 from .rules import (
     C1_PART4_FACTS, check_a0_facts, check_a0p1_facts, check_c1_facts, check_c2_facts, check_c4_facts, check_c5_facts,
@@ -233,6 +233,7 @@ def build_pool(root, repo, dx):
     check_a0p1_facts(moves_ts, champ_moves, items_ts, champ_items, legal)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
+    check_a2a_facts(abil_ts, champ_abil, {rel: Source(root, rel, READER_INPUTS) for rel in ('sim/pokemon.ts', 'data/conditions.ts')})
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
     check_g61_facts(root, abil_ts, champ_abil)

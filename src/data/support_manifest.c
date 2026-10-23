@@ -841,6 +841,21 @@ const dfi_support_manifest dfi_support = {
             /* step G79 (decision 0015 5br): Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562,
              * sim/field.ts:106-116); Altaria and Drampa; an engine row */
             [DFI_ABILITY_CLOUDNINE] = 1u,
+            /* A2a (Champions-100, decision 0015 entry 5dy): one clause each at an existing hook, engine rows */
+            [DFI_ABILITY_ILLUMINATE] = 1u,    /* Keen Eye's TryBoost and ignoreEvasion (dfi_boost, dfi_accuracy_check) */
+            [DFI_ABILITY_WHITESMOKE] = 1u,    /* Clear Body's TryBoost (dfi_boost) */
+            [DFI_ABILITY_WATERABSORB] = 1u,   /* Volt Absorb's TryHit for Water moves */
+            [DFI_ABILITY_EARTHEATER] = 1u,    /* Volt Absorb's TryHit for Ground moves */
+            [DFI_ABILITY_MOTORDRIVE] = 1u,    /* Speed +1 or -immune for Electric moves (Lightning Rod without the redirect) */
+            [DFI_ABILITY_ICEBODY] = 1u,       /* a sixteenth in snow (eachEvent('Weather'), dfi_weather_heal) */
+            [DFI_ABILITY_SURGESURFER] = 1u,   /* Speed x2 in Electric Terrain (dfi_speed_key) */
+            [DFI_ABILITY_QUICKFEET] = 1u,     /* Speed x1.5 while statused, no paralysis halving (dfi_speed_key) */
+            [DFI_ABILITY_CORROSION] = 1u,     /* its poisons skip the Poison and Steel immunity (dfi_try_status) */
+            [DFI_ABILITY_PURIFYINGSALT] = 1u, /* no status, no Yawn, Ghost moves x0.5 at the holder */
+            [DFI_ABILITY_GOOEY] = 1u,         /* a contact hit lowers the attacker's Speed by 1 (DamagingHit) */
+            [DFI_ABILITY_POISONPOINT] = 1u,   /* a contact hit poisons the attacker at 3 in 10 (DamagingHit, draw site 26) */
+            [DFI_ABILITY_TANGLEDFEET] = 1u,   /* accuracy x0.5 against a confused holder (the accuracy chain) */
+            [DFI_ABILITY_NATURALCURE] = 1u,   /* the status cured at the switch-out (the Champions entry, combat/flow/switch.h) */
         },
     .items =
         {

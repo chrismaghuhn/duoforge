@@ -42,3 +42,7 @@ duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES abilities/test_pool_g81.c
 
 # Step K2 (decision 0015 5dd, #474): Piercing Drill and Excadrite (the marks, the stone link, the -zbroken event kind, the 0.25 rounding).
 duoforge_add_test(NAME duoforge.state.pool_k2 SOURCES abilities/test_pool_k2.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+
+# A2a (decision 0015 entry 5dy): fourteen abilities at existing hooks (the marks, the neighbour abilities at the decisive steps of
+# the a2a_cover_* battles, the Flower Veil and Tangled Feet refusals; white-box).
+duoforge_add_test(NAME duoforge.state.pool_a2a SOURCES abilities/test_pool_a2a.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)

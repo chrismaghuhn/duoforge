@@ -1,0 +1,103 @@
+{
+  "name": "a2a_cover_i",
+  "purpose": "A2a (decision 0015 entry 5dy, fourteen abilities at existing hooks): a PASS battle of the random differential campaign of run 52002 (diff_driver.py random, seed 52002, battle fz_52002_677, teams of the A2a branch, all content marked, every battle of the run PASS). It shows Motor Drive at +6 Speed (-immune).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,9604e41c49b45c7f6150cf1c799740bd40dee572f2b07ebadcbb95e6ec542afa",
+  "teams": [
+    "Roserade (F) @ Life Orb\nAbility: Poison Point\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Sludge Bomb\n- Giga Drain\n- Sleep Powder\n- Toxic\n\nRaichu-Alola (M) @ Magnet\nAbility: Surge Surfer\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Electric Terrain\n- Discharge\n- Sweet Kiss\n- Psychic\n\nSalazzle (F) @ Poison Barb\nAbility: Corrosion\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Toxic\n- Sludge Bomb\n- Swagger\n- Mud-Slap\n\nStarmie @ Wise Glasses\nAbility: Illuminate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Surf\n- Icy Wind\n- Confuse Ray\n- Thunder Wave\n\nJolteon (F) @ Choice Scarf\nAbility: Quick Feet\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Thunderbolt\n- Shadow Ball\n- Mud-Slap\n- Bite\n\nPidgeot (M) @ Sharp Beak\nAbility: Tangled Feet\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Brave Bird\n- Feather Dance\n- U-turn\n- Quick Attack",
+    "Garganacl (F) @ Sitrus Berry\nAbility: Purifying Salt\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Earthquake\n- Rock Slide\n- Dynamic Punch\n- Protect\n\nVaporeon (F) @ Mystic Water\nAbility: Water Absorb\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Muddy Water\n- Surf\n- Yawn\n- Mud-Slap\n\nOrthworm (M) @ Leftovers\nAbility: Earth Eater\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Earthquake\n- Iron Head\n- Mud-Slap\n- Protect\n\nGoodra (F) @ Rocky Helmet\nAbility: Gooey\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Breaking Swipe\n- Muddy Water\n- Toxic\n- Thunderbolt\n\nTorkoal (M) @ Charcoal\nAbility: White Smoke\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nQuiet Nature\n- Heat Wave\n- Earthquake\n- Will-O-Wisp\n- Yawn\n\nEmolga (M) @ Focus Sash\nAbility: Motor Drive\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Discharge\n- Electroweb\n- Thunder Wave\n- Double Team"
+  ],
+  "choices": [
+    {
+      "p1": "team 5142",
+      "p2": "team 6253"
+    },
+    {
+      "p1": "switch 4, move 2 1",
+      "p2": "switch 3, move 1"
+    },
+    {
+      "p1": "move 4 -2, move 1 1",
+      "p2": "move 1, switch 3"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1, switch 3",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 1, move 2",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "pass, switch 3",
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 -2, move 2 1",
+      "p2": "move 3 2, move 2"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "move 4, move 3 -1"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "move 3 -2, move 2"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 3 1"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "pass, move 2"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "pass, move 3 -1"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 1"
+    },
+    {
+      "p1": "move 1 2, pass",
+      "p2": "pass, move 1"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "pass, move 3 1"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 1"
+    }
+  ]
+}

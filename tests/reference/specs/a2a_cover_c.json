@@ -1,0 +1,83 @@
+{
+  "name": "a2a_cover_c",
+  "purpose": "A2a (decision 0015 entry 5dy, fourteen abilities at existing hooks): a PASS battle of the random differential campaign of run 52003 (diff_driver.py random, seed 52003, battle fz_52003_411, teams of the A2a branch, all content marked, every battle of the run PASS). It shows Illuminate ignoring a raised evasion, Quick Feet (statused Jolteon; a paralysed Gardevoir that traced Quick Feet keeps its Speed) and Tangled Feet (a confused holder).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,6e7961b219eb8df94937894fb460c95dbe3dff98778e7c913a43677ca66d1c3f",
+  "teams": [
+    "Roserade (F) @ Life Orb\nAbility: Poison Point\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Sludge Bomb\n- Giga Drain\n- Sleep Powder\n- Toxic\n\nPidgeot (M) @ Sharp Beak\nAbility: Tangled Feet\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Brave Bird\n- Feather Dance\n- U-turn\n- Quick Attack\n\nSalazzle (F) @ Poison Barb\nAbility: Corrosion\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Toxic\n- Sludge Bomb\n- Swagger\n- Mud-Slap\n\nRaichu-Alola (M) @ Magnet\nAbility: Surge Surfer\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Electric Terrain\n- Discharge\n- Sweet Kiss\n- Psychic\n\nStarmie @ Wise Glasses\nAbility: Illuminate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Surf\n- Icy Wind\n- Confuse Ray\n- Thunder Wave\n\nJolteon (F) @ Choice Scarf\nAbility: Quick Feet\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Thunderbolt\n- Shadow Ball\n- Mud-Slap\n- Bite",
+    "Gardevoir (F) @ Sitrus Berry\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Psychic\n- Will-O-Wisp\n- Double Team\n\nMetagross @ Metal Coat\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Meteor Mash\n- Zen Headbutt\n- Bullet Punch\n- Icy Wind\n\nUmbreon (M) @ Expert Belt\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nCalm Nature\n- Toxic\n- Swagger\n- Snarl\n- Foul Play\n\nEspeon (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Shadow Ball\n- Yawn\n- Mud-Slap\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nCorviknight (M) @ Rocky Helmet\nAbility: Mirror Armor\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Iron Head\n- Body Press\n- Feather Dance"
+  ],
+  "choices": [
+    {
+      "p1": "team 3625",
+      "p2": "team 2315"
+    },
+    {
+      "p1": "move 1 -2, move 1 -1",
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "switch 3, switch 4",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p1": "move 1 1, move 4 1",
+      "p2": "move 4, move 2 1"
+    },
+    {
+      "p1": "move 3 -2, move 3 1",
+      "p2": "move 3 1, move 2 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 4 2, move 1",
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 1, move 2",
+      "p2": "move 1 2, switch 4"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 4 -2, move 3 2",
+      "p2": "move 3 2, move 4"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 -2, move 2",
+      "p2": "move 2 1, move 2 -1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 2, move 3 -1",
+      "p2": "switch 4, switch 3"
+    },
+    {
+      "p1": "move 4 2, move 4 2",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 2 2, move 1 2"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 4 -2, move 2 1"
+    }
+  ]
+}

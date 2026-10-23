@@ -1,0 +1,240 @@
+{
+ "P1_inventory": {
+  "debug": {
+   "equal": true,
+   "names": 1589,
+   "sha256": "b3598b2ea89087e874e40b9132624d387ec57fdd345bcfdfb6b4fc0660a42e58"
+  },
+  "ipo": {
+   "equal": true,
+   "names": 1589,
+   "sha256": "b3598b2ea89087e874e40b9132624d387ec57fdd345bcfdfb6b4fc0660a42e58"
+  },
+  "noipo": {
+   "equal": true,
+   "names": 1589,
+   "sha256": "b3598b2ea89087e874e40b9132624d387ec57fdd345bcfdfb6b4fc0660a42e58"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_selected_tests": {
+  "after-ipo": 271,
+  "after-noipo": 265,
+  "before-ipo": 271,
+  "before-noipo": 265
+ },
+ "P2_reference": {
+  "executions": 2790,
+  "ipo": "0538385f3c958f954126c86a03bee79751ca4c21e9c892fbd0889e6156fa523c",
+  "noipo": "0538385f3c958f954126c86a03bee79751ca4c21e9c892fbd0889e6156fa523c",
+  "steps": 24388,
+  "stops": 9147,
+  "unique_battles": 1232
+ },
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "2f3b5fe0a4f7d3870d8ab0124134d639ee3846fc",
+  "dirty": false,
+  "phase": "after"
+ },
+ "audit": {
+  "base": "98915957cd87f6b2eb8ec1aa51a6419d5cd06089",
+  "expanded_equals_old_turn_c": true,
+  "regions": [
+   {
+    "file": "src/combat/abilities/entry.h",
+    "included_at": 8684,
+    "lines": 221,
+    "new_lines": [
+     9,
+     229
+    ],
+    "old_lines": [
+     8684,
+     8904
+    ],
+    "region_sha256": "1d48b5de2c4c95470857815c0a26735dd5c1e73bfa6c3a5fa0325a2f1eea2a29"
+   },
+   {
+    "file": "src/combat/abilities/skill_swap.h",
+    "included_at": 8686,
+    "lines": 129,
+    "new_lines": [
+     9,
+     137
+    ],
+    "old_lines": [
+     8906,
+     9034
+    ],
+    "region_sha256": "9326b3f0c8d42fdc47273bdee82c2bb2d30f89eba2c7d1d21fdec42cafed4c24"
+   }
+  ],
+  "turn_c_lines": [
+   10467,
+   10119
+  ]
+ },
+ "before": {
+  "commit": "98915957cd87f6b2eb8ec1aa51a6419d5cd06089",
+  "dirty": false,
+  "phase": "before"
+ },
+ "changed_files": [
+  "docs/decisions/0015-content-expansion-pool.md",
+  "docs/decisions/0032-substitute.md",
+  "docs/decisions/0041-skill-swap.md",
+  "src/combat/abilities/entry.h",
+  "src/combat/abilities/skill_swap.h",
+  "src/combat/turn.c",
+  "src/combat/turn.h",
+  "tests/abilities/test_pool_g81.c",
+  "tests/data/test_pool_tables.c",
+  "tools/datagen/tablegen/abilities.py",
+  "tools/datagen/tablegen/rules.py"
+ ],
+ "fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "f294fc70b1fb2c3431af169d7f201f5798b29b4483f25d5cdbfde9798e79c74e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "f294fc70b1fb2c3431af169d7f201f5798b29b4483f25d5cdbfde9798e79c74e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "f294fc70b1fb2c3431af169d7f201f5798b29b4483f25d5cdbfde9798e79c74e",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "native_reports": {
+  "debug": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15460 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 28978 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  },
+  "ipo": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15460 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 28978 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  },
+  "noipo": {
+   "equal": true,
+   "reports": {
+    "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+    "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15460 checks, 0 failures",
+    "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+    "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+    "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+    "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 28978 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+    "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+   }
+  }
+ },
+ "object_identity": {
+  "bench_main": "bench/main.c.o embeds the commit (cmake/bench_revision.cmake)",
+  "debug": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "files": 286,
+   "shared_library_equal": false,
+   "shared_library_sha256_after": "0e7c39fc66a426029712578798e950efbeb9a2c03f6311f9de937cacb044d59a",
+   "shared_library_sha256_before": "500bf61c3534342a8cb01960cd9fe61209dd379da34ab712490be9ac4da2f87a"
+  },
+  "debug_note": "turn.c.o and the library differ only in .debug_* and the build-id; every other section is byte-equal",
+  "ipo": {
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge.dir/src/state/data_query.c.o",
+    "CMakeFiles/duoforge.dir/src/state/request.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/data_query.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/request.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "tests/CMakeFiles/duoforge_data_pool_tables.dir/data/test_pool_tables.c.o",
+    "tests/CMakeFiles/duoforge_state_last_respects_revival.dir/moves/test_last_respects_revival.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g41.dir/abilities/test_pool_g41.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g45.dir/abilities/test_pool_g45.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g47.dir/interactions/test_pool_g47.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g53.dir/abilities/test_pool_g53.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g60.dir/moves/test_pool_g60.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g67.dir/interactions/test_pool_g67.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g69.dir/abilities/test_pool_g69.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g70.dir/moves/test_pool_g70.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g74.dir/moves/test_pool_g74.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g77.dir/interactions/test_pool_g77.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g81.dir/abilities/test_pool_g81.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g83.dir/interactions/test_pool_g83.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g90.dir/moves/test_pool_g90.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_i2.dir/interactions/test_pool_i2.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_k3.dir/moves/test_pool_k3.c.o"
+   ],
+   "files": 286,
+   "shared_library_equal": true,
+   "shared_library_sha256_after": "61aa926201f196d127e2bf3e1c6e85facb4ebbc7832a654def87fb1f72aa6ca6",
+   "shared_library_sha256_before": "61aa926201f196d127e2bf3e1c6e85facb4ebbc7832a654def87fb1f72aa6ca6"
+  },
+  "ipo_note": "turn.c.o and the objects that include turn.h or a changed test comment (request.c.o, data_query.c.o, 17 test objects) differ only in the per-unit id of their .gnu.lto_* section names, contents equal (turn.c.o: the LTO IR carries source locations); the library is byte-equal",
+  "noipo": {
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "files": 286,
+   "shared_library_equal": true,
+   "shared_library_sha256_after": "6c3cfcfa7b01b7508fa7cf0979a5274dbf6440f07cfc75920fd6bdab3fbabe5a",
+   "shared_library_sha256_before": "6c3cfcfa7b01b7508fa7cf0979a5274dbf6440f07cfc75920fd6bdab3fbabe5a"
+  }
+ }
+}

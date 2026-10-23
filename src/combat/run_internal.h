@@ -47,7 +47,8 @@ typedef struct dfi_run {
     uint32_t drag_pending;
     /* step G56: the positions whose lockedmove (Outrage, Thrash, Petal Dance) duration is 2 in this step: started, or
      * restarted with a count of 2 or more (onRestart). Transient, like drag_pending; read and cleared by the AfterMove of the use (the
-     * count goes down there, so no residual of a later call needs it). */
+     * count goes down there, so no residual of a later call needs it). Its counterpart, a lock NOT restarted this turn (its use
+     * stopped by a sleep), is the state bit DFI_SINGLE_TURN_LOCK_UNUSED (issue 606, decision 0015 5dv), which a PIVOT pause keeps. */
     uint32_t lock_restarted;
     /* step G42: the classification of the current move action's result (DFI_MRES_*, bits; 0 = none seen). */
     uint32_t mres;

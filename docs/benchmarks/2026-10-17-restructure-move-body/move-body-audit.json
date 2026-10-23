@@ -1,0 +1,117 @@
+{
+ "old": "origin/main",
+ "new": "HEAD",
+ "old_function_lines": 2025,
+ "stop_returns": 128,
+ "arrays_moved_to_caller": [
+  {
+   "old_function_line": 41,
+   "line": "uint32_t targets[DFI_POSITIONS] = {0};"
+  },
+  {
+   "old_function_line": 738,
+   "line": "bool hit[DFI_POSITIONS] = {false, false, false, false};"
+  },
+  {
+   "old_function_line": 1065,
+   "line": "uint32_t hp_before[DFI_POSITIONS] = {0u, 0u, 0u, 0u};"
+  },
+  {
+   "old_function_line": 1075,
+   "line": "bool sub_struggle[DFI_POSITIONS] = {false, false, false, false};"
+  }
+ ],
+ "phases": [
+  {
+   "phase": "dfi_move_body_prepare",
+   "old_function_lines": [
+    10,
+    108
+   ],
+   "new_lines": [
+    6440,
+    6537
+   ],
+   "stop_returns": 11,
+   "body_sha256": "2c66da47b15b636314878857ab5d1ba7098dc898bf1fc15af82bd45748b3b2ad"
+  },
+  {
+   "phase": "dfi_move_body_announce",
+   "old_function_lines": [
+    109,
+    218
+   ],
+   "new_lines": [
+    6566,
+    6675
+   ],
+   "stop_returns": 5,
+   "body_sha256": "bf23130a32e4eba374203226f686eba6de0cf0203ee9fe0288638b80a6358afb"
+  },
+  {
+   "phase": "dfi_move_body_try_move",
+   "old_function_lines": [
+    219,
+    404
+   ],
+   "new_lines": [
+    6705,
+    6890
+   ],
+   "stop_returns": 5,
+   "body_sha256": "ac19c465c667acbf740aed0472d34baf82db533092f8bc8cccd2b218a2426dab"
+  },
+  {
+   "phase": "dfi_move_body_status_handlers",
+   "old_function_lines": [
+    405,
+    615
+   ],
+   "new_lines": [
+    6913,
+    7123
+   ],
+   "stop_returns": 39,
+   "body_sha256": "fae19c41f97c94169f9740cc97db3fb1f7b58f05e0c2e61fee1f954abebba3a8"
+  },
+  {
+   "phase": "dfi_move_body_hit_steps",
+   "old_function_lines": [
+    616,
+    1028
+   ],
+   "new_lines": [
+    7151,
+    7562
+   ],
+   "stop_returns": 22,
+   "body_sha256": "d3c060dde0266300728b10c8d1d03255ba208c6fbfe2304b2479e0e317ce1586"
+  },
+  {
+   "phase": "dfi_move_body_hit_loop",
+   "old_function_lines": [
+    1029,
+    1843
+   ],
+   "new_lines": [
+    7595,
+    8407
+   ],
+   "stop_returns": 46,
+   "body_sha256": "bceddbd709e49724946fee00ed8544f86006a865166359f4705430f810000a40"
+  },
+  {
+   "phase": "dfi_move_body_after_loop",
+   "old_function_lines": [
+    1844,
+    2024
+   ],
+   "new_lines": [
+    8438,
+    8618
+   ],
+   "stop_returns": 0,
+   "body_sha256": "4719ac0e3fc87699dbbf399069c638cdf58e3b0b296ba1203e673b4943d6855c"
+  }
+ ]
+}
