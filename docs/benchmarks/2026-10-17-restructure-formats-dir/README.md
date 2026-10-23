@@ -1,10 +1,16 @@
 # Restructure 5b-1: the generated Reg M-C tables move to `src/data/formats/reg-mc/` — proof
 
-Clean `restructure/5-datagen` **`71118118`** (5a on main `8800b625`) against the clean branch head **`ddff8284`**, both
+**Current proof (2026-10-23, after the merge of main):** clean main **`7ef33a66`** (#642) against the clean branch head
+**`c60813fb`** (the merge `5ffecc06` of main into the branch, plus `proofs.py` reading its tools from the environment), both
 **dirty=false**. Same source and build paths in both phases, three profiles: Release with IPO (`-flto=auto
--ffat-lto-objects`), Release without IPO, and Debug, with `DUOFORGE_PYTHON` set (the Python tests run in both phases).
-Machine as in [machine.json](../2026-10-16-restructure-damage/machine.json). Scripts: [proofs.py](proofs.py),
-[summarize.py](summarize.py).
+-ffat-lto-objects`), Release without IPO, and Debug, configured with `DUOFORGE_PYTHON`, `DUOFORGE_LEARN_PYTHON`,
+`DUOFORGE_PS_REFERENCE_DIR` and `DUOFORGE_NODE` (the Python and reference tests run in both phases). Machine:
+[machine.json](machine.json) (the owner's PC). Scripts: [proofs.py](proofs.py), [summarize.py](summarize.py). The first proof
+(2026-10-17, on 5a `71118118`, a cloud VM) found the same; its numbers are in the git history of this folder.
+
+The merge had one conflict, `tests/data/provenance.cmake` (the branch's path, the hash of the merged `pool_tables.c`); the
+two test files main added with the old include path (`test_pool_a2a.c`, `test_pool_lockfam_sleep.c`) were pointed at the new
+folder, and every generator writes the merged tables again byte for byte.
 
 ## Exact change
 
@@ -29,23 +35,25 @@ hashes.
 
 | Profile | `libduoforge_shared.so` before | after | objects |
 |---|---|---|---|
-| IPO on | `d1307524…` | **same** | the LTO objects differ only in their IR, which records the header paths |
-| IPO off | `cd754b95…` | **same** | every engine object byte-equal by name; only `bench/main.c.o` (the embedded commit) differs |
-| Debug | `5765939d…` | `1487220e…` | debug info names the new paths |
+| IPO on | `6c58d4f9…` | **same** | the LTO objects differ only in their IR, which records the header paths |
+| IPO off | `2a239e54…` | **same** | every engine object byte-equal by name; only `bench/main.c.o` (the embedded commit) differs |
+| Debug | `f7cf7a28…` | `6175f5c8…` | debug info names the new paths |
 
 ## P1–P6
 
-- **P1:** the sorted inventory is identical before and after (1585 names in both Release profiles, 1584 in Debug). Every
-  test's properties are unchanged except the commands of the six `duoforge.provenance.<file>` checks, which name the
-  moved files and pin their new hashes. Selected runs: 270 IPO and 264 no-IPO before and after, 0 failed, one skipped
-  in both phases (`duoforge.python.evaluator_quick`, needs JAX; the hosted CI runs it).
-- **P2:** 10 variants, 2784 executions, **1229 unique battles**, 24320 steps, 9124 stops; result bytes equal before and
-  after, with and without IPO, canonical SHA `227e1d4645ed5ac289914e74c4f20be9bc009a3ef7a3ee547bb2ab9dac846b74`
+- **P1:** the sorted inventory is identical before and after (1599 names in all three profiles). Every test's properties
+  are unchanged except the commands of the six `duoforge.provenance.<file>` checks, which name the moved files and pin their
+  new hashes. Selected runs: 272 IPO and 266 no-IPO, before and after; in both phases and both profiles the same one fails,
+  `duoforge.python.book` (`test_load_refuses_main_and_other_worktrees_before_reading` walks `git worktree list`, and on this
+  machine that lists stale worktrees of other sessions under `/tmp`, which are outside the repository; it is red on main
+  too and does not read the tables).
+- **P2:** 10 variants, 2808 executions, **1241 unique battles**, 24664 steps, 9229 stops; result bytes equal before and
+  after, with and without IPO, canonical SHA `77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5`
   ([per-battle-digests.tsv](per-battle-digests.tsv)); the ten native reference reports are byte-equal in all three
   profiles.
 - **P3, P4:** `duoforge.python.perft` and `duoforge.python.bench` pass in both profiles; the pins are unchanged.
-- **P5:** `closure_regen`, `extended_regen`, `pool_regen`, `pool_families`, `format_regmc` and the provenance checks
-  pass; the generated files differ only in the include line named above; context fingerprints equal in all profiles.
+- **P5:** `closure_regen`, `extended_regen`, `pool_regen`, `pool_families` and the provenance checks pass; the generated
+  files differ from main only in the include line named above; context fingerprints equal in all profiles.
 - **P6:** `include/` diff empty; 249 exports and the layouts byte-equal in all three profiles.
 
 **Full suite, after the proof:** the proof's selection does not run `duoforge.data.format_pool_reg_mc` and
@@ -54,6 +62,12 @@ hashes.
 (two path lines each; the pinned validator makes both committed pools again, byte for byte). The whole CTest suite of
 `b31f028f` then passes locally without IPO, **1585 of 1585**; 27 are skipped by this machine's configuration (the
 `DUOFORGE_LEARN_PYTHON`/JAX tests and the German-locale check), which the hosted CI runs.
+
+**Full suite of `c60813fb` (2026-10-23), locally without IPO, with Python, JAX on the CPU and the pinned checkout:** 1599
+tests, **1596 passed**, one skipped (`duoforge.lint.no_mutable_globals`, "library is not ELF" in this configuration), two
+failed, neither of them about the tables: `duoforge.python.expert_teacher`, known red on this machine (#585, BLAS thread
+count, red on main), and `duoforge.python.book`, the stale worktree listing above, which passes once the stale entries are
+pruned. 91 Python tests ran (none skipped), 89 of them green.
 
 All counts and hashes: [proof-summary.json](proof-summary.json). The library is byte-equal, so behaviour cannot
 change; no differential fuzz run is needed for this step.

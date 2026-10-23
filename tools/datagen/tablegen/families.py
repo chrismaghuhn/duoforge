@@ -46,7 +46,10 @@ ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', '
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                              'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
                              'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor',
-                             'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill']}
+                             'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill',
+                             # A2a (decision 0015 entry 5dy): one clause each at an existing hook (abilities.py A2A_ABILITY_FACTS)
+                             'illuminate', 'whitesmoke', 'waterabsorb', 'eartheater', 'motordrive', 'icebody', 'surgesurfer',
+                             'quickfeet', 'corrosion', 'purifyingsalt', 'gooey', 'poisonpoint', 'tangledfeet', 'naturalcure']}
 
 
 def derive_family(src, champ, rid, expected, matchers, what):

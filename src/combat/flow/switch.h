@@ -458,6 +458,29 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
                                   DUOFORGE_NO_POSITION));
         }
     }
+    /* Natural Cure (A2a, decision 0015 entry 5dy; the Champions entry, data/mods/champions/abilities.ts:49-58, which drops
+     * onCheckShow): the same SwitchOut event (a drag included, sim/battle-actions.ts:87) cures a status of the holder with
+     * `-curestatus|holder|status|[from] ability: Natural Cure|[silent]` and clearStatus (sim/pokemon.ts:1755-1762: setStatus('')).
+     * Silent only for the clients' messages: the line is in the protocol for both players, so the opponent's display of the
+     * member follows it (CURE_STATUS, cause ABILITY Natural Cure; the converter keeps this [silent] line, trace_to_c.py). The
+     * cleared status takes its counters with it: the sleep counter, the decision 0066 cant count and the toxic stage (the state
+     * invariant: the stage belongs to a tox status), as Lum Berry's cure (dfi_lum_cure). An instaswitch has no leaving Pokemon here: the pin's SwitchOut of a
+     * revived holder runs on a Pokemon whose status Revival Blessing cleared (sim/battle.ts:2793), so nothing is cured.
+     * Nightmare is not in the pool. The holder has one ability, so never with Regenerator. */
+    if (leaving != NULL && leaving->hp != 0u && leaving->status != DFI_STATUS_NONE &&
+        dfi_ability(b, leaving, DFI_ABILITY_NATURALCURE)) {
+        dfi_member *cm = dfi_at(b, side * 2u + slot);
+        duoforge_event cure = dfi_ev(DUOFORGE_EVENT_CURE_STATUS, side * 2u + slot, DUOFORGE_CAUSE_ABILITY,
+                                     1u + DFI_ABILITY_NATURALCURE, DUOFORGE_NO_POSITION);
+        cure.detail = cm->status;
+        dfi_emit(r, &cure);
+        if (cm->status == DFI_STATUS_TOX) {
+            b->tail.sides[side].toxic_stage[dfi_pos(b, side * 2u + slot)->occupant] = 0u;
+        }
+        cm->status = (uint8_t)DFI_STATUS_NONE;
+        cm->status_counter = 0u;
+        b->tail.sides[side].sleep_cant[dfi_pos(b, side * 2u + slot)->occupant] = 0u; /* decision 0066 */
+    }
     if (leaving != NULL && leaving->hp != 0u) {
         /* cancelAction (sim/battle-actions.ts:107): a Pokemon that leaves
          * standing loses its queued actions. */

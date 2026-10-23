@@ -256,6 +256,15 @@ duoforge.reference.trace.a0p4_cover_bittermalice
 duoforge.reference.trace.a0p4_cover_mountaingale
 duoforge.reference.trace.a0p4_cover_nightdaze
 duoforge.reference.trace.a0p4_cover_shelter
+duoforge.reference.trace.a2a_cover_a
+duoforge.reference.trace.a2a_cover_b
+duoforge.reference.trace.a2a_cover_c
+duoforge.reference.trace.a2a_cover_d
+duoforge.reference.trace.a2a_cover_e
+duoforge.reference.trace.a2a_cover_f
+duoforge.reference.trace.a2a_cover_g
+duoforge.reference.trace.a2a_cover_h
+duoforge.reference.trace.a2a_cover_i
 duoforge.reference.trace.ac1_trace_defiant
 duoforge.reference.trace.ac1_trace_drizzle
 duoforge.reference.trace.ac1_trace_intimidate
@@ -390,6 +399,9 @@ duoforge.reference.trace.fz556_prankster_curse_dark
 duoforge.reference.trace.fz556_stance_change_soak
 duoforge.reference.trace.fz556_trick_illusion
 duoforge.reference.trace.fz570_throat_chop_bounce
+duoforge.reference.trace.fz_6063_534
+duoforge.reference.trace.fz_6_175_outrage_main
+duoforge.reference.trace.fz_6_175_outrage_main_prefix
 duoforge.reference.trace.g09_encore_encore
 duoforge.reference.trace.g09_encore_fail
 duoforge.reference.trace.g09_encore_late
@@ -1486,6 +1498,7 @@ duoforge.state.knowledge
 duoforge.state.last_respects_revival
 duoforge.state.mega_by_stone
 duoforge.state.model_pool_tail
+duoforge.state.pool_a2a
 duoforge.state.pool_ac1
 duoforge.state.pool_fainted_holder
 duoforge.state.pool_g11
@@ -1564,6 +1577,7 @@ duoforge.state.pool_k1
 duoforge.state.pool_k2
 duoforge.state.pool_k3
 duoforge.state.pool_k4_draws
+duoforge.state.pool_lockfam_sleep
 duoforge.state.pool_mega2
 duoforge.state.pool_setup
 duoforge.state.pool_tail

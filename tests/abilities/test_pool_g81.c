@@ -4,7 +4,7 @@
  *
  * Frisk (data/abilities.ts:1545-1557) announces, at its holder's switch-in, the item of every foe in foes() order that holds one:
  * `-item|X|Item|[from] ability: Frisk|[of] Y` (no [identify]: the pin prints none). The turn code emits ITEM_SHOWN with the foe as
- * the position, the Frisk user in other, cause ABILITY, id = Frisk + 1 and id2 = the item + 1 (dfi_frisk, src/combat/turn.c). The
+ * the position, the Frisk user in other, cause ABILITY, id = Frisk + 1 and id2 = the item + 1 (dfi_frisk, src/combat/abilities/entry.h). The
  * switch-in order is the one of the entry handlers (the leads are on the field before any of them runs, as the reference's
  * `|switch|` lines come first).
  *
