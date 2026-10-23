@@ -66,8 +66,8 @@ for mode in ('ipo', 'noipo', 'debug'):
     if phase == 'after':  # the before inventory under the new names, for the summary
         prior_names = json.loads((out / f'before/ctest-{mode}.json').read_text())['tests']
         (dest / f'inventory-mapped-before-{mode}.txt').write_text(
-            '\n'.join(sorted(n for t in prior_names for n in ([p[0] for p in PARTS[t['name']]] if t['name'] in PARTS
-                                                               else [RENAMES.get(t['name'], t['name'])]))) + '\n')
+            '\n'.join(sorted({n for t in prior_names for n in ([p[0] for p in PARTS[t['name']]] if t['name'] in PARTS
+                                                                else [RENAMES.get(t['name'], t['name'])])})) + '\n')  # a merge target once
     (dest / f'inventory-{mode}.txt').write_text(inventory)
     if phase == 'after':
         prior = json.loads((out / f'before/ctest-{mode}.json').read_text())
