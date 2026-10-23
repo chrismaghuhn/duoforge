@@ -54,22 +54,22 @@ class NewMechanic(unittest.TestCase):
         return {p.relative_to(self.root).as_posix(): p.read_bytes() for p in sorted(self.root.rglob('*')) if p.is_file()}
 
     def test_a_scaffold_writes_the_test_its_registration_the_doc_and_the_numbers(self):
-        code, out, err = self.run_tool('moves', 'dummy_scaffold', '--id', '5zz', '--title', 'Dummy scaffold mechanic',
+        code, out, err = self.run_tool('moves', 'unit_scaffold_case', '--id', '5zz', '--title', 'Unit scaffold case',
                                        '--step', 'X1', '--draw-site', 'DUMMY_ROLL=%d' % self.site,
                                        '--residual-kind', 'DUMMY=%d' % self.kind)
         self.assertEqual((code, err), (0, ''))
-        test = (self.root / 'tests/moves/test_dummy_scaffold.c').read_text(encoding='utf-8')
-        self.assertIn('df_test_begin(&t, "duoforge.moves.dummy_scaffold");', test)
+        test = (self.root / 'tests/moves/test_unit_scaffold_case.c').read_text(encoding='utf-8')
+        self.assertIn('df_test_begin(&t, "duoforge.moves.unit_scaffold_case");', test)
         self.assertIn('const bool mechanic_checks_written = false;', test)  # it fails until it is filled in
         self.assertIn('mechanic_checks_written && "scaffold of 5zz: write the mechanic\'s checks"', test)
         cmake = (self.root / 'tests/moves/tests.cmake').read_text(encoding='utf-8')
-        self.assertTrue(cmake.endswith('duoforge_add_test(NAME duoforge.moves.dummy_scaffold SOURCES moves/test_dummy_scaffold.c '
+        self.assertTrue(cmake.endswith('duoforge_add_test(NAME duoforge.moves.unit_scaffold_case SOURCES moves/test_unit_scaffold_case.c '
                                        'WHITEBOX TIMEOUT 60 TIER quick AREA moves)\n'))
-        doc = (self.root / 'docs/mechanics/moves/5zz-dummy-scaffold-mechanic.md').read_text(encoding='utf-8').split('\n')
+        doc = (self.root / 'docs/mechanics/moves/5zz-unit-scaffold-case.md').read_text(encoding='utf-8').split('\n')
         self.assertEqual(doc[0], '<a id="5zz"></a>')
-        self.assertEqual(doc[2], '# 5zz. X1, Dummy scaffold mechanic')
+        self.assertEqual(doc[2], '# 5zz. X1, Unit scaffold case')
         self.assertEqual([l for l in doc if l.startswith('- ')][:3],
-                         ['- Area: moves', '- Step: X1', '- Tests: duoforge.moves.dummy_scaffold'])
+                         ['- Area: moves', '- Step: X1', '- Tests: duoforge.moves.unit_scaffold_case'])
         self.assertEqual(sum(1 for l in doc if l.startswith('5zz. **')), 1)
         self.assertNotIn('## Support', doc)  # optional, added with its support line by hand
         sites = (self.root / 'src/rng/draw_sites.def').read_text(encoding='utf-8')
@@ -88,8 +88,8 @@ class NewMechanic(unittest.TestCase):
         self.assertEqual(table['DUMMY_ROLL'], self.site)
         self.assertEqual(table, {n: int(v) for n, v in re.findall(r'^DFI_DRAW_SITE\(([A-Z0-9_]+), (\d+)u,', sites, re.M)})
         self.assertEqual(sorted(out.split('\n')[:-1]), sorted('writes ' + p for p in [
-            'docs/mechanics/moves/5zz-dummy-scaffold-mechanic.md', 'src/combat/residual_kinds.def',
-            'src/combat/residual_order.h', 'src/rng/draw.h', 'src/rng/draw_sites.def', 'tests/moves/test_dummy_scaffold.c',
+            'docs/mechanics/moves/5zz-unit-scaffold-case.md', 'src/combat/residual_kinds.def',
+            'src/combat/residual_order.h', 'src/rng/draw.h', 'src/rng/draw_sites.def', 'tests/moves/test_unit_scaffold_case.c',
             'tests/moves/tests.cmake', 'tools/reference/trace_to_c.py']))
 
     def test_dry_run_writes_nothing(self):
