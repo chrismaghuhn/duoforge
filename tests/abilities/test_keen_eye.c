@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include <duoforge/duoforge.h>
+
 #include "data/formulas.h"
 #include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
@@ -27,6 +28,7 @@
 #include "support/conformance_replay.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
+
 /* Flower Veil (a Grass type's TryBoost) would race Keen Eye and Big Pecks by Speed on a Grass forme with either ability, and
  * dfi_boost assumes none exists: no forme of the pool with Keen Eye or Big Pecks as a legal ability is a Grass type. */
 static void check_no_grass_holder(df_test *t)

@@ -24,6 +24,8 @@
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
+
+
 static void check_marks(df_test *t)
 {
     static const uint32_t rows[] = {DFI_ABILITY_STEADFAST, DFI_ABILITY_MOXIE, DFI_ABILITY_WEAKARMOR, DFI_ABILITY_TELEPATHY,

@@ -21,6 +21,8 @@
 #include "support/conformance_replay.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
+
+
 /* Volt Absorb: at full HP the first Thunderbolt is absorbed (Jolteon, side 1 position 0, stays at full HP); after the Earthquake
  * of the second turn the third turn's Thunderbolt heals it by a quarter of its maximum HP (the trace: 44 -> 87 of 172). */
 static void check_volt_absorb(df_test *t, const duoforge_context *ctx)

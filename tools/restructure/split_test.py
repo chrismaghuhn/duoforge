@@ -206,24 +206,54 @@ def needed_macros(macros, code):
 
 
 def drop_unused_defines(preamble, keep):
-    """The preamble without the #define lines whose names are not in `keep`; a block (lines between blank lines) of
-    comments and defines that loses every define loses its comments too."""
-    out = []
-    for block in re.split(r'\n(?=\n)', preamble):
-        names = [m.group(1) for m in DEFINE.finditer(block)]
-        if not names:
-            out.append(block)
+    """The preamble without the #define lines whose names are not in `keep`, each with the comment lines directly above it
+    (no blank line between) when it is the only define that comment stands over; every other line stays where it was, and
+    two blank lines that a removal makes adjacent become one.
+
+    Nothing is dropped from a preamble whose preprocessor reads its own defines: one with a conditional (#if, #ifdef,
+    #ifndef, #elif) or with a #define before an #include (a define that configures a header). Such a preamble is kept as
+    it is: a dropped define there could change the value of another without a trace."""
+    if re.search(r'^\s*#\s*(if|ifdef|ifndef|elif)\b', preamble, re.M) or \
+            re.search(r'^#define\b(?:.*\n)*?^#include\b', preamble, re.M):
+        return preamble
+    lines = preamble.split('\n')
+    drop = [False] * len(lines)
+    i = 0
+    while i < len(lines):
+        m = re.match(r'#define (\w+)', lines[i])
+        if not m:
+            i += 1
             continue
-        kept = DEFINE.sub(lambda m: m.group(0) if m.group(1) in keep else '\x00', block)
-        kept = '\n'.join(l for l in kept.split('\n') if l != '\x00')
-        if not any(n in keep for n in names) and not re.sub(r'/\*.*?\*/|\s', '', kept, flags=re.S):
-            continue  # only comments and dropped defines were in it
-        if not any(n in keep for n in names):
-            kept = re.sub(r'^\s*/\*.*?\*/\s*$', '', kept, flags=re.S | re.M).strip('\n')
-            if not kept.strip():
-                continue
-        out.append(kept)
-    return '\n'.join(out)
+        j = i
+        while lines[j].endswith('\\'):
+            j += 1
+        if m.group(1) not in keep:
+            for k in range(i, j + 1):
+                drop[k] = True
+            # the comment lines directly above, when the next line after this define is no other define of the group
+            above = i - 1
+            while above >= 0 and not drop[above] and lines[above].strip() and not lines[above].startswith('#'):
+                above -= 1
+            group_has_kept = any(re.match(r'#define (\w+)', lines[k]) and re.match(r'#define (\w+)', lines[k]).group(1) in keep
+                                 for k in range(above + 1, len(lines)) if k > j and lines[k].startswith('#define')
+                                 and all(lines[x].strip() for x in range(j + 1, k)))
+            first_define = above + 1
+            while first_define < i and not lines[first_define].startswith('#define'):
+                first_define += 1
+            if first_define == i and not group_has_kept:
+                for k in range(above + 1, i):
+                    drop[k] = True
+        i = j + 1
+    out, removed_since = [], False
+    for k, l in enumerate(lines[:-1]):  # the last element is what follows the last newline: kept as it is
+        if drop[k]:
+            removed_since = True
+            continue
+        if not l.strip() and out and not out[-1].strip() and removed_since:
+            continue  # a removal made two blank lines adjacent (two that the source had stay)
+        removed_since = False
+        out.append(l)
+    return '\n'.join(out + [lines[-1]])
 
 
 def norm(code):
@@ -276,7 +306,7 @@ def comment(ctest, text, width=128):
 SECTIONS = []  # every part split() made, as its pieces, for merge()
 
 
-def merge(root, mspec):
+def merge(root, mspec, spec_base=None):
     """One file from the parts of several splits (restructure step 6e, the Mega stones): mspec = {"file": <area>/test_x.c,
     "header": text, "sections": [{"spec": <split spec>, "prefix": "<name>_"}, ...]}. Each section is the part of its spec
     whose file is mspec's file (split() places and checks it as for any part). The includes are the union, a top-level
@@ -287,13 +317,16 @@ def merge(root, mspec):
     <its file>. It writes over its file, which may be one of its own sources (a section that file already had), so running
     it again needs the sources back from git (as the proof READMEs say)."""
     target = mspec['file']
+    spec_base = Path(spec_base) if spec_base is not None else root
     secs = []
     for sec in mspec['sections']:
         SECTIONS.clear()
         if isinstance(sec['spec'], dict):
             spec = sec['spec']
-        else:  # a spec file: under root, or else in the repository of this tool (a merge rerun on a copied tree)
-            path = root / sec['spec'] if (root / sec['spec']).exists() else Path(__file__).resolve().parents[2] / sec['spec']
+        else:  # a spec file, relative to the repository the merge spec belongs to (not to --root, the tree it writes)
+            path = spec_base / sec['spec']
+            if not path.exists():
+                raise Refused('merge: the spec %s is not in %s' % (sec['spec'], spec_base))
             spec = json.loads(path.read_text(encoding='utf-8'))
         sec = dict(sec, spec=spec)
         split(root, spec)
@@ -563,7 +596,8 @@ def main(argv):
     spec = json.loads(Path(args[0]).read_text(encoding='utf-8'))
     if merging:
         try:
-            ctest, text = merge(root, spec)
+            base = next((d for d in Path(args[0]).resolve().parents if (d / 'tools' / 'restructure').is_dir()), root)
+            ctest, text = merge(root, spec, base)
         except Refused as e:
             print('split_test: refused: %s' % e, file=sys.stderr)
             return 2

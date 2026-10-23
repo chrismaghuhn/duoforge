@@ -7,29 +7,32 @@
 ## What changes
 
 `tools/restructure/split_test.py`:
-- **Macros in `merge()`.** The macros a section needs now take part in the comparison and the renames, like the items.
-  - The review's case: two identical functions that name a macro of two values were kept as one, so the second section ran the first section's check with the first section's value. They now stay two.
+- **Macros in `merge()`.** The macros a section needs take part in the comparison and the renames, like the items.
+  - The review's case: two identical functions that name a macro of two values were kept as one, and the second section ran the first section's check with the first section's value. They now stay two.
   - A macro that only another macro names is kept.
-  - The docstring states the order: the merge first, then the splits with `--except`. A rerun needs the sources back from git.
-- **`split()`.** A part keeps only the `#define`s it needs. A block of comments and defines that loses every define loses its comments too. A part also keeps the blank line, or none, that its source had between two items.
-- **`keep_header`** takes `header_replace`.
+- **Spec paths of a merge.** They are read relative to the repository of the merge spec. A missing one is refused instead of looked up elsewhere.
+- **The docstring** states the order: the merge first, then the splits with `--except`. A rerun needs the sources back from git.
+- **`split()`** keeps only the `#define`s a part needs, line by line.
+  - A comment directly above a dropped define goes only when it stands over that define alone.
+  - Blank lines stay; two that a removal makes adjacent become one.
+  - Nothing is dropped from a preamble that has a preprocessor conditional or a `#define` before an `#include`. A dropped define there could change another one's value without a trace, which the second review found. Such a preamble is kept whole.
+- **Blank lines between items.** A part keeps the blank line, or none, that its source had between two items.
+- **`keep_header`** takes `header_replace`, refused when its text is not in the comment.
 
-`tools/restructure/test_audit.py`: two part rows of one source may not name the same file. That allows one part row per merge target.
+`tools/restructure/test_audit.py`: two part rows of one source may not name the same file, so there is one per merge target.
 
-Unit tests in `duoforge.tools.restructure`, 26 in all:
+Unit tests in `duoforge.tools.restructure` (30 in all) cover:
 - the review's macro case, and a macro of a macro;
-- unused macros dropped;
+- defines dropped line by line, with the comments of a define and the source's double blank lines kept;
+- the conditional and the config-define preambles kept whole;
+- blank lines between items;
+- `header_replace` and its refusal;
+- the merge spec paths;
 - the names of anonymous enums and tagged structs;
 - `--except` and `keep_header`;
 - the part-row pair rule.
 
-**The files made again with the fixed tool:**
-
-| What | Change |
-|---|---|
-| Twelve 6e-1 parts and three 6e-2 parts | lose their unused macros |
-| `test_aura_guard.c`, `test_magic_bounce.c` | get their source's spacing back |
-| `test_magic_bounce.c` | its comment points at the stones' file |
+**The files made again with the fixed tool.** Against main, every changed test file loses only `#define` lines, comment lines of those defines and blank lines that their removal made double. The one exception is `test_magic_bounce.c`, whose comment sentence now names the stones' file. `test_aura_guard.c` and `test_magic_bounce.c` also get their source's spacing back. No removed macro is named anywhere in its file.
 
 `docs/mechanics` 5bc: its Tests and Mutation lines say again what was tested then and where those tests are now.
 

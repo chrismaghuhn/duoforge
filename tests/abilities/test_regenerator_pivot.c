@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <duoforge/duoforge.h>
+
 #include "data/formulas.h"
 #include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
@@ -22,6 +23,7 @@
 #include "support/conformance_replay.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
+
 /* 3. Regenerator on a PIVOT switch-out (step G51 rework; the fix of the G39 Regenerator row, decision 0015 5bc). In g51_dragalgite
  * Dragalge-Mega uses Flip Turn at step 2 and leaves at step 3 (the answer to the PIVOT, `switch 3`): Regenerator heals it by a
  * third before the switch, and the opponent's knowledge of its HP must show the healed percent. */
