@@ -484,6 +484,16 @@ class SplitTest(unittest.TestCase):
         slashes = '#include <x.h>\n\n// two\n// lines\n#define B 2\n#define K 1\n'
         self.assertEqual(split_test.drop_unused_defines(slashes, {'K'}), '#include <x.h>\n\n// two\n// lines\n#define K 1\n')
         self.assertEqual(split_test.drop_unused_defines(slashes, set()), '#include <x.h>\n')
+        # a comment that runs on past a define, a define in a comment, a nested /*, a // line continued: kept whole
+        for whole in ('#include <x.h>\n\n#define B 2 /* the value\n   of B */\n#define C 3\n',
+                      '#include <x.h>\n\n/* disabled:\n#define B 2 */\n#define C 3\n',
+                      '#include <x.h>\n\n/* outer\n/* inner */\n#define B 2\n#define C 3\n',
+                      '#include <x.h>\n\n// a line \\\n#define B 2\n#define C 3\n',
+                      '#include <x.h>\n\n#define C 3\n/* open\n'):
+            self.assertEqual(split_test.drop_unused_defines(whole, {'C'}), whole)
+        # a comment that closes on the define's own line goes with it
+        self.assertEqual(split_test.drop_unused_defines('#include <x.h>\n\n#define B 2 /* B */\n#define C 3\n', {'C'}),
+                         '#include <x.h>\n\n#define C 3\n')
         # a define at the end of the preamble goes with its blank line above, so the blank before the first item is single
         end = '#include <x.h>\n\n#define B 2\n'
         self.assertEqual(split_test.drop_unused_defines(end, set()), '#include <x.h>\n')

@@ -205,6 +205,34 @@ def needed_macros(macros, code):
     return need
 
 
+def comment_state(lines):
+    """Per line, whether it starts inside a block comment, or None when the preamble's comments are not plain: a /* inside
+    a block comment, or a // line that ends with a backslash (its next line is comment too). String literals are not read
+    as such: a /* in one only makes the answer more cautious (a comment seen where there is none keeps lines)."""
+    inside, state = False, []
+    for l in lines:
+        state.append(inside)
+        k = 0
+        while k < len(l):
+            two = l[k:k + 2]
+            if inside:
+                if two == '/*':
+                    return None
+                if two == '*/':
+                    inside, k = False, k + 2
+                    continue
+            elif two == '/*':
+                inside, k = True, k + 2
+                continue
+            elif two == '//':
+                if l.endswith('\\'):
+                    return None
+                break
+            k += 1
+    state.append(inside)  # after the last line
+    return state
+
+
 def comment_above(lines, i, drop):
     """The first line of the whole comment directly above line i: a run of // lines, or one /* ... */ block whose last line
     ends with */ and whose first opens it; i itself when there is none (or only part of one), so that a removal never cuts
@@ -234,11 +262,16 @@ def drop_unused_defines(preamble, keep):
 
     Nothing is dropped from a preamble whose preprocessor reads its own defines: one with a conditional (#if, #ifdef,
     #ifndef, #elif) or with a #define before an #include (a define that configures a header). Such a preamble is kept as
-    it is: a dropped define there could change the value of another without a trace."""
+    it is: a dropped define there could change the value of another without a trace. Nor from one whose comments are
+    not plain (comment_state()), nor when a define to drop starts inside a comment or a comment runs on past its last
+    line: a removal there would leave part of a comment."""
     if re.search(r'^\s*#\s*(if|ifdef|ifndef|elif)\b', preamble, re.M) or \
             re.search(r'^\s*#\s*define\b(?:.*\n)*?^\s*#\s*include\b', preamble, re.M):
         return preamble
     lines = preamble.split('\n')
+    inside = comment_state(lines)
+    if inside is None or inside[-1]:
+        return preamble
     drop = [False] * len(lines)
     i = 0
     while i < len(lines):
@@ -250,6 +283,8 @@ def drop_unused_defines(preamble, keep):
         while lines[j].endswith('\\'):
             j += 1
         if m.group(1) not in keep:
+            if inside[i] or inside[j + 1]:
+                return preamble  # the define is comment text, or a comment runs on past it: kept whole
             for k in range(i, j + 1):
                 drop[k] = True
             # the comment lines directly above, when the next line after this define is no other define of the group
