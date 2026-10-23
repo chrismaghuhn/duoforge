@@ -9,7 +9,7 @@ Writes, and changes nothing that runs:
   checks") until real checks replace it: an unfilled scaffold never passes, and its line in tests/<area>/tests.cmake: duoforge.<area>.<behaviour>, tier quick, the area
   label (the names of restructure step 6: tests/renames.tsv, tools/restructure/test_audit.py);
 - docs/mechanics/<doc area>/<id>-<slug>.md from docs/mechanics/TEMPLATE.md (restructure step 11), with the anchor, the
-  title, the area, the step and the Tests line filled in; the id is the next one of the lane's block in
+  title, the area, the step and the Tests line filled in, without the optional ## Support section; the id is the next one of the lane's block in
   docs/process/NUMBERS.md, which the lane gives here (the tool hands out no number, and refuses an id outside the block
   of --lane, read from the row "Decision 0015 entry ids", or one that has its file or anchor already);
 - for each --draw-site NAME=ID: the line DFI_DRAW_SITE(NAME, IDu, "name") of src/rng/draw_sites.def, the #define
@@ -92,13 +92,17 @@ def doc_text(template, entry, title, area, step, tests):
     t = re.sub(r'^- Step: .*$', '- Step: %s' % step, t, count=1, flags=re.M)
     t = re.sub(r'^- Tests: .*$', '- Tests: %s' % tests, t, count=1, flags=re.M)
     t = t.replace('<id>. **<step code>, <title>**', '%s. **%s**' % (entry, '%s, %s' % (step, title) if step != '-' else title))
+    # The optional ## Support section is left out (TEMPLATE.md: delete it when the step has none); a step that has a support
+    # line adds it and runs tools/docs/mechanics_docs.py --write (docs/mechanics/README.md).
+    if '\n## Support' in t:
+        t = t[:t.index('\n## Support')].rstrip('\n') + '\n'
     if '<id>' in t.split('\n', 3)[0] or '- Tests: %s' % tests not in t:
         raise Refused('docs/mechanics/TEMPLATE.md does not have the header this tool fills in')
     return t
 
 
 def id_key(entry):
-    """The order of the 0015 ids: shorter first, then by letter (5z < 5aa < 5ea < 5ez < 5fa)."""
+    """The order of the entry ids: shorter first, then by letter (5z < 5aa < 5ea < 5ez < 5fa)."""
     return (len(entry), entry)
 
 
@@ -182,7 +186,7 @@ def plan(args):
     if doc_area not in DOC_AREAS:
         raise Refused('documentation area %r: one of %s (--doc-area)' % (doc_area, ', '.join(DOC_AREAS)))
     if not re.fullmatch(r'5[a-z]{1,3}', args.id):
-        raise Refused('entry id %r: an id of the 0015 series from the lane block of docs/process/NUMBERS.md (5ea, ...)' % args.id)
+        raise Refused('entry id %r: 5 and one to three letters, from the lane block of docs/process/NUMBERS.md' % args.id)
     name = 'duoforge.%s.%s' % (area, behaviour)
     test_rel = 'tests/%s/test_%s.c' % (area, behaviour)
     doc_rel = 'docs/mechanics/%s/%s-%s.md' % (doc_area, args.id, slug_of(args.title))

@@ -50,7 +50,8 @@ python3 tools/new_mechanic.py <test area> <behaviour> --id <id> --lane <Content 
 ```
 
 It writes `docs/mechanics/<area>/<id>-<slug>.md` from `TEMPLATE.md` (anchor, heading, Area, Step and the Tests line
-filled in), `tests/<area>/test_<behaviour>.c` with its line in `tests/<area>/tests.cmake` (CTest
+filled in; the optional `## Support` section is left out, add it with step 3 when the step has a support line),
+`tests/<area>/test_<behaviour>.c` with its line in `tests/<area>/tests.cmake` (CTest
 `duoforge.<area>.<behaviour>`, the naming of `tests/renames.tsv`), and, when given, the definition-file lines and
 `#define`s of a draw site or a residual kind (restructure step 5c) with the numbers the HS handed out. It refuses an id
 outside the lane's block or one that has its file or anchor already, a taken test name, site or kind, and a name with a

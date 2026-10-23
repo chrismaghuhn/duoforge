@@ -57,6 +57,7 @@ class NewMechanic(unittest.TestCase):
         self.assertEqual([l for l in doc if l.startswith('- ')][:3],
                          ['- Area: moves', '- Step: X1', '- Tests: duoforge.moves.dummy_scaffold'])
         self.assertEqual(sum(1 for l in doc if l.startswith('5zz. **')), 1)
+        self.assertNotIn('## Support', doc)  # optional, added with its support line by hand
         sites = (self.root / 'src/rng/draw_sites.def').read_text(encoding='utf-8')
         self.assertIn('DFI_DRAW_SITE(POISON_POINT, 26u, "poison-point")\nDFI_DRAW_SITE(DUMMY_ROLL, 27u, "dummy-roll")\n'
                       'DFI_DRAW_SITE(PARTIAL_TRAP_TURNS, 32u', sites)  # in id order
