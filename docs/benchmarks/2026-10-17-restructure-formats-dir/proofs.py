@@ -1,6 +1,6 @@
 """Restructure step 5b-1 (tables to src/data/formats/reg-mc/): P1-P6 and object identity, one phase (before|after) per run.
 
-Usage: PHASE=before|after OUT=<dir outside the repo> python proofs.py
+Usage: PHASE=before|after OUT=<dir outside the repo> [PY=<python with numpy>] [NODE_DIR=<dir of node 22>] python proofs.py
 Builds build/ipo, build/noipo and build/debug of the checked-out commit (same source and build paths in both phases, so object
 bytes compare), then records the CTest inventory, object and library hashes, exports, layouts, selected tests and the
 reference digests. The after phase compares with the before phase. Only counts and hashes are retained.
@@ -13,7 +13,10 @@ out = Path(os.environ['OUT'])
 phase = os.environ['PHASE']
 dest = out / phase
 dest.mkdir(parents=True, exist_ok=True)
-env = dict(os.environ, PATH='/opt/node22/bin:' + os.environ['PATH'], OPENBLAS_NUM_THREADS='1')
+env = dict(os.environ, PATH=os.environ.get('NODE_DIR', '/opt/node22/bin') + ':' + os.environ['PATH'], OPENBLAS_NUM_THREADS='1',
+           JAX_PLATFORMS='cpu', LC_ALL='C.UTF-8')
+py = os.environ.get('PY', 'python3')
+jobs = os.environ.get('DUOFORGE_JOBS', '4')
 git = lambda *a: subprocess.check_output(['git', *a], cwd=root, text=True).strip()
 revision = git('rev-parse', 'HEAD')
 dirty = bool(git('status', '--porcelain'))
@@ -28,7 +31,7 @@ COMMAND_CHANGES = {'duoforge.provenance.%s' % f for f in ('closure_tables.c', 'e
 for mode in ('ipo', 'noipo', 'debug'):
     build = root / 'build' / mode
     start = time.perf_counter()
-    subprocess.run(['cmake', '--build', str(build), '--parallel', '4'], cwd=root, env=env,
+    subprocess.run(['cmake', '--build', str(build), '--parallel', jobs], cwd=root, env=env,
                    stdout=(dest / f'build-{mode}.log').open('w'), stderr=subprocess.STDOUT, check=True)
     (dest / f'build-time-{mode}.json').write_text(json.dumps({'seconds': time.perf_counter() - start,
                                                               'scope': 'incremental'}, indent=2) + '\n')
@@ -65,7 +68,7 @@ for mode in ('ipo', 'noipo', 'debug'):
     fp_code = ('import json\nfrom duoforge.context import Context\nfrom duoforge import _layout as L\n'
                'print(json.dumps({n: Context(data_kind=L.CONSTANTS["DUOFORGE_DATA_KIND_" + n]).fingerprint().hex() '
                'for n in ("CLOSURE", "TEAM_C", "POOL")}))')
-    fp = subprocess.check_output(['python3', '-c', fp_code],
+    fp = subprocess.check_output([py, '-c', fp_code],
                                  cwd=root, env=dict(env, DUOFORGE_LIBRARY=str(build / 'libduoforge_shared.so'), PYTHONPATH=str(root / 'python')), text=True)
     (dest / f'fingerprints-{mode}.json').write_text(fp)
     if phase == 'after':
@@ -101,11 +104,11 @@ for mode in ('ipo', 'noipo', 'debug'):
     names = sorted(set(names))
     (dest / f'selected-{mode}.json').write_text(json.dumps(names, indent=2) + '\n')
     r = subprocess.run(['ctest', '--test-dir', str(build), '-R', '^(' + '|'.join(map(re.escape, names)) + ')$',
-                        '--output-on-failure', '--parallel', '4', '--timeout', '900',
+                        '--output-on-failure', '--parallel', jobs, '--timeout', '900',
                         '--output-junit', str(dest / f'proofs-{mode}.xml')],
                        cwd=root, env=env, stdout=(dest / f'proofs-{mode}.log').open('w'), stderr=subprocess.STDOUT)
     print(phase, mode, len(names), 'selected tests, exit', r.returncode, flush=True)
-    subprocess.run(['python3', 'tools/restructure/capture_reference.py', '.', str(build), str(dest / f'reference-{mode}')],
+    subprocess.run([py, 'tools/restructure/capture_reference.py', '.', str(build), str(dest / f'reference-{mode}')],
                    cwd=root, env=env, stdout=(dest / f'reference-{mode}.log').open('w'), stderr=subprocess.STDOUT,
                    check=True)
     if phase == 'after':
