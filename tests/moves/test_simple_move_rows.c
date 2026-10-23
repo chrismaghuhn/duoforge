@@ -1,22 +1,14 @@
 /*
- * duoforge.state.pool_g44 (white-box): step G44 of the content expansion (decision 0015 item 5an), the simple moves.
+ * duoforge.moves.simple_move_rows (white-box): step G44 of the content expansion (decision 0015 item 5an), the simple moves as
+ * one batch: four handlers (Thunder, Power Trip, Ice Fang, Tri Attack) and seven data rows (Breaking Swipe, Vacuum Wave, Stone
+ * Edge, Aqua Cutter, Hammer Arm, Trop Kick, Meteor Mash). The marks, the handler numbers and the pinned numbers of each row
+ * (with the Champions override of Trop Kick's power); what stays unmarked (Fly, which Thunder would hit through); and the
+ * guard: Ice Fang and Tri Attack bypass the generic secondaries path, so they skip the pin's ModifySecondaries
+ * (sim/battle-actions.ts:1340-1341), which Shield Dust, Covert Cloak and Serene Grace change; none of the three is marked, and
+ * marking any of them later fails here until these paths honour it. The recorded battles g44_* are replayed by
+ * duoforge.reference.conformance_pool_data.
  *
- * Four handlers, each a rule that the generic columns cannot hold: Thunder (never misses in rain, 50 under sun), Power Trip
- * (20 plus 20 per positive stage of the user), Ice Fang (a freeze roll, then a flinch roll) and Tri Attack (a 20 percent roll,
- * then a pick of burn, paralysis or freeze). Seven data rows: Breaking Swipe, Vacuum Wave, Stone Edge, Aqua Cutter, Hammer
- * Arm, Trop Kick and Meteor Mash. The recorded battles (g44_* under "data": "pool") are replayed by
- * duoforge.reference.conformance_pool_data, which compares every draw, message and HP that the reference shows. Here are the
- * facts that the battles do not show by themselves:
- *
- *   - the marks, the handler numbers and the pinned numbers of each row (the pin's power, accuracy, priority, critical hit
- *     ratio and stage changes, with the Champions override of Trop Kick's power);
- *   - what stays unmarked: Scale Shot (its hit count is a draw of its own, a new draw site, so it is left out of this step),
- *     and Fly, which Thunder would hit through (not marked, so no battle can have a Thunder that meets a Fly);
- *   - the guard: Ice Fang and Tri Attack bypass the generic secondaries path, so they skip the pin's ModifySecondaries
- *     (sim/battle-actions.ts:1340-1341), which Shield Dust, Covert Cloak and Serene Grace change. None of the three is marked
- *     or a row of the pool today; marking any of them later fails here until these paths honour it;
- *   - Power Trip's positive-stage sum at every stat, white-box (combat/moves/power_trip.h): the battles of this step carry two stages
- *     of attack and defense only, so an accuracy or evasion stage is checked here.
+ * Split by subject from the test of step G44 (restructure step 6e; tests/renames.tsv maps the old name).
  */
 #include <stdio.h>
 #include <string.h>
@@ -138,46 +130,6 @@ static void check_unmarked(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FLY] == 0u);
 }
 
-/* The Tri Attack chance (20 of random(100)): the roll 19 passes, 20 fails, at both edges and at the ends. No recorded battle has
- * a roll of 19 on that draw, so the edges are checked here (combat/moves/tri_attack.h). */
-static void check_tri_attack_edges(df_test *t)
-{
-    DF_CHECK(t, dfi_tri_attack_chance_hit(0u));
-    DF_CHECK(t, dfi_tri_attack_chance_hit(19u));
-    DF_CHECK(t, !dfi_tri_attack_chance_hit(20u));
-    DF_CHECK(t, !dfi_tri_attack_chance_hit(99u));
-}
-
-/* Power Trip's positive-stage sum: every stat counts, accuracy and evasion too (Coil raises accuracy, and the five-stat
- * mutant of the decision is caught here), a negative stage adds nothing. Stored stages are biased by DFI_STAGE_NEUTRAL. */
-static void check_power_trip_stages(df_test *t)
-{
-    uint8_t s[DFI_STAT_STAGE_COUNT];
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        s[i] = DFI_STAGE_NEUTRAL;
-    }
-    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 0u);
-    for (uint32_t k = 0u; k < DFI_STAT_STAGE_COUNT; ++k) {
-        s[k] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u);
-        DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 1u);
-        s[k] = DFI_STAGE_NEUTRAL;
-    }
-    s[DFI_STAGE_ACCURACY] = (uint8_t)(DFI_STAGE_NEUTRAL + 2u);
-    s[DFI_STAGE_EVASION] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u);
-    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 3u);
-    s[DFI_STAGE_ATK] = (uint8_t)(DFI_STAGE_NEUTRAL + 2u);
-    s[DFI_STAGE_DEF] = 0u; /* -6 */
-    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 5u);
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        s[i] = (uint8_t)(DFI_STAGE_NEUTRAL + DFI_STAGE_NEUTRAL); /* +6 */
-    }
-    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 42u);
-    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-        s[i] = 0u; /* -6 */
-    }
-    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 0u);
-}
-
 /* The guard (decision 0015 item 5an): the rows that the generic secondaries path would have to honour (Shield Dust blocks a
  * move's secondary, Serene Grace doubles its chance, Covert Cloak blocks the effect of an item's source), and the secondaries
  * that Ice Fang and Tri Attack bypass (ModifySecondaries, sim/battle-actions.ts:1340-1341). None is marked, and none is a
@@ -211,12 +163,10 @@ static void check_guard_unmarked(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g44");
+    df_test_begin(&t, "duoforge.moves.simple_move_rows");
     check_marks(&t);
     check_pins(&t);
     check_unmarked(&t);
-    check_power_trip_stages(&t);
-    check_tri_attack_edges(&t);
     check_guard_unmarked(&t);
     return df_test_end(&t);
 }

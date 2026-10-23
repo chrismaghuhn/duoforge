@@ -1,10 +1,10 @@
 #ifndef DUOFORGE_TESTS_SUPPORT_CONFORMANCE_REPLAY_H
 #define DUOFORGE_TESTS_SUPPORT_CONFORMANCE_REPLAY_H
 /*
- * Replaying a recorded POOL battle of tests/reference/conformance_pool.h with the reference's tape (restructure step 6e).
- * These are the helpers that the split white-box tests share, each one character for character the copy that their source
- * file had (tools/restructure/split_test.py checks that, comments aside): the battle's setup, one step's decision bundle,
- * a battle by name, and two replays to a step, which differ in what they check on the way. Many older tests keep their own
+ * Replaying a recorded POOL battle of tests/reference/conformance_pool.h with the reference's tape (restructure step 6e). These
+ * are the helpers that the split white-box tests share, each one character for character the copy that their source file had
+ * (tools/restructure/split_test.py checks that, comments aside): the battle's setup, one step's decision bundle, a battle by
+ * name, and three replays to a step, which differ in what they check on the way and at the end. Many older tests keep their own
  * copies; only the parts of a split include this header.
  */
 #include <stdint.h>
@@ -112,6 +112,37 @@ static inline duoforge_battle *df_conf_replay_by_name(df_test *t, const duoforge
             return NULL;
         }
     }
+    return b;
+}
+
+/* The same replay by name, and then the state check of the battle (DF_CHECK of duoforge_battle_check) before it returns. */
+static inline duoforge_battle *df_conf_replay_checked(df_test *t, const duoforge_context *ctx, const char *name, uint32_t steps)
+{
+    const df_conf_battle *cb = df_conf_find(name);
+    if (!DF_CHECK(t, cb != NULL && steps <= cb->step_count)) {
+        return NULL;
+    }
+    duoforge_battle_setup setup;
+    df_conf_build_setup(cb, &setup);
+    duoforge_battle *b = NULL;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return NULL;
+    }
+    for (uint32_t si = 0u; si < steps; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        df_conf_bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0xFFFFFFFFu;
+        const duoforge_status status =
+            dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+        if (!DF_CHECK(t, status == DUOFORGE_OK && used == st->tape_len)) {
+            fprintf(stderr, "  %s step %u: %s\n", name, si, duoforge_status_name(status));
+            duoforge_battle_destroy(b);
+            return NULL;
+        }
+    }
+    DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
     return b;
 }
 

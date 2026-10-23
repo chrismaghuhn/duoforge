@@ -1,12 +1,12 @@
 /*
- * duoforge.state.pool_g80 (white-box): step G80 of the content expansion (decision 0044): Psych Up, Howl and Ally Switch.
+ * duoforge.moves.ally_switch (white-box): step G80 of the content expansion (decision 0044), Ally Switch's state: its byte of
+ * the tail travels in the encoding (reserve bytes 4..7) and comes back unchanged; the invariant refuses a level 0, a level
+ * above 6, a turn count of 0 or 3 and a byte at a stopped position; a swap whose partner may hold Illusion is E_UNSUPPORTED
+ * before anything changes (decision 0044 section 5; set through the tail's ability_now); and dfi_swap_position_state moves
+ * every field of its inventory (combat/turn.c) to the other position, keeps the others, and changes nothing outside the two
+ * positions and the trap and leech references.
  *
- * The behaviour is replayed by duoforge.reference.conformance_pool_data: the recorded battles g80_* under "data": "pool" cover
- * Psych Up copying a Dragon Cheer stage 2 and the boosts, Howl on a Soundproof partner, Ally Switch's swap and the targets that
- * follow it, its consecutive roll, and Stomping Tantrum after the roll. This file checks what the battles do not show directly:
- * the rows (the special ids, the boost role and the target class, the support marks, the event and draw numbers), the Ally
- * Switch byte of the tail: its codec round trip in reserve bytes 4..7, the invariant that refuses a level or a turn count out of
- * range, and the Illusion refusal (E_UNSUPPORTED) of a swap whose partner may hold Illusion, set through the tail's ability_now.
+ * Split by subject from the test of step G80 (restructure step 6e; tests/renames.tsv maps the old name).
  */
 #include <stddef.h>
 #include <stdio.h>
@@ -25,6 +25,8 @@
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
+#define MV(slot, target) {DUOFORGE_SLOT_MOVE, (slot), (target), 0u}
+#define NO DUOFORGE_TARGET_NONE
 
 /* One slot's command of a turn: move slot and target flat position. */
 typedef struct g80_cmd {
@@ -33,9 +35,6 @@ typedef struct g80_cmd {
     uint8_t target;
     uint8_t reserve;
 } g80_cmd;
-
-#define MV(slot, target) {DUOFORGE_SLOT_MOVE, (slot), (target), 0u}
-#define NO DUOFORGE_TARGET_NONE
 
 static const df_conf_battle *find_conf(const char *name)
 {
@@ -137,32 +136,6 @@ static void finish(duoforge_context *ctx, duoforge_battle *b)
     duoforge_context_destroy(ctx);
 }
 
-/* The rows: the special ids and their order, the boost role and the target class, the unmodelled lists, the support marks, the
- * event numbers, the draw site and the Ally Switch byte's place in the reserve. */
-static void test_rows(df_test *t)
-{
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_PSYCH_UP, 0x76u); /* generator order: after Endeavor (C5, 0x75), before Ally Switch (batch 8 merge order) */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_ALLY_SWITCH, DFI_SPECIAL_PSYCH_UP + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SPEED_SWAP + 1u);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_PSYCHUP].special, DFI_SPECIAL_PSYCH_UP);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_ALLYSWITCH].special, DFI_SPECIAL_ALLY_SWITCH);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_HOWL].boost_role, DFI_BOOST_ROLE_PRIMARY_TARGET);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_HOWL].target_class, DFI_TARGET_CLASS_ALLIES);
-    DF_CHECK(t, dfi_pool_move_unmodeled[DFI_MOVE_PSYCHUP] == NULL);
-    DF_CHECK(t, dfi_pool_move_unmodeled[DFI_MOVE_HOWL] == NULL);
-    DF_CHECK(t, dfi_pool_move_unmodeled[DFI_MOVE_ALLYSWITCH] == NULL);
-    DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_PSYCHUP], 1u);
-    DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_HOWL], 1u);
-    DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_ALLYSWITCH], 1u);
-    DF_CHECK_EQ_U64(t, DUOFORGE_EVENT_SWAP, 49u);
-    DF_CHECK_EQ_U64(t, DUOFORGE_EVENT_COPY_BOOST, 50u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_ALLY_SWITCH, 33u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 34u); /* G80 Ally Switch (site 33) */
-    DF_CHECK_EQ_U64(t, DFI_ALLY_SWITCH_MAX, 26u); /* level 6, two turns: (6 << 2) | 2 */
-    DF_CHECK_EQ_U64(t, DFI_ENC_TAIL5_ALLY_SWITCH_OFF, 4u);
-    DF_CHECK_EQ_U64(t, DFI_ENC_TAIL5_ALLY_SWITCH_COUNT, 4u);
-}
-
 /* The Ally Switch byte of each position travels in the encoding (reserve bytes 4..7) and comes back unchanged. */
 static void test_codec_round_trip(df_test *t)
 {
@@ -251,36 +224,6 @@ static void test_illusion_refusal(df_test *t)
     /* As the recorded swap battle's first turn: Chimecho (slot 0) and Audino (slot 1) use Ally Switch (move 0, no target); the
      * foe's Malamar aims Foul Play at our slot 0 and Spiritomb at our slot 1 (targets are flat positions) */
     static const g80_cmd turn1[2][2] = {{MV(0, NO), MV(0, NO)}, {MV(0, 0u), MV(0, NO)}};
-    turn_bundle(&bd, b, turn1);
-    const duoforge_status st = duoforge_battle_step(ctx, b, &bd, &res);
-    DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
-    finish(ctx, b);
-}
-
-/* Stalwart with a randomNormal move (issue 541): the original target is the one resolveAction drew when the move was queued
- * (sim/battle-queue.ts:268-273), a draw the engine does not model, so the move is refused (E_UNSUPPORTED) rather than aimed by a
- * draw of its own. No recorded battle reaches it (its battle would stop there), so Stalwart is set through the tail's ability_now
- * of the Outrage user of fz519_volt_switch_sub (Bastiodon, our slot 1). */
-static void test_stalwart_random_refusal(df_test *t)
-{
-    duoforge_context *ctx = NULL;
-    duoforge_battle *b = NULL;
-    duoforge_decision_bundle bd;
-    duoforge_step_result res;
-    if (!start(t, "fz519_volt_switch_sub", &ctx, &b, &bd, &res)) {
-        finish(ctx, b);
-        return;
-    }
-    const uint32_t member = b->sides[0].positions[1].occupant;
-    DF_CHECK(t, member < DUOFORGE_MAX_ROSTER);
-    if (member >= DUOFORGE_MAX_ROSTER) {
-        finish(ctx, b);
-        return;
-    }
-    b->tail.sides[0].ability_now[member] = (uint16_t)(DFI_ABILITY_STALWART + 1u);
-    /* Altaria Protects (move 1), Bastiodon uses Outrage (move 2, randomNormal: no target); the foe's Rotom-Heat aims Eerie
-     * Impulse and Garganacl Heavy Slam at our slot 0 (flat 0) */
-    static const g80_cmd turn1[2][2] = {{MV(1, NO), MV(2, NO)}, {MV(1, 0u), MV(1, 0u)}};
     turn_bundle(&bd, b, turn1);
     const duoforge_status st = duoforge_battle_step(ctx, b, &bd, &res);
     DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
@@ -413,12 +356,10 @@ static void test_swap_position_fields(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g80");
-    test_rows(&t);
+    df_test_begin(&t, "duoforge.moves.ally_switch");
     test_codec_round_trip(&t);
     test_invariant(&t);
     test_illusion_refusal(&t);
-    test_stalwart_random_refusal(&t);
     test_swap_position_fields(&t);
     return df_test_end(&t);
 }

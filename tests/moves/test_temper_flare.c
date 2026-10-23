@@ -7,7 +7,7 @@
  * position (flat 0, the user):
  *
  *   - the move result of the position: `this` (bits 0-1) and `last` (bits 2-3), against the table below. The classes are
- *     those of tests/moves/test_pool_g42.c; at the end of a turn `this` is 0 and `last` holds the turn's result.
+ *     those of tests/moves/test_move_result_roost.c; at the end of a turn `this` is 0 and `last` holds the turn's result.
  *   - a Temper Flare that hits: TRUE; a Roost at full HP (`-fail heal`): FALSE; a Temper Flare that Protect takes:
  *     NULL (no failure); a position that switched in: 0 in both (its result was cleared on the switch).
  *   - the unclassified bits (4, 5) and bits 6-7 are zero; the Roost volatile is not set (the Roost failed).

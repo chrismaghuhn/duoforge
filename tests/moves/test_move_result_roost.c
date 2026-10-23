@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g42 (white-box): step G42, Roost and Stomping Tantrum (decision 0015 section 7, tail rev 4: move_result,
+ * duoforge.moves.move_result_roost (white-box): step G42, Roost and Stomping Tantrum (decision 0015 section 7, tail rev 4: move_result,
  * single_turn; decision 0018: the ROOST volatile of the position, supported bit 40; MOVE_FAILED, bit 41, stays clear).
  *
  * The recorded battles (g42_* under "data": "pool") are replayed through the step with the reference's draws, as in
@@ -321,7 +321,7 @@ static const char *const names[] = {"g42_roost_full", "g42_tantrum_switch", "g42
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g42");
+    df_test_begin(&t, "duoforge.moves.move_result_roost");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t compared = 0u;
     uint32_t roosts = 0u;

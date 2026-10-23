@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g31 (white-box): step G31 of the content expansion, Taunt and Yawn, in the POOL state tail
+ * duoforge.moves.taunt_yawn_tail_view (white-box): step G31 of the content expansion, Taunt and Yawn, in the POOL state tail
  * (decision 0015 section 7: taunt_turns and yawn_turns of a position, rev 2 and 3 as they are) and in the POOL view extension
  * (decision 0018: the position's volatiles bits TAUNT and YAWN, supported bits 14 and 25).
  *
@@ -205,7 +205,7 @@ static const char *const names[] = {"g31_taunt_a", "g31_taunt_encore", "g31_taun
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g31");
+    df_test_begin(&t, "duoforge.moves.taunt_yawn_tail_view");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t compared = 0u;
     uint32_t taunts = 0u;
