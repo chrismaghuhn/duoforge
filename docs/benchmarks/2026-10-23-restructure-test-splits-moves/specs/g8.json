@@ -1,0 +1,63 @@
+{
+ "source": "moves/test_pool_g8.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "bundle_of": "df_conf_bundle_of",
+   "find": "df_conf_find",
+   "replay": "df_conf_replay_checked"
+  }
+ },
+ "shared_blocks": [
+  0,
+  1,
+  8
+ ],
+ "parts": [
+  {
+   "file": "moves/test_throat_chop.c",
+   "main_blocks": [
+    0,
+    1,
+    2,
+    8
+   ],
+   "header": "step G8 of the content expansion, Throat Chop in the POOL state tail (decision 0015 section 7) and in the request. g8_throat_chop is replayed with the reference's draws to the turns that matter: the counter is 2 when set and the residual of the turn counts it down, so the next request has the sound moves barred (a holder of a sound move alone gets Struggle) and the one after has them back; a Throat Chop into Protect adds nothing, a faint clears the position, and the other side's slots are not touched. The reference's own lines are compared by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G8 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_heal_block.c",
+   "main_blocks": [
+    0,
+    1,
+    3,
+    4,
+    6,
+    8
+   ],
+   "header": "step G8 of the content expansion, Psychic Noise's Heal Block in the POOL state tail (decision 0015 section 7) and in the request. g8_heal_block: the block is 2 turns (1 left after the turn it was set in, gone after the next residual) and bars the heal moves of the request while it holds; a faint clears it. g8_heal_block_pair: two blocks set in one turn end in one residual. Two Heal Blocks that end in one residual at equal Speed are ordered by a SPEED_TIE draw (the reference shuffles them and the two -end lines show the outcome): under 24 seeds of the engine's own generator the turn is accepted with both lines and both orders occur; the recorded tie_a and tie_b battles are the two orders against the reference's draws.\n\nSplit by subject from the test of step G8 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_switch_clears_volatiles.c",
+   "main_blocks": [
+    0,
+    1,
+    5,
+    8
+   ],
+   "header": "step G8 of the content expansion, a switch ends every volatile of the POOL state tail (decision 0015 section 7): dfi_vacate, and dfi_place, which clears the same way before it overwrites an occupant, clear the position's five tail fields and the leaving member's Soak type; the other position, the other members' Soak types and a position of the other side are not touched.\n\nSplit by subject from the test of step G8 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_throat_chop_heal_block_view.c",
+   "calls": [
+    "check_view_ext"
+   ],
+   "header": "step G8 of the content expansion, the public view extension (decision 0018) of Throat Chop and Heal Block: after every step of the five recorded g8_* battles, both viewers' extension equals the expected one byte for byte (revision, viewer, epoch, the two supported bits, the two position bits of the table and nothing else; the hidden counters never show, Throat Chop is public, so the foe sees it as well), and the two viewers' position sections are the same. The table is what the protocol lines say alone; tools/reference/test_trace_to_c.py derives it from the committed traces.\n\nSplit by subject from the test of step G8 (restructure step 6e; tests/renames.tsv maps the old name).",
+   "main_blocks": [
+    0,
+    1,
+    8
+   ]
+  }
+ ]
+}

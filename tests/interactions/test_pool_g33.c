@@ -40,7 +40,7 @@ static void check_facts(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TWINBEAM].special, DFI_SPECIAL_MULTI_HIT_2);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].special, DFI_SPECIAL_TRIPLE_AXEL);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRIPLE_AXEL, DFI_SPECIAL_MULTI_HIT_2 + 1u);
-    /* Population Bomb is not one of this step's rows: step G48 marks it (MULTI_HIT_10, tests/test_pool_g48.c) */
+    /* Population Bomb is not one of this step's rows: step G48 marks it (MULTI_HIT_10, tests/moves/test_hits_taken_hazard_moves.c) */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].accuracy, 90u);
 }
 

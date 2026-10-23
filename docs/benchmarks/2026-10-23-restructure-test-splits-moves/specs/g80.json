@@ -1,0 +1,29 @@
+{
+ "source": "moves/test_pool_g80.c",
+ "parts": [
+  {
+   "file": "moves/test_psych_up_howl_ally_switch_rows.c",
+   "calls": [
+    "test_rows"
+   ],
+   "header": "step G80 of the content expansion (decision 0044), the rows of Psych Up, Howl and Ally Switch: the special ids and their order, Howl's boost role and target class, the unmodelled lists, the support marks, the event numbers, Ally Switch's draw site and the place of its byte in the tail's reserve. The recorded battles g80_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G80 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_ally_switch.c",
+   "calls": [
+    "test_codec_round_trip",
+    "test_invariant",
+    "test_illusion_refusal",
+    "test_swap_position_fields"
+   ],
+   "header": "step G80 of the content expansion (decision 0044), Ally Switch's state: its byte of the tail travels in the encoding (reserve bytes 4..7) and comes back unchanged; the invariant refuses a level 0, a level above 6, a turn count of 0 or 3 and a byte at a stopped position; a swap whose partner may hold Illusion is E_UNSUPPORTED before anything changes (decision 0044 section 5; set through the tail's ability_now); and dfi_swap_position_state moves every field of its inventory (combat/turn.c) to the other position, keeps the others, and changes nothing outside the two positions and the trap and leech references.\n\nSplit by subject from the test of step G80 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_stalwart_random_move.c",
+   "calls": [
+    "test_stalwart_random_refusal"
+   ],
+   "header": "step G80 of the content expansion (decision 0044; issue 541), Stalwart with a randomNormal move: the original target is the one resolveAction drew when the move was queued (sim/battle-queue.ts:268-273), a draw the engine does not model, so the move is refused (E_UNSUPPORTED) rather than aimed by a draw of its own. No recorded battle reaches it, so Stalwart is set through the tail's ability_now of the Outrage user of fz519_volt_switch_sub.\n\nSplit by subject from the test of step G80 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

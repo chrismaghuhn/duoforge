@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g64 (white-box): step G64 of the content expansion (decision 0015, item 5ca, moves batch 2), POOL build.
+ * duoforge.moves.moves_batch_2_rows (white-box): step G64 of the content expansion (decision 0015, item 5ca, moves batch 2), POOL build.
  *
  * Four handlers: Beat Up (BEAT_UP), Bug Bite (BUG_BITE), Poltergeist (POLTERGEIST) and Sheer Cold (SHEER_COLD). The recorded
  * battles (g64_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data. Here are the facts the battles
@@ -59,7 +59,7 @@ static void check_pins(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g64");
+    df_test_begin(&t, "duoforge.moves.moves_batch_2_rows");
     check_handlers(&t);
     check_marks(&t);
     check_pins(&t);

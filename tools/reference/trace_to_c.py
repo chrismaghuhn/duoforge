@@ -1193,11 +1193,11 @@ IGNORED_VOLATILES = {
     # is the extension's RAGE_POWDER bit, read after every step by duoforge.state.pool_g30.
     'ragepowder': 'the extension bit RAGE_POWDER',
     # Step G42: Roost's volatile takes the Flying type off until the residual of its turn. It is not a field of the record: the
-    # -singleturn line and the immunity and the damage of a Ground move show it; duoforge.state.pool_g42 reads the tail's bit
+    # -singleturn line and the immunity and the damage of a Ground move show it; duoforge.moves.move_result_roost reads the tail's bit
     # after every step (a pivot inside the Roost turn is the only boundary where it stands).
     'roost': 'the Ground move lines and the single-turn line',
     # Step G76 (Destiny Bond, data/moves.ts:3482-3520): not a field of the record; its start line (-singlemove, SINGLE_TURN),
-    # the KO line (-activate, ACTIVATE with cause MOVE) and the consecutive-use fail show it, and duoforge.state.pool_g76 reads
+    # the KO line (-activate, ACTIVATE with cause MOVE) and the consecutive-use fail show it, and duoforge.moves.destiny_bond reads
     # the position bit DESTINY_BOND after every step.
     'destinybond': 'the start and KO lines and the extension bit DESTINY_BOND',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock

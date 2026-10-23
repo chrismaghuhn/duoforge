@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g19 (white-box): step G19 of the content expansion, Coaching and Glaive Rush: Coaching's boosts
+ * duoforge.moves.glaive_rush_tail_view (white-box): step G19 of the content expansion, Coaching and Glaive Rush: Coaching's boosts
  * for the ally (target adjacentAlly, boost role PRIMARY_ALLY) and Glaive Rush's volatile in the POOL state tail
  * (glaive_rush of a position, decision 0015 section 7) and in the view extension (decision 0018: the GLAIVE_RUSH bit of
  * the position's volatiles, supported bit 20).
@@ -257,7 +257,7 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g19");
+    df_test_begin(&t, "duoforge.moves.glaive_rush_tail_view");
     (void)conf_events;
     (void)replay;
     duoforge_context *kp = df_make_context(&df_config_pool);

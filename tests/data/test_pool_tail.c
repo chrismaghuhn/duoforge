@@ -1923,7 +1923,7 @@ int main(void)
                 /* step G60: the example's Substitutes would absorb this step's hits (both leads are the targets of the foe's first
                  * moves, and the hits go to the Substitute: ACTIVATE, no DAMAGE, the HP is hidden); tested in test_substitute.c. */
                 tp->substitute_hp = 0u;
-                tp->glaive_rush = 0u;   /* step G19: the first BeforeMove of a Pokemon ends it (test_pool_g19.c) */
+                tp->glaive_rush = 0u;   /* step G19: the first BeforeMove of a Pokemon ends it (test_glaive_rush_tail_view.c) */
                 /* step G56: the example's locks are not this step's turn (a locked move is forced, and its count goes down; the
                  * lock is tested by test_outrage_lock.c): the lock and its move in the body are cleared together. */
                 tp->lock_turns = 0u;
@@ -1992,7 +1992,7 @@ int main(void)
                 want.sides[s].positions[p].last_move = x->tail.sides[s].positions[p].last_move;
                 /* step G42: the move results of this turn are the actions' own (the engine writes them while the turn runs and
                  * the end of the turn shifts them to the last turn; the shift is checked by the recorded battles of
-                 * test_pool_g42.c), so this model takes them as they are, and only the bits outside the layout are checked. */
+                 * test_move_result_roost.c), so this model takes them as they are, and only the bits outside the layout are checked. */
                 const uint32_t mr = x->tail.sides[s].positions[p].move_result;
                 DF_CHECK_EQ_U64(&t, mr & 0xC0u, 0u);
                 want.sides[s].positions[p].move_result = (uint8_t)mr;

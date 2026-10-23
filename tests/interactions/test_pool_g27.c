@@ -278,7 +278,7 @@ int main(void)
                     /* Encore's slot (step G9, checked by duoforge.moves.encore) is in the battle that has both. */
                     exp.sides[flat / 2u].positions[flat % 2u].encore_slot =
                         b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot;
-                    /* Heal Block's bit (step G8, checked by duoforge.state.pool_g8) is in the battle that has it end with a Disable. */
+                    /* Heal Block's bit (step G8, checked by duoforge.moves.throat_chop_heal_block_view) is in the battle that has it end with a Disable. */
                     exp.sides[flat / 2u].positions[flat % 2u].volatiles =
                         b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u
                             ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK

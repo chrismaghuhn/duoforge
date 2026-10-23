@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g68 (white-box): step G68 of the content expansion (decision 0015, item 5cc, moves batch 4), POOL build.
+ * duoforge.moves.moves_batch_4_rows (white-box): step G68 of the content expansion (decision 0015, item 5cc, moves batch 4), POOL build.
  *
  * Two handlers: Steel Beam (STEEL_BEAM: the recoil of half the maximum HP after a hit and in MoveFail) and Thunder Wave
  * (THUNDER_WAVE: the Electric type immunity of the target, which the status moves skip). Fire Punch and Ice Hammer have no
@@ -65,7 +65,7 @@ static void check_pins(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g68");
+    df_test_begin(&t, "duoforge.moves.moves_batch_4_rows");
     check_handlers(&t);
     check_marks(&t);
     check_pins(&t);

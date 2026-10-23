@@ -7,7 +7,7 @@
  * stage is biased by DFI_STAGE_NEUTRAL, so a stored value above it is a positive stage. A negative stage adds nothing.
  * turn.c's basePowerCallback for Power Trip is 20 + 20 times this sum.
  *
- * Internal header: no public value, no state. The white-box test duoforge.state.pool_g44 calls it at every stat.
+ * Internal header: no public value, no state. The white-box test duoforge.moves.power_trip calls it at every stat.
  */
 #include <stdint.h>
 

@@ -1263,11 +1263,11 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
         (`|-start|X|Throat Chop|[silent]`, `|-start|X|move: Heal Block`) until the matching -end line, or until the
         occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (view_ext_rows in
-        tests/test_pool_g8.c: the expected view extension after each step of the G8 battles, for both viewers, as
-        masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
+        tests/moves/test_throat_chop_heal_block_view.c: the expected view extension after each step of the G8 battles, for
+        both viewers, as masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
         extension is checked against the protocol and not against itself."""
         names = ('g8_throat_chop', 'g8_heal_block', 'g8_heal_block_pair', 'g8_heal_block_tie_a', 'g8_heal_block_tie_b')
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g8.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_throat_chop_heal_block_view.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g8_\w+)", (\d+)u, 0x([0-9a-f])u, 0x([0-9a-f])u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4), 16))
@@ -1548,12 +1548,12 @@ class Library(unittest.TestCase):
         `|-status|X|slp` line when it lands, or the terrain's `|-activate|X|move: Electric Terrain` (or Misty) line when the terrain
         refuses it (data/moves.ts:4518 and 12172); the volatile ends either way, so a refused sleep clears the bit as well.
         Both end when the occupant leaves (`|switch|` at the position) or faints. The rows of the C test (rows in
-        tests/test_pool_g31.c) must be exactly what these lines give for the committed traces; the sleep that Yawn brings
+        tests/moves/test_taunt_yawn_tail_view.c) must be exactly what these lines give for the committed traces; the sleep that Yawn brings
         has no [from], there are `cant|X|move: Taunt|MOVE` lines, and the new public numbers are the header's."""
         self.assertEqual(trace_to_c.CAUSE['TAUNT'], 20)
         self.assertEqual(trace_to_c.VOLATILE_TAUNT, 6)
         self.assertEqual(trace_to_c.VOLATILE_YAWN, 7)
-        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g31.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_taunt_yawn_tail_view.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g31_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -2364,12 +2364,12 @@ class Library(unittest.TestCase):
         line that is followed by damage to a foe (a miss, a block or an immunity gives nothing; the `-singlemove|X|Glaive
         Rush|[silent]` line is not shown) until the user's next `|move|` or `|cant|` line (BeforeMove, priority 100) or
         until it leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (rows in
-        tests/test_pool_g19.c: the flag of each position after each step) must be exactly what these lines give for the
+        tests/moves/test_glaive_rush_tail_view.c: the flag of each position after each step) must be exactly what these lines give for the
         committed traces, so the engine's tail and extension are checked against the protocol and not against
         themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
         self.assertEqual(len(names), 6)  # with g19_glaive_rush_mirror (the replay tracker's coverage)
-        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g19.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_glaive_rush_tail_view.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g19_glaive\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):

@@ -4147,7 +4147,7 @@ static void dfi_run_swap_scratch(dfi_run *r, uint32_t user, uint32_t partner)
  * Not moved, slot-bound: sealed_cmds[a/c] and requested_slots (the request of the slot), and sides[].knowledge, ability_now,
  * forme_now, soak_type, item_now, toxic_stage, type2, member_flags, illusion, hazards and screens (per roster member or per side).
  * The run's scratch (speed_seen, residual_hp, faint queue, drag and lock bits) is dfi_run_swap_scratch, and the queued actions are
- * remapped by the caller. Field test: tests/test_pool_g80.c (dfi_swap_position_state moves every listed field and no other). */
+ * remapped by the caller. Field test: tests/moves/test_ally_switch.c (dfi_swap_position_state moves every listed field and no other). */
 bool dfi_ally_swap_wish_blocked(const struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c)
 {
     /* Healing Wish (step G82, slotCondition 'healingwish', data/moves.ts:8348-8382): bit 0 of the slot's flags. The Swap event of
