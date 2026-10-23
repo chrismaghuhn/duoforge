@@ -1190,7 +1190,7 @@ def check_tail(ctx, st):
             # Step G66 (decision 0040), the species half of the strict stats rule of src/state/invariants.c: the Blade's forme
             # (forme_now = the Blade's id + 1) belongs to an Aegislash only. The stats half (the Blade's stats for that forme,
             # the sheet's stats otherwise) needs the pool's base stats and nature table; this model keeps member stats at zero
-            # and checks no stats, so that half is tested in C only (tests/test_pool_g66.c).
+            # and checks no stats, so that half is tested in C only (tests/forms/test_stance_change.c).
             if fo == POOL_AEGISLASH_BLADE_FORME + 1 and mem['species'] != POOL_AEGISLASH_FORME:
                 return 'TAIL_MEMBER'
             if it != 0 and it != TAIL_ITEM_NONE and it > POOL_ITEM_COUNT:

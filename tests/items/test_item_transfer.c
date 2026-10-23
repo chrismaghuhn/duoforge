@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g29 (white-box): step G29 of the content expansion, the item-transfer moves Trick, Switcheroo, Thief
+ * duoforge.items.item_transfer (white-box): step G29 of the content expansion, the item-transfer moves Trick, Switcheroo, Thief
  * and Covet, in the POOL tail's item_now (decision 0015 section 7), in the events (ITEM_START for a
  * `-item` line, ITEM_END with the cause ITEM_TAKEN for the silent `-enditem` of an item that left), in what reads the held
  * item and in the view extension (decision 0018: item_now of the member, bit 11).
@@ -384,7 +384,7 @@ static void check_kind_rules(df_test *t, const duoforge_context *k_other, const 
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g29");
+    df_test_begin(&t, "duoforge.items.item_transfer");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     duoforge_context *kd = df_make_context(&df_config_pool_dev);

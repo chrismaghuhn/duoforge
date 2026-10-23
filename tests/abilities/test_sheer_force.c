@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g61 (white-box): step G61 of the content expansion (decision 0015 item 5bi), Sheer Force, Cameruptite and
+ * duoforge.abilities.sheer_force (white-box): step G61 of the content expansion (decision 0015 item 5bi), Sheer Force, Cameruptite and
  * Feraligite, and Dragonize as the Mega ability of Feraligatr.
  *
  * Sheer Force (data/abilities.ts:4202-4221) strips the secondaries and self effects of a move that has secondaries (and is not
@@ -121,7 +121,7 @@ static void check_multiplier(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g61");
+    df_test_begin(&t, "duoforge.abilities.sheer_force");
     check_marks(&t);
     check_named_moves(&t);
     check_pool_counts(&t);

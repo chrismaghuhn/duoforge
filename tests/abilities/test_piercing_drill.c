@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_k2 (white-box): step K2 of the content expansion (decision 0015, entry 5dd, issue #474), Piercing Drill.
+ * duoforge.abilities.piercing_drill (white-box): step K2 of the content expansion (decision 0015, entry 5dd, issue #474), Piercing Drill.
  *
  * Piercing Drill (data/abilities.ts:3282-3294; the Champions mod inherits it, data/mods/champions/abilities.ts:59-62) marks the
  * holder's contact move through onHitProtect; checkMoveBypassesProtect (sim/battle.ts:1300-1309) then lets it through the
@@ -59,7 +59,7 @@ static void test_quarter_modifier_rounding(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_k2");
+    df_test_begin(&t, "duoforge.abilities.piercing_drill");
     test_piercing_drill_is_an_engine_row(&t);
     test_excadrite_takes_excadrill_to_its_mega(&t);
     test_protect_broken_event_kind(&t);

@@ -4,7 +4,7 @@
  *
  * The expectations are tests/reference/party_order_g46.h, generated from the traces by tools/reference/party_expect.py: the
  * state.sides[s].pokemon list of each step, mapped to the roster index through the start log. Each replayed step runs the
- * recorded tape of the conformance battle (the same records as test_pool_g41.c), and the engine's entries (roster index + 1,
+ * recorded tape of the conformance battle (the same records as test_shadow_tag.c), and the engine's entries (roster index + 1,
  * 3 bits, tail.party_order) must be the expected row: the four brought members in order, the rest empty.
  *
  * A row also checks the count (every expected battle has as many rows as conformance steps), so a battle cannot pass with

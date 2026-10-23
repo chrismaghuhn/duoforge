@@ -4,7 +4,7 @@ duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES forms/test_mega_by_s
 # Mega batch 2: Swampertite, Metagrossite, Lucarionite Z and Aura Guard: the marks, the Mega of each pair, Aura Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES forms/test_pool_mega2.c WHITEBOX TIMEOUT 60 TIER quick AREA forms)
-duoforge_add_test(NAME duoforge.state.pool_g66 SOURCES forms/test_pool_g66.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA forms)
+duoforge_add_test(NAME duoforge.forms.stance_change SOURCES forms/test_stance_change.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA forms)
 # Step G43 (Mega batch 3): ten Mega Stones marked with no new rule (Dragoninite, Glimmoranite, Blazikenite, Absolite Z,
 # Raichunite X, Lopunnite, Alakazite, Meowsticite, Scizorite, Galladite): the marks, the Mega of each pair, the setup and the API.
 duoforge_add_test(NAME duoforge.state.pool_g43 SOURCES forms/test_pool_g43.c WHITEBOX TIMEOUT 60 TIER quick AREA forms)

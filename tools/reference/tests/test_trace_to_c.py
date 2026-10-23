@@ -1711,12 +1711,12 @@ class Library(unittest.TestCase):
     def test_item_transfer_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Trick, Switcheroo, Thief and Covet (step G29): the item_now of every roster member
         after each step, and the numbers of `-item` and silent `-enditem ... [from] move:` lines, are what the committed
-        traces' protocol lines say alone; the rows of tests/test_pool_g29.c must be exactly that. `|-item|X|Item|[from] move:
+        traces' protocol lines say alone; the rows of tests/items/test_item_transfer.c must be exactly that. `|-item|X|Item|[from] move:
         M` gives X the item (item id + 1; a Thief's or Covet's `[of] Y` takes Y's away, 255), `|-enditem|X|Item|[silent]|[from]
         move: M` takes X's away; a used-up item and a switch change nothing. Also the converter: the lines are ITEM_START (cause
         MOVE) and ITEM_END (cause ITEM_TAKEN), and any other shape is refused."""
         names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails', 'g29_edge_cases', 'g29_trick_lock_before_move', 'g29_thief_fainted')
-        source = open(os.path.join(ROOT, 'tests', 'items/test_pool_g29.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'items/test_item_transfer.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g29_\w+)", (\d+)u, \{([^}]*)\}, (\d+)u, (\d+)u\}', source):
             codes = tuple(int(x.strip().rstrip('u')) for x in m.group(3).split(','))
@@ -1817,7 +1817,7 @@ class Library(unittest.TestCase):
     def test_item_taken_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Knock Off: a member holds nothing from the `|-enditem|X|Item|[from] move: Knock Off|
         [of] Y` line on, and nothing clears it (the item stays gone across a switch-out and a faint: sim/pokemon.ts:1851-1866
-        takeItem sets pokemon.item to the empty item for good). The rows of the C test (rows in tests/test_pool_g16.c: per
+        takeItem sets pokemon.item to the empty item for good). The rows of the C test (rows in tests/items/test_knock_off.c: per
         step the members that hold nothing as a mask over side * 6 + roster index, the number of such lines, the number of
         `|-activate|X|ability: Sticky Hold` lines) must be exactly what these lines give for the committed traces, so the
         engine's tail, events and extension are checked against the protocol and not against itself. Also: the converter
@@ -1825,7 +1825,7 @@ class Library(unittest.TestCase):
         refuses any other shape of a `[from] move:` item line."""
         names = ('g16_removal', 'g16_unburden', 'g16_stones', 'g16_sticky_hold', 'g16_scarf_helmet', 'g16_helmet_faint',
                  'g16_scarf_lock_stays')
-        source = open(os.path.join(ROOT, 'tests', 'items/test_pool_g16.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'items/test_knock_off.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g16_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
@@ -2197,13 +2197,13 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for an ability changed by Trace: a position has the copied ability from the
         `|-ability|X|NEW|OLD|[from] ability: Trace|[of] foe` line until its occupant leaves (`|switch|`, `|drag|`,
         `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: formeChange sets the Mega forme's ability). The rows of the
-        C test (tests/test_pool_ac1.c: the copied ability of the four positions after each step of the ac1 battles)
+        C test (tests/abilities/test_trace.c: the copied ability of the four positions after each step of the ac1 battles)
         must be exactly what these lines give for the committed traces. Also: the converter reads the line as an
         ABILITY event (the new ability in id2, cause ABILITY, the foe in `other`), and refuses a [from] ability line
         that is not Trace's, an [of] that is missing and a plain line with a [from]."""
         names = ('ac1_trace_intimidate', 'ac1_trace_defiant', 'ac1_trace_drizzle', 'ac1_trace_single',
                  'ac1_trace_switch')
-        source = open(os.path.join(ROOT, 'tests', 'abilities/test_pool_ac1.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'abilities/test_trace.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(ac1_\w+)", (\d+)u, \{([^}]*)\}\}', source):
             cells = [c.strip() for c in m.group(3).split(',')]

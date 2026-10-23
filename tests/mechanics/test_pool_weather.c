@@ -278,7 +278,7 @@ static void check_view(df_test *t, const duoforge_context *ctx)
  * and Sand Force (step G63) in dfi_sand_immune, so the others stay unmarked. The abilities that suppress or override the weather
  * that the Speed abilities of step G22 read (Air Lock and Utility Umbrella are not in the pool at all) stay unmarked too, and
  * so do the ones that break an ability (Inner Focus is breakable): no battle holds any of them. Cloud Nine was unmarked until
- * step G79, which marks it (its suppression is checked in tests/test_pool_g79.c, and the check below pins the mark). Mega Sol makes
+ * step G79, which marks it (its suppression is checked in tests/abilities/test_cloud_nine.c, and the check below pins the mark). Mega Sol makes
  * Pokemon#effectiveWeather sunny for its holder's moves; step G59 marks it (its two weather-reading moves are refused off sun,
  * tests/test_pool_g59.c). The pinned-data side of this list is checked by tools/datagen/pool_families.js. */
 static void check_unmodelled_sources(df_test *t)
@@ -289,14 +289,14 @@ static void check_unmodelled_sources(df_test *t)
         DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[abilities[i]], DFI_HANDLER_UNMODELED);
     }
     /* Step G79 (decision 0015 5br): Cloud Nine is marked, an engine row (the pin that held it unmarked is replaced here, not
-     * weakened: the battles of tests/test_pool_g79.c and the recorded g79_* battles now hold it). */
+     * weakened: the battles of tests/abilities/test_cloud_nine.c and the recorded g79_* battles now hold it). */
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_CLOUDNINE] != 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_CLOUDNINE], DFI_HANDLER_NONE);
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDRUSH], 1u); /* step G22: its immunity is dfi_sand_immune */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDVEIL], 1u); /* step G39: so is Sand Veil's */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDFORCE], 1u); /* step G63: its immunity is dfi_sand_immune too */
     /* Step G55 marks the rocks (Sandstorm and Snowscape for 8 turns with Smooth Rock and Icy Rock); the rule is checked in
-     * tests/test_pool_g55.c and by the recorded battles g55_*. */
+     * tests/items/test_duration_items.c and by the recorded battles g55_*. */
     DF_CHECK(t, dfi_support.items[DFI_ITEM_SMOOTHROCK] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_ICYROCK] != 0u);
     /* Sand Stream and Snow Warning, the two moves, and the immunity bit of exactly three types. */

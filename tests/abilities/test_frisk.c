@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g81 (white-box): step G81 of the content expansion, Frisk (decision 0015 entry 5bs), and the event
+ * duoforge.abilities.frisk (white-box): step G81 of the content expansion, Frisk (decision 0015 entry 5bs), and the event
  * ITEM_SHOWN in its Frisk form (decision 0033).
  *
  * Frisk (data/abilities.ts:1545-1557) announces, at its holder's switch-in, the item of every foe in foes() order that holds one:
@@ -231,7 +231,7 @@ static void check_illusion_refusal(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g81");
+    df_test_begin(&t, "duoforge.abilities.frisk");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     check_marks(&t);
     check_battles(&t, ctx);

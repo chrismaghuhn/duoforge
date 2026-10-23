@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_ac1 (white-box): step AC1 of the ability-change work, Trace, in the POOL state tail (the member's
+ * duoforge.abilities.trace (white-box): step AC1 of the ability-change work, Trace, in the POOL state tail (the member's
  * ability_now, decision 0015 section 7), in the event and in the view extension (decision 0018: position_ext.ability_now,
  * bit 2).
  *
@@ -367,7 +367,7 @@ static void check_no_candidate(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_ac1");
+    df_test_begin(&t, "duoforge.abilities.trace");
     (void)conf_events;
     duoforge_context *kp = df_make_context(&df_config_pool);
     duoforge_context *kd = df_make_context(&df_config_pool_dev);

@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g79 (white-box): step G79, Cloud Nine (decision 0015 5br).
+ * duoforge.abilities.cloud_nine (white-box): step G79, Cloud Nine (decision 0015 5br).
  *
  *   Altaria and Drampa       Cloud Nine     the weather is suppressed while a holder stands (data/abilities.ts:543-562,
  *                                           sim/field.ts:106-116); its switch-in prints -ability and nothing else
@@ -223,7 +223,7 @@ static void check_trace_cloud_nine(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g79");
+    df_test_begin(&t, "duoforge.abilities.cloud_nine");
     check_facts(&t);
     check_mega_sol_cloud_nine(&t);
     check_trace_cloud_nine(&t);

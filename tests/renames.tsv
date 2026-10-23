@@ -4,25 +4,25 @@
 # that does it is merged; tools/restructure/test_audit.py --check (duoforge.lint.test_renames) holds both states.
 old_file	old_ctest	action	new_file	new_ctest	state	subject
 abilities/test_pool_a2a.c	duoforge.state.pool_a2a	split	-	-	planned	A2a: fourteen abilities with one clause each
-abilities/test_pool_ac1.c	duoforge.state.pool_ac1	rename	abilities/test_trace.c	duoforge.abilities.trace	planned	AC1: Trace
+abilities/test_pool_ac1.c	duoforge.state.pool_ac1	rename	abilities/test_trace.c	duoforge.abilities.trace	done	AC1: Trace
 abilities/test_pool_g22.c	duoforge.state.pool_g22	split	-	-	planned	G22: the weather Speed abilities, Inner Focus, Liquid Voice
-abilities/test_pool_g41.c	duoforge.state.pool_g41	rename	abilities/test_shadow_tag.c	duoforge.abilities.shadow_tag	planned	G41: Shadow Tag (and Gengarite)
+abilities/test_pool_g41.c	duoforge.state.pool_g41	rename	abilities/test_shadow_tag.c	duoforge.abilities.shadow_tag	done	G41: Shadow Tag (and Gengarite)
 abilities/test_pool_g45.c	duoforge.state.pool_g45	split	-	-	planned	G45: Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb, Punk Rock
-abilities/test_pool_g53.c	duoforge.state.pool_g53	rename	abilities/test_pressure.c	duoforge.abilities.pressure	planned	G53: Pressure and the PP a viewer attributes
-abilities/test_pool_g57.c	duoforge.state.pool_g57	rename	abilities/test_magic_bounce.c	duoforge.abilities.magic_bounce	planned	G57: Magic Bounce (its Mega Stone checks go to forms in 6e)
-abilities/test_pool_g61.c	duoforge.state.pool_g61	rename	abilities/test_sheer_force.c	duoforge.abilities.sheer_force	planned	G61: Sheer Force (its Mega Stone checks go to forms in 6e)
+abilities/test_pool_g53.c	duoforge.state.pool_g53	rename	abilities/test_pressure.c	duoforge.abilities.pressure	done	G53: Pressure and the PP a viewer attributes
+abilities/test_pool_g57.c	duoforge.state.pool_g57	rename	abilities/test_magic_bounce.c	duoforge.abilities.magic_bounce	done	G57: Magic Bounce (its Mega Stone checks go to forms in 6e)
+abilities/test_pool_g61.c	duoforge.state.pool_g61	rename	abilities/test_sheer_force.c	duoforge.abilities.sheer_force	done	G61: Sheer Force (its Mega Stone checks go to forms in 6e)
 abilities/test_pool_g63.c	duoforge.state.pool_g63	split	-	-	planned	G63: Sand Force, Shell Armor, Filter and the other simple Mega abilities
 abilities/test_pool_g65.c	duoforge.state.pool_g65	split	-	-	planned	G65: Unaware and the other simple modifier abilities
-abilities/test_pool_g69.c	duoforge.state.pool_g69	rename	abilities/test_symbiosis.c	duoforge.abilities.symbiosis	planned	G69: Symbiosis
-abilities/test_pool_g73.c	duoforge.state.pool_g73	rename	abilities/test_moody.c	duoforge.abilities.moody	planned	G73: Moody
-abilities/test_pool_g79.c	duoforge.state.pool_g79	rename	abilities/test_cloud_nine.c	duoforge.abilities.cloud_nine	planned	G79: Cloud Nine
-abilities/test_pool_g81.c	duoforge.state.pool_g81	rename	abilities/test_frisk.c	duoforge.abilities.frisk	planned	G81: Frisk and ITEM_SHOWN
-abilities/test_pool_k2.c	duoforge.state.pool_k2	rename	abilities/test_piercing_drill.c	duoforge.abilities.piercing_drill	planned	K2: Piercing Drill
+abilities/test_pool_g69.c	duoforge.state.pool_g69	rename	abilities/test_symbiosis.c	duoforge.abilities.symbiosis	done	G69: Symbiosis
+abilities/test_pool_g73.c	duoforge.state.pool_g73	rename	abilities/test_moody.c	duoforge.abilities.moody	done	G73: Moody
+abilities/test_pool_g79.c	duoforge.state.pool_g79	rename	abilities/test_cloud_nine.c	duoforge.abilities.cloud_nine	done	G79: Cloud Nine
+abilities/test_pool_g81.c	duoforge.state.pool_g81	rename	abilities/test_frisk.c	duoforge.abilities.frisk	done	G81: Frisk and ITEM_SHOWN
+abilities/test_pool_k2.c	duoforge.state.pool_k2	rename	abilities/test_piercing_drill.c	duoforge.abilities.piercing_drill	done	K2: Piercing Drill
 flow/test_pool_g46_party.c	duoforge.state.pool_g46_party	rename	flow/test_party_order.c	duoforge.flow.party_order	planned	G46: the party order after switches
 forms/test_pool_g43.c	duoforge.state.pool_g43	merge	forms/test_mega_stones.c	duoforge.forms.mega_stones	planned	G43: Mega batch 3, stones with no new rule
 forms/test_pool_g51.c	duoforge.state.pool_g51	merge	forms/test_mega_stones.c	duoforge.forms.mega_stones	planned	G51: Mega batch 4, stones with no new rule
 forms/test_pool_g59.c	duoforge.state.pool_g59	split	-	-	planned	G59: six Mega abilities and their stones
-forms/test_pool_g66.c	duoforge.state.pool_g66	rename	forms/test_stance_change.c	duoforge.forms.stance_change	planned	G66: Aegislash, Stance Change and King's Shield
+forms/test_pool_g66.c	duoforge.state.pool_g66	rename	forms/test_stance_change.c	duoforge.forms.stance_change	done	G66: Aegislash, Stance Change and King's Shield
 forms/test_pool_mega2.c	duoforge.state.pool_mega2	split	-	-	planned	Mega batch 2: four stones and Aura Guard
 interactions/test_pool_g27.c	duoforge.state.pool_g27	rename	interactions/test_cursed_body_disable.c	duoforge.interactions.cursed_body_disable	planned	G27: Cursed Body and Disable
 interactions/test_pool_g30.c	duoforge.state.pool_g30	split	-	-	planned	G30: Rage Powder, the powder immunity and a batch of rows
@@ -38,10 +38,10 @@ interactions/test_pool_g77.c	duoforge.state.pool_g77	split	-	-	planned	G77: Magm
 interactions/test_pool_g83.c	duoforge.state.pool_g83	split	-	-	planned	G83: Bulletproof, Rivalry, Leaf Guard, Iron Ball
 interactions/test_pool_i2.c	duoforge.state.pool_i2	rename	interactions/test_illusion.c	duoforge.interactions.illusion	planned	I2: Illusion
 interactions/test_pool_k4_draws.c	duoforge.state.pool_k4_draws	rename	interactions/test_gravity_accuracy_draws.c	duoforge.interactions.gravity_accuracy_draws	planned	K4: Gravity's accuracy rule with changed draws
-items/test_pool_g16.c	duoforge.state.pool_g16	rename	items/test_knock_off.c	duoforge.items.knock_off	planned	G16: Knock Off
-items/test_pool_g29.c	duoforge.state.pool_g29	rename	items/test_item_transfer.c	duoforge.items.item_transfer	planned	G29: Trick, Switcheroo, Thief, Covet
+items/test_pool_g16.c	duoforge.state.pool_g16	rename	items/test_knock_off.c	duoforge.items.knock_off	done	G16: Knock Off
+items/test_pool_g29.c	duoforge.state.pool_g29	rename	items/test_item_transfer.c	duoforge.items.item_transfer	done	G29: Trick, Switcheroo, Thief, Covet
 items/test_pool_g49.c	duoforge.state.pool_g49	split	-	-	planned	G49: Muscle Band, Wise Glasses, Bright Powder
-items/test_pool_g55.c	duoforge.state.pool_g55	rename	items/test_duration_items.c	duoforge.items.duration_items	planned	G55: the rocks and Terrain Extender
+items/test_pool_g55.c	duoforge.state.pool_g55	rename	items/test_duration_items.c	duoforge.items.duration_items	done	G55: the rocks and Terrain Extender
 mechanics/test_pool_g20.c	duoforge.state.pool_g20	rename	mechanics/test_aurora_veil.c	duoforge.mechanics.aurora_veil	planned	G20: Aurora Veil
 mechanics/test_pool_g20_protect.c	duoforge.state.pool_g20_protect	rename	mechanics/test_spiky_shield.c	duoforge.mechanics.spiky_shield	planned	G20: Spiky Shield
 mechanics/test_pool_g36.c	duoforge.state.pool_g36	rename	mechanics/test_toxic.c	duoforge.mechanics.toxic	planned	G36: Toxic and the badly poisoned status

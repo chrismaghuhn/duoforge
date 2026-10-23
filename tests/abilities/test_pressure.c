@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g53 (white-box): step G53 of the content expansion (decision 0030), Pressure and the PP a viewer can
+ * duoforge.abilities.pressure (white-box): step G53 of the content expansion (decision 0030), Pressure and the PP a viewer can
  * attribute to a foe's moves.
  *
  * Pressure (data/abilities.ts:3437-3449: onDeductPP returns 1 for a foe; useMoveInner sums the returns over the pressure
@@ -399,7 +399,7 @@ static void check_locked_turn_free(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g53");
+    df_test_begin(&t, "duoforge.abilities.pressure");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     if (DF_CHECK(&t, ctx != NULL)) {
         check_marks(&t);

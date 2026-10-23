@@ -12,7 +12,7 @@ add_test(NAME duoforge.reference.tiebreak_ref
 duoforge_label_test(duoforge.reference.tiebreak_ref reference tools ci-no-skip)
 set_tests_properties(duoforge.reference.tiebreak_ref PROPERTIES TIMEOUT 900)
 # Step G57: the reflectable moves of the Champions Dex (flags.reflectable), recomputed by the pinned Showdown; the
-# generated bit DFI_MOVE_FLAG3_REFLECTABLE (dfi_pool_move_flags3) is checked against them by duoforge.state.pool_g57.
+# generated bit DFI_MOVE_FLAG3_REFLECTABLE (dfi_pool_move_flags3) is checked against them by duoforge.abilities.magic_bounce.
 add_test(NAME duoforge.reference.reflect_ref
     COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/reflect_ref.js"
         "${DUOFORGE_PS_REFERENCE_DIR}" --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/reflect_ref.h")

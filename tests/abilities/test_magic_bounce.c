@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g57 (white-box): step G57 of the content expansion, Magic Bounce and the Mega Stones Absolite and Sablenite
+ * duoforge.abilities.magic_bounce (white-box): step G57 of the content expansion, Magic Bounce and the Mega Stones Absolite and Sablenite
  * (decision 0015, entry 5bg).
  *
  * Magic Bounce (data/abilities.ts:2437-2464) bounces a reflectable move that is aimed at its holder, or a hazard that a foe
@@ -579,7 +579,7 @@ static void test_ghost_curse_executes(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g57");
+    df_test_begin(&t, "duoforge.abilities.magic_bounce");
     test_reflect_column_matches_the_dex(&t);
     test_marked_reflectable_moves_are_the_handled_list(&t);
     test_marked_reflectable_moves_are_not_spread(&t);
