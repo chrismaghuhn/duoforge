@@ -18,6 +18,8 @@ foreach(_shard RANGE 3)
         ARGS ${_shard} 4 TIER ${_duoforge_residual_tier} AREA flow)
 endforeach()
 
+# The refusals of the residual's no-order phase around the equal-Speed tie (issues 630, 633; docs/mechanics/flow/5ga).
+duoforge_add_test(NAME duoforge.flow.residual_noorder_tie SOURCES flow/test_residual_noorder_tie.c WHITEBOX TIMEOUT 60 TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.rng.kat SOURCES flow/test_rng_kat.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.rng.contract SOURCES flow/test_rng_contract.c WHITEBOX TIER quick AREA flow)
 duoforge_add_test(NAME duoforge.state.setup SOURCES flow/test_setup.c WHITEBOX TIER quick AREA flow)

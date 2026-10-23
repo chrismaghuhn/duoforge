@@ -98,10 +98,16 @@ static inline const char *dfi_res_kind_name(uint32_t kind)
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 25 * 4 entries, a few draws and a few
  * orders (25 per position: the count of steps G27, G31, G32, G56, G42, G84, G84b, G90 and G80 together, DFI_RES_PER_POSITION in turn.c). */
-#define DFI_RES_MODEL_MAX 111u /* 3 + 4 * 2 + 25 * 4: DFI_RES_PER_POSITION counts Curse (step G84b), the partial trap (G90) and the Ally Switch duration (G80) */
+#define DFI_RES_MODEL_MAX 116u /* 4 + 6 * 2 + 25 * 4: the field's four, a side's six (Gravity and the guards, issue 661's review); DFI_RES_PER_POSITION counts Curse (step G84b), the partial trap (G90) and the Ally Switch duration (G80) */
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
-#define DFI_RES_REGION_MAX 4u
+#define DFI_RES_REGION_MAX 7u /* four Pokemon, two sides, the field */
+
+/* The `flat` of the entries that belong to no Pokemon but whose order in the list is unknown too: a side's conditions
+ * (DFI_RESIDUAL_SIDE_FLAT + side) and the field's pseudo-weathers (DFI_RESIDUAL_FIELD_FLAT). They are added in an order the state does
+ * not hold, so they are regions of the arrangement test like a Pokemon's volatiles. */
+#define DFI_RESIDUAL_SIDE_FLAT 4u
+#define DFI_RESIDUAL_FIELD_FLAT 6u
 
 typedef struct dfi_residual_entry {
     uint32_t kind;
@@ -129,10 +135,13 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
 
 /* A handler of one of a Pokemon's volatiles (the part of its list whose order is not stored). Leech Seed (G84) and Curse (G84b)
  * are volatiles too: the campaign seed 84 battle fz_84_21 showed that their insertion order decides which of two tied holders the
- * shuffle puts first (the reference's list had Curse before Leech Seed on one Pokemon), so they go through the exact test. */
+ * shuffle puts first (the reference's list had Curse before Leech Seed on one Pokemon), so they go through the exact test. A
+ * side's conditions and the field's pseudo-weathers (DFI_RES_FIELD_END, flats DFI_RESIDUAL_SIDE_FLAT and DFI_RESIDUAL_FIELD_FLAT) are
+ * added in an unknown order as well and are treated the same way (issue 661's review). */
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
-    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_HEAL_BLOCK ||
+    return e->kind == DFI_RES_FIELD_END || e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT ||
+           e->kind == DFI_RES_HEAL_BLOCK ||
            e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH || e->kind == DFI_RES_LOCK ||
            e->kind == DFI_RES_LEECH || e->kind == DFI_RES_CURSE ||
            e->kind == DFI_RES_PARTIAL_TRAP;
@@ -148,10 +157,19 @@ static inline bool dfi_residual_is_counter(const dfi_residual_entry *e)
 {
     return e->kind == DFI_RES_DURATION && e->order == DFI_RES_NO_ORDER;
 }
+/* Not Perish Song: its count line is a callback every turn, so a cast of this turn may come after or before a Protect of this turn.
+ * Not a lockedmove either (issue 633): its entry is a callback whether it ends now or not, and a lock started this turn is younger
+ * than a Helping Hand that its holder got before it moved, so either order of a lock and a counter is possible. */
 static inline bool dfi_residual_is_old_ending(const dfi_residual_entry *e)
 {
-    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE ||
-                           e->kind == DFI_RES_LOCK); /* not Perish Song: its count line is a callback every turn, so a cast of this turn may come after or before a Protect of this turn */
+    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE);
+}
+
+/* Two volatile entries of one Pokemon whose order can show: two sort keys, or one key held by a lockedmove and a counter (no order,
+ * sub-order 2 both; issue 630: in a drawn no-order group the shuffle's result depends on which of the two stood first). */
+static inline bool dfi_residual_distinct(const dfi_residual_entry *a, const dfi_residual_entry *b)
+{
+    return a->order != b->order || a->sub_order != b->sub_order || (a->kind == DFI_RES_LOCK) != (b->kind == DFI_RES_LOCK);
 }
 static inline bool dfi_residual_arrangement_possible(const dfi_residual_entry *seg, uint32_t len)
 {
@@ -183,7 +201,7 @@ static inline bool dfi_residual_order_may_matter(const dfi_residual_entry *list,
             if (j == i || !dfi_residual_is_volatile(&list[j]) || list[j].flat != list[i].flat) {
                 continue;
             }
-            distinct = distinct || list[j].order != list[i].order || list[j].sub_order != list[i].sub_order;
+            distinct = distinct || dfi_residual_distinct(&list[j], &list[i]);
             earliest = list[j].order < earliest ? list[j].order : earliest;
         }
         if (!distinct) {
@@ -330,7 +348,7 @@ static inline bool dfi_residual_order_changes_outcome(const dfi_residual_entry *
         uint32_t j = i + 1u;
         bool distinct = false;
         while (j < n && dfi_residual_is_volatile(&list[j]) && list[j].flat == list[i].flat) {
-            distinct = distinct || list[j].order != list[i].order || list[j].sub_order != list[i].sub_order;
+            distinct = distinct || dfi_residual_distinct(&list[j], &list[i]);
             j += 1u;
         }
         for (uint32_t k = 0u; k < n; ++k) { /* a volatile of this Pokemon outside the run: not a layout the engine builds */
