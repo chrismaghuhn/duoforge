@@ -306,6 +306,58 @@ class SplitTest(unittest.TestCase):
                       self.run_split({'parts': self.TWO, 'support': {'header': 'support/h.h', 'items': {'twice': 'df_twice'}}},
                                      header=other))
 
+    LOOP = SOURCE.replace("""    check_one(&t);
+    check_two(&t);
+""", """    unsigned k0 = 0u; /* a context */
+    for (unsigned k = 0u; k < 2u; ++k) {
+        check_one(&t);
+        check_two(&t);
+    }
+    (void)k0;
+""")
+
+    def test_main_blocks_and_shared_blocks(self):
+        src = SOURCE.replace('    check_one(&t);\n', '    unsigned c = 1u; /* shared */\n    check_one(&t);\n    (void)c;\n')
+        out = self.run_split({'shared_blocks': [0], 'parts': [
+            {'file': 'moves/test_one.c', 'calls': ['check_one'], 'main_blocks': [0, 2], 'header': 'one'},
+            {'file': 'moves/test_two.c', 'calls': ['check_two'], 'main_blocks': [0], 'header': 'two'}]}, source=src)
+        self.assertIn('unsigned c = 1u; /* shared */', out['moves/test_one.c'])
+        self.assertIn('unsigned c = 1u; /* shared */', out['moves/test_two.c'])
+        self.assertIn('(void)c;', out['moves/test_one.c'])
+        self.assertIn('main blocks [2]', self.run_split({'shared_blocks': [0], 'parts': [
+            {'file': 'moves/test_one.c', 'calls': ['check_one'], 'main_blocks': [0], 'header': 'one'},
+            {'file': 'moves/test_two.c', 'calls': ['check_two'], 'main_blocks': [0], 'header': 'two'}]}, source=src))
+
+    def test_a_main_written_out_keeps_every_call_and_every_line(self):
+        def body(call):
+            return ['    unsigned k0 = 0u;', '    for (unsigned k = 0u; k < 2u; ++k) {', '        %s(&t);' % call, '    }',
+                    '    (void)k0;']
+        good = [{'file': 'moves/test_one.c', 'main_body': body('check_one'), 'header': 'one'},
+                {'file': 'moves/test_two.c', 'main_body': body('check_two'), 'header': 'two'}]
+        out = self.run_split({'parts': good}, source=self.LOOP)
+        self.assertIn('    for (unsigned k = 0u; k < 2u; ++k) {\n        check_one(&t);\n    }', out['moves/test_one.c'])
+        no_loop = [dict(good[0], main_body=['    check_one(&t);']), dict(good[1], main_body=['    check_two(&t);'])]
+        self.assertIn('lines of the source main in no part', self.run_split({'parts': no_loop}, source=self.LOOP))
+        twice = [dict(good[0], main_body=body('check_one') + ['    check_one(&t);']), good[1]]
+        self.assertIn('the parts make the calls', self.run_split({'parts': twice}, source=self.LOOP))
+
+    def test_line_comments_stay_and_conditionals_are_refused(self):
+        src = SOURCE.replace('/* the first subject */', '// the first subject')
+        self.assertIn('// the first subject\nstatic void check_one', self.run_split({'parts': self.TWO}, source=src)['moves/test_one.c'])
+        guarded = SOURCE.replace('/* the second subject */\n', '#if 1\n/* the second subject */\n').replace(
+            'DF_CHECK(t, twice(2u) == 4u);\n}\n', 'DF_CHECK(t, twice(2u) == 4u);\n}\n#endif\n')
+        self.assertIn('a preprocessor conditional', self.run_split({'parts': self.TWO}, source=guarded))
+
+    def test_a_support_type_is_renamed_in_code_not_in_comments(self):
+        src = SOURCE.replace('/* shared by both checks */\nstatic unsigned twice(unsigned x)\n{\n    return 2u * x;\n}\n',
+                             '/* shared by both checks; a pair is a word here */\ntypedef struct pair {\n    unsigned x;\n} pair;\n\n'
+                             'static unsigned twice(unsigned x)\n{\n    pair p = {x};\n    return 2u * p.x;\n}\n')
+        header = '/* h */\ntypedef struct df_pair {\n    unsigned x;\n} df_pair;\n'
+        out = self.run_split({'parts': self.TWO, 'support': {'header': 'support/h.h', 'items': {'pair': 'df_pair'}}},
+                             source=src, header=header)
+        self.assertIn('    df_pair p = {x};', out['moves/test_one.c'])
+        self.assertNotIn('typedef struct pair', out['moves/test_one.c'])
+
     def test_parts_of_a_split_in_the_table(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -327,6 +379,18 @@ class SplitTest(unittest.TestCase):
                              ['moves/test_pool_g999.c: a split is done with 1 part row(s); a single subject is a rename'])
             self.assertIn('moves/test_pool_g999.c: a part row whose source has no split row of the same CTest name',
                           table(part % ('one', 'one', 'one')))
+            planned = split.replace('\tdone\t', '\tplanned\t')
+            self.assertIn('moves/test_pool_g999.c: a part row while its split is planned (the old test would still run beside it)',
+                          table(planned, part % ('one', 'one', 'one'), part % ('two', 'two', 'two')))
+            self.assertIn('moves/test_pool_g999.c: the new file moves/test_one.c is in two rows',
+                          table(split, part % ('one', 'one', 'one'), part % ('one', 'one', 'one')))
+            self.assertIn('moves/test_pool_g999.c: a part row is written when its file is (state done)',
+                          table(split, part % ('one', 'one', 'one'), (part % ('two', 'two', 'two')).replace('\tdone\t', '\tplanned\t')))
+            (root / 'tests/items').mkdir()
+            (root / 'tests/items/tests.cmake').write_text(cmake, encoding='utf-8')
+            (root / 'tests/moves/tests.cmake').write_text('', encoding='utf-8')
+            self.assertIn('moves/test_pool_g999.c: part moves/test_one.c is registered outside tests/moves/tests.cmake',
+                          table(split, part % ('one', 'one', 'one'), part % ('two', 'two', 'two')))
 
 
 if __name__ == '__main__':

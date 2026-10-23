@@ -13,5 +13,5 @@ duoforge_add_test(NAME duoforge.state.pool_g59 SOURCES forms/test_pool_g59.c WHI
 # Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the
 # Mega of each pair, the setup, the API, and the Keen Eye ignoreEvasion check (white-box).
 duoforge_add_test(NAME duoforge.state.pool_g51 SOURCES forms/test_pool_g51.c WHITEBOX TIMEOUT 60 TIER quick AREA forms)
-# the Mega Stones and the Megas they lead to. Step G63 of the content expansion (decision 0015 entry 5bj): Garchompite, Steelixite, Slowbronite, ...
+# Step G63 (decision 0015 entry 5bj): the Mega Stones and the Megas they lead to (G63 stones).
 duoforge_add_test(NAME duoforge.forms.mega_stones SOURCES forms/test_mega_stones.c WHITEBOX TIMEOUT 60 TIER quick AREA forms)

@@ -9,39 +9,39 @@ duoforge_add_test(NAME duoforge.abilities.shadow_tag SOURCES abilities/test_shad
 duoforge_add_test(NAME duoforge.abilities.magic_bounce SOURCES abilities/test_magic_bounce.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 # Step G61: Sheer Force (the strip and boost predicates on every pool move), Dragonize, Cameruptite and Feraligite: the marks and the named moves.
 duoforge_add_test(NAME duoforge.abilities.sheer_force SOURCES abilities/test_sheer_force.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G45 of the content expansion (decision 0015 entry 5ba), six abilities of the simple kind as one batch: Steadfast, Moxie, Weak Armor, Telepathy, ...
+# Step G45 (decision 0015 entry 5ba): the batch of six simple abilities: their marks and handlers, Mold Breaker unmarked.
 duoforge_add_test(NAME duoforge.abilities.simple_ability_rows SOURCES abilities/test_simple_ability_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G45 of the content expansion (decision 0015 entry 5ba), Steadfast: replays g45_steadfast to the turn where the flinch of Machamp (a Fake Out in ...
+# Step G45 (decision 0015 entry 5ba): Steadfast: the Speed boost after the flinch of g45_steadfast.
 duoforge_add_test(NAME duoforge.abilities.steadfast SOURCES abilities/test_steadfast.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G45 of the content expansion (decision 0015 entry 5ba), Moxie: replays g45_moxie_double, where Krookodile's Earthquake knocks out two foes at ...
+# Step G45 (decision 0015 entry 5ba): Moxie: the Attack boost by the number of faints.
 duoforge_add_test(NAME duoforge.abilities.moxie SOURCES abilities/test_moxie.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G45 of the content expansion (decision 0015 entry 5ba), Weak Armor: replays g45_weak_armor, where one Physical hit (Garchomp's Earthquake) ...
+# Step G45 (decision 0015 entry 5ba): Weak Armor: the Defense drop and Speed boost after a Physical hit.
 duoforge_add_test(NAME duoforge.abilities.weak_armor SOURCES abilities/test_weak_armor.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G45 of the content expansion (decision 0015 entry 5ba), Telepathy: replays g45_telepathy, where the Earthquake of Garchomp does not reach ...
+# Step G45 (decision 0015 entry 5ba): Telepathy: the ally untouched by Earthquake.
 duoforge_add_test(NAME duoforge.abilities.telepathy SOURCES abilities/test_telepathy.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G45 of the content expansion (decision 0015 entry 5ba), Volt Absorb: replays g45_volt_absorb, where a Thunderbolt at full HP is absorbed (no ...
+# Step G45 (decision 0015 entry 5ba): Volt Absorb: the absorbed Thunderbolt at full HP and the heal after damage.
 duoforge_add_test(NAME duoforge.abilities.volt_absorb SOURCES abilities/test_volt_absorb.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G22 of the content expansion (decision 0015 entry 5o), the queued action of a fainted Swift Swim holder, under both POOL kinds. In ...
+# Step G22 (decision 0015 entry 5o): the tie of a fainted Swift Swim holder's queued action, both POOL kinds.
 duoforge_add_test(NAME duoforge.abilities.swift_swim_fainted_holder SOURCES abilities/test_swift_swim_fainted_holder.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G22 of the content expansion (decision 0015 entry 5o), an Intimidate drop that the cap already took to nothing, under both POOL kinds. ...
+# Step G22 (decision 0015 entry 5o): an Intimidate drop the cap already took to nothing against Inner Focus, both POOL kinds.
 duoforge_add_test(NAME duoforge.abilities.inner_focus_intimidate_cap SOURCES abilities/test_inner_focus_intimidate_cap.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 
 # Step G53 (decision 0030): Pressure and the foe's derived PP.
 duoforge_add_test(NAME duoforge.abilities.pressure SOURCES abilities/test_pressure.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 
-# step G63 of the content expansion (decision 0015 entry 5bj), the simple Mega abilities as one batch: Sand Force (BasePower 5325/4096 for a Rock, ...
+# Step G63 (decision 0015 entry 5bj): the batch of four Mega abilities: their rows and the base abilities they leave unmodelled.
 duoforge_add_test(NAME duoforge.abilities.simple_mega_abilities SOURCES abilities/test_simple_mega_abilities.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G63 of the content expansion (decision 0015 entry 5bj), the one fact that Stalwart's redirection rule depends on: no marked move has the ...
+# Step G63 (decision 0015 entry 5bj): Stalwart: no marked move has the scripted target class.
 duoforge_add_test(NAME duoforge.abilities.stalwart SOURCES abilities/test_stalwart.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 
 # Step G69 (decision 0015 5bm): Symbiosis, the pass of the item to an ally that has used up its own.
 duoforge_add_test(NAME duoforge.abilities.symbiosis SOURCES abilities/test_symbiosis.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 
-# step G65 of the content expansion (decision 0015 entry 5bk), the simple modifier abilities as one batch, POOL build: Unaware (onAnyModifyBoost), ...
+# Step G65 (decision 0015 entry 5bk): the batch of five modifier abilities: their marks and handlers, Mold Breaker unmarked.
 duoforge_add_test(NAME duoforge.abilities.modifier_abilities SOURCES abilities/test_modifier_abilities.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G65 of the content expansion (decision 0015 entry 5bk), the rows that Reckless's recoil clause relies on: Struggle has no recoil (its ...
+# Step G65 (decision 0015 entry 5bk): Reckless: the recoil and crash rows its clause reads, and the unmodified reads Unaware never meets.
 duoforge_add_test(NAME duoforge.abilities.reckless SOURCES abilities/test_reckless.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# step G65 of the content expansion (decision 0015 entry 5bk), Trace copying Water Bubble onto a burned holder is refused (E_UNSUPPORTED) and the ...
+# Step G65 (decision 0015 entry 5bk): Trace copying Water Bubble onto a burned holder, refused.
 duoforge_add_test(NAME duoforge.abilities.trace_water_bubble SOURCES abilities/test_trace_water_bubble.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 
 # Step G73 (decision 0015 5bo): Moody (its residual order, its two samples on one site, the boost with the raised key first; white-box, with
@@ -59,13 +59,13 @@ duoforge_add_test(NAME duoforge.abilities.frisk SOURCES abilities/test_frisk.c W
 # Step K2 (decision 0015 5dd, #474): Piercing Drill and Excadrite (the marks, the stone link, the -zbroken event kind, the 0.25 rounding).
 duoforge_add_test(NAME duoforge.abilities.piercing_drill SOURCES abilities/test_piercing_drill.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 
-# batch A2a of the Champions-100 track (decision 0015 entry 5dy), fourteen abilities with one clause each at an existing hook, as one batch. The ...
+# Step A2a (decision 0015 entry 5dy): the batch of fourteen one-clause abilities: the marks, and each clause at its decisive step against a marked neighbour.
 duoforge_add_test(NAME duoforge.abilities.one_clause_abilities SOURCES abilities/test_one_clause_abilities.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# batch A2a of the Champions-100 track (decision 0015 entry 5dy), the refusals that no campaign battle reaches: an Illuminate or White Smoke holder ...
+# Step A2a (decision 0015 entry 5dy): Illuminate or White Smoke on a Grass holder next to Flower Veil, refused.
 duoforge_add_test(NAME duoforge.abilities.flower_veil_drop_refusals SOURCES abilities/test_flower_veil_drop_refusals.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# batch A2a of the Champions-100 track (decision 0015 entry 5dy), Tangled
+# Step A2a (decision 0015 entry 5dy): Tangled Feet: the later hit's refusal and the order of the priority -1 accuracy group.
 duoforge_add_test(NAME duoforge.abilities.tangled_feet SOURCES abilities/test_tangled_feet.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# batch A2a of the Champions-100 track (decision 0015 entry 5dy), Life Dew (a Water heal move of the user and its ally) at an ally with Water Absorb: ...
+# Step A2a (decision 0015 entry 5dy): Life Dew at an ally with Water Absorb, refused before anything changes.
 duoforge_add_test(NAME duoforge.abilities.life_dew_water_absorb SOURCES abilities/test_life_dew_water_absorb.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
-# batch A2a of the Champions-100 track (decision 0015 entry 5dy), Natural Cure's CURE_STATUS has cause ABILITY and id2 Natural Cure + 1 (a2a_cover_b ...
+# Step A2a (decision 0015 entry 5dy): Natural Cure's CURE_STATUS event and its digest line.
 duoforge_add_test(NAME duoforge.abilities.natural_cure SOURCES abilities/test_natural_cure.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)

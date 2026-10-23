@@ -38,6 +38,8 @@ def top_level(text):
             i = j
             continue
         if text.startswith('//', i):
+            if start is None and depth == 0:
+                start = line_start
             i = text.index('\n', i)
             continue
         if c == '"' or c == "'":
@@ -111,6 +113,11 @@ def main_body_statements(body):
                 start = line_start
             i = body.index('*/', i + 2) + 2
             continue
+        if body.startswith('//', i):
+            if start is None and depth == 0:
+                start = line_start
+            i = body.index('\n', i)
+            continue
         c = body[i]
         if c in '"\'':
             j = i + 1
@@ -146,6 +153,23 @@ def main_body_statements(body):
             continue
         i += 1
     return out
+
+
+def code_only(text):
+    """The text without its comments and string literals (a name there is no use)."""
+    text = re.sub(r'/\*.*?\*/|//[^\n]*', ' ', text, flags=re.S)
+    return re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '""', text)
+
+
+def in_code(text, pattern, repl):
+    """re.sub of pattern in the code of text only: comments and string literals stay as they are."""
+    out, pos = [], 0
+    for m in re.finditer(r'/\*.*?\*/|//[^\n]*|"(?:\\.|[^"\\])*"', text, flags=re.S):
+        out.append(re.sub(pattern, repl, text[pos:m.start()]))
+        out.append(m.group(0))
+        pos = m.end()
+    out.append(re.sub(pattern, repl, text[pos:]))
+    return ''.join(out)
 
 
 def norm(code):
@@ -210,6 +234,9 @@ def split(root, spec):
         body = text[s:e]
         if kind == 'pp':
             if s >= first_def:
+                if not re.match(r'\s*#\s*(define|undef)\b', re.sub(r'/\*.*?\*/', '', body, flags=re.S)):
+                    raise Refused('a preprocessor conditional or include after the first item (%s): split by hand'
+                                  % body.strip().split('\n')[-1][:60])
                 pre.append(body)
         elif re.search(r'^int main\(void\)', body, re.M):
             main_item = body
@@ -245,9 +272,7 @@ def split(root, spec):
             body = '\n'.join(part['main_body']) + '\n'
             for n in re.findall(r'\b(\w+)\(&t', body):
                 if n in names:
-                    if n in body_calls:
-                        raise Refused('%s: %s is called in %s already' % (part['file'], n, body_calls[n]))
-                    body_calls[n] = part['file']
+                    body_calls[n] = part['file']  # how often and with what is checked below, against the source's calls
         for c in part.get('calls', []):
             ks = [k for k, n in call_of.items() if n == c]
             if not ks:
@@ -271,13 +296,13 @@ def split(root, spec):
             sel.add(k)
         if 'main_body' not in part:
             body = ''.join(stmt_texts[k] for k in sorted(sel))
-        need, todo = set(), set(re.findall(r'\b\w+\b', body)) & set(names)
+        need, todo = set(), set(re.findall(r'\b\w+\b', code_only(body))) & set(names)
         while todo:
             n = todo.pop()
             if n in need:
                 continue
             need.add(n)
-            todo |= set(re.findall(r'\b\w+\b', dict(defs)[n])) & set(names) - {n}
+            todo |= set(re.findall(r'\b\w+\b', code_only(dict(defs)[n]))) & set(names) - {n}
         used_items |= need
         m = re.fullmatch(r'([a-z]+)/test_([a-z0-9_]+)\.c', part['file'])
         if not m:
@@ -296,18 +321,33 @@ def split(root, spec):
         code = defs_text + '\n' + new_main.lstrip('\n')
         for o, n in provided.items():  # the header's names: a function where it is called, a type as a word
             if o in funcs:
-                code = re.sub(r'(?<![\w.])%s\(' % re.escape(o), n + '(', code)
+                code = in_code(code, r'(?<![\w.>])%s\(' % re.escape(o), n + '(')
             else:
-                code = re.sub(r'(?<![\w.])%s\b' % re.escape(o), n, code)
+                code = in_code(code, r'(?<![\w.>])%s\b' % re.escape(o), n)
         out = header + preamble + code
         parts.append((part['file'], ctest, out))
     if spec.get('list'):
         return begin.group(1), [('%d%s' % (k, ' call ' + call_of[k] if k in call_of else ''), '', st) for k, st in enumerate(stmt_texts)]
-    if body_calls:  # with a main written out, every check called in the source main is called in exactly one part
-        source_calls = {n for n in re.findall(r'\b(\w+)\(&t', inner) if n in names}
-        placed = set(body_calls) | {call_of[k] for k in taken_calls}
-        if source_calls != placed:
-            raise Refused('main_body: the parts call %s, the source %s' % (sorted(placed), sorted(source_calls)))
+    if body_calls:
+        # A main written out: every check call of the source main, with its arguments, is made by exactly one part (as a
+        # multiset of call texts), and every other line of the source main is a line of some part's main (its loops, its
+        # contexts, its guards). The parts may add lines (a context of their own), which the proof counts.
+        def lines(text):
+            return [' '.join(l.split()) for l in code_only(text).split('\n') if l.strip()]
+        is_call = lambda l: re.match(r'(\w+)\(&t\b', l) and re.match(r'(\w+)', l).group(1) in names
+        src_calls = sorted(l for l in lines(inner) if is_call(l))
+        part_lines = [lines('\n'.join(p['main_body']) if 'main_body' in p else
+                            ''.join(stmt_texts[k] for k in range(len(stmt_texts))
+                                    if taken_calls.get(k) == p['file'] or taken_blocks.get(k) == p['file']
+                                    or k in set(spec.get('shared_blocks', [])) & set(p.get('main_blocks', []))))
+                      for p in spec['parts']]
+        got_calls = sorted(l for pl in part_lines for l in pl if is_call(l))
+        if src_calls != got_calls:
+            raise Refused('main_body: the parts make the calls %s, the source %s' % (got_calls, src_calls))
+        every = {l for pl in part_lines for l in pl}
+        missing = [l for l in lines(inner) if not is_call(l) and l not in every]
+        if missing:
+            raise Refused('main_body: lines of the source main in no part: %s' % missing)
         left_calls = left_blocks = []
     else:
         left_calls = sorted(set(call_of) - set(taken_calls))

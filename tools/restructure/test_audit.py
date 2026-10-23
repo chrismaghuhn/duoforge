@@ -35,10 +35,10 @@ FROZEN = ('docs/history/', 'docs/benchmarks/', 'docs/research/', 'docs/decisions
 TABLE = 'tests/renames.tsv'
 
 
-def registrations(root):
-    """{source under tests/: [CTest names]} from every tests/<area>/tests.cmake."""
+def registrations(root, area='*'):
+    """{source under tests/: [CTest names]} from every tests/<area>/tests.cmake (or the one of `area`)."""
     reg = {}
-    for f in sorted((root / 'tests').glob('*/tests.cmake')):
+    for f in sorted((root / 'tests').glob('%s/tests.cmake' % area)):
         for m in re.finditer(r'duoforge_add_test\(NAME (\S+) SOURCES ([^\s)]+)', f.read_text(encoding='utf-8')):
             reg.setdefault(m.group(2), []).append(m.group(1))
     return reg
@@ -80,6 +80,8 @@ def check(root):
             src = sources.get(where)
             if src is None or src['action'] != 'split' or src['old_ctest'] != r['old_ctest']:
                 problems.append('%s: a part row whose source has no split row of the same CTest name' % where)
+            elif src['state'] != 'done':
+                problems.append('%s: a part row while its split is planned (the old test would still run beside it)' % where)
             if r['state'] != 'done':
                 problems.append('%s: a part row is written when its file is (state done)' % where)
         else:
@@ -103,6 +105,9 @@ def check(root):
         if r['action'] == 'part':
             if r['new_ctest'] not in reg.get(r['new_file'], []):
                 problems.append('%s: part %s is not registered as %s' % (where, r['new_file'], r['new_ctest']))
+            elif r['new_file'] not in registrations(root, r['new_file'].split('/')[0]):
+                problems.append('%s: part %s is registered outside tests/%s/tests.cmake'
+                                % (where, r['new_file'], r['new_file'].split('/')[0]))
             continue
         if r['state'] == 'planned':
             if not old_exists:

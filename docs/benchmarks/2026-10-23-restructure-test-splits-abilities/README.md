@@ -8,8 +8,15 @@ source's properties, its own name, executable and area label) and the executed c
 
 ## The splits
 
-`tools/restructure/split_test.py` cuts each source by subject. Every check call and every main block lands in exactly one
-part and every item in at least one; otherwise the spec is refused. The parts keep the source's registration flags.
+`tools/restructure/split_test.py` cuts each source by subject from the specs in [specs/](specs/). Every item of the source
+lands in at least one part or in the support header. Every check call lands in exactly one part, and so does every main block,
+except the setup blocks a spec names as shared (`shared_blocks`). For a main written out (`main_body`, G22 and A2a: a loop
+over contexts), the parts must make the source's check calls exactly, as a multiset of call texts with their arguments, and
+every other line of the source main must be a line of some part's main. Otherwise the spec is refused. The parts keep the
+source's registration flags.
+
+The specs reproduce the committed parts byte for byte. To verify, put each source of `main` back and run
+`python3 tools/restructure/split_test.py docs/benchmarks/2026-10-23-restructure-test-splits-abilities/specs/<id>.json --check`.
 
 | Source | Parts | Executed checks |
 |---|---|---:|
