@@ -45,7 +45,7 @@ checks the result against them:
   Population Bomb; old lines 57 and 79). The 13 added lines are the generated-by comment and the manifest section.
   [support-readme.diff](support-readme.diff) is the full diff (most of it is lines that moved).
 - `python3 tools/docs/mechanics_docs.py --check`: README up to date; 117 mechanic files, 117 table rows to files, 7
-  no-entry rows, 3309 citations next to "0015" in tracked files resolve.
+  no-entry rows, 3209 citations next to "0015" in tracked files resolve.
 - Mutants of the checks (each reverted): a hand edit of the README, a changed support line without `--write`, an entry text under another id's anchor, an `Area` line naming another folder, an
   anchor changed to another file's id, a removed mechanic file, a suffixed id other than `5dl-556`, and
   a citation of an unknown id next to "0015" in a tracked header: each fails `--check`.
