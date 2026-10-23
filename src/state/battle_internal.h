@@ -75,12 +75,21 @@ typedef struct dfi_move_slot {
 #define DFI_VOL_UNBURDEN 32u    /* Team C: Unburden's volatile, set when its holder's item is used */
 #define DFI_VOL_CHOICE_LOCK 64u /* Team C: Choice Scarf's choicelock; the move in locked_move */
 #define DFI_VOL_NEWLY_SWITCHED 128u /* Team C: pokemon.newlySwitched, from its switch-in to the end of the turn */
-/* Build-time guard (static asserts): the volatile bits are pairwise disjoint (the sum of the bits is their OR, so no two share a bit). */
-_Static_assert((DFI_VOL_FLINCH + DFI_VOL_PROTECT + DFI_VOL_FLASH_FIRE + DFI_VOL_FOLLOW_ME + DFI_VOL_HELPING_HAND + DFI_VOL_UNBURDEN +
-                DFI_VOL_CHOICE_LOCK + DFI_VOL_NEWLY_SWITCHED) ==
-                   (DFI_VOL_FLINCH | DFI_VOL_PROTECT | DFI_VOL_FLASH_FIRE | DFI_VOL_FOLLOW_ME | DFI_VOL_HELPING_HAND |
-                    DFI_VOL_UNBURDEN | DFI_VOL_CHOICE_LOCK | DFI_VOL_NEWLY_SWITCHED),
+/* Build-time guard (static asserts; restructure step 5c): every DFI_VOL_<NAME> has the bit of its line in volatile_flags.def,
+ * the frozen record of the bits, and the bits are pairwise disjoint (the sum of the bits is their OR, so no two share a bit). */
+#define DFI_VOL_FLAG(name, bit) _Static_assert(DFI_VOL_##name == (bit), "DFI_VOL_" #name " keeps its bit in volatile_flags.def");
+#include "state/volatile_flags.def"
+#undef DFI_VOL_FLAG
+#define DFI_VOL_FLAG(name, bit) +DFI_VOL_##name
+_Static_assert((0u
+#include "state/volatile_flags.def"
+                ) == (0u
+#undef DFI_VOL_FLAG
+#define DFI_VOL_FLAG(name, bit) | DFI_VOL_##name
+#include "state/volatile_flags.def"
+                     ),
                "the DFI_VOL_* bits are pairwise disjoint");
+#undef DFI_VOL_FLAG
 #define DFI_STALL_LEVEL_MAX 6u /* success chance 1 / 3^level */
 #define DFI_STALL_DURATION 2u /* data/conditions.ts: stall */
 #define DFI_STALL_TURNS_MAX 2u
@@ -339,15 +348,27 @@ typedef struct dfi_side {
  * -start|X|Curse|[of] source). Per occupant: it ends with the occupant (dfi_tail_clear_occupant) and Baton Pass copies it. */
 #define DFI_POSFLAG_CURSED 0x80u
 #define DFI_POSFLAG_VALID_MASK 0xFFu
-/* Build-time guard (static asserts, G84, G88 and G84b): the position-flag fields are pairwise disjoint and together make the valid mask. */
-_Static_assert((DFI_POSFLAG_HEALING_WISH + DFI_POSFLAG_STATS_RAISED + DFI_POSFLAG_DRAGON_CHEER_MASK + DFI_POSFLAG_DESTINY_BOND +
-                DFI_POSFLAG_LOWERED + DFI_POSFLAG_HURT + DFI_POSFLAG_CURSED) ==
-                   (DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
-                    DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT | DFI_POSFLAG_CURSED),
-                "the DFI_POSFLAG_* fields are pairwise disjoint");
-_Static_assert((DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
-                DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT | DFI_POSFLAG_CURSED) == DFI_POSFLAG_VALID_MASK,
-                "the DFI_POSFLAG_* fields make the valid mask");
+/* Build-time guard (static asserts, G84, G88 and G84b; restructure step 5c): every DFI_POSFLAG_<NAME> field has the mask of
+ * its line in position_flags.def, the frozen record of the fields, and the fields are pairwise disjoint (their sum is their
+ * OR) and together make the valid mask. */
+#define DFI_POS_FLAG(name, mask) \
+    _Static_assert(DFI_POSFLAG_##name == (mask), "DFI_POSFLAG_" #name " keeps its mask in position_flags.def");
+#include "state/position_flags.def"
+#undef DFI_POS_FLAG
+#define DFI_POS_FLAG(name, mask) +DFI_POSFLAG_##name
+_Static_assert((0u
+#include "state/position_flags.def"
+                ) == (0u
+#undef DFI_POS_FLAG
+#define DFI_POS_FLAG(name, mask) | DFI_POSFLAG_##name
+#include "state/position_flags.def"
+                     ),
+               "the DFI_POSFLAG_* fields are pairwise disjoint");
+_Static_assert((0u
+#include "state/position_flags.def"
+                ) == DFI_POSFLAG_VALID_MASK,
+               "the DFI_POSFLAG_* fields make the valid mask");
+#undef DFI_POS_FLAG
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
 /* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which
