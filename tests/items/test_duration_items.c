@@ -74,7 +74,7 @@ static void check_bounds(df_test *t)
     duoforge_context_destroy(pool);
 }
 
-/* ---- the recorded battles, step by step (the conformance pattern of test_pool_g49.c) ---- */
+/* ---- the recorded battles, step by step (the conformance pattern of tests/items/test_power_and_accuracy_items.c) ---- */
 
 static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
 {

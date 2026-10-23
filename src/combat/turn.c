@@ -623,7 +623,7 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
      * Max moves (Max Phantasm, data/moves.ts:11350, and its neighbour at :11484), isNonstandard "Past" and not in Champions.
      * Neither holder can meet another TryBoost of the
      * same stat as a forme: a holder has one ability, and Flower Veil reads a Grass type, which no forme with either ability is
-     * (tests/test_pool_g51.c). Skill Swap (step G70) can still give the ability to a Grass type next to a Flower Veil holder; that composition is not refused here (decision 0015 entry 5dy, a follow-up).
+     * (tests/abilities/test_keen_eye.c). Skill Swap (step G70) can still give the ability to a Grass type next to a Flower Veil holder; that composition is not refused here (decision 0015 entry 5dy, a follow-up).
      * Illuminate (A2a, decision 0015 entry 5dy; data/abilities.ts:2037-2054) has Keen Eye's two callbacks word for word, its
      * own name in the line aside (tools/datagen gen_closure.py checks both texts), so it is the same branch with its own id.
      * An Illuminate holder that is a Grass type next to a Flower Veil holder (Skill Swap can make one; no pool forme with

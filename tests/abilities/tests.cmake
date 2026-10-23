@@ -69,3 +69,13 @@ duoforge_add_test(NAME duoforge.abilities.tangled_feet SOURCES abilities/test_ta
 duoforge_add_test(NAME duoforge.abilities.life_dew_water_absorb SOURCES abilities/test_life_dew_water_absorb.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 # Step A2a (decision 0015 entry 5dy): Natural Cure's CURE_STATUS event and its digest line.
 duoforge_add_test(NAME duoforge.abilities.natural_cure SOURCES abilities/test_natural_cure.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+# Step G51 (decision 0015 entry 5bc): Keen Eye: no Grass holder next to Flower Veil, and its ignoreEvasion.
+duoforge_add_test(NAME duoforge.abilities.keen_eye SOURCES abilities/test_keen_eye.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+# Step G51 (decision 0015 entry 5bc): Regenerator on a PIVOT switch-out and the healed percent the opponent sees.
+duoforge_add_test(NAME duoforge.abilities.regenerator_pivot SOURCES abilities/test_regenerator_pivot.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+# Step G59 (decision 0015 entry 5bh): the PULSE flag that Mega Launcher reads.
+duoforge_add_test(NAME duoforge.abilities.mega_launcher SOURCES abilities/test_mega_launcher.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+# Step G59 (decision 0015 entry 5bh): Mega Sol's refusal of a weather-reading move in rain.
+duoforge_add_test(NAME duoforge.abilities.mega_sol SOURCES abilities/test_mega_sol.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+# Step Mega batch 2 (decision 0015 entry 5ag): Aura Guard in the ModifyDamage chain and the refusal of a chain whose order matters.
+duoforge_add_test(NAME duoforge.abilities.aura_guard SOURCES abilities/test_aura_guard.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)

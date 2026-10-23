@@ -129,7 +129,7 @@ static void check_unmarked(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FINALGAMBIT] != 0u);
     /* the ability whose rule would change a hit count (Skill Link: the maximum) stays unmarked. Mega Launcher was left unmarked
      * here until step G59: its two rules now live in src/combat/turn.c (the pulse BasePower by the flags3 bit PULSE, and Heal
-     * Pulse's three quarters in dfi_run_heal_fraction), pinned by tests/test_pool_g59.c and the recorded battle g59_heal_pulse. */
+     * Pulse's three quarters in dfi_run_heal_fraction), pinned by tests/abilities/test_mega_launcher.c and the recorded battle g59_heal_pulse. */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SKILLLINK], 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MEGALAUNCHER] != 0u);
     /* Loaded Dice raises the hit count in the same draw: an item of the pool would be marked only with that rule */

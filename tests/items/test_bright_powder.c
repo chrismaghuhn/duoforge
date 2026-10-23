@@ -1,26 +1,18 @@
 /*
- * duoforge.state.pool_g49 (white-box): step G49 of the content expansion, the item rows Muscle Band, Wise Glasses and
- * Bright Powder (decision 0015, item 5am). The duration rows (Damp Rock, Heat Rock, Smooth Rock, Icy Rock and Terrain
- * Extender) are not part of this step: the Python live tracker keeps weather and terrain turns at 5 (python/duoforge_live).
+ * duoforge.items.bright_powder (white-box): step G49 of the content expansion (decision 0015 entry 5ao), Bright Powder
+ * (data/items.ts:659-670): the accuracy of a move against the holder x3686/4096, onModifyAccuracyPriority -2, the same priority
+ * as Wide Lens (the attacker's side). The two of priority -2 have no order in the pin (the holders' Speed, an exact tie draws),
+ * so the engine computes both orders and refuses a move for which they give different accuracies (E_UNSUPPORTED); the multi-hit
+ * path refuses a target with Bright Powder.
  *
- *   - Muscle Band (data/items.ts:4239-4251) and Wise Glasses (data/items.ts:7754-7766): base power x4505/4096 for a Physical
- *     and a Special move of the holder, onBasePowerPriority 16, so after Sharpness (19) and before the type boosters (15).
- *   - Bright Powder (data/items.ts:659-670): the accuracy of a move against the holder x3686/4096, onModifyAccuracyPriority -2,
- *     the same priority as Wide Lens (data/items.ts:7719-7726, the attacker's side). The two of priority -2 have no order in
- *     the pin (the holders' Speed, an exact tie draws), so the engine computes both orders and refuses a move for which they
- *     give different accuracies (E_UNSUPPORTED). The multi-hit path refuses a target with Bright Powder (the loop applies
- *     ModifyAccuracy after the stages, as it does for Wide Lens).
- *
- * The recorded battles (g49_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data, which compares
- * everything the reference shows. Here are the facts that it does not show:
- *   - the marks and the handler columns of the three rows (ENGINE_ROWS: no handler, not UNMODELED, no family);
- *   - the chain arithmetic: the modifiers, and for which base accuracies the two orders of Wide Lens and Bright Powder give
- *     different accuracies, for each prefix that Compound Eyes and Snow Cloak or Sand Veil make before them;
+ *   - the chain arithmetic: for which base accuracies the two orders of Wide Lens and Bright Powder give different accuracies,
+ *     for each prefix that Compound Eyes and Snow Cloak or Sand Veil make before them;
  *   - the two refusals, each with a control that the same battle with the powder removed (or a Sitrus Berry) is accepted:
- *       (a) Compound Eyes and Wide Lens on the attacker, Bright Powder on the target, a move of accuracy 75 (Sleep Powder,
- *           Vivillon): the two orders give 97 and 96, so the step is E_UNSUPPORTED (a battle built here, step API);
- *       (b) a multi-hit multiaccuracy move (Triple Axel, the recorded g33_triple_axel battle) into a Bright Powder holder:
- *           its first hit hits (the recorded draw is below 81), its second hit's check is refused (E_UNSUPPORTED).
+ *     (a) Compound Eyes and Wide Lens on the attacker, Bright Powder on the target, a move of accuracy 75 (Sleep Powder,
+ *         Vivillon): the two orders give 97 and 96, so the step is E_UNSUPPORTED; (b) a multi-hit multiaccuracy move (Triple
+ *         Axel, the recorded g33_triple_axel battle) into a Bright Powder holder.
+ *
+ * Split by subject from the test of step G49 (restructure step 6e; tests/renames.tsv maps the old name).
  */
 #include <stdbool.h>
 #include <stdint.h>
@@ -254,23 +246,6 @@ static void check_triple_axel_refusal(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
-static void check_facts(df_test *t)
-{
-    static const uint32_t items[] = {DFI_ITEM_MUSCLEBAND, DFI_ITEM_WISEGLASSES, DFI_ITEM_BRIGHTPOWDER};
-    for (size_t i = 0u; i < sizeof items / sizeof items[0]; ++i) {
-        DF_CHECK(t, dfi_support.items[items[i]] != 0u);
-        DF_CHECK_EQ_U64(t, dfi_pool_item_handler[items[i]], DFI_HANDLER_NONE);
-        DF_CHECK_EQ_U64(t, dfi_pool_item_family[items[i]].family, DFI_ITEM_FAMILY_NONE);
-    }
-    /* The duration rows (Damp, Heat, Smooth and Icy Rock, Terrain Extender) were unmarked at this step; step G55 marks them,
-     * and tests/items/test_duration_items.c owns that check. */
-    /* The modifiers as the pin writes them: 4505/4096 is 1.1 and 3686/4096 is 0.9 of the base accuracy or power. */
-    DF_CHECK_EQ_U64(t, modified(100u, 4505u), 110u);
-    DF_CHECK_EQ_U64(t, modified(100u, 3686u), 90u);
-    DF_CHECK_EQ_U64(t, modified(85u, 3686u), 76u);
-    DF_CHECK_EQ_U64(t, modified(100u, 4096u), 100u);
-}
-
 static void check_orders(df_test *t)
 {
     uint32_t wide = 0u;
@@ -305,23 +280,11 @@ static void check_orders(df_test *t)
     DF_CHECK_EQ_U64(t, modified(75u, 5270u), 96u);
 }
 
-static void check_recorded(df_test *t)
-{
-    static const char *names[] = {"g49_wise_glasses", "g49_wise_glasses_base", "g49_muscle_band", "g49_muscle_band_base",
-                                  "g49_bright_powder", "g49_bright_powder_base", "g49_category_cross",
-                                  "g49_bright_powder_tie"};
-    for (size_t i = 0u; i < sizeof names / sizeof names[0]; ++i) {
-        DF_CHECK(t, find(names[i]) != NULL);
-    }
-}
-
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g49");
-    check_facts(&t);
+    df_test_begin(&t, "duoforge.items.bright_powder");
     check_orders(&t);
-    check_recorded(&t);
     check_vivillon_refusal(&t);
     check_triple_axel_refusal(&t);
     return df_test_end(&t);
