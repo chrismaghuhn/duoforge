@@ -35,7 +35,6 @@
 #define ANNIHILAPE_ROSTER 0u
 
 enum { LO, EB, BERRY, SCREEN, GLAIVE, SR, MS, FG, AG, KINDS };
-
 static const uint32_t values[KINDS] = {5324u, 4915u, 2048u, 2732u, 8192u, 3072u, 2048u, 3072u, 2048u};
 
 /* The reference computation, independent of dfi_mods_commute: every permutation by recursion. */

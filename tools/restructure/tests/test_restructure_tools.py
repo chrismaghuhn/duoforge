@@ -1,5 +1,8 @@
 """tools/restructure: fn_diff's normalisation and clone groups, callgrind_gate's parser and clone sums, and the rules of
 test_audit's rename table, offline."""
+import contextlib
+import io
+import json
 import os
 import subprocess
 import sys
@@ -375,7 +378,6 @@ class SplitTest(unittest.TestCase):
                                               'sections': [{'spec': one, 'prefix': 'first_'}, {'spec': two, 'prefix': 'second_'}]})
         self.assertEqual(ctest, 'duoforge.moves.both')
         for name in ('first_twice', 'second_twice', 'first_check_one', 'second_check_one'):
-            self.assertIn('static ', text)
             self.assertRegex(text, r'\b%s\(' % name)
         self.assertIn('static void check_two(df_test *t)', text)  # only the first section has it: no prefix
         self.assertIn('    { /* first */\n        first_check_one(&t);\n        check_two(&t);\n    }\n    { /* second */\n        second_check_one(&t);\n    }\n',
@@ -389,6 +391,152 @@ class SplitTest(unittest.TestCase):
         _, text = split_test.merge(root, {'file': 'moves/test_both.c', 'header': 'both',
                                           'sections': [{'spec': same, 'prefix': 'first_'}, {'spec': three, 'prefix': 'third_'}]})
         self.assertEqual(text.count('static unsigned twice(unsigned x)'), 1)  # the same helper in both: kept once, not renamed
+
+    def merge_tree(self, sources):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / 'tests/moves').mkdir(parents=True)
+        for name, text in sources.items():
+            (root / 'tests/moves' / name).write_text(text, encoding='utf-8')
+        return root
+
+    def test_merge_tells_sections_apart_by_their_macros(self):
+        """Two identical functions that name a macro of two values stay two (the review's case): each section keeps its value."""
+        def source(n, value):
+            return SOURCE.replace('pool_g999', n).replace('#include "support/check.h"\n', '#include "support/check.h"\n\n#define BASE %su\n#define LIMIT (BASE + 1u)\n' % value).replace(
+                'DF_CHECK(t, twice(1u) == 2u);', 'DF_CHECK(t, twice(1u) <= LIMIT);')
+        root = self.merge_tree({'test_pool_g998.c': source('pool_g998', 1), 'test_pool_g997.c': source('pool_g997', 7)})
+        spec = lambda n: {'source': 'moves/test_%s.c' % n, 'parts': [{'file': 'moves/test_both.c', 'calls': ['check_one', 'check_two'], 'header': 's'}]}
+        _, text = split_test.merge(root, {'file': 'moves/test_both.c', 'header': 'both', 'sections': [
+            {'spec': spec('pool_g998'), 'prefix': 'a_'}, {'spec': spec('pool_g997'), 'prefix': 'b_'}]})
+        self.assertIn('#define a_BASE 1u', text)
+        self.assertIn('#define b_BASE 7u', text)
+        self.assertIn('#define a_LIMIT (a_BASE + 1u)', text)  # a macro that only another macro names is kept, renamed
+        self.assertIn('#define b_LIMIT (b_BASE + 1u)', text)
+        self.assertIn('DF_CHECK(t, twice(1u) <= a_LIMIT);', text)  # twice is the same in both: shared
+        self.assertIn('DF_CHECK(t, twice(1u) <= b_LIMIT);', text)
+        self.assertIn('    { /* b */\n        b_check_one(&t);', text)
+        same = self.merge_tree({'test_pool_g998.c': source('pool_g998', 1), 'test_pool_g997.c': source('pool_g997', 1)})
+        _, text = split_test.merge(same, {'file': 'moves/test_both.c', 'header': 'both', 'sections': [
+            {'spec': spec('pool_g998'), 'prefix': 'a_'}, {'spec': spec('pool_g997'), 'prefix': 'b_'}]})
+        self.assertEqual(text.count('#define BASE 1u'), 1)  # the same macro of the same value: once, as it was
+        self.assertEqual(text.count('static void check_one('), 1)
+
+    def test_a_part_keeps_only_the_macros_it_needs(self):
+        src = SOURCE.replace('#include "support/check.h"\n', '#include "support/check.h"\n\n/* only check_two\'s */\n#define TWO 2u\n').replace(
+            'DF_CHECK(t, twice(2u) == 4u);', 'DF_CHECK(t, twice(TWO) == 4u);')
+        out = self.run_split({'parts': self.TWO}, source=src)
+        self.assertNotIn('TWO', out['moves/test_one.c'])
+        self.assertNotIn("only check_two's", out['moves/test_one.c'])
+        self.assertIn('#define TWO 2u', out['moves/test_two.c'])
+
+    def test_names_of_anonymous_enums_and_tagged_structs(self):
+        self.assertEqual(split_test.item_name('enum { LO, HI, KINDS };\n'), 'LO')
+        self.assertEqual(split_test.item_name('struct pair {\n    unsigned base;\n};\n'), 'pair')
+        self.assertEqual(split_test.item_name('static const struct pair pairs[] = {{1u}};\n'), 'pairs')
+        self.assertEqual(split_test.enumerators([('LO', 'enum { LO, HI = 3, KINDS };\n')]), {'LO': 'LO', 'HI': 'LO', 'KINDS': 'LO'})
+
+    def test_except_and_keep_header(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / 'tests/moves').mkdir(parents=True)
+        (root / 'tests/moves/test_pool_g999.c').write_text(SOURCE, encoding='utf-8')
+        spec = Path(tmp.name) / 'spec.json'
+        spec.write_text(json.dumps({'source': 'moves/test_pool_g999.c', 'parts': [
+            {'file': 'moves/test_pool_g999.c', 'calls': ['check_one'], 'keep_header': True},
+            {'file': 'moves/test_two.c', 'calls': ['check_two'], 'header': 'two'}]}), encoding='utf-8')
+        with open(os.devnull, 'w') as sink:
+            stdout, sys.stdout = sys.stdout, sink
+            try:
+                self.assertEqual(split_test.main([str(spec), '--root', str(root), '--except', 'moves/test_two.c']), 0)
+            finally:
+                sys.stdout = stdout
+        kept = (root / 'tests/moves/test_pool_g999.c').read_text(encoding='utf-8')
+        self.assertTrue(kept.startswith('/*\n * duoforge.state.pool_g999 (white-box): two subjects.\n */\n'))
+        self.assertNotIn('check_two', kept)
+        self.assertFalse((root / 'tests/moves/test_two.c').exists())
+
+    def test_defines_dropped_line_by_line_and_never_where_the_preprocessor_reads_them(self):
+        pre = ('#include <stdio.h>\n\n#include "support/check.h"\n\n/* the cap */\n#define CAP 3u\n#define FLOOR 1u\n\n'
+               '/* only for the other part */\n#define OTHER 9u\n\n')
+        self.assertEqual(split_test.drop_unused_defines(pre, {'CAP', 'FLOOR'}),
+                         '#include <stdio.h>\n\n#include "support/check.h"\n\n/* the cap */\n#define CAP 3u\n#define FLOOR 1u\n')
+        # the comment over a group stays with the define that is kept, and goes when the first define of its group goes alone
+        self.assertEqual(split_test.drop_unused_defines(pre, {'FLOOR'}),
+                         '#include <stdio.h>\n\n#include "support/check.h"\n\n/* the cap */\n#define FLOOR 1u\n')
+        self.assertEqual(split_test.drop_unused_defines(pre, set()), '#include <stdio.h>\n\n#include "support/check.h"\n')
+        guarded = '#include <stdio.h>\n\n#define WITH 1\n#if WITH\n#define LIM 3u\n#else\n#define LIM 5u\n#endif\n'
+        self.assertEqual(split_test.drop_unused_defines(guarded, {'LIM'}), guarded)  # a conditional: nothing is dropped
+        two = '#include <stdio.h>\n\n\n#define X 1u\n#define Y 2u\n'
+        self.assertEqual(split_test.drop_unused_defines(two, {'Y'}), '#include <stdio.h>\n\n\n#define Y 2u\n')  # the source's two
+        config = '#define DF_CHECK_VERBOSE 1\n#include <stdio.h>\n\n#define X 1u\n'
+        self.assertEqual(split_test.drop_unused_defines(config, set()), config)  # a define before an include: kept
+        # a kept define of several lines directly above a dropped one keeps its body (its continuation is no comment)
+        cont = '#include <x.h>\n\n#define A(x) \\\n    ((x) + 1)\n#define B 2\n'
+        self.assertEqual(split_test.drop_unused_defines(cont, {'A'}), '#include <x.h>\n\n#define A(x) \\\n    ((x) + 1)\n')
+        # a block comment goes whole or not at all (a middle line without a star), a // run goes whole
+        half = '#include <x.h>\n\n/* a comment\n   over two lines\n * and more */\n#define B 2\n#define C 3\n'
+        self.assertEqual(split_test.drop_unused_defines(half, set()), '#include <x.h>\n')
+        tail = '#include <x.h>\n\n/* one */ int x;\n * not a comment */\n#define B 2\n#define K 1\n'
+        self.assertEqual(split_test.drop_unused_defines(tail, {'K'}), '#include <x.h>\n\n/* one */ int x;\n * not a comment */\n#define K 1\n')
+        slashes = '#include <x.h>\n\n// two\n// lines\n#define B 2\n#define K 1\n'
+        self.assertEqual(split_test.drop_unused_defines(slashes, {'K'}), '#include <x.h>\n\n// two\n// lines\n#define K 1\n')
+        self.assertEqual(split_test.drop_unused_defines(slashes, set()), '#include <x.h>\n')
+        # a comment that runs on past a define, a define in a comment, a nested /*, a // line continued: kept whole
+        for whole in ('#include <x.h>\n\n#define B 2 /* the value\n   of B */\n#define C 3\n',
+                      '#include <x.h>\n\n/* disabled:\n#define B 2 */\n#define C 3\n',
+                      '#include <x.h>\n\n/* outer\n/* inner */\n#define B 2\n#define C 3\n',
+                      '#include <x.h>\n\n// a line \\\n#define B 2\n#define C 3\n',
+                      '#include <x.h>\n\n#define C 3\n/* open\n',
+                      '#include <x.h>\n\n#define U "http://x" /* the value\n   of U */\n#define C 3\n',
+                      '#include <x.h>\n\n#define Q "a \\" // b" /* the value\n   of Q */\n#define C 3\n',
+                      '#include <x.h>\n\n#define S "open\n#define C 3\n'):
+            self.assertEqual(split_test.drop_unused_defines(whole, {'C'}), whole)
+        # a comment that closes on the define's own line goes with it
+        self.assertEqual(split_test.drop_unused_defines('#include <x.h>\n\n#define B 2 /* B */\n#define C 3\n', {'C'}),
+                         '#include <x.h>\n\n#define C 3\n')
+        # a literal's /* or */ is no comment: the define goes alone
+        self.assertEqual(split_test.drop_unused_defines('#include <x.h>\n\n#define S "/*" \'*\'\n#define C 3\n', {'C'}),
+                         '#include <x.h>\n\n#define C 3\n')
+        # a define at the end of the preamble goes with its blank line above, so the blank before the first item is single
+        end = '#include <x.h>\n\n#define B 2\n'
+        self.assertEqual(split_test.drop_unused_defines(end, set()), '#include <x.h>\n')
+
+    def test_a_part_keeps_its_sources_blank_lines_between_items(self):
+        src = SOURCE.replace('/* the first subject */\nstatic void check_one', 'static unsigned zero = 0u;\n/* the first subject */\nstatic void check_one').replace(
+            'DF_CHECK(t, twice(1u) == 2u);', 'DF_CHECK(t, twice(1u) == 2u + zero);')
+        out = self.run_split({'parts': self.TWO}, source=src)
+        self.assertIn('}\n\nstatic unsigned zero = 0u;\n/* the first subject */\nstatic void check_one', out['moves/test_one.c'])
+
+    def test_header_replace_and_its_refusal(self):
+        keep = {'file': 'moves/test_pool_g999.c', 'calls': ['check_one', 'check_two'], 'keep_header': True,
+                'header_replace': [[' two subjects.', ' two subjects, the second elsewhere.']]}
+        out = self.run_split({'parts': [keep]})
+        self.assertTrue(out['moves/test_pool_g999.c'].startswith('/*\n * duoforge.state.pool_g999 (white-box): two subjects, the second elsewhere.\n */\n'))
+        self.assertIn('header_replace', self.run_split({'parts': [dict(keep, header_replace=[['no such text', 'x']])]}))
+
+    def test_merge_specs_come_from_the_repository_of_the_merge_spec(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / 'tests/moves').mkdir(parents=True)
+        (root / 'tests/moves/test_pool_g999.c').write_text(SOURCE, encoding='utf-8')
+        mspec = {'file': 'moves/test_both.c', 'header': 'both', 'sections': [{'spec': 'specs/one.json', 'prefix': 'a_'}]}
+        with self.assertRaises(split_test.Refused) as cm:
+            split_test.merge(root, mspec, spec_base=root)
+        self.assertIn('specs/one.json is not in', str(cm.exception))
+        (root / 'specs').mkdir()
+        (root / 'specs/one.json').write_text(json.dumps({'source': 'moves/test_pool_g999.c', 'parts': [
+            {'file': 'moves/test_both.c', 'calls': ['check_one', 'check_two'], 'header': 's'}]}), encoding='utf-8')
+        self.assertEqual(split_test.merge(root, mspec, spec_base=root)[0], 'duoforge.moves.both')
+        # a merge spec in no repository (no tools/restructure above it) is refused, not read against --root
+        (root / 'both.merge.json').write_text(json.dumps(mspec), encoding='utf-8')
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(split_test.main([str(root / 'both.merge.json'), '--merge', '--root', str(root)]), 2)
+        self.assertIn('in no repository', err.getvalue())
 
     def test_parts_of_a_split_in_the_table(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -416,6 +564,9 @@ class SplitTest(unittest.TestCase):
                           table(planned, part % ('one', 'one', 'one'), part % ('two', 'two', 'two')))
             self.assertIn('moves/test_pool_g999.c: the new file moves/test_one.c is in two rows',
                           table(split, part % ('one', 'one', 'one'), part % ('one', 'one', 'one')))
+            merge = 'moves/test_pool_g998.c\tduoforge.state.pool_g998\tmerge\tmoves/test_one.c\tduoforge.moves.one\tdone\tG998'
+            self.assertIn('moves/test_pool_g999.c: two part rows of one source name moves/test_one.c',
+                          table(split, merge, part % ('one', 'one', 'one'), part % ('one', 'one', 'one')))
             self.assertIn('moves/test_pool_g999.c: a part row is written when its file is (state done)',
                           table(split, part % ('one', 'one', 'one'), (part % ('two', 'two', 'two')).replace('\tdone\t', '\tplanned\t')))
             (root / 'tests/items').mkdir()

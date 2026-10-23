@@ -24,8 +24,6 @@
 
 /* The stage indices of dfi_active_slot.stages (biased by 6): atk 0, def 1, spa 2, spd 3, spe 4. */
 #define G45_ATK 0u
-#define G45_DEF 1u
-#define G45_SPE 4u
 
 /* Moxie: after the first turn, Krookodile (side 0, position 0) knocked out two foes at once: Attack +2. */
 static void check_moxie(df_test *t, const duoforge_context *ctx)

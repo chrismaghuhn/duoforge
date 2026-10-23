@@ -24,7 +24,6 @@
 #include "support/conformance_replay.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-#define TAPE_MAX 64u
 
 /* The events of one step of a battle with the reference's tape, player 0's view; returns the engine's status. */
 static duoforge_status step_events(const duoforge_context *ctx, duoforge_battle *b, const df_conf_step *st,

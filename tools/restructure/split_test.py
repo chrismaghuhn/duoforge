@@ -190,6 +190,138 @@ def enumerators(defs):
     return out
 
 
+DEFINE = re.compile(r'^#define (\w+)[^\n]*(?:\\\n[^\n]*)*', re.M)
+
+
+def needed_macros(macros, code):
+    """The names of `macros` ({name: #define line}) that `code` needs: those it names, and those their own lines name."""
+    words = lambda text: set(re.findall(r'\b\w+\b', code_only(text)))
+    need, todo = set(), words(code) & set(macros)
+    while todo:
+        n = todo.pop()
+        if n not in need:
+            need.add(n)
+            todo |= (words(macros[n][len('#define ' + n):]) & set(macros)) - need
+    return need
+
+
+def comment_state(lines):
+    """Per line, whether it starts inside a block comment, or None when the preamble's comments are not plain: a /* inside
+    a block comment, a // line that ends with a backslash (its next line is comment too), or a string or character literal
+    not closed on its line. Outside a comment a literal is skipped, its escapes included, so that a /*, */ or // in it is
+    no comment. C17 is assumed (CMakeLists.txt): C23's digit separators (1'000) would be read as a character literal."""
+    inside, state = False, []
+    for l in lines:
+        state.append(inside)
+        k = 0
+        while k < len(l):
+            two = l[k:k + 2]
+            if inside:
+                if two == '/*':
+                    return None
+                if two == '*/':
+                    inside, k = False, k + 2
+                    continue
+            elif l[k] in '"\'':
+                end = k + 1  # a string or character literal, its escapes skipped: what it holds is no comment
+                while end < len(l) and l[end] != l[k]:
+                    end += 2 if l[end] == '\\' else 1
+                if end >= len(l):
+                    return None  # not closed on its line
+                k = end + 1
+                continue
+            elif two == '/*':
+                inside, k = True, k + 2
+                continue
+            elif two == '//':
+                if l.endswith('\\'):
+                    return None
+                break
+            k += 1
+    state.append(inside)  # after the last line
+    return state
+
+
+def comment_above(lines, i, drop):
+    """The first line of the whole comment directly above line i: a run of // lines, or one /* ... */ block whose last line
+    ends with */ and whose first opens it; i itself when there is none (or only part of one), so that a removal never cuts
+    a comment in half. A line that continues a define (the one before it ends with a backslash) is no comment."""
+    def free(k):
+        return k >= 0 and not drop[k] and not (k > 0 and lines[k - 1].endswith('\\'))
+    k = i - 1
+    if free(k) and lines[k].lstrip().startswith('//'):
+        while free(k - 1) and lines[k - 1].lstrip().startswith('//'):
+            k -= 1
+        return k
+    if free(k) and lines[k].rstrip().endswith('*/'):
+        start = k
+        while free(start) and '/*' not in lines[start]:
+            start -= 1
+        block = '\n'.join(lines[start:k + 1]).strip() if start >= 0 else ''
+        if free(start) and block.startswith('/*') and block.count('/*') == 1 and block.count('*/') == 1:
+            return start
+    return i
+
+
+def drop_unused_defines(preamble, keep):
+    """The preamble without the #define lines whose names are not in `keep`, each with the comment lines directly above it
+    (no blank line between, comment lines only) when it is the only define that comment stands over; every other line
+    stays where it was, two blank lines that a removal makes adjacent become one, and a blank line that a removal leaves at
+    the end goes (the part puts one before its first item).
+
+    Nothing is dropped from a preamble whose preprocessor reads its own defines: one with a conditional (#if, #ifdef,
+    #ifndef, #elif) or with a #define before an #include (a define that configures a header). Such a preamble is kept as
+    it is: a dropped define there could change the value of another without a trace. Nor from one whose comments are
+    not plain (comment_state()), nor when a define to drop starts inside a comment or a comment runs on past its last
+    line: a removal there would leave part of a comment."""
+    if re.search(r'^\s*#\s*(if|ifdef|ifndef|elif)\b', preamble, re.M) or \
+            re.search(r'^\s*#\s*define\b(?:.*\n)*?^\s*#\s*include\b', preamble, re.M):
+        return preamble
+    lines = preamble.split('\n')
+    inside = comment_state(lines)
+    if inside is None or inside[-1]:
+        return preamble
+    drop = [False] * len(lines)
+    i = 0
+    while i < len(lines):
+        m = re.match(r'#define (\w+)', lines[i])
+        if not m:
+            i += 1
+            continue
+        j = i
+        while lines[j].endswith('\\'):
+            j += 1
+        if m.group(1) not in keep:
+            if inside[i] or inside[j + 1]:
+                return preamble  # the define is comment text, or a comment runs on past it: kept whole
+            for k in range(i, j + 1):
+                drop[k] = True
+            # the comment lines directly above, when the next line after this define is no other define of the group
+            above = comment_above(lines, i, drop) - 1
+            group_has_kept = any(re.match(r'#define (\w+)', lines[k]) and re.match(r'#define (\w+)', lines[k]).group(1) in keep
+                                 for k in range(above + 1, len(lines)) if k > j and lines[k].startswith('#define')
+                                 and all(lines[x].strip() for x in range(j + 1, k)))
+            first_define = above + 1
+            while first_define < i and not lines[first_define].startswith('#define'):
+                first_define += 1
+            if first_define == i and not group_has_kept:
+                for k in range(above + 1, i):
+                    drop[k] = True
+        i = j + 1
+    out, removed_since = [], False
+    for k, l in enumerate(lines[:-1]):  # the last element is what follows the last newline: kept as it is
+        if drop[k]:
+            removed_since = True
+            continue
+        if not l.strip() and out and not out[-1].strip() and removed_since:
+            continue  # a removal made two blank lines adjacent (two that the source had stay)
+        removed_since = False
+        out.append(l)
+    if removed_since and lines[-1] == '' and out and not out[-1].strip():
+        out.pop()  # a removal at the end left a blank line, which would double the one before the first item
+    return '\n'.join(out + [lines[-1]])
+
+
 def norm(code):
     return ' '.join(re.sub(r'/\*.*?\*/', ' ', code, flags=re.S).split())
 
@@ -240,17 +372,28 @@ def comment(ctest, text, width=128):
 SECTIONS = []  # every part split() made, as its pieces, for merge()
 
 
-def merge(root, mspec):
+def merge(root, mspec, spec_base=None):
     """One file from the parts of several splits (restructure step 6e, the Mega stones): mspec = {"file": <area>/test_x.c,
     "header": text, "sections": [{"spec": <split spec>, "prefix": "<name>_"}, ...]}. Each section is the part of its spec
     whose file is mspec's file (split() places and checks it as for any part). The includes are the union, a top-level
     item that two sections have is kept once when its text is the same and else renamed in each section by its prefix
-    (code only), and main runs the sections' bodies in the given order. Returns (ctest, text)."""
+    (code only), and main runs the sections' bodies in the given order. Returns (ctest, text).
+
+    A merge reads its sources as they were before any of their splits ran: run it first, then the splits with --except
+    <its file>. It writes over its file, which may be one of its own sources (a section that file already had), so running
+    it again needs the sources back from git (as the proof READMEs say)."""
     target = mspec['file']
+    spec_base = Path(spec_base) if spec_base is not None else root
     secs = []
     for sec in mspec['sections']:
         SECTIONS.clear()
-        spec = sec['spec'] if isinstance(sec['spec'], dict) else json.loads((root / sec['spec']).read_text(encoding='utf-8'))
+        if isinstance(sec['spec'], dict):
+            spec = sec['spec']
+        else:  # a spec file, relative to the repository the merge spec belongs to (not to --root, the tree it writes)
+            path = spec_base / sec['spec']
+            if not path.exists():
+                raise Refused('merge: the spec %s is not in %s' % (sec['spec'], spec_base))
+            spec = json.loads(path.read_text(encoding='utf-8'))
         sec = dict(sec, spec=spec)
         split(root, spec)
         mine = [x for x in SECTIONS if x['file'] == target]
@@ -259,7 +402,11 @@ def merge(root, mspec):
         secs.append(dict(mine[0], prefix=sec['prefix']))
     by_name = {}
     for k, x in enumerate(secs):
-        for n, b in x['defs']:
+        x['macros'] = {m.group(1): m.group(0) for m in DEFINE.finditer(x['preamble'])}
+        need = needed_macros(x['macros'], ''.join(b for _, b in x['defs']) + x['body'])
+        x['macros'] = {n: l for n, l in x['macros'].items() if n in need}
+        # the macros take part in the renames like the items: a function that names a macro of another value differs
+        for n, b in list(x['defs']) + list(x['macros'].items()):
             by_name.setdefault(n, []).append((k, b))
     rename = [dict() for _ in secs]
 
@@ -288,18 +435,16 @@ def merge(root, mspec):
                 lines_q.append(l)
     defs_out, seen, body = [], set(), ''
     for k, x in enumerate(secs):
-        used = set(re.findall(r'\b\w+\b', code_only(''.join(b for _, b in x['defs']) + x['body'])))
-        for l in re.findall(r'^#define [^\n]*(?:\\\n[^\n]*)*', x['preamble'], re.M):
-            name = re.match(r'#define (\w+)', l).group(1)
-            if name not in used:
-                continue  # a macro of another part of the source
+        for name, l in x['macros'].items():
+            nn = rename[k].get(name, name)
+            if nn in seen:
+                continue  # the same macro, the same value, from an earlier section
+            seen.add(nn)
+            l = l.replace('#define ' + name, '#define ' + nn, 1) if nn != name else l
             for o, n in rename[k].items():
-                l = in_code(l, r'(?<![\w.>])%s\b' % re.escape(o), n)
-            if any(re.match(r'#define %s\b' % re.escape(name), m) for m in macros) and l not in macros:
-                rename[k][name] = x['prefix'] + name
-                l = l.replace('#define ' + name, '#define ' + x['prefix'] + name, 1)
-            if l not in macros:
-                macros.append(l)
+                if o != name:
+                    l = in_code(l, r'(?<![\w.>])%s\b' % re.escape(o), n)
+            macros.append(l)
         def ren(text, k=k):
             for o, n in rename[k].items():
                 text = in_code(text, r'(?<![\w.>])%s\b' % re.escape(o), n)
@@ -337,8 +482,11 @@ def split(root, spec):
     pre, defs, main_item = [], [], None
     first_def = next(s for k, s, e in items if k == 'item')
     pre.append(text[head_end:first_def].rstrip('\n') + '\n')  # the includes and macros before the first item, as written
+    gap, prev_end = {}, head_end  # whether a blank line stood before an item in the source (kept in the parts)
     for kind, s, e in items:
         body = text[s:e]
+        blank_before = '\n\n' in text[prev_end - 1:s] if s > prev_end - 1 else False
+        prev_end = e
         if kind == 'pp':
             if s >= first_def:
                 if not re.match(r'\s*#\s*(define|undef)\b', re.sub(r'/\*.*?\*/', '', body, flags=re.S)):
@@ -349,6 +497,7 @@ def split(root, spec):
             main_item = body
         else:
             defs.append((item_name(body), body))
+            gap[item_name(body)] = blank_before
     if main_item is None:
         raise Refused('no main')
     names = [n for n, _ in defs]
@@ -417,16 +566,23 @@ def split(root, spec):
         if not m:
             raise Refused('part file %r' % part['file'])
         ctest = 'duoforge.%s.%s' % (m.group(1), m.group(2))
-        # a part that stays the source (its file and name) keeps the source's own comment
+        # a part that stays the source (its file and name) keeps the source's own comment, with the replacements it lists
         header = text[:head_end] if part.get('keep_header') else comment(ctest, part['header'])
+        for old, new in part.get('header_replace', []):
+            if old not in header:
+                raise Refused('%s: header_replace: %r is not in the comment' % (part['file'], old[:40]))
+            header = header.replace(old, new)
         preamble = ''.join(pre)
+        all_macros = {m.group(1): m.group(0) for m in DEFINE.finditer(preamble)}
+        part_code = ''.join(b for n, b in defs if n in need and n not in provided) + body
+        preamble = drop_unused_defines(preamble, needed_macros(all_macros, part_code))
         if sup_header and need & set(provided):
             quoted = list(re.finditer(r'^#include "([^"]+)"\n', preamble, re.M))
             after = [m for m in quoted if m.group(1) < sup_header]  # in the sorted place among the quoted includes
             at = after[-1].end() if after else quoted[0].start()
             preamble = preamble[:at] + '#include "%s"\n' % sup_header + preamble[at:]
-        defs_text = ''.join('\n' + b.lstrip('\n') if not b.startswith('\n') else b
-                            for n, b in defs if n in need and n not in provided)
+        chosen = [(n, b) for n, b in defs if n in need and n not in provided]
+        defs_text = ''.join(('\n' if k == 0 or gap.get(n, True) else '') + b.lstrip('\n') for k, (n, b) in enumerate(chosen))
         new_main = main_item[:main_item.index('{') + 1] + mb[:decl_end].replace(begin.group(1), ctest) + body + mb[end.start():] + '}\n'
         code = defs_text + '\n' + new_main.lstrip('\n')
         for o, n in provided.items():  # the header's names: a function where it is called, a type as a word
@@ -506,7 +662,10 @@ def main(argv):
     spec = json.loads(Path(args[0]).read_text(encoding='utf-8'))
     if merging:
         try:
-            ctest, text = merge(root, spec)
+            base = next((d for d in Path(args[0]).resolve().parents if (d / 'tools' / 'restructure').is_dir()), None)
+            if base is None:
+                raise Refused('merge: the spec %s is in no repository (no tools/restructure above it)' % args[0])
+            ctest, text = merge(root, spec, base)
         except Refused as e:
             print('split_test: refused: %s' % e, file=sys.stderr)
             return 2

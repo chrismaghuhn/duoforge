@@ -21,11 +21,6 @@
 #include "support/fixtures.h"
 #include "support/pool.h"
 
-/* The stage indices of dfi_active_slot.stages (biased by 6): atk 0, def 1, spa 2, spd 3, spe 4. */
-#define G45_ATK 0u
-#define G45_DEF 1u
-#define G45_SPE 4u
-
 /* Telepathy: the Earthquake of Garchomp (side 0, position 0) in the second turn spreads to Medicham (side 0, position 1), which
  * Telepathy stops: its HP is unchanged (the Earthquake would take it without the ability). */
 static void check_telepathy(df_test *t, const duoforge_context *ctx)

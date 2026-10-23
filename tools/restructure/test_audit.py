@@ -76,6 +76,8 @@ def check(root):
             problems.append('%s: action %r, state %r' % (where, r['action'], r['state']))
         if r['action'] == 'part':
             # A part of a split (step 6e): its source has a split row, the part is done when written.
+            if any(x['new_file'] == r['new_file'] for x in parts_of.get(where, [])):
+                problems.append('%s: two part rows of one source name %s' % (where, r['new_file']))
             parts_of.setdefault(where, []).append(r)
             src = sources.get(where)
             if src is None or src['action'] != 'split' or src['old_ctest'] != r['old_ctest']:

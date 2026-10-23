@@ -28,8 +28,6 @@
 #include "support/conformance_replay.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-#define G51_PAIRS (sizeof pairs / sizeof pairs[0])
-#define G51_STONES 10u
 
 /* Flower Veil (a Grass type's TryBoost) would race Keen Eye and Big Pecks by Speed on a Grass forme with either ability, and
  * dfi_boost assumes none exists: no forme of the pool with Keen Eye or Big Pecks as a legal ability is a Grass type. */

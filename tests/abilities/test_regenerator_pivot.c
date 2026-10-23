@@ -23,8 +23,6 @@
 #include "support/conformance_replay.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-#define G51_PAIRS (sizeof pairs / sizeof pairs[0])
-#define G51_STONES 10u
 
 /* 3. Regenerator on a PIVOT switch-out (step G51 rework; the fix of the G39 Regenerator row, decision 0015 5bc). In g51_dragalgite
  * Dragalge-Mega uses Flip Turn at step 2 and leaves at step 3 (the answer to the PIVOT, `switch 3`): Regenerator heals it by a
