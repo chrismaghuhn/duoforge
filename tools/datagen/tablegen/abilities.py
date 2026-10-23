@@ -132,7 +132,7 @@ G53_ABILITY_FACTS = (
 # are engine rows (ENGINE_ROWS) that the turn code reads by id; the pinned callbacks they hard-code are checked here, whole,
 # whitespace aside. The Champions mod overrides none of them (check_g34_facts). Mold Breaker, Teravolt and Turboblaze are not
 # marked, and Mycelium Might is not in the pool, so no marked ability ignores the `breakable` flag of Telepathy, Volt Absorb or
-# Punk Rock (tests/test_pool_g45.c pins the refusals).
+# Punk Rock (tests/abilities/test_simple_ability_rows.c pins the refusals).
 G45_ABILITY_FACTS = (
     ('steadfast', ("onFlinch(pokemon) { this.boost({ spe: 1 }); },", 'flags: {},')),
     ('weakarmor', ("onDamagingHit(damage, target, source, move) { if (move.category === 'Physical') { "
