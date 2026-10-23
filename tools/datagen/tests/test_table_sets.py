@@ -99,8 +99,16 @@ class RuleSetsAndDefinitions(unittest.TestCase):
             self.assertEqual(gen_closure.INPUTS[rel], sha)
 
     def test_an_unknown_rule_set_is_refused(self):
-        refused(self, "rule set 'gen9' is not defined", gen_closure.rule_set, 'gen9')
-        refused(self, "rule set 'gen9' is not defined", lambda: dummy_format(rule_set='gen9'))
+        refused(self, "rule set 'gen8' is not defined", gen_closure.rule_set, 'gen8')
+        refused(self, "rule set 'gen8' is not defined", lambda: dummy_format(rule_set='gen8'))
+
+    def test_the_gen9_rule_set_is_refused_by_name(self):
+        # O8 (HS decision 2026-10-23): a definition may name gen9, but no table set builds it before the Gen 9 design.
+        why = 'rule set gen9 is refused: standalone table sets come with the Gen 9 design'
+        refused(self, why, gen_closure.rule_set, 'gen9')
+        refused(self, why, lambda: dummy_format(rule_set='gen9'))
+        refused(self, why, gen_closure.load_table_set, ROOT, 'gen9ou')
+        self.assertNotIn('gen9', gen_closure.RULE_SETS)
 
     def test_reg_mc_keeps_todays_names_and_widths(self):
         ts = gen_closure.load_table_set(ROOT, 'reg-mc')
@@ -180,6 +188,26 @@ class Widths(unittest.TestCase):
         refused(self, 'exceed the table set\'s 400 and 600', self.bounds, self.data(formes=401), b)
         refused(self, 'a forme has 301 legal moves, the bound moves_per_forme is 300', self.bounds,
                 self.data(moves=400, legal_moves=301), b)
+
+    def test_w1_the_learnset_width_is_the_sets(self):
+        # W1 (O8): the learnable bitset of a table set has a bit for each of its moves; gen9ou's 666 moves need 84 bytes.
+        b = dict(dummy_tables()['bounds'], moves=700)
+        d = self.data(moves=666)
+        for fl in d['forme_legal']:
+            self.assertEqual(len(fl['learnable']), 84)
+        self.bounds(d, b)
+        short = dict(d, forme_legal=[dict(fl, learnable=[0] * 83) for fl in d['forme_legal']])
+        refused(self, 'the learnable bitset is too short for 666 moves', self.bounds, short, b)
+        refused(self, 'learnset_bytes 83 holds 664 moves, the pool has 666', gen_closure.forme_legal, [], ['m'] * 666,
+                [], None, {}, None, None, 83, 'the test pool')
+
+    def test_w2_the_move_bound_is_per_forme(self):
+        # W2 (O8): more moves in total than DUOFORGE_DATA_MAX_FORME_MOVES (512) pass while no forme has more legal
+        # moves than the set's moves_per_forme; a forme at the bound passes, one above it fails.
+        b = dict(dummy_tables()['bounds'], moves=700, moves_per_forme=512)
+        self.bounds(self.data(moves=666, legal_moves=512), b)
+        refused(self, 'a forme has 513 legal moves, the bound moves_per_forme is 512', self.bounds,
+                self.data(moves=666, legal_moves=513), b)
 
     def test_a_bound_past_the_row_fields_fails(self):
         refused(self, 'exceed the row fields', self.bounds, self.data(), dict(dummy_tables()['bounds'], items=255))

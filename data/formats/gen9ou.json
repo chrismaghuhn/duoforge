@@ -1,0 +1,326 @@
+{
+ "comment": "The format definition of [Gen 9] OU, the Smogon singles format on the gen9 mod (step O8 of docs/superpowers/specs/2026-10-15-gen9-ou-design.md). Hand-written. Every value names the line of the pinned Showdown checkout it comes from; tools/datagen/gen_format.py --format gen9ou --pin <checkout> compares each quote with its line and reads the value back from it. The rules are the base Standard (data/rulesets.ts; the gen9 mod has no rulesets of its own) with the format's own clauses: no Item Clause, no Adjust Level (sets up to level 100), a team of 1 to 6 (the singles minimum of the rule table, no Min Team Size rule), EVs (510 in total, at most 255 in a stat) and Terastallization. The ladder timer is the server's default, because the format names no timer rule. No header is generated from this definition and the engine reads none of its values; no data kind plays it (no Gen 9 mechanics before O9, no Tera before O10).",
+ "id": "gen9ou",
+ "showdown_commit": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "showdown_format_id": "gen9ou",
+ "facts": {
+  "name": {
+   "value": "[Gen 9] OU",
+   "pin": [
+    "config/formats.ts",
+    74,
+    "name: \"[Gen 9] OU\","
+   ]
+  },
+  "mod": {
+   "value": "gen9",
+   "pin": [
+    "config/formats.ts",
+    75,
+    "mod: 'gen9',"
+   ]
+  },
+  "game_type_default": {
+   "value": "singles",
+   "pin": [
+    "sim/dex-formats.ts",
+    546,
+    "this.gameType = data.gameType || 'singles';"
+   ]
+  },
+  "ruleset": {
+   "value": [
+    "Standard",
+    "Evasion Abilities Clause",
+    "Sleep Moves Clause",
+    "!Sleep Clause Mod"
+   ],
+   "pin": [
+    "config/formats.ts",
+    76,
+    "ruleset: ['Standard', 'Evasion Abilities Clause', 'Sleep Moves Clause', '!Sleep Clause Mod'],"
+   ]
+  },
+  "banlist": {
+   "value": [
+    "Uber",
+    "AG",
+    "Arena Trap",
+    "Moody",
+    "Shadow Tag",
+    "King's Rock",
+    "Razor Fang",
+    "Baton Pass",
+    "Last Respects",
+    "Shed Tail",
+    "Tera Blast"
+   ],
+   "pin": [
+    "config/formats.ts",
+    77,
+    "banlist: ['Uber', 'AG', 'Arena Trap', 'Moody', 'Shadow Tag', 'King\\'s Rock', 'Razor Fang', 'Baton Pass', 'Last Respects', 'Shed Tail', 'Tera Blast'],"
+   ]
+  },
+  "standard_ag_rules": {
+   "value": [
+    "Obtainable",
+    "Team Preview",
+    "HP Percentage Mod",
+    "Cancel Mod",
+    "Endless Battle Clause"
+   ],
+   "pin": [
+    "data/rulesets.ts",
+    16,
+    "'Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause',"
+   ]
+  },
+  "standard_rules": {
+   "value": [
+    "Standard AG"
+   ],
+   "pin": [
+    "data/rulesets.ts",
+    24,
+    "'Standard AG',"
+   ]
+  },
+  "standard_clauses": {
+   "value": [
+    "Sleep Clause Mod",
+    "Species Clause",
+    "Nickname Clause",
+    "OHKO Clause",
+    "Evasion Items Clause",
+    "Evasion Moves Clause"
+   ],
+   "pin": [
+    "data/rulesets.ts",
+    25,
+    "'Sleep Clause Mod', 'Species Clause', 'Nickname Clause', 'OHKO Clause', 'Evasion Items Clause', 'Evasion Moves Clause',"
+   ]
+  },
+  "team_preview": {
+   "value": true,
+   "pin": [
+    "data/rulesets.ts",
+    16,
+    "'Team Preview'"
+   ]
+  },
+  "lead_only_preview": {
+   "value": true,
+   "pin": [
+    "sim/battle.ts",
+    1394,
+    "// will only ask the user to select their lead(s)."
+   ]
+  },
+  "endless_battle_clause": {
+   "value": true,
+   "pin": [
+    "data/rulesets.ts",
+    16,
+    "'Endless Battle Clause'"
+   ]
+  },
+  "species_clause": {
+   "value": true,
+   "pin": [
+    "data/rulesets.ts",
+    25,
+    "'Species Clause'"
+   ]
+  },
+  "nickname_clause": {
+   "value": true,
+   "pin": [
+    "data/rulesets.ts",
+    25,
+    "'Nickname Clause'"
+   ]
+  },
+  "ohko_clause": {
+   "value": true,
+   "pin": [
+    "data/rulesets.ts",
+    25,
+    "'OHKO Clause'"
+   ]
+  },
+  "evasion_items_clause": {
+   "value": true,
+   "pin": [
+    "data/rulesets.ts",
+    25,
+    "'Evasion Items Clause'"
+   ]
+  },
+  "evasion_moves_clause": {
+   "value": true,
+   "pin": [
+    "data/rulesets.ts",
+    25,
+    "'Evasion Moves Clause'"
+   ]
+  },
+  "evasion_abilities_clause": {
+   "value": true,
+   "pin": [
+    "config/formats.ts",
+    76,
+    "'Evasion Abilities Clause'"
+   ]
+  },
+  "sleep_moves_clause": {
+   "value": true,
+   "pin": [
+    "config/formats.ts",
+    76,
+    "'Sleep Moves Clause'"
+   ]
+  },
+  "sleep_clause_mod_removed": {
+   "value": true,
+   "pin": [
+    "config/formats.ts",
+    76,
+    "'!Sleep Clause Mod'"
+   ]
+  },
+  "min_team_size_singles": {
+   "value": 1,
+   "pin": [
+    "sim/dex-formats.ts",
+    274,
+    "1;"
+   ]
+  },
+  "max_team_size": {
+   "value": 6,
+   "pin": [
+    "sim/dex-formats.ts",
+    286,
+    "this.maxTeamSize = Number(this.valueRules.get('maxteamsize')) || 6;"
+   ]
+  },
+  "max_level": {
+   "value": 100,
+   "pin": [
+    "sim/dex-formats.ts",
+    292,
+    "this.maxLevel = Number(this.valueRules.get('maxlevel')) || 100;"
+   ]
+  },
+  "moves_per_set": {
+   "value": 4,
+   "pin": [
+    "sim/dex-formats.ts",
+    289,
+    "this.maxMoveCount = Number(this.valueRules.get('maxmovecount')) || 4;"
+   ]
+  },
+  "ev_total_max": {
+   "value": 510,
+   "pin": [
+    "sim/dex-formats.ts",
+    344,
+    "this.evLimit = dex.gen > 2 ? 510 : null;"
+   ]
+  },
+  "ev_max": {
+   "value": 255,
+   "pin": [
+    "sim/team-validator.ts",
+    1321,
+    "if (set.evs[stat as StatID] > 255) {"
+   ]
+  },
+  "terastallization": {
+   "value": true,
+   "pin": [
+    "sim/battle-actions.ts",
+    1928,
+    "return pokemon.teraType;"
+   ]
+  },
+  "ladder_timer_starting_s": {
+   "value": 150,
+   "pin": [
+    "server/room-battle.ts",
+    45,
+    "const STARTING_TIME = 150;"
+   ]
+  },
+  "ladder_timer_grace_s": {
+   "value": 60,
+   "pin": [
+    "server/room-battle.ts",
+    48,
+    "const STARTING_GRACE_TIME = 60;"
+   ]
+  },
+  "ladder_timer_add_per_turn_s": {
+   "value": 10,
+   "pin": [
+    "server/room-battle.ts",
+    199,
+    "addPerTurn: hasLongTurns ? 25 : 10,"
+   ]
+  },
+  "ladder_timer_max_per_turn_s": {
+   "value": 150,
+   "pin": [
+    "server/room-battle.ts",
+    46,
+    "const MAX_TURN_TIME = 150;"
+   ]
+  },
+  "ladder_timer_max_first_turn_s": {
+   "value": 150,
+   "pin": [
+    "server/room-battle.ts",
+    46,
+    "const MAX_TURN_TIME = 150;"
+   ]
+  },
+  "ladder_timeout_auto_choose": {
+   "value": false,
+   "pin": [
+    "server/room-battle.ts",
+    202,
+    "timeoutAutoChoose: false,"
+   ]
+  }
+ },
+ "engine": {
+  "comment": "active_per_side is the position count of game type singles. Nothing in the engine reads this definition.",
+  "active_per_side": 1
+ },
+ "pool": {
+  "source": "data/formats/pools/gen9ou.json",
+  "sha256": "15e7e5f18286f8ad6a97b76b953832f691de20e5c7ff55a4f3552c31603a7551",
+  "made_by": "docs/research/expansion/tools/build_legal_pool.js --format gen9ou: the pinned TeamValidator for showdown_format_id at showdown_commit (its meta names both)"
+ },
+ "tables": {
+  "comment": "What tools/datagen/gen_closure.py --pool --format gen9ou is to build (step O8; HS decisions 2026-10-15 and 2026-10-16): the gen9 rule set (the base data alone, no override files and no PP cap; tools/datagen/tablegen/source.py names it and refuses it until the Gen 9 design brings standalone table sets, so no gen9ou table is generated yet), the symbols dfi_gen9ou_* and DFI_GEN9OU_* of src/data/formats/gen9ou/pool_tables.{h,c}, 84 learnset bytes (W1: one bit per move row, the 666 pool moves and Struggle, against Reg M-C's 64), and the id bounds of the engine fields (formes below 0xFFFF and moves up to 0xFFFF as u16 ids; items and abilities 254, u8 with 0xFF as none; 512 legal moves per forme, DUOFORGE_DATA_MAX_FORME_MOVES, compared per forme and not with the 666 moves in total: W2). Smeargle is excluded (HS option A).",
+  "rule_set": "gen9",
+  "symbol_prefix": "gen9ou",
+  "include_guard": "DUOFORGE_DATA_FORMATS_GEN9OU_POOL_TABLES_H",
+  "stem": "pool_tables",
+  "learnset_bytes": 84,
+  "bounds": {
+   "formes": 65534,
+   "moves": 65535,
+   "moves_per_forme": 512,
+   "items": 254,
+   "abilities": 254
+  },
+  "excluded_formes": [
+   {
+    "id": "smeargle",
+    "reason": "Sketch: the pinned validator accepts 664 moves for Smeargle, more than the 512 of DUOFORGE_DATA_MAX_FORME_MOVES (the promise that a buffer of 512 moves always holds a forme's legal moves). Refused by name until a learnset property 'learns every sketchable move' (the Gen 9 design) replaces the list (HS option A, 2026-10-16)."
+   }
+  ]
+ }
+}
