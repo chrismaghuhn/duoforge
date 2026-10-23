@@ -1,0 +1,423 @@
+{
+ "P1_command_changed": [],
+ "P1_inventory": {
+  "debug": {
+   "before_sha256": "9cf18335d1cbb519560355478dd28e3d9dbcacc6f39454f22a8189d4d921cada",
+   "equal_under_the_renames": true,
+   "names": 1622,
+   "sha256": "d2f1eab16bc769ff2325ff5c43ff4a58517fcfb888824a014995ecf30c64dbef"
+  },
+  "ipo": {
+   "before_sha256": "9cf18335d1cbb519560355478dd28e3d9dbcacc6f39454f22a8189d4d921cada",
+   "equal_under_the_renames": true,
+   "names": 1622,
+   "sha256": "d2f1eab16bc769ff2325ff5c43ff4a58517fcfb888824a014995ecf30c64dbef"
+  },
+  "noipo": {
+   "before_sha256": "9cf18335d1cbb519560355478dd28e3d9dbcacc6f39454f22a8189d4d921cada",
+   "equal_under_the_renames": true,
+   "names": 1622,
+   "sha256": "d2f1eab16bc769ff2325ff5c43ff4a58517fcfb888824a014995ecf30c64dbef"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_renamed": {
+  "debug": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill"
+  ],
+  "ipo": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill"
+  ],
+  "noipo": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill"
+  ]
+ },
+ "P1_selected_tests": {
+  "after-ipo": {
+   "names_sha256": "15904216506369a05e6f5741e1d638a63860d734f5ecef81e3604e3f9953f401",
+   "passed": 293,
+   "tests": 293
+  },
+  "after-noipo": {
+   "names_sha256": "a8124d5ed9cbd9427f67b9f10551353587bd47e51088cac34ce661610d593219",
+   "passed": 288,
+   "tests": 288
+  },
+  "before-ipo": {
+   "names_sha256": "d0b74e3d11819e5e616d7eb156caf6cc4ee88f41f0ee3c21f30f8c753d703689",
+   "passed": 279,
+   "tests": 279
+  },
+  "before-noipo": {
+   "names_sha256": "8ad8eca80119172929a0ed7e0ccdbd1870c9dc98ee807d59bcbf2878ccfba472",
+   "passed": 274,
+   "tests": 274
+  }
+ },
+ "P1_split": {
+  "debug": {
+   "duoforge.state.pool_a2a": [
+    "duoforge.abilities.one_clause_abilities",
+    "duoforge.abilities.flower_veil_drop_refusals",
+    "duoforge.abilities.tangled_feet",
+    "duoforge.abilities.life_dew_water_absorb",
+    "duoforge.abilities.natural_cure"
+   ],
+   "duoforge.state.pool_g22": [
+    "duoforge.abilities.swift_swim_fainted_holder",
+    "duoforge.abilities.inner_focus_intimidate_cap"
+   ],
+   "duoforge.state.pool_g45": [
+    "duoforge.abilities.simple_ability_rows",
+    "duoforge.abilities.steadfast",
+    "duoforge.abilities.moxie",
+    "duoforge.abilities.weak_armor",
+    "duoforge.abilities.telepathy",
+    "duoforge.abilities.volt_absorb"
+   ],
+   "duoforge.state.pool_g63": [
+    "duoforge.abilities.simple_mega_abilities",
+    "duoforge.abilities.stalwart",
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g65": [
+    "duoforge.abilities.modifier_abilities",
+    "duoforge.abilities.reckless",
+    "duoforge.abilities.trace_water_bubble"
+   ]
+  },
+  "ipo": {
+   "duoforge.state.pool_a2a": [
+    "duoforge.abilities.one_clause_abilities",
+    "duoforge.abilities.flower_veil_drop_refusals",
+    "duoforge.abilities.tangled_feet",
+    "duoforge.abilities.life_dew_water_absorb",
+    "duoforge.abilities.natural_cure"
+   ],
+   "duoforge.state.pool_g22": [
+    "duoforge.abilities.swift_swim_fainted_holder",
+    "duoforge.abilities.inner_focus_intimidate_cap"
+   ],
+   "duoforge.state.pool_g45": [
+    "duoforge.abilities.simple_ability_rows",
+    "duoforge.abilities.steadfast",
+    "duoforge.abilities.moxie",
+    "duoforge.abilities.weak_armor",
+    "duoforge.abilities.telepathy",
+    "duoforge.abilities.volt_absorb"
+   ],
+   "duoforge.state.pool_g63": [
+    "duoforge.abilities.simple_mega_abilities",
+    "duoforge.abilities.stalwart",
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g65": [
+    "duoforge.abilities.modifier_abilities",
+    "duoforge.abilities.reckless",
+    "duoforge.abilities.trace_water_bubble"
+   ]
+  },
+  "noipo": {
+   "duoforge.state.pool_a2a": [
+    "duoforge.abilities.one_clause_abilities",
+    "duoforge.abilities.flower_veil_drop_refusals",
+    "duoforge.abilities.tangled_feet",
+    "duoforge.abilities.life_dew_water_absorb",
+    "duoforge.abilities.natural_cure"
+   ],
+   "duoforge.state.pool_g22": [
+    "duoforge.abilities.swift_swim_fainted_holder",
+    "duoforge.abilities.inner_focus_intimidate_cap"
+   ],
+   "duoforge.state.pool_g45": [
+    "duoforge.abilities.simple_ability_rows",
+    "duoforge.abilities.steadfast",
+    "duoforge.abilities.moxie",
+    "duoforge.abilities.weak_armor",
+    "duoforge.abilities.telepathy",
+    "duoforge.abilities.volt_absorb"
+   ],
+   "duoforge.state.pool_g63": [
+    "duoforge.abilities.simple_mega_abilities",
+    "duoforge.abilities.stalwart",
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g65": [
+    "duoforge.abilities.modifier_abilities",
+    "duoforge.abilities.reckless",
+    "duoforge.abilities.trace_water_bubble"
+   ]
+  }
+ },
+ "P2_reference": {
+  "checks": {
+   "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15754 checks, 0 failures",
+   "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+   "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+   "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 29398 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+  },
+  "executions": 2808,
+  "ipo": {
+   "equal": true,
+   "sha256": "77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5"
+  },
+  "native_reports_equal": {
+   "debug": true,
+   "ipo": true,
+   "noipo": true
+  },
+  "noipo": {
+   "equal": true,
+   "sha256": "77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5"
+  },
+  "steps": 24664,
+  "stops": 9229,
+  "unique_battles": 1241,
+  "variants": 10
+ },
+ "P3_perft_pins_sha256": "84c744369b4fdc0705d4a2c7f4c08d5df2cbc78fb53ef2898bca3edb2192ddcb",
+ "P3_perft_pins_unchanged": true,
+ "P4_bench_sha256_unchanged": true,
+ "P5_fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "P5_fingerprints_equal": true,
+ "P5_generated_unchanged": false,
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "552b777dbafca90d2efcd753c5314fa5c3ca0645",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "757a00cabf37fe21d936cbdf5dead064d63c4674",
+  "dirty": false,
+  "phase": "before"
+ },
+ "changed_files": [
+  "docs/benchmarks/2026-10-23-restructure-test-splits-abilities/machine.json",
+  "docs/benchmarks/2026-10-23-restructure-test-splits-abilities/proofs.py",
+  "docs/benchmarks/2026-10-23-restructure-test-splits-abilities/summarize.py",
+  "docs/mechanics/abilities/5ba-six-abilities-simple-kind-steadfast.md",
+  "docs/mechanics/abilities/5bk-simple-modifier-abilities-unaware-marvel.md",
+  "docs/mechanics/abilities/5dy-a2a-fourteen-abilities.md",
+  "docs/mechanics/abilities/5s-six-abilities.md",
+  "docs/mechanics/forms/5bj-simple-mega-abilities-sand-force.md",
+  "src/combat/turn.c",
+  "tests/abilities/test_flower_veil_drop_refusals.c",
+  "tests/abilities/test_inner_focus_intimidate_cap.c",
+  "tests/abilities/test_life_dew_water_absorb.c",
+  "tests/abilities/test_modifier_abilities.c",
+  "tests/abilities/test_moxie.c",
+  "tests/abilities/test_natural_cure.c",
+  "tests/abilities/test_one_clause_abilities.c",
+  "tests/abilities/test_pool_a2a.c",
+  "tests/abilities/test_pool_g22.c",
+  "tests/abilities/test_pool_g45.c",
+  "tests/abilities/test_pool_g63.c",
+  "tests/abilities/test_reckless.c",
+  "tests/abilities/test_simple_ability_rows.c",
+  "tests/abilities/test_simple_mega_abilities.c",
+  "tests/abilities/test_stalwart.c",
+  "tests/abilities/test_steadfast.c",
+  "tests/abilities/test_swift_swim_fainted_holder.c",
+  "tests/abilities/test_tangled_feet.c",
+  "tests/abilities/test_telepathy.c",
+  "tests/abilities/test_trace_water_bubble.c",
+  "tests/abilities/test_volt_absorb.c",
+  "tests/abilities/test_weak_armor.c",
+  "tests/abilities/tests.cmake",
+  "tests/data/test_pool_tables.c",
+  "tests/forms/test_mega_stones.c",
+  "tests/forms/tests.cmake",
+  "tests/renames.tsv",
+  "tests/support/conformance_replay.h",
+  "tools/datagen/tablegen/abilities.py",
+  "tools/restructure/split_test.py",
+  "tools/restructure/test_audit.py",
+  "tools/restructure/tests/test_restructure_tools.py"
+ ],
+ "object_identity": {
+  "debug": {
+   "compared": 329,
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "library_after": "8f4f3befdc7619bcc4931b3d0e4710c8bd37b462477f99eb44373c90881a2a8a",
+   "library_before": "8f4f3befdc7619bcc4931b3d0e4710c8bd37b462477f99eb44373c90881a2a8a"
+  },
+  "ipo": {
+   "compared": 331,
+   "differing": [
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/boo.dir/main.c.o",
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/foo.dir/foo.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "tests/CMakeFiles/duoforge_data_pool_tables.dir/data/test_pool_tables.c.o"
+   ],
+   "library_after": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a",
+   "library_before": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a"
+  },
+  "noipo": {
+   "compared": 349,
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "tests/CMakeFiles/duoforge_abilities_flower_veil_drop_refusals.dir/abilities/test_flower_veil_drop_refusals.c.o",
+    "tests/CMakeFiles/duoforge_abilities_inner_focus_intimidate_cap.dir/abilities/test_inner_focus_intimidate_cap.c.o",
+    "tests/CMakeFiles/duoforge_abilities_modifier_abilities.dir/abilities/test_modifier_abilities.c.o",
+    "tests/CMakeFiles/duoforge_abilities_moxie.dir/abilities/test_moxie.c.o",
+    "tests/CMakeFiles/duoforge_abilities_natural_cure.dir/abilities/test_natural_cure.c.o",
+    "tests/CMakeFiles/duoforge_abilities_one_clause_abilities.dir/abilities/test_one_clause_abilities.c.o",
+    "tests/CMakeFiles/duoforge_abilities_simple_ability_rows.dir/abilities/test_simple_ability_rows.c.o",
+    "tests/CMakeFiles/duoforge_abilities_swift_swim_fainted_holder.dir/abilities/test_swift_swim_fainted_holder.c.o",
+    "tests/CMakeFiles/duoforge_abilities_weak_armor.dir/abilities/test_weak_armor.c.o",
+    "tests/CMakeFiles/duoforge_forms_mega_stones.dir/forms/test_mega_stones.c.o"
+   ],
+   "library_after": "57d79859671ef2d0dbfa80a63d33dd98c7a437ec348a612f436c4eb52cfeffbd",
+   "library_before": "57d79859671ef2d0dbfa80a63d33dd98c7a437ec348a612f436c4eb52cfeffbd"
+  }
+ },
+ "split_checks": {
+  "ipo": {
+   "after": {
+    "duoforge.abilities.flower_veil_drop_refusals": 27,
+    "duoforge.abilities.inner_focus_intimidate_cap": 52,
+    "duoforge.abilities.life_dew_water_absorb": 25,
+    "duoforge.abilities.modifier_abilities": 17,
+    "duoforge.abilities.moxie": 7,
+    "duoforge.abilities.natural_cure": 13,
+    "duoforge.abilities.one_clause_abilities": 420,
+    "duoforge.abilities.reckless": 9,
+    "duoforge.abilities.simple_ability_rows": 13,
+    "duoforge.abilities.simple_mega_abilities": 16,
+    "duoforge.abilities.stalwart": 372,
+    "duoforge.abilities.steadfast": 6,
+    "duoforge.abilities.swift_swim_fainted_holder": 38,
+    "duoforge.abilities.tangled_feet": 29,
+    "duoforge.abilities.telepathy": 6,
+    "duoforge.abilities.trace_water_bubble": 11,
+    "duoforge.abilities.volt_absorb": 18,
+    "duoforge.abilities.weak_armor": 6,
+    "duoforge.forms.mega_stones": 15
+   },
+   "before": {
+    "duoforge.state.pool_a2a": 510,
+    "duoforge.state.pool_g22": 90,
+    "duoforge.state.pool_g45": 56,
+    "duoforge.state.pool_g63": 403,
+    "duoforge.state.pool_g65": 37
+   }
+  },
+  "noipo": {
+   "after": {
+    "duoforge.abilities.flower_veil_drop_refusals": 27,
+    "duoforge.abilities.inner_focus_intimidate_cap": 52,
+    "duoforge.abilities.life_dew_water_absorb": 25,
+    "duoforge.abilities.modifier_abilities": 17,
+    "duoforge.abilities.moxie": 7,
+    "duoforge.abilities.natural_cure": 13,
+    "duoforge.abilities.one_clause_abilities": 420,
+    "duoforge.abilities.reckless": 9,
+    "duoforge.abilities.simple_ability_rows": 13,
+    "duoforge.abilities.simple_mega_abilities": 16,
+    "duoforge.abilities.stalwart": 372,
+    "duoforge.abilities.steadfast": 6,
+    "duoforge.abilities.swift_swim_fainted_holder": 38,
+    "duoforge.abilities.tangled_feet": 29,
+    "duoforge.abilities.telepathy": 6,
+    "duoforge.abilities.trace_water_bubble": 11,
+    "duoforge.abilities.volt_absorb": 18,
+    "duoforge.abilities.weak_armor": 6,
+    "duoforge.forms.mega_stones": 15
+   },
+   "before": {
+    "duoforge.state.pool_a2a": 510,
+    "duoforge.state.pool_g22": 90,
+    "duoforge.state.pool_g45": 56,
+    "duoforge.state.pool_g63": 403,
+    "duoforge.state.pool_g65": 37
+   }
+  }
+ }
+}
