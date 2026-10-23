@@ -190,7 +190,7 @@ static bool dfi_double_shock_shape(struct duoforge_battle *b, uint32_t user)
     return m != NULL && dfi_forme_of(m)->dex_num == 923u && t[0] == DFI_TYPE_ELECTRIC && t[1] == DFI_TYPE_FIGHTING;
 }
 
-static bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, uint32_t type)
+static DFI_ALWAYS_INLINE bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, uint32_t type)
 {
     uint32_t t[2];
     dfi_types_of(b, m, t);
@@ -814,7 +814,7 @@ static void dfi_apply_boosts(dfi_active_slot *pos, const uint8_t *boosts)
 /* ---------------------------------------------------------------- targets */
 
 
-static bool dfi_alive(struct duoforge_battle *b, uint32_t flat)
+static DFI_ALWAYS_INLINE bool dfi_alive(struct duoforge_battle *b, uint32_t flat)
 {
     const dfi_member *m = dfi_at(b, flat);
     return m != NULL && m->hp != 0u;
