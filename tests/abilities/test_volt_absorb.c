@@ -21,12 +21,6 @@
 #include "support/conformance_replay.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-
-/* The stage indices of dfi_active_slot.stages (biased by 6): atk 0, def 1, spa 2, spd 3, spe 4. */
-#define G45_ATK 0u
-#define G45_DEF 1u
-#define G45_SPE 4u
-
 /* Volt Absorb: at full HP the first Thunderbolt is absorbed (Jolteon, side 1 position 0, stays at full HP); after the Earthquake
  * of the second turn the third turn's Thunderbolt heals it by a quarter of its maximum HP (the trace: 44 -> 87 of 172). */
 static void check_volt_absorb(df_test *t, const duoforge_context *ctx)

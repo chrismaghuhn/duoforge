@@ -23,7 +23,6 @@
 #include "support/pool.h"
 
 /* The stage indices of dfi_active_slot.stages (biased by 6): atk 0, def 1, spa 2, spd 3, spe 4. */
-#define G45_ATK 0u
 #define G45_DEF 1u
 #define G45_SPE 4u
 

@@ -6,6 +6,19 @@ paths in both phases, three profiles: Release with IPO, Release without IPO, and
 Scripts: [proofs.py](proofs.py), [summarize.py](summarize.py): those of 6e-1, with the merge rows and the executed checks
 compared by group (several sources share the stones' file). Specs: [specs/](specs/).
 
+**To make the files again:** export `tests/` of main `de746106` into a scratch tree. Run
+`split_test.py specs/mega_stones.merge.json --merge --root <tree>` first: the merge reads its sources before their splits
+change them. Then run each other spec with `--root <tree> --except forms/test_mega_stones.c`. This reproduces every file
+byte for byte. The 6e-1 specs do the same from main `757a00ca`.
+
+**The review (#662).**
+- **Macros.** `merge()` now compares and renames macros like the other items, so two identical functions that name a macro of two values stay two. A macro that only another macro names is kept.
+- **Unused macros.** `split()` and `merge()` keep only the macros a part needs. This removes some unused `#define`s and their comments from twelve 6e-1 parts and three 6e-2 parts; the generated code is otherwise unchanged.
+- **Blank lines.** A part keeps the blank line, or none, that its source had between two items.
+- **Headers.** `keep_header` takes `header_replace`, so `test_magic_bounce.c`'s comment points at the stones' new file.
+- **Audit.** `test_audit` allows one part row per pair of source and merge target.
+- **Tests.** Each of these has a unit test.
+
 ## What changes
 
 **`forms/test_mega_stones.c`, one section per batch** (`split_test.py --merge`, [specs/mega_stones.merge.json](specs/mega_stones.merge.json)):

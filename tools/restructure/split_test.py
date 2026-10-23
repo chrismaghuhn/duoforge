@@ -190,6 +190,42 @@ def enumerators(defs):
     return out
 
 
+DEFINE = re.compile(r'^#define (\w+)[^\n]*(?:\\\n[^\n]*)*', re.M)
+
+
+def needed_macros(macros, code):
+    """The names of `macros` ({name: #define line}) that `code` needs: those it names, and those their own lines name."""
+    words = lambda text: set(re.findall(r'\b\w+\b', code_only(text)))
+    need, todo = set(), words(code) & set(macros)
+    while todo:
+        n = todo.pop()
+        if n not in need:
+            need.add(n)
+            todo |= (words(macros[n][len('#define ' + n):]) & set(macros)) - need
+    return need
+
+
+def drop_unused_defines(preamble, keep):
+    """The preamble without the #define lines whose names are not in `keep`; a block (lines between blank lines) of
+    comments and defines that loses every define loses its comments too."""
+    out = []
+    for block in re.split(r'\n(?=\n)', preamble):
+        names = [m.group(1) for m in DEFINE.finditer(block)]
+        if not names:
+            out.append(block)
+            continue
+        kept = DEFINE.sub(lambda m: m.group(0) if m.group(1) in keep else '\x00', block)
+        kept = '\n'.join(l for l in kept.split('\n') if l != '\x00')
+        if not any(n in keep for n in names) and not re.sub(r'/\*.*?\*/|\s', '', kept, flags=re.S):
+            continue  # only comments and dropped defines were in it
+        if not any(n in keep for n in names):
+            kept = re.sub(r'^\s*/\*.*?\*/\s*$', '', kept, flags=re.S | re.M).strip('\n')
+            if not kept.strip():
+                continue
+        out.append(kept)
+    return '\n'.join(out)
+
+
 def norm(code):
     return ' '.join(re.sub(r'/\*.*?\*/', ' ', code, flags=re.S).split())
 
@@ -245,12 +281,20 @@ def merge(root, mspec):
     "header": text, "sections": [{"spec": <split spec>, "prefix": "<name>_"}, ...]}. Each section is the part of its spec
     whose file is mspec's file (split() places and checks it as for any part). The includes are the union, a top-level
     item that two sections have is kept once when its text is the same and else renamed in each section by its prefix
-    (code only), and main runs the sections' bodies in the given order. Returns (ctest, text)."""
+    (code only), and main runs the sections' bodies in the given order. Returns (ctest, text).
+
+    A merge reads its sources as they were before any of their splits ran: run it first, then the splits with --except
+    <its file>. It writes over its file, which may be one of its own sources (a section that file already had), so running
+    it again needs the sources back from git (as the proof READMEs say)."""
     target = mspec['file']
     secs = []
     for sec in mspec['sections']:
         SECTIONS.clear()
-        spec = sec['spec'] if isinstance(sec['spec'], dict) else json.loads((root / sec['spec']).read_text(encoding='utf-8'))
+        if isinstance(sec['spec'], dict):
+            spec = sec['spec']
+        else:  # a spec file: under root, or else in the repository of this tool (a merge rerun on a copied tree)
+            path = root / sec['spec'] if (root / sec['spec']).exists() else Path(__file__).resolve().parents[2] / sec['spec']
+            spec = json.loads(path.read_text(encoding='utf-8'))
         sec = dict(sec, spec=spec)
         split(root, spec)
         mine = [x for x in SECTIONS if x['file'] == target]
@@ -259,7 +303,11 @@ def merge(root, mspec):
         secs.append(dict(mine[0], prefix=sec['prefix']))
     by_name = {}
     for k, x in enumerate(secs):
-        for n, b in x['defs']:
+        x['macros'] = {m.group(1): m.group(0) for m in DEFINE.finditer(x['preamble'])}
+        need = needed_macros(x['macros'], ''.join(b for _, b in x['defs']) + x['body'])
+        x['macros'] = {n: l for n, l in x['macros'].items() if n in need}
+        # the macros take part in the renames like the items: a function that names a macro of another value differs
+        for n, b in list(x['defs']) + list(x['macros'].items()):
             by_name.setdefault(n, []).append((k, b))
     rename = [dict() for _ in secs]
 
@@ -288,18 +336,16 @@ def merge(root, mspec):
                 lines_q.append(l)
     defs_out, seen, body = [], set(), ''
     for k, x in enumerate(secs):
-        used = set(re.findall(r'\b\w+\b', code_only(''.join(b for _, b in x['defs']) + x['body'])))
-        for l in re.findall(r'^#define [^\n]*(?:\\\n[^\n]*)*', x['preamble'], re.M):
-            name = re.match(r'#define (\w+)', l).group(1)
-            if name not in used:
-                continue  # a macro of another part of the source
+        for name, l in x['macros'].items():
+            nn = rename[k].get(name, name)
+            if nn in seen:
+                continue  # the same macro, the same value, from an earlier section
+            seen.add(nn)
+            l = l.replace('#define ' + name, '#define ' + nn, 1) if nn != name else l
             for o, n in rename[k].items():
-                l = in_code(l, r'(?<![\w.>])%s\b' % re.escape(o), n)
-            if any(re.match(r'#define %s\b' % re.escape(name), m) for m in macros) and l not in macros:
-                rename[k][name] = x['prefix'] + name
-                l = l.replace('#define ' + name, '#define ' + x['prefix'] + name, 1)
-            if l not in macros:
-                macros.append(l)
+                if o != name:
+                    l = in_code(l, r'(?<![\w.>])%s\b' % re.escape(o), n)
+            macros.append(l)
         def ren(text, k=k):
             for o, n in rename[k].items():
                 text = in_code(text, r'(?<![\w.>])%s\b' % re.escape(o), n)
@@ -337,8 +383,11 @@ def split(root, spec):
     pre, defs, main_item = [], [], None
     first_def = next(s for k, s, e in items if k == 'item')
     pre.append(text[head_end:first_def].rstrip('\n') + '\n')  # the includes and macros before the first item, as written
+    gap, prev_end = {}, head_end  # whether a blank line stood before an item in the source (kept in the parts)
     for kind, s, e in items:
         body = text[s:e]
+        blank_before = '\n\n' in text[prev_end - 1:s] if s > prev_end - 1 else False
+        prev_end = e
         if kind == 'pp':
             if s >= first_def:
                 if not re.match(r'\s*#\s*(define|undef)\b', re.sub(r'/\*.*?\*/', '', body, flags=re.S)):
@@ -349,6 +398,7 @@ def split(root, spec):
             main_item = body
         else:
             defs.append((item_name(body), body))
+            gap[item_name(body)] = blank_before
     if main_item is None:
         raise Refused('no main')
     names = [n for n, _ in defs]
@@ -417,16 +467,23 @@ def split(root, spec):
         if not m:
             raise Refused('part file %r' % part['file'])
         ctest = 'duoforge.%s.%s' % (m.group(1), m.group(2))
-        # a part that stays the source (its file and name) keeps the source's own comment
+        # a part that stays the source (its file and name) keeps the source's own comment, with the replacements it lists
         header = text[:head_end] if part.get('keep_header') else comment(ctest, part['header'])
+        for old, new in part.get('header_replace', []):
+            if old not in header:
+                raise Refused('%s: header_replace: %r is not in the comment' % (part['file'], old[:40]))
+            header = header.replace(old, new)
         preamble = ''.join(pre)
+        all_macros = {m.group(1): m.group(0) for m in DEFINE.finditer(preamble)}
+        part_code = ''.join(b for n, b in defs if n in need and n not in provided) + body
+        preamble = drop_unused_defines(preamble, needed_macros(all_macros, part_code))
         if sup_header and need & set(provided):
             quoted = list(re.finditer(r'^#include "([^"]+)"\n', preamble, re.M))
             after = [m for m in quoted if m.group(1) < sup_header]  # in the sorted place among the quoted includes
             at = after[-1].end() if after else quoted[0].start()
             preamble = preamble[:at] + '#include "%s"\n' % sup_header + preamble[at:]
-        defs_text = ''.join('\n' + b.lstrip('\n') if not b.startswith('\n') else b
-                            for n, b in defs if n in need and n not in provided)
+        chosen = [(n, b) for n, b in defs if n in need and n not in provided]
+        defs_text = ''.join(('\n' if k == 0 or gap.get(n, True) else '') + b.lstrip('\n') for k, (n, b) in enumerate(chosen))
         new_main = main_item[:main_item.index('{') + 1] + mb[:decl_end].replace(begin.group(1), ctest) + body + mb[end.start():] + '}\n'
         code = defs_text + '\n' + new_main.lstrip('\n')
         for o, n in provided.items():  # the header's names: a function where it is called, a type as a word

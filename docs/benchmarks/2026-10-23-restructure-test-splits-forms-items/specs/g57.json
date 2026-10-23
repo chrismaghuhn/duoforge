@@ -18,7 +18,13 @@
     "test_unmodelled_bounces_are_refused",
     "test_ghost_curse_executes"
    ],
-   "keep_header": true
+   "keep_header": true,
+   "header_replace": [
+    [
+     " step G57 of the content expansion, Magic Bounce and the Mega Stones Absolite and Sablenite\n * (decision 0015, entry 5bg).",
+     " step G57 of the content expansion, Magic Bounce (decision 0015, entry 5bg); its Mega\n * Stones Absolite and Sablenite are checked in tests/forms/test_mega_stones.c."
+    ]
+   ]
   },
   {
    "file": "forms/test_mega_stones.c",

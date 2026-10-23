@@ -13,7 +13,6 @@
 #include <string.h>
 
 #include <duoforge/duoforge.h>
-
 #include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
@@ -24,8 +23,6 @@
 #include "support/conformance_replay.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-#define TAPE_MAX 64u
-
 /* The events of one step of a battle with the reference's tape, player 0's view; returns the engine's status. */
 static duoforge_status step_events(const duoforge_context *ctx, duoforge_battle *b, const df_conf_step *st,
                                    duoforge_event *events, uint32_t *count)

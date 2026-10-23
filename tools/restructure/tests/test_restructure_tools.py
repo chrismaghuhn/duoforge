@@ -1,5 +1,6 @@
 """tools/restructure: fn_diff's normalisation and clone groups, callgrind_gate's parser and clone sums, and the rules of
 test_audit's rename table, offline."""
+import json
 import os
 import subprocess
 import sys
@@ -375,7 +376,6 @@ class SplitTest(unittest.TestCase):
                                               'sections': [{'spec': one, 'prefix': 'first_'}, {'spec': two, 'prefix': 'second_'}]})
         self.assertEqual(ctest, 'duoforge.moves.both')
         for name in ('first_twice', 'second_twice', 'first_check_one', 'second_check_one'):
-            self.assertIn('static ', text)
             self.assertRegex(text, r'\b%s\(' % name)
         self.assertIn('static void check_two(df_test *t)', text)  # only the first section has it: no prefix
         self.assertIn('    { /* first */\n        first_check_one(&t);\n        check_two(&t);\n    }\n    { /* second */\n        second_check_one(&t);\n    }\n',
@@ -389,6 +389,72 @@ class SplitTest(unittest.TestCase):
         _, text = split_test.merge(root, {'file': 'moves/test_both.c', 'header': 'both',
                                           'sections': [{'spec': same, 'prefix': 'first_'}, {'spec': three, 'prefix': 'third_'}]})
         self.assertEqual(text.count('static unsigned twice(unsigned x)'), 1)  # the same helper in both: kept once, not renamed
+
+    def merge_tree(self, sources):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / 'tests/moves').mkdir(parents=True)
+        for name, text in sources.items():
+            (root / 'tests/moves' / name).write_text(text, encoding='utf-8')
+        return root
+
+    def test_merge_tells_sections_apart_by_their_macros(self):
+        """Two identical functions that name a macro of two values stay two (the review's case): each section keeps its value."""
+        def source(n, value):
+            return SOURCE.replace('pool_g999', n).replace('#include "support/check.h"\n', '#include "support/check.h"\n\n#define BASE %su\n#define LIMIT (BASE + 1u)\n' % value).replace(
+                'DF_CHECK(t, twice(1u) == 2u);', 'DF_CHECK(t, twice(1u) <= LIMIT);')
+        root = self.merge_tree({'test_pool_g998.c': source('pool_g998', 1), 'test_pool_g997.c': source('pool_g997', 7)})
+        spec = lambda n: {'source': 'moves/test_%s.c' % n, 'parts': [{'file': 'moves/test_both.c', 'calls': ['check_one', 'check_two'], 'header': 's'}]}
+        _, text = split_test.merge(root, {'file': 'moves/test_both.c', 'header': 'both', 'sections': [
+            {'spec': spec('pool_g998'), 'prefix': 'a_'}, {'spec': spec('pool_g997'), 'prefix': 'b_'}]})
+        self.assertIn('#define a_BASE 1u', text)
+        self.assertIn('#define b_BASE 7u', text)
+        self.assertIn('#define a_LIMIT (a_BASE + 1u)', text)  # a macro that only another macro names is kept, renamed
+        self.assertIn('#define b_LIMIT (b_BASE + 1u)', text)
+        self.assertIn('DF_CHECK(t, twice(1u) <= a_LIMIT);', text)  # twice is the same in both: shared
+        self.assertIn('DF_CHECK(t, twice(1u) <= b_LIMIT);', text)
+        self.assertIn('    { /* b */\n        b_check_one(&t);', text)
+        same = self.merge_tree({'test_pool_g998.c': source('pool_g998', 1), 'test_pool_g997.c': source('pool_g997', 1)})
+        _, text = split_test.merge(same, {'file': 'moves/test_both.c', 'header': 'both', 'sections': [
+            {'spec': spec('pool_g998'), 'prefix': 'a_'}, {'spec': spec('pool_g997'), 'prefix': 'b_'}]})
+        self.assertEqual(text.count('#define BASE 1u'), 1)  # the same macro of the same value: once, as it was
+        self.assertEqual(text.count('static void check_one('), 1)
+
+    def test_a_part_keeps_only_the_macros_it_needs(self):
+        src = SOURCE.replace('#include "support/check.h"\n', '#include "support/check.h"\n\n/* only check_two\'s */\n#define TWO 2u\n').replace(
+            'DF_CHECK(t, twice(2u) == 4u);', 'DF_CHECK(t, twice(TWO) == 4u);')
+        out = self.run_split({'parts': self.TWO}, source=src)
+        self.assertNotIn('TWO', out['moves/test_one.c'])
+        self.assertNotIn("only check_two's", out['moves/test_one.c'])
+        self.assertIn('#define TWO 2u', out['moves/test_two.c'])
+
+    def test_names_of_anonymous_enums_and_tagged_structs(self):
+        self.assertEqual(split_test.item_name('enum { LO, HI, KINDS };\n'), 'LO')
+        self.assertEqual(split_test.item_name('struct pair {\n    unsigned base;\n};\n'), 'pair')
+        self.assertEqual(split_test.item_name('static const struct pair pairs[] = {{1u}};\n'), 'pairs')
+        self.assertEqual(split_test.enumerators([('LO', 'enum { LO, HI = 3, KINDS };\n')]), {'LO': 'LO', 'HI': 'LO', 'KINDS': 'LO'})
+
+    def test_except_and_keep_header(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / 'tests/moves').mkdir(parents=True)
+        (root / 'tests/moves/test_pool_g999.c').write_text(SOURCE, encoding='utf-8')
+        spec = Path(tmp.name) / 'spec.json'
+        spec.write_text(json.dumps({'source': 'moves/test_pool_g999.c', 'parts': [
+            {'file': 'moves/test_pool_g999.c', 'calls': ['check_one'], 'keep_header': True},
+            {'file': 'moves/test_two.c', 'calls': ['check_two'], 'header': 'two'}]}), encoding='utf-8')
+        with open(os.devnull, 'w') as sink:
+            stdout, sys.stdout = sys.stdout, sink
+            try:
+                self.assertEqual(split_test.main([str(spec), '--root', str(root), '--except', 'moves/test_two.c']), 0)
+            finally:
+                sys.stdout = stdout
+        kept = (root / 'tests/moves/test_pool_g999.c').read_text(encoding='utf-8')
+        self.assertTrue(kept.startswith('/*\n * duoforge.state.pool_g999 (white-box): two subjects.\n */\n'))
+        self.assertNotIn('check_two', kept)
+        self.assertFalse((root / 'tests/moves/test_two.c').exists())
 
     def test_parts_of_a_split_in_the_table(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -416,6 +482,9 @@ class SplitTest(unittest.TestCase):
                           table(planned, part % ('one', 'one', 'one'), part % ('two', 'two', 'two')))
             self.assertIn('moves/test_pool_g999.c: the new file moves/test_one.c is in two rows',
                           table(split, part % ('one', 'one', 'one'), part % ('one', 'one', 'one')))
+            merge = 'moves/test_pool_g998.c\tduoforge.state.pool_g998\tmerge\tmoves/test_one.c\tduoforge.moves.one\tdone\tG998'
+            self.assertIn('moves/test_pool_g999.c: two part rows of one source name moves/test_one.c',
+                          table(split, merge, part % ('one', 'one', 'one'), part % ('one', 'one', 'one')))
             self.assertIn('moves/test_pool_g999.c: a part row is written when its file is (state done)',
                           table(split, part % ('one', 'one', 'one'), (part % ('two', 'two', 'two')).replace('\tdone\t', '\tplanned\t')))
             (root / 'tests/items').mkdir()

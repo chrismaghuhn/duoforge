@@ -1,6 +1,6 @@
 /*
- * duoforge.abilities.magic_bounce (white-box): step G57 of the content expansion, Magic Bounce and the Mega Stones Absolite and Sablenite
- * (decision 0015, entry 5bg).
+ * duoforge.abilities.magic_bounce (white-box): step G57 of the content expansion, Magic Bounce (decision 0015, entry 5bg); its Mega
+ * Stones Absolite and Sablenite are checked in tests/forms/test_mega_stones.c.
  *
  * Magic Bounce (data/abilities.ts:2437-2464) bounces a reflectable move that is aimed at its holder, or a hazard that a foe
  * sets on the holder's side, back at the move's user. The bounced run is in src/combat/turn.c (dfi_bounce). The reflectable
@@ -277,7 +277,6 @@ static duoforge_battle *start(df_test *t, const duoforge_context *ctx, const df_
  * (cause ABILITY, id2 = Magic Bounce + 1) of both players' events. */
 /* The events of the last turn() (player 0's copy first), for the tests that read the lines themselves. */
 static duoforge_event g57_events[2][64];
-
 static uint32_t g57_event_count;
 
 static duoforge_status turn(const duoforge_context *ctx, duoforge_battle *b, duoforge_slot_command cmd[2][2], uint32_t *bounces)
