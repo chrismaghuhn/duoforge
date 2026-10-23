@@ -174,4 +174,45 @@ static inline void df_conf_run_step(const duoforge_context *ctx, duoforge_battle
     out->count = buffers[0].count;
 }
 
+/* The replay of df_conf_replay_battle without its message: each step's status checked and its tape used. */
+static inline duoforge_battle *df_conf_replay_quiet(df_test *t, const duoforge_context *ctx, const df_conf_battle *cb, uint32_t steps)
+{
+    duoforge_battle_setup setup;
+    df_conf_build_setup(cb, &setup);
+    duoforge_battle *b = NULL;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return NULL;
+    }
+    for (uint32_t si = 0u; si < steps; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        df_conf_bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0u;
+        if (!DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res) ==
+                             DUOFORGE_OK) ||
+            !DF_CHECK_EQ_U64(t, used, st->tape_len)) {
+            duoforge_battle_destroy(b);
+            return NULL;
+        }
+    }
+    return b;
+}
+
+/* The events of one recorded step with the reference's tape, player 0's view; returns the engine's status. */
+static inline duoforge_status df_conf_step_events(const duoforge_context *ctx, duoforge_battle *b, const df_conf_step *st,
+                                        duoforge_event *events, uint32_t *count)
+{
+    duoforge_decision_bundle bd;
+    df_conf_bundle_of(st, b, &bd);
+    duoforge_step_result res;
+    uint32_t used = 0u;
+    static duoforge_event other[DUOFORGE_MAX_EVENTS];
+    duoforge_event_buffer buffers[2] = {{events, DUOFORGE_MAX_EVENTS, 0u}, {other, DUOFORGE_MAX_EVENTS, 0u}};
+    const duoforge_status s =
+        dfi_battle_step_events_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res, buffers);
+    *count = buffers[0].count;
+    return s;
+}
+
 #endif
