@@ -125,8 +125,8 @@ READERS = {
     'ladder_timer_max_per_turn_s': number(r'^const MAX_TURN_TIME = (\d+);$'),
     'ladder_timer_max_first_turn_s': number(r'^const MAX_TURN_TIME = (\d+);$'),
     'ladder_timeout_auto_choose': lambda q: False if q == 'timeoutAutoChoose: false,' else None,
-    # The facts of gen9ou: the base Standard (data/rulesets.ts, the gen9 mod has none of its own), the format's own clauses, the singles minimum
-    # team size, the level and EV limits of the rule table's defaults and Terastallization.
+    # The facts of gen9ou: the base Standard (data/rulesets.ts, the gen9 mod has none of its own), the format's own
+    # clauses, the singles minimum team size, the level and EV limits of the rule table's defaults and Terastallization.
     'standard_clauses': quoted_items,
     'evasion_items_clause': present("'Evasion Items Clause'"),
     'evasion_moves_clause': present("'Evasion Moves Clause'"),
@@ -425,7 +425,11 @@ def check_gen9ou(fmt, line):
              ('nickname_clause', ('data/rulesets.ts', 25)), ('ohko_clause', ('data/rulesets.ts', 25)),
              ('evasion_items_clause', ('data/rulesets.ts', 25)), ('evasion_moves_clause', ('data/rulesets.ts', 25)),
              ('evasion_abilities_clause', ('config/formats.ts', 76)), ('sleep_moves_clause', ('config/formats.ts', 76)),
-             ('sleep_clause_mod_removed', ('config/formats.ts', 76)))):
+             ('sleep_clause_mod_removed', ('config/formats.ts', 76)),
+             # Quotes that a reader would also accept on another line ("1;", "|| 100;"): their lines are fixed here.
+             ('min_team_size_singles', ('sim/dex-formats.ts', 274)), ('max_level', ('sim/dex-formats.ts', 292)),
+             ('ev_total_max', ('sim/dex-formats.ts', 344)), ('ev_max', ('sim/team-validator.ts', 1321)),
+             ('terastallization', ('sim/battle-actions.ts', 1928)))):
         pin = rules[name]['pin']
         if pin[0] != path or pin[1] != rule_line or rules[name]['value'] in (None, False):
             fail('fact %s is not the rule of %s:%d' % (name, path, rule_line))
