@@ -1,27 +1,10 @@
 /*
- * duoforge.state.pool_g65 (white-box): step G65 of the content expansion (decision 0015, item 5bk, simple modifier abilities),
- * POOL build.
+ * duoforge.abilities.trace_water_bubble (white-box): step G65 of the content expansion (decision 0015 entry 5bk), Trace copying
+ * Water Bubble onto a burned holder is refused (E_UNSUPPORTED) and the battle is unchanged, as Limber's is: the Water Bubble
+ * onUpdate that would cure the burn is not modelled. The battle is the recorded ac1_trace_switch with both foes given Water
+ * Bubble as their ability now, and Gardevoir burned when it comes back in.
  *
- * Five engine rows, read by id in combat/turn.c:
- *   Unaware       onAnyModifyBoost: the stat stages read for the other side's attacks (the holder as target zeroes the user's
- *                 attack-side reads, the holder as user the target's defence-side reads, and the accuracy and evasion of the draw)
- *   Marvel Scale  onModifyDef at priority 6: x1.5 on the Defence of a holder with a status
- *   Water Bubble  onSourceModifyAtk/SpA x0.5 for Fire at the holder, onModifyAtk/SpA x2 for its Water moves, the burn refused
- *   Reckless      onBasePower at priority 23: x4915/4096 for a move with a recoil (not Struggle, not the crash moves)
- *   Super Luck    onModifyCritRatio +1
- *
- * The recorded battles (g65_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data, which compares every
- * event, HP and draw with the reference. Here are the facts that they do not show by themselves:
- *   - the marks and the handler columns: the five rows are marked engine rows (family NONE, handler NONE), Mold Breaker, which
- *     would ignore a breakable ability, is not marked and stays UNMODELLED, and Reckless's crash clause is not modelled;
- *   - the rows the step relies on: Struggle has no recoil (its struggleRecoil is a flag), the recoil moves carry their fraction,
- *     and the crash moves (Axe Kick, High Jump Kick, Supercell Slam) are UNMODELLED, so no Reckless boost is reachable through them;
- *   - the four unmodified reads of the pin (getStat(..., true), which runs no ModifyBoost: moves.ts:10367 Light That Burns the
- *     Sky, :13346 Photon Geyser, :16230 Shell Side Arm, abilities.ts:1022 Download): Shell Side Arm is the only one in the pool,
- *     and it is an UNMODELLED row, so no read of it reaches Unaware; the other three are not pool rows;
- *   - Trace copying Water Bubble onto a burned holder is refused (E_UNSUPPORTED) and the battle is unchanged, as Limber's is:
- *     the Water Bubble onUpdate that would cure the burn is not modelled. The battle is the recorded ac1_trace_switch with
- *     both foes given Water Bubble as their ability now, and Gardevoir burned when it comes back in.
+ * Split by subject from the test of step G65 (restructure step 6e; tests/renames.tsv maps the old name).
  */
 #include <stdio.h>
 #include <string.h>
@@ -38,42 +21,6 @@
 #include "support/pool.h"
 
 #define AB(name) (1u + DFI_ABILITY_##name)
-
-/* ---- the marks, the handler columns and the rows that stay out */
-static void check_facts(df_test *t)
-{
-    static const uint32_t abilities[] = {DFI_ABILITY_UNAWARE, DFI_ABILITY_MARVELSCALE, DFI_ABILITY_WATERBUBBLE,
-                                         DFI_ABILITY_RECKLESS, DFI_ABILITY_SUPERLUCK};
-    for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
-        DF_CHECK(t, dfi_support.abilities[abilities[i]] != 0u);
-        DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[abilities[i]], DFI_HANDLER_NONE); /* an engine row: read by id */
-        DF_CHECK_EQ_U64(t, dfi_pool_ability_family[abilities[i]].family, DFI_ABILITY_FAMILY_NONE);
-    }
-    /* Mold Breaker (and so Teravolt and Turboblaze, which are not in the pool) would ignore the breakable flag of Unaware, Marvel
-     * Scale and Water Bubble: it is not marked, and its row is UNMODELLED, so no team with it is played. */
-    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_MOLDBREAKER], 0u);
-    DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_MOLDBREAKER], DFI_HANDLER_UNMODELED);
-}
-
-/* ---- the moves that Reckless's recoil clause reads, and the ones it must not reach */
-static void check_recoil_rows(df_test *t)
-{
-    /* the recoil fraction of the move data: numerator and denominator (sim/battle-actions.ts applyRecoilDamage) */
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_BRAVEBIRD].recoil[0], 33u);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_BRAVEBIRD].recoil[1], 100u);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_HEADSMASH].recoil[1], 2u);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_WILDCHARGE].recoil[1], 4u);
-    /* Struggle has no move.recoil (struggleRecoil is a flag, moves.ts:18228): Reckless does not boost it */
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_STRUGGLE].recoil[1], 0u);
-    /* the crash moves (hasCrashDamage) are UNMODELLED: no Reckless boost reaches them, and the generator refuses a modelled one
-     * while Reckless has no crash clause (pool_families.js checkG65) */
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_AXEKICK].special, DFI_SPECIAL_UNMODELED);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_HIGHJUMPKICK].special, DFI_SPECIAL_UNMODELED);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERCELLSLAM].special, DFI_SPECIAL_UNMODELED);
-    /* Shell Side Arm reads the unmodified Attack and Special Attack (sim/battle-actions.ts getStat(..., true), moves.ts:16230):
-     * the row is UNMODELLED, so no Unaware stage is zeroed in that read. Once it is modelled, its read is to be exempt. */
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SHELLSIDEARM].special, DFI_SPECIAL_UNMODELED);
-}
 
 /* ---- Trace copying Water Bubble onto a burned holder: refused, the battle unchanged */
 static const df_conf_battle *find(const char *name)
@@ -198,10 +145,8 @@ static void check_trace_refusal(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g65");
+    df_test_begin(&t, "duoforge.abilities.trace_water_bubble");
     duoforge_context *kp = df_make_context(&df_config_pool);
-    check_facts(&t);
-    check_recoil_rows(&t);
     if (kp != NULL) {
         check_trace_refusal(&t, kp);
         duoforge_context_destroy(kp);

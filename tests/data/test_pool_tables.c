@@ -1792,7 +1792,7 @@ int main(void)
      * what it does not implement must not be in the tables. Aura Break (3072/4096 instead of 5448/4096) and Dark Aura
      * are in no pool ability, and Mold Breaker (which ignores the breakable Flower Veil) is not either. White Smoke is marked since
      * A2a (decision 0015 entry 5dy): a Grass holder made by Skill Swap next to a Flower Veil holder is refused (dfi_boost,
-     * tests/abilities/test_pool_a2a.c). */
+     * tests/abilities/test_flower_veil_drop_refusals.c). */
     {
         static const char *const absent[] = {"aurabreak", "darkaura", "moldbreaker", "teravolt", "turboblaze",
                                              "neutralizinggas", "cleanbody"};

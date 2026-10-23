@@ -6002,7 +6002,7 @@ static duoforge_status dfi_accuracy_targets(dfi_run *r, uint32_t user, const uin
                  * chainModify(0.5) while the target has the confusion volatile (confusion_turns), for a numeric accuracy only (the
                  * chain is not reached for an accuracy of true, base_accuracy 0). It is in the priority -1 group with Compound Eyes
                  * (the user's); 2048 is dyadic, so the two orders give the same chain from 4096 and from Gravity's 6840
-                 * (tests/abilities/test_pool_a2a.c computes both). The target's one ability: never with Snow Cloak or Sand Veil. */
+                 * (tests/abilities/test_tangled_feet.c computes both). The target's one ability: never with Snow Cloak or Sand Veil. */
                 if (base_accuracy != 0u && dfi_pos(b, targets[i])->confusion_turns != 0u &&
                     dfi_ability(r->b, acc_target, DFI_ABILITY_TANGLEDFEET)) {
                     acc_ok = acc_ok && dfi_chain_modify(acc_chain, 2048u, &acc_chain);
