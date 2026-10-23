@@ -144,11 +144,22 @@ jobs:
   # the learner's JAX test (CPU) and the reference tests against the pinned
   # Showdown (data regeneration, arithmetic, every committed battle trace, the
   # worker and the differential tools).
+  #
+  # The tests run in three parallel shards by CTest label (the learner's JAX tests alone took about 13 minutes each
+  # and the single job about 53); the gate job joins the shard logs and checks that every test ran exactly once and
+  # that no Python or reference test was skipped.
   linux-full:
-    name: Linux / gcc / Release / Python, JAX, reference
+    name: Linux / gcc / Release / Python, JAX, reference (${{ matrix.shard }})
     if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { shard: learn, select: "-L '^learn$'" }
+          - { shard: slow, select: "-L '^slow$' -LE '^learn$'" }
+          - { shard: rest, select: "-LE '^(learn|slow)$'" }
     env:
       CC: gcc
       CXX: g++
@@ -204,19 +215,51 @@ jobs:
         run: |
           sudo locale-gen de_DE.UTF-8
           locale -a | grep -qx 'de_DE.utf8'
-      - name: Test
+      - name: Test (${{ matrix.shard }})
         run: |
           set -o pipefail
-          ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 2>&1 | tee ctest.log
-      - name: No Python or reference test skipped
-        # These tests report themselves skipped when their interpreter or
-        # checkout is missing; in this job that is a broken setup, not a pass.
+          ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 \
+            ${{ matrix.select }} 2>&1 | tee "ctest-${{ matrix.shard }}.log"
+      - name: Inventory
+        if: always()
+        run: ctest --test-dir build --show-only=json-v1 > "ctest-inventory-${{ matrix.shard }}.json"
+      - name: Keep the shard log for the gate
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2 (verified via git ls-remote 2026-10-23)
+        with:
+          name: linux-full-${{ matrix.shard }}
+          path: |
+            ctest-${{ matrix.shard }}.log
+            ctest-inventory-${{ matrix.shard }}.json
+          retention-days: 3
+
+  linux-full-gate:
+    name: Linux / gcc / Release / Python, JAX, reference
+    # These tests report themselves skipped when their interpreter or checkout is missing; in the full job that is a
+    # broken setup, not a pass. The shard logs are joined: every test of the inventory must have run exactly once.
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
+    needs: linux-full
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Shard results
+        run: test "${{ needs.linux-full.result }}" = success
+      - name: Shard logs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0 (verified via git ls-remote 2026-10-23)
+        with:
+          pattern: linux-full-*
+          merge-multiple: true
+      - name: No Python or reference test skipped, every test ran once
         run: |
-          ctest --test-dir build --show-only=json-v1 > "$RUNNER_TEMP/ctest-inventory.json"
+          cmp ctest-inventory-learn.json ctest-inventory-rest.json
+          cmp ctest-inventory-slow.json ctest-inventory-rest.json
+          cat ctest-learn.log ctest-slow.log ctest-rest.log > ctest.log
           python tools/ci/check_ctest_labels.py \
-            --inventory "$RUNNER_TEMP/ctest-inventory.json" --log ctest.log \
+            --inventory ctest-inventory-rest.json --log ctest.log \
             --no-skip-label ci-no-skip --present-label ci-linux-proof \
-            --present-count 25 --nonempty-label ci-ps-trace
+            --present-count 25 --nonempty-label ci-ps-trace --require-all
 
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan

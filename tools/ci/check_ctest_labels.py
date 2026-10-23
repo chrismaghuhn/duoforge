@@ -10,7 +10,7 @@ import re
 
 
 def check(inventory, log, no_skip_label, exclude_label, present_label,
-          present_count, nonempty_label):
+          present_count, nonempty_label, require_all=False):
     labels = {
         test["name"]: set(next((prop["value"] for prop in test.get("properties", [])
                                if prop["name"] == "LABELS"), []))
@@ -36,6 +36,18 @@ def check(inventory, log, no_skip_label, exclude_label, present_label,
     skipped = sorted(name for name in required if "***Skipped" in rows.get(name, ""))
     missing = sorted(present - rows.keys())
     traces = sorted(nonempty & rows.keys())
+    if require_all:
+        # The log may join the logs of several shards: every test of the inventory must have run in one of them,
+        # exactly once, so a shard selection that drops or doubles a test fails here.
+        counts = {}
+        for line in log.splitlines():
+            match = re.search(r"Test\s+#\s*\d+:\s+(\S+)", line)
+            if match:
+                counts[match.group(1)] = counts.get(match.group(1), 0) + 1
+        missing = sorted(set(labels) - counts.keys())
+        doubled = sorted(name for name, count in counts.items() if count > 1)
+        if missing or doubled:
+            raise ValueError(f"not run in any shard={missing}; run in more than one shard={doubled}")
     if skipped or missing or not traces:
         raise ValueError(f"skipped={skipped}; missing={missing}; labelled traces={len(traces)}")
     return len(required), len(present), len(traces)
@@ -50,12 +62,14 @@ def main():
     parser.add_argument("--present-label", required=True)
     parser.add_argument("--present-count", type=int, required=True)
     parser.add_argument("--nonempty-label", required=True)
+    parser.add_argument("--require-all", action="store_true",
+                        help="every test of the inventory must appear exactly once in the (joined) log")
     args = parser.parse_args()
     try:
         counts = check(json.loads(args.inventory.read_text(encoding="utf-8")),
                        args.log.read_text(encoding="utf-8-sig"), args.no_skip_label,
                        args.exclude_label, args.present_label, args.present_count,
-                       args.nonempty_label)
+                       args.nonempty_label, args.require_all)
     except ValueError as error:
         parser.exit(1, f"CTest label gate: {error}\n")
     print(f"CTest label gate: {counts[0]} skip-guard tests, "
