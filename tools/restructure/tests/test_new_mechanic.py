@@ -15,7 +15,9 @@ import new_mechanic  # noqa: E402
 
 FILES = ['tests/moves/tests.cmake', 'tests/abilities/tests.cmake', 'tests/interactions/tests.cmake',
          'docs/mechanics/TEMPLATE.md', 'src/rng/draw.h', 'src/rng/draw_sites.def', 'src/combat/residual_order.h',
-         'src/combat/residual_kinds.def', 'tools/reference/trace_to_c.py', 'docs/process/NUMBERS.md']
+         'src/combat/residual_kinds.def', 'tools/reference/trace_to_c.py']
+# A fixed block row, so that the cases do not follow the HS's current blocks.
+NUMBERS = '| Family | Owner |\n|---|---|\n| Decision 0015 entry ids | Content: 5ea-5ez; Fuzz: 5fa-5fm; HS: the rest | notes |\n'
 
 
 class NewMechanic(unittest.TestCase):
@@ -25,6 +27,17 @@ class NewMechanic(unittest.TestCase):
         for rel in FILES:
             (self.root / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(REPO / rel, self.root / rel)
+        (self.root / 'docs/process').mkdir(parents=True)
+        (self.root / 'docs/process/NUMBERS.md').write_text(NUMBERS, encoding='utf-8')
+        # The first free draw site below the count and the first free residual kind of the copied files: the cases take
+        # those, whatever the lanes have taken by then.
+        sites = (self.root / 'src/rng/draw_sites.def').read_text(encoding='utf-8')
+        used = {int(v) for v in re.findall(r'^DFI_DRAW_SITE\([A-Z0-9_]+, (\d+)u,', sites, re.M)}
+        self.count = int(re.search(r'^#define DFI_SITE_COUNT (\d+)u', (self.root / 'src/rng/draw.h').read_text(encoding='utf-8'),
+                                   re.M).group(1))
+        self.site = min(v for v in range(1, self.count) if v not in used)
+        kinds = (self.root / 'src/combat/residual_kinds.def').read_text(encoding='utf-8')
+        self.kind = max(int(v) for v in re.findall(r'^DFI_RES_KIND\([A-Z0-9_]+, (\d+)u,', kinds, re.M)) + 1
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -42,7 +55,8 @@ class NewMechanic(unittest.TestCase):
 
     def test_a_scaffold_writes_the_test_its_registration_the_doc_and_the_numbers(self):
         code, out, err = self.run_tool('moves', 'dummy_scaffold', '--id', '5zz', '--title', 'Dummy scaffold mechanic',
-                                       '--step', 'X1', '--draw-site', 'DUMMY_ROLL=27', '--residual-kind', 'DUMMY=27')
+                                       '--step', 'X1', '--draw-site', 'DUMMY_ROLL=%d' % self.site,
+                                       '--residual-kind', 'DUMMY=%d' % self.kind)
         self.assertEqual((code, err), (0, ''))
         test = (self.root / 'tests/moves/test_dummy_scaffold.c').read_text(encoding='utf-8')
         self.assertIn('df_test_begin(&t, "duoforge.moves.dummy_scaffold");', test)
@@ -59,18 +73,19 @@ class NewMechanic(unittest.TestCase):
         self.assertEqual(sum(1 for l in doc if l.startswith('5zz. **')), 1)
         self.assertNotIn('## Support', doc)  # optional, added with its support line by hand
         sites = (self.root / 'src/rng/draw_sites.def').read_text(encoding='utf-8')
-        self.assertIn('DFI_DRAW_SITE(POISON_POINT, 26u, "poison-point")\nDFI_DRAW_SITE(DUMMY_ROLL, 27u, "dummy-roll")\n'
-                      'DFI_DRAW_SITE(PARTIAL_TRAP_TURNS, 32u', sites)  # in id order
+        values = [int(v) for v in re.findall(r'^DFI_DRAW_SITE\([A-Z0-9_]+, (\d+)u,', sites, re.M)]
+        self.assertEqual(values, sorted(values))  # the new line in id order
+        self.assertIn('DFI_DRAW_SITE(DUMMY_ROLL, %du, "dummy-roll")' % self.site, sites)
         self.assertRegex((self.root / 'src/rng/draw.h').read_text(encoding='utf-8'),
-                         r'#define DFI_SITE_DUMMY_ROLL 27u /\*[^\n]*\*/\n#define DFI_SITE_COUNT ')
+                         r'#define DFI_SITE_DUMMY_ROLL %du /\*[^\n]*\*/\n#define DFI_SITE_COUNT ' % self.site)
         kinds = (self.root / 'src/combat/residual_kinds.def').read_text(encoding='utf-8')
-        self.assertTrue(kinds.endswith('DFI_RES_KIND(CURSE, 26u, "curse")\nDFI_RES_KIND(DUMMY, 27u, "dummy")\n'))
-        self.assertIn('#define DFI_RES_DUMMY 27u', (self.root / 'src/combat/residual_order.h').read_text(encoding='utf-8'))
+        self.assertTrue(kinds.endswith('DFI_RES_KIND(DUMMY, %du, "dummy")\n' % self.kind))
+        self.assertIn('#define DFI_RES_DUMMY %du' % self.kind, (self.root / 'src/combat/residual_order.h').read_text(encoding='utf-8'))
         trace = (self.root / 'tools/reference/trace_to_c.py').read_text(encoding='utf-8')
         sites_src = trace[trace.index('\nSITES = {'):]
         sites_src = sites_src[:sites_src.index('}') + 1]
         table = ast.literal_eval(sites_src.strip().split('=', 1)[1].strip())  # the dict literal (comments are tokens, not values)
-        self.assertEqual(table['DUMMY_ROLL'], 27)
+        self.assertEqual(table['DUMMY_ROLL'], self.site)
         self.assertEqual(table, {n: int(v) for n, v in re.findall(r'^DFI_DRAW_SITE\(([A-Z0-9_]+), (\d+)u,', sites, re.M)})
         self.assertEqual(sorted(out.split('\n')[:-1]), sorted('writes ' + p for p in [
             'docs/mechanics/moves/5zz-dummy-scaffold-mechanic.md', 'src/combat/residual_kinds.def',
@@ -100,11 +115,11 @@ class NewMechanic(unittest.TestCase):
             (('moves', 'probe', '--id', '5ea', '--lane', 'Fuzz'), 'outside the Fuzz block'),
             (('moves', 'probe', '--id', '5eb', '--lane', 'HS'), "another lane's block"),
             (('moves', 'probe', '--id', '5eb', '--lane', 'Nobody'), 'has no block'),
-            (('moves', 'probe', '--draw-site', 'DRAG=27'), 'taken'),
+            (('moves', 'probe', '--draw-site', 'DRAG=%d' % self.site), 'taken'),
             (('moves', 'probe', '--draw-site', 'NEW_ROLL=20'), 'taken'),
-            (('moves', 'probe', '--draw-site', 'NEW_ROLL=34'), 'outside 1..33'),
-            (('moves', 'probe', '--draw-site', 'new=27'), 'NAME=NUMBER'),
-            (('moves', 'probe', '--residual-kind', 'CURSE=27'), 'taken'),
+            (('moves', 'probe', '--draw-site', 'NEW_ROLL=%d' % self.count), 'outside 1..%d' % (self.count - 1)),
+            (('moves', 'probe', '--draw-site', 'new=%d' % self.site), 'NAME=NUMBER'),
+            (('moves', 'probe', '--residual-kind', 'CURSE=%d' % self.kind), 'taken'),
             (('moves', 'probe', '--residual-kind', 'NEW=19'), 'taken'),
         ]
         for args, reason in cases:
