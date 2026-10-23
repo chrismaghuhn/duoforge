@@ -15,3 +15,8 @@ add_test(NAME duoforge.lint.test_renames
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/restructure/test_audit.py" "${PROJECT_SOURCE_DIR}" --check)
 duoforge_label_test(duoforge.lint.test_renames quick tools ci-no-skip)
 set_tests_properties(duoforge.lint.test_renames PROPERTIES TIMEOUT 60 ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
+# Restructure step 12: tools/new_mechanic.py on a copy of the files it touches (what a scaffold writes, what it refuses).
+add_test(NAME duoforge.tools.new_mechanic
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/restructure/tests/test_new_mechanic.py")
+duoforge_label_test(duoforge.tools.new_mechanic quick tools ci-no-skip)
+set_tests_properties(duoforge.tools.new_mechanic PROPERTIES TIMEOUT 60 ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")

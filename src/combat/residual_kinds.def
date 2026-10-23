@@ -5,7 +5,7 @@
  * with one number (a duplicate case value is a compile error on every compiler).
  *
  * A line here never changes its number. A new kind takes a free number from the HS register, gets its line here and its
- * #define in residual_order.h. 20-24 are lane B's (HS froze them); free from 27.
+ * #define in residual_order.h (tools/new_mechanic.py writes both). Who hands out which numbers: docs/process/NUMBERS.md.
  */
 DFI_RES_KIND(WEATHER, 1u, "weather")
 DFI_RES_KIND(TERRAIN_END, 2u, "terrain-end")

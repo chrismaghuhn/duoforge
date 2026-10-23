@@ -6,7 +6,8 @@
  *
  * The ids are recorded in fixtures and traces (tools/reference/trace_to_c.py): a line here never changes its id. A new site
  * takes a free id from the HS register (gaps are fine), gets its line here and its #define in draw.h, and DFI_SITE_COUNT stays
- * above every id. Free: 27-31.
+ * above every id (tools/new_mechanic.py writes the line, the #define and the SITES entry of trace_to_c.py). Who hands out
+ * which ids: docs/process/NUMBERS.md.
  */
 DFI_DRAW_SITE(SPEED_TIE, 1u, "speed-tie")
 DFI_DRAW_SITE(ACCURACY, 2u, "accuracy")
