@@ -21,7 +21,6 @@
 #include "support/fixtures.h"
 #include "support/pool.h"
 
-
 /* Telepathy: the Earthquake of Garchomp (side 0, position 0) in the second turn spreads to Medicham (side 0, position 1), which
  * Telepathy stops: its HP is unchanged (the Earthquake would take it without the ability). */
 static void check_telepathy(df_test *t, const duoforge_context *ctx)

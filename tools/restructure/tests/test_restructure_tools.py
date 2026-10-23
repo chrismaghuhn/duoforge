@@ -460,17 +460,23 @@ class SplitTest(unittest.TestCase):
         pre = ('#include <stdio.h>\n\n#include "support/check.h"\n\n/* the cap */\n#define CAP 3u\n#define FLOOR 1u\n\n'
                '/* only for the other part */\n#define OTHER 9u\n\n')
         self.assertEqual(split_test.drop_unused_defines(pre, {'CAP', 'FLOOR'}),
-                         '#include <stdio.h>\n\n#include "support/check.h"\n\n/* the cap */\n#define CAP 3u\n#define FLOOR 1u\n\n')
+                         '#include <stdio.h>\n\n#include "support/check.h"\n\n/* the cap */\n#define CAP 3u\n#define FLOOR 1u\n')
         # the comment over a group stays with the define that is kept, and goes when the first define of its group goes alone
         self.assertEqual(split_test.drop_unused_defines(pre, {'FLOOR'}),
-                         '#include <stdio.h>\n\n#include "support/check.h"\n\n/* the cap */\n#define FLOOR 1u\n\n')
-        self.assertEqual(split_test.drop_unused_defines(pre, set()), '#include <stdio.h>\n\n#include "support/check.h"\n\n')
+                         '#include <stdio.h>\n\n#include "support/check.h"\n\n/* the cap */\n#define FLOOR 1u\n')
+        self.assertEqual(split_test.drop_unused_defines(pre, set()), '#include <stdio.h>\n\n#include "support/check.h"\n')
         guarded = '#include <stdio.h>\n\n#define WITH 1\n#if WITH\n#define LIM 3u\n#else\n#define LIM 5u\n#endif\n'
         self.assertEqual(split_test.drop_unused_defines(guarded, {'LIM'}), guarded)  # a conditional: nothing is dropped
         two = '#include <stdio.h>\n\n\n#define X 1u\n#define Y 2u\n'
         self.assertEqual(split_test.drop_unused_defines(two, {'Y'}), '#include <stdio.h>\n\n\n#define Y 2u\n')  # the source's two
         config = '#define DF_CHECK_VERBOSE 1\n#include <stdio.h>\n\n#define X 1u\n'
         self.assertEqual(split_test.drop_unused_defines(config, set()), config)  # a define before an include: kept
+        # a kept define of several lines directly above a dropped one keeps its body (its continuation is no comment)
+        cont = '#include <x.h>\n\n#define A(x) \\\n    ((x) + 1)\n#define B 2\n'
+        self.assertEqual(split_test.drop_unused_defines(cont, {'A'}), '#include <x.h>\n\n#define A(x) \\\n    ((x) + 1)\n')
+        # a define at the end of the preamble goes with its blank line above, so the blank before the first item is single
+        end = '#include <x.h>\n\n#define B 2\n'
+        self.assertEqual(split_test.drop_unused_defines(end, set()), '#include <x.h>\n')
 
     def test_a_part_keeps_its_sources_blank_lines_between_items(self):
         src = SOURCE.replace('/* the first subject */\nstatic void check_one', 'static unsigned zero = 0u;\n/* the first subject */\nstatic void check_one').replace(

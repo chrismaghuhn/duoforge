@@ -22,7 +22,6 @@
 #include "support/fixtures.h"
 #include "support/pool.h"
 
-
 /* ---- the marks, the handler columns and the rows that stay out */
 static void check_facts(df_test *t)
 {

@@ -10,12 +10,12 @@
 - **Macros in `merge()`.** The macros a section needs take part in the comparison and the renames, like the items.
   - The review's case: two identical functions that name a macro of two values were kept as one, and the second section ran the first section's check with the first section's value. They now stay two.
   - A macro that only another macro names is kept.
-- **Spec paths of a merge.** They are read relative to the repository of the merge spec. A missing one is refused instead of looked up elsewhere.
+- **Spec paths of a merge.** They are read relative to the repository of the merge spec. A missing one is refused instead of looked up elsewhere, and so is a merge spec outside any repository.
 - **The docstring** states the order: the merge first, then the splits with `--except`. A rerun needs the sources back from git.
 - **`split()`** keeps only the `#define`s a part needs, line by line.
-  - A comment directly above a dropped define goes only when it stands over that define alone.
-  - Blank lines stay; two that a removal makes adjacent become one.
-  - Nothing is dropped from a preamble that has a preprocessor conditional or a `#define` before an `#include`. A dropped define there could change another one's value without a trace, which the second review found. Such a preamble is kept whole.
+  - A comment directly above a dropped define goes only when it stands over that define alone. Only comment lines count, never the continuation of a kept define above (the third review's case: a kept macro of several lines lost its body).
+  - Blank lines stay; two that a removal makes adjacent become one, and a blank line that a removal leaves at the end of the preamble goes (the part puts one before its first item).
+  - Nothing is dropped from a preamble that has a preprocessor conditional or a `#define` before an `#include` (in any spacing, `# include` too). A dropped define there could change another one's value without a trace, which the second review found. Such a preamble is kept whole.
 - **Blank lines between items.** A part keeps the blank line, or none, that its source had between two items.
 - **`keep_header`** takes `header_replace`, refused when its text is not in the comment.
 

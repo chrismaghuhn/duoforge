@@ -207,14 +207,15 @@ def needed_macros(macros, code):
 
 def drop_unused_defines(preamble, keep):
     """The preamble without the #define lines whose names are not in `keep`, each with the comment lines directly above it
-    (no blank line between) when it is the only define that comment stands over; every other line stays where it was, and
-    two blank lines that a removal makes adjacent become one.
+    (no blank line between, comment lines only) when it is the only define that comment stands over; every other line
+    stays where it was, two blank lines that a removal makes adjacent become one, and a blank line that a removal leaves at
+    the end goes (the part puts one before its first item).
 
     Nothing is dropped from a preamble whose preprocessor reads its own defines: one with a conditional (#if, #ifdef,
     #ifndef, #elif) or with a #define before an #include (a define that configures a header). Such a preamble is kept as
     it is: a dropped define there could change the value of another without a trace."""
     if re.search(r'^\s*#\s*(if|ifdef|ifndef|elif)\b', preamble, re.M) or \
-            re.search(r'^#define\b(?:.*\n)*?^#include\b', preamble, re.M):
+            re.search(r'^\s*#\s*define\b(?:.*\n)*?^\s*#\s*include\b', preamble, re.M):
         return preamble
     lines = preamble.split('\n')
     drop = [False] * len(lines)
@@ -232,7 +233,9 @@ def drop_unused_defines(preamble, keep):
                 drop[k] = True
             # the comment lines directly above, when the next line after this define is no other define of the group
             above = i - 1
-            while above >= 0 and not drop[above] and lines[above].strip() and not lines[above].startswith('#'):
+            # (comment lines only: never the continuation of a define above, nor any other code)
+            while above >= 0 and not drop[above] and lines[above].strip().startswith(('/*', '*', '//')) and \
+                    not (above > 0 and lines[above - 1].endswith('\\')):
                 above -= 1
             group_has_kept = any(re.match(r'#define (\w+)', lines[k]) and re.match(r'#define (\w+)', lines[k]).group(1) in keep
                                  for k in range(above + 1, len(lines)) if k > j and lines[k].startswith('#define')
@@ -253,6 +256,8 @@ def drop_unused_defines(preamble, keep):
             continue  # a removal made two blank lines adjacent (two that the source had stay)
         removed_since = False
         out.append(l)
+    if removed_since and lines[-1] == '' and out and not out[-1].strip():
+        out.pop()  # a removal at the end left a blank line, which would double the one before the first item
     return '\n'.join(out + [lines[-1]])
 
 
@@ -596,7 +601,9 @@ def main(argv):
     spec = json.loads(Path(args[0]).read_text(encoding='utf-8'))
     if merging:
         try:
-            base = next((d for d in Path(args[0]).resolve().parents if (d / 'tools' / 'restructure').is_dir()), root)
+            base = next((d for d in Path(args[0]).resolve().parents if (d / 'tools' / 'restructure').is_dir()), None)
+            if base is None:
+                raise Refused('merge: the spec %s is in no repository (no tools/restructure above it)' % args[0])
             ctest, text = merge(root, spec, base)
         except Refused as e:
             print('split_test: refused: %s' % e, file=sys.stderr)
