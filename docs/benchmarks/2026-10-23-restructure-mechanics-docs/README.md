@@ -36,7 +36,7 @@ versions (old lines 54 and 84), both kept.
 checks the result against them:
 
 ```
-1. 117 entries = 117 mechanic file bodies, byte for byte
+1. 117 entries = the bodies of the 117 mechanic files with their id as anchor, byte for byte
 2. 0015 outside the entries: 167 non-blank lines equal in order; the batch 8 note moved to 4.3
 3. support README: 73 of 74 non-blank lines kept (1 exact duplicate removed), 13 generated lines added
 ```
@@ -46,7 +46,7 @@ checks the result against them:
   [support-readme.diff](support-readme.diff) is the full diff (most of it is lines that moved).
 - `python3 tools/docs/mechanics_docs.py --check`: README up to date; 117 mechanic files, 117 table rows to files, 7
   no-entry rows, 3209 citations next to "0015" in tracked files resolve.
-- Mutants of the checks (each reverted): a hand edit of the README, a changed support line without `--write`, an
+- Mutants of the checks (each reverted): a hand edit of the README, a changed support line without `--write`, an entry text under another id's anchor, an `Area` line naming another folder, an
   anchor changed to another file's id, a removed mechanic file, a suffixed id other than `5dl-556`, and
   a citation of an unknown id next to "0015" in a tracked header: each fails `--check`.
 - **P1:** sorted `ctest -N` inventory (configured with the LANES.md options, both trees) 1599 before, 1601 after; the
