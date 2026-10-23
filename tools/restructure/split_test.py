@@ -207,8 +207,9 @@ def needed_macros(macros, code):
 
 def comment_state(lines):
     """Per line, whether it starts inside a block comment, or None when the preamble's comments are not plain: a /* inside
-    a block comment, or a // line that ends with a backslash (its next line is comment too). String literals are not read
-    as such: a /* in one only makes the answer more cautious (a comment seen where there is none keeps lines)."""
+    a block comment, a // line that ends with a backslash (its next line is comment too), or a string or character literal
+    not closed on its line. Outside a comment a literal is skipped, its escapes included, so that a /*, */ or // in it is
+    no comment."""
     inside, state = False, []
     for l in lines:
         state.append(inside)
@@ -221,6 +222,14 @@ def comment_state(lines):
                 if two == '*/':
                     inside, k = False, k + 2
                     continue
+            elif l[k] in '"\'':
+                end = k + 1  # a string or character literal, its escapes skipped: what it holds is no comment
+                while end < len(l) and l[end] != l[k]:
+                    end += 2 if l[end] == '\\' else 1
+                if end >= len(l):
+                    return None  # not closed on its line
+                k = end + 1
+                continue
             elif two == '/*':
                 inside, k = True, k + 2
                 continue

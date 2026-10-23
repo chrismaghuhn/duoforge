@@ -489,10 +489,16 @@ class SplitTest(unittest.TestCase):
                       '#include <x.h>\n\n/* disabled:\n#define B 2 */\n#define C 3\n',
                       '#include <x.h>\n\n/* outer\n/* inner */\n#define B 2\n#define C 3\n',
                       '#include <x.h>\n\n// a line \\\n#define B 2\n#define C 3\n',
-                      '#include <x.h>\n\n#define C 3\n/* open\n'):
+                      '#include <x.h>\n\n#define C 3\n/* open\n',
+                      '#include <x.h>\n\n#define U "http://x" /* the value\n   of U */\n#define C 3\n',
+                      '#include <x.h>\n\n#define Q "a \\" // b" /* the value\n   of Q */\n#define C 3\n',
+                      '#include <x.h>\n\n#define S "open\n#define C 3\n'):
             self.assertEqual(split_test.drop_unused_defines(whole, {'C'}), whole)
         # a comment that closes on the define's own line goes with it
         self.assertEqual(split_test.drop_unused_defines('#include <x.h>\n\n#define B 2 /* B */\n#define C 3\n', {'C'}),
+                         '#include <x.h>\n\n#define C 3\n')
+        # a literal's /* or */ is no comment: the define goes alone
+        self.assertEqual(split_test.drop_unused_defines('#include <x.h>\n\n#define S "/*" \'*\'\n#define C 3\n', {'C'}),
                          '#include <x.h>\n\n#define C 3\n')
         # a define at the end of the preamble goes with its blank line above, so the blank before the first item is single
         end = '#include <x.h>\n\n#define B 2\n'
