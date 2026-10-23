@@ -1,0 +1,346 @@
+{
+ "P1_command_changed": [],
+ "P1_inventory": {
+  "debug": {
+   "before_sha256": "9cf18335d1cbb519560355478dd28e3d9dbcacc6f39454f22a8189d4d921cada",
+   "equal_under_the_renames": true,
+   "names": 1608,
+   "sha256": "16fd803342840b0de884aba44e109a71495ba0adf9159e387fc5ad5815188663"
+  },
+  "ipo": {
+   "before_sha256": "9cf18335d1cbb519560355478dd28e3d9dbcacc6f39454f22a8189d4d921cada",
+   "equal_under_the_renames": true,
+   "names": 1608,
+   "sha256": "16fd803342840b0de884aba44e109a71495ba0adf9159e387fc5ad5815188663"
+  },
+  "noipo": {
+   "before_sha256": "9cf18335d1cbb519560355478dd28e3d9dbcacc6f39454f22a8189d4d921cada",
+   "equal_under_the_renames": true,
+   "names": 1608,
+   "sha256": "16fd803342840b0de884aba44e109a71495ba0adf9159e387fc5ad5815188663"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_renamed": {
+  "debug": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g11 -> duoforge.moves.soak",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g17 -> duoforge.moves.recharge",
+   "duoforge.state.pool_g26 -> duoforge.moves.perish_song",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g38 -> duoforge.moves.imprison",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g50 -> duoforge.moves.double_shock",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g56 -> duoforge.moves.outrage_lock",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g58 -> duoforge.moves.phantom_force",
+   "duoforge.state.pool_g60 -> duoforge.moves.substitute",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g62 -> duoforge.moves.haze",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g70 -> duoforge.moves.skill_swap",
+   "duoforge.state.pool_g71 -> duoforge.moves.attract",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g74 -> duoforge.moves.baton_pass",
+   "duoforge.state.pool_g78 -> duoforge.moves.dragon_darts",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_g82 -> duoforge.moves.healing_wish",
+   "duoforge.state.pool_g87 -> duoforge.moves.attract_source_view",
+   "duoforge.state.pool_g88 -> duoforge.moves.turn_history_moves",
+   "duoforge.state.pool_g9 -> duoforge.moves.encore",
+   "duoforge.state.pool_g90 -> duoforge.moves.partial_trap",
+   "duoforge.state.pool_g92 -> duoforge.moves.confusion_moves",
+   "duoforge.state.pool_k1 -> duoforge.moves.temper_flare",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill",
+   "duoforge.state.pool_k3 -> duoforge.moves.speed_swap",
+   "duoforge.state.pool_lockfam_sleep -> duoforge.moves.lockedmove_sleep"
+  ],
+  "ipo": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g11 -> duoforge.moves.soak",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g17 -> duoforge.moves.recharge",
+   "duoforge.state.pool_g26 -> duoforge.moves.perish_song",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g38 -> duoforge.moves.imprison",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g50 -> duoforge.moves.double_shock",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g56 -> duoforge.moves.outrage_lock",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g58 -> duoforge.moves.phantom_force",
+   "duoforge.state.pool_g60 -> duoforge.moves.substitute",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g62 -> duoforge.moves.haze",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g70 -> duoforge.moves.skill_swap",
+   "duoforge.state.pool_g71 -> duoforge.moves.attract",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g74 -> duoforge.moves.baton_pass",
+   "duoforge.state.pool_g78 -> duoforge.moves.dragon_darts",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_g82 -> duoforge.moves.healing_wish",
+   "duoforge.state.pool_g87 -> duoforge.moves.attract_source_view",
+   "duoforge.state.pool_g88 -> duoforge.moves.turn_history_moves",
+   "duoforge.state.pool_g9 -> duoforge.moves.encore",
+   "duoforge.state.pool_g90 -> duoforge.moves.partial_trap",
+   "duoforge.state.pool_g92 -> duoforge.moves.confusion_moves",
+   "duoforge.state.pool_k1 -> duoforge.moves.temper_flare",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill",
+   "duoforge.state.pool_k3 -> duoforge.moves.speed_swap",
+   "duoforge.state.pool_lockfam_sleep -> duoforge.moves.lockedmove_sleep"
+  ],
+  "noipo": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g11 -> duoforge.moves.soak",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g17 -> duoforge.moves.recharge",
+   "duoforge.state.pool_g26 -> duoforge.moves.perish_song",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g38 -> duoforge.moves.imprison",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g50 -> duoforge.moves.double_shock",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g56 -> duoforge.moves.outrage_lock",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g58 -> duoforge.moves.phantom_force",
+   "duoforge.state.pool_g60 -> duoforge.moves.substitute",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g62 -> duoforge.moves.haze",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g70 -> duoforge.moves.skill_swap",
+   "duoforge.state.pool_g71 -> duoforge.moves.attract",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g74 -> duoforge.moves.baton_pass",
+   "duoforge.state.pool_g78 -> duoforge.moves.dragon_darts",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_g82 -> duoforge.moves.healing_wish",
+   "duoforge.state.pool_g87 -> duoforge.moves.attract_source_view",
+   "duoforge.state.pool_g88 -> duoforge.moves.turn_history_moves",
+   "duoforge.state.pool_g9 -> duoforge.moves.encore",
+   "duoforge.state.pool_g90 -> duoforge.moves.partial_trap",
+   "duoforge.state.pool_g92 -> duoforge.moves.confusion_moves",
+   "duoforge.state.pool_k1 -> duoforge.moves.temper_flare",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill",
+   "duoforge.state.pool_k3 -> duoforge.moves.speed_swap",
+   "duoforge.state.pool_lockfam_sleep -> duoforge.moves.lockedmove_sleep"
+  ]
+ },
+ "P1_selected_tests": {
+  "after-ipo": {
+   "names_sha256": "c85fa609629439a6bda1a6f66790ede46acaf49697df558f0141d76097656206",
+   "passed": 279,
+   "tests": 279
+  },
+  "after-noipo": {
+   "names_sha256": "37c451f27a8e13d6caa2820fbac8107170227fbbdf1b7b261ea5f86eff51875b",
+   "passed": 274,
+   "tests": 274
+  },
+  "before-ipo": {
+   "names_sha256": "d0b74e3d11819e5e616d7eb156caf6cc4ee88f41f0ee3c21f30f8c753d703689",
+   "passed": 279,
+   "tests": 279
+  },
+  "before-noipo": {
+   "names_sha256": "8ad8eca80119172929a0ed7e0ccdbd1870c9dc98ee807d59bcbf2878ccfba472",
+   "passed": 274,
+   "tests": 274
+  }
+ },
+ "P2_reference": {
+  "checks": {
+   "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15754 checks, 0 failures",
+   "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+   "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+   "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 29398 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+  },
+  "executions": 2808,
+  "ipo": {
+   "equal": true,
+   "sha256": "77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5"
+  },
+  "native_reports_equal": {
+   "debug": true,
+   "ipo": true,
+   "noipo": true
+  },
+  "noipo": {
+   "equal": true,
+   "sha256": "77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5"
+  },
+  "steps": 24664,
+  "stops": 9229,
+  "unique_battles": 1241,
+  "variants": 10
+ },
+ "P3_perft_pins_sha256": "84c744369b4fdc0705d4a2c7f4c08d5df2cbc78fb53ef2898bca3edb2192ddcb",
+ "P3_perft_pins_unchanged": true,
+ "P4_bench_sha256_unchanged": false,
+ "P5_fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "P5_fingerprints_equal": true,
+ "P5_generated_unchanged": false,
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "8a763e74c2d8fb52cc00e01888ab7c362757f316",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "757a00cabf37fe21d936cbdf5dead064d63c4674",
+  "dirty": false,
+  "phase": "before"
+ },
+ "changed_files": [
+  "docs/benchmarks/2026-10-23-restructure-test-names-moves/machine.json",
+  "docs/benchmarks/2026-10-23-restructure-test-names-moves/proofs.py",
+  "docs/benchmarks/2026-10-23-restructure-test-names-moves/summarize.py",
+  "docs/mechanics/abilities/5bn-cute-charm-attract.md",
+  "docs/mechanics/abilities/5bv-attract-source-becomes-public.md",
+  "docs/mechanics/flow/5do-random-target-issue-542-recharge.md",
+  "docs/mechanics/moves/5ac-perish-song.md",
+  "docs/mechanics/moves/5ae-imprison.md",
+  "docs/mechanics/moves/5ar-double-shock.md",
+  "docs/mechanics/moves/5aw-outrage-lockedmove.md",
+  "docs/mechanics/moves/5ax-phantom-force.md",
+  "docs/mechanics/moves/5ay-substitute.md",
+  "docs/mechanics/moves/5az-haze-after-you-quash.md",
+  "docs/mechanics/moves/5b-soak.md",
+  "docs/mechanics/moves/5cd-skill-swap.md",
+  "docs/mechanics/moves/5dc-temper-flare.md",
+  "docs/mechanics/moves/5de-speed-swap.md",
+  "docs/mechanics/moves/5ds-a0-data-only-marks-parts-1-4.md",
+  "docs/mechanics/moves/5dv-lock-holder-put-to-sleep.md",
+  "docs/mechanics/moves/5dx-skill-swap-fails-on-every.md",
+  "docs/mechanics/moves/5e-encore.md",
+  "docs/mechanics/moves/5f-recharge-moves.md",
+  "docs/support/README.md",
+  "docs/support/README.template.md",
+  "python/tests/live/test_live.py",
+  "python/tests/replay/test_speed_swap_live.py",
+  "src/combat/turn.c",
+  "src/data/support_manifest.c",
+  "tests/data/test_pool_tail.c",
+  "tests/interactions/test_pool_g27.c",
+  "tests/mechanics/test_pool_weather.c",
+  "tests/moves/test_attract.c",
+  "tests/moves/test_attract_source_view.c",
+  "tests/moves/test_baton_pass.c",
+  "tests/moves/test_confusion_moves.c",
+  "tests/moves/test_double_shock.c",
+  "tests/moves/test_dragon_darts.c",
+  "tests/moves/test_encore.c",
+  "tests/moves/test_haze.c",
+  "tests/moves/test_healing_wish.c",
+  "tests/moves/test_imprison.c",
+  "tests/moves/test_lockedmove_sleep.c",
+  "tests/moves/test_outrage_lock.c",
+  "tests/moves/test_partial_trap.c",
+  "tests/moves/test_perish_song.c",
+  "tests/moves/test_phantom_force.c",
+  "tests/moves/test_pool_g54.c",
+  "tests/moves/test_recharge.c",
+  "tests/moves/test_skill_swap.c",
+  "tests/moves/test_soak.c",
+  "tests/moves/test_speed_swap.c",
+  "tests/moves/test_substitute.c",
+  "tests/moves/test_temper_flare.c",
+  "tests/moves/test_turn_history_moves.c",
+  "tests/moves/tests.cmake",
+  "tests/renames.tsv",
+  "tools/datagen/pool_families.js",
+  "tools/reference/tests/test_trace_to_c.py",
+  "tools/reference/trace_to_c.py",
+  "tools/restructure/tests/test_restructure_tools.py"
+ ],
+ "object_identity": {
+  "debug": {
+   "compared": 307,
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "library_after": "8f4f3befdc7619bcc4931b3d0e4710c8bd37b462477f99eb44373c90881a2a8a",
+   "library_before": "8f4f3befdc7619bcc4931b3d0e4710c8bd37b462477f99eb44373c90881a2a8a"
+  },
+  "ipo": {
+   "compared": 309,
+   "differing": [
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/boo.dir/main.c.o",
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/foo.dir/foo.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge.dir/src/data/support_manifest.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/data/support_manifest.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "tests/CMakeFiles/duoforge_state_pool_g27.dir/interactions/test_pool_g27.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g54.dir/moves/test_pool_g54.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_tail.dir/data/test_pool_tail.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_weather.dir/mechanics/test_pool_weather.c.o"
+   ],
+   "library_after": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a",
+   "library_before": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a"
+  },
+  "noipo": {
+   "compared": 308,
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "library_after": "57d79859671ef2d0dbfa80a63d33dd98c7a437ec348a612f436c4eb52cfeffbd",
+   "library_before": "57d79859671ef2d0dbfa80a63d33dd98c7a437ec348a612f436c4eb52cfeffbd"
+  }
+ }
+}
