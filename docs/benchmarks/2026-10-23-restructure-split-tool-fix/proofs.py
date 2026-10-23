@@ -89,7 +89,8 @@ for mode in ('ipo', 'noipo', 'debug'):
         # The renames of this step are the done rows whose old name the before tree still has (an earlier step's rows are
         # done in both trees and name nothing of the before tree).
         here = {o for o in list(RENAMES) + list(PARTS) if o in b}
-        assert here, 'no rename or split of this step in the before tree'
+        # A step without renames (a fix of the tools: NO_RENAMES=1) compares every test under its own name.
+        assert here or os.environ.get('NO_RENAMES') == '1', 'no rename or split of this step in the before tree'
         b = mapped
         for t in list(a.values()) + list(b.values()):  # the labels compare as sets
             for p in t['properties']:
