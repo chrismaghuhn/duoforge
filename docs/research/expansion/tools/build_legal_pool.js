@@ -11,6 +11,9 @@
  *   --duoforge  the DuoForge worktree whose closure and extended tables give in_duoforge
  *   --out       the output file (default data/formats/pools/reg-mc.json of the repository)
  * Without options it writes what it always wrote (Reg M-C, data/formats/reg-mc.json).
+ * A Champions format (mod champions*) is probed with a Champions set: level 50, Stat Points, Item Clause = 1. A Gen 9
+ * format of the standard mod (mod gen9, e.g. gen9ou) is probed with a Gen 9 set: level 100, 1 EV (the validator
+ * refuses a set with no EV at all), IVs 31 and a Tera type; it has no Item Clause. Any other mod is refused.
  *
  * Writes:
  *   the --out file
@@ -64,17 +67,27 @@ const ruleTable = Dex.formats.getRuleTable(format);
 for (const rule of ['speciesclause', 'nicknameclause']) {
   if (!ruleTable.has(rule)) throw new Error(`${FORMAT_ID} lacks ${rule}`);
 }
-if (ruleTable.valueRules.get('itemclause') !== '1') throw new Error(`${FORMAT_ID} lacks Item Clause = 1`);
-if (!format.mod.startsWith('champions')) throw new Error(`${FORMAT_ID} is not a Champions format (Stat Points, no Tera)`);
+const CHAMPIONS = format.mod.startsWith('champions');
+if (!CHAMPIONS && format.mod !== 'gen9') throw new Error(`${FORMAT_ID} is neither a Champions format nor a Gen 9 format of the standard mod`);
+if (CHAMPIONS && ruleTable.valueRules.get('itemclause') !== '1') throw new Error(`${FORMAT_ID} lacks Item Clause = 1`);
+if (!CHAMPIONS && ruleTable.has('itemclause')) throw new Error(`${FORMAT_ID} has an Item Clause; the Gen 9 rules block below says none`);
 
 function mkSet(species, ability, item, moves, extra) {
+  const probe = CHAMPIONS ? {
+    evs: { hp: 2, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+    level: 50,
+  } : {
+    evs: { hp: 1, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+    level: 100,
+    teraType: 'Normal',
+  };
   return Object.assign({
     name: '', species, item: item || '', ability, moves,
     nature: 'Adamant', gender: '',
-    evs: { hp: 2, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+    evs: probe.evs,
     ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
-    level: 50,
-  }, extra || {});
+    level: probe.level,
+  }, CHAMPIONS ? {} : { teraType: probe.teraType }, extra || {});
 }
 const validate = set => validator.validateSet(set, {});
 const toID = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -93,15 +106,26 @@ const rules = {
   team_size: { min: ruleTable.minTeamSize, max: ruleTable.maxTeamSize, picked: ruleTable.pickedTeamSize },
   level: { adjust_level_to: ruleTable.adjustLevel, validator_max_level: ruleTable.maxLevel },
   moves_per_set: ruleTable.maxMoveCount,
-  stat_points: {
-    note: 'champions mod: set.evs holds Stat Points (validator: useStatPoints = mod startsWith champions)',
-    total_limit: ruleTable.evLimit, per_stat_max: 32, ivs: 'all 31 required',
-  },
-  min_source_gen: ruleTable.minSourceGen,
-  clauses_team_level: ['Species Clause', 'Item Clause = 1', 'Nickname Clause'],
-  terastallization: 'disabled (mod scripts.ts actions.canTerastallize returns null; validator drops teraType for champions mods)',
-  dynamax_zmoves: 'none: all 87 Z/Max moves in the dex are tagged nonexistent (Past/Gmax), no Z-crystal item is legal, sim/side.ts canDynamaxNow() requires gen 8',
 };
+if (CHAMPIONS) {
+  Object.assign(rules, {
+    stat_points: {
+      note: 'champions mod: set.evs holds Stat Points (validator: useStatPoints = mod startsWith champions)',
+      total_limit: ruleTable.evLimit, per_stat_max: 32, ivs: 'all 31 required',
+    },
+    min_source_gen: ruleTable.minSourceGen,
+    clauses_team_level: ['Species Clause', 'Item Clause = 1', 'Nickname Clause'],
+    terastallization: 'disabled (mod scripts.ts actions.canTerastallize returns null; validator drops teraType for champions mods)',
+    dynamax_zmoves: 'none: all 87 Z/Max moves in the dex are tagged nonexistent (Past/Gmax), no Z-crystal item is legal, sim/side.ts canDynamaxNow() requires gen 8',
+  });
+} else {
+  Object.assign(rules, {
+    evs: { note: 'gen9 mod: set.evs holds EVs', total_limit: ruleTable.evLimit, per_stat_max: 252, ivs: '0 to 31' },
+    min_source_gen: ruleTable.minSourceGen,
+    clauses_team_level: ['Species Clause', 'Nickname Clause'],
+    terastallization: ruleTable.has('terastalclause') ? 'disabled by Terastal Clause' : 'enabled (every set has a Tera type)',
+  });
+}
 
 // ---------------------------------------------------------- species scanning
 const allSpecies = dex.species.all().filter(s => s.exists);
@@ -519,7 +543,7 @@ const out = {
   },
   rules,
   method: {
-    species: 'validator.validateSet accepts a full set (level 50, Adamant, 2 Stat Points, IVs 31, one probe move, one declared ability) naming the species; Gmax placeholder names are skipped (the validator aliases X-Gmax to X + gigantamax flag, which does nothing without Dynamax)',
+    species: 'validator.validateSet accepts a full set (' + (CHAMPIONS ? 'level 50, Adamant, 2 Stat Points' : 'level 100, Adamant, 1 EV, Tera type Normal') + ', IVs 31, one probe move, one declared ability) naming the species; Gmax placeholder names are skipped (the validator aliases X-Gmax to X + gigantamax flag, which does nothing without Dynamax)',
     selectable: 'validated species that are not battleOnly formes',
     mega: 'for every item.megaStone entry (base -> mega): validateSet(base holding stone) must pass; the validator maps the stone to the Mega forme (getValidationSpecies) and runs checkSpecies/checkTagRules on it; naming the Mega forme directly is cross-checked',
     battle_only: 'non-Mega battleOnly formes whose base is selectable and whose required ability/item/move set validates',
