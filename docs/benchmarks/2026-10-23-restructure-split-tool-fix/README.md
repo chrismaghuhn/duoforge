@@ -1,6 +1,6 @@
 # Restructure 6e: the fix of the split tool after the review of #662 — proof
 
-**Commits compared.** Clean main **`095064af`** (#662) against the clean branch head **`56e2641c`**, both **dirty=false**. Same source and build paths in both phases, three profiles: Release with IPO, Release without IPO, and Debug. Machine: [machine.json](machine.json). Scripts: [proofs.py](proofs.py), [summarize.py](summarize.py) (those of 6e-2; `NO_RENAMES=1`: this step renames nothing), [regen.sh](regen.sh).
+**Commits compared.** Clean main **`095064af`** (#662) against the clean branch head **`195838f5`**, both **dirty=false**. Same source and build paths in both phases, three profiles: Release with IPO, Release without IPO, and Debug. Machine: [machine.json](machine.json). Scripts: [proofs.py](proofs.py), [summarize.py](summarize.py) (those of 6e-2; `NO_RENAMES=1`: this step renames nothing), [regen.sh](regen.sh).
 
 **Why a separate PR.** #662 was merged at `99a4bce3`, before its review fixes. Its committed output is correct: the reviewer rebuilt it and found every check exactly once and every table in its section. The fixes of the tool land here on their own, as the HS decided.
 
@@ -25,6 +25,7 @@ Unit tests in `duoforge.tools.restructure` (30 in all) cover:
 - the review's macro case, and a macro of a macro;
 - defines dropped line by line, with the comments of a define and the source's double blank lines kept;
 - the conditional and the config-define preambles kept whole;
+- comments that go whole or not at all (a block with a middle line without a star, a `//` run, a code line ending in `*/`), a kept define's continuation, and the comment guard's cases (a comment running past a define, a define in a comment, a nested `/*`, a continued `//`, string and character literals, an open literal);
 - blank lines between items;
 - `header_replace` and its refusal;
 - the merge spec paths;
@@ -41,6 +42,7 @@ Unit tests in `duoforge.tools.restructure` (30 in all) cover:
 - **`regen.sh` reproduces every 6e-1 and 6e-2 part from its sources byte for byte:** 27 files, 0 differ. The sources are main `757a00ca` for 6e-1 and `de746106` for 6e-2.
 - **The removed macros were unused:**
   - The library is byte-equal in all three profiles: IPO `0a1d3855…`, without IPO `57d79859…`, Debug `8f4f3bef…`.
+  - The objects that differ are those of the changed test files and the bench's `main.c.o` (it embeds the commit). With IPO, 13 unchanged test files differ too, only in the random suffix of their `.gnu.lto_*` section names: they were compiled again after interrupted runs, and the same file compiled twice gives the same code (`objdump -d` equal) under other suffixes. [proof-summary.json](proof-summary.json) (`object_identity`) lists them.
   - Every one of the 27 tests made again executes the same number of checks before and after (2651 in all, each test equal to itself).
 - **P1:** 1624 names, every property equal. Selected runs: 295/295 and 290/290 in both phases.
 - **Full suite** (without IPO, Python, JAX on the CPU, pinned checkout):

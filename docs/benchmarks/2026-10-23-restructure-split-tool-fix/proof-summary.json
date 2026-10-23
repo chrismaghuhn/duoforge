@@ -393,7 +393,7 @@
   }
  },
  "after": {
-  "commit": "56e2641ca1205f6e266d773b5b5f45ba901662f0",
+  "commit": "195838f5aeb615832faba134409d26a0eef5617b",
   "dirty": false,
   "phase": "after"
  },
@@ -403,10 +403,14 @@
   "phase": "before"
  },
  "changed_files": [
+  "docs/benchmarks/2026-10-23-restructure-split-tool-fix/README.md",
   "docs/benchmarks/2026-10-23-restructure-split-tool-fix/machine.json",
+  "docs/benchmarks/2026-10-23-restructure-split-tool-fix/per-battle-digests.tsv",
+  "docs/benchmarks/2026-10-23-restructure-split-tool-fix/proof-summary.json",
   "docs/benchmarks/2026-10-23-restructure-split-tool-fix/proofs.py",
   "docs/benchmarks/2026-10-23-restructure-split-tool-fix/regen.sh",
   "docs/benchmarks/2026-10-23-restructure-split-tool-fix/summarize.py",
+  "docs/benchmarks/2026-10-23-restructure-split-tool-fix/test-inventory.txt",
   "docs/benchmarks/2026-10-23-restructure-test-splits-forms-items/README.md",
   "docs/benchmarks/2026-10-23-restructure-test-splits-forms-items/specs/g57.json",
   "docs/mechanics/forms/5bc-mega-batch-4-ten-mega.md",
@@ -458,19 +462,32 @@
     "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/foo.dir/foo.c.o",
     "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
     "tests/CMakeFiles/duoforge_abilities_aura_guard.dir/abilities/test_aura_guard.c.o",
+    "tests/CMakeFiles/duoforge_abilities_flower_veil_drop_refusals.dir/abilities/test_flower_veil_drop_refusals.c.o",
     "tests/CMakeFiles/duoforge_abilities_inner_focus_intimidate_cap.dir/abilities/test_inner_focus_intimidate_cap.c.o",
     "tests/CMakeFiles/duoforge_abilities_keen_eye.dir/abilities/test_keen_eye.c.o",
+    "tests/CMakeFiles/duoforge_abilities_life_dew_water_absorb.dir/abilities/test_life_dew_water_absorb.c.o",
     "tests/CMakeFiles/duoforge_abilities_magic_bounce.dir/abilities/test_magic_bounce.c.o",
     "tests/CMakeFiles/duoforge_abilities_mega_launcher.dir/abilities/test_mega_launcher.c.o",
+    "tests/CMakeFiles/duoforge_abilities_mega_sol.dir/abilities/test_mega_sol.c.o",
     "tests/CMakeFiles/duoforge_abilities_modifier_abilities.dir/abilities/test_modifier_abilities.c.o",
     "tests/CMakeFiles/duoforge_abilities_moxie.dir/abilities/test_moxie.c.o",
+    "tests/CMakeFiles/duoforge_abilities_natural_cure.dir/abilities/test_natural_cure.c.o",
+    "tests/CMakeFiles/duoforge_abilities_one_clause_abilities.dir/abilities/test_one_clause_abilities.c.o",
     "tests/CMakeFiles/duoforge_abilities_reckless.dir/abilities/test_reckless.c.o",
     "tests/CMakeFiles/duoforge_abilities_regenerator_pivot.dir/abilities/test_regenerator_pivot.c.o",
     "tests/CMakeFiles/duoforge_abilities_simple_ability_rows.dir/abilities/test_simple_ability_rows.c.o",
+    "tests/CMakeFiles/duoforge_abilities_simple_mega_abilities.dir/abilities/test_simple_mega_abilities.c.o",
+    "tests/CMakeFiles/duoforge_abilities_stalwart.dir/abilities/test_stalwart.c.o",
     "tests/CMakeFiles/duoforge_abilities_steadfast.dir/abilities/test_steadfast.c.o",
+    "tests/CMakeFiles/duoforge_abilities_swift_swim_fainted_holder.dir/abilities/test_swift_swim_fainted_holder.c.o",
+    "tests/CMakeFiles/duoforge_abilities_tangled_feet.dir/abilities/test_tangled_feet.c.o",
     "tests/CMakeFiles/duoforge_abilities_telepathy.dir/abilities/test_telepathy.c.o",
+    "tests/CMakeFiles/duoforge_abilities_trace_water_bubble.dir/abilities/test_trace_water_bubble.c.o",
     "tests/CMakeFiles/duoforge_abilities_volt_absorb.dir/abilities/test_volt_absorb.c.o",
-    "tests/CMakeFiles/duoforge_abilities_weak_armor.dir/abilities/test_weak_armor.c.o"
+    "tests/CMakeFiles/duoforge_abilities_weak_armor.dir/abilities/test_weak_armor.c.o",
+    "tests/CMakeFiles/duoforge_forms_mega_stones.dir/forms/test_mega_stones.c.o",
+    "tests/CMakeFiles/duoforge_items_bright_powder.dir/items/test_bright_powder.c.o",
+    "tests/CMakeFiles/duoforge_items_power_and_accuracy_items.dir/items/test_power_and_accuracy_items.c.o"
    ],
    "library_after": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a",
    "library_before": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a"
