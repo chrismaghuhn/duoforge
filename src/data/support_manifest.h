@@ -18,7 +18,7 @@
  */
 #include <stdint.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 typedef struct dfi_support_manifest {
     uint8_t turn_core;      /* turn order, damage, stages, PP, Struggle (step 2); every battle needs it */

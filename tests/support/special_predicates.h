@@ -4,7 +4,7 @@
 #define DUOFORGE_TEST_SPECIAL_PREDICATES_H
 #include <stdbool.h>
 #include <stdint.h>
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 static inline bool df_test_old_special_guard(uint32_t special)
 {
     return !(special > DFI_SPECIAL_STRUGGLE && special != DFI_SPECIAL_DARKEST_LARIAT &&

@@ -252,8 +252,8 @@ function parseDefines(file) {
   }
   return out;
 }
-const dfClosure = parseDefines(DUOFORGE + '/src/data/closure_tables.h');
-const dfExt = parseDefines(DUOFORGE + '/src/data/extended_tables.h');
+const dfClosure = parseDefines(DUOFORGE + '/src/data/formats/reg-mc/closure_tables.h');
+const dfExt = parseDefines(DUOFORGE + '/src/data/formats/reg-mc/extended_tables.h');
 const dfi = {};
 for (const k of ['FORME', 'MOVE', 'ITEM', 'ABILITY']) {
   const m = new Map();

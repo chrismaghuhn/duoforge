@@ -1,6 +1,6 @@
 # Restructure 11: docs per mechanic — proof
 
-Base: clean `main` **`7ef33a66`**. Documentation, two tools and two test registrations only: no file under `src/`,
+Base: clean `main` **`80bb7524`** (first cut on `7ef33a66`; after #636/#637 changed four foundation lines of the support README, main was merged and the split rerun on its files: only `README.template.md` and the README took those four lines). Documentation, two tools and two test registrations only: no file under `src/`,
 `include/`, `python/`, `tools/datagen/` or `tests/` other than one `include` line in `tests/CMakeLists.txt` changes, so
 P2 to P6 (reference results, perft, bench, generated data, public surface) cannot change and were not rerun.
 
@@ -45,11 +45,11 @@ checks the result against them:
   Population Bomb; old lines 57 and 79). The 13 added lines are the generated-by comment and the manifest section.
   [support-readme.diff](support-readme.diff) is the full diff (most of it is lines that moved).
 - `python3 tools/docs/mechanics_docs.py --check`: README up to date; 117 mechanic files, 117 table rows to files, 7
-  no-entry rows, 3209 citations next to "0015" in tracked files resolve.
+  no-entry rows, 3309 citations next to "0015" in tracked files resolve.
 - Mutants of the checks (each reverted): a hand edit of the README, a changed support line without `--write`, an entry text under another id's anchor, an `Area` line naming another folder, an
   anchor changed to another file's id, a removed mechanic file, a suffixed id other than `5dl-556`, and
   a citation of an unknown id next to "0015" in a tracked header: each fails `--check`.
-- **P1:** sorted `ctest -N` inventory (configured with the LANES.md options, both trees) 1599 before, 1601 after; the
+- **P1:** sorted `ctest -N` inventory (configured with the LANES.md options, both trees) 1601 before, 1603 after (main `80bb7524`); the
   only difference is the two new tests `duoforge.docs.mechanics_ids` and `duoforge.docs.support_readme` (tier quick,
   area tools). [test-inventory.txt](test-inventory.txt) is the new inventory. Locally they pass together with
   `duoforge.data.test_main_last`, `duoforge.python.generated_marks` and `duoforge.tools.restructure`; the full suite runs

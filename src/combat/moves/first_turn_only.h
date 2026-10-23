@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 /* Fake Out and First Impression: usable on the first move action since the
  * user entered only. The request disables the move once the user has acted

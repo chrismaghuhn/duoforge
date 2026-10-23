@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/battle_internal.h"
 
 /* Champions HP display (sim/pokemon.ts:2060-2073 at the pin): floor percent,

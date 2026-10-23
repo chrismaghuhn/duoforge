@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "data/extended_tables.h"
+#include "data/formats/reg-mc/extended_tables.h"
 
 const duoforge_context_config df_config_team_c = {DUOFORGE_DATA_KIND_TEAM_C, 6u, 4u, 0u, 0u, NULL};
 const duoforge_context_config df_config_team_c_dev = {DUOFORGE_DATA_KIND_TEAM_C_DEV, 6u, 4u, 0u, 0u, NULL};

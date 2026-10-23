@@ -54,6 +54,8 @@ duoforge.data.pool_rows
 duoforge.data.pool_tables
 duoforge.data.static
 duoforge.data.static_unread
+duoforge.data.table_sets
+duoforge.data.table_sets_pinned
 duoforge.data.test_main_last
 duoforge.docs.mechanics_ids
 duoforge.docs.support_readme

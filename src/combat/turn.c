@@ -20,7 +20,7 @@
 #include "core/arith.h"
 #include "core/inline.h"
 #include "core/modifier.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"

@@ -13,6 +13,7 @@ usage: python3 tools/datagen/tests/test_gen_closure.py
 """
 import sys
 import io
+import json
 import os
 import re
 import unittest
@@ -340,7 +341,8 @@ class FormeLegal(unittest.TestCase):
                            learnset('rillaboom', 'woodhammer', 'fakeout', 'protect', 'tackle'))
         abil = TextSource('data/abilities.ts', abilities if abilities is not None else self.ABILITIES)
         return gen_closure.forme_legal(formes, self.POOL_MOVES, pool_abilities or self.POOL_ABILITIES, learn, species, abil,
-                                       TextSource('data/mods/champions/abilities.ts', champ))
+                                       TextSource('data/mods/champions/abilities.ts', champ),
+                                       (len(self.POOL_MOVES) + 7) // 8, 'the test pool')
 
     def refused(self, message, *args, **kwargs):
         with self.assertRaises(SystemExit) as cm:
@@ -1481,6 +1483,12 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'gooey', 'poisonpoint', 'tangledfeet', 'naturalcure']})
 
 
+# The id bounds of Reg M-C's table set, read from its definition (tables.bounds of data/formats/reg-mc.json).
+with io.open(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+                          'data', 'formats', 'reg-mc.json'), encoding='utf-8') as _fh:
+    REG_MC_BOUNDS = json.load(_fh)['tables']['bounds']
+
+
 class Bounds(unittest.TestCase):
     """check_bounds reads the widths from the sources that own them (a copy of the repository's three files)."""
 
@@ -1500,7 +1508,7 @@ class Bounds(unittest.TestCase):
     def data(self, formes=3, moves=5, items=4, abilities=6):
         row = {'set_moves': [], 'set_item': 0xFF, 'dex_num': 1, 'weight_hg': 1, 'base': [1] * 6, 'id': 'x'}
         return {'formes': [dict(row, id='f%d' % i) for i in range(formes)], 'moves': [{}] * moves, 'items': [{}] * items,
-                'abilities': [{}] * abilities, 'forme_legal': [{'learnable': [0] * ((moves + 7) // 8)}] * formes}
+                'abilities': [{}] * abilities, 'forme_legal': [{'learnable': [0] * ((moves + 7) // 8), 'moves': []}] * formes}
 
     def edit(self, key, old, new):
         path = os.path.join(self.tmp.name, gen_closure.BOUND_SOURCES[key])
@@ -1512,16 +1520,16 @@ class Bounds(unittest.TestCase):
 
     def refused(self, d, message):
         with self.assertRaises(SystemExit) as cm:
-            gen_closure.check_bounds(d, self.tmp.name)
+            gen_closure.check_bounds(d, self.tmp.name, REG_MC_BOUNDS)
         self.assertIn(message, str(cm.exception.code))
 
     def test_the_pool_fits_the_widths_of_this_repository(self):
-        gen_closure.check_bounds(self.data(), self.tmp.name)
-        gen_closure.check_bounds(self.data(formes=346, moves=511, items=166, abilities=215), self.tmp.name)
+        gen_closure.check_bounds(self.data(), self.tmp.name, REG_MC_BOUNDS)
+        gen_closure.check_bounds(self.data(formes=346, moves=511, items=166, abilities=215), self.tmp.name, REG_MC_BOUNDS)
 
     def test_the_counts_of_the_ids_are_bounded(self):
-        self.refused(self.data(abilities=255), 'a u8 id field holds at most 254')
-        self.refused(self.data(items=255), 'a u8 id field holds at most 254')
+        self.refused(self.data(abilities=255), 'the table set holds at most 254 and 254')
+        self.refused(self.data(items=255), 'the table set holds at most 254 and 254')
         self.refused(self.data(moves=513), 'DUOFORGE_DATA_MAX_FORME_MOVES')
         self.refused(self.data(formes=65536), 'bounds')
 
@@ -1554,7 +1562,7 @@ class Bounds(unittest.TestCase):
         d['formes'][0]['base'] = [1, 1, 1, 1, 1, 256]
         self.refused(d, 'outside its field')
         d = self.data()
-        d['forme_legal'] = [{'learnable': [0]}] * 3
+        d['forme_legal'] = [{'learnable': [0], 'moves': []}] * 3
         self.refused(dict(d, moves=[{}] * 9), 'the learnable bitset is too short')
 
 
@@ -2623,7 +2631,7 @@ class BulletFlag(unittest.TestCase):
     def committed_table(name):
         # the body of a pool table in pool_tables.c, or with name None the move count of pool_tables.h
         root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        with open(os.path.join(root, 'src', 'data', 'pool_tables.%s' % ('h' if name is None else 'c')), encoding='utf-8') as f:
+        with open(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.%s' % ('h' if name is None else 'c')), encoding='utf-8') as f:
             text = f.read()
         if name is None:
             return int(re.search(r'#define DFI_POOL_MOVE_COUNT (\d+)u', text).group(1))

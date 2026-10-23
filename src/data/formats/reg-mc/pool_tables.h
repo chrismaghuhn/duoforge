@@ -39,7 +39,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "data/extended_tables.h"
+#include "data/formats/reg-mc/extended_tables.h"
 
 /* ---- pool formes (appended after the extended ones): step G2, then the legal pool ---- */
 #define DFI_FORME_PELIPPER 23u

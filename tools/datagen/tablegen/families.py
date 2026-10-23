@@ -1,8 +1,8 @@
 """What the item and ability families share: the parameter codes of weather and terrain, the family
 derivation from one strict pattern, the handler ids and the rows the turn code implements by id.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@8800b625).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@8800b625).
 """
 
 from .source import fail, fields, NoMatch

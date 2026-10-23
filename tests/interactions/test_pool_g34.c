@@ -21,7 +21,7 @@
 #include <duoforge/duoforge.h>
 
 #include "combat/damage_chain.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
 #include "rng/draw.h"
