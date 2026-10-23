@@ -32,3 +32,9 @@ add_test(NAME duoforge.data.format_pin_champions_ou
         --format champions-ou --pin "${DUOFORGE_PS_REFERENCE_DIR}")
 duoforge_label_test(duoforge.data.format_pin_champions_ou reference tools)
 set_tests_properties(duoforge.data.format_pin_champions_ou PROPERTIES TIMEOUT 60)
+# Every fact of the Gen 9 OU definition against its line of the pinned checkout (step O8 of the Gen 9 OU design).
+add_test(NAME duoforge.data.format_pin_gen9ou
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/gen_format.py"
+        --format gen9ou --pin "${DUOFORGE_PS_REFERENCE_DIR}")
+duoforge_label_test(duoforge.data.format_pin_gen9ou reference tools)
+set_tests_properties(duoforge.data.format_pin_gen9ou PROPERTIES TIMEOUT 60)

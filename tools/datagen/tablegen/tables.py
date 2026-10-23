@@ -193,9 +193,12 @@ def check_bounds(d, repo, bounds):
             fail('bounds: %s is %d bits, the pool needs %d' % (what, bits, biggest))
     if width(api, 'typedef struct duoforge_member_view {', 'species_id') != 16:
         fail('bounds: species_id of the member view is no longer 16 bits')
+    # W2 (O8, HS decision 2026-10-15): DUOFORGE_DATA_MAX_FORME_MOVES promises that a buffer of that many entries holds
+    # the legal moves of any one forme (duoforge_data_forme_moves), so the bound is per forme, not on the moves in
+    # total: a table set may have more moves than that (gen9ou: 666) as long as no forme learns more.
     m = re.search(r'#define DUOFORGE_DATA_MAX_FORME_MOVES\s+(\d+)u', api)
-    if m is None or n['moves'] > int(m.group(1)):
-        fail('bounds: %d moves exceed DUOFORGE_DATA_MAX_FORME_MOVES' % n['moves'])
+    if m is None:
+        fail('bounds: DUOFORGE_DATA_MAX_FORME_MOVES not found in %s' % BOUND_SOURCES['api'])
     if bounds['moves_per_forme'] > int(m.group(1)):
         fail('bounds: moves_per_forme %d exceeds DUOFORGE_DATA_MAX_FORME_MOVES %s' % (bounds['moves_per_forme'],
                                                                                     m.group(1)))
