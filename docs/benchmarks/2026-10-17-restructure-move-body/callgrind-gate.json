@@ -1,0 +1,715 @@
+{
+ "limit": 1.01,
+ "profiles": {
+  "ipo": {
+   "code_diff": {
+    "clones": {
+     "dfi_accuracy_check": {
+      "after": [
+       "dfi_accuracy_check.lto_priv.0"
+      ],
+      "before": [
+       "dfi_accuracy_check.lto_priv.0"
+      ]
+     },
+     "dfi_after_hit_updates": {
+      "after": [],
+      "before": [
+       "dfi_after_hit_updates.lto_priv.0"
+      ]
+     },
+     "dfi_alive": {
+      "after": [
+       "dfi_alive.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_at": {
+      "after": [
+       "dfi_at.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_before_move": {
+      "after": [
+       "dfi_before_move.lto_priv.0",
+       "dfi_before_move.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_before_move.lto_priv.0",
+       "dfi_before_move.lto_priv.0.cold"
+      ]
+     },
+     "dfi_boost": {
+      "after": [
+       "dfi_boost.isra.0",
+       "dfi_boost.isra.0.cold"
+      ],
+      "before": [
+       "dfi_boost.isra.0",
+       "dfi_boost.isra.0.cold"
+      ]
+     },
+     "dfi_bounce": {
+      "after": [
+       "dfi_bounce.lto_priv.0"
+      ],
+      "before": [
+       "dfi_bounce.lto_priv.0"
+      ]
+     },
+     "dfi_fail_still": {
+      "after": [
+       "dfi_fail_still.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_field_start_turns": {
+      "after": [
+       "dfi_field_start_turns.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_has_type": {
+      "after": [
+       "dfi_has_type.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_holds": {
+      "after": [
+       "dfi_holds.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_item_code": {
+      "after": [
+       "dfi_item_code.lto_priv.0",
+       "dfi_item_code.part.0.lto_priv.0"
+      ],
+      "before": [
+       "dfi_item_code.part.0.lto_priv.0"
+      ]
+     },
+     "dfi_last_move": {
+      "after": [
+       "dfi_last_move.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_lum_berry": {
+      "after": [
+       "dfi_lum_berry"
+      ],
+      "before": [
+       "dfi_lum_berry.lto_priv.0"
+      ]
+     },
+     "dfi_move_of": {
+      "after": [
+       "dfi_move_of.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_partial_trap_start": {
+      "after": [],
+      "before": [
+       "dfi_partial_trap_start.lto_priv.0",
+       "dfi_partial_trap_start.lto_priv.0.cold"
+      ]
+     },
+     "dfi_piercing_drill_passes": {
+      "after": [
+       "dfi_piercing_drill_passes.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_run_after_you": {
+      "after": [
+       "dfi_run_after_you.isra.0"
+      ],
+      "before": []
+     },
+     "dfi_run_heal_pulse": {
+      "after": [
+       "dfi_run_heal_pulse.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_run_move_body": {
+      "after": [
+       "dfi_run_move_body.lto_priv.0",
+       "dfi_run_move_body.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_run_move_body.lto_priv.0",
+       "dfi_run_move_body.lto_priv.0.cold"
+      ]
+     },
+     "dfi_status_effects": {
+      "after": [
+       "dfi_status_effects.lto_priv.0",
+       "dfi_status_effects.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_status_effects.lto_priv.0",
+       "dfi_status_effects.lto_priv.0.cold"
+      ]
+     },
+     "dfi_status_hit_end": {
+      "after": [
+       "dfi_status_hit_end.lto_priv.0"
+      ],
+      "before": []
+     },
+     "dfi_try_status": {
+      "after": [
+       "dfi_try_status.lto_priv.0"
+      ],
+      "before": [
+       "dfi_try_status.lto_priv.0"
+      ]
+     },
+     "dfi_update": {
+      "after": [
+       "dfi_update.lto_priv.0",
+       "dfi_update.lto_priv.0.cold"
+      ],
+      "before": [
+       "dfi_update.lto_priv.0",
+       "dfi_update.lto_priv.0.cold"
+      ]
+     },
+     "dfi_use_item": {
+      "after": [
+       "dfi_use_item.lto_priv.0"
+      ],
+      "before": []
+     }
+    },
+    "differing_groups": [
+     "dfi_accuracy_check",
+     "dfi_after_hit_updates",
+     "dfi_alive",
+     "dfi_at",
+     "dfi_before_move",
+     "dfi_boost",
+     "dfi_bounce",
+     "dfi_fail_still",
+     "dfi_field_start_turns",
+     "dfi_has_type",
+     "dfi_holds",
+     "dfi_item_code",
+     "dfi_last_move",
+     "dfi_lum_berry",
+     "dfi_move_of",
+     "dfi_partial_trap_start",
+     "dfi_piercing_drill_passes",
+     "dfi_run_after_you",
+     "dfi_run_heal_pulse",
+     "dfi_run_move_body",
+     "dfi_status_effects",
+     "dfi_status_hit_end",
+     "dfi_try_status",
+     "dfi_update",
+     "dfi_use_item"
+    ],
+    "functions": [
+     229,
+     240
+    ],
+    "groups": 228,
+    "instructions": {
+     "dfi_accuracy_check": [
+      653,
+      653
+     ],
+     "dfi_after_hit_updates": [
+      16,
+      0
+     ],
+     "dfi_alive": [
+      0,
+      21
+     ],
+     "dfi_at": [
+      0,
+      20
+     ],
+     "dfi_before_move": [
+      1049,
+      1056
+     ],
+     "dfi_boost": [
+      3275,
+      3279
+     ],
+     "dfi_bounce": [
+      1034,
+      1034
+     ],
+     "dfi_fail_still": [
+      0,
+      46
+     ],
+     "dfi_field_start_turns": [
+      0,
+      49
+     ],
+     "dfi_has_type": [
+      0,
+      195
+     ],
+     "dfi_holds": [
+      0,
+      45
+     ],
+     "dfi_item_code": [
+      35,
+      79
+     ],
+     "dfi_last_move": [
+      0,
+      14
+     ],
+     "dfi_lum_berry": [
+      216,
+      215
+     ],
+     "dfi_move_of": [
+      0,
+      9
+     ],
+     "dfi_partial_trap_start": [
+      188,
+      0
+     ],
+     "dfi_piercing_drill_passes": [
+      0,
+      49
+     ],
+     "dfi_run_after_you": [
+      0,
+      354
+     ],
+     "dfi_run_heal_pulse": [
+      0,
+      48
+     ],
+     "dfi_run_move_body": [
+      8779,
+      8525
+     ],
+     "dfi_status_effects": [
+      2942,
+      2917
+     ],
+     "dfi_status_hit_end": [
+      0,
+      18
+     ],
+     "dfi_try_status": [
+      869,
+      855
+     ],
+     "dfi_update": [
+      762,
+      762
+     ],
+     "dfi_use_item": [
+      0,
+      15
+     ]
+    },
+    "rename_only": [
+     "dfi_item_code",
+     "dfi_update"
+    ]
+   },
+   "exclusive_delta_top": [
+    [
+     "dfi_holds",
+     8899740
+    ],
+    [
+     "dfi_at",
+     6780225
+    ],
+    [
+     "dfi_item_code",
+     -5463250
+    ],
+    [
+     "dfi_emit",
+     2751420
+    ],
+    [
+     "dfi_run_move_body",
+     1939825
+    ],
+    [
+     "dfi_ability",
+     1152660
+    ],
+    [
+     "dfi_types_of",
+     -145970
+    ],
+    [
+     "dfi_has_type",
+     144110
+    ],
+    [
+     "dfi_boost",
+     53550
+    ],
+    [
+     "dfi_status_hit_end",
+     45435
+    ]
+   ],
+   "functions": {
+    "dfi_event_make": {
+     "clones": [
+      [],
+      []
+     ],
+     "exclusive": [
+      0,
+      0
+     ],
+     "inclusive": [
+      0,
+      0
+     ]
+    },
+    "dfi_get_damage": {
+     "clones": [
+      [
+       "dfi_get_damage.lto_priv.0"
+      ],
+      [
+       "dfi_get_damage.lto_priv.0"
+      ]
+     ],
+     "exclusive": [
+      88431705,
+      88431705
+     ],
+     "inclusive": [
+      123344425,
+      123344425
+     ]
+    },
+    "dfi_run_move_body": {
+     "clones": [
+      [
+       "dfi_run_move_body.lto_priv.0"
+      ],
+      [
+       "dfi_run_move_body.lto_priv.0"
+      ]
+     ],
+     "exclusive": [
+      143040355,
+      144980180
+     ],
+     "inclusive": [
+      630794265,
+      646961840
+     ]
+    }
+   },
+   "ir_total": [
+    3664684064,
+    3680853015
+   ],
+   "ir_total_ratio": 1.0044120995746497,
+   "pass": true
+  },
+  "noipo": {
+   "code_diff": {
+    "clones": {
+     "dfi_alive": {
+      "after": [
+       "dfi_alive"
+      ],
+      "before": []
+     },
+     "dfi_at": {
+      "after": [
+       "dfi_at"
+      ],
+      "before": []
+     },
+     "dfi_fail_still": {
+      "after": [
+       "dfi_fail_still"
+      ],
+      "before": []
+     },
+     "dfi_field_start_turns": {
+      "after": [
+       "dfi_field_start_turns"
+      ],
+      "before": []
+     },
+     "dfi_has_type": {
+      "after": [
+       "dfi_has_type"
+      ],
+      "before": []
+     },
+     "dfi_holds": {
+      "after": [
+       "dfi_holds"
+      ],
+      "before": []
+     },
+     "dfi_item_code": {
+      "after": [
+       "dfi_item_code",
+       "dfi_item_code.part.0"
+      ],
+      "before": [
+       "dfi_item_code.part.0"
+      ]
+     },
+     "dfi_last_move": {
+      "after": [
+       "dfi_last_move"
+      ],
+      "before": []
+     },
+     "dfi_move_of": {
+      "after": [
+       "dfi_move_of"
+      ],
+      "before": []
+     },
+     "dfi_piercing_drill_passes": {
+      "after": [
+       "dfi_piercing_drill_passes"
+      ],
+      "before": []
+     },
+     "dfi_run_move_body": {
+      "after": [
+       "dfi_run_move_body.constprop.0",
+       "dfi_run_move_body.constprop.0.cold"
+      ],
+      "before": [
+       "dfi_run_move_body.constprop.0",
+       "dfi_run_move_body.constprop.0.cold"
+      ]
+     },
+     "dfi_status_hit_end": {
+      "after": [
+       "dfi_status_hit_end"
+      ],
+      "before": []
+     },
+     "dfi_status_updates": {
+      "after": [],
+      "before": [
+       "dfi_status_updates"
+      ]
+     }
+    },
+    "differing_groups": [
+     "dfi_alive",
+     "dfi_at",
+     "dfi_fail_still",
+     "dfi_field_start_turns",
+     "dfi_has_type",
+     "dfi_holds",
+     "dfi_item_code",
+     "dfi_last_move",
+     "dfi_move_of",
+     "dfi_piercing_drill_passes",
+     "dfi_run_move_body",
+     "dfi_status_hit_end",
+     "dfi_status_updates"
+    ],
+    "functions": [
+     447,
+     457
+    ],
+    "groups": 440,
+    "instructions": {
+     "dfi_alive": [
+      0,
+      20
+     ],
+     "dfi_at": [
+      0,
+      19
+     ],
+     "dfi_fail_still": [
+      0,
+      52
+     ],
+     "dfi_field_start_turns": [
+      0,
+      48
+     ],
+     "dfi_has_type": [
+      0,
+      164
+     ],
+     "dfi_holds": [
+      0,
+      44
+     ],
+     "dfi_item_code": [
+      34,
+      77
+     ],
+     "dfi_last_move": [
+      0,
+      14
+     ],
+     "dfi_move_of": [
+      0,
+      8
+     ],
+     "dfi_piercing_drill_passes": [
+      0,
+      48
+     ],
+     "dfi_run_move_body": [
+      9576,
+      9071
+     ],
+     "dfi_status_hit_end": [
+      0,
+      17
+     ],
+     "dfi_status_updates": [
+      16,
+      0
+     ]
+    },
+    "rename_only": []
+   },
+   "exclusive_delta_top": [
+    [
+     "dfi_holds",
+     8644385
+    ],
+    [
+     "dfi_at",
+     6328210
+    ],
+    [
+     "dfi_item_code",
+     -5252220
+    ],
+    [
+     "dfi_ability",
+     1119210
+    ],
+    [
+     "dfi_run_move_body",
+     -532865
+    ],
+    [
+     "dfi_types_of",
+     -147390
+    ],
+    [
+     "dfi_has_type",
+     147120
+    ],
+    [
+     "dfi_status_hit_end",
+     41940
+    ],
+    [
+     "dfi_last_move",
+     38655
+    ],
+    [
+     "dfi_status_updates",
+     -38445
+    ]
+   ],
+   "functions": {
+    "dfi_event_make": {
+     "clones": [
+      [],
+      []
+     ],
+     "exclusive": [
+      0,
+      0
+     ],
+     "inclusive": [
+      0,
+      0
+     ]
+    },
+    "dfi_get_damage": {
+     "clones": [
+      [
+       "dfi_get_damage"
+      ],
+      [
+       "dfi_get_damage"
+      ]
+     ],
+     "exclusive": [
+      87902785,
+      87902785
+     ],
+     "inclusive": [
+      142188025,
+      142188025
+     ]
+    },
+    "dfi_run_move_body": {
+     "clones": [
+      [
+       "dfi_run_move_body.constprop.0"
+      ],
+      [
+       "dfi_run_move_body.constprop.0"
+      ]
+     ],
+     "exclusive": [
+      145027735,
+      144494870
+     ],
+     "inclusive": [
+      657762970,
+      668112255
+     ]
+    }
+   },
+   "ir_total": [
+    3987796635,
+    3998145927
+   ],
+   "ir_total_ratio": 1.0025952406672813,
+   "pass": true
+  }
+ },
+ "workload": [
+  "--battles",
+  "128",
+  "--repetitions",
+  "1",
+  "--warmup",
+  "0",
+  "--max-steps",
+  "128",
+  "--policy-seed",
+  "20261001",
+  "--battle-seed",
+  "7001",
+  "--families",
+  "step,events",
+  "--workers",
+  "1"
+ ]
+}

@@ -781,6 +781,8 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          ((tp->single_turn & DFI_SINGLE_TURN_SPEED_SWAP) == 0u || slot->occupant < DUOFORGE_MAX_ROSTER) &&
                          tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
+                         /* issue 606 (decision 0015 5dv): the unused-lock bit only with a running lock */
+                         ((tp->single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) == 0u || tp->lock_turns != 0u) &&
                          (tp->lock_turns == 0u || slot->locked_move != 0u) && /* lockedmove (G56): its move is in the slot */
                          (tp->lock_turns == 0u || lock_last_ok);
     /* Rev 5 (lane A, G72b, decision 0015 5ce; step G76, 5cg): the position flags (bit 0 Healing Wish, never set; the stats-raised
@@ -972,6 +974,20 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant],
                                     &side->positions[p], dfi_substitute_cap(side))) {
                 return DFI_INV_TAIL_POSITION;
+            }
+            /* Issue 606 (decision 0015 5dv): the unused-lock bit lives from a stopped use to the residual of the same turn, so
+             * it stands only at a PIVOT pause between the two or at the end of the battle; every other boundary is after a
+             * residual (TURN, REPLACEMENT) or before any turn (TEAM_SELECTION). Its use is behind it: the rest of the turn
+             * holds no move of that position. */
+            if ((tp->single_turn & DFI_SINGLE_TURN_LOCK_UNUSED) != 0u) {
+                if (b->boundary_kind != DUOFORGE_BOUNDARY_PIVOT && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
+                    return DFI_INV_TAIL_POSITION;
+                }
+                for (uint32_t q = 0u; q < b->queue_len && q < DFI_QUEUE_CAPACITY; ++q) {
+                    if (b->queue[q].kind == DFI_Q_MOVE && (uint32_t)b->queue[q].side == s && (uint32_t)b->queue[q].slot == p) {
+                        return DFI_INV_TAIL_POSITION;
+                    }
+                }
             }
         }
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {

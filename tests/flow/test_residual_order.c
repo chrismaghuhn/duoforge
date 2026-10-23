@@ -490,15 +490,15 @@ static void test_kinds_and_sites_have_names(df_test *t)
     DF_CHECK(t, dfi_res_kind_name(0u) == NULL);
     DF_CHECK(t, dfi_res_kind_name(255u) == NULL);
     /* Every defined draw site has a name (the list is every DFI_SITE_* of src/rng/draw.h; cmake/checks/lint_sources.cmake
-     * checks that each define has its case). The unused values 0, 26..31 (lane B's range, not defined yet), 255 and the
-     * count have none. */
-#define DF_SITE_NAMED(X)     X(SPEED_TIE) X(ACCURACY) X(CRIT) X(DAMAGE_ROLL) X(SECONDARY) X(STALL) X(SLEEP_TURNS) X(FREEZE_THAW)     X(FULL_PARALYSIS) X(CONFUSION_TURNS) X(CONFUSION_HIT) X(RANDOM_TARGET) X(STATUS_PICK) X(INSERT_TIE) X(TRACE)     X(POISON_TOUCH) X(CURSED_BODY) X(FLAME_BODY) X(STATIC) X(DRAG) X(LOCK_TURNS) X(MULTIHIT_COUNT)     X(PARTIAL_TRAP_TURNS) X(MOODY) X(CUTE_CHARM) X(ATTRACT) X(ALLY_SWITCH)
+     * checks that each define has its case). The unused values 0, 27..31 (lane B's range, not defined yet; 26 is Poison Point's,
+     * A2a, HS grant), 255 and the count have none. */
+#define DF_SITE_NAMED(X)     X(SPEED_TIE) X(ACCURACY) X(CRIT) X(DAMAGE_ROLL) X(SECONDARY) X(STALL) X(SLEEP_TURNS) X(FREEZE_THAW)     X(FULL_PARALYSIS) X(CONFUSION_TURNS) X(CONFUSION_HIT) X(RANDOM_TARGET) X(STATUS_PICK) X(INSERT_TIE) X(TRACE)     X(POISON_TOUCH) X(CURSED_BODY) X(FLAME_BODY) X(STATIC) X(DRAG) X(LOCK_TURNS) X(MULTIHIT_COUNT)     X(PARTIAL_TRAP_TURNS) X(MOODY) X(CUTE_CHARM) X(ATTRACT) X(POISON_POINT) X(ALLY_SWITCH)
 #define DF_SITE_CHECK(n) DF_CHECK(t, dfi_site_name(DFI_SITE_##n) != NULL);
     DF_SITE_NAMED(DF_SITE_CHECK)
 #undef DF_SITE_CHECK
 #undef DF_SITE_NAMED
     DF_CHECK(t, dfi_site_name(0u) == NULL);
-    DF_CHECK(t, dfi_site_name(26u) == NULL);
+    DF_CHECK(t, dfi_site_name(27u) == NULL);
     DF_CHECK(t, dfi_site_name(DFI_SITE_COUNT) == NULL);
     DF_CHECK(t, dfi_site_name(255u) == NULL);
 }

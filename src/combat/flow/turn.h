@@ -589,10 +589,11 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
         dfi_queue_pop(b, &q);
         if (q.kind == DFI_Q_MOVE) {
             bool ran = false;
-            /* lockedmove (step G56): a locked user whose move is stopped before its use (a flinch, a freeze, a full paralysis)
-             * keeps the lock into the residual, where its end (fieldEvent, onEnd) would need the lock's count and the
-             * order of that end, which is not modelled: refused. A sleeping holder is not refused (its lock is deleted
-             * silently at the residual, as the pin does). */
+            /* lockedmove (step G56): a locked user whose move is stopped before its use keeps the lock, not restarted, into the
+             * residual, whose countdown ends it there with onEnd (sim/battle.ts:515-522; issue 606, decision 0015 5dv). A
+             * sleeping holder goes on and its lock gets the unused-lock bit (DFI_SINGLE_TURN_LOCK_UNUSED, in the state, so a
+             * PIVOT pause before the residual keeps it); the other stops (a flinch, a freeze, a full paralysis, a confusion
+             * self-hit) stay refused: lifting them is its own change. */
             uint32_t mover = (uint32_t)q.side * 2u + (uint32_t)q.slot;
             const bool lock_before = b->tail.sides[mover / 2u].positions[mover % 2u].lock_turns != 0u;
             st = dfi_run_move(&r, &q, &ran);
@@ -610,6 +611,10 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                 const dfi_member *mm = dfi_at(b, mover);
                 if (mm != NULL && mm->hp != 0u && mm->status != DFI_STATUS_SLP) {
                     return DUOFORGE_E_UNSUPPORTED;
+                }
+                dfi_tail_pos *mt = &b->tail.sides[mover / 2u].positions[mover % 2u];
+                if (mm != NULL && mm->hp != 0u && mt->lock_turns != 0u) {
+                    mt->single_turn = (uint8_t)((uint32_t)mt->single_turn | DFI_SINGLE_TURN_LOCK_UNUSED); /* wide-operands-reviewed: a byte mask */
                 }
             }
             if (!ran) {

@@ -47,7 +47,7 @@ uint32_t dfi_target_class_for_types(uint32_t special, uint32_t table_class, cons
 /* Illusion (decision 0026): the disguise of the lead at `slot` of `side` at team start, if its holder disguises. */
 bool dfi_illusion_lead_disguise(const struct duoforge_battle *b, uint32_t side, uint32_t slot, uint32_t *roster);
 
-/* Skill Swap's decision before anything changes (decision 0041; dfi_skill_swap_decision in turn.c): the swap proceeds, the move
+/* Skill Swap's decision before anything changes (decision 0041; dfi_skill_swap_decision in abilities/skill_swap.h): the swap proceeds, the move
  * fails silently (-fail and [still]: a fainted holder or failskillswap on either ability), it is refused (an Update handler acts on
  * a state the holder has: Limber on a paralysed holder, Thermal Exchange on a burned one, Oblivious on a taunted one), or a holder is
  * not there. Reads the state only. */

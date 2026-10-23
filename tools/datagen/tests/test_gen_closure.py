@@ -1474,7 +1474,11 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
                                                                  'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                                                                  'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
-                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill']})
+                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill',
+                                                                 # A2a (decision 0015 entry 5dy)
+                                                                 'illuminate', 'whitesmoke', 'waterabsorb', 'eartheater', 'motordrive',
+                                                                 'icebody', 'surgesurfer', 'quickfeet', 'corrosion', 'purifyingsalt',
+                                                                 'gooey', 'poisonpoint', 'tangledfeet', 'naturalcure']})
 
 
 class Bounds(unittest.TestCase):
@@ -1834,6 +1838,48 @@ class SmallRules(unittest.TestCase):
         self.assertIn('ejectbutton', gen_closure.ENGINE_ROWS['items'])
         for ability in ('soundproof', 'unnerve', 'speedboost'):
             self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
+
+
+class A2aFacts(unittest.TestCase):
+    """A2a (decision 0015 entry 5dy): the fourteen engine rows' pinned texts are demanded whole (A2A_ABILITY_FACTS, Natural Cure's
+    Champions entry, A2A_OTHER_FACTS); each one dropped from its source fails the generator."""
+
+    def sources(self, skip=None):
+        base = [entry(aid, *[f for i, f in enumerate(facts) if ('base', aid, i) != skip])
+                for aid, facts in gen_closure.A2A_ABILITY_FACTS]
+        champ = [entry(aid, *[f for i, f in enumerate(facts) if ('champ', aid, i) != skip])
+                 for aid, facts in gen_closure.A2A_CHAMPIONS_FACTS]
+        others = {rel: TextSource(rel, '\n'.join(f for i, f in enumerate(facts) if ('other', rel, i) != skip))
+                  for rel, facts in gen_closure.A2A_OTHER_FACTS}
+        return (TextSource('data/abilities.ts', '\n'.join(base)), TextSource('data/mods/champions/abilities.ts', '\n'.join(champ)),
+                others)
+
+    def test_the_facts_are_accepted(self):
+        gen_closure.check_a2a_facts(*self.sources())
+
+    def test_the_rows_of_the_batch(self):
+        ids = [aid for aid, _ in gen_closure.A2A_ABILITY_FACTS] + [aid for aid, _ in gen_closure.A2A_CHAMPIONS_FACTS]
+        self.assertEqual(sorted(ids), sorted(['illuminate', 'whitesmoke', 'waterabsorb', 'eartheater', 'motordrive', 'icebody',
+                                              'surgesurfer', 'quickfeet', 'corrosion', 'purifyingsalt', 'gooey', 'poisonpoint',
+                                              'tangledfeet', 'naturalcure']))
+        for aid in ids:
+            self.assertIn(aid, gen_closure.ENGINE_ROWS['abilities'])
+
+    def test_every_fact_is_demanded(self):
+        cases = [('base', aid, i) for aid, facts in gen_closure.A2A_ABILITY_FACTS for i in range(len(facts))]
+        cases += [('champ', aid, i) for aid, facts in gen_closure.A2A_CHAMPIONS_FACTS for i in range(len(facts))]
+        cases += [('other', rel, i) for rel, facts in gen_closure.A2A_OTHER_FACTS for i in range(len(facts))]
+        for case in cases:
+            with self.subTest(case=case), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_a2a_facts(*self.sources(case))
+            self.assertIn('no longer has', str(cm.exception.code))
+
+    def test_a_champions_override_of_a_base_row_fails(self):
+        abil, champ, others = self.sources()
+        champ = TextSource('data/mods/champions/abilities.ts', entry('gooey', 'inherit: true,', 'flags: {},'))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_a2a_facts(abil, champ, others)
+        self.assertIn('overrides', str(cm.exception.code))
 
 
 class SmallRulesG35(unittest.TestCase):
