@@ -4,6 +4,7 @@
 /* Private scratch for one turn action. Extracted without changing its layout
  * or lifetime; positional initializers remain in turn.c. No public API. */
 #include "combat/events.h"
+#include "core/inline.h"
 #include "state/observation_digest.h"
 #include "rng/draw.h"
 #include "state/battle_internal.h"
@@ -85,13 +86,13 @@ typedef struct dfi_run {
     uint32_t protect_bypass;
 } dfi_run;
 
-static inline dfi_active_slot *dfi_pos(struct duoforge_battle *b, uint32_t flat)
+static DFI_ALWAYS_INLINE dfi_active_slot *dfi_pos(struct duoforge_battle *b, uint32_t flat)
 {
     return &b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].positions[flat % DUOFORGE_ACTIVE_PER_SIDE];
 }
 
 /* The member at a flat position, or NULL when it is empty. */
-static inline dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
+static DFI_ALWAYS_INLINE dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
 {
     const uint32_t occupant = dfi_pos(b, flat)->occupant;
     if (occupant >= DUOFORGE_MAX_ROSTER) {

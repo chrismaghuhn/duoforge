@@ -18,11 +18,16 @@ docs/superpowers/specs/2026-10-15-gen9-ou-design.md), is checked the same way (i
 with --pin, every quote). The engine reads none of its values (the singles kind of decision 0083 plays the format on
 the Reg M-C pool tables), so it writes no header: --format champions-ou with no other option only checks.
 
+A third, data/formats/gen9ou.json ([Gen 9] OU, singles on the gen9 mod; step O8 of the Gen 9 OU design), is checked
+the same way and writes no header either. Its tables section names the gen9 rule set, which gen_closure.py refuses by
+name until the Gen 9 design brings standalone table sets.
+
 usage:
   python3 tools/datagen/gen_format.py                  # write src/data/formats/reg-mc/format_tables.h
   python3 tools/datagen/gen_format.py --check          # compare only
   python3 tools/datagen/gen_format.py --pin <checkout> # compare every quote with the pinned checkout
   python3 tools/datagen/gen_format.py --format champions-ou [--pin <checkout>]  # check the second definition
+  python3 tools/datagen/gen_format.py --format gen9ou [--pin <checkout>]        # check the third definition
 """
 import hashlib
 import io
@@ -94,7 +99,7 @@ READERS = {
     'item_clause': number(r"^'Item Clause = (\d+)'$"),
     'species_clause': present("'Species Clause'"),
     'nickname_clause': present("'Nickname Clause'"),
-    'terastallization': lambda q: False if q == 'return null;' else None,
+    'terastallization': lambda q: False if q == 'return null;' else True if q == 'return pokemon.teraType;' else None,
     'timer_starting_s': number(r"'Timer Starting = (\d+)'"),
     'timer_grace_s': number(r"'Timer Grace = (\d+)'"),
     'timer_add_per_turn_s': number(r"'Timer Add Per Turn = (\d+)'"),
@@ -120,6 +125,17 @@ READERS = {
     'ladder_timer_max_per_turn_s': number(r'^const MAX_TURN_TIME = (\d+);$'),
     'ladder_timer_max_first_turn_s': number(r'^const MAX_TURN_TIME = (\d+);$'),
     'ladder_timeout_auto_choose': lambda q: False if q == 'timeoutAutoChoose: false,' else None,
+    # The facts of gen9ou: the base Standard (data/rulesets.ts, the gen9 mod has none of its own), the format's own
+    # clauses, the singles minimum team size, the level and EV limits of the rule table's defaults and Terastallization.
+    'standard_clauses': quoted_items,
+    'evasion_items_clause': present("'Evasion Items Clause'"),
+    'evasion_moves_clause': present("'Evasion Moves Clause'"),
+    'evasion_abilities_clause': present("'Evasion Abilities Clause'"),
+    'sleep_clause_mod_removed': present("'!Sleep Clause Mod'"),
+    'min_team_size_singles': number(r'^(\d+);$'),
+    'max_level': number(r"\|\| (\d+);$"),
+    'ev_total_max': number(r'^this\.evLimit = dex\.gen > 2 \? (\d+) : null;$'),
+    'ev_max': number(r'^if \(set\.evs\[stat as StatID\] > (\d+)\) \{$'),
 }
 
 # The facts each definition must hold, exactly.
@@ -136,6 +152,13 @@ FACTS = {
                      'terastallization', 'ladder_timer_starting_s', 'ladder_timer_grace_s',
                      'ladder_timer_add_per_turn_s', 'ladder_timer_max_per_turn_s', 'ladder_timer_max_first_turn_s',
                      'ladder_timeout_auto_choose'},
+    'gen9ou': {'name', 'mod', 'game_type_default', 'ruleset', 'banlist', 'standard_ag_rules', 'standard_rules',
+               'standard_clauses', 'team_preview', 'lead_only_preview', 'endless_battle_clause', 'species_clause',
+               'nickname_clause', 'ohko_clause', 'evasion_items_clause', 'evasion_moves_clause',
+               'evasion_abilities_clause', 'sleep_moves_clause', 'sleep_clause_mod_removed', 'min_team_size_singles',
+               'max_team_size', 'max_level', 'moves_per_set', 'ev_total_max', 'ev_max', 'terastallization',
+               'ladder_timer_starting_s', 'ladder_timer_grace_s', 'ladder_timer_add_per_turn_s',
+               'ladder_timer_max_per_turn_s', 'ladder_timer_max_first_turn_s', 'ladder_timeout_auto_choose'},
 }
 assert set(READERS) == set().union(*FACTS.values())
 
@@ -167,6 +190,32 @@ CONTEXT = {'reg-mc': {
     ('sim/dex-formats.ts', 348): "if (format.mod.startsWith('champions')) {",
     ('sim/team-validator.ts', 1155): "const useStatPoints = dex.currentMod.startsWith('champions');",
     ('sim/team-validator.ts', 1313): '} else if (useStatPoints) {',
+    ('server/room-battle.ts', 183): "const hasLongTurns = format.gameType !== 'singles';",
+    ('server/room-battle.ts', 194): 'this.settings = {',
+}, 'gen9ou': {
+    ('config/formats.ts', 73): '{',
+    ('config/formats.ts', 78): '},',
+    ('data/rulesets.ts', 11): 'standardag: {',
+    ('data/rulesets.ts', 15): 'ruleset: [',
+    ('data/rulesets.ts', 17): '],',
+    ('data/rulesets.ts', 19): 'standard: {',
+    ('data/rulesets.ts', 23): 'ruleset: [',
+    ('data/rulesets.ts', 26): '],',
+    ('data/rulesets.ts', 166): 'obtainable: {',
+    ('data/rulesets.ts', 170): "ruleset: ['Obtainable Moves', 'Obtainable Abilities', 'Obtainable Formes', 'EV Limit = Auto', "
+                               "'Obtainable Misc'],",
+    ('sim/battle-actions.ts', 1924): 'canTerastallize(pokemon: Pokemon) {',
+    ('sim/battle-actions.ts', 1925): 'if (pokemon.getItem().zMove || pokemon.canMegaEvo || this.dex.gen !== 9) {',
+    ('sim/battle.ts', 1391): "if (type === 'teampreview') {",
+    ('sim/battle.ts', 1392): '// `pickedTeamSize = 6` means the format wants the user to select',
+    ('sim/battle.ts', 1395): 'const pickedTeamSize = this.ruleTable.pickedTeamSize;',
+    ('sim/dex-formats.ts', 272): "const gameTypeMinTeamSize = ['triples', 'rotation'].includes(format.gameType as 'triples') ? 3 :",
+    ('sim/dex-formats.ts', 273): "format.gameType === 'doubles' ? 2 :",
+    ('sim/dex-formats.ts', 285): "this.minTeamSize = Number(this.valueRules.get('minteamsize')) || 0;",
+    ('sim/dex-formats.ts', 287): "this.pickedTeamSize = Number(this.valueRules.get('pickedteamsize')) || null;",
+    ('sim/dex-formats.ts', 343): "if (this.valueRules.get('evlimit') === 'Auto') {",
+    ('sim/dex-formats.ts', 391): 'if (!this.minTeamSize) this.minTeamSize = Math.max(gameTypeMinTeamSize, this.pickedTeamSize || 0);',
+    ('sim/team-validator.ts', 1319): '} else { // EVs',
     ('server/room-battle.ts', 183): "const hasLongTurns = format.gameType !== 'singles';",
     ('server/room-battle.ts', 194): 'this.settings = {',
 }}
@@ -314,6 +363,9 @@ def check_pin(fmt, checkout):
     if fmt['id'] == 'champions-ou':
         check_champions_ou(fmt, line)
         return
+    if fmt['id'] == 'gen9ou':
+        check_gen9ou(fmt, line)
+        return
     for rule in ('Species Clause', 'Nickname Clause', 'Item Clause = 1', 'Picked Team Size = Auto'):
         if rule not in rules['flat_rules']['value']:
             fail('Flat Rules lack %s' % rule)
@@ -345,6 +397,44 @@ def check_champions_ou(fmt, line):
         pin = rules[name]['pin']
         if pin[0] != 'data/mods/champions/rulesets.ts' or pin[1] != rule_line or rules[name]['value'] in (None, False):
             fail('fact %s is not the rule of data/mods/champions/rulesets.ts:%d' % (name, rule_line))
+
+
+def check_gen9ou(fmt, line):
+    """The checks of [Gen 9] OU beyond its quotes: a singles format of the gen9 mod without a game type line, its rules
+    the base Standard (data/rulesets.ts, not a mod's), no Item Clause anywhere in its rules, Terastallization, and one
+    position per side."""
+    rules = fmt['facts']
+    entry = [line('config/formats.ts', n) for n in range(73, 79)]
+    if entry[1] != 'name: "%s",' % rules['name']['value'] or any(text.startswith('gameType:') for text in entry):
+        fail('config/formats.ts:73-78 is not the entry of %s without a game type' % rules['name']['value'])
+    if rules['mod']['value'] != 'gen9' or rules['game_type_default']['value'] != 'singles' or \
+            fmt['engine']['active_per_side'] != 1:
+        fail('gen9ou is a singles format of the gen9 mod with one position per side')
+    if rules['ruleset']['value'][0] != 'Standard' or rules['standard_rules']['value'] != ['Standard AG']:
+        fail('the format is not the base Standard')
+    lists = [rules[k]['value'] for k in ('ruleset', 'standard_ag_rules', 'standard_rules', 'standard_clauses')]
+    if any(r.startswith('Item Clause') for value in lists for r in value):
+        fail('gen9ou has no Item Clause; a rule list now names one')
+    if rules['terastallization']['value'] is not True:
+        fail('gen9ou plays with Terastallization')
+    # The other rules are quoted one by one: the line of each must belong to the list it names.
+    for name, (path, rule_line) in (
+            (('team_preview', ('data/rulesets.ts', 16)), ('endless_battle_clause', ('data/rulesets.ts', 16)),
+             ('standard_ag_rules', ('data/rulesets.ts', 16)), ('standard_rules', ('data/rulesets.ts', 24)),
+             ('standard_clauses', ('data/rulesets.ts', 25)), ('species_clause', ('data/rulesets.ts', 25)),
+             ('nickname_clause', ('data/rulesets.ts', 25)), ('ohko_clause', ('data/rulesets.ts', 25)),
+             ('evasion_items_clause', ('data/rulesets.ts', 25)), ('evasion_moves_clause', ('data/rulesets.ts', 25)),
+             ('evasion_abilities_clause', ('config/formats.ts', 76)), ('sleep_moves_clause', ('config/formats.ts', 76)),
+             ('sleep_clause_mod_removed', ('config/formats.ts', 76)),
+             # Quotes that a reader would also accept on another line ("1;", "|| 100;"): their lines are fixed here.
+             ('min_team_size_singles', ('sim/dex-formats.ts', 274)), ('max_level', ('sim/dex-formats.ts', 292)),
+             ('ev_total_max', ('sim/dex-formats.ts', 344)), ('ev_max', ('sim/team-validator.ts', 1321)),
+             ('terastallization', ('sim/battle-actions.ts', 1928)))):
+        pin = rules[name]['pin']
+        if pin[0] != path or pin[1] != rule_line or rules[name]['value'] in (None, False):
+            fail('fact %s is not the rule of %s:%d' % (name, path, rule_line))
+    if 'Sleep Clause Mod' not in rules['standard_clauses']['value']:
+        fail('the Standard clauses no longer name the Sleep Clause Mod that gen9ou removes')
 
 
 def main():

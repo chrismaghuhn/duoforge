@@ -1530,7 +1530,11 @@ class Bounds(unittest.TestCase):
     def test_the_counts_of_the_ids_are_bounded(self):
         self.refused(self.data(abilities=255), 'the table set holds at most 254 and 254')
         self.refused(self.data(items=255), 'the table set holds at most 254 and 254')
-        self.refused(self.data(moves=513), 'DUOFORGE_DATA_MAX_FORME_MOVES')
+        # W2 (O8): DUOFORGE_DATA_MAX_FORME_MOVES bounds the legal moves of one forme, not the moves in total.
+        many = self.data(moves=513)
+        gen_closure.check_bounds(many, self.tmp.name, REG_MC_BOUNDS)
+        many['forme_legal'] = [dict(many['forme_legal'][0], moves=['m'] * 513)] * 3
+        self.refused(many, 'a forme has 513 legal moves, the bound moves_per_forme is 512')
         self.refused(self.data(formes=65536), 'bounds')
 
     def test_a_narrower_field_fails_loudly(self):
