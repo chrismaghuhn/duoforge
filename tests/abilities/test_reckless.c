@@ -20,9 +20,6 @@
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-
-#define AB(name) (1u + DFI_ABILITY_##name)
-
 /* ---- the moves that Reckless's recoil clause reads, and the ones it must not reach */
 static void check_recoil_rows(df_test *t)
 {

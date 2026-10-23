@@ -9,7 +9,6 @@
 #include <string.h>
 
 #include <duoforge/duoforge.h>
-
 #include "combat/damage_chain.h"
 #include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
@@ -21,12 +20,6 @@
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-/* The steps of g59_mega_sol (step 0 is the team selection): Sunny Day, then Solar Beam with the Mega Evolution, then Weather
- * Ball. The field's weather is changed to rain before the step with the move `which` (the step index), or not at all. */
-#define MS_SOLAR_STEP 2u
-#define MS_WEATHER_STEP 3u
-#define NO_CHANGE 0xffffffffu
-
 /* ---- Mega Launcher reads the public static flag PULSE of the pool row (decision 0020) */
 static void check_pulse(df_test *t)
 {
