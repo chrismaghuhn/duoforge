@@ -1,0 +1,44 @@
+{
+ "name": "noorder_tie_wide_guard",
+ "purpose": "Review of PR 661 (docs/mechanics/flow/5ga-residual-noorder-tie.md): Wide Guard is a side condition with a duration and no order (Speed 0, sub-order 4), an entry of the residual sort that the engine's list lacked. In the last step Machamp's Wide Guard stands on side 1, Politoed's Hypnosis stops Dragonite's locked turn and Venusaur restarts its lock, both at Speed 110; Perish Song ends side 1's two Pokemon. Without the Wide Guard entry the selection sort's swaps leave the two locks in the other pre-shuffle order (for every value of the draw), and the battle-ending faint point would come at the other lock. Refused on main and before the fix; PASS with the entry.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,d2e5582fa38294f24028f75b9b788a5107a2fb7e68e6290e4d20cb416c652873",
+ "teams": [
+  "Farigiraf (F) @ Sitrus Berry\nAbility: Armor Tail\nLevel: 50\nEVs: 29 HP / 20 Def / 17 SpD\nBold Nature\n- Psychic\n- Grass Knot\n- Trick Room\n- Protect\n\nCharizard (M) @ Charizardite Y\nAbility: Blaze\nLevel: 50\nEVs: 16 HP / 18 Def / 3 SpA / 29 Spe\nTimid Nature\n- Heat Wave\n- Weather Ball\n- Hurricane\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 7 Def / 27 Spe\nBold Nature\n- Perish Song\n- Hypnosis\n- Muddy Water\n- Protect\n\nGrimmsnarl (M) @ Light Clay\nAbility: Prankster\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nSassy Nature\n- Spirit Break\n- Reflect\n- Light Screen\n- Parting Shot\n\nMachamp (M) @ Expert Belt\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Coaching\n- Protect\n- Close Combat\n- Wide Guard\n\nGolisopod (F) @ Golisopite\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 1 SpD / 1 Spe\nAdamant Nature\n- Leech Life\n- Iron Head\n- Drill Run\n- Protect",
+  "Arcanine (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 Atk / 32 Spe\nJolly Nature\n- Outrage\n- Wild Charge\n- Flare Blitz\n- Extreme Speed\n\nScizor (M) @ Scizorite\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk\nAdamant Nature\n- Bug Bite\n- U-turn\n- Bullet Punch\n- Swords Dance\n\nDragonite (M) @ Sitrus Berry\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 24 SpD / 10 Spe\nModest Nature\n- Outrage\n- Protect\n- Extreme Speed\n- Iron Head\n\nVenusaur (M) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 24 SpD / 10 Spe\nModest Nature\n- Sleep Powder\n- Outrage\n- Giga Drain\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nMeganium (F) @ Expert Belt\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 SpA\nModest Nature\n- Energy Ball\n- Swords Dance\n- Giga Drain\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 2435",
+   "p2": "team 1234"
+  },
+  {
+   "p1": "move 2 2, move 1 2",
+   "p2": "move 2 1, move 3 2"
+  },
+  {
+   "p1": "move 2 2, move 1 2",
+   "p2": "move 2 1, move 3 2"
+  },
+  {
+   "p1": "switch 4, switch 3"
+  },
+  {
+   "p1": "move 1 -2, move 1",
+   "p2": "move 4 2, move 4"
+  },
+  {
+   "p1": "move 1 -2, move 4",
+   "p2": "switch 3, switch 4"
+  },
+  {
+   "p1": "move 1 -2, move 3",
+   "p2": "move 1, move 2"
+  },
+  {
+   "p1": "move 4, move 2 1",
+   "p2": "move 1, move 2"
+  }
+ ]
+}

@@ -427,6 +427,10 @@ static dfi_residual_entry ent(uint32_t kind, uint32_t flat, uint32_t order, uint
 #define LEFT(f) ent(DFI_RES_LEFTOVERS, (f), 5u, 4u, true)
 #define HERB(f) ent(DFI_RES_WHITE_HERB, (f), 29u, 8u, true)
 #define LOCK(f) ent(DFI_RES_LOCK, (f), DFI_RES_NO_ORDER, 2u, true)
+/* A side's condition (review of PR 661): Reflect (26, sub-order 1), Tailwind (26, 5), Wide Guard (no order, Speed 0, 4). */
+#define REFLECT(sd) ((dfi_residual_entry){DFI_RES_FIELD_END, DFI_RESIDUAL_SIDE_FLAT + (sd), 26u, 0u, 1u, false})
+#define TAILWIND(sd) ((dfi_residual_entry){DFI_RES_FIELD_END, DFI_RESIDUAL_SIDE_FLAT + (sd), 26u, 0u, 5u, false})
+#define WIDEGUARD(sd) ((dfi_residual_entry){DFI_RES_FIELD_END, DFI_RESIDUAL_SIDE_FLAT + (sd), DFI_RES_NO_ORDER, 0u, 4u, false})
 
 static void test_examples(df_test *t)
 {
@@ -506,6 +510,53 @@ static void test_examples(df_test *t)
         const dfi_residual_entry l[] = {LOCK(0), COUNTER(0), LOCK(1)};
         DF_CHECK(t, dfi_residual_order_may_matter(l, 3u));
         DF_CHECK(t, dfi_residual_order_ambiguous(l, 3u));
+    }
+    /* A side's conditions are added in an unknown order too (review of PR 661): with Reflect and Tailwind on both sides and
+     * three locks of one Speed, which side condition stood first decides where the swaps leave the locks. Refused; with the
+     * conditions' keys lumped into one (as the engine listed them before the review) the list had no region and was not. */
+    {
+        const dfi_residual_entry l[] = {REFLECT(0), TAILWIND(0), LOCK(0), LOCK(1), REFLECT(1), TAILWIND(1), LOCK(3), LEFT(3)};
+        DF_CHECK(t, dfi_residual_order_ambiguous(l, 8u));
+        dfi_residual_entry lumped[8];
+        for (uint32_t i = 0u; i < 8u; ++i) {
+            lumped[i] = l[i];
+            if (lumped[i].kind == DFI_RES_FIELD_END) {
+                lumped[i].sub_order = 1u;
+            }
+        }
+        DF_CHECK(t, !dfi_residual_order_ambiguous(lumped, 8u));
+    }
+    /* Wide Guard is an entry of the sort though it only ends (review of PR 661, battle noorder_tie_wide_guard): with it the
+     * two locks of Speed 110 leave the sort in the other order than without it, for each value of both draws. */
+    {
+        const dfi_residual_entry with[] = {ent(DFI_RES_WEATHER, 0u, 1u, 5u, true), WIDEGUARD(0),
+                                           (dfi_residual_entry){DFI_RES_PERISH, 0u, 24u, 117u, 2u, true},
+                                           (dfi_residual_entry){DFI_RES_DURATION, 0u, DFI_RES_NO_ORDER, 117u, 2u, false},
+                                           (dfi_residual_entry){DFI_RES_PERISH, 1u, 24u, 117u, 2u, true},
+                                           (dfi_residual_entry){DFI_RES_LOCK, 2u, DFI_RES_NO_ORDER, 110u, 2u, true},
+                                           (dfi_residual_entry){DFI_RES_LOCK, 3u, DFI_RES_NO_ORDER, 110u, 2u, true},
+                                           (dfi_residual_entry){DFI_RES_LEFTOVERS, 3u, 5u, 110u, 4u, true}};
+        dfi_residual_entry without[7];
+        for (uint32_t i = 0u, k = 0u; i < 8u; ++i) {
+            if (i != 1u) {
+                without[k++] = with[i];
+            }
+        }
+        DF_CHECK(t, !dfi_residual_order_ambiguous(with, 8u));
+        for (uint32_t v = 0u; v < 4u; ++v) {
+            const uint32_t digits[2] = {v & 1u, v >> 1u};
+            uint32_t ids_with[8], ids_without[8], n_with = 0u, n_without = 0u;
+            DF_CHECK_EQ_U64(t, dfi_residual_model(with, 8u, digits, NULL, ids_with, &n_with), 2u);
+            DF_CHECK_EQ_U64(t, dfi_residual_model(without, 7u, digits, NULL, ids_without, &n_without), 2u);
+            uint32_t first_with = UINT32_MAX, first_without = UINT32_MAX;
+            for (uint32_t k = 0u; k < n_with; ++k) {
+                first_with = (first_with == UINT32_MAX && ids_with[k] / 1000u == DFI_RES_LOCK) ? ids_with[k] : first_with;
+            }
+            for (uint32_t k = 0u; k < n_without; ++k) {
+                first_without = (first_without == UINT32_MAX && ids_without[k] / 1000u == DFI_RES_LOCK) ? ids_without[k] : first_without;
+            }
+            DF_CHECK(t, first_with != UINT32_MAX && first_without != UINT32_MAX && first_with != first_without);
+        }
     }
     /* A lock and a counter on one holder with no second lock of its Speed: nothing draws, the order shows nowhere. */
     {

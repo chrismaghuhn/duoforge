@@ -9090,7 +9090,7 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
  * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore, Disable (step G27),
  * Perish Song (step G26), Taunt and Yawn (step G31)), an item (Leftovers or White Herb), Speed Boost (step G32) and Grassy Terrain. */
 #define DFI_RES_PER_POSITION 25u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31), the lockedmove (G56), Roost's volatile (G42), Leech Seed's drain (G84), Curse (G84b), the partial trap (G90) and the Ally Switch duration (G80) */
-#define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
+#define DFI_RES_MAX (4u + 6u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS) /* the field: Trick Room, Gravity, weather, terrain; a side: four screens and Tailwind, two guards */
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
 /* Battle.speedSort over the residual handlers, continued from *sorted until `want` callbacks are placed (*placed counts
@@ -9388,8 +9388,16 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_residual_collect(dfi_run *r, struct
                                                              dfi_residual_entry *list, uint32_t *count)
 {
     uint32_t n = 0u;
+    /* The field's pseudo-weathers first, in the order they were added (findFieldEventHandlers, sim/battle.ts:1133-1145): Trick
+     * Room (order 27, sub-order 1) and Gravity (27, sub-order 2, data/moves.ts:7832-7833). They only count down, but each is an
+     * entry of the sort whose swaps move the other entries (issue 661's review: without Gravity the pre-shuffle order of a later
+     * tie can differ). The order of the two is not stored: they are a region of the arrangement test (DFI_RESIDUAL_FIELD_FLAT). */
     if (b->trick_room_turns != 0u) {
-        list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, 0u, 27u, 0u, 1u, false};
+        list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, DFI_RESIDUAL_FIELD_FLAT, 27u, 0u, 1u, false};
+        n += 1u;
+    }
+    if (b->tail.gravity_turns != 0u) {
+        list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, DFI_RESIDUAL_FIELD_FLAT, 27u, 0u, 2u, false};
         n += 1u;
     }
     if (b->weather != DFI_WEATHER_NONE) {
@@ -9402,13 +9410,38 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_residual_collect(dfi_run *r, struct
     }
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         if (flat % 2u == 0u) {
-            /* The side's conditions come before its Pokemon (order 26). */
+            /* The side's conditions come before its Pokemon (findSideEventHandlers, sim/battle.ts:1149-1163), each with its
+             * own key: Reflect, Light Screen, Tailwind and Aurora Veil at order 26 with sub-orders 1, 2, 5 and 10
+             * (data/moves.ts:864-865 and the like), Wide Guard and Quick Guard with no order, Speed 0 and the side
+             * condition's sub-order 4 (duration 1, no onResidual: sim/battle.ts:954-976). None is a callback, but each is an
+             * entry of the sort (issue 661's review: a missing Wide Guard changes the pre-shuffle order of a later tie). The
+             * order in which they were added is not stored: they are a region of the arrangement test (flat
+             * DFI_RESIDUAL_SIDE_FLAT + side). */
             const dfi_side *sd = &b->sides[flat / 2u];
-            const uint32_t conditions = (sd->reflect_turns != 0u ? 1u : 0u) + (sd->light_screen_turns != 0u ? 1u : 0u) +
-                                        (sd->tailwind_turns != 0u ? 1u : 0u) +
-                                        (b->tail.sides[flat / 2u].aurora_veil_turns != 0u ? 1u : 0u);
-            for (uint32_t k = 0u; k < conditions; ++k) {
-                list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, 0u, 26u, 0u, 1u, false};
+            const dfi_tail_side *tsd = &b->tail.sides[flat / 2u];
+            const uint32_t side_flat = DFI_RESIDUAL_SIDE_FLAT + flat / 2u;
+            if (sd->reflect_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, side_flat, 26u, 0u, 1u, false};
+                n += 1u;
+            }
+            if (sd->light_screen_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, side_flat, 26u, 0u, 2u, false};
+                n += 1u;
+            }
+            if (sd->tailwind_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, side_flat, 26u, 0u, 5u, false};
+                n += 1u;
+            }
+            if (tsd->aurora_veil_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, side_flat, 26u, 0u, 10u, false};
+                n += 1u;
+            }
+            if (tsd->wide_guard != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, side_flat, DFI_RES_NO_ORDER, 0u, 4u, false};
+                n += 1u;
+            }
+            if (tsd->quick_guard != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, side_flat, DFI_RES_NO_ORDER, 0u, 4u, false};
                 n += 1u;
             }
         }
