@@ -97,7 +97,7 @@ static inline const char *dfi_res_kind_name(uint32_t kind)
 }
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 25 * 4 entries, a few draws and a few
- * orders (25 per position: the count of steps G27, G31, G32, G56, G42, G84, G84b, G90 and G80 together, DFI_RES_PER_POSITION in turn.c). */
+ * orders (25 per position: the count of steps G27, G31, G32, G56, G42, G84, G84b, G90 and G80 together, DFI_RES_PER_POSITION in combat/flow/residual_collect.h). */
 #define DFI_RES_MODEL_MAX 116u /* 4 + 6 * 2 + 25 * 4: the field's four, a side's six (Gravity and the guards, issue 661's review); DFI_RES_PER_POSITION counts Curse (step G84b), the partial trap (G90) and the Ally Switch duration (G80) */
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
