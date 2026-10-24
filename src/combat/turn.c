@@ -1874,7 +1874,7 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
         /* Inner Focus (step G22, POOL data, data/abilities.ts:2153-2167): onTryAddVolatile returns null for the flinch
          * volatile, so it is not added and nothing is shown; the secondary's roll was drawn before (the caller). The
          * ability is breakable (a move or ability that ignores abilities would skip it): Mold Breaker is unmarked
-         * (tests/test_pool_weather.c), Teravolt and Turboblaze are not in the pool, and a move with ignoreAbility has a
+         * (tests/mechanics/test_sand_snow_weather.c), Teravolt and Turboblaze are not in the pool, and a move with ignoreAbility has a
          * field that the generator does not model (UNMODELED). */
         if (dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS)) {
             return DUOFORGE_OK;
@@ -2947,7 +2947,7 @@ static duoforge_status dfi_update(dfi_run *r)
  * ability that gives the immunity: Sand Rush (step G22, data/abilities.ts:3980-3982, onImmunity 'sandstorm' returns
  * false; the Champions mod has no entry), Overcoat (step G30, data/abilities.ts:3108-3111) and Sand Force (step G63). The
  * others that give it (Safety Goggles) or stop indirect damage (Magic Guard) are not marked in the support manifest,
- * so no battle holds one (tests/test_pool_weather.c checks that); marking one needs its immunity here. */
+ * so no battle holds one (tests/mechanics/test_sand_snow_weather.c checks that); marking one needs its immunity here. */
 static bool dfi_sand_immune(const struct duoforge_battle *b, const dfi_member *m)
 {
     if (dfi_ability(b, m, DFI_ABILITY_SANDRUSH) || dfi_ability(b, m, DFI_ABILITY_OVERCOAT) ||

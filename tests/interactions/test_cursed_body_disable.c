@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g27 (white-box): step G27 of the content expansion, Cursed Body and Disable, in the POOL state tail
+ * duoforge.interactions.cursed_body_disable (white-box): step G27 of the content expansion, Cursed Body and Disable, in the POOL state tail
  * (decision 0015 section 7: disable_slot and disable_turns of a position, rev 3 as it is) and in the POOL view extension
  * (decision 0018: the position's disable_slot, supported bit 21).
  *
@@ -205,7 +205,7 @@ static const char *const names[] = {"g27_cursed_body_a", "g27_cursed_body_spread
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g27");
+    df_test_begin(&t, "duoforge.interactions.cursed_body_disable");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t compared = 0u;
     uint32_t live = 0u;

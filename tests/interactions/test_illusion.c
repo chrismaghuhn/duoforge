@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_i2 (white-box): step I2 of the content expansion, Illusion (decision 0026, amended by I2).
+ * duoforge.interactions.illusion (white-box): step I2 of the content expansion, Illusion (decision 0026, amended by I2).
  *
  * The recorded battles of this step, replayed to their interesting steps (step 0 is the team step):
  *
@@ -1161,7 +1161,7 @@ static void check_insta_disguise(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_i2");
+    df_test_begin(&t, "duoforge.interactions.illusion");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     check_team_start(&t, ctx);
     check_public_mask(&t, ctx);

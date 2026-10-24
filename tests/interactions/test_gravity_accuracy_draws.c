@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_k4_draws (white-box): step K4 (#475, decision 0015 5dl), Gravity's accuracy rule with the draws of the
+ * duoforge.interactions.gravity_accuracy_draws (white-box): step K4 (#475, decision 0015 5dl), Gravity's accuracy rule with the draws of the
  * recorded k4 battles changed by one value each.
  *
  * The recorded battles are replayed by duoforge.reference.conformance_pool_data with the reference's draws. Here one
@@ -276,7 +276,7 @@ static void check_later_hit_non_integer(df_test *t, duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_k4_draws");
+    df_test_begin(&t, "duoforge.interactions.gravity_accuracy_draws");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     check_gravity_first_hit(&t, ctx);
     check_gravity_later_hit(&t, ctx);

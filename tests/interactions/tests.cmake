@@ -51,8 +51,8 @@ duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES interactions/test_pool_g3
 # Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES interactions/test_pool_g33.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 # Step K4 (#475, decision 0015 5dl): Gravity's accuracy rule (first hit 6840/4096, later hit integer) with one recorded draw changed.
-duoforge_add_test(NAME duoforge.state.pool_k4_draws SOURCES interactions/test_pool_k4_draws.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
-duoforge_add_test(NAME duoforge.state.pool_g52 SOURCES interactions/test_pool_g52.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.gravity_accuracy_draws SOURCES interactions/test_gravity_accuracy_draws.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.revival_blessing_view SOURCES interactions/test_revival_blessing_view.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES interactions/test_pool_g34.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
@@ -61,9 +61,9 @@ duoforge_add_test(NAME duoforge.state.pool_g35 SOURCES interactions/test_pool_g3
 duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES interactions/test_pool_g39.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 # Step G27: Cursed Body and Disable in the tail's disable_slot and disable_turns, the request, the cant line and the POOL view
 # extension (the position's disable_slot, bit 21).
-duoforge_add_test(NAME duoforge.state.pool_g27 SOURCES interactions/test_pool_g27.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.cursed_body_disable SOURCES interactions/test_cursed_body_disable.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 # Step I2 (decision 0026, amended by I2): Illusion, the disguise, the break, the foe view, the causes (white-box).
-duoforge_add_test(NAME duoforge.state.pool_i2 SOURCES interactions/test_pool_i2.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.illusion SOURCES interactions/test_illusion.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA interactions)
 
 # Step G75 (decision 0015 5bp): the cheap set, Pure Power, Battle Armor and Scope Lens (engine rows), the stones Medichamite and
 # Clefablite, and the two Mega pairs (white-box).
@@ -94,4 +94,4 @@ foreach(_kind IN ITEMS conformance tiebreak)
         target_include_directories(duoforge_reference_${_kind}${_suffix} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
     endforeach()
 endforeach()
-duoforge_add_test(NAME duoforge.state.pool_g47 SOURCES interactions/test_pool_g47.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.status_cures SOURCES interactions/test_status_cures.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)

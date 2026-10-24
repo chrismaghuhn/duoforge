@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g7 (white-box): step G7 of the content expansion, Wide Guard, in the POOL state tail
+ * duoforge.mechanics.wide_guard (white-box): step G7 of the content expansion, Wide Guard, in the POOL state tail
  * (decision 0015 section 7) and in the POOL view extension (decision 0018).
  *
  * The recorded battles (g7_wide_guard_a, _b, _ally and _pivot under "data": "pool") are replayed through the step with
@@ -150,7 +150,7 @@ static const struct {
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g7");
+    df_test_begin(&t, "duoforge.mechanics.wide_guard");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     static const char *const names[] = {"g7_wide_guard_a", "g7_wide_guard_b", "g7_wide_guard_ally",
                                         "g7_wide_guard_pivot"};

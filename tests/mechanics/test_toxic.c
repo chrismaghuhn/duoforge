@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g36 (white-box): step G36 of the content expansion, Toxic and the badly poisoned status, in the POOL
+ * duoforge.mechanics.toxic (white-box): step G36 of the content expansion, Toxic and the badly poisoned status, in the POOL
  * state tail (decision 0015 section 7: toxic_stage of a roster member, rev 2 as it is), the member's status
  * DUOFORGE_AILMENT_TOX and the POOL view (decision 0018: the ailment value in the member views, supported bit 10).
  *
@@ -155,7 +155,7 @@ static const char *const names[] = {"g36_poison_fang_a", "g36_poison_fang_b", "g
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g36");
+    df_test_begin(&t, "duoforge.mechanics.toxic");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     uint32_t compared = 0u;
     uint32_t staged = 0u;

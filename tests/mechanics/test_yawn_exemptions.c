@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g72 (white-box): step G72 of the content expansion (decision 0015 item 5ce), the open evidence gap of
+ * duoforge.mechanics.yawn_exemptions (white-box): step G72 of the content expansion (decision 0015 item 5ce), the open evidence gap of
  * the Yawn rules (G31's clause (3), G58's semi-invulnerable exemptions).
  *
  * The behaviour is replayed by duoforge.reference.conformance_pool_data: two recorded battles (g72_* under "data": "pool")
@@ -200,7 +200,7 @@ static void test_yawn_missed_charger(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g72");
+    df_test_begin(&t, "duoforge.mechanics.yawn_exemptions");
     test_yawn_on_charger_under_electric(&t);
     test_yawn_missed_charger(&t);
     return df_test_end(&t);
