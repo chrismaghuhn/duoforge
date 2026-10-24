@@ -6,7 +6,7 @@ the trace's `state.sides[s].pokemon` list, which holds the brought members in th
 index through the battle's `start` log (`|poke|pN|Species, ...|` lines, the roster in team order).
 
 Writes tests/reference/party_order_g46.h (committed); `--check` only compares. The C test
-tests/test_pool_g46_party.c compares the engine's tail.party_order with these rows after every conformance step.
+tests/flow/test_party_order.c compares the engine's tail.party_order with these rows after every conformance step.
 
 usage: python tools/reference/party_expect.py [--check]
 """

@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 /* Grass Knot and Low Kick: the base power follows the target's weight in
  * hectograms (basePowerCallback, data/moves.ts:10446-10464 for Low Kick, the

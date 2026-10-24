@@ -1,8 +1,8 @@
 """The pin checks of steps that span moves, items and abilities: the cross-area facts of single steps and
 the content batches (C1, C2, C4, C5, K2, A0, A0P1).
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@8800b625).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@8800b625).
 """
 import os
 import re
@@ -144,7 +144,7 @@ def check_failskillswap(pool_abilities, abil_ts, champ_abil, c_text):
     the turn code's dfi_fails_skillswap reads (c_text: the text of FAILSKILLSWAP_SOURCE; issue #620)."""
     found = sorted(aid for aid in pool_abilities if 'failskillswap' in ability_flags(abil_ts, champ_abil, aid))
     if found != sorted(FAILSKILLSWAP_ABILITIES):
-        fail('the pool abilities with failskillswap are %s, not FAILSKILLSWAP_ABILITIES %s (turn.c dfi_fails_skillswap)'
+        fail('the pool abilities with failskillswap are %s, not FAILSKILLSWAP_ABILITIES %s (src/combat/abilities/skill_swap.h dfi_fails_skillswap)'
              % (found, sorted(FAILSKILLSWAP_ABILITIES)))
     c_ids = failskillswap_c_ids(c_text)
     if len(set(c_ids)) != len(c_ids) or sorted(c_ids) != sorted(FAILSKILLSWAP_ABILITIES):

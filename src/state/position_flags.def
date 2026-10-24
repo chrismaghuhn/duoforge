@@ -1,0 +1,14 @@
+/*
+ * The fields of a position's tail flags (position_flags, tail rev 5), one line per field: DFI_POS_FLAG(NAME, mask), in bit order
+ * (restructure step 5c); a field of more than one bit (the Dragon Cheer stage) has its whole mask. An X-macro file without an
+ * include guard: src/state/battle_internal.h includes it with its own DFI_POS_FLAG to check every DFI_POSFLAG_<NAME> against its
+ * mask (_Static_assert), and that the fields are pairwise disjoint and make DFI_POSFLAG_VALID_MASK. The bits are part of the
+ * canonical state encoding: a line here never changes its mask.
+ */
+DFI_POS_FLAG(HEALING_WISH, 0x01u)
+DFI_POS_FLAG(STATS_RAISED, 0x02u)
+DFI_POS_FLAG(DRAGON_CHEER_MASK, 0x0Cu)
+DFI_POS_FLAG(DESTINY_BOND, 0x10u)
+DFI_POS_FLAG(LOWERED, 0x20u)
+DFI_POS_FLAG(HURT, 0x40u)
+DFI_POS_FLAG(CURSED, 0x80u)

@@ -17,7 +17,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "support/check.h"
 
 #define KIND_COUNT 6u

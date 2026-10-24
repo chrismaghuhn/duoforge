@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include "batch/batch_each.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "encode/encode_internal.h"
 
 #if defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD != 0

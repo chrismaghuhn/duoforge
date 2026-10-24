@@ -19,7 +19,7 @@ typedef struct dfi_reference_set {
     uint32_t moves[4];
 } dfi_reference_set;
 
-/* Ids from src/data/closure_tables.h; Stat Points and natures from the
+/* Ids from src/data/formats/reg-mc/closure_tables.h; Stat Points and natures from the
  * pastes in decision 0004. Genders: Grimmsnarl is male in the paste and
  * male-only; Gholdengo is genderless; the others were chosen for the tests
  * (the owner specifies gender in every fixture). */

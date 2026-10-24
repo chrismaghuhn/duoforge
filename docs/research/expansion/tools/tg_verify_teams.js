@@ -54,7 +54,7 @@ function defines(text, prefix) {
 	while ((m = re.exec(text))) if (m[1] !== 'COUNT') out[m[1].toLowerCase()] = Number(m[2]);
 	return out;
 }
-const hdr = read('src/data/closure_tables.h') + read('src/data/extended_tables.h');
+const hdr = read('src/data/formats/reg-mc/closure_tables.h') + read('src/data/formats/reg-mc/extended_tables.h');
 const T = {
 	forme: defines(hdr, 'FORME'), move: defines(hdr, 'MOVE'), item: defines(hdr, 'ITEM'),
 	ability: defines(hdr, 'ABILITY'), nature: defines(hdr, 'NATURE'),
@@ -63,7 +63,7 @@ const byId = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k]));
 const NAME = {forme: byId(T.forme), move: byId(T.move), item: byId(T.item), ability: byId(T.ability)};
 
 // The forme rows of the extended tables: ability, gender rule, Mega links and the one fixed set.
-const ext = read('src/data/extended_tables.c');
+const ext = read('src/data/formats/reg-mc/extended_tables.c');
 const rows = [];
 {
 	const start = ext.indexOf('dfi_ext_formes[DFI_EXT_FORME_COUNT] = {');

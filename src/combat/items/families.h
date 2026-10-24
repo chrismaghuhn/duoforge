@@ -17,7 +17,7 @@
 #include <stdint.h>
 
 #include "core/modifier.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/battle_internal.h"
 
 /* The modifiers, in 4096ths (data/items.ts: chainModify([4915, 4096]) in the

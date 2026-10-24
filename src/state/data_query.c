@@ -2,7 +2,7 @@
 
 #include "combat/turn.h"
 #include "data/formulas.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
 

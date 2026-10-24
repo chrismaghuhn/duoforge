@@ -1,0 +1,159 @@
+# Restructure step 6: the historical test names and what becomes of them (docs/superpowers/plans/2026-10-11-repo-restructure.md).
+# One row per old file. action: rename (one subject, new name given), split (several subjects, cut in step 6e, where the
+# new names are added as rows of their own), merge (joins the named file in step 6e). state: planned, or done once the PR
+# that does it is merged; tools/restructure/test_audit.py --check (duoforge.lint.test_renames) holds both states.
+old_file	old_ctest	action	new_file	new_ctest	state	subject
+abilities/test_pool_a2a.c	duoforge.state.pool_a2a	split	-	-	done	A2a: fourteen abilities with one clause each
+abilities/test_pool_ac1.c	duoforge.state.pool_ac1	rename	abilities/test_trace.c	duoforge.abilities.trace	done	AC1: Trace
+abilities/test_pool_g22.c	duoforge.state.pool_g22	split	-	-	done	G22: the weather Speed abilities, Inner Focus, Liquid Voice
+abilities/test_pool_g41.c	duoforge.state.pool_g41	rename	abilities/test_shadow_tag.c	duoforge.abilities.shadow_tag	done	G41: Shadow Tag (and Gengarite)
+abilities/test_pool_g45.c	duoforge.state.pool_g45	split	-	-	done	G45: Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb, Punk Rock
+abilities/test_pool_g53.c	duoforge.state.pool_g53	rename	abilities/test_pressure.c	duoforge.abilities.pressure	done	G53: Pressure and the PP a viewer attributes
+abilities/test_pool_g57.c	duoforge.state.pool_g57	rename	abilities/test_magic_bounce.c	duoforge.abilities.magic_bounce	done	G57: Magic Bounce (its Mega Stone checks go to forms in 6e)
+abilities/test_pool_g61.c	duoforge.state.pool_g61	rename	abilities/test_sheer_force.c	duoforge.abilities.sheer_force	done	G61: Sheer Force (its Mega Stone checks go to forms in 6e)
+abilities/test_pool_g63.c	duoforge.state.pool_g63	split	-	-	done	G63: Sand Force, Shell Armor, Filter and the other simple Mega abilities
+abilities/test_pool_g65.c	duoforge.state.pool_g65	split	-	-	done	G65: Unaware and the other simple modifier abilities
+abilities/test_pool_g69.c	duoforge.state.pool_g69	rename	abilities/test_symbiosis.c	duoforge.abilities.symbiosis	done	G69: Symbiosis
+abilities/test_pool_g73.c	duoforge.state.pool_g73	rename	abilities/test_moody.c	duoforge.abilities.moody	done	G73: Moody
+abilities/test_pool_g79.c	duoforge.state.pool_g79	rename	abilities/test_cloud_nine.c	duoforge.abilities.cloud_nine	done	G79: Cloud Nine
+abilities/test_pool_g81.c	duoforge.state.pool_g81	rename	abilities/test_frisk.c	duoforge.abilities.frisk	done	G81: Frisk and ITEM_SHOWN
+abilities/test_pool_k2.c	duoforge.state.pool_k2	rename	abilities/test_piercing_drill.c	duoforge.abilities.piercing_drill	done	K2: Piercing Drill
+flow/test_pool_g46_party.c	duoforge.state.pool_g46_party	rename	flow/test_party_order.c	duoforge.flow.party_order	done	G46: the party order after switches
+forms/test_pool_g43.c	duoforge.state.pool_g43	merge	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	G43: Mega batch 3, stones with no new rule
+forms/test_pool_g51.c	duoforge.state.pool_g51	split	-	-	done	G51: Mega batch 4, stones with no new rule
+forms/test_pool_g59.c	duoforge.state.pool_g59	split	-	-	done	G59: six Mega abilities and their stones
+forms/test_pool_g66.c	duoforge.state.pool_g66	rename	forms/test_stance_change.c	duoforge.forms.stance_change	done	G66: Aegislash, Stance Change and King's Shield
+forms/test_pool_mega2.c	duoforge.state.pool_mega2	split	-	-	done	Mega batch 2: four stones and Aura Guard
+interactions/test_pool_g27.c	duoforge.state.pool_g27	rename	interactions/test_cursed_body_disable.c	duoforge.interactions.cursed_body_disable	done	G27: Cursed Body and Disable
+interactions/test_pool_g30.c	duoforge.state.pool_g30	split	-	-	done	G30: Rage Powder, the powder immunity and a batch of rows
+interactions/test_pool_g33.c	duoforge.state.pool_g33	split	-	-	done	G33: the multi-hit moves and Mirror Armor
+interactions/test_pool_g34.c	duoforge.state.pool_g34	split	-	-	done	G34: a batch of small rules
+interactions/test_pool_g35.c	duoforge.state.pool_g35	split	-	-	done	G35: ten data rows, Rain Dish and Friend Guard
+interactions/test_pool_g39.c	duoforge.state.pool_g39	split	-	-	done	G39: thirteen abilities and four moves
+interactions/test_pool_g47.c	duoforge.state.pool_g47	rename	interactions/test_status_cures.c	duoforge.interactions.status_cures	done	G47: the status and volatile cures
+interactions/test_pool_g52.c	duoforge.state.pool_g52	rename	interactions/test_revival_blessing_view.c	duoforge.interactions.revival_blessing_view	done	G52: Revival Blessing's REVIVE and the information boundary
+interactions/test_pool_g67.c	duoforge.state.pool_g67	split	-	-	done	G67: Magic Guard, Air Balloon and ITEM_SHOWN
+interactions/test_pool_g75.c	duoforge.state.pool_g75	split	-	-	planned	G75: Pure Power, Battle Armor and the cheap set
+interactions/test_pool_g77.c	duoforge.state.pool_g77	split	-	-	done	G77: Magma Armor and the crit package
+interactions/test_pool_g83.c	duoforge.state.pool_g83	split	-	-	done	G83: Bulletproof, Rivalry, Leaf Guard, Iron Ball
+interactions/test_pool_i2.c	duoforge.state.pool_i2	rename	interactions/test_illusion.c	duoforge.interactions.illusion	done	I2: Illusion
+interactions/test_pool_k4_draws.c	duoforge.state.pool_k4_draws	rename	interactions/test_gravity_accuracy_draws.c	duoforge.interactions.gravity_accuracy_draws	done	K4: Gravity's accuracy rule with changed draws
+items/test_pool_g16.c	duoforge.state.pool_g16	rename	items/test_knock_off.c	duoforge.items.knock_off	done	G16: Knock Off
+items/test_pool_g29.c	duoforge.state.pool_g29	rename	items/test_item_transfer.c	duoforge.items.item_transfer	done	G29: Trick, Switcheroo, Thief, Covet
+items/test_pool_g49.c	duoforge.state.pool_g49	split	-	-	done	G49: Muscle Band, Wise Glasses, Bright Powder
+items/test_pool_g55.c	duoforge.state.pool_g55	rename	items/test_duration_items.c	duoforge.items.duration_items	done	G55: the rocks and Terrain Extender
+mechanics/test_pool_g20.c	duoforge.state.pool_g20	rename	mechanics/test_aurora_veil.c	duoforge.mechanics.aurora_veil	done	G20: Aurora Veil
+mechanics/test_pool_g20_protect.c	duoforge.state.pool_g20_protect	rename	mechanics/test_spiky_shield.c	duoforge.mechanics.spiky_shield	done	G20: Spiky Shield
+mechanics/test_pool_g36.c	duoforge.state.pool_g36	rename	mechanics/test_toxic.c	duoforge.mechanics.toxic	done	G36: Toxic and the badly poisoned status
+mechanics/test_pool_g37.c	duoforge.state.pool_g37	rename	mechanics/test_entry_hazards.c	duoforge.mechanics.entry_hazards	done	G37: the entry hazards
+mechanics/test_pool_g7.c	duoforge.state.pool_g7	rename	mechanics/test_wide_guard.c	duoforge.mechanics.wide_guard	done	G7: Wide Guard
+mechanics/test_pool_g72.c	duoforge.state.pool_g72	rename	mechanics/test_yawn_exemptions.c	duoforge.mechanics.yawn_exemptions	done	G72: the Yawn rules' evidence gap
+mechanics/test_pool_terrain.c	duoforge.state.pool_terrain	rename	mechanics/test_electric_misty_terrain.c	duoforge.mechanics.electric_misty_terrain	done	G25: Electric and Misty Terrain
+mechanics/test_pool_weather.c	duoforge.state.pool_weather	rename	mechanics/test_sand_snow_weather.c	duoforge.mechanics.sand_snow_weather	done	Sandstorm and Snowscape
+moves/test_pool_g11.c	duoforge.state.pool_g11	rename	moves/test_soak.c	duoforge.moves.soak	done	G11: Soak
+moves/test_pool_g17.c	duoforge.state.pool_g17	rename	moves/test_recharge.c	duoforge.moves.recharge	done	G17: the recharge moves
+moves/test_pool_g19.c	duoforge.state.pool_g19	rename	moves/test_glaive_rush_tail_view.c	duoforge.moves.glaive_rush_tail_view	done	G19: Coaching and Glaive Rush
+moves/test_pool_g26.c	duoforge.state.pool_g26	rename	moves/test_perish_song.c	duoforge.moves.perish_song	done	G26: Perish Song
+moves/test_pool_g31.c	duoforge.state.pool_g31	rename	moves/test_taunt_yawn_tail_view.c	duoforge.moves.taunt_yawn_tail_view	done	G31: Taunt and Yawn
+moves/test_pool_g38.c	duoforge.state.pool_g38	rename	moves/test_imprison.c	duoforge.moves.imprison	done	G38: Imprison
+moves/test_pool_g42.c	duoforge.state.pool_g42	rename	moves/test_move_result_roost.c	duoforge.moves.move_result_roost	done	G42: Roost and Stomping Tantrum
+moves/test_pool_g44.c	duoforge.state.pool_g44	split	-	-	done	G44: Thunder, Power Trip, Ice Fang and another simple move
+moves/test_pool_g48.c	duoforge.state.pool_g48	split	-	-	done	G48: Rage Fist, Stone Axe, Ceaseless Edge and the other rev 4 moves
+moves/test_pool_g50.c	duoforge.state.pool_g50	rename	moves/test_double_shock.c	duoforge.moves.double_shock	done	G50: Double Shock
+moves/test_pool_g54.c	duoforge.state.pool_g54	split	-	-	done	G54: the moves batch (Icicle Spear, Scale Shot, Quick Guard, ...)
+moves/test_pool_g56.c	duoforge.state.pool_g56	rename	moves/test_outrage_lock.c	duoforge.moves.outrage_lock	done	G56: Outrage as a lockedmove
+moves/test_pool_g58.c	duoforge.state.pool_g58	rename	moves/test_phantom_force.c	duoforge.moves.phantom_force	done	G58: Phantom Force
+moves/test_pool_g60.c	duoforge.state.pool_g60	rename	moves/test_substitute.c	duoforge.moves.substitute	done	G60: Substitute
+moves/test_pool_g62.c	duoforge.state.pool_g62	rename	moves/test_haze.c	duoforge.moves.haze	done	G62: Haze
+moves/test_pool_g64.c	duoforge.state.pool_g64	rename	moves/test_moves_batch_2_rows.c	duoforge.moves.moves_batch_2_rows	done	G64: Beat Up, Bug Bite, Poltergeist, Sheer Cold
+moves/test_pool_g68.c	duoforge.state.pool_g68	rename	moves/test_moves_batch_4_rows.c	duoforge.moves.moves_batch_4_rows	done	G68: Steel Beam and Thunder Wave
+moves/test_pool_g70.c	duoforge.state.pool_g70	rename	moves/test_skill_swap.c	duoforge.moves.skill_swap	done	G70: Skill Swap
+moves/test_pool_g71.c	duoforge.state.pool_g71	rename	moves/test_attract.c	duoforge.moves.attract	done	G71: Attract
+moves/test_pool_g72b.c	duoforge.state.pool_g72b	split	-	-	done	G72b: Alluring Voice and Dragon Cheer
+moves/test_pool_g74.c	duoforge.state.pool_g74	rename	moves/test_baton_pass.c	duoforge.moves.baton_pass	done	G74: Baton Pass
+moves/test_pool_g76.c	duoforge.state.pool_g76	split	-	-	done	G76: Destiny Bond and Final Gambit
+moves/test_pool_g78.c	duoforge.state.pool_g78	rename	moves/test_dragon_darts.c	duoforge.moves.dragon_darts	done	G78: Dragon Darts
+moves/test_pool_g8.c	duoforge.state.pool_g8	split	-	-	done	G8: Throat Chop and Psychic Noise's Heal Block
+moves/test_pool_g80.c	duoforge.state.pool_g80	split	-	-	done	G80: Psych Up, Howl, Ally Switch
+moves/test_pool_g82.c	duoforge.state.pool_g82	rename	moves/test_healing_wish.c	duoforge.moves.healing_wish	done	G82: Healing Wish
+moves/test_pool_g86.c	duoforge.state.pool_g86	split	-	-	done	G86: Heavy Slam, Hard Press, Ice Spinner, Belly Drum
+moves/test_pool_g87.c	duoforge.state.pool_g87	rename	moves/test_attract_source_view.c	duoforge.moves.attract_source_view	done	G87: Attract's public source
+moves/test_pool_g88.c	duoforge.state.pool_g88	rename	moves/test_turn_history_moves.c	duoforge.moves.turn_history_moves	done	G88: Lash Out and Assurance (the turn-history flags)
+moves/test_pool_g9.c	duoforge.state.pool_g9	rename	moves/test_encore.c	duoforge.moves.encore	done	G9: Encore
+moves/test_pool_g90.c	duoforge.state.pool_g90	rename	moves/test_partial_trap.c	duoforge.moves.partial_trap	done	G90: the partial trap
+moves/test_pool_g92.c	duoforge.state.pool_g92	rename	moves/test_confusion_moves.c	duoforge.moves.confusion_moves	done	G92: Confuse Ray, Swagger, Teeter Dance
+moves/test_pool_k1.c	duoforge.state.pool_k1	rename	moves/test_temper_flare.c	duoforge.moves.temper_flare	done	K1: Temper Flare
+moves/test_pool_k3.c	duoforge.state.pool_k3	rename	moves/test_speed_swap.c	duoforge.moves.speed_swap	done	K3: Speed Swap
+moves/test_pool_lockfam_sleep.c	duoforge.state.pool_lockfam_sleep	rename	moves/test_lockedmove_sleep.c	duoforge.moves.lockedmove_sleep	done	issue 606: a lockedmove holder asleep
+abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_simple_ability_rows.c	duoforge.abilities.simple_ability_rows	done	G45: simple ability rows
+abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_steadfast.c	duoforge.abilities.steadfast	done	G45: steadfast
+abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_moxie.c	duoforge.abilities.moxie	done	G45: moxie
+abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_weak_armor.c	duoforge.abilities.weak_armor	done	G45: weak armor
+abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_telepathy.c	duoforge.abilities.telepathy	done	G45: telepathy
+abilities/test_pool_g45.c	duoforge.state.pool_g45	part	abilities/test_volt_absorb.c	duoforge.abilities.volt_absorb	done	G45: volt absorb
+abilities/test_pool_g65.c	duoforge.state.pool_g65	part	abilities/test_modifier_abilities.c	duoforge.abilities.modifier_abilities	done	G65: modifier abilities
+abilities/test_pool_g65.c	duoforge.state.pool_g65	part	abilities/test_reckless.c	duoforge.abilities.reckless	done	G65: reckless
+abilities/test_pool_g65.c	duoforge.state.pool_g65	part	abilities/test_trace_water_bubble.c	duoforge.abilities.trace_water_bubble	done	G65: trace water bubble
+abilities/test_pool_g63.c	duoforge.state.pool_g63	part	abilities/test_simple_mega_abilities.c	duoforge.abilities.simple_mega_abilities	done	G63: simple mega abilities
+abilities/test_pool_g63.c	duoforge.state.pool_g63	part	abilities/test_stalwart.c	duoforge.abilities.stalwart	done	G63: stalwart
+abilities/test_pool_g63.c	duoforge.state.pool_g63	part	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	G63: mega stones
+abilities/test_pool_g22.c	duoforge.state.pool_g22	part	abilities/test_swift_swim_fainted_holder.c	duoforge.abilities.swift_swim_fainted_holder	done	G22: swift swim fainted holder
+abilities/test_pool_g22.c	duoforge.state.pool_g22	part	abilities/test_inner_focus_intimidate_cap.c	duoforge.abilities.inner_focus_intimidate_cap	done	G22: inner focus intimidate cap
+abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_one_clause_abilities.c	duoforge.abilities.one_clause_abilities	done	A2a: one clause abilities
+abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_flower_veil_drop_refusals.c	duoforge.abilities.flower_veil_drop_refusals	done	A2a: flower veil drop refusals
+abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_tangled_feet.c	duoforge.abilities.tangled_feet	done	A2a: tangled feet
+abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_life_dew_water_absorb.c	duoforge.abilities.life_dew_water_absorb	done	A2a: life dew water absorb
+abilities/test_pool_a2a.c	duoforge.state.pool_a2a	part	abilities/test_natural_cure.c	duoforge.abilities.natural_cure	done	A2a: natural cure
+forms/test_pool_g51.c	duoforge.state.pool_g51	part	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	G51: mega stones
+forms/test_pool_g51.c	duoforge.state.pool_g51	part	abilities/test_keen_eye.c	duoforge.abilities.keen_eye	done	G51: keen eye
+forms/test_pool_g51.c	duoforge.state.pool_g51	part	abilities/test_regenerator_pivot.c	duoforge.abilities.regenerator_pivot	done	G51: regenerator pivot
+forms/test_pool_g59.c	duoforge.state.pool_g59	part	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	G59: mega stones
+forms/test_pool_g59.c	duoforge.state.pool_g59	part	abilities/test_mega_launcher.c	duoforge.abilities.mega_launcher	done	G59: mega launcher
+forms/test_pool_g59.c	duoforge.state.pool_g59	part	abilities/test_mega_sol.c	duoforge.abilities.mega_sol	done	G59: mega sol
+forms/test_pool_mega2.c	duoforge.state.pool_mega2	part	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	Mega batch 2: mega stones
+forms/test_pool_mega2.c	duoforge.state.pool_mega2	part	abilities/test_aura_guard.c	duoforge.abilities.aura_guard	done	Mega batch 2: aura guard
+items/test_pool_g49.c	duoforge.state.pool_g49	part	items/test_power_and_accuracy_items.c	duoforge.items.power_and_accuracy_items	done	G49: power and accuracy items
+items/test_pool_g49.c	duoforge.state.pool_g49	part	items/test_bright_powder.c	duoforge.items.bright_powder	done	G49: bright powder
+moves/test_pool_g44.c	duoforge.state.pool_g44	part	moves/test_simple_move_rows.c	duoforge.moves.simple_move_rows	done	G44: simple move rows
+moves/test_pool_g44.c	duoforge.state.pool_g44	part	moves/test_power_trip.c	duoforge.moves.power_trip	done	G44: power trip
+moves/test_pool_g44.c	duoforge.state.pool_g44	part	moves/test_tri_attack.c	duoforge.moves.tri_attack	done	G44: tri attack
+moves/test_pool_g48.c	duoforge.state.pool_g48	part	moves/test_hits_taken_hazard_moves.c	duoforge.moves.hits_taken_hazard_moves	done	G48: hits taken hazard moves
+moves/test_pool_g48.c	duoforge.state.pool_g48	part	moves/test_rage_fist.c	duoforge.moves.rage_fist	done	G48: rage fist
+moves/test_pool_g54.c	duoforge.state.pool_g54	part	moves/test_moves_batch_rows.c	duoforge.moves.moves_batch_rows	done	G54: moves batch rows
+moves/test_pool_g54.c	duoforge.state.pool_g54	part	moves/test_multi_hit_count.c	duoforge.moves.multi_hit_count	done	G54: multi hit count
+moves/test_pool_g54.c	duoforge.state.pool_g54	part	moves/test_quick_guard_view.c	duoforge.moves.quick_guard_view	done	G54: quick guard view
+moves/test_pool_g72b.c	duoforge.state.pool_g72b	part	moves/test_alluring_voice_dragon_cheer_rows.c	duoforge.moves.alluring_voice_dragon_cheer_rows	done	G72b: alluring voice dragon cheer rows
+moves/test_pool_g72b.c	duoforge.state.pool_g72b	part	moves/test_alluring_voice.c	duoforge.moves.alluring_voice	done	G72b: alluring voice
+moves/test_pool_g72b.c	duoforge.state.pool_g72b	part	moves/test_dragon_cheer.c	duoforge.moves.dragon_cheer	done	G72b: dragon cheer
+moves/test_pool_g76.c	duoforge.state.pool_g76	part	moves/test_destiny_bond_final_gambit_rows.c	duoforge.moves.destiny_bond_final_gambit_rows	done	G76: destiny bond final gambit rows
+moves/test_pool_g76.c	duoforge.state.pool_g76	part	moves/test_destiny_bond.c	duoforge.moves.destiny_bond	done	G76: destiny bond
+moves/test_pool_g76.c	duoforge.state.pool_g76	part	moves/test_final_gambit.c	duoforge.moves.final_gambit	done	G76: final gambit
+moves/test_pool_g8.c	duoforge.state.pool_g8	part	moves/test_throat_chop.c	duoforge.moves.throat_chop	done	G8: throat chop
+moves/test_pool_g8.c	duoforge.state.pool_g8	part	moves/test_heal_block.c	duoforge.moves.heal_block	done	G8: heal block
+moves/test_pool_g8.c	duoforge.state.pool_g8	part	moves/test_switch_clears_volatiles.c	duoforge.moves.switch_clears_volatiles	done	G8: switch clears volatiles
+moves/test_pool_g8.c	duoforge.state.pool_g8	part	moves/test_throat_chop_heal_block_view.c	duoforge.moves.throat_chop_heal_block_view	done	G8: throat chop heal block view
+moves/test_pool_g80.c	duoforge.state.pool_g80	part	moves/test_psych_up_howl_ally_switch_rows.c	duoforge.moves.psych_up_howl_ally_switch_rows	done	G80: psych up howl ally switch rows
+moves/test_pool_g80.c	duoforge.state.pool_g80	part	moves/test_ally_switch.c	duoforge.moves.ally_switch	done	G80: ally switch
+moves/test_pool_g80.c	duoforge.state.pool_g80	part	abilities/test_stalwart_random_move.c	duoforge.abilities.stalwart_random_move	done	G80: stalwart random move
+moves/test_pool_g86.c	duoforge.state.pool_g86	part	moves/test_power_move_rows.c	duoforge.moves.power_move_rows	done	G86: power move rows
+moves/test_pool_g86.c	duoforge.state.pool_g86	part	moves/test_heavy_slam.c	duoforge.moves.heavy_slam	done	G86: heavy slam
+moves/test_pool_g86.c	duoforge.state.pool_g86	part	moves/test_hard_press.c	duoforge.moves.hard_press	done	G86: hard press
+interactions/test_pool_g30.c	duoforge.state.pool_g30	part	interactions/test_rage_powder_batch_rows.c	duoforge.interactions.rage_powder_batch_rows	done	G30: rage powder batch rows
+interactions/test_pool_g30.c	duoforge.state.pool_g30	part	moves/test_rage_powder_view.c	duoforge.moves.rage_powder_view	done	G30: rage powder view
+interactions/test_pool_g33.c	duoforge.state.pool_g33	part	interactions/test_multi_hit_mirror_armor_rows.c	duoforge.interactions.multi_hit_mirror_armor_rows	done	G33: multi hit mirror armor rows
+interactions/test_pool_g33.c	duoforge.state.pool_g33	part	interactions/test_multiaccuracy_later_hits.c	duoforge.interactions.multiaccuracy_later_hits	done	G33: multiaccuracy later hits
+interactions/test_pool_g34.c	duoforge.state.pool_g34	part	interactions/test_small_rules_rows.c	duoforge.interactions.small_rules_rows	done	G34: small rules rows
+interactions/test_pool_g34.c	duoforge.state.pool_g34	part	interactions/test_modify_damage_chain_order.c	duoforge.interactions.modify_damage_chain_order	done	G34: modify damage chain order
+interactions/test_pool_g35.c	duoforge.state.pool_g35	part	interactions/test_rain_dish_friend_guard_rows.c	duoforge.interactions.rain_dish_friend_guard_rows	done	G35: rain dish friend guard rows
+interactions/test_pool_g35.c	duoforge.state.pool_g35	part	interactions/test_friend_guard_chain_order.c	duoforge.interactions.friend_guard_chain_order	done	G35: friend guard chain order
+interactions/test_pool_g39.c	duoforge.state.pool_g39	part	interactions/test_thirteen_abilities_rows.c	duoforge.interactions.thirteen_abilities_rows	done	G39: thirteen abilities rows
+interactions/test_pool_g39.c	duoforge.state.pool_g39	part	abilities/test_damp_sturdy_rows.c	duoforge.abilities.damp_sturdy_rows	done	G39: damp sturdy rows
+interactions/test_pool_g39.c	duoforge.state.pool_g39	part	interactions/test_hyper_cutter_flower_veil.c	duoforge.interactions.hyper_cutter_flower_veil	done	G39: hyper cutter flower veil
+interactions/test_pool_g67.c	duoforge.state.pool_g67	part	interactions/test_magic_guard_air_balloon.c	duoforge.interactions.magic_guard_air_balloon	done	G67: magic guard air balloon
+interactions/test_pool_g67.c	duoforge.state.pool_g67	part	mechanics/test_item_shown_fold.c	duoforge.mechanics.item_shown_fold	done	G67: item shown fold
+interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_crit_package_rows.c	duoforge.interactions.crit_package_rows	done	G77: crit package rows
+interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_modify_damage_bound.c	duoforge.interactions.modify_damage_bound	done	G77: modify damage bound
+interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_sniper_chain_order.c	duoforge.interactions.sniper_chain_order	done	G77: sniper chain order
+interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_magma_armor_frozen_refusals.c	duoforge.interactions.magma_armor_frozen_refusals	done	G77: magma armor frozen refusals
+interactions/test_pool_g83.c	duoforge.state.pool_g83	part	interactions/test_bulletproof_rivalry_leaf_guard_iron_ball.c	duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball	done	G83: bulletproof rivalry leaf guard iron ball
+interactions/test_pool_g83.c	duoforge.state.pool_g83	part	interactions/test_leaf_guard_mega_sol_refusal.c	duoforge.interactions.leaf_guard_mega_sol_refusal	done	G83: leaf guard mega sol refusal

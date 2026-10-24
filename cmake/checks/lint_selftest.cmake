@@ -162,7 +162,40 @@ file(WRITE "${WORK}/fp/src/eval/other.c" "int64_t outside_registered_kernel;
 ")
 _lint_case("${WORK}/fp/src/eval/other.c" banned-token 1 "${WORK}/fp")
 
+# The number spaces (restructure step 5c): a member #define without its line in the definition file is a finding, a
+# listed non-member (DFI_SITE_COUNT) and a member with its line are not. The tree holds the draw-site space only.
+file(MAKE_DIRECTORY "${WORK}/numbers/src/rng")
+file(WRITE "${WORK}/numbers/src/rng/draw.h" "#define DFI_SITE_SPEED_TIE 1u
+#define DFI_SITE_NEW\t2u
+#define DFI_SITE_COUNT 3u
+")
+file(WRITE "${WORK}/numbers/src/rng/draw_sites.def" "DFI_DRAW_SITE(SPEED_TIE, 1u, \"speed-tie\")
+")
+file(WRITE "${WORK}/numbers/src/clean.c" "uint32_t value;
+")
+execute_process(
+    COMMAND "${CMAKE_COMMAND}" "-DROOT=${WORK}/numbers" "-DFILES=${WORK}/numbers/src/clean.c" -P "${_lint}"
+    RESULT_VARIABLE _rc
+    OUTPUT_VARIABLE _out
+    ERROR_VARIABLE _err)
+string(REGEX MATCHALL "number-space \\([A-Z_]+ " _space_hits "${_out}${_err}")
+if(_rc EQUAL 0 OR NOT _space_hits STREQUAL "number-space (DFI_SITE_NEW ")
+    message("lint selftest: number spaces: expected one finding for DFI_SITE_NEW, got rc=${_rc}\n${_out}${_err}")
+    set(_bad 1)
+endif()
+file(APPEND "${WORK}/numbers/src/rng/draw_sites.def" "DFI_DRAW_SITE(NEW, 2u, \"new\")
+")
+execute_process(
+    COMMAND "${CMAKE_COMMAND}" "-DROOT=${WORK}/numbers" "-DFILES=${WORK}/numbers/src/clean.c" -P "${_lint}"
+    RESULT_VARIABLE _rc
+    OUTPUT_VARIABLE _out
+    ERROR_VARIABLE _err)
+if(NOT _rc EQUAL 0)
+    message("lint selftest: number spaces: expected clean once the line exists, got rc=${_rc}\n${_out}${_err}")
+    set(_bad 1)
+endif()
+
 if(_bad)
     message(FATAL_ERROR "LINT_SELFTEST FAILED")
 endif()
-message("LINT_SELFTEST OK (${_big_size}-byte clean file, 6 fixtures, 3 floating-point cases)")
+message("LINT_SELFTEST OK (${_big_size}-byte clean file, 6 fixtures, 3 floating-point cases, 2 number-space cases)")

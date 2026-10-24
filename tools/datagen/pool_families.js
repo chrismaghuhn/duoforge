@@ -5,7 +5,7 @@
 //
 // usage: node tools/datagen/pool_families.js <pinned checkout> <repo root>
 //
-// It reads the committed src/data/pool_tables.{h,c}, so it checks the columns
+// It reads the committed src/data/formats/reg-mc/pool_tables.{h,c}, so it checks the columns
 // that the engine reads, and calls the pinned handlers themselves (the Item
 // and Ability objects of the format's dex) with a probe for each of the 18
 // types:
@@ -678,7 +678,7 @@ function checkFocusSash(dex, root) {
 // The four moves of step G10 against the pinned data: Low Kick's weight table is Grass Knot's (the engine shares
 // one), First Impression has Fake Out's first-turn rule, Scald thaws its target and Recover heals half.
 // Step G9, Encore: the pinned facts that the engine hard-codes (decision 0015, item 5e): the condition's duration and
-// residual order, the failencore flag of the moves a gated member can have (the list in tests/test_pool_g9.c is the pin's
+// residual order, the failencore flag of the moves a gated member can have (the list in tests/moves/test_encore.c is the pin's
 // whole list), and the behaviour of onStart (the Champions version, with the replacement of the queued action),
 // onResidual and onDisableMove, called with stand-ins for the battle and the target.
 function checkEncore(dex, repo) {
@@ -687,7 +687,7 @@ function checkEncore(dex, repo) {
     expect('encore duration and residual order', [c.duration, c.onResidualOrder], [3, 16]);
     expect('encore flags, accuracy, target, pp', [move.flags.failencore, move.flags.bypasssub, move.flags.protect,
         move.accuracy, move.target, move.pp], [1, 1, 1, 100, 'normal', 5]);
-    const text = readText(path.join(repo, 'tests', 'moves/test_pool_g9.c'));
+    const text = readText(path.join(repo, 'tests', 'moves/test_encore.c'));
     const listed = (text.match(/failencore:begin \*\/([\s\S]*?)\/\* failencore:end/) || ['', ''])[1].match(/"[a-z]+"/g) || [];
     expect('failencore moves', dex.moves.all().filter((m) => m.flags.failencore).map((m) => m.id).sort(),
         listed.map((x) => x.slice(1, -1)));
@@ -793,7 +793,7 @@ function checkG22(dex, formes, itemIds, abilityIds) {
             id === 'sandrush' ? ['onImmunity', 'onModifySpe'] : ['onModifySpe']);
     }
     // Utility Umbrella (which makes effectiveWeather ignore sun and rain) is not in the pool, and the only ability of the
-    // pool that suppresses the weather (Cloud Nine; Air Lock has no row) stays unmarked (tests/test_pool_weather.c).
+    // pool that suppresses the weather (Cloud Nine; Air Lock has no row) stays unmarked (tests/mechanics/test_sand_snow_weather.c).
     expect('Utility Umbrella is an item of the pool', itemIds.has('utilityumbrella'), false);
     expect('abilities of the pool that suppress the weather',
         [...abilityIds].filter((id) => dex.data.Abilities[id] && dex.data.Abilities[id].suppressWeather).sort(), ['cloudnine']);
@@ -1539,7 +1539,8 @@ function checkG10Moves(dex) {
 const ORDER_CALLBACKS = ['onModifyPriority', 'onFractionalPriority', 'onModifySpe'];
 const ENGINE_ORDER = {
     ability: {prankster: ['onModifyPriority'], galewings: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
-        swiftswim: ['onModifySpe'], slushrush: ['onModifySpe'], chlorophyll: ['onModifySpe']},
+        swiftswim: ['onModifySpe'], slushrush: ['onModifySpe'], chlorophyll: ['onModifySpe'],
+        surgesurfer: ['onModifySpe'], quickfeet: ['onModifySpe']}, // A2a: dfi_speed_key
     item: {choicescarf: ['onModifySpe'], ironball: ['onModifySpe']},
 };
 function orderCallbacks(raw) {
@@ -1960,6 +1961,10 @@ const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
         'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
         'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm', 'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill',
+        // A2a (decision 0015 entry 5dy)
+        'illuminate', 'whitesmoke', 'waterabsorb', 'eartheater', 'motordrive', 'icebody', 'surgesurfer', 'quickfeet', 'corrosion',
+        'purifyingsalt', 'gooey', 'poisonpoint', 'tangledfeet', 'naturalcure',
+        // A1b (decision 0015 entry 5dz)
         'furcoat', 'grasspelt', 'steelyspirit', 'plus', 'minus', 'stakeout', 'analytic', 'fluffy', 'heatproof']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
@@ -2307,15 +2312,15 @@ function main() {
     }
     const root = path.resolve(args[0]);
     const repo = path.resolve(args[1]);
-    const header = readText(path.join(repo, 'src', 'data', 'pool_tables.h'));
-    const source = readText(path.join(repo, 'src', 'data', 'pool_tables.c'));
+    const header = readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.h'));
+    const source = readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.c'));
     const itemCount = defineOf(header, 'DFI_POOL_ITEM_COUNT');
     const abilityCount = defineOf(header, 'DFI_POOL_ABILITY_COUNT');
-    const extendedAbilities = defineOf(readText(path.join(repo, 'src', 'data', 'extended_tables.h')),
+    const extendedAbilities = defineOf(readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', 'extended_tables.h')),
         'DFI_EXT_ABILITY_COUNT');
     const itemRows = familyRows(source, 'ITEM', 'dfi_pool_item_family', itemCount);
     const abilityRows = familyRows(source, 'ABILITY', 'dfi_pool_ability_family', abilityCount);
-    const headers = ['closure_tables.h', 'extended_tables.h', 'pool_tables.h'].map((f) => readText(path.join(repo, 'src', 'data', f)));
+    const headers = ['closure_tables.h', 'extended_tables.h', 'pool_tables.h'].map((f) => readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', f)));
     const moveIds = definedIds(headers, 'MOVE');
     const abilityIds = definedIds(headers, 'ABILITY');
     const formeRowsList = formeRows(source, defineOf(header, 'DFI_POOL_FORME_COUNT'), defineOf(header, 'DFI_POOL_LEARN_BYTES'));
@@ -2380,7 +2385,7 @@ function main() {
     checkLegal(dex, TeamValidator.get(FORMAT_ID), itemRows, abilityRows, extendedAbilities);
     const legal = checkFormes(dex, TeamValidator.get(FORMAT_ID), formeRowsList, moveIds, abilityIds);
     const names = checkNames(dex, source, headers);
-    const extendedHeader = readText(path.join(repo, 'src', 'data', 'extended_tables.h'));
+    const extendedHeader = readText(path.join(repo, 'src', 'data', 'formats', 'reg-mc', 'extended_tables.h'));
     const unmodeled = checkHandlers(dex, source, header, {
         closure: headers[0], ext: headers[1], moveCount: defineOf(extendedHeader, 'DFI_EXT_MOVE_COUNT'),
         itemCount: defineOf(extendedHeader, 'DFI_EXT_ITEM_COUNT'), abilityCount: extendedAbilities,

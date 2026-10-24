@@ -1,0 +1,34 @@
+{
+ "source": "moves/test_pool_g72b.c",
+ "parts": [
+  {
+   "file": "moves/test_alluring_voice_dragon_cheer_rows.c",
+   "calls": [
+    "test_row"
+   ],
+   "header": "step G72b of the content expansion (decision 0015 5ce), the rows of Alluring Voice and Dragon Cheer: the support marks, the handler ids in their merged order, the view bit and position bit of the Dragon Cheer stage (the manifest and the view agree), the volatile number and the public cause DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN.\n\nSplit by subject from the test of step G72b (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_alluring_voice.c",
+   "calls": [
+    "test_av_raised_turn",
+    "test_av_last_turn",
+    "test_av_switch",
+    "test_av_control",
+    "test_pivot_refusal"
+   ],
+   "header": "step G72b of the content expansion (decision 0015 5ce), Alluring Voice and the stats-raised bit of tail rev 5: the recorded g72b_av_* battles to the steps that matter. A target raised this turn is confused (Defiant at the start, Salamence's Intimidate); the raise ends with its turn and goes with a switch-out, so Alluring Voice the turn after, or at the Pokemon that took the slot, does not confuse; an unraised target is not confused. At the mid-turn PIVOT of g72b_av_pivot (Milotic's Eject Button after Alluring Voice, Golurk's move still queued) the public causes name DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN and the public record refuses with E_UNSUPPORTED. The behaviour is compared with the reference by duoforge.reference.conformance_pool_data. Flat positions: side 0 slots 0 and 1 (flat 0, 1), side 1 (flat 2, 3).\n\nSplit by subject from the test of step G72b (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_dragon_cheer.c",
+   "calls": [
+    "test_dc_dragon",
+    "test_dc_nondragon",
+    "test_dc_second",
+    "test_dc_switch",
+    "test_dc_focus_energy_guard"
+   ],
+   "header": "step G72b of the content expansion (decision 0015 5ce), Dragon Cheer and its stage in tail rev 5: the recorded g72b_dc_* battles to the steps that matter. A cheer on a Dragon ally is stage 2 and sets the view bit of the position, on a non-Dragon ally stage 1 (the crits of each are compared by duoforge.reference.conformance_pool_data); a second cheer fails and leaves the stage; the cheer ends with the switch-out and a new one starts again. The guard: the cheer fails on a target with Focus Energy (unmarked, so set through the tail's focus_energy byte), and the stage stays 0. Flat positions: side 0 slots 0 and 1 (flat 0, 1), side 1 (flat 2, 3).\n\nSplit by subject from the test of step G72b (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

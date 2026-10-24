@@ -13,7 +13,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 #include "reference/conformance_types.h"
 
 /* At most this many event differences are written per run; the counter is the caller's. */

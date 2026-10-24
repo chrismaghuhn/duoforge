@@ -5,11 +5,11 @@
  * The hit count of Icicle Spear and Scale Shot (step G54), as a function of the draw of DFI_SITE_MULTIHIT_COUNT (random(20)).
  * The Champions hit loop picks sample([2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5]) (data/mods/champions/
  * scripts.ts:437-446, the same list as sim/battle-actions.ts:870): seven 2s, seven 3s, three 4s and three 5s, in this order.
- * The white-box test duoforge.state.pool_g54 checks every index. Internal header: no public value, no state.
+ * The white-box test duoforge.moves.multi_hit_count checks every index. Internal header: no public value, no state.
  */
 #include <stdint.h>
 
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 static inline uint32_t dfi_multihit_count(uint32_t pick)
 {

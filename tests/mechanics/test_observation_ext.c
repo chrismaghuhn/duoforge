@@ -2,7 +2,7 @@
  * duoforge.request.observation_ext (white-box): the POOL player-view
  * extension at tier 0 (decision 0018): the types, the query and its
  * conventions and the supported mask. Every field is zero and every bit clear until a step implements its
- * feature (step G8: Throat Chop and Heal Block; their fields are checked in test_pool_g8.c).
+ * feature (step G8: Throat Chop and Heal Block; their fields are checked in duoforge.moves.throat_chop_heal_block_view).
  *
  *   - the struct sizes and every offset of decision 0018 section 3 (literal
  *     numbers, not read back from the header's own macros);
@@ -24,7 +24,7 @@
 
 #include <duoforge/duoforge.h>
 
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 #include "data/support_manifest.h"
 #include "state/battle_internal.h"
 #include "support/check.h"

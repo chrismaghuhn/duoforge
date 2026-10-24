@@ -1,0 +1,42 @@
+{
+ "source": "interactions/test_pool_g30.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "bundle_of": "df_conf_bundle_of",
+   "find": "df_conf_find"
+  }
+ },
+ "shared_blocks": [
+  0,
+  8
+ ],
+ "parts": [
+  {
+   "file": "interactions/test_rage_powder_batch_rows.c",
+   "calls": [
+    "check_facts"
+   ],
+   "main_blocks": [
+    0,
+    8
+   ],
+   "header": "step G30 of the content expansion, Rage Powder with the powder immunity, Psychic Fangs, Solar Beam, Flame Body, Clear Body, Hospitality and Overcoat, and the data rows that only waited for a recorded battle (the status powders, Matcha Gotcha, Giga Drain, Energy Ball, Play Rough), as one batch: the draw sites, the marks, the special numbers, the powder flag of exactly six moves; what stays unmarked and why (Cotton Spore, Magic Powder, Utility Umbrella and Power Herb, which Solar Beam's weather and charge would meet, and Safety Goggles), and the later marks the step's guards rely on (Stomping Tantrum by G42, Mega Sol by G59, whose refusals off sun keep the Utility Umbrella and Power Herb claims); and no Grass-type forme can have Clear Body or Trace (Flower Veil's order with Clear Body). The recorded battles g30_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G30 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_rage_powder_view.c",
+   "main_blocks": [
+    0,
+    1,
+    2,
+    3,
+    5,
+    6,
+    7,
+    8
+   ],
+   "header": "step G30 of the content expansion, Rage Powder in the view extension. Rage Powder shares the position's Follow Me bit with Follow Me, and the last move of the occupant tells them apart (dfi_last_move_id). After every step of the recorded g30_* battles, replayed with the reference's draws: the extension of both viewers has the position bit RAGE_POWDER (decision 0018, supported bit 39, public) exactly where the protocol says Rage Powder stands, at the PIVOT boundary inside the turn of g30_rage_powder_pivot and at no turn boundary (the residual ends it); no position shows Follow Me's flag in the player view; and no other volatile bit of the extension is set.\n\nSplit by subject from the test of step G30 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

@@ -2,7 +2,7 @@
 #define DUOFORGE_COMBAT_MOVES_BEAT_UP_H
 
 #include "combat/run_internal.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/context_internal.h"
 
 /* Beat Up (step G64, data/moves.ts:1150-1179): onModifyMove keeps the Pokemon of the user's side that are the user or are not

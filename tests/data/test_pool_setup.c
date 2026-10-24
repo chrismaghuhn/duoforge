@@ -30,7 +30,7 @@
 
 #include "codec/state_codec.h"
 #include "core/sha256.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "3601837eb5a96900176e5620d1350803b5af2e30feb04aaf32d04d6f8999345c" /* batch A1b (table hash 610b1146, decision 0015 5dz; measured; previous f294fc70...); A0 PR-2 (parts 1 and 4, table hash d6eee672; measured; previous df5c0ef6...); A0 PR-1 (parts 2 and 3, table hash d14de900; measured in Release and Debug, equal to tools/state_model/state_v3_model.py; previous a2e950c5...); the model fingerprint of the pool tables; batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade, Snap Trap, the eight marks; previous dd791294...); changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
-#define FP_KPD_HEX "6f24587314d8349db8876483101722b7be05095e1c2c86c8915c425e8c5caa84" /* batch A1b (as FP_KP_HEX; previous ab7ef4db...); A0 PR-2 (as FP_KP_HEX; previous 950bd25a...); A0 PR-1 (as FP_KP_HEX; previous 9b569bbb...); POOL_DEV: the same table hash, changed by steps K1, K2, K3, K4 and batch A0 part 3 (previous 7456fe2e...) */
+#define FP_KP_HEX "db215d17d4c88922387a80148227d889507207e1f41489979615f5b260e6cde6" /* batch A1b (table hash 18935708, decision 0015 5dz, on A2a; measured, equal to tools/state_model/state_v3_model.py; previous c4d08f84...); A2a (entry 5dy, table hash e4aeeb21; measured; previous f294fc70...); A0 PR-2 (parts 1 and 4, table hash d6eee672; measured; previous df5c0ef6...); A0 PR-1 (parts 2 and 3, table hash d14de900; measured in Release and Debug, equal to tools/state_model/state_v3_model.py; previous a2e950c5...); the model fingerprint of the pool tables; batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade, Snap Trap, the eight marks; previous dd791294...); changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
+#define FP_KPD_HEX "f08ce1579c573002f69b32591304d4fed242a4f0f9d2ad6fad64106c084822ec" /* batch A1b (as FP_KP_HEX; previous 1e150a55...); A2a (as FP_KP_HEX; previous ab7ef4db...); A0 PR-2 (as FP_KP_HEX; previous 950bd25a...); A0 PR-1 (as FP_KP_HEX; previous 9b569bbb...); POOL_DEV: the same table hash, changed by steps K1, K2, K3, K4 and batch A0 part 3 (previous 7456fe2e...) */
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */

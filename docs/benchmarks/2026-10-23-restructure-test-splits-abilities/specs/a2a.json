@@ -1,0 +1,77 @@
+{
+ "source": "abilities/test_pool_a2a.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "bundle_of": "df_conf_bundle_of",
+   "find": "df_conf_find",
+   "replay": "df_conf_replay_battle",
+   "member_of": "df_conf_member_of",
+   "a2a_run": "df_conf_run",
+   "run_step": "df_conf_run_step"
+  }
+ },
+ "parts": [
+  {
+   "file": "abilities/test_one_clause_abilities.c",
+   "main_body": [
+    "    check_marks(&t);",
+    "    duoforge_context *kp = df_make_context(&df_config_pool);",
+    "    if (DF_CHECK(&t, kp != NULL)) {",
+    "        for (size_t i = 0; i < sizeof cases / sizeof cases[0]; ++i) {",
+    "            check_case(&t, kp, &cases[i]);",
+    "        }",
+    "        duoforge_context_destroy(kp);",
+    "    }"
+   ],
+   "header": "batch A2a of the Champions-100 track (decision 0015 entry 5dy), fourteen abilities with one clause each at an\nexisting hook, as one batch. The recorded POOL battles a2a_cover_a to a2a_cover_i (campaigns 52002 and 52003) are replayed\nagainst the pool rows by duoforge.reference.conformance_pool_data; this test checks what the replays alone do not:\n\n  1. The marks and the handler column: the fourteen rows are marked engine rows (handler NONE); Insomnia, Vital Spirit and\n     Immunity stay unmarked UNMODELED rows (HS decision: stragglers after the abilities move, their Trace refusal belongs in\n     dfi_trace). Poison Point's draw site is 26 (HS grant) with its own name.\n  2. The hook fires and the neighbours do not: at the step of a recorded battle where the clause decides something, the step\n     replays with the reference's tape; with the holder's ability changed to a marked neighbour of the same hook (Volt Absorb\n     for Water Absorb and Earth Eater, Lightning Rod for Motor Drive, Rain Dish for Ice Body, Static for Poison Point, ...)\n     the same step no longer reproduces the reference (another status, another tape use or other events).\n\nSplit by subject from the test of step A2a (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_flower_veil_drop_refusals.c",
+   "main_body": [
+    "    duoforge_context *kp = df_make_context(&df_config_pool);",
+    "    if (DF_CHECK(&t, kp != NULL)) {",
+    "        check_flower_veil_refusals(&t, kp);",
+    "        check_illuminate_flower_veil(&t, kp);",
+    "        duoforge_context_destroy(kp);",
+    "    }"
+   ],
+   "header": "batch A2a of the Champions-100 track (decision 0015 entry 5dy), the refusals that no campaign battle reaches: an\nIlluminate or White Smoke holder that is a Grass type next to a Flower Veil holder (two TryBoost handlers for one drop;\ng12_flower_veil_a and g31_yawn_flower_veil with the protected Rillaboom's ability changed, Sylveon's Yawn slot holding\nMud-Slap, which it learns) is E_UNSUPPORTED (r->deferred), the battle unchanged; the controls play.\n\nSplit by subject from the test of step A2a (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_tangled_feet.c",
+   "main_body": [
+    "    check_dyadic_order(&t);",
+    "    duoforge_context *kp = df_make_context(&df_config_pool);",
+    "    if (DF_CHECK(&t, kp != NULL)) {",
+    "        check_tangled_feet_later_hit(&t, kp);",
+    "        duoforge_context_destroy(kp);",
+    "    }"
+   ],
+   "header": "batch A2a of the Champions-100 track (decision 0015 entry 5dy), Tangled Feet:\n\n  - a multi-accuracy move's later hit at a confused Tangled Feet holder (a2a_cover_c with Gardevoir's Will-O-Wisp slot holding\n    Triple Axel, which it learns) is refused (E_UNSUPPORTED, the later-hit refusal), the battle unchanged; the control plays;\n  - Tangled Feet's 2048 and Compound Eyes' 5325 (both priority -1) give the same chain in both orders, from 4096 and from\n    Gravity's 6840 (the accuracy chain applies them in one fixed order).\n\nSplit by subject from the test of step A2a (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_life_dew_water_absorb.c",
+   "main_body": [
+    "    duoforge_context *kp = df_make_context(&df_config_pool);",
+    "    if (DF_CHECK(&t, kp != NULL)) {",
+    "        check_life_dew(&t, kp);",
+    "        duoforge_context_destroy(kp);",
+    "    }"
+   ],
+   "header": "batch A2a of the Champions-100 track (decision 0015 entry 5dy), Life Dew (a Water heal move of the user and its\nally) at an ally with Water Absorb: the heal path does not run the TryHit abilities, so it is refused before anything changes\n(g32_life_dew step 3 with Kingambit's ability changed); the user's own Water Absorb is not asked (target === source) and the\ncontrol plays.\n\nSplit by subject from the test of step A2a (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_natural_cure.c",
+   "main_body": [
+    "    duoforge_context *kp = df_make_context(&df_config_pool);",
+    "    if (DF_CHECK(&t, kp != NULL)) {",
+    "        check_natural_cure_event(&t, kp);",
+    "        duoforge_context_destroy(kp);",
+    "    }"
+   ],
+   "header": "batch A2a of the Champions-100 track (decision 0015 entry 5dy), Natural Cure's CURE_STATUS has cause ABILITY and\nid2 Natural Cure + 1 (a2a_cover_b step 2), and the observation digest's line schema accepts it.\n\nSplit by subject from the test of step A2a (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

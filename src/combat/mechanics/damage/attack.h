@@ -68,6 +68,12 @@ dfi_damage_attack(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_dat
     if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, d, DFI_ABILITY_WATERBUBBLE)) {
         ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
     }
+    /* Purifying Salt (A2a, decision 0015 entry 5dy; data/abilities.ts:3631-3644, onSourceModifyAtkPriority 6 and
+     * onSourceModifySpAPriority 5, breakable, Mold Breaker not marked): x0.5 for a Ghost move against its holder, either
+     * category, Thick Fat's shape with the Ghost type (2048, dyadic like every factor of this chain). */
+    if (move_type == DFI_TYPE_GHOST && dfi_ability(r->b, d, DFI_ABILITY_PURIFYINGSALT)) {
+        ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
+    }
     /* Batch A1b, four more members of this chain. Each is the holder's one ability or its one item, and every product of the chain
      * stays exact (at most one 1.5 of the attacker's ability, the rest powers of two), so their priorities (5 and 6, Light Ball's
      * 1) and the holders' Speeds do not change the value.

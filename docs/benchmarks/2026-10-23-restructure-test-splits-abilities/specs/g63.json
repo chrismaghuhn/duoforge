@@ -1,0 +1,27 @@
+{
+ "source": "abilities/test_pool_g63.c",
+ "parts": [
+  {
+   "file": "abilities/test_simple_mega_abilities.c",
+   "calls": [
+    "test_mega_abilities_are_engine_rows",
+    "test_unmarked_base_abilities_stay_unmodelled"
+   ],
+   "header": "step G63 of the content expansion (decision 0015 entry 5bj), the simple Mega abilities as one batch: Sand Force\n(BasePower 5325/4096 for a Rock, Ground or Steel move in Sandstorm, and the Sandstorm immunity), Shell Armor (onCriticalHit\nfalse, the crit roll is still taken), Filter (the Solid Rock damage step) and Stalwart are marked engine rows (handler NONE),\nand the base abilities of their Megas' formes that stay unmarked (Slowbro's Own Tempo, Aggron's Heavy Metal, Heracross's Guts)\nare UNMODELLED, the Megas reachable through the marked base abilities. The behaviour is covered by the recorded battles g63_*,\nincluding the control battle of the Shell Armor rule.\n\nSplit by subject from the test of step G63 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_stalwart.c",
+   "calls": [
+    "test_no_marked_scripted_move"
+   ],
+   "header": "step G63 of the content expansion (decision 0015 entry 5bj), the one fact that Stalwart's redirection rule depends\non: no marked move has the scripted target class. Stalwart does not change a scripted move's target at the pin, and the\nengine's redirection only runs for the single-target classes; a marked scripted move would need its own case (E_UNSUPPORTED for\na Stalwart holder), so this check fails first if one is marked.\n\nSplit by subject from the test of step G63 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "forms/test_mega_stones.c",
+   "calls": [
+    "test_mega_stones_g63"
+   ],
+   "header": "the Mega Stones and the Megas they lead to. Step G63 of the content expansion (decision 0015 entry 5bj):\nGarchompite, Steelixite, Slowbronite, Scolipite, Aggronite and Skarmorite are marked and take their base forme to its Mega\n(the manifest and the tables); Heracronite (Skill Link) is not, because Skill Link is dropped (no modelled multi-hit move is in\nHeracross's learnset). The stones of the other Mega batches join this file in restructure step 6e.\n\nSplit by subject from the test of step G63 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

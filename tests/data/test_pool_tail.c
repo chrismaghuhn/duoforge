@@ -26,8 +26,8 @@
 
 #include "codec/state_codec.h"
 #include "core/sha256.h"
-#include "data/closure_tables.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
@@ -914,7 +914,7 @@ MUT(m_lock_last_none, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, 0u, 2u)) /* no las
 MUT(m_lock_last_other, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, 1u, 2u)) /* Dragon Pulse (slot 1) used last */
 MUT(m_lock_last_struggle, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, DFI_TAIL_MOVE_MAX, 2u)) /* Struggle used last */
 /* issue 606 (decision 0015 5dv): the unused-lock bit of a valid lock, at the example's TURN boundary: it stands only at a PIVOT
- * pause or at the end of the battle (the PIVOT case is duoforge.state.pool_lockfam_sleep's codec round trip) */
+ * pause or at the end of the battle (the PIVOT case is duoforge.moves.lockedmove_sleep's codec round trip) */
 MUT(m_lock_unused_at_turn, {
     lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, EXAMPLE_LOCK_SLOT, 1u);
     y->tail.sides[1].positions[0].single_turn = (uint8_t)DFI_SINGLE_TURN_LOCK_UNUSED;
@@ -1907,7 +1907,7 @@ int main(void)
      * nothing else of it changes (the field, the other side conditions, the other volatiles and the member overrides
      * stay: nothing in this turn ends them). The last move and Encore are written by the step too (step G9: every move
      * used sets the last move, an Encore locks the request to its slot and counts down): the example of this block has
-     * neither, they are tested in test_pool_g9.c; nor does it have a Pokemon that must recharge (step G17, test_pool_g17.c:
+     * neither, they are tested in test_encore.c; nor does it have a Pokemon that must recharge (step G17, test_recharge.c:
      * its request is the recharge turn alone). The soak types of the example (Fighting and Water on the leads, which
      * the types now read: step G11) keep the turn from ending in a knock-out before its residual. */
     {
@@ -1921,15 +1921,15 @@ int main(void)
                 tp->encore_turns = 0u;
                 tp->must_recharge = 0u; /* step G17: a Pokemon that must recharge is offered the recharge only */
                 /* step G60: the example's Substitutes would absorb this step's hits (both leads are the targets of the foe's first
-                 * moves, and the hits go to the Substitute: ACTIVATE, no DAMAGE, the HP is hidden); tested in test_pool_g60.c. */
+                 * moves, and the hits go to the Substitute: ACTIVATE, no DAMAGE, the HP is hidden); tested in test_substitute.c. */
                 tp->substitute_hp = 0u;
-                tp->glaive_rush = 0u;   /* step G19: the first BeforeMove of a Pokemon ends it (test_pool_g19.c) */
+                tp->glaive_rush = 0u;   /* step G19: the first BeforeMove of a Pokemon ends it (test_glaive_rush_tail_view.c) */
                 /* step G56: the example's locks are not this step's turn (a locked move is forced, and its count goes down; the
-                 * lock is tested by test_pool_g56.c): the lock and its move in the body are cleared together. */
+                 * lock is tested by test_outrage_lock.c): the lock and its move in the body are cleared together. */
                 tp->lock_turns = 0u;
                 x->sides[s].positions[p].locked_move = 0u;
                 if (tp->perish == 1u) {
-                    tp->perish = 0u; /* step G26: a count of 1 ends in the residual: the holder faints (test_pool_g26.c) */
+                    tp->perish = 0u; /* step G26: a count of 1 ends in the residual: the holder faints (test_perish_song.c) */
                 }
             }
         }
@@ -1992,7 +1992,7 @@ int main(void)
                 want.sides[s].positions[p].last_move = x->tail.sides[s].positions[p].last_move;
                 /* step G42: the move results of this turn are the actions' own (the engine writes them while the turn runs and
                  * the end of the turn shifts them to the last turn; the shift is checked by the recorded battles of
-                 * test_pool_g42.c), so this model takes them as they are, and only the bits outside the layout are checked. */
+                 * test_move_result_roost.c), so this model takes them as they are, and only the bits outside the layout are checked. */
                 const uint32_t mr = x->tail.sides[s].positions[p].move_result;
                 DF_CHECK_EQ_U64(&t, mr & 0xC0u, 0u);
                 want.sides[s].positions[p].move_result = (uint8_t)mr;

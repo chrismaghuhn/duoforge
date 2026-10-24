@@ -387,7 +387,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ASSURANCE] = 1u,
             /* Step G86 (decision 0015 5cn, batch 6). Data rows: Body Slam (paralysis at 30 percent; its minimize flag is inert, Minimize is
              * unmarked), Razor Shell (Defense -1 at 50 percent; slicing, Sharpness), Tickle (Attack and Defense -1; reflectable, Magic
-             * Bounce's list in tests/test_pool_g57.c). Handlers: Heavy Slam (weight ratio, user and target), Hard Press (the target's HP),
+             * Bounce's list in tests/abilities/test_magic_bounce.c). Handlers: Heavy Slam (weight ratio, user and target), Hard Press (the target's HP),
              * Ice Spinner (the terrain clears after a hit), Belly Drum (half the HP for +6 Attack). */
             [DFI_MOVE_BODYSLAM] = 1u,
             [DFI_MOVE_RAZORSHELL] = 1u,
@@ -459,7 +459,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_STEELROLLER] = 1u,
             [DFI_MOVE_CLANGOROUSSOUL] = 1u,
             [DFI_MOVE_BRICKBREAK] = 1u,
-            /* Step G38: Imprison (the foes may not use the moves it knows; duoforge.state.pool_g38). */
+            /* Step G38: Imprison (the foes may not use the moves it knows; duoforge.moves.imprison). */
             [DFI_MOVE_IMPRISON] = 1u,
             [DFI_MOVE_FIERYDANCE] = 1u,
             [DFI_MOVE_PSYCHOCUT] = 1u,
@@ -841,6 +841,21 @@ const dfi_support_manifest dfi_support = {
             /* step G79 (decision 0015 5br): Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562,
              * sim/field.ts:106-116); Altaria and Drampa; an engine row */
             [DFI_ABILITY_CLOUDNINE] = 1u,
+            /* A2a (Champions-100, decision 0015 entry 5dy): one clause each at an existing hook, engine rows */
+            [DFI_ABILITY_ILLUMINATE] = 1u,    /* Keen Eye's TryBoost and ignoreEvasion (dfi_boost, dfi_accuracy_check) */
+            [DFI_ABILITY_WHITESMOKE] = 1u,    /* Clear Body's TryBoost (dfi_boost) */
+            [DFI_ABILITY_WATERABSORB] = 1u,   /* Volt Absorb's TryHit for Water moves */
+            [DFI_ABILITY_EARTHEATER] = 1u,    /* Volt Absorb's TryHit for Ground moves */
+            [DFI_ABILITY_MOTORDRIVE] = 1u,    /* Speed +1 or -immune for Electric moves (Lightning Rod without the redirect) */
+            [DFI_ABILITY_ICEBODY] = 1u,       /* a sixteenth in snow (eachEvent('Weather'), dfi_weather_heal) */
+            [DFI_ABILITY_SURGESURFER] = 1u,   /* Speed x2 in Electric Terrain (dfi_speed_key) */
+            [DFI_ABILITY_QUICKFEET] = 1u,     /* Speed x1.5 while statused, no paralysis halving (dfi_speed_key) */
+            [DFI_ABILITY_CORROSION] = 1u,     /* its poisons skip the Poison and Steel immunity (dfi_try_status) */
+            [DFI_ABILITY_PURIFYINGSALT] = 1u, /* no status, no Yawn, Ghost moves x0.5 at the holder */
+            [DFI_ABILITY_GOOEY] = 1u,         /* a contact hit lowers the attacker's Speed by 1 (DamagingHit) */
+            [DFI_ABILITY_POISONPOINT] = 1u,   /* a contact hit poisons the attacker at 3 in 10 (DamagingHit, draw site 26) */
+            [DFI_ABILITY_TANGLEDFEET] = 1u,   /* accuracy x0.5 against a confused holder (the accuracy chain) */
+            [DFI_ABILITY_NATURALCURE] = 1u,   /* the status cured at the switch-out (the Champions entry, combat/flow/switch.h) */
             /* Batch A1b (decision 0015 5dz): one member of an existing damage chain each (src/combat/mechanics/damage/), the pinned
              * texts checked by check_a1b_facts (tools/datagen/tablegen/rules.py). */
             [DFI_ABILITY_FURCOAT] = 1u,      /* Persian-Alola and Furfrou: Defense x2 (ModifyDef) */
@@ -1017,22 +1032,22 @@ const dfi_support_manifest dfi_support = {
         },    /* The POOL player-view extension (decision 0018): a bit is set by the step that implements the feature and
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
-     * duoforge.state.pool_g8). Step G11: the type change of Soak (bit 9: TYPE_CHANGED and type_now of the position, public,
-     * verified against the four g11 battles in duoforge.state.pool_g11). Step G7: Wide Guard (bit 17: guard_flags, public,
-     * verified in duoforge.state.pool_g7). Step G9: Encore (bit 7: encore_slot of the position, public, verified against
-     * the g09_encore battles step by step in duoforge.state.pool_g9). Step G17: the recharge (bit 15: MUST_RECHARGE of the
-     * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). Step G19: Glaive Rush (bit 20:
-     * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.state.pool_g19). Step G20:
+     * duoforge.moves.throat_chop_heal_block_view). Step G11: the type change of Soak (bit 9: TYPE_CHANGED and type_now of the position, public,
+     * verified against the four g11 battles in duoforge.moves.soak). Step G7: Wide Guard (bit 17: guard_flags, public,
+     * verified in duoforge.mechanics.wide_guard). Step G9: Encore (bit 7: encore_slot of the position, public, verified against
+     * the g09_encore battles step by step in duoforge.moves.encore). Step G17: the recharge (bit 15: MUST_RECHARGE of the
+     * position's volatiles, public, verified against the g17 battles step by step in duoforge.moves.recharge). Step G19: Glaive Rush (bit 20:
+     * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.moves.glaive_rush_tail_view). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
-     * in duoforge.state.pool_g20). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
-     * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
-     * announced, 3 to 1, verified against the g26 battles step by step in duoforge.state.pool_g26). */
+     * in duoforge.mechanics.aurora_veil). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
+     * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.moves.rage_powder_view). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
+     * announced, 3 to 1, verified against the g26 battles step by step in duoforge.moves.perish_song). */
     /* Step G38: Imprison (bit 12: IMPRISON of the position's volatiles, bit 2, public, verified against the g38 battles in
-     * duoforge.state.pool_g38). */
+     * duoforge.moves.imprison). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
-     * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
+     * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.mechanics.sand_snow_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
-     * duoforge.state.pool_ac1). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
+     * duoforge.abilities.trace). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
      * ability), so the bit is exact: a zero is "no change". */
     /* Step G42: Roost (bit 40: the ROOST volatile of the position, public: the -singleturn line of Roost, set at its heal and
      * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact
@@ -1094,6 +1109,6 @@ const dfi_support_manifest dfi_support = {
                          /* Step K4 (#475, decision 0015 5dl): Gravity, gravity_turns of the field view (encoder 5 column, encode.c). */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_GRAVITY) |
                          /* Step G87 (decision 0080): Attract's source position (volatiles2 bits 12-13), public, verified against the
-                          * recorded pool battles and the from_view worlds of tests/test_pool_g87.c. */
+                          * recorded pool battles and the from_view worlds of tests/moves/test_attract_source_view.c. */
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE)
 };

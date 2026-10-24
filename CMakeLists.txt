@@ -139,9 +139,9 @@ set(DUOFORGE_SOURCES
     src/state/reference_teams.c
     src/state/observation.c
     src/state/tiebreak.c
-    src/data/closure_tables.c
-    src/data/extended_tables.c
-    src/data/pool_tables.c
+    src/data/formats/reg-mc/closure_tables.c
+    src/data/formats/reg-mc/extended_tables.c
+    src/data/formats/reg-mc/pool_tables.c
     src/data/formulas.c
     src/data/support_manifest.c
     src/codec/state_codec.c

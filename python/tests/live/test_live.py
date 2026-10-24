@@ -823,7 +823,7 @@ def _pool_assembler_observations(points, verifier):
                 key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
             elif parts["status"] != 0 and parts["reason"] == "engine-refuses-record":
                 # the engine's public record of this point is status 0, but its check refuses a world with an infatuated occupant
-                # (duoforge_battle_from_view, lead's option B, tests/test_pool_g71.c): the tracker refuses with that verdict. Only
+                # (duoforge_battle_from_view, lead's option B, tests/moves/test_attract.c): the tracker refuses with that verdict. Only
                 # records with an Attract source in the engine's record may take this key (infatuated_in_engine).
                 verifier.assertTrue(infatuated_in_engine(name, k, player), (name, k, player))
                 key = INFATUATED_REFUSAL

@@ -1,0 +1,276 @@
+{
+ "P1_command_changed": [],
+ "P1_inventory": {
+  "debug": {
+   "before_sha256": "881b59c48201394d4f73c3cd3619af2bfb5b84c8437b302361b104a59d1fd058",
+   "equal_under_the_renames": true,
+   "names": 1604,
+   "sha256": "c356ba85967433cca37a2a69b8c93e4dfa0a23b1f7f44904e79a1d4f786b6f7c"
+  },
+  "ipo": {
+   "before_sha256": "881b59c48201394d4f73c3cd3619af2bfb5b84c8437b302361b104a59d1fd058",
+   "equal_under_the_renames": true,
+   "names": 1604,
+   "sha256": "c356ba85967433cca37a2a69b8c93e4dfa0a23b1f7f44904e79a1d4f786b6f7c"
+  },
+  "noipo": {
+   "before_sha256": "881b59c48201394d4f73c3cd3619af2bfb5b84c8437b302361b104a59d1fd058",
+   "equal_under_the_renames": true,
+   "names": 1604,
+   "sha256": "c356ba85967433cca37a2a69b8c93e4dfa0a23b1f7f44904e79a1d4f786b6f7c"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_renamed": {
+  "debug": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill"
+  ],
+  "ipo": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill"
+  ],
+  "noipo": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill"
+  ]
+ },
+ "P1_selected_tests": {
+  "after-ipo": {
+   "names_sha256": "ccbfea7f2f022240fad13ca13ac0cb9a85686bfd6a46f6871ca6f209005f5d34",
+   "passed": 277,
+   "tests": 277
+  },
+  "after-noipo": {
+   "names_sha256": "5feef9f1c7b11d7dc5c18c00496570549b413fc39da0f9a35eb02ab9b39239b7",
+   "passed": 272,
+   "tests": 272
+  },
+  "before-ipo": {
+   "names_sha256": "e7f1fc423fa248afd20ed8781dc3b85ebd4ebcb394eab07177a540e458f7e6b8",
+   "passed": 277,
+   "tests": 277
+  },
+  "before-noipo": {
+   "names_sha256": "9adb5876f9325983b627eb7eb40414c8cbe5a53200c33ae347c0197973f19665",
+   "passed": 272,
+   "tests": 272
+  }
+ },
+ "P2_reference": {
+  "checks": {
+   "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15754 checks, 0 failures",
+   "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+   "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+   "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 29398 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+  },
+  "executions": 2808,
+  "ipo": {
+   "equal": true,
+   "sha256": "77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5"
+  },
+  "native_reports_equal": {
+   "debug": true,
+   "ipo": true,
+   "noipo": true
+  },
+  "noipo": {
+   "equal": true,
+   "sha256": "77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5"
+  },
+  "steps": 24664,
+  "stops": 9229,
+  "unique_battles": 1241,
+  "variants": 10
+ },
+ "P3_perft_pins_sha256": "84c744369b4fdc0705d4a2c7f4c08d5df2cbc78fb53ef2898bca3edb2192ddcb",
+ "P3_perft_pins_unchanged": true,
+ "P4_bench_sha256_unchanged": false,
+ "P5_fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "P5_fingerprints_equal": true,
+ "P5_generated_unchanged": false,
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "199c8e6847bb8ce1150df95a9ac7dd572d1ba5fc",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "1bf6d5e4554eeb26fc332162701935b68061c9ff",
+  "dirty": false,
+  "phase": "before"
+ },
+ "changed_files": [
+  "docs/benchmarks/2026-10-23-restructure-test-names/machine.json",
+  "docs/benchmarks/2026-10-23-restructure-test-names/proofs.py",
+  "docs/benchmarks/2026-10-23-restructure-test-names/summarize.py",
+  "docs/mechanics/abilities/5bd-pressure-foes-derived-pp.md",
+  "docs/mechanics/abilities/5bg-magic-bounce-mega-stones-absolite.md",
+  "docs/mechanics/abilities/5bm-symbiosis.md",
+  "docs/mechanics/abilities/5bo-moody.md",
+  "docs/mechanics/abilities/5bp-cheap-set-pure-power-battle.md",
+  "docs/mechanics/abilities/5br-cloud-nine-weather-suppressed-by.md",
+  "docs/mechanics/abilities/5bs-frisk.md",
+  "docs/mechanics/abilities/5dq-magic-bounce-issue-543-34.md",
+  "docs/mechanics/field/5bf-rock-items-damp-rock-heat.md",
+  "docs/mechanics/forms/5ak-shadow-tag-gengarite.md",
+  "docs/mechanics/forms/5dd-piercing-drill-excadrite.md",
+  "docs/mechanics/forms/5n-mega-batch.md",
+  "docs/mechanics/moves/5af-item-transfer-moves-trick-switcheroo.md",
+  "docs/mechanics/moves/5cc-moves-batch-4.md",
+  "docs/mechanics/moves/5co-cheap-moves-c1.md",
+  "docs/mechanics/moves/5ct-cheap-moves-c4.md",
+  "docs/mechanics/moves/5h-knock-off.md",
+  "docs/support/README.md",
+  "python/tests/engine/test_repo_hygiene.py",
+  "src/combat/sheer_force.h",
+  "src/data/support_manifest.c",
+  "tests/abilities/test_cloud_nine.c",
+  "tests/abilities/test_frisk.c",
+  "tests/abilities/test_magic_bounce.c",
+  "tests/abilities/test_moody.c",
+  "tests/abilities/test_piercing_drill.c",
+  "tests/abilities/test_pool_g63.c",
+  "tests/abilities/test_pressure.c",
+  "tests/abilities/test_shadow_tag.c",
+  "tests/abilities/test_sheer_force.c",
+  "tests/abilities/test_symbiosis.c",
+  "tests/abilities/test_trace.c",
+  "tests/abilities/tests.cmake",
+  "tests/flow/test_invariants.c",
+  "tests/flow/test_pool_g46_party.c",
+  "tests/forms/test_stance_change.c",
+  "tests/forms/tests.cmake",
+  "tests/items/test_duration_items.c",
+  "tests/items/test_item_transfer.c",
+  "tests/items/test_knock_off.c",
+  "tests/items/test_pool_g49.c",
+  "tests/items/tests.cmake",
+  "tests/mechanics/test_pool_g20_protect.c",
+  "tests/mechanics/test_pool_weather.c",
+  "tests/renames.tsv",
+  "tools/reference/tests/pinned.cmake",
+  "tools/reference/tests/test_trace_to_c.py",
+  "tools/restructure/rename_tests.py",
+  "tools/restructure/test_audit.py",
+  "tools/restructure/tests/test_restructure_tools.py",
+  "tools/state_model/state_v3_model.py"
+ ],
+ "object_identity": {
+  "debug": {
+   "compared": 293,
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "library_after": "8f4f3befdc7619bcc4931b3d0e4710c8bd37b462477f99eb44373c90881a2a8a",
+   "library_before": "8f4f3befdc7619bcc4931b3d0e4710c8bd37b462477f99eb44373c90881a2a8a"
+  },
+  "ipo": {
+   "compared": 295,
+   "differing": [
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/boo.dir/main.c.o",
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/foo.dir/foo.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge.dir/src/data/support_manifest.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/data/support_manifest.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "tests/CMakeFiles/duoforge_state_invariants.dir/flow/test_invariants.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g20_protect.dir/mechanics/test_pool_g20_protect.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g46_party.dir/flow/test_pool_g46_party.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g49.dir/items/test_pool_g49.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g63.dir/abilities/test_pool_g63.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_weather.dir/mechanics/test_pool_weather.c.o"
+   ],
+   "library_after": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a",
+   "library_before": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a"
+  },
+  "noipo": {
+   "compared": 294,
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "library_after": "57d79859671ef2d0dbfa80a63d33dd98c7a437ec348a612f436c4eb52cfeffbd",
+   "library_before": "57d79859671ef2d0dbfa80a63d33dd98c7a437ec348a612f436c4eb52cfeffbd"
+  }
+ }
+}

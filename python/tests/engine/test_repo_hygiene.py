@@ -39,7 +39,7 @@ class RepoHygieneTest(unittest.TestCase):
         for path in ("runs/night/params-12.npz", "bc.npz", "x/league/snap", "checkpoints/a.json", "best.npz",
                      "latest.json", "model.safetensors", "w.pt"):
             self.assertTrue(forbidden(path), path)
-        for path in ("python/duoforge_learn/checkpoint.py", "docs/learning/RUNBOOK.md", "tests/test_pool_g41.c",
+        for path in ("python/duoforge_learn/checkpoint.py", "docs/learning/RUNBOOK.md", "tests/abilities/test_shadow_tag.c",
                      "python/tests/support/data/live_stream_ab.json", "src/batch/batch.c"):
             self.assertFalse(forbidden(path), path)
 

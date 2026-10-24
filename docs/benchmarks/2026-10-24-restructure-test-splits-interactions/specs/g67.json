@@ -1,0 +1,40 @@
+{
+ "source": "interactions/test_pool_g67.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "bundle_of": "df_conf_bundle_of",
+   "find": "df_conf_find"
+  }
+ },
+ "shared_blocks": [
+  0,
+  4
+ ],
+ "parts": [
+  {
+   "file": "interactions/test_magic_guard_air_balloon.c",
+   "calls": [
+    "check_marks",
+    "check_battles"
+   ],
+   "main_blocks": [
+    0,
+    4
+   ],
+   "header": "step G67 of the content expansion, Magic Guard and Air Balloon (decision 0015 entry 5bl). Magic Guard (data/abilities.ts:2465-2476) blocks every damage whose Showdown effect is not a Move; the turn code classes every indirect damage with dfi_deal's required dfi_dmg_class (SIDE, WEATHER, STATUS, CONDITION, RECOIL and ITEM skipped silently by a holder, ABILITY skipped with -activate, DIRECT and MOVE taken, UNCLASSIFIED refused). The marks (both rows are engine rows, the switch-in line is the event kind 48), and each of the twelve battles of its list replays to its end with no refusal; test_conformance compares the HP and the lines of every step.\n\nSplit by subject from the test of step G67 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "mechanics/test_item_shown_fold.c",
+   "calls": [
+    "check_fold_ignores_item_shown"
+   ],
+   "main_blocks": [
+    0,
+    4
+   ],
+   "header": "step G67 of the content expansion, the event ITEM_SHOWN (decision 0033) in the fold: the open team sheets already show the item, so a fold of this event leaves the viewer's knowledge (the whole battle record, as the fold writes it) exactly as it was: g67_balloon_ground replayed to its end and folded once.\n\nSplit by subject from the test of step G67 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}
