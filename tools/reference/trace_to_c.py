@@ -1553,7 +1553,10 @@ def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, w
                 sst[(s, w['d'])] = value
             else:
                 sst[(s, roster_of[s][nm])] = None
-        elif len(parts) >= 3 and parts[1] == '-enditem' and len(parts[2]) > 3 and parts[2][2] in 'ab':
+        elif (len(parts) >= 3 and parts[1] == '-enditem' and len(parts[2]) > 3 and parts[2][2] in 'ab' and
+              '[weaken]' not in parts[4:]):
+            # A resist berry's [weaken] line is the second line of the berry its [eat] line took: no new loss (an ally's
+            # Symbiosis between the two has given the eater a new item, issue 553).
             item_line(int(parts[2][1]) - 1, parts[2].split(': ', 1)[1], 1)
         elif len(parts) >= 4 and parts[1] == '-item' and any(x.startswith('[from] move:') for x in parts[4:]):
             item_line(int(parts[2][1]) - 1, parts[2].split(': ', 1)[1], 0)
