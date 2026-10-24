@@ -9,8 +9,8 @@
  * The sections, from the tests of their steps (restructure step 6e; tests/renames.tsv maps the old names): Mega batch 2
  * (Swampertite, Metagrossite, Froslassite, Lucarionite Z), Mega batch 3 (G43: ten stones with no new rule), Mega batch 4 (G51:
  * ten stones with no new rule, and Keen Eye and Big Pecks marked for Pidgeot), the Magic Bounce stones (G57: Absolite,
- * Sablenite, Clefablite; Starminite unmarked), the six new Mega abilities and their stones (G59), and the simple Mega
- * abilities' stones (G63).
+ * Sablenite, Clefablite; Starminite unmarked), the six new Mega abilities and their stones (G59), the simple Mega abilities'
+ * stones (G63), and the cheap set's stones (G75: Medichamite and Clefablite; Starminite and Sharpedonite unmarked).
  */
 #include <stddef.h>
 #include <stdint.h>
@@ -484,6 +484,37 @@ static void test_mega_stones_g63(df_test *t)
     DF_CHECK(t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_SKARMORY, DFI_ITEM_SKARMORITE + 1u));
 }
 
+/* ---- the marks of the two stones, and the stones that stay out */
+static void check_stones(df_test *t)
+{
+    static const uint32_t items[] = {DFI_ITEM_MEDICHAMITE, DFI_ITEM_CLEFABLITE};
+    for (size_t i = 0u; i < sizeof items / sizeof items[0]; ++i) {
+        DF_CHECK(t, dfi_support.items[items[i]] != 0u);
+        DF_CHECK_EQ_U64(t, dfi_pool_item_handler[items[i]], DFI_HANDLER_NONE);
+    }
+    /* the stones that stay out, and Strong Jaw, whose bite flag would need a pool column (deferred, not in this batch) */
+    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_STARMINITE], 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_ALTARIANITE] != 0u); /* marked since A0 part 1 (decision 0015 entry 5ds) */
+    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_SHARPEDONITE], 0u);
+    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_STRONGJAW], 0u);
+    DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_STRONGJAW], DFI_HANDLER_UNMODELED);
+}
+
+/* ---- the Mega pairs of the two stones, and the legal base abilities of their base formes */
+static void cheap_set_stones_check_pairs(df_test *t)
+{
+    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_MEDICHAM, 1u + DFI_ITEM_MEDICHAMITE), DFI_FORME_MEDICHAMMEGA);
+    DF_CHECK(t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_MEDICHAM, 1u + DFI_ITEM_MEDICHAMITE));
+    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_CLEFABLE, 1u + DFI_ITEM_CLEFABLITE), DFI_FORME_CLEFABLEMEGA);
+    DF_CHECK(t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_CLEFABLE, 1u + DFI_ITEM_CLEFABLITE));
+    /* the base formes of the battles hold the ability of each pair */
+    DF_CHECK(t, base_ability_legal(DFI_FORME_MEDICHAM, DFI_ABILITY_PUREPOWER));
+    DF_CHECK(t, base_ability_legal(DFI_FORME_CLEFABLE, DFI_ABILITY_UNAWARE));
+    /* a stone of another forme gives nothing: Medichamite on Clefable, Clefablite on Medicham */
+    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_CLEFABLE, 1u + DFI_ITEM_MEDICHAMITE), DFI_FORME_NONE);
+    DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_MEDICHAM, 1u + DFI_ITEM_CLEFABLITE), DFI_FORME_NONE);
+}
+
 int main(void)
 {
     df_test t;
@@ -511,6 +542,10 @@ int main(void)
     }
     { /* simple mega abilities */
         test_mega_stones_g63(&t);
+    }
+    { /* cheap set stones */
+        check_stones(&t);
+        cheap_set_stones_check_pairs(&t);
     }
     return df_test_end(&t);
 }
