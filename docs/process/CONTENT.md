@@ -28,8 +28,10 @@ restructure (2026-10-24). Lane set-up, merge order and gates: [LANES.md](LANES.m
    for the repository stays out; the spec, a summary and its SHA-256 go in.
 6. **Tests and mutant.** White-box checks in the scaffolded test; revert the fix and show the new test (or battle)
    turns red. Every new refusal gets a case that checks `E_UNSUPPORTED` and the unchanged state.
-7. **Counting pins** (pool hash, fingerprints, `UNMODELED_*`, marked count, pool bound) are set as the sum of all merged
-   work; after merging `main`, measure them again.
+7. **Counting pins** (pool hash, fingerprints, `UNMODELED_*`, marked count) are set as the sum of all merged work;
+   after merging `main`, measure them again. The battle-count bounds in `tests/reference/pins/reg-mc.json` are lower
+   bounds: a new battle needs no edit there. Raise them deliberately and in bundles (after a batch block, or in a mini
+   PR measured on `main`), not in every PR; on a line conflict keep the higher value.
 8. **Doc file.** Fill the entry (pin, rules, events, view, evidence, mutants, open gaps) and, if the step has a support
    line, the `## Support` section; then `python3 tools/docs/mechanics_docs.py --write`.
 
