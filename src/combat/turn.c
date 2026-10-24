@@ -8,6 +8,7 @@
 #include "combat/residual_order.h"
 #include "combat/events.h"
 #include "combat/items/items.h"
+#include "combat/items/kings_rock.h"
 #include "combat/moves/families.h"
 #include "combat/moves/multihit.h"
 #include "combat/moves/power_trip.h"
@@ -1911,6 +1912,19 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
     return DUOFORGE_OK;
 }
 
+/* King's Rock's added secondary for one target that is not false (batch I1, decision 0015 entry 5ef): its roll random(100) on the
+ * secondaries' site, then the flinch at a roll below 10 for a target the hit reached (`hit`; a Substitute's hit is a null target,
+ * whose moveHit does nothing). dfi_add_volatile skips a fainted target and an Inner Focus holder. */
+static duoforge_status dfi_kings_rock_flinch(dfi_run *r, uint32_t target, bool hit)
+{
+    uint32_t roll = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+    if (st != DUOFORGE_OK || !hit || roll >= DFI_KINGS_ROCK_CHANCE) {
+        return st;
+    }
+    return dfi_add_volatile(r, target, DFI_VOLATILE_FLINCH);
+}
+
 /* A primary confusion (step G92, decision 0062): the volatile of a move without secondaries (Confuse Ray, Swagger, Flatter,
  * Teeter Dance; runMoveEffects' addVolatile, sim/battle-actions.ts:1236-1238, sim/pokemon.ts:1969-2009). A fainted Pokemon
  * refuses, and a confused one refuses silently (no TryAddVolatile). Then TryAddVolatile: Misty Terrain's onTryAddVolatile
@@ -1995,9 +2009,11 @@ static bool dfi_can_switch(const struct duoforge_battle *b, uint32_t side)
  * only where the next request is made, at the TURN boundary, so it is derived from the board and keeps no state: a trapped
  * Pokemon's request refuses every switch (side.chooseSwitch: "Can't switch: The active Pokemon is trapped"; the hint
  * `trapped` or `maybeTrapped` of the request is information, not a rule). Replacements, pivots (a move's selfSwitch, Emergency
- * Exit, Eject Button) and a forced switch ignore it. Shed Shell and Run Away free their holder (items.ts shedshell, the Champions
- * mod's runaway, onTrapPokemon at priority -10 after Shadow Tag's): neither is marked, so no battle has them. The ability is
- * the current one: a Mega's, or one that Trace copied. `flat` must be an occupied position. */
+ * Exit, Eject Button) and a forced switch ignore it. Shed Shell (batch I1, decision 0015 entry 5ef; data/items.ts:5633-5649, no
+ * Champions entry) frees its holder: its onTrapPokemon and onMaybeTrapPokemon (priority -10, after Shadow Tag's foe handler and
+ * the partial trap's, both at 0) set trapped and maybeTrapped back to false, so the holder of the item it has now is never
+ * trapped, by either trap. Run Away (the Champions mod's runaway, the same handlers) is not marked. The ability is the current
+ * one: a Mega's, or one that Trace copied. `flat` must be an occupied position. */
 static const dfi_member *dfi_member_at(const struct duoforge_battle *b, uint32_t flat)
 {
     const uint32_t occupant = b->sides[flat / 2u].positions[flat % 2u].occupant;
@@ -2009,6 +2025,9 @@ bool dfi_switch_trapped(const struct duoforge_battle *b, uint32_t flat)
     const dfi_member *m = dfi_member_at(b, flat);
     if (m == NULL || m->hp == 0u || dfi_has_type(b, m, DFI_TYPE_GHOST)) {
         return false; /* tryTrap refuses a Ghost type for every trap (typechart trapped: 3) */
+    }
+    if (dfi_holds(b, m, DFI_ITEM_SHEDSHELL)) {
+        return false; /* Shed Shell's TrapPokemon handler runs last (priority -10) and clears trapped */
     }
     /* The partial trap (step G90, decision 0060): the volatile is up and its source is on the field (a source that left has
      * its tail source cleared, and a fainted one has ended the trap at the residual). The holder itself may have Shadow Tag. */
@@ -2610,6 +2629,16 @@ static bool dfi_herbs_matter(dfi_run *r)
 static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat)
 {
     return b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u;
+}
+
+/* Big Root (batch I1, decision 0015 entry 5ef; data/items.ts:482-497, onTryHealPriority 1, no Champions entry): the TryHeal of
+ * the healed holder, chainModify([5324, 4096]) when the heal's effect is drain, leechseed, ingrain, aquaring or strengthsap. The
+ * marked ones are the drain of a damaging move (the hit and a Substitute's hit), Leech Seed's residual and Strength Sap; Ingrain
+ * and Aqua Ring are not marked. runEvent ends with modify(damage, 5324/4096) (sim/battle.ts:929-933) on the amount that heal()
+ * made at least 1 and truncated (sim/battle.ts:2268-2271), which every caller's amount already is. `amount` is that amount. */
+static uint32_t dfi_big_root(const struct duoforge_battle *b, uint32_t flat, uint32_t amount)
+{
+    return dfi_holds(b, dfi_member_at(b, flat), DFI_ITEM_BIGROOT) ? dfi_modify(amount, 5324u) : amount;
 }
 
 /* addVolatile('throatchop') on a standing target without it: no onRestart, so a second hit changes nothing; its
@@ -4848,7 +4877,7 @@ static duoforge_status dfi_run_strength_sap(dfi_run *r, uint32_t user, const uin
     dfi_member *um = dfi_at(b, user);
     const bool healed = um != NULL && um->hp != 0u && um->hp < um->hp_max && !dfi_heal_blocked(b, user);
     if (healed) {
-        dfi_heal(r, user, atk, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        dfi_heal(r, user, dfi_big_root(b, user, atk), DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION); /* Big Root: strengthsap */
     }
     if (!healed && !dropped) {
         dfi_fail_still(r, user); /* `!!(heal || success)` is false (data/moves.ts:18184-18187): the hit loop breaks, no Update */
@@ -4985,6 +5014,10 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
          * arithmetic. */
         const dfi_member *shooter = dfi_at(b, user);
         if (dfi_ability(b, shooter, DFI_ABILITY_COMPOUNDEYES) || dfi_holds(b, shooter, DFI_ITEM_WIDELENS)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        /* And Zoom Lens (batch I1, decision 0015 entry 5ef) where it applies: a target that will not move again this turn. */
+        if (dfi_holds(b, shooter, DFI_ITEM_ZOOMLENS) && dfi_will_move(b, target) == NULL) {
             return DUOFORGE_E_UNSUPPORTED;
         }
         /* The same for the target's Snow Cloak in snow and Sand Veil in a sandstorm (step G39: 3277/4096 in the same event). */
@@ -5559,7 +5592,7 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
     if (dealt != 0u && md->drain[1] != 0u) {
         /* heal(Math.ceil(damage * drain[0] / drain[1]), source, target, 'drain') (data/moves.ts:18363) */
         const uint32_t amount = (dealt * md->drain[0] + md->drain[1] - 1u) / md->drain[1];
-        dfi_heal(r, user, amount, DUOFORGE_CAUSE_DRAIN, 0u, target);
+        dfi_heal(r, user, dfi_big_root(b, user, amount), DUOFORGE_CAUSE_DRAIN, 0u, target); /* Big Root: the drain's TryHeal */
     }
     /* AfterSubDamage on the Substitute's holder (data/moves.ts:18368-18369, after the recoil and the drain): an Air Balloon pops.
      * Struggle's recoil is not in this function (the move body applies it after the hit loop), so for Struggle the pop waits
@@ -6036,15 +6069,24 @@ static duoforge_status dfi_accuracy_targets(dfi_run *r, uint32_t user, const uin
                  * target, data/items.ts:665-670, chainModify([3686, 4096]), a number only) run in one event at the same
                  * priority, so the pin's order between them is the holders' Speed, and an exact tie draws. The chain rounds
                  * at each step, so the two orders agree only for some prefixes: when they differ the order is not modelled
-                 * (E_UNSUPPORTED, never a guess). With no powder the chain is Wide Lens's alone. */
+                 * (E_UNSUPPORTED, never a guess). With no powder the chain is Wide Lens's alone. Zoom Lens (batch I1, decision 0015
+                 * entry 5ef; data/items.ts:7825-7840, onSourceModifyAccuracyPriority -2, no Champions entry) is the attacker's
+                 * lens of the same group: chainModify([4915, 4096]) for a numeric accuracy when the target will not move again
+                 * this turn (!queue.willMove(target): it has moved, switches, or has fainted), read at this step; the attacker
+                 * holds one item, so the lens is Wide Lens's 4505 or Zoom Lens's 4915, and the powder order check is the same. */
                 const bool acc_bright_powder = base_accuracy != 0u && dfi_holds(r->b, acc_target, DFI_ITEM_BRIGHTPOWDER);
-                if (acc_wide_lens && acc_bright_powder) {
+                const uint32_t acc_lens = acc_wide_lens ? 4505u
+                                          : base_accuracy != 0u && dfi_holds(r->b, dfi_at(b, user), DFI_ITEM_ZOOMLENS) &&
+                                                    dfi_will_move(b, targets[i]) == NULL
+                                              ? 4915u
+                                              : 0u;
+                if (acc_lens != 0u && acc_bright_powder) {
                     uint32_t wide_first = acc_chain;
                     uint32_t powder_first = acc_chain;
-                    acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &wide_first) &&
+                    acc_ok = acc_ok && dfi_chain_modify(acc_chain, acc_lens, &wide_first) &&
                              dfi_chain_modify(wide_first, 3686u, &wide_first);
                     acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3686u, &powder_first) &&
-                             dfi_chain_modify(powder_first, 4505u, &powder_first);
+                             dfi_chain_modify(powder_first, acc_lens, &powder_first);
                     if (!acc_ok) {
                         return DUOFORGE_E_INVARIANT;
                     }
@@ -6055,8 +6097,8 @@ static duoforge_status dfi_accuracy_targets(dfi_run *r, uint32_t user, const uin
                     }
                     acc_chain = wide_first;
                 } else {
-                    if (acc_wide_lens) {
-                        acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &acc_chain);
+                    if (acc_lens != 0u) {
+                        acc_ok = acc_ok && dfi_chain_modify(acc_chain, acc_lens, &acc_chain);
                     }
                     if (acc_bright_powder) {
                         acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3686u, &acc_chain);
@@ -7929,6 +7971,22 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 sub_off[i] = false;
             }
         }
+        /* Normal Gem (batch I1, decision 0015 entry 5ef; data/items.ts:4324-4336, no Champions entry): the attacker's
+         * onSourceTryPrimaryHit (priority 0, so before a target's Substitute at -1) for each target of the hit that is not the
+         * user, when the move is not Status, has no pledgecombo flag (no Normal move has it) and is Normal now (move_type: after
+         * an -ate ability, Liquid Voice, Weather Ball): source.useItem() (`-enditem|user|Normal Gem|[from] gem|[move] M`,
+         * Unburden, Symbiosis) and the gem volatile (data/conditions.ts:463-472: BasePower x5325/4096 at priority 14, in
+         * dfi_damage_base_power). The item goes at the first such target, so once per move, before any target's damage. */
+        if (!status_move && move_type == DFI_TYPE_NORMAL && dfi_holds(b, m, DFI_ITEM_NORMALGEM)) {
+            bool reached = false;
+            for (uint32_t i = 0u; i < count; ++i) {
+                reached = reached || (hit[i] && targets[i] != user);
+            }
+            if (reached) {
+                dfi_use_item(r, user);
+                r->gem |= 1u << user;
+            }
+        }
         if (!status_move) {
             for (uint32_t i = 0u; i < count; ++i) {
                 bool taken = false;
@@ -8005,7 +8063,8 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 total += dealt;
                 if (md->drain[1] != 0u && dealt != 0u) {
                     const uint32_t num = dealt * md->drain[0] * 2u + md->drain[1];
-                    dfi_heal(r, user, num / (2u * md->drain[1]), DUOFORGE_CAUSE_DRAIN, 0u, targets[i]); /* round */
+                    /* round, then Big Root's TryHeal (the drain effect) */
+                    dfi_heal(r, user, dfi_big_root(b, user, num / (2u * md->drain[1])), DUOFORGE_CAUSE_DRAIN, 0u, targets[i]);
                 }
             }
         }
@@ -8222,7 +8281,14 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
          * or volatile reaches only a standing target. Sheer Force (step G61) strips
          * them all for its holder: no draw, no effect (sim/battle-actions.ts:1099, the
          * `moveData.secondaries` test of a stripped move). */
-        if (md->sec_chance != 0u && !dfi_sf_strips(r->b, m, md)) {
+        /* King's Rock (batch I1, decision 0015 entry 5ef; combat/items/kings_rock.h): the flinch secondary that the holder's item
+         * added at ModifyMove rolls after the move's own secondaries of each target (secondaries() loops over the targets, and
+         * for each over its secondaries, sim/battle-actions.ts:1336-1354): inside the generic loop below for a move whose own
+         * secondary is the generic one, in a loop after the last secondary block for every other move. */
+        const bool kings_rock = dfi_kings_rock_adds(dfi_holds(r->b, m, DFI_ITEM_KINGSROCK),
+                                                    dfi_ability(r->b, m, DFI_ABILITY_SHEERFORCE), status_move, md);
+        const bool generic_secondary = md->sec_chance != 0u && !dfi_sf_strips(r->b, m, md);
+        if (generic_secondary) {
             for (uint32_t i = 0u; i < count; ++i) {
                 /* the absorbed target draws too (see Alluring Voice above) but takes no effect */
                 if (!hit[i] && !sub_off[i]) {
@@ -8233,13 +8299,16 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 if (st != DUOFORGE_OK) {
                     return dfi_move_body_stop(stop, st);
                 }
-                if (roll >= md->sec_chance) {
-                    continue;
-                }
                 /* A self-boost secondary (Ancient Power, Charge Beam) acts on the user even when the target's hit went to a Substitute:
                  * secondaries() calls moveHit for every target that is not false, and the null target still runs the secondary's
                  * self (selfDrops, sim/battle-actions.ts:1317-1333 and :1336-1350). The target effects need a hit target. */
-                if (!hit[i] && md->sec_kind != DFI_SECONDARY_SELF_BOOST) {
+                if (roll >= md->sec_chance || (!hit[i] && md->sec_kind != DFI_SECONDARY_SELF_BOOST)) {
+                    if (kings_rock) {
+                        st = dfi_kings_rock_flinch(r, targets[i], hit[i]);
+                        if (st != DUOFORGE_OK) {
+                            return dfi_move_body_stop(stop, st);
+                        }
+                    }
                     continue;
                 }
                 if (md->sec_kind == DFI_SECONDARY_BOOST) {
@@ -8274,6 +8343,12 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 }
                 if (st != DUOFORGE_OK) {
                     return dfi_move_body_stop(stop, st);
+                }
+                if (kings_rock) {
+                    st = dfi_kings_rock_flinch(r, targets[i], hit[i]);
+                    if (st != DUOFORGE_OK) {
+                        return dfi_move_body_stop(stop, st);
+                    }
                 }
             }
             if (md->boost_role == DFI_BOOST_ROLE_SELF_AFTER_HIT) {
@@ -8339,6 +8414,19 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 }
                 if (st != DUOFORGE_OK) {
                     return dfi_move_body_stop(stop, st);
+                }
+            }
+        }
+        /* King's Rock's flinch for every move whose own secondaries (if any) ran above outside the generic loop: Stone Axe,
+         * Ceaseless Edge, Alluring Voice and Tri Attack (one target each, so the order per target holds), a Sheer Force holder's
+         * stripped move (no secondary of its own left) and a move without secondaries. */
+        if (kings_rock && !generic_secondary) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i] || sub_off[i]) {
+                    st = dfi_kings_rock_flinch(r, targets[i], hit[i]);
+                    if (st != DUOFORGE_OK) {
+                        return dfi_move_body_stop(stop, st);
+                    }
                 }
             }
         }
@@ -8639,7 +8727,7 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
     return DUOFORGE_OK;
 }
 
-/* Phase 7 of dfi_run_move_body: recoil, MoveFail, selfBoost and Life Orb (the last phase). */
+/* Phase 7 of dfi_run_move_body: recoil, MoveFail, selfBoost, Life Orb and Shell Bell (the last phase). */
 static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_after_loop(dfi_run *r, const dfi_queue_record *q, bool *ran,
                                                                   dfi_move_body_state *c, uint32_t *targets, bool *hit,
                                                                   uint32_t *hp_before, bool *sub_struggle)
@@ -8838,12 +8926,22 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_after_loop(dfi_run *r, co
         }
         dfi_emergency_exit(r, user, user_before); /* after AfterMoveSecondarySelf */
     }
+    /* Shell Bell (batch I1, decision 0015 entry 5ef; data/items.ts:5650-5664, no Champions entry): the same AfterMoveSecondarySelf
+     * event (priority -1; the holder has one item, so never with Life Orb), so not for a move that Sheer Force stripped. When the
+     * move's totalDamage (the HP the targets lost over every hit; a Substitute's hit adds 0) is not 0 and the holder has no
+     * forceSwitchFlag (a Red Card drag, drag_pending), heal(totalDamage / 8): at least 1 (`damage <= 1` becomes 1), truncated;
+     * dfi_heal skips a fainted or full holder and a Heal Block one. `-heal|holder|hp|[from] item: Shell Bell`. */
+    if (total != 0u && dfi_holds(r->b, m, DFI_ITEM_SHELLBELL) && ((r->drag_pending >> user) & 1u) == 0u &&
+        !dfi_sf_strips(r->b, m, md)) {
+        dfi_heal(r, user, total / 8u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SHELLBELL, DUOFORGE_NO_POSITION);
+    }
     return DUOFORGE_OK;
 }
 
 static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, bool *ran)
 {
     r->hit_index = 1u;
+    r->gem = 0u; /* batch I1: the gem volatile reaches only the move of its own action (run_internal.h) */
     struct duoforge_battle *b = r->b;
     const uint32_t side = q->side;
     const uint32_t user = side * 2u + (uint32_t)q->slot;
@@ -9345,7 +9443,8 @@ static duoforge_status dfi_residual_lock(dfi_run *r, uint32_t flat)
  * nothing happens when it is absent, fainted or at 0 HP. The holder loses baseMaxhp / 8 (this.damage, `[from] Leech Seed [of]
  * target`); the target then gains that amount (this.heal, silent: no line, so the HEAL event carries cause LEECH_SEED). A holder
  * that is down does not drain (its volatile handlers do not run: fieldEvent skips fainted holders, sim/battle.ts:514-517). The
- * source's slot is `leech_seed_source` - 1 (a flat position). Big Root's x1.3 is not modelled (not in the pool). */
+ * source's slot is `leech_seed_source` - 1 (a flat position). Big Root's x5324/4096 (its TryHeal) applies to the amount
+ * (dfi_big_root, batch I1, decision 0015 entry 5ef). */
 static duoforge_status dfi_leech_drain(dfi_run *r, uint32_t holder)
 {
     struct duoforge_battle *b = r->b;
@@ -9380,7 +9479,7 @@ static duoforge_status dfi_leech_drain(dfi_run *r, uint32_t holder)
     if (t->hp >= t->hp_max) {
         return DUOFORGE_OK;
     }
-    const uint32_t hp = (uint32_t)t->hp + lost;
+    const uint32_t hp = (uint32_t)t->hp + dfi_big_root(b, target, lost); /* Big Root: the leechseed TryHeal (batch I1, 5ef) */
     t->hp = (uint16_t)(hp > t->hp_max ? t->hp_max : hp); /* wide-operands-reviewed: <= hp_max */
     dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_HEAL, target, DUOFORGE_CAUSE_LEECH_SEED, 0u, DUOFORGE_NO_POSITION));
     return DUOFORGE_OK;

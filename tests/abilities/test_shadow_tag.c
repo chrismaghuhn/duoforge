@@ -240,7 +240,8 @@ static void check_domain(df_test *t)
 
 /* What would free the holder, or move, copy, take away or hide the ability, or trap in another way, is not marked: no battle has
  * it, and the trap rule reads none of it. Each is named, so that marking any of them fails here until dfi_switch_trapped reads it
- * (Shed Shell and Run Away free their holder, onTrapPokemon at priority -10 after Shadow Tag's; Skill Swap, Role Play, Entrainment,
+ * (Run Away frees its holder, onTrapPokemon at priority -10 after Shadow Tag's: Shed Shell, the item with the same handlers, is
+ * marked by batch I1, decision 0015 entry 5ef, and dfi_switch_trapped reads it; Skill Swap, Role Play, Entrainment,
  * Simple Beam, Worry Seed, Wandering Spirit and Mummy move or replace an ability; Gastro Acid suppresses it; Neutralizing Gas is not
  * in the pool; Illusion hides the Pokemon whose types and ability count; Mean Look and Block trap in their own way). Trace is
  * marked and is public (the `-ability` line); a type change is Soak's (marked, public). */
@@ -252,7 +253,7 @@ static void check_marks(df_test *t)
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_CURSEDBODY] != 0u); /* Gengar's own ability: the base of the Mega */
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_TRACE] != 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SOAK] != 0u);
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_SHEDSHELL] == 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_SHEDSHELL] != 0u); /* marked by batch I1 (decision 0015 entry 5ef): it frees its holder */
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_RUNAWAY] == 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_ILLUSION] != 0u); /* marked by step I2 (decision 0026): this step left it unmarked */
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_WANDERINGSPIRIT] == 0u);

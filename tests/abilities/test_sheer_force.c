@@ -35,11 +35,11 @@ static void check_marks(df_test *t)
     DF_CHECK(t, dfi_support.items[DFI_ITEM_CAMERUPTITE] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_FERALIGITE] != 0u);
     /* Magma Armor and Anger Point (Camerupt's and Tauros's abilities) were left unmarked by G61; step G77 (lane B batch 5, decision
-     * 0015 5bq) marks them, so the guard reads the marked state now. Shell Bell (the forceSwitchFlag gate of G46) and Wimp Out
-     * have no mark, so no battle can carry them */
+     * 0015 5bq) marks them, so the guard reads the marked state now. Shell Bell (the forceSwitchFlag gate of G46) is marked by
+     * batch I1 (decision 0015 entry 5ef): its heal is gated by Sheer Force as Life Orb's recoil; Wimp Out has no mark */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_MAGMAARMOR] != 0u ? 1u : 0u, 1u);
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_ANGERPOINT] != 0u ? 1u : 0u, 1u);
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_SHELLBELL] != 0u ? 1u : 0u, 0u);
+    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_SHELLBELL] != 0u ? 1u : 0u, 1u);
 }
 
 /* The move named by its id, with the strip and boost of a Sheer Force holder. */

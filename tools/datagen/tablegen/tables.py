@@ -20,7 +20,7 @@ from .moves import (
     parse_pool_move, prefix_flag_reads, SAND_IMMUNITY, STATUS_IMMUNITY, STATUS_IMMUNITY_C, STATUS_IMMUNITY_P)
 from .families import derive_family, ENGINE_ROWS, HANDLER_IDS
 from .items import (
-    check_g28_items, check_g49_facts, check_g55_items, entry_features, G2_ITEMS, INERT_ITEM_KEYS, ITEM_FAMILIES,
+    check_g28_items, check_g49_facts, check_g55_items, check_i1_facts, entry_features, G2_ITEMS, INERT_ITEM_KEYS, ITEM_FAMILIES,
     ITEM_MATCHERS, ITEM_MEMBERS, item_param, POOL_ITEMS)
 from .abilities import (
     ABILITY_FAMILIES, ABILITY_MATCHERS, ABILITY_MEMBERS, ability_param, check_a2a_facts, check_g30_facts, check_g37_facts,
@@ -256,6 +256,8 @@ def build_pool(root, repo, dx, ts):
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
     check_g61_facts(root, abil_ts, champ_abil)
     check_g49_facts(items_ts, champ_items)
+    check_i1_facts(items_ts, champ_items, {rel: Source(root, rel, READER_INPUTS) for rel in (
+        'data/conditions.ts', 'sim/pokemon.ts', 'sim/battle-queue.ts', 'sim/battle.ts', 'sim/battle-actions.ts')} | {'data/moves.ts': moves_ts})
     check_g59_facts(abil_ts, champ_abil, Source(root, 'sim/pokemon.ts', READER_INPUTS),
                     Source(root, 'data/conditions.ts', READER_INPUTS))
     check_g79_facts(Source(root, 'sim/field.ts', READER_INPUTS), Source(root, 'sim/battle.ts', READER_INPUTS),

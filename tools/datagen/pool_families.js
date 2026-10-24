@@ -1209,6 +1209,104 @@ function checkG61(dex, headers, moveIds, moveRows, unmodeledMoves) {
     return {checked, stripped, boostOnly, strippedIds};
 }
 
+// Batch I1 (decision 0015 entry 5ef): the six items of one clause each, on probes of their pinned handlers, and the move facts the
+// engine reads with them. King's Rock: the engine's flinch secondary of a move (combat/items/kings_rock.h: the generic column
+// with the flinch volatile, or Ice Fang's own code) is the pin's (a secondary with volatileStatus 'flinch') for every modelled pool
+// move, and the pinned onModifyMove adds the 10 percent flinch to a damaging move without one, keeps a move with one, and leaves a
+// Status move. Normal Gem: no pool move of type Normal has the pledgecombo flag (the engine has no pledge test). Zoom Lens: the
+// modifier only for a numeric accuracy at a target that will not move. Shell Bell: totalDamage / 8 unless forceSwitchFlag. Big
+// Root: the five heal effects. Shed Shell: both trap flags cleared.
+function checkI1(dex, headers, moveIds, moveRows, unmodeledMoves) {
+    const SEC_CHANCE = 14, SEC_KIND = 15, SEC_PARAM = 16, SPECIAL = 28;
+    const loose = (name) => { // a #define with a trailing comment (DFI_SECONDARY_VOLATILE)
+        for (const h of headers) {
+            const m = h.match(new RegExp('^#define ' + name + ' (\\d+)u\\b', 'm'));
+            if (m !== null) {
+                return Number(m[1]);
+            }
+        }
+        throw new Error('#define ' + name + ' not found');
+    };
+    const volatileKind = loose('DFI_SECONDARY_VOLATILE');
+    const flinch = specialOf(headers, 'DFI_VOLATILE_FLINCH');
+    const iceFang = specialOf(headers, 'DFI_SPECIAL_ICE_FANG');
+    let checked = 0, withFlinch = 0;
+    for (let number = 0; number < moveRows.length; number++) {
+        const id = moveIds.get(number);
+        if (id === undefined || unmodeledMoves.has(id)) {
+            continue;
+        }
+        const mv = dex.moves.get(id);
+        const row = moveRows[number];
+        const pinFlinch = (mv.secondaries || []).some((s) => s.volatileStatus === 'flinch');
+        const engFlinch = (row[SEC_CHANCE] !== 0 && row[SEC_KIND] === volatileKind && row[SEC_PARAM] === flinch) ||
+            row[SPECIAL] === iceFang;
+        expect('King\'s Rock: the flinch secondary of ' + id + ' (the pin = the engine)', engFlinch, pinFlinch);
+        if (mv.type === 'Normal') {
+            expect('Normal Gem: ' + id + ' has no pledgecombo flag', Boolean(mv.flags.pledgecombo), false);
+        }
+        checked += 1;
+        withFlinch += pinFlinch ? 1 : 0;
+    }
+    const kr = dex.items.get('kingsrock');
+    const added = (move) => {
+        call(kr.onModifyMove, battle(kr), [move]);
+        return move.secondaries === undefined ? null : move.secondaries.map((s) => [s.chance, s.volatileStatus || s.status || null]);
+    };
+    expect('King\'s Rock on a damaging move without secondaries', added(moveOf('Normal', {})), [[10, 'flinch']]);
+    expect('King\'s Rock on a damaging move with a burn', added(moveOf('Fire', {secondaries: [{chance: 10, status: 'brn'}]})),
+        [[10, 'brn'], [10, 'flinch']]);
+    expect('King\'s Rock on a damaging move with a flinch', added(moveOf('Rock', {secondaries: [{chance: 30, volatileStatus: 'flinch'}]})),
+        [[30, 'flinch']]);
+    expect('King\'s Rock on a Status move', added(moveOf('Normal', {category: 'Status'})), null);
+    expect('King\'s Rock onModifyMovePriority', kr.onModifyMovePriority, -1);
+    const zoom = dex.items.get('zoomlens');
+    const zoomed = (accuracy, willMove) => call(zoom.onSourceModifyAccuracy,
+        battle(zoom, {queue: {willMove: () => (willMove ? {} : null)}}), [accuracy, {}]);
+    expect('Zoom Lens at a target that will not move', zoomed(90, false), {chain: [4915, 4096]});
+    expect('Zoom Lens at a target that will move', zoomed(90, true), undefined);
+    expect('Zoom Lens on an accuracy of true', zoomed(true, false), undefined);
+    expect('Zoom Lens onSourceModifyAccuracyPriority', zoom.onSourceModifyAccuracyPriority, -2);
+    const bell = dex.items.get('shellbell');
+    const rang = (totalDamage, forceSwitchFlag) => {
+        const healed = [];
+        call(bell.onAfterMoveSecondarySelf, battle(bell, {heal: (d) => healed.push(d)}), [{forceSwitchFlag}, {}, {totalDamage}]);
+        return healed;
+    };
+    expect('Shell Bell heals totalDamage / 8', rang(100, false), [12.5]);
+    expect('Shell Bell after no damage', rang(0, false), []);
+    expect('Shell Bell with forceSwitchFlag', rang(100, true), []);
+    expect('Shell Bell onAfterMoveSecondarySelfPriority', bell.onAfterMoveSecondarySelfPriority, -1);
+    const root = dex.items.get('bigroot');
+    const rooted = ['drain', 'leechseed', 'ingrain', 'aquaring', 'strengthsap', 'shellbell', 'leftovers', 'recover']
+        .filter((effect) => call(root.onTryHeal, battle(root), [10, {}, {}, {id: effect}]) !== undefined);
+    expect('Big Root heal effects', rooted, ['drain', 'leechseed', 'ingrain', 'aquaring', 'strengthsap']);
+    expect('Big Root modifier', call(root.onTryHeal, battle(root), [10, {}, {}, {id: 'drain'}]), {chain: [5324, 4096]});
+    expect('Big Root onTryHealPriority', root.onTryHealPriority, 1);
+    const shed = dex.items.get('shedshell');
+    const holder = {trapped: true, maybeTrapped: true};
+    call(shed.onTrapPokemon, battle(shed), [holder]);
+    call(shed.onMaybeTrapPokemon, battle(shed), [holder]);
+    expect('Shed Shell clears both trap flags', holder, {trapped: false, maybeTrapped: false});
+    expect('Shed Shell trap priorities', [shed.onTrapPokemonPriority, shed.onMaybeTrapPokemonPriority], [-10, -10]);
+    const gem = dex.items.get('normalgem');
+    const gemmed = (move, same) => {
+        const used = [];
+        const source = {useItem() { used.push('use'); return true; }, addVolatile(v) { used.push(v); }};
+        call(gem.onSourceTryPrimaryHit, battle(gem), [same ? source : {}, source, move]);
+        return used;
+    };
+    expect('Normal Gem on a Normal move', gemmed(moveOf('Normal', {}), false), ['use', 'gem']);
+    expect('Normal Gem on another type', gemmed(moveOf('Fire', {}), false), []);
+    expect('Normal Gem on a Status move', gemmed(moveOf('Normal', {category: 'Status'}), false), []);
+    expect('Normal Gem at the user itself', gemmed(moveOf('Normal', {}), true), []);
+    expect('Normal Gem is a gem', gem.isGem, true);
+    const volatile = dex.conditions.get('gem');
+    expect('the gem volatile', [volatile.duration, volatile.onBasePowerPriority,
+        call(volatile.onBasePower, battle(volatile), [80, {}, {}, {}])], [1, 14, {chain: [5325, 4096]}]);
+    return {checked, withFlinch};
+}
+
 // Step G69, Symbiosis (decision 0015 5bm): the pinned onAllyAfterUseItem on probes. The holder's item moves to the user when the
 // user is not switching (switchFlag) and the holder holds one; then the one line -activate|holder|ability: Symbiosis|Item|[of] user.
 // Nothing changes for a switching user or an empty holder. The engine refuses the other cases (dfi_symbiosis, src/combat/turn.c).
@@ -1851,7 +1949,8 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek'],
+const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek',
+        'normalgem', 'kingsrock', 'zoomlens', 'shellbell', 'bigroot', 'shedshell'],
     abilities: ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
@@ -2263,6 +2362,7 @@ function main() {
     checkG67(dex);
     checkG81(dex);
     const g61 = checkG61(dex, headers, moveIds, moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT')), unmodeledMoves);
+    const i1 = checkI1(dex, headers, moveIds, moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT')), unmodeledMoves);
     checkG47(dex);
     checkG44(dex);
     checkG54(dex);
@@ -2295,7 +2395,7 @@ function main() {
     process.stdout.write('pool_families: ' + itemRows.length + ' items and ' + abilityRows.length +
         ' abilities agree with the pinned handlers (' + JSON.stringify(items) + ', ' + JSON.stringify(abilities) +
         '); every pool item and the new abilities pass the validator; ' + legal.bases + ' base formes: ' + legal.probes +
-        ' validator probes of their moves and abilities agree; ' + names + ' names are pinned dex ids; the UNMODELED markers agree with the pinned entries (' + JSON.stringify(unmodeled) + '); ' + aliases + ' cosmetic aliases are their base forme\n');
+        ' validator probes of their moves and abilities agree; ' + names + ' names are pinned dex ids; the UNMODELED markers agree with the pinned entries (' + JSON.stringify(unmodeled) + '); ' + aliases + ' cosmetic aliases are their base forme; I1: ' + i1.checked + ' modelled moves, ' + i1.withFlinch + ' with a flinch secondary\n');
 }
 
 main();

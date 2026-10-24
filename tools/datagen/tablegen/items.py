@@ -228,3 +228,100 @@ def check_g55_items(items_ts, champ_items):
             fail('item %s: the champions mod overrides the entry' % rid)
         if re.search(r'on[A-Z]\w*\(|durationCallback|condition:', chr(10).join(e[2])):
             fail('item %s: a callback, which the rows of G55 do not model' % rid)
+
+
+# Batch I1 (decision 0015 entry 5ef): six items with one clause each at an existing hook, engine rows (ENGINE_ROWS): the turn code
+# reads them by id and hard-codes these pinned texts. None has a Champions entry; the rules are format-independent (the same rows
+# serve every table set). Normal Gem: the attacker's TryPrimaryHit and the gem volatile (I1_OTHER_FACTS); King's Rock: the added
+# flinch secondary (combat/items/kings_rock.h; pool_families.js checkI1 checks the flinch secondaries of every pool move); Zoom
+# Lens: the accuracy of the priority -2 group at a target that will not move (queue.willMove); Shell Bell: the after-move heal of
+# totalDamage / 8; Big Root: the TryHeal of the five effects; Shed Shell: the two trap handlers.
+I1_ITEM_FACTS = (
+    ('normalgem', ('isGem: true,',
+                   "onSourceTryPrimaryHit(target, source, move) { if (target === source || move.category === 'Status' || "
+                   "move.flags['pledgecombo']) return; if (move.type === 'Normal' && source.useItem()) { source.addVolatile('gem'); } },")),
+    ('kingsrock', ('onModifyMovePriority: -1,',
+                   'onModifyMove(move) { if (move.category !== "Status") { if (!move.secondaries) move.secondaries = []; '
+                   "for (const secondary of move.secondaries) { if (secondary.volatileStatus === 'flinch') return; } "
+                   "move.secondaries.push({ chance: 10, volatileStatus: 'flinch', }); } },")),
+    ('zoomlens', ('onSourceModifyAccuracyPriority: -2,',
+                  "onSourceModifyAccuracy(accuracy, target) { if (typeof accuracy === 'number' && !this.queue.willMove(target)) { "
+                  "this.debug('Zoom Lens boosting accuracy'); return this.chainModify([4915, 4096]); } },")),
+    ('shellbell', ('onAfterMoveSecondarySelfPriority: -1,',
+                   'onAfterMoveSecondarySelf(pokemon, target, move) { if (move.totalDamage && !pokemon.forceSwitchFlag) { '
+                   'this.heal(move.totalDamage / 8, pokemon); } },')),
+    ('bigroot', ('onTryHealPriority: 1,',
+                 "onTryHeal(damage, target, source, effect) { const heals = ['drain', 'leechseed', 'ingrain', 'aquaring', 'strengthsap']; "
+                 'if (heals.includes(effect.id)) { return this.chainModify([5324, 4096]); } },')),
+    ('shedshell', ('onTrapPokemonPriority: -10,', 'onTrapPokemon(pokemon) { pokemon.trapped = false; },',
+                   'onMaybeTrapPokemonPriority: -10,', 'onMaybeTrapPokemon(pokemon) { pokemon.maybeTrapped = false; },')),
+)
+# The rules outside the item entries that the engine hard-codes with them: the gem volatile (data/conditions.ts:463-472), useItem's
+# gem line (sim/pokemon.ts:1828-1829), queue.willMove (sim/battle-queue.ts:324-332), heal()'s minimum and TryHeal
+# (sim/battle.ts:2268-2271) and runEvent's final modify (sim/battle.ts:929-933), the secondaries() loop (sim/battle-actions.ts:
+# 1336-1354), the AfterMoveSecondarySelf gate (sim/battle-actions.ts:536-539), Leech Seed's heal (data/moves.ts:10223-10226) and
+# Strength Sap's (data/moves.ts:18187).
+I1_OTHER_FACTS = (
+    ('data/conditions.ts', ("gem: { name: 'gem', duration: 1, affectsFainted: true, onBasePowerPriority: 14, "
+                            "onBasePower(basePower, user, target, move) { this.debug('Gem Boost'); return this.chainModify([5325, 4096]); }, },",)),
+    ('sim/pokemon.ts', ("if (item.isGem) { this.battle.add('-enditem', this, item, '[from] gem', `[move] ${this.battle.activeMove!.name}`); }",)),
+    ('sim/battle-queue.ts', ("willMove(pokemon: Pokemon) { if (pokemon.fainted) return null; for (const action of this.list) { "
+                             "if (action.choice === 'move' && action.pokemon === pokemon) { return action; } } return null; }",)),
+    ('sim/battle.ts', ("if (damage && damage <= 1) damage = 1; damage = this.trunc(damage); // for things like Liquid Ooze, the Heal "
+                       "event still happens when nothing is healed. damage = this.runEvent('TryHeal', target, source, effect, damage);",
+                       "if (typeof relayVar === 'number' && relayVar === Math.abs(Math.floor(relayVar))) {")),
+    ('sim/battle-actions.ts', ("for (const secondary of secondaries) { const secondaryRoll = this.battle.random(100);",
+                               "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce')) && !move.flags['futuremove']) { "
+                               "const originalHp = pokemon.hp; this.battle.singleEvent('AfterMoveSecondarySelf', move, null, pokemon, "
+                               "target, move); this.battle.runEvent('AfterMoveSecondarySelf', pokemon, target, move);")),
+    ('data/moves.ts', ('const damage = this.damage(pokemon.baseMaxhp / 8, pokemon, target); if (damage) { this.heal(damage, target, pokemon); }',
+                       'return !!(this.heal(atk, source, target) || success);')),
+)
+# Starminite, the Mega Stone of Starmie (Starmie-Mega: Huge Power), through the generic Mega path (data/items.ts:6021-6032,
+# data/mods/champions/items.ts:906-909): the pinned megaStone, itemUser and standard onTakeItem, a Champions entry of `inherit`
+# and `isNonstandard: null` only (the stone's legality in the Champions table set; the row is the same in every set).
+I1_STONES = {'starminite': ('Starmie', 'Starmie-Mega')}
+
+
+def check_i1_facts(items_ts, champ_items, others, only=None):
+    """Batch I1 (decision 0015 entry 5ef): every fact of I1_ITEM_FACTS is in the pinned item entry, whitespace aside, and the
+    Champions mod has no entry of its own for it; the facts of I1_OTHER_FACTS are in their files (`others`: rel -> Source);
+    each stone of I1_STONES has the pinned megaStone, itemUser and standard onTakeItem and no other field, and a Champions entry
+    of `inherit` and `isNonstandard: null` only. `only`: (item facts, other facts, stones) to check instead (the generator's tests)."""
+    items, other, stones = (I1_ITEM_FACTS, I1_OTHER_FACTS, I1_STONES) if only is None else only
+    for iid, facts in items:
+        e = items_ts.entry(iid)
+        if e is None:
+            fail('item %s not found' % iid)
+        if champ_items.entry(iid) is not None:
+            fail('item %s: the champions mod overrides the entry' % iid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('item %s: the entry no longer has "%s"' % (iid, fact))
+    for rel, facts in other:
+        text = norm(chr(10).join(others[rel].lines))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('%s: the pin no longer has "%s"' % (rel, fact))
+    for iid, (base, mega) in sorted(stones.items()):
+        e = items_ts.entry(iid)
+        if e is None:
+            fail('item %s not found' % iid)
+        got = fields(e[2])
+        if norm(got.get('megaStone', (0, ''))[1]) != norm('megaStone: { "%s": "%s" },' % (base, mega)):
+            fail('item %s: megaStone is not %s -> %s' % (iid, base, mega))
+        if norm(got.get('itemUser', (0, ''))[1]) != norm('itemUser: ["%s"],' % base):
+            fail('item %s: itemUser is not %s' % (iid, base))
+        if 'onTakeItem' not in got or not got['onTakeItem'][0] or \
+                norm(re.sub(r'//[^\n]*', '', got['onTakeItem'][1])) not in STONE_TAKE_ITEM:
+            fail('item %s: onTakeItem is not the standard Mega Stone text' % iid)
+        extra = sorted(set(got) - {'name', 'spritenum', 'megaStone', 'itemUser', 'onTakeItem', 'num', 'gen', 'isNonstandard'})
+        if extra:
+            fail('item %s: the pin has fields the I1 facts do not list: %s' % (iid, ', '.join(extra)))
+        ci = champ_items.entry(iid)
+        if ci is None:
+            fail('item %s: the Champions entry is missing' % iid)
+        cf = fields(ci[2])
+        if set(cf) - {'inherit', 'isNonstandard'} or norm(cf.get('isNonstandard', (0, ''))[1]) != 'isNonstandard: null,':
+            fail('item %s: the Champions entry is not inherit and isNonstandard null' % iid)

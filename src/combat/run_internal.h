@@ -84,6 +84,11 @@ typedef struct dfi_run {
      * by the holder's HitProtect bypass. Transient: cleared before each hit's protection checks, read by that hit's damage. Last in
      * the struct (positional initializers, which take 0u here). */
     uint32_t protect_bypass;
+    /* Batch I1 (Normal Gem, decision 0015 entry 5ef): the flat positions (bit p) whose Pokemon got the gem volatile in this action
+     * (data/conditions.ts:463-472, duration 1: its BasePower x5325/4096 for the rest of the turn). Transient: only the action of
+     * the holder's own move reads it, and no marked move lets a Pokemon move twice in a turn (Dancer and Instruct are not
+     * marked), so the action is the volatile's whole reach; never state. Last in the struct (positional initializers, 0u). */
+    uint32_t gem;
 } dfi_run;
 
 static DFI_ALWAYS_INLINE dfi_active_slot *dfi_pos(struct duoforge_battle *b, uint32_t flat)

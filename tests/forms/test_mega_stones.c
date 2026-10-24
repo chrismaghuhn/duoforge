@@ -9,8 +9,9 @@
  * The sections, from the tests of their steps (restructure step 6e; tests/renames.tsv maps the old names): Mega batch 2
  * (Swampertite, Metagrossite, Froslassite, Lucarionite Z), Mega batch 3 (G43: ten stones with no new rule), Mega batch 4 (G51:
  * ten stones with no new rule, and Keen Eye and Big Pecks marked for Pidgeot), the Magic Bounce stones (G57: Absolite,
- * Sablenite, Clefablite; Starminite unmarked), the six new Mega abilities and their stones (G59), the simple Mega abilities'
- * stones (G63), and the cheap set's stones (G75: Medichamite and Clefablite; Starminite and Sharpedonite unmarked).
+ * Sablenite, Clefablite; Sharpedonite unmarked), the six new Mega abilities and their stones (G59), the simple Mega abilities'
+ * stones (G63), the cheap set's stones (G75: Medichamite and Clefablite; Sharpedonite unmarked) and Starminite (batch I1,
+ * decision 0015 entry 5ef: Starmie-Mega's Huge Power and the base forme's Illuminate and Natural Cure are marked).
  */
 #include <stddef.h>
 #include <stdint.h>
@@ -397,15 +398,16 @@ static void stones_batch4_check_api(df_test *t)
 }
 
 /* Absolite and Sablenite are marked; Clefablite was unmarked by G57 (its Mega ability, Magic Bounce, passed the forme gate but its
- * base's abilities were not), and is marked since step G75 (Clefable's hidden Unaware, marked by G65). Starminite stays unmarked
- * (Starmie's abilities are not marked), so an unmarked stone is still refused. Absol has two Mega pairs, and each stone takes it to
+ * base's abilities were not), and is marked since step G75 (Clefable's hidden Unaware, marked by G65). Starminite is marked since
+ * batch I1 (Illuminate and Natural Cure, A2a); Sharpedonite stays unmarked, so an unmarked stone is still refused. Absol has two Mega pairs, and each stone takes it to
  * its own Mega (dfi_mega_of: the stone is 1 + its id, the base's own link first). */
 static void test_mega_stones(df_test *t)
 {
     DF_CHECK(t, dfi_support.items[DFI_ITEM_ABSOLITE] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_SABLENITE] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_CLEFABLITE] != 0u); /* marked since step G75 */
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_STARMINITE] == 0u); /* still unmarked: an unmarked stone is refused */
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_SHARPEDONITE] == 0u); /* still unmarked: an unmarked stone is refused */
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_STARMINITE] != 0u);   /* marked since batch I1 (decision 0015 entry 5ef) */
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_ABSOL, DFI_ITEM_ABSOLITE + 1u), DFI_FORME_ABSOLMEGA);
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_ABSOL, DFI_ITEM_ABSOLITEZ + 1u), DFI_FORME_ABSOLMEGAZ);
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_SABLEYE, DFI_ITEM_SABLENITE + 1u), DFI_FORME_SABLEYEMEGA);
@@ -493,7 +495,7 @@ static void check_stones(df_test *t)
         DF_CHECK_EQ_U64(t, dfi_pool_item_handler[items[i]], DFI_HANDLER_NONE);
     }
     /* the stones that stay out, and Strong Jaw, whose bite flag would need a pool column (deferred, not in this batch) */
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_STARMINITE], 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_STARMINITE] != 0u); /* marked since batch I1 (decision 0015 entry 5ef) */
     DF_CHECK(t, dfi_support.items[DFI_ITEM_ALTARIANITE] != 0u); /* marked since A0 part 1 (decision 0015 entry 5ds) */
     DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_SHARPEDONITE], 0u);
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_STRONGJAW], 0u);

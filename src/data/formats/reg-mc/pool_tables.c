@@ -1861,7 +1861,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {342u, 343u},
     /* Beedrillite -- data/items.ts:422-433, data/mods/champions/items.ts:90-93 */
     {33u, 34u},
-    /* Big Root -- data/items.ts:482-497  [unmodelled: callback onTryHeal; callback onTryHealPriority] */
+    /* Big Root -- data/items.ts:482-497 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Binding Band -- data/items.ts:498-507 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -1951,7 +1951,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Kangaskhanite -- data/items.ts:3117-3128, data/mods/champions/items.ts:498-501 */
     {61u, 62u},
-    /* King's Rock -- data/items.ts:3209-3231  [unmodelled: callback onModifyMove; callback onModifyMovePriority] */
+    /* King's Rock -- data/items.ts:3209-3231 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Leek -- data/items.ts:3322-3337, data/mods/champions/items.ts:522-525 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -1989,7 +1989,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Muscle Band -- data/items.ts:4239-4253 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Normal Gem -- data/items.ts:4324-4336  [unmodelled: callback onSourceTryPrimaryHit] */
+    /* Normal Gem -- data/items.ts:4324-4336 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Oran Berry -- data/items.ts:4397-4418  [unmodelled: callback onEat; callback onTryEatItem; callback onUpdate; read by id in data/abilities.ts; read by id in sim/pokemon.ts] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2029,9 +2029,9 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {205u, 206u},
     /* Sharpedonite -- data/items.ts:5621-5632, data/mods/champions/items.ts:854-857 */
     {130u, 131u},
-    /* Shed Shell -- data/items.ts:5633-5649  [unmodelled: callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority] */
+    /* Shed Shell -- data/items.ts:5633-5649 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Shell Bell -- data/items.ts:5650-5664  [unmodelled: callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority] */
+    /* Shell Bell -- data/items.ts:5650-5664 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Skarmorite -- data/items.ts:5766-5777, data/mods/champions/items.ts:862-865 */
     {105u, 106u},
@@ -2057,7 +2057,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Wise Glasses -- data/items.ts:7754-7768 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Zoom Lens -- data/items.ts:7825-7840  [unmodelled: callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority] */
+    /* Zoom Lens -- data/items.ts:7825-7840 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
 };
 
@@ -2718,7 +2718,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_BARBARACITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BAXCALIBRITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BEEDRILLITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_BIGROOT] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_BIGROOT] = DFI_HANDLER_NONE,
     [DFI_ITEM_BINDINGBAND] = DFI_HANDLER_NONE,
     [DFI_ITEM_BLASTOISINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BLAZIKENITE] = DFI_HANDLER_NONE,
@@ -2763,7 +2763,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_ICYROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_IRONBALL] = DFI_HANDLER_NONE,
     [DFI_ITEM_KANGASKHANITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_KINGSROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_KINGSROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_LEEK] = DFI_HANDLER_NONE,
     [DFI_ITEM_LEPPABERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_LIGHTBALL] = DFI_HANDLER_UNMODELED,
@@ -2782,7 +2782,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_METRONOME] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_MISTYSEED] = DFI_HANDLER_NONE,
     [DFI_ITEM_MUSCLEBAND] = DFI_HANDLER_NONE,
-    [DFI_ITEM_NORMALGEM] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_NORMALGEM] = DFI_HANDLER_NONE,
     [DFI_ITEM_ORANBERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_PECHABERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_PERSIMBERRY] = DFI_HANDLER_UNMODELED,
@@ -2802,8 +2802,8 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_SCOVILLAINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCRAFTINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SHARPEDONITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_SHEDSHELL] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_SHELLBELL] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_SHEDSHELL] = DFI_HANDLER_NONE,
+    [DFI_ITEM_SHELLBELL] = DFI_HANDLER_NONE,
     [DFI_ITEM_SKARMORITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SLOWBRONITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SMOOTHROCK] = DFI_HANDLER_NONE,
@@ -2816,7 +2816,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_VICTREEBELITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_WIDELENS] = DFI_HANDLER_NONE,
     [DFI_ITEM_WISEGLASSES] = DFI_HANDLER_NONE,
-    [DFI_ITEM_ZOOMLENS] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_ZOOMLENS] = DFI_HANDLER_NONE,
 };
 
 const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
@@ -6950,23 +6950,17 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
 
 const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_ASPEARBERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_BIGROOT] = "callback onTryHeal; callback onTryHealPriority",
     [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_FOCUSBAND] = "callback onDamage; callback onDamagePriority",
-    [DFI_ITEM_KINGSROCK] = "callback onModifyMove; callback onModifyMovePriority",
     [DFI_ITEM_LEPPABERRY] = "callback onEat; callback onUpdate; read by id in data/items.ts; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_LIGHTBALL] = "callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority",
     [DFI_ITEM_METRONOME] = "callback onStart; condition block; read by id in data/moves.ts; read by id in sim/pokemon.ts",
-    [DFI_ITEM_NORMALGEM] = "callback onSourceTryPrimaryHit",
     [DFI_ITEM_ORANBERRY] = "callback onEat; callback onTryEatItem; callback onUpdate; read by id in data/abilities.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_PECHABERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_PERSIMBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_QUICKCLAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
     [DFI_ITEM_RAWSTBERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_SHEDSHELL] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
-    [DFI_ITEM_SHELLBELL] = "callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority",
-    [DFI_ITEM_ZOOMLENS] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
 };
 
 const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
@@ -7048,10 +7042,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xe4u, 0xaeu, 0xebu, 0x21u, 0xc9u, 0xaeu, 0x57u, 0x2cu,
-    0x35u, 0x2au, 0xcbu, 0x85u, 0x90u, 0xc4u, 0x93u, 0x7eu,
-    0x69u, 0xb4u, 0x13u, 0xf8u, 0x88u, 0xb2u, 0x62u, 0xb6u,
-    0x6cu, 0x30u, 0x32u, 0x4au, 0x50u, 0x11u, 0x57u, 0x3du,
+    0xf9u, 0xe1u, 0x75u, 0x35u, 0xacu, 0x90u, 0x02u, 0xafu,
+    0x64u, 0xb3u, 0xc2u, 0x40u, 0x47u, 0x2au, 0x0fu, 0x33u,
+    0x20u, 0x1cu, 0x87u, 0xd9u, 0xa3u, 0x06u, 0xa1u, 0x73u,
+    0x52u, 0x8bu, 0xdcu, 0xb1u, 0x84u, 0x78u, 0x51u, 0x74u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

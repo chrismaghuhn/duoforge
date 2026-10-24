@@ -177,6 +177,12 @@ dfi_damage_base_power(dfi_run *r, uint32_t user, uint32_t target, const dfi_move
         }
     }
     ok = dfi_type_booster_base_power(r->b, a, move_type, ok, &bp_chain);
+    /* The gem volatile of a Normal Gem the user used at this move's TryPrimaryHit (batch I1, decision 0015 entry 5ef;
+     * data/conditions.ts:463-472, onBasePowerPriority 14: after the items' 15, before Helping Hand's 10): chainModify([5325,
+     * 4096]) for every hit and target of the move, a Substitute's hit included. */
+    if (((r->gem >> user) & 1u) != 0u) {
+        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
     /* Helping Hand's volatile (Team C): chainModify(1.5) at
      * onBasePowerPriority 10, after the items (15) and before Grassy Terrain
      * (6) (data/moves.ts:8590-8597). */

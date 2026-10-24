@@ -1017,6 +1017,16 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_SCOPELENS] = 1u,  /* step G75: +1 to the holder's critical ratio (data/items.ts:5554-5565) */
             [DFI_ITEM_MEDICHAMITE] = 1u, /* step G75: Medicham-Mega (Pure Power), the stone of 5p (data/items.ts:3865-3876) */
             [DFI_ITEM_CLEFABLITE] = 1u,  /* step G75: Clefable-Mega (Magic Bounce), Clefable with its hidden Unaware (data/items.ts:1088-1099) */
+            /* Batch I1 (decision 0015 entry 5ef): Starminite through the generic Mega path, mark only (Starmie-Mega's Huge Power is
+             * marked, so are the base forme's Illuminate and Natural Cure; a Starmie with the unmarked Analytic stays refused), and
+             * six items with one clause each at an existing hook (engine rows, checked by check_i1_facts and checkI1): */
+            [DFI_ITEM_STARMINITE] = 1u,
+            [DFI_ITEM_NORMALGEM] = 1u, /* TryPrimaryHit of a Normal move: used, the gem volatile's BasePower x5325/4096 */
+            [DFI_ITEM_KINGSROCK] = 1u, /* ModifyMove: a 10 percent flinch secondary for a damaging move without one */
+            [DFI_ITEM_ZOOMLENS] = 1u,  /* ModifyAccuracy x4915/4096 at a target that will not move again this turn */
+            [DFI_ITEM_SHELLBELL] = 1u, /* AfterMoveSecondarySelf: heal totalDamage / 8 */
+            [DFI_ITEM_BIGROOT] = 1u,   /* TryHeal x5324/4096 for the drain, Leech Seed and Strength Sap heals */
+            [DFI_ITEM_SHEDSHELL] = 1u, /* TrapPokemon: the holder is never trapped */
         },    /* The POOL player-view extension (decision 0018): a bit is set by the step that implements the feature and
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in
