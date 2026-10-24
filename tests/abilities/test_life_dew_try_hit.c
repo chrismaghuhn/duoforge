@@ -10,8 +10,8 @@
  *
  * Decision 0015 entry 5ee (issue 672), docs/mechanics/moves/5ee-life-dew-misses-a-semi-invulnerable-ally.md: the Invulnerability
  * step comes first (hitStepInvulnerabilityEvent), so an ally in the charge of Phantom Force is -miss|user|ally and is not healed
- * (life_dew_phantom_force). Its neighbours: the same ally after its locked turn is healed, and No Guard on the ally or on the
- * user lets the move reach it.
+ * (life_dew_phantom_force), and its TryHit abilities (Good as Gold, Water Absorb) are not asked. Its neighbours: the same ally
+ * after its locked turn is healed, and No Guard on the ally or on the user lets the move reach it.
  */
 #include <stdbool.h>
 #include <string.h>
@@ -42,7 +42,7 @@ typedef struct life_dew_seen {
     uint32_t ally_fails;         /* -fail at the ally (full HP) */
     uint32_t ally_misses;        /* -miss|user|ally */
     uint32_t miss_flags;         /* Life Dew's move lines with [miss] */
-    uint32_t first_ally_line;    /* the index of the ally's first heal or immune line after the move line */
+    uint32_t first_ally_line;    /* the index of the ally's first heal, immune, fail or -miss line after the move line */
     uint32_t first_user_line;    /* the index of the user's first heal or fail line after the move line */
 } life_dew_seen;
 
@@ -253,6 +253,23 @@ static void check_invulnerable(df_test *t, const duoforge_context *ctx)
         DF_CHECK_EQ_U64(t, s.ally_move_heals, 1u);
         DF_CHECK_EQ_U64(t, s.user_move_heals, 1u);
         DF_CHECK_EQ_U64(t, s.spread_mask, 3u);
+    }
+    /* The order: the Invulnerability step comes before the TryHit abilities (sim/battle-actions.ts:556-559). Step 3 with the
+     * charging ally given Good as Gold or Water Absorb: -miss only, no -immune and no ability heal. */
+    if (life_dew_variant(t, ctx, "life_dew_phantom_force", 3u, DFI_FORME_GENGAR, 0u, AB(GOODASGOLD), AB(GOODASGOLD), &s)) {
+        DF_CHECK_EQ_U64(t, s.ally_misses, 1u);
+        DF_CHECK_EQ_U64(t, s.ally_immune, 0u);
+        DF_CHECK_EQ_U64(t, s.ally_move_heals, 0u);
+        DF_CHECK_EQ_U64(t, s.user_move_heals, 1u);
+        DF_CHECK_EQ_U64(t, s.spread_mask, 1u);
+    }
+    if (life_dew_variant(t, ctx, "life_dew_phantom_force", 3u, DFI_FORME_GENGAR, 0u, AB(WATERABSORB), AB(WATERABSORB), &s)) {
+        DF_CHECK_EQ_U64(t, s.ally_misses, 1u);
+        DF_CHECK_EQ_U64(t, s.ally_immune, 0u);
+        DF_CHECK_EQ_U64(t, s.ally_ability_heals, 0u);
+        DF_CHECK_EQ_U64(t, s.ally_move_heals, 0u);
+        DF_CHECK_EQ_U64(t, s.user_move_heals, 1u);
+        DF_CHECK_EQ_U64(t, s.spread_mask, 1u);
     }
     /* Step 3 with No Guard on the charging ally (onAnyInvulnerability returns 0, data/abilities.ts:2970-2974): no -miss, the
      * ally is healed by the move. */
