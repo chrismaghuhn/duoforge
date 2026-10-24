@@ -1,8 +1,8 @@
 """Abilities: the ability families (-ate, pinch, weather and terrain setters), their matchers and
 parameters, the ability facts by step and their checks.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@8800b625).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@8800b625).
 """
 import os
 import re
@@ -63,7 +63,7 @@ MEGA2_ABILITY_FACTS = (
 # reads by id; the pinned callbacks they hard-code are checked here, whole, whitespace aside (Regenerator's is the Champions mod's
 # own entry: G32_ENTRY_FACTS-style, champ=True). Mold Breaker, which Hyper Cutter, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand
 # Veil and Limber are breakable against, is not marked. Damp is inert: its callbacks stop Explosion, Mind Blown, Misty Explosion,
-# Self-Destruct and Aftermath, none of which is marked (tests/test_pool_g39.c pins it, and Sturdy's OHKO immunity likewise).
+# Self-Destruct and Aftermath, none of which is marked (tests/abilities/test_damp_sturdy_rows.c pins it, and Sturdy's OHKO immunity likewise).
 G39_ABILITY_FACTS = (
     ('hypercutter', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
                      "if (boost.atk && boost.atk < 0) { delete boost.atk; if (!(effect as ActiveMove).secondaries) { "
@@ -132,7 +132,7 @@ G53_ABILITY_FACTS = (
 # are engine rows (ENGINE_ROWS) that the turn code reads by id; the pinned callbacks they hard-code are checked here, whole,
 # whitespace aside. The Champions mod overrides none of them (check_g34_facts). Mold Breaker, Teravolt and Turboblaze are not
 # marked, and Mycelium Might is not in the pool, so no marked ability ignores the `breakable` flag of Telepathy, Volt Absorb or
-# Punk Rock (tests/test_pool_g45.c pins the refusals).
+# Punk Rock (tests/abilities/test_simple_ability_rows.c pins the refusals).
 G45_ABILITY_FACTS = (
     ('steadfast', ("onFlinch(pokemon) { this.boost({ spe: 1 }); },", 'flags: {},')),
     ('weakarmor', ("onDamagingHit(damage, target, source, move) { if (move.category === 'Physical') { "

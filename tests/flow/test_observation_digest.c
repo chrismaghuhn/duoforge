@@ -4,7 +4,7 @@
 #include "state/observation_digest.h"
 #include "state/observation_key.h"
 #include "state/closure_member.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/knowledge.h"
 #include "support/pool.h"
 #include "state/request.h"

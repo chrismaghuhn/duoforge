@@ -23,7 +23,7 @@
 #include <string.h>
 
 #include "codec/state_codec.h"
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 #include "rng/pcg32.h"
 #include "state/battle_internal.h"
 #include "state/knowledge.h"

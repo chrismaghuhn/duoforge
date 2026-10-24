@@ -1,0 +1,40 @@
+{
+ "source": "moves/test_pool_g54.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "find": "df_conf_find"
+  }
+ },
+ "parts": [
+  {
+   "file": "moves/test_moves_batch_rows.c",
+   "calls": [
+    "check_marks",
+    "check_pins",
+    "check_unmarked",
+    "check_constants"
+   ],
+   "header": "step G54 of the content expansion (decision 0015, the moves batch), in the POOL build, as one batch: six handlers (Icicle Spear and Scale Shot, a hit count of 2 to 5 drawn from the Champions sample; Quick Guard, the side guard of decision 0029; Upper Hand; Heal Pulse; Strength Sap) and the data row Sing. Their marks, handler numbers and pinned numbers; what stays unmarked and why (Skill Link and Loaded Dice, whose hit-count rules are not modelled; Steel Beam, Final Gambit and Mega Launcher, dropped here, are marked by later steps); and the constants the rows depend on (the draw site of the hit count, the BLOCKED detail of Quick Guard, its side guard bit and the view's feature bit). The recorded battles g54_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G54 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_multi_hit_count.c",
+   "calls": [
+    "check_multihit_weights"
+   ],
+   "header": "step G54 of the content expansion (decision 0015, the moves batch), the hit count of a 2-to-5 multi-hit move: each draw of DFI_SITE_MULTIHIT_COUNT (random(20)) maps to the Champions sample index by index, with the shares 7, 7, 3 and 3 of two, three, four and five hits.\n\nSplit by subject from the test of step G54 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_quick_guard_view.c",
+   "calls": [
+    "check_guard_flag"
+   ],
+   "main_blocks": [
+    0,
+    7
+   ],
+   "header": "step G54 of the content expansion (decision 0015, the moves batch; decision 0029), Quick Guard's side flag reaches the view: the tail's quick_guard of one side sets that side's DUOFORGE_SIDE_GUARD_QUICK_GUARD bit in guard_flags of the view extension, and no other side's.\n\nSplit by subject from the test of step G54 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

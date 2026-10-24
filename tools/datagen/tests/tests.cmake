@@ -4,6 +4,14 @@ add_test(NAME duoforge.data.gen_closure_refusals
 duoforge_label_test(duoforge.data.gen_closure_refusals quick tools)
 set_tests_properties(duoforge.data.gen_closure_refusals PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+# The table set of a format (restructure step 5): the tables section of data/formats/<id>.json, the rule sets, the
+# excluded formes, the widths, the bounds and the writer's names, played through with a made-up second format (no
+# checkout needed; the whole-pool build of that format is duoforge.data.table_sets_pinned).
+add_test(NAME duoforge.data.table_sets
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_table_sets.py")
+duoforge_label_test(duoforge.data.table_sets quick tools)
+set_tests_properties(duoforge.data.table_sets PROPERTIES TIMEOUT 60
+    ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 # Every Python test script CTest runs keeps unittest.main() last, so no TestCase is left unrun (issue #457).
 add_test(NAME duoforge.data.test_main_last
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_main_last.py")
@@ -46,4 +54,12 @@ add_test(NAME duoforge.data.format_champions_ou
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_format_champions_ou.py")
 duoforge_label_test(duoforge.data.format_champions_ou quick tools)
 set_tests_properties(duoforge.data.format_champions_ou PROPERTIES TIMEOUT 60
+    ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+# The format definition data/formats/gen9ou.json (step O8 of the Gen 9 OU design): the facts against the rule table of
+# its pool source, the tables section against the pool (W1: the learnset bytes; W2: the moves per forme; Smeargle
+# excluded by name), the gen9 rule set refused by name and the engine's header still Reg M-C's (no checkout needed).
+add_test(NAME duoforge.data.format_gen9ou
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/datagen/tests/test_format_gen9ou.py")
+duoforge_label_test(duoforge.data.format_gen9ou quick tools)
+set_tests_properties(duoforge.data.format_gen9ou PROPERTIES TIMEOUT 60
     ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)

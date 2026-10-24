@@ -2,7 +2,7 @@
 
 #include "core/arith.h"
 #include "data/formulas.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 /* The widths that the whole pool must fit (decision 0015 section 4.2). gen_closure.py checks the same from these
  * sources when it writes the tables; here the build fails if a table or a field changes under it. A member's species

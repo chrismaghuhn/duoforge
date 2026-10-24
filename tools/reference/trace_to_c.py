@@ -421,10 +421,10 @@ _RESIST_BERRIES = []
 
 def resist_berries():
     """The handler names (the item ids in lower case) of the RESIST_BERRY family of the generated pool tables
-    (src/data/pool_tables.c, dfi_pool_item_family): the items whose ModifyDamage modifier the engine models, one for all."""
+    (src/data/formats/reg-mc/pool_tables.c, dfi_pool_item_family): the items whose ModifyDamage modifier the engine models, one for all."""
     if not _RESIST_BERRIES:
         root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
-        source = read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.c'))
+        source = read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.c'))
         _RESIST_BERRIES.extend(sorted(m.lower() for m in re.findall(
             r'\[DFI_ITEM_(\w+)\] = \{DFI_ITEM_FAMILY_RESIST_BERRY,', source)))
         if not _RESIST_BERRIES:
@@ -1190,14 +1190,14 @@ IGNORED_VOLATILES = {
     # is then the one remembered (two_turn_lock).
     'electroshot': 'the locked slot and target',
     # Step G30: Rage Powder shares the position's Follow Me bit, so the engine's state compares as no Follow Me: its presence
-    # is the extension's RAGE_POWDER bit, read after every step by duoforge.state.pool_g30.
+    # is the extension's RAGE_POWDER bit, read after every step by duoforge.moves.rage_powder_view.
     'ragepowder': 'the extension bit RAGE_POWDER',
     # Step G42: Roost's volatile takes the Flying type off until the residual of its turn. It is not a field of the record: the
-    # -singleturn line and the immunity and the damage of a Ground move show it; duoforge.state.pool_g42 reads the tail's bit
+    # -singleturn line and the immunity and the damage of a Ground move show it; duoforge.moves.move_result_roost reads the tail's bit
     # after every step (a pivot inside the Roost turn is the only boundary where it stands).
     'roost': 'the Ground move lines and the single-turn line',
     # Step G76 (Destiny Bond, data/moves.ts:3482-3520): not a field of the record; its start line (-singlemove, SINGLE_TURN),
-    # the KO line (-activate, ACTIVATE with cause MOVE) and the consecutive-use fail show it, and duoforge.state.pool_g76 reads
+    # the KO line (-activate, ACTIVATE with cause MOVE) and the consecutive-use fail show it, and duoforge.moves.destiny_bond reads
     # the position bit DESTINY_BOND after every step.
     'destinybond': 'the start and KO lines and the extension bit DESTINY_BOND',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
@@ -1221,7 +1221,7 @@ IGNORED_VOLATILES = {
     'taunt': 'the moves of the requests, the cant lines and the start and end lines',
     # Step G90 (decision 0060): the partial trap's turns are not a field of the record (a drawn counter, hidden from both viewers):
     # the residual damage lines, the end line and the trapped request (no switch option) show it; the source and the band are read
-    # by duoforge.state.pool_g90 after every step, and the presence bit of the view by its own test.
+    # by duoforge.moves.partial_trap after every step, and the presence bit of the view by its own test.
     'partiallytrapped': 'the residual damage lines, the end line and the trapped request; the turns are hidden',
     'yawn': 'the start line and the sleep that it brings',
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
@@ -3181,13 +3181,13 @@ def load_tables(root, team_c):
     """Name -> id tables: the closure's, or for the extended ids the pool
     tables (the closure ids, Team C's and the rows the expansion adds, decision
     0015: every closure and Team C name keeps its id)."""
-    header = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.h'))
-    source = read_ascii(os.path.join(root, 'src', 'data', 'closure_tables.c'))
+    header = read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'closure_tables.h'))
+    source = read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'closure_tables.c'))
     start = 'dfi_closure_formes[DFI_FORME_COUNT] = {'
     if team_c:
-        header += read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.h'))
-        header += read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.h'))
-        source = read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.c'))
+        header += read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'extended_tables.h'))
+        header += read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.h'))
+        source = read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.c'))
         start = 'dfi_pool_formes[DFI_POOL_FORME_COUNT] = {'
     tables = {k: ids(header, k) for k in ('FORME', 'MOVE', 'ITEM', 'ABILITY', 'NATURE')}
     a = source.index(start)

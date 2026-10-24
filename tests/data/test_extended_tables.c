@@ -3,7 +3,7 @@
  * 0009, the closure followed by Team C.
  *
  * The closure ids are an exact prefix: every closure row equals the row of
- * src/data/closure_tables.c, the only extension inside the prefix is the
+ * src/data/formats/reg-mc/closure_tables.c, the only extension inside the prefix is the
  * poison immunity bit, and the closure canonical bytes recomputed from the
  * prefix hash to the closure table hash (so the CLOSURE fingerprint still
  * names the data a CLOSURE battle reads). Team C rows are literal values read
@@ -18,7 +18,7 @@
 
 #include "core/bytes.h"
 #include "core/sha256.h"
-#include "data/extended_tables.h"
+#include "data/formats/reg-mc/extended_tables.h"
 #include "data/formulas.h"
 #include "support/check.h"
 

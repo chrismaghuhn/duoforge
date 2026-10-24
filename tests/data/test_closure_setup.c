@@ -14,7 +14,7 @@
 #include <string.h>
 
 #include "codec/state_codec.h"
-#include "data/closure_tables.h"
+#include "data/formats/reg-mc/closure_tables.h"
 #include "data/support_manifest.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"

@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
-"""Generates src/data/closure_tables.{h,c}: the immutable data of the two
+"""Generates src/data/formats/reg-mc/closure_tables.{h,c}: the immutable data of the two
 reference teams (decision 0004) read from the pinned Pokemon Showdown
 checkout (decision 0006 section 2).
 
-usage: python3 tools/datagen/gen_closure.py <pinned checkout> [--team-c | --pool] [--check]
+usage: python3 tools/datagen/gen_closure.py <pinned checkout> [--team-c | --pool [--format <id>]] [--check]
 
-  --team-c  write src/data/extended_tables.{h,c} instead: the closure tables
+  --team-c  write src/data/formats/reg-mc/extended_tables.{h,c} instead: the closure tables
             followed by Team C (docs/decisions/0009). The closure ids stay an
             exact prefix; the generator checks that before it writes.
-  --pool    write src/data/pool_tables.{h,c} instead: the extended tables as
+  --pool    write src/data/formats/reg-mc/pool_tables.{h,c} instead: the extended tables as
             the prefix, then the rows of the content expansion, with the
             family columns of every item and ability and the moves and
             abilities that each forme may have (docs/decisions/0015). Both
             prefixes are checked row by row before it writes.
+  --format  with --pool: the format whose tables are built (default reg-mc, the
+            engine's format): its definition data/formats/<id>.json names the
+            pool, the rule set, the writer's names, the learnset bytes, the id
+            bounds and the excluded formes (its tables section; restructure
+            step 5). The closure and Team C tables are Reg M-C's.
   --check   do not write; exit 1 if the committed files differ.
 
 Offline tooling. It extracts static data only; every effect still needs a
@@ -29,45 +34,57 @@ import json
 import os
 import sys
 
-from tablegen import abilities, families, items, moves, output, rules, source, species, tables
+import gen_format
+from tablegen import abilities, families, formats, items, moves, output, rules, source, species, tables
 
 # Every name of the area modules stays readable as gen_closure.<name> (the tests, classify_unsupported.py and
 # tools/reference/team_registry.py read the parsers, the pin and the fact tables from here); main() below uses
-# build, build_pool, check_prefix, check_pool_prefix, render, render_ext, render_pool and feature_summary.
-for _area in (source, species, moves, families, items, abilities, rules, tables, output):
+# load_table_set, build, build_pool, check_prefix, check_pool_prefix, render, render_ext, render_pool and
+# feature_summary.
+for _area in (source, formats, species, moves, families, items, abilities, rules, tables, output):
     globals().update({k: v for k, v in vars(_area).items() if not k.startswith('__')})
 del _area
 
 
 def main():
-    team_c = '--team-c' in sys.argv[1:]
-    pool = '--pool' in sys.argv[1:]
-    args = [a for a in sys.argv[1:] if a not in ('--check', '--team-c', '--pool')]
-    check = '--check' in sys.argv[1:]
-    if len(args) != 1 or (team_c and pool):
+    argv = sys.argv[1:]
+    format_id = gen_format.ENGINE_FORMAT
+    if '--format' in argv:
+        k = argv.index('--format')
+        if k + 1 >= len(argv):
+            sys.exit(__doc__)
+        format_id = argv[k + 1]
+        del argv[k:k + 2]
+    team_c = '--team-c' in argv
+    pool = '--pool' in argv
+    args = [a for a in argv if a not in ('--check', '--team-c', '--pool')]
+    check = '--check' in argv
+    if len(args) != 1 or (team_c and pool) or (format_id != gen_format.ENGINE_FORMAT and not pool):
         sys.exit(__doc__)
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    d = build(args[0])
+    ts = load_table_set(repo, format_id)
+    d = build(args[0], ts)
     if pool:
         dc = d
-        dx = build(args[0], ext=True)
+        dx = build(args[0], ts, ext=True)
         check_prefix(dx, dc)
-        d = build_pool(args[0], repo, dx)
+        d = build_pool(args[0], repo, dx, ts)
         check_pool_prefix(d, dx, dc)
-        h, c, digest, size = render_pool(d, dx)
-        stem = 'pool_tables'
+        h, c, digest, size = render_pool(d, dx, ts)
+        stem = ts.stem
         summary = feature_summary(d)
     elif team_c:
         dc = d
-        d = build(args[0], ext=True)
+        d = build(args[0], ts, ext=True)
         check_prefix(d, dc)
         h, c, digest, size = render_ext(d, dc)
         stem = 'extended_tables'
     else:
         h, c, digest, size = render(d)
         stem = 'closure_tables'
-    outs = ((os.path.join(repo, 'src', 'data', stem + '.h'), h),
-            (os.path.join(repo, 'src', 'data', stem + '.c'), c))
+    # src/data/formats/<id>/ holds the tables of a format (restructure step 5); the closure and Team C tables are reg-mc's.
+    outs = ((os.path.join(repo, 'src', 'data', 'formats', ts.format_id, stem + '.h'), h),
+            (os.path.join(repo, 'src', 'data', 'formats', ts.format_id, stem + '.c'), c))
     for path, text in outs:
         if check:
             have = io.open(path, 'rb').read().replace(b'\r\n', b'\n')

@@ -98,12 +98,12 @@ TAIL_TOXIC_STAGE_MAX = 15
 TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet (the status bound of every kind is below)
 # Decision 0066 (visible sleep): the cant lines of a sleeping member, the member byte 9 (a POOL tail byte; twelve of them).
 TAIL_SLEEP_CANT_MAX = 2             # the start is 2 or 3 and the wake is the attempt after the last cant line
-TAIL_SLEEP_STATUS = 4               # DFI_STATUS_SLP (src/data/closure_tables.h)
+TAIL_SLEEP_STATUS = 4               # DFI_STATUS_SLP (src/data/formats/reg-mc/closure_tables.h)
 # What the pool tables hold (decision 0015 section 2, tests/test_pool_tables.c): the bounds of the member overrides.
 POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 347, 511, 166, 215
-POOL_AEGISLASH_FORME = 244              # DFI_FORME_AEGISLASH (src/data/pool_tables.h)
+POOL_AEGISLASH_FORME = 244              # DFI_FORME_AEGISLASH (src/data/formats/reg-mc/pool_tables.h)
 POOL_AEGISLASH_BLADE_FORME = 346        # DFI_FORME_AEGISLASHBLADE: the last pool row (step G66, decision 0040)
-# The pool moves whose effect is a lockedmove (DFI_SPECIAL_LOCKED_MOVE in src/data/pool_tables.c, step G56): Outrage, Petal
+# The pool moves whose effect is a lockedmove (DFI_SPECIAL_LOCKED_MOVE in src/data/formats/reg-mc/pool_tables.c, step G56): Outrage, Petal
 # Dance, Thrash and (since A0 part 3, decision 0015 entry 5dr; unmarked) Raging Fury, as src/state/invariants.c accepts every
 # LOCKED_MOVE row. A running lock (the tail's lock_turns) has one of them as its occupant's last used move.
 POOL_MOVE_OUTRAGE = 326                 # DFI_MOVE_OUTRAGE
@@ -168,11 +168,11 @@ VOL_FOLLOW_ME = 8  # TEAM_C kinds only: Follow Me's volatile, until the residual
 VOL_HELPING_HAND = 16  # TEAM_C kinds only: Helping Hand's volatile, until the residual
 VOL_UNBURDEN = 32  # TEAM_C kinds only: Unburden's volatile, set when its holder's item is used
 VOL_NEWLY_SWITCHED = 128  # TEAM_C kinds only: newlySwitched, until the end of the turn
-ABILITY_UNBURDEN = 17  # 1 + DFI_ABILITY_UNBURDEN (src/data/extended_tables.h)
+ABILITY_UNBURDEN = 17  # 1 + DFI_ABILITY_UNBURDEN (src/data/formats/reg-mc/extended_tables.h)
 POSITION_FLAG_FOLLOW_ME = 1  # in duoforge_position_view.reserved (TEAM_C kinds)
 POSITION_FLAG_HELPING_HAND = 2  # in duoforge_position_view.reserved (TEAM_C kinds)
 POSITION_FLAG_UNBURDEN = 4  # in duoforge_position_view.reserved (TEAM_C kinds)
-ITEM_CHOICE_SCARF = 16  # 1 + DFI_ITEM_CHOICESCARF (src/data/extended_tables.h)
+ITEM_CHOICE_SCARF = 16  # 1 + DFI_ITEM_CHOICESCARF (src/data/formats/reg-mc/extended_tables.h)
 REVEALED_ITEM_CONSUMED, REVEALED_MEGA = 1, 2
 # side-relative offsets of the v3 side block
 SIDE_POS_OFF, SIDE_SEALED_OFF, SIDE_KNOW_OFF, SIDE_MEMBERS_OFF = 15, 57, 67, 109
@@ -1190,7 +1190,7 @@ def check_tail(ctx, st):
             # Step G66 (decision 0040), the species half of the strict stats rule of src/state/invariants.c: the Blade's forme
             # (forme_now = the Blade's id + 1) belongs to an Aegislash only. The stats half (the Blade's stats for that forme,
             # the sheet's stats otherwise) needs the pool's base stats and nature table; this model keeps member stats at zero
-            # and checks no stats, so that half is tested in C only (tests/test_pool_g66.c).
+            # and checks no stats, so that half is tested in C only (tests/forms/test_stance_change.c).
             if fo == POOL_AEGISLASH_BLADE_FORME + 1 and mem['species'] != POOL_AEGISLASH_FORME:
                 return 'TAIL_MEMBER'
             if it != 0 and it != TAIL_ITEM_NONE and it > POOL_ITEM_COUNT:

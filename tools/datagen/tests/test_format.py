@@ -3,10 +3,10 @@
 
 Without a checkout, with code of its own, this test checks that:
   - the definition loads: its keys, the facts' shapes, the pool source it names (sha256, Showdown commit, format id);
-  - src/data/format_tables.h is what tools/datagen/gen_format.py makes of it;
+  - src/data/formats/reg-mc/format_tables.h is what tools/datagen/gen_format.py makes of it;
   - the definition reproduces today's pool tables exactly: after the rows of the content steps (28 formes, 72 moves,
     52 items, 29 abilities: the closure, Team C and G2 prefix), the forme, move, item and ability rows of
-    src/data/pool_tables.c are the pool source's ids in its own order (a forme followed by its Mega formes, the
+    src/data/formats/reg-mc/pool_tables.c are the pool source's ids in its own order (a forme followed by its Mega formes, the
     cosmetic copies left out, then the battle-only Blade row of step G66), and the counts are 347, 511, 166 and 215;
   - the format facts in code are named: the engine's level, brought count and Stat Point limits are the
     DFI_FORMAT_* constants, and the Python context's defaults are the layout's roster and the definition's pick.
@@ -104,7 +104,7 @@ class FormatDefinition(unittest.TestCase):
         self.assertIn('\n#define DFI_STAT_POINTS_MAX DFI_FORMAT_STAT_POINTS_MAX ', formulas)
         self.assertIn('\n#define DFI_STAT_POINTS_TOTAL_MAX DFI_FORMAT_STAT_POINTS_TOTAL_MAX ', formulas)
         for rel in ('src/state/context_internal.h', 'src/data/formulas.h'):
-            self.assertIn('\n#include "data/format_tables.h" /* the format facts (restructure step 10) */\n', read(rel), rel)
+            self.assertIn('\n#include "data/formats/reg-mc/format_tables.h" /* the format facts (restructure step 10) */\n', read(rel), rel)
         tree = ast.parse(read('python/duoforge/context.py'))
         consts = {t.id: n.value.value for n in tree.body if isinstance(n, ast.Assign) for t in n.targets
                   if isinstance(t, ast.Name) and isinstance(n.value, ast.Constant)}

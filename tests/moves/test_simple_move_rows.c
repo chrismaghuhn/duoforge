@@ -1,0 +1,172 @@
+/*
+ * duoforge.moves.simple_move_rows (white-box): step G44 of the content expansion (decision 0015 item 5an), the simple moves as
+ * one batch: four handlers (Thunder, Power Trip, Ice Fang, Tri Attack) and seven data rows (Breaking Swipe, Vacuum Wave, Stone
+ * Edge, Aqua Cutter, Hammer Arm, Trop Kick, Meteor Mash). The marks, the handler numbers and the pinned numbers of each row
+ * (with the Champions override of Trop Kick's power); what stays unmarked (Fly, which Thunder would hit through); and the
+ * guard: Ice Fang and Tri Attack bypass the generic secondaries path, so they skip the pin's ModifySecondaries
+ * (sim/battle-actions.ts:1340-1341), which Shield Dust, Covert Cloak and Serene Grace change; none of the three is marked, and
+ * marking any of them later fails here until these paths honour it. The recorded battles g44_* are replayed by
+ * duoforge.reference.conformance_pool_data.
+ *
+ * Split by subject from the test of step G44 (restructure step 6e; tests/renames.tsv maps the old name).
+ */
+#include <stdio.h>
+#include <string.h>
+
+#include <duoforge/duoforge.h>
+
+#include "combat/moves/power_trip.h"
+#include "combat/moves/tri_attack.h"
+#include "data/formats/reg-mc/closure_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
+#include "data/support_manifest.h"
+#include "reference/conformance_pool.h"
+#include "support/check.h"
+#include "support/pool.h"
+
+static void check_marks(df_test *t)
+{
+    static const uint32_t moves[] = {
+        DFI_MOVE_THUNDER, DFI_MOVE_POWERTRIP, DFI_MOVE_ICEFANG, DFI_MOVE_TRIATTACK,
+        DFI_MOVE_BREAKINGSWIPE, DFI_MOVE_VACUUMWAVE, DFI_MOVE_STONEEDGE, DFI_MOVE_AQUACUTTER,
+        DFI_MOVE_HAMMERARM, DFI_MOVE_TROPKICK, DFI_MOVE_METEORMASH,
+    };
+    for (size_t i = 0u; i < sizeof moves / sizeof moves[0]; ++i) {
+        DF_CHECK(t, dfi_support.moves[moves[i]] != 0u);
+    }
+    /* the data rows have no handler; the four handlers are the ids after Yawn, in this order */
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_BREAKINGSWIPE].special, DFI_SPECIAL_NONE);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_VACUUMWAVE].special, DFI_SPECIAL_NONE);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_STONEEDGE].special, DFI_SPECIAL_NONE);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_AQUACUTTER].special, DFI_SPECIAL_NONE);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_HAMMERARM].special, DFI_SPECIAL_NONE);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TROPKICK].special, DFI_SPECIAL_NONE);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_METEORMASH].special, DFI_SPECIAL_NONE);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_THUNDER].special, DFI_SPECIAL_THUNDER);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_POWERTRIP].special, DFI_SPECIAL_POWER_TRIP);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_ICEFANG].special, DFI_SPECIAL_ICE_FANG);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIATTACK].special, DFI_SPECIAL_TRI_ATTACK);
+    /* after the handlers of step G48 (Rage Fist, Stone Axe, Ceaseless Edge, Population Bomb) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_POWER_TRIP, DFI_SPECIAL_MULTI_HIT_10 + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_THUNDER, DFI_SPECIAL_POWER_TRIP + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_ICE_FANG, DFI_SPECIAL_THUNDER + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRI_ATTACK, DFI_SPECIAL_ICE_FANG + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_ROOST, DFI_SPECIAL_DOUBLE_SHOCK + 1u); /* step G42, after Double Shock (G50) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_STOMPING_TANTRUM, DFI_SPECIAL_ROOST + 1u); /* step G42 */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SPEED_SWAP + 1u /* G72b: after Alluring Voice and Dragon Cheer */) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */;
+}
+
+static void check_pins(df_test *t)
+{
+    /* Thunder (data/moves.ts:19438-19466): accuracy 70, 110 power, Special, a 30 percent paralysis */
+    const dfi_move_data *th = &dfi_pool_moves[DFI_MOVE_THUNDER];
+    DF_CHECK_EQ_U64(t, th->accuracy, 70u);
+    DF_CHECK_EQ_U64(t, th->base_power, 110u);
+    DF_CHECK_EQ_U64(t, th->category, DFI_CATEGORY_SPECIAL);
+    DF_CHECK_EQ_U64(t, th->sec_chance, 30u);
+    DF_CHECK_EQ_U64(t, th->sec_kind, DFI_SECONDARY_STATUS);
+    /* Power Trip (data/moves.ts:13851-13870): base power 20, accuracy 100, Physical; the rest is the callback */
+    const dfi_move_data *pt = &dfi_pool_moves[DFI_MOVE_POWERTRIP];
+    DF_CHECK_EQ_U64(t, pt->accuracy, 100u);
+    DF_CHECK_EQ_U64(t, pt->base_power, 20u);
+    DF_CHECK_EQ_U64(t, pt->category, DFI_CATEGORY_PHYSICAL);
+    DF_CHECK_EQ_U64(t, pt->sec_chance, 0u);
+    /* Ice Fang (data/moves.ts:9347-9368): accuracy 95, 65 power, Physical; the two secondaries belong to the handler */
+    const dfi_move_data *fang = &dfi_pool_moves[DFI_MOVE_ICEFANG];
+    DF_CHECK_EQ_U64(t, fang->accuracy, 95u);
+    DF_CHECK_EQ_U64(t, fang->base_power, 65u);
+    DF_CHECK_EQ_U64(t, fang->sec_chance, 0u);
+    /* Tri Attack (data/moves.ts:19845-19864): accuracy 100, 80 power, Special; the chance 20 belongs to the handler */
+    const dfi_move_data *tri = &dfi_pool_moves[DFI_MOVE_TRIATTACK];
+    DF_CHECK_EQ_U64(t, tri->accuracy, 100u);
+    DF_CHECK_EQ_U64(t, tri->base_power, 80u);
+    DF_CHECK_EQ_U64(t, tri->category, DFI_CATEGORY_SPECIAL);
+    DF_CHECK_EQ_U64(t, tri->sec_chance, 0u);
+    /* the data rows: Breaking Swipe (allAdjacentFoes, a 100 percent Attack drop of each foe) */
+    const dfi_move_data *bs = &dfi_pool_moves[DFI_MOVE_BREAKINGSWIPE];
+    DF_CHECK_EQ_U64(t, bs->base_power, 60u);
+    DF_CHECK_EQ_U64(t, bs->sec_chance, 100u);
+    DF_CHECK_EQ_U64(t, bs->sec_kind, DFI_SECONDARY_BOOST);
+    DF_CHECK_EQ_U64(t, bs->boosts[DFI_STAGE_ATK], DFI_STAGE_BIAS - 1u);
+    /* Vacuum Wave (data/moves.ts:20282-20294): 40 power, accuracy 100, Special, priority +1 */
+    const dfi_move_data *vw = &dfi_pool_moves[DFI_MOVE_VACUUMWAVE];
+    DF_CHECK_EQ_U64(t, vw->base_power, 40u);
+    DF_CHECK_EQ_U64(t, vw->accuracy, 100u);
+    DF_CHECK_EQ_U64(t, vw->category, DFI_CATEGORY_SPECIAL);
+    DF_CHECK_EQ_U64(t, vw->priority, DFI_PRIORITY_BIAS + 1u);
+    /* Stone Edge (data/moves.ts:18096-18109): 100 power, accuracy 80, critical hit ratio 2 */
+    const dfi_move_data *se = &dfi_pool_moves[DFI_MOVE_STONEEDGE];
+    DF_CHECK_EQ_U64(t, se->base_power, 100u);
+    DF_CHECK_EQ_U64(t, se->accuracy, 80u);
+    DF_CHECK_EQ_U64(t, se->crit_ratio, 2u);
+    /* Aqua Cutter (data/moves.ts:439-452): 70 power, accuracy 100, critical hit ratio 2, the slicing flag */
+    const dfi_move_data *ac = &dfi_pool_moves[DFI_MOVE_AQUACUTTER];
+    DF_CHECK_EQ_U64(t, ac->base_power, 70u);
+    DF_CHECK_EQ_U64(t, ac->crit_ratio, 2u);
+    DF_CHECK(t, (dfi_pool_move_flags2[DFI_MOVE_AQUACUTTER] & DFI_MOVE_FLAG2_SLICING) != 0u);
+    /* Hammer Arm (data/moves.ts:8085-8102): 100 power, accuracy 90, the user loses one Speed stage */
+    const dfi_move_data *ha = &dfi_pool_moves[DFI_MOVE_HAMMERARM];
+    DF_CHECK_EQ_U64(t, ha->base_power, 100u);
+    DF_CHECK_EQ_U64(t, ha->accuracy, 90u);
+    DF_CHECK_EQ_U64(t, ha->boosts[DFI_STAGE_SPE], DFI_STAGE_BIAS - 1u);
+    /* Trop Kick (data/moves.ts:20057-20075; the Champions mod sets the power to 85, data/mods/champions/moves.ts:1084-1087) */
+    const dfi_move_data *tk = &dfi_pool_moves[DFI_MOVE_TROPKICK];
+    DF_CHECK_EQ_U64(t, tk->base_power, 85u);
+    DF_CHECK_EQ_U64(t, tk->sec_chance, 100u);
+    DF_CHECK_EQ_U64(t, tk->boosts[DFI_STAGE_ATK], DFI_STAGE_BIAS - 1u);
+    /* Meteor Mash (data/moves.ts:11763-11783): 90 power, accuracy 90, a 20 percent roll for the user's Attack +1 */
+    const dfi_move_data *mm = &dfi_pool_moves[DFI_MOVE_METEORMASH];
+    DF_CHECK_EQ_U64(t, mm->base_power, 90u);
+    DF_CHECK_EQ_U64(t, mm->accuracy, 90u);
+    DF_CHECK_EQ_U64(t, mm->sec_chance, 20u);
+    DF_CHECK_EQ_U64(t, mm->sec_kind, DFI_SECONDARY_SELF_BOOST);
+    DF_CHECK_EQ_U64(t, mm->boosts[DFI_STAGE_ATK], DFI_STAGE_BIAS + 1u);
+}
+
+static void check_unmarked(df_test *t)
+{
+    /* Scale Shot was left out of this step (its hit count is a draw of its own); step G54 marks it (test_moves_batch_rows.c) */
+    /* Thunder can hit through Fly (a semi-invulnerable target): Fly is not marked, so no battle has that case */
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_FLY] == 0u);
+}
+
+/* The guard (decision 0015 item 5an): the rows that the generic secondaries path would have to honour (Shield Dust blocks a
+ * move's secondary, Serene Grace doubles its chance, Covert Cloak blocks the effect of an item's source), and the secondaries
+ * that Ice Fang and Tri Attack bypass (ModifySecondaries, sim/battle-actions.ts:1340-1341). None is marked, and none is a
+ * row of the pool today (Serene Grace and Covert Cloak have no name in the tables). A row of any of these names that a later
+ * step adds must stay unmarked until these paths honour it. */
+static void check_guard_unmarked(df_test *t)
+{
+    DF_CHECK(t, dfi_pool_ability_names[DFI_ABILITY_SHIELDDUST] != NULL &&
+                    strcmp(dfi_pool_ability_names[DFI_ABILITY_SHIELDDUST], "shielddust") == 0);
+    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SHIELDDUST], 0u);
+    static const char *const abilities[] = {"shielddust", "serenegrace"};
+    for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
+        const char *n = dfi_pool_ability_names[i];
+        for (size_t k = 0u; n != NULL && k < sizeof abilities / sizeof abilities[0]; ++k) {
+            if (strcmp(n, abilities[k]) == 0) {
+                DF_CHECK_EQ_U64(t, dfi_support.abilities[i], 0u);
+            }
+        }
+    }
+    static const char *const items[] = {"covertcloak"};
+    for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+        const char *n = dfi_pool_item_names[i];
+        for (size_t k = 0u; n != NULL && k < sizeof items / sizeof items[0]; ++k) {
+            if (strcmp(n, items[k]) == 0) {
+                DF_CHECK_EQ_U64(t, dfi_support.items[i], 0u);
+            }
+        }
+    }
+}
+
+int main(void)
+{
+    df_test t;
+    df_test_begin(&t, "duoforge.moves.simple_move_rows");
+    check_marks(&t);
+    check_pins(&t);
+    check_unmarked(&t);
+    check_guard_unmarked(&t);
+    return df_test_end(&t);
+}

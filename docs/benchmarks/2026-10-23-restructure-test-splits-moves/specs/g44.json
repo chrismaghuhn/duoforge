@@ -1,0 +1,29 @@
+{
+ "source": "moves/test_pool_g44.c",
+ "parts": [
+  {
+   "file": "moves/test_simple_move_rows.c",
+   "calls": [
+    "check_marks",
+    "check_pins",
+    "check_unmarked",
+    "check_guard_unmarked"
+   ],
+   "header": "step G44 of the content expansion (decision 0015 item 5an), the simple moves as one batch: four handlers (Thunder, Power Trip, Ice Fang, Tri Attack) and seven data rows (Breaking Swipe, Vacuum Wave, Stone Edge, Aqua Cutter, Hammer Arm, Trop Kick, Meteor Mash). The marks, the handler numbers and the pinned numbers of each row (with the Champions override of Trop Kick's power); what stays unmarked (Fly, which Thunder would hit through); and the guard: Ice Fang and Tri Attack bypass the generic secondaries path, so they skip the pin's ModifySecondaries (sim/battle-actions.ts:1340-1341), which Shield Dust, Covert Cloak and Serene Grace change; none of the three is marked, and marking any of them later fails here until these paths honour it. The recorded battles g44_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G44 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_power_trip.c",
+   "calls": [
+    "check_power_trip_stages"
+   ],
+   "header": "step G44 of the content expansion (decision 0015 item 5an), Power Trip's positive-stage sum (combat/moves/power_trip.h), white-box: every stat counts, accuracy and evasion too, a negative stage adds nothing, from 0 to 42. The recorded battles carry two stages of attack and defense only, so the other stats are checked here.\n\nSplit by subject from the test of step G44 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_tri_attack.c",
+   "calls": [
+    "check_tri_attack_edges"
+   ],
+   "header": "step G44 of the content expansion (decision 0015 item 5an), Tri Attack's chance (20 of random(100), combat/moves/tri_attack.h): the roll 19 passes and 20 fails, at both edges and at the ends. No recorded battle has a roll of 19 on that draw.\n\nSplit by subject from the test of step G44 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

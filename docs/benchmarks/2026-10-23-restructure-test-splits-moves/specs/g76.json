@@ -1,0 +1,29 @@
+{
+ "source": "moves/test_pool_g76.c",
+ "parts": [
+  {
+   "file": "moves/test_destiny_bond_final_gambit_rows.c",
+   "calls": [
+    "test_row"
+   ],
+   "header": "step G76 of the content expansion (decision 0015 5cg), the rows of Destiny Bond and Final Gambit: the handler ids, the support marks, the view bit and feature of Destiny Bond, its bit in position_flags, the event that carries -singlemove, and the volatile numbers. Healing Wish is not in this step (5cg says why).\n\nSplit by subject from the test of step G76 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_destiny_bond.c",
+   "calls": [
+    "test_db_clear",
+    "test_db_consecutive",
+    "test_db_ko"
+   ],
+   "header": "step G76 of the content expansion (decision 0015 5cg), Destiny Bond's flag bit after the steps that matter of the recorded g76_db_* battles: the holder's next move ends it (the attempt, not the turn); a second use in a row fails and ends the volatile, a third starts it; a holder knocked out by a foe's move takes the attacker with it, and the holder's flag ends with its faint. The behaviour is compared with the reference by duoforge.reference.conformance_pool_data. Flat positions: side 0 slots 0 and 1 (flat 0, 1), side 1 (flat 2, 3); roster members of side 1: Golurk 0, Kingambit 1, Pincurchin 2.\n\nSplit by subject from the test of step G76 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_final_gambit.c",
+   "calls": [
+    "test_fg_hit",
+    "test_fg_immune"
+   ],
+   "header": "step G76 of the content expansion (decision 0015 5cg), Final Gambit's HP after the steps that matter of the recorded g76_fg_* battles: it deals its user's HP and knocks the user out; into an immune Ghost it deals nothing. The per-step HP is compared with the reference by duoforge.reference.conformance_pool_data. Flat positions: side 0 slots 0 and 1 (flat 0, 1), side 1 (flat 2, 3); roster members of side 1: Golurk 0, Kingambit 1, Pincurchin 2.\n\nSplit by subject from the test of step G76 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

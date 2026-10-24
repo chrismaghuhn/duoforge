@@ -83,7 +83,7 @@ KIND_FILES = {
     'ability': ('data/abilities.ts', 'data/mods/champions/abilities.ts'),
 }
 EXPECTED_COUNTS = {'move': 511, 'item': 166, 'ability': 215}
-SPECIAL_FIELD_INDEX = 28  # the flat move row of src/data/pool_tables.c: the special is the 29th number
+SPECIAL_FIELD_INDEX = 28  # the flat move row of src/data/formats/reg-mc/pool_tables.c: the special is the 29th number
 MOVE_ROW_LENGTH = 29
 CLASSES = ('data-only', 'hand-work', 'modelled-unmarked')
 EXCLUDED_CHAMPION_FILES = {'moves.ts', 'abilities.ts', 'items.ts', 'learnsets.ts', 'formats-data.ts', 'text.ts'}
@@ -533,9 +533,11 @@ def checkout_sources(checkout):
 
 
 def build(checkout):
-    pool_text = read_text('src/data/pool_tables.c')
-    headers = [read_text('src/data/' + f) for f in sorted(os.listdir(os.path.join(REPO, 'src', 'data')))
-               if f.endswith('.h')]
+    pool_text = read_text('src/data/formats/reg-mc/pool_tables.c')
+    # The headers of src/data and of the format's generated tables (src/data/formats/reg-mc/), in file-name order.
+    dirs = ('src/data/', 'src/data/formats/reg-mc/')
+    headers = [read_text(d + f) for f, d in sorted((f, d) for d in dirs for f in os.listdir(os.path.join(REPO, *d.split('/')))
+                                                    if f.endswith('.h'))]
     manifest_text = read_text('src/data/support_manifest.c')
     comments = recorded_comments([manifest_text, read_text('tools/datagen/gen_closure.py')])
     names = pool_names(pool_text)

@@ -59,6 +59,6 @@ void dfi_context_canonical_bytes(const struct duoforge_context *ctx, uint8_t out
 bool dfi_context_fingerprint_matches(const struct duoforge_context *ctx,
                                      const uint8_t fingerprint[DUOFORGE_DIGEST_SIZE]);
 
-#include "data/format_tables.h" /* the format facts (restructure step 10) */
+#include "data/formats/reg-mc/format_tables.h" /* the format facts (restructure step 10) */
 
 #endif

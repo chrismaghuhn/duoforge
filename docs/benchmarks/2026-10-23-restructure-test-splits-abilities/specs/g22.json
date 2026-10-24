@@ -1,0 +1,44 @@
+{
+ "source": "abilities/test_pool_g22.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "bundle_of": "df_conf_bundle_of",
+   "find": "df_conf_find",
+   "replay": "df_conf_replay_battle"
+  }
+ },
+ "parts": [
+  {
+   "file": "abilities/test_swift_swim_fainted_holder.c",
+   "main_body": [
+    "    (void)conf_events;",
+    "    duoforge_context *kp = df_make_context(&df_config_pool);",
+    "    duoforge_context *kd = df_make_context(&df_config_pool_dev);",
+    "    for (uint32_t k = 0u; k < 2u; ++k) {",
+    "        const duoforge_context *ctx = k == 0u ? kp : kd;",
+    "        check_fainted_holder(&t, ctx);",
+    "    }",
+    "    duoforge_context_destroy(kd);",
+    "    duoforge_context_destroy(kp);"
+   ],
+   "header": "step G22 of the content expansion (decision 0015 entry 5o), the queued action of a fainted Swift Swim holder,\nunder both POOL kinds. In g22_swift_swim Kingambit knocks Basculegion out with Sucker Punch in the rain; its Liquidation stays\nin the queue and, with a standing holder's x2, would not tie Politoed's Weather Ball (196 against 98). The pin prices a\nfainted Pokemon's action again without its ability (an inactive Pokemon's ability handler is ignored, sim/battle.ts:874-883,\nsim/pokemon.ts:858-859), at the raw 98 that Politoed has with its 8 Speed points, so the two tie and the reference draws a\nshuffle. The tape without that entry fails exactly there (E_INVARIANT, every earlier entry consumed): the engine draws the tie.\nThe recorded battles g22_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G22 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_inner_focus_intimidate_cap.c",
+   "main_body": [
+    "    (void)conf_events;",
+    "    duoforge_context *kp = df_make_context(&df_config_pool);",
+    "    duoforge_context *kd = df_make_context(&df_config_pool_dev);",
+    "    for (uint32_t k = 0u; k < 2u; ++k) {",
+    "        const duoforge_context *ctx = k == 0u ? kp : kd;",
+    "        check_cap(&t, ctx);",
+    "    }",
+    "    duoforge_context_destroy(kd);",
+    "    duoforge_context_destroy(kp);"
+   ],
+   "header": "step G22 of the content expansion (decision 0015 entry 5o), an Intimidate drop that the cap already took to\nnothing, under both POOL kinds. Battle.boost (sim/battle.ts:2020-2088) caps the change first (Attack at -6 is a change of 0,\nwhich is no `boost.atk` for Inner Focus's onTryBoost) and then shows `-unboost|atk|0` for an ability's secondary change. So an\nInner Focus holder at -6 Attack gets that line from Intimidate and no `-fail` (data/abilities.ts:2157-2162); at -5 or better\nit gets the `-fail` and no unboost. The state is made by hand: the Dragonite of g22_inner_focus has its Attack stage set to -6\nbefore Staraptor's switch-in, and the control, with the stage left alone, shows the `-fail`.\n\nSplit by subject from the test of step G22 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

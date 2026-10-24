@@ -114,25 +114,47 @@ foreach(_file IN LISTS _files)
     endforeach()
 endforeach()
 
-# Every draw site defined in src/rng/draw.h has its case in dfi_site_name (a site without a name is a finding, the same
-# as a missing POSFLAG case): each "#define DFI_SITE_<NAME>" except DFI_SITE_COUNT needs "case DFI_SITE_<NAME>:".
+# Every number of a shared number space has its line in the space's definition file (restructure step 5c): each
+# "#define <PREFIX><NAME>" of the header, except the listed constants that are not members of the space, needs
+# "<MACRO>(<NAME>," in the .def file, which checks its value at build time and (for the sites and the residual kinds) makes its
+# case in the name switch. A number without a line would have no frozen record and no name.
 # file(STRINGS) cannot split a CRLF working copy into lines, so the defines are matched on the whole text (no group).
-if(EXISTS "${ROOT}/src/rng/draw.h")
-    file(READ "${ROOT}/src/rng/draw.h" _draw_text)
-    string(REPLACE "" "" _draw_text "${_draw_text}")
-    string(REGEX MATCHALL "#define DFI_SITE_[A-Z0-9_]+[ 	]" _site_defs "${_draw_text}")
-    foreach(_site_def IN LISTS _site_defs)
-        string(REPLACE "#define DFI_SITE_" "" _site "${_site_def}")
-        string(STRIP "${_site}" _site)
-        if(NOT "${_site}" STREQUAL "COUNT")
-            string(FIND "${_draw_text}" "case DFI_SITE_${_site}:" _case_pos)
-            if(_case_pos EQUAL -1)
-                message("src/rng/draw.h: site-case (DFI_SITE_${_site} has no case in dfi_site_name)")
-                math(EXPR _findings "${_findings} + 1")
+function(_duoforge_lint_number_space header def prefix macro others)
+    set(_space_findings 0 PARENT_SCOPE)
+    if(NOT EXISTS "${ROOT}/${header}" OR NOT EXISTS "${ROOT}/${def}")
+        return()
+    endif()
+    file(READ "${ROOT}/${header}" _text)
+    file(READ "${ROOT}/${def}" _def_text)
+    string(REGEX MATCHALL "#define ${prefix}[A-Z0-9_]+[ 	]" _defs "${_text}")
+    set(_n 0)
+    foreach(_d IN LISTS _defs)
+        string(REPLACE "#define ${prefix}" "" _name "${_d}")
+        string(STRIP "${_name}" _name)
+        if(NOT "${_name}" IN_LIST others)
+            string(FIND "${_def_text}" "${macro}(${_name}," _pos)
+            if(_pos EQUAL -1)
+                message("${header}: number-space (${prefix}${_name} has no line in ${def})")
+                math(EXPR _n "${_n} + 1")
             endif()
         endif()
     endforeach()
-endif()
+    set(_space_findings ${_n} PARENT_SCOPE)
+endfunction()
+foreach(_space IN ITEMS
+        "src/rng/draw.h|src/rng/draw_sites.def|DFI_SITE_|DFI_DRAW_SITE|COUNT"
+        "src/combat/residual_order.h|src/combat/residual_kinds.def|DFI_RES_|DFI_RES_KIND|NO_ORDER;MODEL_MAX;DRAW_CAP;ARRANGEMENT_CAP;REGION_MAX"
+        "src/state/battle_internal.h|src/state/volatile_flags.def|DFI_VOL_|DFI_VOL_FLAG|FLAGS_MAX"
+        "src/state/battle_internal.h|src/state/position_flags.def|DFI_POSFLAG_|DFI_POS_FLAG|DRAGON_CHEER_SHIFT;DRAGON_CHEER_MAX;VALID_MASK")
+    string(REPLACE "|" ";" _parts "${_space}")
+    list(GET _parts 0 _header)
+    list(GET _parts 1 _def)
+    list(GET _parts 2 _prefix)
+    list(GET _parts 3 _macro)
+    list(SUBLIST _parts 4 -1 _others)
+    _duoforge_lint_number_space("${_header}" "${_def}" "${_prefix}" "${_macro}" "${_others}")
+    math(EXPR _findings "${_findings} + ${_space_findings}")
+endforeach()
 
 list(LENGTH _files _file_count)
 if(_findings GREATER 0)

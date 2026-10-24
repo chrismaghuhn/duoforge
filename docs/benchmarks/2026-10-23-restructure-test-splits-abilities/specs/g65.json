@@ -1,0 +1,27 @@
+{
+ "source": "abilities/test_pool_g65.c",
+ "parts": [
+  {
+   "file": "abilities/test_modifier_abilities.c",
+   "calls": [
+    "check_facts"
+   ],
+   "header": "step G65 of the content expansion (decision 0015 entry 5bk), the simple modifier abilities as one batch, POOL\nbuild: Unaware (onAnyModifyBoost), Marvel Scale (onModifyDef x1.5 with a status), Water Bubble (Fire at the holder x0.5, its\nWater moves x2, the burn refused), Reckless (x4915/4096 for a recoil move) and Super Luck (crit ratio +1) are marked engine\nrows (family NONE, handler NONE, read by id in combat/turn.c), and Mold Breaker, which would ignore the breakable ones, is not\nmarked and stays UNMODELLED. The recorded battles g65_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G65 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_reckless.c",
+   "calls": [
+    "check_recoil_rows"
+   ],
+   "header": "step G65 of the content expansion (decision 0015 entry 5bk), the rows that Reckless's recoil clause relies on:\nStruggle has no recoil (its struggleRecoil is a flag), the recoil moves carry their fraction, and the crash moves (Axe Kick,\nHigh Jump Kick, Supercell Slam) are UNMODELLED, so no Reckless boost is reachable through them. Also the four unmodified reads\nof the pin (getStat(..., true), which runs no ModifyBoost): Shell Side Arm is the only one in the pool and it is an UNMODELLED\nrow, so no read of it reaches Unaware.\n\nSplit by subject from the test of step G65 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_trace_water_bubble.c",
+   "main_blocks": [
+    0,
+    3
+   ],
+   "header": "step G65 of the content expansion (decision 0015 entry 5bk), Trace copying Water Bubble onto a burned holder is\nrefused (E_UNSUPPORTED) and the battle is unchanged, as Limber's is: the Water Bubble onUpdate that would cure the burn is not\nmodelled. The battle is the recorded ac1_trace_switch with both foes given Water Bubble as their ability now, and Gardevoir\nburned when it comes back in.\n\nSplit by subject from the test of step G65 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+{
+ "source": "interactions/test_pool_g39.c",
+ "parts": [
+  {
+   "file": "interactions/test_thirteen_abilities_rows.c",
+   "calls": [
+    "check_marks"
+   ],
+   "header": "step G39 of the content expansion, thirteen abilities (Hyper Cutter, Scrappy, Infiltrator, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand Veil, Static, Justified, Limber, Solar Power, Regenerator) and four moves (Charm, Fake Tears, Sacred Sword, Super Fang) as one batch: the marks and the table rows (the abilities are engine rows, Sacred Sword has Darkest Lariat's handler, Super Fang its own, Charm and Fake Tears are data with the boost role PRIMARY_TARGET). The recorded battles g39_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G39 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "abilities/test_damp_sturdy_rows.c",
+   "calls": [
+    "check_inert"
+   ],
+   "header": "step G39 of the content expansion, what Damp and Sturdy act on: Damp's callbacks only stop Explosion, Self-Destruct, Misty Explosion and Mind Blown and nullify Aftermath, none of which is marked, so Damp stays inert; the OHKO moves that Sturdy's second callback is immune to are marked by later steps (Sheer Cold by G64, Fissure, Guillotine and Horn Drill by G92 with the OHKO handler, Sturdy's immunity checked in its own test); and Mold Breaker, which they (and five more abilities of the step) are breakable against, stays unmarked.\n\nSplit by subject from the test of step G39 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "interactions/test_hyper_cutter_flower_veil.c",
+   "calls": [
+    "check_hyper_cutter_not_grass"
+   ],
+   "header": "step G39 of the content expansion, the TryBoost order that the engine does not compute: Hyper Cutter shares the event with Flower Veil's handler, so no Pokemon of the pool that can have Hyper Cutter is a Grass type (a Flower Veil holder protects the Grass types of its side).\n\nSplit by subject from the test of step G39 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

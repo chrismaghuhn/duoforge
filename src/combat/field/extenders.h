@@ -4,7 +4,7 @@
 /* The held items that lengthen a field effect when its setter holds them (data/conditions.ts and data/moves.ts
  * durationCallback: source.hasItem). One definition for the turn code (weather.h dfi_weather_rock, the terrains and the
  * screens in turn.c) and for the live tracker, which reads them through the state layout dump (#512 D1), never a copy. */
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 
 #define DFI_WEATHER_ROCK_RAIN DFI_ITEM_DAMPROCK  /* Rain Dance */
 #define DFI_WEATHER_ROCK_SUN DFI_ITEM_HEATROCK   /* Sunny Day */

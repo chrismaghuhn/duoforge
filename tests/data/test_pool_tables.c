@@ -4,7 +4,7 @@
  * family columns of every item and ability.
  *
  * The extended tables, and so the closure, are an exact prefix: every row
- * equals the row of src/data/extended_tables.c and src/data/closure_tables.c;
+ * equals the row of src/data/formats/reg-mc/extended_tables.c and src/data/formats/reg-mc/closure_tables.c;
  * the canonical bytes recomputed from the prefix, without the family columns,
  * hash to the CLOSURE and TEAM_C table hashes (so their fingerprints still
  * name the data a battle of their kind reads). The family columns of the
@@ -39,7 +39,7 @@
 #include "core/bytes.h"
 #include "core/modifier.h"
 #include "core/sha256.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
@@ -1792,7 +1792,7 @@ int main(void)
      * what it does not implement must not be in the tables. Aura Break (3072/4096 instead of 5448/4096) and Dark Aura
      * are in no pool ability, and Mold Breaker (which ignores the breakable Flower Veil) is not either. White Smoke is marked since
      * A2a (decision 0015 entry 5dy): a Grass holder made by Skill Swap next to a Flower Veil holder is refused (dfi_boost,
-     * tests/abilities/test_pool_a2a.c). */
+     * tests/abilities/test_flower_veil_drop_refusals.c). */
     {
         static const char *const absent[] = {"aurabreak", "darkaura", "moldbreaker", "teravolt", "turboblaze",
                                              "neutralizinggas", "cleanbody"};
