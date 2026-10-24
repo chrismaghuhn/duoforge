@@ -8193,11 +8193,12 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
             }
         }
         /* Double Shock's self onHit (decision 0025, data/moves.ts:3960-3964, selfDrops: once for every target that was not ruled out,
-         * with no test of the user's HP): the type Electric becomes ??? and the -start line shows ???/Fighting. */
+         * with no test of the user's HP): the type Electric becomes ??? and the -start line shows ???/Fighting. A target whose hit a
+         * Substitute took is null, not false (data/mods/champions/scripts.ts:349-352), so it counts too (issue 553). */
         if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             if (hit_any) {
                 st = dfi_double_shock_self(r, user, move_id);
