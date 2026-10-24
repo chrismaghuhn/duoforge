@@ -16,12 +16,10 @@
     "fixture_matches": 0,
     "live": {
       "outcomes": {
-        "equal": 4
+        "equal": 6
       },
       "own_pp_stops": [],
-      "stops": {
-        "line:-enditem": 2
-      }
+      "stops": {}
     }
   },
   "set": "pool",
