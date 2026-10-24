@@ -148,7 +148,7 @@ dfi_damage_modify(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_dat
     /* The handlers have no order and priority 0, so runEvent sorts them by their holders' speed, then by subOrder (a screen, a
      * side condition, has no speed and is last); this build does not compute that order (a follow-up, combat/damage_chain.h), so
      * the modifiers must chain to one value in every order. Pairs and triples of Life Orb, Expert Belt, a resist berry, a screen,
-     * Solid Rock, Multiscale and Friend Guard do (checked by dfi_mods_commute at its own test, tests/test_pool_g34.c, and here for
+     * Solid Rock, Multiscale and Friend Guard do (checked by dfi_mods_commute at its own test, tests/interactions/test_modify_damage_chain_order.c, and here for
      * every hit); the combinations that do not (Glaive Rush's x2 with three others, an Expert Belt with a berry and Glaive Rush, a
      * Solid Rock with them) are E_UNSUPPORTED. */
     if (mods >= 3u && !dfi_mods_commute(mlist, mods)) {

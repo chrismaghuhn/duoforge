@@ -1190,7 +1190,7 @@ IGNORED_VOLATILES = {
     # is then the one remembered (two_turn_lock).
     'electroshot': 'the locked slot and target',
     # Step G30: Rage Powder shares the position's Follow Me bit, so the engine's state compares as no Follow Me: its presence
-    # is the extension's RAGE_POWDER bit, read after every step by duoforge.state.pool_g30.
+    # is the extension's RAGE_POWDER bit, read after every step by duoforge.moves.rage_powder_view.
     'ragepowder': 'the extension bit RAGE_POWDER',
     # Step G42: Roost's volatile takes the Flying type off until the residual of its turn. It is not a field of the record: the
     # -singleturn line and the immunity and the damage of a Ground move show it; duoforge.moves.move_result_roost reads the tail's bit

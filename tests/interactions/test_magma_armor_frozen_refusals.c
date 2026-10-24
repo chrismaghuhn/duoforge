@@ -1,27 +1,12 @@
 /*
- * duoforge.state.pool_g77 (white-box): step G77 of the content expansion (decision 0015, item 5bq, the crit package), POOL build.
+ * duoforge.interactions.magma_armor_frozen_refusals (white-box): step G77 of the content expansion (decision 0015, item 5bq),
+ * Magma Armor and a frozen holder: its onUpdate cure is not modelled, so a frozen Pokemon that would gain the ability is
+ * refused. Skill Swap that would hand a frozen Pokemon Magma Armor, or hand Magma Armor away to a frozen partner, is refused
+ * and the refusal changes nothing (dfi_skill_swap_decision), and the same swap with the status absent proceeds; Trace copying
+ * Magma Armor onto a frozen holder is refused (E_UNSUPPORTED) and the battle is unchanged (the recorded ac1_trace_switch with
+ * both foes given Magma Armor now and Gardevoir frozen when it comes back in).
  *
- * Four rows, read by id in combat/turn.c:
- *   Magma Armor   onImmunity 'frz' refuses every freeze of its holder (Immunity, after the natural immunities and before
- *                 SetStatus); its onUpdate cure is not modelled: a frozen holder that gains the ability (Trace, Skill Swap) is refused
- *   Anger Point   onHit: a critical hit that the holder takes from a primary move raises its Attack by 12 (capped at +6), the line
- *                 -setboost with [from] ability: Anger Point (sim/battle.ts:2050-2053)
- *   Sniper        onModifyDamage of the attacker: x1.5 (6144/4096) on a critical hit, in the ModifyDamage chain
- *   Leek          onModifyCritRatio of the holder: +2 when its base species is Farfetch'd or Sirfetch'd
- *
- * The recorded battles (g77_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data, which compares every
- * event, HP and draw with the reference. Here are the facts that they do not show by themselves:
- *   - the marks and the handler columns: the four rows are marked engine rows (family NONE, handler NONE); Mold Breaker, which
- *     would ignore the breakable flag of Magma Armor, is not marked and stays UNMODELLED;
- *   - the ModifyDamage chain holds at most DFI_MODIFY_DAMAGE_MAX (six) modifiers, and dfi_mods_push refuses a seventh
- *     (E_UNSUPPORTED) without writing past the list. The maximum for one hit is six (combat/damage_chain.h): Sniper is a
- *     crit-only modifier and a screen is not applied to a crit, so the two never meet;
- *   - the chain of a critical hit with Life Orb, a resist berry, Solid Rock and Sniper does not commute: the engine refuses that
- *     hit (E_UNSUPPORTED), and the reference orders those four by speed (a tie); the converter drops nothing of it;
- *   - Skill Swap that would hand a frozen Pokemon Magma Armor, or hand Magma Armor away from a frozen Pokemon, is refused, and the
- *     refusal changes nothing (dfi_skill_swap_decision); the same swap with the status absent proceeds;
- *   - Trace copying Magma Armor onto a frozen holder is refused (E_UNSUPPORTED) and the battle is unchanged: the battle is the
- *     recorded ac1_trace_switch with both foes given Magma Armor now and Gardevoir frozen when it comes back in.
+ * Split by subject from the test of step G77 (restructure step 6e; tests/renames.tsv maps the old name).
  */
 #include <stdio.h>
 #include <string.h>
@@ -40,54 +25,6 @@
 #include "support/pool.h"
 
 #define AB(name) (1u + DFI_ABILITY_##name)
-
-/* ---- the marks, the handler columns and the rows that stay out */
-static void check_facts(df_test *t)
-{
-    static const uint32_t abilities[] = {DFI_ABILITY_MAGMAARMOR, DFI_ABILITY_ANGERPOINT, DFI_ABILITY_SNIPER};
-    for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
-        DF_CHECK(t, dfi_support.abilities[abilities[i]] != 0u);
-        DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[abilities[i]], DFI_HANDLER_NONE); /* an engine row: read by id */
-        DF_CHECK_EQ_U64(t, dfi_pool_ability_family[abilities[i]].family, DFI_ABILITY_FAMILY_NONE);
-    }
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_LEEK] != 0u);
-    DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_LEEK], DFI_HANDLER_NONE);
-    DF_CHECK_EQ_U64(t, dfi_pool_item_family[DFI_ITEM_LEEK].family, DFI_ITEM_FAMILY_NONE);
-    /* Mold Breaker would ignore the breakable flag of Magma Armor: it is not marked, and its row is UNMODELLED */
-    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_MOLDBREAKER], 0u);
-    DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_MOLDBREAKER], DFI_HANDLER_UNMODELED);
-}
-
-/* ---- the ModifyDamage list: the bound, and the refusal of a write past it */
-static void check_chain_bound(df_test *t)
-{
-    DF_CHECK_EQ_U64(t, DFI_MODIFY_DAMAGE_MAX, 6u); /* the bound is six (damage_chain.h): no hit has a seventh modifier */
-    uint32_t list[DFI_MODIFY_DAMAGE_MAX] = {0u};
-    uint32_t mods = 0u;
-    for (uint32_t i = 0u; i < DFI_MODIFY_DAMAGE_MAX; ++i) {
-        DF_CHECK(t, dfi_mods_push(list, &mods, 2048u + i));
-    }
-    DF_CHECK_EQ_U64(t, mods, DFI_MODIFY_DAMAGE_MAX);
-    /* the ninth is refused: the count and the list are unchanged, nothing is written past the end */
-    DF_CHECK(t, !dfi_mods_push(list, &mods, 4096u));
-    DF_CHECK_EQ_U64(t, mods, DFI_MODIFY_DAMAGE_MAX);
-    DF_CHECK_EQ_U64(t, list[DFI_MODIFY_DAMAGE_MAX - 1u], 2048u + DFI_MODIFY_DAMAGE_MAX - 1u);
-}
-
-/* ---- the commutation of the chain with Sniper: the sets the engine refuses, and the ones it chains */
-static void check_commute(df_test *t)
-{
-    /* Life Orb 5324, a resist berry 2048, Solid Rock 3072 and Sniper 6144 on one critical super-effective hit: the chain takes
-     * 2995 or 2996 by the order of its four factors, so the engine refuses the hit */
-    const uint32_t refused[4] = {5324u, 2048u, 3072u, 6144u};
-    DF_CHECK(t, !dfi_mods_commute(refused, 4u));
-    /* Life Orb with Sniper and a resist berry (no Solid Rock, Friend Guard or Glaive Rush): every order gives 3993 */
-    const uint32_t chains[3] = {5324u, 6144u, 2048u};
-    DF_CHECK(t, dfi_mods_commute(chains, 3u));
-    /* a resist berry, Glaive Rush and Sniper: every order gives 6144 */
-    const uint32_t berry_glaive[3] = {6144u, 2048u, 8192u};
-    DF_CHECK(t, dfi_mods_commute(berry_glaive, 3u));
-}
 
 /* ---- a recorded battle replayed to its leads (step 0: the team selection), the setters and the decisions */
 static const df_conf_battle *find(const char *name)
@@ -299,11 +236,8 @@ static void check_trace_refusal(df_test *t, const duoforge_context *ctx)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g77");
+    df_test_begin(&t, "duoforge.interactions.magma_armor_frozen_refusals");
     duoforge_context *kp = df_make_context(&df_config_pool);
-    check_facts(&t);
-    check_chain_bound(&t);
-    check_commute(&t);
     if (kp != NULL) {
         check_skill_swap(&t, kp);
         check_trace_refusal(&t, kp);

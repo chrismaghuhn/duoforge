@@ -46,19 +46,24 @@ duoforge_add_test(NAME duoforge.reference.runner_domain SOURCES interactions/tes
 duoforge_add_test(NAME duoforge.combat.focus_sash_confusion SOURCES interactions/test_focus_sash_confusion.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 duoforge_add_test(NAME duoforge.combat.closure_gate SOURCES interactions/test_closure_gate.c WHITEBOX TIMEOUT 600 TIER full AREA interactions)
 duoforge_add_test(NAME duoforge.combat.team_c_gate SOURCES interactions/test_team_c_gate.c WHITEBOX TIMEOUT 600 TIER full AREA interactions)
-duoforge_add_test(NAME duoforge.state.pool_g30 SOURCES interactions/test_pool_g30.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
-# Step G34: a batch of small rules (Gale Wings, accuracy and base power abilities, Solid Rock and Multiscale in the damage chain,
-# Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
-duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES interactions/test_pool_g33.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.rage_powder_batch_rows SOURCES interactions/test_rage_powder_batch_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+# Step G33: Dual Wingbeat, Twin Beam, Triple Axel and Mirror Armor: the marks, and the later hits of a multiaccuracy move.
+duoforge_add_test(NAME duoforge.interactions.multi_hit_mirror_armor_rows SOURCES interactions/test_multi_hit_mirror_armor_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.multiaccuracy_later_hits SOURCES interactions/test_multiaccuracy_later_hits.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 # Step K4 (#475, decision 0015 5dl): Gravity's accuracy rule (first hit 6840/4096, later hit integer) with one recorded draw changed.
 duoforge_add_test(NAME duoforge.interactions.gravity_accuracy_draws SOURCES interactions/test_gravity_accuracy_draws.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 duoforge_add_test(NAME duoforge.interactions.revival_blessing_view SOURCES interactions/test_revival_blessing_view.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
-duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES interactions/test_pool_g34.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+# Step G34: a batch of small rules (Gale Wings, accuracy and base power abilities, Solid Rock and Multiscale in the damage chain,
+# Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
+duoforge_add_test(NAME duoforge.interactions.small_rules_rows SOURCES interactions/test_small_rules_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.modify_damage_chain_order SOURCES interactions/test_modify_damage_chain_order.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
-duoforge_add_test(NAME duoforge.state.pool_g35 SOURCES interactions/test_pool_g35.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
-# Step G39: thirteen abilities and four moves: the marks, the rows, what keeps Damp and Sturdy inert, Hyper Cutter against Flower Veil.
-duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES interactions/test_pool_g39.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.rain_dish_friend_guard_rows SOURCES interactions/test_rain_dish_friend_guard_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.friend_guard_chain_order SOURCES interactions/test_friend_guard_chain_order.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+# Step G39: thirteen abilities and four moves: the marks, the rows, Hyper Cutter against Flower Veil (Damp and Sturdy: abilities).
+duoforge_add_test(NAME duoforge.interactions.thirteen_abilities_rows SOURCES interactions/test_thirteen_abilities_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.hyper_cutter_flower_veil SOURCES interactions/test_hyper_cutter_flower_veil.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 # Step G27: Cursed Body and Disable in the tail's disable_slot and disable_turns, the request, the cant line and the POOL view
 # extension (the position's disable_slot, bit 21).
 duoforge_add_test(NAME duoforge.interactions.cursed_body_disable SOURCES interactions/test_cursed_body_disable.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
@@ -70,15 +75,19 @@ duoforge_add_test(NAME duoforge.interactions.illusion SOURCES interactions/test_
 duoforge_add_test(NAME duoforge.state.pool_g75 SOURCES interactions/test_pool_g75.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 
 # Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
-# pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
-duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES interactions/test_pool_g67.c WHITEBOX TIMEOUT 120 TIER quick AREA interactions)
+# pops, the immunity, the switch-in line ITEM_SHOWN); the fold that ignores ITEM_SHOWN is in tests/mechanics.
+duoforge_add_test(NAME duoforge.interactions.magic_guard_air_balloon SOURCES interactions/test_magic_guard_air_balloon.c WHITEBOX TIMEOUT 120 TIER quick AREA interactions)
 
-# Step G83 (decision 0015 entry 5bt): Bulletproof, Rivalry, Leaf Guard and Iron Ball (their rows, the five recorded battles; white-box).
-duoforge_add_test(NAME duoforge.state.pool_g83 SOURCES interactions/test_pool_g83.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+# Step G83 (decision 0015 entry 5bt): Bulletproof, Rivalry, Leaf Guard and Iron Ball (their rows, eight recorded battles, Leaf Guard under Mega Sol; white-box).
+duoforge_add_test(NAME duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball SOURCES interactions/test_bulletproof_rivalry_leaf_guard_iron_ball.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.leaf_guard_mega_sol_refusal SOURCES interactions/test_leaf_guard_mega_sol_refusal.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 
 # Step G77 (decision 0015 5bq): the crit package Magma Armor, Anger Point, Sniper and Leek (their rows, the ModifyDamage bound and
 # commutation with Sniper, the Skill Swap and Trace refusals of Magma Armor onto a frozen holder; white-box).
-duoforge_add_test(NAME duoforge.state.pool_g77 SOURCES interactions/test_pool_g77.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.crit_package_rows SOURCES interactions/test_crit_package_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.modify_damage_bound SOURCES interactions/test_modify_damage_bound.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.sniper_chain_order SOURCES interactions/test_sniper_chain_order.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+duoforge_add_test(NAME duoforge.interactions.magma_armor_frozen_refusals SOURCES interactions/test_magma_armor_frozen_refusals.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 target_compile_definitions(duoforge_reference_conformance_team_c PRIVATE DF_CONFORMANCE_TEAM_C)
 target_compile_definitions(duoforge_reference_conformance_pool PRIVATE DF_CONFORMANCE_POOL)
 target_compile_definitions(duoforge_reference_conformance_team_c_pool PRIVATE DF_CONFORMANCE_TEAM_C

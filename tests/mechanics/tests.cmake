@@ -23,3 +23,5 @@ duoforge_add_test(NAME duoforge.mechanics.entry_hazards SOURCES mechanics/test_e
 duoforge_add_test(NAME duoforge.mechanics.yawn_exemptions SOURCES mechanics/test_yawn_exemptions.c WHITEBOX TIMEOUT 60 TIER quick AREA mechanics)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.mechanics.spiky_shield SOURCES mechanics/test_spiky_shield.c WHITEBOX TIMEOUT 60 TIER quick AREA mechanics)
+# Step G67 (decision 0033): the fold leaves the viewer's knowledge unchanged by ITEM_SHOWN.
+duoforge_add_test(NAME duoforge.mechanics.item_shown_fold SOURCES mechanics/test_item_shown_fold.c WHITEBOX TIMEOUT 120 TIER quick AREA mechanics)

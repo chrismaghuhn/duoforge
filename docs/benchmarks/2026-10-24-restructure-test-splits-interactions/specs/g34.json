@@ -1,0 +1,20 @@
+{
+ "source": "interactions/test_pool_g34.c",
+ "parts": [
+  {
+   "file": "interactions/test_small_rules_rows.c",
+   "calls": [
+    "check_facts"
+   ],
+   "header": "step G34 of the content expansion, a batch of small rules (Gale Wings, Compound Eyes, Wide Lens, Technician, Iron Fist, Sharpness, Solid Rock, Multiscale, Steel Roller, Clangorous Soul, Brick Break) and the data rows Fiery Dance, Psycho Cut, Iron Defense and Electroweb: the marks, the special numbers of the three new handlers and the two new bits of the second flags byte (punch and slicing: internal; the engine must not read decision 0020's static column, which duoforge.data.static_unread checks), carried by exactly the punch and slicing moves of the pin, whatever their power. The recorded battles g34_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G34 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "interactions/test_modify_damage_chain_order.c",
+   "calls": [
+    "check_chain",
+    "check_refusal"
+   ],
+   "header": "step G34 of the content expansion, the order of the ModifyDamage chain: the engine chains Life Orb or Expert Belt, a resist berry, a screen, Glaive Rush's x2, Solid Rock and Multiscale in an order that it cannot know (speed ties are shuffled), so every combination that one hit can have must chain to one value in every order, or the engine refuses it (E_UNSUPPORTED). dfi_mods_commute is compared with a brute force over all orders for every subset of the seven modifiers (53 of 71 commute, 18 do not, two of them named), and the engine's refusal itself is played.\n\nSplit by subject from the test of step G34 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

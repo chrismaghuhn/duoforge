@@ -81,3 +81,5 @@ duoforge_add_test(NAME duoforge.abilities.mega_sol SOURCES abilities/test_mega_s
 duoforge_add_test(NAME duoforge.abilities.aura_guard SOURCES abilities/test_aura_guard.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 # Step G80 (decision 0044, issue 541): Stalwart with a randomNormal move is refused (E_UNSUPPORTED).
 duoforge_add_test(NAME duoforge.abilities.stalwart_random_move SOURCES abilities/test_stalwart_random_move.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA abilities)
+# Step G39: what Damp and Sturdy act on (Damp stays inert, the OHKO moves are marked later, Mold Breaker unmarked).
+duoforge_add_test(NAME duoforge.abilities.damp_sturdy_rows SOURCES abilities/test_damp_sturdy_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)

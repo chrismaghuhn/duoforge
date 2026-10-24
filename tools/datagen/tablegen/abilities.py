@@ -63,7 +63,7 @@ MEGA2_ABILITY_FACTS = (
 # reads by id; the pinned callbacks they hard-code are checked here, whole, whitespace aside (Regenerator's is the Champions mod's
 # own entry: G32_ENTRY_FACTS-style, champ=True). Mold Breaker, which Hyper Cutter, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand
 # Veil and Limber are breakable against, is not marked. Damp is inert: its callbacks stop Explosion, Mind Blown, Misty Explosion,
-# Self-Destruct and Aftermath, none of which is marked (tests/test_pool_g39.c pins it, and Sturdy's OHKO immunity likewise).
+# Self-Destruct and Aftermath, none of which is marked (tests/abilities/test_damp_sturdy_rows.c pins it, and Sturdy's OHKO immunity likewise).
 G39_ABILITY_FACTS = (
     ('hypercutter', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
                      "if (boost.atk && boost.atk < 0) { delete boost.atk; if (!(effect as ActiveMove).secondaries) { "

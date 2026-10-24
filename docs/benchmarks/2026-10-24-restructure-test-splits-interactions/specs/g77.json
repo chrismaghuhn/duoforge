@@ -1,0 +1,34 @@
+{
+ "source": "interactions/test_pool_g77.c",
+ "parts": [
+  {
+   "file": "interactions/test_crit_package_rows.c",
+   "calls": [
+    "check_facts"
+   ],
+   "header": "step G77 of the content expansion (decision 0015, item 5bq, the crit package), POOL build, as one batch: Magma Armor, Anger Point, Sniper and Leek are marked engine rows (family NONE, handler NONE), read by id in combat/turn.c; Mold Breaker, which would ignore the breakable flag of Magma Armor, is not marked and stays UNMODELLED. The recorded battles g77_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G77 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "interactions/test_modify_damage_bound.c",
+   "calls": [
+    "check_chain_bound"
+   ],
+   "header": "step G77 of the content expansion (decision 0015, item 5bq), the bound of the ModifyDamage list: it holds at most DFI_MODIFY_DAMAGE_MAX (six) modifiers, and dfi_mods_push refuses a seventh (E_UNSUPPORTED) without writing past the list. The maximum for one hit is six (combat/damage_chain.h): Sniper is a crit-only modifier and a screen is not applied to a crit, so the two never meet.\n\nSplit by subject from the test of step G77 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "interactions/test_sniper_chain_order.c",
+   "calls": [
+    "check_commute"
+   ],
+   "header": "step G77 of the content expansion (decision 0015, item 5bq), the ModifyDamage chain with Sniper: the chain of a critical hit with Life Orb, a resist berry, Solid Rock and Sniper does not commute, so the engine refuses that hit (E_UNSUPPORTED; the reference orders those four by speed, a tie), and the sets that commute are chained.\n\nSplit by subject from the test of step G77 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "interactions/test_magma_armor_frozen_refusals.c",
+   "main_blocks": [
+    0,
+    4
+   ],
+   "header": "step G77 of the content expansion (decision 0015, item 5bq), Magma Armor and a frozen holder: its onUpdate cure is not modelled, so a frozen Pokemon that would gain the ability is refused. Skill Swap that would hand a frozen Pokemon Magma Armor, or hand Magma Armor away to a frozen partner, is refused and the refusal changes nothing (dfi_skill_swap_decision), and the same swap with the status absent proceeds; Trace copying Magma Armor onto a frozen holder is refused (E_UNSUPPORTED) and the battle is unchanged (the recorded ac1_trace_switch with both foes given Magma Armor now and Gardevoir frozen when it comes back in).\n\nSplit by subject from the test of step G77 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}
