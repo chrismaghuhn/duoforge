@@ -1,0 +1,22 @@
+{
+  "name": "guard_dog_flower_veil_skill_swap",
+  "purpose": "Guard Dog before Flower Veil (issue 640, decision 0015 entry 5ec): Meowscarada (M, Grass) takes Guard Dog from the foe Mabosstiff by Skill Swap next to its ally Florges (F, Flower Veil); Gyarados's Intimidate at its entry then meets Guard Dog first (onTryBoostPriority 2, data/abilities.ts:1727-1744): Meowscarada's Attack rises by 1 and Flower Veil (data/abilities.ts:1419-1437) finds no drop left, so no -block shows; Florges, no Grass type, loses its Attack.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000640e",
+  "teams": [
+    "Meowscarada (M)\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Skill Swap\n- Flower Trick\n- Protect\n- Knock Off\n\nFlorges (F)\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Moonblast\n- Protect\n- Dazzling Gleam\n\nEspeon (F)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nGengar (F)\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Shadow Ball\n- Dark Pulse\n- Focus Blast\n\nRillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Fake Out\n- Earthquake\n- Drum Beating\n\nPelipper (M)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nBold Nature\n- Hurricane\n- Helping Hand\n- Hydro Pump",
+    "Mabosstiff (M)\nAbility: Guard Dog\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Crunch\n- Protect\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Protect\n\nGyarados (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Waterfall\n- Dragon Dance\n- Protect\n\nSpiritomb (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nCalm Nature\n- Protect\n- Dark Pulse\n- Foul Play\n\nKingambit (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Foul Play\n\nCeruledge (M)\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Bitter Blade\n- Bulk Up"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 3, move 1 2"
+    ],
+    "p2": [
+      "move 1 2, move 1",
+      "switch 3, move 1"
+    ],
+    "max_steps": 3
+  }
+}
