@@ -1,0 +1,55 @@
+{
+  "name": "fz547_ice_spinner_weak_armor",
+  "purpose": "Weavile's Ice Spinner hits Alakazam, which has Weak Armor, in Psychic Terrain; the terrain ends in the move's AfterHit, after the DamagingHit lines (data/mods/champions/scripts.ts:406-414); on main the engine ended it before Weak Armor (issue 547). A battle of the differential fuzzing of issue 396 (free random sets, fz_279_3), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,553744298e5a91a19b462cebbb957d93ff4fb3541c8ff14c86b580ca9743e053",
+  "teams": [
+    "squawkabillyyellow (F) @ gardevoirite\nAbility: intimidate\nLevel: 50\nEVs: 9 HP / 10 Atk / 10 Def / 11 SpA / 14 SpD / 12 Spe\nSassy Nature\n- foulplay\n- thief\n- scaryface\n- protect\n\nfarigiraf (F) @ excadrite\nAbility: armortail\nLevel: 50\nEVs: 12 HP / 9 Atk / 14 Def / 11 SpA / 12 SpD / 8 Spe\nHardy Nature\n- grassknot\n- nightshade\n- dazzlinggleam\n- assurance\n\ntoxtricitylowkey (M) @ lightclay\nAbility: punkrock\nLevel: 50\nEVs: 9 HP / 10 Atk / 11 Def / 10 SpA / 15 SpD / 11 Spe\nLonely Nature\n- metalsound\n- wildcharge\n- gunkshot\n- toxicspikes\n\nweavile (F) @ damprock\nAbility: pressure\nLevel: 50\nEVs: 5 HP / 5 Atk / 3 Def / 4 SpA / 4 SpD / 3 Spe\nCalm Nature\n- throatchop\n- icespinner\n- beatup\n- iciclecrash\n\narmarouge (F) @ psychicseed\nAbility: weakarmor\nLevel: 50\nEVs: 12 HP / 8 Atk / 13 Def / 10 SpA / 10 SpD / 13 Spe\nLax Nature\n- irondefense\n- destinybond\n- calmmind\n- energyball\n\nsamurotthisui (M) @ charcoal\nAbility: torrent\nLevel: 50\nEVs: 14 HP / 18 Atk / 16 Def / 6 SpA / 7 SpD / 5 Spe\nCareful Nature\n- surf\n- helpinghand\n- protect\n- xscissor",
+    "alakazam (F) @ alakazite\nAbility: innerfocus\nLevel: 50\nEVs: 11 HP / 6 Atk / 14 Def / 14 SpA / 9 SpD / 12 Spe\nRash Nature\n- calmmind\n- psychic\n- gigaimpact\n- psychicterrain\n\ntyphlosionhisui (M) @ venusaurite\nAbility: frisk\nLevel: 50\nEVs: 12 HP / 8 Atk / 6 Def / 4 SpA / 10 SpD / 8 Spe\nQuiet Nature\n- firespin\n- sunnyday\n- focusblast\n- lowkick\n\nsamurott (M) @ aerodactylite\nAbility: shellarmor\nLevel: 50\nEVs: 7 HP / 11 Atk / 16 Def / 14 SpA / 8 SpD / 10 Spe\nQuirky Nature\n- soak\n- superpower\n- assurance\n- drillrun\n\nfarfetchd (M) @ pidgeotite\nAbility: innerfocus\nLevel: 50\nEVs: 12 HP / 12 Atk / 10 Def / 8 SpA / 11 SpD / 13 Spe\nRash Nature\n- closecombat\n- irontail\n- bravebird\n- covet\n\nindeedee (M) @ heatrock\nAbility: psychicsurge\nLevel: 50\nEVs: 10 HP / 13 Atk / 15 Def / 9 SpA / 8 SpD / 11 Spe\nQuiet Nature\n- expandingforce\n- dazzlinggleam\n- drainingkiss\n- psyshock\n\nmanectric (F) @ manectite\nAbility: static\nLevel: 50\nEVs: 9 HP / 10 Atk / 6 Def / 10 SpA / 6 SpD / 4 Spe\nCareful Nature\n- lightscreen\n- trailblaze\n- hyperbeam\n- risingvoltage"
+  ],
+  "choices": [
+    {
+      "p1": "team 3541",
+      "p2": "team 5123"
+    },
+    {
+      "p1": "move 4, move 4 -1",
+      "p2": "move 1 2, move 2 1 mega"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 -2, move 2",
+      "p2": "move 2, move 3 1"
+    },
+    {
+      "p1": "switch 3, move 4 -1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 1 -2, move 2",
+      "p2": "move 4 2, move 4"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 2, move 3 1",
+      "p2": "move 3 1, move 1"
+    },
+    {
+      "p1": "move 3 -2, move 2 1",
+      "p2": "move 3 -2, switch 4"
+    },
+    {
+      "p1": "move 3 -2, move 2 -1",
+      "p2": "move 4 -2, move 1 2"
+    },
+    {
+      "p1": "move 3 -2, move 3 1",
+      "p2": "move 2, move 2 1"
+    }
+  ]
+}
