@@ -1,16 +1,11 @@
 /*
- * duoforge.state.pool_g33 (white-box): step G33 of the content expansion, the multi-hit moves Dual Wingbeat, Twin Beam and
- * Triple Axel and the ability Mirror Armor.
+ * duoforge.interactions.multiaccuracy_later_hits (white-box): step G33 of the content expansion, the later hits of a
+ * multiaccuracy move: they are checked with the loop's own arithmetic (scripts.ts:481-510), proved for the accuracy 90 only
+ * (every multiaccuracy move of the pool has it, another accuracy is refused), and the engine plays it only without a
+ * ModifyAccuracy handler on the user: a Triple Axel user with Wide Lens is refused at its second hit, E_UNSUPPORTED, never
+ * played with the first hit's arithmetic.
  *
- * The recorded battles (g33_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data with the
- * reference's draws, which compares everything that the reference shows. Here are the facts and the refusal that it does not
- * show:
- *
- *   - the marks and the handler numbers: the hit counts are in the handler ids (the static hit columns have no reader in the
- *     engine, duoforge.data.static_unread checks that); Population Bomb came later (step G48);
- *   - the later hits of a multiaccuracy move are checked with the loop's own arithmetic (scripts.ts:481-510), which the
- *     engine plays only without a ModifyAccuracy handler on the user: a Triple Axel user with Wide Lens (or Compound Eyes)
- *     is refused at its second hit, E_UNSUPPORTED, never played with the first hit's arithmetic.
+ * Split by subject from the test of step G33 (restructure step 6e; tests/renames.tsv maps the old name).
  */
 #include <stdio.h>
 #include <string.h>
@@ -27,22 +22,6 @@
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-
-static void check_facts(df_test *t)
-{
-    static const uint32_t moves[] = {DFI_MOVE_DUALWINGBEAT, DFI_MOVE_TRIPLEAXEL, DFI_MOVE_TWINBEAM};
-    for (size_t i = 0u; i < sizeof moves / sizeof moves[0]; ++i) {
-        DF_CHECK(t, dfi_support.moves[moves[i]] != 0u);
-    }
-    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MIRRORARMOR] != 0u);
-    DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_MIRRORARMOR], DFI_HANDLER_NONE);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_DUALWINGBEAT].special, DFI_SPECIAL_MULTI_HIT_2);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TWINBEAM].special, DFI_SPECIAL_MULTI_HIT_2);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].special, DFI_SPECIAL_TRIPLE_AXEL);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRIPLE_AXEL, DFI_SPECIAL_MULTI_HIT_2 + 1u);
-    /* Population Bomb is not one of this step's rows: step G48 marks it (MULTI_HIT_10, tests/moves/test_hits_taken_hazard_moves.c) */
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].accuracy, 90u);
-}
 
 /* The later-hit arithmetic is proved for the accuracy 90 only: every multiaccuracy move of the pool has it, and another
  * accuracy is refused (dfi_accuracy_check). The pool's multiaccuracy rows are checked against the helper here. */
@@ -173,8 +152,7 @@ static void check_refusal(df_test *t)
 int main(void)
 {
     df_test t;
-    df_test_begin(&t, "duoforge.state.pool_g33");
-    check_facts(&t);
+    df_test_begin(&t, "duoforge.interactions.multiaccuracy_later_hits");
     check_proven_accuracy(&t);
     check_refusal(&t);
     return df_test_end(&t);

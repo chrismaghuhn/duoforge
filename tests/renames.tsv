@@ -25,17 +25,17 @@ forms/test_pool_g59.c	duoforge.state.pool_g59	split	-	-	done	G59: six Mega abili
 forms/test_pool_g66.c	duoforge.state.pool_g66	rename	forms/test_stance_change.c	duoforge.forms.stance_change	done	G66: Aegislash, Stance Change and King's Shield
 forms/test_pool_mega2.c	duoforge.state.pool_mega2	split	-	-	done	Mega batch 2: four stones and Aura Guard
 interactions/test_pool_g27.c	duoforge.state.pool_g27	rename	interactions/test_cursed_body_disable.c	duoforge.interactions.cursed_body_disable	done	G27: Cursed Body and Disable
-interactions/test_pool_g30.c	duoforge.state.pool_g30	split	-	-	planned	G30: Rage Powder, the powder immunity and a batch of rows
-interactions/test_pool_g33.c	duoforge.state.pool_g33	split	-	-	planned	G33: the multi-hit moves and Mirror Armor
-interactions/test_pool_g34.c	duoforge.state.pool_g34	split	-	-	planned	G34: a batch of small rules
-interactions/test_pool_g35.c	duoforge.state.pool_g35	split	-	-	planned	G35: ten data rows, Rain Dish and Friend Guard
-interactions/test_pool_g39.c	duoforge.state.pool_g39	split	-	-	planned	G39: thirteen abilities and four moves
+interactions/test_pool_g30.c	duoforge.state.pool_g30	split	-	-	done	G30: Rage Powder, the powder immunity and a batch of rows
+interactions/test_pool_g33.c	duoforge.state.pool_g33	split	-	-	done	G33: the multi-hit moves and Mirror Armor
+interactions/test_pool_g34.c	duoforge.state.pool_g34	split	-	-	done	G34: a batch of small rules
+interactions/test_pool_g35.c	duoforge.state.pool_g35	split	-	-	done	G35: ten data rows, Rain Dish and Friend Guard
+interactions/test_pool_g39.c	duoforge.state.pool_g39	split	-	-	done	G39: thirteen abilities and four moves
 interactions/test_pool_g47.c	duoforge.state.pool_g47	rename	interactions/test_status_cures.c	duoforge.interactions.status_cures	done	G47: the status and volatile cures
 interactions/test_pool_g52.c	duoforge.state.pool_g52	rename	interactions/test_revival_blessing_view.c	duoforge.interactions.revival_blessing_view	done	G52: Revival Blessing's REVIVE and the information boundary
-interactions/test_pool_g67.c	duoforge.state.pool_g67	split	-	-	planned	G67: Magic Guard, Air Balloon and ITEM_SHOWN
+interactions/test_pool_g67.c	duoforge.state.pool_g67	split	-	-	done	G67: Magic Guard, Air Balloon and ITEM_SHOWN
 interactions/test_pool_g75.c	duoforge.state.pool_g75	split	-	-	planned	G75: Pure Power, Battle Armor and the cheap set
-interactions/test_pool_g77.c	duoforge.state.pool_g77	split	-	-	planned	G77: Magma Armor and the crit package
-interactions/test_pool_g83.c	duoforge.state.pool_g83	split	-	-	planned	G83: Bulletproof, Rivalry, Leaf Guard, Iron Ball
+interactions/test_pool_g77.c	duoforge.state.pool_g77	split	-	-	done	G77: Magma Armor and the crit package
+interactions/test_pool_g83.c	duoforge.state.pool_g83	split	-	-	done	G83: Bulletproof, Rivalry, Leaf Guard, Iron Ball
 interactions/test_pool_i2.c	duoforge.state.pool_i2	rename	interactions/test_illusion.c	duoforge.interactions.illusion	done	I2: Illusion
 interactions/test_pool_k4_draws.c	duoforge.state.pool_k4_draws	rename	interactions/test_gravity_accuracy_draws.c	duoforge.interactions.gravity_accuracy_draws	done	K4: Gravity's accuracy rule with changed draws
 items/test_pool_g16.c	duoforge.state.pool_g16	rename	items/test_knock_off.c	duoforge.items.knock_off	done	G16: Knock Off
@@ -138,3 +138,22 @@ moves/test_pool_g80.c	duoforge.state.pool_g80	part	abilities/test_stalwart_rando
 moves/test_pool_g86.c	duoforge.state.pool_g86	part	moves/test_power_move_rows.c	duoforge.moves.power_move_rows	done	G86: power move rows
 moves/test_pool_g86.c	duoforge.state.pool_g86	part	moves/test_heavy_slam.c	duoforge.moves.heavy_slam	done	G86: heavy slam
 moves/test_pool_g86.c	duoforge.state.pool_g86	part	moves/test_hard_press.c	duoforge.moves.hard_press	done	G86: hard press
+interactions/test_pool_g30.c	duoforge.state.pool_g30	part	interactions/test_rage_powder_batch_rows.c	duoforge.interactions.rage_powder_batch_rows	done	G30: rage powder batch rows
+interactions/test_pool_g30.c	duoforge.state.pool_g30	part	moves/test_rage_powder_view.c	duoforge.moves.rage_powder_view	done	G30: rage powder view
+interactions/test_pool_g33.c	duoforge.state.pool_g33	part	interactions/test_multi_hit_mirror_armor_rows.c	duoforge.interactions.multi_hit_mirror_armor_rows	done	G33: multi hit mirror armor rows
+interactions/test_pool_g33.c	duoforge.state.pool_g33	part	interactions/test_multiaccuracy_later_hits.c	duoforge.interactions.multiaccuracy_later_hits	done	G33: multiaccuracy later hits
+interactions/test_pool_g34.c	duoforge.state.pool_g34	part	interactions/test_small_rules_rows.c	duoforge.interactions.small_rules_rows	done	G34: small rules rows
+interactions/test_pool_g34.c	duoforge.state.pool_g34	part	interactions/test_modify_damage_chain_order.c	duoforge.interactions.modify_damage_chain_order	done	G34: modify damage chain order
+interactions/test_pool_g35.c	duoforge.state.pool_g35	part	interactions/test_rain_dish_friend_guard_rows.c	duoforge.interactions.rain_dish_friend_guard_rows	done	G35: rain dish friend guard rows
+interactions/test_pool_g35.c	duoforge.state.pool_g35	part	interactions/test_friend_guard_chain_order.c	duoforge.interactions.friend_guard_chain_order	done	G35: friend guard chain order
+interactions/test_pool_g39.c	duoforge.state.pool_g39	part	interactions/test_thirteen_abilities_rows.c	duoforge.interactions.thirteen_abilities_rows	done	G39: thirteen abilities rows
+interactions/test_pool_g39.c	duoforge.state.pool_g39	part	abilities/test_damp_sturdy_rows.c	duoforge.abilities.damp_sturdy_rows	done	G39: damp sturdy rows
+interactions/test_pool_g39.c	duoforge.state.pool_g39	part	interactions/test_hyper_cutter_flower_veil.c	duoforge.interactions.hyper_cutter_flower_veil	done	G39: hyper cutter flower veil
+interactions/test_pool_g67.c	duoforge.state.pool_g67	part	interactions/test_magic_guard_air_balloon.c	duoforge.interactions.magic_guard_air_balloon	done	G67: magic guard air balloon
+interactions/test_pool_g67.c	duoforge.state.pool_g67	part	mechanics/test_item_shown_fold.c	duoforge.mechanics.item_shown_fold	done	G67: item shown fold
+interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_crit_package_rows.c	duoforge.interactions.crit_package_rows	done	G77: crit package rows
+interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_modify_damage_bound.c	duoforge.interactions.modify_damage_bound	done	G77: modify damage bound
+interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_sniper_chain_order.c	duoforge.interactions.sniper_chain_order	done	G77: sniper chain order
+interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_magma_armor_frozen_refusals.c	duoforge.interactions.magma_armor_frozen_refusals	done	G77: magma armor frozen refusals
+interactions/test_pool_g83.c	duoforge.state.pool_g83	part	interactions/test_bulletproof_rivalry_leaf_guard_iron_ball.c	duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball	done	G83: bulletproof rivalry leaf guard iron ball
+interactions/test_pool_g83.c	duoforge.state.pool_g83	part	interactions/test_leaf_guard_mega_sol_refusal.c	duoforge.interactions.leaf_guard_mega_sol_refusal	done	G83: leaf guard mega sol refusal

@@ -1028,7 +1028,7 @@ const dfi_support_manifest dfi_support = {
      * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.moves.glaive_rush_tail_view). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
      * in duoforge.mechanics.aurora_veil). Step G30: Rage Powder (bit 39: RAGE_POWDER of the position's volatiles, public, the value
-     * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.state.pool_g30). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
+     * that decision 0018 gave it, at a PIVOT boundary only; verified against the g30 battles in duoforge.moves.rage_powder_view). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
      * announced, 3 to 1, verified against the g26 battles step by step in duoforge.moves.perish_song). */
     /* Step G38: Imprison (bit 12: IMPRISON of the position's volatiles, bit 2, public, verified against the g38 battles in
      * duoforge.moves.imprison). */

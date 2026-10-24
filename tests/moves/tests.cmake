@@ -78,3 +78,5 @@ duoforge_add_test(NAME duoforge.moves.attract SOURCES moves/test_attract.c WHITE
 # infatuated occupant, both players' views built into worlds and compared with the engine).
 duoforge_add_test(NAME duoforge.moves.attract_source_view SOURCES moves/test_attract_source_view.c WHITEBOX LIBS duoforge_batch TIMEOUT 600 TIER quick AREA moves)
 duoforge_add_test(NAME duoforge.moves.healing_wish SOURCES moves/test_healing_wish.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA moves)
+# Step G30: Rage Powder's RAGE_POWDER bit of the view extension (decision 0018, bit 39), told apart from Follow Me.
+duoforge_add_test(NAME duoforge.moves.rage_powder_view SOURCES moves/test_rage_powder_view.c WHITEBOX TIMEOUT 60 TIER quick AREA moves)

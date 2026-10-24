@@ -599,7 +599,7 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
     /* Hyper Cutter (step G39, data/abilities.ts:1940-1954, onTryBoost of the target itself, breakable): an Attack drop that
      * another Pokemon causes is deleted after Contrary and the cap (boost.atk is then set and negative), and the line
      * -fail|holder|unboost|atk|[from] ability: Hyper Cutter|[of] holder shows unless the effect is a move's secondary
-     * (effect.secondaries). No forme of the pool with it is a Grass type (tests/test_pool_g39.c), so as a forme it never meets
+     * (effect.secondaries). No forme of the pool with it is a Grass type (tests/interactions/test_hyper_cutter_flower_veil.c), so as a forme it never meets
      * a Flower Veil holder's handler; Skill Swap (step G70) can still give it to a Grass type next to a Flower Veil holder, and
      * that composition is not refused here (decision 0015 entry 5dy, a follow-up). */
     if (source != flat && source != DFI_POSITIONS && boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] < DFI_BIAS6 &&
@@ -655,7 +655,7 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
      * causes is deleted, and the line shows unless the effect is a move's secondary (effect.secondaries) or Octolock
      * (not in the pool). Like Flower Veil it sees the drop after Contrary and the cap. A Grass type that has Clear Body
      * and stands next to a Flower Veil holder would need the two handlers' order: no forme of the pool is both, and nothing
-     * that Trace could copy it onto is Grass (tests/test_pool_g30.c checks both), but Skill Swap (step G70) can give it to a
+     * that Trace could copy it onto is Grass (tests/interactions/test_rage_powder_batch_rows.c checks both), but Skill Swap (step G70) can give it to a
      * Grass type; that composition is not refused for Clear Body here (decision 0015 entry 5dy, a follow-up).
      * White Smoke (A2a, decision 0015 entry 5dy; data/abilities.ts:5473-5487) has Clear Body's callback word for word, its own
      * name in the line aside (gen_closure.py checks both texts): the same branch with its own id. Its only pool holder,
@@ -2727,7 +2727,7 @@ static void dfi_heal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause,
  * would take all of a full-HP holder's HP is -ability|holder|Sturdy and leaves 1 HP. The damage of a Move is a move hit and
  * the confusion hit (effectType 'Move', as for the Sash, combat/items/families.h); recoil, items, status and weather are not.
  * Its onTryHit makes the holder immune to OHKO moves: none is modelled (the generator refuses the field), which
- * tests/test_pool_g39.c pins. The ability is breakable: Mold Breaker is not marked. */
+ * tests/abilities/test_damp_sturdy_rows.c pins. The ability is breakable: Mold Breaker is not marked. */
 static bool dfi_sturdy_saves(dfi_run *r, uint32_t flat, uint32_t *damage)
 {
     const dfi_member *tm = dfi_at(r->b, flat);
@@ -6977,7 +6977,7 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_try_move(dfi_run *r, cons
      * Solar Beam's (step G30, data/moves.ts:17224-17258) is the same without the boost, with the sun in place of the
      * rain: the lines, the lock and its end are the two-turn move's, whichever move it is. The pin's
      * effectiveWeather asks Utility Umbrella (sun and rain are ignored for its holder) and Mega Sol (sun for a Mega Sol
-     * user's moves): neither is marked, tests/test_pool_g30.c checks it; ChargeMove is Power Herb's event, which is not
+     * user's moves): neither is marked, tests/interactions/test_rage_powder_batch_rows.c checks it; ChargeMove is Power Herb's event, which is not
      * in the pool either. */
     const bool charge_move = md->special == DFI_SPECIAL_ELECTRO_SHOT || md->special == DFI_SPECIAL_SOLAR_BEAM ||
                              md->special == DFI_SPECIAL_PHANTOM_FORCE;
