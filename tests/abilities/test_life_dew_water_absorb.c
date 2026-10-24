@@ -1,8 +1,10 @@
 /*
  * duoforge.abilities.life_dew_water_absorb (white-box): batch A2a of the Champions-100 track (decision 0015 entry 5dy), Life
- * Dew (a Water heal move of the user and its ally) at an ally with Water Absorb: the heal path does not run the TryHit
- * abilities, so it is refused before anything changes (g32_life_dew step 3 with Kingambit's ability changed); the user's own
- * Water Absorb is not asked (target === source) and the control plays.
+ * Dew (a Water heal move of the user and its ally) at an ally with Water Absorb (g32_life_dew step 3 with Kingambit's ability
+ * changed). A2a refused it (the heal path did not run the TryHit abilities); since decision 0015 entry 5ed (issue 641) the heal
+ * path runs them, so the step plays and the ally's line is Water Absorb's (a heal with [of] the user, or -immune at full HP;
+ * the recorded battle is life_dew_water_absorb, the white-box test duoforge.abilities.life_dew_try_hit). The user's own Water
+ * Absorb is not asked (target === source) and the control plays.
  *
  * Split by subject from the test of step A2a (restructure step 6e; tests/renames.tsv maps the old name).
  */
@@ -44,33 +46,31 @@ static void check_life_dew(df_test *t, const duoforge_context *ctx)
         return;
     }
     const df_conf_step *st = &cb->steps[3];
-    duoforge_decision_bundle bd;
-    df_conf_bundle_of(st, b, &bd);
     for (uint32_t variant = 0u; variant < 3u; ++variant) {
         duoforge_battle *x = NULL;
         if (!DF_CHECK(t, duoforge_battle_clone(ctx, b, &x) == DUOFORGE_OK)) {
             continue;
         }
         if (variant == 1u) {
-            x->tail.sides[0].ability_now[ally] = (uint16_t)AB(WATERABSORB); /* the ally: refused */
+            x->tail.sides[0].ability_now[ally] = (uint16_t)AB(WATERABSORB); /* the ally: its TryHit runs (5ed) */
         } else if (variant == 2u) {
             x->tail.sides[0].ability_now[milotic] = (uint16_t)AB(WATERABSORB); /* the user itself: not asked */
         }
         DF_CHECK(t, duoforge_battle_check(ctx, x) == DUOFORGE_OK);
-        duoforge_battle *before = NULL;
-        DF_CHECK(t, duoforge_battle_clone(ctx, x, &before) == DUOFORGE_OK);
-        duoforge_step_result res;
-        uint32_t used = 0u;
-        const duoforge_status s = dfi_battle_step_tape(ctx, x, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
-        if (variant == 1u) {
-            DF_CHECK(t, s == DUOFORGE_E_UNSUPPORTED);
-            bool equal = false;
-            DF_CHECK(t, before != NULL && duoforge_battle_equal(ctx, x, before, &equal) == DUOFORGE_OK && equal);
-        } else {
-            DF_CHECK(t, s == DUOFORGE_OK);
-            DF_CHECK_EQ_U64(t, used, st->tape_len);
+        static df_conf_run run;
+        df_conf_run_step(ctx, x, st, &run);
+        DF_CHECK(t, run.status == DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, run.used, st->tape_len);
+        /* The ally's line from Water Absorb: one in the ally variant (5ed: no longer refused), none otherwise. */
+        uint32_t absorbed = 0u;
+        for (uint32_t i = 0u; i < run.count; ++i) {
+            const duoforge_event *e = &run.events[i];
+            absorbed += (e->kind == DUOFORGE_EVENT_HEAL || e->kind == DUOFORGE_EVENT_IMMUNE) && e->position == 1u &&
+                                e->cause == DUOFORGE_CAUSE_ABILITY && e->id2 == AB(WATERABSORB)
+                            ? 1u
+                            : 0u;
         }
-        duoforge_battle_destroy(before);
+        DF_CHECK_EQ_U64(t, absorbed, variant == 1u ? 1u : 0u);
         duoforge_battle_destroy(x);
     }
     duoforge_battle_destroy(b);
