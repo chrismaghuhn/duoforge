@@ -1,0 +1,33 @@
+{
+  "name": "fz552_illusion_damaginghit_order",
+  "purpose": "Illusion's onDamagingHit has no order (data/abilities.ts:2071-2075), so the disguise ends after the ordered DamagingHit handlers and, among the unordered ones, in target order (compareLeftToRightOrder, sim/battle.ts:421-426). Step 1: Golurk's Iron Head hits Zoroark-Hisui (p1b, disguised as Banette, holding a Rocky Helmet): the helmet's -damage on Golurk comes before replace / -end Illusion. Step 4: Rock Slide hits Polteageist (p1a, Weak Armor) and Zoroark-Hisui, disguised again after a switch: Weak Armor's lines come before the replace (issue 552). Synthetic teams; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,5520000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "polteageist @ silkscarf\nAbility: weakarmor\nLevel: 50\nEVs: 10 HP / 10 Atk / 10 Def / 10 SpA / 10 SpD / 10 Spe\nHardy Nature\n- protect\n- shadowball\n- nastyplot\n- gigadrain\n\nzoroarkhisui (F) @ rockyhelmet\nAbility: illusion\nLevel: 50\nEVs: 14 HP / 7 Atk / 6 Def / 18 SpA / 11 SpD / 10 Spe\nCalm Nature\n- throatchop\n- aerialace\n- nastyplot\n- substitute\n\nvenusaur (M) @ whiteherb\nAbility: chlorophyll\nLevel: 50\nEVs: 15 HP / 14 Atk / 9 Def / 10 SpA / 12 SpD / 6 Spe\nJolly Nature\n- petalblizzard\n- bodyslam\n- outrage\n- earthpower\n\nbanette (M) @ charcoal\nAbility: frisk\nLevel: 50\nEVs: 9 HP / 9 Atk / 11 Def / 13 SpA / 10 SpD / 14 Spe\nMild Nature\n- darkpulse\n- thunder\n- destinybond\n- nastyplot\n\nprimarina (M) @ widelens\nAbility: torrent\nLevel: 50\nEVs: 10 HP / 13 Atk / 13 Def / 14 SpA / 9 SpD / 7 Spe\nBrave Nature\n- psychup\n- acrobatics\n- sing\n- reflect\n\nsandaconda (M) @ scraftinite\nAbility: sandveil\nLevel: 50\nEVs: 7 HP / 10 Atk / 10 Def / 7 SpA / 13 SpD / 19 Spe\nCareful Nature\n- irondefense\n- mudslap\n- substitute\n- earthpower",
+    "taurospaldeacombat (M) @ sceptilite\nAbility: intimidate\nLevel: 50\nEVs: 12 HP / 12 Atk / 12 Def / 9 SpA / 13 SpD / 8 Spe\nRelaxed Nature\n- lashout\n- protect\n- rockslide\n- doubleedge\n\ngolurk\nAbility: ironfist\nLevel: 50\nEVs: 7 HP / 15 Atk / 10 Def / 12 SpA / 9 SpD / 13 Spe\nQuirky Nature\n- rockslide\n- phantomforce\n- ironhead\n- closecombat\n\nhippowdon (M) @ chandelurite\nAbility: sandforce\nLevel: 50\nEVs: 13 HP / 6 Atk / 9 Def / 10 SpA / 11 SpD / 17 Spe\nImpish Nature\n- superpower\n- bodyslam\n- helpinghand\n- whirlwind\n\npangoro (F) @ fairyfeather\nAbility: ironfist\nLevel: 50\nEVs: 9 HP / 6 Atk / 18 Def / 15 SpA / 8 SpD / 10 Spe\nHasty Nature\n- focusblast\n- sunnyday\n- superpower\n- rocktomb\n\nbellibolt (F) @ smoothrock\nAbility: static\nLevel: 50\nEVs: 10 HP / 15 Atk / 12 Def / 8 SpA / 13 SpD / 8 Spe\nDocile Nature\n- weatherball\n- thunderbolt\n- confuseray\n- wildcharge\n\nscolipede (M) @ scolipite\nAbility: speedboost\nLevel: 50\nEVs: 13 HP / 8 Atk / 7 Def / 5 SpA / 9 SpD / 12 Spe\nHardy Nature\n- sunnyday\n- megahorn\n- assurance\n- throatchop"
+  ],
+  "choices": [
+    {
+      "p1": "team 1234",
+      "p2": "team 1234"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 2, move 3 2"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "move 4 1, move 3 2"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "move 2, move 4 1"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 3, move 4 1"
+    }
+  ]
+}

@@ -70,9 +70,9 @@ duoforge_add_test(NAME duoforge.interactions.cursed_body_disable SOURCES interac
 # Step I2 (decision 0026, amended by I2): Illusion, the disguise, the break, the foe view, the causes (white-box).
 duoforge_add_test(NAME duoforge.interactions.illusion SOURCES interactions/test_illusion.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA interactions)
 
-# Step G75 (decision 0015 5bp): the cheap set, Pure Power, Battle Armor and Scope Lens (engine rows), the stones Medichamite and
-# Clefablite, and the two Mega pairs (white-box).
-duoforge_add_test(NAME duoforge.state.pool_g75 SOURCES interactions/test_pool_g75.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
+# Step G75 (decision 0015 5bp): the cheap set, Pure Power, Battle Armor and Scope Lens (engine rows, white-box); its stones
+# Medichamite and Clefablite and their Mega pairs are a section of tests/forms/test_mega_stones.c.
+duoforge_add_test(NAME duoforge.interactions.cheap_set_rows SOURCES interactions/test_cheap_set_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA interactions)
 
 # Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
 # pops, the immunity, the switch-in line ITEM_SHOWN); the fold that ignores ITEM_SHOWN is in tests/mechanics.
