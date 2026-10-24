@@ -20,8 +20,10 @@
  *   - f639_balloon_cursed_body: Gengar (p2a, Cursed Body) hit by Bullet Punch: its roll (drawn before the pop) succeeds, the
  *     VOLATILE_START of Disable on Lucario (p1a) from Cursed Body, ITEM_END, then Floette-Eternal's Symbiosis.
  *
- * The old order (the pop before the holder's abilities, main before 5eb) puts ITEM_END and the Symbiosis pass in front of the
- * ability events and fails every case; the conformance replay of the same battles fails on it too.
+ * The engine fix is decision 0015 entry 5fa (c) (issue 546, PR #628); this test and the three battles are the evidence of 5eb for
+ * the other holders of issue 639. The old order (the pop before the holder's other abilities, main before 5fa) puts ITEM_END and
+ * the Symbiosis pass in front of the ability events and fails every case; the conformance replay of the same battles fails on
+ * it too.
  */
 #include <stdbool.h>
 #include <stdio.h>
