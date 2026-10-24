@@ -7773,6 +7773,26 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_steps(dfi_run *r, con
     return DUOFORGE_OK;
 }
 
+/* Illusion (decision 0026 section 4): a damaging move hit of any user, an ally included, ends the disguise of the target.
+ * Its replace and -end lines are one ILLUSION_END event; the owner's and the foe's folds read it. The pin's handler is the
+ * holder's onDamagingHit with no order (data/abilities.ts:2071-2075), so it sorts after the ordered handlers (Rough Skin 1,
+ * Rocky Helmet 2: their -damage on the attacker comes first) and among the unordered ones by the target's index
+ * (compareLeftToRightOrder, sim/battle.ts:421-426: an earlier target's Weak Armor or Cursed Body lines come first; issue
+ * 552). It is the holder's one ability, so its place among the holder's own handlers is the ability's: after its status
+ * (a thaw), before its item (Air Balloon) and the attacker's Poison Touch. A holder the hit knocked out runs it too (the
+ * faint is not processed yet). */
+static void dfi_illusion_break(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_tail_pos *dp = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (dp->ability_state != 0u && dfi_ability(b, dfi_at(b, flat), DFI_ABILITY_ILLUSION)) {
+        dp->ability_state = 0u;
+        duoforge_event ie = dfi_event_make(DUOFORGE_EVENT_ILLUSION_END, flat);
+        ie.id = (uint16_t)b->sides[flat / 2u].positions[flat % 2u].occupant;
+        dfi_emit_hp(r, ie);
+    }
+}
+
 /* Phase 6 of dfi_run_move_body: the hit loop. */
 static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, const dfi_queue_record *q, bool *ran,
                                                                 dfi_move_body_state *c, uint32_t *targets, bool *hit,
@@ -8333,29 +8353,12 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 }
             }
         }
-        /* Illusion (decision 0026 section 4; the pin's DamagingHit, sim/battle-actions.ts:1118-1130): a damaging move hit of
-         * any user, an ally included, ends the disguise of the target. Its replace and -end lines are one ILLUSION_END event,
-         * after the self effects and secondaries of the hit and before the DamagingHit handlers, as the pin orders them (an unboost of the
-         * same hit shows before the replace line). The owner's and the foe's folds read it. */
         /* DamagingHit, its handlers by order, then target (compareLeftToRightOrder,
          * sim/battle.ts:421-426). Rocky Helmet (Team C, onDamagingHitOrder 2,
          * data/items.ts:5295-5309) comes first, also when the hit knocked its
          * holder out (the faint is not processed yet): a contact move costs the
          * attacker floor(maxHP / 6), at least 1. */
         const uint32_t user_before_hit = m->hp;
-        /* The break of each target that this hit damaged (the DamagingHit step, after the secondaries). */
-        for (uint32_t i = 0u; i < count; ++i) {
-            if (!hit[i]) {
-                continue;
-            }
-            dfi_tail_pos *dp = &b->tail.sides[targets[i] / 2u].positions[targets[i] % 2u];
-            if (dp->ability_state != 0u && dfi_ability(b, dfi_at(b, targets[i]), DFI_ABILITY_ILLUSION)) {
-                dp->ability_state = 0u;
-                duoforge_event ie = dfi_event_make(DUOFORGE_EVENT_ILLUSION_END, targets[i]);
-                ie.id = (uint16_t)b->sides[targets[i] / 2u].positions[targets[i] % 2u].occupant;
-                dfi_emit_hp(r, ie);
-            }
-        }
         /* Rough Skin (POOL data, data/abilities.ts:3938-3950) is the order-1 handler, before Rocky Helmet's 2: a contact
          * move costs the attacker floor(maxHP / 8), at least 1, with [from] ability: Rough Skin [of] the holder, also
          * when the hit knocked the holder out. A contact move is one with the contact flag (checkMoveMakesContact,
@@ -8396,6 +8399,7 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                  * ... [from] ability: Cursed Body [of] holder` shows before the faint line, recorded in g27_cursed_body_a) and
                  * Flame Body (step G30: it draws its roll too) and the attacker's Poison Touch: it draws its roll (the handler
                  * runs, trySetStatus then fails). */
+                dfi_illusion_break(r, targets[i]); /* issue 552: the holder's own ability handler, a down holder too */
                 st = dfi_toxic_debris(r, user, targets[i], md); /* step G37: the target's own handler, one ability per holder */
                 if (st != DUOFORGE_OK) {
                     return dfi_move_body_stop(stop, st);
@@ -8447,6 +8451,7 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 tm->status_counter = 0u;
                 r->b->tail.sides[targets[i] / 2u].sleep_cant[dfi_pos(r->b, targets[i])->occupant] = 0u; /* decision 0066 */
             }
+            dfi_illusion_break(r, targets[i]); /* issue 552: the holder's own ability handler, after its status's (the thaw) */
             if (dfi_ability(r->b, tm, DFI_ABILITY_STAMINA)) {
                 static const uint8_t def_up[DFI_STAT_STAGE_COUNT] = {6u, 7u, 6u, 6u, 6u, 6u, 6u};
                 dfi_boost(r, targets[i], def_up, user,
