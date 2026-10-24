@@ -1,0 +1,21 @@
+{
+  "name": "fz553_ghost_curse_no_target",
+  "purpose": "A Ghost Curse aimed at an ally with no foe standing: Chandelure and Polteageist (p2) faint by their own Memento at step 1 before Trevenant (p1a, Ghost) uses Curse on its ally. The Champions onModifyMove makes the target randomNormal, getRandomTarget draws nothing and returns the fainted foe.active[0] (sim/battle.ts:2512-2521), and useMove shows |move|...|Curse|p2: Chandelure|[notarget] and -fail. On main the engine stopped with E_INVARIANT in dfi_curse_targets (issue 553, fz_334_84). Synthetic teams; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,5530000000000000000000000000000000000000000000000000000000000006",
+  "teams": [
+    "primarina (M) @ widelens\nAbility: torrent\nLevel: 50\nEVs: 10 HP / 13 Atk / 13 Def / 14 SpA / 9 SpD / 7 Spe\nBrave Nature\n- psychup\n- acrobatics\n- sing\n- reflect\n\nmeganium (M) @ mawilite\nAbility: overgrow\nLevel: 50\nEVs: 11 HP / 11 Atk / 4 Def / 10 SpA / 9 SpD / 21 Spe\nNaughty Nature\n- grassyglide\n- leafstorm\n- doubleedge\n- gigadrain\n\ntrevenant (M) @ silkscarf\nAbility: frisk\nLevel: 50\nEVs: 15 HP / 7 Atk / 16 Def / 10 SpA / 5 SpD / 1 Spe\nBrave Nature\n- curse\n- poltergeist\n- energyball\n- woodhammer\n\nvenusaur (M) @ whiteherb\nAbility: chlorophyll\nLevel: 50\nEVs: 15 HP / 14 Atk / 9 Def / 10 SpA / 12 SpD / 6 Spe\nJolly Nature\n- petalblizzard\n- bodyslam\n- outrage\n- earthpower\n\nsandaconda (M) @ scraftinite\nAbility: sandveil\nLevel: 50\nEVs: 7 HP / 10 Atk / 10 Def / 7 SpA / 13 SpD / 19 Spe\nCareful Nature\n- irondefense\n- mudslap\n- substitute\n- earthpower\n\nbanette (M) @ charcoal\nAbility: frisk\nLevel: 50\nEVs: 9 HP / 9 Atk / 11 Def / 13 SpA / 10 SpD / 14 Spe\nMild Nature\n- darkpulse\n- thunder\n- destinybond\n- nastyplot",
+    "polteageist @ mawilite\nAbility: cursedbody\nLevel: 50\nEVs: 5 HP / 8 Atk / 5 Def / 7 SpA / 5 SpD / 5 Spe\nJolly Nature\n- skillswap\n- gigaimpact\n- memento\n- strengthsap\n\nbellibolt (F) @ smoothrock\nAbility: static\nLevel: 50\nEVs: 10 HP / 15 Atk / 12 Def / 8 SpA / 13 SpD / 8 Spe\nDocile Nature\n- weatherball\n- thunderbolt\n- confuseray\n- wildcharge\n\nchandelure (F) @ absolite\nAbility: flamebody\nLevel: 50\nEVs: 5 HP / 10 Atk / 11 Def / 11 SpA / 14 SpD / 15 Spe\nRash Nature\n- memento\n- trailblaze\n- trickroom\n- haze\n\ngolurk\nAbility: ironfist\nLevel: 50\nEVs: 7 HP / 15 Atk / 10 Def / 12 SpA / 9 SpD / 13 Spe\nQuirky Nature\n- rockslide\n- phantomforce\n- ironhead\n- closecombat\n\nhippowdon (M) @ chandelurite\nAbility: sandforce\nLevel: 50\nEVs: 13 HP / 6 Atk / 9 Def / 10 SpA / 11 SpD / 17 Spe\nImpish Nature\n- superpower\n- bodyslam\n- helpinghand\n- whirlwind\n\nscolipede (M) @ scolipite\nAbility: speedboost\nLevel: 50\nEVs: 13 HP / 8 Atk / 7 Def / 5 SpA / 9 SpD / 12 Spe\nHardy Nature\n- sunnyday\n- megahorn\n- assurance\n- throatchop"
+  ],
+  "choices": [
+    {
+      "p1": "team 3124",
+      "p2": "team 3124"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 1 1, move 3 2"
+    }
+  ]
+}

@@ -473,6 +473,10 @@ class _EventFold:
             self._conditions[detail][index] = turns
         elif kind == EV["SIDE_END"]:
             self._conditions[detail][_SIDE_CONDITION[amount]] = 0
+        elif kind == EV["ITEM_END"] and detail == 1:
+            # a resist berry's [weaken] line: its [eat] line already took the berry, and an ally's Symbiosis may have
+            # given the eater a new item since (issue 553)
+            pass
         elif kind == EV["ITEM_END"]:
             m = self._occupant(pos)
             m.revealed |= REVEALED_ITEM_CONSUMED

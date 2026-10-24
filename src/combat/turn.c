@@ -546,26 +546,15 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         const uint32_t delta = to + 6u - (uint32_t)pos->stages[i];
         capped[i] = (uint8_t)delta; /* 0..12 */
     }
-    /* TryBoost (after Contrary and the cap): Flower Veil deletes every drop that another Pokemon causes on a Grass
-     * type of its side (sim/battle.ts:2030-2033, data/abilities.ts:1419-1437); the line shows unless the effect is a
-     * move's secondary (effect.secondaries): Intimidate's does, Snarl's does not. */
+    /* TryBoost (after Contrary and the cap), its handlers in the pin's order (sim/battle.ts:2034 runEvent): the higher
+     * onTryBoostPriority first, Guard Dog's 2 before every other handler here (default 0). */
     bool veil[DFI_STAT_STAGE_COUNT] = {false, false, false, false, false, false, false};
-    uint32_t holder = 0u;
-    bool flower_veiled = false; /* Flower Veil deleted a drop (A2a: read by the Illuminate and White Smoke refusals below) */
-    if (source != flat && source != DFI_POSITIONS && dfi_flower_veil_holder(b, flat, &holder)) {
-        bool any = false;
-        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-            veil[i] = boosts[i] != DFI_BIAS6 && capped[i] < DFI_BIAS6;
-            any = any || veil[i];
-        }
-        flower_veiled = any;
-        if (any && !(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
-            dfi_flower_veil_block(r, flat, holder);
-        }
-    }
-    /* Guard Dog (step G46, data/abilities.ts:1727-1744, onTryBoost of the holder, breakable): an Intimidate change of Attack
-     * is deleted and the holder's Attack rises by 1 instead (`this.boost({ atk: 1 }, target, target, null, ...)`: a boost
-     * with no effect, so its line has no [from]). Its line is the nested boost's; nothing shows for the deleted drop. */
+    /* Guard Dog (step G46, data/abilities.ts:1727-1744, onTryBoost of the holder, onTryBoostPriority 2, breakable): an
+     * Intimidate change of Attack is deleted and the holder's Attack rises by 1 instead (`this.boost({ atk: 1 }, target,
+     * target, null, ...)`: a boost with no effect, so its line has no [from]). Its line is the nested boost's; nothing
+     * shows for the deleted drop. It runs before Flower Veil (decision 0015 entry 5ec, issue 640): on a Grass holder
+     * (Skill Swap, step G70, gives Guard Dog to one) next to a Flower Veil holder the drop is already gone when Flower
+     * Veil looks, so no -block shows. */
     if (effect.cause == DUOFORGE_CAUSE_ABILITY && effect.id2 == 1u + DFI_ABILITY_INTIMIDATE &&
         boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] != DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_GUARDDOG)) {
         veil[DFI_STAGE_ATK] = true;
@@ -573,6 +562,23 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         /* The nested boost's effect is the running handler, Guard Dog (boost() defaults to this.effect): its line is
          * -ability|holder|Guard Dog|boost, then the -boost line (sim/battle.ts boost). */
         (void)dfi_boost(r, flat, guard_dog_atk_up, flat, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_GUARDDOG, DFI_BOOST_PRIMARY));
+    }
+    /* Flower Veil deletes every drop that another Pokemon causes on a Grass type of its side (sim/battle.ts:2030-2033,
+     * data/abilities.ts:1419-1437) and that is still in the boost (a drop Guard Dog deleted is not); the line shows
+     * unless the effect is a move's secondary (effect.secondaries): Intimidate's does, Snarl's does not. */
+    uint32_t holder = 0u;
+    bool flower_veiled = false; /* Flower Veil deleted a drop (A2a: read by the Illuminate and White Smoke refusals below) */
+    if (source != flat && source != DFI_POSITIONS && dfi_flower_veil_holder(b, flat, &holder)) {
+        bool any = false;
+        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+            const bool drop = !veil[i] && boosts[i] != DFI_BIAS6 && capped[i] < DFI_BIAS6;
+            veil[i] = veil[i] || drop;
+            any = any || drop;
+        }
+        flower_veiled = any;
+        if (any && !(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
+            dfi_flower_veil_block(r, flat, holder);
+        }
     }
     /* Inner Focus (step G22, POOL data, data/abilities.ts:2157-2162): TryBoost, a change that the effect named
      * Intimidate would make to Attack (boost.atk is set: a change the cap already took to 0 is not) is deleted, and
@@ -3696,8 +3702,9 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
  * the user's own never does (target !== source); Soundproof (:4436-4452, a sound move) is unmarked, the other marked
  * abilities with an onTryHit read a type that Perish Song (Normal) is not (Flash Fire, Lightning Rod) or a priority
  * above 0 (Armor Tail; Psychic Terrain: refused below), Protect and Wide Guard let a move without the protect flag
- * through (checkMoveBypassesProtect, sim/battle.ts:1300-1309), and no semi-invulnerable move is marked, so the
- * Invulnerability event misses nothing. A Pokemon that gets the volatile shows nothing now (-start perish3 is [silent];
+ * through (checkMoveBypassesProtect, sim/battle.ts:1300-1309). The Invulnerability event comes first (:13246): a
+ * semi-invulnerable Pokemon (Phantom Force's charge, dfi_invulnerable_to: not against No Guard) is -miss|user|target, gets
+ * nothing and counts as a result (issue 553). A Pokemon that gets the volatile shows nothing now (-start perish3 is [silent];
  * the first count is the residual's); if at least one did, -fieldactivate|move: Perish Song follows. A move that did
  * nothing (every active Pokemon has it already) fails with -fail and [still] (moveHit, sim/battle-actions.ts:1302-1308).
  * The hit loop's Update does not run, as for the other field moves. */
@@ -3712,6 +3719,12 @@ static duoforge_status dfi_run_perish_song(dfi_run *r, uint32_t user, const dfi_
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         const dfi_member *t = dfi_at(b, flat);
         if (t == NULL || t->hp == 0u) {
+            continue;
+        }
+        if (dfi_invulnerable_to(r, user, flat, DFI_MOVE_PERISHSONG)) {
+            const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, flat);
+            dfi_emit(r, &miss); /* -miss|user|target, no [miss] on the move line (onHitField's own add) */
+            result = true;
             continue;
         }
         if (flat != user && dfi_ability(b, t, DFI_ABILITY_GOODASGOLD)) {
@@ -5275,7 +5288,7 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
         return dfi_status_hit_end(r);
     }
     if (count != 1u || target >= DFI_POSITIONS) {
-        return DUOFORGE_E_INVARIANT; /* dfi_curse_targets always leaves one target for a Ghost user */
+        return DUOFORGE_E_INVARIANT; /* one target, or none (no foe: failed before this) */
     }
     if (target != user && dfi_invulnerable_to(r, user, target, DFI_MOVE_CURSE)) {
         /* The Invulnerability step (step G58, sim/battle-actions.ts:556) comes before Good as Gold's TryHit, as for Coaching: a
@@ -5348,6 +5361,7 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
  *     battle-actions.ts useMove draws getRandomTarget twice (after singleEvent ModifyMove and after runEvent ModifyMove); the
  *     second draw is the target (verified by the trace of g84b_ally_random: two RANDOM_TARGET draws, one line).
  *   - a foe: kept, no draw.
+ * With no foe standing the draws draw nothing and the move has no target (count 0).
  * A user without the Ghost type targets itself (onModifyMove sets 'self'), with no draw. */
 static duoforge_status dfi_curse_targets(dfi_run *r, uint32_t user, uint32_t targets[DFI_POSITIONS], uint32_t *count)
 {
@@ -5373,7 +5387,11 @@ static duoforge_status dfi_curse_targets(dfi_run *r, uint32_t user, uint32_t tar
         return st;
     }
     if (second >= DFI_POSITIONS) {
-        return DUOFORGE_E_INVARIANT;
+        /* No foe stands (issue 553): getRandomTarget draws nothing and returns the fainted foe.active[0] (side.randomFoe() is
+         * null, sim/battle.ts:2521), getMoveTargets finds no target, and useMove shows [notarget] and -fail (the move body's
+         * path for a move with nothing to hit). */
+        *count = 0u;
+        return DUOFORGE_OK;
     }
     targets[0] = second;
     *count = 1u;
@@ -8195,11 +8213,12 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
             }
         }
         /* Double Shock's self onHit (decision 0025, data/moves.ts:3960-3964, selfDrops: once for every target that was not ruled out,
-         * with no test of the user's HP): the type Electric becomes ??? and the -start line shows ???/Fighting. */
+         * with no test of the user's HP): the type Electric becomes ??? and the -start line shows ???/Fighting. A target whose hit a
+         * Substitute took is null, not false (data/mods/champions/scripts.ts:349-352), so it counts too (issue 553). */
         if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
             bool hit_any = false;
             for (uint32_t i = 0u; i < count; ++i) {
-                hit_any = hit_any || hit[i];
+                hit_any = hit_any || hit[i] || sub_off[i];
             }
             if (hit_any) {
                 st = dfi_double_shock_self(r, user, move_id);
@@ -9390,8 +9409,10 @@ static duoforge_status dfi_leech_drain(dfi_run *r, uint32_t holder)
     if (lost == 0u || t->hp == 0u) {
         return DUOFORGE_OK;
     }
-    /* Pokemon.heal (sim/pokemon.ts:1640-1652): nothing at full HP, else the amount, capped at the max; the line is silent */
-    if (t->hp >= t->hp_max) {
+    /* Battle.heal runs TryHeal first (sim/battle.ts:2271-2272): Heal Block's onTryHeal returns false (data/moves.ts:8324-8333),
+     * so a heal-blocked target gains nothing, silently (issue 553). Pokemon.heal (sim/pokemon.ts:1640-1652): nothing at full
+     * HP, else the amount, capped at the max; the line is silent */
+    if (t->hp >= t->hp_max || dfi_heal_blocked(b, target)) {
         return DUOFORGE_OK;
     }
     const uint32_t hp = (uint32_t)t->hp + lost;

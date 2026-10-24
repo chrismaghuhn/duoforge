@@ -85,3 +85,5 @@ duoforge_add_test(NAME duoforge.abilities.stalwart_random_move SOURCES abilities
 duoforge_add_test(NAME duoforge.abilities.damp_sturdy_rows SOURCES abilities/test_damp_sturdy_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
 # 5ed (-): Life Dew runs the TryHit abilities of its ally. Scaffolded by tools/new_mechanic.py.
 duoforge_add_test(NAME duoforge.abilities.life_dew_try_hit SOURCES abilities/test_life_dew_try_hit.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+# Decision 0015 entry 5ec (issue 640): Guard Dog before Flower Veil on a Grass holder (onTryBoostPriority 2), and its two neighbours.
+duoforge_add_test(NAME duoforge.abilities.guard_dog_flower_veil SOURCES abilities/test_guard_dog_flower_veil.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
