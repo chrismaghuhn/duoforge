@@ -907,8 +907,9 @@ def queue_record_valid(st, r):
     if r['kind'] in (Q_RUN_SWITCH, Q_MEGA):
         return plain and bound and r['reserve'] == 0
     if r['kind'] == Q_MOVE:
-        # DFI_QRES_*: the order class 0, 1, 2 in bits 0-1 (G62); bits 2-4 the original target of a Stalwart user (issue 541)
-        return (bound and (r['reserve'] & 3) <= 2 and (r['reserve'] >> 2) <= 7 and r['move_slot'] <= MOVE_SLOT_RECHARGE
+        # DFI_QRES_*: the order class 0, 1, 2 in bits 0-1 (G62); bits 2-4 the original target of a Stalwart user (issue 541);
+        # bit 5 Quick Claw's fraction (decision 0015 entry 5eh); bits 6-7 zero
+        return (bound and (r['reserve'] & 3) <= 2 and (r['reserve'] >> 6) == 0 and r['move_slot'] <= MOVE_SLOT_RECHARGE
                 and (r['target'] < 4 or r['target'] == TARGET_NONE))
     return r == qrec(Q_RESIDUAL)
 

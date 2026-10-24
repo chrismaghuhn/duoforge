@@ -146,6 +146,8 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'CUTE_CHARM': 24,  # 24: step G71, Cute Charm's roll (DFI_SITE_CUTE_CHARM), randomChance(3, 10)
          'ATTRACT': 25,  # 25: step G71, Attract's roll before the move (DFI_SITE_ATTRACT), randomChance(1, 2)
          'POISON_POINT': 26,  # 26: A2a (decision 0015 5dy, HS grant), Poison Point's roll (DFI_SITE_POISON_POINT), randomChance(3, 10)
+         'QUICK_CLAW': 27,  # 27: decision 0015 5eh (HS grant), Quick Claw's roll at resolveAction (DFI_SITE_QUICK_CLAW), randomChance(1, 5)
+         'FOCUS_BAND': 28,  # 28: decision 0015 5eh (HS grant), Focus Band's roll in the holder's Damage event (DFI_SITE_FOCUS_BAND), randomChance(1, 10)
          'PARTIAL_TRAP_TURNS': 32,  # 32: step G90, the partial trap's turns (DFI_SITE_PARTIAL_TRAP_TURNS)
          'ALLY_SWITCH': 33}  # 33: step G80, Ally Switch's consecutive-use roll (DFI_SITE_ALLY_SWITCH)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
@@ -2180,6 +2182,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['ABILITY'], 0, tables['ABILITY'][key(what[9:])] + 1)
+            elif what in ('item: Quick Claw', 'item: Focus Band'):
+                # Decision 0015 entry 5eh: `-activate|X|item: Quick Claw` (data/items.ts:4994, its roll at resolveAction) and
+                # `-activate|X|item: Focus Band` (:2262, the holder keeps 1 HP): ACTIVATE with cause ITEM, id2 the item + 1. The pin
+                # prints them with no other argument and no attribute; anything else is refused.
+                if len(args) != 2 or attrs or pos is None:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail=what)
+                e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['ITEM'], 0, tables['ITEM'][key(what[6:])] + 1)
             elif what == 'move: Substitute' and attrs == ['[damage]']:
                 # Substitute (decision 0032): an absorbed hit, `-activate|X|move: Substitute|[damage]`. The line names no
                 # amount: the Substitute's HP is never public.

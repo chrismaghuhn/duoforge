@@ -93,6 +93,12 @@ const CONDITION_SITES = {
     // Ally Switch's consecutive use (step G80, decision 0044): randomChance(1, counter) in the condition's onRestart
     // (data/moves.ts:338-347). It was an UNKNOWN draw before, so the harness version stays (as above).
     'allyswitch:Restart': 'ALLY_SWITCH',
+    // Quick Claw and Focus Band (decision 0015 entry 5eh): Quick Claw's randomChance(1, 5) in onFractionalPriority, which
+    // resolveAction runs (data/items.ts:4989-5005, sim/battle-queue.ts:249), and Focus Band's randomChance(1, 10) in onDamage
+    // (data/items.ts:2253-2268, the Damage event of sim/battle.ts:2121). Both were UNKNOWN draws before (no committed trace has
+    // one: neither item was marked), so the harness version stays.
+    'quickclaw:FractionalPriority': 'QUICK_CLAW',
+    'focusband:Damage': 'FOCUS_BAND',
     // Moody (step G73): its two this.sample calls in onResidual (data/abilities.ts:2701-2734), one site for both draws. Both
     // are random(n) with n the length of the list, a list of one included. The SPEED_TIE shuffles of the same residual are
     // matched above (before this table), so the tie of two Moody holders stays a SPEED_TIE draw.
@@ -120,6 +126,11 @@ function classify(stack, battle) {
         if (frames.includes('Battle.fieldEvent')) return ['SPEED_TIE', 'field:' + ev];
         if (frames.includes('BattleActions.runSwitch')) return ['SPEED_TIE', 'switch-order'];
         return ['SPEED_TIE', 'event:' + ev];
+    }
+    // Quick Claw's roll inside the resolveAction of an inserted choice (Champions' Encore: changeAction -> insertChoice, decision
+    // 0015 entry 5eh) is the item's own draw, not the insertion's tie: the handler is running (battle.effect, battle.event).
+    if (battle.effect && battle.effect.id === 'quickclaw' && battle.event && battle.event.id === 'FractionalPriority') {
+        return ['QUICK_CLAW', ev];
     }
     if (frames.includes('BattleQueue.insertChoice')) {
         // insertChoice resolves the choice first: the target that resolveAction picks for an action without one

@@ -533,6 +533,14 @@ static duoforge_status dfi_queue_choices(dfi_run *r, const duoforge_side_choice 
                 kind == DFI_Q_SWITCH_IN ? 0u : b->sides[s].positions[slot].activation_id, (uint8_t)kind, (uint8_t)s,
                 (uint8_t)slot, move ? c.move_slot : 0u, move ? c.target : 0u,
                 move ? (tracking ? dfi_original_target_code(b, c.target) : 0u) : c.reserve};
+            if (move) {
+                /* resolveAction's FractionalPriority event (sim/battle-queue.ts:249), after the megaEvo action it unshifted: Quick
+                 * Claw's roll, in the order of addition (decision 0015 entry 5eh, combat/items/draw_items.h). */
+                const duoforge_status qst = dfi_quick_claw_roll(r, s * 2u + slot, dfi_at(b, s * 2u + slot), &b->queue[b->queue_len].reserve);
+                if (qst != DUOFORGE_OK) {
+                    return qst;
+                }
+            }
             b->queue_len = (uint8_t)((uint32_t)b->queue_len + 1u); /* wide-operands-reviewed: <= 6 */
         }
     }

@@ -146,10 +146,15 @@ _Static_assert((0u
  * Pokemon at the chosen location when the move was queued, which Stalwart's tracksTarget aims at while it stands
  * (sim/battle.ts:2437-2447). Its roster index + 1, or DFI_QRES_ORIGINAL_NONE when the location held none; 0 when it was not
  * recorded: only a turn in which a Pokemon on the field has Stalwart or Mega Evolves into it records it, so a battle without
- * Stalwart keeps every record byte as before. Bits 5-7 are zero. */
+ * Stalwart keeps every record byte as before. */
 #define DFI_QRES_ORIGINAL_SHIFT 2u
 #define DFI_QRES_ORIGINAL_MASK 7u
 #define DFI_QRES_ORIGINAL_NONE 7u
+/* Bit 5 of the reserve byte of a MOVE record (decision 0015 entry 5eh): the action's fractionalPriority is Quick Claw's 0.1, drawn
+ * when resolveAction resolved it (sim/battle-queue.ts:249, data/items.ts:4989-5005); it sorts the move after every higher integer
+ * priority and before the moves of its own priority (dfi_key_of). Set only by a Quick Claw roll, so a battle without the item
+ * keeps every record byte as before. Bits 6-7 are zero. */
+#define DFI_QRES_QUICK_CLAW 0x20u
 /* Action orders (sim/battle-queue.ts:174-195): the order class of each queued action, the first key of comparePriority. Exported
  * to Python (duoforge._state_layout.VALUES) so the replay pipeline reads the order of the turn's actions from here (#512 S4). */
 #define DFI_ORDER_SWITCH_IN 3u    /* instaswitch: a replacement */

@@ -22,7 +22,8 @@
  * alone (no Levitate or Air Balloon in the pool). No other ability or item of the pool changes a priority:
  * tools/datagen/pool_families.js pins that every modelled ability or item with a priority or Speed callback is
  * Prankster, Unburden, Choice Scarf or (step G22) one of the four weather Speed abilities, so a new one cannot enter
- * without this function and dfi_speed_key being looked at. */
+ * without this function and dfi_speed_key being looked at. Quick Claw's onFractionalPriority (decision 0015 entry 5eh) is
+ * the one fractional callback: drawn once when the action is resolved, kept in its record, read by dfi_key_of. */
 static uint32_t dfi_move_priority(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
 {
     uint32_t priority = md->priority;
@@ -221,7 +222,7 @@ static void dfi_break_protect(dfi_run *r, uint32_t flat, uint32_t move_id)
 static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key *out)
 {
     if (q->kind == DFI_Q_RESIDUAL) {
-        *out = (dfi_key){DFI_ORDER_RESIDUAL, DFI_PRIORITY_BIAS, 0u};
+        *out = (dfi_key){DFI_ORDER_RESIDUAL, DFI_PRIORITY_BIAS, 0u, 0u};
         return DUOFORGE_OK;
     }
     uint32_t order = 0u;
@@ -258,11 +259,16 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
     }
     out->order = order;
     out->priority = DFI_PRIORITY_BIAS;
+    out->frac = 0u;
     if (q->kind == DFI_Q_MOVE && !dfi_move_slot_ok(m, q->move_slot)) {
         return DUOFORGE_E_INVARIANT;
     }
     if (q->kind == DFI_Q_MOVE) {
         out->priority = dfi_move_priority(r->b, m, &dfi_pool_moves[dfi_move_of(m, q->move_slot)]);
+        /* action.priority = priority + action.fractionalPriority (sim/battle.ts:2647): the fractional part that resolveAction
+         * drew for the action (Quick Claw's 0.1, decision 0015 entry 5eh) stays with it for the turn, whatever the holder does
+         * later, so it is a bit of the record (DFI_QRES_QUICK_CLAW), not a fact read from the holder now. */
+        out->frac = ((uint32_t)q->reserve & DFI_QRES_QUICK_CLAW) != 0u ? 1u : 0u;
     }
     out->speed = speed;
     return DUOFORGE_OK;
@@ -276,6 +282,11 @@ static uint32_t dfi_compare(const dfi_key *a, const dfi_key *b)
     }
     if (a->priority != b->priority) {
         return a->priority > b->priority ? 0u : 2u;
+    }
+    /* The fraction of action.priority (decision 0015 entry 5eh): every integer priority step is larger than Quick Claw's 0.1, so
+     * it decides only between equal integer priorities. */
+    if (a->frac != b->frac) {
+        return a->frac > b->frac ? 0u : 2u;
     }
     if (a->speed != b->speed) {
         return a->speed > b->speed ? 0u : 2u;

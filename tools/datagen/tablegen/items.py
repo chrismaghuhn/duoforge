@@ -228,3 +228,85 @@ def check_g55_items(items_ts, champ_items):
             fail('item %s: the champions mod overrides the entry' % rid)
         if re.search(r'on[A-Z]\w*\(|durationCallback|condition:', chr(10).join(e[2])):
             fail('item %s: a callback, which the rows of G55 do not model' % rid)
+
+
+# Decision 0015 entry 5eh: Quick Claw and Focus Band are engine rows (ENGINE_ROWS) with a roll of their own (draw sites
+# QUICK_CLAW 27 and FOCUS_BAND 28, src/combat/items/draw_items.h). Their pinned callbacks are demanded whole, whitespace aside,
+# and the Champions mod has no entry for them (the rows hold in every format). E5H_OTHER_FACTS are the lines of the simulator
+# that the engine's places for the rolls follow: resolveAction runs FractionalPriority with the relay value 0 (the `priority`
+# that Quick Claw tests), getActionSpeed adds the fraction to the priority, Champions' Encore re-resolves the replaced action,
+# and spreadDamage runs the Damage event for every damage but Struggle's recoil.
+E5H_ITEM_FACTS = (
+    ('quickclaw', ('onFractionalPriorityPriority: -2,',
+                   "onFractionalPriority(priority, pokemon, target, move) { if (move.category === 'Status' && "
+                   "pokemon.hasAbility('myceliummight')) return; if (priority <= 0 && this.randomChance(1, 5)) { "
+                   "this.add('-activate', pokemon, 'item: Quick Claw'); return 0.1; } },")),
+    ('focusband', ('onDamagePriority: -40,',
+                   "onDamage(damage, target, source, effect) { if (this.randomChance(1, 10) && damage >= target.hp && effect && "
+                   "effect.effectType === 'Move') { this.add(\"-activate\", target, \"item: Focus Band\"); return target.hp - 1; } },")),
+)
+E5H_OTHER_FACTS = (
+    ('sim/battle-queue.ts', ("action.fractionalPriority = this.battle.runEvent('FractionalPriority', action.pokemon, null, "
+                             "action.move, 0);",)),
+    ('sim/battle.ts', ('action.priority = priority + action.fractionalPriority;',
+                       "if (effect.id !== 'strugglerecoil') { // Struggle recoil is not affected by effects",
+                       "targetDamage = this.runEvent('Damage', target, source, effect, targetDamage, true);")),
+    ('data/mods/champions/moves.ts', ('this.queue.changeAction(target, {',)),
+)
+# Every entry of the pin with a FractionalPriority or a Damage handler (on, onAny, onFoe, onSource, onAlly, or its priority), by
+# file: the engine models the rolls against exactly these (draw_items.h names what each one does; the white-box test
+# duoforge.items.quick_claw_focus_band pins that the rows it does not model stay unmarked). A new handler fails here.
+E5H_FRACTIONAL_HANDLERS = {'data/items.ts': ['custapberry', 'fullincense', 'laggingtail', 'quickclaw'],
+                           'data/abilities.ts': ['myceliummight', 'quickdraw', 'stall']}
+E5H_DAMAGE_HANDLERS = {'data/items.ts': ['focusband', 'focussash'],
+                       'data/abilities.ts': ['angershell', 'berserk', 'damp', 'disguise', 'gluttony', 'heatproof', 'iceface',
+                                             'magicguard', 'mountaineer', 'poisonheal', 'rockhead', 'sturdy'],
+                       'data/mods/champions/abilities.ts': ['angershell', 'berserk'],
+                       'data/moves.ts': ['bide', 'endure', 'falseswipe', 'holdback']}
+E5H_SCANNED = ('data/items.ts', 'data/abilities.ts', 'data/mods/champions/abilities.ts', 'data/moves.ts',
+               'data/mods/champions/items.ts')
+E5H_FRACTIONAL = re.compile(r'\bonFractionalPriority(?:Priority)?\b')
+E5H_DAMAGE = re.compile(r'\bon(?:Any|Foe|Source|Ally)?Damage(?:Priority)?\b')
+
+
+def e5h_handler_entries(src, pattern):
+    """The top-level entries of `src` that have a line matching `pattern`, sorted."""
+    found, owner = set(), None
+    for line in src.lines:
+        m = re.match(r'^\t(\w+): \{', line)
+        if m is not None:
+            owner = m.group(1)
+        if owner is not None and pattern.search(line):
+            found.add(owner)
+    return sorted(found)
+
+
+def check_5eh_facts(items_ts, champ_items, others, only=None):
+    """Decision 0015 entry 5eh: the facts of E5H_ITEM_FACTS are in the pinned item entries, whitespace aside, and the Champions mod
+    has no entry for them; E5H_OTHER_FACTS are in their files, and the entries with a FractionalPriority or Damage handler in the
+    files of E5H_SCANNED are exactly those of E5H_FRACTIONAL_HANDLERS and E5H_DAMAGE_HANDLERS (`others`: rel -> Source for the
+    files of both). `only`: (item facts, other facts, fractional handlers, damage handlers, scanned files) to check instead (the
+    generator's tests)."""
+    facts_by_id, other, fractional, damage, scanned = (
+        (E5H_ITEM_FACTS, E5H_OTHER_FACTS, E5H_FRACTIONAL_HANDLERS, E5H_DAMAGE_HANDLERS, E5H_SCANNED) if only is None else only)
+    for iid, facts in facts_by_id:
+        e = items_ts.entry(iid)
+        if e is None:
+            fail('item %s not found' % iid)
+        if champ_items.entry(iid) is not None:
+            fail('item %s: the champions mod overrides the entry' % iid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('item %s: the entry no longer has "%s"' % (iid, fact))
+    for rel, facts in other:
+        text = norm(chr(10).join(others[rel].lines))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('%s: the pin no longer has "%s"' % (rel, fact))
+    for what, pattern, expected in (('FractionalPriority', E5H_FRACTIONAL, fractional), ('Damage', E5H_DAMAGE, damage)):
+        for rel in scanned:
+            got = e5h_handler_entries(others[rel], pattern)
+            if got != sorted(expected.get(rel, [])):
+                fail('%s: the entries with a %s handler are %s, not %s (src/combat/items/draw_items.h)'
+                     % (rel, what, got, sorted(expected.get(rel, []))))

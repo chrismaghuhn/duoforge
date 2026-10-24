@@ -8,6 +8,7 @@
 #include "combat/residual_order.h"
 #include "combat/events.h"
 #include "combat/items/items.h"
+#include "combat/items/draw_items.h"
 #include "combat/moves/families.h"
 #include "combat/moves/multihit.h"
 #include "combat/moves/power_trip.h"
@@ -39,6 +40,7 @@ typedef struct dfi_key {
     uint32_t order;
     uint32_t priority; /* biased like the move table */
     uint32_t speed;    /* DFI_SPEED_BIAS +/- speed */
+    uint32_t frac;     /* the fractional priority (decision 0015 entry 5eh): 1 for Quick Claw's +0.1, else 0; compared after priority */
 } dfi_key;
 
 /* ---------------------------------------------------------------- access */
@@ -1278,6 +1280,18 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
             dfi_emit(r, &act);
         }
         return DUOFORGE_OK;
+    }
+    /* Focus Band's onDamage (decision 0015 entry 5eh, combat/items/draw_items.h): its roll at every damage that runs the Damage
+     * event (every class but DIRECT), after Magic Guard's stop above; it saves only a Move's damage. A holder's UNCLASSIFIED
+     * damage is refused, as for Magic Guard: whether its Damage event runs is not known. */
+    if (cls == DFI_DMG_UNCLASSIFIED && dfi_holds(r->b, m, DFI_ITEM_FOCUSBAND)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    if (cls != DFI_DMG_DIRECT) {
+        const duoforge_status st = dfi_focus_band_roll(r, flat, m, cls == DFI_DMG_MOVE, &amount);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
     }
     m->hp = (uint16_t)(hp > amount ? hp - amount : 0u); /* wide-operands-reviewed: <= hp */
     if (amount != 0u) {
@@ -3843,8 +3857,15 @@ static duoforge_status dfi_encore_replace(dfi_run *r, uint32_t flat, uint32_t sl
         cls = DUOFORGE_TARGET_CLASS_SELF;
     }
     dfi_cancel_actions(b, old->activation_id); /* `old` is not valid from here */
+    /* resolveAction of the new action (not midTurn): its FractionalPriority event comes before its target (sim/battle-queue.ts:249,
+     * then :268), so a Quick Claw holder rolls again for the new action (decision 0015 entry 5eh); the old action's fraction
+     * went with it. */
+    duoforge_status st = dfi_quick_claw_roll(r, flat, tm, &rec.reserve);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
     uint32_t target = 0u;
-    duoforge_status st = dfi_resolve_target(r, flat, cls, &target);
+    st = dfi_resolve_target(r, flat, cls, &target);
     if (st != DUOFORGE_OK) {
         return st;
     }

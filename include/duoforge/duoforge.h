@@ -1161,7 +1161,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                                     and other DUOFORGE_NO_POSITION;
                                                     POOL kinds, Symbiosis (step G69): `-activate|holder|ability: Symbiosis|Item|[of] user`
                                                     is cause ABILITY, id2 Symbiosis + 1, position the holder, other the user ([of]), and
-                                                    id the item + 1 that the holder passed to the user. Every other ACTIVATE has id 0 */
+                                                    id the item + 1 that the holder passed to the user. POOL kinds, Quick Claw and
+                                                    Focus Band (decision 0015 entry 5eh): `-activate|holder|item: Quick Claw` (its
+                                                    holder moves first in its priority) and `-activate|holder|item: Focus Band`
+                                                    (the holder keeps 1 HP) are cause ITEM, id2 the item + 1, position the holder,
+                                                    other DUOFORGE_NO_POSITION. Every other ACTIVATE has id 0 */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn], or for Destiny Bond [-singlemove] (step G76); id: the move; other: the user ([of]) for

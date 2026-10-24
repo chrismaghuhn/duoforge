@@ -13,3 +13,5 @@ duoforge_add_test(NAME duoforge.items.power_and_accuracy_items SOURCES items/tes
 duoforge_add_test(NAME duoforge.items.bright_powder SOURCES items/test_bright_powder.c WHITEBOX TIMEOUT 60 TIER quick AREA items)
 # 5eb (-): Air Balloon pops after the holder's own DamagingHit abilities. Scaffolded by tools/new_mechanic.py.
 duoforge_add_test(NAME duoforge.items.air_balloon_pop_order SOURCES items/test_air_balloon_pop_order.c WHITEBOX TIMEOUT 60 TIER quick AREA items)
+# 5eh (-): Quick Claw and Focus Band draws. Scaffolded by tools/new_mechanic.py.
+duoforge_add_test(NAME duoforge.items.quick_claw_focus_band SOURCES items/test_quick_claw_focus_band.c WHITEBOX TIMEOUT 60 TIER quick AREA items)

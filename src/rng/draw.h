@@ -54,6 +54,10 @@
 #define DFI_SITE_ATTRACT 25u       /* Attract (POOL data, step G71, decision 0034): randomChance(1, 2) at BeforeMove priority 2, random(2) < 1 */
 #define DFI_SITE_POISON_POINT 26u  /* Poison Point (POOL data, A2a, decision 0015 entry 5dy; HS grant): randomChance(3, 10), random(10) < 3 */
 #define DFI_SITE_ALLY_SWITCH 33u /* Ally Switch's consecutive use (POOL data, step G80, decision 0044): randomChance(1, 3^level), random(3^level) == 0 */
+#define DFI_SITE_QUICK_CLAW 27u /* Quick Claw (decision 0015 entry 5eh; HS grant): randomChance(1, 5) in onFractionalPriority, once per move action that
+                                * resolveAction resolves without midTurn (sim/battle-queue.ts:249; data/items.ts:4989-5005), random(5) < 1 */
+#define DFI_SITE_FOCUS_BAND 28u /* Focus Band (decision 0015 entry 5eh; HS grant): randomChance(1, 10) in onDamage (priority -40), drawn first, at
+                                * every Damage event of the holder (data/items.ts:2253-2268; sim/battle.ts:2121), random(10) < 1 */
 #define DFI_SITE_COUNT 34u /* gaps are fine: dfi_draw checks site < COUNT; the free ids and who hands them out: docs/process/NUMBERS.md */
 
 /* Build-time guard (restructure step 5c): every DFI_SITE_<NAME> has the id of its line in draw_sites.def, the frozen record of
