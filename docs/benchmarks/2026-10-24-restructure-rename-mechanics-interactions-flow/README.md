@@ -44,12 +44,13 @@ mutants' run. The copied `proofs.py` says which steps it serves. These changes a
 
 With the 14 rows done, `duoforge.lint.test_renames` ran into its 60 s timeout on the CI runner (shard rest): the search for
 old names in the living files was one Python alternation over the tree, 17 s here. `test_audit.py` now runs one
-`git grep -I -o -w -F -f <the old names>` over the tracked files, with the same excludes (the table and the frozen
+`git grep -a -o -w -F -f <the old names>` over the tracked files, with the same excludes (the table and the frozen
 records). Measured here: 17.3 s before, 0.3 s after; with every row of the table counted as done (164 old names, the state
 after 6e-4) 0.34 s. The same strictness: on the tree of main before 6d with this step's table (every 6d name still in the
 files), the old and the new search find the same 104 (file, old name) pairs in 45 files. A word is what it was (no word
-character before or after); a binary file is not read, as before; a text file that is not UTF-8 is now read too (stricter).
-A unit test pins the word rule, the binary file and the old file's path. The 60 s timeouts stay. `duoforge.tools.restructure`
+character before or after; git's word characters are ASCII, so a name next to a non-ASCII letter now counts, stricter);
+every tracked file is read, a file that is not UTF-8 too (stricter); the user's git config cannot change the output. A
+unit test pins the word rule, a file with a NUL byte, the old file's path and a config with line numbers and colour. The 60 s timeouts stay. `duoforge.tools.restructure`
 (its 31 unit tests, the committed table among them) takes 0.4 s instead of 18 s.
 
 ## Gate and P1–P6

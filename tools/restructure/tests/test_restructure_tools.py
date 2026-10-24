@@ -154,8 +154,8 @@ class RenameTable(unittest.TestCase):
             self.assertEqual(test_audit.check(root), [])
 
     def test_an_old_name_counts_only_as_a_word(self):
-        # the old names as words (a dot, a slash, a quote or the line's end around them), not inside a longer name; a binary
-        # file is not read; the old file's name maps to its row's path
+        # the old names as words (a dot, a slash, a quote or the line's end around them), not inside a longer name; a file
+        # with a NUL byte is read too; the old file's name maps to its row's path
         with tempfile.TemporaryDirectory() as tmp:
             files = {'tests/moves/test_probe.c': '',
                      'a.md': 'see duoforge.state.pool_g999.\n', 'b.md': 'x_test_pool_g999.c and duoforge.state.pool_g9990\n',
@@ -163,7 +163,12 @@ class RenameTable(unittest.TestCase):
             root = self.tree(tmp, 'done', files, cmake=self.DONE)
             self.assertEqual(test_audit.check(root), [
                 'a.md: still names duoforge.state.pool_g999 (renamed, see tests/renames.tsv)',
-                'c.md: still names moves/test_pool_g999.c (renamed, see tests/renames.tsv)'])
+                'c.md: still names moves/test_pool_g999.c (renamed, see tests/renames.tsv)',
+                'd.bin: still names duoforge.state.pool_g999 (renamed, see tests/renames.tsv)'])
+            # the user's git config does not change what is read
+            subprocess.run(['git', 'config', 'grep.lineNumber', 'true'], cwd=root, check=True)
+            subprocess.run(['git', 'config', 'color.ui', 'always'], cwd=root, check=True)
+            self.assertEqual(len(test_audit.check(root)), 3)
 
     def test_done_row_with_the_old_file_left_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:

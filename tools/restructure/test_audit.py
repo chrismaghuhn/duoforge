@@ -143,21 +143,26 @@ def check(root):
 def old_names_in_living_files(root, olds):
     """{living file: {old name the table maps to}} for every old name (a key of `olds`) that a living file names as a word:
     neither a word character before it nor after it. One `git grep` over the tracked files with every name as a fixed
-    string (-F -w): a Python alternation over the tree took 17 s here and a minute on the CI runner. Binary files are
-    skipped (-I), as a file that is no UTF-8 text was before."""
+    string (-F -w): a Python alternation over the tree took 17 s here and a minute on the CI runner. Every tracked file is
+    read, binary or not (-a); the old search read every file that was UTF-8 text, so this is at least as strict."""
     excludes = [':(exclude)%s' % TABLE] + [':(exclude)%s' % d for d in FROZEN]
     with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.txt', delete=False) as f:
         f.write(''.join(o + '\n' for o in sorted(olds)))
         patterns = f.name
     try:
-        run = subprocess.run(['git', 'grep', '-I', '-o', '-w', '-F', '-h', '--null', '-H', '-f', patterns, '--', '.']
-                             + excludes, cwd=root, capture_output=True)
+        # -a: a file with a NUL byte is read too (the old search read every UTF-8 file); the -c settings and flags keep
+        # the output path NUL match whatever the user's git config says.
+        run = subprocess.run(['git', '-c', 'color.grep=never', '-c', 'grep.lineNumber=false', '-c', 'grep.column=false',
+                              'grep', '-a', '-o', '-w', '-F', '--no-color', '--no-line-number', '--no-column', '--null',
+                              '-H', '-f', patterns, '--', '.'] + excludes, cwd=root, capture_output=True)
     finally:
         os.unlink(patterns)
     if run.returncode not in (0, 1):  # 1: no match
         raise SystemExit('test_audit: git grep failed: %s' % run.stderr.decode('utf-8', 'replace').strip())
     out = {}
-    for line in run.stdout.decode('utf-8').splitlines():
+    for line in run.stdout.decode('utf-8').split('\n'):
+        if not line:
+            continue
         name, _, match = line.partition('\0')
         if match not in olds:
             raise SystemExit('test_audit: git grep matched %r, which is no old name' % match)
