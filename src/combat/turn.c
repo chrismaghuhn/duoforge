@@ -546,26 +546,15 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         const uint32_t delta = to + 6u - (uint32_t)pos->stages[i];
         capped[i] = (uint8_t)delta; /* 0..12 */
     }
-    /* TryBoost (after Contrary and the cap): Flower Veil deletes every drop that another Pokemon causes on a Grass
-     * type of its side (sim/battle.ts:2030-2033, data/abilities.ts:1419-1437); the line shows unless the effect is a
-     * move's secondary (effect.secondaries): Intimidate's does, Snarl's does not. */
+    /* TryBoost (after Contrary and the cap), its handlers in the pin's order (sim/battle.ts:2034 runEvent): the higher
+     * onTryBoostPriority first, Guard Dog's 2 before every other handler here (default 0). */
     bool veil[DFI_STAT_STAGE_COUNT] = {false, false, false, false, false, false, false};
-    uint32_t holder = 0u;
-    bool flower_veiled = false; /* Flower Veil deleted a drop (A2a: read by the Illuminate and White Smoke refusals below) */
-    if (source != flat && source != DFI_POSITIONS && dfi_flower_veil_holder(b, flat, &holder)) {
-        bool any = false;
-        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
-            veil[i] = boosts[i] != DFI_BIAS6 && capped[i] < DFI_BIAS6;
-            any = any || veil[i];
-        }
-        flower_veiled = any;
-        if (any && !(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
-            dfi_flower_veil_block(r, flat, holder);
-        }
-    }
-    /* Guard Dog (step G46, data/abilities.ts:1727-1744, onTryBoost of the holder, breakable): an Intimidate change of Attack
-     * is deleted and the holder's Attack rises by 1 instead (`this.boost({ atk: 1 }, target, target, null, ...)`: a boost
-     * with no effect, so its line has no [from]). Its line is the nested boost's; nothing shows for the deleted drop. */
+    /* Guard Dog (step G46, data/abilities.ts:1727-1744, onTryBoost of the holder, onTryBoostPriority 2, breakable): an
+     * Intimidate change of Attack is deleted and the holder's Attack rises by 1 instead (`this.boost({ atk: 1 }, target,
+     * target, null, ...)`: a boost with no effect, so its line has no [from]). Its line is the nested boost's; nothing
+     * shows for the deleted drop. It runs before Flower Veil (decision 0015 entry 5ec, issue 640): on a Grass holder
+     * (Skill Swap, step G70, gives Guard Dog to one) next to a Flower Veil holder the drop is already gone when Flower
+     * Veil looks, so no -block shows. */
     if (effect.cause == DUOFORGE_CAUSE_ABILITY && effect.id2 == 1u + DFI_ABILITY_INTIMIDATE &&
         boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] != DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_GUARDDOG)) {
         veil[DFI_STAGE_ATK] = true;
@@ -573,6 +562,23 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         /* The nested boost's effect is the running handler, Guard Dog (boost() defaults to this.effect): its line is
          * -ability|holder|Guard Dog|boost, then the -boost line (sim/battle.ts boost). */
         (void)dfi_boost(r, flat, guard_dog_atk_up, flat, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_GUARDDOG, DFI_BOOST_PRIMARY));
+    }
+    /* Flower Veil deletes every drop that another Pokemon causes on a Grass type of its side (sim/battle.ts:2030-2033,
+     * data/abilities.ts:1419-1437) and that is still in the boost (a drop Guard Dog deleted is not); the line shows
+     * unless the effect is a move's secondary (effect.secondaries): Intimidate's does, Snarl's does not. */
+    uint32_t holder = 0u;
+    bool flower_veiled = false; /* Flower Veil deleted a drop (A2a: read by the Illuminate and White Smoke refusals below) */
+    if (source != flat && source != DFI_POSITIONS && dfi_flower_veil_holder(b, flat, &holder)) {
+        bool any = false;
+        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+            const bool drop = !veil[i] && boosts[i] != DFI_BIAS6 && capped[i] < DFI_BIAS6;
+            veil[i] = veil[i] || drop;
+            any = any || drop;
+        }
+        flower_veiled = any;
+        if (any && !(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
+            dfi_flower_veil_block(r, flat, holder);
+        }
     }
     /* Inner Focus (step G22, POOL data, data/abilities.ts:2157-2162): TryBoost, a change that the effect named
      * Intimidate would make to Attack (boost.atk is set: a change the cap already took to 0 is not) is deleted, and
