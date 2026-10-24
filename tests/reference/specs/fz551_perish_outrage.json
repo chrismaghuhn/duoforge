@@ -1,0 +1,60 @@
+{
+  "name": "fz551_perish_outrage",
+  "purpose": "Perish Song reaches 0 for Altaria and for Salamence, which is locked into Outrage; Salamence's lockedmove residual still runs and its faintMessages shows both faints before upkeep (sim/battle.ts:560-563); on main the engine printed upkeep first (issue 551). A battle of the differential fuzzing of issue 396 (free random sets, fz_409_37), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,535c872772a7d4981f93af2e4054040a452ab5ce673dc09d3256f6376b0fed20",
+  "teams": [
+    "salamence (F) @ salamencite\nAbility: moxie\nLevel: 50\nEVs: 5 HP / 12 Atk / 8 Def / 14 SpA / 14 SpD / 13 Spe\nHardy Nature\n- zenheadbutt\n- temperflare\n- outrage\n- stoneedge\n\nsquawkabillyyellow (M) @ brightpowder\nAbility: intimidate\nLevel: 50\nEVs: 9 HP / 3 Atk / 4 Def / 6 SpA / 2 SpD / 1 Spe\nNaive Nature\n- faketears\n- tailwind\n- scaryface\n- protect\n\nserperior (F) @ tyranitarite\nAbility: contrary\nLevel: 50\nEVs: 8 HP / 12 Atk / 10 Def / 8 SpA / 13 SpD / 15 Spe\nCalm Nature\n- dragontail\n- trailblaze\n- solarbeam\n- helpinghand\n\ndrampa (F) @ scraftinite\nAbility: cloudnine\nLevel: 50\nEVs: 11 HP / 12 Atk / 12 Def / 5 SpA / 15 SpD / 11 Spe\nRash Nature\n- helpinghand\n- gigaimpact\n- superpower\n- scaleshot\n\ncamerupt (M) @ cameruptite\nAbility: solidrock\nLevel: 50\nEVs: 7 HP / 6 Atk / 5 Def / 9 SpA / 4 SpD / 9 Spe\nRash Nature\n- heavyslam\n- substitute\n- mudslap\n- protect\n\nbeartic (M) @ mysticwater\nAbility: slushrush\nLevel: 50\nEVs: 14 HP / 8 Atk / 18 Def / 8 SpA / 13 SpD / 5 Spe\nSassy Nature\n- bodypress\n- thief\n- heavyslam\n- iciclespear",
+    "rampardos (M) @ damprock\nAbility: sheerforce\nLevel: 50\nEVs: 8 HP / 15 Atk / 13 Def / 10 SpA / 13 SpD / 7 Spe\nRash Nature\n- roar\n- dragonclaw\n- mudslap\n- thunderbolt\n\nlycanrocmidnight (M) @ sablenite\nAbility: keeneye\nLevel: 50\nEVs: 8 HP / 16 Atk / 12 Def / 12 SpA / 10 SpD / 8 Spe\nModest Nature\n- bulkup\n- substitute\n- swordsdance\n- charm\n\ndecidueyehisui (M) @ sceptilite\nAbility: scrappy\nLevel: 50\nEVs: 9 HP / 6 Atk / 12 Def / 18 SpA / 12 SpD / 9 Spe\nAdamant Nature\n- featherdance\n- grassknot\n- tailwind\n- uturn\n\nferaligatr (M) @ feraligite\nAbility: sheerforce\nLevel: 50\nEVs: 11 HP / 10 Atk / 13 Def / 15 SpA / 10 SpD / 7 Spe\nTimid Nature\n- dragonclaw\n- megakick\n- waterfall\n- aerialace\n\nmausholdfour @ pidgeotite\nAbility: technician\nLevel: 50\nEVs: 18 HP / 11 Atk / 10 Def / 11 SpA / 9 SpD / 7 Spe\nLonely Nature\n- followme\n- uturn\n- beatup\n- trailblaze\n\naltaria (M) @ charizarditex\nAbility: cloudnine\nLevel: 50\nEVs: 1 HP / 4 Atk / 1 Def / 1 SpA / 6 SpD / 1 Spe\nLonely Nature\n- dragonpulse\n- perishsong\n- dragondance\n- trailblaze"
+  ],
+  "choices": [
+    {
+      "p1": "team 5142",
+      "p2": "team 5634"
+    },
+    {
+      "p1": "move 4 mega, move 2 1",
+      "p2": "switch 3, move 2"
+    },
+    {
+      "p1": "move 1 1, move 1 2",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "move 1 1, move 2 1",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 2, move 3",
+      "p2": "move 3 1, move 4 2"
+    },
+    {
+      "p1": "switch 3, switch 4",
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 4 2 mega, move 1"
+    },
+    {
+      "p1": "move 1, move 3 2",
+      "p2": "move 1 -2, move 4 1"
+    },
+    {
+      "p1": "move 4 -2, move 1 1",
+      "p2": "move 1 2, move 3 -1"
+    },
+    {
+      "p1": "move 3 2, pass",
+      "p2": "move 1 1, move 4 1"
+    },
+    {
+      "p1": "move 2 2, pass",
+      "p2": "move 3 -2, pass"
+    }
+  ]
+}

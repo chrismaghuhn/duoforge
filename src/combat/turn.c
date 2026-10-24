@@ -1030,6 +1030,13 @@ static uint32_t dfi_type_mod(const struct duoforge_battle *b, const dfi_member *
     }
     uint32_t types[2];
     dfi_types_of(b, target, types);
+    /* Iron Ball (issue 548, data/items.ts:3056-3060): its onEffectiveness returns 0 for every type of a holder that has the
+     * Flying type, the other type included, so a Ground move is neutral against a Flying dual type (Corviknight: not super
+     * effective through Steel). Not under Gravity; Ingrain and Smack Down are unmarked rows. */
+    if (move_type == DFI_TYPE_GROUND && b->tail.gravity_turns == 0u && dfi_holds(b, target, DFI_ITEM_IRONBALL) &&
+        (types[0] == DFI_TYPE_FLYING || types[1] == DFI_TYPE_FLYING)) {
+        return mod;
+    }
     for (uint32_t i = 0u; i < 2u; ++i) {
         const uint32_t t = types[i];
         if (t >= DFI_TYPE_COUNT) {
@@ -5559,6 +5566,13 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
             return hz;
         }
     }
+    /* Ice Spinner's onAfterSubDamage (data/moves.ts:9429-9433, issue 547): the terrain ends when the user has HP. */
+    if (md->special == DFI_SPECIAL_ICE_SPINNER && dfi_at(b, user)->hp != 0u) {
+        const duoforge_status ct = dfi_clear_terrain(r);
+        if (ct != DUOFORGE_OK) {
+            return ct;
+        }
+    }
     if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u && dfi_holds(r->b, dfi_at(r->b, target), DFI_ITEM_AIRBALLOON)) {
         dfi_use_item(r, target);
     }
@@ -6895,7 +6909,10 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_try_move(dfi_run *r, cons
      * move's target: every class that `single` admits is not 'scripted' (DFI_TARGET_CLASS_SCRIPTED is not among them), so
      * the holder's gate is the whole of Stalwart here. */
     const bool stalwart = m != NULL && dfi_ability(b, m, DFI_ABILITY_STALWART);
-    const bool single = count <= 1u && !stalwart && (target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
+    /* A Curse of a user that is not a Ghost now (issue 550): its onModifyMove sets move.target = 'self' before getMoveTargets
+     * (data/moves.ts:3276-3281), so no RedirectTarget handler takes it (validTarget of self); it hits the user (dfi_curse_targets). */
+    const bool curse_self = md->special == DFI_SPECIAL_CURSE && m != NULL && !dfi_has_type(b, m, DFI_TYPE_GHOST);
+    const bool single = count <= 1u && !stalwart && !curse_self && (target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
                                                      target_class == DUOFORGE_TARGET_CLASS_ANY ||
                                                      target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE ||
                                                      target_class == DFI_TARGET_CLASS_RANDOM_NORMAL);
@@ -7911,15 +7928,6 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 }
             }
         }
-        /* forceSwitch of a damaging move (Dragon Tail, Circle Throw; step G46): the forceSwitch step of spreadMoveHit runs
-         * after the damage is computed and before it is dealt (scripts.ts:392), so the target is still standing. */
-        if (!status_move && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u) {
-            for (uint32_t i = 0u; i < count; ++i) {
-                if (hit[i]) {
-                    dfi_drag_at_hit(r, user, targets[i]);
-                }
-            }
-        }
         /* spreadDamage, per target: the damage, then a drain heals the user by
          * round(dealt * drain) (sim/battle.ts:2170-2173). The HP actually lost
          * adds up to the move's total damage. */
@@ -7983,21 +7991,6 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
         }
         /* Steel Roller's onHit (runMoveEffects, right after the damage of the hit): the terrain ends. */
         if (md->special == DFI_SPECIAL_STEEL_ROLLER) {
-            bool any_hit = false;
-            for (uint32_t i = 0u; i < count; ++i) {
-                any_hit = any_hit || hit[i];
-            }
-            if (any_hit) {
-                st = dfi_clear_terrain(r);
-                if (st != DUOFORGE_OK) {
-                    return dfi_move_body_stop(stop, st);
-                }
-            }
-        }
-        /* Ice Spinner (step G86, data/moves.ts:9417-9434): clearTerrain after a hit that landed (AfterHit, which runs only
-         * while the user still stands, sim/battle-actions.ts:1123) or was absorbed by a Substitute (onAfterSubDamage, if the
-         * source has HP). No onTry: with no terrain the clear does nothing and prints nothing (field.clearTerrain returns false). */
-        if (md->special == DFI_SPECIAL_ICE_SPINNER && dfi_at(b, user)->hp > 0u) {
             bool any_hit = false;
             for (uint32_t i = 0u; i < count; ++i) {
                 any_hit = any_hit || hit[i];
@@ -8318,6 +8311,17 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 }
             }
         }
+        /* forceSwitch of a damaging move (Dragon Tail, Circle Throw; step G46): step 6 of the Champions spreadMoveHit
+         * (data/mods/champions/scripts.ts:391), after the damage is dealt (step 2) and the secondaries (step 5), before the
+         * DamagingHit handlers (issue 545): a Guard Dog or Suction Cups line follows the damage, and a target the hit knocked
+         * out is not dragged (forceSwitch asks target.hp > 0). */
+        if (!status_move && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i]) {
+                    dfi_drag_at_hit(r, user, targets[i]);
+                }
+            }
+        }
         /* Illusion (decision 0026 section 4; the pin's DamagingHit, sim/battle-actions.ts:1118-1130): a damaging move hit of
          * any user, an ally included, ends the disguise of the target. Its replace and -end lines are one ILLUSION_END event,
          * after the self effects and secondaries of the hit and before the DamagingHit handlers, as the pin orders them (an unboost of the
@@ -8454,11 +8458,6 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 return dfi_move_body_stop(stop, st);
             }
             dfi_gooey(r, user, targets[i], md);
-            /* Air Balloon (step G67, data/items.ts:197-202, onDamagingHit): a damaging hit uses it up (-enditem with no [from]).
-             * Indirect damage does not pop it: every indirect path goes through dfi_deal, which never calls this. */
-            if (dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
-                dfi_use_item(r, targets[i]);
-            }
             /* Cursed Body (POOL data): the target's own onDamagingHit, after Thermal Exchange's place and before the attacker's
              * Poison Touch; the target is standing here (a holder that is down rolls too: see above). Two holders hit by one
              * spread move: DamagingHit is sorted by compareLeftToRightOrder (sim/battle.ts:789-790 and :421-426: order, then
@@ -8511,6 +8510,13 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
             if (st != DUOFORGE_OK) {
                 return dfi_move_body_stop(stop, st);
             }
+            /* Air Balloon (step G67, data/items.ts:197-202, onDamagingHit): a damaging hit uses it up (-enditem with no [from]).
+             * Indirect damage does not pop it: every indirect path goes through dfi_deal, which never calls this. The holder's
+             * unordered handlers are collected ability before item (sim/battle.ts:1117-1130) and the sort is stable, so it comes
+             * after the target's own ability handlers above (issue 546: Weak Armor's lines, then -enditem). */
+            if (dfi_holds(r->b, tm, DFI_ITEM_AIRBALLOON)) {
+                dfi_use_item(r, targets[i]);
+            }
             /* The attacker's Poison Touch comes after the target's own handlers (its onSourceDamagingHit is appended
              * after them, sim/battle.ts:1035-1063, and the sort is stable). */
             st = dfi_poison_touch(r, user, targets[i], md);
@@ -8554,6 +8560,20 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_hit_loop(dfi_run *r, cons
                 if (hit[i]) {
                     bool added = false;
                     st = dfi_add_hazard(r, (1u - side), kind, &added);
+                    if (st != DUOFORGE_OK) {
+                        return dfi_move_body_stop(stop, st);
+                    }
+                }
+            }
+        }
+        /* AfterHit of Ice Spinner (step G86, data/moves.ts:9426-9428): clearTerrain for each damaged target, after the
+         * DamagingHit handlers (issue 547: after Weak Armor's lines) and with no test of the user's HP (the Champions loop,
+         * data/mods/champions/scripts.ts:411-414). With no terrain the clear does nothing and prints nothing
+         * (field.clearTerrain returns false). A hit on a Substitute ends it in dfi_substitute_takes (onAfterSubDamage). */
+        if (md->special == DFI_SPECIAL_ICE_SPINNER) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i]) {
+                    st = dfi_clear_terrain(r);
                     if (st != DUOFORGE_OK) {
                         return dfi_move_body_stop(stop, st);
                     }
