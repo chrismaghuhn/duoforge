@@ -83,3 +83,5 @@ duoforge_add_test(NAME duoforge.abilities.aura_guard SOURCES abilities/test_aura
 duoforge_add_test(NAME duoforge.abilities.stalwart_random_move SOURCES abilities/test_stalwart_random_move.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA abilities)
 # Step G39: what Damp and Sturdy act on (Damp stays inert, the OHKO moves are marked later, Mold Breaker unmarked).
 duoforge_add_test(NAME duoforge.abilities.damp_sturdy_rows SOURCES abilities/test_damp_sturdy_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+# Decision 0015 entry 5ec (issue 640): Guard Dog before Flower Veil on a Grass holder (onTryBoostPriority 2), and its two neighbours.
+duoforge_add_test(NAME duoforge.abilities.guard_dog_flower_veil SOURCES abilities/test_guard_dog_flower_veil.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
