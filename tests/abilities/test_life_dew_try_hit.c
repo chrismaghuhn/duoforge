@@ -7,6 +7,11 @@
  * the ally's ability: the same steps with the ally's ability changed to one without a TryHit for the move (Defiant, Volt
  * Absorb) heal the ally by the move, the user's own Good as Gold or Water Absorb is not asked (`target !== source`), and a
  * Water Absorb ally under Heal Block is -immune (its heal refused), where A2a refused the step.
+ *
+ * Decision 0015 entry 5ee (issue 672), docs/mechanics/moves/5ee-life-dew-misses-a-semi-invulnerable-ally.md: the Invulnerability
+ * step comes first (hitStepInvulnerabilityEvent), so an ally in the charge of Phantom Force is -miss|user|ally and is not healed
+ * (life_dew_phantom_force). Its neighbours: the same ally after its locked turn is healed, and No Guard on the ally or on the
+ * user lets the move reach it.
  */
 #include <stdbool.h>
 #include <string.h>
@@ -34,6 +39,9 @@ typedef struct life_dew_seen {
     uint32_t ally_move_heals;
     uint32_t ally_ability_heals; /* cause ABILITY, id2 `ability`, [of] the user */
     uint32_t ally_immune;        /* cause ABILITY, id2 `ability` */
+    uint32_t ally_fails;         /* -fail at the ally (full HP) */
+    uint32_t ally_misses;        /* -miss|user|ally */
+    uint32_t miss_flags;         /* Life Dew's move lines with [miss] */
     uint32_t first_ally_line;    /* the index of the ally's first heal or immune line after the move line */
     uint32_t first_user_line;    /* the index of the user's first heal or fail line after the move line */
 } life_dew_seen;
@@ -57,6 +65,7 @@ static void run_life_dew_step(const duoforge_context *ctx, duoforge_battle *b, c
                 out->move_lines += 1u;
                 out->spread_flags += (e->flags & DUOFORGE_EVENT_FLAG_SPREAD) != 0u ? 1u : 0u;
                 out->spread_mask = e->amount;
+                out->miss_flags += (e->flags & DUOFORGE_EVENT_FLAG_MISS) != 0u ? 1u : 0u;
             }
             continue;
         }
@@ -67,6 +76,14 @@ static void run_life_dew_step(const duoforge_context *ctx, duoforge_battle *b, c
             out->user_move_heals += e->kind == DUOFORGE_EVENT_HEAL && e->cause == DUOFORGE_CAUSE_NONE ? 1u : 0u;
             out->user_fails += e->kind == DUOFORGE_EVENT_FAIL ? 1u : 0u;
             out->first_user_line = out->first_user_line == UINT32_MAX ? i : out->first_user_line;
+        }
+        if (e->kind == DUOFORGE_EVENT_MISS && e->position == 0u && e->other == 1u) {
+            out->ally_misses += 1u;
+            out->first_ally_line = out->first_ally_line == UINT32_MAX ? i : out->first_ally_line;
+        }
+        if (e->position == 1u && e->kind == DUOFORGE_EVENT_FAIL) {
+            out->ally_fails += 1u;
+            out->first_ally_line = out->first_ally_line == UINT32_MAX ? i : out->first_ally_line;
         }
         if (e->position == 1u && (e->kind == DUOFORGE_EVENT_HEAL || e->kind == DUOFORGE_EVENT_IMMUNE)) {
             if (e->kind == DUOFORGE_EVENT_HEAL && e->cause == DUOFORGE_CAUSE_NONE) {
@@ -206,6 +223,54 @@ static void check_water_absorb(df_test *t, const duoforge_context *ctx)
     }
 }
 
+/* 3. The Invulnerability step (life_dew_phantom_force; step 1: Milotic at full HP, Gengar charging; step 2: both hurt, Gengar's
+ * locked Phantom Force has run; step 3: both hurt, Gengar charging again). */
+static void check_invulnerable(df_test *t, const duoforge_context *ctx)
+{
+    life_dew_seen s;
+    /* Step 1: -miss|Milotic|Gengar before the user's -fail; no [miss] on the [spread] line, no line at the ally, no slot. */
+    if (life_dew_variant(t, ctx, "life_dew_phantom_force", 1u, DFI_FORME_GENGAR, 0u, 0u, 0u, &s)) {
+        DF_CHECK_EQ_U64(t, s.ally_misses, 1u);
+        DF_CHECK_EQ_U64(t, s.ally_fails, 0u);
+        DF_CHECK_EQ_U64(t, s.ally_move_heals, 0u);
+        DF_CHECK_EQ_U64(t, s.user_fails, 1u);
+        DF_CHECK(t, s.first_ally_line < s.first_user_line);
+        DF_CHECK_EQ_U64(t, s.miss_flags, 0u);
+        DF_CHECK_EQ_U64(t, s.spread_mask, 0u);
+    }
+    /* Step 3: the hurt charging ally is -miss and not healed, the user heals, the [spread] list is the user's slot alone. */
+    if (life_dew_variant(t, ctx, "life_dew_phantom_force", 3u, DFI_FORME_GENGAR, 0u, 0u, 0u, &s)) {
+        DF_CHECK_EQ_U64(t, s.ally_misses, 1u);
+        DF_CHECK_EQ_U64(t, s.ally_move_heals, 0u);
+        DF_CHECK_EQ_U64(t, s.user_move_heals, 1u);
+        DF_CHECK(t, s.first_ally_line < s.first_user_line);
+        DF_CHECK_EQ_U64(t, s.miss_flags, 0u);
+        DF_CHECK_EQ_U64(t, s.spread_mask, 1u);
+    }
+    /* Step 2, the control: the locked turn removed the volatile before Life Dew, so both are healed, both slots in [spread]. */
+    if (life_dew_variant(t, ctx, "life_dew_phantom_force", 2u, DFI_FORME_GENGAR, 0u, 0u, 0u, &s)) {
+        DF_CHECK_EQ_U64(t, s.ally_misses, 0u);
+        DF_CHECK_EQ_U64(t, s.ally_move_heals, 1u);
+        DF_CHECK_EQ_U64(t, s.user_move_heals, 1u);
+        DF_CHECK_EQ_U64(t, s.spread_mask, 3u);
+    }
+    /* Step 3 with No Guard on the charging ally (onAnyInvulnerability returns 0, data/abilities.ts:2970-2974): no -miss, the
+     * ally is healed by the move. */
+    if (life_dew_variant(t, ctx, "life_dew_phantom_force", 3u, DFI_FORME_GENGAR, 0u, AB(NOGUARD), 0u, &s)) {
+        DF_CHECK_EQ_U64(t, s.ally_misses, 0u);
+        DF_CHECK_EQ_U64(t, s.ally_move_heals, 1u);
+        DF_CHECK_EQ_U64(t, s.user_move_heals, 1u);
+        DF_CHECK_EQ_U64(t, s.spread_mask, 3u);
+    }
+    /* Step 1 with No Guard on the user: the move reaches the charging ally at full HP, which fails as the user does. */
+    if (life_dew_variant(t, ctx, "life_dew_phantom_force", 1u, DFI_FORME_GENGAR, AB(NOGUARD), 0u, 0u, &s)) {
+        DF_CHECK_EQ_U64(t, s.ally_misses, 0u);
+        DF_CHECK_EQ_U64(t, s.ally_fails, 1u);
+        DF_CHECK_EQ_U64(t, s.user_fails, 1u);
+        DF_CHECK_EQ_U64(t, s.spread_mask, 0u);
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -214,6 +279,7 @@ int main(void)
     if (DF_CHECK(&t, kp != NULL)) {
         check_good_as_gold(&t, kp);
         check_water_absorb(&t, kp);
+        check_invulnerable(&t, kp);
         duoforge_context_destroy(kp);
     }
     return df_test_end(&t);
