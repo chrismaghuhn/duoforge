@@ -1,0 +1,22 @@
+{
+  "name": "f639_balloon_weak_armor_justified",
+  "purpose": "Issue 639 (decision 0015 entry 5eb): two standing Air Balloon holders hit by damaging moves; each holder's ability comes before its item (sim/battle.ts:1117-1130, the stable DamagingHit sort :421-426). Lucario's Bullet Punch hits Armarouge (Weak Armor: -unboost def, -boost spe, then -enditem); Kingambit's Night Slash hits Lucario (Justified: -boost atk, then -enditem, then the ally Floette-Eternal's Symbiosis pass of Leftovers).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000639a02",
+  "teams": [
+    "Kingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Night Slash\n- Protect\n\nArmarouge (M) @ Air Balloon\nAbility: Weak Armor\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Calm Mind\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Quick Attack\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nPolitoed (M) @ Leftovers\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect",
+    "Lucario (M) @ Air Balloon\nAbility: Justified\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nCareful Nature\n- Bullet Punch\n- Calm Mind\n- Protect\n\nFloette-Eternal (F) @ Leftovers\nAbility: Symbiosis\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Calm Mind\n- Protect\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n- Swords Dance\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 2, move 2"
+    ],
+    "p2": [
+      "move 1 2, move 1",
+      "move 3, move 2"
+    ],
+    "max_steps": 3
+  }
+}
