@@ -376,6 +376,24 @@ class TrackerStopTest(unittest.TestCase):
         self.assertEqual(holder.leech_source, 0)
         self.assertIn("leech_source", tracker._PASSED)  # Baton Pass copies it (no noCopy; dfi_pass_give)
 
+    def test_a_gem_used_by_its_own_holder_folds(self):
+        # batch I1 (decision 0015 entry 5ef): Normal Gem's use prints `-enditem|X|Normal Gem|[from] gem|[move] M`
+        # (sim/pokemon.ts:1828-1829), the holder's own item used up: it folds as a plain -enditem; another item, a holder
+        # that does not hold it, a missing or second [move] and any other attribute stop on the line
+        from types import SimpleNamespace
+        from duoforge_live import lines
+        items = {"NORMALGEM": 4, "SILKSCARF": 9}
+        held = {"p1a: Kangaskhan": 5, "p1b: Staraptor": 10}
+        view = SimpleNamespace(data=SimpleNamespace(tables={"ITEM": items}), item_now=lambda ident: held.get(ident, 0))
+        self.assertEqual(lines.check("|-enditem|p1a: Kangaskhan|Normal Gem|[from] gem|[move] Fake Out", view), "fold")
+        for line in ("|-enditem|p1b: Staraptor|Silk Scarf|[from] gem|[move] Double-Edge",
+                     "|-enditem|p1b: Staraptor|Normal Gem|[from] gem|[move] Double-Edge",
+                     "|-enditem|p1a: Kangaskhan|Normal Gem|[from] gem",
+                     "|-enditem|p1a: Kangaskhan|Normal Gem|[from] gem|[move] Fake Out|[of] p2a: X"):
+            with self.assertRaises(lines.Stop, msg=line) as caught:
+                lines.check(line, view)
+            self.assertEqual(caught.exception.reason, "line:-enditem [from] gem", line)
+
     def test_throat_chop_takes_only_the_pins_silent_form(self):
         from duoforge_live import lines
         t = self.tracker()

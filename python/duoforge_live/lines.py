@@ -181,6 +181,8 @@ _SINGLE_MOVE = {"Glaive Rush": "GLAIVE_RUSH", "move: Glaive Rush": "GLAIVE_RUSH"
 _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet", "move: Recycle",
                      "move: Knock Off", "move: Incinerate", "move: Fling", "move: Bug Bite", "move: Pluck", "stealeat",
                      "ability: Pickpocket", "ability: Magician", "ability: Harvest", "ability: Pickup"}
+# The gems of the tables (isGem, data/items.ts): their use prints [from] gem (batch I1, decision 0015 entry 5ef).
+GEMS = {"NORMALGEM"}  # trace_to_c.key names
 # The item changes the tracker folds are those the engine plays (#512 S1, duoforge_data_supported; steps G16, G29, G64):
 # a source move or ability it supports takes an item (-enditem) or gives one (-item), stealeat folds when the [move] that
 # steals the berry is supported (Bug Bite). The converter checks each line's shape. Every other source stops on its line.
@@ -527,6 +529,16 @@ def check(line, view):
         return _not_its_own(kind, effect, args[0], view)
     if kind == "-enditem":
         froms = _froms(attrs)
+        if froms == ["gem"]:
+            # Normal Gem (batch I1, decision 0015 entry 5ef): useItem's line for a gem is `-enditem|X|Gem|[from] gem|[move] M`
+            # (sim/pokemon.ts:1828-1829); the holder used its own item up, as with any plain -enditem. Only a gem of the
+            # tables (GEMS) in the holder's own hands, with exactly one [move], folds; every other form stops.
+            item = tables["ITEM"].get(trace_to_c.key(effect))
+            moves = [a for a in attrs if a.startswith("[move] ")]
+            if (trace_to_c.key(effect) in GEMS and item is not None and item + 1 == view.item_now(args[0]) and len(args) == 2
+                    and len(moves) == 1 and len(attrs) == 2):
+                return "fold"
+            _unknown(kind, "[from] gem")
         if any(f in _ITEM_CHANGE_FROM or f.startswith("move: ") for f in froms):
             if len(froms) == 1 and _item_change_played(froms[0], attrs, view):
                 return _feature("ITEM_CHANGE")
