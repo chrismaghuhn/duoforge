@@ -462,9 +462,11 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 if (!on_sheet && disg[slot]) {
                     dfi_fold_illusion_pending(&after->tail.sides[foe].illusion, fs, holder[slot], e.id, use);
                 }
-            } else if (e.kind == DUOFORGE_EVENT_ITEM_END) {
+            } else if (e.kind == DUOFORGE_EVENT_ITEM_END && e.detail != 1u) {
                 /* An item that is gone: used up, or taken by a move (Knock Off, ITEM_TAKEN). The old item_used says it
-                 * is gone either way, as the reference's state does; the view's item_now tells the two apart. */
+                 * is gone either way, as the reference's state does; the view's item_now tells the two apart. A resist
+                 * berry's [weaken] line (detail 1) is the second line of the berry its [eat] line already took: no new loss,
+                 * and an ally's Symbiosis between the two lines has given the eater a new item (issue 553). */
                 k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
             } else if (e.kind == DUOFORGE_EVENT_FAINT) {
                 /* A faint that no damage line announced (Perish Song's, step G26): the screen shows the foe at 0. */
