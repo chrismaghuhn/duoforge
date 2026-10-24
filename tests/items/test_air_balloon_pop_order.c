@@ -40,7 +40,8 @@
 
 #define ANY 0xFFFFu
 
-/* One expected event: kind, position, cause and id2 (ANY: not compared), detail (ANY: not compared). */
+/* One expected event: kind, then position, cause, id2 and detail, each one not compared when ANY. An ABILITY event (the
+ * `-ability|X|Ability|boost` line) carries the ability in id2 and no cause. */
 typedef struct pop_ev {
     uint16_t kind, position, cause, id2, detail;
 } pop_ev;
@@ -56,7 +57,8 @@ typedef struct pop_case {
 
 static bool matches(const duoforge_event *e, const pop_ev *w)
 {
-    return e->kind == w->kind && e->position == w->position && (w->cause == ANY || e->cause == w->cause) &&
+    return e->kind == w->kind && (w->position == ANY || e->position == w->position) &&
+           (w->cause == ANY || e->cause == w->cause) &&
            (w->id2 == ANY || e->id2 == w->id2) && (w->detail == ANY || e->detail == w->detail);
 }
 
@@ -94,7 +96,8 @@ static void check_case(df_test *t, const pop_case *c, const duoforge_event_buffe
     if (c->ally != ANY) {
         const pop_ev sym = {DUOFORGE_EVENT_ACTIVATE, c->ally, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SYMBIOSIS, ANY};
         if (!DF_CHECK(t, (uint32_t)at + 1u < buf->count && matches(&buf->events[at + 1], &sym))) {
-            fprintf(stderr, "  %s viewer %u: no Symbiosis pass of %u right after the pop\n", c->battle, viewer, (unsigned)c->ally);
+            fprintf(stderr, "  %s viewer %u: no Symbiosis pass of %u right after the pop\n", c->battle, viewer,
+                    (unsigned)c->ally);
         }
     }
 }
@@ -146,18 +149,19 @@ int main(void)
         };
         static const pop_case weak_armor_justified[] = {
             {"f639_balloon_weak_armor_justified", 1u, ANY,
-             {{DUOFORGE_EVENT_ABILITY, 1u, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_WEAKARMOR, ANY},
+             {{DUOFORGE_EVENT_ABILITY, 1u, ANY, 1u + DFI_ABILITY_WEAKARMOR, ANY},
               {DUOFORGE_EVENT_UNBOOST, 1u, ANY, ANY, 1u},
               {DUOFORGE_EVENT_BOOST, 1u, ANY, ANY, 4u}},
              3u},
             {"f639_balloon_weak_armor_justified", 2u, 3u,
-             {{DUOFORGE_EVENT_ABILITY, 2u, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_JUSTIFIED, ANY},
+             {{DUOFORGE_EVENT_ABILITY, 2u, ANY, 1u + DFI_ABILITY_JUSTIFIED, ANY},
               {DUOFORGE_EVENT_BOOST, 2u, ANY, ANY, 0u}},
              2u},
         };
         static const pop_case cursed_body[] = {
             {"f639_balloon_cursed_body", 2u, 3u,
-             {{DUOFORGE_EVENT_VOLATILE_START, 0u, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_CURSEDBODY, DUOFORGE_VOLATILE_DISABLE}},
+             {{DUOFORGE_EVENT_VOLATILE_START, 0u, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_CURSEDBODY,
+               DUOFORGE_VOLATILE_DISABLE}},
              1u},
         };
         check_battle(&t, ctx, "f639_balloon_toxic_debris", toxic_debris, sizeof toxic_debris / sizeof toxic_debris[0]);
