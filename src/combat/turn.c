@@ -8930,10 +8930,16 @@ static DFI_ALWAYS_INLINE duoforge_status dfi_move_body_after_loop(dfi_run *r, co
      * event (priority -1; the holder has one item, so never with Life Orb), so not for a move that Sheer Force stripped. When the
      * move's totalDamage (the HP the targets lost over every hit; a Substitute's hit adds 0) is not 0 and the holder has no
      * forceSwitchFlag (a Red Card drag, drag_pending), heal(totalDamage / 8): at least 1 (`damage <= 1` becomes 1), truncated;
-     * dfi_heal skips a fainted or full holder and a Heal Block one. `-heal|holder|hp|[from] item: Shell Bell`. */
+     * dfi_heal skips a fainted or full holder and a Heal Block one. `-heal|holder|hp|[from] item: Shell Bell|[of] T`: heal()
+     * takes the event's source, which is useMoveInner's `target`, the last of the move's targets (sim/battle-actions.ts:469,
+     * `targets[targets.length - 1]`), and names it unless it is the holder; a target that fainted in the move is no longer
+     * active (faintMessages at the end of the hit loop), so the line names it by side only ("p1: X"): no position then. */
     if (total != 0u && dfi_holds(r->b, m, DFI_ITEM_SHELLBELL) && ((r->drag_pending >> user) & 1u) == 0u &&
         !dfi_sf_strips(r->b, m, md)) {
-        dfi_heal(r, user, total / 8u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SHELLBELL, DUOFORGE_NO_POSITION);
+        const uint32_t last = targets[count - 1u];
+        const dfi_member *lm = dfi_at(r->b, last);
+        const uint32_t of = last == user || lm == NULL || lm->hp == 0u ? DUOFORGE_NO_POSITION : last;
+        dfi_heal(r, user, total / 8u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SHELLBELL, of);
     }
     return DUOFORGE_OK;
 }

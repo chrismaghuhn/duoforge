@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb" /* A2a (entry 5dy, table hash e4aeeb21; measured; previous f294fc70...); A0 PR-2 (parts 1 and 4, table hash d6eee672; measured; previous df5c0ef6...); A0 PR-1 (parts 2 and 3, table hash d14de900; measured in Release and Debug, equal to tools/state_model/state_v3_model.py; previous a2e950c5...); the model fingerprint of the pool tables; batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade, Snap Trap, the eight marks; previous dd791294...); changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
-#define FP_KPD_HEX "1e150a55af7d68c3d8303d958ce5bc7947305ff38e995fb6c6f3eec937bf302c" /* A2a (as FP_KP_HEX; previous ab7ef4db...); A0 PR-2 (as FP_KP_HEX; previous 950bd25a...); A0 PR-1 (as FP_KP_HEX; previous 9b569bbb...); POOL_DEV: the same table hash, changed by steps K1, K2, K3, K4 and batch A0 part 3 (previous 7456fe2e...) */
+#define FP_KP_HEX "9fca49f21a57ec54d8e46efa38f76e394735a1598643b5e4eb952b05047bb3df" /* I1 (entry 5ef, table hash f9e17535; measured; previous c4d08f84...); A2a (entry 5dy, table hash e4aeeb21; measured; previous f294fc70...); A0 PR-2 (parts 1 and 4, table hash d6eee672; measured; previous df5c0ef6...); A0 PR-1 (parts 2 and 3, table hash d14de900; measured in Release and Debug, equal to tools/state_model/state_v3_model.py; previous a2e950c5...); the model fingerprint of the pool tables; batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade, Snap Trap, the eight marks; previous dd791294...); changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
+#define FP_KPD_HEX "c3898ecfae8b9c360a9bf5d75dca7023501cdcd0ebcb27a0a6c0a6e2f043f28a" /* I1 (as FP_KP_HEX; previous 1e150a55...); A2a (as FP_KP_HEX; previous ab7ef4db...); A0 PR-2 (as FP_KP_HEX; previous 950bd25a...); A0 PR-1 (as FP_KP_HEX; previous 9b569bbb...); POOL_DEV: the same table hash, changed by steps K1, K2, K3, K4 and batch A0 part 3 (previous 7456fe2e...) */
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -395,9 +395,9 @@ int main(void)
      * next one is not. Every id the pool adds is out of range under the
      * CLOSURE and TEAM_C kinds, whose bounds are 11 and 16 items. */
     s = teams;
-    s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT; /* Floettite */
-    legal(&t, kp, &s, false, "the last pool item (Floettite, unmarked)");
-    legal(&t, kq, &s, false, "the last pool item (dev)");
+    s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT; /* Zoom Lens, marked since batch I1 (decision 0015 entry 5ef) */
+    legal(&t, kp, &s, true, "the last pool item (Zoom Lens, marked)");
+    legal(&t, kq, &s, true, "the last pool item (dev)");
     invalid(&t, kc, &s, "the last pool item under TEAM_C");
     s.sides[0].members[3].item = DFI_POOL_ITEM_COUNT + 1u;
     invalid(&t, kp, &s, "an item beyond the pool");

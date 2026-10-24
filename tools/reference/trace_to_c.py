@@ -1361,6 +1361,12 @@ def ev_cause(attrs, tables):
                 raise ConversionError('from-attribute', 'trace_to_c: unknown [from] %r' % a, detail=what)
         elif a.startswith('[of] '):
             other = ev_pos(a[5:])
+    if other is None and cause == CAUSE['ITEM'] and id2 == tables['ITEM'].get(key('Shell Bell'), -2) + 1 and \
+            re.match(r'^\[of\] p[12]: ', [a for a in attrs if a.startswith('[of] ')][-1]):
+        # Batch I1 (decision 0015 entry 5ef): Shell Bell's heal names the move's last target as [of] (heal() takes the event's
+        # source, sim/battle-actions.ts:469); a target that fainted in the move is no longer active and is named by its side
+        # only (`[of] p1: X`): no position (the engine's NO_POSITION).
+        other = NOPOS
     return cause, id2, other
 
 

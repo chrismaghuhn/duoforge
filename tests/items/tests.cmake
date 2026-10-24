@@ -13,3 +13,5 @@ duoforge_add_test(NAME duoforge.items.power_and_accuracy_items SOURCES items/tes
 duoforge_add_test(NAME duoforge.items.bright_powder SOURCES items/test_bright_powder.c WHITEBOX TIMEOUT 60 TIER quick AREA items)
 # 5eb (-): Air Balloon pops after the holder's own DamagingHit abilities. Scaffolded by tools/new_mechanic.py.
 duoforge_add_test(NAME duoforge.items.air_balloon_pop_order SOURCES items/test_air_balloon_pop_order.c WHITEBOX TIMEOUT 60 TIER quick AREA items)
+# 5ef (I1): I1: Starminite and six items with one clause each at an existing hook. Scaffolded by tools/new_mechanic.py.
+duoforge_add_test(NAME duoforge.items.move_hook_items SOURCES items/test_move_hook_items.c WHITEBOX TIMEOUT 60 TIER quick AREA items)

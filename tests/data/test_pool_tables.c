@@ -1357,7 +1357,11 @@ int main(void)
                                /* step K2: Excadrite (Excadrill-Mega, Piercing Drill), mark only */
                                id == DFI_ITEM_EXCADRITE ||
                                /* step A0 part 1: the two Mega Stones of the batch (Chesnaught, Altaria), mark only */
-                               id == DFI_ITEM_CHESNAUGHTITE || id == DFI_ITEM_ALTARIANITE;
+                               id == DFI_ITEM_CHESNAUGHTITE || id == DFI_ITEM_ALTARIANITE ||
+                               /* batch I1 (decision 0015 entry 5ef): Starminite (mark only) and six engine rows */
+                               id == DFI_ITEM_STARMINITE || id == DFI_ITEM_NORMALGEM || id == DFI_ITEM_KINGSROCK ||
+                               id == DFI_ITEM_ZOOMLENS || id == DFI_ITEM_SHELLBELL || id == DFI_ITEM_BIGROOT ||
+                               id == DFI_ITEM_SHEDSHELL;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
