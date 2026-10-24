@@ -1,0 +1,21 @@
+{
+ "source": "interactions/test_pool_g75.c",
+ "parts": [
+  {
+   "file": "interactions/test_cheap_set_rows.c",
+   "calls": [
+    "check_rows",
+    "check_battle_armor_bases"
+   ],
+   "header": "step G75 of the content expansion (decision 0015, item 5bp, the cheap set), POOL build, its three rows as one batch, each read by id in combat/turn.c: Pure Power (onModifyAtk x2 for a physical move of its holder, data/abilities.ts:3608-3617, as Huge Power), Battle Armor (onCriticalHit false: the critical hit is cancelled after its draw, data/abilities.ts:355-361, as Shell Armor) and Scope Lens (onModifyCritRatio +1, data/items.ts:5554-5565). Their marks and handler columns (engine rows, handler NONE), and the base formes Falinks and Perrserker that carry Battle Armor. The recorded battles g75_* are replayed by duoforge.reference.conformance_pool_data, which compares every event, HP and draw with the reference, the critical draws included. The batch's two Mega Stones are checked in tests/forms/test_mega_stones.c.\n\nSplit by subject from the test of step G75 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "forms/test_mega_stones.c",
+   "calls": [
+    "check_stones",
+    "check_pairs"
+   ],
+   "header": "(this file's section of the stones)"
+  }
+ ]
+}
