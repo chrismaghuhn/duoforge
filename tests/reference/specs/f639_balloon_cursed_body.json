@@ -1,0 +1,22 @@
+{
+  "name": "f639_balloon_cursed_body",
+  "purpose": "Issue 639 (decision 0015 entry 5eb): a draw-taking holder ability. Lucario's Bullet Punch hits the standing Gengar (Cursed Body, Air Balloon); the holder's ability comes before its item (sim/battle.ts:1117-1130, the stable DamagingHit sort :421-426): Cursed Body's roll and its -start Disable line, then -enditem Air Balloon, then the ally Floette-Eternal's Symbiosis pass of Leftovers.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000639a07",
+  "teams": [
+    "Lucario (M) @ Sharp Beak\nAbility: Justified\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Bullet Punch\n- Protect\n\nStaraptor (F) @ Silk Scarf\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Quick Attack\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n- Swords Dance\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nPolitoed (M) @ Leftovers\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect",
+    "Gengar (M) @ Air Balloon\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Sludge Bomb\n- Protect\n\nFloette-Eternal (F) @ Leftovers\nAbility: Symbiosis\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Calm Mind\n- Protect\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n- Swords Dance\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 2, move 2"
+    ],
+    "p2": [
+      "move 1 2, move 1",
+      "move 2, move 2"
+    ],
+    "max_steps": 3
+  }
+}
