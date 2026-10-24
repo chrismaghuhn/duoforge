@@ -27,5 +27,9 @@
     - steps 1 and 3: the ally's `-miss` before the user's line, no `[miss]` on the move line, no heal or `-fail` at the ally, and the `[spread]` slots;
     - step 2, the control: both healed;
     - the neighbours: No Guard on the charging ally (step 3) lets the move heal it; No Guard on the user (step 1) lets the move reach the ally at full HP, which fails as the user does.
-  - **Mutants.** MUTANTS
+  - **Mutants.** One lock job on a copy of head 6054974b, with a green baseline of `conformance_pool_data`, `conformance_pool`, `life_dew_try_hit` and `life_dew_water_absorb` before and after:
+    - **M1**, the clause removed (main's behaviour), is killed by `conformance_pool_data` (`life_dew_phantom_force` step 1, event 7) and `life_dew_try_hit`.
+    - **M2**, `[miss]` on the move line whatever its `[spread]`, is killed by `conformance_pool_data` (step 1, event 6, the move line) and `life_dew_try_hit`.
+    - **M3**, the `-miss` shown but the ally left in the targets, is killed by `conformance_pool_data` (step 1, event 9) and `life_dew_try_hit`.
+    - `conformance_pool` stays green under all three; the kill is `conformance_pool_data`, which runs the pool battles.
 - **Open.** None known for Life Dew. Other semi-invulnerable sources need `dfi_semi_invulnerable` extended when their rows are marked (see there).
