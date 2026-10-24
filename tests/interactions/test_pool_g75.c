@@ -32,8 +32,8 @@
 #include "support/fixtures.h"
 #include "support/pool.h"
 
-/* ---- the marks, the handler columns and the rows that stay out */
-static void check_marks(df_test *t)
+/* ---- the marks and the handler columns of the three rows */
+static void check_rows(df_test *t)
 {
     static const uint32_t abilities[] = {DFI_ABILITY_PUREPOWER, DFI_ABILITY_BATTLEARMOR};
     for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
@@ -41,7 +41,14 @@ static void check_marks(df_test *t)
         DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[abilities[i]], DFI_HANDLER_NONE); /* an engine row: read by id */
         DF_CHECK_EQ_U64(t, dfi_pool_ability_family[abilities[i]].family, DFI_ABILITY_FAMILY_NONE);
     }
-    static const uint32_t items[] = {DFI_ITEM_SCOPELENS, DFI_ITEM_MEDICHAMITE, DFI_ITEM_CLEFABLITE};
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_SCOPELENS] != 0u);
+    DF_CHECK_EQ_U64(t, dfi_pool_item_handler[DFI_ITEM_SCOPELENS], DFI_HANDLER_NONE);
+}
+
+/* ---- the marks of the two stones, and the stones that stay out */
+static void check_stones(df_test *t)
+{
+    static const uint32_t items[] = {DFI_ITEM_MEDICHAMITE, DFI_ITEM_CLEFABLITE};
     for (size_t i = 0u; i < sizeof items / sizeof items[0]; ++i) {
         DF_CHECK(t, dfi_support.items[items[i]] != 0u);
         DF_CHECK_EQ_U64(t, dfi_pool_item_handler[items[i]], DFI_HANDLER_NONE);
@@ -54,7 +61,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_STRONGJAW], DFI_HANDLER_UNMODELED);
 }
 
-/* ---- the Mega pairs of the two stones, and the legal base abilities of their base formes */
+/* ---- the legal base abilities of a forme */
 static bool base_ability_legal(uint32_t base, uint32_t ability)
 {
     const dfi_forme_legal *l = &dfi_pool_forme_legal[base];
@@ -66,6 +73,7 @@ static bool base_ability_legal(uint32_t base, uint32_t ability)
     return false;
 }
 
+/* ---- the Mega pairs of the two stones, and the legal base abilities of their base formes */
 static void check_pairs(df_test *t)
 {
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_MEDICHAM, 1u + DFI_ITEM_MEDICHAMITE), DFI_FORME_MEDICHAMMEGA);
@@ -75,19 +83,25 @@ static void check_pairs(df_test *t)
     /* the base formes of the battles hold the ability of each pair */
     DF_CHECK(t, base_ability_legal(DFI_FORME_MEDICHAM, DFI_ABILITY_PUREPOWER));
     DF_CHECK(t, base_ability_legal(DFI_FORME_CLEFABLE, DFI_ABILITY_UNAWARE));
-    /* Falinks (the holder of the battle) and Perrserker carry Battle Armor as a base ability */
-    DF_CHECK(t, base_ability_legal(DFI_FORME_FALINKS, DFI_ABILITY_BATTLEARMOR));
-    DF_CHECK(t, base_ability_legal(DFI_FORME_PERRSERKER, DFI_ABILITY_BATTLEARMOR));
     /* a stone of another forme gives nothing: Medichamite on Clefable, Clefablite on Medicham */
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_CLEFABLE, 1u + DFI_ITEM_MEDICHAMITE), DFI_FORME_NONE);
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_MEDICHAM, 1u + DFI_ITEM_CLEFABLITE), DFI_FORME_NONE);
+}
+
+/* ---- Falinks (the holder of the battle) and Perrserker carry Battle Armor as a base ability */
+static void check_battle_armor_bases(df_test *t)
+{
+    DF_CHECK(t, base_ability_legal(DFI_FORME_FALINKS, DFI_ABILITY_BATTLEARMOR));
+    DF_CHECK(t, base_ability_legal(DFI_FORME_PERRSERKER, DFI_ABILITY_BATTLEARMOR));
 }
 
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.state.pool_g75");
-    check_marks(&t);
+    check_rows(&t);
+    check_stones(&t);
     check_pairs(&t);
+    check_battle_armor_bases(&t);
     return df_test_end(&t);
 }
