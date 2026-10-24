@@ -5261,7 +5261,7 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
         return dfi_status_hit_end(r);
     }
     if (count != 1u || target >= DFI_POSITIONS) {
-        return DUOFORGE_E_INVARIANT; /* dfi_curse_targets always leaves one target for a Ghost user */
+        return DUOFORGE_E_INVARIANT; /* one target, or none (no foe: failed before this) */
     }
     if (target != user && dfi_invulnerable_to(r, user, target, DFI_MOVE_CURSE)) {
         /* The Invulnerability step (step G58, sim/battle-actions.ts:556) comes before Good as Gold's TryHit, as for Coaching: a
