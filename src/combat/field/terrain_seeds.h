@@ -46,9 +46,12 @@ static inline void dfi_terrain_seed(dfi_run *r, uint32_t flat)
                           : terrain == DFI_TERRAIN_PSYCHIC  ? DFI_ITEM_PSYCHICSEED
                           : terrain == DFI_TERRAIN_ELECTRIC ? DFI_ITEM_ELECTRICSEED
                                                             : DFI_ITEM_MISTYSEED;
-    dfi_use_item(r, flat);
+    /* useItem (sim/pokemon.ts:1825-1845): the -enditem, the item's boosts, then AfterUseItem: an ally's Symbiosis passes its
+     * item after the boost (issue 553). */
+    dfi_use_item_core(r, flat, DUOFORGE_NO_POSITION);
     dfi_boost(r, flat, defense ? def_up : spd_up, DFI_POSITIONS,
               dfi_effect(DUOFORGE_CAUSE_ITEM, 1u + item, DFI_BOOST_PRIMARY));
+    dfi_symbiosis(r, flat);
 }
 
 /* eachEvent('TerrainChange'): every terrain seed on the field in
