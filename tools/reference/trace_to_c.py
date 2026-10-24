@@ -1171,6 +1171,11 @@ NOPOS = 0xFF
 COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('kingsshield', 1), ('banefulbunker', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
                       ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
+    # Batch I1 (decision 0015 entry 5ef): the gem volatile (data/conditions.ts:463-472, duration 1) boosts only its holder's own
+    # move of the action that used the Normal Gem (the -enditem line with [from] gem and the damage show it); the engine keeps it
+    # for that action only (dfi_run.gem). A step can end with it standing (the battle ends, or a pivot pauses the turn before
+    # the residual removes it), and no marked move lets its holder move again in that turn.
+    'gem': 'the [from] gem item line and the damage of its holder\'s move',
     # data/moves.ts disable (step G27): compared through the request (the barred slot) and the start and end lines.
     'disable': 'the request and the Disable lines',
     # data/conditions.ts stall: compared as df_conf_mon.stall (its presence).
