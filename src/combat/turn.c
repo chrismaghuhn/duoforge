@@ -5268,7 +5268,7 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
         return dfi_status_hit_end(r);
     }
     if (count != 1u || target >= DFI_POSITIONS) {
-        return DUOFORGE_E_INVARIANT; /* dfi_curse_targets always leaves one target for a Ghost user */
+        return DUOFORGE_E_INVARIANT; /* one target, or none (no foe: failed before this) */
     }
     if (target != user && dfi_invulnerable_to(r, user, target, DFI_MOVE_CURSE)) {
         /* The Invulnerability step (step G58, sim/battle-actions.ts:556) comes before Good as Gold's TryHit, as for Coaching: a
@@ -5341,6 +5341,7 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
  *     battle-actions.ts useMove draws getRandomTarget twice (after singleEvent ModifyMove and after runEvent ModifyMove); the
  *     second draw is the target (verified by the trace of g84b_ally_random: two RANDOM_TARGET draws, one line).
  *   - a foe: kept, no draw.
+ * With no foe standing the draws draw nothing and the move has no target (count 0).
  * A user without the Ghost type targets itself (onModifyMove sets 'self'), with no draw. */
 static duoforge_status dfi_curse_targets(dfi_run *r, uint32_t user, uint32_t targets[DFI_POSITIONS], uint32_t *count)
 {
@@ -5366,7 +5367,11 @@ static duoforge_status dfi_curse_targets(dfi_run *r, uint32_t user, uint32_t tar
         return st;
     }
     if (second >= DFI_POSITIONS) {
-        return DUOFORGE_E_INVARIANT;
+        /* No foe stands (issue 553): getRandomTarget draws nothing and returns the fainted foe.active[0] (side.randomFoe() is
+         * null, sim/battle.ts:2521), getMoveTargets finds no target, and useMove shows [notarget] and -fail (the move body's
+         * path for a move with nothing to hit). */
+        *count = 0u;
+        return DUOFORGE_OK;
     }
     targets[0] = second;
     *count = 1u;
