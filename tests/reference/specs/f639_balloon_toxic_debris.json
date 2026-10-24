@@ -1,0 +1,22 @@
+{
+  "name": "f639_balloon_toxic_debris",
+  "purpose": "Issue 639 (decision 0015 entry 5eb): Staraptor's Quick Attack hits the standing Glimmora (Toxic Debris, Air Balloon); the holder's ability comes before its item (sim/battle.ts:1117-1130, the stable DamagingHit sort :421-426): Toxic Debris's -activate and the Toxic Spikes line, then -enditem Air Balloon, then the ally Floette-Eternal's Symbiosis pass of Leftovers.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000639a01",
+  "teams": [
+    "Staraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Quick Attack\n- Protect\n\nSneasler (M) @ Silk Scarf\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Protect\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n- Swords Dance\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nPolitoed (M) @ Leftovers\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect",
+    "Glimmora (M) @ Air Balloon\nAbility: Toxic Debris\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Stealth Rock\n- Protect\n\nFloette-Eternal (F) @ Leftovers\nAbility: Symbiosis\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Calm Mind\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n- Swords Dance\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 1 1, move 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 2, move 2"
+    ],
+    "max_steps": 3
+  }
+}
