@@ -5,7 +5,8 @@
  * ability ([of] the user) or is -immune at full HP; the ally leaves the targets and the [spread] list. The recorded battles
  * life_dew_good_as_gold and life_dew_water_absorb show the pin's lines (conformance_pool_data); this test shows that the hook is
  * the ally's ability: the same steps with the ally's ability changed to one without a TryHit for the move (Defiant, Volt
- * Absorb) heal the ally by the move, and the user's own Good as Gold or Water Absorb is not asked (`target !== source`).
+ * Absorb) heal the ally by the move, the user's own Good as Gold or Water Absorb is not asked (`target !== source`), and a
+ * Water Absorb ally under Heal Block is -immune (its heal refused), where A2a refused the step.
  */
 #include <stdbool.h>
 #include <string.h>
@@ -82,9 +83,10 @@ static void run_life_dew_step(const duoforge_context *ctx, duoforge_battle *b, c
 }
 
 /* The battle `name` replayed up to step `step`, then that step on a copy whose user (`user_ability`) or ally (`ally_ability`)
- * has another ability (0: unchanged). */
-static bool life_dew_variant(df_test *t, const duoforge_context *ctx, const char *name, uint32_t step, uint32_t ally_forme,
-                             uint32_t user_ability, uint32_t ally_ability, uint32_t seen_ability, life_dew_seen *out)
+ * has another ability (0: unchanged) and whose ally is under Heal Block for `ally_heal_block` turns (0: as recorded). */
+static bool life_dew_variant_hb(df_test *t, const duoforge_context *ctx, const char *name, uint32_t step, uint32_t ally_forme,
+                                uint32_t user_ability, uint32_t ally_ability, uint32_t ally_heal_block, uint32_t seen_ability,
+                                life_dew_seen *out)
 {
     const df_conf_battle *cb = df_conf_find(name);
     if (!DF_CHECK(t, cb != NULL && cb->step_count > step)) {
@@ -104,6 +106,9 @@ static bool life_dew_variant(df_test *t, const duoforge_context *ctx, const char
         if (ally_ability != 0u) {
             b->tail.sides[0].ability_now[ally] = (uint16_t)ally_ability;
         }
+        if (ally_heal_block != 0u) {
+            b->tail.sides[0].positions[1].heal_block_turns = (uint8_t)ally_heal_block; /* the ally stands at p1b */
+        }
         ok = DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
     }
     if (ok) {
@@ -113,6 +118,12 @@ static bool life_dew_variant(df_test *t, const duoforge_context *ctx, const char
     }
     duoforge_battle_destroy(b);
     return ok;
+}
+
+static bool life_dew_variant(df_test *t, const duoforge_context *ctx, const char *name, uint32_t step, uint32_t ally_forme,
+                             uint32_t user_ability, uint32_t ally_ability, uint32_t seen_ability, life_dew_seen *out)
+{
+    return life_dew_variant_hb(t, ctx, name, step, ally_forme, user_ability, ally_ability, 0u, seen_ability, out);
 }
 
 /* 1. Good as Gold (life_dew_good_as_gold; step 1: Milotic at full HP, step 2: Milotic hurt, Gholdengo hurt both times). */
@@ -176,6 +187,17 @@ static void check_water_absorb(df_test *t, const duoforge_context *ctx)
         DF_CHECK_EQ_U64(t, s.ally_ability_heals, 0u);
         DF_CHECK_EQ_U64(t, s.ally_immune, 0u);
         DF_CHECK_EQ_U64(t, s.spread_mask, 3u);
+    }
+    /* Step 1 with the hurt ally under Heal Block (Psychic Noise's two turns): Water Absorb's this.heal is refused by Heal Block's
+     * onTryHeal (data/moves.ts:8324-8332, `return false`), so the handler shows -immune|ally|[from] ability: Water Absorb
+     * (data/abilities.ts:5364-5370) and still stops the move for the ally; the user heals by the move. A2a refused this. */
+    if (life_dew_variant_hb(t, ctx, "life_dew_water_absorb", 1u, DFI_FORME_VAPOREON, 0u, 0u, 2u, AB(WATERABSORB), &s)) {
+        DF_CHECK_EQ_U64(t, s.ally_immune, 1u);
+        DF_CHECK_EQ_U64(t, s.ally_ability_heals, 0u);
+        DF_CHECK_EQ_U64(t, s.ally_move_heals, 0u);
+        DF_CHECK_EQ_U64(t, s.user_move_heals, 1u);
+        DF_CHECK(t, s.first_ally_line < s.first_user_line);
+        DF_CHECK_EQ_U64(t, s.spread_mask, 1u);
     }
     /* The user's own Water Absorb is not asked (target === source): the user heals by the move. */
     if (life_dew_variant(t, ctx, "life_dew_water_absorb", 1u, DFI_FORME_VAPOREON, AB(WATERABSORB), 0u, AB(WATERABSORB), &s)) {
