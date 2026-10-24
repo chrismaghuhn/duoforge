@@ -62,9 +62,10 @@ static void check_order(df_test *t, const duoforge_context *ctx)
             duoforge_battle_destroy(b);
             return;
         }
-        /* the recorded state: Skill Swap gave Meowscarada Guard Dog */
+        /* the recorded state: Skill Swap gave Meowscarada Guard Dog; Florges keeps its own Flower Veil (ability_now 0) */
         DF_CHECK_EQ_U64(t, b->tail.sides[0].ability_now[meow], AB(GUARDDOG));
-        DF_CHECK_EQ_U64(t, b->tail.sides[0].ability_now[florges], AB(FLOWERVEIL));
+        DF_CHECK_EQ_U64(t, b->tail.sides[0].ability_now[florges], 0u);
+        DF_CHECK_EQ_U64(t, b->sides[0].members[florges].ability, AB(FLOWERVEIL));
         if (variant == VEIL_ONLY) {
             b->tail.sides[0].ability_now[meow] = (uint16_t)AB(OVERGROW);
         } else if (variant == DOG_ONLY) {
