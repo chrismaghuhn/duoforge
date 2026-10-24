@@ -1,0 +1,25 @@
+{
+  "name": "fz553_perish_song_phantom_force",
+  "purpose": "Perish Song against a semi-invulnerable Pokemon: Polteageist (p1a) prepares Phantom Force at step 1; at step 2 Altaria (p2a, faster after Dragon Dance) uses Perish Song before Polteageist's hit. onHitField runs the Invulnerability event first (data/moves.ts:13246): -miss|Altaria|Polteageist, and Polteageist gets no perish count; the other three do. On main the engine gave Polteageist the volatile (issue 553, fz_123_75). Synthetic teams; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,5530000000000000000000000000000000000000000000000000000000000002",
+  "teams": [
+    "primarina (M) @ widelens\nAbility: torrent\nLevel: 50\nEVs: 10 HP / 13 Atk / 13 Def / 14 SpA / 9 SpD / 7 Spe\nBrave Nature\n- psychup\n- acrobatics\n- sing\n- reflect\n\nmeganium (M) @ mawilite\nAbility: overgrow\nLevel: 50\nEVs: 11 HP / 11 Atk / 4 Def / 10 SpA / 9 SpD / 21 Spe\nNaughty Nature\n- grassyglide\n- leafstorm\n- doubleedge\n- gigadrain\n\npolteageist @ cameruptite\nAbility: weakarmor\nLevel: 50\nEVs: 11 HP / 15 Atk / 9 Def / 9 SpA / 14 SpD / 8 Spe\nRelaxed Nature\n- strengthsap\n- willowisp\n- phantomforce\n- lightscreen\n\nvenusaur (M) @ whiteherb\nAbility: chlorophyll\nLevel: 50\nEVs: 15 HP / 14 Atk / 9 Def / 10 SpA / 12 SpD / 6 Spe\nJolly Nature\n- petalblizzard\n- bodyslam\n- outrage\n- earthpower\n\nsandaconda (M) @ scraftinite\nAbility: sandveil\nLevel: 50\nEVs: 7 HP / 10 Atk / 10 Def / 7 SpA / 13 SpD / 19 Spe\nCareful Nature\n- irondefense\n- mudslap\n- substitute\n- earthpower\n\nbanette (M) @ charcoal\nAbility: frisk\nLevel: 50\nEVs: 9 HP / 9 Atk / 11 Def / 13 SpA / 10 SpD / 14 Spe\nMild Nature\n- darkpulse\n- thunder\n- destinybond\n- nastyplot",
+    "pangoro (F) @ fairyfeather\nAbility: ironfist\nLevel: 50\nEVs: 9 HP / 6 Atk / 18 Def / 15 SpA / 8 SpD / 10 Spe\nHasty Nature\n- focusblast\n- sunnyday\n- superpower\n- rocktomb\n\nbellibolt (F) @ smoothrock\nAbility: static\nLevel: 50\nEVs: 10 HP / 15 Atk / 12 Def / 8 SpA / 13 SpD / 8 Spe\nDocile Nature\n- weatherball\n- thunderbolt\n- confuseray\n- wildcharge\n\naltaria (M) @ charizarditex\nAbility: cloudnine\nLevel: 50\nEVs: 1 HP / 4 Atk / 1 Def / 1 SpA / 6 SpD / 1 Spe\nLonely Nature\n- dragonpulse\n- perishsong\n- dragondance\n- trailblaze\n\ngolurk\nAbility: ironfist\nLevel: 50\nEVs: 7 HP / 15 Atk / 10 Def / 12 SpA / 9 SpD / 13 Spe\nQuirky Nature\n- rockslide\n- phantomforce\n- ironhead\n- closecombat\n\nhippowdon (M) @ chandelurite\nAbility: sandforce\nLevel: 50\nEVs: 13 HP / 6 Atk / 9 Def / 10 SpA / 11 SpD / 17 Spe\nImpish Nature\n- superpower\n- bodyslam\n- helpinghand\n- whirlwind\n\nscolipede (M) @ scolipite\nAbility: speedboost\nLevel: 50\nEVs: 13 HP / 8 Atk / 7 Def / 5 SpA / 9 SpD / 12 Spe\nHardy Nature\n- sunnyday\n- megahorn\n- assurance\n- throatchop"
+  ],
+  "choices": [
+    {
+      "p1": "team 3124",
+      "p2": "team 3124"
+    },
+    {
+      "p1": "move 3 1, move 4",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 2, move 2"
+    }
+  ]
+}
