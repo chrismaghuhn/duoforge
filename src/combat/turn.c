@@ -4596,6 +4596,20 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
     uint32_t left[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
     uint32_t n = 0u;
     uint32_t no_accuracy = 0u;
+    /* The Invulnerability step before it (hitStepInvulnerabilityEvent, sim/battle-actions.ts:621-642; step G58), as in the hit
+     * steps: an ally in the charge of Phantom Force is a -miss|user|ally (no [miss] on a [spread] move line) and leaves the
+     * targets before its TryHit, so it is not healed (decision 0015 entry 5ee, #672). */
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (dfi_invulnerable_to(r, user, targets[i], move_id)) {
+            hit[i] = false;
+            duoforge_event *mv = dfi_last_move(r);
+            if (mv != NULL && (mv->flags & DUOFORGE_EVENT_FLAG_SPREAD) == 0u) {
+                mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_MISS); /* wide-operands-reviewed */
+            }
+            const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, targets[i]);
+            dfi_emit(r, &miss);
+        }
+    }
     dfi_try_hit_abilities(r, user, targets, count, hit, &dfi_pool_moves[move_id], move_id,
                           dfi_move_type_now(r, dfi_at(r->b, user), &dfi_pool_moves[move_id]), &no_accuracy);
     for (uint32_t i = 0u; i < count; ++i) {
