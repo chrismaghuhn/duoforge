@@ -83,3 +83,5 @@ duoforge_add_test(NAME duoforge.abilities.aura_guard SOURCES abilities/test_aura
 duoforge_add_test(NAME duoforge.abilities.stalwart_random_move SOURCES abilities/test_stalwart_random_move.c WHITEBOX LIBS duoforge_batch TIMEOUT 60 TIER quick AREA abilities)
 # Step G39: what Damp and Sturdy act on (Damp stays inert, the OHKO moves are marked later, Mold Breaker unmarked).
 duoforge_add_test(NAME duoforge.abilities.damp_sturdy_rows SOURCES abilities/test_damp_sturdy_rows.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)
+# 5ed (-): Life Dew runs the TryHit abilities of its ally. Scaffolded by tools/new_mechanic.py.
+duoforge_add_test(NAME duoforge.abilities.life_dew_try_hit SOURCES abilities/test_life_dew_try_hit.c WHITEBOX TIMEOUT 60 TIER quick AREA abilities)

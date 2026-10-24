@@ -33,7 +33,7 @@ interactions/test_pool_g39.c	duoforge.state.pool_g39	split	-	-	done	G39: thirtee
 interactions/test_pool_g47.c	duoforge.state.pool_g47	rename	interactions/test_status_cures.c	duoforge.interactions.status_cures	done	G47: the status and volatile cures
 interactions/test_pool_g52.c	duoforge.state.pool_g52	rename	interactions/test_revival_blessing_view.c	duoforge.interactions.revival_blessing_view	done	G52: Revival Blessing's REVIVE and the information boundary
 interactions/test_pool_g67.c	duoforge.state.pool_g67	split	-	-	done	G67: Magic Guard, Air Balloon and ITEM_SHOWN
-interactions/test_pool_g75.c	duoforge.state.pool_g75	split	-	-	planned	G75: Pure Power, Battle Armor and the cheap set
+interactions/test_pool_g75.c	duoforge.state.pool_g75	split	-	-	done	G75: Pure Power, Battle Armor and the cheap set
 interactions/test_pool_g77.c	duoforge.state.pool_g77	split	-	-	done	G77: Magma Armor and the crit package
 interactions/test_pool_g83.c	duoforge.state.pool_g83	split	-	-	done	G83: Bulletproof, Rivalry, Leaf Guard, Iron Ball
 interactions/test_pool_i2.c	duoforge.state.pool_i2	rename	interactions/test_illusion.c	duoforge.interactions.illusion	done	I2: Illusion
@@ -157,3 +157,5 @@ interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_snip
 interactions/test_pool_g77.c	duoforge.state.pool_g77	part	interactions/test_magma_armor_frozen_refusals.c	duoforge.interactions.magma_armor_frozen_refusals	done	G77: magma armor frozen refusals
 interactions/test_pool_g83.c	duoforge.state.pool_g83	part	interactions/test_bulletproof_rivalry_leaf_guard_iron_ball.c	duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball	done	G83: bulletproof rivalry leaf guard iron ball
 interactions/test_pool_g83.c	duoforge.state.pool_g83	part	interactions/test_leaf_guard_mega_sol_refusal.c	duoforge.interactions.leaf_guard_mega_sol_refusal	done	G83: leaf guard mega sol refusal
+interactions/test_pool_g75.c	duoforge.state.pool_g75	part	interactions/test_cheap_set_rows.c	duoforge.interactions.cheap_set_rows	done	G75: cheap set rows
+interactions/test_pool_g75.c	duoforge.state.pool_g75	part	forms/test_mega_stones.c	duoforge.forms.mega_stones	done	G75: mega stones

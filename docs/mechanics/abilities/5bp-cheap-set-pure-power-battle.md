@@ -4,7 +4,7 @@
 
 - Area: abilities
 - Step: G75
-- Tests: duoforge.data.pool_tables, duoforge.state.pool_setup, duoforge.reference.conformance_pool_data, duoforge.reference.tiebreak_pool_data, duoforge.data.api, duoforge.abilities.magic_bounce
+- Tests: duoforge.interactions.cheap_set_rows, duoforge.forms.mega_stones, duoforge.data.pool_tables, duoforge.state.pool_setup, duoforge.reference.conformance_pool_data, duoforge.reference.tiebreak_pool_data, duoforge.data.api, duoforge.abilities.magic_bounce
 
 5bp. **G75, the cheap set: Pure Power, Battle Armor, Scope Lens, and the Mega Stones Medichamite and Clefablite** (lane B, batch 4; no public value, no new state, no new draw site, no new pool column, no flags3 bit, no view change, no version bump). Pure Power, Battle Armor and Scope Lens are engine rows (`ENGINE_ROWS` of the generator, handler NONE) that `src/combat/turn.c` reads by id; Medichamite and Clefablite are marked on the Mega-by-stone model of 5p. None is overridden by the Champions mod.
   - **Pure Power** (`data/abilities.ts:3608-3617`, onModifyAtkPriority 5, chainModify(2)): the same text as Huge Power (`:1886-1896`). x2 for a physical move of its holder in the ModifyAtk chain of `turn.c` (the Huge Power line, with the same physical gate). Medicham and Medicham-Mega carry it; Mold Breaker is not marked.
