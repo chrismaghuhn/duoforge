@@ -4559,30 +4559,40 @@ static duoforge_status dfi_run_follow_me(dfi_run *r, uint32_t user, uint32_t mov
  * rounding: Math.round, which is Math.ceil for the halves of Heal Pulse's Math.ceil(baseMaxhp * 0.5), at least 1). */
 static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t den, bool still, uint32_t user,
                                              uint32_t move_id, const uint32_t *targets, uint32_t count);
+static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *targets, uint32_t count, bool *hit,
+                                  const dfi_move_data *md, uint32_t move_id, uint32_t move_type, uint32_t *accuracy);
 
 static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t move_id, const uint32_t *targets,
                                          uint32_t count)
 {
+    /* A heal move reaches its targets through trySpreadMoveHit (sim/battle-actions.ts:550-620), so a target other than the user
+     * runs its TryHit abilities first (hitStepTryHitEvent, :643-652; data/abilities.ts onTryHit: `target !== source`), as in the
+     * hit steps: decision 0015 entry 5ed (#641). For Life Dew (Water, Status, target allies) at its ally that is Good as Gold's
+     * -immune (data/abilities.ts:1630-1636) and Water Absorb's heal by a quarter with [of] the user, or -immune at full HP or
+     * under Heal Block (:5363-5376, A2a's branch); the handler returns null, so the ally leaves the targets (a literal false of
+     * the hit steps) before the heal loop, and the user's heal and the [spread] list see only the targets left. The user's own
+     * TryHit is not asked. No accuracy is read after it (Life Dew's accuracy is true). Heal Pulse ran the hit steps already. */
+    bool hit[DFI_POSITIONS] = {true, true, true, true};
+    uint32_t left[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t n = 0u;
+    uint32_t no_accuracy = 0u;
+    dfi_try_hit_abilities(r, user, targets, count, hit, &dfi_pool_moves[move_id], move_id,
+                          dfi_move_type_now(r, dfi_at(r->b, user), &dfi_pool_moves[move_id]), &no_accuracy);
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i]) {
+            left[n] = targets[i];
+            n += 1u;
+        } else {
+            r->mres |= DFI_MRES_FALSE; /* a TryHit stop is a failure of the hit steps (atLeastOneFailure) */
+        }
+    }
     return dfi_run_heal_fraction(r, dfi_pool_move_heal[move_id][0], dfi_pool_move_heal[move_id][1], true, user, move_id,
-                                 targets, count);
+                                 left, n);
 }
 
 static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t den, bool still, uint32_t user,
                                              uint32_t move_id, const uint32_t *targets, uint32_t count)
 {
-    /* A heal move reaches its targets through trySpreadMoveHit, so a target other than the user runs its TryHit abilities first
-     * (data/abilities.ts onTryHit: `target !== source`). The heal path here does not run dfi_try_hit_abilities: a Water heal move
-     * (Life Dew, allies) at an ally with Water Absorb (A2a, decision 0015 entry 5dy) would heal through the ability (`-heal ...
-     * [from] ability: Water Absorb|[of] user`, or -immune at full HP) instead of the move. Not modelled: refused before anything
-     * changes (E_UNSUPPORTED). Dry Skin and Storm Drain are not marked; no other marked absorber takes a heal move's type (Heal
-     * Pulse is Psychic). */
-    for (uint32_t i = 0u; i < count; ++i) {
-        const dfi_member *tm = dfi_at(r->b, targets[i]);
-        if (targets[i] != user && tm != NULL && tm->hp != 0u && dfi_ability(r->b, tm, DFI_ABILITY_WATERABSORB) &&
-            dfi_move_type_now(r, dfi_at(r->b, user), &dfi_pool_moves[move_id]) == DFI_TYPE_WATER) {
-            return DUOFORGE_E_UNSUPPORTED;
-        }
-    }
     bool did = false;
     bool full_hp_fail = false; /* Heal Pulse (!still) at full HP: its onHit's NOT_FAIL, see the tail */
     /* moveHit's heal, once per target in the order of the list (sim/battle-actions.ts:1201-1222; Life Dew, step G32, heals
@@ -4618,10 +4628,11 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
     }
     /* The `[spread]` list of the move line is the move's hitTargets after the hit steps (sim/battle-actions.ts:614-618): when
      * the heal did something for at least one target every target stays in it, a target at full HP too, and when it did
-     * nothing for any the list is empty (the move line keeps its [spread] with no slot). */
-    if (count > 1u) {
+     * nothing for any the list is empty (the move line keeps its [spread] with no slot). The list is of the targets left after
+     * the TryHit abilities (dfi_run_heal_move): a spread move whose ally a TryHit stopped keeps its [spread] with the user alone. */
+    {
         duoforge_event *mv = dfi_last_move(r);
-        if (mv != NULL) {
+        if (mv != NULL && (mv->flags & DUOFORGE_EVENT_FLAG_SPREAD) != 0u) {
             uint32_t mask = 0u;
             for (uint32_t i = 0u; did && i < count; ++i) {
                 mask |= 1u << targets[i];
